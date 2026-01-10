@@ -11,3 +11,13 @@ export function createTestMessage(message: string): string {
  * Test helper to verify package is importable
  */
 export const TEST_UTILS_VERSION = '0.1.0';
+
+// Export mock provider and utilities
+export {
+  MockProvider,
+  createSimpleMockProvider,
+  createToolCallMockProvider,
+  createErrorMockProvider,
+  createDelayedMockProvider,
+  type MockProviderConfig,
+} from './mockProvider.js';
