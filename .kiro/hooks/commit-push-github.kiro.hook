@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Commit & Push to GitHub",
+  "description": "Commits all changes to the repository and pushes to GitHub main branch with a descriptive commit message",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Review the current git status and recent changes. Then create a descriptive commit message summarizing the work done, stage all changes, commit them, and push to the main branch on GitHub. Use git commands to accomplish this."
+  }
+}

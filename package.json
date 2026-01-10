@@ -1,0 +1,30 @@
+{
+  "name": "ollm-cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "node scripts/build.js",
+    "dev": "echo 'Dev mode not yet implemented'",
+    "test": "vitest run",
+    "lint": "eslint .",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.2",
+    "@types/node": "^20.0.0",
+    "esbuild": "^0.19.0",
+    "eslint": "^9.0.0",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "fast-check": "^3.15.0",
+    "globals": "^17.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.3.0",
+    "typescript-eslint": "^8.52.0",
+    "vitest": "^1.0.0"
+  }
+}

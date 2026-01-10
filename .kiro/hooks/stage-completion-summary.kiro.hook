@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Stage Completion Summary",
+  "description": "Generates a comprehensive summary after stage completion including work description, time/credit breakdown per task, code statistics (lines, files, folders), and AI vs traditional development benchmarks. Saves to .dev/logs/dev-log.md with metadata.",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Create a comprehensive stage completion summary and save it to .dev/logs/dev-log.md. Include the following sections:\n\n## Stage Summary\n- Brief description of works completed in this stage\n- Breakdown of time and Kiro credits used per each task\n- Total time and credits used in this stage\n\nCritical: After completing each task, report actual credits used (not estimates) in this format: \"Task X - Credits used: [actual number]\".  - Use those credit costs in Stage Summary calculations\n\n## Code Statistics\n- Amount of lines of code created\n- Number of files created\n- Number of folders created\n\n## Development Benchmark\n- Estimated time for a small dev team of 3 developers to complete this stage without AI assistance\n- Actual time taken with Kiro AI (vibecoding)\n- Time savings percentage and efficiency comparison\n\n## Metadata\n- Date of work\n- Stage identifier\n- Any relevant notes\n\nFormat this as a new section in the existing .dev/logs/dev-log.md file (create the file if it doesn't exist). Use proper markdown formatting with headers, lists, and tables where appropriate.\nKeep clear separation for each stage.\n"
+  }
+}

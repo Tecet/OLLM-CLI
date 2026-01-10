@@ -1,0 +1,8 @@
+{
+  "name": "@ollm/core",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "dependencies": {},
+  "devDependencies": {}
+}
