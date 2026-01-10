@@ -6,6 +6,8 @@ This implementation plan breaks down the core runtime and provider interface sys
 
 ## Tasks
 
+> **Timestamp Format**: Each task can include `Started: YYYY-MM-DD HH:MM` and `Completed: YYYY-MM-DD HH:MM` to track actual time spent.
+
 - [x] 1. Create provider types and interfaces
   - Create `packages/core/src/provider/types.ts` with all core interfaces
   - Define Role, MessagePart, Message, ToolSchema, ToolCall types
@@ -13,6 +15,8 @@ This implementation plan breaks down the core runtime and provider interface sys
   - Define ModelInfo and PullProgress interfaces
   - Export all types from the file
   - _Requirements: 4.1, 9.1, 9.2, 9.3_
+  - _Started: 2026-01-10 14:30_
+  - _Completed: 2026-01-10 15:15_
 
 - [x] 1.1 Write property tests for message structure
   - **Property 30: Message Structure Validity**
