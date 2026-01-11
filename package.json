@@ -15,7 +15,8 @@
     "task:start": "node scripts/task-tracker.js start",
     "task:complete": "node scripts/task-tracker.js complete",
     "task:credits": "node scripts/task-tracker.js credits",
-    "task:status": "node scripts/task-tracker.js status"
+    "task:status": "node scripts/task-tracker.js status",
+    "task:sync": "node scripts/task-tracker.js sync"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",

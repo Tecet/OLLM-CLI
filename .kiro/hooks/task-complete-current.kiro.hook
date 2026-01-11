@@ -1,0 +1,15 @@
+{
+  "enabled": true,
+  "name": "Task - 2 Complete Current",
+  "description": "Marks the most recently started task as complete and adds completion timestamp with duration. Click this after finishing work on a task.",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Complete the current task by directly editing the tasks.md file:\n\n1. Search for all tasks.md files in .kiro/specs/*/ directories\n2. Find the task that has '_Started:' timestamp but NO '_Completed:' timestamp:\n   - Look for lines like `- [ ] 10.5 ...` followed by `_Started: YYYY-MM-DD HH:MM_`\n   - The task should NOT have `_Completed:` line yet\n   - If multiple found, pick the one with the most recent '_Started:' timestamp\n3. Once found, directly edit the file using strReplace to:\n   - Change `- [ ]` to `- [x]` on the task line\n   - Add `_Completed: YYYY-MM-DD HH:MM_` line (use current time)\n   - Add `_Duration: Xm_` or `_Duration: Xh Ym_` line (calculate from Started to Completed)\n4. Show the user:\n   ```\n   ✓ Task <number> completed\n      Description: <task description>\n      Started: <start time>\n      Completed: <end time>\n      Duration: <duration>\n   ```\n5. Then ask: 'Please provide the credits used for this task (check the \"Credits used:\" line at the end of your previous message, or enter 0 to skip):'\n6. STOP and wait for user response - do not proceed until they provide a number\n7. After user provides credits:\n   - If > 0: Add `_Credits: X.XX_` line to the task using strReplace\n   - If 0: Skip credits, show 'Credits: Not tracked'\n8. Show final summary:\n   ```\n   ✓ Task <number> completed\n      Duration: <duration>\n      Credits: <amount or 'Not tracked'>\n   ```\n\nIMPORTANT:\n- Do NOT use task-tracker.js script (it requires interactive input which blocks)\n- Use strReplace tool to directly edit the tasks.md file\n- Calculate duration by parsing the timestamps (format: YYYY-MM-DD HH:MM)\n- If no task with Started but no Completed found, say: 'No active task found. Use \"Start Next Task\" hook.'"
+  },
+  "workspaceFolderName": "OLLM CLI",
+  "shortName": "task-complete-current"
+}

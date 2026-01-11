@@ -1,25 +1,15 @@
 #!/usr/bin/env node
 
 /**
- * Task Tracker - Utility for managing task timestamps and credits in markdown files
+ * Task Tracker - Adds timestamps to markdown task files
  * 
  * Usage:
- *   node scripts/task-tracker.js start <task-file> <task-number>
- *   node scripts/task-tracker.js complete <task-file> <task-number>
- *   node scripts/task-tracker.js credits <task-file> <task-number> <credits>
- *   node scripts/task-tracker.js status <task-file>
- * 
- * Examples:
- *   node scripts/task-tracker.js start .kiro/specs/stage-03/tasks.md 1
- *   node scripts/task-tracker.js complete .kiro/specs/stage-03/tasks.md 1
- *   node scripts/task-tracker.js credits .kiro/specs/stage-03/tasks.md 1 0.11
- *   node scripts/task-tracker.js status .kiro/specs/stage-03/tasks.md
+ *   node scripts/task-tracker.js start <task-file>
+ *   node scripts/task-tracker.js complete <task-file>
  */
 
 import fs from 'fs';
-import path from 'path';
-
-const TIMESTAMP_FORMAT = 'YYYY-MM-DD HH:MM';
+import readline from 'readline';
 
 function formatTimestamp(date = new Date()) {
   const year = date.getFullYear();
@@ -56,334 +46,266 @@ function calculateDuration(startStr, endStr) {
   return `${minutes}m`;
 }
 
-function findTaskInContent(content, taskNumber) {
-  // Match task patterns like "- [x] 1." or "- [ ] 1." or "  - [x] 1.1"
-  const taskPattern = new RegExp(
-    `^(\\s*- \\[[x ]\\] ${taskNumber}(?:\\.\\d+)?\\.)`,
-    'gm'
-  );
-  
-  const match = taskPattern.exec(content);
-  if (!match) return null;
-  
-  const taskStart = match.index;
-  const taskPrefix = match[1];
-  
-  // Find the end of this task (next task at same or higher level, or end of file)
-  const indentLevel = taskPrefix.match(/^\s*/)[0].length;
-  const nextTaskPattern = new RegExp(
-    `^\\s{0,${indentLevel}}- \\[[x ]\\] \\d+`,
-    'gm'
-  );
-  
-  nextTaskPattern.lastIndex = taskStart + match[0].length;
-  const nextMatch = nextTaskPattern.exec(content);
-  const taskEnd = nextMatch ? nextMatch.index : content.length;
-  
-  return {
-    start: taskStart,
-    end: taskEnd,
-    content: content.substring(taskStart, taskEnd),
-    prefix: taskPrefix,
-    indentLevel
-  };
+function promptForCredits() {
+  return new Promise((resolve) => {
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout
+    });
+    
+    rl.question('Enter credits used (or press Enter to skip): ', (answer) => {
+      rl.close();
+      const credits = parseFloat(answer.trim());
+      resolve(isNaN(credits) || credits < 0 ? null : credits.toFixed(2));
+    });
+  });
 }
 
-function addTimestamp(taskContent, type, timestamp) {
-  const indent = taskContent.match(/^\s*/)[0];
-  const timestampLine = `${indent}  - _${type}: ${timestamp}_\n`;
-  
-  // Check if timestamp already exists
-  const existingPattern = new RegExp(`${indent}  - _${type}:.*_`, 'gm');
-  if (existingPattern.test(taskContent)) {
-    // Replace existing timestamp
-    return taskContent.replace(existingPattern, timestampLine.trim());
+/**
+ * Find the first uncompleted task and return its line index
+ */
+function findFirstUncompletedTaskLine(lines) {
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].match(/^(\s*)- \[ \] \d+/)) {
+      return i;
+    }
   }
+  return -1;
+}
+
+/**
+ * Find the task with Started but no Completed timestamp
+ */
+function findTaskWithStartedNoCompleted(lines) {
+  let latestTaskLine = -1;
+  let latestStartTime = null;
   
-  // Add new timestamp before the next task or at the end
-  const lines = taskContent.split('\n');
-  let insertIndex = lines.length - 1;
-  
-  // Find the last line with content (before empty lines)
-  for (let i = lines.length - 1; i >= 0; i--) {
-    if (lines[i].trim()) {
-      insertIndex = i + 1;
-      break;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    // Check if this is a task line
+    if (!line.match(/^(\s*)- \[[x\-\s]\] \d+/)) continue;
+    
+    const taskLineIndex = i;
+    const taskIndent = line.match(/^(\s*)/)[1].length;
+    
+    // Look for Started and Completed in the task's child lines
+    let hasStarted = false;
+    let hasCompleted = false;
+    let startTime = null;
+    
+    for (let j = i + 1; j < lines.length; j++) {
+      const childLine = lines[j];
+      
+      // Empty line or another task at same/lower indent = end of this task
+      if (childLine.trim() === '') break;
+      const childMatch = childLine.match(/^(\s*)- \[[x\-\s]\] \d+/);
+      if (childMatch && childMatch[1].length <= taskIndent) break;
+      
+      // Check for timestamps
+      const startMatch = childLine.match(/_Started: ([\d\-: ]+)_/);
+      if (startMatch) {
+        hasStarted = true;
+        startTime = parseTimestamp(startMatch[1]);
+      }
+      if (childLine.includes('_Completed:')) {
+        hasCompleted = true;
+      }
+    }
+    
+    if (hasStarted && !hasCompleted) {
+      if (!latestStartTime || (startTime && startTime > latestStartTime)) {
+        latestStartTime = startTime;
+        latestTaskLine = taskLineIndex;
+      }
     }
   }
   
-  lines.splice(insertIndex, 0, timestampLine.trim());
-  return lines.join('\n');
+  return latestTaskLine;
 }
 
-function markTaskComplete(taskContent) {
-  return taskContent.replace(/^(\s*- )\[ \]/, '$1[x]');
+/**
+ * Find where to insert a timestamp for a task starting at taskLineIndex
+ * Returns the line index where the timestamp should be inserted
+ */
+function findTimestampInsertLine(lines, taskLineIndex) {
+  const taskLine = lines[taskLineIndex];
+  const taskIndent = taskLine.match(/^(\s*)/)[1].length;
+  
+  // Start from the line after the task
+  for (let i = taskLineIndex + 1; i < lines.length; i++) {
+    const line = lines[i];
+    
+    // Empty line = insert before it
+    if (line.trim() === '') {
+      return i;
+    }
+    
+    // Another task at same or lower indent = insert before it
+    const taskMatch = line.match(/^(\s*)- \[[x\-\s]\] \d+/);
+    if (taskMatch && taskMatch[1].length <= taskIndent) {
+      return i;
+    }
+    
+    // If we hit an existing timestamp, insert after all timestamps
+    if (line.match(/^\s+- _(?:Started|Completed|Duration|Credits):/)) {
+      // Find the last timestamp line
+      let lastTimestampLine = i;
+      for (let j = i + 1; j < lines.length; j++) {
+        if (lines[j].match(/^\s+- _(?:Started|Completed|Duration|Credits):/)) {
+          lastTimestampLine = j;
+        } else {
+          break;
+        }
+      }
+      return lastTimestampLine + 1;
+    }
+  }
+  
+  // If we reach end of file, insert at end
+  return lines.length;
 }
 
-function startTask(filePath, taskNumber) {
+/**
+ * Get the task number from a task line
+ */
+function getTaskNumber(taskLine) {
+  const match = taskLine.match(/- \[[x\-\s]\] (\d+(?:\.\d+)?)/);
+  return match ? match[1] : null;
+}
+
+function startTask(filePath) {
   if (!fs.existsSync(filePath)) {
     console.error(`Error: File not found: ${filePath}`);
     process.exit(1);
   }
   
   const content = fs.readFileSync(filePath, 'utf-8');
-  const task = findTaskInContent(content, taskNumber);
+  const lines = content.split(/\r?\n/);
   
-  if (!task) {
-    console.error(`Error: Task ${taskNumber} not found in ${filePath}`);
+  const taskLineIndex = findFirstUncompletedTaskLine(lines);
+  
+  if (taskLineIndex === -1) {
+    console.error('Error: No uncompleted tasks found');
     process.exit(1);
   }
   
+  const taskNumber = getTaskNumber(lines[taskLineIndex]);
+  const taskIndent = lines[taskLineIndex].match(/^(\s*)/)[1];
   const timestamp = formatTimestamp();
-  const updatedTask = addTimestamp(task.content, 'Started', timestamp);
-  const updatedContent = 
-    content.substring(0, task.start) +
-    updatedTask +
-    content.substring(task.end);
+  const timestampLine = `${taskIndent}  - _Started: ${timestamp}_`;
   
-  fs.writeFileSync(filePath, updatedContent, 'utf-8');
+  const insertIndex = findTimestampInsertLine(lines, taskLineIndex);
+  
+  // Insert the timestamp line
+  lines.splice(insertIndex, 0, timestampLine);
+  
+  fs.writeFileSync(filePath, lines.join('\n'), 'utf-8');
   
   console.log(`✓ Started task ${taskNumber} at ${timestamp}`);
   console.log(`  File: ${filePath}`);
 }
 
-function completeTask(filePath, taskNumber) {
+async function completeTask(filePath) {
   if (!fs.existsSync(filePath)) {
     console.error(`Error: File not found: ${filePath}`);
     process.exit(1);
   }
   
   const content = fs.readFileSync(filePath, 'utf-8');
-  const task = findTaskInContent(content, taskNumber);
+  const lines = content.split(/\r?\n/);
   
-  if (!task) {
-    console.error(`Error: Task ${taskNumber} not found in ${filePath}`);
+  const taskLineIndex = findTaskWithStartedNoCompleted(lines);
+  
+  if (taskLineIndex === -1) {
+    console.error('Error: No task with Started timestamp (and no Completed) found');
     process.exit(1);
   }
   
+  const taskNumber = getTaskNumber(lines[taskLineIndex]);
+  const taskIndent = lines[taskLineIndex].match(/^(\s*)/)[1];
   const timestamp = formatTimestamp();
-  let updatedTask = markTaskComplete(task.content);
-  updatedTask = addTimestamp(updatedTask, 'Completed', timestamp);
   
-  // Calculate duration if start time exists
-  const startMatch = task.content.match(/_Started: ([\d-: ]+)_/);
-  if (startMatch) {
-    const duration = calculateDuration(startMatch[1], timestamp);
-    if (duration) {
-      updatedTask = addTimestamp(updatedTask, 'Duration', duration);
+  // Mark the task as completed by changing [ ] to [x]
+  lines[taskLineIndex] = lines[taskLineIndex].replace(/- \[ \]/, '- [x]');
+  
+  // Find the Started timestamp for duration calculation
+  let startTimestamp = null;
+  for (let i = taskLineIndex + 1; i < lines.length; i++) {
+    const line = lines[i];
+    if (line.trim() === '') break;
+    const startMatch = line.match(/_Started: ([\d\-: ]+)_/);
+    if (startMatch) {
+      startTimestamp = startMatch[1];
+      break;
     }
   }
   
-  const updatedContent = 
-    content.substring(0, task.start) +
-    updatedTask +
-    content.substring(task.end);
+  const insertIndex = findTimestampInsertLine(lines, taskLineIndex);
   
-  fs.writeFileSync(filePath, updatedContent, 'utf-8');
+  // Build timestamp lines to insert
+  const newLines = [];
+  newLines.push(`${taskIndent}  - _Completed: ${timestamp}_`);
+  
+  if (startTimestamp) {
+    const duration = calculateDuration(startTimestamp, timestamp);
+    if (duration) {
+      newLines.push(`${taskIndent}  - _Duration: ${duration}_`);
+    }
+  }
+  
+  const credits = await promptForCredits();
+  if (credits !== null) {
+    newLines.push(`${taskIndent}  - _Credits: ${credits}_`);
+  }
+  
+  // Insert all new lines
+  lines.splice(insertIndex, 0, ...newLines);
+  
+  fs.writeFileSync(filePath, lines.join('\n'), 'utf-8');
   
   console.log(`✓ Completed task ${taskNumber} at ${timestamp}`);
-  if (startMatch) {
-    const duration = calculateDuration(startMatch[1], timestamp);
+  if (startTimestamp) {
+    const duration = calculateDuration(startTimestamp, timestamp);
     if (duration) {
       console.log(`  Duration: ${duration}`);
     }
   }
+  if (credits !== null) {
+    console.log(`  Credits: ${credits}`);
+  }
   console.log(`  File: ${filePath}`);
 }
 
-function addCredits(filePath, taskNumber, credits) {
-  if (!fs.existsSync(filePath)) {
-    console.error(`Error: File not found: ${filePath}`);
-    process.exit(1);
-  }
-  
-  const content = fs.readFileSync(filePath, 'utf-8');
-  const task = findTaskInContent(content, taskNumber);
-  
-  if (!task) {
-    console.error(`Error: Task ${taskNumber} not found in ${filePath}`);
-    process.exit(1);
-  }
-  
-  const creditsNum = parseFloat(credits);
-  if (isNaN(creditsNum) || creditsNum < 0) {
-    console.error(`Error: Invalid credits value: ${credits}`);
-    process.exit(1);
-  }
-  
-  // Check if credits already exist
-  const creditsMatch = task.content.match(/_Credits: ([\d.]+)_/);
-  let updatedTask;
-  
-  if (creditsMatch) {
-    // Add to existing credits
-    const existingCredits = parseFloat(creditsMatch[1]);
-    const totalCredits = (existingCredits + creditsNum).toFixed(2);
-    updatedTask = task.content.replace(
-      /_Credits: [\d.]+_/,
-      `_Credits: ${totalCredits}_`
-    );
-    console.log(`✓ Added ${creditsNum.toFixed(2)} credits to task ${taskNumber}`);
-    console.log(`  Previous: ${existingCredits.toFixed(2)}`);
-    console.log(`  Total: ${totalCredits}`);
-  } else {
-    // Add new credits line
-    updatedTask = addTimestamp(task.content, 'Credits', creditsNum.toFixed(2));
-    console.log(`✓ Added ${creditsNum.toFixed(2)} credits to task ${taskNumber}`);
-  }
-  
-  const updatedContent = 
-    content.substring(0, task.start) +
-    updatedTask +
-    content.substring(task.end);
-  
-  fs.writeFileSync(filePath, updatedContent, 'utf-8');
-  console.log(`  File: ${filePath}`);
-}
-
-function showStatus(filePath) {
-  if (!fs.existsSync(filePath)) {
-    console.error(`Error: File not found: ${filePath}`);
-    process.exit(1);
-  }
-  
-  const content = fs.readFileSync(filePath, 'utf-8');
-  
-  // Find all tasks with timestamps
-  const taskPattern = /^(\s*- \[([x ])\] (\d+(?:\.\d+)?)\.).*$/gm;
-  const tasks = [];
-  let match;
-  
-  while ((match = taskPattern.exec(content)) !== null) {
-    const taskNumber = match[3];
-    const isComplete = match[2] === 'x';
-    const task = findTaskInContent(content, taskNumber);
-    
-    if (task) {
-      const startMatch = task.content.match(/_Started: ([\d-: ]+)_/);
-      const completeMatch = task.content.match(/_Completed: ([\d-: ]+)_/);
-      const durationMatch = task.content.match(/_Duration: (.+)_/);
-      const creditsMatch = task.content.match(/_Credits: ([\d.]+)_/);
-      
-      if (startMatch || completeMatch || creditsMatch) {
-        tasks.push({
-          number: taskNumber,
-          complete: isComplete,
-          started: startMatch ? startMatch[1] : null,
-          completed: completeMatch ? completeMatch[1] : null,
-          duration: durationMatch ? durationMatch[1] : null,
-          credits: creditsMatch ? parseFloat(creditsMatch[1]) : null
-        });
-      }
-    }
-  }
-  
-  if (tasks.length === 0) {
-    console.log('No tasks with timestamps found.');
-    return;
-  }
-  
-  console.log(`\nTask Status for ${path.basename(filePath)}:\n`);
-  console.log('Task | Status   | Started          | Completed        | Duration | Credits');
-  console.log('-----|----------|------------------|------------------|----------|--------');
-  
-  for (const task of tasks) {
-    const status = task.complete ? '✓ Done' : '⧗ Active';
-    const started = task.started || '-';
-    const completed = task.completed || '-';
-    const duration = task.duration || '-';
-    const credits = task.credits !== null ? task.credits.toFixed(2) : '-';
-    
-    console.log(
-      `${task.number.padEnd(4)} | ${status.padEnd(8)} | ${started.padEnd(16)} | ${completed.padEnd(16)} | ${duration.padEnd(8)} | ${credits}`
-    );
-  }
-  
-  // Calculate totals
-  const completedTasks = tasks.filter(t => t.complete);
-  const activeTasks = tasks.filter(t => !t.complete);
-  
-  console.log('\nSummary:');
-  console.log(`  Total tasks tracked: ${tasks.length}`);
-  console.log(`  Completed: ${completedTasks.length}`);
-  console.log(`  Active: ${activeTasks.length}`);
-  
-  if (completedTasks.length > 0) {
-    const totalMinutes = completedTasks.reduce((sum, task) => {
-      if (!task.duration) return sum;
-      const match = task.duration.match(/(?:(\d+)h )?(\d+)m/);
-      if (!match) return sum;
-      const hours = parseInt(match[1] || '0');
-      const minutes = parseInt(match[2]);
-      return sum + (hours * 60) + minutes;
-    }, 0);
-    
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-    console.log(`  Total time: ${hours}h ${minutes}m`);
-  }
-  
-  // Calculate total credits
-  const totalCredits = tasks.reduce((sum, task) => {
-    return sum + (task.credits || 0);
-  }, 0);
-  
-  if (totalCredits > 0) {
-    console.log(`  Total credits: ${totalCredits.toFixed(2)}`);
-  }
-}
-
-// Main CLI
-const [,, command, filePath, taskNumber, creditsOrExtra] = process.argv;
+const [,, command, filePath] = process.argv;
 
 if (!command) {
   console.log('Usage:');
-  console.log('  node scripts/task-tracker.js start <task-file> <task-number>');
-  console.log('  node scripts/task-tracker.js complete <task-file> <task-number>');
-  console.log('  node scripts/task-tracker.js credits <task-file> <task-number> <credits>');
-  console.log('  node scripts/task-tracker.js status <task-file>');
+  console.log('  node scripts/task-tracker.js start <task-file>');
+  console.log('  node scripts/task-tracker.js complete <task-file>');
   process.exit(1);
 }
 
 switch (command) {
   case 'start':
-    if (!filePath || !taskNumber) {
-      console.error('Error: Missing arguments');
-      console.log('Usage: node scripts/task-tracker.js start <task-file> <task-number>');
+    if (!filePath) {
+      console.error('Error: Missing file path');
+      console.log('Usage: node scripts/task-tracker.js start <task-file>');
       process.exit(1);
     }
-    startTask(filePath, taskNumber);
+    startTask(filePath);
     break;
     
   case 'complete':
-    if (!filePath || !taskNumber) {
-      console.error('Error: Missing arguments');
-      console.log('Usage: node scripts/task-tracker.js complete <task-file> <task-number>');
-      process.exit(1);
-    }
-    completeTask(filePath, taskNumber);
-    break;
-    
-  case 'credits':
-    if (!filePath || !taskNumber || !creditsOrExtra) {
-      console.error('Error: Missing arguments');
-      console.log('Usage: node scripts/task-tracker.js credits <task-file> <task-number> <credits>');
-      process.exit(1);
-    }
-    addCredits(filePath, taskNumber, creditsOrExtra);
-    break;
-    
-  case 'status':
     if (!filePath) {
       console.error('Error: Missing file path');
-      console.log('Usage: node scripts/task-tracker.js status <task-file>');
+      console.log('Usage: node scripts/task-tracker.js complete <task-file>');
       process.exit(1);
     }
-    showStatus(filePath);
+    await completeTask(filePath);
     break;
     
   default:
     console.error(`Error: Unknown command: ${command}`);
-    console.log('Valid commands: start, complete, credits, status');
+    console.log('Valid commands: start, complete');
     process.exit(1);
 }

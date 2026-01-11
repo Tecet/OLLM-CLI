@@ -1,0 +1,15 @@
+{
+  "enabled": true,
+  "name": "Task - 1 Start Next ",
+  "description": "Finds the next unfinished task, adds a start timestamp, and prepares a prompt for a new chat session. Click this when you're ready to begin the next task.",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Find and start the next unfinished task:\n\n1. Search for all tasks.md files in .kiro/specs/*/ directories\n2. Find the FIRST unchecked task [ ]:\n   - PREFER subtasks (decimal numbers like 7.1, 7.2, 8.1, etc.) - pattern: '- [ ] X.Y'\n   - If no unchecked subtasks exist, look for main tasks without subtasks (like '- [ ] 9.' or '- [ ] 9 ')\n   - A main task has subtasks if there are any tasks starting with its number followed by a dot (e.g., 9.1, 9.2)\n   - Skip main tasks that have subtasks (they're just containers)\n3. Once found:\n   - Run `node scripts/task-tracker.js start <file-path> <task-number>` using the task number (e.g., '7.2' or '9')\n   - Display ONLY:\n     * Task number and description\n     * Timestamp added\n     * Message: 'Task <number> started! Click \"Start Task\" in the tasks.md file to begin work in Kiro IDE.'\n4. Do NOT generate any prompts - user will manually trigger task via Kiro IDE\n5. If all tasks complete, say: 'All tasks complete! 🎉'\n\nIMPORTANT: Only add timestamp, no prompts. User will manually start task via Kiro IDE task link."
+  },
+  "workspaceFolderName": "OLLM CLI",
+  "shortName": "task-start-next"
+}
