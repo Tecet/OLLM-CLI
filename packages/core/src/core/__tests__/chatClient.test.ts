@@ -1270,7 +1270,7 @@ describe('Chat Client - Loop Detection Integration', () => {
 
       const client = new ChatClient(providerRegistry, toolRegistry, {
         loopDetectionService,
-        maxTurns: 10,
+        defaultMaxTurns: 10,
       });
 
       const events = await collectEvents(client.chat('test prompt'));
@@ -1321,7 +1321,7 @@ describe('Chat Client - Loop Detection Integration', () => {
 
       const client = new ChatClient(providerRegistry, toolRegistry, {
         loopDetectionService,
-        maxTurns: 20, // Higher than loop detection maxTurns
+        defaultMaxTurns: 20, // Higher than loop detection maxTurns
       });
 
       const events = await collectEvents(client.chat('test prompt'));
@@ -1394,7 +1394,7 @@ describe('Chat Client - Loop Detection Integration', () => {
 
       const client = new ChatClient(providerRegistry, toolRegistry, {
         loopDetectionService,
-        maxTurns: 10,
+        defaultMaxTurns: 10,
       });
 
       const events = await collectEvents(client.chat('test prompt'));
@@ -1436,7 +1436,7 @@ describe('Chat Client - Loop Detection Integration', () => {
 
       // No loop detection service provided
       const client = new ChatClient(providerRegistry, toolRegistry, {
-        maxTurns: 10, // Use default maxTurns
+        defaultMaxTurns: 10, // Use default maxTurns
       });
 
       const events = await collectEvents(client.chat('test prompt'));
