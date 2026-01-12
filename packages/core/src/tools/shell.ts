@@ -16,6 +16,7 @@ import type {
   MessageBus,
 } from './types.js';
 import { ShellExecutionService, type ShellExecutionOptions } from '../services/shellExecutionService.js';
+import { EnvironmentSanitizationService } from '../services/environmentSanitization.js';
 
 /**
  * Parameters for shell command execution
@@ -84,7 +85,17 @@ export class ShellTool implements DeclarativeTool<ShellParams, ToolResult> {
     },
   };
 
-  constructor(private shellService: ShellExecutionService) {}
+  private shellService: ShellExecutionService;
+
+  constructor(shellService?: ShellExecutionService) {
+    // If no shell service provided, create one with default sanitization
+    if (shellService) {
+      this.shellService = shellService;
+    } else {
+      const sanitizationService = new EnvironmentSanitizationService();
+      this.shellService = new ShellExecutionService(sanitizationService);
+    }
+  }
 
   createInvocation(
     params: ShellParams,

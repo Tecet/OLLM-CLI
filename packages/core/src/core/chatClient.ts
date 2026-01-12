@@ -6,6 +6,12 @@
 import type { Message, ToolCall, ProviderAdapter } from '../provider/types.js';
 import type { ProviderRegistry } from '../provider/registry.js';
 import { Turn, type TurnEvent, type ToolRegistry, type ChatOptions } from './turn.js';
+import type { ChatRecordingService } from '../services/chatRecordingService.js';
+import type { ChatCompressionService } from '../services/chatCompressionService.js';
+import { LoopDetectionService } from '../services/loopDetectionService.js';
+import type { ContextManager } from '../services/contextManager.js';
+import type { SessionMessage, SessionToolCall, ServicesConfig } from '../services/types.js';
+import { mergeServicesConfig, getLoopDetectionConfig } from '../services/config.js';
 
 /**
  * Configuration for the chat client.
@@ -13,6 +19,12 @@ import { Turn, type TurnEvent, type ToolRegistry, type ChatOptions } from './tur
 export interface ChatConfig {
   defaultModel?: string;
   defaultMaxTurns?: number;
+  recordingService?: ChatRecordingService;
+  compressionService?: ChatCompressionService;
+  loopDetectionService?: LoopDetectionService;
+  contextManager?: ContextManager;
+  servicesConfig?: Partial<ServicesConfig>;
+  tokenLimit?: number; // Token limit for the model (used for compression threshold)
 }
 
 /**
@@ -24,19 +36,34 @@ export type ChatEvent =
   | { type: 'tool_call_result'; toolCall: ToolCall; result: unknown }
   | { type: 'turn_complete'; turnNumber: number }
   | { type: 'finish'; reason: string }
-  | { type: 'error'; error: Error };
+  | { type: 'error'; error: Error }
+  | { type: 'loop_detected'; pattern: { type: string; details: string; count: number } };
 
 /**
  * Main chat client for managing conversations.
  * Coordinates turns, tool execution, and event streaming.
  */
 export class ChatClient {
+  private recordingService?: ChatRecordingService;
+  private compressionService?: ChatCompressionService;
+  private loopDetectionService?: LoopDetectionService;
+  private contextManager?: ContextManager;
+  private servicesConfig: Required<ServicesConfig>;
+
   constructor(
     private providerRegistry: ProviderRegistry,
     private toolRegistry: ToolRegistry,
     private config: ChatConfig = {}
-  ) {}
-
+  ) {
+    this.recordingService = config.recordingService;
+    this.compressionService = config.compressionService;
+    this.contextManager = config.contextManager;
+    this.servicesConfig = mergeServicesConfig(config.servicesConfig);
+    
+    // Initialize loop detection service only if explicitly provided
+    // (not auto-created from config to avoid interfering with existing tests)
+    this.loopDetectionService = config.loopDetectionService;
+  }
   /**
    * Start a chat conversation with the given prompt.
    * @param prompt The user's initial message
@@ -69,17 +96,118 @@ export class ChatClient {
       return;
     }
 
+    // Initialize session recording (Requirements 1.1, 9.1)
+    let sessionId: string | undefined;
+    if (this.recordingService) {
+      try {
+        const model = options?.model ?? this.config.defaultModel ?? 'unknown';
+        const providerName = options?.provider ?? 'default';
+        sessionId = await this.recordingService.createSession(model, providerName);
+      } catch (error) {
+        // Log error but continue without recording (Requirement 10.1)
+        console.error('Failed to create session:', error);
+      }
+    }
+
     // Initialize conversation with user message
     const messages: Message[] = [
       { role: 'user', parts: [{ type: 'text', text: prompt }] },
     ];
 
+    // Record initial user message (Requirement 1.1)
+    if (sessionId && this.recordingService) {
+      try {
+        await this.recordingService.recordMessage(sessionId, {
+          role: 'user',
+          parts: [{ type: 'text', text: prompt }],
+          timestamp: new Date().toISOString(),
+        });
+      } catch (error) {
+        // Log error but continue (Requirement 10.1)
+        console.error('Failed to record user message:', error);
+      }
+    }
+
     let turnNumber = 0;
     const maxTurns = options?.maxTurns ?? this.config.defaultMaxTurns ?? 10;
+
+    // Reset loop detection for new conversation (Requirement 4.8)
+    if (this.loopDetectionService) {
+      this.loopDetectionService.reset();
+    }
 
     // Turn loop
     while (turnNumber < maxTurns) {
       turnNumber++;
+
+      // Record turn for loop detection (Requirement 4.3)
+      if (this.loopDetectionService) {
+        this.loopDetectionService.recordTurn();
+      }
+
+      // Check for loops before each turn (Requirements 4.1, 4.2, 4.3, 4.7)
+      if (this.loopDetectionService) {
+        const loopPattern = this.loopDetectionService.checkForLoop();
+        if (loopPattern) {
+          // Emit loop detection event (Requirement 4.8)
+          yield {
+            type: 'loop_detected',
+            pattern: loopPattern,
+          };
+          // Stop execution (Requirement 4.7)
+          yield { type: 'finish', reason: 'loop_detected' };
+          break;
+        }
+      }
+
+      // Check compression threshold before each turn (Requirement 3.1)
+      if (this.compressionService && this.servicesConfig.compression.enabled) {
+        try {
+          const tokenLimit = this.config.tokenLimit ?? 4096; // Default to 4096 if not specified
+          const threshold = this.servicesConfig.compression.threshold;
+          
+          // Convert messages to SessionMessage format for compression check
+          const sessionMessages = messages.map(msg => this.messageToSessionMessage(msg));
+          
+          if (this.compressionService.shouldCompress(sessionMessages, tokenLimit, threshold)) {
+            // Trigger compression
+            const compressionResult = await this.compressionService.compress(
+              sessionMessages,
+              {
+                strategy: this.servicesConfig.compression.strategy,
+                preserveRecentTokens: this.servicesConfig.compression.preserveRecent,
+                targetTokens: Math.floor(tokenLimit * 0.7), // Target 70% of limit after compression
+              }
+            );
+
+            // Update message history with compressed messages
+            messages.length = 0; // Clear existing messages
+            messages.push(...compressionResult.compressedMessages.map(msg => 
+              this.sessionMessageToMessage(msg)
+            ));
+
+            // Update session metadata if recording is enabled
+            if (sessionId && this.recordingService) {
+              try {
+                // Get current session to update metadata
+                const session = await this.recordingService.getSession(sessionId);
+                if (session) {
+                  session.metadata.compressionCount++;
+                  session.metadata.tokenCount = compressionResult.compressedTokenCount;
+                  // Save updated session
+                  await this.recordingService.saveSession(sessionId);
+                }
+              } catch (error) {
+                // Log error but continue (Requirement 10.3)
+                console.error('Failed to update session metadata after compression:', error);
+              }
+            }
+          }
+        } catch (error) {
+          // Log error but continue without compression (Requirement 10.3)
+          console.error('Compression check failed:', error);
+        }
+      }
 
       // Check abort signal before starting turn (Requirement 10.4)
       if (options?.abortSignal?.aborted) {
@@ -87,11 +215,30 @@ export class ChatClient {
         break;
       }
 
+      // Get context additions from ContextManager (Requirement 5.7)
+      let systemPromptWithContext = options?.systemPrompt;
+      if (this.contextManager) {
+        const contextAdditions = this.contextManager.getSystemPromptAdditions();
+        if (contextAdditions) {
+          // Append context additions to system prompt
+          systemPromptWithContext = (systemPromptWithContext || '') + contextAdditions;
+        }
+      }
+
+      // Create turn options with context-enhanced system prompt
+      const turnOptions: ChatOptions = {
+        ...options,
+        systemPrompt: systemPromptWithContext,
+      };
+
       // Create and execute turn
-      const turn = new Turn(provider, this.toolRegistry, messages, options);
+      const turn = new Turn(provider, this.toolRegistry, messages, turnOptions);
 
       let hasToolCalls = false;
       let hasError = false;
+      let assistantMessage: Message | undefined;
+      const turnToolCalls: Array<{ toolCall: ToolCall; result: unknown }> = [];
+      let assistantOutput = ''; // Track output for loop detection
 
       try {
         for await (const event of turn.execute()) {
@@ -105,9 +252,24 @@ export class ChatClient {
           const chatEvent = this.mapTurnEventToChatEvent(event);
           yield chatEvent;
 
-          // Track if we have tool calls or errors
-          if (event.type === 'tool_call') {
+          // Track assistant message and tool calls for recording
+          if (event.type === 'text') {
+            // Accumulate assistant message
+            if (!assistantMessage) {
+              assistantMessage = { role: 'assistant', parts: [] };
+            }
+            assistantMessage.parts.push({ type: 'text', text: event.value });
+            // Accumulate output for loop detection (Requirement 4.2)
+            assistantOutput += event.value;
+          } else if (event.type === 'tool_call') {
             hasToolCalls = true;
+            // Record tool call for loop detection (Requirement 4.1, 4.4)
+            if (this.loopDetectionService) {
+              this.loopDetectionService.recordToolCall(event.toolCall.name, event.toolCall.args);
+            }
+          } else if (event.type === 'tool_result') {
+            // Store tool call and result for recording
+            turnToolCalls.push({ toolCall: event.toolCall, result: event.result });
           } else if (event.type === 'error') {
             hasError = true;
             // Requirement 10.2: Tool execution errors are emitted but don't terminate
@@ -122,6 +284,50 @@ export class ChatClient {
           error: new Error(`Turn execution failed: ${err.message}`)
         };
         hasError = true;
+      }
+
+      // Record output for loop detection (Requirement 4.2, 4.5)
+      if (this.loopDetectionService && assistantOutput) {
+        this.loopDetectionService.recordOutput(assistantOutput);
+      }
+
+      // Record assistant message (Requirement 1.2)
+      if (sessionId && this.recordingService && assistantMessage && assistantMessage.parts.length > 0) {
+        try {
+          await this.recordingService.recordMessage(sessionId, {
+            role: 'assistant',
+            parts: assistantMessage.parts.map(part => ({
+              type: 'text',
+              text: part.type === 'text' ? part.text : '',
+            })),
+            timestamp: new Date().toISOString(),
+          });
+        } catch (error) {
+          // Log error but continue (Requirement 10.1)
+          console.error('Failed to record assistant message:', error);
+        }
+      }
+
+      // Record tool calls (Requirement 1.3)
+      if (sessionId && this.recordingService && turnToolCalls.length > 0) {
+        for (const { toolCall, result } of turnToolCalls) {
+          try {
+            const sessionToolCall: SessionToolCall = {
+              id: toolCall.id,
+              name: toolCall.name,
+              args: toolCall.args,
+              result: {
+                llmContent: typeof result === 'string' ? result : JSON.stringify(result),
+                returnDisplay: typeof result === 'string' ? result : undefined,
+              },
+              timestamp: new Date().toISOString(),
+            };
+            await this.recordingService.recordToolCall(sessionId, sessionToolCall);
+          } catch (error) {
+            // Log error but continue (Requirement 10.1)
+            console.error('Failed to record tool call:', error);
+          }
+        }
       }
 
       // Emit turn complete event
@@ -153,6 +359,16 @@ export class ChatClient {
     if (turnNumber >= maxTurns) {
       yield { type: 'finish', reason: 'max_turns' };
     }
+
+    // Save session on exit (Requirement 9.2)
+    if (sessionId && this.recordingService) {
+      try {
+        await this.recordingService.saveSession(sessionId);
+      } catch (error) {
+        // Log error but don't fail (Requirement 10.1)
+        console.error('Failed to save session on exit:', error);
+      }
+    }
   }
 
   /**
@@ -175,5 +391,36 @@ export class ChatClient {
       case 'error':
         return { type: 'error', error: event.error };
     }
+  }
+
+  /**
+   * Convert Message to SessionMessage format
+   * @param message The message to convert
+   * @returns SessionMessage
+   */
+  private messageToSessionMessage(message: Message): SessionMessage {
+    return {
+      role: message.role,
+      parts: message.parts.map(part => ({
+        type: 'text',
+        text: part.type === 'text' ? part.text : '',
+      })),
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * Convert SessionMessage to Message format
+   * @param sessionMessage The session message to convert
+   * @returns Message
+   */
+  private sessionMessageToMessage(sessionMessage: SessionMessage): Message {
+    return {
+      role: sessionMessage.role,
+      parts: sessionMessage.parts.map(part => ({
+        type: 'text',
+        text: part.text,
+      })),
+    };
   }
 }

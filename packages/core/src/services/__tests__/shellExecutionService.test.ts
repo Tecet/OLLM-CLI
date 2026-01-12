@@ -1,11 +1,14 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ShellExecutionService } from '../shellExecutionService.js';
+import { EnvironmentSanitizationService } from '../environmentSanitization.js';
 
 describe('ShellExecutionService', () => {
   let service: ShellExecutionService;
+  let sanitizationService: EnvironmentSanitizationService;
 
   beforeEach(() => {
-    service = new ShellExecutionService();
+    sanitizationService = new EnvironmentSanitizationService();
+    service = new ShellExecutionService(sanitizationService);
   });
 
   describe('execute', () => {
@@ -169,9 +172,13 @@ describe('ShellExecutionService', () => {
           timeout: 5000,
         });
 
-        // The output should contain [REDACTED] instead of the actual secret
+        // The sensitive variable should be removed, so the shell will output the variable name itself
+        // (since the variable doesn't exist in the sanitized environment)
         expect(result.output).not.toContain('my-secret-value');
-        expect(result.output).toContain('[REDACTED]');
+        // On Windows, undefined variables are echoed as %VAR%, on Unix as empty or $VAR
+        if (process.platform === 'win32') {
+          expect(result.output).toContain('%TEST_SECRET%');
+        }
       } finally {
         // Restore original env
         if (originalEnv !== undefined) {
@@ -189,8 +196,14 @@ describe('ShellExecutionService', () => {
         timeout: 5000,
       });
 
-      // PATH should not be redacted
-      expect(result.output).not.toContain('[REDACTED]');
+      // PATH should be preserved and expanded
+      expect(result.output.trim()).not.toBe(envVarSyntax);
+      // Should contain actual path content, not the variable syntax
+      if (process.platform === 'win32') {
+        expect(result.output).not.toContain('%PATH%');
+      } else {
+        expect(result.output).not.toContain('$PATH');
+      }
     });
   });
 });

@@ -96,3 +96,35 @@ export type {
   MemoryParams,
   WriteTodosParams,
 } from './tools/index.js';
+
+// Services
+export {
+  ShellExecutionService,
+  ChatRecordingService,
+  ChatCompressionService,
+  LoopDetectionService,
+  ContextManager,
+  EnvironmentSanitizationService,
+  FileDiscoveryService,
+} from './services/index.js';
+
+// Service types
+export type {
+  SessionMessage,
+  SessionToolCall,
+  Session,
+  SessionSummary,
+  CompressionStrategy,
+  CompressionOptions,
+  CompressionResult,
+  LoopPatternType,
+  LoopPattern,
+  LoopDetectionConfig,
+  ContextEntry,
+  FileEntry,
+  DiscoveryOptions,
+  FileChangeEvent,
+  Disposable,
+  SanitizationConfig,
+  ServicesConfig,
+} from './services/index.js';

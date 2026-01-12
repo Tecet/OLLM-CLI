@@ -27,6 +27,7 @@ import { ShellTool } from '../shell.js';
 import { MemoryTool } from '../memory.js';
 import { WriteTodosTool } from '../write-todos.js';
 import { ShellExecutionService } from '../../services/shellExecutionService.js';
+import { EnvironmentSanitizationService } from '../../services/environmentSanitization.js';
 import type { ToolContext, DeclarativeTool, ToolResult } from '../types.js';
 
 /**
@@ -81,7 +82,8 @@ describe('Tool System Integration', () => {
     await fixture.setup();
     registry = new ToolRegistry();
     messageBus = new ConfirmationBus();
-    shellService = new ShellExecutionService();
+    const sanitizationService = new EnvironmentSanitizationService();
+    shellService = new ShellExecutionService(sanitizationService);
 
     // Default policy: allow all
     const policyConfig: PolicyConfig = {

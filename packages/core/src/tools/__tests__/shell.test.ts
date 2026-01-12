@@ -6,6 +6,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import fc from 'fast-check';
 import { ShellTool, ShellInvocation } from '../shell.js';
 import { ShellExecutionService } from '../../services/shellExecutionService.js';
+import { EnvironmentSanitizationService } from '../../services/environmentSanitization.js';
 import type { MessageBus, ToolResult } from '../types.js';
 
 /**
@@ -25,7 +26,8 @@ describe('Shell Tool', () => {
   let messageBus: MessageBus;
 
   beforeEach(() => {
-    shellService = new ShellExecutionService();
+    const sanitizationService = new EnvironmentSanitizationService();
+    shellService = new ShellExecutionService(sanitizationService);
     shellTool = new ShellTool(shellService);
     messageBus = createMockMessageBus();
   });
@@ -1173,8 +1175,10 @@ describe('Shell Tool', () => {
         // The actual secret value should NOT appear in output
         expect(result.llmContent).not.toContain('super-secret-value-12345');
         
-        // Should contain [REDACTED] instead
-        expect(result.llmContent).toContain('[REDACTED]');
+        // The variable is removed, so on Windows it will echo the variable name itself
+        if (process.platform === 'win32') {
+          expect(result.llmContent).toContain('%MY_TEST_SECRET%');
+        }
       } finally {
         if (originalEnv !== undefined) {
           process.env.MY_TEST_SECRET = originalEnv;
@@ -1207,8 +1211,10 @@ describe('Shell Tool', () => {
         // The actual token value should NOT appear in output
         expect(result.llmContent).not.toContain('token-abc123xyz');
         
-        // Should contain [REDACTED] instead
-        expect(result.llmContent).toContain('[REDACTED]');
+        // The variable is removed, so on Windows it will echo the variable name itself
+        if (process.platform === 'win32') {
+          expect(result.llmContent).toContain('%MY_API_TOKEN%');
+        }
       } finally {
         if (originalEnv !== undefined) {
           process.env.MY_API_TOKEN = originalEnv;
@@ -1241,8 +1247,10 @@ describe('Shell Tool', () => {
         // The actual password should NOT appear in output
         expect(result.llmContent).not.toContain('my-database-password');
         
-        // Should contain [REDACTED] instead
-        expect(result.llmContent).toContain('[REDACTED]');
+        // The variable is removed, so on Windows it will echo the variable name itself
+        if (process.platform === 'win32') {
+          expect(result.llmContent).toContain('%DB_PASSWORD%');
+        }
       } finally {
         if (originalEnv !== undefined) {
           process.env.DB_PASSWORD = originalEnv;
@@ -1275,8 +1283,10 @@ describe('Shell Tool', () => {
         // The actual AWS secret should NOT appear in output
         expect(result.llmContent).not.toContain('aws-secret-key-value');
         
-        // Should contain [REDACTED] instead
-        expect(result.llmContent).toContain('[REDACTED]');
+        // The variable is removed, so on Windows it will echo the variable name itself
+        if (process.platform === 'win32') {
+          expect(result.llmContent).toContain('%AWS_SECRET_ACCESS_KEY%');
+        }
       } finally {
         if (originalEnv !== undefined) {
           process.env.AWS_SECRET_ACCESS_KEY = originalEnv;
@@ -1301,11 +1311,16 @@ describe('Shell Tool', () => {
       const abortController = new AbortController();
       const result = await invocation.execute(abortController.signal);
 
-      // PATH should NOT be redacted
-      expect(result.llmContent).not.toContain('[REDACTED]');
+      // PATH should be preserved and expanded
+      expect(result.llmContent.trim()).not.toBe(envVarSyntax);
       
       // Should contain actual path content
       expect(result.llmContent.length).toBeGreaterThan(0);
+      
+      // On Windows, should not contain the variable syntax
+      if (process.platform === 'win32') {
+        expect(result.llmContent).not.toContain('%PATH%');
+      }
     });
 
     it('should sanitize environment variables with KEY suffix', async () => {
@@ -1331,8 +1346,10 @@ describe('Shell Tool', () => {
         // The actual key value should NOT appear in output
         expect(result.llmContent).not.toContain('encryption-key-value-xyz');
         
-        // Should contain [REDACTED] instead
-        expect(result.llmContent).toContain('[REDACTED]');
+        // The variable is removed, so on Windows it will echo the variable name itself
+        if (process.platform === 'win32') {
+          expect(result.llmContent).toContain('%ENCRYPTION_KEY%');
+        }
       } finally {
         if (originalEnv !== undefined) {
           process.env.ENCRYPTION_KEY = originalEnv;

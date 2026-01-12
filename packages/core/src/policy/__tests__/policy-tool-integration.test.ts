@@ -18,6 +18,7 @@ import { WriteFileTool, WriteFileInvocation } from '../../tools/write-file.js';
 import { EditFileTool, EditFileInvocation } from '../../tools/edit-file.js';
 import { ShellTool, ShellInvocation } from '../../tools/shell.js';
 import { ShellExecutionService } from '../../services/shellExecutionService.js';
+import { EnvironmentSanitizationService } from '../../services/environmentSanitization.js';
 import type { MessageBus, ToolContext, ToolCallConfirmationDetails } from '../../tools/types.js';
 
 /**
@@ -440,7 +441,8 @@ describe('Policy-Tool Integration', () => {
     let shellService: ShellExecutionService;
 
     beforeEach(() => {
-      shellService = new ShellExecutionService();
+      const sanitizationService = new EnvironmentSanitizationService();
+      shellService = new ShellExecutionService(sanitizationService);
       tool = new ShellTool(shellService);
     });
 

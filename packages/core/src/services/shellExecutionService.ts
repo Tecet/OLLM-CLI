@@ -1,4 +1,5 @@
 import { spawn, ChildProcess } from 'child_process';
+import { EnvironmentSanitizationService } from './environmentSanitization.js';
 
 export interface ShellExecutionOptions {
   command: string;
@@ -22,6 +23,7 @@ export interface ShellExecutionResult {
  * Handles environment variable sanitization to prevent secret leakage.
  */
 export class ShellExecutionService {
+  constructor(private sanitizationService: EnvironmentSanitizationService) {}
   /**
    * Execute a shell command with the specified options.
    * 
@@ -36,8 +38,10 @@ export class ShellExecutionService {
     }
 
     return new Promise((resolve, reject) => {
-      // Sanitize environment variables to prevent secret leakage
-      const sanitizedEnv = this.sanitizeEnvironment(process.env);
+      // Sanitize environment variables to prevent secret leakage (Requirement 7.8)
+      const sanitizedEnv = this.sanitizationService.sanitize(
+        process.env as Record<string, string>
+      );
 
       // Spawn the process
       const proc = spawn(options.command, {
@@ -163,7 +167,10 @@ export class ShellExecutionService {
    * @returns Promise resolving to result with process ID
    */
   private async executeBackground(options: ShellExecutionOptions): Promise<ShellExecutionResult> {
-    const sanitizedEnv = this.sanitizeEnvironment(process.env);
+    // Sanitize environment variables to prevent secret leakage (Requirement 7.8)
+    const sanitizedEnv = this.sanitizationService.sanitize(
+      process.env as Record<string, string>
+    );
 
     const proc = spawn(options.command, {
       cwd: options.cwd,
@@ -181,43 +188,5 @@ export class ShellExecutionService {
       output: `Background process started with PID ${proc.pid}`,
       processId: proc.pid,
     };
-  }
-
-  /**
-   * Sanitize environment variables to prevent secret leakage.
-   * Removes or redacts sensitive environment variables.
-   * 
-   * @param env - Original environment variables
-   * @returns Sanitized environment variables
-   */
-  private sanitizeEnvironment(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
-    const sanitized: NodeJS.ProcessEnv = {};
-
-    // List of sensitive environment variable patterns
-    const sensitivePatterns = [
-      /^.*_TOKEN$/i,
-      /^.*_SECRET$/i,
-      /^.*_KEY$/i,
-      /^.*_PASSWORD$/i,
-      /^.*_CREDENTIAL$/i,
-      /^AWS_.*$/i,
-      /^GITHUB_TOKEN$/i,
-      /^NPM_TOKEN$/i,
-      /^API_KEY$/i,
-    ];
-
-    // Copy environment variables, redacting sensitive ones
-    for (const [key, value] of Object.entries(env)) {
-      const isSensitive = sensitivePatterns.some(pattern => pattern.test(key));
-      
-      if (isSensitive) {
-        // Redact sensitive values
-        sanitized[key] = '[REDACTED]';
-      } else {
-        sanitized[key] = value;
-      }
-    }
-
-    return sanitized;
   }
 }

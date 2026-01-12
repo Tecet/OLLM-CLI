@@ -20,9 +20,11 @@ import { MemoryTool } from '../memory.js';
 import { WriteTodosTool } from '../write-todos.js';
 import type { ToolContext } from '../types.js';
 import { ShellExecutionService } from '../../services/shellExecutionService.js';
+import { EnvironmentSanitizationService } from '../../services/environmentSanitization.js';
 
 // Mock shell service for testing
-const mockShellService = new ShellExecutionService();
+const sanitizationService = new EnvironmentSanitizationService();
+const mockShellService = new ShellExecutionService(sanitizationService);
 
 // Mock context for testing
 const mockContext: ToolContext = {

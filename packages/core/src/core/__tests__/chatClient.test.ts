@@ -781,3 +781,989 @@ describe('Chat Client - Unit Tests', () => {
     });
   });
 });
+
+describe('Chat Client - Session Recording Integration', () => {
+  let providerRegistry: ProviderRegistry;
+  let toolRegistry: MockToolRegistry;
+
+  beforeEach(() => {
+    providerRegistry = new ProviderRegistry();
+    toolRegistry = new MockToolRegistry();
+  });
+
+  describe('Session Recording', () => {
+    it('should create session and record messages when recording service is provided', async () => {
+      // Mock recording service
+      const recordedSessions: string[] = [];
+      const recordedMessages: Array<{ sessionId: string; message: any }> = [];
+      const recordedToolCalls: Array<{ sessionId: string; toolCall: any }> = [];
+      const savedSessions: string[] = [];
+
+      const mockRecordingService = {
+        createSession: async (model: string, provider: string) => {
+          const sessionId = `session-${Date.now()}`;
+          recordedSessions.push(sessionId);
+          return sessionId;
+        },
+        recordMessage: async (sessionId: string, message: any) => {
+          recordedMessages.push({ sessionId, message });
+        },
+        recordToolCall: async (sessionId: string, toolCall: any) => {
+          recordedToolCalls.push({ sessionId, toolCall });
+        },
+        saveSession: async (sessionId: string) => {
+          savedSessions.push(sessionId);
+        },
+      };
+
+      const providerEvents: ProviderEvent[] = [
+        { type: 'text', value: 'Hello, world!' },
+        { type: 'finish', reason: 'stop' },
+      ];
+
+      const provider = new MockProvider(providerEvents);
+      providerRegistry.register(provider);
+      providerRegistry.setDefault('mock');
+
+      const client = new ChatClient(providerRegistry, toolRegistry, {
+        recordingService: mockRecordingService as any,
+      });
+
+      const events = await collectEvents(client.chat('Say hello'));
+
+      // Should have created a session
+      expect(recordedSessions.length).toBe(1);
+
+      // Should have recorded user message
+      const userMessages = recordedMessages.filter((m) => m.message.role === 'user');
+      expect(userMessages.length).toBe(1);
+      expect(userMessages[0].message.parts[0].text).toBe('Say hello');
+
+      // Should have recorded assistant message
+      const assistantMessages = recordedMessages.filter(
+        (m) => m.message.role === 'assistant'
+      );
+      expect(assistantMessages.length).toBe(1);
+      expect(assistantMessages[0].message.parts[0].text).toBe('Hello, world!');
+
+      // Should have saved session on exit
+      expect(savedSessions.length).toBe(1);
+      expect(savedSessions[0]).toBe(recordedSessions[0]);
+    });
+
+    it('should record tool calls during conversation', async () => {
+      const recordedToolCalls: Array<{ sessionId: string; toolCall: any }> = [];
+
+      const mockRecordingService = {
+        createSession: async () => 'test-session',
+        recordMessage: async () => {},
+        recordToolCall: async (sessionId: string, toolCall: any) => {
+          recordedToolCalls.push({ sessionId, toolCall });
+        },
+        saveSession: async () => {},
+      };
+
+      // First turn: model calls a tool
+      const firstTurnEvents: ProviderEvent[] = [
+        { type: 'text', value: 'Let me check' },
+        {
+          type: 'tool_call',
+          value: { id: 'call-1', name: 'get_data', args: { key: 'value' } },
+        },
+        { type: 'finish', reason: 'tool' },
+      ];
+
+      // Second turn: model responds
+      const secondTurnEvents: ProviderEvent[] = [
+        { type: 'text', value: 'Here is the data' },
+        { type: 'finish', reason: 'stop' },
+      ];
+
+      let callCount = 0;
+      const provider: ProviderAdapter = {
+        name: 'mock',
+        async *chatStream(_request: ProviderRequest): AsyncIterable<ProviderEvent> {
+          callCount++;
+          const events = callCount === 1 ? firstTurnEvents : secondTurnEvents;
+          for (const event of events) {
+            yield event;
+          }
+        },
+      };
+
+      providerRegistry.register(provider);
+      providerRegistry.setDefault('mock');
+
+      toolRegistry.register('get_data', {
+        execute: async (args) => ({ data: 'test-data', key: args.key }),
+      });
+
+      const client = new ChatClient(providerRegistry, toolRegistry, {
+        recordingService: mockRecordingService as any,
+      });
+
+      await collectEvents(client.chat('Get some data'));
+
+      // Should have recorded the tool call
+      expect(recordedToolCalls.length).toBe(1);
+      expect(recordedToolCalls[0].sessionId).toBe('test-session');
+      expect(recordedToolCalls[0].toolCall.name).toBe('get_data');
+      expect(recordedToolCalls[0].toolCall.args).toEqual({ key: 'value' });
+      expect(recordedToolCalls[0].toolCall.result).toBeDefined();
+    });
+
+    it('should continue without recording if service is not provided', async () => {
+      const providerEvents: ProviderEvent[] = [
+        { type: 'text', value: 'Hello' },
+        { type: 'finish', reason: 'stop' },
+      ];
+
+      const provider = new MockProvider(providerEvents);
+      providerRegistry.register(provider);
+      providerRegistry.setDefault('mock');
+
+      // Create client without recording service
+      const client = new ChatClient(providerRegistry, toolRegistry);
+
+      // Should not throw - should work normally without recording
+      const events = await collectEvents(client.chat('Test'));
+
+      const textEvents = events.filter((e) => e.type === 'text');
+      expect(textEvents.length).toBe(1);
+
+      const finishEvents = events.filter((e) => e.type === 'finish');
+      expect(finishEvents.length).toBe(1);
+    });
+
+    it('should continue if recording service throws errors', async () => {
+      const mockRecordingService = {
+        createSession: async () => {
+          throw new Error('Session creation failed');
+        },
+        recordMessage: async () => {
+          throw new Error('Recording failed');
+        },
+        recordToolCall: async () => {
+          throw new Error('Tool recording failed');
+        },
+        saveSession: async () => {
+          throw new Error('Save failed');
+        },
+      };
+
+      const providerEvents: ProviderEvent[] = [
+        { type: 'text', value: 'Hello' },
+        { type: 'finish', reason: 'stop' },
+      ];
+
+      const provider = new MockProvider(providerEvents);
+      providerRegistry.register(provider);
+      providerRegistry.setDefault('mock');
+
+      const client = new ChatClient(providerRegistry, toolRegistry, {
+        recordingService: mockRecordingService as any,
+      });
+
+      // Should not throw - should continue despite recording errors
+      const events = await collectEvents(client.chat('Test'));
+
+      const textEvents = events.filter((e) => e.type === 'text');
+      expect(textEvents.length).toBe(1);
+
+      const finishEvents = events.filter((e) => e.type === 'finish');
+      expect(finishEvents.length).toBe(1);
+      expect(finishEvents[0]).toEqual({ type: 'finish', reason: 'complete' });
+    });
+  });
+
+  describe('Compression Service Integration', () => {
+    it('should check compression threshold before each turn', async () => {
+      let compressionChecked = false;
+      
+      const mockCompressionService = {
+        shouldCompress: (messages: any[], tokenLimit: number, threshold: number) => {
+          compressionChecked = true;
+          expect(tokenLimit).toBe(8192);
+          expect(threshold).toBe(0.8);
+          return false; // Don't actually compress
+        },
+        compress: async () => {
+          throw new Error('Should not be called');
+        },
+      };
+
+      const providerEvents: ProviderEvent[] = [
+        { type: 'text', value: 'Response' },
+        { type: 'finish', reason: 'stop' },
+      ];
+
+      const provider = new MockProvider(providerEvents);
+      providerRegistry.register(provider);
+      providerRegistry.setDefault('mock');
+
+      const client = new ChatClient(providerRegistry, toolRegistry, {
+        compressionService: mockCompressionService as any,
+        tokenLimit: 8192,
+        servicesConfig: {
+          compression: {
+            enabled: true,
+            threshold: 0.8,
+            strategy: 'hybrid',
+            preserveRecent: 4096,
+          },
+        },
+      });
+
+      await collectEvents(client.chat('Test'));
+
+      expect(compressionChecked).toBe(true);
+    });
+
+    it('should trigger compression when threshold is exceeded', async () => {
+      let compressionTriggered = false;
+      const compressedMessages = [
+        {
+          role: 'system' as const,
+          parts: [{ type: 'text' as const, text: '[Summary of previous messages]' }],
+          timestamp: new Date().toISOString(),
+        },
+        {
+          role: 'user' as const,
+          parts: [{ type: 'text' as const, text: 'Test' }],
+          timestamp: new Date().toISOString(),
+        },
+      ];
+
+      const mockCompressionService = {
+        shouldCompress: () => true, // Always trigger compression
+        compress: async (messages: any[], options: any) => {
+          compressionTriggered = true;
+          expect(options.strategy).toBe('truncate');
+          expect(options.preserveRecentTokens).toBe(2048);
+          return {
+            compressedMessages,
+            originalTokenCount: 10000,
+            compressedTokenCount: 2000,
+            strategy: 'truncate' as const,
+          };
+        },
+      };
+
+      const providerEvents: ProviderEvent[] = [
+        { type: 'text', value: 'Response' },
+        { type: 'finish', reason: 'stop' },
+      ];
+
+      const provider = new MockProvider(providerEvents);
+      providerRegistry.register(provider);
+      providerRegistry.setDefault('mock');
+
+      const client = new ChatClient(providerRegistry, toolRegistry, {
+        compressionService: mockCompressionService as any,
+        tokenLimit: 4096,
+        servicesConfig: {
+          compression: {
+            enabled: true,
+            threshold: 0.8,
+            strategy: 'truncate',
+            preserveRecent: 2048,
+          },
+        },
+      });
+
+      await collectEvents(client.chat('Test'));
+
+      expect(compressionTriggered).toBe(true);
+    });
+
+    it('should update message history with compressed messages', async () => {
+      const compressedMessages = [
+        {
+          role: 'system' as const,
+          parts: [{ type: 'text' as const, text: '[Compressed summary]' }],
+          timestamp: new Date().toISOString(),
+        },
+        {
+          role: 'user' as const,
+          parts: [{ type: 'text' as const, text: 'Recent message' }],
+          timestamp: new Date().toISOString(),
+        },
+      ];
+
+      const mockCompressionService = {
+        shouldCompress: () => true,
+        compress: async () => ({
+          compressedMessages,
+          originalTokenCount: 10000,
+          compressedTokenCount: 1000,
+          strategy: 'hybrid' as const,
+        }),
+      };
+
+      // Track the messages sent to the provider
+      let providerMessages: any[] = [];
+      
+      const providerEvents: ProviderEvent[] = [
+        { type: 'text', value: 'Response' },
+        { type: 'finish', reason: 'stop' },
+      ];
+
+      const provider = new MockProvider(providerEvents);
+      const originalChatStream = provider.chatStream.bind(provider);
+      provider.chatStream = async function* (request: any) {
+        providerMessages = request.messages;
+        yield* originalChatStream(request);
+      };
+
+      providerRegistry.register(provider);
+      providerRegistry.setDefault('mock');
+
+      const client = new ChatClient(providerRegistry, toolRegistry, {
+        compressionService: mockCompressionService as any,
+        tokenLimit: 4096,
+      });
+
+      await collectEvents(client.chat('Recent message'));
+
+      // Verify that compressed messages were used
+      expect(providerMessages.length).toBeGreaterThan(0);
+      // The first message should be the compressed summary
+      expect(providerMessages[0].parts[0].text).toContain('[Compressed summary]');
+    });
+
+    it('should continue without compression if service is not provided', async () => {
+      const providerEvents: ProviderEvent[] = [
+        { type: 'text', value: 'Response' },
+        { type: 'finish', reason: 'stop' },
+      ];
+
+      const provider = new MockProvider(providerEvents);
+      providerRegistry.register(provider);
+      providerRegistry.setDefault('mock');
+
+      // Create client without compression service
+      const client = new ChatClient(providerRegistry, toolRegistry, {
+        tokenLimit: 4096,
+      });
+
+      // Should work normally without compression
+      const events = await collectEvents(client.chat('Test'));
+
+      const textEvents = events.filter((e) => e.type === 'text');
+      expect(textEvents.length).toBe(1);
+
+      const finishEvents = events.filter((e) => e.type === 'finish');
+      expect(finishEvents.length).toBe(1);
+    });
+
+    it('should continue if compression service throws errors', async () => {
+      const mockCompressionService = {
+        shouldCompress: () => {
+          throw new Error('Compression check failed');
+        },
+        compress: async () => {
+          throw new Error('Compression failed');
+        },
+      };
+
+      const providerEvents: ProviderEvent[] = [
+        { type: 'text', value: 'Response' },
+        { type: 'finish', reason: 'stop' },
+      ];
+
+      const provider = new MockProvider(providerEvents);
+      providerRegistry.register(provider);
+      providerRegistry.setDefault('mock');
+
+      const client = new ChatClient(providerRegistry, toolRegistry, {
+        compressionService: mockCompressionService as any,
+        tokenLimit: 4096,
+      });
+
+      // Should not throw - should continue despite compression errors
+      const events = await collectEvents(client.chat('Test'));
+
+      const textEvents = events.filter((e) => e.type === 'text');
+      expect(textEvents.length).toBe(1);
+
+      const finishEvents = events.filter((e) => e.type === 'finish');
+      expect(finishEvents.length).toBe(1);
+    });
+
+    it('should respect compression enabled flag', async () => {
+      let compressionChecked = false;
+
+      const mockCompressionService = {
+        shouldCompress: () => {
+          compressionChecked = true;
+          return false;
+        },
+        compress: async () => {
+          throw new Error('Should not be called');
+        },
+      };
+
+      const providerEvents: ProviderEvent[] = [
+        { type: 'text', value: 'Response' },
+        { type: 'finish', reason: 'stop' },
+      ];
+
+      const provider = new MockProvider(providerEvents);
+      providerRegistry.register(provider);
+      providerRegistry.setDefault('mock');
+
+      const client = new ChatClient(providerRegistry, toolRegistry, {
+        compressionService: mockCompressionService as any,
+        tokenLimit: 4096,
+        servicesConfig: {
+          compression: {
+            enabled: false, // Disabled
+          },
+        },
+      });
+
+      await collectEvents(client.chat('Test'));
+
+      // Compression should not be checked when disabled
+      expect(compressionChecked).toBe(false);
+    });
+  });
+});
+
+describe('Chat Client - Loop Detection Integration', () => {
+  let providerRegistry: ProviderRegistry;
+  let toolRegistry: MockToolRegistry;
+
+  beforeEach(() => {
+    providerRegistry = new ProviderRegistry();
+    toolRegistry = new MockToolRegistry();
+  });
+
+  describe('Loop Detection Service Integration', () => {
+    it('should detect repeated tool calls and stop execution', async () => {
+      // Create a provider that repeatedly calls the same tool
+      const providerEvents: ProviderEvent[] = [
+        { type: 'text', value: 'Calling tool' },
+        {
+          type: 'tool_call',
+          value: { id: '1', name: 'test_tool', args: { param: 'value' } },
+        },
+        { type: 'finish', reason: 'tool' },
+      ];
+
+      const provider = new MockProvider(providerEvents);
+      providerRegistry.register(provider);
+      providerRegistry.setDefault('mock');
+
+      // Register a mock tool
+      toolRegistry.register('test_tool', {
+        execute: async () => ({ result: 'success' }),
+      });
+
+      // Create loop detection service with low threshold
+      const { LoopDetectionService } = await import('../../services/loopDetectionService.js');
+      const loopDetectionService = new LoopDetectionService({
+        enabled: true,
+        maxTurns: 50,
+        repeatThreshold: 3,
+      });
+
+      const client = new ChatClient(providerRegistry, toolRegistry, {
+        loopDetectionService,
+        maxTurns: 10,
+      });
+
+      const events = await collectEvents(client.chat('test prompt'));
+
+      // Should have loop_detected event
+      const loopEvents = events.filter((e) => e.type === 'loop_detected');
+      expect(loopEvents.length).toBe(1);
+
+      // Should have finish event with loop_detected reason
+      const finishEvents = events.filter((e) => e.type === 'finish');
+      expect(finishEvents.length).toBe(1);
+      if (finishEvents[0].type === 'finish') {
+        expect(finishEvents[0].reason).toBe('loop_detected');
+      }
+
+      // Should have exactly 3 turn_complete events (threshold is 3)
+      const turnCompleteEvents = events.filter((e) => e.type === 'turn_complete');
+      expect(turnCompleteEvents.length).toBe(3);
+    });
+
+    it('should detect turn limit and stop execution', async () => {
+      // Create a provider that always has tool calls
+      const providerEvents: ProviderEvent[] = [
+        { type: 'text', value: 'Response' },
+        {
+          type: 'tool_call',
+          value: { id: '1', name: 'test_tool', args: {} },
+        },
+        { type: 'finish', reason: 'tool' },
+      ];
+
+      const provider = new MockProvider(providerEvents);
+      providerRegistry.register(provider);
+      providerRegistry.setDefault('mock');
+
+      // Register a mock tool
+      toolRegistry.register('test_tool', {
+        execute: async () => ({ result: 'success' }),
+      });
+
+      // Create loop detection service with low maxTurns
+      const { LoopDetectionService } = await import('../../services/loopDetectionService.js');
+      const loopDetectionService = new LoopDetectionService({
+        enabled: true,
+        maxTurns: 5,
+        repeatThreshold: 10,
+      });
+
+      const client = new ChatClient(providerRegistry, toolRegistry, {
+        loopDetectionService,
+        maxTurns: 20, // Higher than loop detection maxTurns
+      });
+
+      const events = await collectEvents(client.chat('test prompt'));
+
+      // Should have loop_detected event
+      const loopEvents = events.filter((e) => e.type === 'loop_detected');
+      expect(loopEvents.length).toBe(1);
+      if (loopEvents[0].type === 'loop_detected') {
+        expect(loopEvents[0].pattern.type).toBe('turn-limit');
+      }
+
+      // Should have finish event with loop_detected reason
+      const finishEvents = events.filter((e) => e.type === 'finish');
+      expect(finishEvents.length).toBe(1);
+      if (finishEvents[0].type === 'finish') {
+        expect(finishEvents[0].reason).toBe('loop_detected');
+      }
+
+      // Should have exactly 4 turn_complete events (loop detected at turn 5, before turn executes)
+      const turnCompleteEvents = events.filter((e) => e.type === 'turn_complete');
+      expect(turnCompleteEvents.length).toBe(4);
+    });
+
+    it('should detect repeated outputs and stop execution', async () => {
+      // Create a provider that repeatedly outputs the same text WITHOUT tool calls
+      const providerEvents: ProviderEvent[] = [
+        { type: 'text', value: 'Same output every time' },
+        { type: 'finish', reason: 'stop' }, // No tool calls, so conversation would normally end
+      ];
+
+      let turnCount = 0;
+      const provider: ProviderAdapter = {
+        name: 'mock',
+        async *chatStream(_request: ProviderRequest): AsyncIterable<ProviderEvent> {
+          turnCount++;
+          // After first turn, add a tool call to keep the conversation going
+          if (turnCount > 1) {
+            yield { type: 'text', value: 'Same output every time' };
+            yield {
+              type: 'tool_call',
+              value: { id: String(turnCount), name: 'test_tool', args: { different: turnCount } },
+            };
+            yield { type: 'finish', reason: 'tool' };
+          } else {
+            yield { type: 'text', value: 'Same output every time' };
+            yield {
+              type: 'tool_call',
+              value: { id: '1', name: 'test_tool', args: { different: 1 } },
+            };
+            yield { type: 'finish', reason: 'tool' };
+          }
+        },
+      };
+
+      providerRegistry.register(provider);
+      providerRegistry.setDefault('mock');
+
+      // Register a mock tool
+      toolRegistry.register('test_tool', {
+        execute: async () => ({ result: 'success' }),
+      });
+
+      // Create loop detection service with low threshold
+      const { LoopDetectionService } = await import('../../services/loopDetectionService.js');
+      const loopDetectionService = new LoopDetectionService({
+        enabled: true,
+        maxTurns: 50,
+        repeatThreshold: 3,
+      });
+
+      const client = new ChatClient(providerRegistry, toolRegistry, {
+        loopDetectionService,
+        maxTurns: 10,
+      });
+
+      const events = await collectEvents(client.chat('test prompt'));
+
+      // Should have loop_detected event
+      const loopEvents = events.filter((e) => e.type === 'loop_detected');
+      expect(loopEvents.length).toBe(1);
+      if (loopEvents[0].type === 'loop_detected') {
+        expect(loopEvents[0].pattern.type).toBe('repeated-output');
+      }
+
+      // Should have finish event with loop_detected reason
+      const finishEvents = events.filter((e) => e.type === 'finish');
+      expect(finishEvents.length).toBe(1);
+      if (finishEvents[0].type === 'finish') {
+        expect(finishEvents[0].reason).toBe('loop_detected');
+      }
+    });
+
+    it('should continue without loop detection if service is not provided', async () => {
+      // Create a provider that would trigger loop detection if it were enabled
+      const providerEvents: ProviderEvent[] = [
+        { type: 'text', value: 'Same output' },
+        {
+          type: 'tool_call',
+          value: { id: '1', name: 'test_tool', args: {} },
+        },
+        { type: 'finish', reason: 'tool' },
+      ];
+
+      const provider = new MockProvider(providerEvents);
+      providerRegistry.register(provider);
+      providerRegistry.setDefault('mock');
+
+      // Register a mock tool
+      toolRegistry.register('test_tool', {
+        execute: async () => ({ result: 'success' }),
+      });
+
+      // No loop detection service provided
+      const client = new ChatClient(providerRegistry, toolRegistry, {
+        maxTurns: 10, // Use default maxTurns
+      });
+
+      const events = await collectEvents(client.chat('test prompt'));
+
+      // Should NOT have loop_detected event
+      const loopEvents = events.filter((e) => e.type === 'loop_detected');
+      expect(loopEvents.length).toBe(0);
+
+      // Should have finish event with max_turns reason (not loop_detected)
+      const finishEvents = events.filter((e) => e.type === 'finish');
+      expect(finishEvents.length).toBe(1);
+      if (finishEvents[0].type === 'finish') {
+        expect(finishEvents[0].reason).toBe('max_turns');
+      }
+
+      // Should have exactly 10 turn_complete events
+      const turnCompleteEvents = events.filter((e) => e.type === 'turn_complete');
+      expect(turnCompleteEvents.length).toBe(10);
+    });
+
+    it('should track tool calls with different arguments separately', async () => {
+      let callCount = 0;
+      
+      // Create a provider that calls the same tool with different arguments
+      const provider: ProviderAdapter = {
+        name: 'mock',
+        async *chatStream(_request: ProviderRequest): AsyncIterable<ProviderEvent> {
+          callCount++;
+          yield { type: 'text', value: `Call ${callCount}` }; // Different output each time
+          yield {
+            type: 'tool_call',
+            value: { id: String(callCount), name: 'test_tool', args: { count: callCount } },
+          };
+          yield { type: 'finish', reason: 'tool' };
+        },
+      };
+
+      providerRegistry.register(provider);
+      providerRegistry.setDefault('mock');
+
+      // Register a mock tool
+      toolRegistry.register('test_tool', {
+        execute: async () => ({ result: 'success' }),
+      });
+
+      // Create loop detection service
+      const { LoopDetectionService } = await import('../../services/loopDetectionService.js');
+      const loopDetectionService = new LoopDetectionService({
+        enabled: true,
+        maxTurns: 50,
+        repeatThreshold: 3,
+      });
+
+      const client = new ChatClient(providerRegistry, toolRegistry, {
+        loopDetectionService,
+        defaultMaxTurns: 5,
+      });
+
+      const events = await collectEvents(client.chat('test prompt'));
+
+      // Should NOT have loop_detected event (different arguments and outputs each time)
+      const loopEvents = events.filter((e) => e.type === 'loop_detected');
+      expect(loopEvents.length).toBe(0);
+
+      // Should have finish event with max_turns reason
+      const finishEvents = events.filter((e) => e.type === 'finish');
+      expect(finishEvents.length).toBe(1);
+      if (finishEvents[0].type === 'finish') {
+        expect(finishEvents[0].reason).toBe('max_turns');
+      }
+
+      // Should have exactly 5 turn_complete events
+      const turnCompleteEvents = events.filter((e) => e.type === 'turn_complete');
+      expect(turnCompleteEvents.length).toBe(5);
+    });
+  });
+});
+
+describe('Chat Client - Context Manager Integration', () => {
+  let providerRegistry: ProviderRegistry;
+  let toolRegistry: MockToolRegistry;
+
+  beforeEach(() => {
+    providerRegistry = new ProviderRegistry();
+    toolRegistry = new MockToolRegistry();
+  });
+
+  describe('Context Injection', () => {
+    it('should inject context additions into system prompt', async () => {
+      // Track the messages sent to the provider
+      let providerMessages: any[] = [];
+      
+      const providerEvents: ProviderEvent[] = [
+        { type: 'text', value: 'Response with context' },
+        { type: 'finish', reason: 'stop' },
+      ];
+
+      const provider = new MockProvider(providerEvents);
+      const originalChatStream = provider.chatStream.bind(provider);
+      provider.chatStream = async function* (request: any) {
+        providerMessages = request.messages;
+        yield* originalChatStream(request);
+      };
+
+      providerRegistry.register(provider);
+      providerRegistry.setDefault('mock');
+
+      // Create context manager with some context
+      const { ContextManager } = await import('../../services/contextManager.js');
+      const contextManager = new ContextManager();
+      contextManager.addContext('test-context', 'This is test context', {
+        priority: 100,
+        source: 'user',
+      });
+
+      const client = new ChatClient(providerRegistry, toolRegistry, {
+        contextManager,
+      });
+
+      await collectEvents(client.chat('Test prompt'));
+
+      // Verify that context was injected into system prompt
+      expect(providerMessages.length).toBeGreaterThan(0);
+      
+      // Should have a system message with context
+      const systemMessages = providerMessages.filter((m) => m.role === 'system');
+      expect(systemMessages.length).toBe(1);
+      
+      // System message should contain the context
+      const systemText = systemMessages[0].parts.map((p: any) => p.text).join('');
+      expect(systemText).toContain('This is test context');
+      expect(systemText).toContain('Context: test-context');
+    });
+
+    it('should inject context from multiple sources in priority order', async () => {
+      let providerMessages: any[] = [];
+      
+      const providerEvents: ProviderEvent[] = [
+        { type: 'text', value: 'Response' },
+        { type: 'finish', reason: 'stop' },
+      ];
+
+      const provider = new MockProvider(providerEvents);
+      const originalChatStream = provider.chatStream.bind(provider);
+      provider.chatStream = async function* (request: any) {
+        providerMessages = request.messages;
+        yield* originalChatStream(request);
+      };
+
+      providerRegistry.register(provider);
+      providerRegistry.setDefault('mock');
+
+      // Create context manager with multiple contexts
+      const { ContextManager } = await import('../../services/contextManager.js');
+      const contextManager = new ContextManager();
+      contextManager.addContext('low-priority', 'Low priority context', {
+        priority: 10,
+        source: 'system',
+      });
+      contextManager.addContext('high-priority', 'High priority context', {
+        priority: 100,
+        source: 'user',
+      });
+      contextManager.addContext('medium-priority', 'Medium priority context', {
+        priority: 50,
+        source: 'hook',
+      });
+
+      const client = new ChatClient(providerRegistry, toolRegistry, {
+        contextManager,
+      });
+
+      await collectEvents(client.chat('Test prompt'));
+
+      // Verify that context was injected in priority order
+      const systemMessages = providerMessages.filter((m) => m.role === 'system');
+      expect(systemMessages.length).toBe(1);
+      
+      const systemText = systemMessages[0].parts.map((p: any) => p.text).join('');
+      
+      // High priority should appear before medium, medium before low
+      const highIndex = systemText.indexOf('High priority context');
+      const mediumIndex = systemText.indexOf('Medium priority context');
+      const lowIndex = systemText.indexOf('Low priority context');
+      
+      expect(highIndex).toBeGreaterThan(-1);
+      expect(mediumIndex).toBeGreaterThan(-1);
+      expect(lowIndex).toBeGreaterThan(-1);
+      expect(highIndex).toBeLessThan(mediumIndex);
+      expect(mediumIndex).toBeLessThan(lowIndex);
+    });
+
+    it('should append context to existing system prompt', async () => {
+      let providerMessages: any[] = [];
+      
+      const providerEvents: ProviderEvent[] = [
+        { type: 'text', value: 'Response' },
+        { type: 'finish', reason: 'stop' },
+      ];
+
+      const provider = new MockProvider(providerEvents);
+      const originalChatStream = provider.chatStream.bind(provider);
+      provider.chatStream = async function* (request: any) {
+        providerMessages = request.messages;
+        yield* originalChatStream(request);
+      };
+
+      providerRegistry.register(provider);
+      providerRegistry.setDefault('mock');
+
+      // Create context manager
+      const { ContextManager } = await import('../../services/contextManager.js');
+      const contextManager = new ContextManager();
+      contextManager.addContext('additional-context', 'Additional context', {
+        priority: 50,
+        source: 'extension',
+      });
+
+      const client = new ChatClient(providerRegistry, toolRegistry, {
+        contextManager,
+      });
+
+      await collectEvents(
+        client.chat('Test prompt', {
+          systemPrompt: 'Original system prompt',
+        })
+      );
+
+      // Verify that context was appended to existing system prompt
+      const systemMessages = providerMessages.filter((m) => m.role === 'system');
+      expect(systemMessages.length).toBe(1);
+      
+      const systemText = systemMessages[0].parts.map((p: any) => p.text).join('');
+      
+      // Should contain both original prompt and context
+      expect(systemText).toContain('Original system prompt');
+      expect(systemText).toContain('Additional context');
+    });
+
+    it('should work without context manager', async () => {
+      const providerEvents: ProviderEvent[] = [
+        { type: 'text', value: 'Response' },
+        { type: 'finish', reason: 'stop' },
+      ];
+
+      const provider = new MockProvider(providerEvents);
+      providerRegistry.register(provider);
+      providerRegistry.setDefault('mock');
+
+      // Create client without context manager
+      const client = new ChatClient(providerRegistry, toolRegistry);
+
+      // Should work normally without context manager
+      const events = await collectEvents(client.chat('Test'));
+
+      const textEvents = events.filter((e) => e.type === 'text');
+      expect(textEvents.length).toBe(1);
+
+      const finishEvents = events.filter((e) => e.type === 'finish');
+      expect(finishEvents.length).toBe(1);
+    });
+
+    it('should inject context on every turn', async () => {
+      let turnCount = 0;
+      const capturedMessages: any[][] = [];
+      
+      // First turn: model calls a tool
+      const firstTurnEvents: ProviderEvent[] = [
+        { type: 'text', value: 'Calling tool' },
+        {
+          type: 'tool_call',
+          value: { id: 'call-1', name: 'test_tool', args: {} },
+        },
+        { type: 'finish', reason: 'tool' },
+      ];
+
+      // Second turn: model responds
+      const secondTurnEvents: ProviderEvent[] = [
+        { type: 'text', value: 'Final response' },
+        { type: 'finish', reason: 'stop' },
+      ];
+
+      const provider: ProviderAdapter = {
+        name: 'mock',
+        async *chatStream(request: ProviderRequest): AsyncIterable<ProviderEvent> {
+          turnCount++;
+          capturedMessages.push([...request.messages]);
+          const events = turnCount === 1 ? firstTurnEvents : secondTurnEvents;
+          for (const event of events) {
+            yield event;
+          }
+        },
+      };
+
+      providerRegistry.register(provider);
+      providerRegistry.setDefault('mock');
+
+      // Register mock tool
+      toolRegistry.register('test_tool', {
+        execute: async () => ({ result: 'success' }),
+      });
+
+      // Create context manager
+      const { ContextManager } = await import('../../services/contextManager.js');
+      const contextManager = new ContextManager();
+      contextManager.addContext('persistent-context', 'Context for all turns', {
+        priority: 100,
+        source: 'system',
+      });
+
+      const client = new ChatClient(providerRegistry, toolRegistry, {
+        contextManager,
+      });
+
+      await collectEvents(client.chat('Test prompt'));
+
+      // Should have captured messages from both turns
+      expect(capturedMessages.length).toBe(2);
+
+      // Both turns should have system message with context
+      for (const messages of capturedMessages) {
+        const systemMessages = messages.filter((m) => m.role === 'system');
+        expect(systemMessages.length).toBe(1);
+        
+        const systemText = systemMessages[0].parts.map((p: any) => p.text).join('');
+        expect(systemText).toContain('Context for all turns');
+      }
+    });
+  });
+});

@@ -69,9 +69,12 @@ export class Turn {
    * @yields TurnEvent objects for text, tool calls, tool results, and errors
    */
   async *execute(): AsyncIterable<TurnEvent> {
+    // Inject system prompt if provided (Requirement 5.7)
+    const messagesWithSystemPrompt = this.injectSystemPrompt();
+
     const request: ProviderRequest = {
       model: this.options?.model ?? 'default',
-      messages: this.messages,
+      messages: messagesWithSystemPrompt,
       tools: this.options?.tools,
       options: this.buildGenerationOptions(),
       abortSignal: this.options?.abortSignal,
@@ -222,5 +225,45 @@ export class Turn {
     }
 
     return Object.keys(opts).length > 0 ? opts : undefined;
+  }
+
+  /**
+   * Inject system prompt into messages if provided.
+   * If a system prompt is provided in options and there's no system message,
+   * prepend it to the messages array.
+   * @returns Messages array with system prompt injected if needed
+   */
+  private injectSystemPrompt(): Message[] {
+    if (!this.options?.systemPrompt) {
+      return this.messages;
+    }
+
+    // Check if there's already a system message
+    const hasSystemMessage = this.messages.some(msg => msg.role === 'system');
+    
+    if (hasSystemMessage) {
+      // If there's already a system message, append context to it
+      return this.messages.map(msg => {
+        if (msg.role === 'system') {
+          return {
+            ...msg,
+            parts: [
+              ...msg.parts,
+              { type: 'text', text: this.options!.systemPrompt! }
+            ]
+          };
+        }
+        return msg;
+      });
+    } else {
+      // No system message exists, prepend one
+      return [
+        {
+          role: 'system',
+          parts: [{ type: 'text', text: this.options.systemPrompt }]
+        },
+        ...this.messages
+      ];
+    }
   }
 }
