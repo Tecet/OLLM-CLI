@@ -67,7 +67,28 @@ ollm-cli/
 │   │       │   ├── fileDiscoveryService.ts
 │   │       │   ├── environmentSanitization.ts
 │   │       │   ├── shellExecutionService.ts
-│   │       │   └── modelManagementService.ts
+│   │       │   ├── modelManagementService.ts
+│   │       │   ├── promptTemplateService.ts
+│   │       │   ├── costTracker.ts
+│   │       │   ├── gitService.ts
+│   │       │   ├── mentionParser.ts
+│   │       │   ├── contextLoader.ts
+│   │       │   └── diffReviewer.ts
+│   │       ├── index/        # Codebase indexing and RAG
+│   │       │   ├── codebaseIndex.ts
+│   │       │   ├── embeddingService.ts
+│   │       │   └── vectorStore.ts
+│   │       ├── output/       # Structured output
+│   │       │   ├── structuredOutput.ts
+│   │       │   └── jsonValidator.ts
+│   │       ├── sandbox/      # Code execution
+│   │       │   ├── codeExecutor.ts
+│   │       │   ├── jsExecutor.ts
+│   │       │   ├── pythonExecutor.ts
+│   │       │   └── bashExecutor.ts
+│   │       ├── vision/       # Image and vision support
+│   │       │   ├── visionService.ts
+│   │       │   └── screenshotService.ts
 │   │       ├── tools/        # Tool registry and built-in tools
 │   │       │   ├── tool-registry.ts
 │   │       │   ├── read-file.ts
@@ -80,13 +101,23 @@ ollm-cli/
 │   │       │   ├── web-fetch.ts
 │   │       │   ├── web-search.ts
 │   │       │   ├── memory.ts
-│   │       │   └── mcp-tool.ts
+│   │       │   ├── mcp-tool.ts
+│   │       │   ├── execute.ts
+│   │       │   ├── extract.ts
+│   │       │   ├── image-analyze.ts
+│   │       │   ├── undo.ts
+│   │       │   ├── export.ts
+│   │       │   ├── copy.ts
+│   │       │   └── git.ts
 │   │       └── utils/
 │   ├── ollm-bridge/          # Provider adapters and model management
 │   │   └── src/
 │   │       ├── provider/
-│   │       │   └── localProvider.ts  # Ollama adapter
+│   │       │   ├── localProvider.ts      # Ollama adapter (Tier 1)
+│   │       │   ├── vllmProvider.ts       # vLLM adapter (Tier 2)
+│   │       │   └── openaiCompatibleProvider.ts  # OpenAI-compatible (Tier 3)
 │   │       └── adapters/     # Message, tool, stream adapters
+│   │           └── sseParser.ts          # Server-Sent Events parser
 │   └── test-utils/           # Shared test fixtures and helpers
 ├── schemas/                  # JSON schemas
 │   └── settings.schema.json
@@ -122,12 +153,23 @@ ollm-cli/
 - Session recording and compression
 - Context management and VRAM monitoring
 - Agent delegation system
+- Codebase indexing and semantic search
+- Structured output with schema validation
+- Code execution sandbox
+- Vision and image analysis
+- Productivity tools (undo, export, copy, templates)
+- Cost tracking and budget monitoring
+- Git integration and version control
+- @-mention parsing and context loading
+- Diff review and approval workflow
 
 ### `packages/ollm-bridge`
-- Local provider adapter (Ollama)
+- Local provider adapter (Ollama - Tier 1)
+- vLLM provider adapter (Tier 2 - high performance)
+- OpenAI-compatible provider adapter (Tier 3 - universal)
 - Message format translation
 - Tool schema mapping
-- Stream event handling
+- Stream event handling (NDJSON and SSE)
 - Model management operations
 
 ### `packages/test-utils`
@@ -143,5 +185,16 @@ ollm-cli/
 | `packages/core/src/tools/tool-registry.ts` | Tool registration and discovery |
 | `packages/core/src/policy/policyEngine.ts` | Tool confirmation logic |
 | `packages/core/src/hooks/hookRegistry.ts` | Hook registration and execution |
+| `packages/core/src/index/codebaseIndex.ts` | Codebase indexing and semantic search |
+| `packages/core/src/output/structuredOutput.ts` | JSON schema enforcement |
+| `packages/core/src/sandbox/codeExecutor.ts` | Code execution sandbox |
+| `packages/core/src/vision/visionService.ts` | Image analysis and vision support |
+| `packages/core/src/services/costTracker.ts` | Token usage and cost tracking |
+| `packages/core/src/services/gitService.ts` | Git operations and version control |
+| `packages/core/src/services/diffReviewer.ts` | Diff review and approval |
+| `packages/core/src/context/vramMonitor.ts` | VRAM monitoring and memory management |
+| `packages/core/src/context/contextPool.ts` | Dynamic context sizing |
+| `packages/ollm-bridge/src/provider/vllmProvider.ts` | vLLM provider adapter |
+| `packages/ollm-bridge/src/provider/openaiCompatibleProvider.ts` | OpenAI-compatible provider |
 | `packages/cli/src/ui/AppContainer.tsx` | Main UI container |
 | `schemas/settings.schema.json` | Configuration validation schema |

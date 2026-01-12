@@ -18,12 +18,15 @@ This folder contains the development plan for OLLM CLI, organized into stages th
 | 04 | [Services & Sessions](./stages/stage-04-services-sessions.md) | 3-4 days | Stage 02 |
 | 04b | [Context Management](./stages/stage-04b-context-management.md) | 3-4 days | Stage 04 |
 | 05 | [Hooks, Extensions, MCP](./stages/stage-05-hooks-extensions-mcp.md) | 4-5 days | Stages 03, 04b |
-| 06 | [CLI & UI](./stages/stage-06-cli-ui.md) | 4-5 days | Stage 05 |
+| 05b | [Developer Productivity](./stages/stage-05b-developer-productivity.md) | 5-7 days | Stage 05 |
+| 06 | [CLI & UI](./stages/stage-06-cli-ui.md) | 4-5 days | Stage 05b |
 | 07 | [Model Management](./stages/stage-07-model-management.md) | 2-3 days | Stage 06 |
 | 08 | [Testing & QA](./stages/stage-08-testing-qa.md) | 3-4 days | Stage 07 |
 | 09 | [Docs & Release](./stages/stage-09-docs-release.md) | 2-3 days | Stage 08 |
+| 10 | [Future Dev - Multi-Provider](./stages/stage-10-future-dev.md) | 5-7 days | Stage 09 |
+| 11 | [Intelligence Layer](./stages/stage-11-intelligence-layer.md) | 10-14 days | Stage 10 |
 
-**Total Estimated Effort**: 29-39 days
+**Total Estimated Effort**: 49-67 days
 
 ## Parallel Work Opportunities
 
