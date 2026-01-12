@@ -203,4 +203,25 @@ export interface ServicesConfig {
     allowList?: string[];
     denyPatterns?: string[];
   };
+  contextManagement?: {
+    targetSize?: number;
+    minSize?: number;
+    maxSize?: number;
+    autoSize?: boolean;
+    vramBuffer?: number;
+    kvQuantization?: 'f16' | 'q8_0' | 'q4_0';
+    compression?: {
+      enabled?: boolean;
+      threshold?: number;
+      strategy?: 'summarize' | 'truncate' | 'hybrid';
+      preserveRecent?: number;
+      summaryMaxTokens?: number;
+    };
+    snapshots?: {
+      enabled?: boolean;
+      maxCount?: number;
+      autoCreate?: boolean;
+      autoThreshold?: number;
+    };
+  };
 }

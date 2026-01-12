@@ -2,292 +2,321 @@
 
 ## Overview
 
-This implementation plan breaks down the Model Management and Routing system into discrete, incremental tasks. The approach follows a bottom-up strategy: first implementing the foundational Model Database and Configuration Manager, then building the Model Management Service with caching, followed by the Model Router with profile-based selection, and finally integrating everything with comprehensive testing.
+This implementation plan breaks down the Model Management and Routing system into discrete, incremental tasks. Each task builds on previous work and includes testing to validate functionality early. The plan follows a bottom-up approach, implementing core data structures and services first, then building higher-level features on top.
 
 ## Tasks
 
-- [ ] 1. Implement Model Database
-  - Create model database with glob pattern matching
-  - Implement family detection from model names
-  - Add capability and limits lookup
-  - Support default values for unknown models
-  - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 16.1, 16.2, 16.3, 16.4, 16.5_
+- [ ] 1. Implement Model Database and Routing Profiles
+  - Create model database with pattern matching for known model families
+  - Define routing profiles (fast, general, code, creative) with selection criteria
+  - Implement lookup functions with wildcard support and safe defaults
+  - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
 
-- [ ] 1.1 Write property test for glob pattern matching
-  - **Property 11: Glob Pattern Matching**
-  - **Validates: Requirements 9.1**
+- [ ] 1.1 Write property tests for Model Database
+  - **Property 13: Known model lookup**
+  - **Property 14: Unknown model defaults**
+  - **Property 15: Wildcard pattern matching**
+  - **Validates: Requirements 7.1, 7.2, 7.3, 7.4, 7.5**
 
-- [ ] 1.2 Write property test for most specific pattern selection
-  - **Property 13: Most Specific Pattern Wins**
-  - **Validates: Requirements 9.3**
+- [ ] 2. Implement Model Router
+  - [ ] 2.1 Create ModelRouter class with selection algorithm
+    - Implement filtering by context window and capabilities
+    - Implement scoring by preferred families
+    - Implement fallback chain with circular detection
+    - Support configuration overrides
+    - _Requirements: 5.1, 5.2, 5.3, 5.5, 6.5, 6.6_
 
-- [ ] 1.3 Write property test for family detection
-  - **Property 20: Family Detection Pattern Matching**
-  - **Validates: Requirements 16.1, 16.2, 16.3, 16.4**
+- [ ] 2.2 Write property tests for Model Router
+  - **Property 9: Profile-based model selection**
+  - **Property 10: Preferred family prioritization**
+  - **Property 11: Fallback profile usage**
+  - **Property 12: Configuration override precedence**
+  - **Validates: Requirements 5.1, 5.2, 5.3, 5.5, 6.5, 6.6**
 
-- [ ] 1.4 Write unit tests for model database
-  - Test default limits for unknown models
-  - Test capability lookup
-  - Test database entry structure
-  - _Requirements: 9.4, 9.5_
+- [ ] 2.3 Write unit tests for routing profiles
+  - Test that fast, general, code, and creative profiles exist
+  - Test profile metadata and requirements
+  - _Requirements: 6.1, 6.2, 6.3, 6.4_
 
-- [ ] 2. Implement Configuration Manager
-  - Create configuration loading from multiple sources (file, env, CLI)
-  - Implement precedence rules (CLI > Env > File)
-  - Add validation for generation parameters
-  - Support per-model option overrides
-  - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5, 10.6, 11.1-11.7, 12.1-12.5, 13.1-13.6_
+- [ ] 3. Implement Model Management Service
+  - [ ] 3.1 Create ModelManagementService class with core operations
+    - Implement listModels with caching and TTL
+    - Implement pullModel with progress events and cancellation
+    - Implement deleteModel with unload-first logic
+    - Implement showModel for detailed info
+    - Add error handling with descriptive messages
+    - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 2.1, 2.2, 2.3, 2.4, 2.5, 3.1, 3.2, 3.3, 3.4, 4.1, 4.2, 4.3_
 
-- [ ] 2.1 Write property test for configuration precedence
-  - **Property 18: Configuration Precedence Chain**
-  - **Validates: Requirements 11.7, 12.5**
+- [ ] 3.2 Write property tests for Model Management Service
+  - **Property 1: Model list retrieval**
+  - **Property 2: Model list caching**
+  - **Property 3: Cache invalidation after mutations**
+  - **Property 4: Offline operation with cache**
+  - **Property 5: Progress event emission**
+  - **Property 6: Pull cancellation**
+  - **Property 7: Loaded model unload before deletion**
+  - **Property 8: Error handling consistency**
+  - **Validates: Requirements 1.1, 1.2, 1.3, 1.4, 1.5, 2.2, 2.3, 2.4, 2.5, 3.2, 3.3, 3.4, 4.3**
 
-- [ ] 2.2 Write property test for parameter validation
-  - **Property 19: Parameter Validation Bounds**
+- [ ] 3.3 Implement keep-alive functionality
+  - Add keepModelLoaded and unloadModel methods
+  - Implement periodic keep-alive requests
+  - Track last-used timestamps
+  - Support configurable timeout
+  - Add getLoadedModels status method
+  - _Requirements: 19.1, 19.2, 19.3, 19.4, 20.1, 20.2, 20.3, 20.4_
+
+- [ ] 3.4 Write property tests for keep-alive
+  - **Property 38: Keep-alive request sending**
+  - **Property 39: Last-used timestamp tracking**
+  - **Property 40: Idle timeout unloading**
+  - **Property 41: Keep-alive disable respect**
+  - **Property 42: Loaded model status reporting**
+  - **Validates: Requirements 19.1, 19.2, 19.3, 20.1, 20.2, 20.3, 20.4**
+
+- [ ] 4. Checkpoint - Ensure model management tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [ ] 5. Implement Memory Service
+  - [ ] 5.1 Create MemoryService class with CRUD operations
+    - Implement remember, recall, search, forget, listAll methods
+    - Implement JSON file persistence (~/.ollm/memory.json)
+    - Track access count and timestamps
+    - Support categorization (fact, preference, context)
+    - Mark source (user, llm, system)
+    - _Requirements: 11.1, 11.2, 11.5, 12.1, 12.2, 12.3, 12.4, 12.5, 13.3, 13.4_
+
+- [ ] 5.2 Write property tests for Memory Service persistence
+  - **Property 20: Memory persistence round-trip**
+  - **Property 23: Memory metadata tracking**
+  - **Property 24: Memory search**
+  - **Property 25: Memory deletion**
+  - **Property 26: Memory listing**
+  - **Property 28: Memory categorization**
+  - **Validates: Requirements 11.1, 11.2, 11.5, 12.1, 12.2, 12.3, 12.4, 12.5, 13.4**
+
+- [ ] 5.3 Implement system prompt injection
+  - Implement getSystemPromptAddition method
+  - Respect token budget (default 500 tokens)
+  - Prioritize by access count and recency
+  - Format as key-value pairs
+  - _Requirements: 11.3, 11.4_
+
+- [ ] 5.4 Write property tests for system prompt injection
+  - **Property 21: System prompt injection with budget**
+  - **Property 22: Memory prioritization by recency**
+  - **Validates: Requirements 11.3, 11.4**
+
+- [ ] 5.5 Create remember tool for LLM
+  - Register remember tool in tool registry
+  - Integrate with MemoryService
+  - Mark source as 'llm' for tool-initiated memories
+  - _Requirements: 13.1, 13.2, 13.3_
+
+- [ ] 5.6 Write unit tests for remember tool
+  - Test tool registration
+  - Test LLM source marking
+  - **Property 27: LLM memory source marking**
   - **Validates: Requirements 13.1, 13.2, 13.3**
 
-- [ ] 2.3 Write property test for generation parameter application
-  - **Property 14: Generation Parameter Application**
-  - **Validates: Requirements 10.2**
+- [ ] 6. Implement Template Service
+  - [ ] 6.1 Create TemplateService class with template management
+    - Implement loadTemplates from user and workspace directories
+    - Parse YAML template definitions
+    - Validate template structure
+    - Cache parsed templates
+    - _Requirements: 16.1, 16.2, 16.3, 16.4_
 
-- [ ] 2.4 Write unit tests for configuration manager
-  - Test loading from each source
-  - Test validation error messages
-  - Test per-model options
-  - Test provider options pass-through
-  - _Requirements: 10.1, 10.4, 10.5, 10.6, 13.4, 13.5, 13.6_
+- [ ] 6.2 Write property tests for template loading
+  - **Property 32: Template loading from directories**
+  - **Property 33: Template metadata preservation**
+  - **Validates: Requirements 16.1, 16.2, 16.3, 16.4**
 
-- [ ] 3. Checkpoint - Ensure all tests pass
-  - Ensure all tests pass, ask the user if questions arise.
+- [ ] 6.3 Implement variable substitution
+  - Support {variable_name} syntax
+  - Support {variable_name:default_value} syntax
+  - Handle required vs optional variables
+  - Validate required variables are provided
+  - _Requirements: 17.1, 17.2, 17.3, 17.4, 17.5_
 
+- [ ] 6.4 Write property tests for variable substitution
+  - **Property 34: Variable substitution**
+  - **Property 35: Default value usage**
+  - **Property 36: Required variable validation**
+  - **Validates: Requirements 17.1, 17.2, 17.3, 17.4, 17.5**
 
+- [ ] 6.5 Implement template CRUD operations
+  - Implement listTemplates, getTemplate, createTemplate, deleteTemplate
+  - Persist new templates to user directory
+  - Handle workspace override of user templates
+  - _Requirements: 18.1, 18.2, 18.3_
 
-- [ ] 4. Implement Model Management Service Core
-  - Create ModelManagementService interface and implementation
-  - Implement listModels with provider adapter integration
-  - Implement showModel for detailed model info
-  - Implement getModelStatus for availability checking
-  - Add error handling with descriptive messages
-  - _Requirements: 1.1, 1.2, 1.3, 1.6, 4.1, 4.2, 4.3, 4.4, 4.5, 5.1, 5.2, 5.3, 5.4_
-
-- [ ] 4.1 Write property test for model list structure
-  - **Property 1: Model List Return Type**
-  - **Validates: Requirements 1.1, 1.3**
-
-- [ ] 4.2 Write property test for model status enum
-  - **Property 6: Model Status Enum Values**
-  - **Validates: Requirements 5.1**
-
-- [ ] 4.3 Write property test for descriptive errors
-  - **Property 3: Descriptive Error Messages**
-  - **Validates: Requirements 1.6, 2.5, 3.5, 17.3, 17.4, 17.5**
-
-- [ ] 4.4 Write unit tests for model management core
-  - Test model info field completeness
-  - Test status checking for each state
-  - Test error cases (not found, provider offline)
-  - _Requirements: 4.2, 4.5, 5.2, 5.3, 5.4_
-
-- [ ] 5. Implement Caching System
-  - Add cache for model list with 60-second TTL
-  - Add cache for individual model info with 5-minute TTL
-  - Implement cache invalidation on mutations
-  - Support offline mode with expired cache
-  - _Requirements: 1.4, 1.5, 2.3, 3.2, 14.1, 14.3, 14.4, 14.5, 18.1, 18.2, 18.3, 18.4, 18.5, 18.6_
-
-- [ ] 5.1 Write property test for cache timing
-  - **Property 2: Model List Caching**
-  - **Validates: Requirements 1.5, 18.1**
-
-- [ ] 5.2 Write property test for cache invalidation
-  - **Property 5: Cache Invalidation on Mutation**
-  - **Validates: Requirements 2.3, 3.2, 18.2**
-
-- [ ] 5.3 Write property test for cache expiration
-  - **Property 21: Cache Expiration Behavior**
+- [ ] 6.6 Write property tests for template persistence
+  - **Property 37: Template persistence**
   - **Validates: Requirements 18.3**
 
-- [ ] 5.4 Write property test for model info caching
-  - **Property 22: Model Info Caching Duration**
-  - **Validates: Requirements 18.5**
-
-- [ ] 5.5 Write unit tests for caching
-  - Test offline mode with cached data
-  - Test cache hit/miss behavior
-  - Test manual cache clearing
-  - _Requirements: 1.4, 14.1, 14.3, 14.4, 14.5, 18.4, 18.6_
-
-- [ ] 6. Implement Model Pull and Delete
-  - Implement pullModel with progress tracking
-  - Add progress event emission with all required fields
-  - Implement cancellation support
-  - Implement deleteModel with safety checks
-  - Prevent deletion of models in use
-  - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 3.1, 3.2, 3.3, 3.4, 3.5, 15.1-15.6_
-
-- [ ] 6.1 Write property test for progress event structure
-  - **Property 4: Progress Event Structure**
-  - **Validates: Requirements 2.2, 15.3**
-
-- [ ] 6.2 Write unit tests for pull and delete
-  - Test progress events (initial, updates, final)
-  - Test cancellation
-  - Test delete safety checks (model in use, not found)
-  - Test error handling (network, disk space)
-  - _Requirements: 2.4, 2.6, 2.7, 3.3, 3.4, 15.1, 15.4, 15.5, 15.6_
-
-- [ ] 7. Checkpoint - Ensure all tests pass
+- [ ] 7. Checkpoint - Ensure memory and template tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
+- [ ] 8. Implement Comparison Service
+  - [ ] 8.1 Create ComparisonService class
+    - Implement compare method with parallel execution
+    - Collect response text, token count, latency, tokens/second
+    - Handle individual model failures gracefully
+    - Support cancellation via AbortController
+    - _Requirements: 14.1, 14.2, 14.3, 14.4, 15.2, 15.3_
 
+- [ ] 8.2 Write property tests for Comparison Service
+  - **Property 29: Parallel model execution**
+  - **Property 30: Comparison result structure**
+  - **Property 31: Partial failure handling**
+  - **Validates: Requirements 14.1, 14.2, 14.3, 14.4, 15.2, 15.3**
 
-- [ ] 8. Implement Routing Profiles
-  - Define routing profile interface and data structure
-  - Create predefined profiles (fast, general, code, creative)
-  - Implement profile lookup and listing
-  - Add profile validation
-  - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6_
+- [ ] 9. Implement Project Profile Service
+  - [ ] 9.1 Create ProjectProfileService class with detection
+    - Implement detectProfile with file-based detection
+    - Support TypeScript, Python, Rust, Go detection
+    - Implement loadProfile from .ollm/project.yaml
+    - Define built-in profiles (typescript, python, rust, go, documentation)
+    - _Requirements: 21.1, 21.2, 21.3, 21.4, 21.5, 23.1, 23.2, 23.3, 23.4, 23.5_
 
-- [ ] 8.1 Write unit tests for routing profiles
-  - Test profile structure and fields
-  - Test profile lookup by name
-  - Test profile listing
-  - Test invalid profile handling
-  - _Requirements: 7.1, 7.2, 7.3, 7.4_
+- [ ] 9.2 Write property tests for project detection
+  - **Property 43: Project type detection**
+  - **Validates: Requirements 21.1, 21.2, 21.3, 21.4, 21.5**
 
-- [ ] 9. Implement Model Router Core
-  - Create ModelRouter interface and implementation
-  - Implement model selection algorithm
-  - Add filtering by context window requirements
-  - Add filtering by required capabilities
-  - Implement preferred family selection
-  - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 7.5, 8.1, 8.2, 8.3, 8.4, 8.5_
+- [ ] 9.3 Write unit tests for built-in profiles
+  - Test that TypeScript, Python, Rust, Go, and documentation profiles exist
+  - Test profile metadata and default settings
+  - _Requirements: 23.1, 23.2, 23.3, 23.4, 23.5_
 
-- [ ] 9.1 Write property test for router selection validity
-  - **Property 7: Router Returns Available Model**
-  - **Validates: Requirements 6.2**
+- [ ] 9.4 Implement profile application
+  - Implement applyProfile to merge settings
+  - Support project settings precedence over global
+  - Apply model, system prompt, tool restrictions
+  - Support manual profile override
+  - _Requirements: 22.1, 22.2, 22.3, 22.4, 22.5, 24.4_
 
-- [ ] 9.2 Write property test for preferred family selection
-  - **Property 8: Preferred Family Selection**
-  - **Validates: Requirements 6.3**
+- [ ] 9.5 Write property tests for profile application
+  - **Property 44: Project settings precedence**
+  - **Property 45: Profile setting application**
+  - **Property 46: Manual profile override**
+  - **Validates: Requirements 22.1, 22.2, 22.3, 22.4, 22.5, 24.4**
 
-- [ ] 9.3 Write property test for context requirements
-  - **Property 9: Profile Minimum Context Requirement**
-  - **Validates: Requirements 7.1, 7.2, 7.3, 7.4**
+- [ ] 9.6 Implement project initialization
+  - Implement initializeProject to create .ollm/project.yaml
+  - Support profile selection
+  - Write configuration file with profile settings
+  - _Requirements: 24.3_
 
-- [ ] 9.4 Write property test for capability matching
-  - **Property 10: Required Capabilities Matching**
-  - **Validates: Requirements 7.5, 8.1, 8.2, 8.3, 8.5**
+- [ ] 9.7 Write property tests for project initialization
+  - **Property 47: Project initialization**
+  - **Validates: Requirements 24.3**
 
-- [ ] 9.5 Write unit tests for model router
-  - Test fallback profile logic
-  - Test no compatible models error
-  - Test unknown capability handling
-  - _Requirements: 6.4, 6.5, 7.6, 8.4_
+- [ ] 10. Implement Configuration and Options
+  - [ ] 10.1 Extend settings schema
+    - Add model management options
+    - Add routing configuration
+    - Add keep-alive settings
+    - Add memory settings
+    - Add template directories
+    - Add project profile settings
+    - _Requirements: 9.1, 9.2, 9.3, 9.4_
 
-- [ ] 10. Implement Configuration Overrides
-  - Add support for routing configuration overrides
-  - Implement override application in router
-  - Add validation for override model availability
-  - _Requirements: 6.6, 10.4_
+- [ ] 10.2 Write property tests for options validation
+  - **Property 17: Options validation**
+  - **Property 18: Generation parameter support**
+  - **Validates: Requirements 9.1, 9.2, 9.5**
 
-- [ ] 10.1 Write unit tests for configuration overrides
-  - Test override application
-  - Test override with unavailable model
-  - Test override precedence
-  - _Requirements: 6.6, 10.4_
+- [ ] 10.3 Implement environment variable mapping
+  - Map OLLM_MODEL, OLLM_TEMPERATURE, OLLM_MAX_TOKENS, OLLM_CONTEXT_SIZE
+  - Implement precedence: env vars > config file
+  - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5_
 
-- [ ] 11. Implement Provider Options Integration
-  - Add provider options pass-through
-  - Implement model-specific option overrides
-  - Integrate with provider adapter
-  - _Requirements: 10.3, 10.5_
+- [ ] 10.4 Write property tests for environment variable precedence
+  - **Property 19: Environment variable precedence**
+  - **Validates: Requirements 10.1, 10.2, 10.3, 10.4, 10.5**
 
-- [ ] 11.1 Write property test for provider options pass-through
-  - **Property 15: Provider Options Pass-Through**
-  - **Validates: Requirements 10.3**
+- [ ] 11. Integrate with Token Limits
+  - [ ] 11.1 Update token estimation to use Model Database
+    - Query Model_Database for context window limits
+    - Use safe defaults for unknown models
+    - Trigger compression when approaching limits
+    - _Requirements: 8.1, 8.2, 8.3_
 
-- [ ] 11.2 Write property test for model-specific options
-  - **Property 16: Model-Specific Options**
-  - **Validates: Requirements 10.5**
+- [ ] 11.2 Write property tests for token limit enforcement
+  - **Property 16: Token limit enforcement**
+  - **Validates: Requirements 8.1, 8.2**
 
-- [ ] 11.3 Write unit tests for provider options
-  - Test options passed to provider
-  - Test model-specific option application
-  - _Requirements: 10.3, 10.5_
-
-- [ ] 12. Checkpoint - Ensure all tests pass
+- [ ] 12. Checkpoint - Ensure all integration tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
+- [ ] 13. Add CLI Commands
+  - [ ] 13.1 Add model management commands
+    - /model list - List available models
+    - /model pull <name> - Download a model
+    - /model delete <name> - Remove a model
+    - /model info <name> - Show model details
+    - /model keep <name> - Keep model loaded
+    - /model unload <name> - Unload model
 
+- [ ] 13.2 Add memory commands
+    - /memory list - Show all memories
+    - /memory add <key> <value> - Add memory
+    - /memory forget <key> - Remove memory
+    - /memory clear - Clear all memories
 
-- [ ] 13. Implement Model Database Lookup Integration
-  - Integrate model database with model management service
-  - Add limits lookup for model info
-  - Add capability lookup for routing
-  - Implement caching for database lookups
-  - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6_
+- [ ] 13.3 Add template commands
+    - /template list - Show available templates
+    - /template use <name> [vars...] - Use a template
+    - /template create <name> - Create new template
 
-- [ ] 13.1 Write property test for database lookup fields
-  - **Property 12: Model Database Lookup Fields**
-  - **Validates: Requirements 9.2, 9.5**
+- [ ] 13.4 Add comparison command
+    - /compare "<prompt>" <model1> <model2> [model3] - Compare models
 
-- [ ] 13.2 Write unit tests for database integration
-  - Test limits lookup
-  - Test capability lookup
-  - Test default values
-  - Test lookup caching
-  - _Requirements: 9.4, 9.6_
+- [ ] 13.5 Add project commands
+    - /project detect - Auto-detect project type
+    - /project use <profile> - Select profile
+    - /project init - Initialize project config
 
-- [ ] 14. Implement Configuration Validation
-  - Add comprehensive validation for all configuration fields
-  - Implement validation error reporting
-  - Add validation for model names and profile names
-  - _Requirements: 10.6, 13.1, 13.2, 13.3, 13.4, 13.5, 13.6_
+- [ ] 14. Add UI Components
+  - [ ] 14.1 Create ComparisonView component
+    - Display responses side-by-side
+    - Show performance metrics (tokens/sec, latency)
+    - Allow selection of preferred response
+    - _Requirements: 15.1, 15.2, 15.3, 15.4_
 
-- [ ] 14.1 Write property test for validation errors
-  - **Property 17: Configuration Validation Errors**
-  - **Validates: Requirements 10.6, 13.4, 13.5, 13.6**
+- [ ] 14.2 Update status bar
+    - Show currently loaded models
+    - Show active project profile
+    - _Requirements: 20.4_
 
-- [ ] 14.2 Write unit tests for validation
-  - Test each validation rule
-  - Test error message quality
-  - Test field-specific errors
-  - _Requirements: 13.1, 13.2, 13.3, 13.4, 13.5, 13.6_
+- [ ] 14.3 Write unit tests for UI components
+  - Test ComparisonView rendering
+  - Test status bar updates
 
-- [ ] 15. Implement Error Handling and Recovery
-  - Add comprehensive error handling for all operations
-  - Implement recovery suggestions in error messages
-  - Add specific error types for different failure modes
-  - Handle offline scenarios gracefully
-  - _Requirements: 14.1, 14.2, 14.3, 14.4, 14.5, 17.1, 17.2, 17.3, 17.4, 17.5, 17.6_
+- [ ] 15. Integration and Documentation
+  - [ ] 15.1 Wire all services together
+    - Register services in dependency injection container
+    - Connect Model Router to Model Management Service
+    - Connect Memory Service to system prompt generation
+    - Connect Template Service to command execution
+    - Connect Project Profile Service to configuration
 
-- [ ] 15.1 Write unit tests for error handling
-  - Test network error handling
-  - Test disk space error handling
-  - Test provider error pass-through
-  - Test offline mode errors
-  - Test recovery suggestions
-  - _Requirements: 14.2, 14.3, 14.4, 14.5, 17.1, 17.2, 17.3, 17.4, 17.5_
+- [ ] 15.2 Add integration tests
+    - Test full model lifecycle (list, pull, use, delete)
+    - Test routing with real model database
+    - Test memory persistence across restarts
+    - Test template loading and execution
+    - Test project profile detection and application
 
-- [ ] 16. Integration and Wiring
-  - Wire Model Management Service with Provider Adapter
-  - Wire Model Router with Model Database
-  - Wire Configuration Manager with all services
-  - Integrate caching across all components
-  - Add service initialization and lifecycle management
-  - _Requirements: All requirements_
+- [ ] 15.3 Update documentation
+    - Document model management commands
+    - Document memory system usage
+    - Document template creation and usage
+    - Document project profiles
+    - Document configuration options
 
-- [ ] 16.1 Write integration tests
-  - Test end-to-end model listing
-  - Test end-to-end model pull with progress
-  - Test end-to-end model deletion
-  - Test end-to-end routing with configuration
-  - Test cache behavior across operations
-  - Test offline mode integration
-  - _Requirements: All requirements_
-
-- [ ] 17. Final checkpoint - Ensure all tests pass
+- [ ] 16. Final checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes
@@ -297,5 +326,6 @@ This implementation plan breaks down the Model Management and Routing system int
 - Property tests validate universal correctness properties
 - Unit tests validate specific examples and edge cases
 - Integration tests validate component interactions
-- The implementation follows a bottom-up approach: database → config → management → routing → integration
-
+- All services follow dependency injection pattern for testability
+- Configuration uses JSON schema validation
+- Error messages are descriptive with remediation guidance

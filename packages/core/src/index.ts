@@ -128,3 +128,12 @@ export type {
   SanitizationConfig,
   ServicesConfig,
 } from './services/index.js';
+
+// Commands
+export {
+  ContextCommandHandler,
+  createContextCommandHandler,
+  type ContextCommandResult,
+  type ContextStatusData,
+  type ContextStatsData
+} from './commands/index.js';

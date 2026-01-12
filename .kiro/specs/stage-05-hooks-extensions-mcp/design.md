@@ -2,67 +2,108 @@
 
 ## Overview
 
-This design implements a three-part extensibility system for OLLM CLI:
+The Hooks, Extensions, and MCP system provides a comprehensive extensibility framework for OLLM CLI. It consists of three interconnected subsystems:
 
-1. **Hook System**: Event-driven execution of custom scripts at key lifecycle points
+1. **Hook System**: Event-driven execution of custom scripts at specific lifecycle points
 2. **Extension System**: Manifest-based packaging of hooks, MCP servers, settings, and skills
-3. **MCP Integration**: Client for connecting to Model Context Protocol servers and exposing their tools
+3. **MCP Integration**: Client for communicating with Model Context Protocol servers to provide external tools
 
-The design prioritizes security (trust model for workspace hooks), reliability (timeout and error isolation), and developer experience (simple JSON-based protocols).
+The design prioritizes security through a trust model, reliability through error isolation, and developer experience through clear protocols and conventions.
 
 ## Architecture
 
-### Component Diagram
+### High-Level Architecture
 
-```mermaid
-graph TB
-    ChatClient[Chat Client]
-    HookRegistry[Hook Registry]
-    HookRunner[Hook Runner]
-    ExtensionManager[Extension Manager]
-    MCPClient[MCP Client]
-    ToolRegistry[Tool Registry]
-    
-    ChatClient -->|emit events| HookRegistry
-    HookRegistry -->|get hooks| HookRunner
-    HookRunner -->|execute| HookProcess[Hook Process]
-    
-    ExtensionManager -->|register hooks| HookRegistry
-    ExtensionManager -->|start servers| MCPClient
-    
-    MCPClient -->|list tools| ToolRegistry
-    MCPClient -->|execute| MCPServer[MCP Server Process]
-    
-    ToolRegistry -->|invoke| MCPClient
+```
+┌─────────────────────────────────────────────────────────────┐
+│                         CLI Core                             │
+├─────────────────────────────────────────────────────────────┤
+│                                                               │
+│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐  │
+│  │   Hook       │    │  Extension   │    │     MCP      │  │
+│  │   System     │◄───┤   Manager    │───►│    Client    │  │
+│  └──────────────┘    └──────────────┘    └──────────────┘  │
+│         │                    │                    │          │
+│         │                    │                    │          │
+│         ▼                    ▼                    ▼          │
+│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐  │
+│  │    Trust     │    │   Manifest   │    │    Tool      │  │
+│  │    Model     │    │   Parser     │    │   Wrapper    │  │
+│  └──────────────┘    └──────────────┘    └──────────────┘  │
+│                                                               │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+                    ┌──────────────────┐
+                    │  Tool Registry   │
+                    └──────────────────┘
 ```
 
-### Data Flow
+### Component Interaction Flow
 
-1. **Hook Execution Flow**:
-   - Event occurs in ChatClient → HookRegistry finds hooks → HookRunner executes each hook → Results aggregated → Control returns to ChatClient
+```
+Extension Loading:
+Extension Manager → Manifest Parser → Validate Schema
+                 → Hook Registry (register hooks)
+                 → MCP Client (start servers)
+                 → Tool Registry (register MCP tools)
 
-2. **Extension Loading Flow**:
-   - ExtensionManager scans directories → Parses manifests → Validates schemas → Registers hooks → Starts MCP servers → Registers tools
+Hook Execution:
+Event Trigger → Hook Planner → Identify Hooks
+             → Trust Model → Verify Approval
+             → Hook Runner → Execute with Timeout
+             → Hook Translator → Parse Output
+             → System → Process Results
 
-3. **MCP Tool Invocation Flow**:
-   - Agent selects MCP tool → ToolRegistry routes to MCPClient → MCPClient translates to MCP format → Sends to MCP server → Translates response → Returns to agent
+MCP Tool Call:
+Agent → Tool Registry → Tool Wrapper
+     → MCP Client → MCP Server
+     → Tool Wrapper → Format Response
+     → Agent → Display Result
+```
 
 ## Components and Interfaces
 
-### Hook System
+### Hook System Components
 
 #### HookRegistry
 
-Manages hook registration and discovery.
+Manages registration and discovery of hooks.
 
 ```typescript
+interface HookRegistry {
+  /**
+   * Register a hook for a specific event
+   */
+  registerHook(event: HookEvent, hook: Hook): void;
+  
+  /**
+   * Get all hooks for an event
+   */
+  getHooksForEvent(event: HookEvent): Hook[];
+  
+  /**
+   * Unregister a hook
+   */
+  unregisterHook(hookId: string): void;
+  
+  /**
+   * Get all registered hooks
+   */
+  getAllHooks(): Map<HookEvent, Hook[]>;
+  
+  /**
+   * Clear all hooks for an event
+   */
+  clearEvent(event: HookEvent): void;
+}
+
 interface Hook {
+  id: string;
   name: string;
-  event: HookEvent;
   command: string;
   args?: string[];
-  timeout?: number;
-  source: 'builtin' | 'user' | 'workspace' | 'extension';
+  source: HookSource;
   extensionName?: string;
 }
 
@@ -77,13 +118,31 @@ type HookEvent =
   | 'before_tool'
   | 'after_tool';
 
-class HookRegistry {
-  private hooks: Map<HookEvent, Hook[]>;
-  
-  register(hook: Hook): void;
-  unregister(name: string): void;
-  getHooksForEvent(event: HookEvent): Hook[];
-  clear(): void;
+type HookSource = 'builtin' | 'user' | 'workspace' | 'downloaded';
+```
+
+#### HookPlanner
+
+Determines which hooks to execute for an event.
+
+```typescript
+interface HookPlanner {
+  /**
+   * Plan hook execution for an event
+   */
+  planExecution(event: HookEvent, context: HookContext): HookExecutionPlan;
+}
+
+interface HookExecutionPlan {
+  hooks: Hook[];
+  order: 'registration' | 'priority';
+  parallel: boolean;
+}
+
+interface HookContext {
+  sessionId: string;
+  event: HookEvent;
+  data: Record<string, unknown>;
 }
 ```
 
@@ -92,38 +151,56 @@ class HookRegistry {
 Executes hooks with timeout and error handling.
 
 ```typescript
+interface HookRunner {
+  /**
+   * Execute a single hook
+   */
+  executeHook(hook: Hook, input: HookInput): Promise<HookOutput>;
+  
+  /**
+   * Execute multiple hooks in sequence
+   */
+  executeHooks(hooks: Hook[], input: HookInput): Promise<HookOutput[]>;
+  
+  /**
+   * Set timeout for hook execution
+   */
+  setTimeout(ms: number): void;
+}
+
 interface HookInput {
-  event: HookEvent;
+  event: string;
   data: Record<string, unknown>;
 }
 
 interface HookOutput {
   continue: boolean;
   systemMessage?: string;
-  [key: string]: unknown;
-}
-
-interface HookExecutionResult {
-  hook: Hook;
-  success: boolean;
-  output?: HookOutput;
+  data?: Record<string, unknown>;
   error?: string;
-  timedOut: boolean;
-  duration: number;
 }
+```
 
-class HookRunner {
-  async executeHook(
-    hook: Hook,
-    input: HookInput,
-    timeout: number
-  ): Promise<HookExecutionResult>;
+#### HookTranslator
+
+Converts between system data and hook protocol.
+
+```typescript
+interface HookTranslator {
+  /**
+   * Convert system data to hook input format
+   */
+  toHookInput(event: HookEvent, data: unknown): HookInput;
   
-  async executeHooks(
-    hooks: Hook[],
-    input: HookInput,
-    timeout: number
-  ): Promise<HookExecutionResult[]>;
+  /**
+   * Parse hook output from JSON
+   */
+  parseHookOutput(json: string): HookOutput;
+  
+  /**
+   * Validate hook output structure
+   */
+  validateOutput(output: unknown): boolean;
 }
 ```
 
@@ -132,39 +209,85 @@ class HookRunner {
 Manages hook trust and approval.
 
 ```typescript
+interface TrustedHooks {
+  /**
+   * Check if a hook is trusted
+   */
+  isTrusted(hook: Hook): Promise<boolean>;
+  
+  /**
+   * Request user approval for a hook
+   */
+  requestApproval(hook: Hook): Promise<boolean>;
+  
+  /**
+   * Store approval for a hook
+   */
+  storeApproval(hook: Hook, hash: string): Promise<void>;
+  
+  /**
+   * Compute hash of hook script
+   */
+  computeHash(hook: Hook): Promise<string>;
+  
+  /**
+   * Load trusted hooks from storage
+   */
+  load(): Promise<void>;
+  
+  /**
+   * Save trusted hooks to storage
+   */
+  save(): Promise<void>;
+}
+
 interface HookApproval {
   source: string;
   hash: string;
   approvedAt: string;
   approvedBy: string;
 }
-
-interface TrustedHooksData {
-  version: number;
-  approvals: HookApproval[];
-}
-
-class TrustedHooks {
-  private approvals: Map<string, HookApproval>;
-  private filePath: string;
-  
-  async load(): Promise<void>;
-  async save(): Promise<void>;
-  
-  isApproved(source: string, hash: string): boolean;
-  async approve(source: string, hash: string): Promise<void>;
-  needsApproval(hook: Hook): boolean;
-  computeHash(source: string): Promise<string>;
-}
 ```
 
-### Extension System
+### Extension System Components
 
 #### ExtensionManager
 
-Loads and manages extensions.
+Manages extension lifecycle.
 
 ```typescript
+interface ExtensionManager {
+  /**
+   * Load all extensions from configured directories
+   */
+  loadExtensions(): Promise<Extension[]>;
+  
+  /**
+   * Get a specific extension by name
+   */
+  getExtension(name: string): Extension | undefined;
+  
+  /**
+   * Enable an extension
+   */
+  enableExtension(name: string): Promise<void>;
+  
+  /**
+   * Disable an extension
+   */
+  disableExtension(name: string): Promise<void>;
+  
+  /**
+   * Get all loaded extensions
+   */
+  getAllExtensions(): Extension[];
+  
+  /**
+   * Reload an extension
+   */
+  reloadExtension(name: string): Promise<void>;
+}
+
 interface Extension {
   name: string;
   version: string;
@@ -172,49 +295,10 @@ interface Extension {
   path: string;
   manifest: ExtensionManifest;
   enabled: boolean;
-}
-
-interface ExtensionManifest {
-  name: string;
-  version: string;
-  description: string;
-  mcpServers?: Record<string, MCPServerConfig>;
-  hooks?: Record<HookEvent, HookDefinition[]>;
-  settings?: SettingDefinition[];
-  skills?: SkillDefinition[];
-}
-
-interface HookDefinition {
-  name: string;
-  command: string;
-  args?: string[];
-  timeout?: number;
-}
-
-interface SettingDefinition {
-  name: string;
-  envVar?: string;
-  sensitive?: boolean;
-  description: string;
-  default?: unknown;
-}
-
-interface SkillDefinition {
-  name: string;
-  description: string;
-  prompt: string;
-  parameters?: Record<string, unknown>;
-}
-
-class ExtensionManager {
-  private extensions: Map<string, Extension>;
-  private directories: string[];
-  
-  async loadExtensions(): Promise<Extension[]>;
-  getExtension(name: string): Extension | undefined;
-  async enableExtension(name: string): Promise<void>;
-  async disableExtension(name: string): Promise<void>;
-  listExtensions(): Extension[];
+  hooks: Hook[];
+  mcpServers: MCPServerConfig[];
+  settings: ExtensionSetting[];
+  skills: Skill[];
 }
 ```
 
@@ -223,19 +307,93 @@ class ExtensionManager {
 Parses and validates extension manifests.
 
 ```typescript
-class ManifestParser {
-  parse(manifestPath: string): ExtensionManifest;
-  validate(manifest: unknown): ExtensionManifest;
+interface ManifestParser {
+  /**
+   * Parse manifest from file
+   */
+  parseManifest(path: string): Promise<ExtensionManifest>;
+  
+  /**
+   * Validate manifest structure
+   */
+  validateManifest(manifest: unknown): boolean;
+  
+  /**
+   * Get validation errors
+   */
+  getErrors(): string[];
+}
+
+interface ExtensionManifest {
+  name: string;
+  version: string;
+  description: string;
+  mcpServers?: Record<string, MCPServerConfig>;
+  hooks?: Record<HookEvent, HookConfig[]>;
+  settings?: ExtensionSetting[];
+  skills?: Skill[];
+}
+
+interface HookConfig {
+  name: string;
+  command: string;
+  args?: string[];
+}
+
+interface ExtensionSetting {
+  name: string;
+  envVar?: string;
+  sensitive?: boolean;
+  description: string;
+  default?: unknown;
+}
+
+interface Skill {
+  name: string;
+  description: string;
+  prompt: string;
 }
 ```
 
-### MCP Integration
+### MCP Integration Components
 
 #### MCPClient
 
-Manages connections to MCP servers.
+Manages MCP server connections.
 
 ```typescript
+interface MCPClient {
+  /**
+   * Start an MCP server
+   */
+  startServer(name: string, config: MCPServerConfig): Promise<void>;
+  
+  /**
+   * Stop an MCP server
+   */
+  stopServer(name: string): Promise<void>;
+  
+  /**
+   * Get server status
+   */
+  getServerStatus(name: string): MCPServerStatus;
+  
+  /**
+   * List all servers
+   */
+  listServers(): MCPServerInfo[];
+  
+  /**
+   * Call a tool on an MCP server
+   */
+  callTool(serverName: string, toolName: string, args: unknown): Promise<unknown>;
+  
+  /**
+   * Get tools from a server
+   */
+  getTools(serverName: string): Promise<MCPTool[]>;
+}
+
 interface MCPServerConfig {
   command: string;
   args: string[];
@@ -243,35 +401,23 @@ interface MCPServerConfig {
   transport?: 'stdio' | 'sse' | 'http';
 }
 
-interface MCPConnection {
-  serverName: string;
-  config: MCPServerConfig;
-  connected: boolean;
-  tools: MCPTool[];
-  process?: ChildProcess;
+interface MCPServerStatus {
+  name: string;
+  status: 'starting' | 'connected' | 'disconnected' | 'error';
+  error?: string;
+  tools: number;
 }
 
-class MCPClient {
-  private connections: Map<string, MCPConnection>;
-  private connectionTimeout: number;
-  
-  async connect(
-    serverName: string,
-    config: MCPServerConfig
-  ): Promise<void>;
-  
-  async disconnect(serverName: string): Promise<void>;
-  
-  async listTools(serverName: string): Promise<MCPTool[]>;
-  
-  async executeTool(
-    serverName: string,
-    toolName: string,
-    args: Record<string, unknown>
-  ): Promise<unknown>;
-  
-  getConnection(serverName: string): MCPConnection | undefined;
-  listConnections(): MCPConnection[];
+interface MCPServerInfo {
+  name: string;
+  status: MCPServerStatus;
+  config: MCPServerConfig;
+}
+
+interface MCPTool {
+  name: string;
+  description: string;
+  inputSchema: unknown;
 }
 ```
 
@@ -280,11 +426,34 @@ class MCPClient {
 Handles communication with MCP servers.
 
 ```typescript
-interface MCPMessage {
-  jsonrpc: '2.0';
-  id?: string | number;
-  method?: string;
+interface MCPTransport {
+  /**
+   * Connect to MCP server
+   */
+  connect(): Promise<void>;
+  
+  /**
+   * Disconnect from MCP server
+   */
+  disconnect(): Promise<void>;
+  
+  /**
+   * Send request to server
+   */
+  sendRequest(request: MCPRequest): Promise<MCPResponse>;
+  
+  /**
+   * Check if connected
+   */
+  isConnected(): boolean;
+}
+
+interface MCPRequest {
+  method: string;
   params?: unknown;
+}
+
+interface MCPResponse {
   result?: unknown;
   error?: MCPError;
 }
@@ -294,98 +463,80 @@ interface MCPError {
   message: string;
   data?: unknown;
 }
-
-abstract class MCPTransport {
-  abstract send(message: MCPMessage): Promise<void>;
-  abstract receive(): Promise<MCPMessage>;
-  abstract close(): Promise<void>;
-}
-
-class StdioTransport extends MCPTransport {
-  constructor(private process: ChildProcess) {}
-  // Implementation for stdio communication
-}
-
-class SSETransport extends MCPTransport {
-  constructor(private url: string) {}
-  // Implementation for Server-Sent Events
-}
-
-class HTTPTransport extends MCPTransport {
-  constructor(private url: string) {}
-  // Implementation for HTTP requests
-}
 ```
 
 #### MCPSchemaConverter
 
-Converts MCP tool schemas to internal format.
+Converts MCP schemas to internal format.
 
 ```typescript
-interface MCPTool {
-  name: string;
-  description: string;
-  inputSchema: {
-    type: 'object';
-    properties: Record<string, MCPParameter>;
-    required?: string[];
-  };
-}
-
-interface MCPParameter {
-  type: string;
-  description?: string;
-  enum?: unknown[];
-  default?: unknown;
-}
-
-class MCPSchemaConverter {
-  convertTool(mcpTool: MCPTool, serverName: string): ToolSchema;
-  convertParameter(mcpParam: MCPParameter): ParameterSchema;
+interface MCPSchemaConverter {
+  /**
+   * Convert MCP tool schema to internal ToolSchema
+   */
+  convertToolSchema(mcpTool: MCPTool): ToolSchema;
+  
+  /**
+   * Convert internal args to MCP format
+   */
+  convertArgsToMCP(args: Record<string, unknown>): unknown;
+  
+  /**
+   * Convert MCP result to internal format
+   */
+  convertResultFromMCP(result: unknown): unknown;
 }
 ```
 
-#### MCP Tool Wrapper
+#### MCPToolWrapper
 
 Wraps MCP tools as internal tools.
 
 ```typescript
-class MCPToolWrapper {
-  constructor(
-    private mcpClient: MCPClient,
-    private serverName: string,
-    private toolSchema: ToolSchema
-  ) {}
+interface MCPToolWrapper {
+  /**
+   * Create a tool wrapper for an MCP tool
+   */
+  wrapTool(serverName: string, mcpTool: MCPTool): Tool;
   
-  async execute(args: Record<string, unknown>): Promise<ToolResult>;
+  /**
+   * Execute an MCP tool
+   */
+  executeTool(serverName: string, toolName: string, args: unknown): Promise<ToolResult>;
 }
 ```
 
 ## Data Models
 
-### Hook Protocol
+### Hook Protocol Messages
 
-**Input to Hook (stdin)**:
+#### Hook Input Format
+
 ```json
 {
-  "event": "before_tool",
+  "event": "before_model",
   "data": {
-    "tool_name": "read_file",
-    "args": {
-      "path": "src/index.ts"
-    },
-    "session_id": "abc123"
+    "session_id": "abc123",
+    "prompt": "User prompt text",
+    "model": "llama2",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Hello"
+      }
+    ]
   }
 }
 ```
 
-**Output from Hook (stdout)**:
+#### Hook Output Format
+
 ```json
 {
   "continue": true,
-  "systemMessage": "File access logged",
-  "metadata": {
-    "logged_at": "2024-01-15T10:30:00Z"
+  "systemMessage": "Additional context from hook",
+  "data": {
+    "customField": "value"
   }
 }
 ```
@@ -394,67 +545,66 @@ class MCPToolWrapper {
 
 ```json
 {
-  "name": "my-extension",
+  "name": "github-integration",
   "version": "1.0.0",
-  "description": "Example extension with hooks and MCP",
+  "description": "GitHub integration for OLLM",
   "mcpServers": {
-    "filesystem": {
+    "github": {
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/workspace"],
-      "env": {},
-      "transport": "stdio"
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_TOKEN": "${GITHUB_TOKEN}"
+      }
     }
   },
   "hooks": {
-    "before_tool": [
-      {
-        "name": "audit-logger",
-        "command": "node",
-        "args": ["hooks/audit.js"],
-        "timeout": 5000
-      }
-    ],
     "session_start": [
       {
-        "name": "init-context",
-        "command": "python",
-        "args": ["hooks/init.py"]
+        "name": "init-github",
+        "command": "node",
+        "args": ["hooks/init.js"]
+      }
+    ],
+    "before_tool": [
+      {
+        "name": "validate-github",
+        "command": "node",
+        "args": ["hooks/validate.js"]
       }
     ]
   },
   "settings": [
     {
-      "name": "apiKey",
-      "envVar": "MY_EXT_API_KEY",
+      "name": "githubToken",
+      "envVar": "GITHUB_TOKEN",
       "sensitive": true,
-      "description": "API key for external service"
+      "description": "GitHub personal access token"
     },
     {
-      "name": "logLevel",
-      "description": "Logging verbosity",
-      "default": "info"
+      "name": "defaultRepo",
+      "description": "Default repository for operations",
+      "default": "owner/repo"
     }
   ],
   "skills": [
     {
-      "name": "code-review",
-      "description": "Review code for common issues",
-      "prompt": "Review the following code for bugs, security issues, and style problems:\n\n{code}"
+      "name": "create-pr",
+      "description": "Create a pull request",
+      "prompt": "Create a pull request with the following changes..."
     }
   ]
 }
 ```
 
-### Trusted Hooks File
+### Trusted Hooks Storage
 
-`~/.ollm/trusted-hooks.json`:
 ```json
 {
   "version": 1,
   "approvals": [
     {
-      "source": "/home/user/project/.ollm/extensions/my-ext/hooks/audit.js",
-      "hash": "sha256:a1b2c3d4e5f6...",
+      "source": ".ollm/extensions/my-ext/hooks/validate.js",
+      "hash": "sha256:abc123def456...",
       "approvedAt": "2024-01-15T10:30:00Z",
       "approvedBy": "user"
     }
@@ -462,327 +612,360 @@ class MCPToolWrapper {
 }
 ```
 
-### MCP Protocol Messages
+### MCP Server Configuration
 
-**List Tools Request**:
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 1,
-  "method": "tools/list"
+```typescript
+interface MCPServerConfig {
+  command: string;           // Executable command
+  args: string[];           // Command arguments
+  env?: Record<string, string>;  // Environment variables
+  transport?: 'stdio' | 'sse' | 'http';  // Communication transport
+  timeout?: number;         // Connection timeout in ms
 }
 ```
 
-**List Tools Response**:
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 1,
-  "result": {
-    "tools": [
-      {
-        "name": "read_file",
-        "description": "Read a file from the filesystem",
-        "inputSchema": {
-          "type": "object",
-          "properties": {
-            "path": {
-              "type": "string",
-              "description": "Path to the file"
-            }
-          },
-          "required": ["path"]
-        }
-      }
-    ]
-  }
-}
-```
+### Configuration Schema
 
-**Execute Tool Request**:
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 2,
-  "method": "tools/call",
-  "params": {
-    "name": "read_file",
-    "arguments": {
-      "path": "/workspace/src/index.ts"
-    }
-  }
-}
-```
+```yaml
+hooks:
+  enabled: true
+  timeout: 30000
+  trustWorkspace: false
 
-**Execute Tool Response**:
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 2,
-  "result": {
-    "content": [
-      {
-        "type": "text",
-        "text": "// File contents here..."
-      }
-    ]
-  }
-}
+extensions:
+  enabled: true
+  directories:
+    - ~/.ollm/extensions
+    - .ollm/extensions
+  autoEnable: true
+
+mcp:
+  enabled: true
+  connectionTimeout: 10000
+  servers: {}
 ```
 
 ## Correctness Properties
 
 *A property is a characteristic or behavior that should hold true across all valid executions of a system—essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
 
-### Property Reflection
 
-After analyzing the acceptance criteria, I identified several areas where properties can be consolidated:
+### Property 1: Hook Registration and Retrieval
 
-- **Hook Registry Operations**: Properties 2.2, 2.3, 2.4, and 2.5 all test registry operations and can be combined into comprehensive properties about registration and retrieval
-- **Hook Execution Order**: Properties 3.5 and 2.3 both test ordering and can be unified
-- **Trust Model**: Properties 4.1, 4.2, and 4.7 all test trust decisions and can be combined
-- **Extension Loading**: Properties 5.6 and 5.7 both test registration during loading and can be combined
-- **Manifest Validation**: Properties 6.2, 6.3, 6.4, 6.5, and 6.6 all test validation and can be consolidated
-- **MCP Tool Translation**: Properties 10.1 and 10.3 both test translation and can be combined into a round-trip property
-- **Extension State**: Properties 7.2 and 7.3 test opposite states and can be combined
+*For any* hook and event, registering the hook for that event should make it retrievable when querying hooks for that event.
 
-### Hook System Properties
+**Validates: Requirements 1.1, 1.2**
 
-**Property 1: Hook Registration Preserves Data**
-*For any* hook with event type, name, and command, registering it in the Hook_Registry and then retrieving hooks for that event should return a hook with the same event type, name, and command.
-**Validates: Requirements 2.2, 2.3**
+### Property 2: Hook Execution Order
 
-**Property 2: Hook Registration Order Preserved**
-*For any* sequence of hooks registered for the same event, querying the Hook_Registry for that event should return the hooks in the same order they were registered.
-**Validates: Requirements 2.3, 3.5**
+*For any* set of hooks registered for the same event, executing those hooks should run them in registration order, with user extension hooks executing before workspace extension hooks.
 
-**Property 3: Hook Unregistration Removes Hook**
-*For any* registered hook, unregistering it by name should result in that hook no longer appearing in queries for its event.
-**Validates: Requirements 2.5**
+**Validates: Requirements 1.3, 12.1, 12.2, 12.3, 12.4, 12.5**
 
-**Property 4: Hook Input Serialization Round-Trip**
-*For any* hook execution with event data, the data passed to the hook via stdin should be valid JSON that deserializes to the original event data structure.
-**Validates: Requirements 3.1**
+### Property 3: Hook Timeout Termination
 
-**Property 5: Hook Timeout Enforcement**
-*For any* hook that runs longer than the configured timeout, the Hook_Runner should terminate the hook process within a reasonable grace period (e.g., 1 second after timeout).
-**Validates: Requirements 3.3, 14.3**
+*For any* hook that exceeds the configured timeout, the hook runner should terminate it and continue executing remaining hooks without blocking.
 
-**Property 6: Hook Error Isolation**
-*For any* sequence of hooks where one hook fails, all subsequent hooks in the sequence should still execute.
-**Validates: Requirements 3.4**
+**Validates: Requirements 1.4, 11.2**
 
-**Property 7: Hook Cancellation Signal**
-*For any* hook that returns `continue: false`, the Hook_Runner should signal that the operation should be cancelled.
-**Validates: Requirements 3.7, 13.2**
+### Property 4: Hook Error Isolation
 
-**Property 8: Hook Trust by Source**
-*For any* hook, if its source is 'builtin' or 'user', it should be trusted without requiring approval; if its source is 'workspace' and not previously approved, it should require approval.
-**Validates: Requirements 4.1, 4.2, 4.7**
+*For any* hook that fails with an error or exception, the hook runner should log the error and continue executing remaining hooks without propagating the exception.
 
-**Property 9: Hook Hash Verification**
-*For any* approved hook, if the hook's content changes (resulting in a different SHA-256 hash), it should require re-approval before execution.
-**Validates: Requirements 4.4, 4.5**
+**Validates: Requirements 1.5, 11.1**
 
-**Property 10: Hook Output Data Propagation**
-*For any* hook that returns additional data fields beyond `continue`, those fields should be available to all subsequent hooks in the same event chain.
-**Validates: Requirements 13.3, 13.4**
+### Property 5: Hook Output Capture
 
-**Property 11: Malformed Hook Output Handling**
-*For any* hook that outputs invalid JSON or JSON missing the `continue` field, the Hook_Runner should treat it as `continue: true` and log an error.
-**Validates: Requirements 13.5**
+*For any* hook that completes successfully, the hook runner should capture the hook's stdout output and parse it as JSON.
 
-**Property 12: Per-Hook Timeout Override**
-*For any* hook with a custom timeout specified in its definition, that timeout should be used instead of the global default timeout.
-**Validates: Requirements 14.5**
+**Validates: Requirements 1.6, 2.3**
 
-### Extension System Properties
+### Property 6: Hook Protocol Round Trip
 
-**Property 13: Extension Manifest Parsing**
-*For any* directory containing a valid manifest.json with required fields (name, version, description), the Extension_Manager should successfully parse it and create an Extension object.
-**Validates: Requirements 5.3, 6.1**
+*For any* valid system event data, converting it to hook input format and then parsing hook output should preserve the event type and allow data to flow through the hook protocol.
 
-**Property 14: Invalid Manifest Rejection**
-*For any* manifest.json missing required fields or containing invalid data, the Extension_Manager should skip that extension and log an error.
-**Validates: Requirements 5.4, 6.6**
+**Validates: Requirements 1.8, 1.9, 2.1, 2.2**
 
-**Property 15: Extension Hook Registration**
-*For any* extension with hooks defined in its manifest, loading the extension should result in all those hooks being registered in the Hook_Registry with the correct event types.
-**Validates: Requirements 5.6**
+### Property 7: Hook Output Validation
 
-**Property 16: Extension MCP Server Registration**
-*For any* extension with MCP servers defined in its manifest, loading the extension should result in connection attempts to all those servers.
-**Validates: Requirements 5.7**
+*For any* hook output, it should include a continue field, and if it includes systemMessage or custom data fields, those should be preserved and accessible.
 
-**Property 17: Manifest Field Validation**
-*For any* manifest containing mcpServers, hooks, settings, or skills, each item should have its required fields (command/args for servers, name/command/event for hooks, name/description for settings, name/description/prompt for skills) or validation should fail.
-**Validates: Requirements 6.2, 6.3, 6.4, 6.5**
+**Validates: Requirements 2.4, 2.5, 2.6**
 
-**Property 18: Extension Enable/Disable State**
-*For any* extension, if it is disabled, its hooks and MCP servers should not be registered; if it is enabled, its hooks and MCP servers should be registered.
-**Validates: Requirements 7.2, 7.3**
+### Property 8: Malformed Hook Output Handling
 
-**Property 19: Extension State Persistence**
-*For any* extension whose enabled/disabled state is changed, that state should persist across system restarts.
-**Validates: Requirements 7.4**
+*For any* hook that produces malformed JSON output, the hook runner should log an error, treat the hook as failed, and treat continue as true to allow system operation to proceed.
 
-**Property 20: Extension Settings Merge**
-*For any* extension with settings defined in its manifest, those settings should be merged into the system configuration and accessible via the configuration system.
-**Validates: Requirements 12.1**
+**Validates: Requirements 2.7, 15.6**
 
-**Property 21: Environment Variable Settings**
-*For any* extension setting with an envVar specified, the setting's value should be read from that environment variable.
-**Validates: Requirements 12.2**
+### Property 9: Hook Trust Rules
 
-**Property 22: Sensitive Setting Redaction**
-*For any* extension setting marked as sensitive, its value should not appear in log output.
-**Validates: Requirements 12.3**
+*For any* hook, its trust status should be determined by its source: built-in and user hooks are trusted by default, while workspace and downloaded hooks require approval (unless trustWorkspace is enabled).
 
-**Property 23: Extension Settings Validation**
-*For any* extension with settings, if a required setting is missing, the extension should be disabled and a warning should be logged.
-**Validates: Requirements 12.4, 12.5**
+**Validates: Requirements 3.1, 3.2, 3.3, 3.4**
 
-**Property 24: Skill Registration**
-*For any* extension with skills defined in its manifest, all skills should be registered and available for invocation.
-**Validates: Requirements 15.1, 15.2**
+### Property 10: Hook Approval Persistence
 
-**Property 25: Skill Invocation**
-*For any* registered skill, invoking it should inject the skill's prompt into the conversation context.
-**Validates: Requirements 15.3**
+*For any* hook that receives user approval, computing its hash and storing the approval should make the hook trusted on subsequent checks as long as the hash remains unchanged.
 
-**Property 26: Skill Namespace Collision**
-*For any* two extensions that define skills with the same name, both skills should be accessible using namespaced names (extension-name:skill-name).
-**Validates: Requirements 15.5**
+**Validates: Requirements 3.6, 3.7, 3.9**
 
-### MCP Integration Properties
+### Property 11: Hook Hash Change Detection
 
-**Property 27: MCP Server Process Spawning**
-*For any* MCP server configuration with command and args, connecting to the server should spawn a process with exactly those command and args.
-**Validates: Requirements 8.4**
+*For any* previously approved hook, if its content changes (resulting in a different hash), it should require re-approval before execution.
 
-**Property 28: MCP Server Failure Handling**
-*For any* MCP server that fails to start or connect, the MCP_Client should mark it as unavailable and log an error.
-**Validates: Requirements 8.5**
+**Validates: Requirements 3.8**
 
-**Property 29: MCP Server Disconnection Cleanup**
-*For any* connected MCP server that disconnects, all tools from that server should be removed from the tool registry.
-**Validates: Requirements 8.7**
+### Property 12: Extension Discovery
 
-**Property 30: MCP Tool Schema Conversion**
-*For any* MCP tool schema with parameters, converting it to internal format should preserve all parameter names, types, descriptions, and required/optional status.
-**Validates: Requirements 9.1, 9.2, 9.3**
+*For any* extension directory containing a valid manifest.json file, the extension manager should discover and load the extension when scanning configured directories.
 
-**Property 31: MCP Tool Server Metadata**
-*For any* tool converted from an MCP server, the tool's metadata should include the MCP server name.
-**Validates: Requirements 9.4**
+**Validates: Requirements 4.1, 4.2, 4.3, 4.4**
 
-**Property 32: Invalid MCP Tool Schema Handling**
-*For any* invalid MCP tool schema, the system should skip that tool and log a warning.
-**Validates: Requirements 9.5**
+### Property 13: Invalid Extension Handling
 
-**Property 33: MCP Tool Call Translation Round-Trip**
-*For any* MCP tool invocation, translating the call to MCP format and then translating the result back to internal format should preserve the semantic meaning of the operation.
-**Validates: Requirements 10.1, 10.2, 10.3**
+*For any* extension with an invalid manifest, the extension manager should log an error, skip that extension, and continue loading other extensions without failing.
 
-**Property 34: MCP Tool Error Translation**
-*For any* MCP tool call that fails, the Tool_Wrapper should return an error result containing the failure message.
-**Validates: Requirements 10.4, 10.5**
+**Validates: Requirements 4.5, 11.5**
 
-**Property 35: Multiple MCP Server Connections**
-*For any* set of MCP server configurations, the MCP_Client should maintain concurrent connections to all successfully started servers.
-**Validates: Requirements 11.1**
+### Property 14: Extension Registration
 
-**Property 36: MCP Tool Namespace Collision**
-*For any* two MCP servers that provide tools with the same name, both tools should be accessible using namespaced names (server-name:tool-name).
-**Validates: Requirements 11.2**
+*For any* loaded extension, its hooks should be registered with the hook registry, its MCP servers should be registered with the MCP client, and its settings should be merged with core configuration.
 
-**Property 37: MCP Tool Routing**
-*For any* tool call to an MCP tool, the call should be routed to the correct MCP server based on the tool's metadata.
-**Validates: Requirements 11.3**
+**Validates: Requirements 4.6, 4.7, 4.8, 4.9**
 
-**Property 38: MCP Server Failure Isolation**
-*For any* multi-server setup where one server fails or disconnects, the remaining servers should continue to function normally.
-**Validates: Requirements 11.4**
+### Property 15: Manifest Required Fields
 
+*For any* extension manifest, it should include name, version, and description fields, and validation should fail if any required field is missing.
 
+**Validates: Requirements 5.1**
+
+### Property 16: Manifest Optional Fields
+
+*For any* extension manifest, it may include mcpServers, hooks, settings, and skills fields, and each field should be validated according to its schema when present.
+
+**Validates: Requirements 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 5.8, 5.9**
+
+### Property 17: Extension Disable Cleanup
+
+*For any* enabled extension, disabling it should unregister all its hooks, disconnect all its MCP servers, and remove all its tools from the registry.
+
+**Validates: Requirements 6.1, 6.2, 6.3**
+
+### Property 18: Extension Enable Registration
+
+*For any* disabled extension, enabling it should register its hooks, start its MCP servers, and register its tools with the registry.
+
+**Validates: Requirements 6.4, 6.5, 6.6**
+
+### Property 19: Extension State Persistence Round Trip
+
+*For any* extension, enabling or disabling it and then saving and reloading configuration should restore the same enabled/disabled state.
+
+**Validates: Requirements 6.7, 6.8**
+
+### Property 20: MCP Server Startup
+
+*For any* configured MCP server, starting it should spawn a process with the specified command and args, and establish a connection within the configured timeout.
+
+**Validates: Requirements 7.1, 7.5**
+
+### Property 21: MCP Server Failure Handling
+
+*For any* MCP server that fails to start or connect, the MCP client should log an error and mark the server as unavailable without crashing the system.
+
+**Validates: Requirements 7.6, 11.3**
+
+### Property 22: MCP Tool Discovery
+
+*For any* MCP server that successfully connects, the MCP client should request the list of available tools and register them with the tool registry.
+
+**Validates: Requirements 7.7, 8.8**
+
+### Property 23: MCP Server Cleanup
+
+*For any* connected MCP server, disconnecting it should remove all its tools from the tool registry and gracefully terminate the server process.
+
+**Validates: Requirements 7.8, 7.10**
+
+### Property 24: Multiple MCP Servers
+
+*For any* set of MCP servers, the MCP client should manage them simultaneously, allowing tools from different servers to coexist in the tool registry.
+
+**Validates: Requirements 7.9**
+
+### Property 25: MCP Schema Conversion Round Trip
+
+*For any* MCP tool schema, converting it to internal format and then converting arguments and results back to MCP format should preserve the tool's functionality and data types.
+
+**Validates: Requirements 8.1, 8.2, 8.3, 8.4, 8.5, 8.6**
+
+### Property 26: MCP Error Translation
+
+*For any* MCP tool that returns an error, the tool wrapper should translate it to internal error format without crashing the CLI.
+
+**Validates: Requirements 8.7, 11.4**
+
+### Property 27: Hook Event Data Completeness
+
+*For any* hook event, the hook input should include all event-specific data fields required for that event type (e.g., session_id for session_start, messages and model for before_model).
+
+**Validates: Requirements 9.1, 9.2, 9.3, 9.4, 9.5, 9.6, 9.7, 9.8, 9.9**
+
+### Property 28: Extension Settings Integration
+
+*For any* extension that declares settings, those settings should be added to the configuration schema, readable from environment variables when specified, and available to hooks and MCP servers.
+
+**Validates: Requirements 10.1, 10.2, 10.4, 10.6**
+
+### Property 29: Sensitive Setting Redaction
+
+*For any* extension setting marked as sensitive, its value should be redacted from logs and error messages.
+
+**Validates: Requirements 10.3**
+
+### Property 30: Extension Setting Validation
+
+*For any* extension setting, modifying it should validate the new value against the setting definition, and missing required settings should cause the extension to be disabled.
+
+**Validates: Requirements 10.5, 10.7**
+
+### Property 31: System Resilience After Extension Errors
+
+*For any* extension error (hook failure, MCP crash, invalid manifest), the system should display a clear error message identifying the extension and continue normal operation.
+
+**Validates: Requirements 11.6, 11.7**
+
+### Property 32: MCP Environment Variables
+
+*For any* MCP server configured with environment variables, those variables should be set in the server process environment, with ${VAR_NAME} syntax substituted from the parent environment.
+
+**Validates: Requirements 13.1, 13.2, 13.3, 13.5, 13.6**
+
+### Property 33: Missing Environment Variable Handling
+
+*For any* MCP server environment variable using substitution syntax where the variable is not found, the MCP client should log a warning and use an empty string.
+
+**Validates: Requirements 13.4**
+
+### Property 34: Extension Skills Registration
+
+*For any* extension that declares skills, those skills should be registered with the skill system, discoverable via list commands, and invokable with placeholder substitution.
+
+**Validates: Requirements 14.1, 14.2, 14.3, 14.4, 14.5, 14.6**
+
+### Property 35: Hook Flow Control
+
+*For any* hook that returns continue: false, the system should abort the current operation, and for hooks that return systemMessages, those messages should be added to conversation context in execution order.
+
+**Validates: Requirements 15.1, 15.2, 15.4**
+
+### Property 36: Hook Data Passing
+
+*For any* hook that returns additional data, that data should be available to subsequent hooks in the same event processing chain.
+
+**Validates: Requirements 15.3, 15.5**
+
+### Property 37: MCP Tool Invocation
+
+*For any* MCP tool selected by the agent, the tool wrapper should send the call to the appropriate server, wait for response with timeout, and format the result or error for display.
+
+**Validates: Requirements 17.1, 17.2, 17.3, 17.4, 17.5**
+
+### Property 38: MCP Streaming and Structured Data
+
+*For any* MCP tool that returns streaming responses or structured data, the tool wrapper should handle them correctly and make them available to the agent.
+
+**Validates: Requirements 17.6, 17.7**
+
+### Property 39: Hook Configuration Effects
+
+*For any* hook configuration setting (enabled, timeout, trustWorkspace), changing it should affect hook execution behavior accordingly (e.g., hooks.enabled=false skips all hooks).
+
+**Validates: Requirements 18.1, 18.2, 18.3, 18.4, 18.5, 18.6, 18.7**
+
+### Property 40: MCP Configuration Effects
+
+*For any* MCP configuration setting (enabled, connectionTimeout, servers), changing it should affect MCP client behavior accordingly (e.g., mcp.enabled=false prevents server startup).
+
+**Validates: Requirements 19.1, 19.2, 19.3, 19.4, 19.5, 19.6, 19.7**
+
+### Property 41: Extension Configuration Effects
+
+*For any* extension configuration setting (enabled, directories, autoEnable), changing it should affect extension manager behavior accordingly (e.g., extensions.enabled=false prevents loading).
+
+**Validates: Requirements 20.1, 20.2, 20.3, 20.4, 20.5, 20.6, 20.7**
 
 ## Error Handling
 
 ### Hook Execution Errors
 
-**Timeout Errors**:
-- Hook exceeds configured timeout → Terminate process, log warning, continue with remaining hooks
-- Grace period of 1 second for process termination
-- Return `HookExecutionResult` with `timedOut: true`
+**Timeout Handling**:
+- Default timeout: 30 seconds (configurable)
+- On timeout: Terminate hook process, log warning, continue with next hook
+- Timeout applies per-hook, not to entire event
 
-**Process Errors**:
-- Hook process fails to spawn → Log error, skip hook, continue
-- Hook process crashes → Log error with exit code, continue with remaining hooks
-- Hook writes to stderr → Capture and include in error logs
+**Exception Handling**:
+- Catch all exceptions during hook execution
+- Log error with hook name and extension source
+- Continue executing remaining hooks
+- Never propagate exceptions to core system
 
-**Output Parsing Errors**:
-- Invalid JSON output → Log error, treat as `continue: true`, continue
-- Missing `continue` field → Default to `continue: true`, log warning
-- Unexpected output format → Log error, treat as `continue: true`
-
-**Trust Errors**:
-- Unapproved workspace hook → Skip execution, prompt user for approval
-- Hash mismatch on approved hook → Skip execution, prompt for re-approval
-- Unable to compute hash → Log error, skip hook
+**Malformed Output**:
+- If hook output is not valid JSON: Log error, treat as failed hook
+- If hook output missing required fields: Log error, assume continue=true
+- If hook output has unexpected structure: Log warning, extract what's possible
 
 ### Extension Loading Errors
 
-**Manifest Errors**:
-- Missing manifest.json → Skip extension, log info message
-- Invalid JSON in manifest → Skip extension, log error with parse details
-- Missing required fields → Skip extension, log validation errors
-- Invalid field types → Skip extension, log validation errors
+**Invalid Manifest**:
+- Log error with specific validation failures
+- Skip extension entirely
+- Continue loading other extensions
+- Display warning in extension list
 
-**Hook Registration Errors**:
-- Duplicate hook name → Log warning, use latest registration
-- Invalid event type → Skip hook, log error
-- Missing command → Skip hook, log error
+**Missing Dependencies**:
+- If MCP server command not found: Mark server as unavailable
+- If hook script not found: Skip hook, log error
+- If required setting missing: Disable extension, log error
 
-**Settings Errors**:
-- Missing required setting → Disable extension, log warning
-- Invalid setting value → Use default if available, otherwise disable extension
-- Environment variable not set → Log warning, use default or disable
+**Circular Dependencies**:
+- Detect circular dependencies between extensions
+- Log error and disable affected extensions
+- Prevent infinite loops during loading
 
-### MCP Connection Errors
+### MCP Server Errors
 
 **Connection Failures**:
-- Server process fails to spawn → Mark unavailable, log error with command details
-- Connection timeout → Mark unavailable, log timeout error
-- Invalid transport type → Skip server, log error
+- Retry connection with exponential backoff (3 attempts)
+- After max retries: Mark server as unavailable
+- Log detailed error including command and stderr
+- Allow manual restart via command
 
-**Protocol Errors**:
-- Invalid JSON-RPC message → Log error, close connection
-- Unsupported MCP version → Log error, close connection
-- Missing required methods → Log warning, continue with available methods
+**Runtime Crashes**:
+- Detect server process termination
+- Remove tools from registry
+- Mark server as crashed
+- Optionally auto-restart based on configuration
 
-**Tool Errors**:
-- Invalid tool schema → Skip tool, log warning
-- Tool execution timeout → Return error result to agent
-- Tool execution failure → Return error result with message
-- Server disconnects during tool call → Return error result, remove server tools
+**Tool Call Failures**:
+- Timeout: Return error to agent with timeout message
+- Server error: Translate MCP error to internal format
+- Network error: Return connection error to agent
+- Never crash CLI on tool failure
 
-### Recovery Strategies
+### Configuration Errors
 
-**Hook System**:
-- Failed hooks don't block system operation
-- Errors are logged but don't propagate to user unless critical
-- System continues with remaining hooks after failures
+**Invalid Values**:
+- Validate all configuration on startup
+- Log specific validation errors
+- Use default values for invalid settings
+- Prevent CLI startup if critical settings invalid
 
-**Extension System**:
-- Failed extensions don't prevent other extensions from loading
-- Extensions can be disabled/enabled at runtime
-- Configuration errors are reported clearly to user
-
-**MCP System**:
-- Failed servers don't prevent other servers from connecting
-- Server disconnections are handled gracefully
-- Tools from failed servers are removed from registry
-- Reconnection can be attempted manually or on restart
+**Type Mismatches**:
+- Coerce types when possible (string to number, etc.)
+- Log warning for type coercion
+- Reject if coercion not possible
 
 ## Testing Strategy
 
@@ -790,162 +973,280 @@ After analyzing the acceptance criteria, I identified several areas where proper
 
 This feature requires both unit tests and property-based tests:
 
-- **Unit tests**: Verify specific examples, edge cases, and integration points
-- **Property tests**: Verify universal properties across all inputs
+**Unit Tests** focus on:
+- Specific examples of hook execution
+- Edge cases (empty manifests, missing files)
+- Error conditions (timeouts, crashes, invalid JSON)
+- Integration between components
+- UI interactions (approval prompts)
 
-Both types of tests are complementary and necessary for comprehensive coverage. Unit tests catch concrete bugs in specific scenarios, while property tests verify general correctness across many inputs.
+**Property-Based Tests** focus on:
+- Universal properties across all inputs
+- Round-trip properties (serialization, state persistence)
+- Invariants (hook order, error isolation)
+- Comprehensive input coverage through randomization
 
-### Property-Based Testing
+Both testing approaches are complementary and necessary for comprehensive coverage.
 
-**Library**: Use `fast-check` for TypeScript property-based testing
+### Property-Based Testing Configuration
 
-**Configuration**:
+**Framework**: fast-check (TypeScript property-based testing library)
+
+**Test Configuration**:
 - Minimum 100 iterations per property test
-- Each property test must reference its design document property
-- Tag format: `Feature: stage-05-hooks-extensions-mcp, Property {number}: {property_text}`
+- Each test tagged with feature name and property number
+- Tag format: `Feature: stage-05-hooks-extensions-mcp, Property N: [property text]`
 
-**Property Test Coverage**:
+**Example Property Test**:
+```typescript
+import fc from 'fast-check';
 
-1. **Hook Registry Properties** (Properties 1-3):
-   - Generate random hooks with various event types
-   - Test registration, retrieval, and unregistration
-   - Verify order preservation
-
-2. **Hook Execution Properties** (Properties 4-12):
-   - Generate random event data and hook outputs
-   - Test timeout enforcement with slow hooks
-   - Test error isolation with failing hooks
-   - Test data propagation through hook chains
-
-3. **Extension Properties** (Properties 13-26):
-   - Generate random manifests with various configurations
-   - Test validation with missing/invalid fields
-   - Test enable/disable state transitions
-   - Test settings merge and validation
-
-4. **MCP Properties** (Properties 27-38):
-   - Generate random MCP tool schemas
-   - Test schema conversion preserves information
-   - Test tool routing with multiple servers
-   - Test failure isolation
-
-**Generators**:
-- `arbitraryHook()`: Generate valid Hook objects
-- `arbitraryHookEvent()`: Generate valid HookEvent types
-- `arbitraryManifest()`: Generate valid ExtensionManifest objects
-- `arbitraryMCPToolSchema()`: Generate valid MCP tool schemas
-- `arbitraryMCPServerConfig()`: Generate valid MCP server configurations
-
-### Unit Testing
-
-**Hook System Tests**:
-- Test each hook event type is emitted correctly
-- Test hook approval flow with user interaction
-- Test trusted-hooks.json file operations
-- Test hook timeout with specific durations
-- Test hook error messages and logging
-
-**Extension System Tests**:
-- Test extension discovery in specific directories
-- Test manifest parsing with specific invalid cases
-- Test extension enable/disable persistence
-- Test settings merge with conflicts
-- Test skill registration and invocation
-
-**MCP Integration Tests**:
-- Test connection to mock MCP servers (stdio, SSE, HTTP)
-- Test tool schema conversion with specific MCP types
-- Test tool execution with mock responses
-- Test server disconnection handling
-- Test multiple server coordination
-
-**Integration Tests**:
-- Test full hook lifecycle: register → execute → cleanup
-- Test full extension lifecycle: discover → load → enable → use
-- Test full MCP lifecycle: connect → list tools → execute → disconnect
-- Test interaction between hooks and MCP tools
-- Test extension hooks triggering on MCP tool execution
-
-### Test Organization
-
-```
-packages/core/src/
-├── hooks/
-│   └── __tests__/
-│       ├── hookRegistry.test.ts
-│       ├── hookRunner.test.ts
-│       ├── trustedHooks.test.ts
-│       └── hook-integration.test.ts
-├── extensions/
-│   └── __tests__/
-│       ├── extensionManager.test.ts
-│       ├── manifestParser.test.ts
-│       └── extension-integration.test.ts
-└── mcp/
-    └── __tests__/
-        ├── mcpClient.test.ts
-        ├── mcpTransport.test.ts
-        ├── mcpSchemaConverter.test.ts
-        └── mcp-integration.test.ts
+// Feature: stage-05-hooks-extensions-mcp, Property 1: Hook Registration and Retrieval
+test('hook registration and retrieval', () => {
+  fc.assert(
+    fc.property(
+      fc.string(), // hook name
+      fc.constantFrom(...hookEvents), // event type
+      (hookName, event) => {
+        const registry = new HookRegistry();
+        const hook = createHook(hookName, event);
+        
+        registry.registerHook(event, hook);
+        const retrieved = registry.getHooksForEvent(event);
+        
+        expect(retrieved).toContainEqual(hook);
+      }
+    ),
+    { numRuns: 100 }
+  );
+});
 ```
 
-### Mock Strategies
-
-**Hook Mocks**:
-- Mock hook processes that return specific outputs
-- Mock hook processes that timeout
-- Mock hook processes that fail
-
-**Extension Mocks**:
-- Mock file system for extension directories
-- Mock manifest.json files with various configurations
-- Mock environment variables for settings
-
-**MCP Mocks**:
-- Mock MCP server processes
-- Mock JSON-RPC communication
-- Mock tool schemas and execution results
-
-### Edge Cases to Test
+### Unit Test Coverage
 
 **Hook System**:
-- Empty hook output
-- Hook output with only whitespace
-- Hook that exits immediately
-- Hook that never exits (timeout)
-- Hook with very large output
-- Multiple hooks with same name
-- Hook that modifies its own file during execution
+- Hook registration and retrieval
+- Hook execution with various outputs
+- Timeout handling with slow hooks
+- Error isolation with failing hooks
+- Trust model approval flow
+- Hash computation and verification
 
 **Extension System**:
-- Extension directory doesn't exist
-- Extension directory is empty
-- Manifest with circular dependencies
-- Extension with no hooks or servers
-- Extension with duplicate skill names
-- Extension settings with special characters
+- Extension discovery from directories
+- Manifest parsing and validation
+- Extension enable/disable
+- Settings integration
+- Skills registration
 
-**MCP System**:
-- Server that never responds to initialization
-- Server that disconnects immediately
-- Server with no tools
-- Server with malformed tool schemas
-- Tool with recursive parameter types
-- Tool execution that returns very large results
+**MCP Integration**:
+- Server startup and connection
+- Tool discovery and registration
+- Tool invocation and response handling
+- Error translation
+- Multiple server management
+
+### Integration Tests
+
+**End-to-End Scenarios**:
+1. Load extension → Register hooks → Execute hook on event
+2. Load extension → Start MCP server → Invoke MCP tool
+3. Approve workspace hook → Execute hook → Verify trust persisted
+4. Enable extension → Disable extension → Verify cleanup
+5. Multiple extensions with same event → Verify execution order
+
+**Error Scenarios**:
+1. Invalid manifest → Verify extension skipped
+2. Hook timeout → Verify other hooks execute
+3. MCP server crash → Verify tools removed
+4. Missing required setting → Verify extension disabled
+
+### Test Helpers
+
+**Mock Implementations**:
+- MockHook: Configurable hook for testing
+- MockMCPServer: In-process MCP server for testing
+- MockExtension: Extension with configurable manifest
+
+**Generators** (for property-based tests):
+- Arbitrary hooks with random names and events
+- Arbitrary manifests with valid/invalid structures
+- Arbitrary MCP tool schemas
+- Arbitrary hook inputs and outputs
+
+### Testing Priorities
+
+**Critical Path** (must have 100% coverage):
+1. Hook execution and error isolation
+2. Trust model and approval
+3. Extension loading and validation
+4. MCP server connection and tool registration
+
+**Important** (should have high coverage):
+1. Configuration validation
+2. Settings integration
+3. Skills system
+4. Error handling and recovery
+
+**Nice to Have** (can have lower coverage):
+1. Extension directory structure conventions
+2. UI formatting and display
+3. Performance optimizations
+
+## Implementation Notes
 
 ### Performance Considerations
 
 **Hook Execution**:
-- Hooks should execute in parallel where possible (future optimization)
-- Timeout enforcement should not block other operations
-- Hook output should be streamed for large outputs
+- Execute hooks sequentially to maintain order
+- Consider parallel execution for independent hooks (future enhancement)
+- Use process pools to avoid spawn overhead
+- Cache hook script hashes to avoid recomputation
 
 **Extension Loading**:
-- Extension discovery should be lazy (only when needed)
-- Manifest parsing should be cached
-- Extension enable/disable should be fast (no reload required)
+- Load extensions in parallel during startup
+- Cache parsed manifests
+- Lazy-load MCP servers (start on first use)
+- Index extensions for fast lookup
 
-**MCP Connections**:
-- Server connections should be established in parallel
-- Tool listing should be cached
-- Tool execution should have reasonable timeouts
+**MCP Communication**:
+- Use connection pooling for HTTP transport
+- Implement request batching for multiple tool calls
+- Stream large responses to avoid memory issues
+- Timeout aggressively to prevent hangs
+
+### Security Considerations
+
+**Hook Trust**:
+- Never auto-trust workspace hooks by default
+- Require re-approval on hash change
+- Store hashes using SHA-256
+- Validate hook output before processing
+
+**Extension Sandboxing**:
+- Run hooks in separate processes
+- Limit hook execution time
+- Sanitize hook input/output
+- Redact sensitive data from logs
+
+**MCP Security**:
+- Validate MCP server commands
+- Sanitize environment variables
+- Limit MCP server resource usage
+- Validate tool schemas before registration
+
+### Backward Compatibility
+
+**Configuration Migration**:
+- Support old configuration formats
+- Migrate automatically on first load
+- Log migration actions
+- Preserve user customizations
+
+**Extension Versioning**:
+- Support manifest version field
+- Handle version mismatches gracefully
+- Provide upgrade path for extensions
+- Deprecate old features gradually
+
+## Dependencies
+
+**External Libraries**:
+- `@modelcontextprotocol/sdk`: MCP protocol implementation
+- `fast-check`: Property-based testing
+- `ajv`: JSON schema validation
+- `js-yaml`: YAML configuration parsing
+
+**Internal Dependencies**:
+- Tool Registry (from Stage 03)
+- Configuration System (from Stage 04)
+- Service Infrastructure (from Stage 04)
+
+## File Structure
+
+```
+packages/core/src/
+├── hooks/
+│   ├── hookRegistry.ts
+│   ├── hookPlanner.ts
+│   ├── hookRunner.ts
+│   ├── hookTranslator.ts
+│   ├── trustedHooks.ts
+│   ├── index.ts
+│   └── __tests__/
+│       ├── hookRegistry.test.ts
+│       ├── hookPlanner.test.ts
+│       ├── hookRunner.test.ts
+│       ├── hookTranslator.test.ts
+│       ├── trustedHooks.test.ts
+│       └── integration.test.ts
+├── extensions/
+│   ├── extensionManager.ts
+│   ├── manifestParser.ts
+│   ├── index.ts
+│   └── __tests__/
+│       ├── extensionManager.test.ts
+│       ├── manifestParser.test.ts
+│       └── integration.test.ts
+├── mcp/
+│   ├── mcpClient.ts
+│   ├── mcpTransport.ts
+│   ├── mcpSchemaConverter.ts
+│   ├── index.ts
+│   └── __tests__/
+│       ├── mcpClient.test.ts
+│       ├── mcpTransport.test.ts
+│       ├── mcpSchemaConverter.test.ts
+│       └── integration.test.ts
+└── tools/
+    ├── mcp-tool.ts
+    └── __tests__/
+        └── mcp-tool.test.ts
+```
+
+## Migration Path
+
+### From No Extensions to Extensions
+
+1. **Phase 1**: Implement hook system core
+   - Hook registry and runner
+   - Basic hook protocol
+   - No trust model yet
+
+2. **Phase 2**: Add trust model
+   - Implement approval flow
+   - Add hash verification
+   - Migrate any existing hooks
+
+3. **Phase 3**: Implement extension system
+   - Extension manager and manifest parser
+   - Extension loading and discovery
+   - Settings integration
+
+4. **Phase 4**: Add MCP integration
+   - MCP client and transports
+   - Schema conversion
+   - Tool wrappers
+
+5. **Phase 5**: Polish and optimize
+   - Performance improvements
+   - Error handling refinement
+   - Documentation and examples
+
+### Rollout Strategy
+
+**Alpha** (internal testing):
+- Basic hook system
+- Simple extensions
+- Limited MCP support
+
+**Beta** (early adopters):
+- Full hook system with trust model
+- Extension marketplace
+- Multiple MCP transports
+
+**GA** (general availability):
+- Stable APIs
+- Comprehensive documentation
+- Example extensions
+- Performance optimized

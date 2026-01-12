@@ -9,7 +9,8 @@ import { Turn, type TurnEvent, type ToolRegistry, type ChatOptions } from './tur
 import type { ChatRecordingService } from '../services/chatRecordingService.js';
 import type { ChatCompressionService } from '../services/chatCompressionService.js';
 import { LoopDetectionService } from '../services/loopDetectionService.js';
-import type { ContextManager } from '../services/contextManager.js';
+import type { ContextManager as ServicesContextManager } from '../services/contextManager.js';
+import type { ContextManager as ContextMgmtManager } from '../context/types.js';
 import type { SessionMessage, SessionToolCall, ServicesConfig } from '../services/types.js';
 import { mergeServicesConfig, getLoopDetectionConfig } from '../services/config.js';
 
@@ -22,7 +23,8 @@ export interface ChatConfig {
   recordingService?: ChatRecordingService;
   compressionService?: ChatCompressionService;
   loopDetectionService?: LoopDetectionService;
-  contextManager?: ContextManager;
+  contextManager?: ServicesContextManager;
+  contextMgmtManager?: ContextMgmtManager;
   servicesConfig?: Partial<ServicesConfig>;
   tokenLimit?: number; // Token limit for the model (used for compression threshold)
 }
@@ -47,7 +49,8 @@ export class ChatClient {
   private recordingService?: ChatRecordingService;
   private compressionService?: ChatCompressionService;
   private loopDetectionService?: LoopDetectionService;
-  private contextManager?: ContextManager;
+  private contextManager?: ServicesContextManager;
+  private contextMgmtManager?: ContextMgmtManager;
   private servicesConfig: Required<ServicesConfig>;
 
   constructor(
@@ -58,6 +61,7 @@ export class ChatClient {
     this.recordingService = config.recordingService;
     this.compressionService = config.compressionService;
     this.contextManager = config.contextManager;
+    this.contextMgmtManager = config.contextMgmtManager;
     this.servicesConfig = mergeServicesConfig(config.servicesConfig);
     
     // Initialize loop detection service only if explicitly provided
@@ -113,6 +117,26 @@ export class ChatClient {
     const messages: Message[] = [
       { role: 'user', parts: [{ type: 'text', text: prompt }] },
     ];
+
+    // Add user message to context management system if available
+    if (this.contextMgmtManager) {
+      try {
+        await this.contextMgmtManager.addMessage({
+          id: `user-${Date.now()}`,
+          role: 'user',
+          content: prompt,
+          timestamp: new Date()
+        });
+      } catch (error) {
+        // If context manager rejects the message (e.g., memory limit), emit error
+        const err = error as Error;
+        yield { 
+          type: 'error', 
+          error: new Error(`Context management error: ${err.message}`)
+        };
+        return;
+      }
+    }
 
     // Record initial user message (Requirement 1.1)
     if (sessionId && this.recordingService) {
@@ -206,6 +230,29 @@ export class ChatClient {
         } catch (error) {
           // Log error but continue without compression (Requirement 10.3)
           console.error('Compression check failed:', error);
+        }
+      }
+
+      // Check context management system for automatic actions
+      if (this.contextMgmtManager) {
+        try {
+          const usage = this.contextMgmtManager.getUsage();
+          
+          // Context management system handles automatic compression and snapshots
+          // based on configured thresholds, so we just need to check if we can proceed
+          if (usage.percentage >= 95) {
+            // Near overflow - emit warning
+            yield {
+              type: 'error',
+              error: new Error(
+                `Context usage at ${usage.percentage.toFixed(1)}%. ` +
+                'Consider creating a snapshot or clearing context.'
+              )
+            };
+          }
+        } catch (error) {
+          // Log error but continue
+          console.error('Context management check failed:', error);
         }
       }
 
@@ -305,6 +352,26 @@ export class ChatClient {
         } catch (error) {
           // Log error but continue (Requirement 10.1)
           console.error('Failed to record assistant message:', error);
+        }
+      }
+
+      // Add assistant message to context management system
+      if (this.contextMgmtManager && assistantMessage && assistantMessage.parts.length > 0) {
+        try {
+          const content = assistantMessage.parts
+            .filter(part => part.type === 'text')
+            .map(part => part.type === 'text' ? part.text : '')
+            .join('');
+          
+          await this.contextMgmtManager.addMessage({
+            id: `assistant-${Date.now()}`,
+            role: 'assistant',
+            content,
+            timestamp: new Date()
+          });
+        } catch (error) {
+          // Log error but continue
+          console.error('Failed to add assistant message to context manager:', error);
         }
       }
 

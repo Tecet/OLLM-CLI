@@ -1,163 +1,300 @@
-# Design Document: CLI and UI
+# Design Document: Stage 6 - CLI and UI
 
 ## Overview
 
-The OLLM CLI provides a full-featured terminal user interface (TUI) built with React and Ink, offering both interactive and non-interactive execution modes. The system implements a hybrid layout with tabs for focused work and a collapsible side panel for contextual information. Real-time GPU monitoring, comprehensive status tracking, and an intuitive diff review system enable developers to work efficiently with local LLMs.
+This document describes the design for the OLLM CLI interactive terminal user interface (TUI) and non-interactive execution modes. The system provides a comprehensive React + Ink based interface with a hybrid layout combining tabs and a collapsible side panel, GPU monitoring, performance metrics, reasoning model support, and real-time status tracking.
 
-The architecture separates concerns between the CLI package (UI rendering, input handling, command parsing) and the core package (business logic, services, tool execution). This design enables testing UI components independently and supports future alternative interfaces.
+The design follows a component-based architecture with clear separation between:
+- **CLI Layer**: Argument parsing, configuration loading, and entry point
+- **UI Layer**: React components for rendering the TUI
+- **Service Layer**: Business logic for GPU monitoring, metrics collection, and session management
+- **Context Layer**: State management and data flow between components
 
 ## Architecture
 
-### High-Level Component Structure
+### High-Level Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                         CLI Package                             │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │                    App Container                          │  │
-│  │  ┌────────────┐  ┌──────────────┐  ┌─────────────────┐  │  │
-│  │  │  Tab Bar   │  │ Main Content │  │   Side Panel    │  │  │
-│  │  │  (6 tabs)  │  │   (Active)   │  │  (Collapsible)  │  │  │
-│  │  └────────────┘  └──────────────┘  └─────────────────┘  │  │
-│  │  ┌────────────────────────────────────────────────────┐  │  │
-│  │  │              Input Box                             │  │  │
-│  │  └────────────────────────────────────────────────────┘  │  │
-│  │  ┌────────────────────────────────────────────────────┐  │  │
-│  │  │              Status Bar                            │  │  │
-│  │  └────────────────────────────────────────────────────┘  │  │
-│  └──────────────────────────────────────────────────────────┘  │
-│                                                                 │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │              Configuration Loader                        │  │
-│  │  (System → User → Workspace → Env → CLI Flags)          │  │
-│  └──────────────────────────────────────────────────────────┘  │
-│                                                                 │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │           Non-Interactive Runner                         │  │
-│  │  (Single prompt execution with output formatting)        │  │
-│  └──────────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
+│                         CLI Entry Point                         │
+│                      (packages/cli/src/cli.tsx)                 │
+└────────────────────────┬────────────────────────────────────────┘
+                         │
+                         ├─── Non-Interactive Mode
+                         │    (packages/cli/src/nonInteractive.ts)
+                         │
+                         └─── Interactive Mode (TUI)
                               │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                        Core Package                             │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │                   GPU Monitor Service                    │  │
-│  │  (Platform-specific GPU queries with polling)            │  │
-│  └──────────────────────────────────────────────────────────┘  │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │                   Docs Service                           │  │
-│  │  (Documentation indexing and markdown rendering)         │  │
-│  └──────────────────────────────────────────────────────────┘  │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │              Chat Client & Tool Handler                  │  │
-│  │  (Existing services for chat and tool execution)         │  │
-│  └──────────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
+                              ├─── Config Loader
+                              │    (packages/cli/src/config/)
+                              │
+                              ├─── UI Application
+                              │    (packages/cli/src/ui/)
+                              │    │
+                              │    ├─── Layout Components
+                              │    │    ├─── TabBar
+                              │    │    ├─── SidePanel
+                              │    │    ├─── StatusBar
+                              │    │    └─── InputBox
+                              │    │
+                              │    ├─── Tab Components
+                              │    │    ├─── ChatTab
+                              │    │    ├─── ToolsTab
+                              │    │    ├─── FilesTab
+                              │    │    ├─── SearchTab
+                              │    │    ├─── DocsTab
+                              │    │    └─── SettingsTab
+                              │    │
+                              │    └─── Contexts
+                              │         ├─── UIContext
+                              │         ├─── ChatContext
+                              │         ├─── GPUContext
+                              │         └─── ReviewContext
+                              │
+                              └─── Services
+                                   ├─── GPU Monitor
+                                   ├─── Metrics Collector
+                                   ├─── Reasoning Parser
+                                   ├─── Docs Service
+                                   └─── Theme Manager
 ```
 
-### Configuration Resolution Flow
+### Component Hierarchy
 
 ```
-System Defaults
-    ↓
-User Config (~/.ollm/config.yaml)
-    ↓
-Workspace Config (.ollm/config.yaml)
-    ↓
-Environment Variables
-    ↓
-CLI Flags (highest precedence)
-    ↓
-Merged Configuration → Validation → Application
-```
-
-### GPU Monitoring Flow
-
-```
-GPU Monitor Service
-    ↓
-Platform Detection (NVIDIA / AMD / Apple / CPU)
-    ↓
-Execute Platform Command (nvidia-smi / rocm-smi / ioreg)
-    ↓
-Parse Output → Extract Metrics
-    ↓
-Update Callbacks → Status Bar Update
+App
+├── LaunchScreen (initial state)
+│   ├── LlamaAnimation (standard size)
+│   ├── VersionBanner
+│   ├── QuickActions
+│   └── RecentSessions
+│
+└── MainInterface (after launch)
+    ├── TabBar
+    │   └── Tab (x6: Chat, Tools, Files, Search, Docs, Settings)
+    │
+    ├── ContentArea
+    │   ├── ActiveTab (conditional render)
+    │   │   ├── ChatTab
+    │   │   │   ├── ChatHistory
+    │   │   │   │   ├── Message (x N)
+    │   │   │   │   │   ├── MessageHeader
+    │   │   │   │   │   ├── MessageContent
+    │   │   │   │   │   ├── ToolCall (optional)
+    │   │   │   │   │   ├── ReasoningBox (optional)
+    │   │   │   │   │   └── MetricsDisplay (optional)
+    │   │   │   │   └── LlamaAnimation (when waiting)
+    │   │   │   └── InputBox
+    │   │   │
+    │   │   ├── ToolsTab
+    │   │   │   ├── PendingReviews
+    │   │   │   │   └── ReviewItem (x N)
+    │   │   │   │       ├── DiffViewer
+    │   │   │   │       └── ReviewActions
+    │   │   │   └── ToolHistory
+    │   │   │
+    │   │   ├── FilesTab
+    │   │   │   ├── ContextFilesList
+    │   │   │   ├── GitStatusDisplay
+    │   │   │   └── GitActions
+    │   │   │
+    │   │   ├── SearchTab
+    │   │   │   ├── SearchInput
+    │   │   │   └── SearchResults
+    │   │   │
+    │   │   ├── DocsTab
+    │   │   │   └── DocViewer
+    │   │   │       ├── MarkdownRenderer
+    │   │   │       └── DocNav (in side panel)
+    │   │   │
+    │   │   └── SettingsTab
+    │   │       ├── ModelPicker
+    │   │       ├── ProviderSelector
+    │   │       ├── ThemePicker
+    │   │       ├── SessionInfo
+    │   │       └── OptionsPanel
+    │   │
+    │   └── SidePanel (collapsible)
+    │       ├── ContextSection
+    │       ├── GitSection
+    │       ├── ReviewSection
+    │       └── ToolsSection
+    │
+    ├── StatusBar
+    │   ├── ConnectionStatus
+    │   ├── ModelDisplay
+    │   ├── TokenUsage
+    │   ├── GitStatus
+    │   ├── GPUStatus
+    │   ├── ReviewCount
+    │   └── CostEstimate
+    │
+    └── InputBox (global)
 ```
 
 ## Components and Interfaces
 
-### Configuration Loader
+### 1. CLI Entry Point
 
-**Purpose:** Load and merge configuration from multiple sources with validation.
+**File**: `packages/cli/src/cli.tsx`
 
-**Interface:**
 ```typescript
-interface ConfigLayer {
-  source: 'system' | 'user' | 'workspace' | 'env' | 'cli';
-  priority: number;
-  values: Record<string, unknown>;
+interface CLIOptions {
+  // Execution mode
+  prompt?: string;              // Non-interactive prompt
+  
+  // Model selection
+  model?: string;               // Model name
+  provider?: string;            // Provider name
+  host?: string;                // Provider endpoint
+  
+  // Model management
+  listModels?: boolean;         // List available models
+  pullModel?: string;           // Pull/download model
+  removeModel?: string;         // Remove model
+  modelInfo?: string;           // Show model details
+  
+  // Output control
+  output?: 'text' | 'json' | 'stream-json';
+  reviewDiffs?: boolean;        // Enable diff review
+  noReview?: boolean;           // Disable diff review
+  debug?: boolean;              // Enable debug output
+  noColor?: boolean;            // Disable colors
+  
+  // Configuration
+  config?: string;              // Config file path
+  session?: string;             // Resume session ID
+  
+  // Info
+  version?: boolean;            // Show version
+  help?: boolean;               // Show help
 }
 
-interface ConfigLoader {
-  loadConfig(): Promise<AppConfig>;
-  validateConfig(config: unknown): ValidationResult;
-  mergeConfigs(layers: ConfigLayer[]): AppConfig;
+interface CLIContext {
+  options: CLIOptions;
+  config: Config;
+  mode: 'interactive' | 'non-interactive';
 }
+```
 
-interface AppConfig {
+### 2. Configuration System
+
+**File**: `packages/cli/src/config/configLoader.ts`
+
+```typescript
+interface Config {
+  // Provider settings
+  provider: {
+    default: string;
+    ollama?: {
+      host: string;
+      timeout: number;
+    };
+    vllm?: {
+      host: string;
+      apiKey?: string;
+    };
+    openaiCompatible?: {
+      host: string;
+      apiKey?: string;
+    };
+  };
+  
+  // Model settings
+  model: {
+    default: string;
+    temperature: number;
+    maxTokens: number;
+  };
+  
+  // UI settings
   ui: {
     layout: 'hybrid' | 'simple';
     sidePanel: boolean;
     showGpuStats: boolean;
     showCost: boolean;
+    
+    metrics: {
+      enabled: boolean;
+      compactMode: boolean;
+      showPromptTokens: boolean;
+      showTTFT: boolean;
+      showInStatusBar: boolean;
+    };
+    
+    reasoning: {
+      enabled: boolean;
+      maxVisibleLines: number;
+      autoCollapseOnComplete: boolean;
+    };
   };
+  
+  // Status settings
   status: {
     pollInterval: number;
     highTempThreshold: number;
     lowVramThreshold: number;
   };
-  shortcuts: Record<string, string>;
-  model?: string;
-  provider?: string;
-  output?: 'text' | 'json' | 'stream-json';
+  
+  // Review settings
+  review: {
+    enabled: boolean;
+    inlineThreshold: number;  // Lines
+  };
+  
+  // Session settings
+  session: {
+    autoSave: boolean;
+    saveInterval: number;
+  };
 }
 
-interface ValidationResult {
-  valid: boolean;
-  errors: ValidationError[];
+interface ConfigLayer {
+  source: 'system' | 'user' | 'workspace' | 'env' | 'cli';
+  priority: number;
+  data: Partial<Config>;
 }
 
-interface ValidationError {
-  path: string;
-  message: string;
-  value: unknown;
+class ConfigLoader {
+  loadConfig(): Config;
+  mergeConfigs(layers: ConfigLayer[]): Config;
+  validateConfig(config: Partial<Config>): ValidationResult;
+  getConfigPath(type: 'user' | 'workspace'): string;
 }
 ```
 
-**Behavior:**
-- Load configuration files using YAML/JSON parsers
-- Merge configurations with explicit precedence rules
-- Validate against JSON schema using Ajv
-- Return detailed validation errors with paths and values
-- Cache merged configuration for performance
+**File**: `packages/cli/src/config/configSchema.ts`
 
-### GPU Monitor Service
+```typescript
+// JSON Schema for configuration validation
+const configSchema = {
+  type: 'object',
+  properties: {
+    provider: { /* ... */ },
+    model: { /* ... */ },
+    ui: { /* ... */ },
+    status: { /* ... */ },
+    review: { /* ... */ },
+    session: { /* ... */ }
+  },
+  required: ['provider', 'model']
+};
+```
 
-**Purpose:** Track GPU metrics across different hardware platforms.
+### 3. GPU Monitor Service
 
-**Interface:**
+**File**: `packages/core/src/services/gpuMonitor.ts`
+
 ```typescript
 interface GPUInfo {
   available: boolean;
   vendor: 'nvidia' | 'amd' | 'apple' | 'cpu';
-  vramTotal: number;      // MB
-  vramUsed: number;       // MB
-  vramFree: number;       // MB
-  temperature: number;    // Celsius
-  temperatureMax: number; // Celsius
-  gpuUtilization: number; // Percentage
+  vramTotal: number;        // Bytes
+  vramUsed: number;         // Bytes
+  vramFree: number;         // Bytes
+  temperature: number;      // Celsius
+  temperatureMax: number;   // Celsius
+  gpuUtilization: number;   // Percentage (0-100)
 }
 
 interface GPUMonitor {
@@ -168,155 +305,215 @@ interface GPUMonitor {
   onHighTemp(threshold: number, callback: () => void): void;
   onLowVRAM(threshold: number, callback: () => void): void;
 }
+
+class DefaultGPUMonitor implements GPUMonitor {
+  private vendor: GPUInfo['vendor'] | null = null;
+  private pollingInterval: NodeJS.Timeout | null = null;
+  private callbacks: Map<string, Function[]> = new Map();
+  
+  async detectVendor(): Promise<GPUInfo['vendor']>;
+  async queryNVIDIA(): Promise<GPUInfo>;
+  async queryAMD(): Promise<GPUInfo>;
+  async queryApple(): Promise<GPUInfo>;
+  async queryCPU(): Promise<GPUInfo>;
+}
 ```
 
-**Platform Commands:**
-- **NVIDIA:** `nvidia-smi --query-gpu=temperature.gpu,memory.total,memory.used,memory.free,utilization.gpu --format=csv,noheader,nounits`
-- **AMD:** `rocm-smi --showtemp --showmeminfo --showuse`
-- **Apple:** `ioreg -l | grep -i gpu` (fallback to CPU mode if unavailable)
-- **CPU:** Return `{ available: false, vendor: 'cpu' }`
+### 4. Non-Interactive Runner
 
-**Behavior:**
-- Detect platform on initialization
-- Execute platform-specific commands via shell
-- Parse command output into structured GPUInfo
-- Poll at configured interval (default 5 seconds)
-- Invoke callbacks when thresholds are exceeded
-- Handle command failures gracefully (fallback to CPU mode)
+**File**: `packages/cli/src/nonInteractive.ts`
 
-### Non-Interactive Runner
-
-**Purpose:** Execute single prompts and output results in various formats.
-
-**Interface:**
 ```typescript
-interface NonInteractiveRunner {
-  run(prompt: string, options: RunOptions): Promise<void>;
-}
-
-interface RunOptions {
+interface NonInteractiveOptions {
+  prompt: string;
   model?: string;
   provider?: string;
   output: 'text' | 'json' | 'stream-json';
-  config?: AppConfig;
+  config: Config;
 }
 
-interface JSONOutput {
+interface NonInteractiveResult {
   response: string;
-  model: string;
-  tokens: {
-    prompt: number;
-    completion: number;
-    total: number;
+  metadata?: {
+    model: string;
+    provider: string;
+    tokens: {
+      prompt: number;
+      completion: number;
+      total: number;
+    };
+    duration: number;
+    cost?: number;
   };
-  duration: number;
-  toolCalls?: ToolCall[];
 }
 
-interface StreamJSONEvent {
-  type: 'start' | 'chunk' | 'tool_call' | 'tool_result' | 'end' | 'error';
-  data: unknown;
-  timestamp: number;
+class NonInteractiveRunner {
+  async run(options: NonInteractiveOptions): Promise<NonInteractiveResult>;
+  formatOutput(result: NonInteractiveResult, format: string): string;
+  handleError(error: Error): never;
 }
 ```
 
-**Behavior:**
-- Parse CLI flags and load configuration
-- Initialize chat client with specified model
-- Execute single turn with provided prompt
-- Format output based on output option:
-  - **text:** Write response text to stdout
-  - **json:** Write JSONOutput object to stdout
-  - **stream-json:** Write NDJSON events to stdout as they occur
-- Write errors to stderr with appropriate exit codes
-- Support piped input from stdin
+### 5. UI Context Management
 
-### Tab Bar Component
+**File**: `packages/cli/src/ui/contexts/UIContext.tsx`
 
-**Purpose:** Provide navigation between functional areas.
-
-**Interface:**
 ```typescript
-interface Tab {
+interface UIState {
+  activeTab: TabType;
+  sidePanelVisible: boolean;
+  theme: Theme;
+  keybinds: Keybinds;
+  notifications: Notification[];
+}
+
+type TabType = 'chat' | 'tools' | 'files' | 'search' | 'docs' | 'settings';
+
+interface Notification {
   id: string;
+  tab: TabType;
+  count: number;
+  type: 'info' | 'warning' | 'error';
+}
+
+interface UIContextValue {
+  state: UIState;
+  setActiveTab: (tab: TabType) => void;
+  toggleSidePanel: () => void;
+  setTheme: (theme: Theme) => void;
+  addNotification: (tab: TabType, type: string) => void;
+  clearNotifications: (tab: TabType) => void;
+}
+```
+
+**File**: `packages/cli/src/ui/contexts/GPUContext.tsx`
+
+```typescript
+interface GPUContextValue {
+  info: GPUInfo | null;
+  loading: boolean;
+  error: Error | null;
+  refresh: () => Promise<void>;
+}
+```
+
+**File**: `packages/cli/src/ui/contexts/ChatContext.tsx`
+
+```typescript
+interface Message {
+  id: string;
+  role: 'user' | 'assistant' | 'system' | 'tool';
+  content: string;
+  timestamp: Date;
+  toolCalls?: ToolCall[];
+  reasoning?: ReasoningBlock;
+  metrics?: InferenceMetrics;
+}
+
+interface ChatState {
+  messages: Message[];
+  streaming: boolean;
+  waitingForResponse: boolean;
+  currentInput: string;
+}
+
+interface ChatContextValue {
+  state: ChatState;
+  sendMessage: (content: string) => Promise<void>;
+  cancelGeneration: () => void;
+  clearChat: () => void;
+  editMessage: (id: string, content: string) => void;
+}
+```
+
+**File**: `packages/cli/src/ui/contexts/ReviewContext.tsx`
+
+```typescript
+interface Review {
+  id: string;
+  file: string;
+  diff: string;
+  linesAdded: number;
+  linesRemoved: number;
+  status: 'pending' | 'approved' | 'rejected';
+}
+
+interface ReviewContextValue {
+  reviews: Review[];
+  pendingCount: number;
+  approve: (id: string) => Promise<void>;
+  reject: (id: string) => Promise<void>;
+  approveAll: () => Promise<void>;
+  rejectAll: () => Promise<void>;
+}
+```
+
+### 6. Layout Components
+
+**File**: `packages/cli/src/ui/components/layout/TabBar.tsx`
+
+```typescript
+interface TabBarProps {
+  activeTab: TabType;
+  onTabChange: (tab: TabType) => void;
+  notifications: Map<TabType, number>;
+}
+
+interface Tab {
+  id: TabType;
   label: string;
   icon: string;
   shortcut: string;
-  badge?: number;
 }
 
-interface TabBarProps {
-  tabs: Tab[];
-  activeTab: string;
-  onTabChange: (tabId: string) => void;
-}
+const tabs: Tab[] = [
+  { id: 'chat', label: 'Chat', icon: '💬', shortcut: 'Ctrl+1' },
+  { id: 'tools', label: 'Tools', icon: '🔧', shortcut: 'Ctrl+2' },
+  { id: 'files', label: 'Files', icon: '📁', shortcut: 'Ctrl+3' },
+  { id: 'search', label: 'Search', icon: '🔍', shortcut: 'Ctrl+4' },
+  { id: 'docs', label: 'Docs', icon: '📚', shortcut: 'Ctrl+5' },
+  { id: 'settings', label: 'Settings', icon: '⚙️', shortcut: 'Ctrl+6' }
+];
 ```
 
-**Tabs:**
-1. Chat (💬) - Ctrl+1
-2. Tools (🔧) - Ctrl+2
-3. Files (📁) - Ctrl+3
-4. Search (🔍) - Ctrl+4
-5. Docs (📚) - Ctrl+5
-6. Settings (⚙️) - Ctrl+6
+**File**: `packages/cli/src/ui/components/layout/SidePanel.tsx`
 
-**Behavior:**
-- Render tabs horizontally with icons and labels
-- Highlight active tab with accent color
-- Display badge count when > 0
-- Handle keyboard shortcuts (Ctrl+1-6)
-- Preserve tab state when switching
-
-### Side Panel Component
-
-**Purpose:** Display contextual information without switching tabs.
-
-**Interface:**
 ```typescript
 interface SidePanelProps {
   visible: boolean;
-  onToggle: () => void;
-  sections: PanelSection[];
+  sections: SectionConfig[];
 }
 
-interface PanelSection {
+interface SectionConfig {
+  id: string;
+  title: string;
+  component: React.ComponentType;
+  collapsed: boolean;
+}
+
+interface SidePanelSection {
   title: string;
   collapsed: boolean;
-  content: React.ReactNode;
+  onToggle: () => void;
+  children: React.ReactNode;
 }
 ```
 
-**Sections:**
-1. **Context Files:** List of @-mentioned files
-2. **Git Status:** Branch, staged, and modified files
-3. **Pending Reviews:** Count and list of diffs awaiting approval
-4. **Active Tools:** Currently executing tools with progress
+**File**: `packages/cli/src/ui/components/layout/StatusBar.tsx`
 
-**Behavior:**
-- Toggle visibility with Ctrl+P
-- Expand main content to full width when hidden
-- Collapse/expand individual sections
-- Auto-show when relevant events occur (e.g., new review)
-- Persist visibility preference to config
-
-### Status Bar Component
-
-**Purpose:** Display real-time system metrics and status.
-
-**Interface:**
 ```typescript
 interface StatusBarProps {
   connection: ConnectionStatus;
   model: string;
   tokens: { current: number; max: number };
   git: GitStatus;
-  gpu?: GPUInfo;
+  gpu: GPUInfo | null;
   reviews: number;
   cost: number;
 }
 
 interface ConnectionStatus {
-  state: 'connected' | 'connecting' | 'disconnected';
+  status: 'connected' | 'connecting' | 'disconnected';
   provider: string;
 }
 
@@ -327,365 +524,197 @@ interface GitStatus {
 }
 ```
 
-**Format:**
-```
-🟢 llama3.2:3b │ 8.2K/32K │ main +3 ~2 │ GPU: 45°C 6.2/8GB │ 2 reviews │ ~$0.02
-```
+### 7. Chat Components
 
-**Behavior:**
-- Update all components in real-time
-- Use color-coded indicators (🟢🟡🔴)
-- Format numbers with K/M suffixes
-- Show GPU info when available, "CPU mode" otherwise
-- Calculate cost based on token usage and model pricing
+**File**: `packages/cli/src/ui/components/chat/ChatHistory.tsx`
 
-### Chat Interface Components
-
-**Purpose:** Display conversation history and handle user input.
-
-**Components:**
-
-**ChatHistory:**
 ```typescript
 interface ChatHistoryProps {
   messages: Message[];
   streaming: boolean;
-}
-
-interface Message {
-  role: 'user' | 'assistant' | 'system' | 'tool';
-  content: string;
-  timestamp: number;
-  toolCalls?: ToolCall[];
+  waitingForResponse: boolean;
+  scrollToBottom: boolean;
 }
 ```
 
-**ToolCall Display:**
+**File**: `packages/cli/src/ui/components/chat/Message.tsx`
+
+```typescript
+interface MessageProps {
+  message: Message;
+  theme: Theme;
+}
+```
+
+**File**: `packages/cli/src/ui/components/chat/ToolCall.tsx`
+
 ```typescript
 interface ToolCallProps {
+  toolCall: ToolCall;
+  expanded: boolean;
+  onToggle: () => void;
+}
+
+interface ToolCall {
+  id: string;
   name: string;
-  arguments: Record<string, unknown>;
-  result?: unknown;
-  duration: number;
+  arguments: Record<string, any>;
+  result?: string;
+  duration?: number;
   status: 'pending' | 'success' | 'error';
 }
 ```
 
-**Format:**
-```
-🔧 read_file ✓                                                     0.12s
-┌──────────────────────────────────────────────────────────────────────┐
-│ path: "src/auth/login.ts"                                            │
-│ Result: 245 lines (4.2KB)                                            │
-└──────────────────────────────────────────────────────────────────────┘
-```
+**File**: `packages/cli/src/ui/components/chat/StreamingIndicator.tsx`
 
-**StreamingIndicator:**
 ```typescript
 interface StreamingIndicatorProps {
-  active: boolean;
-  message?: string;
+  text?: string;
+  spinnerType: 'dots' | 'line' | 'arc' | 'bounce';
+}
+
+const spinnerFrames = {
+  dots: ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'],
+  line: ['|', '/', '-', '\\'],
+  arc: ['◜', '◠', '◝', '◞', '◡', '◟'],
+  bounce: ['⠁', '⠂', '⠄', '⠂']
+};
+```
+
+### 8. Performance Metrics
+
+**File**: `packages/core/src/types/metrics.ts`
+
+```typescript
+interface InferenceMetrics {
+  // Raw values from provider
+  promptTokens: number;
+  completionTokens: number;
+  totalDuration: number;       // Nanoseconds
+  promptDuration: number;      // Nanoseconds
+  evalDuration: number;        // Nanoseconds
+  
+  // Calculated values
+  tokensPerSecond: number;
+  timeToFirstToken: number;    // Seconds
+  totalSeconds: number;
+  
+  // Optional
+  loadDuration?: number;
+}
+
+interface SessionStats {
+  totalGenerations: number;
+  totalTokens: number;
+  totalPromptTokens: number;
+  totalCompletionTokens: number;
+  totalTime: number;
+  averageSpeed: number;
+  fastestSpeed: number;
+  slowestSpeed: number;
+  averageTTFT: number;
+}
+
+interface MetricsConfig {
+  enabled: boolean;
+  compactMode: boolean;
+  showPromptTokens: boolean;
+  showTTFT: boolean;
+  showInStatusBar: boolean;
 }
 ```
 
-**Spinner frames:** ⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏ (80ms cycle)
+**File**: `packages/core/src/services/metricsCollector.ts`
 
-**Behavior:**
-- Render messages with role-specific colors
-- Display streaming indicator during generation
-- Show tool calls with formatted arguments
-- Wrap long arguments at 80 characters with expand option
-- Display inline diffs for small changes (≤5 lines)
-- Auto-scroll to bottom on new messages
-
-### Tools Tab Component
-
-**Purpose:** Review and approve file changes.
-
-**Interface:**
 ```typescript
-interface ToolsTabProps {
-  pendingReviews: DiffReview[];
-  toolHistory: ToolExecution[];
-  onApply: (reviewId: string) => void;
-  onReject: (reviewId: string) => void;
-  onApplyAll: () => void;
-  onRejectAll: () => void;
+class MetricsCollector {
+  private sessionStats: SessionStats;
+  private currentGeneration: Partial<InferenceMetrics> | null = null;
+  
+  startGeneration(): void;
+  recordFirstToken(): void;
+  recordCompletion(metadata: ProviderMetadata): InferenceMetrics;
+  getSessionStats(): SessionStats;
+  resetStats(): void;
+}
+```
+
+**File**: `packages/cli/src/ui/components/chat/MetricsDisplay.tsx`
+
+```typescript
+interface MetricsDisplayProps {
+  metrics: InferenceMetrics;
+  compact: boolean;
+  theme: Theme;
 }
 
-interface DiffReview {
-  id: string;
-  file: string;
-  diff: string;
-  linesAdded: number;
-  linesRemoved: number;
-}
+// Full format:
+// ⚡ 42.3 t/s │ 📥 847 tokens │ 📤 156 tokens │ ⏱️ 3.68s │ TTFT: 0.12s
 
-interface ToolExecution {
-  id: string;
-  name: string;
-  arguments: Record<string, unknown>;
-  result: unknown;
+// Compact format:
+// ⚡ 42.3 t/s │ 156 tokens │ 3.68s
+```
+
+### 9. Reasoning Model Support
+
+**File**: `packages/core/src/parsers/reasoningParser.ts`
+
+```typescript
+interface ReasoningBlock {
+  content: string;
+  tokenCount: number;
   duration: number;
-  timestamp: number;
+  complete: boolean;
+}
+
+class ReasoningParser {
+  parse(text: string): { reasoning: ReasoningBlock | null; response: string };
+  parseStreaming(chunk: string, state: ParserState): ParserState;
+}
+
+interface ParserState {
+  buffer: string;
+  inThinkBlock: boolean;
+  thinkContent: string;
+  responseContent: string;
 }
 ```
 
-**Behavior:**
-- List pending reviews with file names and line counts
-- Display full diffs with syntax highlighting
-- Provide individual and batch approval actions
-- Show tool execution history with expand/collapse
-- Update in real-time as new reviews arrive
-
-### Files Tab Component
-
-**Purpose:** Manage context files and git operations.
-
-**Interface:**
-```typescript
-interface FilesTabProps {
-  contextFiles: ContextFile[];
-  gitStatus: GitStatus;
-  onRemoveFile: (path: string) => void;
-  onGitAction: (action: GitAction) => void;
-}
-
-interface ContextFile {
-  path: string;
-  size: number;
-  addedAt: number;
-}
-
-type GitAction = 'commit' | 'stash' | 'diff';
-```
-
-**Behavior:**
-- List all @-mentioned context files
-- Display git status with branch and changes
-- Provide remove action for context files
-- Offer quick git actions (commit, stash, diff)
-
-### Docs Tab Component
-
-**Purpose:** Browse and render documentation within the CLI.
-
-**Interface:**
-```typescript
-interface DocsTabProps {
-  docs: DocEntry[];
-  currentDoc?: string;
-  onSelectDoc: (path: string) => void;
-}
-
-interface DocEntry {
-  title: string;
-  path: string;
-  description?: string;
-  children?: DocEntry[];
-}
-```
-
-**Behavior:**
-- Display doc navigation in side panel
-- Render markdown content in main area
-- Support internal links between documents
-- Handle keyboard navigation (j/k scroll, Enter select)
-- Track navigation history for back button
-
-### Settings Tab Component
-
-**Purpose:** Configure model settings and view session information.
-
-**Interface:**
-```typescript
-interface SettingsTabProps {
-  models: ModelInfo[];
-  currentModel: string;
-  session: SessionInfo;
-  options: ModelOptions;
-  onModelChange: (model: string) => void;
-  onOptionChange: (key: string, value: unknown) => void;
-  onSaveSession: () => void;
-  onExportSession: () => void;
-  onClearChat: () => void;
-}
-
-interface ModelInfo {
-  name: string;
-  size: string;
-  contextLength: number;
-  capabilities: string[];
-}
-
-interface SessionInfo {
-  tokens: number;
-  duration: number;
-  cost: number;
-  messageCount: number;
-}
-
-interface ModelOptions {
-  temperature: number;
-  maxTokens: number;
-  reviewMode: boolean;
-}
-```
-
-**Behavior:**
-- Display model picker with details
-- Show session statistics
-- Provide option controls with immediate updates
-- Offer quick actions for session management
-
-### Launch Screen Component
-
-**Purpose:** Display welcoming screen on startup.
-
-**Interface:**
-```typescript
-interface LaunchScreenProps {
-  version: string;
-  recentSessions: RecentSession[];
-  onDismiss: () => void;
-}
-
-interface RecentSession {
-  id: string;
-  title: string;
-  timestamp: number;
-}
-```
-
-**Behavior:**
-- Load ASCII art from docs/OLLM_v01.txt
-- Center art in terminal
-- Display version and recent sessions
-- Show quick action hints
-- Dismiss on any keypress to Chat tab
-- Return via /home command
-
-### Docs Service
-
-**Purpose:** Index and serve documentation files.
-
-**Interface:**
-```typescript
-interface DocsService {
-  getIndex(): DocEntry[];
-  getDoc(path: string): Promise<string>;
-  renderMarkdown(content: string): string;
-}
-```
-
-**Behavior:**
-- Scan docs/ directory for markdown files
-- Build hierarchical index
-- Load and cache document content
-- Render markdown to terminal-friendly format
-- Resolve internal links
-
-### Slash Command Handler
-
-**Purpose:** Parse and execute slash commands.
-
-**Interface:**
-```typescript
-interface SlashCommandHandler {
-  parse(input: string): SlashCommand | null;
-  execute(command: SlashCommand): Promise<void>;
-}
-
-interface SlashCommand {
-  name: string;
-  args: string[];
-}
-```
-
-**Commands:**
-- `/model list|use|pull|rm|info`
-- `/provider list|use`
-- `/session list|resume|delete|save|export`
-- `/git status|commit|undo`
-- `/review enable|disable|pending`
-- `/extensions list|enable|disable`
-- `/context`
-- `/clear`
-- `/help`
-- `/exit`
-- `/home`
-
-**Behavior:**
-- Parse input for slash prefix
-- Extract command name and arguments
-- Validate command and arguments
-- Execute corresponding action
-- Display results in chat or update UI state
-
-## Data Models
-
-### Configuration Schema
+**File**: `packages/cli/src/ui/components/chat/ReasoningBox.tsx`
 
 ```typescript
-interface ConfigSchema {
-  ui: {
-    layout: 'hybrid' | 'simple';
-    sidePanel: boolean;
-    showGpuStats: boolean;
-    showCost: boolean;
-  };
-  status: {
-    pollInterval: number;        // milliseconds
-    highTempThreshold: number;   // celsius
-    lowVramThreshold: number;    // megabytes
-  };
-  shortcuts: {
-    togglePanel: string;
-    clearChat: string;
-    saveSession: string;
-  };
-  model?: string;
-  provider?: string;
-  host?: string;
-  output?: 'text' | 'json' | 'stream-json';
-  reviewDiffs?: boolean;
-  debug?: boolean;
-  noColor?: boolean;
+interface ReasoningBoxProps {
+  reasoning: ReasoningBlock;
+  expanded: boolean;
+  onToggle: () => void;
+  maxVisibleLines: number;
+  autoScroll: boolean;
 }
+
+// Expanded state:
+// ┌─ 🧠 Reasoning ──────────────────────────────────── [▼ Collapse] ───────┐
+// │ Let me analyze this step by step...                                  ↑ │
+// │                                                                      │ │
+// │ First, I need to understand the problem:                             │ │
+// │ - The user wants to fix a login bug                                  │ │
+// │ - The token validation is being skipped                              ░ │
+// │                                                                      │ │
+// │ Key insight: The condition checks if token exists,                   │ │
+// │ but doesn't validate the token itself...                             ↓ │
+// └──────────────────────────────────────────────────────────────────────┘
+
+// Collapsed state:
+// ┌─ 🧠 Reasoning (847 tokens, 12.3s) ─────────────────── [▶ Expand] ──────┐
+// └──────────────────────────────────────────────────────────────────────────┘
 ```
 
-### GPU Info Model
+### 10. Theme System
 
-```typescript
-interface GPUInfo {
-  available: boolean;
-  vendor: 'nvidia' | 'amd' | 'apple' | 'cpu';
-  vramTotal: number;
-  vramUsed: number;
-  vramFree: number;
-  temperature: number;
-  temperatureMax: number;
-  gpuUtilization: number;
-}
-```
-
-### UI State Model
-
-```typescript
-interface UIState {
-  activeTab: string;
-  sidePanelVisible: boolean;
-  contextFiles: ContextFile[];
-  pendingReviews: DiffReview[];
-  activeTools: ToolExecution[];
-  launchScreenVisible: boolean;
-}
-```
-
-### Theme Model
+**File**: `packages/cli/src/ui/uiSettings.ts`
 
 ```typescript
 interface Theme {
+  name: string;
   bg: {
     primary: string;
     secondary: string;
@@ -713,519 +742,842 @@ interface Theme {
     removed: string;
   };
 }
+
+interface Typography {
+  headers: { bold: boolean; underline: boolean };
+  code: { dim: boolean; italic: boolean };
+  emphasis: { bold: boolean };
+  bullets: string;
+  checkmark: string;
+  cross: string;
+  arrow: string;
+  spinner: 'dots' | 'line' | 'arc' | 'bounce';
+  borders: 'round' | 'single' | 'double' | 'bold' | 'ascii';
+}
+
+interface Keybinds {
+  // Tab navigation
+  tabChat: string;
+  tabTools: string;
+  tabFiles: string;
+  tabSearch: string;
+  tabDocs: string;
+  tabSettings: string;
+  
+  // Layout
+  togglePanel: string;
+  commandPalette: string;
+  toggleDebug: string;
+  
+  // Chat
+  clearChat: string;
+  saveSession: string;
+  cancel: string;
+  send: string;
+  newline: string;
+  editPrevious: string;
+  
+  // Review
+  approve: string;
+  reject: string;
+  
+  // Navigation
+  scrollDown: string;
+  scrollUp: string;
+  select: string;
+  back: string;
+  cycleFocus: string;
+}
+
+interface UISettings {
+  theme: Theme;
+  typography: Typography;
+  keybinds: Keybinds;
+}
+
+const defaultUISettings: UISettings = { /* ... */ };
+
+const builtInThemes: Record<string, Theme> = {
+  'default-dark': { /* ... */ },
+  'dracula': { /* ... */ },
+  'nord': { /* ... */ },
+  'monokai': { /* ... */ },
+  'solarized-dark': { /* ... */ }
+};
+```
+
+**File**: `packages/cli/src/ui/services/themeManager.ts`
+
+```typescript
+class ThemeManager {
+  private currentTheme: Theme;
+  private customTheme: Partial<Theme> | null = null;
+  
+  loadTheme(name: string): Theme;
+  loadCustomTheme(path: string): Theme;
+  applyTheme(theme: Theme): void;
+  mergeThemes(base: Theme, custom: Partial<Theme>): Theme;
+  listThemes(): string[];
+}
+```
+
+### 11. Session Management
+
+**File**: `packages/cli/src/commands/sessionCommands.ts`
+
+```typescript
+interface SessionCommand {
+  name: string;
+  execute: (args: string[]) => Promise<void>;
+}
+
+const sessionCommands: SessionCommand[] = [
+  {
+    name: '/new',
+    execute: async () => {
+      // Prompt for confirmation
+      // Save snapshot
+      // Clear context
+      // Reset metrics
+    }
+  },
+  {
+    name: '/clear',
+    execute: async () => {
+      // Clear context
+      // Preserve system prompt
+    }
+  },
+  {
+    name: '/compact',
+    execute: async () => {
+      // Trigger compression
+      // Show before/after stats
+    }
+  },
+  {
+    name: '/session save',
+    execute: async () => {
+      // Persist session
+    }
+  },
+  {
+    name: '/session list',
+    execute: async () => {
+      // Display saved sessions
+    }
+  },
+  {
+    name: '/session resume',
+    execute: async (args) => {
+      // Restore session by ID
+    }
+  }
+];
+```
+
+### 12. Docs Service
+
+**File**: `packages/cli/src/services/docsService.ts`
+
+```typescript
+interface DocEntry {
+  title: string;
+  path: string;
+  description?: string;
+  children?: DocEntry[];
+}
+
+interface DocsService {
+  getIndex(): DocEntry[];
+  loadDoc(path: string): Promise<string>;
+  renderMarkdown(content: string): string;
+  resolveLink(from: string, to: string): string;
+}
+
+const docsIndex: DocEntry[] = [
+  { title: 'Getting Started', path: 'docs/README.md' },
+  { title: 'Architecture', path: 'docs/architecture.md' },
+  { title: 'Configuration', path: 'docs/configuration.md' },
+  { title: 'Commands', path: 'docs/commands.md' },
+  { title: 'Provider Systems', path: 'docs/provider-systems.md' },
+  { title: 'UI Design', path: 'docs/ui-design-spec.md' },
+  { title: 'Feature Analysis', path: 'docs/feature-analysis.md' }
+];
+```
+
+## Data Models
+
+### Configuration Data Model
+
+```typescript
+// System defaults (lowest priority)
+const systemDefaults: Config = {
+  provider: {
+    default: 'ollama',
+    ollama: {
+      host: 'http://localhost:11434',
+      timeout: 30000
+    }
+  },
+  model: {
+    default: 'llama3.2:3b',
+    temperature: 0.7,
+    maxTokens: 4096
+  },
+  ui: {
+    layout: 'hybrid',
+    sidePanel: true,
+    showGpuStats: true,
+    showCost: true,
+    metrics: {
+      enabled: true,
+      compactMode: false,
+      showPromptTokens: true,
+      showTTFT: true,
+      showInStatusBar: true
+    },
+    reasoning: {
+      enabled: true,
+      maxVisibleLines: 8,
+      autoCollapseOnComplete: true
+    }
+  },
+  status: {
+    pollInterval: 5000,
+    highTempThreshold: 80,
+    lowVramThreshold: 512
+  },
+  review: {
+    enabled: true,
+    inlineThreshold: 5
+  },
+  session: {
+    autoSave: true,
+    saveInterval: 60000
+  }
+};
+
+// User config (~/.ollm/config.yaml)
+// Workspace config (.ollm/config.yaml)
+// Environment variables (OLLM_*)
+// CLI flags (highest priority)
+```
+
+### UI State Data Model
+
+```typescript
+interface AppState {
+  // Launch state
+  launched: boolean;
+  
+  // UI state
+  ui: UIState;
+  
+  // Chat state
+  chat: ChatState;
+  
+  // Review state
+  reviews: Review[];
+  
+  // GPU state
+  gpu: GPUInfo | null;
+  
+  // Session state
+  session: {
+    id: string;
+    startTime: Date;
+    stats: SessionStats;
+  };
+  
+  // Config state
+  config: Config;
+}
+```
+
+### Message Data Model
+
+```typescript
+interface Message {
+  id: string;
+  role: 'user' | 'assistant' | 'system' | 'tool';
+  content: string;
+  timestamp: Date;
+  
+  // Optional fields
+  toolCalls?: ToolCall[];
+  reasoning?: ReasoningBlock;
+  metrics?: InferenceMetrics;
+  
+  // UI state
+  expanded?: boolean;
+  editing?: boolean;
+}
 ```
 
 ## Correctness Properties
 
-
 *A property is a characteristic or behavior that should hold true across all valid executions of a system—essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
+
 
 ### Property 1: Configuration Precedence
 
-*For any* set of configuration values defined across multiple layers (system, user, workspace, env, CLI), the merged configuration should use the value from the highest precedence layer for each setting.
+*For any* configuration key that appears in multiple layers (system, user, workspace, env, CLI), the final merged configuration should use the value from the highest precedence layer (CLI > env > workspace > user > system).
 
-**Validates: Requirements 1.1**
+**Validates: Requirements 1.1, 1.3**
 
-### Property 2: Configuration Error Messages Include Path
+### Property 2: Configuration Validation Errors
 
-*For any* invalid configuration file (malformed YAML/JSON or schema violation), the error message should contain the file path and specific validation error.
+*For any* invalid configuration file, the error message should contain the file path and a description of the validation issue.
 
-**Validates: Requirements 1.2, 1.3**
+**Validates: Requirements 1.2, 22.1**
 
-### Property 3: Configuration Validation Before Application
+### Property 3: Configuration Defaults
 
-*For any* configuration that violates the JSON schema, the Config_Loader should reject it before applying any settings.
+*For any* required configuration key that is missing from all layers, the final configuration should contain the documented default value.
 
 **Validates: Requirements 1.5**
 
-### Property 4: GPU Polling Interval
+### Property 4: GPU Temperature Warning
 
-*For any* configured polling interval, when GPU monitoring is started, queries should occur at approximately that interval until stopped.
+*For any* GPU temperature reading above 80°C, the status bar should display a warning indicator.
 
-**Validates: Requirements 2.5**
+**Validates: Requirements 2.3**
 
-### Property 5: GPU Threshold Callbacks
+### Property 5: VRAM Query Structure
 
-*For any* GPU temperature above the configured threshold or VRAM below the configured threshold, the corresponding callback should be invoked.
+*For any* successful VRAM query, the returned GPUInfo should contain total, used, and free VRAM values in bytes.
 
-**Validates: Requirements 2.6, 2.7**
+**Validates: Requirements 2.4**
 
-### Property 6: GPU Polling Stops
+### Property 6: Non-Interactive Mode Selection
 
-*For any* GPU monitor that is stopped, no further polling queries should occur.
+*For any* CLI invocation with the `--prompt` flag, the CLI should execute in non-interactive mode and exit after completion.
 
-**Validates: Requirements 2.8**
+**Validates: Requirements 3.1, 3.2**
 
-### Property 7: Non-Interactive Single Turn
+### Property 7: Output Format Compliance
 
-*For any* prompt provided via --prompt flag, the non-interactive runner should execute exactly one turn and exit.
+*For any* non-interactive execution with `--output json`, the output should be valid JSON containing a response field and metadata object.
 
-**Validates: Requirements 3.1**
+**Validates: Requirements 3.4**
 
-### Property 8: Output Format Correctness
+### Property 8: NDJSON Stream Format
 
-*For any* response in non-interactive mode, the output format should match the specified format (text, json, or stream-json) and be valid according to that format's specification.
-
-**Validates: Requirements 3.2, 3.3, 3.4**
-
-### Property 9: Error Exit Codes
-
-*For any* error during non-interactive execution, the runner should write to stderr and exit with a non-zero exit code.
+*For any* non-interactive execution with `--output stream-json`, each line of output should be valid JSON.
 
 **Validates: Requirements 3.5**
 
-### Property 10: Stdin Piping
+### Property 9: Error Exit Codes
 
-*For any* content piped to stdin, the non-interactive runner should use it as the prompt.
+*For any* error in non-interactive mode, the CLI should write to stderr and exit with a non-zero exit code.
 
 **Validates: Requirements 3.6**
 
-### Property 11: Tab Keyboard Shortcuts
+### Property 10: Tab Keyboard Shortcuts
 
-*For any* tab shortcut (Ctrl+1 through Ctrl+6), pressing it should switch to the corresponding tab.
+*For any* keyboard shortcut Ctrl+1 through Ctrl+6, the tab bar should switch to the corresponding tab (Chat, Tools, Files, Search, Docs, Settings).
 
 **Validates: Requirements 4.2**
 
-### Property 12: Tab Badges
+### Property 11: Notification Badge Display
 
-*For any* tab with pending items (count > 0), a notification badge should display the count.
+*For any* tab with a notification count greater than zero, the tab bar should display a badge with that count.
 
 **Validates: Requirements 4.3**
 
-### Property 13: Tab State Preservation
+### Property 12: Tab State Preservation
 
-*For any* tab switch, the previous tab's state should be preserved and restored when switching back.
+*For any* tab switch, the previous tab's state (scroll position, input, selections) should be preserved and restored when returning to that tab.
 
 **Validates: Requirements 4.4**
 
+### Property 13: Active Tab Highlighting
+
+*For any* active tab, the tab bar should apply visual highlighting to distinguish it from inactive tabs.
+
+**Validates: Requirements 4.5**
+
 ### Property 14: Side Panel Toggle
 
-*For any* press of Ctrl+P, the side panel should toggle between visible and hidden states.
+*For any* Ctrl+P keypress, the side panel should toggle between visible and hidden states.
 
 **Validates: Requirements 5.1**
 
-### Property 15: Side Panel Width Adjustment
+### Property 15: Side Panel Visibility Persistence
 
-*For any* side panel state change, the main content area should expand to full width when hidden and contract when visible.
+*For any* side panel visibility state (visible or hidden), that state should be persisted and restored across sessions.
 
-**Validates: Requirements 5.2**
+**Validates: Requirements 5.5**
 
-### Property 16: Side Panel Reactive Updates
+### Property 16: Connection Status Indicators
 
-*For any* event that affects context files, git status, pending reviews, or active tools, the corresponding side panel section should update to reflect the change.
-
-**Validates: Requirements 5.4, 5.5, 5.6, 5.7**
-
-### Property 17: Side Panel Persistence
-
-*For any* application session, the side panel visibility preference should be persisted and restored on next launch.
-
-**Validates: Requirements 5.8**
-
-### Property 18: Status Bar Connection Indicator
-
-*For any* connection state (connected, connecting, disconnected), the status bar should display the corresponding colored indicator (green, yellow, red).
+*For any* provider connection state (connected, connecting, disconnected), the status bar should display the corresponding color indicator (🟢, 🟡, 🔴).
 
 **Validates: Requirements 6.1**
 
-### Property 19: Status Bar Component Display
+### Property 17: Token Usage Format
 
-*For any* status bar component (model, tokens, git, GPU, reviews, cost), changes to that component should update the display in real-time.
+*For any* token usage display, the format should be "current/max" where both values are integers.
 
-**Validates: Requirements 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8, 6.9**
+**Validates: Requirements 6.3**
 
-### Property 20: Message Role Colors
+### Property 18: Review Count Display
 
-*For any* message with a role (user, assistant, system, tool), the chat history should display it with the role-specific color.
+*For any* pending review count greater than zero, the status bar should display that count.
+
+**Validates: Requirements 6.6**
+
+### Property 19: Role-Based Message Colors
+
+*For any* message with a role (user, assistant, system, tool), the chat history should apply the theme's corresponding role color.
 
 **Validates: Requirements 7.1**
 
-### Property 21: Streaming Incremental Rendering
+### Property 20: Tool Call Display Completeness
 
-*For any* streaming text chunk, the chat interface should render it incrementally as it arrives.
+*For any* tool call, the chat history should display the tool name, arguments, and result (when available).
 
 **Validates: Requirements 7.3**
 
-### Property 22: Tool Call Display Completeness
+### Property 21: Long Argument Wrapping
 
-*For any* tool call, the chat interface should display the tool name, arguments, execution time, and result.
+*For any* tool call with arguments exceeding 80 characters, the chat history should wrap the arguments and provide an expand option.
 
 **Validates: Requirements 7.4**
 
-### Property 23: Tool Argument Wrapping
+### Property 22: Diff Size Threshold
 
-*For any* tool arguments exceeding 80 characters, the chat interface should wrap them and provide an expand option.
+*For any* diff with 5 or fewer lines, the chat history should display it inline; for diffs with more than 5 lines, it should show a summary with a link to the Tools tab.
 
-**Validates: Requirements 7.5**
+**Validates: Requirements 7.6, 7.7**
 
-### Property 24: Inline Diff Threshold
+### Property 23: Review List Completeness
 
-*For any* file change of 5 lines or fewer, the chat interface should display an inline diff preview.
-
-**Validates: Requirements 7.6**
-
-### Property 25: Pending Reviews Display
-
-*For any* set of pending diff reviews, the Tools tab should display all of them in a list.
-
-**Validates: Requirements 8.1**
-
-### Property 26: Diff Color Coding
-
-*For any* diff displayed in the Tools tab, added lines should be green and removed lines should be red.
-
-**Validates: Requirements 8.2**
-
-### Property 27: Review Actions
-
-*For any* review action (apply or reject), the Tools tab should process the change and remove the review from the pending list.
-
-**Validates: Requirements 8.3, 8.4**
-
-### Property 28: Batch Review Actions
-
-*For any* set of multiple pending reviews, the Tools tab should provide "Apply All" and "Reject All" actions that process all reviews.
-
-**Validates: Requirements 8.5**
-
-### Property 29: Tool History Display
-
-*For any* tool execution history, the Tools tab should display it with expand/collapse functionality.
-
-**Validates: Requirements 8.6**
-
-### Property 30: Context Files Display
-
-*For any* file that has been @-mentioned, the Files tab should display it in the context files list.
+*For any* set of pending reviews, the Tools tab should display all reviews with their file names and line counts.
 
 **Validates: Requirements 9.1**
 
-### Property 31: Git Status Display
+### Property 24: Review Approval Removal
 
-*For any* git repository state, the Files tab should display the branch name, staged files count, and modified files count.
+*For any* review that is approved or rejected, the Tools tab should remove it from the pending list.
 
-**Validates: Requirements 9.2**
+**Validates: Requirements 9.3, 9.4**
 
-### Property 32: Documentation Navigation
+### Property 25: Metrics Display Completeness
 
-*For any* available documentation file, the Docs tab should list it in the navigation panel.
+*For any* completed response with metrics, the metrics display should show tokens per second, input tokens, output tokens, and total time.
 
-**Validates: Requirements 10.1**
+**Validates: Requirements 15.1, 15.2, 15.3, 15.4**
 
-### Property 33: Documentation Rendering
+### Property 26: TTFT Conditional Display
 
-*For any* selected document, the Docs tab should render its markdown content in the main area.
+*For any* response with time-to-first-token data available, the metrics display should include the TTFT value.
 
-**Validates: Requirements 10.2**
+**Validates: Requirements 15.5**
 
-### Property 34: Documentation Links
+### Property 27: Compact Metrics Format
 
-*For any* internal link in a document, clicking it should navigate to the linked document.
+*For any* metrics display in compact mode, the output should be abbreviated to show only tokens per second, output tokens, and total time.
 
-**Validates: Requirements 10.3**
+**Validates: Requirements 15.6**
 
-### Property 35: Documentation History
+### Property 28: Reasoning Block Extraction
 
-*For any* document navigation, pressing Backspace should return to the previous document in history.
+*For any* model output containing `<think>...</think>` blocks, the reasoning parser should extract the thinking content and separate it from the response content.
 
-**Validates: Requirements 10.6**
+**Validates: Requirements 16.1**
 
-### Property 36: Model Picker Display
+### Property 29: Reasoning Box Toggle
 
-*For any* set of available models, the Settings tab should display all of them in the model picker.
+*For any* reasoning box expand/collapse action (click or Ctrl+R), the visibility state should toggle.
 
-**Validates: Requirements 11.1**
+**Validates: Requirements 16.6**
 
-### Property 37: Model Selection
+### Property 30: Session Resume
 
-*For any* model selected in the Settings tab, subsequent requests should use that model.
+*For any* valid session ID provided to `/session resume`, the CLI should restore that session's messages, context, and state.
 
-**Validates: Requirements 11.2**
+**Validates: Requirements 17.7**
 
-### Property 38: Session Info Display
+### Property 31: Theme Merging
 
-*For any* active session, the Settings tab should display token count, duration, and estimated cost.
+*For any* custom theme in `~/.ollm/ui.yaml`, the theme system should deep-merge it over the default theme, preserving unspecified default values.
 
-**Validates: Requirements 11.3**
+**Validates: Requirements 18.2**
 
-### Property 39: Settings Immediate Application
+### Property 32: Theme Switching
 
-*For any* option change in the Settings tab, the change should apply immediately without requiring confirmation.
+*For any* valid theme name provided to `/theme use`, the CLI should apply that theme immediately to all UI components.
 
-**Validates: Requirements 11.5**
+**Validates: Requirements 18.4**
 
-### Property 40: Recent Sessions Display
+### Property 33: Command Suggestions
 
-*For any* set of recent sessions (up to 3), the Launch Screen should display them with titles and timestamps.
+*For any* unrecognized slash command, the CLI should suggest similar valid commands based on string similarity.
 
-**Validates: Requirements 12.3**
+**Validates: Requirements 22.2**
 
-### Property 41: Launch Screen Dismissal
+### Property 34: Missing Argument Help
 
-*For any* keypress on the Launch Screen, it should dismiss and switch to the Chat tab.
+*For any* slash command executed with missing required arguments, the CLI should display usage information for that command.
 
-**Validates: Requirements 12.5**
+**Validates: Requirements 22.3**
 
-### Property 42: Theme Color Application
+### Property 35: Connection Error Display
 
-*For any* UI element with a defined theme color, the element should render with that color.
+*For any* provider connection failure, the CLI should display the connection status and available retry options.
 
-**Validates: Requirements 16.1, 16.2, 16.3, 16.4, 16.5**
-
-### Property 43: Error Message Completeness
-
-*For any* error condition (config load, model load, tool execution, GPU monitoring, invalid command), the error message should contain sufficient information to understand and resolve the issue.
-
-**Validates: Requirements 17.1, 17.2, 17.3, 17.4, 17.5**
+**Validates: Requirements 22.4**
 
 ## Error Handling
 
 ### Configuration Errors
 
-**Invalid YAML/JSON:**
-- Parse error with line and column number
-- File path in error message
-- Example of valid syntax
+**Invalid YAML/JSON Syntax**:
+- Parse error with line number and column
+- Show the problematic line with a caret indicator
+- Suggest common fixes (missing quotes, trailing commas)
 
-**Schema Violations:**
-- Setting name and path
-- Expected type vs actual type
-- Valid value range or options
+**Schema Validation Errors**:
+- List all validation failures with paths
+- Show expected vs actual types
+- Provide examples of valid values
 
-**File Not Found:**
-- Attempted file path
-- Suggestion to create default config
+**Missing Required Fields**:
+- List missing fields
+- Show default values that will be used
+- Warn if defaults may not be appropriate
 
 ### GPU Monitoring Errors
 
-**Command Execution Failure:**
-- Fall back to CPU mode
-- Log warning with command and error
-- Continue operation without GPU stats
+**GPU Detection Failure**:
+- Log warning to debug output
+- Fall back to CPU mode silently
+- Display "CPU mode" in status bar
 
-**Parse Errors:**
-- Log warning with raw output
-- Fall back to CPU mode
-- Continue operation
+**Query Command Failure**:
+- Retry up to 3 times with exponential backoff
+- Fall back to system RAM if all retries fail
+- Log error details to debug output
 
-**Threshold Violations:**
-- Invoke callbacks without blocking
-- Log warnings
-- Continue operation
+**High Temperature Warning**:
+- Display warning indicator in status bar
+- Emit event for potential throttling
+- Continue monitoring without interruption
 
-### Non-Interactive Errors
+### Non-Interactive Mode Errors
 
-**Model Not Found:**
-- List available models
+**Provider Connection Failure**:
+- Write error to stderr with connection details
 - Exit with code 1
+- Include retry suggestions in error message
 
-**Provider Connection Failed:**
-- Display connection error
-- Suggest checking provider status
+**Model Not Found**:
+- Write error to stderr with available models
 - Exit with code 2
+- Suggest using `--list-models` flag
 
-**Tool Execution Failed:**
-- Display tool name and error
+**Timeout**:
+- Write error to stderr with timeout duration
 - Exit with code 3
+- Suggest increasing timeout or checking provider
 
-**Invalid Output Format:**
-- Display valid formats
-- Exit with code 1
+**Invalid Output Format**:
+- Write error to stderr with valid formats
+- Exit with code 4
+- Show example of correct usage
 
 ### UI Errors
 
-**Component Render Errors:**
-- Display error boundary
-- Log error details
-- Allow recovery or exit
+**Component Render Failure**:
+- Log error to debug output
+- Display error boundary with message
+- Provide option to reload or continue
 
-**Keyboard Shortcut Conflicts:**
-- Log warning
-- Use first registered handler
-- Continue operation
+**Theme Loading Failure**:
+- Log warning to debug output
+- Fall back to default theme
+- Continue with default theme
 
-**State Persistence Errors:**
-- Log warning
-- Use default state
-- Continue operation
+**Keyboard Shortcut Conflict**:
+- Log warning to debug output
+- Use default keybind
+- Show warning in settings tab
 
 ## Testing Strategy
 
-### Unit Testing
+### Unit Tests
 
-**Configuration Loader:**
-- Test each layer loads correctly
-- Test precedence with conflicting values
-- Test validation with invalid configs
-- Test error messages contain required info
+Unit tests will verify specific examples and edge cases:
 
-**GPU Monitor:**
-- Mock platform commands
-- Test parsing for each platform
-- Test polling interval accuracy
-- Test threshold callbacks
-- Test stop behavior
+**Configuration Loading**:
+- Test each configuration layer independently
+- Test precedence with specific conflicting values
+- Test validation with known invalid configs
+- Test default value application
 
-**Non-Interactive Runner:**
-- Test each output format
-- Test error handling and exit codes
-- Test stdin piping
-- Test with various prompts
+**GPU Monitoring**:
+- Test vendor detection with mocked commands
+- Test query parsing with sample outputs
+- Test fallback behavior with command failures
+- Test warning thresholds with specific temperatures
 
-**UI Components:**
-- Test rendering with various props
-- Test keyboard shortcuts
-- Test state updates
-- Test error boundaries
+**Non-Interactive Mode**:
+- Test each output format with sample responses
+- Test error handling with specific error types
+- Test stdin reading with piped input
+- Test exit codes for different scenarios
 
-### Property-Based Testing
+**UI Components**:
+- Test tab switching with specific tab IDs
+- Test side panel toggle with state changes
+- Test status bar updates with sample data
+- Test message rendering with different roles
 
-All properties listed in the Correctness Properties section should be implemented as property-based tests with minimum 100 iterations each. Each test should:
+**Metrics Collection**:
+- Test calculation with known provider metadata
+- Test session stats aggregation
+- Test compact mode formatting
+- Test TTFT extraction
 
-1. Generate random valid inputs for the property
-2. Execute the operation
-3. Verify the property holds
-4. Tag the test with: **Feature: stage-06-cli-ui, Property N: [property text]**
+**Reasoning Parser**:
+- Test parsing with complete think blocks
+- Test streaming with partial blocks
+- Test extraction with nested blocks
+- Test error handling with malformed blocks
 
-**Example Property Test:**
-```typescript
-// Feature: stage-06-cli-ui, Property 1: Configuration Precedence
-test('config precedence holds for any conflicting values', () => {
-  fc.assert(
-    fc.property(
-      fc.record({
-        system: fc.record({ setting: fc.string() }),
-        user: fc.record({ setting: fc.string() }),
-        workspace: fc.record({ setting: fc.string() }),
-        env: fc.record({ setting: fc.string() }),
-        cli: fc.record({ setting: fc.string() }),
-      }),
-      (configs) => {
-        const merged = configLoader.mergeConfigs([
-          { source: 'system', priority: 1, values: configs.system },
-          { source: 'user', priority: 2, values: configs.user },
-          { source: 'workspace', priority: 3, values: configs.workspace },
-          { source: 'env', priority: 4, values: configs.env },
-          { source: 'cli', priority: 5, values: configs.cli },
-        ]);
-        
-        // CLI has highest precedence
-        expect(merged.setting).toBe(configs.cli.setting);
-      }
-    ),
-    { numRuns: 100 }
-  );
-});
-```
+**Theme System**:
+- Test built-in theme loading
+- Test custom theme merging
+- Test theme switching
+- Test validation with invalid themes
 
-### Integration Testing
+### Property-Based Tests
 
-**End-to-End Flows:**
-- Launch → Chat → Tool Call → Review → Apply
-- Launch → Settings → Model Switch → Chat
-- Launch → Docs → Navigate → Back
-- Non-interactive with various flags and formats
+Property-based tests will verify universal properties across all inputs:
 
-**Cross-Component Integration:**
-- Side panel updates when chat events occur
-- Status bar updates when model changes
-- Tools tab updates when reviews are pending
-- Files tab updates when @-mentions occur
+**Property 1: Configuration Precedence** (100 iterations)
+- Generate random configurations at each layer
+- Verify highest precedence value is used
+- Tag: **Feature: stage-06-cli-ui, Property 1: Configuration Precedence**
 
-### Visual Testing
+**Property 2: Configuration Validation Errors** (100 iterations)
+- Generate random invalid configurations
+- Verify error messages contain file path and issue
+- Tag: **Feature: stage-06-cli-ui, Property 2: Configuration Validation Errors**
 
-**Snapshot Tests:**
-- Launch screen layout
-- Each tab layout
-- Status bar with various states
-- Tool call display formats
-- Diff viewer rendering
+**Property 3: Configuration Defaults** (100 iterations)
+- Generate configurations with random missing keys
+- Verify defaults are applied correctly
+- Tag: **Feature: stage-06-cli-ui, Property 3: Configuration Defaults**
 
-**Manual Testing:**
-- Theme colors in actual terminal
-- Spinner animation smoothness
-- Keyboard shortcut responsiveness
-- Layout at various terminal sizes
+**Property 4: GPU Temperature Warning** (100 iterations)
+- Generate random temperature readings
+- Verify warning appears when > 80°C
+- Tag: **Feature: stage-06-cli-ui, Property 4: GPU Temperature Warning**
 
-### Performance Testing
+**Property 5: VRAM Query Structure** (100 iterations)
+- Generate random VRAM query responses
+- Verify structure contains required fields
+- Tag: **Feature: stage-06-cli-ui, Property 5: VRAM Query Structure**
 
-**Metrics:**
-- Startup time < 500ms
-- Tab switch time < 100ms
-- Message render time < 50ms
-- GPU poll overhead < 10ms
+**Property 6: Non-Interactive Mode Selection** (100 iterations)
+- Generate random prompts with --prompt flag
+- Verify non-interactive mode is used
+- Tag: **Feature: stage-06-cli-ui, Property 6: Non-Interactive Mode Selection**
 
-**Load Testing:**
-- 1000+ messages in history
-- 100+ pending reviews
-- 50+ context files
-- Long-running tool executions
+**Property 7: Output Format Compliance** (100 iterations)
+- Generate random responses with --output json
+- Verify output is valid JSON with required fields
+- Tag: **Feature: stage-06-cli-ui, Property 7: Output Format Compliance**
 
-## Implementation Notes
+**Property 8: NDJSON Stream Format** (100 iterations)
+- Generate random streaming responses
+- Verify each line is valid JSON
+- Tag: **Feature: stage-06-cli-ui, Property 8: NDJSON Stream Format**
 
-### React + Ink Considerations
+**Property 9: Error Exit Codes** (100 iterations)
+- Generate random errors in non-interactive mode
+- Verify stderr output and non-zero exit code
+- Tag: **Feature: stage-06-cli-ui, Property 9: Error Exit Codes**
 
-- Use `useInput` hook for keyboard shortcuts
-- Use `useStdout` for terminal dimensions
-- Use `useFocus` for focus management
-- Avoid re-renders during streaming (use refs)
-- Test with `ink-testing-library`
+**Property 10: Tab Keyboard Shortcuts** (100 iterations)
+- Generate random tab switch sequences
+- Verify correct tab is activated
+- Tag: **Feature: stage-06-cli-ui, Property 10: Tab Keyboard Shortcuts**
 
-### Configuration Loading
+**Property 11: Notification Badge Display** (100 iterations)
+- Generate random notification counts
+- Verify badges display correct counts
+- Tag: **Feature: stage-06-cli-ui, Property 11: Notification Badge Display**
 
-- Use `js-yaml` for YAML parsing
-- Use `ajv` for JSON schema validation
-- Cache merged config for performance
-- Watch config files for changes (optional)
+**Property 12: Tab State Preservation** (100 iterations)
+- Generate random tab states and switch sequences
+- Verify state is preserved and restored
+- Tag: **Feature: stage-06-cli-ui, Property 12: Tab State Preservation**
 
-### GPU Monitoring
+**Property 13: Active Tab Highlighting** (100 iterations)
+- Generate random tab activations
+- Verify highlighting is applied
+- Tag: **Feature: stage-06-cli-ui, Property 13: Active Tab Highlighting**
 
-- Use `child_process.exec` for platform commands
-- Parse output with regex patterns
-- Handle missing commands gracefully
-- Throttle polling to avoid overhead
+**Property 14: Side Panel Toggle** (100 iterations)
+- Generate random toggle sequences
+- Verify state toggles correctly
+- Tag: **Feature: stage-06-cli-ui, Property 14: Side Panel Toggle**
 
-### Non-Interactive Mode
+**Property 15: Side Panel Visibility Persistence** (100 iterations)
+- Generate random visibility states
+- Verify persistence across sessions
+- Tag: **Feature: stage-06-cli-ui, Property 15: Side Panel Visibility Persistence**
 
-- Use `process.stdin` for piped input
-- Use `process.stdout` and `process.stderr` for output
-- Set appropriate exit codes
-- Handle SIGINT/SIGTERM gracefully
+**Property 16: Connection Status Indicators** (100 iterations)
+- Generate random connection states
+- Verify correct indicator is displayed
+- Tag: **Feature: stage-06-cli-ui, Property 16: Connection Status Indicators**
 
-### State Management
+**Property 17: Token Usage Format** (100 iterations)
+- Generate random token counts
+- Verify format is "current/max"
+- Tag: **Feature: stage-06-cli-ui, Property 17: Token Usage Format**
 
-- Use React Context for global state
-- Use local state for component-specific state
-- Persist preferences to config file
-- Use refs for non-reactive state (e.g., timers)
+**Property 18: Review Count Display** (100 iterations)
+- Generate random review counts
+- Verify display when count > 0
+- Tag: **Feature: stage-06-cli-ui, Property 18: Review Count Display**
 
-### Keyboard Shortcuts
+**Property 19: Role-Based Message Colors** (100 iterations)
+- Generate random messages with different roles
+- Verify correct color is applied
+- Tag: **Feature: stage-06-cli-ui, Property 19: Role-Based Message Colors**
 
-- Register shortcuts at app level
-- Prevent conflicts with terminal shortcuts
-- Document all shortcuts in help
-- Make shortcuts configurable
+**Property 20: Tool Call Display Completeness** (100 iterations)
+- Generate random tool calls
+- Verify all components are displayed
+- Tag: **Feature: stage-06-cli-ui, Property 20: Tool Call Display Completeness**
 
-### Documentation Service
+**Property 21: Long Argument Wrapping** (100 iterations)
+- Generate random tool arguments of varying lengths
+- Verify wrapping when > 80 characters
+- Tag: **Feature: stage-06-cli-ui, Property 21: Long Argument Wrapping**
 
-- Index docs on startup
-- Cache rendered markdown
-- Use `marked` for markdown parsing
-- Support relative links between docs
+**Property 22: Diff Size Threshold** (100 iterations)
+- Generate random diffs of varying sizes
+- Verify inline display for ≤5 lines, summary for >5 lines
+- Tag: **Feature: stage-06-cli-ui, Property 22: Diff Size Threshold**
 
-### ASCII Art
+**Property 23: Review List Completeness** (100 iterations)
+- Generate random sets of pending reviews
+- Verify all reviews are displayed
+- Tag: **Feature: stage-06-cli-ui, Property 23: Review List Completeness**
 
-- Load from file at startup
-- Center based on terminal width
-- Handle narrow terminals gracefully
-- Cache loaded art
+**Property 24: Review Approval Removal** (100 iterations)
+- Generate random reviews and approval/rejection actions
+- Verify removal from pending list
+- Tag: **Feature: stage-06-cli-ui, Property 24: Review Approval Removal**
 
-## Future Enhancements
+**Property 25: Metrics Display Completeness** (100 iterations)
+- Generate random response metrics
+- Verify all required metrics are displayed
+- Tag: **Feature: stage-06-cli-ui, Property 25: Metrics Display Completeness**
 
-- **Themes:** Support light theme and custom themes
-- **Plugins:** Allow UI extensions via plugins
-- **Layouts:** Support alternative layouts (simple, compact)
-- **Animations:** Add smooth transitions and animations
-- **Accessibility:** Improve screen reader support
-- **Localization:** Support multiple languages
-- **Cloud Sync:** Sync sessions and preferences across devices
+**Property 26: TTFT Conditional Display** (100 iterations)
+- Generate random responses with/without TTFT
+- Verify TTFT is shown when available
+- Tag: **Feature: stage-06-cli-ui, Property 26: TTFT Conditional Display**
+
+**Property 27: Compact Metrics Format** (100 iterations)
+- Generate random metrics in compact mode
+- Verify abbreviated format
+- Tag: **Feature: stage-06-cli-ui, Property 27: Compact Metrics Format**
+
+**Property 28: Reasoning Block Extraction** (100 iterations)
+- Generate random outputs with think blocks
+- Verify extraction and separation
+- Tag: **Feature: stage-06-cli-ui, Property 28: Reasoning Block Extraction**
+
+**Property 29: Reasoning Box Toggle** (100 iterations)
+- Generate random toggle actions
+- Verify state toggles correctly
+- Tag: **Feature: stage-06-cli-ui, Property 29: Reasoning Box Toggle**
+
+**Property 30: Session Resume** (100 iterations)
+- Generate random sessions and resume actions
+- Verify session is restored correctly
+- Tag: **Feature: stage-06-cli-ui, Property 30: Session Resume**
+
+**Property 31: Theme Merging** (100 iterations)
+- Generate random custom themes
+- Verify deep merge with defaults
+- Tag: **Feature: stage-06-cli-ui, Property 31: Theme Merging**
+
+**Property 32: Theme Switching** (100 iterations)
+- Generate random theme switches
+- Verify theme is applied immediately
+- Tag: **Feature: stage-06-cli-ui, Property 32: Theme Switching**
+
+**Property 33: Command Suggestions** (100 iterations)
+- Generate random unrecognized commands
+- Verify suggestions are provided
+- Tag: **Feature: stage-06-cli-ui, Property 33: Command Suggestions**
+
+**Property 34: Missing Argument Help** (100 iterations)
+- Generate random commands with missing arguments
+- Verify usage information is displayed
+- Tag: **Feature: stage-06-cli-ui, Property 34: Missing Argument Help**
+
+**Property 35: Connection Error Display** (100 iterations)
+- Generate random connection failures
+- Verify error display includes status and retry options
+- Tag: **Feature: stage-06-cli-ui, Property 35: Connection Error Display**
+
+### Integration Tests
+
+Integration tests will verify component interactions:
+
+**Configuration to UI Flow**:
+- Load configuration from all layers
+- Verify UI reflects merged configuration
+- Test theme application from config
+
+**GPU Monitoring to Status Bar**:
+- Start GPU monitoring
+- Verify status bar updates with GPU info
+- Test warning indicators
+
+**Chat to Metrics Flow**:
+- Send message and receive response
+- Verify metrics are collected and displayed
+- Test session stats aggregation
+
+**Review to Tools Tab Flow**:
+- Generate diff from tool call
+- Verify review appears in Tools tab
+- Test approve/reject workflow
+
+**Session Management Flow**:
+- Create session with messages
+- Save session
+- Resume session
+- Verify state is restored
+
+**Theme Switching Flow**:
+- Load default theme
+- Switch to custom theme
+- Verify all components update
+
+### Testing Tools
+
+- **Vitest**: Test framework for unit and property tests
+- **fast-check**: Property-based testing library
+- **ink-testing-library**: Testing utilities for Ink components
+- **mock-fs**: File system mocking for configuration tests
+- **msw**: Mock Service Worker for provider API mocking
+
+### Test Coverage Goals
+
+- Unit test coverage: >80% for all modules
+- Property test coverage: All 35 properties implemented
+- Integration test coverage: All major workflows
+- Edge case coverage: Error conditions, boundary values, fallbacks

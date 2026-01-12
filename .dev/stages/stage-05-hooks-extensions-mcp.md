@@ -138,6 +138,8 @@ Hooks communicate via JSON over stdin/stdout.
 
 ### S05-T02: Hook Trust Model
 
+**Depends on**: T01
+
 **Steps**:
 1. Implement trust verification:
    - Hash hook scripts/commands
@@ -163,6 +165,8 @@ Hooks communicate via JSON over stdin/stdout.
 ---
 
 ### S05-T03: Extension Manager
+
+**Depends on**: T01
 
 **Steps**:
 1. Implement `ExtensionManager`:
@@ -190,6 +194,8 @@ Hooks communicate via JSON over stdin/stdout.
 
 ### S05-T04: MCP Client and Tool Wrappers
 
+**Depends on**: T03
+
 **Steps**:
 1. Implement MCP client:
    - Support transports: stdio, SSE, HTTP
@@ -213,6 +219,180 @@ Hooks communicate via JSON over stdin/stdout.
 - MCP tools appear in tool registry
 - MCP tools can execute successfully
 - Multiple MCP servers can run simultaneously
+
+---
+
+### S05-T05: Extension Marketplace/Registry
+
+**Depends on**: T03
+
+**Goal**: Allow users to discover and install community extensions.
+
+**Steps**:
+1. Implement `ExtensionRegistry`:
+   - Fetch extension list from online registry
+   - Parse extension metadata
+   - Handle versioning
+2. Slash commands:
+   ```
+   /extensions search "github"
+   /extensions install @ollm/github-ext
+   /extensions update [name]
+   /extensions uninstall <name>
+   ```
+3. Local caching of registry data
+4. Integrity verification via checksums
+
+**Deliverables**:
+- `packages/core/src/extensions/extensionRegistry.ts`
+- `packages/cli/src/commands/extensionMarketplace.ts`
+
+**Acceptance Criteria**:
+- [ ] `/extensions search` returns matching extensions
+- [ ] `/extensions install` downloads and installs
+- [ ] Installed extensions appear in list
+- [ ] Updates detect newer versions
+
+---
+
+### S05-T06: Extension Hot-Reload
+
+**Depends on**: T03
+
+**Goal**: Enable live reloading of extensions during development without restarting CLI.
+
+**Steps**:
+1. Watch extension directories for changes
+2. Implement graceful unload:
+   - Disconnect MCP servers
+   - Unregister hooks
+   - Unregister tools
+3. Reload extension manifest and re-register
+4. Configuration:
+   ```yaml
+   extensions:
+     hotReload:
+       enabled: true
+       debounceMs: 500
+   ```
+
+**Deliverables**:
+- `packages/core/src/extensions/extensionWatcher.ts`
+- Updated `packages/core/src/extensions/extensionManager.ts`
+
+**Acceptance Criteria**:
+- [ ] File changes trigger reload
+- [ ] Extension state cleanly unloaded
+- [ ] New hooks/tools registered automatically
+- [ ] No restart required
+
+---
+
+### S05-T07: Hook Debugging Mode
+
+**Depends on**: T01
+
+**Goal**: Visualize hook execution in real-time for debugging.
+
+**Steps**:
+1. Implement hook execution tracing:
+   - Capture timing per hook
+   - Capture input/output data
+   - Capture errors
+2. Debug output format:
+   ```
+   [hook:before_model] my-ext/validator → 23ms ✓
+   [hook:before_tool] logger → 2ms ✓
+   [hook:after_tool] analytics → ERROR: timeout
+   ```
+3. Slash command: `/hooks debug on|off`
+4. Log to file option for post-run analysis
+
+**Deliverables**:
+- `packages/core/src/hooks/hookDebugger.ts`
+- Updated `packages/core/src/hooks/hookRunner.ts`
+
+**Acceptance Criteria**:
+- [ ] `/hooks debug on` enables tracing
+- [ ] Hook timing displayed in real-time
+- [ ] Errors clearly shown
+- [ ] Debug log exportable
+
+---
+
+### S05-T08: MCP Server Health Monitoring
+
+**Depends on**: T04
+
+**Goal**: Monitor MCP server status and auto-restart on failure.
+
+**Steps**:
+1. Implement health check system:
+   - Periodic ping to MCP servers
+   - Track connection state
+   - Detect unresponsive servers
+2. Auto-recovery:
+   - Attempt restart on failure
+   - Backoff strategy for repeated failures
+   - Notify user of persistent issues
+3. Configuration:
+   ```yaml
+   mcp:
+     healthCheck:
+       enabled: true
+       interval: 30000
+       maxRetries: 3
+       autoRestart: true
+   ```
+4. Status indicator in UI
+
+**Deliverables**:
+- `packages/core/src/mcp/mcpHealthMonitor.ts`
+- Updated `packages/core/src/mcp/mcpClient.ts`
+
+**Acceptance Criteria**:
+- [ ] Health checks run at configured interval
+- [ ] Failed servers auto-restart
+- [ ] Status visible in UI
+- [ ] Manual restart via `/mcp restart <name>`
+
+---
+
+### S05-T09: Extension Sandboxing
+
+**Depends on**: T03
+
+**Goal**: Limit what extensions can access for security.
+
+**Steps**:
+1. Define permission model:
+   - `filesystem`: Access to specific paths
+   - `network`: HTTP/external calls
+   - `env`: Access to environment variables
+   - `shell`: Shell command execution
+2. Permissions in manifest:
+   ```json
+   {
+     "permissions": {
+       "filesystem": ["./src", "~/.config"],
+       "network": ["api.github.com"],
+       "env": ["GITHUB_TOKEN"],
+       "shell": false
+     }
+   }
+   ```
+3. Runtime enforcement in hook/tool execution
+4. Prompt user for elevated permissions
+
+**Deliverables**:
+- `packages/core/src/extensions/extensionSandbox.ts`
+- `packages/core/src/extensions/permissionManager.ts`
+
+**Acceptance Criteria**:
+- [ ] Extensions declare required permissions
+- [ ] Unapproved permissions blocked at runtime
+- [ ] User prompted for sensitive permissions
+- [ ] Permission violations logged
 
 ---
 

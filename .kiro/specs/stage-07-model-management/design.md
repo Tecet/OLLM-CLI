@@ -2,68 +2,102 @@
 
 ## Overview
 
-The Model Management and Routing system provides comprehensive lifecycle management for LLM models and intelligent model selection based on task requirements. It enables users to discover, download, inspect, and remove models through a unified service interface, while automatically selecting appropriate models based on routing profiles that match task characteristics to model capabilities.
+The Model Management and Routing system provides comprehensive model lifecycle management, intelligent model selection, cross-session memory, prompt templates, and project-specific configuration for OLLM CLI. The system consists of multiple services that work together to optimize model usage, maintain context across sessions, and provide a flexible, user-friendly experience.
 
-The system consists of three core components: Model Management Service handles CRUD operations for models with caching and progress tracking, Model Router implements intelligent selection logic using routing profiles and capability matching, and Model Database provides a registry of known models with their limits and capabilities. Together, these components enable both manual model management and automatic model selection optimized for specific use cases.
+The design follows a service-oriented architecture where each major capability is encapsulated in a dedicated service with clear interfaces. Services interact through well-defined contracts and emit events for observability.
 
 ## Architecture
 
-### System Components
+### High-Level Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                  Model Management Layer                     │
-├─────────────────────────────────────────────────────────────┤
-│  ┌──────────────────┐  ┌──────────────────────────────────┐ │
-│  │     Model        │  │        Model Router              │ │
-│  │   Management     │  │  (Selection & Routing Logic)     │ │
-│  │    Service       │  └────────────┬─────────────────────┘ │
-│  │ (CRUD + Cache)   │               │                       │
-│  └────────┬─────────┘               │                       │
-│           │                         │                       │
-│           v                         v                       │
-│  ┌─────────────────────────────────────────────────────────┐│
-│  │              Model Database                             ││
-│  │     (Limits, Capabilities, Family Info)                 ││
-│  └─────────────────────────────────────────────────────────┘│
-│           │                         │                       │
-│           v                         v                       │
-│  ┌──────────────────┐  ┌──────────────────────────────────┐ │
-│  │    Provider      │  │    Configuration Manager         │ │
-│  │    Adapter       │  │  (Options, Env Vars, CLI Flags)  │ │
-│  └──────────────────┘  └──────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
+│                         CLI Layer                            │
+│  (Commands, UI Components, User Interaction)                 │
+└────────────────┬────────────────────────────────────────────┘
+                 │
+┌────────────────┴────────────────────────────────────────────┐
+│                      Service Layer                           │
+│  ┌──────────────────┐  ┌──────────────────┐                │
+│  │ Model Management │  │  Model Router    │                │
+│  │     Service      │  │                  │                │
+│  └──────────────────┘  └──────────────────┘                │
+│  ┌──────────────────┐  ┌──────────────────┐                │
+│  │ Memory Service   │  │ Template Service │                │
+│  └──────────────────┘  └──────────────────┘                │
+│  ┌──────────────────┐  ┌──────────────────┐                │
+│  │ Comparison       │  │ Project Profile  │                │
+│  │    Service       │  │    Service       │                │
+│  └──────────────────┘  └──────────────────┘                │
+└────────────────┬────────────────────────────────────────────┘
+                 │
+┌────────────────┴────────────────────────────────────────────┐
+│                    Data Layer                                │
+│  ┌──────────────────┐  ┌──────────────────┐                │
+│  │ Model Database   │  │ Routing Profiles │                │
+│  └──────────────────┘  └──────────────────┘                │
+└────────────────┬────────────────────────────────────────────┘
+                 │
+┌────────────────┴────────────────────────────────────────────┐
+│                  Provider Adapter Layer                      │
+│         (Ollama, vLLM, OpenAI-compatible)                    │
+└──────────────────────────────────────────────────────────────┘
 ```
 
-### Component Responsibilities
+### Component Interaction Flow
 
-**Model Management Service**: Provides CRUD operations for models (list, pull, delete, show), manages caching with TTL, emits progress events during downloads, handles offline scenarios, and coordinates with provider adapters.
+**Model Selection Flow:**
+```
+User Request → Model Router → Model Database → Provider Adapter
+                    ↓
+              Routing Profile
+```
 
-**Model Router**: Selects appropriate models based on routing profiles, matches models to task requirements, filters by capabilities, applies user configuration overrides, and implements fallback logic.
+**Memory Injection Flow:**
+```
+Session Start → Memory Service → Load from Disk → Inject to System Prompt
+                                                         ↓
+                                                   Token Budget Check
+```
 
-**Model Database**: Maintains registry of known models with glob pattern matching, stores context limits and capabilities, provides default values for unknown models, and supports family-based categorization.
-
-**Configuration Manager**: Merges configuration from multiple sources (files, environment variables, CLI flags), validates options against schema, applies precedence rules, and provides model-specific option overrides.
-
-**Provider Adapter**: Interfaces with backend model providers (Ollama, etc.), translates API calls, handles streaming responses, and reports model metadata.
-
-
+**Template Execution Flow:**
+```
+User Command → Template Service → Load Template → Substitute Variables → Execute Prompt
+```
 
 ## Components and Interfaces
 
-### Model Management Service
+### 1. Model Management Service
 
+**Purpose:** Manages model lifecycle operations (list, pull, delete, info) and keep-alive functionality.
+
+**Interface:**
 ```typescript
+interface ModelManagementService {
+  // Core operations
+  listModels(): Promise<ModelInfo[]>;
+  pullModel(name: string, onProgress: ProgressCallback): Promise<void>;
+  deleteModel(name: string): Promise<void>;
+  showModel(name: string): Promise<ModelInfo>;
+  getModelStatus(name: string): ModelStatus;
+  
+  // Keep-alive management
+  keepModelLoaded(name: string): Promise<void>;
+  unloadModel(name: string): Promise<void>;
+  getLoadedModels(): string[];
+  
+  // Cache management
+  invalidateCache(): void;
+}
+
 interface ModelInfo {
-  name: string;              // Model identifier (e.g., "llama3.1:8b")
-  family: string;            // Model family (llama, mistral, etc.)
-  size: number;              // Size in bytes
-  parameters: number;        // Parameter count in billions
-  quantization: string;      // Quantization type (q4_0, q8_0, f16, etc.)
-  contextWindow: number;     // Maximum context tokens
-  maxOutputTokens?: number;  // Maximum generation tokens
-  modifiedAt: Date;          // Last modified timestamp
+  name: string;
+  size: number;
+  modifiedAt: Date;
+  family: string;
+  contextWindow: number;
   capabilities: ModelCapabilities;
+  parameterCount?: number;
 }
 
 interface ModelCapabilities {
@@ -72,94 +106,404 @@ interface ModelCapabilities {
   streaming: boolean;
 }
 
-enum ModelStatus {
-  AVAILABLE = 'available',
-  DOWNLOADING = 'downloading',
-  NOT_FOUND = 'not_found'
+interface ModelStatus {
+  exists: boolean;
+  loaded: boolean;
+  lastUsed?: Date;
 }
+
+type ProgressCallback = (progress: ProgressEvent) => void;
 
 interface ProgressEvent {
-  percentage: number;        // 0-100
-  downloadedBytes: number;
+  percentage: number;
+  transferRate: number;
+  bytesDownloaded: number;
   totalBytes: number;
-  downloadSpeed: number;     // Bytes per second
-  status: 'downloading' | 'complete' | 'cancelled' | 'error';
-  error?: string;
-}
-
-interface ModelManagementService {
-  // List all available models
-  listModels(): Promise<ModelInfo[]>;
-  
-  // Download a model with progress tracking
-  pullModel(
-    name: string,
-    onProgress: (event: ProgressEvent) => void
-  ): Promise<void>;
-  
-  // Remove a model
-  deleteModel(name: string): Promise<void>;
-  
-  // Get detailed model information
-  showModel(name: string): Promise<ModelInfo>;
-  
-  // Check model availability status
-  getModelStatus(name: string): Promise<ModelStatus>;
-  
-  // Clear cache manually
-  clearCache(): void;
 }
 ```
 
-**Implementation Notes**:
-- Cache model list for 60 seconds to reduce provider queries
-- Cache individual model info for 5 minutes
-- Invalidate cache on pull/delete operations
-- When offline, serve cached data regardless of expiration
-- Progress events emitted at least every 2 seconds during download
-- Support cancellation via AbortController
-- Prevent deletion of models currently in use
-- Return descriptive errors with recovery guidance
+**Implementation Details:**
+- Wraps Provider_Adapter calls with error handling and retry logic
+- Maintains in-memory cache of model list with TTL
+- Emits progress events during model pull operations
+- Tracks last-used timestamps for keep-alive management
+- Sends periodic keep-alive requests for configured models
+- Handles cancellation via AbortController
 
+### 2. Model Router
 
+**Purpose:** Selects appropriate models based on routing profiles and availability.
 
-### Model Router
-
+**Interface:**
 ```typescript
+interface ModelRouter {
+  selectModel(profile: string, availableModels: ModelInfo[]): string | null;
+  getProfile(name: string): RoutingProfile | null;
+  listProfiles(): RoutingProfile[];
+  validateModel(modelName: string, profile: string): boolean;
+}
+
 interface RoutingProfile {
   name: string;
   description: string;
-  preferredFamilies: string[];     // Preferred model families
-  minContextWindow: number;        // Minimum context tokens required
-  requiredCapabilities: string[];  // Required capabilities
-  fallbackProfile?: string;        // Fallback if no match
-}
-
-interface ModelRouter {
-  // Select best model for a profile
-  selectModel(
-    profile: string | RoutingProfile,
-    availableModels: ModelInfo[]
-  ): string;
-  
-  // Get routing profile by name
-  getProfile(name: string): RoutingProfile;
-  
-  // List all available profiles
-  listProfiles(): RoutingProfile[];
-  
-  // Check if model matches profile requirements
-  matchesProfile(model: ModelInfo, profile: RoutingProfile): boolean;
-}
-
-interface RoutingConfig {
-  enabled: boolean;
-  defaultProfile: string;
-  overrides: Record<string, string>;  // profile -> model name
+  preferredFamilies: string[];
+  minContextWindow: number;
+  requiredCapabilities: string[];
+  fallbackProfile?: string;
 }
 ```
 
-**Routing Profiles**:
+**Selection Algorithm:**
+1. Filter models by minimum context window
+2. Filter models by required capabilities
+3. Score models by preferred family match (higher score = better match)
+4. Return highest-scoring model
+5. If no match, try fallback profile recursively
+6. If still no match, return null
+
+**Implementation Details:**
+- Loads routing profiles from configuration and built-in defaults
+- Supports configuration overrides per profile
+- Implements scoring system for model preference
+- Handles circular fallback detection
+
+### 3. Model Database
+
+**Purpose:** Stores known model capabilities, limits, and characteristics.
+
+**Interface:**
+```typescript
+interface ModelDatabase {
+  lookup(modelName: string): ModelEntry | null;
+  getContextWindow(modelName: string): number;
+  getCapabilities(modelName: string): ModelCapabilities;
+  getSuitableProfiles(modelName: string): string[];
+  listKnownModels(): ModelEntry[];
+}
+
+interface ModelEntry {
+  pattern: string;           // Glob pattern (e.g., "llama3.1:*")
+  family: string;            // Model family
+  contextWindow: number;     // Max context tokens
+  maxOutputTokens?: number;  // Max generation tokens
+  capabilities: ModelCapabilities;
+  profiles: string[];        // Suitable routing profiles
+}
+```
+
+**Implementation Details:**
+- Uses glob pattern matching for model name lookup
+- Returns safe defaults for unknown models (4096 context, no special capabilities)
+- Supports wildcard patterns (*, ?)
+- Preloaded with common model families (llama, mistral, phi, gemma, codellama, etc.)
+
+### 4. Memory Service
+
+**Purpose:** Persists facts, preferences, and context across sessions.
+
+**Interface:**
+```typescript
+interface MemoryService {
+  remember(key: string, value: string, options?: RememberOptions): void;
+  recall(key: string): MemoryEntry | null;
+  search(query: string): MemoryEntry[];
+  forget(key: string): void;
+  listAll(): MemoryEntry[];
+  getSystemPromptAddition(): string;
+  load(): Promise<void>;
+  save(): Promise<void>;
+}
+
+interface MemoryEntry {
+  key: string;
+  value: string;
+  category: 'fact' | 'preference' | 'context';
+  createdAt: Date;
+  updatedAt: Date;
+  accessCount: number;
+  source: 'user' | 'llm' | 'system';
+}
+
+interface RememberOptions {
+  category?: 'fact' | 'preference' | 'context';
+  source?: 'user' | 'llm' | 'system';
+}
+```
+
+**Storage Format:**
+```json
+{
+  "version": 1,
+  "memories": [
+    {
+      "key": "user_name",
+      "value": "Alice",
+      "category": "preference",
+      "createdAt": "2026-01-12T10:00:00Z",
+      "updatedAt": "2026-01-12T10:00:00Z",
+      "accessCount": 5,
+      "source": "user"
+    }
+  ]
+}
+```
+
+**System Prompt Injection:**
+- Loads all memories at session start
+- Formats memories as key-value pairs
+- Respects token budget (default: 500 tokens)
+- Prioritizes by access count and recency when budget exceeded
+- Injects as section in system prompt:
+  ```
+  ## Remembered Context
+  - user_name: Alice
+  - preferred_language: TypeScript
+  - project_type: monorepo
+  ```
+
+**Implementation Details:**
+- Stores memories in `~/.ollm/memory.json`
+- Updates access count on recall
+- Supports fuzzy search by key and value
+- Atomic file writes to prevent corruption
+
+### 5. Template Service
+
+**Purpose:** Manages reusable prompt templates with variable substitution.
+
+**Interface:**
+```typescript
+interface TemplateService {
+  loadTemplates(): Promise<void>;
+  listTemplates(): TemplateInfo[];
+  getTemplate(name: string): Template | null;
+  applyTemplate(name: string, variables: Record<string, string>): string;
+  createTemplate(template: Template): Promise<void>;
+  deleteTemplate(name: string): Promise<void>;
+}
+
+interface Template {
+  name: string;
+  description: string;
+  template: string;
+  variables: VariableDefinition[];
+}
+
+interface VariableDefinition {
+  name: string;
+  required: boolean;
+  default?: string;
+  description?: string;
+}
+
+interface TemplateInfo {
+  name: string;
+  description: string;
+  variableCount: number;
+}
+```
+
+**Template Format (YAML):**
+```yaml
+name: code_review
+description: Review code for quality and security
+template: "Review this {language} code for {focus:bugs and security}:\n\n{code}"
+variables:
+  - name: language
+    required: true
+    description: Programming language
+  - name: focus
+    required: false
+    default: "bugs and security"
+    description: Review focus areas
+  - name: code
+    required: true
+    description: Code to review
+```
+
+**Variable Substitution:**
+- Syntax: `{variable_name}` or `{variable_name:default_value}`
+- Required variables without values trigger user prompt
+- Default values used when variable not provided
+- Supports nested braces by escaping: `\{not_a_variable\}`
+
+**Implementation Details:**
+- Loads templates from `~/.ollm/templates/` and `.ollm/templates/`
+- Workspace templates override user templates with same name
+- Validates template syntax on load
+- Caches parsed templates in memory
+
+### 6. Comparison Service
+
+**Purpose:** Runs prompts through multiple models for side-by-side evaluation.
+
+**Interface:**
+```typescript
+interface ComparisonService {
+  compare(prompt: string, models: string[]): Promise<ComparisonResult>;
+  cancel(): void;
+}
+
+interface ComparisonResult {
+  prompt: string;
+  results: ModelResult[];
+  timestamp: Date;
+}
+
+interface ModelResult {
+  model: string;
+  response: string;
+  tokenCount: number;
+  latencyMs: number;
+  tokensPerSecond: number;
+  error?: string;
+}
+```
+
+**Execution Strategy:**
+- Runs all model requests in parallel using Promise.all
+- Captures start/end timestamps for latency calculation
+- Handles individual model failures gracefully
+- Supports cancellation via AbortController
+- Returns partial results if some models fail
+
+**Implementation Details:**
+- Uses Provider_Adapter for model invocation
+- Calculates tokens/second from response metadata
+- Includes error messages in results for failed models
+- Limits concurrent requests to avoid resource exhaustion
+
+### 7. Project Profile Service
+
+**Purpose:** Auto-detects project type and applies project-specific configuration.
+
+**Interface:**
+```typescript
+interface ProjectProfileService {
+  detectProfile(workspacePath: string): Promise<ProjectProfile | null>;
+  loadProfile(workspacePath: string): Promise<ProjectProfile | null>;
+  applyProfile(profile: ProjectProfile): void;
+  listBuiltInProfiles(): BuiltInProfile[];
+  initializeProject(workspacePath: string, profileName: string): Promise<void>;
+}
+
+interface ProjectProfile {
+  name: string;
+  model?: string;
+  systemPrompt?: string;
+  tools?: {
+    enabled?: string[];
+    disabled?: string[];
+  };
+  routing?: {
+    defaultProfile?: string;
+  };
+  options?: Record<string, any>;
+}
+
+interface BuiltInProfile {
+  name: string;
+  description: string;
+  detectionFiles: string[];
+  defaultSettings: ProjectProfile;
+}
+```
+
+**Detection Logic:**
+```typescript
+const DETECTION_RULES = [
+  {
+    name: 'typescript',
+    files: ['package.json'],
+    check: (content) => content.includes('typescript')
+  },
+  {
+    name: 'python',
+    files: ['requirements.txt', 'pyproject.toml', 'setup.py']
+  },
+  {
+    name: 'rust',
+    files: ['Cargo.toml']
+  },
+  {
+    name: 'go',
+    files: ['go.mod']
+  }
+];
+```
+
+**Built-in Profiles:**
+- `typescript`: Code-optimized, enables file tools, code routing profile
+- `python`: Code-optimized, enables file and shell tools
+- `rust`: Code-optimized, emphasizes memory safety
+- `go`: Code-optimized, emphasizes concurrency
+- `documentation`: Writing-optimized, creative routing profile
+
+**Implementation Details:**
+- Checks for characteristic files in workspace root
+- Loads profile from `.ollm/project.yaml` if exists
+- Merges built-in profile with custom overrides
+- Applies settings by updating configuration service
+
+## Data Models
+
+### Model Entry Database
+
+```typescript
+const MODEL_DATABASE: ModelEntry[] = [
+  {
+    pattern: 'llama3.1:*',
+    family: 'llama',
+    contextWindow: 128000,
+    capabilities: { toolCalling: true, vision: false, streaming: true },
+    profiles: ['general', 'code']
+  },
+  {
+    pattern: 'codellama:*',
+    family: 'llama',
+    contextWindow: 16384,
+    capabilities: { toolCalling: false, vision: false, streaming: true },
+    profiles: ['code']
+  },
+  {
+    pattern: 'mistral:*',
+    family: 'mistral',
+    contextWindow: 32768,
+    capabilities: { toolCalling: true, vision: false, streaming: true },
+    profiles: ['general', 'fast']
+  },
+  {
+    pattern: 'phi3:*',
+    family: 'phi',
+    contextWindow: 4096,
+    capabilities: { toolCalling: false, vision: false, streaming: true },
+    profiles: ['fast']
+  },
+  {
+    pattern: 'gemma:*',
+    family: 'gemma',
+    contextWindow: 8192,
+    capabilities: { toolCalling: false, vision: false, streaming: true },
+    profiles: ['fast', 'general']
+  },
+  {
+    pattern: 'deepseek-coder:*',
+    family: 'deepseek',
+    contextWindow: 16384,
+    capabilities: { toolCalling: false, vision: false, streaming: true },
+    profiles: ['code']
+  },
+  {
+    pattern: 'qwen:*',
+    family: 'qwen',
+    contextWindow: 32768,
+    capabilities: { toolCalling: true, vision: false, streaming: true },
+    profiles: ['general', 'code']
+  }
+];
+```
+
+### Routing Profiles
 
 ```typescript
 const ROUTING_PROFILES: RoutingProfile[] = [
@@ -176,13 +520,12 @@ const ROUTING_PROFILES: RoutingProfile[] = [
     description: 'Balanced performance for most tasks',
     preferredFamilies: ['llama', 'mistral', 'qwen'],
     minContextWindow: 8192,
-    requiredCapabilities: ['streaming'],
-    fallbackProfile: undefined
+    requiredCapabilities: ['streaming']
   },
   {
     name: 'code',
     description: 'Optimized for code generation',
-    preferredFamilies: ['codellama', 'deepseek-coder', 'starcoder'],
+    preferredFamilies: ['codellama', 'deepseek-coder', 'starcoder', 'qwen'],
     minContextWindow: 16384,
     requiredCapabilities: ['streaming'],
     fallbackProfile: 'general'
@@ -198,221 +541,7 @@ const ROUTING_PROFILES: RoutingProfile[] = [
 ];
 ```
 
-**Selection Algorithm**:
-
-1. Check for user configuration override for the profile
-2. Filter models by minimum context window requirement
-3. Filter models by required capabilities
-4. Prefer models from preferred families (in order)
-5. If no match, try fallback profile
-6. If still no match, return error
-
-**Implementation Notes**:
-- Configuration overrides take precedence over profile logic
-- Unknown model capabilities default to basic text generation only
-- Multiple required capabilities use AND logic (all must be present)
-- Family matching is case-insensitive substring match
-- Most specific family match wins when multiple families match
-
-
-
-### Model Database
-
-```typescript
-interface ModelEntry {
-  pattern: string;           // Glob pattern for matching (e.g., "llama3.1:*")
-  family: string;            // Model family identifier
-  contextWindow: number;     // Maximum context tokens
-  maxOutputTokens?: number;  // Maximum generation tokens
-  capabilities: ModelCapabilities;
-  profiles: string[];        // Suitable routing profiles
-}
-
-interface ModelDatabase {
-  // Look up model limits by name
-  getModelLimits(modelName: string): ModelLimits;
-  
-  // Get model family from name
-  getModelFamily(modelName: string): string;
-  
-  // Get model capabilities
-  getModelCapabilities(modelName: string): ModelCapabilities;
-  
-  // Check if model matches a pattern
-  matchesPattern(modelName: string, pattern: string): boolean;
-}
-
-interface ModelLimits {
-  contextWindow: number;
-  maxOutputTokens: number;
-}
-
-const DEFAULT_LIMITS: ModelLimits = {
-  contextWindow: 4096,
-  maxOutputTokens: 2048
-};
-```
-
-**Model Database Entries**:
-
-```typescript
-const MODEL_DATABASE: ModelEntry[] = [
-  {
-    pattern: 'llama3.1:*',
-    family: 'llama',
-    contextWindow: 128000,
-    maxOutputTokens: 4096,
-    capabilities: { toolCalling: true, vision: false, streaming: true },
-    profiles: ['general', 'code', 'creative']
-  },
-  {
-    pattern: 'llama3.2:*',
-    family: 'llama',
-    contextWindow: 128000,
-    maxOutputTokens: 4096,
-    capabilities: { toolCalling: true, vision: true, streaming: true },
-    profiles: ['general', 'code', 'creative']
-  },
-  {
-    pattern: 'codellama:*',
-    family: 'codellama',
-    contextWindow: 16384,
-    maxOutputTokens: 4096,
-    capabilities: { toolCalling: false, vision: false, streaming: true },
-    profiles: ['code']
-  },
-  {
-    pattern: 'mistral:*',
-    family: 'mistral',
-    contextWindow: 32768,
-    maxOutputTokens: 4096,
-    capabilities: { toolCalling: true, vision: false, streaming: true },
-    profiles: ['general', 'fast']
-  },
-  {
-    pattern: 'phi3:*',
-    family: 'phi',
-    contextWindow: 4096,
-    maxOutputTokens: 2048,
-    capabilities: { toolCalling: false, vision: false, streaming: true },
-    profiles: ['fast']
-  },
-  {
-    pattern: 'gemma:*',
-    family: 'gemma',
-    contextWindow: 8192,
-    maxOutputTokens: 2048,
-    capabilities: { toolCalling: false, vision: false, streaming: true },
-    profiles: ['fast', 'general']
-  },
-  {
-    pattern: 'deepseek-coder:*',
-    family: 'deepseek-coder',
-    contextWindow: 16384,
-    maxOutputTokens: 4096,
-    capabilities: { toolCalling: false, vision: false, streaming: true },
-    profiles: ['code']
-  },
-  {
-    pattern: 'qwen:*',
-    family: 'qwen',
-    contextWindow: 32768,
-    maxOutputTokens: 4096,
-    capabilities: { toolCalling: true, vision: false, streaming: true },
-    profiles: ['general', 'code']
-  }
-];
-```
-
-**Pattern Matching**:
-- Use glob patterns with wildcards (*, ?, [])
-- Match against full model name including tag (e.g., "llama3.1:8b")
-- When multiple patterns match, use most specific (longest) pattern
-- If no pattern matches, return default limits
-
-**Family Detection**:
-- Check model name for family keywords (case-insensitive)
-- Priority order: codellama > llama, deepseek-coder > deepseek
-- If no family detected, return "unknown"
-
-**Implementation Notes**:
-- Patterns are evaluated in order of specificity (most specific first)
-- Cache lookup results to avoid repeated pattern matching
-- Support adding custom entries via configuration
-- Validate patterns on load to catch syntax errors
-
-
-
-### Configuration Manager
-
-```typescript
-interface ModelConfig {
-  default: string;              // Default model name
-  routing: RoutingConfig;       // Routing configuration
-  options: GenerationOptions;   // Default generation options
-  providers: Record<string, ProviderConfig>;
-}
-
-interface GenerationOptions {
-  temperature: number;          // 0.0 - 2.0
-  maxTokens: number;           // > 0
-  topP: number;                // 0.0 - 1.0
-  topK?: number;
-  repeatPenalty?: number;
-}
-
-interface ProviderConfig {
-  host: string;
-  options: Record<string, any>;  // Provider-specific options
-}
-
-interface ConfigurationManager {
-  // Load configuration from all sources
-  loadConfig(): Promise<ModelConfig>;
-  
-  // Get effective configuration with precedence
-  getEffectiveConfig(): ModelConfig;
-  
-  // Validate configuration
-  validateConfig(config: ModelConfig): ValidationResult;
-  
-  // Get model-specific options
-  getModelOptions(modelName: string): GenerationOptions;
-}
-
-interface ValidationResult {
-  valid: boolean;
-  errors: ValidationError[];
-}
-
-interface ValidationError {
-  field: string;
-  message: string;
-  value: any;
-}
-```
-
-**Configuration Sources** (in precedence order):
-
-1. **CLI Flags** (highest priority)
-   - `--model <name>`
-   - `--temperature <value>`
-   - `--max-tokens <value>`
-   - `--profile <name>`
-
-2. **Environment Variables**
-   - `OLLM_MODEL`
-   - `OLLM_PROVIDER`
-   - `OLLM_HOST`
-   - `OLLM_TEMPERATURE`
-   - `OLLM_MAX_TOKENS`
-   - `OLLM_CONTEXT_SIZE`
-
-3. **Configuration File** (lowest priority)
-   - `~/.ollm/config.yaml` (user-level)
-   - `.ollm/config.yaml` (workspace-level)
-
-**Configuration Example**:
+### Configuration Schema
 
 ```yaml
 model:
@@ -423,430 +552,501 @@ model:
     overrides:
       code: deepseek-coder:6.7b
       fast: phi3:mini
-      
+  keepAlive:
+    enabled: true
+    models:
+      - llama3.1:8b
+    timeout: 300  # seconds
+
 options:
   temperature: 0.7
   maxTokens: 4096
   topP: 0.9
-  
-providers:
-  ollama:
-    host: http://localhost:11434
-    options:
-      numCtx: 8192
-      numGpu: 1
+  numCtx: 8192
+
+memory:
+  enabled: true
+  tokenBudget: 500
+
+templates:
+  directories:
+    - ~/.ollm/templates
+    - .ollm/templates
+
+project:
+  profile: typescript
+  autoDetect: true
 ```
-
-**Validation Rules**:
-
-| Field | Rule | Error Message |
-|-------|------|---------------|
-| temperature | 0.0 ≤ value ≤ 2.0 | "Temperature must be between 0.0 and 2.0" |
-| maxTokens | value > 0 | "Max tokens must be positive" |
-| topP | 0.0 ≤ value ≤ 1.0 | "Top P must be between 0.0 and 1.0" |
-| model | valid model name | "Invalid model name format" |
-| profile | known profile name | "Unknown routing profile" |
-
-**Implementation Notes**:
-- Merge configurations with precedence: CLI > Env > File
-- Validate merged configuration before use
-- Cache effective configuration to avoid repeated merging
-- Support per-model option overrides in config file
-- Provide clear validation errors with field names and values
-
-
-
-## Data Models
-
-### Model Information
-
-```typescript
-interface ModelInfo {
-  name: string;
-  family: string;
-  size: number;
-  parameters: number;
-  quantization: string;
-  contextWindow: number;
-  maxOutputTokens?: number;
-  modifiedAt: Date;
-  capabilities: ModelCapabilities;
-  metadata?: Record<string, any>;
-}
-
-interface ModelCapabilities {
-  toolCalling: boolean;
-  vision: boolean;
-  streaming: boolean;
-}
-```
-
-### Routing Profile
-
-```typescript
-interface RoutingProfile {
-  name: string;
-  description: string;
-  preferredFamilies: string[];
-  minContextWindow: number;
-  requiredCapabilities: string[];
-  fallbackProfile?: string;
-}
-```
-
-### Configuration
-
-```typescript
-interface ModelConfig {
-  default: string;
-  routing: {
-    enabled: boolean;
-    defaultProfile: string;
-    overrides: Record<string, string>;
-  };
-  options: {
-    temperature: number;
-    maxTokens: number;
-    topP: number;
-    topK?: number;
-    repeatPenalty?: number;
-  };
-  providers: Record<string, {
-    host: string;
-    options: Record<string, any>;
-  }>;
-}
-```
-
-### Progress Tracking
-
-```typescript
-interface ProgressEvent {
-  percentage: number;
-  downloadedBytes: number;
-  totalBytes: number;
-  downloadSpeed: number;
-  status: 'downloading' | 'complete' | 'cancelled' | 'error';
-  error?: string;
-  timestamp: Date;
-}
-```
-
-### Cache Entry
-
-```typescript
-interface CacheEntry<T> {
-  data: T;
-  timestamp: Date;
-  ttl: number;  // Time to live in milliseconds
-}
-
-interface ModelCache {
-  modelList?: CacheEntry<ModelInfo[]>;
-  modelInfo: Map<string, CacheEntry<ModelInfo>>;
-}
-```
-
-
 
 ## Correctness Properties
 
+
 A property is a characteristic or behavior that should hold true across all valid executions of a system—essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.
 
-### Property 1: Model List Return Type
-*For any* model list request, the returned value should be an array containing only ModelInfo objects with all required fields (name, size, family, modifiedAt, contextWindow, capabilities).
-**Validates: Requirements 1.1, 1.3**
+### Model Management Properties
 
-### Property 2: Model List Caching
-*For any* model list retrieval, subsequent requests within 60 seconds should return cached data without querying the provider.
-**Validates: Requirements 1.5, 18.1**
+Property 1: Model list retrieval
+*For any* state of the Provider_Adapter, calling listModels should return a list of ModelInfo objects with required fields (name, size, modifiedAt)
+**Validates: Requirements 1.1, 1.2**
 
-### Property 3: Descriptive Error Messages
-*For any* operation that fails, the error message should be non-empty and include information about the failure cause and suggested recovery actions.
-**Validates: Requirements 1.6, 2.5, 3.5, 17.3, 17.4, 17.5**
+Property 2: Model list caching
+*For any* sequence of listModels calls without cache invalidation, the second call should return cached results without calling the Provider_Adapter
+**Validates: Requirements 1.3**
 
-### Property 4: Progress Event Structure
-*For any* progress event emitted during model download, it should contain all required fields: percentage, downloadedBytes, totalBytes, and downloadSpeed.
-**Validates: Requirements 2.2, 15.3**
+Property 3: Cache invalidation after mutations
+*For any* model mutation operation (pull, delete), the operation should invalidate the model list cache
+**Validates: Requirements 2.3, 3.2**
 
-### Property 5: Cache Invalidation on Mutation
-*For any* model pull or delete operation that completes successfully, the model list cache should be invalidated.
-**Validates: Requirements 2.3, 3.2, 18.2**
+Property 4: Offline operation with cache
+*For any* cached model list, when the Provider_Adapter is unavailable, listModels should return the cached data
+**Validates: Requirements 1.5**
 
-### Property 6: Model Status Enum Values
-*For any* model status check, the returned status should be one of the valid enum values: available, downloading, or not_found.
-**Validates: Requirements 5.1**
+Property 5: Progress event emission
+*For any* model pull operation, progress events should be emitted with required fields (percentage, transferRate, bytesDownloaded, totalBytes)
+**Validates: Requirements 2.2**
 
-### Property 7: Router Returns Available Model
-*For any* model selection by the router, the returned model name should be present in the list of available models provided to the router.
-**Validates: Requirements 6.2**
+Property 6: Pull cancellation
+*For any* in-progress model pull, cancelling the operation should abort the download
+**Validates: Requirements 2.5**
 
-### Property 8: Preferred Family Selection
-*For any* routing profile with preferred families, when multiple models match the requirements, the router should select a model from the first matching preferred family.
-**Validates: Requirements 6.3**
+Property 7: Loaded model unload before deletion
+*For any* model that is currently loaded, deleting it should unload it first
+**Validates: Requirements 3.4**
 
-### Property 9: Profile Minimum Context Requirement
-*For any* routing profile, the selected model should have a context window greater than or equal to the profile's minimum context window requirement.
-**Validates: Requirements 7.1, 7.2, 7.3, 7.4**
+Property 8: Error handling consistency
+*For any* operation that fails (list, pull, delete, show), the service should return a descriptive error message
+**Validates: Requirements 1.4, 2.4, 3.3, 4.3**
 
-### Property 10: Required Capabilities Matching
-*For any* routing profile with required capabilities, the selected model should support all capabilities listed in the requirements.
-**Validates: Requirements 7.5, 8.1, 8.2, 8.3, 8.5**
+### Model Routing Properties
 
-### Property 11: Glob Pattern Matching
-*For any* model name and glob pattern, the pattern matching should correctly identify matches using standard glob syntax (*, ?, []).
-**Validates: Requirements 9.1**
+Property 9: Profile-based model selection
+*For any* routing profile and list of available models, selectModel should return a model that meets the profile's minimum context window and required capabilities, or null if none match
+**Validates: Requirements 5.1, 6.5, 6.6**
 
-### Property 12: Model Database Lookup Fields
-*For any* model that matches a database entry, the returned limits should include both contextWindow and maxOutputTokens fields.
-**Validates: Requirements 9.2, 9.5**
+Property 10: Preferred family prioritization
+*For any* routing profile with preferred families and multiple matching models, selectModel should prefer models from the preferred families list
+**Validates: Requirements 5.2**
 
-### Property 13: Most Specific Pattern Wins
-*For any* model name that matches multiple database patterns, the system should use the longest (most specific) matching pattern.
-**Validates: Requirements 9.3**
+Property 11: Fallback profile usage
+*For any* routing profile with a fallback, when no models match the primary profile, selectModel should try the fallback profile
+**Validates: Requirements 5.3**
 
-### Property 14: Generation Parameter Application
-*For any* configured generation parameters (temperature, maxTokens, topP), those parameters should be applied to model requests.
-**Validates: Requirements 10.2**
+Property 12: Configuration override precedence
+*For any* routing profile with a configuration override, selectModel should return the override model regardless of the selection algorithm
+**Validates: Requirements 5.5**
 
-### Property 15: Provider Options Pass-Through
-*For any* provider-specific options in configuration, those options should be passed to the provider adapter without modification.
-**Validates: Requirements 10.3**
+### Model Database Properties
 
-### Property 16: Model-Specific Options
-*For any* per-model options configured, those options should only be applied when that specific model is in use.
-**Validates: Requirements 10.5**
+Property 13: Known model lookup
+*For any* known model pattern in the database, looking up a matching model name should return the stored context window, capabilities, and suitable profiles
+**Validates: Requirements 7.1, 7.2, 7.3**
 
-### Property 17: Configuration Validation Errors
-*For any* invalid configuration, the validation should reject it and return a descriptive error message indicating which field is invalid and why.
-**Validates: Requirements 10.6, 13.4, 13.5, 13.6**
+Property 14: Unknown model defaults
+*For any* model name not matching any database pattern, lookup should return safe default values (4096 context window, no special capabilities)
+**Validates: Requirements 7.4**
 
-### Property 18: Configuration Precedence Chain
-*For any* configuration value specified in multiple sources (CLI flags, environment variables, config file), the effective value should follow the precedence: CLI > Env > File.
-**Validates: Requirements 11.7, 12.5**
+Property 15: Wildcard pattern matching
+*For any* model name and database pattern with wildcards, the pattern should match all appropriate model names
+**Validates: Requirements 7.5**
 
-### Property 19: Parameter Validation Bounds
-*For any* generation parameter, values outside the valid range should be rejected: temperature ∈ [0.0, 2.0], maxTokens > 0, topP ∈ [0.0, 1.0].
-**Validates: Requirements 13.1, 13.2, 13.3**
+Property 16: Token limit enforcement
+*For any* model, token estimation should use the model's context window limit from the database, or the safe default if unknown
+**Validates: Requirements 8.1, 8.2**
 
-### Property 20: Family Detection Pattern Matching
-*For any* model name containing family keywords (llama, mistral, codellama, deepseek-coder, starcoder, phi, gemma), the system should categorize it into the corresponding family.
-**Validates: Requirements 16.1, 16.2, 16.3, 16.4**
+### Configuration Properties
 
-### Property 21: Cache Expiration Behavior
-*For any* cached data past its TTL, the next request should fetch fresh data from the provider.
+Property 17: Options validation
+*For any* model options, the system should validate them against the JSON schema and reject invalid options with clear error messages
+**Validates: Requirements 9.1, 9.5**
+
+Property 18: Generation parameter support
+*For any* valid temperature, max_tokens, and top_p values, the system should accept and apply them
+**Validates: Requirements 9.2**
+
+Property 19: Environment variable precedence
+*For any* configuration setting that has both an environment variable and config file value, the system should use the environment variable value
+**Validates: Requirements 10.1, 10.2, 10.3, 10.4, 10.5**
+
+### Memory Service Properties
+
+Property 20: Memory persistence round-trip
+*For any* memory entry stored via remember, it should be persisted to disk and retrievable via recall after service restart
+**Validates: Requirements 11.1, 11.2, 12.1, 12.2**
+
+Property 21: System prompt injection with budget
+*For any* set of memories, getSystemPromptAddition should inject memories within the token budget
+**Validates: Requirements 11.3**
+
+Property 22: Memory prioritization by recency
+*For any* set of memories exceeding the token budget, getSystemPromptAddition should prioritize recently accessed memories
+**Validates: Requirements 11.4**
+
+Property 23: Memory metadata tracking
+*For any* memory entry accessed via recall, the access count should increment and the timestamp should update
+**Validates: Requirements 11.5**
+
+Property 24: Memory search
+*For any* search query, the search method should return all memory entries where the key or value contains the query string
+**Validates: Requirements 12.3**
+
+Property 25: Memory deletion
+*For any* memory entry, calling forget should remove it such that recall returns null
+**Validates: Requirements 12.4**
+
+Property 26: Memory listing
+*For any* set of stored memories, listAll should return all Memory_Entry objects
+**Validates: Requirements 12.5**
+
+Property 27: LLM memory source marking
+*For any* memory stored via the remember tool, the source field should be set to 'llm'
+**Validates: Requirements 13.2, 13.3**
+
+Property 28: Memory categorization
+*For any* memory stored with a category (fact, preference, context), the category should be preserved in the Memory_Entry
+**Validates: Requirements 13.4**
+
+### Comparison Service Properties
+
+Property 29: Parallel model execution
+*For any* comparison request with multiple models, all models should be invoked with the same prompt
+**Validates: Requirements 14.1**
+
+Property 30: Comparison result structure
+*For any* comparison result, each ModelResult should contain response text, token count, latency, and tokens per second
+**Validates: Requirements 14.2, 15.2, 15.3**
+
+Property 31: Partial failure handling
+*For any* comparison where some models fail, the result should include errors for failed models without failing the entire comparison
+**Validates: Requirements 14.4**
+
+### Template Service Properties
+
+Property 32: Template loading from directories
+*For any* valid template file in the user or workspace configuration directory, loadTemplates should parse and make it available
+**Validates: Requirements 16.1, 16.2, 16.3**
+
+Property 33: Template metadata preservation
+*For any* loaded template, it should include name, description, and variable definitions
+**Validates: Requirements 16.4**
+
+Property 34: Variable substitution
+*For any* template with variables and provided values, applyTemplate should replace all variable placeholders with the provided values
+**Validates: Requirements 17.1**
+
+Property 35: Default value usage
+*For any* template variable with a default value, when no value is provided, applyTemplate should use the default
+**Validates: Requirements 17.2**
+
+Property 36: Required variable validation
+*For any* template with required variables, applyTemplate should fail or prompt when required variables are missing
+**Validates: Requirements 17.3**
+
+Property 37: Template persistence
+*For any* template created via createTemplate, it should be saved to disk and available in subsequent listTemplates calls
 **Validates: Requirements 18.3**
 
-### Property 22: Model Info Caching Duration
-*For any* model info request, the result should be cached for 5 minutes.
-**Validates: Requirements 18.5**
+### Keep-Alive Properties
 
+Property 38: Keep-alive request sending
+*For any* model with keep-alive enabled, the service should send periodic keep-alive requests to the Provider_Adapter
+**Validates: Requirements 19.1, 20.1**
 
+Property 39: Last-used timestamp tracking
+*For any* model usage, the last-used timestamp should be updated
+**Validates: Requirements 19.2**
+
+Property 40: Idle timeout unloading
+*For any* model idle beyond the configured timeout, the service should allow it to unload
+**Validates: Requirements 19.3, 20.2**
+
+Property 41: Keep-alive disable respect
+*For any* configuration where keep-alive is disabled, no keep-alive requests should be sent
+**Validates: Requirements 20.3**
+
+Property 42: Loaded model status reporting
+*For any* point in time, getLoadedModels should return the list of currently loaded models
+**Validates: Requirements 20.4**
+
+### Project Profile Properties
+
+Property 43: Project type detection
+*For any* workspace containing characteristic files (package.json with TypeScript, requirements.txt, Cargo.toml, go.mod), detectProfile should identify the correct project type
+**Validates: Requirements 21.1, 21.2, 21.3, 21.4, 21.5**
+
+Property 44: Project settings precedence
+*For any* setting that exists in both global and project configuration, the system should use the project setting
+**Validates: Requirements 22.1, 22.2**
+
+Property 45: Profile setting application
+*For any* project profile with specified model, system prompt, or tool restrictions, those settings should be applied when the profile is loaded
+**Validates: Requirements 22.3, 22.4, 22.5**
+
+Property 46: Manual profile override
+*For any* manually selected profile, it should take precedence over auto-detected profile
+**Validates: Requirements 24.4**
+
+Property 47: Project initialization
+*For any* project initialization with a selected profile, a workspace configuration file should be created with the profile settings
+**Validates: Requirements 24.3**
 
 ## Error Handling
 
-### Model Management Service Errors
+### Error Categories
 
-| Error | Cause | Recovery |
-|-------|-------|----------|
-| Model Not Found | Model doesn't exist locally or remotely | List available models, suggest similar names |
-| Download Failed | Network error, disk full, permission denied | Check connectivity, disk space, retry with backoff |
-| Delete Failed | Model in use, permission denied | Stop using model, check permissions |
-| Provider Offline | Cannot connect to provider | Use cached data, suggest checking provider status |
-| Cache Corruption | Invalid cache data | Clear cache, fetch fresh data |
-| Model In Use | Attempting to delete active model | Notify user, suggest switching models first |
+1. **Provider Errors**: Adapter unavailable, network failures, model not found
+2. **Validation Errors**: Invalid options, missing required variables, schema violations
+3. **Resource Errors**: Disk full, permission denied, file not found
+4. **Timeout Errors**: Model pull timeout, keep-alive timeout, comparison timeout
 
-### Model Router Errors
+### Error Handling Strategy
 
-| Error | Cause | Recovery |
-|-------|-------|----------|
-| No Compatible Models | No models match profile requirements | Suggest installing compatible models, try fallback profile |
-| Invalid Profile | Unknown profile name | List available profiles, suggest closest match |
-| Configuration Error | Invalid routing config | Validate config, provide specific error |
-| Capability Mismatch | Required capability not available | List models with capability, suggest alternatives |
+**Graceful Degradation:**
+- Use cached data when provider unavailable
+- Return partial results when some operations fail
+- Provide safe defaults when data unavailable
 
-### Model Database Errors
+**Descriptive Messages:**
+- Include error type and context
+- Suggest remediation steps
+- Include relevant identifiers (model name, file path)
 
-| Error | Cause | Recovery |
-|-------|-------|----------|
-| Pattern Syntax Error | Invalid glob pattern | Validate pattern, provide syntax help |
-| No Pattern Match | Model not in database | Use default limits, log warning |
-| Ambiguous Match | Multiple equally specific patterns | Use first match, log warning |
+**Retry Logic:**
+- Exponential backoff for transient failures
+- Maximum retry attempts (3)
+- User-initiated retry for manual operations
 
-### Configuration Manager Errors
+**Error Propagation:**
+- Services throw typed errors
+- CLI layer catches and formats for display
+- Errors include stack traces in debug mode
 
-| Error | Cause | Recovery |
-|-------|-------|----------|
-| Validation Failed | Invalid parameter values | List validation errors with field names |
-| File Not Found | Config file missing | Use defaults, create example config |
-| Parse Error | Invalid YAML/JSON syntax | Show syntax error location, suggest fix |
-| Type Mismatch | Wrong value type | Show expected type, provide example |
-| Unknown Field | Unrecognized config key | Ignore with warning, list valid keys |
+### Example Error Messages
 
-### Progress Tracking Errors
+```typescript
+// Provider unavailable
+"Failed to connect to Ollama at http://localhost:11434. Is Ollama running? Try 'ollama serve' to start it."
 
-| Error | Cause | Recovery |
-|-------|-------|----------|
-| Download Timeout | Network too slow | Increase timeout, retry |
-| Cancellation | User cancelled download | Clean up partial download |
-| Disk Full | Insufficient space | Show space required, suggest cleanup |
-| Checksum Mismatch | Corrupted download | Retry download, verify integrity |
+// Model not found
+"Model 'llama3.1:8b' not found. Available models: llama3:8b, mistral:7b. Use 'ollm model pull llama3.1:8b' to download it."
 
+// Invalid options
+"Invalid temperature value: 2.5. Temperature must be between 0.0 and 2.0."
 
+// Missing required variable
+"Template 'code_review' requires variable 'language'. Provide it with: /template use code_review language=TypeScript"
+```
 
 ## Testing Strategy
 
-### Unit Tests
+### Unit Testing
 
 Unit tests verify specific examples, edge cases, and error conditions for individual components:
 
-**Model Management Service**:
-- List models returns array of ModelInfo
-- Pull model emits progress events
-- Delete model invalidates cache
-- Show model returns detailed info
-- Get status returns correct enum value
-- Cache hit/miss behavior
-- Offline mode uses cached data
-- Error messages are descriptive
+**Model Management Service:**
+- Test listModels with empty, single, and multiple models
+- Test pullModel with progress events and cancellation
+- Test deleteModel with loaded and unloaded models
+- Test cache invalidation after mutations
+- Test error handling for provider failures
 
-**Model Router**:
-- Select model from available list
-- Prefer models from preferred families
-- Filter by minimum context window
-- Filter by required capabilities
-- Apply configuration overrides
-- Fallback profile logic
-- Error when no compatible models
-- Handle unknown model capabilities
+**Model Router:**
+- Test selection with various profile configurations
+- Test fallback chain with multiple levels
+- Test configuration overrides
+- Test filtering by context window and capabilities
+- Test scoring algorithm for preferred families
 
-**Model Database**:
-- Glob pattern matching (*, ?, [])
-- Most specific pattern wins
-- Default limits for unknown models
-- Family detection from model names
-- Capability lookup
-- Cache pattern match results
+**Model Database:**
+- Test pattern matching with wildcards
+- Test lookup for known and unknown models
+- Test default value returns
+- Test capability flag retrieval
 
-**Configuration Manager**:
-- Load from multiple sources
-- Precedence: CLI > Env > File
-- Validate parameter bounds
-- Merge configurations correctly
-- Per-model option overrides
-- Validation error messages
-- Handle missing config files
+**Memory Service:**
+- Test persistence round-trip (store, restart, load)
+- Test token budget enforcement
+- Test prioritization by access count and recency
+- Test search functionality
+- Test CRUD operations (create, read, update, delete)
 
-**Progress Tracking**:
-- Initial event at 0%
-- Final event at 100%
-- Cancellation event
-- Error event with details
-- All required fields present
+**Template Service:**
+- Test template loading from multiple directories
+- Test variable substitution with various patterns
+- Test default value application
+- Test required variable validation
+- Test YAML parsing errors
 
-### Property-Based Tests
+**Comparison Service:**
+- Test parallel execution with multiple models
+- Test result aggregation
+- Test partial failure handling
+- Test cancellation
 
-Property tests verify universal properties across all inputs using randomized test data. Each test should run a minimum of 100 iterations.
+**Project Profile Service:**
+- Test detection for each project type
+- Test profile loading and application
+- Test settings precedence (project > global)
+- Test manual override
 
-**Test Configuration**:
-- Use `fast-check` library for TypeScript property-based testing
-- Minimum 100 iterations per property test
-- Each test references its design document property number
-- Tag format: `Feature: stage-07-model-management, Property N: <property text>`
+### Property-Based Testing
 
-**Key Properties to Test**:
-- Property 1: Model list structure (generate random model data, verify structure)
-- Property 2: Cache timing (generate random timestamps, verify cache behavior)
-- Property 3: Error messages (generate random errors, verify non-empty messages)
-- Property 4: Progress events (generate random progress data, verify fields)
-- Property 7: Router selection (generate random model lists, verify selection is from list)
-- Property 9: Context requirements (generate random profiles and models, verify minimum met)
-- Property 10: Capability matching (generate random capability requirements, verify all present)
-- Property 11: Glob patterns (generate random model names and patterns, verify matching)
-- Property 13: Pattern specificity (generate overlapping patterns, verify most specific wins)
-- Property 18: Configuration precedence (generate random configs, verify precedence order)
-- Property 19: Parameter bounds (generate random parameter values, verify validation)
-- Property 20: Family detection (generate random model names, verify family categorization)
+Property tests verify universal properties across all inputs using fast-check library. Each test runs minimum 100 iterations with randomized inputs.
 
-**Generators**:
+**Configuration:**
 ```typescript
-// Example generators for property tests
-const arbModelInfo = fc.record({
-  name: fc.string({ minLength: 1, maxLength: 50 }),
-  family: fc.constantFrom('llama', 'mistral', 'codellama', 'phi', 'gemma', 'unknown'),
-  size: fc.integer({ min: 1e9, max: 100e9 }),
-  parameters: fc.integer({ min: 1, max: 70 }),
-  quantization: fc.constantFrom('q4_0', 'q8_0', 'f16', 'f32'),
-  contextWindow: fc.integer({ min: 2048, max: 128000 }),
-  maxOutputTokens: fc.option(fc.integer({ min: 512, max: 8192 })),
-  modifiedAt: fc.date(),
-  capabilities: fc.record({
-    toolCalling: fc.boolean(),
-    vision: fc.boolean(),
-    streaming: fc.boolean()
-  })
-});
+import fc from 'fast-check';
 
-const arbRoutingProfile = fc.record({
-  name: fc.constantFrom('fast', 'general', 'code', 'creative'),
-  preferredFamilies: fc.array(fc.string(), { minLength: 1, maxLength: 5 }),
-  minContextWindow: fc.integer({ min: 2048, max: 32768 }),
-  requiredCapabilities: fc.array(
-    fc.constantFrom('toolCalling', 'vision', 'streaming'),
-    { maxLength: 3 }
-  )
-});
-
-const arbGenerationOptions = fc.record({
-  temperature: fc.float({ min: 0.0, max: 2.0 }),
-  maxTokens: fc.integer({ min: 1, max: 8192 }),
-  topP: fc.float({ min: 0.0, max: 1.0 })
-});
-
-const arbProgressEvent = fc.record({
-  percentage: fc.integer({ min: 0, max: 100 }),
-  downloadedBytes: fc.integer({ min: 0, max: 10e9 }),
-  totalBytes: fc.integer({ min: 1, max: 10e9 }),
-  downloadSpeed: fc.integer({ min: 0, max: 100e6 }),
-  status: fc.constantFrom('downloading', 'complete', 'cancelled', 'error')
+// Example property test
+describe('Model Router Properties', () => {
+  it('Property 9: Profile-based model selection', () => {
+    fc.assert(
+      fc.property(
+        fc.record({
+          name: fc.string(),
+          minContextWindow: fc.integer({ min: 1024, max: 128000 }),
+          requiredCapabilities: fc.array(fc.constantFrom('toolCalling', 'vision', 'streaming'))
+        }),
+        fc.array(fc.record({
+          name: fc.string(),
+          contextWindow: fc.integer({ min: 1024, max: 128000 }),
+          capabilities: fc.record({
+            toolCalling: fc.boolean(),
+            vision: fc.boolean(),
+            streaming: fc.boolean()
+          })
+        })),
+        (profile, models) => {
+          const router = new ModelRouter();
+          const selected = router.selectModel(profile.name, models);
+          
+          if (selected !== null) {
+            const model = models.find(m => m.name === selected);
+            // Property: Selected model must meet requirements
+            expect(model.contextWindow).toBeGreaterThanOrEqual(profile.minContextWindow);
+            profile.requiredCapabilities.forEach(cap => {
+              expect(model.capabilities[cap]).toBe(true);
+            });
+          }
+        }
+      ),
+      { numRuns: 100 }
+    );
+  });
 });
 ```
 
-### Integration Tests
+**Property Test Coverage:**
+- Model routing selection algorithm (Properties 9-12)
+- Model database pattern matching (Property 15)
+- Memory service round-trip (Property 20)
+- Memory prioritization (Property 22)
+- Template variable substitution (Properties 34-36)
+- Configuration precedence (Properties 19, 44, 46)
+- Project detection (Property 43)
 
-Integration tests verify interactions between components:
+### Integration Testing
 
-- Model Management Service → Provider Adapter: List, pull, delete operations
-- Model Router → Model Database: Lookup limits and capabilities
-- Configuration Manager → All Services: Apply configuration
-- Cache → Provider: Cache hit/miss behavior
-- Progress Tracking → UI: Event emission and handling
-- Routing → Configuration: Override application
+Integration tests verify component interactions:
 
-### Performance Tests
+**Model Management + Provider Adapter:**
+- Test full model lifecycle (list, pull, use, delete)
+- Test keep-alive with real provider
+- Test error handling with provider failures
 
-Performance tests verify system efficiency:
+**Model Router + Model Database:**
+- Test routing with real model database
+- Test fallback chains
+- Test configuration overrides
 
-- Model list caching reduces provider queries (< 1 query per minute)
-- Pattern matching latency (< 1ms per lookup)
-- Configuration merging speed (< 10ms)
-- Cache lookup speed (< 1ms)
-- Router selection speed (< 5ms for 100 models)
+**Memory Service + File System:**
+- Test persistence across restarts
+- Test concurrent access
+- Test file corruption recovery
 
-### Manual Testing
+**Template Service + File System:**
+- Test loading from multiple directories
+- Test workspace override of user templates
+- Test file watching for hot reload
 
-Manual testing scenarios for user-facing features:
+**Project Profile + Configuration:**
+- Test profile detection and application
+- Test settings merge (global + project)
+- Test profile switching
 
-1. List models and verify output format
-2. Pull a model and verify progress display
-3. Delete a model and verify removal
-4. Show model info and verify details
-5. Use routing profile and verify model selection
-6. Override profile with configuration
-7. Test offline mode with cached data
-8. Test invalid configuration rejection
-9. Test environment variable overrides
-10. Test CLI flag precedence
-11. Test model family detection
-12. Test capability-based filtering
+### Test Organization
 
+```
+packages/core/src/
+├── services/
+│   ├── __tests__/
+│   │   ├── modelManagementService.test.ts
+│   │   ├── modelManagementService.property.test.ts
+│   │   ├── memoryService.test.ts
+│   │   ├── memoryService.property.test.ts
+│   │   ├── templateService.test.ts
+│   │   ├── comparisonService.test.ts
+│   │   └── projectProfileService.test.ts
+├── routing/
+│   ├── __tests__/
+│   │   ├── modelRouter.test.ts
+│   │   └── modelRouter.property.test.ts
+└── core/
+    ├── __tests__/
+    │   ├── modelDatabase.test.ts
+    │   └── modelDatabase.property.test.ts
+```
+
+### Test Data
+
+**Mock Models:**
+```typescript
+const MOCK_MODELS: ModelInfo[] = [
+  {
+    name: 'llama3.1:8b',
+    size: 4700000000,
+    modifiedAt: new Date('2026-01-01'),
+    family: 'llama',
+    contextWindow: 128000,
+    capabilities: { toolCalling: true, vision: false, streaming: true }
+  },
+  {
+    name: 'phi3:mini',
+    size: 2300000000,
+    modifiedAt: new Date('2026-01-01'),
+    family: 'phi',
+    contextWindow: 4096,
+    capabilities: { toolCalling: false, vision: false, streaming: true }
+  }
+];
+```
+
+**Mock Templates:**
+```yaml
+name: test_template
+description: Test template
+template: "Hello {name:World}, you are {age} years old"
+variables:
+  - name: name
+    required: false
+    default: "World"
+  - name: age
+    required: true
+```
+
+**Mock Memories:**
+```json
+{
+  "version": 1,
+  "memories": [
+    {
+      "key": "test_key",
+      "value": "test_value",
+      "category": "fact",
+      "createdAt": "2026-01-12T10:00:00Z",
+      "updatedAt": "2026-01-12T10:00:00Z",
+      "accessCount": 0,
+      "source": "user"
+    }
+  ]
+}
+```

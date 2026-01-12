@@ -50,6 +50,33 @@ export const servicesConfigSchema = z.object({
       denyPatterns: z.array(z.string()).optional(),
     })
     .optional(),
+  contextManagement: z
+    .object({
+      targetSize: z.number().int().positive().optional(),
+      minSize: z.number().int().positive().optional(),
+      maxSize: z.number().int().positive().optional(),
+      autoSize: z.boolean().optional(),
+      vramBuffer: z.number().int().positive().optional(),
+      kvQuantization: z.enum(['f16', 'q8_0', 'q4_0']).optional(),
+      compression: z
+        .object({
+          enabled: z.boolean().optional(),
+          threshold: z.number().min(0).max(1).optional(),
+          strategy: z.enum(['summarize', 'truncate', 'hybrid']).optional(),
+          preserveRecent: z.number().int().positive().optional(),
+          summaryMaxTokens: z.number().int().positive().optional(),
+        })
+        .optional(),
+      snapshots: z
+        .object({
+          enabled: z.boolean().optional(),
+          maxCount: z.number().int().positive().optional(),
+          autoCreate: z.boolean().optional(),
+          autoThreshold: z.number().min(0).max(1).optional(),
+        })
+        .optional(),
+    })
+    .optional(),
 });
 
 /**
@@ -89,6 +116,27 @@ export const DEFAULT_SERVICES_CONFIG: Required<ServicesConfig> = {
       'GITHUB_*',
     ],
   },
+  contextManagement: {
+    targetSize: 8192,
+    minSize: 2048,
+    maxSize: 131072,
+    autoSize: true,
+    vramBuffer: 512 * 1024 * 1024, // 512MB
+    kvQuantization: 'q8_0',
+    compression: {
+      enabled: true,
+      threshold: 0.8,
+      strategy: 'hybrid',
+      preserveRecent: 4096,
+      summaryMaxTokens: 1024,
+    },
+    snapshots: {
+      enabled: true,
+      maxCount: 5,
+      autoCreate: true,
+      autoThreshold: 0.8,
+    },
+  },
 };
 
 /**
@@ -126,6 +174,18 @@ export function mergeServicesConfig(
       denyPatterns: userConfig.environment?.denyPatterns
         ? [...DEFAULT_SERVICES_CONFIG.environment.denyPatterns, ...userConfig.environment.denyPatterns]
         : DEFAULT_SERVICES_CONFIG.environment.denyPatterns,
+    },
+    contextManagement: {
+      ...DEFAULT_SERVICES_CONFIG.contextManagement,
+      ...userConfig.contextManagement,
+      compression: {
+        ...DEFAULT_SERVICES_CONFIG.contextManagement.compression,
+        ...userConfig.contextManagement?.compression,
+      },
+      snapshots: {
+        ...DEFAULT_SERVICES_CONFIG.contextManagement.snapshots,
+        ...userConfig.contextManagement?.snapshots,
+      },
     },
   };
 }

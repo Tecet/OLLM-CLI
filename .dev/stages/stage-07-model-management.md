@@ -116,18 +116,225 @@ Implement model management services (list, pull, remove, info) and routing rules
 
 ---
 
+### S07-T05: Simple Memory (Cross-Session Context)
+
+**Goal**: Persist facts, preferences, and context across sessions without requiring RAG.
+
+**Effort**: 1 day
+
+**Steps**:
+
+1. Implement `MemoryService`:
+
+```typescript
+interface MemoryService {
+  remember(key: string, value: string, options?: RememberOptions): void;
+  recall(key: string): MemoryEntry | null;
+  search(query: string): MemoryEntry[];
+  forget(key: string): void;
+  listAll(): MemoryEntry[];
+  getSystemPromptAddition(): string;
+}
+
+interface MemoryEntry {
+  key: string;
+  value: string;
+  category: 'fact' | 'preference' | 'context';
+  createdAt: Date;
+  updatedAt: Date;
+  accessCount: number;
+  source: 'user' | 'llm' | 'system';
+}
+```
+
+2. Storage in `~/.ollm/memory.json`
+3. System prompt injection with token budget
+4. Slash commands:
+   ```
+   /memory list              # Show all memories
+   /memory add <key> <value> # Add memory
+   /memory forget <key>      # Remove memory
+   /memory clear             # Clear all memories
+   ```
+5. LLM `remember` tool for AI-initiated memories
+
+**Deliverables**:
+- `packages/core/src/services/memoryService.ts`
+- `packages/core/src/tools/remember.ts`
+- `docs/simple_memory.md`
+
+**Acceptance Criteria**:
+- [ ] Memories persist across sessions
+- [ ] Memories included in system prompt
+- [ ] LLM can add memories via tool
+- [ ] User can manage via slash commands
+- [ ] Token budget respected
+
+---
+
+### S07-T06: Model Comparison Mode
+
+**Goal**: Run the same prompt through multiple models and compare outputs side-by-side.
+
+**Steps**:
+1. Implement `ModelComparisonService`:
+   - `compare(prompt, models[]): ComparisonResult`
+   - Run prompt through 2-3 models in parallel
+   - Collect responses with timing metrics
+2. Add `/compare` command:
+   ```
+   /compare "Explain recursion" llama3:8b mistral:7b phi3:mini
+   ```
+3. Create comparison UI component:
+   - Side-by-side response display
+   - Metrics comparison (t/s, tokens, latency)
+   - Select winner action
+
+**Deliverables**:
+- `packages/core/src/services/modelComparisonService.ts`
+- `packages/cli/src/ui/components/compare/ComparisonView.tsx`
+
+**Acceptance Criteria**:
+- [ ] `/compare` runs prompt through multiple models
+- [ ] Responses displayed side-by-side
+- [ ] Performance metrics shown for each
+- [ ] User can select preferred response
+
+---
+
+### S07-T07: Prompt Templates Library
+
+**Goal**: Reusable prompts with variable substitution.
+
+**Steps**:
+1. Implement `TemplateService`:
+   - Load templates from `~/.ollm/templates/`
+   - Variable substitution: `{variable}`
+   - Default values: `{variable:default}`
+2. Template format:
+   ```yaml
+   # ~/.ollm/templates/code_review.yaml
+   name: code_review
+   description: Review code for quality
+   template: "Review this {language} code for {focus:bugs and security}: {code}"
+   variables:
+     - name: language
+       required: true
+     - name: focus
+       default: "bugs and security"
+     - name: code
+       required: true
+   ```
+3. Slash commands:
+   ```
+   /template list
+   /template use <name> [vars...]
+   /template create <name>
+   ```
+
+**Deliverables**:
+- `packages/core/src/services/templateService.ts`
+- `packages/cli/src/commands/templateCommands.ts`
+
+**Acceptance Criteria**:
+- [ ] Templates loaded from config directory
+- [ ] Variable substitution works
+- [ ] Missing required variables prompt user
+- [ ] `/template` commands work
+
+---
+
+### S07-T08: Model Keep-Alive
+
+**Goal**: Keep frequently-used models loaded in VRAM to reduce time-to-first-token.
+
+**Steps**:
+1. Implement keep-alive logic in `ModelManagementService`:
+   - Send periodic keep-alive requests to Ollama
+   - Track last-used timestamps
+   - Configurable timeout per model
+2. Configuration:
+   ```yaml
+   model:
+     keepAlive:
+       enabled: true
+       models:
+         - llama3.1:8b   # Always keep loaded
+       timeout: 300      # Seconds before unload
+   ```
+3. Status bar indicator for loaded models
+4. `/model keep <name>` and `/model unload <name>` commands
+
+**Deliverables**:
+- Updated `packages/core/src/services/modelManagementService.ts`
+- `packages/cli/src/commands/modelKeepAliveCommands.ts`
+
+**Acceptance Criteria**:
+- [ ] Configured models stay loaded
+- [ ] Idle models unload after timeout
+- [ ] Status bar shows loaded models
+- [ ] Manual keep/unload commands work
+
+---
+
+### S07-T09: Project Profiles
+
+**Goal**: Auto-configure model, tools, and system prompt based on project type.
+
+**Steps**:
+1. Implement `ProjectProfileService`:
+   - Detect project type from files (package.json, Cargo.toml, etc.)
+   - Load profile from `.ollm/project.yaml`
+   - Override global settings with project settings
+2. Project profile format:
+   ```yaml
+   # .ollm/project.yaml
+   profile: typescript-monorepo
+   model: llama3.1:70b
+   systemPrompt: "You are helping with a TypeScript monorepo using pnpm..."
+   tools:
+     enabled: [read_file, write_file, shell, glob]
+     disabled: [web_fetch]
+   routing:
+     defaultProfile: code
+   ```
+3. Built-in profile templates:
+   - `typescript`, `python`, `rust`, `go`, `documentation`
+4. `/project` commands:
+   ```
+   /project detect   # Auto-detect and show profile
+   /project use <profile>
+   /project init     # Create .ollm/project.yaml
+   ```
+
+**Deliverables**:
+- `packages/core/src/services/projectProfileService.ts`
+- `packages/cli/src/commands/projectCommands.ts`
+- Built-in profiles in `packages/core/src/profiles/`
+
+**Acceptance Criteria**:
+- [ ] Project profile auto-detected on startup
+- [ ] Profile overrides global settings
+- [ ] `/project` commands work
+- [ ] Built-in profiles available
+
+---
+
 ## File Structure After Stage 07
 
 ```
 packages/core/src/
 ├── services/
-│   └── modelManagementService.ts
+│   ├── modelManagementService.ts
+│   └── memoryService.ts
 ├── routing/
 │   ├── modelRouter.ts
 │   └── routingProfiles.ts
-└── core/
-    ├── modelLimits.ts
-    └── modelDatabase.ts
+├── core/
+│   ├── modelLimits.ts
+│   └── modelDatabase.ts
+└── tools/
+    └── remember.ts
 
 packages/cli/src/config/
 └── optionsMapper.ts

@@ -9,12 +9,15 @@
 │                                                     │                           │
 │                 ACTIVE TAB CONTENT                  │    SIDE PANEL             │
 │                                                     │    (Collapsible)          │
-│                 (Full width when panel hidden)      │                           │
+│                 (Full width when panel hidden)      │    - Activity indicator   │
+│                                                     │    - Context info         │
 │                                                     │                           │
 ├─────────────────────────────────────────────────────┴───────────────────────────┤
-│ > _                                                                             │
+│ ┌─────────────────────────────────────────────────────────────────────────────┐ │
+│ │ > _                                                                         │ │
+│ └─────────────────────────────────────────────────────────────────────────────┘ │
 ├─────────────────────────────────────────────────────────────────────────────────┤
-│ 🟢 llama3.2:3b │ 8.2K/32K │ main +3 │ GPU: 45°C 6.2/8GB │ 2 reviews │ ~$0.02    │
+│ 🟢 llama3.2:3b │ 8.2K/32K │ ⚡38.5t/s │ GPU: 45°C 6.2/8GB │ main +3 │ ~$0.02   │
 └─────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -29,19 +32,19 @@
 | **Provider Status** | Colored dot | 🟢 🟡 🔴 | Provider connection |
 | **Model Name** | Truncated if long | `llama3.2:3b` | Active model |
 | **Token Usage** | current/max | `8.2K/32K` | Context tracking |
-| **Git Status** | branch +staged ~modified | `main +3 ~2` | gitService |
+| **Avg Speed** | tokens/sec | `⚡38.5t/s` | metricsCollector |
 | **GPU Temp** | Temperature | `GPU: 45°C` | nvidia-smi/rocm |
 | **VRAM Usage** | used/total | `6.2/8GB` | nvidia-smi/rocm |
-| **Pending Reviews** | Count | `2 reviews` | diffReviewer |
+| **Git Status** | branch +staged ~modified | `main +3` | gitService |
 | **Session Cost** | Estimate | `~$0.02` | costTracker |
 
 ### Status Bar States
 
 ```
-Connected:    🟢 llama3.2:3b │ 8.2K/32K │ main +3 │ GPU: 45°C 6.2/8GB │ 2 reviews │ ~$0.02
+Connected:    🟢 llama3.2:3b │ 8.2K/32K │ ⚡38.5t/s │ GPU: 45°C 6.2/8GB │ main +3 │ ~$0.02
 Loading:      🟡 Loading llama3.2:3b... │ GPU: 52°C 4.1/8GB 
 Disconnected: 🔴 Disconnected │ Reconnecting...
-No GPU:       🟢 llama3.2:3b │ 8.2K/32K │ main +3 │ CPU mode │ 2 reviews │ ~$0.02
+No GPU:       🟢 llama3.2:3b │ 8.2K/32K │ ⚡38.5t/s │ CPU mode │ main +3 │ ~$0.02
 ```
 
 ### VRAM/GPU Monitoring
@@ -304,56 +307,358 @@ function formatArgument(key: string, value: string): string {
 
 ---
 
-## Streaming Indicator
+## Inference Performance Metrics
 
-### Current: Progress Spinner
+Real-time performance metrics displayed under each LLM response:
 
-```
-┌────────────────────────────────────────────────────────────────────────────┐
-│ Assistant                                                                  │
-│ ⠋ Thinking...                                                              │
-└────────────────────────────────────────────────────────────────────────────┘
-
-Spinner frames: ⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏ (cycle every 80ms)
-```
-
-### Future: Llama ASCII Animation
+### Per-Response Display
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────┐
-│ Assistant                                                                  │
+│ Assistant                                                         3:42 PM  │
 │                                                                            │
-│     🦙 <- Walking llama animation                                          │
-│    /||\                                                                    │
-│   / || \   Thinking...                                                     │
+│ I found the issue in your login handler. The token validation was         │
+│ being skipped when the Authorization header was present but empty.        │
+│ Here's the fix...                                                          │
 │                                                                            │
+│ ──────────────────────────────────────────────────────────────────────────│
+│ ⚡ 42.3 t/s │ 📥 847 tokens │ 📤 156 tokens │ ⏱️ 3.68s │ TTFT: 0.12s     │
 └────────────────────────────────────────────────────────────────────────────┘
 ```
 
-Placeholder for custom llama animation frames:
+### Metrics Explained
+
+| Metric | Symbol | Description |
+|--------|--------|-------------|
+| **Generation Speed** | ⚡ | Tokens generated per second |
+| **Input Tokens** | 📥 | Tokens in prompt (context sent to model) |
+| **Output Tokens** | 📤 | Tokens generated in response |
+| **Total Time** | ⏱️ | End-to-end generation time |
+| **Time to First Token** | TTFT | Latency before first token appears |
+
+### Compact Mode
+
+Configurable compact display for less verbose output:
+
+```
+│ ⚡ 42.3 t/s │ 156 tokens │ 3.68s                                          │
+```
+
+### Data Sources
 
 ```typescript
-// packages/cli/src/ui/animations/llama.ts
+interface InferenceMetrics {
+  promptTokens: number;        // Input/context tokens
+  completionTokens: number;    // Generated tokens  
+  tokensPerSecond: number;     // Generation speed
+  totalDuration: number;       // Total time in seconds
+  timeToFirstToken: number;    // TTFT in seconds
+}
 
-const LLAMA_FRAMES = [
-  `   🦙
-  /||\\
- / || \\`,
-  `   🦙
-  /||\\
-  \\||/`,
-  // ... more frames
-];
+// Ollama API provides:
+// - eval_count, eval_duration (generation)
+// - prompt_eval_count, prompt_eval_duration (prompt processing)
+// - total_duration
 
-const LLAMA_WALKING = [
-  `  🦙    `,
-  `   🦙   `,
-  `    🦙  `,
-  `     🦙 `,
-  `      🦙`,
-  // walking across screen
-];
+// Fallback estimation when provider data unavailable:
+// tokensPerSecond = Math.ceil(responseText.length / 4) / totalSeconds
 ```
+
+### Configuration
+
+```yaml
+ui:
+  metrics:
+    enabled: true              # Show metrics under responses
+    compactMode: false         # Use compact single-line format
+    showPromptTokens: true     # Show input token count (📥)
+    showTTFT: true             # Show time to first token
+    showInStatusBar: true      # Show average t/s in status bar
+```
+
+### Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+M` | Toggle metrics display visibility |
+
+### Slash Commands
+
+| Command | Description |
+|---------|-------------|
+| `/metrics` | Show session performance statistics |
+| `/metrics toggle` | Toggle metrics display |
+| `/metrics reset` | Reset session statistics |
+
+---
+
+## Activity Indicators
+
+Visual feedback shown during LLM operations. Two indicator types work together:
+- **🦙 Llama Animation**: Walks inside Assistant message box (waiting for first token only)
+- **⠋ Spinner**: Shown in Side Panel activity area (streaming, tools, reasoning)
+
+### State 1: Waiting for First Token (Llama Walks)
+
+```
+┌──────────────────────────────────────────────────────┬─────────────────────────────────┐
+│                                                      │  ACTIVITY                       │
+│  You: Fix the login bug in auth.ts                   │                                 │
+│                                                      │  ⏳ Waiting for response        │
+│  ┌──────────────────────────────────────────────┐    │                                 │
+│  │ Assistant                                    │    │  Model: llama3.2:3b             │
+│  │                                              │    │  Queue: 0 pending               │
+│  │  ▌                                           │    │                                 │
+│  │                                              │    │                                 │
+│  │         🦙                                   │    │                                 │
+│  │        /||\                                  │    │                                 │
+│  └──────────────────────────────────────────────┘    │                                 │
+│                                                      │                                 │
+│  ┌──────────────────────────────────────────────┐    │                                 │
+│  │ > _                                          │    │                                 │
+│  └──────────────────────────────────────────────┘    │                                 │
+└──────────────────────────────────────────────────────┴─────────────────────────────────┘
+```
+
+**Llama walks left-to-right, then flips and walks back (bounce loop):**
+```
+│  │  🦙→                                        │  (start left, facing right)
+│  │       🦙→                                   │  (walking right...)
+│  │                                    🦙→      │  (reaches right edge)
+│  │                                    ←🦙      │  (FLIP! now facing left)
+│  │                           ←🦙               │  (walking left...)
+│  │  ←🦙                                        │  (reaches left, FLIP, repeat)
+```
+
+### State 2: Streaming Response (Spinner in Panel)
+
+```
+│  ┌──────────────────────────────────────────────┐    │  ACTIVITY                       │
+│  │ Assistant                                    │    │                                 │
+│  │                                              │    │  ⠋ Generating                   │
+│  │  I found the issue in your login handler.    │    │    42 tokens                    │
+│  │  The token validation was being skipped      │    │    35.2 t/s                     │
+│  │  when the Authorization header was present   │    │    1.2s elapsed                 │
+│  │  but empty.▌                                 │    │                                 │
+│  │                                              │    │  Model: llama3.2:3b             │
+│  └──────────────────────────────────────────────┘    │                                 │
+```
+
+### State 3: Tool Execution (Spinner in Panel)
+
+```
+│  Assistant:                                          │  ACTIVITY                       │
+│  Let me check that file...                           │                                 │
+│                                                      │  ⠋ Running tool                 │
+│  ┌── 🔧 read_file ────────────────────────────────┐  │    📂 read_file                 │
+│  │ Reading src/auth/login.ts...                   │  │    src/auth/login.ts            │
+│  └────────────────────────────────────────────────┘  │                                 │
+│                                                      │  Queue: 0 more                  │
+```
+
+### State 4: Reasoning (Spinner in Panel)
+
+```
+│  ┌──────────────────────────────────────────────┐    │  ACTIVITY                       │
+│  │ Assistant                                    │    │                                 │
+│  │                                              │    │  🧠 Reasoning                   │
+│  │ ┌─ 🧠 Reasoning ────────── [▼ Collapse] ───┐ │    │    234 tokens                   │
+│  │ │ Let me analyze step by step...           │ │    │    4.2s elapsed                 │
+│  │ └──────────────────────────────────────────┘ │    │                                 │
+│  │                                              │    │  ⠋ Generating response...       │
+│  └──────────────────────────────────────────────┘    │                                 │
+```
+
+### Indicator Summary
+
+| State | Message Box | Side Panel |
+|-------|-------------|------------|
+| **Waiting for first token** | 🦙 Llama bounces at bottom | ⏳ Waiting for response |
+| **Streaming** | Text appears with cursor ▌ | ⠋ Generating + token count |
+| **Tool execution** | Tool execution box | ⠋ Running tool + name |
+| **Reasoning** | 🧠 Reasoning box | 🧠 + token count |
+| **Idle** | Normal message | Empty or context info |
+
+### Animation Assets
+
+Using pixel art images (16x16 PNG with transparency):
+
+**Phase 1 (Static Move)**:
+- `llama_right.png` - facing right
+- `llama_left.png` - facing left
+
+**Phase 2 (Walking Animation)** - Future:
+- `llama_right_1.png`, `llama_right_2.png` - walk cycle right
+- `llama_left_1.png`, `llama_left_2.png` - walk cycle left
+
+See [Llama Animation Guide](llama_animation.md) for pixel art specs and creation guide.
+
+### Animation Code
+
+```typescript
+// packages/cli/src/ui/components/LlamaAnimation.tsx
+
+interface LlamaAnimationProps {
+  isActive: boolean;
+  containerWidth: number;
+}
+
+// Phase 1: Static image bounce
+const LLAMA_RIGHT = 'assets/animations/llama_right.png';
+const LLAMA_LEFT = 'assets/animations/llama_left.png';
+
+// Phase 2 (future): Walk cycle frames
+// const WALK_FRAMES_RIGHT = ['llama_right_1.png', 'llama_right_2.png'];
+// const WALK_FRAMES_LEFT = ['llama_left_1.png', 'llama_left_2.png'];
+
+interface LlamaState {
+  position: number;
+  direction: 'right' | 'left';
+  image: string;
+  // walkFrame: number;  // Phase 2
+}
+
+function useLlamaBounce(containerWidth: number, isActive: boolean): LlamaState {
+  const [state, setState] = useState<LlamaState>({
+    position: 0,
+    direction: 'right',
+    image: LLAMA_RIGHT
+  });
+  
+  useEffect(() => {
+    if (!isActive) return;
+    
+    const maxPosition = containerWidth - 16; // 16px icon width
+    const interval = setInterval(() => {
+      setState(prev => {
+        let { position, direction } = prev;
+        
+        if (direction === 'right') {
+          position += 2;
+          if (position >= maxPosition) {
+            direction = 'left';
+          }
+        } else {
+          position -= 2;
+          if (position <= 0) {
+            direction = 'right';
+          }
+        }
+        
+        return {
+          position,
+          direction,
+          image: direction === 'right' ? LLAMA_RIGHT : LLAMA_LEFT
+        };
+      });
+    }, 80); // 80ms per step for smooth movement
+    
+    return () => clearInterval(interval);
+  }, [containerWidth, isActive]);
+  
+  return state;
+}
+```
+
+### Fallback (No Image Support)
+
+For terminals without image support:
+```typescript
+const LLAMA_FALLBACK_RIGHT = '🦙→';
+const LLAMA_FALLBACK_LEFT = '←🦙';
+```
+
+```typescript
+// Spinner frames for side panel
+const SPINNER_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+const SPINNER_INTERVAL = 80; // ms per frame
+```
+
+---
+
+## Reasoning Model Display
+
+For models that output thinking process (DeepSeek-R1, Qwen3, QwQ), display reasoning in a nested scrollable box.
+
+### Expanded State (During Streaming)
+
+```
+┌────────────────────────────────────────────────────────────────────────────┐
+│ Assistant                                                         3:42 PM  │
+│                                                                            │
+│ ┌─ 🧠 Reasoning ──────────────────────────────────── [▼ Collapse] ───────┐ │
+│ │ Let me analyze this step by step...                                  ↑ │ │
+│ │                                                                      │ │ │
+│ │ First, I need to understand the problem:                             │ │ │
+│ │ - The user wants to fix a login bug                                  │ │ │
+│ │ - The token validation is being skipped                              ░ │ │
+│ │                                                                      │ │ │
+│ │ Key insight: The condition checks if token exists,                   │ │ │
+│ │ but doesn't validate the token itself...                             ↓ │ │
+│ └──────────────────────────────────────────────────────────────────────┘ │
+│                                                                            │
+│ ⠋ Generating response...                                                   │
+└────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Collapsed State (After Complete)
+
+```
+│ ┌─ 🧠 Reasoning (847 tokens, 12.3s) ─────────────────── [▶ Expand] ──────┐ │
+│ └──────────────────────────────────────────────────────────────────────────┘ │
+│                                                                            │
+│ I found the issue. The token validation was being skipped when the        │
+│ Authorization header was present but empty. Here's the fix:               │
+│ [code block...]                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Behavior
+
+| State | Behavior |
+|-------|----------|
+| **Streaming** | Expanded, auto-scrolls to follow new content |
+| **Complete** | Auto-collapses, shows token count and duration |
+| **User Toggle** | Manual expand/collapse with button or `Ctrl+R` |
+
+### Design Features
+
+- **Nested Box**: Bordered container within the message
+- **Scrollable**: 8 visible lines, scroll for longer content
+- **Auto-scroll**: Follows new content during streaming
+- **Auto-collapse**: Collapses when response completes
+- **Visual**: Different background, 🧠 icon, muted text color
+
+### Configuration
+
+```yaml
+ui:
+  reasoning:
+    enabled: true                # Show reasoning blocks
+    maxVisibleLines: 8           # Height before scrolling
+    autoCollapseOnComplete: true # Collapse when response finishes
+```
+
+### Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+R` | Toggle reasoning visibility |
+
+### Slash Commands
+
+| Command | Description |
+|---------|-------------|
+| `/reasoning toggle` | Toggle reasoning display globally |
+| `/reasoning expand` | Expand all reasoning blocks |
+| `/reasoning collapse` | Collapse all reasoning blocks |
+
+### Supported Models
+
+- DeepSeek-R1 (all sizes)
+- Qwen3 (in thinking mode)
+- QwQ
+- Any model outputting `<think>...</think>` blocks
 
 ---
 
@@ -575,7 +880,9 @@ In-app documentation browser with side panel navigation:
 | Layout | Hybrid (tabs + collapsible side panel) |
 | Tabs | 6 tabs: Chat, Tools, Files, Search, Docs, Settings |
 | Theme | Dark mode only |
-| Status Bar | Model, tokens, git, GPU temp, VRAM, reviews, cost |
+| Status Bar | Model, tokens, avg t/s, GPU, git, cost |
+| **Metrics** | Per-response: t/s, tokens, TTFT (toggle with Ctrl+M) |
+| **Reasoning** | Nested scrollable box for `<think>` content (Ctrl+R) |
 | Diff Review | Small inline, large in Tools tab |
 | Tool Display | Show name + result, wrapped args |
 | Streaming | Spinner (llama animation later) |

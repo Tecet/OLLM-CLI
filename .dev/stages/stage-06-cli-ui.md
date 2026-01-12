@@ -47,37 +47,197 @@ Provide a full interactive TUI (React + Ink) with a hybrid layout (tabs + collap
 
 ---
 
-## Theme: Dark Mode
+## Unified UI Settings
+
+All UI customization (colors, keybinds, typography) is centralized in a single file that users can override.
+
+**File**: `packages/cli/src/ui/uiSettings.ts`
 
 ```typescript
-const theme = {
-  bg: {
-    primary: '#0d1117',
-    secondary: '#161b22',
-    tertiary: '#21262d',
+export const defaultUISettings = {
+  // ═══════════════════════════════════════════════════════════════════
+  // COLOR THEME (Dark Mode)
+  // ═══════════════════════════════════════════════════════════════════
+  theme: {
+    name: 'default-dark',
+    
+    bg: {
+      primary: '#0d1117',
+      secondary: '#161b22',
+      tertiary: '#21262d',
+    },
+    
+    text: {
+      primary: '#c9d1d9',
+      secondary: '#8b949e',
+      accent: '#58a6ff',
+    },
+    
+    role: {
+      user: '#58a6ff',
+      assistant: '#7ee787',
+      system: '#a371f7',
+      tool: '#f0883e',
+    },
+    
+    status: {
+      success: '#3fb950',
+      warning: '#d29922',
+      error: '#f85149',
+      info: '#58a6ff',
+    },
+    
+    diff: {
+      added: '#2ea043',
+      removed: '#f85149',
+    },
   },
-  text: {
-    primary: '#c9d1d9',
-    secondary: '#8b949e',
-    accent: '#58a6ff',
+
+  // ═══════════════════════════════════════════════════════════════════
+  // TYPOGRAPHY & SYMBOLS
+  // ═══════════════════════════════════════════════════════════════════
+  typography: {
+    // Text styles
+    headers: { bold: true, underline: false },
+    code: { dim: false, italic: false },
+    emphasis: { bold: true },
+    
+    // Unicode characters
+    bullets: '•',           // '●', '○', '▪', '-'
+    checkmark: '✓',         // '✔', '☑', '[x]'
+    cross: '✗',             // '✘', '☒', '[x]'
+    arrow: '→',             // '>', '=>', '▸'
+    
+    // Animation/Spinner style
+    spinner: 'dots',        // 'dots', 'line', 'arc', 'bounce'
+    
+    // Box drawing style
+    borders: 'round',       // 'round', 'single', 'double', 'bold', 'ascii'
+    
+    // ─────────────────────────────────────────────────────────────────
+    // NOTE: The following cannot be controlled by this app.
+    // They are set in your terminal emulator preferences:
+    //   • Font family  → Terminal Settings (Fira Code, JetBrains Mono, etc.)
+    //   • Font size    → Terminal Settings
+    //   • Line height  → Terminal Settings
+    // ─────────────────────────────────────────────────────────────────
   },
-  role: {
-    user: '#58a6ff',
-    assistant: '#7ee787',
-    system: '#a371f7',
-    tool: '#f0883e',
-  },
-  status: {
-    success: '#3fb950',
-    warning: '#d29922',
-    error: '#f85149',
-    info: '#58a6ff',
-  },
-  diff: {
-    added: '#2ea043',
-    removed: '#f85149',
+
+  // ═══════════════════════════════════════════════════════════════════
+  // KEYBINDS
+  // ═══════════════════════════════════════════════════════════════════
+  keybinds: {
+    // Tab navigation
+    tabChat: 'ctrl+1',
+    tabTools: 'ctrl+2',
+    tabFiles: 'ctrl+3',
+    tabSearch: 'ctrl+4',
+    tabDocs: 'ctrl+5',
+    tabSettings: 'ctrl+6',
+    
+    // Layout
+    togglePanel: 'ctrl+p',
+    commandPalette: 'ctrl+k',
+    toggleDebug: 'ctrl+/',
+    
+    // Chat
+    clearChat: 'ctrl+l',
+    saveSession: 'ctrl+s',
+    cancel: 'escape',
+    send: 'enter',
+    newline: 'shift+enter',
+    editPrevious: 'up',
+    
+    // Review
+    approve: 'y',
+    reject: 'n',
+    
+    // Navigation (Docs tab)
+    scrollDown: 'j',
+    scrollUp: 'k',
+    select: 'enter',
+    back: 'backspace',
+    cycleFocus: 'tab',
   },
 };
+
+export type UISettings = typeof defaultUISettings;
+```
+
+### User Customization: `~/.ollm/ui.yaml`
+
+Users can create custom themes by overriding any setting. The loader **deep-merges** user config over defaults.
+
+```yaml
+# ~/.ollm/ui.yaml - Custom UI Settings
+
+theme:
+  name: 'my-purple-theme'
+  bg:
+    primary: '#1a1a2e'
+    secondary: '#16213e'
+  text:
+    accent: '#e94560'
+  role:
+    assistant: '#00fff5'
+
+typography:
+  bullets: '▸'
+  borders: 'double'
+  spinner: 'arc'
+
+keybinds:
+  togglePanel: 'ctrl+b'   # Override default ctrl+p
+  approve: 'a'            # Override default 'y'
+```
+
+> [!NOTE]
+> Font family and size cannot be controlled — those are terminal emulator settings.
+
+### Built-in Themes
+
+Pre-defined themes available for quick switching via Settings tab or `/theme` command:
+
+```typescript
+export const builtInThemes: Record<string, Theme> = {
+  'default-dark': {
+    bg: { primary: '#0d1117', secondary: '#161b22', tertiary: '#21262d' },
+    text: { primary: '#c9d1d9', secondary: '#8b949e', accent: '#58a6ff' },
+    role: { user: '#58a6ff', assistant: '#7ee787', system: '#a371f7', tool: '#f0883e' },
+    status: { success: '#3fb950', warning: '#d29922', error: '#f85149', info: '#58a6ff' },
+    diff: { added: '#2ea043', removed: '#f85149' },
+  },
+  'dracula': {
+    bg: { primary: '#282a36', secondary: '#44475a', tertiary: '#6272a4' },
+    text: { primary: '#f8f8f2', secondary: '#6272a4', accent: '#bd93f9' },
+    role: { user: '#8be9fd', assistant: '#50fa7b', system: '#bd93f9', tool: '#ffb86c' },
+    status: { success: '#50fa7b', warning: '#f1fa8c', error: '#ff5555', info: '#8be9fd' },
+    diff: { added: '#50fa7b', removed: '#ff5555' },
+  },
+  'nord': {
+    bg: { primary: '#2e3440', secondary: '#3b4252', tertiary: '#434c5e' },
+    text: { primary: '#eceff4', secondary: '#d8dee9', accent: '#88c0d0' },
+    role: { user: '#81a1c1', assistant: '#a3be8c', system: '#b48ead', tool: '#ebcb8b' },
+    status: { success: '#a3be8c', warning: '#ebcb8b', error: '#bf616a', info: '#81a1c1' },
+    diff: { added: '#a3be8c', removed: '#bf616a' },
+  },
+  'monokai': {
+    bg: { primary: '#272822', secondary: '#3e3d32', tertiary: '#49483e' },
+    text: { primary: '#f8f8f2', secondary: '#75715e', accent: '#66d9ef' },
+    role: { user: '#66d9ef', assistant: '#a6e22e', system: '#ae81ff', tool: '#fd971f' },
+    status: { success: '#a6e22e', warning: '#e6db74', error: '#f92672', info: '#66d9ef' },
+    diff: { added: '#a6e22e', removed: '#f92672' },
+  },
+  'solarized-dark': {
+    bg: { primary: '#002b36', secondary: '#073642', tertiary: '#586e75' },
+    text: { primary: '#839496', secondary: '#657b83', accent: '#268bd2' },
+    role: { user: '#268bd2', assistant: '#859900', system: '#6c71c4', tool: '#cb4b16' },
+    status: { success: '#859900', warning: '#b58900', error: '#dc322f', info: '#268bd2' },
+    diff: { added: '#859900', removed: '#dc322f' },
+  },
+};
+
+export type ThemeName = keyof typeof builtInThemes;
 ```
 
 ---
@@ -131,8 +291,19 @@ const theme = {
 | `/extensions list` | List extensions |
 | `/extensions enable <name>` | Enable extension |
 | `/extensions disable <name>` | Disable extension |
+| `/theme list` | List available themes |
+| `/theme use <name>` | Switch to theme |
+| `/theme preview <name>` | Preview theme without saving |
 | `/context` | Show context status |
-| `/clear` | Clear conversation |
+| `/new` | Start new session (save current, clear all) |
+| `/clear` | Clear context, keep system prompt |
+| `/compact` | Manual context compression |
+| `/metrics` | Show session performance stats |
+| `/metrics toggle` | Toggle metrics display |
+| `/metrics reset` | Reset session statistics |
+| `/reasoning toggle` | Toggle reasoning display |
+| `/reasoning expand` | Expand all reasoning blocks |
+| `/reasoning collapse` | Collapse all reasoning blocks |
 | `/help` | Show commands |
 | `/exit` | Exit CLI |
 
@@ -325,10 +496,16 @@ interface GPUMonitor {
 
 **Steps**:
 1. Implement ChatHistory with message display
-2. Implement InputBox with multi-line support
-3. Streaming text display with spinner
-4. Tool call display with arguments
-5. Inline diff review for small changes (≤5 lines)
+2. **Implement Llama "Thinking" Animation**:
+   - **Trigger**: Show only during state `WAITING_FOR_RESPONSE` (after user input, before 1st token).
+   - **Component**: Use `LlamaAnimation` (Size: `small`) from `packages/cli/src/components/LlamaAnimation.tsx`.
+   - **Scripts**: Reference `.dev/reference/lama/` for usage examples.
+   - **Layout constraint**: When user submits input, **scroll ChatHistory up by ~20 lines**. This ensures the animation (especially `small` at 12 lines) has a clean stage without being truncated, while remaining more compact than the previous 25-line requirement.
+   - **Transition**: Unmount immediately when `STREAMING` starts.
+3. Implement InputBox with multi-line support
+4. Streaming text display with spinner
+5. Tool call display with arguments
+6. Inline diff review for small changes (≤5 lines)
 
 **Tool Call Display**:
 ```
@@ -438,17 +615,34 @@ interface GPUMonitor {
 **Steps**:
 1. Model picker with details
 2. Provider selection
-3. Session info (tokens, duration, cost)
-4. Options (temperature, max tokens, review mode)
-5. Quick actions (save, export, clear)
+3. **Theme picker with built-in themes**
+4. Session info (tokens, duration, cost)
+5. Options (temperature, max tokens, review mode)
+6. Quick actions (save, export, clear)
+
+**Theme Picker Layout**:
+```
+┌─ 🎨 Theme ─────────────────────────────────────────────────────────────────┐
+│  ● Default Dark                                                            │
+│  ○ Dracula                                                                 │
+│  ○ Nord                                                                    │
+│  ○ Monokai                                                                 │
+│  ○ Solarized Dark                                                          │
+│  ○ Custom (ui.yaml)                                                        │
+└────────────────────────────────────────────────────────────────────────────┘
+[Changes apply immediately]
+```
 
 **Deliverables**:
 - `packages/cli/src/ui/tabs/SettingsTab.tsx`
 - `packages/cli/src/ui/components/settings/ModelPicker.tsx`
+- `packages/cli/src/ui/components/settings/ThemePicker.tsx`
 - `packages/cli/src/ui/components/settings/SessionInfo.tsx`
 
 **Acceptance Criteria**:
 - [ ] Model switching works
+- [ ] Theme switching works instantly
+- [ ] Custom theme shows if ui.yaml exists
 - [ ] Session stats accurate
 - [ ] Options update in real-time
 
@@ -520,51 +714,60 @@ const docsIndex: DocEntry[] = [
 
 ---
 
-### S06-T13: Launch Screen (ASCII Art)
+### S06-T13: Launch Screen (Llama Brand)
 
-**Goal**: Display ASCII art logo and quick actions on startup.
+**Goal**: Display the animated Llama logo and branded version info on startup.
 
 **Steps**:
-1. Load ASCII art from `docs/OLLM_v01.txt`
-2. Display centered in active tab on launch
-3. Show version, quick tips, and recent sessions
-4. Dismiss on any keypress or input
-5. Add `/home` command to return to launch screen
+1. **Logo Component**: Use `LlamaAnimation` with `size="standard"`.
+2. **Display Branded Block**: 
+   - Show the version banner using a centered border box:
+     ```
+     ======================================================
+     
+              ┌───────────────────────────┐
+              │       OLLM CLI V0.1       │
+              └───────────────────────────┘
+     
+     ======================================================
+     ```
+3. **Quick Help**: Display documentation links:
+   - `Documentation: /docs`
+   - `For commands use: /help`
+4. Show version, quick tips, and recent sessions.
+5. Dismiss on any keypress or input.
+6. Add `/home` command to return to launch screen.
 
 **Launch Screen Layout**:
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                                                                             │
-│                                                            -#               │
-│                                                           #+#               │
-│         +##-                                             #-++               │
-│      ##++-+#                                            #+-#                │
-│    #+---.--+.                                         +#+-++                │
-│   ++.    .-+                                        -##-  #.                │
-│  +-       -+           +========+                 +###-  ++                 │
-│ --        -+           |OLLM CLI|              .####+-  .+                  │
-│ +         -+           +========+            #####++-  .#                   │
-│ +         -+                              .####+-+-.  .+                    │
-│ +        .-#                            -####+----   -#                     │
-│ +        .-##                         +##++------   #-                      │
-│  +        -+##      -+++########..  ###--.------  .#                        │
-│  ++      .++##########################-.  .--+.  -+                         │
-│   ++     .+++++########################+-+--.  .#                           │
-│    ##.   .-++-.-###########################++-#.                            │
+│                                [LLAMA ANIMATION]                            │
+│                                (Size: Standard)                             │
 │                                                                             │
-│                        OLLM CLI v1.0.0                                      │
-│                   Local LLM Assistant                                       │
+│   ========================================================================  │
 │                                                                             │
-│  ┌─ Quick Actions ─────────────────────────────────────────────────────┐   │
-│  │  [Enter] Start chatting    [Ctrl+5] View docs    [Ctrl+6] Settings  │   │
-│  │  [/] Commands              [?] Help              [Esc] Quit         │   │
-│  └─────────────────────────────────────────────────────────────────────┘   │
+│                        ┌───────────────────────────┐                        │
+│                        │       OLLM CLI V0.1       │                        │
+│                        └───────────────────────────┘                        │
 │                                                                             │
-│  ┌─ Recent Sessions ───────────────────────────────────────────────────┐   │
+│                                                                             │
+│                                                                             │
+│  Welcome to your local LLM Assistant.                                       │
+│                                                                             │
+│  Documentation: /docs                                                       │
+│  For commands use: /help                                                    │
+│                                                                             │
+│  ┌─ Quick Actions ─────────────────────────────────────────────────────┐    │
+│  │  [Enter] Start chatting    [Ctrl+5] View docs    [Ctrl+6] Settings  │    │
+│  │  [/] Commands              [?] Help              [Esc] Quit         │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                             │
+│  ┌─ Recent Sessions ────────────────────────────────────────────────────┐   │
 │  │  1. "Fixing auth bug" - 2 hours ago                                  │   │
 │  │  2. "Refactoring utils" - yesterday                                  │   │
 │  │  3. "New feature planning" - 3 days ago                              │   │
-│  └─────────────────────────────────────────────────────────────────────┘   │
+│  └──────────────────────────────────────────────────────────────────────┘   │
 │                                                                             │
 │                    Press any key to start...                                │
 └─────────────────────────────────────────────────────────────────────────────┘
@@ -578,33 +781,181 @@ interface LaunchScreenProps {
   onDismiss: () => void;
 }
 
-// Load ASCII art
-async function loadAsciiArt(): Promise<string> {
-  const artPath = path.join(__dirname, '../../../docs/OLLM_v01.txt');
-  return fs.readFile(artPath, 'utf-8');
-}
-
-// Center art in terminal
-function centerAsciiArt(art: string, termWidth: number): string {
-  const lines = art.split('\n');
-  const maxWidth = Math.max(...lines.map(l => l.length));
-  const padding = Math.floor((termWidth - maxWidth) / 2);
-  return lines.map(l => ' '.repeat(padding) + l).join('\n');
-}
+// Logic: Use LlamaAnimation (Standard) as the centered hero element.
+// No longer needs docs/OLLM_v01.txt loading.
 ```
 
 **Deliverables**:
 - `packages/cli/src/ui/components/LaunchScreen.tsx`
 - `packages/cli/src/ui/components/RecentSessions.tsx`
-- Copy `docs/OLLM_v01.txt` to package assets
 
 **Acceptance Criteria**:
-- [ ] ASCII art displays centered on launch
-- [ ] Version number shown
+- [ ] Llama Animation displays centered on launch
+- [ ] Version banner matches specified aesthetic
+- [ ] Documentation /help hints shown
 - [ ] Recent sessions listed
-- [ ] Quick action hints shown
 - [ ] Any keypress dismisses to Chat tab
 - [ ] `/home` command returns to launch screen
+
+---
+
+### S06-T21: Conversation Branching
+
+**Goal**: Fork a conversation at any point to explore different directions without losing the original thread.
+
+**Steps**:
+1. Implement `BranchingService`:
+   - `createBranch(messageId, prompt): Branch`
+   - `listBranches(): Branch[]`
+   - `switchBranch(branchId): void`
+   - Store branches as session variants
+2. UI Components:
+   - Branch indicator in message timeline
+   - Branch switcher dropdown
+   - Visual tree view of conversation branches
+3. Slash commands:
+   ```
+   /branch "Alternative approach..."  # Branch from last message
+   /branch list                       # Show all branches
+   /branch switch <id>                # Switch to branch
+   /branch merge <id>                 # Merge branch into main
+   ```
+
+**Deliverables**:
+- `packages/core/src/services/branchingService.ts`
+- `packages/cli/src/ui/components/chat/BranchIndicator.tsx`
+- `packages/cli/src/ui/components/chat/BranchSwitcher.tsx`
+
+**Acceptance Criteria**:
+- [ ] `/branch` creates new conversation fork
+- [ ] Branches preserved in session
+- [ ] Can switch between branches
+- [ ] Visual indicator shows active branch
+
+---
+
+### S06-T22: Smart Model Suggestions
+
+**Goal**: Suggest switching to a more appropriate model based on message content.
+
+**Steps**:
+1. Implement `ModelSuggestionService`:
+   - Detect code blocks and suggest code models
+   - Detect creative writing patterns
+   - Detect technical questions
+2. Non-intrusive suggestion UI:
+   ```
+   💡 Tip: You shared Python code. Switch to deepseek-coder? [Y/n/Never]
+   ```
+3. Configuration:
+   ```yaml
+   ui:
+     suggestions:
+       enabled: true
+       showOnce: true  # Don't repeat same suggestion
+       triggers:
+         code: [deepseek-coder, codellama]
+         creative: [llama3.1:70b]
+   ```
+4. Respect "Never" dismissals in memory
+
+**Deliverables**:
+- `packages/core/src/services/modelSuggestionService.ts`
+- `packages/cli/src/ui/components/chat/SuggestionBanner.tsx`
+
+**Acceptance Criteria**:
+- [ ] Code detection triggers code model suggestion
+- [ ] Suggestion is non-blocking
+- [ ] User can accept, dismiss, or disable
+- [ ] Dismissed suggestions remembered
+
+---
+
+### S06-T23: Response Quality Feedback
+
+**Goal**: Allow users to rate responses to build local preference data.
+
+**Steps**:
+1. Implement `FeedbackService`:
+   - `recordFeedback(messageId, rating, reason?): void`
+   - `getFeedbackStats(): FeedbackStats`
+   - Store in `~/.ollm/feedback.json`
+2. Quick feedback buttons after each response:
+   ```
+   [👍 Good] [👎 Bad] [🔄 Retry with different model]
+   ```
+3. Optional feedback details on thumbs down
+4. Use feedback to adjust model routing weights
+
+**Deliverables**:
+- `packages/core/src/services/feedbackService.ts`
+- `packages/cli/src/ui/components/chat/FeedbackButtons.tsx`
+
+**Acceptance Criteria**:
+- [ ] Feedback buttons appear after responses
+- [ ] Feedback persisted to file
+- [ ] Retry option uses alternative model
+- [ ] Stats viewable via `/feedback stats`
+
+---
+
+### S06-T24: Syntax Highlighting in Diffs
+
+**Goal**: Apply language-aware syntax highlighting to diff previews.
+
+**Steps**:
+1. Integrate syntax highlighting library (e.g., `prism` or `shiki`)
+2. Detect file language from extension
+3. Apply highlighting to:
+   - Diff viewer in Tools tab
+   - Inline diff previews in chat
+   - Code blocks in assistant responses
+4. Theme-aware color mapping
+
+**Deliverables**:
+- `packages/cli/src/ui/components/code/SyntaxHighlighter.tsx`
+- Updated `packages/cli/src/ui/components/review/DiffViewer.tsx`
+
+**Acceptance Criteria**:
+- [ ] Diffs show syntax-highlighted code
+- [ ] Language auto-detected from filename
+- [ ] Colors match active theme
+- [ ] Performance acceptable for large diffs
+
+---
+
+### S06-T25: Command History with Search
+
+**Goal**: Searchable history of past prompts and commands across sessions.
+
+**Steps**:
+1. Implement `HistoryService`:
+   - Record all user inputs
+   - Persist to `~/.ollm/history.json`
+   - Limit to last 1000 entries
+2. Search functionality:
+   - Fuzzy matching
+   - Date filtering
+   - Session filtering
+3. Slash commands:
+   ```
+   /history                    # Show recent history
+   /history search "keyword"   # Search history
+   /history clear              # Clear history
+   ```
+4. UI: `↑` arrow cycles through history in input box
+
+**Deliverables**:
+- `packages/core/src/services/historyService.ts`
+- `packages/cli/src/commands/historyCommands.ts`
+
+**Acceptance Criteria**:
+- [ ] History persisted across sessions
+- [ ] `/history search` finds matching commands
+- [ ] Arrow up/down cycles history in input
+- [ ] History respects max limit
+
+---
 
 ## Keyboard Shortcuts
 
@@ -640,7 +991,7 @@ packages/cli/src/
 │   └── modelCommands.ts
 └── ui/
     ├── App.tsx
-    ├── theme.ts                  # Dark theme colors
+    ├── uiSettings.ts             # Unified theme, keybinds, typography
     ├── contexts/
     │   ├── ChatContext.tsx
     │   ├── UIContext.tsx
@@ -689,7 +1040,7 @@ packages/cli/src/
     │   └── docsService.ts            # NEW
     └── animations/
         ├── spinner.ts
-        └── llama.ts              # Future enhancement
+        └── llama.ts              # Implemented (Activity Indicator)
 
 packages/core/src/services/
 └── gpuMonitor.ts                 # NEW
@@ -706,7 +1057,7 @@ assets/
 ## Configuration
 
 ```yaml
-# ~/.ollm/config.yaml
+# ~/.ollm/config.yaml - Runtime Settings
 
 ui:
   layout: hybrid              # hybrid | simple
@@ -714,33 +1065,406 @@ ui:
   showGpuStats: true          # Show GPU in status bar
   showCost: true              # Show session cost
   
+  metrics:
+    enabled: true              # Show metrics under responses
+    compactMode: false         # Use compact single-line format
+    showPromptTokens: true     # Show input token count (📥)
+    showTTFT: true             # Show time to first token
+    showInStatusBar: true      # Show average t/s in status bar
+
+  reasoning:
+    enabled: true                # Show reasoning blocks
+    maxVisibleLines: 8           # Height before scrolling
+    autoCollapseOnComplete: true # Collapse when response finishes
+
 status:
   pollInterval: 5000          # GPU poll interval (ms)
   highTempThreshold: 80       # Warn at this temp
   lowVramThreshold: 512       # Warn at this MB
 
 shortcuts:
-  togglePanel: 'ctrl+p'
-  clearChat: 'ctrl+l'
-  saveSession: 'ctrl+s'
+  toggleMetrics: 'ctrl+m'
+  toggleReasoning: 'ctrl+r'
 ```
+
+> [!TIP]
+> For theme colors, keybinds, and typography customization, see `~/.ollm/ui.yaml` (defined in [Unified UI Settings](#unified-ui-settings) section).
 
 ---
 
 ## Verification Checklist
 
+### Core UI
 - [ ] Config loads from all layers
 - [ ] Config validation shows clear errors
 - [ ] Non-interactive mode works with `-p`
 - [ ] All output formats work correctly
+
+### GPU & Status
 - [ ] GPU monitoring works (NVIDIA, AMD, fallback)
-- [ ] Tab bar switches correctly
+- [ ] Status bar shows: model, tokens, t/s, GPU, git, cost
+
+### Layout
+- [ ] Tab bar switches correctly (6 tabs)
 - [ ] Side panel toggles with Ctrl+P
-- [ ] Status bar shows all components
+- [ ] Side panel shows ACTIVITY section
+- [ ] Input box has border
+- [ ] Keyboard shortcuts work
+
+### Chat
 - [ ] Chat history displays messages
 - [ ] Tool calls show with args
-- [ ] Streaming spinner works
 - [ ] Diff review in Tools tab works
-- [ ] Keyboard shortcuts work
 - [ ] Model picker works
 - [ ] Session stats update
+
+### Activity Indicators
+- [ ] Llama animation shows during waiting
+- [ ] Llama bounces left-to-right and back
+- [ ] Llama uses pixel art images (or fallback emoji)
+- [ ] Spinner shows in side panel during streaming
+- [ ] Spinner shows during tool execution
+- [ ] Activity panel shows token count and speed
+
+---
+
+## Cross-References
+
+- [UI Design Spec](../../docs/ui-design-spec.md) - Detailed UI specifications
+- [Llama Animation Guide](../../docs/llama_animation.md) - Pixel art creation guide
+- [UI Settings Guide](../../docs/UI_settings.md) - Theme and customization guide
+- [Commands Reference](../../docs/commands.md) - All slash commands
+
+---
+
+# Part 2: Performance Metrics & Reasoning Display
+
+## Overview
+
+Enhance the chat interface with:
+1. **Performance Metrics** - Real-time inference speed (t/s) under each response
+2. **Reasoning Display** - Nested scrollable box for `<think>` content from reasoning models
+
+## Tech Stack
+
+- React + Ink for UI components
+- Provider response metadata extraction
+- Token counter integration from Stage 04b
+
+---
+
+## Feature: Per-Response Performance Metrics
+
+### Display Format
+
+Each LLM response shows performance metrics below the message content:
+
+```
+┌────────────────────────────────────────────────────────────────────────────┐
+│ Assistant                                                         3:42 PM  │
+│                                                                            │
+│ I found the issue in your login handler. The token validation was         │
+│ being skipped when the Authorization header was present but empty.        │
+│ Here's the fix...                                                          │
+│                                                                            │
+│ ──────────────────────────────────────────────────────────────────────────│
+│ ⚡ 42.3 t/s │ 📥 847 tokens │ 📤 156 tokens │ ⏱️ 3.68s │ TTFT: 0.12s     │
+└────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Metrics Displayed
+
+| Metric | Symbol | Description | Source |
+|--------|--------|-------------|--------|
+| **Generation Speed** | ⚡ | Tokens generated per second | `eval_count / eval_duration` |
+| **Input Tokens** | 📥 | Tokens in prompt (context) | `prompt_eval_count` or Token Counter |
+| **Output Tokens** | 📤 | Tokens generated in response | `eval_count` or Token Counter |
+| **Total Time** | ⏱️ | End-to-end generation time | `total_duration` |
+| **Time to First Token** | TTFT | Latency before first token | `prompt_eval_duration` or measured |
+
+### Compact Mode (Configurable)
+
+For less verbose display:
+
+```
+│ ⚡ 42.3 t/s │ 156 tokens │ 3.68s                                          │
+```
+
+---
+
+## Data Sources
+
+### Ollama Response Metadata
+
+Ollama API returns timing information in response:
+
+```json
+{
+  "model": "llama3.2:3b",
+  "response": "...",
+  "done": true,
+  "total_duration": 3684129000,
+  "load_duration": 12345678,
+  "prompt_eval_count": 847,
+  "prompt_eval_duration": 120000000,
+  "eval_count": 156,
+  "eval_duration": 3680000000
+}
+```
+
+### Calculated Metrics
+
+```typescript
+interface InferenceMetrics {
+  // Raw values from provider
+  promptTokens: number;        // Input/context tokens
+  completionTokens: number;    // Generated tokens  
+  totalDuration: number;       // Total time in nanoseconds
+  promptDuration: number;      // Time to process prompt (TTFT)
+  evalDuration: number;        // Time to generate tokens
+  
+  // Calculated values
+  tokensPerSecond: number;     // eval_count / (eval_duration / 1e9)
+  timeToFirstToken: number;    // promptDuration in seconds
+  totalSeconds: number;        // totalDuration / 1e9
+  
+  // Optional (provider-specific)
+  loadDuration?: number;       // Model load time if applicable
+}
+```
+
+---
+
+## Feature: Reasoning Model Display
+
+Display thinking process from reasoning models (DeepSeek-R1, Qwen3, QwQ) in a nested scrollable box.
+
+### Expanded State (During Streaming)
+
+```
+┌────────────────────────────────────────────────────────────────────────────┐
+│ Assistant                                                         3:42 PM  │
+│                                                                            │
+│ ┌─ 🧠 Reasoning ──────────────────────────────────── [▼ Collapse] ───────┐ │
+│ │ Let me analyze this step by step...                                  ↑ │ │
+│ │                                                                      │ │ │
+│ │ First, I need to understand the problem:                             │ │ │
+│ │ - The user wants to fix a login bug                                  │ │ │
+│ │ - The token validation is being skipped                              ░ │ │
+│ │                                                                      │ │ │
+│ │ Key insight: The condition checks if token exists,                   │ │ │
+│ │ but doesn't validate the token itself...                             ↓ │ │
+│ └──────────────────────────────────────────────────────────────────────┘ │
+│                                                                            │
+│ ⠋ Generating response...                                                   │
+└────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Collapsed State (After Complete)
+
+```
+│ ┌─ 🧠 Reasoning (847 tokens, 12.3s) ─────────────────── [▶ Expand] ──────┐ │
+│ └──────────────────────────────────────────────────────────────────────────┘ │
+│                                                                            │
+│ I found the issue. The token validation was being skipped when...        │
+└────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Behavior
+
+| State | Behavior |
+|-------|----------|
+| **Streaming** | Expanded, auto-scrolls to follow content |
+| **Complete** | Auto-collapses, shows token count and duration |
+| **User Toggle** | Manual expand/collapse via button or `Ctrl+R` |
+
+### Supported Models
+
+- DeepSeek-R1 (all sizes)
+- Qwen3 (in thinking mode)
+- QwQ
+- Any model outputting `<think>...</think>` blocks
+
+---
+
+## Session Statistics Panel
+
+Add detailed stats to Settings tab:
+
+```
+┌─ Session Performance ──────────────────────────────────────────────────────┐
+│                                                                            │
+│  Total Generations:     15                                                 │
+│  Total Tokens:          2,847 (1,234 prompt + 1,613 completion)           │
+│  Total Time:            42.3s                                              │
+│                                                                            │
+│  Average Speed:         38.1 t/s                                           │
+│  Fastest:               52.3 t/s                                           │
+│  Slowest:               12.8 t/s                                           │
+│                                                                            │
+│  Average TTFT:          0.15s                                              │
+│                                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Performance Metrics Tasks
+
+### S06-T14: Inference Metrics Types
+
+**Steps**:
+1. Create `packages/core/src/types/metrics.ts`
+2. Define `InferenceMetrics`, `SessionStats`, `MetricsConfig` interfaces
+3. Add provider-specific response metadata types
+
+**Deliverables**:
+- `packages/core/src/types/metrics.ts`
+
+**Acceptance Criteria**:
+- [ ] All metric types defined
+- [ ] Provider metadata types included
+
+---
+
+### S06-T15: Metrics Collector Service
+
+**Steps**:
+1. Create `packages/core/src/services/metricsCollector.ts`
+2. Implement generation tracking (start, first token, complete)
+3. Add session statistics aggregation
+4. Integrate with context management token counter
+
+**Deliverables**:
+- `packages/core/src/services/metricsCollector.ts`
+- `packages/core/src/services/__tests__/metricsCollector.test.ts`
+
+**Acceptance Criteria**:
+- [ ] Tracks generation timing accurately
+- [ ] Calculates tokens per second correctly
+- [ ] Aggregates session statistics
+- [ ] Falls back to estimation when provider data unavailable
+
+---
+
+### S06-T16: MetricsDisplay UI Component
+
+**Steps**:
+1. Create `packages/cli/src/ui/components/chat/MetricsDisplay.tsx`
+2. Implement full and compact display modes
+3. Apply theme colors and formatting
+4. Add toggle visibility support
+
+**Deliverables**:
+- `packages/cli/src/ui/components/chat/MetricsDisplay.tsx`
+
+**Acceptance Criteria**:
+- [ ] Displays all metrics correctly
+- [ ] Compact mode works
+- [ ] Theme applied correctly
+- [ ] Toggle visibility works
+
+---
+
+### S06-T17: Session Commands (/new, /clear, /compact)
+
+**Steps**:
+1. Create `packages/cli/src/commands/sessionCommands.ts`
+2. Implement `/new` command with confirmation and snapshot
+3. Implement `/clear` command (preserve system prompt)
+4. Implement `/compact` command (trigger compression, show stats)
+5. Register commands in slash command handler
+
+**Deliverables**:
+- `packages/cli/src/commands/sessionCommands.ts`
+
+**Acceptance Criteria**:
+- [ ] `/new` prompts for confirmation and saves snapshot
+- [ ] `/new` clears all context and resets metrics
+- [ ] `/clear` preserves system prompt
+- [ ] `/compact` shows before/after token counts
+
+---
+
+### S06-T18: Reasoning Parser
+
+**Steps**:
+1. Create `packages/core/src/parsers/reasoningParser.ts`
+2. Parse `<think>...</think>` blocks from model output
+3. Extract thinking content, duration, and token count
+4. Handle streaming (partial `<think>` blocks)
+
+**Deliverables**:
+- `packages/core/src/parsers/reasoningParser.ts`
+- `packages/core/src/parsers/__tests__/reasoningParser.test.ts`
+
+**Acceptance Criteria**:
+- [ ] Parses complete `<think>` blocks correctly
+- [ ] Handles streaming partial blocks
+- [ ] Extracts thinking content and response separately
+
+---
+
+### S06-T19: ReasoningBox UI Component
+
+**Steps**:
+1. Create `packages/cli/src/ui/components/chat/ReasoningBox.tsx`
+2. Implement nested scrollable container (8 lines visible)
+3. Add expand/collapse toggle functionality
+4. Auto-scroll during streaming, auto-collapse on complete
+5. Show token count and duration when collapsed
+
+**Deliverables**:
+- `packages/cli/src/ui/components/chat/ReasoningBox.tsx`
+
+**Acceptance Criteria**:
+- [ ] Nested box renders within message
+- [ ] Scrollable with 8 visible lines
+- [ ] Expand/collapse toggle works
+- [ ] Auto-scrolls during streaming
+- [ ] Auto-collapses when complete
+
+---
+
+### S06-T20: Reasoning Commands
+
+**Steps**:
+1. Implement `/reasoning toggle` command
+2. Implement `/reasoning expand` command
+3. Implement `/reasoning collapse` command
+4. Add `Ctrl+R` keyboard shortcut
+
+**Acceptance Criteria**:
+- [ ] `/reasoning toggle` shows/hides all reasoning blocks
+- [ ] `/reasoning expand` expands all blocks
+- [ ] `/reasoning collapse` collapses all blocks
+- [ ] `Ctrl+R` toggles reasoning display
+
+---
+
+## Performance Metrics Verification Checklist
+
+### Metrics
+- [ ] Metrics display under each assistant response
+- [ ] Tokens per second calculated correctly
+- [ ] TTFT shown when available
+- [ ] Compact mode works
+- [ ] Status bar shows average t/s
+- [ ] Session statistics accurate
+- [ ] `/metrics` command works
+- [ ] Toggle shortcut (Ctrl+M) works
+
+### Session Commands
+- [ ] `/new` prompts for confirmation
+- [ ] `/new` saves snapshot before clearing
+- [ ] `/clear` keeps system prompt
+- [ ] `/compact` shows before/after token counts
+
+### Reasoning Display
+- [ ] Parses `<think>` blocks correctly
+- [ ] Displays nested scrollable box
+- [ ] Auto-scrolls during streaming
+- [ ] Auto-collapses when complete
+- [ ] `/reasoning toggle` works
+- [ ] `Ctrl+R` shortcut works
+- [ ] Works with DeepSeek-R1, Qwen3, QwQ

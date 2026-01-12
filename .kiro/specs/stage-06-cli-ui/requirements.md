@@ -1,259 +1,371 @@
-# Requirements Document: CLI and UI
+# Requirements Document: Stage 6 - CLI and UI
 
 ## Introduction
 
-This document specifies the requirements for the OLLM CLI interactive terminal user interface (TUI) and non-interactive execution modes. The system provides a hybrid layout with tabs and a collapsible side panel, comprehensive status monitoring including GPU/VRAM tracking, and a full-featured command-line interface for local LLM interaction.
+This document specifies the requirements for the OLLM CLI interactive terminal user interface (TUI) and non-interactive execution modes. The system provides a full-featured React + Ink based interface with hybrid layout (tabs + collapsible side panel), GPU monitoring, performance metrics, reasoning model support, and comprehensive status tracking.
 
 ## Glossary
 
-- **TUI**: Terminal User Interface - a text-based user interface rendered in the terminal
-- **CLI**: Command-Line Interface - the command-line argument parser and non-interactive execution mode
-- **Tab**: A top-level navigation element that switches the main content area
-- **Side_Panel**: A collapsible panel on the right side showing contextual information
-- **Status_Bar**: The bottom bar displaying system status, model info, and metrics
-- **GPU_Monitor**: Service that tracks GPU temperature and VRAM usage
-- **Diff_Review**: Interface for reviewing and approving file changes before application
-- **Launch_Screen**: The initial screen displayed on startup with ASCII art and quick actions
-- **Slash_Command**: Interactive commands prefixed with `/` for system operations
-- **Non_Interactive_Mode**: Single-prompt execution mode that outputs results and exits
-- **Streaming_Indicator**: Visual feedback showing the model is generating a response
-- **Tool_Call**: Display of a tool execution with arguments and results
-- **Context_File**: A file that has been @-mentioned and added to the conversation context
+- **TUI**: Terminal User Interface - full-screen interactive terminal application
+- **CLI**: Command-Line Interface - the executable entry point and argument parser
+- **Tab**: A top-level navigation element in the UI (Chat, Tools, Files, Search, Docs, Settings)
+- **Side_Panel**: Collapsible panel showing context files, git status, reviews, and active tools
+- **Status_Bar**: Bottom bar displaying model, tokens, git, GPU, and cost information
+- **GPU_Monitor**: Service tracking GPU temperature and VRAM usage
+- **Slash_Command**: Interactive command starting with "/" (e.g., `/model list`)
+- **Non_Interactive_Mode**: Single-prompt execution mode without TUI
+- **Launch_Screen**: Initial branded screen with Llama animation and quick actions
+- **Metrics_Display**: Performance statistics shown under each response
+- **Reasoning_Box**: Nested scrollable container for model thinking process
+- **Theme**: Color scheme and visual styling configuration
+- **Session**: A conversation context with history and state
+- **Snapshot**: Saved context state for rollover or resume
 
 ## Requirements
 
-### Requirement 1: Configuration Management
+### Requirement 1: CLI Configuration and Initialization
 
-**User Story:** As a developer, I want layered configuration resolution, so that I can customize settings at different levels with clear precedence.
-
-#### Acceptance Criteria
-
-1. WHEN the system loads configuration, THE Config_Loader SHALL merge settings from system defaults, user config, workspace config, environment variables, and CLI flags in that precedence order
-2. WHEN a configuration file contains invalid YAML or JSON, THE Config_Loader SHALL display a clear error message indicating the file path and validation error
-3. WHEN a configuration value violates the JSON schema, THE Config_Loader SHALL display a clear error message indicating which setting is invalid and why
-4. WHEN multiple configuration layers define the same setting, THE Config_Loader SHALL use the value from the highest precedence layer
-5. THE Config_Loader SHALL validate all configuration values against the JSON schema before application
-
-### Requirement 2: GPU Monitoring
-
-**User Story:** As a developer, I want to monitor GPU temperature and VRAM usage, so that I can understand resource utilization during model inference.
+**User Story:** As a developer, I want the CLI to load configuration from multiple sources with proper precedence, so that I can customize behavior at different levels.
 
 #### Acceptance Criteria
 
-1. WHEN the GPU_Monitor queries GPU information on NVIDIA hardware, THE GPU_Monitor SHALL execute nvidia-smi and parse temperature, VRAM total, VRAM used, and GPU utilization
-2. WHEN the GPU_Monitor queries GPU information on AMD hardware, THE GPU_Monitor SHALL execute rocm-smi and parse temperature, VRAM total, VRAM used, and GPU utilization
-3. WHEN the GPU_Monitor queries GPU information on Apple Silicon, THE GPU_Monitor SHALL use ioreg or fallback to display "CPU mode"
-4. WHEN GPU hardware is not available, THE GPU_Monitor SHALL report vendor as "cpu" and available as false
-5. WHEN the GPU_Monitor is started with polling enabled, THE GPU_Monitor SHALL query GPU information at the specified interval
-6. WHEN GPU temperature exceeds the configured threshold, THE GPU_Monitor SHALL invoke the registered high temperature callback
-7. WHEN available VRAM falls below the configured threshold, THE GPU_Monitor SHALL invoke the registered low VRAM callback
-8. WHEN the GPU_Monitor is stopped, THE GPU_Monitor SHALL cease all polling operations
+1. WHEN the CLI starts, THE Config_Loader SHALL load settings from system defaults, user config, workspace config, environment variables, and CLI flags in that precedence order
+2. WHEN a configuration file is invalid, THE Config_Loader SHALL display a clear error message with the file path and validation issue
+3. WHEN configuration values conflict, THE Config_Loader SHALL apply the highest precedence value
+4. THE Config_Loader SHALL validate all configuration against a JSON schema
+5. WHEN required configuration is missing, THE Config_Loader SHALL use documented default values
 
-### Requirement 3: Non-Interactive Execution
+### Requirement 2: GPU and VRAM Monitoring
 
-**User Story:** As a developer, I want to execute single prompts from the command line, so that I can integrate OLLM into scripts and automation workflows.
+**User Story:** As a user, I want to see GPU temperature and VRAM usage in real-time, so that I can monitor system resources during inference.
 
 #### Acceptance Criteria
 
-1. WHEN the CLI is invoked with the --prompt flag, THE Non_Interactive_Runner SHALL execute a single turn with the provided prompt and exit
-2. WHEN the output format is "text", THE Non_Interactive_Runner SHALL write the plain text response to stdout
-3. WHEN the output format is "json", THE Non_Interactive_Runner SHALL write a JSON object containing the response to stdout
-4. WHEN the output format is "stream-json", THE Non_Interactive_Runner SHALL write NDJSON events to stdout as they occur
-5. WHEN an error occurs during non-interactive execution, THE Non_Interactive_Runner SHALL write the error message to stderr and exit with a non-zero exit code
-6. WHEN input is piped to stdin, THE Non_Interactive_Runner SHALL read the piped content as the prompt
+1. WHEN a GPU is available, THE GPU_Monitor SHALL detect the vendor (NVIDIA, AMD, Apple, or CPU-only)
+2. WHEN polling is enabled, THE GPU_Monitor SHALL query GPU metrics every 5 seconds during active inference
+3. WHEN GPU temperature exceeds 80°C, THE GPU_Monitor SHALL display a warning indicator
+4. WHEN VRAM usage is queried, THE GPU_Monitor SHALL return total, used, and free VRAM in megabytes
+5. WHEN no GPU is detected, THE GPU_Monitor SHALL display "CPU mode" without errors
+6. THE GPU_Monitor SHALL support NVIDIA (nvidia-smi), AMD (rocm-smi), and Apple Silicon (ioreg) platforms
 
-### Requirement 4: Tab Navigation
+### Requirement 3: Non-Interactive Execution Mode
 
-**User Story:** As a developer, I want to navigate between different functional areas using tabs, so that I can focus on specific tasks without clutter.
+**User Story:** As a developer, I want to execute single prompts without the TUI, so that I can integrate the CLI into scripts and pipelines.
 
 #### Acceptance Criteria
 
-1. THE Tab_Bar SHALL display six tabs: Chat, Tools, Files, Search, Docs, and Settings
+1. WHEN the `--prompt` flag is provided, THE CLI SHALL execute in non-interactive mode
+2. WHEN non-interactive mode completes, THE CLI SHALL output the result and exit with code 0
+3. WHEN `--output text` is specified, THE CLI SHALL output plain text response only
+4. WHEN `--output json` is specified, THE CLI SHALL output a JSON object with response and metadata
+5. WHEN `--output stream-json` is specified, THE CLI SHALL output NDJSON stream of events
+6. WHEN an error occurs in non-interactive mode, THE CLI SHALL write error to stderr and exit with non-zero code
+7. WHEN input is piped, THE CLI SHALL read from stdin as the prompt
+
+### Requirement 4: Tab-Based Navigation
+
+**User Story:** As a user, I want to navigate between different functional areas using tabs, so that I can access different features without losing context.
+
+#### Acceptance Criteria
+
+1. THE Tab_Bar SHALL display 6 tabs: Chat, Tools, Files, Search, Docs, and Settings
 2. WHEN a user presses Ctrl+1 through Ctrl+6, THE Tab_Bar SHALL switch to the corresponding tab
-3. WHEN a tab has pending items (reviews, running tools), THE Tab_Bar SHALL display a notification badge with the count
-4. WHEN a user switches tabs, THE UI SHALL preserve the state of the previous tab
-5. WHEN a user switches back to a tab, THE UI SHALL restore the preserved state
+3. WHEN a tab has notifications, THE Tab_Bar SHALL display a badge with the count
+4. WHEN switching tabs, THE UI SHALL preserve the state of the previous tab
+5. WHEN a tab is active, THE Tab_Bar SHALL highlight it visually
 
-### Requirement 5: Side Panel
+### Requirement 5: Collapsible Side Panel
 
-**User Story:** As a developer, I want a collapsible side panel showing contextual information, so that I can see relevant context without switching tabs.
-
-#### Acceptance Criteria
-
-1. WHEN a user presses Ctrl+P, THE Side_Panel SHALL toggle between visible and hidden states
-2. WHEN the Side_Panel is hidden, THE main content area SHALL expand to full width
-3. THE Side_Panel SHALL display four sections: Context Files, Git Status, Pending Reviews, and Active Tools
-4. WHEN a file is @-mentioned in chat, THE Side_Panel SHALL add it to the Context Files section
-5. WHEN git status changes, THE Side_Panel SHALL update the Git Status section
-6. WHEN a diff review is pending, THE Side_Panel SHALL update the Pending Reviews section with the count
-7. WHEN a tool is executing, THE Side_Panel SHALL add it to the Active Tools section
-8. WHEN the user closes the application, THE UI SHALL persist the Side_Panel visibility preference
-
-### Requirement 6: Status Bar
-
-**User Story:** As a developer, I want a status bar showing system metrics, so that I can monitor connection status, resource usage, and session information at a glance.
+**User Story:** As a user, I want a collapsible side panel showing context and status, so that I can see relevant information without cluttering the main view.
 
 #### Acceptance Criteria
 
-1. THE Status_Bar SHALL display provider connection status using colored indicators (green for connected, yellow for connecting, red for disconnected)
-2. THE Status_Bar SHALL display the current model name
-3. THE Status_Bar SHALL display token usage in the format "current/max"
-4. THE Status_Bar SHALL display git status showing branch name and counts of staged and modified files
-5. WHEN GPU information is available, THE Status_Bar SHALL display GPU temperature and VRAM usage in the format "temp°C used/total"
-6. WHEN GPU information is not available, THE Status_Bar SHALL display "CPU mode"
-7. THE Status_Bar SHALL display the count of pending reviews
-8. THE Status_Bar SHALL display an estimated session cost
-9. WHEN any status component changes, THE Status_Bar SHALL update in real-time
+1. WHEN the user presses Ctrl+P, THE Side_Panel SHALL toggle between visible and hidden states
+2. WHEN the Side_Panel is visible, THE Side_Panel SHALL display sections for Context Files, Git Status, Pending Reviews, and Active Tools
+3. WHEN the Side_Panel is hidden, THE main content SHALL expand to full width
+4. WHEN relevant actions occur, THE Side_Panel SHALL auto-show (e.g., when a diff needs review)
+5. THE Side_Panel SHALL persist visibility preference across sessions
+
+### Requirement 6: Status Bar Display
+
+**User Story:** As a user, I want a status bar showing key metrics, so that I can monitor system state at a glance.
+
+#### Acceptance Criteria
+
+1. THE Status_Bar SHALL display provider connection status with color indicators (🟢🟡🔴)
+2. THE Status_Bar SHALL display current model name
+3. THE Status_Bar SHALL display token usage in format "current/max"
+4. THE Status_Bar SHALL display git branch and change counts
+5. WHEN GPU is available, THE Status_Bar SHALL display temperature and VRAM usage
+6. THE Status_Bar SHALL display pending review count when reviews exist
+7. THE Status_Bar SHALL display estimated session cost
+8. THE Status_Bar SHALL update all components in real-time
 
 ### Requirement 7: Chat Interface
 
-**User Story:** As a developer, I want to view conversation history and send messages, so that I can interact with the LLM naturally.
+**User Story:** As a user, I want to interact with the LLM through a chat interface, so that I can have natural conversations.
 
 #### Acceptance Criteria
 
-1. THE Chat_History SHALL display messages with role-specific colors (user, assistant, system, tool)
-2. WHEN the model is generating a response, THE Chat_Interface SHALL display a streaming indicator with animated spinner
-3. WHEN streaming text arrives, THE Chat_Interface SHALL render it incrementally
-4. WHEN a tool is called, THE Chat_Interface SHALL display the tool name, arguments, execution time, and result
-5. WHEN tool arguments exceed 80 characters, THE Chat_Interface SHALL wrap them and provide an expand option
-6. WHEN a file change is small (5 lines or fewer), THE Chat_Interface SHALL display an inline diff preview
-7. WHEN a user presses Enter in the input box, THE Chat_Interface SHALL send the message
-8. WHEN a user presses Shift+Enter in the input box, THE Chat_Interface SHALL insert a newline
+1. THE Chat_History SHALL display messages with role-based colors (user, assistant, system, tool)
+2. WHEN the assistant is generating, THE Chat_History SHALL display streaming text incrementally
+3. WHEN a tool is called, THE Chat_History SHALL display the tool name, arguments, and result
+4. WHEN tool arguments exceed 80 characters, THE Chat_History SHALL wrap them with an expand option
+5. WHEN waiting for first token, THE Chat_History SHALL display a spinner animation
+6. WHEN a diff is small (≤5 lines), THE Chat_History SHALL display it inline
+7. WHEN a diff is large (>5 lines), THE Chat_History SHALL show a summary and link to Tools tab
 
-### Requirement 8: Tools Tab
+### Requirement 8: Llama Thinking Animation
 
-**User Story:** As a developer, I want to review and approve file changes, so that I can control what modifications are applied to my codebase.
-
-#### Acceptance Criteria
-
-1. THE Tools_Tab SHALL display a list of all pending diff reviews
-2. WHEN a user selects a pending review, THE Tools_Tab SHALL display the full diff with added lines in green and removed lines in red
-3. WHEN a user clicks Apply on a review, THE Tools_Tab SHALL apply the changes and remove the review from the pending list
-4. WHEN a user clicks Reject on a review, THE Tools_Tab SHALL discard the changes and remove the review from the pending list
-5. WHEN multiple reviews are pending, THE Tools_Tab SHALL provide "Apply All" and "Reject All" batch actions
-6. THE Tools_Tab SHALL display tool execution history with expand/collapse functionality
-
-### Requirement 9: Files Tab
-
-**User Story:** As a developer, I want to manage context files and view git status, so that I can control what information the model has access to.
+**User Story:** As a user, I want to see a branded animation while waiting for responses, so that I know the system is working.
 
 #### Acceptance Criteria
 
-1. THE Files_Tab SHALL display all files that have been @-mentioned and added to context
-2. THE Files_Tab SHALL display git status including branch name, staged files, and modified files
-3. WHEN a user selects a file, THE Files_Tab SHALL provide options to remove it from context
-4. THE Files_Tab SHALL provide quick git actions for commit, stash, and diff operations
+1. WHEN the state is WAITING_FOR_RESPONSE, THE Chat_History SHALL display the Llama animation
+2. THE Llama_Animation SHALL use the "small" size (12 lines)
+3. WHEN the animation displays, THE Chat_History SHALL scroll up by 20 lines to provide clean space
+4. WHEN streaming starts, THE Llama_Animation SHALL unmount immediately
+5. THE Llama_Animation SHALL use pixel art images or fallback to emoji
 
-### Requirement 10: Docs Tab
+### Requirement 9: Tools Tab and Diff Review
 
-**User Story:** As a developer, I want to browse documentation within the CLI, so that I can learn about features without leaving the application.
-
-#### Acceptance Criteria
-
-1. THE Docs_Tab SHALL display a navigation list of available documentation files in the side panel
-2. WHEN a user selects a document, THE Docs_Tab SHALL render the markdown content in the main area
-3. WHEN a document contains internal links, THE Docs_Tab SHALL navigate to the linked document when clicked
-4. WHEN a user presses j or k, THE Docs_Tab SHALL scroll down or up respectively
-5. WHEN a user presses Enter on a navigation item, THE Docs_Tab SHALL open that document
-6. WHEN a user presses Backspace, THE Docs_Tab SHALL return to the previous document
-
-### Requirement 11: Settings Tab
-
-**User Story:** As a developer, I want to configure model settings and view session information, so that I can customize behavior and track usage.
+**User Story:** As a user, I want to review and approve file changes, so that I can control what the LLM modifies.
 
 #### Acceptance Criteria
 
-1. THE Settings_Tab SHALL display a model picker showing all available models
-2. WHEN a user selects a model, THE Settings_Tab SHALL switch to that model for subsequent requests
-3. THE Settings_Tab SHALL display session information including token count, duration, and estimated cost
-4. THE Settings_Tab SHALL provide options to adjust temperature, max tokens, and review mode
-5. WHEN a user changes an option, THE Settings_Tab SHALL apply the change immediately
-6. THE Settings_Tab SHALL provide quick actions to save session, export session, and clear conversation
+1. THE Tools_Tab SHALL display a list of pending reviews with file names and line counts
+2. WHEN a review is selected, THE Tools_Tab SHALL display the full diff with syntax highlighting
+3. WHEN the user approves a diff, THE Tools_Tab SHALL apply the changes and remove it from pending
+4. WHEN the user rejects a diff, THE Tools_Tab SHALL discard the changes and remove it from pending
+5. THE Tools_Tab SHALL support batch approve and batch reject actions
+6. THE Tools_Tab SHALL display tool execution history with expand/collapse
 
-### Requirement 12: Launch Screen
+### Requirement 10: Files Tab
 
-**User Story:** As a developer, I want to see a welcoming launch screen on startup, so that I can quickly access recent sessions and understand available actions.
-
-#### Acceptance Criteria
-
-1. WHEN the application starts, THE Launch_Screen SHALL display ASCII art loaded from docs/OLLM_v01.txt
-2. THE Launch_Screen SHALL display the application version number
-3. THE Launch_Screen SHALL display a list of up to 3 recent sessions with titles and timestamps
-4. THE Launch_Screen SHALL display quick action hints for common operations
-5. WHEN a user presses any key, THE Launch_Screen SHALL dismiss and switch to the Chat tab
-6. WHEN a user types /home, THE UI SHALL return to the Launch_Screen
-
-### Requirement 13: Slash Commands
-
-**User Story:** As a developer, I want to execute system commands using slash syntax, so that I can perform operations without leaving the chat interface.
+**User Story:** As a user, I want to manage context files and git status, so that I can control what information the LLM has access to.
 
 #### Acceptance Criteria
 
-1. WHEN a user types /model list, THE CLI SHALL display all available models
-2. WHEN a user types /model use followed by a model name, THE CLI SHALL switch to that model
-3. WHEN a user types /session list, THE CLI SHALL display all saved sessions
-4. WHEN a user types /session resume followed by a session ID, THE CLI SHALL resume that session
-5. WHEN a user types /git status, THE CLI SHALL display git status information
-6. WHEN a user types /review enable, THE CLI SHALL enable diff review mode
-7. WHEN a user types /review disable, THE CLI SHALL disable diff review mode
-8. WHEN a user types /clear, THE CLI SHALL clear the conversation history
-9. WHEN a user types /help, THE CLI SHALL display all available slash commands
-10. WHEN a user types /exit, THE CLI SHALL exit the application
+1. THE Files_Tab SHALL display all @-mentioned context files
+2. THE Files_Tab SHALL display git status with branch and change counts
+3. WHEN a user selects a file, THE Files_Tab SHALL allow adding or removing it from context
+4. THE Files_Tab SHALL provide quick git actions (commit, stash, diff)
+5. THE Files_Tab SHALL update automatically when files change
 
-### Requirement 14: CLI Flags
+### Requirement 11: Search Tab
 
-**User Story:** As a developer, I want to configure the CLI using command-line flags, so that I can customize behavior for different use cases.
+**User Story:** As a user, I want to search the codebase semantically, so that I can find relevant code quickly.
 
 #### Acceptance Criteria
 
-1. WHEN the CLI is invoked with --prompt or -p, THE CLI SHALL execute in non-interactive mode with the provided prompt
-2. WHEN the CLI is invoked with --model or -m, THE CLI SHALL use the specified model
-3. WHEN the CLI is invoked with --output or -o, THE CLI SHALL use the specified output format (text, json, stream-json)
-4. WHEN the CLI is invoked with --list-models, THE CLI SHALL display all available models and exit
-5. WHEN the CLI is invoked with --pull-model, THE CLI SHALL download the specified model
-6. WHEN the CLI is invoked with --remove-model, THE CLI SHALL remove the specified model
-7. WHEN the CLI is invoked with --model-info, THE CLI SHALL display details about the specified model
-8. WHEN the CLI is invoked with --session or -s, THE CLI SHALL resume the specified session
-9. WHEN the CLI is invoked with --debug, THE CLI SHALL enable debug output
-10. WHEN the CLI is invoked with --no-color, THE CLI SHALL disable colored output
-11. WHEN the CLI is invoked with --version or -v, THE CLI SHALL display the version number and exit
-12. WHEN the CLI is invoked with --help or -h, THE CLI SHALL display help information and exit
+1. THE Search_Tab SHALL provide a search input field
+2. WHEN a search is executed, THE Search_Tab SHALL display results with code snippets
+3. WHEN a result is selected, THE Search_Tab SHALL allow adding it to context
+4. THE Search_Tab SHALL support filtering by file type
+5. THE Search_Tab SHALL display a placeholder message indicating full implementation in Stage 11
 
-### Requirement 15: Keyboard Shortcuts
+### Requirement 12: Docs Tab
 
-**User Story:** As a developer, I want keyboard shortcuts for common actions, so that I can work efficiently without using a mouse.
+**User Story:** As a user, I want to browse documentation within the CLI, so that I can learn without leaving the interface.
 
 #### Acceptance Criteria
 
-1. WHEN a user presses Ctrl+1 through Ctrl+6, THE UI SHALL switch to the corresponding tab
-2. WHEN a user presses Ctrl+P, THE UI SHALL toggle the side panel visibility
-3. WHEN a user presses Ctrl+L, THE UI SHALL clear the chat history
-4. WHEN a user presses Ctrl+S, THE UI SHALL save the current session
-5. WHEN a user presses Ctrl+K, THE UI SHALL open the command palette
-6. WHEN a user presses Esc, THE UI SHALL cancel the current operation or return focus to the input box
-7. WHEN a user presses Tab, THE UI SHALL cycle focus between interactive elements
-8. WHEN a user is in the Docs tab and presses j or k, THE UI SHALL scroll down or up respectively
+1. THE Docs_Tab SHALL display a list of available documentation files in the side panel
+2. WHEN a document is selected, THE Docs_Tab SHALL render the markdown content in the main area
+3. THE Docs_Tab SHALL support keyboard navigation (j/k for scroll, Enter to select)
+4. THE Docs_Tab SHALL support internal links between documents
+5. THE Docs_Tab SHALL provide a back button to return to the previous document
 
-### Requirement 16: Theme
+### Requirement 13: Settings Tab
 
-**User Story:** As a developer, I want a dark theme optimized for terminal use, so that the interface is comfortable for extended use.
+**User Story:** As a user, I want to configure the CLI and view session information, so that I can customize behavior and monitor usage.
 
 #### Acceptance Criteria
 
-1. THE UI SHALL use a dark background color (#0d1117) for the primary background
-2. THE UI SHALL use role-specific colors for messages (user: #58a6ff, assistant: #7ee787, system: #a371f7, tool: #f0883e)
-3. THE UI SHALL use status colors (success: #3fb950, warning: #d29922, error: #f85149, info: #58a6ff)
-4. THE UI SHALL use diff colors (added: #2ea043, removed: #f85149)
-5. THE UI SHALL ensure all text has sufficient contrast against backgrounds for readability
+1. THE Settings_Tab SHALL display a model picker with available models
+2. THE Settings_Tab SHALL display a provider selector
+3. THE Settings_Tab SHALL display a theme picker with built-in themes (Default Dark, Dracula, Nord, Monokai, Solarized Dark)
+4. WHEN a theme is selected, THE Settings_Tab SHALL apply it immediately
+5. THE Settings_Tab SHALL display session statistics (tokens, duration, cost)
+6. THE Settings_Tab SHALL provide options for temperature, max tokens, and review mode
+7. THE Settings_Tab SHALL provide quick actions (save, export, clear)
 
-### Requirement 17: Error Handling
+### Requirement 14: Launch Screen
 
-**User Story:** As a developer, I want clear error messages when operations fail, so that I can understand and resolve issues quickly.
+**User Story:** As a user, I want to see a branded launch screen on startup, so that I have a welcoming entry point.
 
 #### Acceptance Criteria
 
-1. WHEN a configuration file fails to load, THE CLI SHALL display the file path and specific parsing error
-2. WHEN a model fails to load, THE CLI SHALL display the model name and error reason
-3. WHEN a tool execution fails, THE Chat_Interface SHALL display the tool name and error message
-4. WHEN GPU monitoring fails, THE GPU_Monitor SHALL fall back to "CPU mode" without crashing
-5. WHEN a slash command is invalid, THE CLI SHALL display available commands and usage examples
+1. WHEN the CLI starts, THE Launch_Screen SHALL display the Llama animation in standard size
+2. THE Launch_Screen SHALL display the version banner in a centered border box
+3. THE Launch_Screen SHALL display documentation links and quick help
+4. THE Launch_Screen SHALL display recent sessions with timestamps
+5. WHEN any key is pressed, THE Launch_Screen SHALL dismiss and show the Chat tab
+6. WHEN the `/home` command is executed, THE CLI SHALL return to the Launch_Screen
+
+### Requirement 15: Performance Metrics Display
+
+**User Story:** As a user, I want to see performance metrics for each response, so that I can understand inference speed and resource usage.
+
+#### Acceptance Criteria
+
+1. WHEN a response completes, THE Metrics_Display SHALL show tokens per second
+2. THE Metrics_Display SHALL show input token count (📥)
+3. THE Metrics_Display SHALL show output token count (📤)
+4. THE Metrics_Display SHALL show total generation time
+5. WHEN available, THE Metrics_Display SHALL show time to first token (TTFT)
+6. WHEN compact mode is enabled, THE Metrics_Display SHALL show abbreviated metrics
+7. WHEN metrics are disabled, THE Metrics_Display SHALL not render
+
+### Requirement 16: Reasoning Model Support
+
+**User Story:** As a user, I want to see the thinking process of reasoning models, so that I can understand how they arrive at answers.
+
+#### Acceptance Criteria
+
+1. WHEN a model outputs `<think>` blocks, THE Reasoning_Parser SHALL extract the thinking content
+2. THE Reasoning_Box SHALL display thinking content in a nested scrollable container
+3. THE Reasoning_Box SHALL show 8 lines visible with scroll for overflow
+4. WHEN streaming, THE Reasoning_Box SHALL auto-scroll to follow new content
+5. WHEN generation completes, THE Reasoning_Box SHALL auto-collapse and show token count and duration
+6. WHEN the user clicks expand/collapse, THE Reasoning_Box SHALL toggle visibility
+7. THE Reasoning_Box SHALL support Ctrl+R keyboard shortcut for toggle
+
+### Requirement 17: Session Management Commands
+
+**User Story:** As a developer, I want to manage sessions with commands, so that I can control context and state.
+
+#### Acceptance Criteria
+
+1. WHEN `/new` is executed, THE CLI SHALL prompt for confirmation before clearing
+2. WHEN `/new` is confirmed, THE CLI SHALL save a snapshot, clear all context, and reset metrics
+3. WHEN `/clear` is executed, THE CLI SHALL clear context but preserve the system prompt
+4. WHEN `/compact` is executed, THE CLI SHALL trigger compression and display before/after token counts
+5. WHEN `/session save` is executed, THE CLI SHALL persist the current session
+6. WHEN `/session list` is executed, THE CLI SHALL display saved sessions
+7. WHEN `/session resume <id>` is executed, THE CLI SHALL restore the specified session
+
+### Requirement 18: Theme System
+
+**User Story:** As a user, I want to customize the UI appearance, so that I can match my preferences.
+
+#### Acceptance Criteria
+
+1. THE Theme_System SHALL provide 5 built-in themes (Default Dark, Dracula, Nord, Monokai, Solarized Dark)
+2. WHEN a user creates `~/.ollm/ui.yaml`, THE Theme_System SHALL deep-merge it over defaults
+3. WHEN `/theme list` is executed, THE CLI SHALL display available themes
+4. WHEN `/theme use <name>` is executed, THE CLI SHALL switch to the specified theme
+5. WHEN `/theme preview <name>` is executed, THE CLI SHALL temporarily apply the theme without saving
+6. THE Theme_System SHALL support customizing colors, typography, and keybinds
+
+### Requirement 19: Slash Commands
+
+**User Story:** As a user, I want to execute commands with slash syntax, so that I can perform actions without leaving the chat.
+
+#### Acceptance Criteria
+
+1. THE CLI SHALL recognize commands starting with "/" in the input
+2. THE CLI SHALL support model commands (`/model list`, `/model use`, `/model pull`, `/model rm`, `/model info`)
+3. THE CLI SHALL support provider commands (`/provider list`, `/provider use`)
+4. THE CLI SHALL support session commands (`/session list`, `/session resume`, `/session delete`, `/session save`, `/session export`)
+5. THE CLI SHALL support git commands (`/git status`, `/git commit`, `/git undo`)
+6. THE CLI SHALL support review commands (`/review enable`, `/review disable`, `/review pending`)
+7. THE CLI SHALL support extension commands (`/extensions list`, `/extensions enable`, `/extensions disable`)
+8. THE CLI SHALL support theme commands (`/theme list`, `/theme use`, `/theme preview`)
+9. THE CLI SHALL support context commands (`/context`, `/new`, `/clear`, `/compact`)
+10. THE CLI SHALL support metrics commands (`/metrics`, `/metrics toggle`, `/metrics reset`)
+11. THE CLI SHALL support reasoning commands (`/reasoning toggle`, `/reasoning expand`, `/reasoning collapse`)
+12. THE CLI SHALL support utility commands (`/help`, `/exit`, `/home`)
+
+### Requirement 20: Keyboard Shortcuts
+
+**User Story:** As a user, I want keyboard shortcuts for common actions, so that I can work efficiently.
+
+#### Acceptance Criteria
+
+1. WHEN Ctrl+1 through Ctrl+6 are pressed, THE CLI SHALL switch to the corresponding tab
+2. WHEN Ctrl+P is pressed, THE CLI SHALL toggle the side panel
+3. WHEN Ctrl+L is pressed, THE CLI SHALL clear the chat
+4. WHEN Ctrl+S is pressed, THE CLI SHALL save the session
+5. WHEN Ctrl+K is pressed, THE CLI SHALL open the command palette
+6. WHEN Ctrl+/ is pressed, THE CLI SHALL toggle debug mode
+7. WHEN Escape is pressed, THE CLI SHALL cancel current action or return to input
+8. WHEN Up arrow is pressed in input, THE CLI SHALL cycle to previous message for editing
+9. WHEN Enter is pressed, THE CLI SHALL send the message
+10. WHEN Shift+Enter is pressed, THE CLI SHALL insert a newline
+11. WHEN y or n is pressed in review mode, THE CLI SHALL approve or reject the diff
+12. WHEN j or k is pressed in Docs tab, THE CLI SHALL scroll down or up
+13. WHEN Tab is pressed, THE CLI SHALL cycle focus between UI elements
+
+### Requirement 21: CLI Flags
+
+**User Story:** As a developer, I want to control CLI behavior with flags, so that I can customize execution.
+
+#### Acceptance Criteria
+
+1. THE CLI SHALL support `--prompt` / `-p` for one-shot prompt execution
+2. THE CLI SHALL support `--model` / `-m` for model selection
+3. THE CLI SHALL support `--provider` for provider selection
+4. THE CLI SHALL support `--host` for provider endpoint URL
+5. THE CLI SHALL support `--list-models` for listing available models
+6. THE CLI SHALL support `--pull-model <name>` for downloading models
+7. THE CLI SHALL support `--remove-model <name>` for removing models
+8. THE CLI SHALL support `--model-info <name>` for showing model details
+9. THE CLI SHALL support `--output` / `-o` for output format (text, json, stream-json)
+10. THE CLI SHALL support `--review-diffs` for enabling diff review mode
+11. THE CLI SHALL support `--no-review` for disabling diff review mode
+12. THE CLI SHALL support `--debug` for enabling debug output
+13. THE CLI SHALL support `--no-color` for disabling colored output
+14. THE CLI SHALL support `--config` / `-c` for custom config file path
+15. THE CLI SHALL support `--session` / `-s` for resuming a session by ID
+16. THE CLI SHALL support `--version` / `-v` for showing version
+17. THE CLI SHALL support `--help` / `-h` for showing help
+
+### Requirement 22: Error Handling and Validation
+
+**User Story:** As a user, I want clear error messages when things go wrong, so that I can understand and fix issues.
+
+#### Acceptance Criteria
+
+1. WHEN configuration is invalid, THE CLI SHALL display the file path, line number, and specific validation error
+2. WHEN a command is not recognized, THE CLI SHALL suggest similar commands
+3. WHEN a required argument is missing, THE CLI SHALL display usage information
+4. WHEN a provider connection fails, THE CLI SHALL display connection status and retry options
+5. WHEN GPU monitoring fails, THE CLI SHALL fall back gracefully without crashing
+
+### Requirement 23: UI Settings Customization
+
+**User Story:** As a user, I want to customize UI settings, so that I can tailor the interface to my workflow.
+
+#### Acceptance Criteria
+
+1. THE UI_Settings SHALL support customizing theme colors (background, text, role, status, diff)
+2. THE UI_Settings SHALL support customizing typography (bullets, checkmark, cross, arrow, spinner, borders)
+3. THE UI_Settings SHALL support customizing keybinds for all shortcuts
+4. WHEN a user creates `~/.ollm/ui.yaml`, THE UI_Settings SHALL load and merge it with defaults
+5. THE UI_Settings SHALL validate custom settings and show errors for invalid values
+
+### Requirement 24: Metrics Configuration
+
+**User Story:** As a user, I want to configure metrics display, so that I can control what performance information is shown.
+
+#### Acceptance Criteria
+
+1. THE Metrics_Config SHALL support enabling/disabling metrics display
+2. THE Metrics_Config SHALL support compact mode for abbreviated metrics
+3. THE Metrics_Config SHALL support showing/hiding prompt tokens
+4. THE Metrics_Config SHALL support showing/hiding time to first token
+5. THE Metrics_Config SHALL support showing/hiding metrics in status bar
+6. WHEN metrics are disabled, THE CLI SHALL not collect or display performance data
+
+### Requirement 25: Reasoning Configuration
+
+**User Story:** As a user, I want to configure reasoning display, so that I can control how thinking processes are shown.
+
+#### Acceptance Criteria
+
+1. THE Reasoning_Config SHALL support enabling/disabling reasoning display
+2. THE Reasoning_Config SHALL support configuring maximum visible lines (default 8)
+3. THE Reasoning_Config SHALL support auto-collapse on completion (default true)
+4. WHEN reasoning is disabled, THE CLI SHALL not parse or display `<think>` blocks
+5. WHEN auto-collapse is disabled, THE Reasoning_Box SHALL remain expanded after completion
