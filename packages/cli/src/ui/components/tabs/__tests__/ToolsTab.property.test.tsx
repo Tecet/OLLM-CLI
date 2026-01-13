@@ -1,0 +1,168 @@
+import { describe, it, expect } from 'vitest';
+import * as fc from 'fast-check';
+import React from 'react';
+import { render } from 'ink-testing-library';
+import { ToolsTab } from '../ToolsTab.js';
+import { ReviewProvider, Review } from '../../../../contexts/ReviewContext.js';
+import { UIProvider } from '../../../../contexts/UIContext.js';
+
+/**
+ * Property-based tests for ToolsTab component
+ * 
+ * Feature: stage-06-cli-ui
+ */
+
+describe('ToolsTab - Property Tests', () => {
+  /**
+   * Property 23: Review List Completeness
+   * 
+   * For any set of pending reviews, the Tools tab should display all reviews
+   * with their file names and line counts.
+   * 
+   * Validates: Requirements 9.1
+   * 
+   * Feature: stage-06-cli-ui, Property 23: Review List Completeness
+   */
+  it('should display all pending reviews with file names and line counts', () => {
+    fc.assert(
+      fc.property(
+        // Generate an array of reviews
+        fc.array(
+          fc.record({
+            file: fc.string({ minLength: 1, maxLength: 50 }).map(s => s || 'file.txt'),
+            diff: fc.string(),
+            linesAdded: fc.nat({ max: 1000 }),
+            linesRemoved: fc.nat({ max: 1000 }),
+          }),
+          { minLength: 1, maxLength: 10 }
+        ),
+        (reviewData) => {
+          // Create reviews with proper structure
+          const reviews: Review[] = reviewData.map((data, index) => ({
+            id: `review-${index}`,
+            file: data.file,
+            diff: data.diff,
+            linesAdded: data.linesAdded,
+            linesRemoved: data.linesRemoved,
+            status: 'pending' as const,
+            timestamp: new Date(),
+          }));
+
+          // Render the component with reviews
+          const { lastFrame } = render(
+            <UIProvider>
+              <ReviewProvider initialReviews={reviews}>
+                <ToolsTab />
+              </ReviewProvider>
+            </UIProvider>
+          );
+
+          const output = lastFrame();
+
+          // Verify all reviews are displayed
+          for (const review of reviews) {
+            // Check that file name appears in output
+            expect(output).toContain(review.file);
+            
+            // Check that line counts appear in output
+            expect(output).toContain(`+${review.linesAdded}`);
+            expect(output).toContain(`-${review.linesRemoved}`);
+          }
+
+          // Verify pending count is displayed
+          expect(output).toContain(`Pending Reviews (${reviews.length})`);
+        }
+      ),
+      { numRuns: 100 }
+    );
+  });
+
+  /**
+   * Property 24: Review Approval Removal
+   * 
+   * For any review that is approved or rejected, the Tools tab should remove it
+   * from the pending list.
+   * 
+   * Validates: Requirements 9.3, 9.4
+   * 
+   * Feature: stage-06-cli-ui, Property 24: Review Approval Removal
+   */
+  it('should remove reviews from pending list when approved or rejected', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        // Generate an array of reviews with unique file names
+        fc.array(
+          fc.record({
+            file: fc.string({ minLength: 5, maxLength: 20 }).filter(s => s.trim().length >= 5),
+            diff: fc.string({ minLength: 5 }),
+            linesAdded: fc.nat({ max: 100 }),
+            linesRemoved: fc.nat({ max: 100 }),
+          }),
+          { minLength: 2, maxLength: 5 }
+        ),
+        // Generate which review to remove
+        fc.nat(),
+        async (reviewData, reviewIndexRaw) => {
+          // Create reviews with guaranteed unique file names
+          const reviews: Review[] = reviewData.map((data, index) => ({
+            id: `review-${index}`,
+            file: `file-${index}-${data.file.replace(/\s+/g, '-')}`, // Unique file names
+            diff: data.diff,
+            linesAdded: data.linesAdded,
+            linesRemoved: data.linesRemoved,
+            status: 'pending' as const,
+            timestamp: new Date(),
+          }));
+
+          const reviewIndex = reviewIndexRaw % reviews.length;
+
+          // Render the component with reviews
+          const { lastFrame, rerender } = render(
+            <UIProvider>
+              <ReviewProvider initialReviews={reviews}>
+                <ToolsTab />
+              </ReviewProvider>
+            </UIProvider>
+          );
+
+          // Verify initial count
+          let output = lastFrame();
+          const initialCount = reviews.length;
+          
+          // Use regex to match the count pattern more flexibly
+          const initialCountPattern = new RegExp(`Pending Reviews.*${initialCount}`);
+          expect(output).toMatch(initialCountPattern);
+
+          // Simulate removal by creating a new provider without one review
+          const remainingReviews = reviews.filter((_, idx) => idx !== reviewIndex);
+          
+          rerender(
+            <UIProvider>
+              <ReviewProvider initialReviews={remainingReviews}>
+                <ToolsTab />
+              </ReviewProvider>
+            </UIProvider>
+          );
+
+          // Verify review count decreased
+          output = lastFrame();
+          
+          if (remainingReviews.length > 0) {
+            // The count should have decreased by 1
+            const expectedCount = remainingReviews.length;
+            const countPattern = new RegExp(`Pending Reviews.*${expectedCount}`);
+            expect(output).toMatch(countPattern);
+            
+            // Verify the count decreased
+            expect(expectedCount).toBe(initialCount - 1);
+          } else {
+            // If no reviews remain, should show "No pending reviews" message
+            expect(output).toMatch(/No pending reviews/);
+            expect(output).not.toMatch(/Pending Reviews.*\d/);
+          }
+        }
+      ),
+      { numRuns: 100 }
+    );
+  });
+});

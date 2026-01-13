@@ -103,11 +103,17 @@ describe('Environment Variable Substitution - Property Tests', () => {
         fc.property(
           fc.dictionary(fc.string({ minLength: 1, maxLength: 20 }), fc.string()),
           (envConfig) => {
-            // Use actual process.env for this test
-            const result = substituteEnvObject(envConfig);
+            // Filter out dangerous prototype properties that Object.entries() won't include
+            const dangerousKeys = ['__proto__', 'constructor', 'prototype'];
+            const safeEnvConfig = Object.fromEntries(
+              Object.entries(envConfig).filter(([key]) => !dangerousKeys.includes(key))
+            );
             
-            // Should return an object with all keys from envConfig
-            expect(Object.keys(result).sort()).toEqual(Object.keys(envConfig).sort());
+            // Use actual process.env for this test
+            const result = substituteEnvObject(safeEnvConfig);
+            
+            // Should return an object with all keys from safeEnvConfig
+            expect(Object.keys(result).sort()).toEqual(Object.keys(safeEnvConfig).sort());
           }
         ),
         { numRuns: 100 }

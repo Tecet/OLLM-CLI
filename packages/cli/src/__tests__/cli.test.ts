@@ -47,7 +47,9 @@ describe('CLI version and help', () => {
     // Should contain key help text elements
     expect(output).toContain('OLLM CLI');
     expect(output).toContain('Usage:');
-    expect(output).toContain('Options:');
+    // The help output uses section headers like "Execution Mode:", "Model Selection:", etc.
+    // instead of a single "Options:" header
+    expect(output).toContain('Execution Mode:');
     expect(output).toContain('--version');
     expect(output).toContain('--help');
   });
@@ -62,12 +64,20 @@ describe('CLI version and help', () => {
  */
 describe('Property 3: Unknown CLI Flag Rejection', () => {
   it('should reject any unknown flag with non-zero exit code', () => {
+    // List of known valid flags that should not be tested as "unknown"
+    const knownFlags = [
+      'version', 'v', 'help', 'h', 'prompt', 'p', 'model', 'm', 'provider',
+      'host', 'list-models', 'pull-model', 'remove-model', 'model-info',
+      'output', 'o', 'review-diffs', 'no-review', 'debug', 'no-color',
+      'config', 'c', 'session', 's'
+    ];
+    
     fc.assert(
       fc.property(
-        // Generate random flag names that are not --version or --help
+        // Generate random flag names that are not in the known flags list
         fc
           .string({ minLength: 1, maxLength: 20 })
-          .filter((s) => s !== 'version' && s !== 'help' && /^[a-zA-Z0-9-_]+$/.test(s)),
+          .filter((s) => !knownFlags.includes(s) && /^[a-zA-Z0-9-_]+$/.test(s)),
         (flagName) => {
           try {
             // Execute CLI with unknown flag

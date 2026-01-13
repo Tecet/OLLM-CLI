@@ -200,7 +200,9 @@ describe('MCPSchemaConverter Property Tests', () => {
       fc.assert(
         fc.property(
           fc.dictionary(
-            fc.string({ minLength: 1, maxLength: 20 }),
+            fc.string({ minLength: 1, maxLength: 20 }).filter(
+              s => !['__proto__', 'constructor', 'prototype'].includes(s)
+            ),
             fc.oneof(
               fc.string({ maxLength: 50 }),
               fc.integer({ min: -1000, max: 1000 }),

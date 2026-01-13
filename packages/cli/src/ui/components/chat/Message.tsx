@@ -1,0 +1,78 @@
+import React, { useState } from 'react';
+import { Box, Text } from 'ink';
+import { Message as MessageType } from '../../../contexts/ChatContext.js';
+import { MetricsDisplay } from './MetricsDisplay.js';
+import { ReasoningBox } from './ReasoningBox.js';
+import type { Theme } from '../../uiSettings.js';
+
+export interface MessageProps {
+  message: MessageType;
+  theme: Theme;
+  metricsConfig?: {
+    enabled: boolean;
+    compactMode: boolean;
+  };
+  reasoningConfig?: {
+    enabled: boolean;
+    maxVisibleLines: number;
+  };
+}
+
+/**
+ * Message component displays a single chat message with role-based colors,
+ * optional metrics, and optional reasoning blocks
+ */
+export function Message({ message, theme, metricsConfig, reasoningConfig }: MessageProps) {
+  const roleColor = theme.role[message.role];
+  const timestamp = message.timestamp.toLocaleTimeString();
+  const [reasoningExpanded, setReasoningExpanded] = useState(false);
+
+  const showMetrics = metricsConfig?.enabled !== false && message.metrics;
+  const showReasoning = reasoningConfig?.enabled !== false && message.reasoning;
+
+  return (
+    <Box flexDirection="column" marginY={1}>
+      {/* Message header with role and timestamp */}
+      <Box marginBottom={1}>
+        <Text color={roleColor} bold>
+          {message.role.toUpperCase()}
+        </Text>
+        <Text color={theme.text.secondary} dimColor>
+          {' '}
+          • {timestamp}
+        </Text>
+      </Box>
+
+      {/* Reasoning box (if present) */}
+      {showReasoning && message.reasoning && (
+        <Box paddingLeft={2} marginBottom={1}>
+          <ReasoningBox
+            reasoning={message.reasoning}
+            expanded={reasoningExpanded}
+            onToggle={() => setReasoningExpanded(!reasoningExpanded)}
+            maxVisibleLines={reasoningConfig?.maxVisibleLines || 8}
+            autoScroll={false}
+            theme={theme}
+          />
+        </Box>
+      )}
+
+      {/* Message content */}
+      <Box paddingLeft={2}>
+        <Text color={theme.text.primary}>{message.content}</Text>
+      </Box>
+
+      {/* Metrics display (if present) */}
+      {showMetrics && message.metrics && (
+        <Box paddingLeft={2} marginTop={1}>
+          <MetricsDisplay
+            metrics={message.metrics}
+            compact={metricsConfig?.compactMode || false}
+            theme={theme}
+            visible={true}
+          />
+        </Box>
+      )}
+    </Box>
+  );
+}

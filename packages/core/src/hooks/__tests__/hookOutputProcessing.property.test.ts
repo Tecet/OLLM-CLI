@@ -27,7 +27,7 @@ describe('Hook Output Processing - Property Tests', () => {
     it('should abort execution when any hook returns continue: false', async () => {
       await fc.assert(
         fc.asyncProperty(
-          fc.array(arbHook(), { minLength: 2, maxLength: 5 }),
+          fc.uniqueArray(arbHook(), { selector: h => h.id, minLength: 2, maxLength: 5 }),
           fc.integer({ min: 0, max: 4 }),
           arbHookInput(),
           async (hooks, abortIndex, input) => {
@@ -40,7 +40,6 @@ describe('Hook Output Processing - Property Tests', () => {
             const actualAbortIndex = abortIndex % hooks.length;
 
             // Mock executeHookInternal to return controlled outputs
-            const originalExecute = (runner as any).executeHookInternal.bind(runner);
             vi.spyOn(runner as any, 'executeHookInternal').mockImplementation(
               (async (hook: Hook, _input: HookInput): Promise<HookOutput> => {
                 const hookIndex = hooks.findIndex((h) => h.id === hook.id);
@@ -81,7 +80,7 @@ describe('Hook Output Processing - Property Tests', () => {
     it('should concatenate system messages in execution order', async () => {
       await fc.assert(
         fc.asyncProperty(
-          fc.array(arbHook(), { minLength: 1, maxLength: 5 }),
+          fc.uniqueArray(arbHook(), { selector: h => h.id, minLength: 1, maxLength: 5 }),
           arbHookInput(),
           async (hooks, input) => {
             // Skip if hooks have invalid IDs (empty or whitespace)
@@ -121,7 +120,7 @@ describe('Hook Output Processing - Property Tests', () => {
     it('should continue execution when all hooks return continue: true', async () => {
       await fc.assert(
         fc.asyncProperty(
-          fc.array(arbHook(), { minLength: 1, maxLength: 5 }),
+          fc.uniqueArray(arbHook(), { selector: h => h.id, minLength: 1, maxLength: 5 }),
           arbHookInput(),
           async (hooks, input) => {
             // Skip if hooks have invalid IDs (empty or whitespace)
@@ -260,7 +259,7 @@ describe('Hook Output Processing - Property Tests', () => {
     it('should preserve data through the execution chain even when some hooks do not return data', async () => {
       await fc.assert(
         fc.asyncProperty(
-          fc.array(arbHook(), { minLength: 3, maxLength: 5 }),
+          fc.uniqueArray(arbHook(), { selector: h => h.id, minLength: 3, maxLength: 5 }),
           arbHookInput(),
           async (hooks, input) => {
             // Mock executeHookInternal where only odd-indexed hooks return data

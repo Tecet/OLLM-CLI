@@ -494,10 +494,10 @@ describe('Service Integration Tests', () => {
       });
 
       // Try to access API_KEY (should be empty/undefined)
-      // Use a simpler command that won't hang on Windows
+      // Use echo command that works reliably on all platforms
       const command = process.platform === 'win32' 
-        ? 'cmd /c "if defined API_KEY (echo %API_KEY%) else (echo EMPTY)"'
-        : 'echo "${API_KEY:-EMPTY}"';
+        ? 'echo %API_KEY%'
+        : 'echo "$API_KEY"';
 
       const result = await shellService.execute({
         command,
@@ -505,8 +505,14 @@ describe('Service Integration Tests', () => {
       });
 
       expect(result.exitCode).toBe(0);
-      // Should output "EMPTY" since API_KEY is not set or is sanitized
-      expect(result.output.trim()).toBe('EMPTY');
+      // On Windows, undefined env vars echo as %VAR_NAME%
+      // On Unix, undefined env vars echo as empty string
+      const output = result.output.trim();
+      if (process.platform === 'win32') {
+        expect(output).toBe('%API_KEY%');
+      } else {
+        expect(output).toBe('');
+      }
     });
 
     it('should handle custom allow and deny patterns', async () => {

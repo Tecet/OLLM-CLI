@@ -1,0 +1,62 @@
+import React from 'react';
+import { Box, Text } from 'ink';
+import { TabType } from '../../../contexts/UIContext.js';
+
+export interface Tab {
+  id: TabType;
+  label: string;
+  icon: string;
+  shortcut: string;
+}
+
+export const tabs: Tab[] = [
+  { id: 'chat', label: 'Chat', icon: '💬', shortcut: 'Ctrl+1' },
+  { id: 'tools', label: 'Tools', icon: '🔧', shortcut: 'Ctrl+2' },
+  { id: 'files', label: 'Files', icon: '📁', shortcut: 'Ctrl+3' },
+  { id: 'search', label: 'Search', icon: '🔍', shortcut: 'Ctrl+4' },
+  { id: 'docs', label: 'Docs', icon: '📚', shortcut: 'Ctrl+5' },
+  { id: 'settings', label: 'Settings', icon: '⚙️', shortcut: 'Ctrl+6' },
+];
+
+export interface TabBarProps {
+  activeTab: TabType;
+  onTabChange: (tab: TabType) => void;
+  notifications: Map<TabType, number>;
+  theme: {
+    text: {
+      primary: string;
+      secondary: string;
+      accent: string;
+    };
+    bg: {
+      primary: string;
+      secondary: string;
+    };
+  };
+}
+
+export function TabBar({ activeTab, onTabChange, notifications, theme }: TabBarProps) {
+  return (
+    <Box flexDirection="row" borderStyle="single" borderColor={theme.text.secondary}>
+      {tabs.map((tab, index) => {
+        const isActive = tab.id === activeTab;
+        const notificationCount = notifications.get(tab.id) || 0;
+        const hasNotifications = notificationCount > 0;
+
+        return (
+          <Box key={tab.id} paddingX={1}>
+            <Text
+              color={isActive ? theme.text.accent : theme.text.secondary}
+              bold={isActive}
+            >
+              {tab.icon} {tab.label}
+              {hasNotifications && (
+                <Text color={theme.text.accent}> ({notificationCount})</Text>
+              )}
+            </Text>
+          </Box>
+        );
+      })}
+    </Box>
+  );
+}

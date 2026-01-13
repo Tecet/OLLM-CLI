@@ -46,12 +46,12 @@ export class DefaultGPUDetector implements GPUDetector {
   private async performDetection(): Promise<GPUType> {
     const systemPlatform = platform();
 
-    // Check for NVIDIA GPU
+    // Check for NVIDIA GPU (works on Windows too if drivers installed)
     if (await this.hasNVIDIA()) {
       return GPUType.NVIDIA;
     }
 
-    // Check for AMD GPU (Linux only)
+    // Check for AMD GPU (Linux only - rocm-smi doesn't work on Windows)
     if (systemPlatform === 'linux' && await this.hasAMD()) {
       return GPUType.AMD;
     }
@@ -59,6 +59,11 @@ export class DefaultGPUDetector implements GPUDetector {
     // Check for Apple Silicon (macOS only)
     if (systemPlatform === 'darwin' && await this.hasAppleSilicon()) {
       return GPUType.APPLE_SILICON;
+    }
+
+    // Check for Windows GPU via Performance Counters (any GPU vendor)
+    if (systemPlatform === 'win32' && await this.hasWindowsGPU()) {
+      return GPUType.WINDOWS;
     }
 
     // Default to CPU-only
@@ -112,6 +117,23 @@ export class DefaultGPUDetector implements GPUDetector {
         timeout: 5000
       });
       return stdout.includes('Apple');
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Check for Windows GPU via Performance Counters
+   * This works with any GPU vendor (NVIDIA, AMD, Intel) on Windows
+   */
+  private async hasWindowsGPU(): Promise<boolean> {
+    try {
+      const { stdout } = await execAsync(
+        'powershell -NoProfile -Command "Get-Counter -ListSet \'GPU*\' -ErrorAction SilentlyContinue | Select-Object -First 1 CounterSetName"',
+        { timeout: 5000, windowsHide: true }
+      );
+      // If we get any output, GPU counters are available
+      return stdout.trim().length > 0;
     } catch {
       return false;
     }

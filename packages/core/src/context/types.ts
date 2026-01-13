@@ -31,6 +31,7 @@ export enum GPUType {
   NVIDIA = 'nvidia',
   AMD = 'amd',
   APPLE_SILICON = 'apple',
+  WINDOWS = 'windows',
   CPU_ONLY = 'cpu'
 }
 

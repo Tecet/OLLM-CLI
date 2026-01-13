@@ -20,7 +20,7 @@ export { ProviderRegistry } from './provider/registry.js';
 
 // Core runtime
 export { ChatClient, type ChatConfig, type ChatEvent } from './core/chatClient.js';
-export { Turn, type TurnEvent, type ToolRegistry, type Tool, type ChatOptions } from './core/turn.js';
+export { Turn, type TurnEvent, type ToolRegistry as TurnToolRegistry, type Tool, type ChatOptions } from './core/turn.js';
 export { TokenCounter, type TokenLimitConfig } from './core/tokenLimits.js';
 export { ReActToolHandler, type ReActParseResult } from './core/reactToolHandler.js';
 
@@ -107,6 +107,56 @@ export {
   EnvironmentSanitizationService,
   FileDiscoveryService,
 } from './services/index.js';
+
+// Context Management System
+export {
+  // Types and interfaces
+  GPUType,
+  MemoryLevel,
+  // Factory functions
+  createGPUDetector,
+  createVRAMMonitor,
+  createContextManager,
+  createContextPool,
+  createSnapshotManager,
+  createMemoryGuard,
+  // Classes (for DI/testing)
+  DefaultVRAMMonitor,
+  DefaultGPUDetector,
+  ContextManagerImpl,
+} from './context/index.js';
+
+export type {
+  VRAMInfo,
+  VRAMMonitor,
+  GPUDetector,
+  ContextConfig,
+  ContextUsage,
+  ContextPool,
+  ContextPoolConfig,
+  ModelInfo as ContextModelInfo,
+  ContextSnapshot,
+  SnapshotMetadata,
+  SnapshotConfig,
+  SnapshotManager,
+  SnapshotStorage,
+  CompressionStrategy as ContextCompressionStrategy,
+  CompressionStrategyType,
+  CompressedContext,
+  CompressionEstimate,
+  CompressionConfig,
+  CompressionService as ContextCompressionService,
+  MemoryThresholds,
+  MemoryGuard,
+  Message as ContextMessage,
+  ToolCall as ContextToolCall,
+  ToolResult as ContextToolResult,
+  ConversationContext,
+  ContextManager as ContextManagerInterface,
+  TokenCounter as ContextTokenCounter,
+  TokenCountCache,
+  KVQuantization,
+} from './context/index.js';
 
 // Service types
 export type {

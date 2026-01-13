@@ -475,8 +475,11 @@ describe('SnapshotManager', () => {
             const currentTokens = Math.floor(maxTokens * usageRatio);
             manager.checkThresholds(currentTokens, maxTokens);
 
-            // Callback should be triggered if and only if usage >= 80%
-            if (usageRatio >= 0.8) {
+            // Calculate the actual usage after floor operation
+            const actualUsage = currentTokens / maxTokens;
+
+            // Callback should be triggered if and only if actual usage >= 80%
+            if (actualUsage >= 0.8) {
               expect(callbackTriggered).toBe(true);
             } else {
               expect(callbackTriggered).toBe(false);

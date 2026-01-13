@@ -50,6 +50,8 @@ export class DefaultVRAMMonitor extends EventEmitter implements VRAMMonitor {
         return await this.getAMDMemory();
       case GPUType.APPLE_SILICON:
         return await this.getAppleMemory();
+      case GPUType.WINDOWS:
+        return await this.getWindowsGPUMemory();
       case GPUType.CPU_ONLY:
       default:
         return await this.getSystemMemory();
@@ -236,6 +238,61 @@ export class DefaultVRAMMonitor extends EventEmitter implements VRAMMonitor {
   }
 
   /**
+   * Get Windows GPU memory using PowerShell Get-Counter
+   * Works with any GPU vendor (NVIDIA, AMD, Intel) on Windows
+   */
+  private async getWindowsGPUMemory(): Promise<VRAMInfo> {
+    try {
+      // Query GPU adapter memory counters using PowerShell
+      const { stdout: memOutput } = await execAsync(
+        `powershell -NoProfile -Command "` +
+        `$counters = Get-Counter -Counter @('\\GPU Adapter Memory(*)\\Local Usage', '\\GPU Adapter Memory(*)\\Dedicated Usage', '\\GPU Adapter Memory(*)\\Shared Usage') -ErrorAction SilentlyContinue; ` +
+        `if ($counters) { ` +
+          `$local = ($counters.CounterSamples | Where-Object { $_.Path -like '*Local Usage' } | Measure-Object -Property CookedValue -Sum).Sum; ` +
+          `$dedicated = ($counters.CounterSamples | Where-Object { $_.Path -like '*Dedicated Usage' } | Measure-Object -Property CookedValue -Sum).Sum; ` +
+          `$shared = ($counters.CounterSamples | Where-Object { $_.Path -like '*Shared Usage' } | Measure-Object -Property CookedValue -Sum).Sum; ` +
+          'Write-Output "$local,$dedicated,$shared" ' +
+        `} else { Write-Output '0,0,0' }"`,
+        { timeout: 10000, windowsHide: true }
+      );
+
+      // Parse memory values (they come in bytes)
+      const memValues = memOutput.trim().split(',').map(v => parseInt(v.trim(), 10) || 0);
+      const localUsage = memValues[0] || 0;
+      const dedicatedUsage = memValues[1] || 0;
+      
+      // Calculate VRAM metrics
+      const used = localUsage + dedicatedUsage;
+      
+      // Query total dedicated memory from registry (more accurate)
+      let total = 0;
+      try {
+        const { stdout: regOutput } = await execAsync(
+          `powershell -NoProfile -Command "` +
+          `Get-ItemProperty -Path 'HKLM:\\SYSTEM\\ControlSet001\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0*' -ErrorAction SilentlyContinue | ` +
+          `ForEach-Object { if ($_.'HardwareInformation.qwMemorySize') { $_.'HardwareInformation.qwMemorySize' } } | ` +
+          `Measure-Object -Maximum | Select-Object -ExpandProperty Maximum"`,
+          { timeout: 5000, windowsHide: true }
+        );
+        total = parseInt(regOutput.trim(), 10) || 0;
+      } catch {
+        // If registry query fails, estimate from used memory
+        total = Math.max(used * 2, 4 * 1024 * 1024 * 1024); // Estimate or default to 4GB
+      }
+
+      const available = Math.max(0, total - used);
+      const modelLoaded = Math.max(0, used - (total * 0.1)); // Assume 10% overhead
+
+      return { total, used, available, modelLoaded };
+    } catch (error) {
+      console.warn('Failed to query Windows GPU memory, falling back to system RAM:', error);
+    }
+
+    // Fallback to system RAM
+    return this.getSystemMemory();
+  }
+
+  /**
    * Get system RAM as fallback for CPU-only mode
    */
   private async getSystemMemory(): Promise<VRAMInfo> {
@@ -250,19 +307,6 @@ export class DefaultVRAMMonitor extends EventEmitter implements VRAMMonitor {
     return { total, used, available, modelLoaded };
   }
 
-  /**
-   * Set low memory threshold (for testing)
-   */
-  setLowMemoryThreshold(threshold: number): void {
-    this.lowMemoryThreshold = Math.max(0, Math.min(1, threshold));
-  }
-
-  /**
-   * Clear cached GPU type (for testing)
-   */
-  clearCache(): void {
-    this.gpuType = null;
-  }
 }
 
 /**
