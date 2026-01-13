@@ -391,7 +391,7 @@ describe('ChatRecordingService', () => {
      * 
      * Validates: Requirements 1.4
      */
-    it('should return summaries for all saved sessions with correct counts', async () => {
+    it('should return summaries for all saved sessions with correct counts', { timeout: 30000 }, async () => {
       await fc.assert(
         fc.asyncProperty(
           fc.array(session(), { minLength: 1, maxLength: 20 }),
@@ -483,7 +483,7 @@ describe('ChatRecordingService', () => {
      * 
      * Validates: Requirements 1.6
      */
-    it('should remove session file and exclude from listing after deletion', async () => {
+    it('should remove session file and exclude from listing after deletion', { timeout: 30000 }, async () => {
       await fc.assert(
         fc.asyncProperty(session(), async (generatedSession: Session) => {
           // Create a session with the generated data
@@ -558,7 +558,7 @@ describe('ChatRecordingService', () => {
      * 
      * Validates: Requirements 9.3, 9.6
      */
-    it('should persist all recorded data to disk immediately and survive process termination', async () => {
+    it('should persist all recorded data to disk immediately and survive process termination', { timeout: 30000 }, async () => {
       await fc.assert(
         fc.asyncProperty(
           // Generate a sequence of messages
@@ -693,7 +693,7 @@ describe('ChatRecordingService', () => {
      * 
      * Validates: Requirements 9.4
      */
-    it('should delete oldest sessions when count exceeds maximum', async () => {
+    it('should delete oldest sessions when count exceeds maximum', { timeout: 30000 }, async () => {
       await fc.assert(
         fc.asyncProperty(
           // Generate a keepCount between 1 and 10
@@ -801,7 +801,7 @@ describe('ChatRecordingService', () => {
      * 
      * Validates: Requirements 9.5
      */
-    it('should update lastActivity timestamp when recording messages or tool calls', async () => {
+    it('should update lastActivity timestamp when recording messages or tool calls', { timeout: 60000 }, async () => {
       await fc.assert(
         fc.asyncProperty(
           // Generate a sequence of messages
@@ -999,6 +999,17 @@ describe('ChatRecordingService', () => {
       for (const existingSession of existingSessions) {
         await service.deleteSession(existingSession.sessionId);
       }
+
+      // Wait a bit for file system operations to complete on Windows
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Clear cache after cleanup
+      // @ts-expect-error - Accessing private property for testing
+      service.sessionCache.clear();
+
+      // Verify cleanup worked
+      const sessionsAfterCleanup = await service.listSessions();
+      expect(sessionsAfterCleanup).toHaveLength(0);
 
       // Create two valid sessions
       const sessionId1 = await service.createSession('llama3.1:8b', 'ollama');

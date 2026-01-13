@@ -185,7 +185,7 @@ describe('MemoryGuard - Property Tests', () => {
         // Generate max tokens
         fc.integer({ min: 2048, max: 131072 }),
         // Generate soft threshold
-        fc.double({ min: 0.5, max: 0.9 }),
+        fc.double({ min: 0.5, max: 0.9, noNaN: true, noDefaultInfinity: true }).filter(v => isFinite(v) && !isNaN(v)),
         (maxTokens, softThreshold) => {
           // Setup
           const vramMonitor = new MockVRAMMonitor();

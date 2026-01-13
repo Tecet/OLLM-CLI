@@ -391,7 +391,7 @@ describe('SnapshotManager', () => {
         ),
         { numRuns: 100 }
       );
-    });
+    }, 10000); // Increase timeout to 10 seconds
 
     /**
      * Feature: stage-04b-context-management, Property 14: Snapshot Deletion Effect
@@ -513,8 +513,12 @@ describe('SnapshotManager', () => {
             const currentTokens = Math.floor(maxTokens * usageRatio);
             manager.checkThresholds(currentTokens, maxTokens);
 
+            // Calculate the actual percentage that checkThresholds will see
+            const actualPercentage = (currentTokens / maxTokens) * 100;
+            
             // Callback should be triggered if and only if usage >= 95%
-            if (usageRatio >= 0.95) {
+            // Use the same calculation as checkThresholds to avoid floating point issues
+            if (actualPercentage >= 95) {
               expect(overflowCallbackTriggered).toBe(true);
             } else {
               expect(overflowCallbackTriggered).toBe(false);

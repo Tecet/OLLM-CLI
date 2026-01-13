@@ -76,9 +76,12 @@ function isValidFilenamePart(s: string): boolean {
 
 /**
  * Normalize path separators to forward slashes for cross-platform testing
+ * On Windows, also normalize case since the file system is case-insensitive
  */
 function normalizePath(p: string): string {
-  return p.replace(/\\/g, '/');
+  const normalized = p.replace(/\\/g, '/');
+  // On Windows, normalize to lowercase for comparison since FS is case-insensitive
+  return process.platform === 'win32' ? normalized.toLowerCase() : normalized;
 }
 
 /**

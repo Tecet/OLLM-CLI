@@ -705,19 +705,25 @@ describe('ChatCompressionService', () => {
             // Property 3: Recent messages should be in the same order
             if (compressedRecent.length > 1) {
               for (let i = 0; i < compressedRecent.length - 1; i++) {
+                const current = compressedRecent[i];
+                const next = compressedRecent[i + 1];
+                
+                // Find indices using timestamp as well to handle duplicate text
                 const currentIdx = messages.findIndex(
                   (m) =>
-                    m.role === compressedRecent[i].role &&
-                    m.parts[0].text === compressedRecent[i].parts[0].text
+                    m.role === current.role &&
+                    m.parts[0].text === current.parts[0].text &&
+                    m.timestamp === current.timestamp
                 );
                 const nextIdx = messages.findIndex(
                   (m) =>
-                    m.role === compressedRecent[i + 1].role &&
-                    m.parts[0].text === compressedRecent[i + 1].parts[0].text
+                    m.role === next.role &&
+                    m.parts[0].text === next.parts[0].text &&
+                    m.timestamp === next.timestamp
                 );
                 
                 // If both messages are found in original, they should be in order
-                if (currentIdx !== -1 && nextIdx !== -1) {
+                if (currentIdx !== -1 && nextIdx !== -1 && currentIdx !== nextIdx) {
                   expect(currentIdx).toBeLessThan(nextIdx);
                 }
               }

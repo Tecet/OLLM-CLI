@@ -137,3 +137,50 @@ export {
   type ContextStatusData,
   type ContextStatsData
 } from './commands/index.js';
+
+// Hook system
+export type {
+  Hook,
+  HookEvent,
+  HookSource,
+  HookInput,
+  HookOutput,
+  HookContext,
+  HookExecutionPlan,
+  HookApproval,
+} from './hooks/index.js';
+
+// Extension system
+export type {
+  Extension,
+  ExtensionManifest,
+  ExtensionSetting,
+  HookConfig,
+  Skill,
+} from './extensions/index.js';
+
+// MCP integration
+export type {
+  MCPServerConfig,
+  MCPServerStatus,
+  MCPServerStatusType,
+  MCPServerInfo,
+  MCPTool,
+  MCPRequest,
+  MCPResponse,
+  MCPError,
+  MCPTransport,
+  MCPClient,
+  MCPSchemaConverter,
+  MCPToolWrapper,
+} from './mcp/index.js';
+
+export {
+  BaseMCPTransport,
+  StdioTransport,
+  SSETransport,
+  HTTPTransport,
+  DefaultMCPClient,
+  DefaultMCPSchemaConverter,
+  DefaultMCPToolWrapper,
+} from './mcp/index.js';
