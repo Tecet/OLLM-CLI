@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { render, Box, Text } from 'ink';
-import { LlamaAnimation } from '../../packages/cli/src/components/LlamaAnimation';
+import { LlamaAnimation } from '../../packages/cli/src/components/lama/LlamaAnimation';
 
 // TEST 2: Large Size
 const TestLarge = () => {

@@ -35,16 +35,14 @@ We use a hybrid approach to ensure the best quality at every size:
 packages/cli/
 └── src/
     └── components/
-        └── LlamaAnimation.tsx   # Core Component
-
-.dev/reference/
-└── lama/                        # Test Suite & Tools
-    ├── jumping_lama_s_st.tsx    # Test: Small & Standard
-    ├── jumping_lama_l.tsx       # Test: Large
-    ├── jumping_lama_xl.tsx      # Test: Extra Large
-    ├── test-llama-component.tsx # Integration Test
-    └── ...
+        └── lama/
+            ├── LlamaAnimation.tsx     # Core component used throughout the CLI
+            ├── lama_sprite/           # PNG assets (active)
+            ├── reference/             # Legacy reference scripts (backup)
+            └── demo.tsx               # Reusable CLI-specific demo harness
 ```
+
+Backup copies of everything in the `lama/` folder live under `.dev/reference/lama/` so you can restore the previous iteration anytime.
 
 ---
 
@@ -52,7 +50,7 @@ packages/cli/
 
 The distance the llama walks before turning around is controlled by the `maxSteps` variable in the code.
 
-1. Open `packages/cli/src/components/LlamaAnimation.tsx`.
+1. Open `packages/cli/src/components/lama/LlamaAnimation.tsx`.
 2. Locate the `setStep` update function inside `useEffect`:
 
 ```typescript
@@ -74,25 +72,33 @@ setStep(prev => {
 
 ## Running Verification Tests
 
-We have a dedicated test suite in `.dev/reference/lama/` to verify the rendering quality and stability.
+We have a dedicated test suite in `packages/cli/src/components/lama/reference/` to verify the rendering quality and stability (the same scripts are mirrored for safekeeping at `.dev/reference/lama/reference/`).
 
 **Small:**
 ```bash
-npx tsx .dev/reference/lama/jumping_lama_small.tsx
+npx tsx packages/cli/src/components/lama/reference/jumping_lama_small.tsx
 ```
 
 **Standard:**
 ```bash
-npx tsx .dev/reference/lama/jumping_lama_standard.tsx
+npx tsx packages/cli/src/components/lama/reference/jumping_lama_standard.tsx
 ```
 
 **Large (High Detail):**
 ```bash
-npx tsx .dev/reference/lama/jumping_lama_l.tsx
+npx tsx packages/cli/src/components/lama/reference/jumping_lama_l.tsx
 ```
 
 **Extra Large (Giant):**
 ```bash
-npx tsx .dev/reference/lama/jumping_lama_xl.tsx
+npx tsx packages/cli/src/components/lama/reference/jumping_lama_xl.tsx
 ```
 *(Requires a maximized terminal window)*
+
+## Active Demo
+
+For a CLI-native demo that renders both `small` and `standard` animations, run `packages/cli/src/components/lama/demo.tsx`. A backup of that demo resides at `.dev/reference/lama/demo.tsx`.
+
+```bash
+npx tsx packages/cli/src/components/lama/demo.tsx
+```

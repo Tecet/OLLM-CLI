@@ -498,8 +498,8 @@ interface GPUMonitor {
 1. Implement ChatHistory with message display
 2. **Implement Llama "Thinking" Animation**:
    - **Trigger**: Show only during state `WAITING_FOR_RESPONSE` (after user input, before 1st token).
-   - **Component**: Use `LlamaAnimation` (Size: `small`) from `packages/cli/src/components/LlamaAnimation.tsx`.
-   - **Scripts**: Reference `.dev/reference/lama/` for usage examples.
+  - **Component**: Use `LlamaAnimation` (Size: `small`) from `packages/cli/src/components/lama/LlamaAnimation.tsx`.
+  - **Scripts**: Reference `packages/cli/src/components/lama/reference/` (mirrored at `.dev/reference/lama/reference/`) for usage examples (legacy helpers).
    - **Layout constraint**: When user submits input, **scroll ChatHistory up by ~20 lines**. This ensures the animation (especially `small` at 12 lines) has a clean stage without being truncated, while remaining more compact than the previous 25-line requirement.
    - **Transition**: Unmount immediately when `STREAMING` starts.
 3. Implement InputBox with multi-line support
@@ -790,12 +790,12 @@ interface LaunchScreenProps {
 - `packages/cli/src/ui/components/RecentSessions.tsx`
 
 **Acceptance Criteria**:
-- [ ] Llama Animation displays centered on launch
-- [ ] Version banner matches specified aesthetic
-- [ ] Documentation /help hints shown
-- [ ] Recent sessions listed
-- [ ] Any keypress dismisses to Chat tab
-- [ ] `/home` command returns to launch screen
+- [x] Llama Animation displays centered on launch
+- [x] Version banner matches specified aesthetic
+- [x] Documentation /help hints shown
+- [x] Recent sessions listed
+- [x] Any keypress dismisses to Chat tab
+- [x] `/home` command returns to launch screen
 
 ---
 
@@ -1119,9 +1119,9 @@ shortcuts:
 - [ ] Session stats update
 
 ### Activity Indicators
-- [ ] Llama animation shows during waiting
-- [ ] Llama bounces left-to-right and back
-- [ ] Llama uses pixel art images (or fallback emoji)
+- [x] Llama animation shows during waiting
+- [x] Llama bounces left-to-right and back
+- [x] Llama uses pixel art images (or fallback emoji)
 - [ ] Spinner shows in side panel during streaming
 - [ ] Spinner shows during tool execution
 - [ ] Activity panel shows token count and speed

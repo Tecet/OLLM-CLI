@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { render, Box, Text } from 'ink';
-import { LlamaAnimation } from '../../packages/cli/src/components/LlamaAnimation';
+import { LlamaAnimation } from '../../packages/cli/src/components/lama/LlamaAnimation';
 
 // Dedicated test for the Extra Large (96px) Llama
 // This requires a very tall terminal window or fullscreen mode

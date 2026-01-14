@@ -84,6 +84,7 @@ export class MemoryService {
   private tokenBudget: number;
   private enabled: boolean;
   private loaded: boolean = false;
+  private savePromise: Promise<void> | null = null;
 
   constructor(config: MemoryServiceConfig = {}) {
     this.memoryPath =
@@ -136,12 +137,30 @@ export class MemoryService {
 
   /**
    * Save memories to disk
+   * Serializes concurrent saves to prevent race conditions
    */
   async save(): Promise<void> {
     if (!this.enabled) {
       return;
     }
 
+    // Serialize saves to prevent race conditions
+    if (this.savePromise) {
+      await this.savePromise;
+    }
+
+    this.savePromise = this.performSave();
+    try {
+      await this.savePromise;
+    } finally {
+      this.savePromise = null;
+    }
+  }
+
+  /**
+   * Perform the actual save operation
+   */
+  private async performSave(): Promise<void> {
     const storage: MemoryStorage = {
       version: 1,
       memories: Array.from(this.memories.values()).map((mem) => ({

@@ -496,7 +496,7 @@ See [Llama Animation Guide](llama_animation.md) for pixel art specs and creation
 ### Animation Code
 
 ```typescript
-// packages/cli/src/ui/components/LlamaAnimation.tsx
+// packages/cli/src/components/lama/LlamaAnimation.tsx
 
 interface LlamaAnimationProps {
   isActive: boolean;

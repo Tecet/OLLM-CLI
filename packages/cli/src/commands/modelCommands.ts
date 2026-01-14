@@ -16,6 +16,36 @@ import type { ModelManagementService } from '@ollm/ollm-cli-core/services/modelM
 import type { ServiceContainer } from '@ollm/ollm-cli-core/services/serviceContainer.js';
 
 /**
+ * /model use <name> - Switch to a different model
+ * This handler doesn't require a service container
+ * 
+ * Requirements: 19.2
+ */
+async function modelUseHandler(args: string[]): Promise<CommandResult> {
+  if (args.length === 0) {
+    return {
+      success: false,
+      message: 'Usage: /model use <model-name>',
+    };
+  }
+
+  const modelName = args[0];
+
+  // Call the model switch callback if available
+  if (typeof (globalThis as any).__ollmModelSwitchCallback === 'function') {
+    (globalThis as any).__ollmModelSwitchCallback(modelName);
+  }
+
+  return {
+    success: true,
+    message: `Switched to model: ${modelName}`,
+    data: {
+      model: modelName,
+    },
+  };
+}
+
+/**
  * Create model commands with service container dependency injection
  */
 export function createModelCommands(container: ServiceContainer): Command[] {
@@ -66,31 +96,6 @@ async function modelListHandler(service: ModelManagementService): Promise<Comman
       message: `Failed to list models: ${error instanceof Error ? error.message : String(error)}`,
     };
   }
-}
-
-/**
- * /model use <name> - Switch to a different model
- * 
- * Requirements: 19.2
- */
-async function modelUseHandler(args: string[]): Promise<CommandResult> {
-  if (args.length === 0) {
-    return {
-      success: false,
-      message: 'Usage: /model use <model-name>',
-    };
-  }
-
-  const modelName = args[0];
-
-  // This will integrate with ModelManagementService
-  return {
-    success: true,
-    message: `Switched to model: ${modelName}`,
-    data: {
-      model: modelName,
-    },
-  };
 }
 
 /**

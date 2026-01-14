@@ -4,6 +4,7 @@ import { Message as MessageType } from '../../../contexts/ChatContext.js';
 import { Message } from './Message.js';
 import { ToolCall } from './ToolCall.js';
 import { StreamingIndicator } from './StreamingIndicator.js';
+import { LlamaAnimation } from '../../../components/lama/LlamaAnimation.js';
 import type { Theme } from '../../uiSettings.js';
 
 export interface ChatHistoryProps {
@@ -70,10 +71,11 @@ export function ChatHistory({
         </Box>
       ))}
 
-      {/* Llama animation during waiting */}
+
+      {/* Llama animation while waiting for first token */}
       {waitingForResponse && !streaming && (
-        <Box marginTop={2} marginBottom={2}>
-          <LlamaAnimation theme={theme} />
+        <Box marginTop={1} marginBottom={1}>
+          <LlamaAnimation size="small" />
         </Box>
       )}
 
@@ -143,23 +145,6 @@ function renderInlineDiff(
           </Text>
         );
       })}
-    </Box>
-  );
-}
-
-/**
- * Llama animation component (placeholder)
- * Shows a simple animation while waiting for response
- */
-function LlamaAnimation({ theme }: { theme: { text: { accent: string } } }) {
-  return (
-    <Box flexDirection="column" alignItems="center">
-      <Text color={theme.text.accent}>
-        🦙
-      </Text>
-      <Text color={theme.text.accent} dimColor>
-        Thinking...
-      </Text>
     </Box>
   );
 }

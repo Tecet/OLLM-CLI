@@ -246,6 +246,7 @@ describe('Memory Service Properties', () => {
   /**
    * Property 26: Memory listing
    * For any set of stored memories, listAll should return all Memory_Entry objects
+   * (duplicate keys are updated, not duplicated - Map behavior)
    * Validates: Requirements 12.5
    */
   it('Property 26: Memory listing', async () => {
@@ -270,15 +271,21 @@ describe('Memory Service Properties', () => {
           // List all
           const listed = service.listAll();
 
-          // Should have same count
-          expect(listed.length).toBe(memories.length);
-
-          // All stored memories should be in the list
+          // Get unique keys from input (Map behavior - last value wins)
+          const uniqueKeys = new Map<string, string>();
           for (const mem of memories) {
-            const found = listed.find((l) => l.key === mem.key);
+            uniqueKeys.set(mem.key, mem.value);
+          }
+
+          // Should have same count as unique keys
+          expect(listed.length).toBe(uniqueKeys.size);
+
+          // All unique keys should be in the list with their final values
+          for (const [key, value] of uniqueKeys.entries()) {
+            const found = listed.find((l) => l.key === key);
             expect(found).toBeDefined();
             if (found) {
-              expect(found.value).toBe(mem.value);
+              expect(found.value).toBe(value);
             }
           }
         }

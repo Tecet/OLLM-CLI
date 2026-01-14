@@ -12,7 +12,7 @@
  */
 
 import { useState, useCallback, useEffect } from 'react';
-import { Box, Text } from 'ink';
+import { Box, Text, useStdout } from 'ink';
 import { UIProvider, useUI, TabType } from '../contexts/UIContext.js';
 import { ChatProvider, useChat } from '../contexts/ChatContext.js';
 import { GPUProvider, useGPU } from '../contexts/GPUContext.js';
@@ -40,11 +40,16 @@ interface AppContentProps {
 }
 
 function AppContent({ config }: AppContentProps) {
-  const [showLaunchScreen, setShowLaunchScreen] = useState(true);
+  // Use global UI state for launch screen visibility
+  const { state: uiState, setActiveTab, toggleSidePanel, setLaunchScreenVisible } = useUI();
+  
   const [debugMode, setDebugMode] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   
-  const { state: uiState, setActiveTab, toggleSidePanel } = useUI();
+  // Get terminal dimensions
+  const { stdout } = useStdout();
+  const terminalHeight = stdout?.rows || 24; // Default to 24 if not available
+  
   const { clearChat, cancelGeneration, state: chatState } = useChat();
   const { reviews } = useReview();
   const { info: gpuInfo } = useGPU();
@@ -74,8 +79,8 @@ function AppContent({ config }: AppContentProps) {
 
   // Handle launch screen dismiss
   const handleDismissLaunch = useCallback(() => {
-    setShowLaunchScreen(false);
-  }, []);
+    setLaunchScreenVisible(false);
+  }, [setLaunchScreenVisible]);
 
   // Handle save session
   const handleSaveSession = useCallback(async () => {
@@ -163,7 +168,7 @@ function AppContent({ config }: AppContentProps) {
   ]);
 
   // Show launch screen
-  if (showLaunchScreen) {
+  if (uiState.launchScreenVisible) {
     return (
       <LaunchScreen
         theme={uiState.theme}
@@ -201,19 +206,21 @@ function AppContent({ config }: AppContentProps) {
   });
 
   return (
-    <Box flexDirection="column" height="100%">
-      {/* Tab Bar */}
-      <TabBar
-        activeTab={uiState.activeTab}
-        onTabChange={setActiveTab}
-        notifications={notificationCounts}
-        theme={uiState.theme}
-      />
+    <Box flexDirection="column" height={terminalHeight}>
+      {/* Tab Bar - fixed height (1 line) */}
+      <Box flexShrink={0}>
+        <TabBar
+          activeTab={uiState.activeTab}
+          onTabChange={setActiveTab}
+          notifications={notificationCounts}
+          theme={uiState.theme}
+        />
+      </Box>
 
-      {/* Main Content Area */}
-      <Box flexGrow={1} flexDirection="row">
+      {/* Main Content Area - scrollable */}
+      <Box flexGrow={1} flexShrink={1} minHeight={0} flexDirection="row">
         {/* Active Tab Content */}
-        <Box flexGrow={1}>
+        <Box flexGrow={1} minHeight={0}>
           {renderActiveTab()}
         </Box>
 
@@ -252,17 +259,19 @@ function AppContent({ config }: AppContentProps) {
         )}
       </Box>
 
-      {/* Status Bar - integrated with GPU monitoring */}
-      <StatusBar
-        connection={{ status: 'connected', provider: config.provider.default }}
-        model={currentModel}
-        tokens={{ current: chatState.messages.reduce((sum, m) => sum + m.content.length, 0), max: 4096 }}
-        git={{ branch: 'main', staged: 0, modified: 0 }}
-        gpu={gpuInfo}
-        reviews={reviews.length}
-        cost={0}
-        theme={uiState.theme}
-      />
+      {/* Status Bar - fixed at bottom (1 line) */}
+      <Box flexShrink={0}>
+        <StatusBar
+          connection={{ status: 'connected', provider: config.provider.default }}
+          model={currentModel}
+          tokens={{ current: chatState.messages.reduce((sum, m) => sum + m.content.length, 0), max: 4096 }}
+          git={{ branch: 'main', staged: 0, modified: 0 }}
+          gpu={gpuInfo}
+          reviews={reviews.length}
+          cost={0}
+          theme={uiState.theme}
+        />
+      </Box>
 
       {/* Debug overlay */}
       {debugMode && (

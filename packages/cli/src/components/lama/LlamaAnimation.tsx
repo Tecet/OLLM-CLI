@@ -9,8 +9,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Assets now live adjacent to the component inside the CLI package.
-// packages/cli/src/components -> lama/lama_sprite
-const ASSETS_PATH = path.resolve(__dirname, 'lama/lama_sprite');
+// packages/cli/src/components/lama -> lama_sprite
+const ASSETS_PATH = path.resolve(__dirname, 'lama_sprite');
 
 type Direction = 'left' | 'right';
 type Size = 'standard' | 'small' | 'xsmall' | 'large' | 'xlarge';
@@ -34,7 +34,7 @@ function intToRGBA(i: number) {
 
 // --- IMAGE PROCESSING (Manual Nearest Neighbor + Half-Block) ---
 async function loadLlamaFrames(size: Size) {
-    let logicalHeight = 20; // Default standard lines of text
+    let logicalHeight = 24; // Default standard lines of text
     if (size === 'xsmall') logicalHeight = 7;   // 7 lines = 14px effective
     if (size === 'small') logicalHeight = 12;
     if (size === 'large') logicalHeight = 48;
@@ -179,7 +179,7 @@ export const LlamaAnimation: React.FC<LlamaAnimationProps> = ({ size = 'small', 
     const { stdout } = useStdout();
     const isInteractive = stdout?.isTTY !== false;
 
-    let logicalHeight = 20;
+    let logicalHeight = 24;
     if (size === 'xsmall') logicalHeight = 7;
     if (size === 'small') logicalHeight = 12;
     if (size === 'large') logicalHeight = 48;

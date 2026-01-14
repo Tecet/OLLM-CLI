@@ -8,6 +8,7 @@
 import * as esbuild from 'esbuild';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { cp, mkdir } from 'fs/promises';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -24,6 +25,12 @@ async function build() {
 
     // Run esbuild
     await esbuild.build(config);
+
+    // Copy llama sprite assets for runtime usage
+    const assetsSource = join(__dirname, '..', 'packages', 'cli', 'src', 'components', 'lama', 'lama_sprite');
+    const assetsTarget = join(__dirname, '..', 'packages', 'cli', 'dist', 'lama_sprite');
+    await mkdir(assetsTarget, { recursive: true });
+    await cp(assetsSource, assetsTarget, { recursive: true });
 
     console.log('✓ Build completed successfully');
     console.log(`  Output: ${config.outfile}`);

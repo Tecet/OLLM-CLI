@@ -76,6 +76,7 @@ export interface Keybinds {
 export interface UIState {
   activeTab: TabType;
   sidePanelVisible: boolean;
+  launchScreenVisible: boolean;
   theme: Theme;
   keybinds: Keybinds;
   notifications: Notification[];
@@ -85,6 +86,7 @@ export interface UIContextValue {
   state: UIState;
   setActiveTab: (tab: TabType) => void;
   toggleSidePanel: () => void;
+  setLaunchScreenVisible: (visible: boolean) => void;
   setTheme: (theme: Theme) => void;
   addNotification: (tab: TabType, type: Notification['type']) => void;
   clearNotifications: (tab: TabType) => void;
@@ -166,6 +168,7 @@ export function UIProvider({
 }: UIProviderProps) {
   const [activeTab, setActiveTab] = useState<TabType>(initialTab);
   const [sidePanelVisible, setSidePanelVisible] = useState(initialSidePanelVisible);
+  const [launchScreenVisible, setLaunchScreenVisible] = useState(true);
   const [theme, setTheme] = useState<Theme>(initialTheme);
   const [keybinds] = useState<Keybinds>(initialKeybinds);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -202,12 +205,14 @@ export function UIProvider({
     state: {
       activeTab,
       sidePanelVisible,
+      launchScreenVisible,
       theme,
       keybinds,
       notifications,
     },
     setActiveTab,
     toggleSidePanel,
+    setLaunchScreenVisible,
     setTheme,
     addNotification,
     clearNotifications,

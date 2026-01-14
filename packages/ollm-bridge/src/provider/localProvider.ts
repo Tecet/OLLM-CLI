@@ -139,9 +139,196 @@ export class LocalProvider implements ProviderAdapter {
   }
 
   /**
+   * Validate a tool schema for correctness.
+   * Throws an error with a descriptive message if the schema is invalid.
+   */
+  private validateToolSchema(tool: ToolSchema): void {
+    // Validate tool name
+    if (!tool.name || typeof tool.name !== 'string') {
+      throw new Error('Tool schema validation failed: Tool name is required and must be a non-empty string');
+    }
+
+    const trimmedName = tool.name.trim();
+    if (trimmedName === '') {
+      throw new Error('Tool schema validation failed: Tool name cannot be empty or whitespace only');
+    }
+
+    // Validate tool name format (must start with letter or underscore, contain only alphanumeric, underscore, or dash)
+    if (!/^[a-zA-Z_][a-zA-Z0-9_-]*$/.test(tool.name)) {
+      throw new Error(
+        `Tool schema validation failed: Tool name "${tool.name}" is invalid. ` +
+        'Tool names must start with a letter or underscore and contain only letters, numbers, underscores, or dashes'
+      );
+    }
+
+    // Validate parameters if present
+    if (tool.parameters !== undefined && tool.parameters !== null) {
+      this.validateJsonSchema(tool.parameters, `tool "${tool.name}"`);
+    }
+  }
+
+  /**
+   * Validate a JSON Schema object for correctness.
+   * Throws an error with a descriptive message if the schema is invalid.
+   */
+  private validateJsonSchema(schema: any, context: string): void {
+    // Check for circular references
+    const seen = new WeakSet();
+    const checkCircular = (obj: any, path: string = 'root'): void => {
+      if (obj === null || typeof obj !== 'object') return;
+      
+      if (seen.has(obj)) {
+        throw new Error(
+          `Tool schema validation failed: Circular reference detected in ${context} at ${path}`
+        );
+      }
+      
+      seen.add(obj);
+      
+      if (Array.isArray(obj)) {
+        obj.forEach((item, index) => checkCircular(item, `${path}[${index}]`));
+      } else {
+        Object.keys(obj).forEach(key => checkCircular(obj[key], `${path}.${key}`));
+      }
+    };
+    
+    try {
+      checkCircular(schema);
+    } catch (error) {
+      throw error;
+    }
+
+    // Validate type field if present
+    if (schema.type !== undefined) {
+      const validTypes = ['string', 'number', 'integer', 'boolean', 'object', 'array', 'null'];
+      if (typeof schema.type !== 'string' || !validTypes.includes(schema.type)) {
+        throw new Error(
+          `Tool schema validation failed: Invalid type "${schema.type}" in ${context}. ` +
+          `Valid types are: ${validTypes.join(', ')}`
+        );
+      }
+
+      // Validate type-specific constraints
+      if (schema.type === 'object') {
+        // Validate properties structure
+        if (schema.properties !== undefined) {
+          if (typeof schema.properties !== 'object' || Array.isArray(schema.properties)) {
+            throw new Error(
+              `Tool schema validation failed: "properties" must be an object in ${context}`
+            );
+          }
+          
+          // Recursively validate nested properties
+          for (const [propName, propSchema] of Object.entries(schema.properties)) {
+            this.validateJsonSchema(propSchema, `${context}.properties.${propName}`);
+          }
+        }
+
+        // Validate required field
+        if (schema.required !== undefined) {
+          if (!Array.isArray(schema.required)) {
+            throw new Error(
+              `Tool schema validation failed: "required" must be an array in ${context}`
+            );
+          }
+        }
+      }
+
+      if (schema.type === 'array') {
+        // Array schemas should have items definition (but it's not strictly required in JSON Schema)
+        // We'll only validate items if it's present
+        if (schema.items !== undefined && schema.items !== null) {
+          this.validateJsonSchema(schema.items, `${context}.items`);
+        }
+      }
+    } else {
+      // If no type is specified, check if properties field exists (implies object type)
+      if (schema.properties !== undefined) {
+        // This is likely an object schema without explicit type
+        // Validate properties structure
+        if (typeof schema.properties !== 'object' || Array.isArray(schema.properties)) {
+          throw new Error(
+            `Tool schema validation failed: "properties" must be an object in ${context}`
+          );
+        }
+        
+        // Recursively validate nested properties
+        for (const [propName, propSchema] of Object.entries(schema.properties)) {
+          this.validateJsonSchema(propSchema, `${context}.properties.${propName}`);
+        }
+      }
+
+      // Validate required field even without type
+      if (schema.required !== undefined) {
+        if (!Array.isArray(schema.required)) {
+          throw new Error(
+            `Tool schema validation failed: "required" must be an array in ${context}`
+          );
+        }
+      }
+    }
+
+    // Validate enum if present
+    if (schema.enum !== undefined) {
+      if (!Array.isArray(schema.enum)) {
+        throw new Error(
+          `Tool schema validation failed: "enum" must be an array in ${context}`
+        );
+      }
+      
+      if (schema.enum.length === 0) {
+        throw new Error(
+          `Tool schema validation failed: "enum" array cannot be empty in ${context}`
+        );
+      }
+    }
+
+    // Validate numeric constraints
+    if (schema.minimum !== undefined && schema.maximum !== undefined) {
+      if (typeof schema.minimum === 'number' && typeof schema.maximum === 'number') {
+        if (schema.minimum > schema.maximum) {
+          throw new Error(
+            `Tool schema validation failed: Conflicting constraints in ${context} - ` +
+            `minimum (${schema.minimum}) cannot be greater than maximum (${schema.maximum})`
+          );
+        }
+      }
+    }
+
+    // Validate string length constraints
+    if (schema.minLength !== undefined && schema.maxLength !== undefined) {
+      if (typeof schema.minLength === 'number' && typeof schema.maxLength === 'number') {
+        if (schema.minLength > schema.maxLength) {
+          throw new Error(
+            `Tool schema validation failed: Conflicting constraints in ${context} - ` +
+            `minLength (${schema.minLength}) cannot be greater than maxLength (${schema.maxLength})`
+          );
+        }
+      }
+    }
+
+    // Validate array item constraints
+    if (schema.minItems !== undefined && schema.maxItems !== undefined) {
+      if (typeof schema.minItems === 'number' && typeof schema.maxItems === 'number') {
+        if (schema.minItems > schema.maxItems) {
+          throw new Error(
+            `Tool schema validation failed: Conflicting constraints in ${context} - ` +
+            `minItems (${schema.minItems}) cannot be greater than maxItems (${schema.maxItems})`
+          );
+        }
+      }
+    }
+  }
+
+  /**
    * Map tool schemas to Ollama function calling format.
    */
   private mapTools(tools: ToolSchema[]): unknown[] {
+    // Validate each tool schema before mapping
+    for (const tool of tools) {
+      this.validateToolSchema(tool);
+    }
+
     return tools.map((tool) => ({
       type: 'function',
       function: {
@@ -162,19 +349,36 @@ export class LocalProvider implements ProviderAdapter {
 
     if (chunk.message?.tool_calls) {
       for (const toolCall of chunk.message.tool_calls) {
+        let args: Record<string, unknown>;
+        try {
+          const parsed = JSON.parse(toolCall.function.arguments || '{}');
+          // Ensure args is always an object, even if JSON.parse returns a primitive
+          args = typeof parsed === 'object' && parsed !== null ? parsed : {};
+        } catch {
+          // If JSON parsing fails, use empty object
+          args = {};
+        }
+
         yield {
           type: 'tool_call',
           value: {
             id: toolCall.id ?? crypto.randomUUID(),
             name: toolCall.function.name,
-            args: JSON.parse(toolCall.function.arguments || '{}'),
+            args,
           },
         };
       }
     }
 
     if (chunk.done) {
-      yield { type: 'finish', reason: chunk.done_reason || 'stop' };
+      // Map server's done_reason to ProviderEvent finish reason
+      let reason: 'stop' | 'length' | 'tool' = 'stop';
+      if (chunk.done_reason === 'length') {
+        reason = 'length';
+      } else if (chunk.done_reason === 'tool_calls' || chunk.done_reason === 'tool') {
+        reason = 'tool';
+      }
+      yield { type: 'finish', reason };
     }
   }
 

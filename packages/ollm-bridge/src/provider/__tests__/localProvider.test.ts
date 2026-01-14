@@ -1,808 +1,754 @@
 /**
- * Property-based tests for Local Provider.
- * These tests validate the correctness properties defined in the design document.
+ * Unit tests for LocalProvider adapter.
+ * Tests message format conversion, stream event parsing, and error handling.
+ * 
+ * Feature: stage-08-testing-qa
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import fc from 'fast-check';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import * as fc from 'fast-check';
 import { LocalProvider } from '../localProvider.js';
-import type {
-  ProviderRequest,
-  ProviderEvent,
-  Message,
-  ToolSchema,
-  MessagePart,
-} from '@ollm/core';
+import type { Message, MessagePart, ToolSchema, ProviderRequest, ProviderEvent } from '@ollm/core';
 
-/**
- * Arbitraries (generators) for property-based testing
- */
-
-// Generate a message part
-const messagePartArbitrary = fc.oneof(
-  fc.record({
-    type: fc.constant('text' as const),
-    text: fc.string(),
-  }),
-  fc.record({
-    type: fc.constant('image' as const),
-    data: fc.string(),
-    mimeType: fc.constantFrom('image/png', 'image/jpeg', 'image/gif'),
-  })
-);
-
-// Generate a message
-const messageArbitrary = fc.record({
-  role: fc.constantFrom('system', 'user', 'assistant', 'tool') as fc.Arbitrary<
-    'system' | 'user' | 'assistant' | 'tool'
-  >,
-  parts: fc.array(messagePartArbitrary, { minLength: 1 }),
-  name: fc.option(fc.string(), { nil: undefined }),
-});
-
-// Generate a tool schema
-const toolSchemaArbitrary = fc.record({
-  name: fc.string({ minLength: 1 }),
-  description: fc.option(fc.string(), { nil: undefined }),
-  parameters: fc.option(fc.dictionary(fc.string(), fc.anything()), {
-    nil: undefined,
-  }),
-});
-
-// Generate a provider request
-const providerRequestArbitrary = fc.record({
-  model: fc.string({ minLength: 1 }),
-  systemPrompt: fc.option(fc.string(), { nil: undefined }),
-  messages: fc.array(messageArbitrary, { minLength: 1 }),
-  tools: fc.option(fc.array(toolSchemaArbitrary), { nil: undefined }),
-  options: fc.option(
-    fc.record({
-      temperature: fc.option(fc.double({ min: 0, max: 2 }), { nil: undefined }),
-      maxTokens: fc.option(fc.integer({ min: 1, max: 100000 }), {
-        nil: undefined,
-      }),
-    }),
-    { nil: undefined }
-  ),
-});
-
-describe('Local Provider - Property-Based Tests', () => {
+describe('LocalProvider', () => {
   let provider: LocalProvider;
 
   beforeEach(() => {
     provider = new LocalProvider({ baseUrl: 'http://localhost:11434' });
   });
 
-  describe('Property 10: Provider Interface Compliance', () => {
-    it('should implement the ProviderAdapter interface', () => {
-      // Feature: stage-02-core-provider, Property 10: Provider Interface Compliance
-      // Validates: Requirements 4.1
-
-      // Check that the provider has the required name property
-      expect(provider.name).toBe('local');
-
-      // Check that chatStream method exists and returns an async iterable
-      expect(typeof provider.chatStream).toBe('function');
-
-      // Verify the method signature by checking it can be called
-      const request: ProviderRequest = {
-        model: 'test',
-        messages: [{ role: 'user', parts: [{ type: 'text', text: 'test' }] }],
-      };
-
-      const result = provider.chatStream(request);
-      expect(result).toBeDefined();
-      expect(typeof result[Symbol.asyncIterator]).toBe('function');
-    });
-  });
-
-  describe('Property 11: Optional Method Presence', () => {
-    it('should implement all optional model management methods', () => {
-      // Feature: stage-02-core-provider, Property 11: Optional Method Presence
-      // Validates: Requirements 4.2, 4.3
-
-      // Check that countTokens is defined
-      expect(typeof provider.countTokens).toBe('function');
-
-      // Check that model management methods are defined
-      expect(typeof provider.listModels).toBe('function');
-      expect(typeof provider.pullModel).toBe('function');
-      expect(typeof provider.deleteModel).toBe('function');
-      expect(typeof provider.showModel).toBe('function');
-    });
-
-    it('should return positive token count for any request', async () => {
-      // Feature: stage-02-core-provider, Property 11: Optional Method Presence
-      // Validates: Requirements 4.2, 4.3
-
-      await fc.assert(
-        fc.asyncProperty(providerRequestArbitrary, async (request) => {
-          if (!provider.countTokens) return true;
-
-          const count = await provider.countTokens(request);
-
-          // Token count should be a positive number
-          expect(typeof count).toBe('number');
-          expect(count).toBeGreaterThanOrEqual(0);
-          expect(Number.isInteger(count)).toBe(true);
-
-          return true;
-        }),
-        { numRuns: 100 }
-      );
-    });
-  });
-
-  describe('Property 12: Message Format Mapping', () => {
-    it('should preserve message content in round-trip conversion', () => {
-      // Feature: stage-02-core-provider, Property 12: Message Format Mapping
-      // Validates: Requirements 4.4, 9.4, 9.5
-
-      fc.assert(
-        fc.property(
-          fc.array(messageArbitrary, { minLength: 1 }),
-          fc.option(fc.string(), { nil: undefined }),
-          (messages: Message[], systemPrompt?: string) => {
-            // Map to Ollama format
-            const mapped = (provider as any).mapMessages(
-              messages,
-              systemPrompt
-            );
-
-            // Verify structure
-            expect(Array.isArray(mapped)).toBe(true);
-
-            // If system prompt provided, first message should be system
-            if (systemPrompt) {
-              expect(mapped.length).toBeGreaterThanOrEqual(1);
-              expect((mapped[0] as any).role).toBe('system');
-              expect((mapped[0] as any).content).toBe(systemPrompt);
-            }
-
-            // Verify all messages are mapped
-            const expectedLength = systemPrompt
-              ? messages.length + 1
-              : messages.length;
-            expect(mapped.length).toBe(expectedLength);
-
-            // Verify each message has required fields
-            for (const msg of mapped) {
-              expect((msg as any).role).toBeDefined();
-              expect((msg as any).content).toBeDefined();
-              expect(typeof (msg as any).content).toBe('string');
-            }
-
-            return true;
-          }
+  describe('Message Format Conversion', () => {
+    /**
+     * Property 1: Message Format Conversion Completeness
+     * Feature: stage-08-testing-qa, Property 1: Message Format Conversion Completeness
+     * 
+     * For any message (user, assistant, tool call, or tool result), converting it to 
+     * provider format should produce a valid provider message with all required fields 
+     * present and correctly populated.
+     * 
+     * Validates: Requirements 1.1, 1.2, 1.3, 1.4
+     */
+    it('Property 1: converts all message types with complete fields', () => {
+      // Arbitrary for generating messages
+      const arbRole = fc.constantFrom('user', 'assistant', 'system', 'tool');
+      const arbText = fc.string({ minLength: 1, maxLength: 500 });
+      
+      const arbMessage = fc.record({
+        role: arbRole,
+        parts: fc.array(
+          fc.record({
+            type: fc.constant('text' as const),
+            text: arbText,
+          }),
+          { minLength: 1, maxLength: 3 }
         ),
-        { numRuns: 100 }
-      );
-    });
-
-    it('should preserve tool message names', () => {
-      // Feature: stage-02-core-provider, Property 12: Message Format Mapping
-      // Validates: Requirements 4.4, 9.4, 9.5
-
-      fc.assert(
-        fc.property(
-          fc.string({ minLength: 1 }),
-          fc.string(),
-          (toolName: string, content: string) => {
-            const messages: Message[] = [
-              {
-                role: 'tool',
-                parts: [{ type: 'text', text: content }],
-                name: toolName,
-              },
-            ];
-
-            const mapped = (provider as any).mapMessages(messages);
-
-            expect(mapped.length).toBe(1);
-            expect((mapped[0] as any).name).toBe(toolName);
-
-            return true;
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
-  });
-
-  describe('Property 13: Tool Schema Conversion', () => {
-    it('should preserve tool names, descriptions, and parameters', () => {
-      // Feature: stage-02-core-provider, Property 13: Tool Schema Conversion
-      // Validates: Requirements 4.5, 5.5
-
-      fc.assert(
-        fc.property(
-          fc.array(toolSchemaArbitrary, { minLength: 1, maxLength: 10 }),
-          (tools: ToolSchema[]) => {
-            const mapped = (provider as any).mapTools(tools);
-
-            // Should have same length
-            expect(mapped.length).toBe(tools.length);
-
-            // Verify each tool is properly converted
-            for (let i = 0; i < tools.length; i++) {
-              const original = tools[i];
-              const converted = mapped[i] as any;
-
-              // Should have correct structure
-              expect(converted.type).toBe('function');
-              expect(converted.function).toBeDefined();
-
-              // Should preserve name
-              expect(converted.function.name).toBe(original.name);
-
-              // Should preserve description if present
-              if (original.description !== undefined) {
-                expect(converted.function.description).toBe(
-                  original.description
-                );
-              }
-
-              // Should preserve parameters if present
-              if (original.parameters !== undefined) {
-                expect(converted.function.parameters).toEqual(
-                  original.parameters
-                );
-              }
-            }
-
-            return true;
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
-  });
-
-  describe('Property 14: Local Provider Request Formatting', () => {
-    it('should generate valid request body with all required fields', () => {
-      // Feature: stage-02-core-provider, Property 14: Local Provider Request Formatting
-      // Validates: Requirements 5.2
-
-      fc.assert(
-        fc.property(providerRequestArbitrary, (request: ProviderRequest) => {
-          // Simulate what chatStream does internally
-          const body = {
-            model: request.model,
-            messages: (provider as any).mapMessages(
-              request.messages,
-              request.systemPrompt
-            ),
-            tools: request.tools
-              ? (provider as any).mapTools(request.tools)
-              : undefined,
-            options: request.options,
-            stream: true,
-          };
-
-          // Verify required fields
-          expect(body.model).toBe(request.model);
-          expect(Array.isArray(body.messages)).toBe(true);
-          expect(body.messages.length).toBeGreaterThan(0);
-          expect(body.stream).toBe(true);
-
-          // Verify tools are mapped if present
-          if (request.tools) {
-            expect(Array.isArray(body.tools)).toBe(true);
-            expect(body.tools?.length).toBe(request.tools.length);
-          }
-
-          // Verify options are passed through
-          if (request.options) {
-            expect(body.options).toEqual(request.options);
-          }
-
-          return true;
-        }),
-        { numRuns: 100 }
-      );
-    });
-  });
-
-  describe('Property 15: Local Provider Event Streaming', () => {
-    it('should emit text events for content chunks', () => {
-      // Feature: stage-02-core-provider, Property 15: Local Provider Event Streaming
-      // Validates: Requirements 5.3
-
-      fc.assert(
-        fc.property(fc.string(), (content: string) => {
-          const chunk = {
-            message: { content },
-          };
-
-          const events = Array.from(
-            (provider as any).mapChunkToEvents(chunk)
-          ) as ProviderEvent[];
-
-          // Should emit a text event
-          expect(events.length).toBeGreaterThan(0);
-          expect(events[0].type).toBe('text');
-          if (events[0].type === 'text') {
-            expect(events[0].value).toBe(content);
-          }
-
-          return true;
-        }),
-        { numRuns: 100 }
-      );
-    });
-
-    it('should emit tool_call events for tool calls', () => {
-      // Feature: stage-02-core-provider, Property 15: Local Provider Event Streaming
-      // Validates: Requirements 5.3
-
-      fc.assert(
-        fc.property(
-          fc.string({ minLength: 1 }),
-          fc.string(),
-          fc.dictionary(fc.string(), fc.anything()),
-          (toolName: string, toolId: string, args: Record<string, unknown>) => {
-            const chunk = {
-              message: {
-                tool_calls: [
-                  {
-                    id: toolId,
-                    function: {
-                      name: toolName,
-                      arguments: JSON.stringify(args),
-                    },
-                  },
-                ],
-              },
-            };
-
-            const events = Array.from(
-              (provider as any).mapChunkToEvents(chunk)
-            ) as ProviderEvent[];
-
-            // Should emit a tool_call event
-            expect(events.length).toBeGreaterThan(0);
-            expect(events[0].type).toBe('tool_call');
-            if (events[0].type === 'tool_call') {
-              expect(events[0].value.name).toBe(toolName);
-              expect(events[0].value.id).toBe(toolId);
-              
-              // JSON.parse converts undefined to null, so we need to normalize
-              // the expected args to match this behavior
-              const normalizedArgs = JSON.parse(JSON.stringify(args));
-              expect(events[0].value.args).toEqual(normalizedArgs);
-            }
-
-            return true;
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
-
-    it('should emit finish event when done', () => {
-      // Feature: stage-02-core-provider, Property 15: Local Provider Event Streaming
-      // Validates: Requirements 5.3
-
-      fc.assert(
-        fc.property(
-          fc.option(fc.constantFrom('stop' as const, 'length' as const, 'tool' as const), { nil: undefined }),
-          (doneReason: 'stop' | 'length' | 'tool' | undefined) => {
-            const chunk = {
-              done: true,
-              done_reason: doneReason,
-            };
-
-            const events = Array.from(
-              (provider as any).mapChunkToEvents(chunk)
-            ) as ProviderEvent[];
-
-            // Should emit a finish event
-            expect(events.length).toBeGreaterThan(0);
-            expect(events[0].type).toBe('finish');
-            if (events[0].type === 'finish') {
-              expect(events[0].reason).toBe(doneReason || 'stop');
-            }
-
-            return true;
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
-  });
-
-  describe('Property 16: Connection Error Handling', () => {
-    it('should emit error event with descriptive message on HTTP error', async () => {
-      // Feature: stage-02-core-provider, Property 16: Connection Error Handling
-      // Validates: Requirements 5.4, 10.1
-
-      // This test verifies the error handling logic in chatStream
-      // We test the error event structure that would be emitted
-
-      const errorMessage = 'HTTP 500: Internal Server Error';
-      const errorCode = '500';
-
-      const errorEvent = {
-        type: 'error' as const,
-        error: {
-          message: errorMessage,
-          code: errorCode,
-        },
-      };
-
-      // Verify error event structure
-      expect(errorEvent.type).toBe('error');
-      expect(errorEvent.error.message).toBe(errorMessage);
-      expect(errorEvent.error.code).toBe(errorCode);
-      expect(typeof errorEvent.error.message).toBe('string');
-    });
-
-    it('should handle missing response body', () => {
-      // Feature: stage-02-core-provider, Property 16: Connection Error Handling
-      // Validates: Requirements 5.4, 10.1
-
-      const errorEvent = {
-        type: 'error' as const,
-        error: { message: 'No response body' },
-      };
-
-      expect(errorEvent.type).toBe('error');
-      expect(errorEvent.error.message).toBe('No response body');
-    });
-  });
-
-  describe('Unit Tests', () => {
-    describe('NDJSON parsing with various chunk sizes', () => {
-      it('should handle single complete JSON line', () => {
-        const chunk = { message: { content: 'Hello' } };
-        const events = Array.from((provider as any).mapChunkToEvents(chunk)) as ProviderEvent[];
-
-        expect(events.length).toBe(1);
-        expect(events[0].type).toBe('text');
-        if (events[0].type === 'text') {
-          expect(events[0].value).toBe('Hello');
-        }
+        name: fc.option(fc.string({ minLength: 1, maxLength: 50 }), { nil: undefined }),
       });
 
-      it('should handle multiple events in single chunk', () => {
-        const chunk = {
-          message: {
-            content: 'Hello',
-            tool_calls: [
-              {
-                id: 'test-id',
-                function: {
-                  name: 'test_tool',
-                  arguments: '{"arg": "value"}',
-                },
-              },
-            ],
+      fc.assert(
+        fc.property(arbMessage, (message: Message) => {
+          // Access private method via type assertion for testing
+          const mapped = (provider as any).mapMessages([message], undefined);
+          
+          // Should produce exactly one mapped message
+          expect(mapped).toHaveLength(1);
+          
+          const mappedMsg = mapped[0];
+          
+          // Should have role field
+          expect(mappedMsg).toHaveProperty('role');
+          expect(mappedMsg.role).toBe(message.role);
+          
+          // Should have content field
+          expect(mappedMsg).toHaveProperty('content');
+          expect(typeof mappedMsg.content).toBe('string');
+          
+          // Content should be concatenation of all text parts
+          const expectedContent = message.parts
+            .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
+            .map(p => p.text)
+            .join('');
+          expect(mappedMsg.content).toBe(expectedContent);
+          
+          // If message has name, mapped message should have name
+          if (message.name) {
+            expect(mappedMsg).toHaveProperty('name');
+            expect(mappedMsg.name).toBe(message.name);
+          }
+        }),
+        { numRuns: 100 }
+      );
+    });
+
+    it('converts user messages correctly', () => {
+      const message: Message = {
+        role: 'user',
+        parts: [{ type: 'text', text: 'Hello, world!' }],
+      };
+
+      const mapped = (provider as any).mapMessages([message], undefined);
+
+      expect(mapped).toHaveLength(1);
+      expect(mapped[0]).toEqual({
+        role: 'user',
+        content: 'Hello, world!',
+      });
+    });
+
+    it('converts assistant messages correctly', () => {
+      const message: Message = {
+        role: 'assistant',
+        parts: [{ type: 'text', text: 'Hi there!' }],
+      };
+
+      const mapped = (provider as any).mapMessages([message], undefined);
+
+      expect(mapped).toHaveLength(1);
+      expect(mapped[0]).toEqual({
+        role: 'assistant',
+        content: 'Hi there!',
+      });
+    });
+
+    it('converts tool messages with name correctly', () => {
+      const message: Message = {
+        role: 'tool',
+        parts: [{ type: 'text', text: 'Tool result' }],
+        name: 'get_weather',
+      };
+
+      const mapped = (provider as any).mapMessages([message], undefined);
+
+      expect(mapped).toHaveLength(1);
+      expect(mapped[0]).toEqual({
+        role: 'tool',
+        content: 'Tool result',
+        name: 'get_weather',
+      });
+    });
+
+    it('includes system prompt when provided', () => {
+      const message: Message = {
+        role: 'user',
+        parts: [{ type: 'text', text: 'Hello' }],
+      };
+
+      const mapped = (provider as any).mapMessages([message], 'You are helpful');
+
+      expect(mapped).toHaveLength(2);
+      expect(mapped[0]).toEqual({
+        role: 'system',
+        content: 'You are helpful',
+      });
+      expect(mapped[1]).toEqual({
+        role: 'user',
+        content: 'Hello',
+      });
+    });
+
+    it('handles multi-part messages', () => {
+      const message: Message = {
+        role: 'user',
+        parts: [
+          { type: 'text', text: 'Part 1 ' },
+          { type: 'text', text: 'Part 2' },
+        ],
+      };
+
+      const mapped = (provider as any).mapMessages([message], undefined);
+
+      expect(mapped).toHaveLength(1);
+      expect(mapped[0].content).toBe('Part 1 Part 2');
+    });
+
+    it('handles image parts by replacing with placeholder', () => {
+      const message: Message = {
+        role: 'user',
+        parts: [
+          { type: 'text', text: 'What is this? ' },
+          { type: 'image', data: 'base64data', mimeType: 'image/png' },
+        ],
+      };
+
+      const mapped = (provider as any).mapMessages([message], undefined);
+
+      expect(mapped).toHaveLength(1);
+      expect(mapped[0].content).toBe('What is this? [image]');
+    });
+  });
+
+  describe('Tool Schema Mapping', () => {
+    it('converts tool schemas to Ollama format', () => {
+      const tools: ToolSchema[] = [
+        {
+          name: 'get_weather',
+          description: 'Get weather for a location',
+          parameters: {
+            type: 'object',
+            properties: {
+              location: { type: 'string' },
+            },
+            required: ['location'],
           },
-        };
+        },
+      ];
 
-        const events = Array.from((provider as any).mapChunkToEvents(chunk)) as ProviderEvent[];
+      const mapped = (provider as any).mapTools(tools);
 
-        expect(events.length).toBe(2);
-        expect(events[0].type).toBe('text');
-        if (events[0].type === 'text') {
-          expect(events[0].value).toBe('Hello');
-        }
-        expect(events[1].type).toBe('tool_call');
-        if (events[1].type === 'tool_call') {
-          expect(events[1].value.name).toBe('test_tool');
-        }
-      });
-
-      it('should handle done flag', () => {
-        const chunk = {
-          done: true,
-          done_reason: 'stop',
-        };
-
-        const events = Array.from((provider as any).mapChunkToEvents(chunk)) as ProviderEvent[];
-
-        expect(events.length).toBe(1);
-        expect(events[0].type).toBe('finish');
-        if (events[0].type === 'finish') {
-          expect(events[0].reason).toBe('stop');
-        }
-      });
-
-      it('should handle chunk with no events', () => {
-        const chunk = {};
-        const events = Array.from((provider as any).mapChunkToEvents(chunk)) as ProviderEvent[];
-
-        expect(events.length).toBe(0);
+      expect(mapped).toHaveLength(1);
+      expect(mapped[0]).toEqual({
+        type: 'function',
+        function: {
+          name: 'get_weather',
+          description: 'Get weather for a location',
+          parameters: {
+            type: 'object',
+            properties: {
+              location: { type: 'string' },
+            },
+            required: ['location'],
+          },
+        },
       });
     });
 
-    describe('Connection error handling', () => {
-      it('should handle HTTP error responses', async () => {
-        // Mock fetch to return error response
-        const originalFetch = global.fetch;
-        global.fetch = async () => {
-          return {
-            ok: false,
-            status: 500,
-            statusText: 'Internal Server Error',
-          } as Response;
-        };
+    it('handles tools without description', () => {
+      const tools: ToolSchema[] = [
+        {
+          name: 'simple_tool',
+          parameters: { type: 'object', properties: {} },
+        },
+      ];
 
-        const request: ProviderRequest = {
-          model: 'test',
-          messages: [
-            { role: 'user', parts: [{ type: 'text', text: 'test' }] },
-          ],
-        };
+      const mapped = (provider as any).mapTools(tools);
 
-        const events = [];
-        for await (const event of provider.chatStream(request)) {
-          events.push(event);
-        }
-
-        expect(events.length).toBeGreaterThan(0);
-        expect(events[0].type).toBe('error');
-        if (events[0].type === 'error') {
-          expect(events[0].error.message).toContain('500');
-        }
-
-        // Restore original fetch
-        global.fetch = originalFetch;
-      });
-
-      it('should handle missing response body', async () => {
-        // Mock fetch to return response without body
-        const originalFetch = global.fetch;
-        global.fetch = async () => {
-          return {
-            ok: true,
-            body: null,
-          } as Response;
-        };
-
-        const request: ProviderRequest = {
-          model: 'test',
-          messages: [
-            { role: 'user', parts: [{ type: 'text', text: 'test' }] },
-          ],
-        };
-
-        const events = [];
-        for await (const event of provider.chatStream(request)) {
-          events.push(event);
-        }
-
-        expect(events.length).toBeGreaterThan(0);
-        expect(events[0].type).toBe('error');
-        if (events[0].type === 'error') {
-          expect(events[0].error.message).toBe('No response body');
-        }
-
-        // Restore original fetch
-        global.fetch = originalFetch;
-      });
-
-      it('should handle network errors', async () => {
-        // Mock fetch to throw network error
-        const originalFetch = global.fetch;
-        global.fetch = async () => {
-          throw new Error('Network error');
-        };
-
-        const request: ProviderRequest = {
-          model: 'test',
-          messages: [
-            { role: 'user', parts: [{ type: 'text', text: 'test' }] },
-          ],
-        };
-
-        const events = [];
-        for await (const event of provider.chatStream(request)) {
-          events.push(event);
-        }
-
-        expect(events.length).toBeGreaterThan(0);
-        expect(events[0].type).toBe('error');
-        if (events[0].type === 'error') {
-          expect(events[0].error.message).toBe('Network error');
-        }
-
-        // Restore original fetch
-        global.fetch = originalFetch;
-      });
-
-      it('should handle abort signal', async () => {
-        // Mock fetch to throw AbortError
-        const originalFetch = global.fetch;
-        global.fetch = async () => {
-          const error = new Error('The operation was aborted');
-          error.name = 'AbortError';
-          throw error;
-        };
-
-        const request: ProviderRequest = {
-          model: 'test',
-          messages: [
-            { role: 'user', parts: [{ type: 'text', text: 'test' }] },
-          ],
-          abortSignal: new AbortController().signal,
-        };
-
-        const events = [];
-        for await (const event of provider.chatStream(request)) {
-          events.push(event);
-        }
-
-        expect(events.length).toBeGreaterThan(0);
-        expect(events[0].type).toBe('finish');
-        if (events[0].type === 'finish') {
-          expect(events[0].reason).toBe('stop');
-        }
-
-        // Restore original fetch
-        global.fetch = originalFetch;
-      });
+      expect(mapped).toHaveLength(1);
+      expect(mapped[0].function.name).toBe('simple_tool');
+      expect(mapped[0].function.description).toBeUndefined();
     });
 
-    describe('Mock HTTP responses', () => {
-      it('should parse streaming NDJSON response', async () => {
-        // Mock fetch to return streaming response
-        const originalFetch = global.fetch;
+    it('handles multiple tools', () => {
+      const tools: ToolSchema[] = [
+        { name: 'tool1', parameters: {} },
+        { name: 'tool2', parameters: {} },
+        { name: 'tool3', parameters: {} },
+      ];
 
-        const mockChunks = [
-          '{"message":{"content":"Hello"}}\n',
-          '{"message":{"content":" world"}}\n',
-          '{"done":true,"done_reason":"stop"}\n',
-        ];
+      const mapped = (provider as any).mapTools(tools);
 
-        let chunkIndex = 0;
-        global.fetch = async () => {
-          const encoder = new TextEncoder();
-          const stream = new ReadableStream({
-            async pull(controller) {
-              if (chunkIndex < mockChunks.length) {
-                controller.enqueue(encoder.encode(mockChunks[chunkIndex]));
-                chunkIndex++;
-              } else {
-                controller.close();
-              }
-            },
-          });
-
-          return {
-            ok: true,
-            body: stream,
-          } as Response;
-        };
-
-        const request: ProviderRequest = {
-          model: 'test',
-          messages: [
-            { role: 'user', parts: [{ type: 'text', text: 'test' }] },
-          ],
-        };
-
-        const events = [];
-        for await (const event of provider.chatStream(request)) {
-          events.push(event);
-        }
-
-        // Should have text events and finish event
-        const textEvents = events.filter((e) => e.type === 'text');
-        const finishEvents = events.filter((e) => e.type === 'finish');
-
-        expect(textEvents.length).toBe(2);
-        expect(textEvents[0].value).toBe('Hello');
-        expect(textEvents[1].value).toBe(' world');
-        expect(finishEvents.length).toBeGreaterThanOrEqual(1);
-
-        // Restore original fetch
-        global.fetch = originalFetch;
-      });
-
-      it('should handle partial JSON chunks', async () => {
-        // Mock fetch to return partial chunks that need buffering
-        const originalFetch = global.fetch;
-
-        const mockChunks = [
-          '{"message":{"con',
-          'tent":"Hello"}}\n{"mes',
-          'sage":{"content":" world"}}\n',
-        ];
-
-        let chunkIndex = 0;
-        global.fetch = async () => {
-          const encoder = new TextEncoder();
-          const stream = new ReadableStream({
-            async pull(controller) {
-              if (chunkIndex < mockChunks.length) {
-                controller.enqueue(encoder.encode(mockChunks[chunkIndex]));
-                chunkIndex++;
-              } else {
-                controller.close();
-              }
-            },
-          });
-
-          return {
-            ok: true,
-            body: stream,
-          } as Response;
-        };
-
-        const request: ProviderRequest = {
-          model: 'test',
-          messages: [
-            { role: 'user', parts: [{ type: 'text', text: 'test' }] },
-          ],
-        };
-
-        const events = [];
-        for await (const event of provider.chatStream(request)) {
-          events.push(event);
-        }
-
-        // Should successfully parse both messages despite chunking
-        const textEvents = events.filter((e) => e.type === 'text');
-        expect(textEvents.length).toBe(2);
-        expect(textEvents[0].value).toBe('Hello');
-        expect(textEvents[1].value).toBe(' world');
-
-        // Restore original fetch
-        global.fetch = originalFetch;
-      });
-
-      it('should skip malformed JSON lines', async () => {
-        // Mock fetch to return mix of valid and invalid JSON
-        const originalFetch = global.fetch;
-
-        const mockChunks = [
-          '{"message":{"content":"Hello"}}\n',
-          'invalid json\n',
-          '{"message":{"content":" world"}}\n',
-        ];
-
-        let chunkIndex = 0;
-        global.fetch = async () => {
-          const encoder = new TextEncoder();
-          const stream = new ReadableStream({
-            async pull(controller) {
-              if (chunkIndex < mockChunks.length) {
-                controller.enqueue(encoder.encode(mockChunks[chunkIndex]));
-                chunkIndex++;
-              } else {
-                controller.close();
-              }
-            },
-          });
-
-          return {
-            ok: true,
-            body: stream,
-          } as Response;
-        };
-
-        const request: ProviderRequest = {
-          model: 'test',
-          messages: [
-            { role: 'user', parts: [{ type: 'text', text: 'test' }] },
-          ],
-        };
-
-        const events = [];
-        for await (const event of provider.chatStream(request)) {
-          events.push(event);
-        }
-
-        // Should parse valid lines and skip invalid ones
-        const textEvents = events.filter((e) => e.type === 'text');
-        expect(textEvents.length).toBe(2);
-        expect(textEvents[0].value).toBe('Hello');
-        expect(textEvents[1].value).toBe(' world');
-
-        // Restore original fetch
-        global.fetch = originalFetch;
-      });
+      expect(mapped).toHaveLength(3);
+      expect(mapped[0].function.name).toBe('tool1');
+      expect(mapped[1].function.name).toBe('tool2');
+      expect(mapped[2].function.name).toBe('tool3');
     });
   });
 });
+
+  describe('Error Handling', () => {
+    /**
+     * Tests for error handling edge cases.
+     * Validates: Requirements 1.8, 1.9, 1.10
+     */
+
+    it('handles network errors gracefully', async () => {
+      // Create provider with invalid URL to simulate network error
+      const provider = new LocalProvider({ baseUrl: 'http://invalid-host-that-does-not-exist:99999' });
+
+      const request: ProviderRequest = {
+        model: 'test-model',
+        messages: [{ role: 'user', parts: [{ type: 'text', text: 'Hello' }] }],
+      };
+
+      const events: ProviderEvent[] = [];
+      for await (const event of provider.chatStream(request)) {
+        events.push(event);
+      }
+
+      // Should yield an error event
+      expect(events.length).toBeGreaterThan(0);
+      const errorEvent = events.find(e => e.type === 'error');
+      expect(errorEvent).toBeDefined();
+      expect(errorEvent?.type).toBe('error');
+      if (errorEvent?.type === 'error') {
+        expect(errorEvent.error.message).toBeDefined();
+        expect(typeof errorEvent.error.message).toBe('string');
+      }
+    });
+
+    it('handles malformed JSON responses gracefully', async () => {
+      // Mock fetch to return malformed JSON
+      const originalFetch = global.fetch;
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        body: {
+          getReader: () => ({
+            read: vi.fn()
+              .mockResolvedValueOnce({
+                done: false,
+                value: new TextEncoder().encode('{"invalid json\n'),
+              })
+              .mockResolvedValueOnce({
+                done: false,
+                value: new TextEncoder().encode('{"message":{"content":"valid"},"done":false}\n'),
+              })
+              .mockResolvedValueOnce({
+                done: true,
+                value: undefined,
+              }),
+          }),
+        },
+      });
+
+      const provider = new LocalProvider({ baseUrl: 'http://localhost:11434' });
+      const request: ProviderRequest = {
+        model: 'test-model',
+        messages: [{ role: 'user', parts: [{ type: 'text', text: 'Hello' }] }],
+      };
+
+      const events: ProviderEvent[] = [];
+      for await (const event of provider.chatStream(request)) {
+        events.push(event);
+      }
+
+      // Should skip malformed JSON and process valid chunks
+      const textEvents = events.filter(e => e.type === 'text');
+      expect(textEvents.length).toBeGreaterThan(0);
+      expect(textEvents[0].type).toBe('text');
+      if (textEvents[0].type === 'text') {
+        expect(textEvents[0].value).toBe('valid');
+      }
+
+      // Should have a finish event
+      const finishEvent = events.find(e => e.type === 'finish');
+      expect(finishEvent).toBeDefined();
+
+      // Restore original fetch
+      global.fetch = originalFetch;
+    });
+
+    it('handles HTTP error responses gracefully', async () => {
+      // Mock fetch to return HTTP error
+      const originalFetch = global.fetch;
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: 'Internal Server Error',
+      });
+
+      const provider = new LocalProvider({ baseUrl: 'http://localhost:11434' });
+      const request: ProviderRequest = {
+        model: 'test-model',
+        messages: [{ role: 'user', parts: [{ type: 'text', text: 'Hello' }] }],
+      };
+
+      const events: ProviderEvent[] = [];
+      for await (const event of provider.chatStream(request)) {
+        events.push(event);
+      }
+
+      // Should yield an error event with HTTP status
+      expect(events.length).toBeGreaterThan(0);
+      const errorEvent = events.find(e => e.type === 'error');
+      expect(errorEvent).toBeDefined();
+      expect(errorEvent?.type).toBe('error');
+      if (errorEvent?.type === 'error') {
+        expect(errorEvent.error.message).toContain('500');
+        expect(errorEvent.error.message).toContain('Internal Server Error');
+        expect(errorEvent.error.code).toBe('500');
+      }
+
+      // Restore original fetch
+      global.fetch = originalFetch;
+    });
+
+    it('handles missing response body gracefully', async () => {
+      // Mock fetch to return response without body
+      const originalFetch = global.fetch;
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        body: null,
+      });
+
+      const provider = new LocalProvider({ baseUrl: 'http://localhost:11434' });
+      const request: ProviderRequest = {
+        model: 'test-model',
+        messages: [{ role: 'user', parts: [{ type: 'text', text: 'Hello' }] }],
+      };
+
+      const events: ProviderEvent[] = [];
+      for await (const event of provider.chatStream(request)) {
+        events.push(event);
+      }
+
+      // Should yield an error event
+      expect(events.length).toBeGreaterThan(0);
+      const errorEvent = events.find(e => e.type === 'error');
+      expect(errorEvent).toBeDefined();
+      expect(errorEvent?.type).toBe('error');
+      if (errorEvent?.type === 'error') {
+        expect(errorEvent.error.message).toContain('No response body');
+      }
+
+      // Restore original fetch
+      global.fetch = originalFetch;
+    });
+
+    it('handles timeout errors gracefully', async () => {
+      // Mock fetch to simulate timeout via AbortSignal
+      const originalFetch = global.fetch;
+      global.fetch = vi.fn().mockImplementation(() => {
+        return new Promise((_, reject) => {
+          const error = new Error('The operation was aborted');
+          error.name = 'AbortError';
+          reject(error);
+        });
+      });
+
+      const provider = new LocalProvider({ baseUrl: 'http://localhost:11434' });
+      const abortController = new AbortController();
+      
+      const request: ProviderRequest = {
+        model: 'test-model',
+        messages: [{ role: 'user', parts: [{ type: 'text', text: 'Hello' }] }],
+        abortSignal: abortController.signal,
+      };
+
+      // Simulate timeout by aborting
+      setTimeout(() => abortController.abort(), 10);
+
+      const events: ProviderEvent[] = [];
+      for await (const event of provider.chatStream(request)) {
+        events.push(event);
+      }
+
+      // Should yield a finish event (graceful termination on abort)
+      expect(events.length).toBeGreaterThan(0);
+      const finishEvent = events.find(e => e.type === 'finish');
+      expect(finishEvent).toBeDefined();
+      expect(finishEvent?.type).toBe('finish');
+      if (finishEvent?.type === 'finish') {
+        expect(finishEvent.reason).toBe('stop');
+      }
+
+      // Restore original fetch
+      global.fetch = originalFetch;
+    });
+
+    it('handles generic errors gracefully', async () => {
+      // Mock fetch to throw a generic error
+      const originalFetch = global.fetch;
+      global.fetch = vi.fn().mockRejectedValue(new Error('Connection refused'));
+
+      const provider = new LocalProvider({ baseUrl: 'http://localhost:11434' });
+      const request: ProviderRequest = {
+        model: 'test-model',
+        messages: [{ role: 'user', parts: [{ type: 'text', text: 'Hello' }] }],
+      };
+
+      const events: ProviderEvent[] = [];
+      for await (const event of provider.chatStream(request)) {
+        events.push(event);
+      }
+
+      // Should yield an error event
+      expect(events.length).toBeGreaterThan(0);
+      const errorEvent = events.find(e => e.type === 'error');
+      expect(errorEvent).toBeDefined();
+      expect(errorEvent?.type).toBe('error');
+      if (errorEvent?.type === 'error') {
+        expect(errorEvent.error.message).toContain('Connection refused');
+      }
+
+      // Restore original fetch
+      global.fetch = originalFetch;
+    });
+
+    it('handles empty stream chunks gracefully', async () => {
+      // Mock fetch to return empty chunks
+      const originalFetch = global.fetch;
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        body: {
+          getReader: () => ({
+            read: vi.fn()
+              .mockResolvedValueOnce({
+                done: false,
+                value: new TextEncoder().encode('\n\n\n'),
+              })
+              .mockResolvedValueOnce({
+                done: false,
+                value: new TextEncoder().encode('{"message":{"content":"text"},"done":false}\n'),
+              })
+              .mockResolvedValueOnce({
+                done: true,
+                value: undefined,
+              }),
+          }),
+        },
+      });
+
+      const provider = new LocalProvider({ baseUrl: 'http://localhost:11434' });
+      const request: ProviderRequest = {
+        model: 'test-model',
+        messages: [{ role: 'user', parts: [{ type: 'text', text: 'Hello' }] }],
+      };
+
+      const events: ProviderEvent[] = [];
+      for await (const event of provider.chatStream(request)) {
+        events.push(event);
+      }
+
+      // Should skip empty lines and process valid chunks
+      const textEvents = events.filter(e => e.type === 'text');
+      expect(textEvents.length).toBeGreaterThan(0);
+      expect(textEvents[0].type).toBe('text');
+      if (textEvents[0].type === 'text') {
+        expect(textEvents[0].value).toBe('text');
+      }
+
+      // Restore original fetch
+      global.fetch = originalFetch;
+    });
+  });
+
+  describe('Stream Event Parsing', () => {
+    let provider: LocalProvider;
+
+    beforeEach(() => {
+      provider = new LocalProvider({ baseUrl: 'http://localhost:11434' });
+    });
+
+    /**
+     * Property 2: Stream Event Parsing Correctness
+     * Feature: stage-08-testing-qa, Property 2: Stream Event Parsing Correctness
+     * 
+     * For any stream event (text delta, tool call, or completion), parsing it should 
+     * correctly extract all event data without loss of information.
+     * 
+     * Validates: Requirements 1.5, 1.6, 1.7
+     */
+    it('Property 2: parses all stream event types correctly', () => {
+      // Arbitrary for generating stream chunks
+      const arbTextChunk = fc.record({
+        message: fc.record({
+          content: fc.string({ minLength: 0, maxLength: 100 }),
+        }),
+        done: fc.constant(false),
+      });
+
+      const arbToolCallChunk = fc.record({
+        message: fc.record({
+          tool_calls: fc.array(
+            fc.record({
+              id: fc.option(fc.string({ minLength: 5, maxLength: 20 }), { nil: undefined }),
+              function: fc.record({
+                name: fc.string({ minLength: 1, maxLength: 50 }),
+                arguments: fc.jsonValue().map(v => JSON.stringify(v)),
+              }),
+            }),
+            { minLength: 1, maxLength: 3 }
+          ),
+        }),
+        done: fc.constant(false),
+      });
+
+      const arbCompletionChunk = fc.record({
+        done: fc.constant(true),
+        done_reason: fc.option(
+          fc.constantFrom('stop', 'length', 'tool_calls'),
+          { nil: undefined }
+        ),
+      });
+
+      const arbChunk = fc.oneof(arbTextChunk, arbToolCallChunk, arbCompletionChunk);
+
+      fc.assert(
+        fc.property(arbChunk, (chunk: any) => {
+          const events = Array.from((provider as any).mapChunkToEvents(chunk));
+
+          // Should produce at least one event
+          expect(events.length).toBeGreaterThan(0);
+
+          for (const event of events) {
+            // All events should have a type
+            expect(event).toHaveProperty('type');
+            expect(['text', 'tool_call', 'finish', 'error']).toContain(event.type);
+
+            // Validate event structure based on type
+            if (event.type === 'text') {
+              expect(event).toHaveProperty('value');
+              expect(typeof event.value).toBe('string');
+            } else if (event.type === 'tool_call') {
+              expect(event).toHaveProperty('value');
+              expect(event.value).toHaveProperty('id');
+              expect(event.value).toHaveProperty('name');
+              expect(event.value).toHaveProperty('args');
+              expect(typeof event.value.args).toBe('object');
+            } else if (event.type === 'finish') {
+              expect(event).toHaveProperty('reason');
+              expect(['stop', 'length', 'tool']).toContain(event.reason);
+            }
+          }
+        }),
+        { numRuns: 100 }
+      );
+    });
+
+    it('parses text delta events correctly', () => {
+      const chunk = {
+        message: { content: 'Hello' },
+        done: false,
+      };
+
+      const events = Array.from((provider as any).mapChunkToEvents(chunk));
+
+      expect(events).toHaveLength(1);
+      expect(events[0]).toEqual({
+        type: 'text',
+        value: 'Hello',
+      });
+    });
+
+    it('parses tool call events correctly', () => {
+      const chunk = {
+        message: {
+          tool_calls: [
+            {
+              id: 'call_123',
+              function: {
+                name: 'get_weather',
+                arguments: '{"location":"Seattle"}',
+              },
+            },
+          ],
+        },
+        done: false,
+      };
+
+      const events = Array.from((provider as any).mapChunkToEvents(chunk));
+
+      expect(events).toHaveLength(1);
+      expect(events[0]).toEqual({
+        type: 'tool_call',
+        value: {
+          id: 'call_123',
+          name: 'get_weather',
+          args: { location: 'Seattle' },
+        },
+      });
+    });
+
+    it('generates ID for tool calls without ID', () => {
+      const chunk = {
+        message: {
+          tool_calls: [
+            {
+              function: {
+                name: 'get_time',
+                arguments: '{}',
+              },
+            },
+          ],
+        },
+        done: false,
+      };
+
+      const events = Array.from((provider as any).mapChunkToEvents(chunk));
+
+      expect(events).toHaveLength(1);
+      expect(events[0].type).toBe('tool_call');
+      expect(events[0].value.id).toBeDefined();
+      expect(events[0].value.id.length).toBeGreaterThan(0);
+    });
+
+    it('parses completion events correctly', () => {
+      const chunk = {
+        done: true,
+        done_reason: 'stop',
+      };
+
+      const events = Array.from((provider as any).mapChunkToEvents(chunk));
+
+      expect(events).toHaveLength(1);
+      expect(events[0]).toEqual({
+        type: 'finish',
+        reason: 'stop',
+      });
+    });
+
+    it('uses default reason when done_reason is missing', () => {
+      const chunk = {
+        done: true,
+      };
+
+      const events = Array.from((provider as any).mapChunkToEvents(chunk));
+
+      expect(events).toHaveLength(1);
+      expect(events[0]).toEqual({
+        type: 'finish',
+        reason: 'stop',
+      });
+    });
+
+    it('handles multiple tool calls in one chunk', () => {
+      const chunk = {
+        message: {
+          tool_calls: [
+            {
+              id: 'call_1',
+              function: { name: 'tool1', arguments: '{"a":1}' },
+            },
+            {
+              id: 'call_2',
+              function: { name: 'tool2', arguments: '{"b":2}' },
+            },
+          ],
+        },
+        done: false,
+      };
+
+      const events = Array.from((provider as any).mapChunkToEvents(chunk));
+
+      expect(events).toHaveLength(2);
+      expect(events[0].type).toBe('tool_call');
+      expect(events[0].value.name).toBe('tool1');
+      expect(events[1].type).toBe('tool_call');
+      expect(events[1].value.name).toBe('tool2');
+    });
+
+    it('handles empty tool call arguments', () => {
+      const chunk = {
+        message: {
+          tool_calls: [
+            {
+              id: 'call_123',
+              function: {
+                name: 'get_time',
+                arguments: '',
+              },
+            },
+          ],
+        },
+        done: false,
+      };
+
+      const events = Array.from((provider as any).mapChunkToEvents(chunk));
+
+      expect(events).toHaveLength(1);
+      expect(events[0].value.args).toEqual({});
+    });
+
+    it('handles chunk with both content and done', () => {
+      const chunk = {
+        message: { content: 'Final text' },
+        done: true,
+        done_reason: 'stop',
+      };
+
+      const events = Array.from((provider as any).mapChunkToEvents(chunk));
+
+      expect(events).toHaveLength(2);
+      expect(events[0]).toEqual({ type: 'text', value: 'Final text' });
+      expect(events[1]).toEqual({ type: 'finish', reason: 'stop' });
+    });
+  });

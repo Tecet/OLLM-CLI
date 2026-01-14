@@ -2,7 +2,7 @@
 import React from 'react';
 import { render, Box, Text } from 'ink';
 // Import directly from the component source to verify integration
-import { LlamaAnimation } from '../../packages/cli/src/components/LlamaAnimation';
+import { LlamaAnimation } from '../../packages/cli/src/components/lama/LlamaAnimation';
 
 const IntegrationTest = () => {
     return (

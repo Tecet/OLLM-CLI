@@ -3,6 +3,7 @@ import { useContextManager } from './ContextManagerContext.js';
 import { commandRegistry } from '../commands/index.js';
 import { useServices } from './ServiceContext.js';
 import { useModel } from './ModelContext.js';
+import { useUI } from './UIContext.js';
 
 /**
  * Tool call information
@@ -127,8 +128,8 @@ export interface ChatProviderProps {
 export function ChatProvider({
   children,
   initialMessages = [],
-  onSendMessage,
-  onCancelGeneration,
+  onSendMessage, // Optional - kept for backwards compatibility
+  onCancelGeneration, // Optional - kept for backwards compatibility
 }: ChatProviderProps) {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [streaming, setStreaming] = useState(false);
@@ -150,13 +151,16 @@ export function ChatProvider({
     }
   }, []);
 
+  // Get UI context to handle launch screen commands
+  const { setLaunchScreenVisible } = useUI();
+  
   // Wire up the service container to the command registry
   // This enables service-dependent commands like /model list to work
   // Note: ChatProvider is always inside ServiceProvider in the component hierarchy
   const { container: serviceContainer } = useServices();
   
   // Get the model context for sending messages to the LLM
-  const { sendToLLM, cancelRequest } = useModel();
+  const { sendToLLM, cancelRequest, setCurrentModel } = useModel();
   
   // Track the current assistant message ID for streaming updates
   const assistantMessageIdRef = useRef<string | null>(null);
@@ -164,8 +168,10 @@ export function ChatProvider({
   useEffect(() => {
     if (serviceContainer) {
       commandRegistry.setServiceContainer(serviceContainer);
+      // Store the model switching callback globally so commands can access it
+      (globalThis as any).__ollmModelSwitchCallback = setCurrentModel;
     }
-  }, [serviceContainer]);
+  }, [serviceContainer, setCurrentModel]);
 
   // Convert chat messages to core message format for context tracking
   const convertToContextMessage = useCallback((msg: Message) => ({
@@ -208,6 +214,11 @@ export function ChatProvider({
       if (commandRegistry.isCommand(content)) {
         try {
           const result = await commandRegistry.execute(content);
+          
+          // Handle navigation actions
+          if (result.action === 'show-launch-screen') {
+            setLaunchScreenVisible(true);
+          }
           
           // Add command result as system message
           addMessage({
@@ -293,7 +304,7 @@ export function ChatProvider({
         assistantMessageIdRef.current = null;
       }
     },
-    [addMessage, messages, sendToLLM]
+    [addMessage, messages, sendToLLM, setLaunchScreenVisible]
   );
 
   const cancelGeneration = useCallback(() => {
