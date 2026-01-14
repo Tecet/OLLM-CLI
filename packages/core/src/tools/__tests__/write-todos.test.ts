@@ -10,7 +10,7 @@ import { promises as fs } from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { WriteTodosTool, WriteTodosInvocation, Todo } from '../write-todos.js';
-import { MockMessageBus, createMockAbortSignal } from './test-helpers.js';
+import { MockMessageBus, createMockAbortSignal , createToolContext} from './test-helpers.js';
 
 /**
  * Test fixture for todo operations
@@ -104,7 +104,7 @@ describe('Write Todos Tool', () => {
             // Add the todo
             const addInvocation = tool.createInvocation(
               { action: 'add', task },
-              messageBus
+              createToolContext(messageBus)
             );
             const addResult = await addInvocation.execute(createMockAbortSignal());
 
@@ -146,7 +146,7 @@ describe('Write Todos Tool', () => {
             for (const task of tasks) {
               const addInvocation = tool.createInvocation(
                 { action: 'add', task },
-                messageBus
+                createToolContext(messageBus)
               );
               const addResult = await addInvocation.execute(createMockAbortSignal());
               expect(addResult.error).toBeUndefined();
@@ -184,7 +184,7 @@ describe('Write Todos Tool', () => {
             for (const task of tasks) {
               const addInvocation = tool.createInvocation(
                 { action: 'add', task },
-                messageBus
+                createToolContext(messageBus)
               );
               const addResult = await addInvocation.execute(createMockAbortSignal());
               expect(addResult.error).toBeUndefined();
@@ -218,7 +218,7 @@ describe('Write Todos Tool', () => {
             const tool1 = new WriteTodosTool(todosPath);
             const addInvocation = tool1.createInvocation(
               { action: 'add', task },
-              messageBus
+              createToolContext(messageBus)
             );
             const addResult = await addInvocation.execute(createMockAbortSignal());
             expect(addResult.error).toBeUndefined();
@@ -227,7 +227,7 @@ describe('Write Todos Tool', () => {
             const tool2 = new WriteTodosTool(todosPath);
             const listInvocation = tool2.createInvocation(
               { action: 'list' },
-              messageBus
+              createToolContext(messageBus)
             );
             const listResult = await listInvocation.execute(createMockAbortSignal());
 
@@ -259,7 +259,7 @@ describe('Write Todos Tool', () => {
             for (const task of tasks) {
               const addInvocation = tool.createInvocation(
                 { action: 'add', task },
-                messageBus
+                createToolContext(messageBus)
               );
               await addInvocation.execute(createMockAbortSignal());
             }
@@ -292,7 +292,7 @@ describe('Write Todos Tool', () => {
             // Add the todo
             const addInvocation = tool.createInvocation(
               { action: 'add', task },
-              messageBus
+              createToolContext(messageBus)
             );
             await addInvocation.execute(createMockAbortSignal());
 
@@ -332,7 +332,7 @@ describe('Write Todos Tool', () => {
             // First add a todo
             const addInvocation = tool.createInvocation(
               { action: 'add', task },
-              messageBus
+              createToolContext(messageBus)
             );
             const addResult = await addInvocation.execute(createMockAbortSignal());
             expect(addResult.error).toBeUndefined();
@@ -346,7 +346,7 @@ describe('Write Todos Tool', () => {
             // Complete the todo
             const completeInvocation = tool.createInvocation(
               { action: 'complete', id: todoId },
-              messageBus
+              createToolContext(messageBus)
             );
             const completeResult = await completeInvocation.execute(createMockAbortSignal());
 
@@ -387,7 +387,7 @@ describe('Write Todos Tool', () => {
             for (const task of tasks) {
               const addInvocation = tool.createInvocation(
                 { action: 'add', task },
-                messageBus
+                createToolContext(messageBus)
               );
               const addResult = await addInvocation.execute(createMockAbortSignal());
               expect(addResult.error).toBeUndefined();
@@ -401,7 +401,7 @@ describe('Write Todos Tool', () => {
             // Complete the selected todo
             const completeInvocation = tool.createInvocation(
               { action: 'complete', id: todoToComplete.id },
-              messageBus
+              createToolContext(messageBus)
             );
             const completeResult = await completeInvocation.execute(createMockAbortSignal());
             expect(completeResult.error).toBeUndefined();
@@ -443,7 +443,7 @@ describe('Write Todos Tool', () => {
             // Try to complete a non-existent todo
             const completeInvocation = tool.createInvocation(
               { action: 'complete', id: fakeId },
-              messageBus
+              createToolContext(messageBus)
             );
             const completeResult = await completeInvocation.execute(createMockAbortSignal());
 
@@ -472,7 +472,7 @@ describe('Write Todos Tool', () => {
             // Add a todo
             const addInvocation = tool.createInvocation(
               { action: 'add', task },
-              messageBus
+              createToolContext(messageBus)
             );
             await addInvocation.execute(createMockAbortSignal());
 
@@ -483,7 +483,7 @@ describe('Write Todos Tool', () => {
             // Complete it once
             const completeInvocation1 = tool.createInvocation(
               { action: 'complete', id: todoId },
-              messageBus
+              createToolContext(messageBus)
             );
             const result1 = await completeInvocation1.execute(createMockAbortSignal());
             expect(result1.error).toBeUndefined();
@@ -491,7 +491,7 @@ describe('Write Todos Tool', () => {
             // Complete it again (should handle gracefully)
             const completeInvocation2 = tool.createInvocation(
               { action: 'complete', id: todoId },
-              messageBus
+              createToolContext(messageBus)
             );
             const result2 = await completeInvocation2.execute(createMockAbortSignal());
 
@@ -523,7 +523,7 @@ describe('Write Todos Tool', () => {
             const tool1 = new WriteTodosTool(todosPath);
             const addInvocation = tool1.createInvocation(
               { action: 'add', task },
-              messageBus
+              createToolContext(messageBus)
             );
             await addInvocation.execute(createMockAbortSignal());
 
@@ -534,7 +534,7 @@ describe('Write Todos Tool', () => {
             // Complete with first tool instance
             const completeInvocation = tool1.createInvocation(
               { action: 'complete', id: todoId },
-              messageBus
+              createToolContext(messageBus)
             );
             await completeInvocation.execute(createMockAbortSignal());
 
@@ -542,7 +542,7 @@ describe('Write Todos Tool', () => {
             const tool2 = new WriteTodosTool(todosPath);
             const listInvocation = tool2.createInvocation(
               { action: 'list' },
-              messageBus
+              createToolContext(messageBus)
             );
             const listResult = await listInvocation.execute(createMockAbortSignal());
 
@@ -566,7 +566,7 @@ describe('Write Todos Tool', () => {
 
       const completeInvocation = tool.createInvocation(
         { action: 'complete' },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await completeInvocation.execute(createMockAbortSignal());
 
@@ -590,7 +590,7 @@ describe('Write Todos Tool', () => {
             // First add a todo
             const addInvocation = tool.createInvocation(
               { action: 'add', task },
-              messageBus
+              createToolContext(messageBus)
             );
             const addResult = await addInvocation.execute(createMockAbortSignal());
             expect(addResult.error).toBeUndefined();
@@ -603,7 +603,7 @@ describe('Write Todos Tool', () => {
             // Remove the todo
             const removeInvocation = tool.createInvocation(
               { action: 'remove', id: todoId },
-              messageBus
+              createToolContext(messageBus)
             );
             const removeResult = await removeInvocation.execute(createMockAbortSignal());
 
@@ -640,7 +640,7 @@ describe('Write Todos Tool', () => {
             for (const task of tasks) {
               const addInvocation = tool.createInvocation(
                 { action: 'add', task },
-                messageBus
+                createToolContext(messageBus)
               );
               const addResult = await addInvocation.execute(createMockAbortSignal());
               expect(addResult.error).toBeUndefined();
@@ -654,7 +654,7 @@ describe('Write Todos Tool', () => {
             // Remove the selected todo
             const removeInvocation = tool.createInvocation(
               { action: 'remove', id: todoToRemove.id },
-              messageBus
+              createToolContext(messageBus)
             );
             const removeResult = await removeInvocation.execute(createMockAbortSignal());
             expect(removeResult.error).toBeUndefined();
@@ -694,7 +694,7 @@ describe('Write Todos Tool', () => {
             // Try to remove a non-existent todo
             const removeInvocation = tool.createInvocation(
               { action: 'remove', id: fakeId },
-              messageBus
+              createToolContext(messageBus)
             );
             const removeResult = await removeInvocation.execute(createMockAbortSignal());
 
@@ -723,7 +723,7 @@ describe('Write Todos Tool', () => {
             const tool1 = new WriteTodosTool(todosPath);
             const addInvocation = tool1.createInvocation(
               { action: 'add', task },
-              messageBus
+              createToolContext(messageBus)
             );
             await addInvocation.execute(createMockAbortSignal());
 
@@ -734,7 +734,7 @@ describe('Write Todos Tool', () => {
             // Remove with first tool instance
             const removeInvocation = tool1.createInvocation(
               { action: 'remove', id: todoId },
-              messageBus
+              createToolContext(messageBus)
             );
             await removeInvocation.execute(createMockAbortSignal());
 
@@ -742,7 +742,7 @@ describe('Write Todos Tool', () => {
             const tool2 = new WriteTodosTool(todosPath);
             const listInvocation = tool2.createInvocation(
               { action: 'list' },
-              messageBus
+              createToolContext(messageBus)
             );
             const listResult = await listInvocation.execute(createMockAbortSignal());
 
@@ -765,7 +765,7 @@ describe('Write Todos Tool', () => {
 
       const removeInvocation = tool.createInvocation(
         { action: 'remove' },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await removeInvocation.execute(createMockAbortSignal());
 
@@ -787,7 +787,7 @@ describe('Write Todos Tool', () => {
             // Add a todo
             const addInvocation = tool.createInvocation(
               { action: 'add', task },
-              messageBus
+              createToolContext(messageBus)
             );
             await addInvocation.execute(createMockAbortSignal());
 
@@ -798,14 +798,14 @@ describe('Write Todos Tool', () => {
             // Complete it first
             const completeInvocation = tool.createInvocation(
               { action: 'complete', id: todoId },
-              messageBus
+              createToolContext(messageBus)
             );
             await completeInvocation.execute(createMockAbortSignal());
 
             // Now remove it
             const removeInvocation = tool.createInvocation(
               { action: 'remove', id: todoId },
-              messageBus
+              createToolContext(messageBus)
             );
             const removeResult = await removeInvocation.execute(createMockAbortSignal());
 
@@ -843,7 +843,7 @@ describe('Write Todos Tool', () => {
             for (const task of tasks) {
               const addInvocation = tool.createInvocation(
                 { action: 'add', task },
-                messageBus
+                createToolContext(messageBus)
               );
               const addResult = await addInvocation.execute(createMockAbortSignal());
               expect(addResult.error).toBeUndefined();
@@ -852,7 +852,7 @@ describe('Write Todos Tool', () => {
             // List todos
             const listInvocation = tool.createInvocation(
               { action: 'list' },
-              messageBus
+              createToolContext(messageBus)
             );
             const listResult = await listInvocation.execute(createMockAbortSignal());
 
@@ -895,7 +895,7 @@ describe('Write Todos Tool', () => {
             for (const task of tasks) {
               const addInvocation = tool.createInvocation(
                 { action: 'add', task },
-                messageBus
+                createToolContext(messageBus)
               );
               await addInvocation.execute(createMockAbortSignal());
             }
@@ -907,14 +907,14 @@ describe('Write Todos Tool', () => {
 
             const completeInvocation = tool.createInvocation(
               { action: 'complete', id: todoToComplete.id },
-              messageBus
+              createToolContext(messageBus)
             );
             await completeInvocation.execute(createMockAbortSignal());
 
             // List todos
             const listInvocation = tool.createInvocation(
               { action: 'list' },
-              messageBus
+              createToolContext(messageBus)
             );
             const listResult = await listInvocation.execute(createMockAbortSignal());
 
@@ -947,7 +947,7 @@ describe('Write Todos Tool', () => {
       // List todos on empty list
       const listInvocation = tool.createInvocation(
         { action: 'list' },
-        messageBus
+        createToolContext(messageBus)
       );
       const listResult = await listInvocation.execute(createMockAbortSignal());
 
@@ -974,7 +974,7 @@ describe('Write Todos Tool', () => {
             for (const task of tasks) {
               const addInvocation = tool.createInvocation(
                 { action: 'add', task },
-                messageBus
+                createToolContext(messageBus)
               );
               await addInvocation.execute(createMockAbortSignal());
             }
@@ -985,7 +985,7 @@ describe('Write Todos Tool', () => {
             // List todos
             const listInvocation = tool.createInvocation(
               { action: 'list' },
-              messageBus
+              createToolContext(messageBus)
             );
             const listResult = await listInvocation.execute(createMockAbortSignal());
 
@@ -1019,7 +1019,7 @@ describe('Write Todos Tool', () => {
             for (const task of tasks) {
               const addInvocation = tool.createInvocation(
                 { action: 'add', task },
-                messageBus
+                createToolContext(messageBus)
               );
               await addInvocation.execute(createMockAbortSignal());
             }
@@ -1033,7 +1033,7 @@ describe('Write Todos Tool', () => {
             for (const index of indicesToComplete) {
               const completeInvocation = tool.createInvocation(
                 { action: 'complete', id: todos[index].id },
-                messageBus
+                createToolContext(messageBus)
               );
               await completeInvocation.execute(createMockAbortSignal());
             }
@@ -1041,7 +1041,7 @@ describe('Write Todos Tool', () => {
             // List todos
             const listInvocation = tool.createInvocation(
               { action: 'list' },
-              messageBus
+              createToolContext(messageBus)
             );
             const listResult = await listInvocation.execute(createMockAbortSignal());
 
@@ -1077,7 +1077,7 @@ describe('Write Todos Tool', () => {
             for (const task of tasks) {
               const addInvocation = tool.createInvocation(
                 { action: 'add', task },
-                messageBus
+                createToolContext(messageBus)
               );
               await addInvocation.execute(createMockAbortSignal());
             }
@@ -1085,7 +1085,7 @@ describe('Write Todos Tool', () => {
             // List todos
             const listInvocation = tool.createInvocation(
               { action: 'list' },
-              messageBus
+              createToolContext(messageBus)
             );
             const listResult = await listInvocation.execute(createMockAbortSignal());
 
@@ -1112,7 +1112,7 @@ describe('Write Todos Tool', () => {
 
       const invocation = tool.createInvocation(
         { action: 'add' },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -1127,7 +1127,7 @@ describe('Write Todos Tool', () => {
 
       const invocation = tool.createInvocation(
         { action: 'list' },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -1143,7 +1143,7 @@ describe('Write Todos Tool', () => {
 
       const invocation = tool.createInvocation(
         { action: 'add', task: 'Test task' },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const description = invocation.getDescription();
@@ -1157,7 +1157,7 @@ describe('Write Todos Tool', () => {
 
       const invocation = tool.createInvocation(
         { action: 'add', task: 'Test' },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const locations = invocation.toolLocations();
@@ -1170,7 +1170,7 @@ describe('Write Todos Tool', () => {
 
       const invocation = tool.createInvocation(
         { action: 'add', task: 'Test' },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const confirmation = await invocation.shouldConfirmExecute(

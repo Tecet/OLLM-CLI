@@ -9,7 +9,7 @@ import * as path from 'path';
 import * as os from 'os';
 import { ReadFileTool, ReadFileInvocation } from '../read-file.js';
 import { ReadManyFilesTool, ReadManyFilesInvocation } from '../read-many-files.js';
-import { MockMessageBus, createMockAbortSignal } from './test-helpers.js';
+import { MockMessageBus, createMockAbortSignal, createToolContext } from './test-helpers.js';
 
 /**
  * Test fixture for file operations
@@ -85,7 +85,7 @@ describe('Read File Tool', () => {
             // Read it back using the tool
             const invocation = tool.createInvocation(
               { path: filePath },
-              messageBus
+              createToolContext(messageBus)
             );
             const result = await invocation.execute(createMockAbortSignal());
 
@@ -121,7 +121,7 @@ describe('Read File Tool', () => {
             // Read it back using the tool
             const invocation = tool.createInvocation(
               { path: filePath },
-              messageBus
+              createToolContext(messageBus)
             );
             const result = await invocation.execute(createMockAbortSignal());
 
@@ -142,7 +142,7 @@ describe('Read File Tool', () => {
       // Feature: stage-03-tools-policy, Property 6: File Read Round Trip
       const filePath = await fixture.createFile('empty.txt', '');
 
-      const invocation = tool.createInvocation({ path: filePath }, messageBus);
+      const invocation = tool.createInvocation({ path: filePath }, createToolContext(messageBus));
       const result = await invocation.execute(createMockAbortSignal());
 
       expect(result.error).toBeUndefined();
@@ -174,7 +174,7 @@ describe('Read File Tool', () => {
             // Read with line range
             const invocation = tool.createInvocation(
               { path: filePath, startLine, endLine },
-              messageBus
+              createToolContext(messageBus)
             );
             const result = await invocation.execute(createMockAbortSignal());
 
@@ -215,7 +215,7 @@ describe('Read File Tool', () => {
             // Read from startLine to end
             const invocation = tool.createInvocation(
               { path: filePath, startLine },
-              messageBus
+              createToolContext(messageBus)
             );
             const result = await invocation.execute(createMockAbortSignal());
 
@@ -256,7 +256,7 @@ describe('Read File Tool', () => {
             // Read from beginning to endLine
             const invocation = tool.createInvocation(
               { path: filePath, endLine },
-              messageBus
+              createToolContext(messageBus)
             );
             const result = await invocation.execute(createMockAbortSignal());
 
@@ -286,7 +286,7 @@ describe('Read File Tool', () => {
       // Read just line 3
       const invocation = tool.createInvocation(
         { path: filePath, startLine: 3, endLine: 3 },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -312,7 +312,7 @@ describe('Read File Tool', () => {
             // Try to read the non-existent file
             const invocation = tool.createInvocation(
               { path: nonExistentPath },
-              messageBus
+              createToolContext(messageBus)
             );
             const result = await invocation.execute(createMockAbortSignal());
 
@@ -333,7 +333,7 @@ describe('Read File Tool', () => {
       const dirPath = path.join(fixture.getTempDir(), 'testdir');
       await fs.mkdir(dirPath);
 
-      const invocation = tool.createInvocation({ path: dirPath }, messageBus);
+      const invocation = tool.createInvocation({ path: dirPath }, createToolContext(messageBus));
       const result = await invocation.execute(createMockAbortSignal());
 
       expect(result.error).toBeDefined();
@@ -350,7 +350,7 @@ describe('Read File Tool', () => {
       // Try to read with invalid startLine (beyond file length)
       const invocation = tool.createInvocation(
         { path: filePath, startLine: 10 },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -368,7 +368,7 @@ describe('Read File Tool', () => {
       // Try to read with endLine < startLine
       const invocation = tool.createInvocation(
         { path: filePath, startLine: 4, endLine: 2 },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -388,7 +388,7 @@ describe('Read File Tool', () => {
       const filePath = path.join(fixture.getTempDir(), 'binary.bin');
       await fs.writeFile(filePath, binaryData);
 
-      const invocation = tool.createInvocation({ path: filePath }, messageBus);
+      const invocation = tool.createInvocation({ path: filePath }, createToolContext(messageBus));
       const result = await invocation.execute(createMockAbortSignal());
 
       // The file will be read, but may contain replacement characters
@@ -403,7 +403,7 @@ describe('Read File Tool', () => {
       const largeContent = 'x'.repeat(11 * 1024 * 1024);
       const filePath = await fixture.createFile('large.txt', largeContent);
 
-      const invocation = tool.createInvocation({ path: filePath }, messageBus);
+      const invocation = tool.createInvocation({ path: filePath }, createToolContext(messageBus));
       const result = await invocation.execute(createMockAbortSignal());
 
       // Should have an error indicating file too large
@@ -421,7 +421,7 @@ describe('Read File Tool', () => {
         // Try to make the file unreadable (Unix-like systems)
         await fs.chmod(filePath, 0o000);
 
-        const invocation = tool.createInvocation({ path: filePath }, messageBus);
+        const invocation = tool.createInvocation({ path: filePath }, createToolContext(messageBus));
         const result = await invocation.execute(createMockAbortSignal());
 
         // Should have a permission error
@@ -444,7 +444,7 @@ describe('Read File Tool', () => {
       const controller = new AbortController();
       controller.abort();
 
-      const invocation = tool.createInvocation({ path: filePath }, messageBus);
+      const invocation = tool.createInvocation({ path: filePath }, createToolContext(messageBus));
       const result = await invocation.execute(controller.signal);
 
       // Should return an error result (not throw)
@@ -456,7 +456,7 @@ describe('Read File Tool', () => {
   describe('Tool Interface', () => {
     it('should provide correct description', async () => {
       const filePath = await fixture.createFile('test.txt', 'content');
-      const invocation = tool.createInvocation({ path: filePath }, messageBus);
+      const invocation = tool.createInvocation({ path: filePath }, createToolContext(messageBus));
 
       const description = invocation.getDescription();
       expect(description).toContain(filePath);
@@ -466,7 +466,7 @@ describe('Read File Tool', () => {
       const filePath = await fixture.createFile('test.txt', 'content');
       const invocation = tool.createInvocation(
         { path: filePath, startLine: 1, endLine: 5 },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const description = invocation.getDescription();
@@ -477,7 +477,7 @@ describe('Read File Tool', () => {
 
     it('should return correct tool locations', async () => {
       const filePath = await fixture.createFile('test.txt', 'content');
-      const invocation = tool.createInvocation({ path: filePath }, messageBus);
+      const invocation = tool.createInvocation({ path: filePath }, createToolContext(messageBus));
 
       const locations = invocation.toolLocations();
       expect(locations).toEqual([filePath]);
@@ -485,7 +485,7 @@ describe('Read File Tool', () => {
 
     it('should not require confirmation', async () => {
       const filePath = await fixture.createFile('test.txt', 'content');
-      const invocation = tool.createInvocation({ path: filePath }, messageBus);
+      const invocation = tool.createInvocation({ path: filePath }, createToolContext(messageBus));
 
       const confirmation = await invocation.shouldConfirmExecute(
         createMockAbortSignal()
@@ -574,7 +574,7 @@ describe('Read Many Files Tool', () => {
             // Read all files
             const invocation = tool.createInvocation(
               { paths: filePaths },
-              messageBus
+              createToolContext(messageBus)
             );
             const result = await invocation.execute(createMockAbortSignal());
 
@@ -610,7 +610,7 @@ describe('Read Many Files Tool', () => {
 
       const invocation = tool.createInvocation(
         { paths: [file1, file2, file3] },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -634,7 +634,7 @@ describe('Read Many Files Tool', () => {
 
       const invocation = tool.createInvocation(
         { paths: [file1, nonExistent, file3] },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -666,7 +666,7 @@ describe('Read Many Files Tool', () => {
 
       const invocation = tool.createInvocation(
         { paths: [file1, file2] },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const description = invocation.getDescription();
@@ -680,7 +680,7 @@ describe('Read Many Files Tool', () => {
 
       const invocation = tool.createInvocation(
         { paths: [file1, file2] },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const locations = invocation.toolLocations();
@@ -690,7 +690,7 @@ describe('Read Many Files Tool', () => {
     it('should not require confirmation', async () => {
       const file1 = await fixture.createFile('test1.txt', 'content1');
 
-      const invocation = tool.createInvocation({ paths: [file1] }, messageBus);
+      const invocation = tool.createInvocation({ paths: [file1] }, createToolContext(messageBus));
 
       const confirmation = await invocation.shouldConfirmExecute(
         createMockAbortSignal()

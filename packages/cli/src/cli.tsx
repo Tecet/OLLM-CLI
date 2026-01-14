@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, Text } from 'ink';
-import yargs from 'yargs';
+import Yargs from 'yargs/yargs';
 import { hideBin } from 'yargs/helpers';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
@@ -92,7 +92,7 @@ const HelpDisplay: React.FC = () => (
 );
 
 // Parse arguments
-const argv = yargs(hideBin(process.argv))
+const argv = Yargs(hideBin(process.argv))
   .version(false)
   .help(false)
   .strict()

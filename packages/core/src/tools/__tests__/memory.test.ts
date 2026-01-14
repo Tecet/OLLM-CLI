@@ -10,7 +10,7 @@ import { promises as fs } from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { MemoryTool, MemoryInvocation } from '../memory.js';
-import { MockMessageBus, createMockAbortSignal } from './test-helpers.js';
+import { MockMessageBus, createMockAbortSignal , createToolContext} from './test-helpers.js';
 
 /**
  * Test fixture for memory operations
@@ -104,7 +104,7 @@ describe('Memory Tool', () => {
             // Step 1: Store the value
             const setInvocation = tool.createInvocation(
               { action: 'set', key, value },
-              messageBus
+              createToolContext(messageBus)
             );
             const setResult = await setInvocation.execute(createMockAbortSignal());
 
@@ -116,7 +116,7 @@ describe('Memory Tool', () => {
             // Step 2: Retrieve the value
             const getInvocation = tool.createInvocation(
               { action: 'get', key },
-              messageBus
+              createToolContext(messageBus)
             );
             const getResult = await getInvocation.execute(createMockAbortSignal());
 
@@ -147,7 +147,7 @@ describe('Memory Tool', () => {
             const tool1 = new MemoryTool(storePath);
             const setInvocation = tool1.createInvocation(
               { action: 'set', key, value },
-              messageBus
+              createToolContext(messageBus)
             );
             const setResult = await setInvocation.execute(createMockAbortSignal());
             expect(setResult.error).toBeUndefined();
@@ -156,7 +156,7 @@ describe('Memory Tool', () => {
             const tool2 = new MemoryTool(storePath);
             const getInvocation = tool2.createInvocation(
               { action: 'get', key },
-              messageBus
+              createToolContext(messageBus)
             );
             const getResult = await getInvocation.execute(createMockAbortSignal());
 
@@ -194,7 +194,7 @@ describe('Memory Tool', () => {
             for (const [key, value] of uniquePairs) {
               const setInvocation = tool.createInvocation(
                 { action: 'set', key, value },
-                messageBus
+                createToolContext(messageBus)
               );
               const setResult = await setInvocation.execute(createMockAbortSignal());
               expect(setResult.error).toBeUndefined();
@@ -204,7 +204,7 @@ describe('Memory Tool', () => {
             for (const [key, expectedValue] of uniquePairs) {
               const getInvocation = tool.createInvocation(
                 { action: 'get', key },
-                messageBus
+                createToolContext(messageBus)
               );
               const getResult = await getInvocation.execute(createMockAbortSignal());
               expect(getResult.error).toBeUndefined();
@@ -231,7 +231,7 @@ describe('Memory Tool', () => {
             // Try to get a key that was never set
             const getInvocation = tool.createInvocation(
               { action: 'get', key },
-              messageBus
+              createToolContext(messageBus)
             );
             const getResult = await getInvocation.execute(createMockAbortSignal());
 
@@ -262,21 +262,21 @@ describe('Memory Tool', () => {
             // Store first value
             const set1 = tool.createInvocation(
               { action: 'set', key, value: value1 },
-              messageBus
+              createToolContext(messageBus)
             );
             await set1.execute(createMockAbortSignal());
 
             // Store second value with same key
             const set2 = tool.createInvocation(
               { action: 'set', key, value: value2 },
-              messageBus
+              createToolContext(messageBus)
             );
             await set2.execute(createMockAbortSignal());
 
             // Retrieve should return the second value
             const getInvocation = tool.createInvocation(
               { action: 'get', key },
-              messageBus
+              createToolContext(messageBus)
             );
             const getResult = await getInvocation.execute(createMockAbortSignal());
 
@@ -306,7 +306,7 @@ describe('Memory Tool', () => {
             // Step 1: Store a value
             const setInvocation = tool.createInvocation(
               { action: 'set', key, value },
-              messageBus
+              createToolContext(messageBus)
             );
             const setResult = await setInvocation.execute(createMockAbortSignal());
             expect(setResult.error).toBeUndefined();
@@ -314,7 +314,7 @@ describe('Memory Tool', () => {
             // Step 2: Verify the value is stored
             const getBeforeDelete = tool.createInvocation(
               { action: 'get', key },
-              messageBus
+              createToolContext(messageBus)
             );
             const getBeforeResult = await getBeforeDelete.execute(createMockAbortSignal());
             expect(getBeforeResult.error).toBeUndefined();
@@ -323,7 +323,7 @@ describe('Memory Tool', () => {
             // Step 3: Delete the key
             const deleteInvocation = tool.createInvocation(
               { action: 'delete', key },
-              messageBus
+              createToolContext(messageBus)
             );
             const deleteResult = await deleteInvocation.execute(createMockAbortSignal());
             expect(deleteResult.error).toBeUndefined();
@@ -333,7 +333,7 @@ describe('Memory Tool', () => {
             // Step 4: Verify the key is no longer found
             const getAfterDelete = tool.createInvocation(
               { action: 'get', key },
-              messageBus
+              createToolContext(messageBus)
             );
             const getAfterResult = await getAfterDelete.execute(createMockAbortSignal());
             expect(getAfterResult.error).toBeUndefined();
@@ -361,14 +361,14 @@ describe('Memory Tool', () => {
             const tool1 = new MemoryTool(storePath);
             const setInvocation = tool1.createInvocation(
               { action: 'set', key, value },
-              messageBus
+              createToolContext(messageBus)
             );
             await setInvocation.execute(createMockAbortSignal());
 
             // Delete the key
             const deleteInvocation = tool1.createInvocation(
               { action: 'delete', key },
-              messageBus
+              createToolContext(messageBus)
             );
             await deleteInvocation.execute(createMockAbortSignal());
 
@@ -376,7 +376,7 @@ describe('Memory Tool', () => {
             const tool2 = new MemoryTool(storePath);
             const getInvocation = tool2.createInvocation(
               { action: 'get', key },
-              messageBus
+              createToolContext(messageBus)
             );
             const getResult = await getInvocation.execute(createMockAbortSignal());
 
@@ -419,7 +419,7 @@ describe('Memory Tool', () => {
             for (const [key, value] of uniquePairs) {
               const setInvocation = tool.createInvocation(
                 { action: 'set', key, value },
-                messageBus
+                createToolContext(messageBus)
               );
               await setInvocation.execute(createMockAbortSignal());
             }
@@ -432,7 +432,7 @@ describe('Memory Tool', () => {
             // Delete the first key
             const deleteInvocation = tool.createInvocation(
               { action: 'delete', key: keyToDelete },
-              messageBus
+              createToolContext(messageBus)
             );
             const deleteResult = await deleteInvocation.execute(createMockAbortSignal());
             expect(deleteResult.error).toBeUndefined();
@@ -440,7 +440,7 @@ describe('Memory Tool', () => {
             // Verify deleted key is not found
             const getDeleted = tool.createInvocation(
               { action: 'get', key: keyToDelete },
-              messageBus
+              createToolContext(messageBus)
             );
             const getDeletedResult = await getDeleted.execute(createMockAbortSignal());
             expect(getDeletedResult.llmContent).toContain('Key not found');
@@ -449,7 +449,7 @@ describe('Memory Tool', () => {
             for (const key of remainingKeys) {
               const getInvocation = tool.createInvocation(
                 { action: 'get', key },
-                messageBus
+                createToolContext(messageBus)
               );
               const getResult = await getInvocation.execute(createMockAbortSignal());
               expect(getResult.error).toBeUndefined();
@@ -476,7 +476,7 @@ describe('Memory Tool', () => {
             // Try to delete a key that was never set
             const deleteInvocation = tool.createInvocation(
               { action: 'delete', key },
-              messageBus
+              createToolContext(messageBus)
             );
             const deleteResult = await deleteInvocation.execute(createMockAbortSignal());
 
@@ -518,7 +518,7 @@ describe('Memory Tool', () => {
             for (const [key, value] of uniquePairs) {
               const setInvocation = tool.createInvocation(
                 { action: 'set', key, value },
-                messageBus
+                createToolContext(messageBus)
               );
               const setResult = await setInvocation.execute(createMockAbortSignal());
               expect(setResult.error).toBeUndefined();
@@ -527,7 +527,7 @@ describe('Memory Tool', () => {
             // List all keys
             const listInvocation = tool.createInvocation(
               { action: 'list' },
-              messageBus
+              createToolContext(messageBus)
             );
             const listResult = await listInvocation.execute(createMockAbortSignal());
 
@@ -577,7 +577,7 @@ describe('Memory Tool', () => {
             for (const [key, value] of uniquePairs) {
               const setInvocation = tool.createInvocation(
                 { action: 'set', key, value },
-                messageBus
+                createToolContext(messageBus)
               );
               await setInvocation.execute(createMockAbortSignal());
             }
@@ -585,7 +585,7 @@ describe('Memory Tool', () => {
             // List all keys
             const listInvocation = tool.createInvocation(
               { action: 'list' },
-              messageBus
+              createToolContext(messageBus)
             );
             const listResult = await listInvocation.execute(createMockAbortSignal());
 
@@ -629,7 +629,7 @@ describe('Memory Tool', () => {
             for (const [key, value] of uniquePairs) {
               const setInvocation = tool.createInvocation(
                 { action: 'set', key, value },
-                messageBus
+                createToolContext(messageBus)
               );
               await setInvocation.execute(createMockAbortSignal());
             }
@@ -642,14 +642,14 @@ describe('Memory Tool', () => {
             // Delete the first key
             const deleteInvocation = tool.createInvocation(
               { action: 'delete', key: keyToDelete },
-              messageBus
+              createToolContext(messageBus)
             );
             await deleteInvocation.execute(createMockAbortSignal());
 
             // List all keys
             const listInvocation = tool.createInvocation(
               { action: 'list' },
-              messageBus
+              createToolContext(messageBus)
             );
             const listResult = await listInvocation.execute(createMockAbortSignal());
 
@@ -674,7 +674,7 @@ describe('Memory Tool', () => {
       // List keys from empty store
       const listInvocation = tool.createInvocation(
         { action: 'list' },
-        messageBus
+        createToolContext(messageBus)
       );
       const listResult = await listInvocation.execute(createMockAbortSignal());
 
@@ -707,7 +707,7 @@ describe('Memory Tool', () => {
             for (const [key, value] of uniquePairs) {
               const setInvocation = tool.createInvocation(
                 { action: 'set', key, value },
-                messageBus
+                createToolContext(messageBus)
               );
               await setInvocation.execute(createMockAbortSignal());
             }
@@ -715,7 +715,7 @@ describe('Memory Tool', () => {
             // List all keys
             const listInvocation = tool.createInvocation(
               { action: 'list' },
-              messageBus
+              createToolContext(messageBus)
             );
             const listResult = await listInvocation.execute(createMockAbortSignal());
 
@@ -758,7 +758,7 @@ describe('Memory Tool', () => {
             for (const [key, value] of uniquePairs) {
               const setInvocation = tool1.createInvocation(
                 { action: 'set', key, value },
-                messageBus
+                createToolContext(messageBus)
               );
               await setInvocation.execute(createMockAbortSignal());
             }
@@ -767,7 +767,7 @@ describe('Memory Tool', () => {
             const tool2 = new MemoryTool(storePath);
             const listInvocation = tool2.createInvocation(
               { action: 'list' },
-              messageBus
+              createToolContext(messageBus)
             );
             const listResult = await listInvocation.execute(createMockAbortSignal());
 
@@ -791,7 +791,7 @@ describe('Memory Tool', () => {
 
       const invocation = tool.createInvocation(
         { action: 'get', key: 'nonexistent' },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -806,13 +806,13 @@ describe('Memory Tool', () => {
 
       const setInvocation = tool.createInvocation(
         { action: 'set', key: 'special', value: specialValue },
-        messageBus
+        createToolContext(messageBus)
       );
       await setInvocation.execute(createMockAbortSignal());
 
       const getInvocation = tool.createInvocation(
         { action: 'get', key: 'special' },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await getInvocation.execute(createMockAbortSignal());
 
@@ -826,13 +826,13 @@ describe('Memory Tool', () => {
 
       const setInvocation = tool.createInvocation(
         { action: 'set', key: 'empty', value: '' },
-        messageBus
+        createToolContext(messageBus)
       );
       await setInvocation.execute(createMockAbortSignal());
 
       const getInvocation = tool.createInvocation(
         { action: 'get', key: 'empty' },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await getInvocation.execute(createMockAbortSignal());
 
@@ -848,7 +848,7 @@ describe('Memory Tool', () => {
 
       const invocation = tool.createInvocation(
         { action: 'get' },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -863,7 +863,7 @@ describe('Memory Tool', () => {
 
       const invocation = tool.createInvocation(
         { action: 'set', value: 'test' },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -878,7 +878,7 @@ describe('Memory Tool', () => {
 
       const invocation = tool.createInvocation(
         { action: 'set', key: 'test' },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -896,7 +896,7 @@ describe('Memory Tool', () => {
 
       const invocation = tool.createInvocation(
         { action: 'set', key: 'test', value: 'value' },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(controller.signal);
 
@@ -912,7 +912,7 @@ describe('Memory Tool', () => {
 
       const invocation = tool.createInvocation(
         { action: 'get', key: 'mykey' },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const description = invocation.getDescription();
@@ -927,7 +927,7 @@ describe('Memory Tool', () => {
 
       const invocation = tool.createInvocation(
         { action: 'set', key: 'mykey', value: 'myvalue' },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const description = invocation.getDescription();
@@ -942,7 +942,7 @@ describe('Memory Tool', () => {
 
       const invocation = tool.createInvocation(
         { action: 'get', key: 'test' },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const locations = invocation.toolLocations();
@@ -955,7 +955,7 @@ describe('Memory Tool', () => {
 
       const invocation = tool.createInvocation(
         { action: 'set', key: 'test', value: 'value' },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const confirmation = await invocation.shouldConfirmExecute(

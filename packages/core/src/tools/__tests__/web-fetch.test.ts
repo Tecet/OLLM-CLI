@@ -9,7 +9,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import fc from 'fast-check';
 import { WebFetchTool, WebFetchInvocation } from '../web-fetch.js';
-import type { MessageBus, ToolResult } from '../types.js';
+import type { MessageBus, ToolResult, ToolContext } from '../types.js';
 
 /**
  * Create a mock message bus for testing
@@ -18,6 +18,13 @@ function createMockMessageBus(): MessageBus {
   return {
     requestConfirmation: async () => true,
   } as MessageBus;
+}
+
+/**
+ * Create a ToolContext from a MessageBus for testing
+ */
+function createToolContext(messageBus: MessageBus): ToolContext {
+  return { messageBus };
 }
 
 /**
@@ -85,7 +92,7 @@ describe('Web Fetch Tool', () => {
             const url = `https://${domain}.example.com/${path}`;
             const invocation = webFetchTool.createInvocation(
               { url },
-              messageBus
+              createToolContext(messageBus)
             );
 
             const abortController = new AbortController();
@@ -139,7 +146,7 @@ describe('Web Fetch Tool', () => {
 
             const invocation = webFetchTool.createInvocation(
               { url: 'https://example.com/test' },
-              messageBus
+              createToolContext(messageBus)
             );
 
             const abortController = new AbortController();
@@ -173,7 +180,7 @@ describe('Web Fetch Tool', () => {
 
             const invocation = webFetchTool.createInvocation(
               { url: 'https://example.com/test' },
-              messageBus
+              createToolContext(messageBus)
             );
 
             const abortController = new AbortController();
@@ -207,7 +214,7 @@ describe('Web Fetch Tool', () => {
 
             const invocation = webFetchTool.createInvocation(
               { url: 'https://example.com/test' },
-              messageBus
+              createToolContext(messageBus)
             );
 
             const abortController = new AbortController();
@@ -240,7 +247,7 @@ describe('Web Fetch Tool', () => {
 
             const invocation = webFetchTool.createInvocation(
               { url: 'https://example.com/test' },
-              messageBus
+              createToolContext(messageBus)
             );
 
             const abortController = new AbortController();
@@ -262,7 +269,7 @@ describe('Web Fetch Tool', () => {
     it('should provide a description of the fetch operation', () => {
       const invocation = webFetchTool.createInvocation(
         { url: 'https://example.com/test' },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const description = invocation.getDescription();
@@ -274,7 +281,7 @@ describe('Web Fetch Tool', () => {
     it('should include selector in description when provided', () => {
       const invocation = webFetchTool.createInvocation(
         { url: 'https://example.com/test', selector: 'div.content' },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const description = invocation.getDescription();
@@ -286,7 +293,7 @@ describe('Web Fetch Tool', () => {
     it('should return URL as tool location', () => {
       const invocation = webFetchTool.createInvocation(
         { url: 'https://example.com/test' },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const locations = invocation.toolLocations();
@@ -298,7 +305,7 @@ describe('Web Fetch Tool', () => {
     it('should not require confirmation by default', async () => {
       const invocation = webFetchTool.createInvocation(
         { url: 'https://example.com/test' },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const abortController = new AbortController();
@@ -359,7 +366,7 @@ describe('Web Fetch Tool', () => {
 
             const invocation = webFetchTool.createInvocation(
               { url: 'https://example.com/test', selector: tag },
-              messageBus
+              createToolContext(messageBus)
             );
 
             const abortController = new AbortController();
@@ -402,7 +409,7 @@ describe('Web Fetch Tool', () => {
 
             const invocation = webFetchTool.createInvocation(
               { url: 'https://example.com/test', selector: tag },
-              messageBus
+              createToolContext(messageBus)
             );
 
             const abortController = new AbortController();
@@ -446,7 +453,7 @@ describe('Web Fetch Tool', () => {
             // Use a tag that doesn't exist in the HTML
             const invocation = webFetchTool.createInvocation(
               { url: 'https://example.com/test', selector: 'article' },
-              messageBus
+              createToolContext(messageBus)
             );
 
             const abortController = new AbortController();
@@ -485,7 +492,7 @@ describe('Web Fetch Tool', () => {
 
             const invocation = webFetchTool.createInvocation(
               { url: 'https://example.com/test', selector: outerTag },
-              messageBus
+              createToolContext(messageBus)
             );
 
             const abortController = new AbortController();
@@ -518,7 +525,7 @@ describe('Web Fetch Tool', () => {
       // **Validates: Requirements 6.2**
       const invocation = webFetchTool.createInvocation(
         { url: 'https://example.com/test', selector: 'div.content' },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const description = invocation.getDescription();
@@ -557,7 +564,7 @@ describe('Web Fetch Tool', () => {
 
             const invocation = webFetchTool.createInvocation(
               { url: 'https://example.com/test', maxLength },
-              messageBus
+              createToolContext(messageBus)
             );
 
             const abortController = new AbortController();
@@ -606,7 +613,7 @@ describe('Web Fetch Tool', () => {
 
             const invocation = webFetchTool.createInvocation(
               { url: 'https://example.com/test', maxLength },
-              messageBus
+              createToolContext(messageBus)
             );
 
             const abortController = new AbortController();
@@ -648,7 +655,7 @@ describe('Web Fetch Tool', () => {
 
             const invocation = webFetchTool.createInvocation(
               { url: 'https://example.com/test', maxLength },
-              messageBus
+              createToolContext(messageBus)
             );
 
             const abortController = new AbortController();
@@ -690,7 +697,7 @@ describe('Web Fetch Tool', () => {
 
             const invocation = webFetchTool.createInvocation(
               { url: 'https://example.com/test', maxLength: length },
-              messageBus
+              createToolContext(messageBus)
             );
 
             const abortController = new AbortController();
@@ -731,7 +738,7 @@ describe('Web Fetch Tool', () => {
             // No maxLength specified
             const invocation = webFetchTool.createInvocation(
               { url: 'https://example.com/test' },
-              messageBus
+              createToolContext(messageBus)
             );
 
             const abortController = new AbortController();
@@ -758,7 +765,7 @@ describe('Web Fetch Tool', () => {
     it('should return error for invalid URLs', async () => {
       const invocation = webFetchTool.createInvocation(
         { url: 'not-a-valid-url' },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const abortController = new AbortController();
@@ -771,7 +778,7 @@ describe('Web Fetch Tool', () => {
     it('should return error for unsupported protocols', async () => {
       const invocation = webFetchTool.createInvocation(
         { url: 'ftp://example.com/file' },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const abortController = new AbortController();
@@ -795,7 +802,7 @@ describe('Web Fetch Tool', () => {
 
             const invocation = webFetchTool.createInvocation(
               { url: `${protocol}://example.com/test` },
-              messageBus
+              createToolContext(messageBus)
             );
 
             const abortController = new AbortController();
@@ -830,7 +837,7 @@ describe('Web Fetch Tool', () => {
 
         const invocation = webFetchTool.createInvocation(
           { url: 'https://example.com/nonexistent-page' },
-          messageBus
+          createToolContext(messageBus)
         );
 
         const abortController = new AbortController();
@@ -865,7 +872,7 @@ describe('Web Fetch Tool', () => {
 
           const invocation = webFetchTool.createInvocation(
             { url: 'https://example.com/test' },
-            messageBus
+            createToolContext(messageBus)
           );
 
           const abortController = new AbortController();
@@ -896,7 +903,7 @@ describe('Web Fetch Tool', () => {
 
           const invocation = webFetchTool.createInvocation(
             { url: 'https://example.com/test' },
-            messageBus
+            createToolContext(messageBus)
           );
 
           const abortController = new AbortController();
@@ -920,7 +927,7 @@ describe('Web Fetch Tool', () => {
 
         const invocation = webFetchTool.createInvocation(
           { url: 'https://example.com/slow-page', timeout: 100 },
-          messageBus
+          createToolContext(messageBus)
         );
 
         const abortController = new AbortController();
@@ -944,7 +951,7 @@ describe('Web Fetch Tool', () => {
 
         const invocation = webFetchTool.createInvocation(
           { url: 'https://example.com/slow-page' },
-          messageBus
+          createToolContext(messageBus)
         );
 
         const abortController = new AbortController();
@@ -969,7 +976,7 @@ describe('Web Fetch Tool', () => {
 
         const invocation = webFetchTool.createInvocation(
           { url: 'https://example.com/test' },
-          messageBus
+          createToolContext(messageBus)
         );
 
         const result = await invocation.execute(abortController.signal);
@@ -992,7 +999,7 @@ describe('Web Fetch Tool', () => {
 
         const invocation1 = webFetchTool.createInvocation(
           { url: 'https://example.com/test', timeout: 5000 },
-          messageBus
+          createToolContext(messageBus)
         );
 
         const result1 = await invocation1.execute(userAbortController.signal);
@@ -1003,7 +1010,7 @@ describe('Web Fetch Tool', () => {
 
         const invocation2 = webFetchTool.createInvocation(
           { url: 'https://example.com/test', timeout: 100 },
-          messageBus
+          createToolContext(messageBus)
         );
 
         const result2 = await invocation2.execute(timeoutController.signal);
@@ -1019,7 +1026,7 @@ describe('Web Fetch Tool', () => {
 
         const invocation = webFetchTool.createInvocation(
           { url: 'https://nonexistent.invalid/page' },
-          messageBus
+          createToolContext(messageBus)
         );
 
         const abortController = new AbortController();
@@ -1039,7 +1046,7 @@ describe('Web Fetch Tool', () => {
 
         const invocation = webFetchTool.createInvocation(
           { url: 'https://localhost:8080/test' },
-          messageBus
+          createToolContext(messageBus)
         );
 
         const abortController = new AbortController();
@@ -1057,7 +1064,7 @@ describe('Web Fetch Tool', () => {
 
         const invocation = webFetchTool.createInvocation(
           { url: 'https://example.com/test' },
-          messageBus
+          createToolContext(messageBus)
         );
 
         const abortController = new AbortController();
@@ -1075,7 +1082,7 @@ describe('Web Fetch Tool', () => {
 
         const invocation = webFetchTool.createInvocation(
           { url: 'https://self-signed.example.com/test' },
-          messageBus
+          createToolContext(messageBus)
         );
 
         const abortController = new AbortController();
@@ -1093,7 +1100,7 @@ describe('Web Fetch Tool', () => {
 
         const invocation = webFetchTool.createInvocation(
           { url: 'https://example.com/test' },
-          messageBus
+          createToolContext(messageBus)
         );
 
         const abortController = new AbortController();
@@ -1111,7 +1118,7 @@ describe('Web Fetch Tool', () => {
 
         const invocation = webFetchTool.createInvocation(
           { url: 'https://example.com/test' },
-          messageBus
+          createToolContext(messageBus)
         );
 
         const abortController = new AbortController();
@@ -1127,7 +1134,7 @@ describe('Web Fetch Tool', () => {
 
         const invocation = webFetchTool.createInvocation(
           { url: 'https://example.com/test' },
-          messageBus
+          createToolContext(messageBus)
         );
 
         const abortController = new AbortController();
@@ -1144,7 +1151,7 @@ describe('Web Fetch Tool', () => {
 
         const invocation = webFetchTool.createInvocation(
           { url: 'https://example.com/test' },
-          messageBus
+          createToolContext(messageBus)
         );
 
         const abortController = new AbortController();

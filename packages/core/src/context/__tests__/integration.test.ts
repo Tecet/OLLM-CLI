@@ -98,7 +98,7 @@ describe('Context Management Integration Tests', () => {
 
   describe('Snapshot Manager → Storage Integration', () => {
     it('should save and load snapshots correctly', async () => {
-      const storage = createSnapshotStorage(sessionId, tempDir);
+      const storage = createSnapshotStorage(tempDir);
       const snapshotManager = createSnapshotManager(storage, {
         enabled: true,
         maxCount: 5,
@@ -167,7 +167,7 @@ describe('Context Management Integration Tests', () => {
     });
 
     it('should handle rolling cleanup correctly', async () => {
-      const storage = createSnapshotStorage(sessionId, tempDir);
+      const storage = createSnapshotStorage(tempDir);
       const snapshotManager = createSnapshotManager(storage, {
         enabled: true,
         maxCount: 3,
@@ -227,7 +227,7 @@ describe('Context Management Integration Tests', () => {
         async (newSize: number) => {}
       );
       
-      const storage = createSnapshotStorage(sessionId, tempDir);
+      const storage = createSnapshotStorage(tempDir);
       const snapshotManager = createSnapshotManager(storage, {
         enabled: true,
         maxCount: 5,
@@ -251,7 +251,7 @@ describe('Context Management Integration Tests', () => {
         }
       );
       
-      memoryGuard.setServices(snapshotManager, compressionService);
+      memoryGuard.setServices({ snapshot: snapshotManager, compression: compressionService });
 
       // Set up context at 85% capacity (should trigger warning)
       const context = {
@@ -283,7 +283,7 @@ describe('Context Management Integration Tests', () => {
       });
 
       // Check memory level (should trigger warning)
-      await memoryGuard.checkMemoryLevel();
+      await memoryGuard.checkMemoryLevelAndAct();
 
       // Verify warning was triggered
       expect(warningCalled).toBe(true);
@@ -303,7 +303,7 @@ describe('Context Management Integration Tests', () => {
         async (newSize: number) => {}
       );
       
-      const storage = createSnapshotStorage(sessionId, tempDir);
+      const storage = createSnapshotStorage(tempDir);
       const snapshotManager = createSnapshotManager(storage, {
         enabled: true,
         maxCount: 5,
@@ -327,7 +327,7 @@ describe('Context Management Integration Tests', () => {
         }
       );
       
-      memoryGuard.setServices(snapshotManager, compressionService);
+      memoryGuard.setServices({ snapshot: snapshotManager, compression: compressionService });
 
       // Set up context at 96% capacity (should trigger emergency)
       const context = {

@@ -278,20 +278,6 @@ export class SnapshotManagerImpl implements SnapshotManager {
     
     return lastCompression.ratio;
   }
-
-  /**
-   * Update configuration
-   */
-  updateConfig(config: Partial<SnapshotConfig>): void {
-    this.config = { ...this.config, ...config };
-  }
-
-  /**
-   * Get current configuration
-   */
-  getConfig(): SnapshotConfig {
-    return { ...this.config };
-  }
 }
 
 /**

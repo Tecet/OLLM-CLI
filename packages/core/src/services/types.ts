@@ -16,7 +16,7 @@ export type MessagePart = TextPart;
  * Session message structure
  */
 export interface SessionMessage {
-  role: 'user' | 'assistant' | 'system';
+  role: 'user' | 'assistant' | 'system' | 'tool';
   parts: MessagePart[];
   timestamp: string; // ISO 8601
 }
@@ -223,5 +223,37 @@ export interface ServicesConfig {
       autoCreate?: boolean;
       autoThreshold?: number;
     };
+  };
+  model?: {
+    default?: string;
+    routing?: {
+      enabled?: boolean;
+      defaultProfile?: string;
+      overrides?: Record<string, string>;
+    };
+    keepAlive?: {
+      enabled?: boolean;
+      models?: string[];
+      timeout?: number;
+    };
+    cacheTTL?: number;
+  };
+  options?: {
+    temperature?: number;
+    maxTokens?: number;
+    topP?: number;
+    numCtx?: number;
+  };
+  memory?: {
+    enabled?: boolean;
+    tokenBudget?: number;
+    storagePath?: string;
+  };
+  templates?: {
+    directories?: string[];
+  };
+  project?: {
+    profile?: string;
+    autoDetect?: boolean;
   };
 }

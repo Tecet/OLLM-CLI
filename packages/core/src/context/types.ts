@@ -160,6 +160,10 @@ export interface ContextPool {
   getUsage(): ContextUsage;
   /** Update configuration */
   updateConfig(config: Partial<ContextPoolConfig>): void;
+  /** Set current token count */
+  setCurrentTokens(tokens: number): void;
+  /** Update VRAM information */
+  updateVRAMInfo(vramInfo: VRAMInfo): void;
 }
 
 // ============================================================================
@@ -226,6 +230,8 @@ export interface SnapshotConfig {
  * Snapshot manager interface
  */
 export interface SnapshotManager {
+  /** Set the current session ID */
+  setSessionId(sessionId: string): void;
   /** Create snapshot from current context */
   createSnapshot(context: ConversationContext): Promise<ContextSnapshot>;
   /** Restore context from snapshot */
@@ -238,6 +244,12 @@ export interface SnapshotManager {
   onContextThreshold(threshold: number, callback: () => void): void;
   /** Register pre-overflow callback */
   onBeforeOverflow(callback: () => void): void;
+  /** Check context usage and trigger callbacks */
+  checkThresholds(currentTokens: number, maxTokens: number): void;
+  /** Update configuration */
+  updateConfig(config: Partial<SnapshotConfig>): void;
+  /** Get current configuration */
+  getConfig(): SnapshotConfig;
   /** Cleanup old snapshots */
   cleanupOldSnapshots(maxCount: number): Promise<void>;
 }
@@ -328,7 +340,7 @@ export interface CompressionConfig {
 /**
  * Compression service interface
  */
-export interface CompressionService {
+export interface ICompressionService {
   /** Compress messages using specified strategy */
   compress(
     messages: Message[],
@@ -367,6 +379,16 @@ export interface MemoryThresholds {
 }
 
 /**
+ * Memory guard configuration
+ */
+export interface MemoryGuardConfig {
+  /** Safety buffer in bytes (default: 512MB) */
+  safetyBuffer: number;
+  /** Memory thresholds */
+  thresholds: MemoryThresholds;
+}
+
+/**
  * Memory guard interface
  */
 export interface MemoryGuard {
@@ -378,6 +400,16 @@ export interface MemoryGuard {
   onThreshold(level: MemoryLevel, callback: () => void): void;
   /** Execute emergency actions */
   executeEmergencyActions(): Promise<void>;
+  /** Set services for memory guard */
+  setServices(services: { compression: ICompressionService; snapshot: SnapshotManager }): void;
+  /** Set context for memory guard */
+  setContext(context: ConversationContext): void;
+  /** Check current memory level */
+  checkMemoryLevel(): MemoryLevel;
+  /** Update configuration */
+  updateConfig(config: Partial<MemoryGuardConfig>): void;
+  /** Register event listener */
+  on(event: string, callback: (data: any) => void): void;
 }
 
 // ============================================================================
@@ -517,4 +549,8 @@ export interface ContextManager {
   compress(): Promise<void>;
   /** Clear context (except system prompt) */
   clear(): Promise<void>;
+  /** Set system prompt */
+  setSystemPrompt(prompt: string): void;
+  /** Register event listener */
+  on(event: string, callback: (data: any) => void): void;
 }

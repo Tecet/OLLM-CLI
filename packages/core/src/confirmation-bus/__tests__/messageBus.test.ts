@@ -1289,7 +1289,7 @@ describe('Property 41: Message Bus Concurrent Requests', () => {
             if (i !== actualCancelIndex) {
               expect(results[i].status).toBe('fulfilled');
               if (results[i].status === 'fulfilled') {
-                expect(results[i].value).toBe(true);
+                expect((results[i] as PromiseFulfilledResult<boolean>).value).toBe(true);
               }
             }
           }
@@ -1351,7 +1351,7 @@ describe('Property 41: Message Bus Concurrent Requests', () => {
             if (i !== actualTimeoutIndex) {
               expect(results[i].status).toBe('fulfilled');
               if (results[i].status === 'fulfilled') {
-                expect(results[i].value).toBe(true);
+                expect((results[i] as PromiseFulfilledResult<boolean>).value).toBe(true);
               }
             }
           }
@@ -1547,7 +1547,7 @@ describe('Property 41: Message Bus Concurrent Requests', () => {
             if (i !== actualAbortIndex) {
               expect(results[i].status).toBe('fulfilled');
               if (results[i].status === 'fulfilled') {
-                expect(results[i].value).toBe(true);
+                expect((results[i] as PromiseFulfilledResult<boolean>).value).toBe(true);
               }
             }
           }

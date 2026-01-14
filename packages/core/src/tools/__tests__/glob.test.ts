@@ -8,7 +8,7 @@ import { promises as fs } from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { GlobTool, GlobInvocation } from '../glob.js';
-import { MockMessageBus, createMockAbortSignal } from './test-helpers.js';
+import { MockMessageBus, createMockAbortSignal, createToolContext } from './test-helpers.js';
 
 /**
  * Test fixture for file operations
@@ -157,7 +157,7 @@ describe('Glob Tool', () => {
               // Execute glob
               const invocation = tool.createInvocation(
                 { pattern, directory: testFixture.getTempDir() },
-                messageBus
+                createToolContext(messageBus)
               );
               const result = await invocation.execute(createMockAbortSignal());
 
@@ -223,7 +223,7 @@ describe('Glob Tool', () => {
 
       const invocation = tool.createInvocation(
         { pattern: '**/*', directory: fixture.getTempDir() },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -246,7 +246,7 @@ describe('Glob Tool', () => {
 
       const invocation = tool.createInvocation(
         { pattern: 'src/**/*.ts', directory: fixture.getTempDir() },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -273,7 +273,7 @@ describe('Glob Tool', () => {
 
       const invocation = tool.createInvocation(
         { pattern: 'file?.ts', directory: fixture.getTempDir() },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -298,7 +298,7 @@ describe('Glob Tool', () => {
 
       const invocation = tool.createInvocation(
         { pattern: '**/*.py', directory: fixture.getTempDir() },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -313,7 +313,7 @@ describe('Glob Tool', () => {
 
       const invocation = tool.createInvocation(
         { pattern: 'exact.ts', directory: fixture.getTempDir() },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -358,7 +358,7 @@ describe('Glob Tool', () => {
                   directory: testFixture.getTempDir(),
                   maxResults 
                 },
-                messageBus
+                createToolContext(messageBus)
               );
               const result = await invocation.execute(createMockAbortSignal());
 
@@ -401,7 +401,7 @@ describe('Glob Tool', () => {
 
       const invocation = tool.createInvocation(
         { pattern: '**/*.ts', directory: fixture.getTempDir() },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -429,7 +429,7 @@ describe('Glob Tool', () => {
           directory: fixture.getTempDir(),
           maxResults: 100 
         },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -456,7 +456,7 @@ describe('Glob Tool', () => {
           directory: fixture.getTempDir(),
           maxResults: 1 
         },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -482,7 +482,7 @@ describe('Glob Tool', () => {
           directory: fixture.getTempDir(),
           maxResults: 0 
         },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -542,7 +542,7 @@ describe('Glob Tool', () => {
                   directory: testFixture.getTempDir(),
                   includeHidden: false 
                 },
-                messageBus
+                createToolContext(messageBus)
               );
               const result = await invocation.execute(createMockAbortSignal());
 
@@ -629,7 +629,7 @@ describe('Glob Tool', () => {
                   directory: testFixture.getTempDir(),
                   includeHidden: true 
                 },
-                messageBus
+                createToolContext(messageBus)
               );
               const result = await invocation.execute(createMockAbortSignal());
 
@@ -667,7 +667,7 @@ describe('Glob Tool', () => {
 
       const invocation = tool.createInvocation(
         { pattern: '**/*.ts', directory: fixture.getTempDir() },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -696,7 +696,7 @@ describe('Glob Tool', () => {
           directory: fixture.getTempDir(),
           includeHidden: false 
         },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -725,7 +725,7 @@ describe('Glob Tool', () => {
           directory: fixture.getTempDir(),
           includeHidden: true 
         },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -746,7 +746,7 @@ describe('Glob Tool', () => {
     it('should provide correct description', () => {
       const invocation = tool.createInvocation(
         { pattern: '**/*.ts' },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const description = invocation.getDescription();
@@ -757,7 +757,7 @@ describe('Glob Tool', () => {
     it('should return correct tool locations', () => {
       const invocation = tool.createInvocation(
         { pattern: '**/*.ts', directory: '/test/dir' },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const locations = invocation.toolLocations();
@@ -767,7 +767,7 @@ describe('Glob Tool', () => {
     it('should default to current directory when no directory specified', () => {
       const invocation = tool.createInvocation(
         { pattern: '**/*.ts' },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const locations = invocation.toolLocations();
@@ -777,7 +777,7 @@ describe('Glob Tool', () => {
     it('should not require confirmation', async () => {
       const invocation = tool.createInvocation(
         { pattern: '**/*.ts' },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const confirmation = await invocation.shouldConfirmExecute(

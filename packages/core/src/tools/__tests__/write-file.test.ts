@@ -8,7 +8,7 @@ import { promises as fs } from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { WriteFileTool, WriteFileInvocation } from '../write-file.js';
-import { MockMessageBus, createMockAbortSignal } from './test-helpers.js';
+import { MockMessageBus, createMockAbortSignal, createToolContext } from './test-helpers.js';
 
 /**
  * Test fixture for file operations
@@ -89,7 +89,7 @@ describe('Write File Tool', () => {
             // Try to write to it without overwrite flag
             const invocation = tool.createInvocation(
               { path: filePath, content: newContent },
-              messageBus
+              createToolContext(messageBus)
             );
             const result = await invocation.execute(createMockAbortSignal());
 
@@ -116,7 +116,7 @@ describe('Write File Tool', () => {
 
       const invocation = tool.createInvocation(
         { path: filePath, content: 'new content' },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -144,7 +144,7 @@ describe('Write File Tool', () => {
             // Write to it with overwrite=true
             const invocation = tool.createInvocation(
               { path: filePath, content: newContent, overwrite: true },
-              messageBus
+              createToolContext(messageBus)
             );
             const result = await invocation.execute(createMockAbortSignal());
 
@@ -170,7 +170,7 @@ describe('Write File Tool', () => {
 
       const invocation = tool.createInvocation(
         { path: filePath, content: '', overwrite: true },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -187,7 +187,7 @@ describe('Write File Tool', () => {
 
       const invocation = tool.createInvocation(
         { path: filePath, content: newContent, overwrite: true },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -216,7 +216,7 @@ describe('Write File Tool', () => {
             // Write to the nested path
             const invocation = tool.createInvocation(
               { path: nestedPath, content },
-              messageBus
+              createToolContext(messageBus)
             );
             const result = await invocation.execute(createMockAbortSignal());
 
@@ -263,7 +263,7 @@ describe('Write File Tool', () => {
 
       const invocation = tool.createInvocation(
         { path: deepPath, content: 'deep content' },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -282,7 +282,7 @@ describe('Write File Tool', () => {
 
       const invocation = tool.createInvocation(
         { path: filePath, content: 'content' },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -311,7 +311,7 @@ describe('Write File Tool', () => {
 
             const invocation = tool.createInvocation(
               { path: filePath, content },
-              messageBus
+              createToolContext(messageBus)
             );
             const result = await invocation.execute(createMockAbortSignal());
 
@@ -334,7 +334,7 @@ describe('Write File Tool', () => {
 
       const invocation = tool.createInvocation(
         { path: filePath, content: '' },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -350,7 +350,7 @@ describe('Write File Tool', () => {
 
       const invocation = tool.createInvocation(
         { path: filePath, content: largeContent },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -370,7 +370,7 @@ describe('Write File Tool', () => {
 
       const invocation = tool.createInvocation(
         { path: filePath, content: 'content' },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(controller.signal);
 
@@ -384,7 +384,7 @@ describe('Write File Tool', () => {
 
       const invocation = tool.createInvocation(
         { path: dirPath, content: 'content' },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -398,7 +398,7 @@ describe('Write File Tool', () => {
       const filePath = fixture.getFilePath('test.txt');
       const invocation = tool.createInvocation(
         { path: filePath, content: 'content' },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const description = invocation.getDescription();
@@ -410,7 +410,7 @@ describe('Write File Tool', () => {
       const filePath = fixture.getFilePath('test.txt');
       const invocation = tool.createInvocation(
         { path: filePath, content: 'content' },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const locations = invocation.toolLocations();
@@ -421,7 +421,7 @@ describe('Write File Tool', () => {
       const filePath = fixture.getFilePath('test.txt');
       const invocation = tool.createInvocation(
         { path: filePath, content: 'content' },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const confirmation = await invocation.shouldConfirmExecute(

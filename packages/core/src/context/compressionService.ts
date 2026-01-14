@@ -7,7 +7,7 @@
 
 import type {
   Message,
-  CompressionService as ICompressionService,
+  ICompressionService,
   CompressionStrategy,
   CompressedContext,
   CompressionEstimate,

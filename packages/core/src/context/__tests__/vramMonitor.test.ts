@@ -92,7 +92,7 @@ describe('VRAMMonitor', () => {
 
         await fc.assert(
           fc.asyncProperty(
-            fc.double({ min: 0.9, max: 0.99 }), // Very high threshold to ensure low memory condition
+            fc.double({ min: 0.9, max: 0.99 }).filter(n => !Number.isNaN(n)), // Very high threshold to ensure low memory condition, filter out NaN
             async (threshold) => {
               mockDetector.setGPUType(GPUType.CPU_ONLY);
               monitor.clearCache();

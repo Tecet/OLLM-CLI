@@ -8,7 +8,7 @@ import { promises as fs } from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { GrepTool } from '../grep.js';
-import { MockMessageBus, createMockAbortSignal } from './test-helpers.js';
+import { MockMessageBus, createMockAbortSignal, createToolContext } from './test-helpers.js';
 
 /**
  * Test fixture for file operations
@@ -132,7 +132,7 @@ describe('Grep Tool', () => {
               // Execute grep
               const invocation = tool.createInvocation(
                 { pattern: searchTerm, directory: testFixture.getTempDir() },
-                messageBus
+                createToolContext(messageBus)
               );
               const result = await invocation.execute(createMockAbortSignal());
 
@@ -174,7 +174,7 @@ describe('Grep Tool', () => {
 
       const invocation = tool.createInvocation(
         { pattern: 'hello', directory: fixture.getTempDir() },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -197,7 +197,7 @@ describe('Grep Tool', () => {
 
       const invocation = tool.createInvocation(
         { pattern: 'test\\d+', directory: fixture.getTempDir() },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -217,7 +217,7 @@ describe('Grep Tool', () => {
 
       const invocation = tool.createInvocation(
         { pattern: 'xyz', directory: fixture.getTempDir() },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -235,7 +235,7 @@ describe('Grep Tool', () => {
 
       const invocation = tool.createInvocation(
         { pattern: 'Hello', directory: fixture.getTempDir(), caseSensitive: true },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -255,7 +255,7 @@ describe('Grep Tool', () => {
 
       const invocation = tool.createInvocation(
         { pattern: 'Hello', directory: fixture.getTempDir(), caseSensitive: false },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -273,7 +273,7 @@ describe('Grep Tool', () => {
 
       const invocation = tool.createInvocation(
         { pattern: 'HELLO', directory: fixture.getTempDir() },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -300,7 +300,7 @@ describe('Grep Tool', () => {
           directory: fixture.getTempDir(),
           filePattern: '**/*.ts'
         },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -321,7 +321,7 @@ describe('Grep Tool', () => {
 
       const invocation = tool.createInvocation(
         { pattern: 'match', directory: fixture.getTempDir() },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -346,7 +346,7 @@ describe('Grep Tool', () => {
           directory: fixture.getTempDir(),
           filePattern: 'src/**/*.ts'
         },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -367,7 +367,7 @@ describe('Grep Tool', () => {
 
       const invocation = tool.createInvocation(
         { pattern: 'match', directory: fixture.getTempDir(), maxResults: 3 },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -383,7 +383,7 @@ describe('Grep Tool', () => {
     it('should provide correct description', () => {
       const invocation = tool.createInvocation(
         { pattern: 'test' },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const description = invocation.getDescription();
@@ -394,7 +394,7 @@ describe('Grep Tool', () => {
     it('should return correct tool locations', () => {
       const invocation = tool.createInvocation(
         { pattern: 'test', directory: '/test/dir' },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const locations = invocation.toolLocations();
@@ -404,7 +404,7 @@ describe('Grep Tool', () => {
     it('should default to current directory when no directory specified', () => {
       const invocation = tool.createInvocation(
         { pattern: 'test' },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const locations = invocation.toolLocations();
@@ -414,7 +414,7 @@ describe('Grep Tool', () => {
     it('should not require confirmation', async () => {
       const invocation = tool.createInvocation(
         { pattern: 'test' },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const confirmation = await invocation.shouldConfirmExecute(

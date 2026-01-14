@@ -1,8 +1,12 @@
 {
-  "name": "@ollm/core",
+  "name": "@ollm/ollm-cli-core",
   "version": "0.1.0",
   "type": "module",
   "main": "./dist/index.js",
+  "exports": {
+    ".": "./dist/index.js",
+    "./*": "./dist/*"
+  },
   "dependencies": {
     "fdir": "^6.5.0",
     "glob": "^13.0.0",

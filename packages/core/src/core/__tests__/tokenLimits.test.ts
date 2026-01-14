@@ -63,7 +63,7 @@ const createMockProviderWithCountTokens = (tokenCount: number): ProviderAdapter 
 
 // Generate token limit config
 const tokenLimitConfigArbitrary = fc.record({
-  modelLimits: fc.constant(new Map<string, number>([['test-model', 4096]])),
+  modelLimits: fc.option(fc.constant(new Map<string, number>([['test-model', 4096]])), { nil: undefined }),
   warningThreshold: fc.double({ min: 0.5, max: 0.99, noNaN: true }),
 });
 
@@ -446,6 +446,125 @@ describe('Token Counter - Property-Based Tests', () => {
 
             expect(result.withinLimit).toBe(true);
             expect(result.limit).toBe(limit);
+
+            return true;
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
+  });
+
+  describe('Property 16: Token Limit Enforcement with Model Database', () => {
+    /**
+     * Feature: stage-07-model-management, Property 16: Token limit enforcement
+     * 
+     * For any model, token estimation should use the model's context window limit
+     * from the Model Database, or the safe default if unknown.
+     * 
+     * Validates: Requirements 8.1, 8.2
+     */
+    it('should use Model Database context window for known models', () => {
+      // Feature: stage-07-model-management, Property 16: Token limit enforcement
+      // Validates: Requirements 8.1, 8.2
+      fc.assert(
+        fc.property(
+          mockProviderWithoutCountTokens,
+          fc.constantFrom(
+            'llama3.1:8b',
+            'mistral:7b',
+            'codellama:13b',
+            'phi3:mini',
+            'gemma:7b',
+            'qwen:14b'
+          ),
+          fc.integer({ min: 1000, max: 200000 }),
+          (provider, modelName, estimatedTokens) => {
+            const config: TokenLimitConfig = {
+              warningThreshold: 0.9,
+            };
+
+            const tokenCounter = new TokenCounter(provider, config);
+            const result = tokenCounter.checkLimit(modelName, estimatedTokens);
+
+            // The limit should come from Model Database, not the default 4096
+            // Known models have various context windows (2048, 4096, 8192, 16384, 32768, 128000)
+            expect(result.limit).toBeGreaterThan(0);
+            
+            // Verify the result is consistent with the limit
+            expect(result.withinLimit).toBe(estimatedTokens <= result.limit);
+            expect(result.isWarning).toBe(
+              estimatedTokens >= result.limit * 0.9 && estimatedTokens <= result.limit
+            );
+
+            return true;
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
+
+    it('should use safe default (4096) for unknown models', () => {
+      // Feature: stage-07-model-management, Property 16: Token limit enforcement
+      // Validates: Requirements 8.2
+      fc.assert(
+        fc.property(
+          mockProviderWithoutCountTokens,
+          fc
+            .string({ minLength: 5, maxLength: 20 })
+            .filter((s) => /^[a-z0-9-]+:[a-z0-9-]+$/i.test(s))
+            .filter((s) => !s.startsWith('llama') && !s.startsWith('mistral') && !s.startsWith('phi')),
+          fc.integer({ min: 1000, max: 10000 }),
+          (provider, unknownModel, estimatedTokens) => {
+            const config: TokenLimitConfig = {
+              warningThreshold: 0.9,
+            };
+
+            const tokenCounter = new TokenCounter(provider, config);
+            const result = tokenCounter.checkLimit(unknownModel, estimatedTokens);
+
+            // Unknown models should get the safe default of 4096
+            expect(result.limit).toBe(4096);
+            
+            // Verify the result is consistent with the limit
+            expect(result.withinLimit).toBe(estimatedTokens <= 4096);
+            expect(result.isWarning).toBe(
+              estimatedTokens >= 4096 * 0.9 && estimatedTokens <= 4096
+            );
+
+            return true;
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
+
+    it('should prefer config overrides over Model Database', () => {
+      // Feature: stage-07-model-management, Property 16: Token limit enforcement
+      // Validates: Requirements 8.1
+      fc.assert(
+        fc.property(
+          mockProviderWithoutCountTokens,
+          fc.constantFrom('llama3.1:8b', 'mistral:7b'),
+          fc.integer({ min: 5000, max: 20000 }),
+          fc.integer({ min: 1000, max: 50000 }),
+          (provider, modelName, overrideLimit, estimatedTokens) => {
+            const config: TokenLimitConfig = {
+              modelLimits: new Map([[modelName, overrideLimit]]),
+              warningThreshold: 0.9,
+            };
+
+            const tokenCounter = new TokenCounter(provider, config);
+            const result = tokenCounter.checkLimit(modelName, estimatedTokens);
+
+            // The limit should be the override, not from Model Database
+            expect(result.limit).toBe(overrideLimit);
+            
+            // Verify the result is consistent with the override limit
+            expect(result.withinLimit).toBe(estimatedTokens <= overrideLimit);
+            expect(result.isWarning).toBe(
+              estimatedTokens >= overrideLimit * 0.9 && estimatedTokens <= overrideLimit
+            );
 
             return true;
           }

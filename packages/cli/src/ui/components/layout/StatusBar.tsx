@@ -31,6 +31,8 @@ export interface StatusBarProps {
   gpu: GPUInfo | null;
   reviews: number;
   cost: number;
+  loadedModels?: string[];
+  projectProfile?: string;
   theme: {
     text: {
       primary: string;
@@ -82,6 +84,8 @@ export function StatusBar({
   gpu,
   reviews,
   cost,
+  loadedModels = [],
+  projectProfile,
   theme,
 }: StatusBarProps) {
   const connectionIndicator = getConnectionIndicator(connection.status);
@@ -102,10 +106,30 @@ export function StatusBar({
         </Text>
         <Text color={theme.text.secondary}>│</Text>
         <Text color={theme.text.accent}>{model}</Text>
+        
+        {/* Project Profile */}
+        {projectProfile && (
+          <>
+            <Text color={theme.text.secondary}>│</Text>
+            <Text color={theme.status.info}>
+              {projectProfile}
+            </Text>
+          </>
+        )}
       </Box>
 
       {/* Right side: Metrics */}
       <Box flexDirection="row" gap={1}>
+        {/* Loaded Models */}
+        {loadedModels.length > 0 && (
+          <>
+            <Text color={theme.status.success}>
+              {loadedModels.length} loaded
+            </Text>
+            <Text color={theme.text.secondary}>│</Text>
+          </>
+        )}
+
         {/* Token usage */}
         <Text color={theme.text.secondary}>
           {tokens.current}/{tokens.max}

@@ -86,7 +86,7 @@ export type {
   ReadManyFilesParams,
   WriteFileParams,
   EditFileParams,
-  FileEdit,
+  // FileEdit, // Commented out - not yet implemented
   GlobParams,
   GrepParams,
   LsParams,
@@ -106,6 +106,10 @@ export {
   ContextManager,
   EnvironmentSanitizationService,
   FileDiscoveryService,
+  MemoryService,
+  TemplateService,
+  ComparisonService,
+  ProjectProfileService,
 } from './services/index.js';
 
 // Context Management System

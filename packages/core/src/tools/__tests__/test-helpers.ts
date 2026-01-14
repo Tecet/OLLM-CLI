@@ -2,7 +2,7 @@
  * Test helpers and utilities for tool testing
  */
 
-import type { MessageBus, ToolCallConfirmationDetails } from '../types.js';
+import type { MessageBus, ToolCallConfirmationDetails, ToolContext } from '../types.js';
 
 /**
  * Mock message bus for testing
@@ -159,4 +159,12 @@ export async function assertRejects(
       }
     }
   }
+}
+
+/**
+ * Create a ToolContext from a MessageBus for testing
+ * This helper wraps a MessageBus in the ToolContext object structure
+ */
+export function createToolContext(messageBus: MessageBus): ToolContext {
+  return { messageBus };
 }

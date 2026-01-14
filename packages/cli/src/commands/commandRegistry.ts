@@ -1,7 +1,12 @@
 import type { Command, CommandResult } from './types.js';
+import type { ServiceContainer } from '@ollm/ollm-cli-core/services/serviceContainer.js';
 import { homeCommand } from './homeCommand.js';
 import { sessionCommands } from './sessionCommands.js';
-import { modelCommands } from './modelCommands.js';
+import { modelCommands, createModelCommands } from './modelCommands.js';
+import { memoryCommands, createMemoryCommands } from './memoryCommands.js';
+import { templateCommands, createTemplateCommands } from './templateCommands.js';
+import { comparisonCommands, createComparisonCommands } from './comparisonCommands.js';
+import { projectCommands, createProjectCommands } from './projectCommands.js';
 import { providerCommands } from './providerCommands.js';
 import { gitCommands } from './gitCommands.js';
 import { reviewCommands } from './reviewCommands.js';
@@ -20,8 +25,11 @@ import { utilityCommands } from './utilityCommands.js';
 export class CommandRegistry {
   private commands: Map<string, Command> = new Map();
   private aliases: Map<string, string> = new Map();
+  private serviceContainer?: ServiceContainer;
 
-  constructor() {
+  constructor(serviceContainer?: ServiceContainer) {
+    this.serviceContainer = serviceContainer;
+    
     // Register built-in commands
     this.register(homeCommand);
     
@@ -30,9 +38,32 @@ export class CommandRegistry {
       this.register(command);
     }
     
-    // Register model commands
-    for (const command of modelCommands) {
-      this.register(command);
+    // Register service-dependent commands
+    // If service container is provided, use factory functions
+    // Otherwise, use default exports (which work without services)
+    if (serviceContainer) {
+      this.registerServiceCommands(serviceContainer);
+    } else {
+      // Register default commands (backwards compatible)
+      for (const command of modelCommands) {
+        this.register(command);
+      }
+      
+      for (const command of memoryCommands) {
+        this.register(command);
+      }
+      
+      for (const command of templateCommands) {
+        this.register(command);
+      }
+      
+      for (const command of comparisonCommands) {
+        this.register(command);
+      }
+      
+      for (const command of projectCommands) {
+        this.register(command);
+      }
     }
     
     // Register provider commands
@@ -79,6 +110,53 @@ export class CommandRegistry {
     for (const command of utilityCommands) {
       this.register(command);
     }
+  }
+  
+  /**
+   * Register service-dependent commands
+   */
+  private registerServiceCommands(serviceContainer: ServiceContainer): void {
+    // Register model commands
+    for (const command of createModelCommands(serviceContainer)) {
+      this.register(command);
+    }
+    
+    // Register memory commands
+    for (const command of createMemoryCommands(serviceContainer)) {
+      this.register(command);
+    }
+    
+    // Register template commands
+    for (const command of createTemplateCommands(serviceContainer)) {
+      this.register(command);
+    }
+    
+    // Register comparison commands
+    for (const command of createComparisonCommands(serviceContainer)) {
+      this.register(command);
+    }
+    
+    // Register project commands
+    for (const command of createProjectCommands(serviceContainer)) {
+      this.register(command);
+    }
+  }
+  
+  /**
+   * Set the service container
+   * This allows updating the service container after construction
+   */
+  setServiceContainer(serviceContainer: ServiceContainer): void {
+    this.serviceContainer = serviceContainer;
+    
+    // Clear existing service-dependent commands
+    const serviceCommands = ['/model', '/memory', '/template', '/compare', '/project'];
+    for (const cmd of serviceCommands) {
+      this.commands.delete(cmd);
+    }
+    
+    // Register new commands with updated service container
+    this.registerServiceCommands(serviceContainer);
   }
 
   /**

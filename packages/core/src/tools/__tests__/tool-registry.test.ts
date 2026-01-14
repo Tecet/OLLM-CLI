@@ -8,7 +8,7 @@ import { ToolRegistry } from '../tool-registry.js';
 import type {
   DeclarativeTool,
   ToolInvocation,
-  MessageBus,
+  ToolContext,
 } from '../types.js';
 
 /**
@@ -30,7 +30,7 @@ function createMockTool(
         properties: {},
       },
     },
-    createInvocation: (params: any, messageBus: MessageBus) => {
+    createInvocation: (params: any, context: ToolContext) => {
       return {
         params,
         getDescription: () => `Mock invocation of ${name}`,

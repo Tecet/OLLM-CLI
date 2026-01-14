@@ -23,7 +23,7 @@ Complete reference for all slash commands available in OLLM CLI interactive mode
 | Upload | `/upload` `/uploads list/show/delete/clear` |
 | Navigation | `/home` `/help` `/exit` |
 
-**Total: ~55 commands** across all categories.
+**Total: ~70 commands** across all categories.
 
 ---
 
@@ -60,8 +60,10 @@ Complete reference for all slash commands available in OLLM CLI interactive mode
 | `/model list` | List available models |
 | `/model use <name>` | Switch to model |
 | `/model pull <name>` | Download model |
-| `/model rm <name>` | Remove model |
+| `/model delete <name>` | Remove model |
 | `/model info <name>` | Show model details |
+| `/model keep <name>` | Keep model loaded in memory |
+| `/model unload <name>` | Unload model from memory |
 
 ### 🔌 Provider Management
 
@@ -133,6 +135,28 @@ Complete reference for all slash commands available in OLLM CLI interactive mode
 | `/memory forget <key>` | Remove a specific memory |
 | `/memory clear` | Clear all memories |
 | `/memory search <query>` | Search memories |
+
+### 📝 Templates
+
+| Command | Description |
+|---------|-------------|
+| `/template list` | Show available templates |
+| `/template use <name> [vars...]` | Use a template with variables |
+| `/template create <name>` | Create new template |
+
+### 🔄 Model Comparison
+
+| Command | Description |
+|---------|-------------|
+| `/compare "<prompt>" <model1> <model2> [model3]` | Compare model outputs |
+
+### 📦 Project Profiles
+
+| Command | Description |
+|---------|-------------|
+| `/project detect` | Auto-detect project type |
+| `/project use <profile>` | Select project profile |
+| `/project init` | Initialize project config |
 
 ### 📎 File Upload
 
@@ -410,18 +434,82 @@ Model llama3.2:3b ready.
 
 ---
 
-### `/model rm <name>`
+### `/model delete <name>`
 
 Remove a model from local storage.
 
 ```
-/model rm codellama:7b
+/model delete codellama:7b
 ```
 
 **Behavior**:
 - Deletes the model files from disk
-- Cannot remove the currently active model
+- Automatically unloads the model if currently loaded
+- Cannot remove the currently active model (switch first)
 - Prompts for confirmation
+- Frees up disk space
+
+**Example output**:
+```
+Delete codellama:7b? This will free 3.8 GB. [y/N] y
+Unloading model...
+Deleting model files...
+Model codellama:7b removed successfully.
+```
+
+---
+
+### `/model keep <name>`
+
+Keep a model loaded in memory for faster response times.
+
+```
+/model keep llama3.1:8b
+```
+
+**Behavior**:
+- Sends periodic keep-alive requests to prevent unloading
+- Reduces latency for subsequent requests
+- Model stays in VRAM until manually unloaded or timeout
+- Useful for frequently-used models
+
+**Example output**:
+```
+Keeping llama3.1:8b loaded in memory.
+Model will remain loaded until manually unloaded or idle timeout.
+```
+
+**Configuration**:
+```yaml
+model:
+  keepAlive:
+    enabled: true
+    models:
+      - llama3.1:8b
+    timeout: 300  # seconds
+```
+
+---
+
+### `/model unload <name>`
+
+Unload a model from memory.
+
+```
+/model unload llama3.1:8b
+```
+
+**Behavior**:
+- Removes model from VRAM
+- Frees GPU memory for other models
+- Model files remain on disk
+- Next use will require reload time
+
+**Example output**:
+```
+Unloading llama3.1:8b from memory...
+Model unloaded. 4.7 GB VRAM freed.
+```
 
 ---
 
@@ -907,9 +995,348 @@ Preview a theme without saving.
 
 ---
 
-## Memory Commands
+---
 
-Commands for managing cross-session memory.
+## Template Commands
+
+Commands for managing and using prompt templates.
+
+### `/template list`
+
+Show all available templates.
+
+```
+/template list
+```
+
+**Example output**:
+```
+Available Templates:
+  
+  User Templates (~/.ollm/templates/):
+    code_review       Review code for quality and security
+    bug_report        Generate detailed bug report
+    commit_message    Create semantic commit message
+  
+  Workspace Templates (.ollm/templates/):
+    api_design        Design REST API endpoints
+    test_plan         Create test plan for feature
+```
+
+**Behavior**:
+- Lists templates from both user and workspace directories
+- Workspace templates override user templates with same name
+- Shows template name and description
+
+---
+
+### `/template use <name> [vars...]`
+
+Use a template with variable substitution.
+
+```
+/template use code_review language=TypeScript focus="security"
+```
+
+**Behavior**:
+- Loads the specified template
+- Substitutes provided variables
+- Prompts for required variables if missing
+- Uses default values for optional variables
+- Executes the resulting prompt
+
+**Variable Syntax**:
+- `{variable_name}` - Required variable
+- `{variable_name:default_value}` - Optional with default
+
+**Example template** (`code_review.yaml`):
+```yaml
+name: code_review
+description: Review code for quality and security
+template: "Review this {language} code for {focus:bugs and security}:\n\n{code}"
+variables:
+  - name: language
+    required: true
+    description: Programming language
+  - name: focus
+    required: false
+    default: "bugs and security"
+    description: Review focus areas
+  - name: code
+    required: true
+    description: Code to review
+```
+
+**Usage examples**:
+```
+# Provide all variables inline
+/template use code_review language=Python code="def hello(): print('hi')"
+
+# Prompt for missing required variables
+/template use code_review language=TypeScript
+# System will prompt: "Enter value for 'code':"
+
+# Use default values
+/template use code_review language=Rust code="fn main() {}"
+# Uses default focus: "bugs and security"
+```
+
+---
+
+### `/template create <name>`
+
+Create a new template interactively.
+
+```
+/template create my_template
+```
+
+**Behavior**:
+- Prompts for template details:
+  - Description
+  - Template text with variables
+  - Variable definitions (name, required, default, description)
+- Saves to user templates directory (`~/.ollm/templates/`)
+- Validates template syntax
+- Makes template immediately available
+
+**Example interaction**:
+```
+/template create api_endpoint
+
+Description: Design a REST API endpoint
+Template text: Design a {method} endpoint for {resource} that {action}
+Add variable 'method' (required/optional/done): required
+Add variable 'resource' (required/optional/done): required  
+Add variable 'action' (required/optional/done): required
+Add variable (required/optional/done): done
+
+Template 'api_endpoint' created successfully.
+```
+
+---
+
+## Comparison Commands
+
+Commands for comparing model outputs side-by-side.
+
+### `/compare "<prompt>" <model1> <model2> [model3]`
+
+Run the same prompt through multiple models for comparison.
+
+```
+/compare "Explain async/await in JavaScript" llama3.1:8b mistral:7b codellama:7b
+```
+
+**Behavior**:
+- Executes prompt on all specified models in parallel
+- Collects responses, token counts, and performance metrics
+- Displays results side-by-side in ComparisonView
+- Handles individual model failures gracefully
+- Shows tokens/second, latency, and total tokens for each
+
+**Example output**:
+```
+┌─ Comparison Results ───────────────────────────────────────────────────────┐
+│                                                                            │
+│  Prompt: "Explain async/await in JavaScript"                              │
+│                                                                            │
+│  ┌─ llama3.1:8b ──────────────┐  ┌─ mistral:7b ───────────────┐         │
+│  │ Async/await is syntactic   │  │ Async/await provides a     │         │
+│  │ sugar for promises that... │  │ cleaner way to handle...   │         │
+│  │                            │  │                            │         │
+│  │ ⚡ 42.3 t/s                │  │ ⚡ 38.1 t/s                │         │
+│  │ 📊 156 tokens              │  │ 📊 142 tokens              │         │
+│  │ ⏱️ 3.7s                    │  │ ⏱️ 3.9s                    │         │
+│  └────────────────────────────┘  └────────────────────────────┘         │
+│                                                                            │
+│  ┌─ codellama:7b ─────────────┐                                          │
+│  │ In JavaScript, async/await │                                          │
+│  │ allows you to write...     │                                          │
+│  │                            │                                          │
+│  │ ⚡ 35.2 t/s                │                                          │
+│  │ 📊 168 tokens              │                                          │
+│  │ ⏱️ 4.8s                    │                                          │
+│  └────────────────────────────┘                                          │
+│                                                                            │
+│  Select preferred response: [1] llama3.1:8b  [2] mistral:7b  [3] codellama│
+└────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Use cases**:
+- Evaluate model quality for specific tasks
+- Compare response styles and accuracy
+- Benchmark performance across models
+- Choose best model for a use case
+
+**Cancellation**:
+- Press `Ctrl+C` to cancel comparison
+- Partial results shown for completed models
+
+---
+
+## Project Profile Commands
+
+Commands for managing project-specific configuration.
+
+### `/project detect`
+
+Auto-detect the current project type.
+
+```
+/project detect
+```
+
+**Behavior**:
+- Scans workspace for characteristic files
+- Identifies project type (TypeScript, Python, Rust, Go, etc.)
+- Shows detected profile and recommended settings
+- Does not apply settings automatically
+
+**Detection rules**:
+- **TypeScript**: `package.json` with TypeScript dependency
+- **Python**: `requirements.txt`, `pyproject.toml`, or `setup.py`
+- **Rust**: `Cargo.toml`
+- **Go**: `go.mod`
+- **Documentation**: `README.md`, `docs/` directory
+
+**Example output**:
+```
+Detected project type: TypeScript
+
+Recommended profile: typescript
+  Model: deepseek-coder:6.7b
+  Routing: code profile
+  Tools: file operations, shell, git
+  System prompt: Code-focused with TypeScript best practices
+
+Apply this profile? [y/N]
+```
+
+---
+
+### `/project use <profile>`
+
+Select and apply a project profile.
+
+```
+/project use typescript
+```
+
+**Behavior**:
+- Applies profile settings to current session
+- Overrides global configuration
+- Updates model, system prompt, and tool availability
+- Settings persist for workspace
+
+**Built-in profiles**:
+- `typescript` - Code-optimized for TypeScript projects
+- `python` - Code-optimized for Python projects
+- `rust` - Code-optimized for Rust projects
+- `go` - Code-optimized for Go projects
+- `documentation` - Writing-optimized for docs
+
+**Example output**:
+```
+Applied profile: typescript
+  Model: deepseek-coder:6.7b
+  Routing: code profile
+  System prompt updated
+  Enabled tools: file, shell, git, search
+```
+
+**Profile settings** (`.ollm/project.yaml`):
+```yaml
+profile: typescript
+model: deepseek-coder:6.7b
+routing:
+  defaultProfile: code
+systemPrompt: |
+  You are a TypeScript expert. Focus on:
+  - Type safety and strict mode
+  - Modern ES2022+ features
+  - Async/await over promises
+  - Functional programming patterns
+tools:
+  enabled:
+    - file
+    - shell
+    - git
+    - search
+options:
+  temperature: 0.3
+  maxTokens: 4096
+```
+
+---
+
+### `/project init`
+
+Initialize project configuration file.
+
+```
+/project init
+```
+
+**Behavior**:
+- Creates `.ollm/project.yaml` in workspace root
+- Prompts for profile selection
+- Writes configuration with profile settings
+- Allows customization of settings
+
+**Example interaction**:
+```
+/project init
+
+Select project profile:
+  [1] typescript - TypeScript/JavaScript projects
+  [2] python - Python projects
+  [3] rust - Rust projects
+  [4] go - Go projects
+  [5] documentation - Documentation writing
+  [6] custom - Start from scratch
+
+Choice: 1
+
+Created .ollm/project.yaml with typescript profile.
+You can customize settings by editing the file.
+```
+
+**Generated file** (`.ollm/project.yaml`):
+```yaml
+# OLLM Project Configuration
+# This file configures OLLM behavior for this workspace
+
+profile: typescript
+
+# Model selection
+model: deepseek-coder:6.7b
+
+# Routing profile for automatic model selection
+routing:
+  defaultProfile: code
+
+# System prompt customization
+systemPrompt: |
+  You are a TypeScript expert assistant.
+
+# Tool availability
+tools:
+  enabled:
+    - file
+    - shell
+    - git
+    - search
+
+# Generation options
+options:
+  temperature: 0.3
+  maxTokens: 4096
+```
+
+---
+
+## Memory Commands (Detailed)
 
 ### `/memory list`
 

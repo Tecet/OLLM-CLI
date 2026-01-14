@@ -8,7 +8,7 @@ import { promises as fs } from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { EditFileTool, EditFileInvocation } from '../edit-file.js';
-import { MockMessageBus, createMockAbortSignal } from './test-helpers.js';
+import { MockMessageBus, createMockAbortSignal, createToolContext } from './test-helpers.js';
 
 /**
  * Test fixture for file operations
@@ -112,7 +112,7 @@ describe('Edit File Tool', () => {
                 path: filePath,
                 edits: [{ target, replacement }],
               },
-              messageBus
+              createToolContext(messageBus)
             );
             const result = await invocation.execute(createMockAbortSignal());
 
@@ -142,7 +142,7 @@ describe('Edit File Tool', () => {
           path: filePath,
           edits: [{ target: 'UNIQUE_TARGET', replacement: 'REPLACED' }],
         },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -166,7 +166,7 @@ describe('Edit File Tool', () => {
             { target: 'CCC', replacement: 'C3' },
           ],
         },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -204,7 +204,7 @@ describe('Edit File Tool', () => {
                 path: filePath,
                 edits: [{ target, replacement }],
               },
-              messageBus
+              createToolContext(messageBus)
             );
             const result = await invocation.execute(createMockAbortSignal());
 
@@ -235,7 +235,7 @@ describe('Edit File Tool', () => {
           path: filePath,
           edits: [{ target: 'DOES_NOT_EXIST', replacement: 'NEW' }],
         },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -261,7 +261,7 @@ describe('Edit File Tool', () => {
             { target: 'CCC', replacement: 'C3' },
           ],
         },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -303,7 +303,7 @@ describe('Edit File Tool', () => {
                 path: filePath,
                 edits: [{ target, replacement }],
               },
-              messageBus
+              createToolContext(messageBus)
             );
             const result = await invocation.execute(createMockAbortSignal());
 
@@ -336,7 +336,7 @@ describe('Edit File Tool', () => {
           path: filePath,
           edits: [{ target: 'DUPLICATE', replacement: 'NEW' }],
         },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -359,7 +359,7 @@ describe('Edit File Tool', () => {
           path: filePath,
           edits: [{ target: 'function test()', replacement: 'function newTest()' }],
         },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -379,7 +379,7 @@ describe('Edit File Tool', () => {
           path: filePath,
           edits: [{ target: 'const x = 10;', replacement: 'const x = 100;' }],
         },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -398,7 +398,7 @@ describe('Edit File Tool', () => {
           path: filePath,
           edits: [{ target: 'Line 2\nLine 3', replacement: 'New Line' }],
         },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -417,7 +417,7 @@ describe('Edit File Tool', () => {
           path: filePath,
           edits: [{ target: 'DELETE_ME', replacement: '' }],
         },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -436,7 +436,7 @@ describe('Edit File Tool', () => {
           path: filePath,
           edits: [{ target: '  indented line  ', replacement: 'no indent' }],
         },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -456,7 +456,7 @@ describe('Edit File Tool', () => {
           path: nonExistentPath,
           edits: [{ target: 'old', replacement: 'new' }],
         },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -476,7 +476,7 @@ describe('Edit File Tool', () => {
           path: filePath,
           edits: [{ target: 'Line 1', replacement: 'New Line' }],
         },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(controller.signal);
 
@@ -500,7 +500,7 @@ describe('Edit File Tool', () => {
             { target: 'BBB', replacement: 'B2' },
           ],
         },
-        messageBus
+        createToolContext(messageBus)
       );
 
       // Abort immediately
@@ -521,7 +521,7 @@ describe('Edit File Tool', () => {
           path: filePath,
           edits: [{ target: 'old', replacement: 'new' }],
         },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const description = invocation.getDescription();
@@ -541,7 +541,7 @@ describe('Edit File Tool', () => {
             { target: 'old3', replacement: 'new3' },
           ],
         },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const description = invocation.getDescription();
@@ -557,7 +557,7 @@ describe('Edit File Tool', () => {
           path: filePath,
           edits: [{ target: 'old', replacement: 'new' }],
         },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const locations = invocation.toolLocations();
@@ -571,7 +571,7 @@ describe('Edit File Tool', () => {
           path: filePath,
           edits: [{ target: 'old', replacement: 'new' }],
         },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const confirmation = await invocation.shouldConfirmExecute(

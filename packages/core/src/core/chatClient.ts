@@ -13,6 +13,7 @@ import type { ContextManager as ServicesContextManager } from '../services/conte
 import type { ContextManager as ContextMgmtManager } from '../context/types.js';
 import type { SessionMessage, SessionToolCall, ServicesConfig } from '../services/types.js';
 import { mergeServicesConfig, getLoopDetectionConfig } from '../services/config.js';
+import { ModelDatabase, modelDatabase } from '../routing/modelDatabase.js';
 
 /**
  * Configuration for the chat client.
@@ -26,7 +27,8 @@ export interface ChatConfig {
   contextManager?: ServicesContextManager;
   contextMgmtManager?: ContextMgmtManager;
   servicesConfig?: Partial<ServicesConfig>;
-  tokenLimit?: number; // Token limit for the model (used for compression threshold)
+  tokenLimit?: number; // Token limit override (if not specified, uses Model Database)
+  modelDatabase?: ModelDatabase; // Model Database instance (optional, uses singleton by default)
 }
 
 /**
@@ -52,6 +54,7 @@ export class ChatClient {
   private contextManager?: ServicesContextManager;
   private contextMgmtManager?: ContextMgmtManager;
   private servicesConfig: Required<ServicesConfig>;
+  private modelDatabase: ModelDatabase;
 
   constructor(
     private providerRegistry: ProviderRegistry,
@@ -63,6 +66,7 @@ export class ChatClient {
     this.contextManager = config.contextManager;
     this.contextMgmtManager = config.contextMgmtManager;
     this.servicesConfig = mergeServicesConfig(config.servicesConfig);
+    this.modelDatabase = config.modelDatabase ?? modelDatabase;
     
     // Initialize loop detection service only if explicitly provided
     // (not auto-created from config to avoid interfering with existing tests)
@@ -184,22 +188,27 @@ export class ChatClient {
         }
       }
 
-      // Check compression threshold before each turn (Requirement 3.1)
+      // Check compression threshold before each turn (Requirement 3.1, 8.1, 8.2, 8.3)
       if (this.compressionService && this.servicesConfig.compression.enabled) {
         try {
-          const tokenLimit = this.config.tokenLimit ?? 4096; // Default to 4096 if not specified
-          const threshold = this.servicesConfig.compression.threshold;
+          // Get model name for token limit lookup
+          const model = options?.model ?? this.config.defaultModel ?? 'unknown';
+          
+          // Query Model Database for context window limit (Requirement 8.1, 8.2)
+          // Config override takes precedence if specified
+          const tokenLimit = this.config.tokenLimit ?? this.modelDatabase.getContextWindow(model);
+          const threshold = this.servicesConfig.compression.threshold ?? 0.8;
           
           // Convert messages to SessionMessage format for compression check
           const sessionMessages = messages.map(msg => this.messageToSessionMessage(msg));
           
           if (this.compressionService.shouldCompress(sessionMessages, tokenLimit, threshold)) {
-            // Trigger compression
+            // Trigger compression (Requirement 8.3)
             const compressionResult = await this.compressionService.compress(
               sessionMessages,
               {
-                strategy: this.servicesConfig.compression.strategy,
-                preserveRecentTokens: this.servicesConfig.compression.preserveRecent,
+                strategy: this.servicesConfig.compression.strategy ?? 'hybrid',
+                preserveRecentTokens: this.servicesConfig.compression.preserveRecent ?? 1000,
                 targetTokens: Math.floor(tokenLimit * 0.7), // Target 70% of limit after compression
               }
             );

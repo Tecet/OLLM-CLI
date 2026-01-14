@@ -52,3 +52,49 @@ export {
   MetricsCollector,
   type ProviderMetadata,
 } from './metricsCollector.js';
+
+// Export model management service
+export {
+  ModelManagementService,
+  type ExtendedModelInfo,
+  type ModelCapabilities,
+  type ModelStatus,
+  type ProgressEvent,
+  type ProgressCallback,
+  type ModelManagementServiceConfig,
+} from './modelManagementService.js';
+
+// Export memory service
+export {
+  MemoryService,
+  type MemoryEntry,
+  type MemoryCategory,
+  type MemorySource,
+  type RememberOptions,
+  type MemoryServiceConfig,
+} from './memoryService.js';
+
+// Export template service
+export {
+  TemplateService,
+  type Template,
+  type TemplateInfo,
+  type VariableDefinition,
+  type TemplateServiceConfig,
+} from './templateService.js';
+
+// Export comparison service
+export {
+  ComparisonService,
+  type ComparisonResult,
+  type ModelResult,
+  type ComparisonServiceConfig,
+} from './comparisonService.js';
+
+// Export project profile service
+export {
+  ProjectProfileService,
+  type ProjectProfile,
+  type BuiltInProfile,
+  type ProjectProfileServiceConfig,
+} from './projectProfileService.js';

@@ -5,6 +5,7 @@
  * API keys, secrets, and credentials from leaking to the LLM or logs.
  */
 
+// @ts-ignore - picomatch doesn't have type definitions
 import picomatch from 'picomatch';
 import type { SanitizationConfig } from './types.js';
 import { sanitizeErrorMessage } from './errorSanitization.js';
@@ -47,7 +48,7 @@ const DEFAULT_DENY_PATTERNS = [
 export class EnvironmentSanitizationService {
   private allowList: Set<string>;
   private denyPatterns: string[];
-  private denyMatcher: (value: string) => boolean;
+  private denyMatcher: (value: string) => boolean = () => false;
 
   constructor(config?: SanitizationConfig) {
     // Initialize with defaults

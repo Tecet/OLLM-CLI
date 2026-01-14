@@ -16,7 +16,7 @@ import type {
   ContextPool,
   SnapshotStorage,
   SnapshotManager,
-  CompressionService,
+  ICompressionService,
   MemoryGuard
 } from '../types.js';
 
@@ -195,7 +195,7 @@ describe('ContextManager', () => {
     it('should use configured quantization type', () => {
       fc.assert(
         fc.property(
-          fc.constantFrom('f16', 'q8_0', 'q4_0'),
+          fc.constantFrom('f16' as const, 'q8_0' as const, 'q4_0' as const),
           (kvQuantization) => {
             const config: Partial<ContextConfig> = {
               kvQuantization,

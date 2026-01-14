@@ -190,7 +190,7 @@ describe('CompressionService', () => {
           fc.array(
             fc.record({
               id: fc.uuid(),
-              role: fc.constantFrom('user', 'assistant', 'tool'),
+              role: fc.constantFrom('user' as const, 'assistant' as const, 'tool' as const),
               content: fc.string({ minLength: 10, maxLength: 200 }),
               timestamp: fc.date(),
             }),
@@ -243,7 +243,7 @@ describe('CompressionService', () => {
           fc.array(
             fc.record({
               id: fc.uuid(),
-              role: fc.constantFrom('user', 'assistant', 'system'),
+              role: fc.constantFrom('user' as const, 'assistant' as const, 'system' as const),
               content: fc.string({ minLength: 10, maxLength: 200 }),
               timestamp: fc.date(),
             }),
@@ -286,7 +286,7 @@ describe('CompressionService', () => {
           fc.array(
             fc.record({
               id: fc.uuid(),
-              role: fc.constantFrom('user', 'assistant'),
+              role: fc.constantFrom('user' as const, 'assistant' as const),
               content: fc.string({ minLength: 10, maxLength: 100 }),
               timestamp: fc.date(),
             }),
@@ -330,7 +330,7 @@ describe('CompressionService', () => {
           fc.array(
             fc.record({
               id: fc.uuid(),
-              role: fc.constantFrom('user', 'assistant', 'system'),
+              role: fc.constantFrom('user' as const, 'assistant' as const, 'system' as const),
               content: fc.string({ minLength: 50, maxLength: 200 }), // Increased min to avoid edge case
               timestamp: fc.date(),
             }),
@@ -374,7 +374,7 @@ describe('CompressionService', () => {
           fc.array(
             fc.record({
               id: fc.uuid(),
-              role: fc.constantFrom('user', 'assistant', 'system'),
+              role: fc.constantFrom('user' as const, 'assistant' as const, 'system' as const),
               content: fc.string({ minLength: 10, maxLength: 200 }),
               timestamp: fc.date(),
             }),

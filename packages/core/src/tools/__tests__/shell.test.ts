@@ -7,7 +7,7 @@ import fc from 'fast-check';
 import { ShellTool, ShellInvocation } from '../shell.js';
 import { ShellExecutionService } from '../../services/shellExecutionService.js';
 import { EnvironmentSanitizationService } from '../../services/environmentSanitization.js';
-import type { MessageBus, ToolResult } from '../types.js';
+import type { MessageBus, ToolResult, ToolContext } from '../types.js';
 
 /**
  * Create a mock message bus for testing
@@ -18,6 +18,13 @@ function createMockMessageBus(): MessageBus {
     respondToConfirmation: () => {},
     cancelRequest: () => {},
   } as MessageBus;
+}
+
+/**
+ * Create a ToolContext from a MessageBus for testing
+ */
+function createToolContext(messageBus: MessageBus): ToolContext {
+  return { messageBus };
 }
 
 describe('Shell Tool', () => {
@@ -48,7 +55,7 @@ describe('Shell Tool', () => {
           async (command) => {
             const invocation = shellTool.createInvocation(
               { command },
-              messageBus
+              createToolContext(messageBus)
             );
 
             const abortController = new AbortController();
@@ -80,7 +87,7 @@ describe('Shell Tool', () => {
       const command = process.platform === 'win32' ? 'cmd /c "echo test"' : 'echo test';
       const invocation = shellTool.createInvocation(
         { command },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const abortController = new AbortController();
@@ -98,7 +105,7 @@ describe('Shell Tool', () => {
           async (exitCode) => {
             const invocation = shellTool.createInvocation(
               { command: `exit ${exitCode}` },
-              messageBus
+              createToolContext(messageBus)
             );
 
             const abortController = new AbortController();
@@ -129,7 +136,7 @@ describe('Shell Tool', () => {
 
             const invocation = shellTool.createInvocation(
               { command },
-              messageBus
+              createToolContext(messageBus)
             );
 
             const abortController = new AbortController();
@@ -158,7 +165,7 @@ describe('Shell Tool', () => {
           command: process.platform === 'win32' ? 'cd' : 'pwd',
           cwd: process.cwd(),
         },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const abortController = new AbortController();
@@ -180,7 +187,7 @@ describe('Shell Tool', () => {
 
       const invocation = shellTool.createInvocation(
         { command },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const abortController = new AbortController();
@@ -198,7 +205,7 @@ describe('Shell Tool', () => {
 
       const invocation = shellTool.createInvocation(
         { command },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const abortController = new AbortController();
@@ -219,7 +226,7 @@ describe('Shell Tool', () => {
           async (command) => {
             const invocation = shellTool.createInvocation(
               { command },
-              messageBus
+              createToolContext(messageBus)
             );
 
             const abortController = new AbortController();
@@ -246,7 +253,7 @@ describe('Shell Tool', () => {
     it('should provide a description of the command', () => {
       const invocation = shellTool.createInvocation(
         { command: 'echo "test"' },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const description = invocation.getDescription();
@@ -258,7 +265,7 @@ describe('Shell Tool', () => {
     it('should return tool locations based on cwd', () => {
       const invocation = shellTool.createInvocation(
         { command: 'echo "test"', cwd: '/some/path' },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const locations = invocation.toolLocations();
@@ -270,7 +277,7 @@ describe('Shell Tool', () => {
     it('should return empty locations when no cwd specified', () => {
       const invocation = shellTool.createInvocation(
         { command: 'echo "test"' },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const locations = invocation.toolLocations();
@@ -282,7 +289,7 @@ describe('Shell Tool', () => {
     it('should not require confirmation by default', async () => {
       const invocation = shellTool.createInvocation(
         { command: 'echo "test"' },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const abortController = new AbortController();
@@ -313,7 +320,7 @@ describe('Shell Tool', () => {
             
             const invocation = shellTool.createInvocation(
               { command },
-              messageBus
+              createToolContext(messageBus)
             );
 
             const abortController = new AbortController();
@@ -362,7 +369,7 @@ describe('Shell Tool', () => {
       
       const invocation = shellTool.createInvocation(
         { command, timeout: 5000 },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const abortController = new AbortController();
@@ -394,7 +401,7 @@ describe('Shell Tool', () => {
       
       const invocation = shellTool.createInvocation(
         { command },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const abortController = new AbortController();
@@ -428,7 +435,7 @@ describe('Shell Tool', () => {
           async (command) => {
             const invocation = shellTool.createInvocation(
               { command },
-              messageBus
+              createToolContext(messageBus)
             );
 
             const abortController = new AbortController();
@@ -459,7 +466,7 @@ describe('Shell Tool', () => {
       
       const invocation = shellTool.createInvocation(
         { command },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const abortController = new AbortController();
@@ -490,7 +497,7 @@ describe('Shell Tool', () => {
       
       const invocation = shellTool.createInvocation(
         { command },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const abortController = new AbortController();
@@ -528,7 +535,7 @@ describe('Shell Tool', () => {
 
             const invocation = shellTool.createInvocation(
               { command, timeout: timeoutMs },
-              messageBus
+              createToolContext(messageBus)
             );
 
             const abortController = new AbortController();
@@ -567,7 +574,7 @@ describe('Shell Tool', () => {
 
             const invocation = shellTool.createInvocation(
               { command, timeout: timeoutMs },
-              messageBus
+              createToolContext(messageBus)
             );
 
             const abortController = new AbortController();
@@ -596,7 +603,7 @@ describe('Shell Tool', () => {
 
       const invocation = shellTool.createInvocation(
         { command, timeout: timeoutMs },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const abortController = new AbortController();
@@ -621,7 +628,7 @@ describe('Shell Tool', () => {
 
       const invocation = shellTool.createInvocation(
         { command, timeout: timeoutMs },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const abortController = new AbortController();
@@ -647,7 +654,7 @@ describe('Shell Tool', () => {
 
       const invocation = shellTool.createInvocation(
         { command, timeout: timeoutMs },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const abortController = new AbortController();
@@ -681,7 +688,7 @@ describe('Shell Tool', () => {
       for (let i = 0; i < iterations; i++) {
         const invocation = shellTool.createInvocation(
           { command, timeout: timeoutMs },
-          messageBus
+          createToolContext(messageBus)
         );
 
         const abortController = new AbortController();
@@ -723,7 +730,7 @@ describe('Shell Tool', () => {
 
             const invocation = shellTool.createInvocation(
               { command, cwd: workingDir },
-              messageBus
+              createToolContext(messageBus)
             );
 
             const abortController = new AbortController();
@@ -764,7 +771,7 @@ describe('Shell Tool', () => {
 
             const invocation = shellTool.createInvocation(
               { command, cwd: dir },
-              messageBus
+              createToolContext(messageBus)
             );
 
             const abortController = new AbortController();
@@ -799,7 +806,7 @@ describe('Shell Tool', () => {
 
             const invocation = shellTool.createInvocation(
               { command, cwd: nonExistentDir },
-              messageBus
+              createToolContext(messageBus)
             );
 
             const abortController = new AbortController();
@@ -828,7 +835,7 @@ describe('Shell Tool', () => {
 
       const invocation = shellTool.createInvocation(
         { command, cwd: workingDir },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const abortController = new AbortController();
@@ -857,7 +864,7 @@ describe('Shell Tool', () => {
 
             const invocation = shellTool.createInvocation(
               { command, cwd: workingDir },
-              messageBus
+              createToolContext(messageBus)
             );
 
             const abortController = new AbortController();
@@ -888,7 +895,7 @@ describe('Shell Tool', () => {
 
       const invocation = shellTool.createInvocation(
         { command, cwd: workingDir },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const abortController = new AbortController();
@@ -907,7 +914,7 @@ describe('Shell Tool', () => {
       // Create invocation without cwd parameter
       const invocation = shellTool.createInvocation(
         { command },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const abortController = new AbortController();
@@ -935,7 +942,7 @@ describe('Shell Tool', () => {
 
       const invocation = shellTool.createInvocation(
         { command, cwd: workingDir },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const abortController = new AbortController();
@@ -1005,7 +1012,7 @@ describe('Shell Tool', () => {
           timeout: 30000,  // Long overall timeout
           idleTimeout: 500  // Short idle timeout
         },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const abortController = new AbortController();
@@ -1037,7 +1044,7 @@ describe('Shell Tool', () => {
           timeout: 10000,
           idleTimeout: 2000  // Idle timeout longer than gaps between output
         },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const abortController = new AbortController();
@@ -1063,7 +1070,7 @@ describe('Shell Tool', () => {
           timeout: 30000,
           idleTimeout: 500
         },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const abortController = new AbortController();
@@ -1096,7 +1103,7 @@ describe('Shell Tool', () => {
           background: true,
           timeout: 1000  // Short timeout to verify we return immediately
         },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const abortController = new AbortController();
@@ -1125,7 +1132,7 @@ describe('Shell Tool', () => {
 
       const invocation = shellTool.createInvocation(
         { command, background: true, timeout: 1000 },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const abortController = new AbortController();
@@ -1141,7 +1148,7 @@ describe('Shell Tool', () => {
       
       const invocation = shellTool.createInvocation(
         { command: 'sleep 10', background: true },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const description = invocation.getDescription();
@@ -1166,7 +1173,7 @@ describe('Shell Tool', () => {
         
         const invocation = shellTool.createInvocation(
           { command: `echo ${envVarSyntax}`, timeout: 5000 },
-          messageBus
+          createToolContext(messageBus)
         );
 
         const abortController = new AbortController();
@@ -1202,7 +1209,7 @@ describe('Shell Tool', () => {
         
         const invocation = shellTool.createInvocation(
           { command: `echo ${envVarSyntax}`, timeout: 5000 },
-          messageBus
+          createToolContext(messageBus)
         );
 
         const abortController = new AbortController();
@@ -1238,7 +1245,7 @@ describe('Shell Tool', () => {
         
         const invocation = shellTool.createInvocation(
           { command: `echo ${envVarSyntax}`, timeout: 5000 },
-          messageBus
+          createToolContext(messageBus)
         );
 
         const abortController = new AbortController();
@@ -1274,7 +1281,7 @@ describe('Shell Tool', () => {
         
         const invocation = shellTool.createInvocation(
           { command: `echo ${envVarSyntax}`, timeout: 5000 },
-          messageBus
+          createToolContext(messageBus)
         );
 
         const abortController = new AbortController();
@@ -1305,7 +1312,7 @@ describe('Shell Tool', () => {
       
       const invocation = shellTool.createInvocation(
         { command: `echo ${envVarSyntax}`, timeout: 5000 },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const abortController = new AbortController();
@@ -1337,7 +1344,7 @@ describe('Shell Tool', () => {
         
         const invocation = shellTool.createInvocation(
           { command: `echo ${envVarSyntax}`, timeout: 5000 },
-          messageBus
+          createToolContext(messageBus)
         );
 
         const abortController = new AbortController();

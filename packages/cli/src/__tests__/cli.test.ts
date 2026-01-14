@@ -8,7 +8,7 @@ import { execSync } from 'child_process';
 import fc from 'fast-check';
 import { createTestMessage, TEST_UTILS_VERSION } from '@ollm/test-utils';
 
-const CLI_PATH = 'dist/cli.js';
+const CLI_PATH = 'packages/cli/dist/cli.js';
 
 /**
  * Cross-package import verification

@@ -14,7 +14,7 @@ import {
   SearchProvider,
   SearchResult,
 } from '../web-search.js';
-import type { MessageBus } from '../types.js';
+import type { MessageBus, ToolContext } from '../types.js';
 
 /**
  * Create a mock message bus for testing
@@ -23,6 +23,13 @@ function createMockMessageBus(): MessageBus {
   return {
     requestConfirmation: async () => true,
   } as MessageBus;
+}
+
+/**
+ * Create a ToolContext from a MessageBus for testing
+ */
+function createToolContext(messageBus: MessageBus): ToolContext {
+  return { messageBus };
 }
 
 /**
@@ -114,7 +121,7 @@ describe('Web Search Tool', () => {
 
             const invocation = webSearchTool.createInvocation(
               { query, numResults },
-              messageBus
+              createToolContext(messageBus)
             );
 
             const abortController = new AbortController();
@@ -168,7 +175,7 @@ describe('Web Search Tool', () => {
 
             const invocation = webSearchTool.createInvocation(
               { query, numResults },
-              messageBus
+              createToolContext(messageBus)
             );
 
             const abortController = new AbortController();
@@ -216,7 +223,7 @@ describe('Web Search Tool', () => {
 
             const invocation = webSearchTool.createInvocation(
               { query, numResults },
-              messageBus
+              createToolContext(messageBus)
             );
 
             const abortController = new AbortController();
@@ -262,7 +269,7 @@ describe('Web Search Tool', () => {
             // Don't specify numResults
             const invocation = webSearchTool.createInvocation(
               { query },
-              messageBus
+              createToolContext(messageBus)
             );
 
             const abortController = new AbortController();
@@ -297,7 +304,7 @@ describe('Web Search Tool', () => {
 
             const invocation = webSearchTool.createInvocation(
               { query, numResults: 1 },
-              messageBus
+              createToolContext(messageBus)
             );
 
             const abortController = new AbortController();
@@ -327,7 +334,7 @@ describe('Web Search Tool', () => {
 
       const invocation = webSearchTool.createInvocation(
         { query: 'test query' },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const description = invocation.getDescription();
@@ -342,7 +349,7 @@ describe('Web Search Tool', () => {
 
       const invocation = webSearchTool.createInvocation(
         { query: 'test query' },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const locations = invocation.toolLocations();
@@ -357,7 +364,7 @@ describe('Web Search Tool', () => {
 
       const invocation = webSearchTool.createInvocation(
         { query: 'test query' },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const abortController = new AbortController();
@@ -381,7 +388,7 @@ describe('Web Search Tool', () => {
 
       const invocation = webSearchTool.createInvocation(
         { query: 'test', numResults: 10 },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const abortController = new AbortController();
@@ -401,7 +408,7 @@ describe('Web Search Tool', () => {
 
       const invocation = webSearchTool.createInvocation(
         { query: 'nonexistent query', numResults: 10 },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const abortController = new AbortController();
@@ -419,7 +426,7 @@ describe('Web Search Tool', () => {
 
       const invocation = webSearchTool.createInvocation(
         { query: '' },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const abortController = new AbortController();
@@ -436,7 +443,7 @@ describe('Web Search Tool', () => {
 
       const invocation = webSearchTool.createInvocation(
         { query: '   ' },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const abortController = new AbortController();
@@ -452,7 +459,7 @@ describe('Web Search Tool', () => {
 
       const invocation = webSearchTool.createInvocation(
         { query: 'test', numResults: 0 },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const abortController = new AbortController();
@@ -482,7 +489,7 @@ describe('Web Search Tool', () => {
 
       const invocation = webSearchTool.createInvocation(
         { query: 'test query' },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const abortController = new AbortController();
@@ -506,7 +513,7 @@ describe('Web Search Tool', () => {
 
       const invocation = webSearchTool.createInvocation(
         { query: 'test query' },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const abortController = new AbortController();
@@ -528,7 +535,7 @@ describe('Web Search Tool', () => {
 
       const invocation = webSearchTool.createInvocation(
         { query: 'test query' },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const abortController = new AbortController();
@@ -550,7 +557,7 @@ describe('Web Search Tool', () => {
 
       const invocation = webSearchTool.createInvocation(
         { query: 'test query' },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const abortController = new AbortController();
@@ -572,7 +579,7 @@ describe('Web Search Tool', () => {
 
       const invocation = webSearchTool.createInvocation(
         { query: 'test query' },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const abortController = new AbortController();
@@ -595,7 +602,7 @@ describe('Web Search Tool', () => {
 
       const invocation = webSearchTool.createInvocation(
         { query: 'test query' },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const abortController = new AbortController();
@@ -615,7 +622,7 @@ describe('Web Search Tool', () => {
 
       const invocation = webSearchTool.createInvocation(
         { query: 'test query' },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const result = await invocation.execute(abortController.signal);

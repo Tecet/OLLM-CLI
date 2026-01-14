@@ -15,19 +15,10 @@ import type {
   VRAMMonitor,
   ContextPool,
   SnapshotManager,
-  CompressionService,
-  ConversationContext
+  ICompressionService,
+  ConversationContext,
+  MemoryGuardConfig
 } from './types.js';
-
-/**
- * Memory Guard configuration
- */
-export interface MemoryGuardConfig {
-  /** Safety buffer in bytes (default: 512MB) */
-  safetyBuffer: number;
-  /** Memory thresholds */
-  thresholds: MemoryThresholds;
-}
 
 /**
  * Default memory guard configuration
@@ -54,7 +45,7 @@ export class MemoryGuardImpl extends EventEmitter implements MemoryGuard {
   private vramMonitor: VRAMMonitor;
   private contextPool: ContextPool;
   private snapshotManager?: SnapshotManager;
-  private compressionService?: CompressionService;
+  private compressionService?: ICompressionService;
   private thresholdCallbacks: Map<MemoryLevel, Array<() => void>> = new Map();
   private currentContext?: ConversationContext;
 
@@ -78,12 +69,9 @@ export class MemoryGuardImpl extends EventEmitter implements MemoryGuard {
   /**
    * Set optional services for advanced memory management
    */
-  setServices(
-    snapshotManager?: SnapshotManager,
-    compressionService?: CompressionService
-  ): void {
-    this.snapshotManager = snapshotManager;
-    this.compressionService = compressionService;
+  setServices(services: { compression: ICompressionService; snapshot: SnapshotManager }): void {
+    this.snapshotManager = services.snapshot;
+    this.compressionService = services.compression;
   }
 
   /**
@@ -137,13 +125,19 @@ export class MemoryGuardImpl extends EventEmitter implements MemoryGuard {
   }
 
   /**
-   * Check current memory level and trigger appropriate actions
+   * Check current memory level and return it
    */
-  async checkMemoryLevel(): Promise<void> {
+  checkMemoryLevel(): MemoryLevel {
     const usage = this.contextPool.getUsage();
     const percentage = usage.percentage / 100; // Convert to 0-1 range
+    return this.determineMemoryLevel(percentage);
+  }
 
-    const level = this.determineMemoryLevel(percentage);
+  /**
+   * Check current memory level and trigger appropriate actions
+   */
+  async checkMemoryLevelAndAct(): Promise<void> {
+    const level = this.checkMemoryLevel();
 
     // Trigger callbacks for this level
     const callbacks = this.thresholdCallbacks.get(level);

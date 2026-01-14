@@ -13,7 +13,7 @@ import type {
   VRAMMonitor,
   ContextPool,
   SnapshotManager,
-  CompressionService,
+  ICompressionService,
   ConversationContext,
   VRAMInfo,
   ContextUsage
@@ -97,6 +97,10 @@ class MockContextPool implements ContextPool {
     this.currentTokens = tokens;
   }
 
+  updateVRAMInfo(): void {
+    // Mock implementation
+  }
+
   setMaxTokens(tokens: number): void {
     this.maxTokens = tokens;
   }
@@ -110,9 +114,13 @@ class MockSnapshotManager implements SnapshotManager {
   onContextThreshold = vi.fn();
   onBeforeOverflow = vi.fn();
   cleanupOldSnapshots = vi.fn();
+  setSessionId = vi.fn();
+  checkThresholds = vi.fn();
+  updateConfig = vi.fn();
+  getConfig = vi.fn();
 }
 
-class MockCompressionService implements CompressionService {
+class MockCompressionService implements ICompressionService {
   compress = vi.fn();
   estimateCompression = vi.fn();
   shouldCompress = vi.fn();
@@ -239,7 +247,7 @@ describe('MemoryGuard - Property Tests', () => {
           const compressionService = new MockCompressionService();
 
           const memoryGuard = new MemoryGuardImpl(vramMonitor, contextPool);
-          memoryGuard.setServices(snapshotManager, compressionService);
+          memoryGuard.setServices({ snapshot: snapshotManager, compression: compressionService });
 
           // Create mock context with random messages
           const messages = Array.from({ length: messageCount }, (_, i) => ({
@@ -313,7 +321,7 @@ describe('MemoryGuard - Unit Tests', () => {
     compressionService = new MockCompressionService();
 
     memoryGuard = new MemoryGuardImpl(vramMonitor, contextPool);
-    memoryGuard.setServices(snapshotManager, compressionService);
+    memoryGuard.setServices({ snapshot: snapshotManager, compression: compressionService });
   });
 
   describe('canAllocate', () => {
@@ -542,7 +550,7 @@ describe('MemoryGuard - Unit Tests', () => {
       contextPool.setCurrentTokens(8000);
       contextPool.setMaxTokens(10000);
 
-      await memoryGuard.checkMemoryLevel();
+      await memoryGuard.checkMemoryLevelAndAct();
 
       // Verify compression was triggered
       expect(compressionService.compress).toHaveBeenCalled();
@@ -554,7 +562,7 @@ describe('MemoryGuard - Unit Tests', () => {
 
       const resizeSpy = vi.spyOn(contextPool, 'resize');
 
-      await memoryGuard.checkMemoryLevel();
+      await memoryGuard.checkMemoryLevelAndAct();
 
       // Verify context was reduced
       expect(resizeSpy).toHaveBeenCalled();
@@ -596,10 +604,13 @@ describe('MemoryGuard - Unit Tests', () => {
         memoryGuard.on('emergency', () => resolve());
       });
 
-      await memoryGuard.checkMemoryLevel();
+      await memoryGuard.checkMemoryLevelAndAct();
 
-      // Wait for emergency event
-      await emergencyPromise;
+      // Wait for emergency event with timeout
+      await Promise.race([
+        emergencyPromise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 3000))
+      ]);
 
       // Verify emergency actions were executed
       expect(snapshotManager.createSnapshot).toHaveBeenCalled();

@@ -12,12 +12,13 @@
  */
 
 import { useState, useCallback, useEffect } from 'react';
-import { Box } from 'ink';
+import { Box, Text } from 'ink';
 import { UIProvider, useUI, TabType } from '../contexts/UIContext.js';
 import { ChatProvider, useChat } from '../contexts/ChatContext.js';
 import { GPUProvider, useGPU } from '../contexts/GPUContext.js';
 import { ReviewProvider, useReview } from '../contexts/ReviewContext.js';
 import { ContextManagerProvider } from '../contexts/ContextManagerContext.js';
+import { ServiceProvider } from '../contexts/ServiceContext.js';
 import { LaunchScreen } from './components/launch/LaunchScreen.js';
 import { TabBar } from './components/layout/TabBar.js';
 import { SidePanel } from './components/layout/SidePanel.js';
@@ -30,6 +31,7 @@ import { DocsTab } from './components/tabs/DocsTab.js';
 import { SettingsTab } from './components/tabs/SettingsTab.js';
 import { useGlobalKeyboardShortcuts } from './hooks/useKeyboardShortcuts.js';
 import { ErrorBoundary } from './components/ErrorBoundary.js';
+import { LocalProvider } from '@ollm/ollm-bridge/provider/localProvider.js';
 import type { Config } from '../config/types.js';
 
 interface AppContentProps {
@@ -221,25 +223,25 @@ function AppContent({ config }: AppContentProps) {
               {
                 id: 'context',
                 title: 'Context Files',
-                component: () => <Box><Box>Context files section</Box></Box>,
+                component: () => <Box><Text>Context files section</Text></Box>,
                 collapsed: false,
               },
               {
                 id: 'git',
                 title: 'Git Status',
-                component: () => <Box><Box>Git status section</Box></Box>,
+                component: () => <Box><Text>Git status section</Text></Box>,
                 collapsed: false,
               },
               {
                 id: 'reviews',
                 title: 'Pending Reviews',
-                component: () => <Box><Box>Reviews section</Box></Box>,
+                component: () => <Box><Text>Reviews section</Text></Box>,
                 collapsed: false,
               },
               {
                 id: 'tools',
                 title: 'Active Tools',
-                component: () => <Box><Box>Tools section</Box></Box>,
+                component: () => <Box><Text>Tools section</Text></Box>,
                 collapsed: false,
               },
             ]}
@@ -267,11 +269,11 @@ function AppContent({ config }: AppContentProps) {
           borderStyle="single"
           borderColor="yellow"
         >
-          <Box>Debug Mode: ON</Box>
-          <Box>Active Tab: {uiState.activeTab}</Box>
-          <Box>Side Panel: {uiState.sidePanelVisible ? 'Visible' : 'Hidden'}</Box>
-          <Box>GPU: {gpuInfo ? `${gpuInfo.vendor} - ${gpuInfo.temperature}°C` : 'N/A'}</Box>
-          <Box>Messages: {chatState.messages.length}</Box>
+          <Text>Debug Mode: ON</Text>
+          <Text>Active Tab: {uiState.activeTab}</Text>
+          <Text>Side Panel: {uiState.sidePanelVisible ? 'Visible' : 'Hidden'}</Text>
+          <Text>GPU: {gpuInfo ? `${gpuInfo.vendor} - ${gpuInfo.temperature}°C` : 'N/A'}</Text>
+          <Text>Messages: {chatState.messages.length}</Text>
         </Box>
       )}
 
@@ -282,8 +284,8 @@ function AppContent({ config }: AppContentProps) {
           borderStyle="single"
           borderColor={uiState.theme.text.accent}
         >
-          <Box>Command Palette (Coming Soon)</Box>
-          <Box>Press Ctrl+K to close</Box>
+          <Text>Command Palette (Coming Soon)</Text>
+          <Text>Press Ctrl+K to close</Text>
         </Box>
       )}
     </Box>
@@ -329,6 +331,33 @@ export function App({ config }: AppProps) {
     },
   } : undefined;
   
+  // Create provider adapter based on config
+  const provider = (() => {
+    const providerName = config.provider.default;
+    
+    if (providerName === 'ollama' || providerName === 'local') {
+      const ollamaConfig = config.provider.ollama || {
+        host: 'http://localhost:11434',
+        timeout: 30000,
+      };
+      
+      return new LocalProvider({
+        baseUrl: ollamaConfig.host,
+        timeout: ollamaConfig.timeout,
+      });
+    }
+    
+    // TODO: Add vLLM and OpenAI-compatible providers
+    // For now, default to Ollama
+    return new LocalProvider({
+      baseUrl: 'http://localhost:11434',
+      timeout: 30000,
+    });
+  })();
+  
+  // Get workspace path (if available)
+  const workspacePath = process.cwd();
+  
   return (
     <ErrorBoundary>
       <UIProvider 
@@ -338,19 +367,25 @@ export function App({ config }: AppProps) {
           pollingInterval={config.status?.pollInterval || 5000}
           autoStart={config.ui?.showGpuStats !== false}
         >
-          <ContextManagerProvider
-            sessionId={sessionId}
-            modelInfo={modelInfo}
-            config={contextConfig}
+          <ServiceProvider
+            provider={provider}
+            config={config}
+            workspacePath={workspacePath}
           >
-            <ChatProvider>
-              <ReviewProvider>
-                <ErrorBoundary>
-                  <AppContent config={config} />
-                </ErrorBoundary>
-              </ReviewProvider>
-            </ChatProvider>
-          </ContextManagerProvider>
+            <ContextManagerProvider
+              sessionId={sessionId}
+              modelInfo={modelInfo}
+              config={contextConfig}
+            >
+              <ChatProvider>
+                <ReviewProvider>
+                  <ErrorBoundary>
+                    <AppContent config={config} />
+                  </ErrorBoundary>
+                </ReviewProvider>
+              </ChatProvider>
+            </ContextManagerProvider>
+          </ServiceProvider>
         </GPUProvider>
       </UIProvider>
     </ErrorBoundary>

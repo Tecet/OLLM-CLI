@@ -109,12 +109,12 @@ const MANIFEST_SCHEMA = {
  * Manifest parser for extension system
  */
 export class ManifestParser {
-  private ajv: Ajv;
+  private ajv: InstanceType<typeof Ajv>;
   private validator: ValidateFunction;
   private errors: string[] = [];
 
   constructor() {
-    this.ajv = new Ajv({ allErrors: true, strict: false, strictSchema: false });
+    this.ajv = new Ajv({ allErrors: true, strictSchema: false });
     this.validator = this.ajv.compile(MANIFEST_SCHEMA);
   }
 
@@ -160,7 +160,7 @@ export class ManifestParser {
 
     if (!valid && this.validator.errors) {
       this.errors = this.validator.errors.map((error) => {
-        const path = error.instancePath || 'root';
+        const path = (error as any).instancePath || error.dataPath || 'root';
         const message = error.message || 'validation failed';
         return `${path}: ${message}`;
       });

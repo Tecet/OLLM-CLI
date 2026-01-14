@@ -77,6 +77,52 @@ export const servicesConfigSchema = z.object({
         .optional(),
     })
     .optional(),
+  model: z
+    .object({
+      default: z.string().optional(),
+      routing: z
+        .object({
+          enabled: z.boolean().optional(),
+          defaultProfile: z.string().optional(),
+          overrides: z.record(z.string()).optional(),
+        })
+        .optional(),
+      keepAlive: z
+        .object({
+          enabled: z.boolean().optional(),
+          models: z.array(z.string()).optional(),
+          timeout: z.number().int().positive().optional(),
+        })
+        .optional(),
+      cacheTTL: z.number().int().positive().optional(),
+    })
+    .optional(),
+  options: z
+    .object({
+      temperature: z.number().min(0).max(2).optional(),
+      maxTokens: z.number().int().positive().optional(),
+      topP: z.number().min(0).max(1).optional(),
+      numCtx: z.number().int().positive().optional(),
+    })
+    .optional(),
+  memory: z
+    .object({
+      enabled: z.boolean().optional(),
+      tokenBudget: z.number().int().positive().optional(),
+      storagePath: z.string().optional(),
+    })
+    .optional(),
+  templates: z
+    .object({
+      directories: z.array(z.string()).optional(),
+    })
+    .optional(),
+  project: z
+    .object({
+      profile: z.string().optional(),
+      autoDetect: z.boolean().optional(),
+    })
+    .optional(),
 });
 
 /**
@@ -137,6 +183,38 @@ export const DEFAULT_SERVICES_CONFIG: Required<ServicesConfig> = {
       autoThreshold: 0.8,
     },
   },
+  model: {
+    default: 'llama3.1:8b',
+    routing: {
+      enabled: true,
+      defaultProfile: 'general',
+      overrides: {},
+    },
+    keepAlive: {
+      enabled: true,
+      models: [],
+      timeout: 300, // 5 minutes
+    },
+    cacheTTL: 300000, // 5 minutes
+  },
+  options: {
+    temperature: 0.7,
+    maxTokens: 4096,
+    topP: 0.9,
+    numCtx: 8192,
+  },
+  memory: {
+    enabled: true,
+    tokenBudget: 500,
+    storagePath: '~/.ollm/memory.json',
+  },
+  templates: {
+    directories: ['~/.ollm/templates', '.ollm/templates'],
+  },
+  project: {
+    profile: undefined,
+    autoDetect: true,
+  },
 };
 
 /**
@@ -161,18 +239,19 @@ export function mergeServicesConfig(
     fileDiscovery: {
       ...DEFAULT_SERVICES_CONFIG.fileDiscovery,
       ...userConfig.fileDiscovery,
-      builtinIgnores: userConfig.fileDiscovery?.builtinIgnores
-        ? [...DEFAULT_SERVICES_CONFIG.fileDiscovery.builtinIgnores, ...userConfig.fileDiscovery.builtinIgnores]
-        : DEFAULT_SERVICES_CONFIG.fileDiscovery.builtinIgnores,
+      builtinIgnores: [
+        ...DEFAULT_SERVICES_CONFIG.fileDiscovery.builtinIgnores,
+        ...(userConfig.fileDiscovery?.builtinIgnores ?? [])
+      ],
     },
     environment: {
       ...DEFAULT_SERVICES_CONFIG.environment,
       ...userConfig.environment,
       allowList: userConfig.environment?.allowList
-        ? [...DEFAULT_SERVICES_CONFIG.environment.allowList, ...userConfig.environment.allowList]
+        ? [...DEFAULT_SERVICES_CONFIG.environment.allowList, ...(userConfig.environment.allowList ?? [])]
         : DEFAULT_SERVICES_CONFIG.environment.allowList,
       denyPatterns: userConfig.environment?.denyPatterns
-        ? [...DEFAULT_SERVICES_CONFIG.environment.denyPatterns, ...userConfig.environment.denyPatterns]
+        ? [...DEFAULT_SERVICES_CONFIG.environment.denyPatterns, ...(userConfig.environment.denyPatterns ?? [])]
         : DEFAULT_SERVICES_CONFIG.environment.denyPatterns,
     },
     contextManagement: {
@@ -186,6 +265,40 @@ export function mergeServicesConfig(
         ...DEFAULT_SERVICES_CONFIG.contextManagement.snapshots,
         ...userConfig.contextManagement?.snapshots,
       },
+    },
+    model: {
+      ...DEFAULT_SERVICES_CONFIG.model,
+      ...userConfig.model,
+      routing: {
+        ...DEFAULT_SERVICES_CONFIG.model.routing,
+        ...userConfig.model?.routing,
+        overrides: {
+          ...DEFAULT_SERVICES_CONFIG.model.routing.overrides,
+          ...userConfig.model?.routing?.overrides,
+        },
+      },
+      keepAlive: {
+        ...DEFAULT_SERVICES_CONFIG.model.keepAlive,
+        ...userConfig.model?.keepAlive,
+        models: userConfig.model?.keepAlive?.models ?? DEFAULT_SERVICES_CONFIG.model.keepAlive.models,
+      },
+    },
+    options: {
+      ...DEFAULT_SERVICES_CONFIG.options,
+      ...userConfig.options,
+    },
+    memory: {
+      ...DEFAULT_SERVICES_CONFIG.memory,
+      ...userConfig.memory,
+    },
+    templates: {
+      ...DEFAULT_SERVICES_CONFIG.templates,
+      ...userConfig.templates,
+      directories: userConfig.templates?.directories ?? DEFAULT_SERVICES_CONFIG.templates.directories,
+    },
+    project: {
+      ...DEFAULT_SERVICES_CONFIG.project,
+      ...userConfig.project,
     },
   };
 }
@@ -205,9 +318,9 @@ export function getLoopDetectionConfig(
   servicesConfig: Required<ServicesConfig>
 ): LoopDetectionConfig {
   return {
-    enabled: servicesConfig.loopDetection.enabled,
-    maxTurns: servicesConfig.loopDetection.maxTurns,
-    repeatThreshold: servicesConfig.loopDetection.repeatThreshold,
+    enabled: servicesConfig.loopDetection.enabled ?? true,
+    maxTurns: servicesConfig.loopDetection.maxTurns ?? 10,
+    repeatThreshold: servicesConfig.loopDetection.repeatThreshold ?? 3,
   };
 }
 
@@ -218,7 +331,172 @@ export function getSanitizationConfig(
   servicesConfig: Required<ServicesConfig>
 ): SanitizationConfig {
   return {
-    allowList: servicesConfig.environment.allowList,
-    denyPatterns: servicesConfig.environment.denyPatterns,
+    allowList: servicesConfig.environment.allowList ?? [],
+    denyPatterns: servicesConfig.environment.denyPatterns ?? [],
   };
+}
+
+/**
+ * Get model management configuration from services config
+ */
+export function getModelManagementConfig(
+  servicesConfig: Required<ServicesConfig>
+) {
+  return {
+    cacheTTL: servicesConfig.model.cacheTTL,
+    keepAliveEnabled: servicesConfig.model.keepAlive.enabled,
+    keepAliveTimeout: servicesConfig.model.keepAlive.timeout,
+    keepAliveModels: servicesConfig.model.keepAlive.models,
+  };
+}
+
+/**
+ * Get model router configuration from services config
+ */
+export function getModelRouterConfig(
+  servicesConfig: Required<ServicesConfig>
+) {
+  return {
+    overrides: servicesConfig.model.routing.overrides,
+  };
+}
+
+/**
+ * Get memory service configuration from services config
+ */
+export function getMemoryServiceConfig(
+  servicesConfig: Required<ServicesConfig>
+) {
+  return {
+    storagePath: servicesConfig.memory.storagePath,
+    tokenBudget: servicesConfig.memory.tokenBudget,
+  };
+}
+
+/**
+ * Get template service configuration from services config
+ */
+export function getTemplateServiceConfig(
+  servicesConfig: Required<ServicesConfig>
+) {
+  return {
+    userTemplatesDir: servicesConfig.templates.directories[0],
+    workspaceTemplatesDir: servicesConfig.templates.directories[1],
+  };
+}
+
+/**
+ * Get project profile service configuration from services config
+ */
+export function getProjectProfileServiceConfig(
+  servicesConfig: Required<ServicesConfig>
+) {
+  return {
+    autoDetect: servicesConfig.project.autoDetect,
+  };
+}
+
+/**
+ * Get generation options from services config
+ */
+export function getGenerationOptions(
+  servicesConfig: Required<ServicesConfig>
+) {
+  return {
+    temperature: servicesConfig.options.temperature,
+    maxTokens: servicesConfig.options.maxTokens,
+    topP: servicesConfig.options.topP,
+    numCtx: servicesConfig.options.numCtx,
+  };
+}
+
+/**
+ * Environment variable names for model configuration
+ */
+export const ENV_VAR_NAMES = {
+  MODEL: 'OLLM_MODEL',
+  TEMPERATURE: 'OLLM_TEMPERATURE',
+  MAX_TOKENS: 'OLLM_MAX_TOKENS',
+  CONTEXT_SIZE: 'OLLM_CONTEXT_SIZE',
+} as const;
+
+/**
+ * Apply environment variable overrides to configuration
+ * Environment variables take precedence over config file settings
+ * 
+ * @param config Base configuration from file
+ * @returns Configuration with environment variable overrides applied
+ */
+export function applyEnvironmentOverrides(
+  config: Partial<ServicesConfig>
+): Partial<ServicesConfig> {
+  const result = { ...config };
+
+  // OLLM_MODEL overrides model.default
+  const envModel = process.env[ENV_VAR_NAMES.MODEL];
+  if (envModel) {
+    result.model = {
+      ...result.model,
+      default: envModel,
+    };
+  }
+
+  // OLLM_TEMPERATURE overrides options.temperature
+  const envTemperature = process.env[ENV_VAR_NAMES.TEMPERATURE];
+  if (envTemperature) {
+    const temperature = parseFloat(envTemperature);
+    if (!isNaN(temperature) && temperature >= 0 && temperature <= 2) {
+      result.options = {
+        ...result.options,
+        temperature,
+      };
+    }
+  }
+
+  // OLLM_MAX_TOKENS overrides options.maxTokens
+  const envMaxTokens = process.env[ENV_VAR_NAMES.MAX_TOKENS];
+  if (envMaxTokens) {
+    const maxTokens = parseInt(envMaxTokens, 10);
+    if (!isNaN(maxTokens) && maxTokens > 0) {
+      result.options = {
+        ...result.options,
+        maxTokens,
+      };
+    }
+  }
+
+  // OLLM_CONTEXT_SIZE overrides options.numCtx
+  const envContextSize = process.env[ENV_VAR_NAMES.CONTEXT_SIZE];
+  if (envContextSize) {
+    const numCtx = parseInt(envContextSize, 10);
+    if (!isNaN(numCtx) && numCtx > 0) {
+      result.options = {
+        ...result.options,
+        numCtx,
+      };
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Load and merge configuration with environment variable precedence
+ * 
+ * Precedence order (highest to lowest):
+ * 1. Environment variables
+ * 2. User configuration
+ * 3. Default configuration
+ * 
+ * @param userConfig User configuration from file
+ * @returns Fully merged configuration with all overrides applied
+ */
+export function loadConfigWithEnvOverrides(
+  userConfig: Partial<ServicesConfig> = {}
+): Required<ServicesConfig> {
+  // Apply environment variable overrides first
+  const configWithEnv = applyEnvironmentOverrides(userConfig);
+  
+  // Then merge with defaults
+  return mergeServicesConfig(configWithEnv);
 }

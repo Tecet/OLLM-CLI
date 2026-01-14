@@ -8,7 +8,7 @@ import { promises as fs } from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { LsTool, LsInvocation } from '../ls.js';
-import { MockMessageBus, createMockAbortSignal } from './test-helpers.js';
+import { MockMessageBus, createMockAbortSignal, createToolContext } from './test-helpers.js';
 
 /**
  * Test fixture for file operations
@@ -111,7 +111,7 @@ describe('Ls Tool', () => {
               // Execute ls without includeHidden
               const invocation = tool.createInvocation(
                 { path: testFixture.getTempDir() },
-                messageBus
+                createToolContext(messageBus)
               );
               const result = await invocation.execute(createMockAbortSignal());
 
@@ -154,7 +154,7 @@ describe('Ls Tool', () => {
 
       const invocation = tool.createInvocation(
         { path: fixture.getTempDir(), includeHidden: true },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -183,7 +183,7 @@ describe('Ls Tool', () => {
 
       const invocation = tool.createInvocation(
         { path: fixture.getTempDir() },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -243,7 +243,7 @@ describe('Ls Tool', () => {
               // Execute ls with recursive
               const invocation = tool.createInvocation(
                 { path: testFixture.getTempDir(), recursive: true },
-                messageBus
+                createToolContext(messageBus)
               );
               const result = await invocation.execute(createMockAbortSignal());
 
@@ -282,7 +282,7 @@ describe('Ls Tool', () => {
 
       const invocation = tool.createInvocation(
         { path: fixture.getTempDir(), recursive: true, maxDepth: 2 },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -310,7 +310,7 @@ describe('Ls Tool', () => {
 
       const invocation = tool.createInvocation(
         { path: fixture.getTempDir(), recursive: false },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -334,7 +334,7 @@ describe('Ls Tool', () => {
     it('should provide correct description', () => {
       const invocation = tool.createInvocation(
         { path: '/test/dir' },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const description = invocation.getDescription();
@@ -345,7 +345,7 @@ describe('Ls Tool', () => {
     it('should return correct tool locations', () => {
       const invocation = tool.createInvocation(
         { path: '/test/dir' },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const locations = invocation.toolLocations();
@@ -355,7 +355,7 @@ describe('Ls Tool', () => {
     it('should not require confirmation', async () => {
       const invocation = tool.createInvocation(
         { path: '/test/dir' },
-        messageBus
+        createToolContext(messageBus)
       );
 
       const confirmation = await invocation.shouldConfirmExecute(

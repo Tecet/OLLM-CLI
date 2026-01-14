@@ -12,7 +12,7 @@ import * as os from 'os';
 import { GlobTool } from '../glob.js';
 import { GrepTool } from '../grep.js';
 import { LsTool } from '../ls.js';
-import { MockMessageBus, createMockAbortSignal } from './test-helpers.js';
+import { MockMessageBus, createMockAbortSignal , createToolContext} from './test-helpers.js';
 
 /**
  * Test fixture for file operations with gitignore support
@@ -103,7 +103,7 @@ describe('Property 24: Gitignore Respect', () => {
       // Execute glob
       const invocation = globTool.createInvocation(
         { pattern: '**/*', directory: fixture.getTempDir() },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -141,7 +141,7 @@ describe('Property 24: Gitignore Respect', () => {
 
       const invocation = globTool.createInvocation(
         { pattern: '**/*', directory: fixture.getTempDir() },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -177,7 +177,7 @@ describe('Property 24: Gitignore Respect', () => {
 
       const invocation = globTool.createInvocation(
         { pattern: '**/*.log', directory: fixture.getTempDir() },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -214,7 +214,7 @@ describe('Property 24: Gitignore Respect', () => {
 
       const invocation = grepTool.createInvocation(
         { pattern: 'searchterm', directory: fixture.getTempDir() },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -252,7 +252,7 @@ describe('Property 24: Gitignore Respect', () => {
           directory: fixture.getTempDir(),
           filePattern: '**/*.ts'
         },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -288,7 +288,7 @@ describe('Property 24: Gitignore Respect', () => {
 
       const invocation = lsTool.createInvocation(
         { path: fixture.getTempDir(), recursive: true },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -323,7 +323,7 @@ describe('Property 24: Gitignore Respect', () => {
 
       const invocation = lsTool.createInvocation(
         { path: fixture.getTempDir(), recursive: true },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -400,7 +400,7 @@ describe('Property 24: Gitignore Respect', () => {
               // Test glob tool
               const globInvocation = globTool.createInvocation(
                 { pattern: '**/*', directory: testFixture.getTempDir() },
-                messageBus
+                createToolContext(messageBus)
               );
               const globResult = await globInvocation.execute(createMockAbortSignal());
               expect(globResult.error).toBeUndefined();
@@ -445,7 +445,7 @@ describe('Property 24: Gitignore Respect', () => {
 
       const invocation = globTool.createInvocation(
         { pattern: '**/*', directory: fixture.getTempDir() },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -469,7 +469,7 @@ describe('Property 24: Gitignore Respect', () => {
 
       const invocation = globTool.createInvocation(
         { pattern: '**/*', directory: fixture.getTempDir() },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 
@@ -500,7 +500,7 @@ describe('Property 24: Gitignore Respect', () => {
 
       const invocation = globTool.createInvocation(
         { pattern: '**/*', directory: fixture.getTempDir() },
-        messageBus
+        createToolContext(messageBus)
       );
       const result = await invocation.execute(createMockAbortSignal());
 

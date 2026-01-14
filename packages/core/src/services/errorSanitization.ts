@@ -5,6 +5,7 @@
  * API keys, secrets, tokens, and other credentials from appearing in logs.
  */
 
+// @ts-ignore - picomatch doesn't have type definitions
 import picomatch from 'picomatch';
 
 /**

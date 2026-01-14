@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from 'react';
 import { useContextManager } from './ContextManagerContext.js';
+import { commandRegistry } from '../commands/index.js';
+import { useServices } from './ServiceContext.js';
 
 /**
  * Tool call information
@@ -147,6 +149,17 @@ export function ChatProvider({
     }
   }, []);
 
+  // Wire up the service container to the command registry
+  // This enables service-dependent commands like /model list to work
+  // Note: ChatProvider is always inside ServiceProvider in the component hierarchy
+  const { container: serviceContainer } = useServices();
+  
+  useEffect(() => {
+    if (serviceContainer) {
+      commandRegistry.setServiceContainer(serviceContainer);
+    }
+  }, [serviceContainer]);
+
   // Convert chat messages to core message format for context tracking
   const convertToContextMessage = useCallback((msg: Message) => ({
     role: msg.role as 'user' | 'assistant' | 'system',
@@ -184,7 +197,26 @@ export function ChatProvider({
       // Clear input
       setCurrentInput('');
 
-      // Set waiting state
+      // Check if this is a slash command
+      if (commandRegistry.isCommand(content)) {
+        try {
+          const result = await commandRegistry.execute(content);
+          
+          // Add command result as system message
+          addMessage({
+            role: 'system',
+            content: result.message || (result.success ? 'Command executed successfully' : 'Command failed'),
+          });
+        } catch (error) {
+          addMessage({
+            role: 'system',
+            content: `Command error: ${error instanceof Error ? error.message : String(error)}`,
+          });
+        }
+        return;
+      }
+
+      // Set waiting state for regular chat messages
       setWaitingForResponse(true);
 
       try {

@@ -22,7 +22,7 @@ import type {
   TokenCounter,
   ContextPool,
   SnapshotManager,
-  CompressionService,
+  ICompressionService,
   MemoryGuard,
   SnapshotStorage,
   ModelInfo
@@ -74,7 +74,7 @@ export class ContextManagerImpl extends EventEmitter implements ContextManager {
   private tokenCounter: TokenCounter;
   private contextPool: ContextPool;
   private snapshotManager: SnapshotManager;
-  private compressionService: CompressionService;
+  private compressionService: ICompressionService;
   private memoryGuard: MemoryGuard;
   private snapshotStorage: SnapshotStorage;
   
@@ -93,7 +93,7 @@ export class ContextManagerImpl extends EventEmitter implements ContextManager {
       contextPool?: ContextPool;
       snapshotStorage?: SnapshotStorage;
       snapshotManager?: SnapshotManager;
-      compressionService?: CompressionService;
+      compressionService?: ICompressionService;
       memoryGuard?: MemoryGuard;
     }
   ) {
@@ -151,7 +151,10 @@ export class ContextManagerImpl extends EventEmitter implements ContextManager {
     );
     
     // Set up memory guard with services
-    this.memoryGuard.setServices(this.snapshotManager, this.compressionService);
+    this.memoryGuard.setServices({ 
+      snapshot: this.snapshotManager, 
+      compression: this.compressionService 
+    });
     
     // Initialize current context
     this.currentContext = {
