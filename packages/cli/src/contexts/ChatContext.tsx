@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useCallback, useEffect, use
 import { useContextManager } from './ContextManagerContext.js';
 import { commandRegistry } from '../commands/index.js';
 import { useServices } from './ServiceContext.js';
+import { useModel } from './ModelContext.js';
 
 /**
  * Tool call information
@@ -154,6 +155,12 @@ export function ChatProvider({
   // Note: ChatProvider is always inside ServiceProvider in the component hierarchy
   const { container: serviceContainer } = useServices();
   
+  // Get the model context for sending messages to the LLM
+  const { sendToLLM, cancelRequest } = useModel();
+  
+  // Track the current assistant message ID for streaming updates
+  const assistantMessageIdRef = useRef<string | null>(null);
+  
   useEffect(() => {
     if (serviceContainer) {
       commandRegistry.setServiceContainer(serviceContainer);
@@ -218,36 +225,89 @@ export function ChatProvider({
 
       // Set waiting state for regular chat messages
       setWaitingForResponse(true);
+      setStreaming(true);
+
+      // Create a placeholder assistant message for streaming
+      const assistantMsgId = `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      assistantMessageIdRef.current = assistantMsgId;
+      
+      const assistantMessage: Message = {
+        id: assistantMsgId,
+        role: 'assistant',
+        content: '',
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, assistantMessage]);
+
+      // Build conversation history for the LLM
+      const conversationHistory = messages.map(msg => ({
+        role: msg.role as 'user' | 'assistant' | 'system',
+        content: msg.content,
+      }));
+      // Add the new user message
+      conversationHistory.push({ role: 'user', content });
 
       try {
-        // Call external handler if provided
-        if (onSendMessage) {
-          await onSendMessage(content);
-        }
+        await sendToLLM(
+          conversationHistory,
+          // onText - update the assistant message with streamed text
+          (text: string) => {
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === assistantMsgId
+                  ? { ...msg, content: msg.content + text }
+                  : msg
+              )
+            );
+          },
+          // onError - show error message
+          (error: string) => {
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === assistantMsgId
+                  ? { ...msg, content: msg.content || `Error: ${error}` }
+                  : msg
+              )
+            );
+          },
+          // onComplete - mark streaming as complete
+          () => {
+            setStreaming(false);
+            setWaitingForResponse(false);
+            assistantMessageIdRef.current = null;
+          }
+        );
       } catch (error) {
         console.error('Error sending message:', error);
         
-        // Add error message
-        addMessage({
-          role: 'system',
-          content: `Error: ${error instanceof Error ? error.message : String(error)}`,
-        });
-      } finally {
-        setWaitingForResponse(false);
+        // Update the assistant message with error
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === assistantMsgId
+              ? { ...msg, content: `Error: ${error instanceof Error ? error.message : String(error)}` }
+              : msg
+          )
+        );
         setStreaming(false);
+        setWaitingForResponse(false);
+        assistantMessageIdRef.current = null;
       }
     },
-    [addMessage, onSendMessage]
+    [addMessage, messages, sendToLLM]
   );
 
   const cancelGeneration = useCallback(() => {
+    // Cancel the actual LLM request
+    cancelRequest();
+    
     setStreaming(false);
     setWaitingForResponse(false);
+    assistantMessageIdRef.current = null;
     
     if (onCancelGeneration) {
       onCancelGeneration();
     }
-  }, [onCancelGeneration]);
+  }, [onCancelGeneration, cancelRequest]);
 
   const clearChat = useCallback(() => {
     setMessages([]);

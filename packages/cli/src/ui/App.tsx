@@ -19,6 +19,7 @@ import { GPUProvider, useGPU } from '../contexts/GPUContext.js';
 import { ReviewProvider, useReview } from '../contexts/ReviewContext.js';
 import { ContextManagerProvider } from '../contexts/ContextManagerContext.js';
 import { ServiceProvider } from '../contexts/ServiceContext.js';
+import { ModelProvider, useModel } from '../contexts/ModelContext.js';
 import { LaunchScreen } from './components/launch/LaunchScreen.js';
 import { TabBar } from './components/layout/TabBar.js';
 import { SidePanel } from './components/layout/SidePanel.js';
@@ -47,6 +48,7 @@ function AppContent({ config }: AppContentProps) {
   const { clearChat, cancelGeneration, state: chatState } = useChat();
   const { reviews } = useReview();
   const { info: gpuInfo } = useGPU();
+  const { currentModel } = useModel();
 
   // Extract configuration settings
   const metricsConfig = {
@@ -253,7 +255,7 @@ function AppContent({ config }: AppContentProps) {
       {/* Status Bar - integrated with GPU monitoring */}
       <StatusBar
         connection={{ status: 'connected', provider: config.provider.default }}
-        model={config.model.default}
+        model={currentModel}
         tokens={{ current: chatState.messages.reduce((sum, m) => sum + m.content.length, 0), max: 4096 }}
         git={{ branch: 'main', staged: 0, modified: 0 }}
         gpu={gpuInfo}
@@ -377,13 +379,18 @@ export function App({ config }: AppProps) {
               modelInfo={modelInfo}
               config={contextConfig}
             >
-              <ChatProvider>
-                <ReviewProvider>
-                  <ErrorBoundary>
-                    <AppContent config={config} />
-                  </ErrorBoundary>
-                </ReviewProvider>
-              </ChatProvider>
+              <ModelProvider
+                provider={provider}
+                initialModel={config.model.default}
+              >
+                <ChatProvider>
+                  <ReviewProvider>
+                    <ErrorBoundary>
+                      <AppContent config={config} />
+                    </ErrorBoundary>
+                  </ReviewProvider>
+                </ChatProvider>
+              </ModelProvider>
             </ContextManagerProvider>
           </ServiceProvider>
         </GPUProvider>

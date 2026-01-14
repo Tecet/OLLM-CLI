@@ -40,13 +40,19 @@ async function modelListHandler(service: ModelManagementService): Promise<Comman
     
     // Format model list
     const modelList = models.map(model => {
-      const size = (model.size / (1024 * 1024 * 1024)).toFixed(2);
-      // Handle modifiedAt as either Date or string
-      const modifiedDate = model.modifiedAt instanceof Date 
-        ? model.modifiedAt 
-        : new Date(model.modifiedAt);
-      const date = modifiedDate.toLocaleDateString();
-      return `  ${model.name} (${size} GB, modified: ${date})`;
+      // Handle size - use sizeBytes if available
+      const sizeGB = model.sizeBytes 
+        ? (model.sizeBytes / (1024 * 1024 * 1024)).toFixed(2)
+        : 'N/A';
+      
+      // Handle modifiedAt - parse if string, format if available
+      let dateStr = 'N/A';
+      if (model.modifiedAt) {
+        const modifiedDate = new Date(model.modifiedAt);
+        dateStr = modifiedDate.toLocaleDateString();
+      }
+      
+      return `  ${model.name} (${sizeGB} GB, modified: ${dateStr})`;
     }).join('\n');
     
     return {
