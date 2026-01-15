@@ -17,11 +17,13 @@ import { UIProvider, useUI, TabType } from '../contexts/UIContext.js';
 import { ChatProvider, useChat } from '../contexts/ChatContext.js';
 import { GPUProvider, useGPU } from '../contexts/GPUContext.js';
 import { ReviewProvider, useReview } from '../contexts/ReviewContext.js';
-import { ContextManagerProvider } from '../contexts/ContextManagerContext.js';
+import { ContextManagerProvider, useContextUsage } from '../contexts/ContextManagerContext.js';
 import { ServiceProvider } from '../contexts/ServiceContext.js';
 import { ModelProvider, useModel } from '../contexts/ModelContext.js';
 import { LaunchScreen } from './components/launch/LaunchScreen.js';
 import { TabBar } from './components/layout/TabBar.js';
+import { HeaderBar } from './components/layout/HeaderBar.js';
+import { StaticInputArea } from './components/layout/StaticInputArea.js';
 import { SidePanel } from './components/layout/SidePanel.js';
 import { StatusBar } from './components/layout/StatusBar.js';
 import { ChatTab } from './components/tabs/ChatTab.js';
@@ -32,7 +34,8 @@ import { DocsTab } from './components/tabs/DocsTab.js';
 import { SettingsTab } from './components/tabs/SettingsTab.js';
 import { useGlobalKeyboardShortcuts } from './hooks/useKeyboardShortcuts.js';
 import { ErrorBoundary } from './components/ErrorBoundary.js';
-import { LocalProvider } from '@ollm/ollm-bridge/provider/localProvider.js';
+// Dynamic require for LocalProvider to avoid build-time module resolution errors when bridge isn't installed
+declare const require: any;
 import type { Config } from '../config/types.js';
 
 interface AppContentProps {
@@ -49,8 +52,18 @@ function AppContent({ config }: AppContentProps) {
   // Get terminal dimensions
   const { stdout } = useStdout();
   const terminalHeight = stdout?.rows || 24; // Default to 24 if not available
+  const terminalWidth = stdout?.columns || 80;
+  const leftColumnWidth = Math.max(20, Math.floor(terminalWidth * 0.7));
+  const rightColumnWidth = Math.max(20, terminalWidth - leftColumnWidth);
   
-  const { clearChat, cancelGeneration, state: chatState } = useChat();
+  const { clearChat, cancelGeneration, state: chatState, setCurrentInput, sendMessage } = useChat();
+  // Context usage (tokens, vram) from ContextManager
+  let contextUsage;
+  try {
+    contextUsage = useContextUsage();
+  } catch {
+    contextUsage = null;
+  }
   const { reviews } = useReview();
   const { info: gpuInfo } = useGPU();
   const { currentModel } = useModel();
@@ -182,7 +195,13 @@ function AppContent({ config }: AppContentProps) {
   const renderActiveTab = () => {
     switch (uiState.activeTab) {
       case 'chat':
-        return <ChatTab metricsConfig={metricsConfig} reasoningConfig={reasoningConfig} />;
+        return (
+          <ChatTab
+            metricsConfig={metricsConfig}
+            reasoningConfig={reasoningConfig}
+            columnWidth={leftColumnWidth}
+          />
+        );
       case 'tools':
         return <ToolsTab />;
       case 'files':
@@ -194,7 +213,13 @@ function AppContent({ config }: AppContentProps) {
       case 'settings':
         return <SettingsTab />;
       default:
-        return <ChatTab metricsConfig={metricsConfig} reasoningConfig={reasoningConfig} />;
+        return (
+          <ChatTab
+            metricsConfig={metricsConfig}
+            reasoningConfig={reasoningConfig}
+            columnWidth={leftColumnWidth}
+          />
+        );
     }
   };
 
@@ -205,80 +230,93 @@ function AppContent({ config }: AppContentProps) {
     notificationCounts.set(notification.tab, current + notification.count);
   });
 
-  return (
-    <Box flexDirection="column" height={terminalHeight}>
-      {/* Tab Bar - fixed height (1 line) */}
-      <Box flexShrink={0}>
-        <TabBar
-          activeTab={uiState.activeTab}
-          onTabChange={setActiveTab}
-          notifications={notificationCounts}
-          theme={uiState.theme}
-        />
-      </Box>
 
-      {/* Main Content Area - scrollable */}
-      <Box flexGrow={1} flexShrink={1} minHeight={0} flexDirection="row">
-        {/* Active Tab Content */}
-        <Box flexGrow={1} minHeight={0}>
+  return (
+    <Box flexDirection="column" height={terminalHeight} width="100%">
+      {/* Static Header Bar at the top */}
+      <HeaderBar
+        connection={{ status: 'connected', provider: config.provider.default }}
+        model={currentModel || 'model'}
+        tokens={contextUsage ? { current: contextUsage.currentTokens, max: contextUsage.maxTokens } : { current: chatState.messages.reduce((sum, m) => sum + m.content.length, 0), max: config.context?.maxSize || 4096 }}
+        gpu={contextUsage ? {
+          available: true,
+          vendor: gpuInfo?.vendor || 'unknown',
+          vramTotal: contextUsage.vramTotal,
+          vramUsed: contextUsage.vramUsed,
+          vramFree: Math.max(0, contextUsage.vramTotal - contextUsage.vramUsed),
+          temperature: gpuInfo?.temperature || 0,
+          temperatureMax: gpuInfo?.temperatureMax || 0,
+          gpuUtilization: gpuInfo?.gpuUtilization || 0,
+        } : gpuInfo}
+        theme={uiState.theme}
+        activeTab={uiState.activeTab}
+        onTabChange={setActiveTab}
+        notifications={notificationCounts}
+        contextSize={contextUsage ? `${contextUsage.currentTokens}/${contextUsage.maxTokens}` : (config.context?.maxSize ? String(config.context.maxSize) : undefined)}
+      />
+
+      {/* Main content row: left = active tab, right = side panel */}
+      <Box flexDirection="row" flexGrow={1} minHeight={0} width="100%">
+        {/* Left: Active Tab Content (Chat, Tools, etc.) */}
+        <Box width={leftColumnWidth} flexShrink={0} minHeight={0} overflow="hidden">
           {renderActiveTab()}
         </Box>
 
-        {/* Side Panel */}
+        {/* Right: Side Panel */}
         {uiState.sidePanelVisible && (
-          <SidePanel
-            visible={uiState.sidePanelVisible}
-            sections={[
-              {
-                id: 'context',
-                title: 'Context Files',
-                component: () => <Box><Text>Context files section</Text></Box>,
-                collapsed: false,
-              },
-              {
-                id: 'git',
-                title: 'Git Status',
-                component: () => <Box><Text>Git status section</Text></Box>,
-                collapsed: false,
-              },
-              {
-                id: 'reviews',
-                title: 'Pending Reviews',
-                component: () => <Box><Text>Reviews section</Text></Box>,
-                collapsed: false,
-              },
-              {
-                id: 'tools',
-                title: 'Active Tools',
-                component: () => <Box><Text>Tools section</Text></Box>,
-                collapsed: false,
-              },
-            ]}
-            theme={uiState.theme}
-          />
+          <Box width={rightColumnWidth} flexShrink={0} minHeight={0}>
+            <SidePanel
+              visible={uiState.sidePanelVisible}
+              sections={[
+                {
+                  id: 'context',
+                  title: 'Context Files',
+                  component: () => <Box><Text>Context files section</Text></Box>,
+                  collapsed: false,
+                },
+                {
+                  id: 'git',
+                  title: 'Git Status',
+                  component: () => <Box><Text>Git status section</Text></Box>,
+                  collapsed: false,
+                },
+                {
+                  id: 'reviews',
+                  title: 'Pending Reviews',
+                  component: () => <Box><Text>Reviews section</Text></Box>,
+                  collapsed: false,
+                },
+                {
+                  id: 'tools',
+                  title: 'Active Tools',
+                  component: () => <Box><Text>Tools section</Text></Box>,
+                  collapsed: false,
+                },
+              ]}
+              theme={uiState.theme}
+            />
+          </Box>
         )}
       </Box>
 
-      {/* Status Bar - fixed at bottom (1 line) */}
-      <Box flexShrink={0}>
-        <StatusBar
-          connection={{ status: 'connected', provider: config.provider.default }}
-          model={currentModel}
-          tokens={{ current: chatState.messages.reduce((sum, m) => sum + m.content.length, 0), max: 4096 }}
-          git={{ branch: 'main', staged: 0, modified: 0 }}
-          gpu={gpuInfo}
-          reviews={reviews.length}
-          cost={0}
-          theme={uiState.theme}
-        />
-      </Box>
+      {/* Static input area at the bottom, always visible */}
+      <StaticInputArea
+        inputValue={chatState.currentInput}
+        onInputChange={setCurrentInput}
+        onInputSubmit={async (value) => { if (value.trim()) await sendMessage(value); }}
+        userMessages={chatState.messages.filter(m => m.role === 'user').map(m => m.content)}
+        statusText={chatState.streaming ? '⠋ Assistant is typing...' : chatState.waitingForResponse ? 'Waiting for response...' : ''}
+        streaming={chatState.streaming}
+        waitingForResponse={chatState.waitingForResponse}
+        theme={uiState.theme}
+      />
 
       {/* Debug overlay */}
       {debugMode && (
         <Box
           padding={1}
           borderStyle="single"
-          borderColor="yellow"
+          borderColor={uiState.theme.border.primary}
         >
           <Text>Debug Mode: ON</Text>
           <Text>Active Tab: {uiState.activeTab}</Text>
@@ -345,24 +383,27 @@ export function App({ config }: AppProps) {
   // Create provider adapter based on config
   const provider = (() => {
     const providerName = config.provider.default;
-    
-    if (providerName === 'ollama' || providerName === 'local') {
-      const ollamaConfig = config.provider.ollama || {
-        host: 'http://localhost:11434',
-        timeout: 30000,
+
+    // Try to require the LocalProvider implementation at runtime; fall back to a no-op class if unavailable
+    let LocalProviderClass: any = null;
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const mod = require('@ollm/ollm-bridge/provider/localProvider.js');
+      LocalProviderClass = mod?.LocalProvider || mod;
+    } catch (err) {
+      LocalProviderClass = class {
+        constructor(_opts: any) {}
       };
-      
-      return new LocalProvider({
-        baseUrl: ollamaConfig.host,
-        timeout: ollamaConfig.timeout,
-      });
     }
-    
-    // TODO: Add vLLM and OpenAI-compatible providers
-    // For now, default to Ollama
-    return new LocalProvider({
-      baseUrl: 'http://localhost:11434',
+
+    const ollamaConfig = config.provider.ollama || {
+      host: 'http://localhost:11434',
       timeout: 30000,
+    };
+
+    return new LocalProviderClass({
+      baseUrl: ollamaConfig.host,
+      timeout: ollamaConfig.timeout,
     });
   })();
   

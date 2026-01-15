@@ -28,16 +28,20 @@ interface LaunchScreenProps {
 const STANDARD_ANIMATION_HEIGHT = 24;
 const STANDARD_ANIMATION_WIDTH = STANDARD_ANIMATION_HEIGHT * 2;
 
-const LaunchHeader = React.memo(({ theme }: { theme: LaunchScreenProps['theme'] }) => (
-  <Box flexDirection="column" alignItems="center" gap={1} width="100%">
-    <VersionBanner theme={theme} />
+// Fixed layout constants - these don't change with terminal size
+const LAYOUT = {
+  topPadding: 3,        // Lines from top to banner
+  afterBanner: 2,       // Lines between banner and quick actions  
+  afterQuickActions: 3, // Lines between quick actions and animation area
+};
 
-    <Box flexDirection="column" alignItems="center">
-      <Text dimColor color={theme.text.secondary}>Press any key to continue...</Text>
-      <Text color={theme.text.secondary}>For commands use: /help</Text>
+const LaunchHeader = React.memo(({ theme }: { theme: LaunchScreenProps['theme'] }) => (
+  <Box flexDirection="column" alignItems="center" width="100%">
+    <Box marginTop={LAYOUT.topPadding}>
+      <VersionBanner theme={theme} />
     </Box>
 
-    <Box marginTop={1}>
+    <Box marginTop={LAYOUT.afterBanner}>
       <QuickActions theme={theme} />
     </Box>
   </Box>
@@ -84,8 +88,6 @@ export const LaunchScreen: React.FC<LaunchScreenProps> = ({
       flexDirection="column"
       alignItems="center"
       justifyContent="flex-start"
-      paddingY={isCompact ? 0 : 1}
-      gap={isCompact ? 1 : 2}
       height={rootHeight}
       overflow="hidden"
     >
@@ -93,10 +95,10 @@ export const LaunchScreen: React.FC<LaunchScreenProps> = ({
 
       <LaunchFooter theme={theme} recentSessions={recentSessions} />
 
-      {/* Animation at the bottom */}
-      <Box flexDirection="column" alignItems="center" width="100%">
+      {/* Animation at the bottom - fixed position from content */}
+      <Box flexDirection="column" alignItems="center" width="100%" marginTop={LAYOUT.afterQuickActions}>
         <Box height={STANDARD_ANIMATION_HEIGHT} justifyContent="center">
-          <LlamaAnimation size="standard" movementRatio={0.85} />
+          <LlamaAnimation size="standard" movementRatio={0.85} enabled />
         </Box>
       </Box>
     </Box>

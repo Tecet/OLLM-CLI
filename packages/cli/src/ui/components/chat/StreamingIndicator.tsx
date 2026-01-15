@@ -7,6 +7,7 @@ export interface StreamingIndicatorProps {
   text?: string;
   spinnerType?: SpinnerType;
   color?: string;
+  intervalMs?: number;
 }
 
 /**
@@ -27,6 +28,7 @@ export function StreamingIndicator({
   text = 'Streaming...',
   spinnerType = 'dots',
   color = '#888888',
+  intervalMs = 250,
 }: StreamingIndicatorProps) {
   const [frameIndex, setFrameIndex] = useState(0);
   const frames = spinnerFrames[spinnerType];
@@ -34,10 +36,10 @@ export function StreamingIndicator({
   useEffect(() => {
     const interval = setInterval(() => {
       setFrameIndex((prev) => (prev + 1) % frames.length);
-    }, 80); // Update every 80ms for smooth animation
+    }, intervalMs);
 
     return () => clearInterval(interval);
-  }, [frames.length]);
+  }, [frames.length, intervalMs]);
 
   return (
     <Text color={color}>

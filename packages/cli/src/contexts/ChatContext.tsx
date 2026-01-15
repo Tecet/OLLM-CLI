@@ -152,7 +152,7 @@ export function ChatProvider({
   }, []);
 
   // Get UI context to handle launch screen commands
-  const { setLaunchScreenVisible } = useUI();
+  const { setLaunchScreenVisible, setTheme } = useUI();
   
   // Wire up the service container to the command registry
   // This enables service-dependent commands like /model list to work
@@ -172,6 +172,13 @@ export function ChatProvider({
       (globalThis as any).__ollmModelSwitchCallback = setCurrentModel;
     }
   }, [serviceContainer, setCurrentModel]);
+
+  // Wire up the theme callback to the command registry
+  useEffect(() => {
+    if (setTheme) {
+      commandRegistry.setThemeCallback(setTheme);
+    }
+  }, [setTheme]);
 
   // Convert chat messages to core message format for context tracking
   const convertToContextMessage = useCallback((msg: Message) => ({

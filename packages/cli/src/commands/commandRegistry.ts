@@ -11,11 +11,12 @@ import { providerCommands } from './providerCommands.js';
 import { gitCommands } from './gitCommands.js';
 import { reviewCommands } from './reviewCommands.js';
 import { extensionCommands } from './extensionCommands.js';
-import { themeCommands } from './themeCommands.js';
+import { themeCommands, createThemeCommands } from './themeCommands.js';
 import { contextCommands } from './contextCommands.js';
 import { metricsCommands } from './metricsCommands.js';
 import { reasoningCommands } from './reasoningCommands.js';
 import { utilityCommands } from './utilityCommands.js';
+import type { Theme } from '../ui/uiSettings.js';
 
 /**
  * Command Registry
@@ -26,9 +27,11 @@ export class CommandRegistry {
   private commands: Map<string, Command> = new Map();
   private aliases: Map<string, string> = new Map();
   private serviceContainer?: ServiceContainer;
+  private setTheme?: (theme: Theme) => void;
 
-  constructor(serviceContainer?: ServiceContainer) {
+  constructor(serviceContainer?: ServiceContainer, setTheme?: (theme: Theme) => void) {
     this.serviceContainer = serviceContainer;
+    this.setTheme = setTheme;
     
     // Register built-in commands
     this.register(homeCommand);
@@ -86,8 +89,11 @@ export class CommandRegistry {
       this.register(command);
     }
     
-    // Register theme commands
-    for (const command of themeCommands) {
+    // Register theme commands with setTheme callback
+    const themeCommandsToRegister = this.setTheme 
+      ? createThemeCommands(this.setTheme)
+      : themeCommands;
+    for (const command of themeCommandsToRegister) {
       this.register(command);
     }
     
@@ -157,6 +163,21 @@ export class CommandRegistry {
     
     // Register new commands with updated service container
     this.registerServiceCommands(serviceContainer);
+  }
+
+  /**
+   * Set the theme callback
+   * This allows updating the theme from commands
+   */
+  setThemeCallback(setTheme: (theme: Theme) => void): void {
+    this.setTheme = setTheme;
+    
+    // Re-register theme commands with the new callback
+    this.commands.delete('/theme');
+    const themeCommandsToRegister = createThemeCommands(setTheme);
+    for (const command of themeCommandsToRegister) {
+      this.register(command);
+    }
   }
 
   /**

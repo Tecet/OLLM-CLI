@@ -13,6 +13,7 @@
 
 import React from 'react';
 import { Box, Text } from 'ink';
+import { useUI } from '../contexts/UIContext.js';
 
 /**
  * Props for ContextStatus component
@@ -61,12 +62,12 @@ function formatPercentage(value: number): string {
 }
 
 /**
- * Get color for usage percentage
+ * Get color for usage percentage using theme status colors
  */
-function getUsageColor(percentage: number): string {
-  if (percentage >= 80) return 'red';
-  if (percentage >= 60) return 'yellow';
-  return 'green';
+function getUsageColor(percentage: number, theme: any): string {
+  if (percentage >= 80) return theme.status.error;
+  if (percentage >= 60) return theme.status.warning;
+  return theme.status.success;
 }
 
 /**
@@ -84,6 +85,8 @@ export const ContextStatus: React.FC<ContextStatusProps> = ({
   compressionEnabled,
   compressionThreshold
 }) => {
+  const { state: uiState } = useUI();
+  const theme = uiState.theme;
   // Calculate percentages
   const tokenPercentage = (currentTokens / maxTokens) * 100;
   const vramPercentage = (vramUsed / vramTotal) * 100;
@@ -92,12 +95,12 @@ export const ContextStatus: React.FC<ContextStatusProps> = ({
   const showWarning = tokenPercentage > 80 || vramPercentage > 80;
   
   return (
-    <Box flexDirection="column" paddingX={1} paddingY={1} borderStyle="round" borderColor="cyan">
+    <Box flexDirection="column" paddingX={1} paddingY={1} borderStyle="round" borderColor={theme.border.primary}>
       {/* Title */}
       <Box marginBottom={1}>
-        <Text bold color="cyan">Context Status</Text>
+        <Text bold color={theme.text.accent}>Context Status</Text>
         {showWarning && (
-          <Text color="red" bold> ⚠ HIGH USAGE</Text>
+          <Text color={theme.status.warning} bold> ⚠ HIGH USAGE</Text>
         )}
       </Box>
       
@@ -110,7 +113,7 @@ export const ContextStatus: React.FC<ContextStatusProps> = ({
       {/* Token Usage */}
       <Box>
         <Text dimColor>Tokens: </Text>
-        <Text color={getUsageColor(tokenPercentage)}>
+        <Text color={getUsageColor(tokenPercentage, theme)}>
           {currentTokens.toLocaleString()} / {maxTokens.toLocaleString()}
         </Text>
         <Text dimColor> (</Text>
@@ -123,7 +126,7 @@ export const ContextStatus: React.FC<ContextStatusProps> = ({
       {/* VRAM Usage */}
       <Box>
         <Text dimColor>VRAM: </Text>
-        <Text color={getUsageColor(vramPercentage)}>
+        <Text color={getUsageColor(vramPercentage, theme)}>
           {formatBytes(vramUsed)} / {formatBytes(vramTotal)}
         </Text>
         <Text dimColor> (</Text>
@@ -152,13 +155,13 @@ export const ContextStatus: React.FC<ContextStatusProps> = ({
         <Text dimColor>Compression: </Text>
         {compressionEnabled ? (
           <>
-            <Text color="green">Enabled</Text>
+            <Text color={theme.status.success}>Enabled</Text>
             <Text dimColor> (threshold: </Text>
             <Text>{formatPercentage(compressionThreshold * 100)}</Text>
             <Text dimColor>)</Text>
           </>
         ) : (
-          <Text color="gray">Disabled</Text>
+          <Text color={theme.text.secondary}>Disabled</Text>
         )}
       </Box>
     </Box>

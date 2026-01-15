@@ -15,40 +15,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render } from 'ink-testing-library';
 import * as fc from 'fast-check';
 import { InputBox } from '../InputBox.js';
-import { mockTheme, mockKeybinds, getTextContent } from '@ollm/test-utils';
-
-// Mock state for useChat hook
-let mockChatState = {
-  messages: [] as Array<{ id: string; role: string; content: string; timestamp: Date }>,
-  streaming: false,
-  waitingForResponse: false,
-  currentInput: '',
-};
-
-const mockSendMessage = vi.fn();
-const mockSetCurrentInput = vi.fn();
-
-// Mock the useChat hook
-vi.mock('../../../../contexts/ChatContext.js', () => ({
-  useChat: () => ({
-    state: mockChatState,
-    sendMessage: mockSendMessage,
-    setCurrentInput: mockSetCurrentInput,
-  }),
-}));
+import { mockTheme, getTextContent } from '@ollm/test-utils';
 
 describe('InputBox Property Tests', () => {
   const defaultTheme = mockTheme;
-  const defaultKeybinds = mockKeybinds;
+  const mockOnSubmit = vi.fn();
+  const mockOnChange = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockChatState = {
-      messages: [],
-      streaming: false,
-      waitingForResponse: false,
-      currentInput: '',
-    };
   });
 
   describe('Property 25: Input Field Value Display', () => {
@@ -57,10 +32,14 @@ describe('InputBox Property Tests', () => {
         fc.property(
           fc.string({ minLength: 1, maxLength: 200 }).filter(s => !s.includes('\n')),
           (inputValue) => {
-            mockChatState.currentInput = inputValue;
-
             const { lastFrame } = render(
-              <InputBox theme={defaultTheme} keybinds={defaultKeybinds} />
+              <InputBox
+                theme={defaultTheme}
+                value={inputValue}
+                onChange={mockOnChange}
+                onSubmit={mockOnSubmit}
+                userMessages={[]}
+              />
             );
 
             const frame = lastFrame();
@@ -80,10 +59,14 @@ describe('InputBox Property Tests', () => {
           fc.array(fc.string({ minLength: 1, maxLength: 50 }), { minLength: 2, maxLength: 5 }),
           (lines) => {
             const inputValue = lines.join('\n');
-            mockChatState.currentInput = inputValue;
-
             const { lastFrame } = render(
-              <InputBox theme={defaultTheme} keybinds={defaultKeybinds} />
+              <InputBox
+                theme={defaultTheme}
+                value={inputValue}
+                onChange={mockOnChange}
+                onSubmit={mockOnSubmit}
+                userMessages={[]}
+              />
             );
 
             const frame = lastFrame();
@@ -106,10 +89,14 @@ describe('InputBox Property Tests', () => {
         fc.property(
           fc.string({ minLength: 1, maxLength: 100 }),
           (inputValue) => {
-            mockChatState.currentInput = inputValue;
-
             const { lastFrame } = render(
-              <InputBox theme={defaultTheme} keybinds={defaultKeybinds} />
+              <InputBox
+                theme={defaultTheme}
+                value={inputValue}
+                onChange={mockOnChange}
+                onSubmit={mockOnSubmit}
+                userMessages={[]}
+              />
             );
 
             const frame = lastFrame();
@@ -132,10 +119,14 @@ describe('InputBox Property Tests', () => {
     });
 
     it('displays empty input with prompt', () => {
-      mockChatState.currentInput = '';
-
       const { lastFrame } = render(
-        <InputBox theme={defaultTheme} keybinds={defaultKeybinds} />
+        <InputBox
+          theme={defaultTheme}
+          value=""
+          onChange={mockOnChange}
+          onSubmit={mockOnSubmit}
+          userMessages={[]}
+        />
       );
 
       const frame = lastFrame();
@@ -151,10 +142,15 @@ describe('InputBox Property Tests', () => {
         fc.property(
           fc.string({ maxLength: 100 }),
           (inputValue) => {
-            mockChatState.currentInput = inputValue;
-
             const { lastFrame } = render(
-              <InputBox theme={defaultTheme} keybinds={defaultKeybinds} disabled={true} />
+              <InputBox
+                theme={defaultTheme}
+                value={inputValue}
+                onChange={mockOnChange}
+                onSubmit={mockOnSubmit}
+                userMessages={[]}
+                disabled={true}
+              />
             );
 
             const frame = lastFrame();
@@ -173,10 +169,15 @@ describe('InputBox Property Tests', () => {
         fc.property(
           fc.string({ maxLength: 100 }),
           (inputValue) => {
-            mockChatState.currentInput = inputValue;
-
             const { lastFrame } = render(
-              <InputBox theme={defaultTheme} keybinds={defaultKeybinds} disabled={false} />
+              <InputBox
+                theme={defaultTheme}
+                value={inputValue}
+                onChange={mockOnChange}
+                onSubmit={mockOnSubmit}
+                userMessages={[]}
+                disabled={false}
+              />
             );
 
             const frame = lastFrame();

@@ -17,6 +17,8 @@ export interface KeyInput {
     downArrow?: boolean;
     leftArrow?: boolean;
     rightArrow?: boolean;
+    pageUp?: boolean;
+    pageDown?: boolean;
     return?: boolean;
     escape?: boolean;
     ctrl?: boolean;
@@ -148,6 +150,10 @@ export class KeyboardHandler {
       parts.push('left');
     } else if (key.rightArrow) {
       parts.push('right');
+    } else if (key.pageUp) {
+      parts.push('pageup');
+    } else if (key.pageDown) {
+      parts.push('pagedown');
     } else if (input) {
       parts.push(input.toLowerCase());
     }

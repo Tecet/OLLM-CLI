@@ -5,6 +5,7 @@
 
 import React, { Component, ReactNode } from 'react';
 import { Box, Text } from 'ink';
+import { useUI } from '../../contexts/UIContext.js';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -58,12 +59,23 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       }
 
       // Default error display
+      // Use theme from UI context when available
+      let theme = undefined;
+      try {
+        theme = useUI().state.theme;
+      } catch {
+        // fallback to literal red
+      }
+
+      const borderColor = theme ? theme.border.primary : 'red';
+      const textColor = theme ? theme.status.error : 'red';
+
       return (
-        <Box flexDirection="column" padding={1} borderStyle="round" borderColor="red">
-          <Text color="red" bold>
+        <Box flexDirection="column" padding={1} borderStyle="round" borderColor={borderColor}>
+          <Text color={textColor} bold>
             ❌ An error occurred
           </Text>
-          <Text color="red">{this.state.error.message}</Text>
+          <Text color={textColor}>{this.state.error.message}</Text>
           
           {process.env.OLLM_LOG_LEVEL === 'debug' && this.state.errorInfo && (
             <Box flexDirection="column" marginTop={1}>
@@ -90,12 +102,17 @@ export const DefaultErrorFallback: React.FC<{ error: Error; errorInfo: React.Err
   error,
   errorInfo,
 }) => {
-  return (
-    <Box flexDirection="column" padding={1} borderStyle="round" borderColor="red">
-      <Text color="red" bold>
-        ❌ Component Error
-      </Text>
-      <Text color="red">{error.message}</Text>
+      let theme = undefined;
+      try { theme = useUI().state.theme; } catch {}
+      const borderColor = theme ? theme.border.primary : 'red';
+      const textColor = theme ? theme.status.error : 'red';
+
+      return (
+        <Box flexDirection="column" padding={1} borderStyle="round" borderColor={borderColor}>
+          <Text color={textColor} bold>
+            ❌ Component Error
+          </Text>
+          <Text color={textColor}>{error.message}</Text>
       
       <Box marginTop={1}>
         <Text dimColor>The application encountered an error but will continue running.</Text>
@@ -115,9 +132,13 @@ export const DefaultErrorFallback: React.FC<{ error: Error; errorInfo: React.Err
  * Minimal error fallback for critical errors
  */
 export const MinimalErrorFallback: React.FC<{ error: Error }> = ({ error }) => {
+  let theme = undefined;
+  try { theme = useUI().state.theme; } catch {}
+  const textColor = theme ? theme.status.error : 'red';
+
   return (
     <Box padding={1}>
-      <Text color="red">❌ Error: {error.message}</Text>
+      <Text color={textColor}>❌ Error: {error.message}</Text>
     </Box>
   );
 };

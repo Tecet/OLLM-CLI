@@ -20,6 +20,7 @@ interface LlamaAnimationProps {
     paddingLeft?: number;
     movementRatio?: number; // Fraction of viewport width used for bouncing
     movementWidth?: number;
+    enabled?: boolean; // Controls whether animation runs (default: false)
 }
 
 // Frame data structure - stores rows separately for positioning
@@ -35,6 +36,18 @@ function intToRGBA(i: number) {
         g: (i >>> 16) & 0xFF,
         b: (i >>> 8) & 0xFF,
         a: i & 0xFF
+    };
+}
+
+// Helper: Quantize color to reduce flickering from subtle color variations
+// Rounds to nearest multiple of 8 to stabilize colors between frames
+function quantizeColor(c: { r: number; g: number; b: number; a: number }) {
+    const q = 8; // Quantization step - higher = more stable but less color detail
+    return {
+        r: Math.round(c.r / q) * q,
+        g: Math.round(c.g / q) * q,
+        b: Math.round(c.b / q) * q,
+        a: c.a
     };
 }
 
@@ -74,14 +87,17 @@ async function loadLlamaFrames(size: Size): Promise<Record<Direction, FrameData[
                 
                 for (let x = 0; x < pixelWidth; x++) {
                     // Always read from resized buffer - all sprites normalized to same size
-                    const cTop = intToRGBA(image.getPixelColor(x, y * 2));
-                    const cBot = intToRGBA(image.getPixelColor(x, y * 2 + 1));
+                    const cTopRaw = intToRGBA(image.getPixelColor(x, y * 2));
+                    const cBotRaw = intToRGBA(image.getPixelColor(x, y * 2 + 1));
+                    
+                    // Quantize colors to reduce flickering from subtle variations
+                    const cTop = quantizeColor(cTopRaw);
+                    const cBot = quantizeColor(cBotRaw);
 
                     // --- DENSE BLOCK LOGIC ---
-                    // Use lower alpha threshold of 64 to include darker semi-transparent pixels
-                    // This helps stabilize leg rendering where dark pixels may have lower alpha
-                    const topVisible = cTop.a >= 64;
-                    const botVisible = cBot.a >= 64;
+                    // Use alpha threshold of 1 - any non-transparent pixel is visible
+                    const topVisible = cTopRaw.a >= 1;
+                    const botVisible = cBotRaw.a >= 1;
 
                     // Always reset state at start of each character for consistency
                     // This eliminates flickering caused by inconsistent escape sequences between frames
@@ -275,8 +291,8 @@ export const LlamaAnimationDirect: React.FC<LlamaAnimationProps & { startRow?: n
         // Initial draw
         animate();
         
-        // Animation timer - 40ms for smooth animation
-        animationRef.current.timer = setInterval(animate, 40);
+        // Animation timer - 50ms for smooth animation
+        animationRef.current.timer = setInterval(animate, 50);
 
         return () => {
             if (animationRef.current.timer) {
@@ -293,7 +309,9 @@ export const LlamaAnimationDirect: React.FC<LlamaAnimationProps & { startRow?: n
 });
 LlamaAnimationDirect.displayName = 'LlamaAnimationDirect';
 
-export const LlamaAnimation: React.FC<LlamaAnimationProps> = memo(({ size = 'small', paddingLeft: initialPadding = 0, movementRatio = 1, movementWidth }) => {
+export const LlamaAnimation: React.FC<LlamaAnimationProps> = memo(({ size = 'small', paddingLeft: initialPadding = 0, movementRatio = 1, movementWidth, enabled = false }) => {
+    // Only run animation when explicitly enabled (e.g., on the launch screen)
+    if (!enabled) return null;
     const [frames, setFrames] = useState<Record<Direction, FrameData[]> | null>(null);
     const [animationState, dispatch] = useReducer(
         (state: { frameIdx: number; step: number; direction: Direction; maxSteps: number }, action: { type: 'tick'; maxSteps: number; frameCount: number }) => {

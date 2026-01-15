@@ -1,10 +1,7 @@
 import React from 'react';
 import { Box, Text } from 'ink';
 import { Message as MessageType } from '../../../contexts/ChatContext.js';
-import { Message } from './Message.js';
-import { ToolCall } from './ToolCall.js';
 import { StreamingIndicator } from './StreamingIndicator.js';
-import { LlamaAnimation } from '../../../components/lama/LlamaAnimation.js';
 import type { Theme } from '../../uiSettings.js';
 
 export interface ChatHistoryProps {
@@ -13,6 +10,9 @@ export interface ChatHistoryProps {
   waitingForResponse: boolean;
   scrollToBottom?: boolean;
   theme: Theme;
+  scrollOffset?: number;
+  maxVisibleLines?: number;
+  paddingY?: number;
   metricsConfig?: {
     enabled: boolean;
     compactMode: boolean;
@@ -33,64 +33,211 @@ export function ChatHistory({
   waitingForResponse,
   scrollToBottom = true,
   theme,
+  scrollOffset = 0,
+  maxVisibleLines,
+  paddingY = 0,
   metricsConfig,
   reasoningConfig,
 }: ChatHistoryProps) {
+  const resolvedMax = Math.max(1, maxVisibleLines ?? 20);
+  const lines = buildChatLines(messages, theme, metricsConfig, reasoningConfig, paddingY);
+  const clampedOffset = Math.min(Math.max(scrollOffset, 0), Math.max(0, lines.length - resolvedMax));
+  const endIndex = Math.max(0, lines.length - clampedOffset);
+  const startIndex = Math.max(0, endIndex - resolvedMax);
+  const visibleLines = lines.slice(startIndex, endIndex);
+  const canScrollUp = startIndex > 0;
+  const canScrollDown = endIndex < lines.length;
+
   return (
-    <Box flexDirection="column" paddingX={1}>
-      {/* Render all messages */}
-      {messages.map((message) => (
-        <Box key={message.id} flexDirection="column">
-          {/* Main message */}
-          <Message 
-            message={message} 
-            theme={theme}
-            metricsConfig={metricsConfig}
-            reasoningConfig={reasoningConfig}
-          />
+    <Box flexDirection="column" paddingX={1} paddingY={paddingY} width="100%">
+      {/* Always reserve space for scroll indicator to prevent layout shift */}
+      <Box height={1}>
+        <Text color={canScrollUp ? theme.text.secondary : undefined}>
+          {canScrollUp ? '↑ Older messages (Ctrl+PageUp)' : ' '}
+        </Text>
+      </Box>
 
-          {/* Tool calls if present */}
-          {message.toolCalls && message.toolCalls.length > 0 && (
-            <Box flexDirection="column" paddingLeft={2}>
-              {message.toolCalls.map((toolCall) => (
-                <ToolCall
-                  key={toolCall.id}
-                  toolCall={toolCall}
-                  theme={theme}
-                />
-              ))}
-            </Box>
-          )}
-
-          {/* Inline diff display for small diffs */}
-          {message.content.includes('diff --git') && (
-            <Box flexDirection="column" paddingLeft={2} marginTop={1}>
-              {renderInlineDiff(message.content, theme)}
-            </Box>
-          )}
-        </Box>
-      ))}
+      {/* Render visible lines */}
+      {visibleLines.map((line) => renderLine(line))}
 
 
-      {/* Llama animation while waiting for first token */}
-      {waitingForResponse && !streaming && (
-        <Box marginTop={1} marginBottom={1}>
-          <LlamaAnimation size="small" />
-        </Box>
-      )}
-
-      {/* Streaming indicator */}
-      {streaming && (
-        <Box marginTop={1}>
+      {/* Fixed height area for status indicators to prevent layout shift */}
+      <Box height={1} marginTop={1}>
+        {waitingForResponse && !streaming ? (
+          <Text color={theme.text.secondary}>Waiting for response...</Text>
+        ) : streaming ? (
           <StreamingIndicator
             text="Assistant is typing..."
             spinnerType="dots"
             color={theme.text.secondary}
+            intervalMs={250}
           />
-        </Box>
-      )}
+        ) : (
+          <Text> </Text>
+        )}
+      </Box>
+
+      {/* Always reserve space for scroll-down indicator */}
+      <Box height={1}>
+        <Text color={canScrollDown ? theme.text.secondary : undefined}>
+          {canScrollDown ? '↓ Newer messages (Ctrl+PageDown)' : ' '}
+        </Text>
+      </Box>
     </Box>
   );
+}
+
+type ChatLinePart = {
+  text: string;
+  color?: string;
+  bold?: boolean;
+  dim?: boolean;
+};
+
+type ChatLine = {
+  key: string;
+  parts: ChatLinePart[];
+  indent?: number;
+};
+
+function renderLine(line: ChatLine) {
+  const indentPrefix = line.indent ? ' '.repeat(line.indent) : '';
+  const parts = line.parts.length
+    ? [{ ...line.parts[0], text: indentPrefix + line.parts[0].text }, ...line.parts.slice(1)]
+    : [{ text: indentPrefix }];
+
+  return (
+    <Box key={line.key}>
+      {parts.map((part, index) => (
+        <Text
+          key={`${line.key}-${index}`}
+          color={part.color}
+          bold={part.bold}
+          dimColor={part.dim}
+        >
+          {part.text}
+        </Text>
+      ))}
+    </Box>
+  );
+}
+
+function buildChatLines(
+  messages: MessageType[],
+  theme: Theme,
+  metricsConfig?: { enabled: boolean; compactMode: boolean },
+  reasoningConfig?: { enabled: boolean; maxVisibleLines: number },
+  paddingY: number = 0
+): ChatLine[] {
+  const lines: ChatLine[] = [];
+  const addLine = (parts: ChatLinePart[], indent = 0) => {
+    lines.push({ key: `line-${lines.length}`, parts, indent });
+  };
+
+  for (let i = 0; i < paddingY; i += 1) {
+    addLine([{ text: ' ' }]);
+  }
+
+  messages.forEach((message) => {
+    const roleColor = theme.role[message.role];
+    const timestamp = message.timestamp.toLocaleTimeString();
+    const showMetrics = metricsConfig?.enabled !== false && message.metrics;
+    const showReasoning = reasoningConfig?.enabled !== false && message.reasoning;
+
+    addLine([
+      { text: message.role.toUpperCase(), color: roleColor, bold: true },
+      { text: ` • ${timestamp}`, color: theme.text.secondary, dim: true },
+    ]);
+
+    if (showReasoning && message.reasoning) {
+      addLine([{ text: 'Reasoning:', color: theme.text.secondary, dim: true }], 2);
+      const reasoningLines = message.reasoning.content.split('\n');
+      reasoningLines.forEach((line) => {
+        addLine([{ text: line || ' ', color: theme.text.primary }], 4);
+      });
+    }
+
+    const contentLines = message.content.split('\n');
+    contentLines.forEach((line) => {
+      addLine([{ text: line || ' ', color: theme.text.primary }], 2);
+    });
+
+    if (message.toolCalls && message.toolCalls.length > 0) {
+      message.toolCalls.forEach((toolCall) => {
+        const statusColor =
+          toolCall.status === 'success'
+            ? theme.status.success
+            : toolCall.status === 'error'
+            ? theme.status.error
+            : theme.status.info;
+        const durationText = toolCall.duration
+          ? ` (${(toolCall.duration / 1000).toFixed(2)}s)`
+          : '';
+
+        addLine(
+          [
+            { text: `🔧 ${toolCall.name}`, color: theme.text.accent, bold: true },
+            { text: ` [${toolCall.status}]${durationText}`, color: statusColor },
+          ],
+          2
+        );
+
+        addLine([{ text: 'Arguments:', color: theme.text.secondary, dim: true }], 4);
+        const argsString = JSON.stringify(toolCall.arguments, null, 2) || '{}';
+        argsString.split('\n').forEach((line) => {
+          addLine([{ text: line || ' ', color: theme.text.primary }], 6);
+        });
+
+        if (toolCall.result) {
+          addLine([{ text: 'Result:', color: theme.text.secondary, dim: true }], 4);
+          toolCall.result.split('\n').forEach((line) => {
+            addLine([{ text: line || ' ', color: theme.text.primary }], 6);
+          });
+        }
+      });
+    }
+
+    if (showMetrics && message.metrics) {
+      addLine([
+        { text: formatMetricsLine(message.metrics, metricsConfig?.compactMode || false), color: theme.text.secondary },
+      ], 2);
+    }
+
+    addLine([{ text: ' ' }]);
+  });
+
+  for (let i = 0; i < paddingY; i += 1) {
+    addLine([{ text: ' ' }]);
+  }
+
+  return lines;
+}
+
+function formatMetricsLine(metrics: {
+  tokensPerSecond: number;
+  promptTokens: number;
+  completionTokens: number;
+  totalSeconds: number;
+  timeToFirstToken: number;
+}, compact: boolean): string {
+  const formatNumber = (num: number, decimals: number = 1): string => num.toFixed(decimals);
+
+  if (compact) {
+    return `⚡ ${formatNumber(metrics.tokensPerSecond)} t/s │ ${metrics.completionTokens} tokens │ ${formatNumber(metrics.totalSeconds)}s`;
+  }
+
+  const parts: string[] = [
+    `⚡ ${formatNumber(metrics.tokensPerSecond)} t/s`,
+    `📥 ${metrics.promptTokens} tokens`,
+    `📤 ${metrics.completionTokens} tokens`,
+    `⏱️ ${formatNumber(metrics.totalSeconds)}s`,
+  ];
+
+  if (metrics.timeToFirstToken > 0) {
+    parts.push(`TTFT: ${formatNumber(metrics.timeToFirstToken)}s`);
+  }
+
+  return parts.join(' │ ');
 }
 
 /**

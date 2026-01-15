@@ -1,8 +1,12 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Box, Text, useInput } from 'ink';
-import { useChat } from '../../../contexts/ChatContext.js';
 
 export interface InputBoxProps {
+  value: string;
+  onChange: (value: string) => void;
+  onSubmit: (value: string) => void | Promise<void>;
+  userMessages: string[];
+  placeholder?: string;
   theme: {
     text: {
       primary: string;
@@ -14,46 +18,46 @@ export interface InputBoxProps {
       secondary: string;
     };
   };
-  keybinds: {
-    send: string;
-    newline: string;
-    editPrevious: string;
-  };
   disabled?: boolean;
 }
 
-export function InputBox({ theme, keybinds, disabled = false }: InputBoxProps) {
-  const { state, sendMessage, setCurrentInput } = useChat();
-  const [localInput, setLocalInput] = useState(state.currentInput);
+export const InputBox = React.memo(function InputBox({
+  value,
+  onChange,
+  onSubmit,
+  userMessages,
+  placeholder,
+  theme,
+  disabled = false,
+}: InputBoxProps) {
+  const [localInput, setLocalInput] = useState(value);
   const [cursorPosition, setCursorPosition] = useState(0);
   const [historyIndex, setHistoryIndex] = useState(-1);
 
   // Sync local input with context
   useEffect(() => {
-    setLocalInput(state.currentInput);
-    setCursorPosition(state.currentInput.length);
-  }, [state.currentInput]);
-
-  // Get user messages for history navigation
-  const userMessages = state.messages.filter((msg) => msg.role === 'user');
+    setLocalInput(value);
+    setCursorPosition(value.length);
+  }, [value]);
 
   const handleSubmit = useCallback(async () => {
     if (localInput.trim() && !disabled) {
-      await sendMessage(localInput);
+      await onSubmit(localInput);
       setLocalInput('');
+      onChange('');
       setCursorPosition(0);
       setHistoryIndex(-1);
     }
-  }, [localInput, disabled, sendMessage]);
+  }, [localInput, disabled, onSubmit, onChange]);
 
   const handleNewline = useCallback(() => {
     if (!disabled) {
       const newInput = localInput.slice(0, cursorPosition) + '\n' + localInput.slice(cursorPosition);
       setLocalInput(newInput);
-      setCurrentInput(newInput);
+      onChange(newInput);
       setCursorPosition(cursorPosition + 1);
     }
-  }, [localInput, cursorPosition, disabled, setCurrentInput]);
+  }, [localInput, cursorPosition, disabled, onChange]);
 
   const handleEditPrevious = useCallback(() => {
     if (disabled || userMessages.length === 0) return;
@@ -61,19 +65,19 @@ export function InputBox({ theme, keybinds, disabled = false }: InputBoxProps) {
     // If we're at the start of history or not in history mode, start from the most recent
     if (historyIndex === -1) {
       const lastMessage = userMessages[userMessages.length - 1];
-      setLocalInput(lastMessage.content);
-      setCurrentInput(lastMessage.content);
-      setCursorPosition(lastMessage.content.length);
+      setLocalInput(lastMessage);
+      onChange(lastMessage);
+      setCursorPosition(lastMessage.length);
       setHistoryIndex(userMessages.length - 1);
     } else if (historyIndex > 0) {
       // Move to previous message
       const prevMessage = userMessages[historyIndex - 1];
-      setLocalInput(prevMessage.content);
-      setCurrentInput(prevMessage.content);
-      setCursorPosition(prevMessage.content.length);
+      setLocalInput(prevMessage);
+      onChange(prevMessage);
+      setCursorPosition(prevMessage.length);
       setHistoryIndex(historyIndex - 1);
     }
-  }, [disabled, userMessages, historyIndex, setCurrentInput]);
+  }, [disabled, userMessages, historyIndex, onChange]);
 
   useInput((input, key) => {
     if (disabled) return;
@@ -101,7 +105,7 @@ export function InputBox({ theme, keybinds, disabled = false }: InputBoxProps) {
       if (cursorPosition > 0) {
         const newInput = localInput.slice(0, cursorPosition - 1) + localInput.slice(cursorPosition);
         setLocalInput(newInput);
-        setCurrentInput(newInput);
+        onChange(newInput);
         setCursorPosition(cursorPosition - 1);
         setHistoryIndex(-1); // Exit history mode
       }
@@ -128,7 +132,7 @@ export function InputBox({ theme, keybinds, disabled = false }: InputBoxProps) {
     if (input && !key.ctrl && !key.meta) {
       const newInput = localInput.slice(0, cursorPosition) + input + localInput.slice(cursorPosition);
       setLocalInput(newInput);
-      setCurrentInput(newInput);
+      onChange(newInput);
       setCursorPosition(cursorPosition + input.length);
       setHistoryIndex(-1); // Exit history mode
     }
@@ -141,57 +145,62 @@ export function InputBox({ theme, keybinds, disabled = false }: InputBoxProps) {
   const cursorInLine = cursorPosition - currentLineStart;
 
   return (
-    <Box
-      flexDirection="column"
-      borderStyle="single"
-      borderColor={disabled ? theme.text.secondary : theme.text.accent}
-      paddingX={1}
-      paddingY={0}
-    >
-      {/* Input prompt */}
-      <Box>
-        <Text color={theme.text.accent} bold>
-          {disabled ? '⏸ ' : '> '}
-        </Text>
-        <Text color={theme.text.secondary} dimColor={disabled}>
-          {disabled ? 'Waiting for response...' : 'Type your message (Enter to send, Shift+Enter for newline)'}
+    <>
+      {/* History indicator (above input box) - always reserve space to prevent layout shift */}
+      <Box height={1} marginBottom={0}>
+        <Text color={theme.text.secondary} dimColor>
+          {historyIndex >= 0 
+            ? `[Editing message ${userMessages.length - historyIndex} of ${userMessages.length}]`
+            : ' '}
         </Text>
       </Box>
 
-      {/* Multi-line input display */}
-      {lines.length > 0 && (
-        <Box flexDirection="column" marginTop={0}>
-          {lines.map((line, index) => {
-            const isCurrentLine = index === currentLineIndex;
-            const displayLine = line || ' '; // Show space for empty lines
-
-            return (
-              <Box key={index}>
-                <Text color={theme.text.primary}>
-                  {isCurrentLine && cursorInLine <= line.length ? (
-                    <>
-                      {displayLine.slice(0, cursorInLine)}
-                      <Text inverse>{displayLine[cursorInLine] || ' '}</Text>
-                      {displayLine.slice(cursorInLine + 1)}
-                    </>
-                  ) : (
-                    displayLine
-                  )}
-                </Text>
-              </Box>
-            );
-          })}
-        </Box>
-      )}
-
-      {/* History indicator */}
-      {historyIndex >= 0 && (
-        <Box marginTop={0}>
-          <Text color={theme.text.secondary} dimColor>
-            [Editing message {userMessages.length - historyIndex} of {userMessages.length}]
+      <Box
+        flexDirection="column"
+        paddingX={1}
+        paddingY={0}
+        height={6}
+        width="100%"
+        overflow="hidden"
+      >
+        {/* Input prompt */}
+        <Box>
+          <Text color={theme.text.accent} bold>
+            {disabled ? '⏸ ' : '> '}
+          </Text>
+          <Text color={theme.text.secondary} dimColor={disabled}>
+            {disabled ? 'Waiting for response...' : (placeholder || 'Type your message (Enter to send, Shift+Enter for newline)')}
           </Text>
         </Box>
-      )}
-    </Box>
+
+        {/* Multi-line input display */}
+        {lines.length > 0 && (
+          <Box flexDirection="column" marginTop={0}>
+            {lines.map((line, index) => {
+              const isCurrentLine = index === currentLineIndex;
+              const displayLine = line || ' '; // Show space for empty lines
+
+              return (
+                <Box key={index}>
+                  <Text color={theme.text.primary}>
+                    {isCurrentLine && cursorInLine <= line.length ? (
+                      <>
+                        {displayLine.slice(0, cursorInLine)}
+                        <Text inverse>{displayLine[cursorInLine] || ' '}</Text>
+                        {displayLine.slice(cursorInLine + 1)}
+                      </>
+                    ) : (
+                      displayLine
+                    )}
+                  </Text>
+                </Box>
+              );
+            })}
+          </Box>
+        )}
+      </Box>
+    </>
   );
-}
+});
+
+InputBox.displayName = 'InputBox';

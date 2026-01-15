@@ -46,6 +46,7 @@ export interface StatusBarProps {
       info: string;
     };
   };
+  compact?: boolean;
 }
 
 function formatBytes(bytes: number): string {
@@ -87,102 +88,141 @@ export function StatusBar({
   loadedModels = [],
   projectProfile,
   theme,
+  compact = false,
 }: StatusBarProps) {
   const connectionIndicator = getConnectionIndicator(connection.status);
   const connectionColor = getConnectionColor(connection.status, theme);
+  if (compact) {
+    return (
+      <Box flexDirection="row" alignItems="center">
+        <Text color={connectionColor}>{connectionIndicator} {connection.provider}</Text>
+        <Text color={theme.text.secondary}> │ </Text>
+        <Text color={theme.text.accent}>{model}</Text>
 
-  return (
-    <Box
-      flexDirection="row"
-      borderStyle="single"
-      borderColor={theme.text.secondary}
-      paddingX={1}
-      justifyContent="space-between"
-    >
-      {/* Left side: Connection and Model */}
-      <Box flexDirection="row">
-        <Box>
-          <Text color={connectionColor}>
-            {connectionIndicator} {connection.provider}
-          </Text>
-        </Box>
-        <Box>
-          <Text color={theme.text.secondary}> │ </Text>
-        </Box>
-        <Box>
-          <Text color={theme.text.accent}>{model}</Text>
-        </Box>
-        
-        {/* Project Profile */}
+        {loadedModels && loadedModels.length > 0 && (
+          <>
+            <Text color={theme.text.secondary}> </Text>
+            <Text color={theme.text.secondary}>({loadedModels.length})</Text>
+          </>
+        )}
+
         {projectProfile && (
-          <Box>
+          <>
             <Text color={theme.text.secondary}> │ </Text>
-            <Text color={theme.status.info}>
-              {projectProfile}
-            </Text>
-          </Box>
-        )}
-      </Box>
-
-      {/* Right side: Metrics */}
-      <Box flexDirection="row">
-        {/* Loaded Models */}
-        {loadedModels.length > 0 && (
-          <Box>
-            <Text color={theme.status.success}>
-              {loadedModels.length} loaded
-            </Text>
-            <Text color={theme.text.secondary}> │ </Text>
-          </Box>
+            <Text color={theme.status.info}>{projectProfile}</Text>
+          </>
         )}
 
-        {/* Token usage */}
-        <Box>
-          <Text color={theme.text.secondary}>
-            {tokens.current}/{tokens.max}
-          </Text>
-        </Box>
-
-        {/* Git status */}
         {git && (
-          <Box>
+          <>
             <Text color={theme.text.secondary}> │ </Text>
-            <Text color={theme.status.info}>
-              {git.branch}
-              {git.staged > 0 && ` +${git.staged}`}
-              {git.modified > 0 && ` ~${git.modified}`}
-            </Text>
-          </Box>
+            <Text color={theme.text.secondary}>{git.branch}</Text>
+            <Text color={theme.text.secondary}> • </Text>
+            <Text color={theme.text.secondary}>+{git.staged} ~{git.modified}</Text>
+          </>
         )}
 
-        {/* GPU status */}
+        {(typeof reviews === 'number' && reviews > 0) && (
+          <>
+            <Text color={theme.text.secondary}> │ </Text>
+            <Text color={theme.text.secondary}>Reviews: </Text>
+            <Text color={theme.text.accent}>{reviews}</Text>
+          </>
+        )}
+
+        {(typeof cost === 'number') && (
+          <>
+            <Text color={theme.text.secondary}> │ </Text>
+            <Text color={theme.text.secondary}>Cost: </Text>
+            <Text color={theme.text.secondary}>{cost.toFixed(2)}</Text>
+          </>
+        )}
+
+        <Text color={theme.text.secondary}> │ </Text>
+        <Text color={theme.text.secondary}>{tokens.current}/{tokens.max}</Text>
+
         {gpu && gpu.available && (
-          <Box>
+          <>
             <Text color={theme.text.secondary}> │ </Text>
             <Text color={gpu.temperature > 80 ? theme.status.warning : theme.text.secondary}>
               {gpu.temperature}°C {formatBytes(gpu.vramUsed)}/{formatBytes(gpu.vramTotal)}
             </Text>
-          </Box>
+          </>
+        )}
+      </Box>
+    );
+  }
+
+  return (
+    <Box flexDirection="row" alignItems="center" width="100%">
+      {/* Left: connection, model, project profile, git, loaded models, reviews, cost */}
+      <Box flexDirection="row" alignItems="center" flexGrow={1}>
+        <Text color={connectionColor}>
+          {connectionIndicator} {connection.provider}
+        </Text>
+
+        <Text color={theme.text.secondary}> │ </Text>
+
+        <Text color={theme.text.accent}>{model}</Text>
+
+        {loadedModels && loadedModels.length > 0 && (
+          <>
+            <Text color={theme.text.secondary}> </Text>
+            <Text color={theme.text.secondary}>({loadedModels.length})</Text>
+          </>
         )}
 
-        {/* Review count */}
-        {reviews > 0 && (
-          <Box>
+        {projectProfile && (
+          <>
             <Text color={theme.text.secondary}> │ </Text>
-            <Text color={theme.status.warning}>
-              {reviews} review{reviews !== 1 ? 's' : ''}
-            </Text>
-          </Box>
+            <Text color={theme.status.info}>{projectProfile}</Text>
+          </>
         )}
 
-        {/* Cost estimate */}
-        {cost > 0 && (
-          <Box>
+        {git && (
+          <>
             <Text color={theme.text.secondary}> │ </Text>
-            <Text color={theme.text.secondary}>
-              ${cost.toFixed(4)}
+            <Text color={theme.text.secondary}>{git.branch}</Text>
+            <Text color={theme.text.secondary}> • </Text>
+            <Text color={theme.text.secondary}>+{git.staged} ~{git.modified}</Text>
+          </>
+        )}
+
+        {(typeof reviews === 'number' && reviews > 0) && (
+          <>
+            <Text color={theme.text.secondary}> │ </Text>
+            <Text color={theme.text.secondary}>Reviews: </Text>
+            <Text color={theme.text.accent}>{reviews}</Text>
+          </>
+        )}
+
+        {(typeof cost === 'number') && (
+          <>
+            <Text color={theme.text.secondary}> │ </Text>
+            <Text color={theme.text.secondary}>Cost: </Text>
+            <Text color={theme.text.secondary}>{cost.toFixed(2)}</Text>
+          </>
+        )}
+      </Box>
+
+      {/* Middle: token usage */}
+      <Box flexDirection="row" alignItems="center" paddingX={1}>
+        <Text color={theme.text.secondary}>|</Text>
+        <Text color={theme.text.secondary}> </Text>
+        <Text color={theme.text.secondary}>{tokens.current}/{tokens.max}</Text>
+      </Box>
+
+      {/* Right: GPU status */}
+      <Box flexDirection="row" alignItems="center" paddingLeft={1}>
+        {gpu && gpu.available ? (
+          <>
+            <Text color={theme.text.secondary}> │ </Text>
+            <Text color={gpu.temperature > 80 ? theme.status.warning : theme.text.secondary}>
+              {gpu.temperature}°C {formatBytes(gpu.vramUsed)}/{formatBytes(gpu.vramTotal)}
             </Text>
-          </Box>
+          </>
+        ) : (
+          <Text color={theme.text.secondary}> </Text>
         )}
       </Box>
     </Box>

@@ -21,6 +21,10 @@ export interface Theme {
     secondary: string;
     accent: string;
   };
+  border: {
+    primary: string;
+    secondary: string;
+  };
   role: {
     user: string;
     assistant: string;
@@ -104,6 +108,10 @@ const defaultTheme: Theme = {
     primary: '#d4d4d4',
     secondary: '#858585',
     accent: '#4ec9b0',
+  },
+  border: {
+    primary: '#858585',
+    secondary: '#555555',
   },
   role: {
     user: '#569cd6',

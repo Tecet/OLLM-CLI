@@ -11,42 +11,23 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { render } from 'ink-testing-library';
 import { InputBox } from '../InputBox.js';
-import { KeyboardInput, mockTheme, mockKeybinds, stripAnsi } from '@ollm/test-utils';
-
-// Mock the useChat hook
-const mockSendMessage = vi.fn();
-const mockSetCurrentInput = vi.fn();
-
-let mockChatState = {
-  messages: [] as Array<{ id: string; role: string; content: string; timestamp: Date }>,
-  streaming: false,
-  waitingForResponse: false,
-  currentInput: '',
-};
-
-vi.mock('../../../../contexts/ChatContext.js', () => ({
-  useChat: () => ({
-    state: mockChatState,
-    sendMessage: mockSendMessage,
-    setCurrentInput: mockSetCurrentInput,
-  }),
-}));
+import { KeyboardInput, mockTheme, stripAnsi } from '@ollm/test-utils';
 
 describe('InputBox - Keyboard Navigation', () => {
+  const mockOnSubmit = vi.fn();
+  const mockOnChange = vi.fn();
+
   const defaultProps = {
     theme: mockTheme,
-    keybinds: mockKeybinds,
+    value: '',
+    onChange: mockOnChange,
+    onSubmit: mockOnSubmit,
+    userMessages: [] as string[],
     disabled: false,
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockChatState = {
-      messages: [],
-      streaming: false,
-      waitingForResponse: false,
-      currentInput: '',
-    };
   });
 
   /**
@@ -56,17 +37,18 @@ describe('InputBox - Keyboard Navigation', () => {
   describe('Arrow Key Navigation', () => {
     it('should navigate through history with up arrow', () => {
       // Set up history with a previous message
-      mockChatState.messages = [
-        { id: '1', role: 'user', content: 'first message', timestamp: new Date() }
-      ];
-      
-      const { stdin, lastFrame } = render(<InputBox {...defaultProps} />);
+      const { stdin } = render(
+        <InputBox
+          {...defaultProps}
+          userMessages={['first message']}
+        />
+      );
 
       // Press up arrow to navigate to previous message
       stdin.write(KeyboardInput.ARROW_UP);
 
       // setCurrentInput should be called with the previous message content
-      expect(mockSetCurrentInput).toHaveBeenCalledWith('first message');
+      expect(mockOnChange).toHaveBeenCalledWith('first message');
     });
 
     it('should call setCurrentInput when typing', () => {
@@ -76,7 +58,7 @@ describe('InputBox - Keyboard Navigation', () => {
       stdin.write('hello');
 
       // setCurrentInput should be called with each character
-      expect(mockSetCurrentInput).toHaveBeenCalled();
+      expect(mockOnChange).toHaveBeenCalled();
     });
 
     it('should not move cursor beyond start', () => {
@@ -111,16 +93,18 @@ describe('InputBox - Keyboard Navigation', () => {
    */
   describe('Enter Key Behavior', () => {
     it('should submit message on Enter when input has content', () => {
-      // Set up initial input value
-      mockChatState.currentInput = 'hello';
-      
-      const { stdin } = render(<InputBox {...defaultProps} />);
+      const { stdin } = render(
+        <InputBox
+          {...defaultProps}
+          value="hello"
+        />
+      );
       
       // Press Enter to submit
       stdin.write(KeyboardInput.ENTER);
 
-      // sendMessage should be called with the input content
-      expect(mockSendMessage).toHaveBeenCalledWith('hello');
+      // onSubmit should be called with the input content
+      expect(mockOnSubmit).toHaveBeenCalledWith('hello');
     });
 
     it('should not submit when input is empty', () => {
@@ -129,9 +113,9 @@ describe('InputBox - Keyboard Navigation', () => {
       // Press Enter without typing anything
       stdin.write(KeyboardInput.ENTER);
 
-      // sendMessage should not be called for empty input
+      // onSubmit should not be called for empty input
       // Note: The component trims input, so empty strings are ignored
-      expect(mockSendMessage).not.toHaveBeenCalled();
+      expect(mockOnSubmit).not.toHaveBeenCalled();
     });
   });
 
@@ -148,8 +132,8 @@ describe('InputBox - Keyboard Navigation', () => {
       // Type some text
       stdin.write('hello');
 
-      // setCurrentInput should not be called when disabled
-      expect(mockSetCurrentInput).not.toHaveBeenCalled();
+      // onChange should not be called when disabled
+      expect(mockOnChange).not.toHaveBeenCalled();
     });
 
     it('should not submit when disabled', () => {
@@ -160,24 +144,24 @@ describe('InputBox - Keyboard Navigation', () => {
       // Try to submit
       stdin.write(KeyboardInput.ENTER);
 
-      // sendMessage should not be called when disabled
-      expect(mockSendMessage).not.toHaveBeenCalled();
+      // onSubmit should not be called when disabled
+      expect(mockOnSubmit).not.toHaveBeenCalled();
     });
 
     it('should not navigate history when disabled', () => {
-      mockChatState.messages = [
-        { id: '1', role: 'user', content: 'previous', timestamp: new Date() }
-      ];
-      
       const { stdin } = render(
-        <InputBox {...defaultProps} disabled={true} />
+        <InputBox
+          {...defaultProps}
+          disabled={true}
+          userMessages={['previous']}
+        />
       );
 
       // Try to navigate history
       stdin.write(KeyboardInput.ARROW_UP);
 
-      // setCurrentInput should not be called when disabled
-      expect(mockSetCurrentInput).not.toHaveBeenCalled();
+      // onChange should not be called when disabled
+      expect(mockOnChange).not.toHaveBeenCalled();
     });
 
     it('should show disabled message', () => {
@@ -196,9 +180,12 @@ describe('InputBox - Keyboard Navigation', () => {
    */
   describe('Multi-line Display', () => {
     it('should display multiple lines correctly', () => {
-      mockChatState.currentInput = 'Line 1\nLine 2\nLine 3';
-      
-      const { lastFrame } = render(<InputBox {...defaultProps} />);
+      const { lastFrame } = render(
+        <InputBox
+          {...defaultProps}
+          value="Line 1\nLine 2\nLine 3"
+        />
+      );
 
       const frame = stripAnsi(lastFrame() ?? '');
       expect(frame).toContain('Line 1');

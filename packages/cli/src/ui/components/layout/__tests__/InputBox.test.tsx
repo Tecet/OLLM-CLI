@@ -9,45 +9,27 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render } from 'ink-testing-library';
 import { InputBox } from '../InputBox.js';
-import { mockTheme, mockKeybinds, stripAnsi } from '@ollm/test-utils';
-
-// Mock the useChat hook
-const mockSendMessage = vi.fn();
-const mockSetCurrentInput = vi.fn();
-
-let mockChatState = {
-  messages: [] as Array<{ id: string; role: string; content: string; timestamp: Date }>,
-  streaming: false,
-  waitingForResponse: false,
-  currentInput: '',
-};
-
-vi.mock('../../../../contexts/ChatContext.js', () => ({
-  useChat: () => ({
-    state: mockChatState,
-    sendMessage: mockSendMessage,
-    setCurrentInput: mockSetCurrentInput,
-  }),
-}));
+import { mockTheme, stripAnsi } from '@ollm/test-utils';
 
 describe('InputBox Component', () => {
   const defaultTheme = mockTheme;
-  const defaultKeybinds = mockKeybinds;
+  const mockOnSubmit = vi.fn();
+  const mockOnChange = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockChatState = {
-      messages: [],
-      streaming: false,
-      waitingForResponse: false,
-      currentInput: '',
-    };
   });
 
   describe('Input Field Display', () => {
     it('renders input field with prompt', () => {
       const { lastFrame } = render(
-        <InputBox theme={defaultTheme} keybinds={defaultKeybinds} />
+        <InputBox
+          theme={defaultTheme}
+          value=""
+          onChange={mockOnChange}
+          onSubmit={mockOnSubmit}
+          userMessages={[]}
+        />
       );
 
       const frame = lastFrame();
@@ -57,10 +39,14 @@ describe('InputBox Component', () => {
     });
 
     it('displays current input value', () => {
-      mockChatState.currentInput = 'Hello world';
-
       const { lastFrame } = render(
-        <InputBox theme={defaultTheme} keybinds={defaultKeybinds} />
+        <InputBox
+          theme={defaultTheme}
+          value="Hello world"
+          onChange={mockOnChange}
+          onSubmit={mockOnSubmit}
+          userMessages={[]}
+        />
       );
 
       const frame = stripAnsi(lastFrame() ?? '');
@@ -68,10 +54,14 @@ describe('InputBox Component', () => {
     });
 
     it('displays multi-line input', () => {
-      mockChatState.currentInput = 'Line 1\nLine 2\nLine 3';
-
       const { lastFrame } = render(
-        <InputBox theme={defaultTheme} keybinds={defaultKeybinds} />
+        <InputBox
+          theme={defaultTheme}
+          value="Line 1\nLine 2\nLine 3"
+          onChange={mockOnChange}
+          onSubmit={mockOnSubmit}
+          userMessages={[]}
+        />
       );
 
       const frame = stripAnsi(lastFrame() ?? '');
@@ -82,7 +72,14 @@ describe('InputBox Component', () => {
 
     it('shows disabled state when disabled', () => {
       const { lastFrame } = render(
-        <InputBox theme={defaultTheme} keybinds={defaultKeybinds} disabled={true} />
+        <InputBox
+          theme={defaultTheme}
+          value=""
+          onChange={mockOnChange}
+          onSubmit={mockOnSubmit}
+          userMessages={[]}
+          disabled={true}
+        />
       );
 
       const frame = lastFrame();
@@ -91,7 +88,14 @@ describe('InputBox Component', () => {
 
     it('shows enabled state when not disabled', () => {
       const { lastFrame } = render(
-        <InputBox theme={defaultTheme} keybinds={defaultKeybinds} disabled={false} />
+        <InputBox
+          theme={defaultTheme}
+          value=""
+          onChange={mockOnChange}
+          onSubmit={mockOnSubmit}
+          userMessages={[]}
+          disabled={false}
+        />
       );
 
       const frame = lastFrame();
@@ -102,19 +106,31 @@ describe('InputBox Component', () => {
   describe('Input Acceptance', () => {
     it('accepts text input', () => {
       const { stdin } = render(
-        <InputBox theme={defaultTheme} keybinds={defaultKeybinds} />
+        <InputBox
+          theme={defaultTheme}
+          value=""
+          onChange={mockOnChange}
+          onSubmit={mockOnSubmit}
+          userMessages={[]}
+        />
       );
 
       stdin.write('Hello');
 
       // The input should be reflected in the component
       // Note: Due to the async nature of Ink, we check that setCurrentInput was called
-      expect(mockSetCurrentInput).toHaveBeenCalled();
+      expect(mockOnChange).toHaveBeenCalled();
     });
 
     it('handles empty input', () => {
       const { lastFrame } = render(
-        <InputBox theme={defaultTheme} keybinds={defaultKeybinds} />
+        <InputBox
+          theme={defaultTheme}
+          value=""
+          onChange={mockOnChange}
+          onSubmit={mockOnSubmit}
+          userMessages={[]}
+        />
       );
 
       const frame = lastFrame();
@@ -124,10 +140,14 @@ describe('InputBox Component', () => {
     });
 
     it('handles special characters', () => {
-      mockChatState.currentInput = 'Hello @user! #tag $var';
-
       const { lastFrame } = render(
-        <InputBox theme={defaultTheme} keybinds={defaultKeybinds} />
+        <InputBox
+          theme={defaultTheme}
+          value="Hello @user! #tag $var"
+          onChange={mockOnChange}
+          onSubmit={mockOnSubmit}
+          userMessages={[]}
+        />
       );
 
       const frame = stripAnsi(lastFrame() ?? '');
@@ -135,10 +155,14 @@ describe('InputBox Component', () => {
     });
 
     it('handles unicode characters', () => {
-      mockChatState.currentInput = 'Hello 世界 🌍';
-
       const { lastFrame } = render(
-        <InputBox theme={defaultTheme} keybinds={defaultKeybinds} />
+        <InputBox
+          theme={defaultTheme}
+          value="Hello 世界 🌍"
+          onChange={mockOnChange}
+          onSubmit={mockOnSubmit}
+          userMessages={[]}
+        />
       );
 
       const frame = stripAnsi(lastFrame() ?? '');
@@ -148,18 +172,14 @@ describe('InputBox Component', () => {
 
   describe('History Navigation', () => {
     it('shows history indicator when editing previous message', () => {
-      mockChatState.messages = [
-        {
-          id: '1',
-          role: 'user',
-          content: 'Previous message',
-          timestamp: new Date(),
-        },
-      ];
-      mockChatState.currentInput = '';
-
       const { stdin, lastFrame } = render(
-        <InputBox theme={defaultTheme} keybinds={defaultKeybinds} />
+        <InputBox
+          theme={defaultTheme}
+          value=""
+          onChange={mockOnChange}
+          onSubmit={mockOnSubmit}
+          userMessages={['Previous message']}
+        />
       );
 
       // Simulate up arrow to navigate history
@@ -173,10 +193,14 @@ describe('InputBox Component', () => {
 
   describe('Cursor Display', () => {
     it('displays cursor in input field', () => {
-      mockChatState.currentInput = 'Test';
-
       const { lastFrame } = render(
-        <InputBox theme={defaultTheme} keybinds={defaultKeybinds} />
+        <InputBox
+          theme={defaultTheme}
+          value="Test"
+          onChange={mockOnChange}
+          onSubmit={mockOnSubmit}
+          userMessages={[]}
+        />
       );
 
       const frame = lastFrame();
@@ -188,7 +212,14 @@ describe('InputBox Component', () => {
   describe('Border Styling', () => {
     it('uses accent color when enabled', () => {
       const { lastFrame } = render(
-        <InputBox theme={defaultTheme} keybinds={defaultKeybinds} disabled={false} />
+        <InputBox
+          theme={defaultTheme}
+          value=""
+          onChange={mockOnChange}
+          onSubmit={mockOnSubmit}
+          userMessages={[]}
+          disabled={false}
+        />
       );
 
       const frame = lastFrame();
@@ -198,7 +229,14 @@ describe('InputBox Component', () => {
 
     it('uses secondary color when disabled', () => {
       const { lastFrame } = render(
-        <InputBox theme={defaultTheme} keybinds={defaultKeybinds} disabled={true} />
+        <InputBox
+          theme={defaultTheme}
+          value=""
+          onChange={mockOnChange}
+          onSubmit={mockOnSubmit}
+          userMessages={[]}
+          disabled={true}
+        />
       );
 
       const frame = lastFrame();

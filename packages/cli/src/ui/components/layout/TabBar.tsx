@@ -35,9 +35,9 @@ export interface TabBarProps {
   };
 }
 
-export function TabBar({ activeTab, onTabChange, notifications, theme }: TabBarProps) {
+export function TabBar({ activeTab, onTabChange, notifications, theme, noBorder }: TabBarProps & { noBorder?: boolean }) {
   return (
-    <Box flexDirection="row" borderStyle="single" borderColor={theme.text.secondary}>
+    <Box flexDirection="row" {...(!noBorder && { borderStyle: "single", borderColor: theme.text.secondary })}>
       {tabs.map((tab, index) => {
         const isActive = tab.id === activeTab;
         const notificationCount = notifications.get(tab.id) || 0;

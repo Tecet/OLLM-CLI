@@ -73,10 +73,10 @@ export function SidePanel({ visible, sections, theme }: SidePanelProps) {
   return (
     <Box
       flexDirection="column"
-      width={30}
+      flexGrow={1}
       borderStyle="single"
       borderColor={theme.text.secondary}
-      paddingX={1}
+      paddingLeft={1}
     >
       <Box marginBottom={1}>
         <Text color={theme.text.accent} bold>
