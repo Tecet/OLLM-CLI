@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useReducer } from 'react';
+import React, { useState, useEffect, useReducer, useMemo, memo, useRef, useCallback } from 'react';
 import { Box, Text, useStdout } from 'ink';
 import { Jimp, ResizeStrategy } from 'jimp';
 import path from 'path';
@@ -22,6 +22,12 @@ interface LlamaAnimationProps {
     movementWidth?: number;
 }
 
+// Frame data structure - stores rows separately for positioning
+interface FrameData {
+    rows: string[];  // Individual rows (raw, without padding)
+    spriteWidth: number; // Character width of sprite
+}
+
 // Helper: Integer to RGBA
 function intToRGBA(i: number) {
     return {
@@ -33,7 +39,8 @@ function intToRGBA(i: number) {
 }
 
 // --- IMAGE PROCESSING (Manual Nearest Neighbor + Half-Block) ---
-async function loadLlamaFrames(size: Size) {
+// Returns frames with row arrays for positioning
+async function loadLlamaFrames(size: Size): Promise<Record<Direction, FrameData[]>> {
     let logicalHeight = 24; // Default standard lines of text
     if (size === 'xsmall') logicalHeight = 7;   // 7 lines = 14px effective
     if (size === 'small') logicalHeight = 12;
@@ -43,99 +50,251 @@ async function loadLlamaFrames(size: Size) {
     // We render 2 pixels per line (Top/Bottom half-blocks)
     const pixelHeight = logicalHeight * 2;
     const pixelWidth = pixelHeight; // Square aspect ratio 1:1
+    const spriteWidth = pixelWidth; // Character width matches pixel width
 
-    const frames: Record<Direction, string[]> = { right: [], left: [] };
+    const frames: Record<Direction, FrameData[]> = { right: [], left: [] };
     
     // Sub-function to process a single image file
-    const processContent = async (p: string): Promise<string> => {
+    const processContent = async (p: string): Promise<FrameData> => {
         try {
             const image = await Jimp.read(p);
             
             const origW = image.bitmap.width;  
             const origH = image.bitmap.height;
             
-            // ADAPTIVE SCALING STRATEGY (Restored)
-            // - Small/Standard: Use Manual NEAREST_NEIGHBOR (Crisp, vivid colors)
-            // - Large/XL (Upscaling): Use Jimp BICUBIC Resize (Smooth/High Quality)
-            // This prevents "washed out" colors on small sizes caused by bicubic interpolation
-            
-            const isUpscale = pixelHeight > origH || size === 'xsmall'; // Force Bicubic for xsmall test
-            
-            if (isUpscale) {
-                // Resize the buffer explicitly for better interpolation (only for upscaling)
-                image.resize({ w: pixelWidth, h: pixelHeight, mode: ResizeStrategy.BICUBIC });
-            }
+            // Ensure all sprites render to the same size regardless of source dimensions
+            // This handles any dimension mismatches between sprite files
+            // Always resize to target dimensions for consistent output
+            image.resize({ w: pixelWidth, h: pixelHeight, mode: ResizeStrategy.NEAREST_NEIGHBOR });
 
             const rows: string[] = [];
 
             for (let y = 0; y < logicalHeight; y++) {
                 let row = '';
+                
                 for (let x = 0; x < pixelWidth; x++) {
-                    let cTop, cBot;
-
-                    if (isUpscale) {
-                        // 1:1 Sampling from resized buffer (Smooth)
-                        // Top pixel at (x, y*2)
-                        // Bot pixel at (x, y*2+1)
-                        cTop = intToRGBA(image.getPixelColor(x, y * 2));
-                        cBot = intToRGBA(image.getPixelColor(x, y * 2 + 1));
-                    } else {
-                        // Sub-sampling from original buffer (Crisp Nearest Neighbor)
-                        // This preserves exact original pixel colors
-                        const srcX = Math.floor(x * (origW / pixelWidth));
-                        const srcY_Top = Math.floor((y * 2) * (origH / pixelHeight));
-                        const srcY_Bot = Math.floor((y * 2 + 1) * (origH / pixelHeight));
-
-                        cTop = intToRGBA(image.getPixelColor(srcX, srcY_Top));
-                        cBot = intToRGBA(image.getPixelColor(srcX, srcY_Bot));
-                    }
+                    // Always read from resized buffer - all sprites normalized to same size
+                    const cTop = intToRGBA(image.getPixelColor(x, y * 2));
+                    const cBot = intToRGBA(image.getPixelColor(x, y * 2 + 1));
 
                     // --- DENSE BLOCK LOGIC ---
-                    const topVisible = cTop.a >= 128;
-                    const botVisible = cBot.a >= 128;
+                    // Use lower alpha threshold of 64 to include darker semi-transparent pixels
+                    // This helps stabilize leg rendering where dark pixels may have lower alpha
+                    const topVisible = cTop.a >= 64;
+                    const botVisible = cBot.a >= 64;
 
+                    // Always reset state at start of each character for consistency
+                    // This eliminates flickering caused by inconsistent escape sequences between frames
                     if (topVisible && botVisible) {
-                        // BOTH pixels have color
-                        // Fore = Top, Back = Bottom, Char = Upper Block (▀)
-                        row += `\x1b[38;2;${cTop.r};${cTop.g};${cTop.b}m\x1b[48;2;${cBot.r};${cBot.g};${cBot.b}m▀`;
+                        // BOTH pixels have color - foreground=top, background=bottom
+                        row += `\x1b[0m\x1b[38;2;${cTop.r};${cTop.g};${cTop.b}m\x1b[48;2;${cBot.r};${cBot.g};${cBot.b}m▀`;
                     } else if (topVisible && !botVisible) {
-                        // TOP only
-                        // Fore = Top, Back = Default/Transparent, Char = Upper Block (▀)
-                        row += `\x1b[38;2;${cTop.r};${cTop.g};${cTop.b}m\x1b[49m▀`;
+                        // TOP only - foreground=top, no background
+                        row += `\x1b[0m\x1b[38;2;${cTop.r};${cTop.g};${cTop.b}m▀`;
                     } else if (!topVisible && botVisible) {
-                        // BOTTOM only
-                        // Fore = Bottom, Back = Default/Transparent, Char = Lower Block (▄)
-                        row += `\x1b[38;2;${cBot.r};${cBot.g};${cBot.b}m\x1b[49m▄`;
+                        // BOTTOM only - foreground=bottom, no background
+                        row += `\x1b[0m\x1b[38;2;${cBot.r};${cBot.g};${cBot.b}m▄`;
                     } else {
-                        // NEITHER
-                        // Reset all, Space
+                        // NEITHER - transparent space
                         row += `\x1b[0m `;
                     }
                 }
-                // Reset style at end of row
-                rows.push(row + '\x1b[0m');
+                // Row already ends in reset state from last character
+                rows.push(row);
             }
             
-            return rows.join('\n');
+            return {
+                rows,
+                spriteWidth: pixelWidth
+            };
             
         } catch (_e) {
-            return ''; 
+            return { rows: [], spriteWidth: 0 }; 
         }
     };
 
     // Load sequences
     // We assume 6 frames per direction: llama-r1..6, llama-l1..6
+    // Triple each frame for smoother animation
     for (let i = 1; i <= 6; i++) {
-        frames.right.push(await processContent(path.join(ASSETS_PATH, 'right', `llama-r${i}.png`)));
-        frames.left.push(await processContent(path.join(ASSETS_PATH, 'left', `llama-l${i}.png`)));
+        const rightFrame = await processContent(path.join(ASSETS_PATH, 'right', `llama-r${i}.png`));
+        const leftFrame = await processContent(path.join(ASSETS_PATH, 'left', `llama-l${i}.png`));
+        // Push three times for smoother animation
+        frames.right.push(rightFrame);
+        frames.right.push(rightFrame);
+        frames.right.push(rightFrame);
+        frames.left.push(leftFrame);
+        frames.left.push(leftFrame);
+        frames.left.push(leftFrame);
     }
     return frames;
 }
 
 
 // --- COMPONENT ---
-export const LlamaAnimation: React.FC<LlamaAnimationProps> = ({ size = 'small', paddingLeft: initialPadding = 0, movementRatio = 1, movementWidth }) => {
-    const [frames, setFrames] = useState<Record<Direction, string[]> | null>(null);
+// Build a complete frame string with embedded padding for atomic rendering
+// This avoids React layout recalculations entirely
+function buildPaddedFrame(frameData: FrameData, leftPad: number, totalWidth: number): string {
+    const { rows, spriteWidth } = frameData;
+    const leftPadStr = ' '.repeat(Math.max(0, leftPad));
+    const rightPad = Math.max(0, totalWidth - leftPad - spriteWidth);
+    const rightPadStr = ' '.repeat(rightPad);
+    
+    // Build each row with padding baked in, ensuring exact width
+    const paddedRows = rows.map(row => {
+        // Each row: [leftPad][sprite content][reset][rightPad]
+        return leftPadStr + row + '\x1b[0m' + rightPadStr;
+    });
+    
+    // No cursor hiding - let terminal handle it naturally
+    return paddedRows.join('\n');
+}
+
+// Direct stdout animation component - bypasses Ink's render cycle
+// Uses cursor positioning to update only the animation area
+export const LlamaAnimationDirect: React.FC<LlamaAnimationProps & { startRow?: number }> = memo(({ 
+    size = 'small', 
+    paddingLeft: initialPadding = 0, 
+    movementRatio = 1, 
+    movementWidth,
+    startRow 
+}) => {
+    const [frames, setFrames] = useState<Record<Direction, FrameData[]> | null>(null);
+    const animationRef = useRef<{
+        frameIdx: number;
+        step: number;
+        direction: Direction;
+        timer: NodeJS.Timeout | null;
+    }>({ frameIdx: 0, step: 0, direction: 'right', timer: null });
+    
+    const { stdout } = useStdout();
+    const isInteractive = stdout?.isTTY !== false;
+
+    let logicalHeight = 24;
+    if (size === 'xsmall') logicalHeight = 7;
+    if (size === 'small') logicalHeight = 12;
+    if (size === 'large') logicalHeight = 48;
+    if (size === 'xlarge') logicalHeight = 96;
+    
+    const spriteWidth = logicalHeight * 2;
+    const clampedRatio = Math.min(Math.max(movementRatio, 0.1), 1);
+    const termWidth = stdout?.columns || 80;
+    const termHeight = stdout?.rows || 24;
+    const hasFixedMovementWidth = typeof movementWidth === 'number';
+    const dynamicWidth = hasFixedMovementWidth
+        ? Math.max(0, Math.floor(movementWidth ?? 0))
+        : Math.max(0, Math.floor(termWidth * clampedRatio));
+    const paddedInitial = Math.floor(initialPadding);
+    const computedMaxSteps = Math.max(0, dynamicWidth - spriteWidth - paddedInitial);
+
+    // Calculate starting row for cursor positioning
+    const animStartRow = startRow ?? Math.max(1, termHeight - logicalHeight);
+
+    useEffect(() => {
+        loadLlamaFrames(size).then(setFrames);
+    }, [size]);
+
+    // Direct animation loop - writes to stdout bypassing Ink
+    useEffect(() => {
+        if (!frames || !isInteractive || !stdout) return;
+
+        // Keep track of last valid frame to prevent flashing
+        let lastValidOutput = '';
+
+        const animate = () => {
+            const state = animationRef.current;
+            const frameSet = frames[state.direction];
+            
+            // Ensure frameIdx is valid for current direction
+            const frameCount = frameSet?.length || 6;
+            const safeFrameIdx = state.frameIdx % frameCount;
+            const frame = frameSet?.[safeFrameIdx];
+            
+            // Skip this tick if frame is invalid, but don't clear the screen
+            if (!frame || frame.rows.length === 0) {
+                if (lastValidOutput) {
+                    stdout.write(lastValidOutput);
+                }
+                return;
+            }
+
+            // Calculate position
+            const maxLeftSpacing = Math.max(0, dynamicWidth - spriteWidth);
+            const leftSpacing = Math.min(paddedInitial + state.step, maxLeftSpacing);
+            const leftPadStr = ' '.repeat(Math.max(0, leftSpacing));
+            // Right padding to ensure consistent line width and clear old content
+            const rightPad = Math.max(0, dynamicWidth - leftSpacing - spriteWidth);
+            const rightPadStr = ' '.repeat(rightPad);
+
+            // Build the entire frame as a single string for atomic output
+            // Hide cursor at start, show at end
+            let output = '\x1b[?25l';
+            
+            // Draw each row at correct position - overwrite instead of clear for less flicker
+            frame.rows.forEach((row, i) => {
+                // Move cursor to row position, column 1, then draw full-width content
+                output += `\x1b[${animStartRow + i};1H${leftPadStr}${row}\x1b[0m${rightPadStr}`;
+            });
+            
+            // Show cursor again
+            output += '\x1b[?25h';
+            
+            // Store for fallback
+            lastValidOutput = output;
+            
+            // Use cork/uncork for truly atomic write if available
+            if (typeof stdout.cork === 'function') {
+                stdout.cork();
+                stdout.write(output);
+                stdout.uncork();
+            } else {
+                stdout.write(output);
+            }
+
+            // Update animation state AFTER rendering
+            const isMovingRight = state.direction === 'right';
+            let nextStep = state.step + (isMovingRight ? 1 : -1);
+            let nextDirection = state.direction;
+
+            if (nextStep > computedMaxSteps) {
+                nextStep = computedMaxSteps;
+                nextDirection = 'left';
+            } else if (nextStep < 0) {
+                nextStep = 0;
+                nextDirection = 'right';
+            }
+
+            // Update frame index, wrapping for the NEXT direction's frame count
+            const nextFrameSet = frames[nextDirection];
+            const nextFrameCount = nextFrameSet?.length || 6;
+            state.frameIdx = (safeFrameIdx + 1) % nextFrameCount;
+            state.step = nextStep;
+            state.direction = nextDirection;
+        };
+
+        // Initial draw
+        animate();
+        
+        // Animation timer - 40ms for smooth animation
+        animationRef.current.timer = setInterval(animate, 40);
+
+        return () => {
+            if (animationRef.current.timer) {
+                clearInterval(animationRef.current.timer);
+                animationRef.current.timer = null;
+            }
+        };
+    }, [frames, isInteractive, stdout, computedMaxSteps, paddedInitial, dynamicWidth, spriteWidth, animStartRow]);
+
+    // Return placeholder box to reserve space in Ink layout
+    return (
+        <Box height={logicalHeight} width={dynamicWidth} />
+    );
+});
+LlamaAnimationDirect.displayName = 'LlamaAnimationDirect';
+
+export const LlamaAnimation: React.FC<LlamaAnimationProps> = memo(({ size = 'small', paddingLeft: initialPadding = 0, movementRatio = 1, movementWidth }) => {
+    const [frames, setFrames] = useState<Record<Direction, FrameData[]> | null>(null);
     const [animationState, dispatch] = useReducer(
         (state: { frameIdx: number; step: number; direction: Direction; maxSteps: number }, action: { type: 'tick'; maxSteps: number; frameCount: number }) => {
             const { frameIdx, step, direction } = state;
@@ -144,7 +303,7 @@ export const LlamaAnimation: React.FC<LlamaAnimationProps> = ({ size = 'small', 
                 return {
                     frameIdx: (frameIdx + 1) % action.frameCount,
                     step: 0,
-                    direction: 'right',
+                    direction: 'right' as Direction,
                     maxSteps: 0,
                 };
             }
@@ -202,30 +361,63 @@ export const LlamaAnimation: React.FC<LlamaAnimationProps> = ({ size = 'small', 
     useEffect(() => {
         if (!frames || !isInteractive) return;
 
+        // Use 30ms tick interval to match 30 FPS
         const timer = setInterval(() => {
             dispatch({ type: 'tick', maxSteps: computedMaxSteps, frameCount: frames.right.length });
-        }, 120);
+        }, 30);
 
         return () => clearInterval(timer);
-    }, [frames, isInteractive, stdout?.columns, spriteWidth, initialPadding, computedMaxSteps]);
+    }, [frames, isInteractive, computedMaxSteps]);
 
-    if (!frames) return null;
+    // Get current frame data - use stable fallback to prevent flashing during direction changes
+    const currentFrameData = useMemo(() => {
+        if (!frames) return null;
+        const frameSet = frames[direction];
+        // Ensure valid frameIdx
+        const safeIdx = Math.abs(frameIdx) % (frameSet?.length || 6);
+        const frame = frameSet?.[safeIdx];
+        // Fallback to first frame of current direction if frameIdx is out of range
+        // This prevents blank frames during animation transitions
+        if (!frame || frame.rows.length === 0) {
+            return frameSet?.[0] ?? frames.right[0] ?? null;
+        }
+        return frame;
+    }, [frames, direction, frameIdx]);
 
-    const currentFrame = isInteractive ? frames[direction][frameIdx] : frames.right[0];
-    const containerWidth = hasFixedMovementWidth ? dynamicWidth : '100%';
-    const renderWidth = hasFixedMovementWidth ? Math.max(0, Math.min(spriteWidth, dynamicWidth)) : spriteWidth;
-    const leftSpacing = Math.min(paddedInitial + step, Math.max(0, dynamicWidth - renderWidth));
-    const rightSpacing = Math.max(dynamicWidth - renderWidth - leftSpacing, 0);
+    // Keep track of last valid frame to prevent blank flashes
+    const lastValidFrame = useRef<FrameData | null>(null);
+    const frameToRender = currentFrameData && currentFrameData.rows.length > 0 
+        ? currentFrameData 
+        : lastValidFrame.current;
+    
+    // Update the last valid frame reference
+    if (currentFrameData && currentFrameData.rows.length > 0) {
+        lastValidFrame.current = currentFrameData;
+    }
 
+    // Clamp leftSpacing to ensure sprite stays within bounds
+    // Max left position is (dynamicWidth - spriteWidth) to prevent overflow
+    const maxLeftSpacing = Math.max(0, dynamicWidth - spriteWidth);
+    const leftSpacing = Math.min(paddedInitial + step, maxLeftSpacing);
+
+    // Build the complete frame with padding baked in - this makes the update atomic
+    // and avoids React layout recalculations that cause flicker
+    // IMPORTANT: This useMemo must be called before any early returns to maintain hook order
+    const paddedFrame = useMemo(() => {
+        if (!frameToRender || frameToRender.rows.length === 0) return '';
+        return buildPaddedFrame(frameToRender, leftSpacing, dynamicWidth);
+    }, [frameToRender, leftSpacing, dynamicWidth]);
+
+    // Don't render if no valid frame data at all
+    if (!frames || !paddedFrame) return null;
+
+    // Render as a single Text block - entire frame updates atomically
+    // Fixed height and width container prevents layout shift
+    // Using key based on frame content hash to help React/Ink minimize rerenders
     return (
-        <Box height={logicalHeight} width={containerWidth} overflow="hidden">
-            <Box flexDirection="row" height="100%">
-                <Box width={leftSpacing} />
-                <Box width={renderWidth} height="100%">
-                    <Text wrap="truncate">{currentFrame}</Text>
-                </Box>
-                <Box width={rightSpacing} />
-            </Box>
+        <Box height={logicalHeight} width={dynamicWidth} overflow="hidden" flexShrink={0} flexGrow={0}>
+            <Text wrap="truncate-end">{paddedFrame}</Text>
         </Box>
     );
-};
+});
+LlamaAnimation.displayName = 'LlamaAnimation';

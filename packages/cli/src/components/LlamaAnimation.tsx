@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useReducer } from 'react';
+import React, { useState, useEffect, useReducer, useMemo, memo, useRef } from 'react';
 import { Box, Text, useStdout } from 'ink';
 import { Jimp, ResizeStrategy } from 'jimp';
 import path from 'path';
@@ -22,6 +22,12 @@ interface LlamaAnimationProps {
     movementWidth?: number;
 }
 
+// Frame data structure - stores rows separately for positioning
+interface FrameData {
+    rows: string[];  // Individual rows (raw, without padding)
+    spriteWidth: number; // Character width of sprite
+}
+
 // Helper: Integer to RGBA
 function intToRGBA(i: number) {
     return {
@@ -33,7 +39,8 @@ function intToRGBA(i: number) {
 }
 
 // --- IMAGE PROCESSING (Manual Nearest Neighbor + Half-Block) ---
-async function loadLlamaFrames(size: Size) {
+// Returns frames with row arrays for positioning
+async function loadLlamaFrames(size: Size): Promise<Record<Direction, FrameData[]>> {
     let logicalHeight = 20; // Default standard lines of text
     if (size === 'xsmall') logicalHeight = 7;   // 7 lines = 14px effective
     if (size === 'small') logicalHeight = 12;
@@ -43,11 +50,12 @@ async function loadLlamaFrames(size: Size) {
     // We render 2 pixels per line (Top/Bottom half-blocks)
     const pixelHeight = logicalHeight * 2;
     const pixelWidth = pixelHeight; // Square aspect ratio 1:1
+    const spriteWidth = pixelWidth; // Character width matches pixel width
 
-    const frames: Record<Direction, string[]> = { right: [], left: [] };
+    const frames: Record<Direction, FrameData[]> = { right: [], left: [] };
     
     // Sub-function to process a single image file
-    const processContent = async (p: string): Promise<string> => {
+    const processContent = async (p: string): Promise<FrameData> => {
         try {
             const image = await Jimp.read(p);
             
@@ -116,10 +124,13 @@ async function loadLlamaFrames(size: Size) {
                 rows.push(row + '\x1b[0m');
             }
             
-            return rows.join('\n');
+            return {
+                rows,
+                spriteWidth: pixelWidth
+            };
             
         } catch (_e) {
-            return ''; 
+            return { rows: [], spriteWidth: 0 }; 
         }
     };
 
@@ -134,8 +145,26 @@ async function loadLlamaFrames(size: Size) {
 
 
 // --- COMPONENT ---
-export const LlamaAnimation: React.FC<LlamaAnimationProps> = ({ size = 'small', paddingLeft: initialPadding = 0, movementRatio = 1, movementWidth }) => {
-    const [frames, setFrames] = useState<Record<Direction, string[]> | null>(null);
+// Build a complete frame string with embedded padding for atomic rendering
+// This avoids React layout recalculations entirely
+function buildPaddedFrame(frameData: FrameData, leftPad: number, totalWidth: number): string {
+    const { rows, spriteWidth } = frameData;
+    const leftPadStr = ' '.repeat(Math.max(0, leftPad));
+    const rightPad = Math.max(0, totalWidth - leftPad - spriteWidth);
+    const rightPadStr = ' '.repeat(rightPad);
+    
+    // Build each row with padding baked in, ensuring exact width
+    const paddedRows = rows.map(row => {
+        // Each row: [leftPad][sprite content][reset][rightPad]
+        return leftPadStr + row + '\x1b[0m' + rightPadStr;
+    });
+    
+    // No cursor hiding - let terminal handle it naturally
+    return paddedRows.join('\n');
+}
+
+export const LlamaAnimation: React.FC<LlamaAnimationProps> = memo(({ size = 'small', paddingLeft: initialPadding = 0, movementRatio = 1, movementWidth }) => {
+    const [frames, setFrames] = useState<Record<Direction, FrameData[]> | null>(null);
     const [animationState, dispatch] = useReducer(
         (state: { frameIdx: number; step: number; direction: Direction; maxSteps: number }, action: { type: 'tick'; maxSteps: number; frameCount: number }) => {
             const { frameIdx, step, direction } = state;
@@ -144,7 +173,7 @@ export const LlamaAnimation: React.FC<LlamaAnimationProps> = ({ size = 'small', 
                 return {
                     frameIdx: (frameIdx + 1) % action.frameCount,
                     step: 0,
-                    direction: 'right',
+                    direction: 'right' as Direction,
                     maxSteps: 0,
                 };
             }
@@ -202,30 +231,60 @@ export const LlamaAnimation: React.FC<LlamaAnimationProps> = ({ size = 'small', 
     useEffect(() => {
         if (!frames || !isInteractive) return;
 
+        // Use 120ms tick interval for smooth animation
         const timer = setInterval(() => {
             dispatch({ type: 'tick', maxSteps: computedMaxSteps, frameCount: frames.right.length });
         }, 120);
 
         return () => clearInterval(timer);
-    }, [frames, isInteractive, stdout?.columns, spriteWidth, initialPadding, computedMaxSteps]);
+    }, [frames, isInteractive, computedMaxSteps]);
 
-    if (!frames) return null;
+    // Get current frame data - use stable fallback to prevent flashing during direction changes
+    const currentFrameData = useMemo(() => {
+        if (!frames) return null;
+        const frameSet = frames[direction];
+        const frame = frameSet?.[frameIdx];
+        // Fallback to first frame of current direction if frameIdx is out of range
+        // This prevents blank frames during animation transitions
+        if (!frame || frame.rows.length === 0) {
+            return frameSet?.[0] ?? frames.right[0] ?? null;
+        }
+        return frame;
+    }, [frames, direction, frameIdx]);
 
-    const currentFrame = isInteractive ? frames[direction][frameIdx] : frames.right[0];
-    const containerWidth = hasFixedMovementWidth ? dynamicWidth : '100%';
-    const renderWidth = hasFixedMovementWidth ? Math.max(0, Math.min(spriteWidth, dynamicWidth)) : spriteWidth;
-    const leftSpacing = Math.min(paddedInitial + step, Math.max(0, dynamicWidth - renderWidth));
-    const rightSpacing = Math.max(dynamicWidth - renderWidth - leftSpacing, 0);
+    // Keep track of last valid frame to prevent blank flashes
+    const lastValidFrame = useRef<FrameData | null>(null);
+    const frameToRender = currentFrameData && currentFrameData.rows.length > 0 
+        ? currentFrameData 
+        : lastValidFrame.current;
+    
+    // Update the last valid frame reference
+    if (currentFrameData && currentFrameData.rows.length > 0) {
+        lastValidFrame.current = currentFrameData;
+    }
 
+    // Clamp leftSpacing to ensure sprite stays within bounds
+    // Max left position is (dynamicWidth - spriteWidth) to prevent overflow
+    const maxLeftSpacing = Math.max(0, dynamicWidth - spriteWidth);
+    const leftSpacing = Math.min(paddedInitial + step, maxLeftSpacing);
+
+    // Build the complete frame with padding baked in - this makes the update atomic
+    // and avoids React layout recalculations that cause flicker
+    // IMPORTANT: This useMemo must be called before any early returns to maintain hook order
+    const paddedFrame = useMemo(() => {
+        if (!frameToRender || frameToRender.rows.length === 0) return '';
+        return buildPaddedFrame(frameToRender, leftSpacing, dynamicWidth);
+    }, [frameToRender, leftSpacing, dynamicWidth]);
+
+    // Don't render if no valid frame data at all
+    if (!frames || !paddedFrame) return null;
+
+    // Render as a single Text block - entire frame updates atomically
+    // Fixed height and width container prevents layout shift
     return (
-        <Box height={logicalHeight} width={containerWidth} overflow="hidden">
-            <Box flexDirection="row" height="100%">
-                <Box width={leftSpacing} />
-                <Box width={renderWidth} height="100%">
-                    <Text wrap="truncate">{currentFrame}</Text>
-                </Box>
-                <Box width={rightSpacing} />
-            </Box>
+        <Box height={logicalHeight} width={dynamicWidth} overflow="hidden">
+            <Text wrap="truncate">{paddedFrame}</Text>
         </Box>
     );
-};
+});
+LlamaAnimation.displayName = 'LlamaAnimation';

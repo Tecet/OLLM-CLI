@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
-import { render } from 'ink-testing-library';
+import { render, stripAnsi } from '../../../../test/ink-testing.js';
 import { ComparisonView } from '../ComparisonView.js';
 import type { ComparisonResult } from '@ollm/ollm-cli-core/services/comparisonService.js';
 

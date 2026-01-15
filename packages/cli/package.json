@@ -1,24 +1,62 @@
 {
   "name": "@ollm/cli",
   "version": "0.1.0",
+  "description": "Local-first CLI for open-source LLMs with tools, hooks, and MCP integration",
   "type": "module",
   "bin": {
     "ollm": "./dist/cli.js"
   },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "keywords": [
+    "llm",
+    "cli",
+    "ollama",
+    "ai",
+    "local",
+    "mcp",
+    "tools",
+    "context-management",
+    "terminal",
+    "tui",
+    "react",
+    "ink",
+    "open-source",
+    "local-first"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/ollm-cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/ollm-cli/issues"
+  },
+  "homepage": "https://github.com/yourusername/ollm-cli#readme",
+  "license": "Apache-2.0",
+  "author": "OLLM CLI Contributors",
   "dependencies": {
-    "@ollm/ollm-cli-core": "*",
-    "@ollm/core": "*",
-    "@ollm/test-utils": "*",
     "ajv": "^8.12.0",
     "ajv-formats": "^2.1.1",
-    "ink": "^4.0.0",
-    "react": "^18.2.0",
-    "react-devtools-core": "^5.0.0",
+    "fdir": "^6.5.0",
+    "glob": "^13.0.0",
+    "ignore": "^5.3.2",
+    "ink": "^6.6.0",
+    "jimp": "^1.6.0",
+    "picomatch": "^4.0.3",
+    "react": "19.2.3",
+    "react-devtools-core": "^6.1.2",
+    "terminal-image": "^4.2.0",
     "yaml": "^2.3.4",
     "yargs": "^17.7.0"
   },
   "devDependencies": {
-    "@types/react": "^18.2.0",
+    "@types/react": "^19.0.0",
     "@types/yargs": "^17.0.0"
   }
 }

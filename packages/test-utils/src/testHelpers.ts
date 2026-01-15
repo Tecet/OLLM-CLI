@@ -174,8 +174,11 @@ export function createResourceTracker(): ResourceTracker {
     },
     async cleanupAll() {
       for (const resource of resources) {
-        await resource.cleanup();
-        resource.cleaned = true;
+        // Only cleanup if not already cleaned (idempotency)
+        if (!resource.cleaned) {
+          await resource.cleanup();
+          resource.cleaned = true;
+        }
       }
     },
     hasUncleaned() {

@@ -9,7 +9,7 @@
 
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
-import { render } from 'ink-testing-library';
+import { render, stripAnsi } from '../../../../test/ink-testing.js';
 import { ReasoningBox, useReasoningBox } from '../ReasoningBox.js';
 import type { ReasoningBlock } from '../../../../../../core/src/services/reasoningParser.js';
 import React, { useState } from 'react';

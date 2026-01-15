@@ -1,5 +1,5 @@
 import React from 'react';
-import { render } from 'ink-testing-library';
+import { render, stripAnsi } from '../../../../test/ink-testing.js';
 import { describe, it, expect, vi } from 'vitest';
 import { LaunchScreen } from '../LaunchScreen.js';
 
@@ -27,7 +27,7 @@ describe('LaunchScreen', () => {
       <LaunchScreen onDismiss={onDismiss} theme={mockTheme} />
     );
     
-    const output = lastFrame();
+    const output = stripAnsi(lastFrame() || '');
     expect(output).toContain('OLLM CLI');
     expect(output).toContain('Version');
   });
@@ -38,7 +38,7 @@ describe('LaunchScreen', () => {
       <LaunchScreen onDismiss={onDismiss} theme={mockTheme} />
     );
     
-    const output = lastFrame();
+    const output = stripAnsi(lastFrame() || '');
     expect(output).toContain('Quick Actions');
     expect(output).toContain('/help');
   });
@@ -61,7 +61,7 @@ describe('LaunchScreen', () => {
       />
     );
     
-    const output = lastFrame();
+    const output = stripAnsi(lastFrame() || '');
     expect(output).toContain('Recent Sessions');
     expect(output).toContain('session-');
   });
@@ -72,7 +72,7 @@ describe('LaunchScreen', () => {
       <LaunchScreen onDismiss={onDismiss} theme={mockTheme} recentSessions={[]} />
     );
     
-    const output = lastFrame();
+    const output = stripAnsi(lastFrame() || '');
     expect(output).not.toContain('Recent Sessions');
   });
 
@@ -82,7 +82,7 @@ describe('LaunchScreen', () => {
       <LaunchScreen onDismiss={onDismiss} theme={mockTheme} />
     );
     
-    const output = lastFrame();
-    expect(output).toContain('Press any key to continue');
+    const output = stripAnsi(lastFrame() || '');
+    expect(output).toContain('Press any key to continue...');
   });
 });

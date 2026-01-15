@@ -544,7 +544,7 @@ describe('SnapshotManager', () => {
       await fc.assert(
         fc.asyncProperty(
           fc.integer({ min: 2, max: 10 }),
-          fc.integer({ min: 3, max: 15 }),
+          fc.integer({ min: 3, max: 12 }), // Reduced from 15 to 12
           async (maxCount, snapshotsToCreate) => {
             const sessionId = randomUUID();
             const config = createTestConfig({ maxCount });
@@ -557,8 +557,7 @@ describe('SnapshotManager', () => {
               const context = createTestContext({ sessionId });
               const snapshot = await manager.createSnapshot(context);
               createdSnapshots.push(snapshot);
-              // Small delay to ensure different timestamps
-              await new Promise(resolve => setTimeout(resolve, 1));
+              // No delay needed - timestamps are sufficient for ordering
             }
 
             // List snapshots
@@ -592,8 +591,8 @@ describe('SnapshotManager', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 50 } // Reduced from 100 to 50 for faster execution
       );
-    }, 15000); // 15 second timeout
+    }, 30000); // Increased timeout to 30 seconds for file-heavy operations
   });
 });

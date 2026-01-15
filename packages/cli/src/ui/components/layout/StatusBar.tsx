@@ -100,79 +100,89 @@ export function StatusBar({
       justifyContent="space-between"
     >
       {/* Left side: Connection and Model */}
-      <Box flexDirection="row" gap={1}>
-        <Text color={connectionColor}>
-          {connectionIndicator} {connection.provider}
-        </Text>
-        <Text color={theme.text.secondary}>│</Text>
-        <Text color={theme.text.accent}>{model}</Text>
+      <Box flexDirection="row">
+        <Box>
+          <Text color={connectionColor}>
+            {connectionIndicator} {connection.provider}
+          </Text>
+        </Box>
+        <Box>
+          <Text color={theme.text.secondary}> │ </Text>
+        </Box>
+        <Box>
+          <Text color={theme.text.accent}>{model}</Text>
+        </Box>
         
         {/* Project Profile */}
         {projectProfile && (
-          <>
-            <Text color={theme.text.secondary}>│</Text>
+          <Box>
+            <Text color={theme.text.secondary}> │ </Text>
             <Text color={theme.status.info}>
               {projectProfile}
             </Text>
-          </>
+          </Box>
         )}
       </Box>
 
       {/* Right side: Metrics */}
-      <Box flexDirection="row" gap={1}>
+      <Box flexDirection="row">
         {/* Loaded Models */}
         {loadedModels.length > 0 && (
-          <>
+          <Box>
             <Text color={theme.status.success}>
               {loadedModels.length} loaded
             </Text>
-            <Text color={theme.text.secondary}>│</Text>
-          </>
+            <Text color={theme.text.secondary}> │ </Text>
+          </Box>
         )}
 
         {/* Token usage */}
-        <Text color={theme.text.secondary}>
-          {tokens.current}/{tokens.max}
-        </Text>
+        <Box>
+          <Text color={theme.text.secondary}>
+            {tokens.current}/{tokens.max}
+          </Text>
+        </Box>
 
         {/* Git status */}
         {git && (
-          <>
-            <Text color={theme.text.secondary}>│</Text>
+          <Box>
+            <Text color={theme.text.secondary}> │ </Text>
             <Text color={theme.status.info}>
-              {git.branch} {git.staged > 0 && `+${git.staged}`} {git.modified > 0 && `~${git.modified}`}
+              {git.branch}
+              {git.staged > 0 && ` +${git.staged}`}
+              {git.modified > 0 && ` ~${git.modified}`}
             </Text>
-          </>
+          </Box>
         )}
 
         {/* GPU status */}
         {gpu && gpu.available && (
-          <>
-            <Text color={theme.text.secondary}>│</Text>
+          <Box>
+            <Text color={theme.text.secondary}> │ </Text>
             <Text color={gpu.temperature > 80 ? theme.status.warning : theme.text.secondary}>
               {gpu.temperature}°C {formatBytes(gpu.vramUsed)}/{formatBytes(gpu.vramTotal)}
             </Text>
-          </>
+          </Box>
         )}
 
         {/* Review count */}
         {reviews > 0 && (
-          <>
-            <Text color={theme.text.secondary}>│</Text>
+          <Box>
+            <Text color={theme.text.secondary}> │ </Text>
             <Text color={theme.status.warning}>
               {reviews} review{reviews !== 1 ? 's' : ''}
             </Text>
-          </>
+          </Box>
         )}
 
         {/* Cost estimate */}
         {cost > 0 && (
-          <>
-            <Text color={theme.text.secondary}>│</Text>
+          <Box>
+            <Text color={theme.text.secondary}> │ </Text>
             <Text color={theme.text.secondary}>
               ${cost.toFixed(4)}
             </Text>
-          </>
+          </Box>
         )}
       </Box>
     </Box>

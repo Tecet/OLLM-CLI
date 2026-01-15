@@ -170,11 +170,11 @@ repo/
 ```json
 {
   "dependencies": {
-    "ink": "^4.x",
-    "react": "^18.x"
+    "ink": "^6.x",
+    "react": "^19.x"
   },
   "devDependencies": {
-    "@types/react": "^18.x"
+    "@types/react": "^19.x"
   }
 }
 ```

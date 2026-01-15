@@ -6,7 +6,7 @@
  */
 
 import { readdir, stat } from 'fs/promises';
-import { join, resolve } from 'path';
+import { join, resolve, sep } from 'path';
 import { randomUUID } from 'crypto';
 import type { Extension, ExtensionManifest, MCPServerConfig } from './types.js';
 import { ManifestParser } from './manifestParser.js';
@@ -251,7 +251,9 @@ export class ExtensionManager {
     const normalizedPath = resolve(path);
 
     // Check if in user directory (~/.ollm/extensions)
-    if (normalizedPath.includes('.ollm/extensions') || normalizedPath.includes('.ollm\\extensions')) {
+    // Use path.sep for platform-agnostic path separator
+    const extensionsDir = `.ollm${sep}extensions`;
+    if (normalizedPath.includes(extensionsDir)) {
       // Check if it's in home directory
       const homeDir = process.env.HOME || process.env.USERPROFILE || '';
       if (normalizedPath.startsWith(homeDir)) {

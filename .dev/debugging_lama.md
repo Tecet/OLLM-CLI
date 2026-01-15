@@ -400,3 +400,37 @@ render(<App config={config} />, {
 1. **Try Option A first** - Upgrade Ink to 6.x and enable `incrementalRendering`
 2. **If that fails**, implement Option B as a fallback
 3. **Document terminal requirements** for users if advanced protocols are needed
+
+---
+
+## Bug Log: Animation Flicker Resolution
+- **Issue:** Animation flickered due to full-frame redraws on every tick
+- **Symptoms:** Visual jitter and flashing during animation updates
+- **Scope:** Affected all animation rendering in launch screen and demo
+
+### Attempts
+1. **Timestamp:** 2026-01-15T00:00:00-08:00
+   **Hypothesis:** Ink 6.x `incrementalRendering` was already enabled but still flickering because the entire frame was rendered as a single `<Text>` blob, preventing Ink from diffing individual lines.
+   **Plan:** Implement Option B from root cause analysis - refactor animation to render rows individually so Ink can diff line-by-line.
+   **Action:** 
+   - Modified `loadLlamaFrames` to return `FrameData` objects with both `rows: string[]` (for line-by-line rendering) and `full: string` (fallback)
+   - Added memoized `AnimationRow` component for efficient row rendering
+   - Wrapped `LlamaAnimation` in `React.memo()` to prevent unnecessary re-renders
+   - Used `useMemo` for `currentFrameData` to avoid recalculating on every render
+   - Updated both `packages/cli/src/components/lama/LlamaAnimation.tsx` and `packages/cli/src/components/LlamaAnimation.tsx`
+   **Result:** Animation renders smoothly with significantly reduced flicker. Ink can now diff individual rows and only update changed lines.
+   **Next step:** Monitor for any edge cases in different terminal environments.
+
+2. **Timestamp:** 2026-01-15T10:30:00-08:00
+   **Hypothesis:** Row-based rendering still causes flicker in bottom 30-40% because React layout recalculations from marginLeft changes affect multiple rows.
+   **Plan:** Think outside the box - use atomic frame rendering with cursor hiding to eliminate all React layout changes.
+   **Action:**
+   - Replaced row-based rendering with single `<Text>` component containing pre-computed frame string
+   - Added `buildPaddedFrame()` helper that bakes spacing directly into each row as spaces
+   - Added ANSI cursor hiding (`\x1b[?25l`) before frame and showing (`\x1b[?25h`) after
+   - Frame structure: `FrameData { rows: string[], spriteWidth: number }` - padding computed at render time
+   - Container uses fixed `width={dynamicWidth}` and `height={logicalHeight}` to prevent layout shifts
+   - Removed marginLeft - spacing now embedded in frame string itself
+   - Increased tick interval to 150ms for smoother updates
+   **Result:** Pending verification - atomic updates should eliminate partial redraws.
+   **Next step:** Test in terminal and verify flicker is eliminated.

@@ -22,6 +22,7 @@ ollm-cli/
 │   ├── configuration.md           # Complete config reference
 │   ├── troubleshooting.md         # Common issues and solutions
 │   ├── release-checklist.md       # Release procedures
+│   ├── ROADMAP.md                 # Future development roadmap
 │   ├── architecture.md            # (existing) System design
 │   ├── context-management-plan.md # (existing) Context system
 │   └── draft/                     # (existing) Development docs
@@ -41,7 +42,8 @@ ollm-cli/
 1. **README.md** - Quick start and overview (5-minute read)
 2. **Configuration Reference** - Complete settings documentation (reference)
 3. **Troubleshooting Guide** - Problem-solving resource (as-needed)
-4. **Release Checklist** - Maintainer procedures (internal)
+4. **Roadmap** - Future development plans and feature timeline
+5. **Release Checklist** - Maintainer procedures (internal)
 
 ### Package Distribution Flow
 
@@ -207,6 +209,146 @@ OLLM_LOG_LEVEL=debug ollm
 - GitHub Issues: [link]
 - Documentation: [link]
 - Community: [link]
+```
+
+#### Roadmap Document Structure
+
+```markdown
+# OLLM CLI Roadmap
+
+## Overview
+
+This document outlines the development roadmap for OLLM CLI, including completed features and planned future development stages.
+
+## Current Status
+
+**Latest Release:** v0.1.0  
+**Current Stage:** Stage 9 - Documentation and Release
+
+## Completed Stages
+
+### ✅ Stage 1-8: Core Features (Completed)
+
+Brief summary of completed stages including:
+- Interactive TUI and non-interactive modes
+- Tool system with file, shell, and web operations
+- Context management with VRAM monitoring
+- Session recording and compression
+- Hook system for automation
+- MCP integration
+- Testing and QA infrastructure
+
+[Link to detailed documentation]
+
+## Planned Future Development
+
+### 🔮 Stage 10: Kraken Integration (Planned)
+
+**Status:** Planned for future development  
+**Description:** External LLM provider integration for accessing powerful cloud models
+
+**Key Features:**
+- CLI bridge execution for terminal-based coding agents (Gemini CLI, Claude Code, Codex CLI)
+- API provider integration (OpenAI, Anthropic, Google AI)
+- Provider discovery and health checks
+- Intelligent provider selection and auto-escalation
+- Cost tracking and budget enforcement
+- Context transfer between local and external models
+
+[Link to detailed specification: .kiro/specs/stage-10-kraken-integration-future-dev/]
+
+### 🔮 Stage 11: Developer Productivity Tools (Planned)
+
+**Status:** Planned for future development  
+**Description:** Git integration, @-mentions, and diff review for Aider-like workflows
+
+**Key Features:**
+- Git operations tool (status, commit, diff, undo)
+- @-mention syntax for explicit context loading (@file, @symbol, @url)
+- Diff review mode with approve/reject workflow
+- Auto-commit with semantic commit messages
+- Git status in system prompt and status bar
+
+[Link to detailed specification: .kiro/specs/stage-11-developer-productivity-future-dev/]
+
+### 🔮 Stage 12: Cross-Platform Support (Planned)
+
+**Status:** Planned for future development  
+**Description:** Comprehensive cross-platform compatibility for Windows, macOS, and Linux
+
+**Key Features:**
+- Platform detection and adaptation
+- Configuration path resolution (XDG, AppData, Library)
+- Terminal capability detection
+- Cross-platform GPU monitoring
+- Platform-specific shell execution
+- Path normalization
+
+[Link to detailed specification: .kiro/specs/stage-12-cross-platform-future-dev/]
+
+### 🔮 Stage 13: Multi-Provider Support (Planned)
+
+**Status:** Planned for future development  
+**Description:** vLLM and OpenAI-compatible provider adapters
+
+**Key Features:**
+- vLLM provider with high-performance features
+- OpenAI-compatible provider (LM Studio, LocalAI, Kobold, llama.cpp)
+- SSE stream parsing utility
+- Provider registry with aliases
+- Guided decoding support (vLLM-specific)
+- Provider-specific options passthrough
+
+[Link to detailed specification: .kiro/specs/stage-13-vllm-openai-future-dev/]
+
+### 🔮 Stage 14: File Upload System (Planned)
+
+**Status:** Planned for future development  
+**Description:** File sharing with LLM through terminal interface
+
+**Key Features:**
+- Multiple upload methods (slash commands, clipboard, drag-drop, @mentions)
+- Session-scoped storage with automatic cleanup
+- File deduplication with checksums
+- Image processing for vision models
+- Text file extraction and syntax highlighting
+- Storage limits and retention policies
+
+[Link to detailed specification: .kiro/specs/stage-14-file-upload-future-dev/]
+
+### 🔮 Stage 15: Intelligence Layer (Planned)
+
+**Status:** Planned for future development  
+**Description:** Advanced AI capabilities for large codebases
+
+**Key Features:**
+- Semantic codebase search with RAG
+- Structured JSON output with schema enforcement
+- Sandboxed code execution (JavaScript, Python, Bash)
+- Vision and image analysis support
+- Developer productivity tools (undo, export, copy, templates)
+- Usage and cost tracking
+
+[Link to detailed specification: .kiro/specs/stage-15-intelligence-layer-future-dev/]
+
+## Timeline
+
+**Note:** All future development stages are planned but not yet scheduled. Timeline will be determined based on:
+- Community feedback and feature requests
+- Resource availability
+- Priority of features for user workflows
+- Technical dependencies between stages
+
+## Contributing
+
+We welcome contributions to any planned feature! Please:
+1. Review the detailed specification for the stage you're interested in
+2. Open an issue to discuss your approach
+3. Submit a pull request with your implementation
+
+## Feedback
+
+Have suggestions for the roadmap? Please open an issue with the "roadmap" label to share your thoughts.
 ```
 
 ### Package Configuration

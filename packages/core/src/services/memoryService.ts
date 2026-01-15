@@ -179,7 +179,8 @@ export class MemoryService {
       await fs.mkdir(dirname(this.memoryPath), { recursive: true });
 
       // Write atomically by writing to temp file then renaming
-      const tempPath = `${this.memoryPath}.tmp`;
+      // Use unique temp file name to avoid race conditions with concurrent saves
+      const tempPath = `${this.memoryPath}.tmp.${Date.now()}.${Math.random().toString(36).slice(2, 9)}`;
       await fs.writeFile(tempPath, JSON.stringify(storage, null, 2), 'utf-8');
       await fs.rename(tempPath, this.memoryPath);
     } catch (error: any) {

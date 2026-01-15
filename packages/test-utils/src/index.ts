@@ -72,3 +72,43 @@ export {
   type TestMessage,
   type TestToolCall,
 } from './fixtures.js';
+
+// Export UI test helpers
+export {
+  stripAnsi,
+  getTextContent,
+  frameContains,
+  frameMatches,
+  countOccurrences,
+  getLines,
+  getLine,
+  isEmptyFrame,
+  KeyboardInput,
+  typeText,
+  typeAndSubmit,
+  waitForCondition,
+  waitForText,
+  waitForPattern,
+  waitForFrameUpdate,
+  mockTheme,
+  mockKeybinds,
+  createTestWrapper,
+  UIAssertions,
+  UIPerformance,
+  UISnapshot,
+  UIState,
+  UITestHelpers,
+} from './uiTestHelpers.js';
+
+// Export compatibility matrix infrastructure
+export {
+  TestResult,
+  CompatibilityTestRunner,
+  CompatibilityMatrixGenerator,
+  createCompatibilityTestRunner,
+  createCompatibilityMatrixGenerator,
+  type CompatibilityTest,
+  type CompatibilityMatrix,
+  type CompatibilityTestConfig,
+  type CapabilityTestFn,
+} from './compatibilityMatrix.js';

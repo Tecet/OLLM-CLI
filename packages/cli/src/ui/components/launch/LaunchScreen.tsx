@@ -24,7 +24,8 @@ interface LaunchScreenProps {
   };
 }
 
-const STANDARD_ANIMATION_HEIGHT = 20;
+// Standard animation uses 24 lines height (matches LlamaAnimation logicalHeight for 'standard' size)
+const STANDARD_ANIMATION_HEIGHT = 24;
 const STANDARD_ANIMATION_WIDTH = STANDARD_ANIMATION_HEIGHT * 2;
 
 const LaunchHeader = React.memo(({ theme }: { theme: LaunchScreenProps['theme'] }) => (
@@ -32,7 +33,7 @@ const LaunchHeader = React.memo(({ theme }: { theme: LaunchScreenProps['theme'] 
     <VersionBanner theme={theme} />
 
     <Box flexDirection="column" alignItems="center">
-      <Text color={theme.text.secondary}>Documentation: /docs</Text>
+      <Text dimColor color={theme.text.secondary}>Press any key to continue...</Text>
       <Text color={theme.text.secondary}>For commands use: /help</Text>
     </Box>
 
@@ -47,16 +48,10 @@ const LaunchFooter = React.memo(
   ({ theme, recentSessions }: { theme: LaunchScreenProps['theme']; recentSessions: Session[] }) => (
     <Box flexDirection="column" alignItems="center" width="100%">
       {recentSessions.length > 0 && (
-        <Box marginTop={2}>
+        <Box marginTop={1}>
           <RecentSessions sessions={recentSessions} theme={theme} />
         </Box>
       )}
-
-      <Box marginTop={3}>
-        <Text dimColor color={theme.text.secondary}>
-          Press any key to continue...
-        </Text>
-      </Box>
     </Box>
   )
 );
@@ -78,9 +73,11 @@ export const LaunchScreen: React.FC<LaunchScreenProps> = ({
   const termHeight = stdout?.rows ?? 0;
   const isCompact = termHeight > 0 && termHeight < 40;
   const rootHeight = termHeight > 0 ? termHeight : undefined;
-  const animationOuterWidth = Math.max(2, Math.floor(termWidth * 0.7));
-  const animationPadding = 2;
-  const animationInnerWidth = Math.max(0, animationOuterWidth - 2 - animationPadding * 2);
+  
+  // Animation sprite is 48 chars wide (24 lines * 2), need space for movement
+  // Use 80% of terminal width but ensure at least sprite width + some movement room
+  const minAnimationWidth = STANDARD_ANIMATION_WIDTH + 20; // sprite + minimal movement
+  const animationWidth = Math.max(minAnimationWidth, Math.floor(termWidth * 0.8));
 
   return (
     <Box
@@ -94,28 +91,14 @@ export const LaunchScreen: React.FC<LaunchScreenProps> = ({
     >
       <LaunchHeader theme={theme} />
 
-      {/* Animation below the hero text */}
+      <LaunchFooter theme={theme} recentSessions={recentSessions} />
+
+      {/* Animation at the bottom */}
       <Box flexDirection="column" alignItems="center" width="100%">
-        <Box
-          width={animationOuterWidth}
-          padding={animationPadding}
-          borderStyle="single"
-          borderColor={theme.text.accent}
-          overflow="hidden"
-          height={STANDARD_ANIMATION_HEIGHT + animationPadding * 2}
-        >
-          <Box
-            width="100%"
-            height={STANDARD_ANIMATION_HEIGHT}
-            justifyContent="center"
-            backgroundColor="#050505"
-          >
-            <LlamaAnimation size="standard" movementWidth={animationInnerWidth} />
-          </Box>
+        <Box height={STANDARD_ANIMATION_HEIGHT} justifyContent="center">
+          <LlamaAnimation size="standard" movementRatio={0.85} />
         </Box>
       </Box>
-
-      <LaunchFooter theme={theme} recentSessions={recentSessions} />
     </Box>
   );
 };

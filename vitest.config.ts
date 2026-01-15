@@ -5,6 +5,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@ollm/core': resolve(__dirname, './packages/core/src/index.ts'),
+      '@ollm/ollm-cli-core': resolve(__dirname, './packages/core/src'),
       '@ollm/ollm-bridge': resolve(__dirname, './packages/ollm-bridge/src/index.ts'),
       '@ollm/test-utils': resolve(__dirname, './packages/test-utils/src/index.ts'),
     },

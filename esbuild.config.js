@@ -16,6 +16,7 @@ export default {
   platform: 'node',
   target: 'node20',
   format: 'esm',
+  sourcemap: true,
   banner: {
     js: '#!/usr/bin/env node',
   },
@@ -40,7 +41,6 @@ export default {
     'glob',
     'ignore',
     'picomatch',
-    'ink-image',
     'jimp',
     'terminal-image',
   ],

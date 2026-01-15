@@ -311,4 +311,8 @@ if (argv.prompt) {
 
 // Interactive mode - render the TUI
 const { App } = await import('./ui/App.js');
-render(<App config={config} />);
+render(<App config={config} />, {
+  // Ink 6.x anti-flicker options for smooth animation rendering
+  incrementalRendering: true,
+  maxFps: 30  // Higher FPS for fast animation
+});
