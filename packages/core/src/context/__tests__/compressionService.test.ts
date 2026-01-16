@@ -174,6 +174,94 @@ describe('CompressionService', () => {
     });
   });
 
+  describe('Inflation Guard', () => {
+    it('should set status to success when compression is effective', async () => {
+      const messages: Message[] = [
+        {
+          id: '1',
+          role: 'user',
+          content: 'This is a long message that should be easy to summarize or truncate effectively.',
+          timestamp: new Date(),
+        },
+        {
+          id: '2',
+          role: 'user',
+          content: 'Another long message for testing the effective compression.',
+          timestamp: new Date(),
+        },
+      ];
+
+      const strategy: CompressionStrategy = {
+        type: 'truncate',
+        preserveRecent: 10, // Force significant truncation
+        summaryMaxTokens: 1024,
+      };
+
+      const result = await service.compress(messages, strategy);
+      expect(result.status).toBe('success');
+      expect(result.compressedTokens).toBeLessThan(result.originalTokens);
+    });
+
+    it('should set status to inflated when compression increases token count', async () => {
+      // Small input where overhead of summary message makes it larger
+      const messages: Message[] = [
+        {
+          id: '1',
+          role: 'user',
+          content: 'Hi',
+          timestamp: new Date(),
+        },
+      ];
+
+      const strategy: CompressionStrategy = {
+        type: 'summarize',
+        preserveRecent: 0,
+        summaryMaxTokens: 1024,
+      };
+
+      const result = await service.compress(messages, strategy);
+      // Since summary placeholder "[Conversation summary: 1 messages compressed (1 user, 0 assistant)]"
+      // is much longer than "Hi", it should trigger inflation guard.
+      expect(result.status).toBe('inflated');
+      expect(result.compressedTokens).toBeGreaterThanOrEqual(result.originalTokens);
+    });
+  });
+
+  describe('Fractional Preservation', () => {
+    it('should preserve at least 30% of tokens even if preserveRecent is lower', async () => {
+      // Create a long set of messages (~200 tokens)
+      const messages: Message[] = Array.from({ length: 10 }, (_, i) => ({
+        id: `${i}`,
+        role: 'user',
+        content: 'This is a moderately long message to build up some token count for testing preservation.',
+        timestamp: new Date(),
+      }));
+
+      const strategy: CompressionStrategy = {
+        type: 'truncate',
+        preserveRecent: 10, // Very low budget
+        summaryMaxTokens: 1024,
+      };
+
+      const result = await service.compress(messages, strategy);
+      
+      // Total tokens should be around 200+. 30% would be ~60+.
+      // Overhead per message is 10.
+      expect(result.preserved.length).toBeGreaterThan(1); // Should have kept more than 1 message
+      
+      const preservedTokens = result.preserved.reduce((sum, msg) => {
+        return sum + Math.ceil(msg.content.length / 4) + 10;
+      }, 0);
+
+      const totalTokens = messages.reduce((sum, msg) => {
+        return sum + Math.ceil(msg.content.length / 4) + 10;
+      }, 0);
+
+      // Verify it's at least 30% of total
+      expect(preservedTokens).toBeGreaterThanOrEqual(Math.ceil(totalTokens * 0.3));
+    });
+  });
+
   describe('Property-Based Tests', () => {
     /**
      * Property 18: System Prompt Preservation in Truncation

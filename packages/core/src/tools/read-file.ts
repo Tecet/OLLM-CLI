@@ -193,7 +193,7 @@ export class ReadFileInvocation implements ToolInvocation<ReadFileParams, ToolRe
           llmContent: '',
           returnDisplay: '',
           error: {
-            message: `File not found: ${this.params.path}`,
+            message: `File not found: ${this.params.path}.\nTip: Use 'ls "${path.dirname(this.params.path)}"' or 'find_by_name' to verify the path.`,
             type: 'FileNotFoundError',
           },
         };

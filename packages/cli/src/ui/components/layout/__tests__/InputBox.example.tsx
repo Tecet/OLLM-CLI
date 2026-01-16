@@ -14,7 +14,7 @@
 import React from 'react';
 import { Box, Text } from 'ink';
 import { InputBox } from '../InputBox.js';
-import { ChatProvider } from '../../../../contexts/ChatContext.js';
+import { ChatProvider } from '../../../../features/context/ChatContext.js';
 import { defaultDarkTheme, defaultKeybinds } from '../../../uiSettings.js';
 
 /**

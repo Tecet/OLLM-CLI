@@ -43,8 +43,8 @@ describe('StatusBar - Loaded Models', () => {
 
     const output = lastFrame();
 
-    // Should show count of loaded models
-    expect(output).toContain('2 loaded');
+    // Should show count of loaded models in parentheses
+    expect(output).toContain('(2)');
   });
 
   it('should not display loaded models when array is empty', () => {
@@ -76,8 +76,8 @@ describe('StatusBar - Loaded Models', () => {
 
     const output = lastFrame();
 
-    // Should show "1 loaded"
-    expect(output).toContain('1 loaded');
+    // Should show "(1)"
+    expect(output).toContain('(1)');
   });
 
   it('should display plural form for multiple loaded models', () => {
@@ -89,8 +89,8 @@ describe('StatusBar - Loaded Models', () => {
 
     const output = lastFrame();
 
-    // Should show "3 loaded"
-    expect(output).toContain('3 loaded');
+    // Should show "(3)"
+    expect(output).toContain('(3)');
   });
 
   it('should update when loaded models change', () => {
@@ -98,7 +98,7 @@ describe('StatusBar - Loaded Models', () => {
       <StatusBar {...defaultProps} loadedModels={['llama3.1:8b']} />
     );
 
-    expect(lastFrame()).toContain('1 loaded');
+    expect(lastFrame()).toContain('(1)');
 
     // Add another model
     rerender(
@@ -108,7 +108,7 @@ describe('StatusBar - Loaded Models', () => {
       />
     );
 
-    expect(lastFrame()).toContain('2 loaded');
+    expect(lastFrame()).toContain('(2)');
   });
 
   it('should position loaded models before token usage', () => {
@@ -120,8 +120,8 @@ describe('StatusBar - Loaded Models', () => {
 
     const output = lastFrame();
 
-    // Find positions
-    const loadedPos = output.indexOf('2 loaded');
+    // Find positions - loaded models show as "(2)"
+    const loadedPos = output.indexOf('(2)');
     const tokensPos = output.indexOf('100/4096');
 
     // Loaded models should appear before tokens

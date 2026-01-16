@@ -270,6 +270,8 @@ export interface SnapshotStorage {
   exists(snapshotId: string): Promise<boolean>;
   /** Verify snapshot integrity */
   verify(snapshotId: string): Promise<boolean>;
+  /** Get the base storage path */
+  getBasePath(): string;
 }
 
 // ============================================================================
@@ -307,6 +309,8 @@ export interface CompressedContext {
   compressedTokens: number;
   /** Compression ratio (compressed/original) */
   compressionRatio: number;
+  /** Status of the compression attempt */
+  status?: 'success' | 'inflated';
 }
 
 /**
@@ -422,7 +426,7 @@ export interface MemoryGuard {
 export interface ToolCall {
   id: string;
   name: string;
-  arguments: Record<string, unknown>;
+  args: Record<string, unknown>;
 }
 
 /**
@@ -446,6 +450,10 @@ export interface Message {
   content: string;
   /** Message timestamp */
   timestamp: Date;
+  /** Tool calls made by assistant */
+  toolCalls?: ToolCall[];
+  /** Tool call ID for tool role */
+  toolCallId?: string;
   /** Cached token count */
   tokenCount?: number;
   /** Additional metadata */
@@ -529,6 +537,10 @@ export interface ContextConfig {
 export interface ContextManager {
   /** Current configuration */
   config: ContextConfig;
+  /** Active skills */
+  activeSkills: string[];
+  /** Active tools */
+  activeTools: string[];
   /** Start context management services */
   start(): Promise<void>;
   /** Stop context management services */
@@ -549,8 +561,16 @@ export interface ContextManager {
   compress(): Promise<void>;
   /** Clear context (except system prompt) */
   clear(): Promise<void>;
+  /** Set active skills and corresponding tools */
+  setActiveSkills(skills: string[]): void;
   /** Set system prompt */
   setSystemPrompt(prompt: string): void;
   /** Register event listener */
   on(event: string, callback: (data: any) => void): void;
+  /** Unregister event listener */
+  off(event: string, callback: (data: any) => void): void;
+  /** Emit event */
+  emit(event: string, data?: any): boolean;
+  /** Get current messages in context */
+  getMessages(): Promise<Message[]>;
 }

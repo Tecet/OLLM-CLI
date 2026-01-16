@@ -23,7 +23,9 @@ export type MessagePart =
 export interface Message {
   role: Role;
   parts: MessagePart[];
-  name?: string; // Required for tool messages
+  name?: string; // Identification for tool role (legacy or specific providers)
+  toolCalls?: ToolCall[]; // For assistant role
+  toolCallId?: string; // For tool role
 }
 
 /**
@@ -70,12 +72,28 @@ export interface ProviderRequest {
 }
 
 /**
+ * Metrics from the provider for an inference run.
+ */
+export interface ProviderMetrics {
+  totalDuration: number;
+  loadDuration: number;
+  promptEvalCount: number;
+  promptEvalDuration: number;
+  evalCount: number;
+  evalDuration: number;
+}
+
+/**
  * Events emitted by a provider during streaming.
  */
 export type ProviderEvent =
   | { type: 'text'; value: string }
   | { type: 'tool_call'; value: ToolCall }
-  | { type: 'finish'; reason: 'stop' | 'length' | 'tool' }
+  | { 
+      type: 'finish'; 
+      reason: 'stop' | 'length' | 'tool';
+      metrics?: ProviderMetrics;
+    }
   | { type: 'error'; error: { message: string; code?: string } };
 
 /**

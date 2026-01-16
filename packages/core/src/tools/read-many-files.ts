@@ -176,7 +176,7 @@ export class ReadManyFilesInvocation implements ToolInvocation<ReadManyFilesPara
         let errorMessage: string;
 
         if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-          errorMessage = 'File not found';
+          errorMessage = 'File not found. Tip: Use \'ls\' or \'find_by_name\' to locate it.';
         } else if ((error as NodeJS.ErrnoException).code === 'EACCES') {
           errorMessage = 'Permission denied';
         } else if (

@@ -42,6 +42,19 @@ export interface ExtensionManifest {
   settings?: ExtensionSetting[];
   /** Skill definitions */
   skills?: Skill[];
+  /** Permission requirements */
+  permissions?: {
+    /** Filesystem access paths */
+    filesystem?: string[];
+    /** Network access domains */
+    network?: string[];
+    /** Environment variable access */
+    env?: string[];
+    /** Shell command execution */
+    shell?: boolean;
+    /** MCP server management */
+    mcp?: boolean;
+  };
 }
 
 /**

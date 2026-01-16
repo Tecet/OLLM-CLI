@@ -20,6 +20,11 @@ interface TrustedHooksStorage {
 }
 
 /**
+ * Callback for requesting user approval
+ */
+export type ApprovalCallback = (hook: Hook, hash: string) => Promise<boolean>;
+
+/**
  * Configuration for TrustedHooks
  */
 export interface TrustedHooksConfig {
@@ -27,6 +32,8 @@ export interface TrustedHooksConfig {
   storagePath: string;
   /** Whether to auto-trust workspace hooks */
   trustWorkspace?: boolean;
+  /** Callback for requesting user approval (optional) */
+  approvalCallback?: ApprovalCallback;
 }
 
 /**
@@ -124,20 +131,33 @@ export class TrustedHooks {
   /**
    * Request user approval for a hook
    * 
-   * TODO: Integrate with UI for actual user prompting
+   * Uses the approval callback if provided, otherwise returns false.
    * 
    * @param hook - The hook to request approval for
    * @returns Promise that resolves to true if approved
    */
   async requestApproval(hook: Hook): Promise<boolean> {
-    // TODO: Implement UI integration for approval prompting
-    // For now, this is a stub that returns false
-    // In a real implementation, this would:
-    // 1. Display hook details to user
-    // 2. Show hook source code
-    // 3. Prompt for approval
-    // 4. Return user's decision
-    return false;
+    // If no approval callback is configured, deny by default
+    if (!this.config.approvalCallback) {
+      console.warn(
+        `Hook '${hook.name}' requires approval but no approval callback is configured. Denying by default.`
+      );
+      return false;
+    }
+
+    // Compute hash for the hook
+    const hash = await this.computeHash(hook);
+
+    // Call the approval callback
+    try {
+      const approved = await this.config.approvalCallback(hook, hash);
+      return approved;
+    } catch (error) {
+      // If approval callback throws, deny by default
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error(`Error requesting approval for hook '${hook.name}': ${errorMessage}`);
+      return false;
+    }
   }
 
   /**
@@ -149,11 +169,14 @@ export class TrustedHooks {
   async storeApproval(hook: Hook, hash: string): Promise<void> {
     const sourcePath = this.getHookSourcePath(hook);
     
+    // Get username from environment or use 'user' as default
+    const username = process.env.USER || process.env.USERNAME || 'user';
+    
     const approval: HookApproval = {
       source: sourcePath,
       hash,
       approvedAt: new Date().toISOString(),
-      approvedBy: 'user', // TODO: Get actual username
+      approvedBy: username,
     };
 
     // Store in memory

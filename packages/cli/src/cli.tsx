@@ -7,6 +7,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { loadConfig } from './config/configLoader.js';
 import type { Config } from './config/types.js';
+import { patchStdio, createWorkingStdio } from './utils/stdio.js';
 
 // Get package.json path
 const __filename = fileURLToPath(import.meta.url);
@@ -311,8 +312,20 @@ if (argv.prompt) {
 
 // Interactive mode - render the TUI
 const { App } = await import('./ui/App.js');
+
+// Patch stdio to prevent stray output from corrupting the TUI
+// This redirects all stdout/stderr to an event bus (currently silenced)
+// preventing flickering and "jitter" caused by background logs.
+patchStdio();
+const inkStdio = createWorkingStdio();
+
 render(<App config={config} />, {
-  // Ink 6.x anti-flicker options for smooth animation rendering
+  stdout: inkStdio.stdout as any,
+  stderr: inkStdio.stderr as any,
+  // Ink 6.x options
   incrementalRendering: true,
-  maxFps: 30  // Higher FPS for fast animation
+  maxFps: 30,
+  patchConsole: false, 
+  exitOnCtrlC: true,
+  alternateBuffer: true,
 });

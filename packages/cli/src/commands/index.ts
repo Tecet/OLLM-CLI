@@ -11,4 +11,5 @@ export { contextCommands } from './contextCommands.js';
 export { metricsCommands } from './metricsCommands.js';
 export { reasoningCommands } from './reasoningCommands.js';
 export { utilityCommands } from './utilityCommands.js';
+export { hookCommands } from './hookCommands.js';
 export type { Command, CommandHandler, CommandResult } from './types.js';

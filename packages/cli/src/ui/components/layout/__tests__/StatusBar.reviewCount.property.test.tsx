@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
-import React from 'react';
 import { render, stripAnsi } from '../../../../test/ink-testing.js';
 import { StatusBar, ConnectionStatus } from '../StatusBar.js';
 
@@ -50,10 +49,10 @@ describe('Property 18: Review Count Display', () => {
             <StatusBar {...defaultProps} reviews={reviewCount} />
           );
 
-          const output = lastFrame();
+          const output = stripAnsi(lastFrame());
           
-          // Property: Review count > 0 should be displayed
-          expect(output).toContain(`${reviewCount} review`);
+          // Property: Review count > 0 should be displayed with "Reviews:" prefix
+          expect(output).toContain(`Reviews: ${reviewCount}`);
           
           return true;
         }
@@ -71,7 +70,7 @@ describe('Property 18: Review Count Display', () => {
             <StatusBar {...defaultProps} reviews={reviewCount} />
           );
 
-          const output = lastFrame();
+          const output = stripAnsi(lastFrame());
           
           // Property: Review count of 0 should not be displayed
           expect(output).not.toContain('review');
@@ -88,11 +87,10 @@ describe('Property 18: Review Count Display', () => {
       <StatusBar {...defaultProps} reviews={1} />
     );
 
-    const output = lastFrame();
+    const output = stripAnsi(lastFrame());
     
-    // Property: Count of 1 should use singular form
-    expect(output).toContain('1 review');
-    expect(output).not.toContain('1 reviews');
+    // Property: Count of 1 should use "Reviews: 1" format
+    expect(output).toContain('Reviews: 1');
   });
 
   it('should display plural "reviews" for count greater than 1', () => {
@@ -104,10 +102,10 @@ describe('Property 18: Review Count Display', () => {
             <StatusBar {...defaultProps} reviews={reviewCount} />
           );
 
-          const output = lastFrame();
+          const output = stripAnsi(lastFrame());
           
-          // Property: Count > 1 should use plural form
-          expect(output).toContain(`${reviewCount} reviews`);
+          // Property: Count > 1 should use "Reviews: N" format
+          expect(output).toContain(`Reviews: ${reviewCount}`);
           
           return true;
         }
@@ -125,10 +123,10 @@ describe('Property 18: Review Count Display', () => {
             <StatusBar {...defaultProps} reviews={reviewCount} />
           );
 
-          const output = lastFrame();
+          const output = stripAnsi(lastFrame());
           
-          // Property: Review count should be displayed (color is applied via Ink)
-          expect(output).toContain(`${reviewCount} review`);
+          // Property: Review count should be displayed with "Reviews:" prefix
+          expect(output).toContain(`Reviews: ${reviewCount}`);
           
           return true;
         }
@@ -147,16 +145,16 @@ describe('Property 18: Review Count Display', () => {
             <StatusBar {...defaultProps} reviews={reviewCount} />
           );
 
-          const firstOutput = firstFrame();
-          expect(firstOutput).toContain(`${reviewCount} review`);
+          const firstOutput = stripAnsi(firstFrame());
+          expect(firstOutput).toContain(`Reviews: ${reviewCount}`);
 
           // Re-render with same review count
           rerender(<StatusBar {...defaultProps} reviews={reviewCount} />);
 
-          const secondOutput = firstFrame();
+          const secondOutput = stripAnsi(firstFrame());
           
           // Property: Review count should remain consistent
-          expect(secondOutput).toContain(`${reviewCount} review`);
+          expect(secondOutput).toContain(`Reviews: ${reviewCount}`);
           
           return true;
         }
@@ -178,20 +176,16 @@ describe('Property 18: Review Count Display', () => {
             <StatusBar {...defaultProps} reviews={firstCount} />
           );
 
-          const firstOutput = firstFrame();
-          expect(firstOutput).toContain(`${firstCount} review`);
+          const firstOutput = stripAnsi(firstFrame());
+          expect(firstOutput).toContain(`Reviews: ${firstCount}`);
 
           // Re-render with different review count
           rerender(<StatusBar {...defaultProps} reviews={secondCount} />);
 
-          const secondOutput = firstFrame();
+          const secondOutput = stripAnsi(firstFrame());
           
           // Property: Review count should update to new value
-          expect(secondOutput).toContain(`${secondCount} review`);
-          
-          // Only check that old count is not present if it's not a substring of new count
-          // For example, "5" is a substring of "45", so we can't reliably check for absence
-          // Instead, we verify the new count is present, which is sufficient
+          expect(secondOutput).toContain(`Reviews: ${secondCount}`);
           
           return true;
         }
@@ -210,13 +204,13 @@ describe('Property 18: Review Count Display', () => {
             <StatusBar {...defaultProps} reviews={initialCount} />
           );
 
-          const firstOutput = firstFrame();
-          expect(firstOutput).toContain(`${initialCount} review`);
+          const firstOutput = stripAnsi(firstFrame());
+          expect(firstOutput).toContain(`Reviews: ${initialCount}`);
 
           // Re-render with zero reviews
           rerender(<StatusBar {...defaultProps} reviews={0} />);
 
-          const secondOutput = firstFrame();
+          const secondOutput = stripAnsi(firstFrame());
           
           // Property: Review count should be hidden when zero
           expect(secondOutput).not.toContain('review');
@@ -251,10 +245,10 @@ describe('Property 18: Review Count Display', () => {
             />
           );
 
-          const output = lastFrame();
+          const output = stripAnsi(lastFrame());
           
           // Property: Review count should coexist with other elements
-          expect(output).toContain(`${reviews} review`);
+          expect(output).toContain(`Reviews: ${reviews}`);
           expect(output).toContain(model);
           expect(output).toContain(`${tokens.current}/${tokens.max}`);
           

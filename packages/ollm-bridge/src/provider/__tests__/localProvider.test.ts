@@ -670,10 +670,12 @@ describe('LocalProvider', () => {
       const events = Array.from((provider as any).mapChunkToEvents(chunk));
 
       expect(events).toHaveLength(1);
-      expect(events[0]).toEqual({
+      expect(events[0]).toMatchObject({
         type: 'finish',
         reason: 'stop',
       });
+      // Should also include metrics
+      expect(events[0]).toHaveProperty('metrics');
     });
 
     it('uses default reason when done_reason is missing', () => {
@@ -684,10 +686,12 @@ describe('LocalProvider', () => {
       const events = Array.from((provider as any).mapChunkToEvents(chunk));
 
       expect(events).toHaveLength(1);
-      expect(events[0]).toEqual({
+      expect(events[0]).toMatchObject({
         type: 'finish',
         reason: 'stop',
       });
+      // Should also include metrics
+      expect(events[0]).toHaveProperty('metrics');
     });
 
     it('handles multiple tool calls in one chunk', () => {
@@ -749,6 +753,8 @@ describe('LocalProvider', () => {
 
       expect(events).toHaveLength(2);
       expect(events[0]).toEqual({ type: 'text', value: 'Final text' });
-      expect(events[1]).toEqual({ type: 'finish', reason: 'stop' });
+      expect(events[1]).toMatchObject({ type: 'finish', reason: 'stop' });
+      // Should also include metrics
+      expect(events[1]).toHaveProperty('metrics');
     });
   });

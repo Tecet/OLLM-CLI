@@ -15,3 +15,29 @@ export type { ResolvedExtensionSetting } from './settingsIntegration.js';
 export { SkillRegistry, substitutePromptPlaceholders, extractPlaceholders } from './skillRegistry.js';
 export type { RegisteredSkill } from './skillRegistry.js';
 export * from './config.js';
+
+// Extension Registry (Marketplace)
+export { ExtensionRegistry } from './extensionRegistry.js';
+export type {
+  ExtensionMetadata,
+  ExtensionSearchResult,
+  ExtensionInstallResult,
+  RegistryConfig,
+} from './extensionRegistry.js';
+
+// Extension Watcher (Hot-Reload)
+export { ExtensionWatcher } from './extensionWatcher.js';
+export type {
+  FileChangeEvent,
+  WatcherConfig,
+} from './extensionWatcher.js';
+
+// Extension Sandbox (Permissions)
+export { ExtensionSandbox } from './extensionSandbox.js';
+export type {
+  PermissionType,
+  Permission,
+  ExtensionPermissions,
+  PermissionCheckResult,
+  SandboxConfig,
+} from './extensionSandbox.js';

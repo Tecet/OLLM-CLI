@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Box, Text } from 'ink';
-import { useUI } from '../../../contexts/UIContext.js';
+import { useUI } from '../../../features/context/UIContext.js';
 
 /**
  * Git status information

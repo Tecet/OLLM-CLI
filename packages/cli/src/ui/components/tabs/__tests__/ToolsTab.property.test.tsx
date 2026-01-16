@@ -3,8 +3,8 @@ import * as fc from 'fast-check';
 import React from 'react';
 import { render, stripAnsi } from '../../../../test/ink-testing.js';
 import { ToolsTab } from '../ToolsTab.js';
-import { ReviewProvider, Review } from '../../../../contexts/ReviewContext.js';
-import { UIProvider } from '../../../../contexts/UIContext.js';
+import { ReviewProvider, Review } from '../../../../features/context/ReviewContext.js';
+import { UIProvider } from '../../../../features/context/UIContext.js';
 
 /**
  * Property-based tests for ToolsTab component

@@ -35,6 +35,7 @@ import { createSnapshotManager } from './snapshotManager.js';
 import { CompressionService as CompressionServiceImpl } from './compressionService.js';
 import { createMemoryGuard } from './memoryGuard.js';
 import { createSnapshotStorage } from './snapshotStorage.js';
+import { loadJitContext } from './jitDiscovery.js';
 
 /**
  * Default context configuration
@@ -69,6 +70,11 @@ const DEFAULT_CONFIG: ContextConfig = {
  */
 export class ContextManagerImpl extends EventEmitter implements ContextManager {
   public config: ContextConfig;
+  public activeSkills: string[] = [];
+  public activeTools: string[] = [];
+  public activeHooks: string[] = [];
+  public activeMcpServers: string[] = [];
+  public activePrompts: string[] = [];
   
   private vramMonitor: VRAMMonitor;
   private tokenCounter: TokenCounter;
@@ -431,6 +437,40 @@ export class ContextManagerImpl extends EventEmitter implements ContextManager {
     return await this.snapshotManager.listSnapshots(this.sessionId);
   }
 
+  private loadedPaths: Set<string> = new Set();
+
+  /**
+   * Discover and load context for a specific path
+   */
+  async discoverContext(targetPath: string): Promise<void> {
+    const roots = [this.snapshotStorage.getBasePath()]; // Simple root for now
+    
+    const result = await loadJitContext(
+      targetPath,
+      roots,
+      this.loadedPaths
+    );
+
+    if (result.files.length === 0) {
+      return;
+    }
+
+    // Add discovered instructions as a system-level message
+    const discoveryMessage: Message = {
+      id: `jit-discovery-${Date.now()}`,
+      role: 'system',
+      content: result.instructions,
+      timestamp: new Date()
+    };
+
+    await this.addMessage(discoveryMessage);
+    
+    this.emit('context-discovered', {
+      path: targetPath,
+      files: result.files.map((f: { path: string }) => f.path)
+    });
+  }
+
   /**
    * Trigger manual compression
    */
@@ -449,6 +489,16 @@ export class ContextManagerImpl extends EventEmitter implements ContextManager {
       this.currentContext.messages,
       strategy
     );
+
+    // Inflation Guard: Skip update if compression actually increased token count
+    if (compressed.status === 'inflated') {
+      this.emit('compression-skipped', {
+        reason: 'inflation',
+        originalTokens: compressed.originalTokens,
+        compressedTokens: compressed.compressedTokens
+      });
+      return;
+    }
     
     // Replace messages with compressed version
     const systemPrompt = this.currentContext.messages.find(
@@ -514,6 +564,38 @@ export class ContextManagerImpl extends EventEmitter implements ContextManager {
   }
 
   /**
+   * Set active skills and corresponding tools
+   */
+  setActiveSkills(skills: string[]): void {
+    this.activeSkills = skills;
+    this.emit('active-skills-updated', { skills });
+  }
+
+  /**
+   * Set active hooks
+   */
+  setActiveHooks(hooks: string[]): void {
+    this.activeHooks = hooks;
+    this.emit('active-hooks-updated', { hooks });
+  }
+
+  /**
+   * Set active MCP servers
+   */
+  setActiveMcpServers(servers: string[]): void {
+    this.activeMcpServers = servers;
+    this.emit('active-mcp-updated', { servers });
+  }
+
+  /**
+   * Set active tools
+   */
+  setActiveTools(tools: string[]): void {
+    this.activeTools = tools;
+    this.emit('active-tools-updated', { tools });
+  }
+
+  /**
    * Set system prompt
    */
   setSystemPrompt(content: string): void {
@@ -527,6 +609,12 @@ export class ContextManagerImpl extends EventEmitter implements ContextManager {
         content
       )
     };
+    
+    // Track prompts if it's a registered prompt
+    if (content) {
+        // This is a simplified tracking, ideally we check against a registry
+        // but for now we just emit that system prompt changed
+    }
     
     // Remove old system prompt if exists
     this.currentContext.messages = this.currentContext.messages.filter(
@@ -544,6 +632,14 @@ export class ContextManagerImpl extends EventEmitter implements ContextManager {
     
     // Update context pool
     this.contextPool.setCurrentTokens(this.currentContext.tokenCount);
+    
+    this.emit('system-prompt-updated', { content });
+  }
+  /**
+   * Get current messages in context
+   */
+  async getMessages(): Promise<Message[]> {
+    return this.currentContext.messages;
   }
 }
 

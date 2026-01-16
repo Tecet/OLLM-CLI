@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Text } from 'ink';
-import { useUI } from '../../../contexts/UIContext.js';
+import { useUI } from '../../../features/context/UIContext.js';
 import { ModelPicker, Model } from '../settings/ModelPicker.js';
 import { ProviderSelector, Provider } from '../settings/ProviderSelector.js';
 import { ThemePicker } from '../settings/ThemePicker.js';
@@ -76,11 +76,6 @@ export function SettingsTab({
 }: SettingsTabProps) {
   const { state: uiState } = useUI();
 
-  const handleQuickAction = (action: 'save' | 'export' | 'clear') => {
-    if (onQuickAction) {
-      onQuickAction(action);
-    }
-  };
 
   return (
     <Box flexDirection="column" height="100%" padding={1}>
@@ -161,6 +156,13 @@ export function SettingsTab({
             />
           </Box>
         </Box>
+      </Box>
+
+      {/* Footer */}
+      <Box marginTop={1} justifyContent="center" flexShrink={0}>
+        <Text color={uiState.theme.text.secondary} dimColor>
+          Press Esc to return to Chat
+        </Text>
       </Box>
     </Box>
   );

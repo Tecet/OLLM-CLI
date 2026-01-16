@@ -13,6 +13,7 @@ export type {
   ModelInfo,
   PullProgress,
   ProviderAdapter,
+  ProviderMetrics,
 } from './provider/types.js';
 
 // Provider registry
@@ -67,6 +68,8 @@ export {
   WebSearchTool,
   MemoryTool,
   WriteTodosTool,
+  MemoryDumpTool,
+  HotSwapTool,
 } from './tools/index.js';
 
 // Tool types
@@ -128,6 +131,7 @@ export {
   DefaultVRAMMonitor,
   DefaultGPUDetector,
   ContextManagerImpl,
+  HotSwapService,
 } from './context/index.js';
 
 export type {
@@ -238,3 +242,11 @@ export {
   DefaultMCPSchemaConverter,
   DefaultMCPToolWrapper,
 } from './mcp/index.js';
+
+// Prompt System
+export {
+  PromptRegistry,
+  type PromptDefinition,
+  type RegisteredPrompt,
+  type PromptTemplateParams,
+} from './prompts/index.js';

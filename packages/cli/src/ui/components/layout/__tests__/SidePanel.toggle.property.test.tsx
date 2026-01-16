@@ -1,8 +1,18 @@
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
-import React from 'react';
-import { render, stripAnsi } from '../../../../test/ink-testing.js';
-import { SidePanel, ContextSection } from '../SidePanel.js';
+import { render } from '../../../../test/ink-testing.js';
+import { SidePanel } from '../SidePanel.js';
+import { Box, Text } from 'ink';
+import type { TabType } from '../../../../features/context/UIContext.js';
+
+// Mock ContextSection component for testing
+function MockContextSection() {
+  return (
+    <Box flexDirection="column">
+      <Text>Mock Context</Text>
+    </Box>
+  );
+}
 
 /**
  * Property 14: Side Panel Toggle
@@ -29,10 +39,14 @@ describe('Property 14: Side Panel Toggle', () => {
     {
       id: 'context',
       title: 'Context Files',
-      component: ContextSection,
+      component: MockContextSection,
       collapsed: false,
     },
   ];
+
+  const defaultActiveTab: TabType = 'chat';
+  const defaultNotifications = new Map<TabType, number>();
+  const mockOnTabChange = () => {};
 
   it('should render when visible is true', () => {
     fc.assert(
@@ -43,6 +57,9 @@ describe('Property 14: Side Panel Toggle', () => {
             <SidePanel
               visible={visible}
               sections={defaultSections}
+              activeTab={defaultActiveTab}
+              onTabChange={mockOnTabChange}
+              notifications={defaultNotifications}
               theme={defaultTheme}
             />
           );
@@ -69,6 +86,9 @@ describe('Property 14: Side Panel Toggle', () => {
             <SidePanel
               visible={visible}
               sections={defaultSections}
+              activeTab={defaultActiveTab}
+              onTabChange={mockOnTabChange}
+              notifications={defaultNotifications}
               theme={defaultTheme}
             />
           );
@@ -96,6 +116,9 @@ describe('Property 14: Side Panel Toggle', () => {
               <SidePanel
                 visible={visible}
                 sections={defaultSections}
+                activeTab={defaultActiveTab}
+                onTabChange={mockOnTabChange}
+                notifications={defaultNotifications}
                 theme={defaultTheme}
               />
             );
@@ -132,6 +155,9 @@ describe('Property 14: Side Panel Toggle', () => {
               <SidePanel
                 visible={currentVisibility}
                 sections={defaultSections}
+                activeTab={defaultActiveTab}
+                onTabChange={mockOnTabChange}
+                notifications={defaultNotifications}
                 theme={defaultTheme}
               />
             );

@@ -19,6 +19,7 @@ import { WebSearchTool } from './web-search.js';
 import { MemoryTool } from './memory.js';
 import { WriteTodosTool } from './write-todos.js';
 import { RememberTool } from './remember.js';
+import { MemoryDumpTool } from './MemoryDumpTool.js';
 import { ToolRegistry } from './tool-registry.js';
 
 // Export tool registry
@@ -56,6 +57,8 @@ export { WebSearchTool, WebSearchInvocation, type WebSearchParams } from './web-
 export { MemoryTool, MemoryInvocation, type MemoryParams } from './memory.js';
 export { WriteTodosTool, WriteTodosInvocation, type WriteTodosParams } from './write-todos.js';
 export { RememberTool, RememberInvocation, type RememberParams } from './remember.js';
+export { MemoryDumpTool } from './MemoryDumpTool.js';
+export { HotSwapTool, HotSwapInvocation, type HotSwapParams } from './HotSwapTool.js';
 
 /**
  * Configuration for built-in tools that require paths
@@ -119,4 +122,7 @@ export function registerBuiltInTools(registry: ToolRegistry, config?: BuiltInToo
   // Persistent storage tools
   registry.register(new MemoryTool(memoryPath));
   registry.register(new WriteTodosTool(todosPath));
+  
+  // Debug/Self-Reflection
+  registry.register(new MemoryDumpTool());
 }

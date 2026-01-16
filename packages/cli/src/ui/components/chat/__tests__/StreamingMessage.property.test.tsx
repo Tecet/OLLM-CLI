@@ -16,7 +16,7 @@ import React from 'react';
 import { render } from 'ink-testing-library';
 import { Message } from '../Message.js';
 import { mockTheme } from '@ollm/test-utils';
-import type { Message as MessageType } from '../../../../contexts/ChatContext.js';
+import type { Message } from '../../../../features/context/ChatContext.js';
 
 describe('Property 28: Incremental Text Rendering', () => {
   /**

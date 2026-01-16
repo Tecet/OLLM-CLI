@@ -14,6 +14,9 @@ export type {
   MCPServerStatusType,
   MCPServerInfo,
   MCPTool,
+  MCPResource,
+  MCPPrompt,
+  MCPOAuthConfig,
   MCPRequest,
   MCPResponse,
   MCPError,
@@ -49,3 +52,22 @@ export {
 
 // Configuration
 export * from './config.js';
+
+// Health monitoring
+export type {
+  HealthCheckResult,
+  HealthMonitorConfig,
+  HealthMonitorEvent,
+  HealthMonitorEventType,
+  HealthMonitorEventListener,
+} from './mcpHealthMonitor.js';
+export { MCPHealthMonitor } from './mcpHealthMonitor.js';
+
+// OAuth provider
+export type {
+  OAuthToken,
+  OAuthTokenStorage,
+  OAuthProviderConfig,
+  OAuthAuthorizationResult,
+} from './mcpOAuth.js';
+export { MCPOAuthProvider } from './mcpOAuth.js';

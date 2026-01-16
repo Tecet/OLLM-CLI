@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Box, Text } from 'ink';
-import { useUI } from '../../../contexts/UIContext.js';
+import { useUI } from '../../../features/context/UIContext.js';
 
 /**
  * SearchTab component (Scaffold)
@@ -12,7 +12,7 @@ import { useUI } from '../../../contexts/UIContext.js';
  */
 export function SearchTab() {
   const { state: uiState } = useUI();
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery] = useState('');
 
   return (
     <Box flexDirection="column" height="100%" padding={2}>
@@ -25,9 +25,11 @@ export function SearchTab() {
         marginBottom={2}
         flexShrink={0}
       >
-        <Text bold color={uiState.theme.text.accent} marginBottom={1}>
-          Semantic Search
-        </Text>
+        <Box marginBottom={1}>
+            <Text bold color={uiState.theme.text.accent}>
+            Semantic Search
+            </Text>
+        </Box>
         
         <Box>
           <Text color={uiState.theme.text.secondary}>
@@ -45,9 +47,11 @@ export function SearchTab() {
         paddingY={1}
         flexGrow={1}
       >
-        <Text bold color={uiState.theme.text.secondary} marginBottom={1}>
-          Search Results
-        </Text>
+        <Box marginBottom={1}>
+            <Text bold color={uiState.theme.text.secondary}>
+            Search Results
+            </Text>
+        </Box>
         
         <Box flexDirection="column" gap={1}>
           <Text color={uiState.theme.text.secondary}>
@@ -66,9 +70,11 @@ export function SearchTab() {
         marginTop={2}
         flexShrink={0}
       >
-        <Text bold color={uiState.theme.status.info} marginBottom={1}>
-          📝 Implementation Note
-        </Text>
+        <Box marginBottom={1}>
+            <Text bold color={uiState.theme.status.info}>
+            📝 Implementation Note
+            </Text>
+        </Box>
         
         <Text color={uiState.theme.text.secondary}>
           Full semantic search functionality will be implemented in Stage 11.
@@ -90,6 +96,13 @@ export function SearchTab() {
         </Text>
         <Text color={uiState.theme.text.secondary}>
           • File type filtering
+        </Text>
+      </Box>
+
+      {/* Footer */}
+      <Box marginTop={1} justifyContent="center" flexShrink={0}>
+        <Text color={uiState.theme.text.secondary} dimColor>
+          Press Esc to return to Chat
         </Text>
       </Box>
     </Box>

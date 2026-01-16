@@ -32,3 +32,6 @@ temp/
 
 # Test artifacts
 test-session-*/
+
+# Development documentation and debugging
+.dev/

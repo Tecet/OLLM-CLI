@@ -9,7 +9,7 @@ import React from 'react';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { render } from 'ink-testing-library';
 import { ChatHistory } from '../ChatHistory.js';
-import type { Message } from '../../../../contexts/ChatContext.js';
+import { Message } from '../../../../features/context/ChatContext.js';
 import { mockTheme } from '@ollm/test-utils';
 
 describe('ChatHistory Component', () => {
@@ -205,7 +205,7 @@ describe('ChatHistory Component', () => {
   });
 
   describe('Streaming Indicators', () => {
-    it('shows streaming indicator when streaming', () => {
+    it('renders without error when streaming', () => {
       const messages: Message[] = [];
 
       const { lastFrame } = render(
@@ -219,10 +219,10 @@ describe('ChatHistory Component', () => {
 
       const frame = lastFrame();
       expect(frame).toBeDefined();
-      expect(frame).toContain('typing');
+      // Streaming indicator is shown in StaticInputArea, not ChatHistory
     });
 
-    it('shows waiting indicator when waiting for response', () => {
+    it('renders without error when waiting for response', () => {
       const messages: Message[] = [];
 
       const { lastFrame } = render(
@@ -236,10 +236,10 @@ describe('ChatHistory Component', () => {
 
       const frame = lastFrame();
       expect(frame).toBeDefined();
-      // Llama animation should be present
+      // Waiting indicator (Llama animation) is shown in StaticInputArea, not ChatHistory
     });
 
-    it('hides indicators when not streaming or waiting', () => {
+    it('renders messages when not streaming or waiting', () => {
       const messages: Message[] = [
         {
           id: '1',
@@ -260,7 +260,7 @@ describe('ChatHistory Component', () => {
 
       const frame = lastFrame();
       expect(frame).toBeDefined();
-      expect(frame).not.toContain('typing');
+      expect(frame).toContain('Hello');
     });
   });
 

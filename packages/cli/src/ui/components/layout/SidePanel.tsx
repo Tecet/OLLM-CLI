@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Box, Text } from 'ink';
+import { TabBar } from './TabBar.js';
+import { TabType } from '../../../features/context/UIContext.js';
 
 export interface SectionConfig {
   id: string;
@@ -11,6 +13,9 @@ export interface SectionConfig {
 export interface SidePanelProps {
   visible: boolean;
   sections: SectionConfig[];
+  activeTab: TabType;
+  onTabChange: (tab: TabType) => void;
+  notifications: Map<TabType, number>;
   theme: {
     text: {
       primary: string;
@@ -32,7 +37,7 @@ interface SidePanelSectionProps {
   theme: SidePanelProps['theme'];
 }
 
-function SidePanelSection({ title, collapsed, onToggle, children, theme }: SidePanelSectionProps) {
+function SidePanelSection({ title, collapsed, children, theme }: Omit<SidePanelSectionProps, 'onToggle'>) {
   return (
     <Box flexDirection="column" marginBottom={1}>
       <Box>
@@ -49,22 +54,8 @@ function SidePanelSection({ title, collapsed, onToggle, children, theme }: SideP
   );
 }
 
-export function SidePanel({ visible, sections, theme }: SidePanelProps) {
-  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(
-    new Set(sections.filter(s => s.collapsed).map(s => s.id))
-  );
-
-  const toggleSection = (id: string) => {
-    setCollapsedSections(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  };
+export function SidePanel({ visible, sections, activeTab, onTabChange, notifications, theme }: SidePanelProps) {
+  const collapsedSections = new Set(sections.filter(s => s.collapsed).map(s => s.id));
 
   if (!visible) {
     return null;
@@ -76,13 +67,24 @@ export function SidePanel({ visible, sections, theme }: SidePanelProps) {
       flexGrow={1}
       borderStyle="single"
       borderColor={theme.text.secondary}
-      paddingLeft={1}
+      paddingX={1}
     >
-      <Box marginBottom={1}>
-        <Text color={theme.text.accent} bold>
-          Side Panel
-        </Text>
+      {/* Navigation Tabs at the top of side panel */}
+      <Box 
+        borderStyle="single" 
+        borderColor={theme.text.secondary} 
+        marginY={1}
+        paddingX={1}
+      >
+        <TabBar
+          activeTab={activeTab}
+          onTabChange={onTabChange}
+          notifications={notifications}
+          theme={theme}
+          noBorder
+        />
       </Box>
+
       {sections.map(section => {
         const Component = section.component;
         const isCollapsed = collapsedSections.has(section.id);
@@ -92,23 +94,12 @@ export function SidePanel({ visible, sections, theme }: SidePanelProps) {
             key={section.id}
             title={section.title}
             collapsed={isCollapsed}
-            onToggle={() => toggleSection(section.id)}
             theme={theme}
           >
             <Component />
           </SidePanelSection>
         );
       })}
-    </Box>
-  );
-}
-
-// Section Components
-
-export function ContextSection() {
-  return (
-    <Box flexDirection="column">
-      <Text dimColor>No context files</Text>
     </Box>
   );
 }

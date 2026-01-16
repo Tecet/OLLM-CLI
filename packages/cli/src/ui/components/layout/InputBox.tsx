@@ -145,9 +145,15 @@ export const InputBox = React.memo(function InputBox({
   const cursorInLine = cursorPosition - currentLineStart;
 
   return (
-    <>
-      {/* History indicator (above input box) - always reserve space to prevent layout shift */}
-      <Box height={1} marginBottom={0}>
+    <Box
+      flexDirection="column"
+      paddingX={1}
+      paddingY={0}
+      width="100%"
+      overflow="hidden"
+    >
+      {/* History indicator - always reserve space to prevent layout shift */}
+      <Box height={1}>
         <Text color={theme.text.secondary} dimColor>
           {historyIndex >= 0 
             ? `[Editing message ${userMessages.length - historyIndex} of ${userMessages.length}]`
@@ -155,51 +161,41 @@ export const InputBox = React.memo(function InputBox({
         </Text>
       </Box>
 
-      <Box
-        flexDirection="column"
-        paddingX={1}
-        paddingY={0}
-        height={6}
-        width="100%"
-        overflow="hidden"
-      >
-        {/* Input prompt */}
-        <Box>
-          <Text color={theme.text.accent} bold>
-            {disabled ? '⏸ ' : '> '}
-          </Text>
-          <Text color={theme.text.secondary} dimColor={disabled}>
-            {disabled ? 'Waiting for response...' : (placeholder || 'Type your message (Enter to send, Shift+Enter for newline)')}
-          </Text>
-        </Box>
-
-        {/* Multi-line input display */}
-        {lines.length > 0 && (
-          <Box flexDirection="column" marginTop={0}>
-            {lines.map((line, index) => {
-              const isCurrentLine = index === currentLineIndex;
-              const displayLine = line || ' '; // Show space for empty lines
-
-              return (
-                <Box key={index}>
-                  <Text color={theme.text.primary}>
-                    {isCurrentLine && cursorInLine <= line.length ? (
-                      <>
-                        {displayLine.slice(0, cursorInLine)}
-                        <Text inverse>{displayLine[cursorInLine] || ' '}</Text>
-                        {displayLine.slice(cursorInLine + 1)}
-                      </>
-                    ) : (
-                      displayLine
-                    )}
-                  </Text>
-                </Box>
-              );
-            })}
-          </Box>
-        )}
+      {/* Input prompt - static, no animations */}
+      <Box height={1}>
+        <Text color={theme.text.accent} bold>{'> '}</Text>
+        <Text color={theme.text.secondary} dimColor={disabled}>
+          {disabled 
+            ? 'Waiting for response'
+            : (placeholder || 'Type your message (Enter to send, Shift+Enter for newline)')
+          }
+        </Text>
       </Box>
-    </>
+
+      {/* Multi-line input display */}
+      <Box flexDirection="column" flexGrow={1}>
+        {lines.map((line, index) => {
+          const isCurrentLine = index === currentLineIndex;
+          const displayLine = line || ' '; // Show space for empty lines
+
+          return (
+            <Box key={index} height={1}>
+              <Text color={theme.text.primary}>
+                {isCurrentLine && cursorInLine <= line.length ? (
+                  <>
+                    {displayLine.slice(0, cursorInLine)}
+                    <Text inverse>{displayLine[cursorInLine] || ' '}</Text>
+                    {displayLine.slice(cursorInLine + 1)}
+                  </>
+                ) : (
+                  displayLine
+                )}
+              </Text>
+            </Box>
+          );
+        })}
+      </Box>
+    </Box>
   );
 });
 

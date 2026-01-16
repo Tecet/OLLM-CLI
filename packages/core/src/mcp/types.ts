@@ -6,12 +6,34 @@
  */
 
 /**
+ * OAuth 2.0 configuration for MCP servers
+ */
+export interface MCPOAuthConfig {
+  /** Enable OAuth authentication */
+  enabled: boolean;
+  /** OAuth authorization endpoint URL (auto-discovered if omitted) */
+  authorizationUrl?: string;
+  /** OAuth token endpoint URL (auto-discovered if omitted) */
+  tokenUrl?: string;
+  /** OAuth client ID */
+  clientId: string;
+  /** OAuth client secret (optional for PKCE flow) */
+  clientSecret?: string;
+  /** OAuth scopes to request */
+  scopes?: string[];
+  /** Local redirect port for OAuth callback (default: 3000) */
+  redirectPort?: number;
+  /** Use PKCE (Proof Key for Code Exchange) flow (default: true) */
+  usePKCE?: boolean;
+}
+
+/**
  * MCP server configuration
  */
 export interface MCPServerConfig {
-  /** Command to execute the MCP server */
+  /** Command to execute the MCP server (for stdio transport) */
   command: string;
-  /** Command-line arguments */
+  /** Command-line arguments (for stdio transport) */
   args: string[];
   /** Environment variables for the server process */
   env?: Record<string, string>;
@@ -19,6 +41,12 @@ export interface MCPServerConfig {
   transport?: 'stdio' | 'sse' | 'http';
   /** Connection timeout in milliseconds */
   timeout?: number;
+  /** OAuth configuration for authenticated servers */
+  oauth?: MCPOAuthConfig;
+  /** Server URL (for SSE and HTTP transports) */
+  url?: string;
+  /** Working directory for stdio transport */
+  cwd?: string;
 }
 
 /**
@@ -62,6 +90,36 @@ export interface MCPTool {
   description: string;
   /** JSON schema for tool input parameters */
   inputSchema: unknown;
+}
+
+/**
+ * MCP resource definition
+ */
+export interface MCPResource {
+  /** Resource URI */
+  uri: string;
+  /** Resource name */
+  name: string;
+  /** Resource description */
+  description?: string;
+  /** Resource MIME type */
+  mimeType?: string;
+}
+
+/**
+ * MCP prompt definition
+ */
+export interface MCPPrompt {
+  /** Prompt name */
+  name: string;
+  /** Prompt description */
+  description?: string;
+  /** Prompt arguments schema */
+  arguments?: Array<{
+    name: string;
+    description?: string;
+    required?: boolean;
+  }>;
 }
 
 /**
@@ -211,4 +269,39 @@ export interface MCPClient {
    * @returns Array of tools provided by the server
    */
   getTools(serverName: string): Promise<MCPTool[]>;
+
+  /**
+   * Get resources from an MCP server
+   * @param serverName - Server name
+   * @returns Array of resources provided by the server
+   */
+  getResources?(serverName: string): Promise<MCPResource[]>;
+
+  /**
+   * Read a resource from an MCP server
+   * @param serverName - Server name
+   * @param uri - Resource URI
+   * @returns Resource content
+   */
+  readResource?(serverName: string, uri: string): Promise<unknown>;
+
+  /**
+   * Get prompts from an MCP server
+   * @param serverName - Server name
+   * @returns Array of prompts provided by the server
+   */
+  getPrompts?(serverName: string): Promise<MCPPrompt[]>;
+
+  /**
+   * Get a prompt from an MCP server
+   * @param serverName - Server name
+   * @param promptName - Prompt name
+   * @param args - Prompt arguments
+   * @returns Prompt messages
+   */
+  getPrompt?(
+    serverName: string,
+    promptName: string,
+    args?: Record<string, unknown>
+  ): Promise<unknown>;
 }

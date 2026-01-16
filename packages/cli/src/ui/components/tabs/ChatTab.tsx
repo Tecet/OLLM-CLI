@@ -2,8 +2,8 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Box, useStdout } from 'ink';
 import { ChatHistory } from '../chat/ChatHistory.js';
 import { InputBox } from '../layout/InputBox.js';
-import { useChat } from '../../../contexts/ChatContext.js';
-import { useUI } from '../../../contexts/UIContext.js';
+import { useChat } from '../../../features/context/ChatContext.js';
+import { useUI } from '../../../features/context/UIContext.js';
 import { useContextKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts.js';
 
 export interface ChatTabProps {

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Box, Text } from 'ink';
-import { useReview } from '../../../contexts/ReviewContext.js';
-import { useUI } from '../../../contexts/UIContext.js';
+import { useUI } from '../../../features/context/UIContext.js';
+import { useReview } from '../../../features/context/ReviewContext.js';
 import { DiffViewer } from '../tools/DiffViewer.js';
 import { ReviewActions } from '../tools/ReviewActions.js';
 import { useContextKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts.js';

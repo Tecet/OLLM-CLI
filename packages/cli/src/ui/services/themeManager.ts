@@ -7,7 +7,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
-import { Theme, builtInThemes, defaultDarkTheme } from '../uiSettings.js';
+import { Theme, builtInThemes, defaultDarkTheme } from '../../config/uiSettings.js';
 
 export interface ThemeManagerOptions {
   customThemePath?: string;

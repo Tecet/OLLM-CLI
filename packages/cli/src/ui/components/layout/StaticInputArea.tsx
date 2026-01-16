@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Text } from 'ink';
 import { InputBox } from './InputBox.js';
+import { StreamingIndicator } from '../chat/StreamingIndicator.js';
 
 export interface StaticInputAreaProps {
   inputValue: string;
@@ -23,22 +24,46 @@ export function StaticInputArea({
   waitingForResponse,
   theme,
 }: StaticInputAreaProps) {
+  // Determine content for status area
+  const renderStatus = () => {
+    if (statusText) {
+      return <Text color={theme.text.secondary}>{statusText}</Text>;
+    }
+    if (streaming) {
+      return (
+        <StreamingIndicator 
+          text="Assistant is typing..." 
+          spinnerType="dots"
+          color={theme.text.secondary}
+        />
+      );
+    }
+    if (waitingForResponse) {
+      return (
+        <StreamingIndicator 
+          text="Waiting for response..." 
+          spinnerType="dots"
+          color={theme.text.secondary}
+        />
+      );
+    }
+    return <Text>{' '}</Text>;
+  };
+
   return (
-    <Box flexDirection="column" width="100%" borderStyle="single" borderColor={theme.text.secondary}>
-      {/* Status line (always 1 row, static) */}
-      <Box height={1}>
-        <Text color={theme.text.secondary}>
-          {statusText || (streaming ? '⠋ Assistant is typing...' : waitingForResponse ? 'Waiting for response...' : ' ')}
-        </Text>
+    <Box flexDirection="column" width="100%">
+      {/* Fixed height status area */}
+      <Box height={1} paddingX={1}>
+        {renderStatus()}
       </Box>
-      {/* Input box (always static, never moves) */}
-      <Box height={6}>
+      {/* Input box with border - static container */}
+      <Box height={6} borderStyle="single" borderColor={theme.text.secondary}>
         <InputBox
           value={inputValue}
           onChange={onInputChange}
           onSubmit={onInputSubmit}
           userMessages={userMessages}
-          placeholder={'> Type a message... (Enter to send, Shift+Enter for newline)'}
+          placeholder={'Type a message... (Enter to send, Shift+Enter for newline)'}
           disabled={streaming || waitingForResponse}
           theme={theme}
         />

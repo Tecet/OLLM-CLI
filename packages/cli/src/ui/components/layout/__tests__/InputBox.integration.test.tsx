@@ -1,9 +1,10 @@
+```javascript
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, stripAnsi } from '../../../../test/ink-testing.js';
 import { InputBox } from '../InputBox.js';
-import { ChatProvider, Message } from '../../../../contexts/ChatContext.js';
-import { UIProvider } from '../../../../contexts/UIContext.js';
+import { useChat } from '../../../../features/context/ChatContext.js';
+import { UIProvider } from '../../../../features/context/UIContext.js';
 
 /**
  * Test wrapper that provides required context providers

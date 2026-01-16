@@ -1,0 +1,7 @@
+{
+  "theme": "default",
+  "hardware": {
+    "gpuCount": 1,
+    "gpuName": "Unknown"
+  }
+}

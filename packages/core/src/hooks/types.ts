@@ -14,7 +14,10 @@ export type HookEvent =
   | 'after_model'
   | 'before_tool_selection'
   | 'before_tool'
-  | 'after_tool';
+  | 'after_tool'
+  | 'pre_compress'      // Before context compression
+  | 'post_compress'     // After context compression
+  | 'notification';     // General notification event
 
 /**
  * Source of a hook determines its trust level

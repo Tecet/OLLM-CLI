@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
-import { TabType } from '../../../../contexts/UIContext.js';
+import { TabType } from '../../../../features/context/UIContext.js';
 import { tabs } from '../TabBar.js';
 
 /**

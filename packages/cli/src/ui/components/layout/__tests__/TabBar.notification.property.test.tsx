@@ -3,7 +3,7 @@ import * as fc from 'fast-check';
 import React from 'react';
 import { render, stripAnsi } from '../../../../test/ink-testing.js';
 import { TabBar } from '../TabBar.js';
-import { TabType } from '../../../../contexts/UIContext.js';
+import { TabType } from '../../../../features/context/UIContext.js';
 
 /**
  * Property 11: Notification Badge Display

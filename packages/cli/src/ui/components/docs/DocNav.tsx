@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Text } from 'ink';
 import { DocEntry } from '../../services/docsService.js';
-import { Theme } from '../../../contexts/UIContext.js';
+import { useUI, Theme } from '../../../features/context/UIContext.js';
 
 export interface DocNavProps {
   /** Documentation entries */

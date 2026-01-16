@@ -25,27 +25,59 @@ interface VersionBannerProps {
       accent: string;
     };
   };
+  modelInfo?: {
+    name: string;
+    size?: string;
+  };
+  gpuInfo?: {
+    name: string;
+    vram: string;
+    utilization?: string;
+  };
 }
 
-export const VersionBanner: React.FC<VersionBannerProps> = ({ theme }) => {
+export const VersionBanner: React.FC<VersionBannerProps> = ({ theme, modelInfo, gpuInfo }) => {
   return (
-    <Box
-      flexDirection="column"
-      alignItems="center"
-      borderStyle="round"
-      borderColor={theme.text.accent}
-      paddingX={2}
-      paddingY={1}
-    >
-      <Text bold color={theme.text.accent}>
-        OLLM CLI
-      </Text>
-      <Text color={theme.text.primary}>
-        Version {version}
-      </Text>
-      <Text dimColor color={theme.text.primary}>
-        Local-first LLM Interface
-      </Text>
+    <Box flexDirection="column" alignItems="center">
+      <Box
+        flexDirection="column"
+        alignItems="center"
+        borderStyle="round"
+        borderColor={theme.text.accent}
+        paddingX={2}
+        paddingY={1}
+      >
+        <Text bold color={theme.text.accent}>
+          OLLM CLI
+        </Text>
+        <Text color={theme.text.primary}>
+          Version {version}
+        </Text>
+        <Text dimColor color={theme.text.primary}>
+          Local-first LLM Interface
+        </Text>
+      </Box>
+
+      {(modelInfo || gpuInfo) && (
+        <Box marginTop={1} flexDirection="column" alignItems="center">
+          {modelInfo && (
+            <Text color={theme.text.primary}>
+              Model: <Text bold color={theme.text.accent}>{modelInfo.name}</Text>
+            </Text>
+          )}
+          {gpuInfo && (
+            <Text color={theme.text.primary} dimColor>
+              GPU: {gpuInfo.name} | VRAM: {gpuInfo.vram}
+            </Text>
+          )}
+        </Box>
+      )}
+      
+      <Box marginTop={1}>
+        <Text color={theme.text.accent} dimColor>
+          Press any key to start...
+        </Text>
+      </Box>
     </Box>
   );
 };

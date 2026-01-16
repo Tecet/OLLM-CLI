@@ -264,9 +264,19 @@ export class SSETransport extends BaseMCPTransport {
   private eventSource?: EventEmitter;
   private abortController?: AbortController;
   private buffer: string = '';
+  private accessToken?: string;
 
-  constructor(private url: string) {
+  constructor(private url: string, accessToken?: string) {
     super();
+    this.accessToken = accessToken;
+  }
+
+  /**
+   * Set the OAuth access token for authenticated requests
+   * @param token - OAuth access token
+   */
+  setAccessToken(token: string): void {
+    this.accessToken = token;
   }
 
   async connect(): Promise<void> {
@@ -278,13 +288,20 @@ export class SSETransport extends BaseMCPTransport {
       try {
         this.abortController = new AbortController();
         
+        const headers: Record<string, string> = {
+          'Accept': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+        };
+
+        // Add OAuth token if available
+        if (this.accessToken) {
+          headers['Authorization'] = `Bearer ${this.accessToken}`;
+        }
+        
         // Create SSE connection
         fetch(this.url, {
           method: 'GET',
-          headers: {
-            'Accept': 'text/event-stream',
-            'Cache-Control': 'no-cache',
-          },
+          headers,
           signal: this.abortController.signal,
         })
           .then(async (response) => {
@@ -376,11 +393,18 @@ export class SSETransport extends BaseMCPTransport {
       // Send request via HTTP POST
       const postUrl = this.url.replace(/\/sse$/, '/message');
       
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+
+      // Add OAuth token if available
+      if (this.accessToken) {
+        headers['Authorization'] = `Bearer ${this.accessToken}`;
+      }
+      
       fetch(postUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify(jsonRpcRequest),
       })
         .then((response) => {
@@ -495,9 +519,19 @@ export class SSETransport extends BaseMCPTransport {
  */
 export class HTTPTransport extends BaseMCPTransport {
   private requestId: number = 0;
+  private accessToken?: string;
 
-  constructor(private url: string) {
+  constructor(private url: string, accessToken?: string) {
     super();
+    this.accessToken = accessToken;
+  }
+
+  /**
+   * Set the OAuth access token for authenticated requests
+   * @param token - OAuth access token
+   */
+  setAccessToken(token: string): void {
+    this.accessToken = token;
   }
 
   async connect(): Promise<void> {
@@ -507,11 +541,18 @@ export class HTTPTransport extends BaseMCPTransport {
 
     // For HTTP transport, we just verify the server is reachable
     try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+
+      // Add OAuth token if available
+      if (this.accessToken) {
+        headers['Authorization'] = `Bearer ${this.accessToken}`;
+      }
+
       const response = await fetch(this.url, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({
           jsonrpc: '2.0',
           id: 0,
@@ -554,11 +595,18 @@ export class HTTPTransport extends BaseMCPTransport {
     };
 
     try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+
+      // Add OAuth token if available
+      if (this.accessToken) {
+        headers['Authorization'] = `Bearer ${this.accessToken}`;
+      }
+
       const response = await fetch(this.url, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify(jsonRpcRequest),
       });
 

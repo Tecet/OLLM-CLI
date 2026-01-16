@@ -19,6 +19,20 @@ export interface MCPConfig {
 }
 
 /**
+ * Zod schema for OAuth configuration
+ */
+export const mcpOAuthConfigSchema = z.object({
+  enabled: z.boolean(),
+  authorizationUrl: z.string().url().optional(),
+  tokenUrl: z.string().url().optional(),
+  clientId: z.string(),
+  clientSecret: z.string().optional(),
+  scopes: z.array(z.string()).optional(),
+  redirectPort: z.number().int().positive().optional(),
+  usePKCE: z.boolean().optional(),
+});
+
+/**
  * Zod schema for MCP server configuration
  */
 export const mcpServerConfigSchema = z.object({
@@ -27,6 +41,9 @@ export const mcpServerConfigSchema = z.object({
   env: z.record(z.string()).optional(),
   transport: z.enum(['stdio', 'sse', 'http']).optional(),
   timeout: z.number().int().positive().optional(),
+  oauth: mcpOAuthConfigSchema.optional(),
+  url: z.string().url().optional(),
+  cwd: z.string().optional(),
 });
 
 /**

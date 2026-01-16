@@ -8,7 +8,7 @@
 import React from 'react';
 import { Box, Text } from 'ink';
 import type { InferenceMetrics } from '../../../../../core/src/types/metrics.js';
-import type { Theme } from '../../uiSettings.js';
+import type { Theme } from '../../../config/uiSettings.js';
 
 export interface MetricsDisplayProps {
   metrics: InferenceMetrics;

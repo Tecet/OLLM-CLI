@@ -1,8 +1,7 @@
 import React from 'react';
 import { Box, Text } from 'ink';
-import { Message as MessageType } from '../../../contexts/ChatContext.js';
-import { StreamingIndicator } from './StreamingIndicator.js';
-import type { Theme } from '../../uiSettings.js';
+import { Message as MessageType } from '../../../features/context/ChatContext.js';
+import type { Theme } from '../../../config/uiSettings.js';
 
 export interface ChatHistoryProps {
   messages: MessageType[];
@@ -25,7 +24,7 @@ export interface ChatHistoryProps {
 
 /**
  * ChatHistory component displays the list of messages
- * with streaming indicators and Llama animation during waiting
+ * Status indicators are shown in StaticInputArea above the input box
  */
 export function ChatHistory({
   messages,
@@ -39,6 +38,10 @@ export function ChatHistory({
   metricsConfig,
   reasoningConfig,
 }: ChatHistoryProps) {
+  // Use _ to avoid unused var lint if they aren't used in this render cycle
+  const _s = streaming;
+  const _w = waitingForResponse;
+  const _stb = scrollToBottom;
   const resolvedMax = Math.max(1, maxVisibleLines ?? 20);
   const lines = buildChatLines(messages, theme, metricsConfig, reasoningConfig, paddingY);
   const clampedOffset = Math.min(Math.max(scrollOffset, 0), Math.max(0, lines.length - resolvedMax));
@@ -58,24 +61,12 @@ export function ChatHistory({
       </Box>
 
       {/* Render visible lines */}
-      {visibleLines.map((line) => renderLine(line))}
+      {visibleLines.map((line) => (
+        <ChatLineItem key={line.key} line={line} theme={theme} />
+      ))}
 
 
-      {/* Fixed height area for status indicators to prevent layout shift */}
-      <Box height={1} marginTop={1}>
-        {waitingForResponse && !streaming ? (
-          <Text color={theme.text.secondary}>Waiting for response...</Text>
-        ) : streaming ? (
-          <StreamingIndicator
-            text="Assistant is typing..."
-            spinnerType="dots"
-            color={theme.text.secondary}
-            intervalMs={250}
-          />
-        ) : (
-          <Text> </Text>
-        )}
-      </Box>
+      {/* Status indicator removed - now shown in StaticInputArea above input box */}
 
       {/* Always reserve space for scroll-down indicator */}
       <Box height={1}>
@@ -91,6 +82,7 @@ type ChatLinePart = {
   text: string;
   color?: string;
   bold?: boolean;
+  italic?: boolean;
   dim?: boolean;
 };
 
@@ -98,29 +90,68 @@ type ChatLine = {
   key: string;
   parts: ChatLinePart[];
   indent?: number;
+  isEphemeral?: boolean; // New flag for fading messages
+  timestamp?: number;    // Creation time for ephemeral check
 };
 
-function renderLine(line: ChatLine) {
+// New component to handle individual line rendering and state
+const ChatLineItem = ({ line, theme }: { line: ChatLine; theme: Theme }) => {
+  const [visible, setVisible] = React.useState(true);
+  const [opacity, setOpacity] = React.useState<'normal' | 'dim' | 'hidden'>('normal');
+
+  React.useEffect(() => {
+    if (line.isEphemeral) {
+      // Step 1: Dim after 2 seconds
+      const dimTimer = setTimeout(() => {
+        setOpacity('dim');
+      }, 2000);
+
+      // Step 2: Hide after 3 seconds (+1s dim phase)
+      const hideTimer = setTimeout(() => {
+        setOpacity('hidden');
+        setVisible(false);
+      }, 3000);
+
+      return () => {
+        clearTimeout(dimTimer);
+        clearTimeout(hideTimer);
+      };
+    }
+  }, [line.isEphemeral]);
+
+  if (!visible) return <Box height={0} />;
+
   const indentPrefix = line.indent ? ' '.repeat(line.indent) : '';
   const parts = line.parts.length
     ? [{ ...line.parts[0], text: indentPrefix + line.parts[0].text }, ...line.parts.slice(1)]
     : [{ text: indentPrefix }];
 
+  // Apply fading effect overrides
+  const getPartColor = (part: ChatLinePart) => {
+    if (opacity === 'dim') return theme.text.secondary; // Fallback to secondary for dim phase
+    return part.color;
+  };
+  
+  const isDimmed = opacity === 'dim' || parts.some(p => p.dim);
+
   return (
-    <Box key={line.key}>
+    <Box>
       {parts.map((part, index) => (
         <Text
           key={`${line.key}-${index}`}
-          color={part.color}
+          color={getPartColor(part)}
           bold={part.bold}
-          dimColor={part.dim}
+          italic={part.italic}
+          dimColor={isDimmed}
         >
           {part.text}
         </Text>
       ))}
     </Box>
   );
-}
+};
+
+const HEAVY_TOOLS = ['trigger_hot_swap', 'write_memory_dump', 'context_rollover', 'memory_guard_action'];
 
 function buildChatLines(
   messages: MessageType[],
@@ -130,8 +161,15 @@ function buildChatLines(
   paddingY: number = 0
 ): ChatLine[] {
   const lines: ChatLine[] = [];
-  const addLine = (parts: ChatLinePart[], indent = 0) => {
-    lines.push({ key: `line-${lines.length}`, parts, indent });
+  const addLine = (parts: ChatLinePart[], indent = 0, isEphemeral = false) => {
+    lines.push({ 
+      key: `line-${lines.length}`, 
+      parts, 
+      indent,
+      isEphemeral,
+      timestamp: Date.now() // Note: This will refresh on re-build, which isn't ideal for persistence across re-renders
+      // Ideally, the message timestamp should drive this, but for now we restart fade on re-render which is acceptable for "new" summaries
+    });
   };
 
   for (let i = 0; i < paddingY; i += 1) {
@@ -143,6 +181,17 @@ function buildChatLines(
     const timestamp = message.timestamp.toLocaleTimeString();
     const showMetrics = metricsConfig?.enabled !== false && message.metrics;
     const showReasoning = reasoningConfig?.enabled !== false && message.reasoning;
+
+    // Special handling for Context Rollover system messages to prevent view blocking
+    // Using includes() for broader matching and checking safe role case
+    if (message.role.toLowerCase() === 'system' && message.content.includes('[Context Rollover]')) {
+      addLine([
+        { text: 'ℹ️ ', color: theme.text.accent },
+        { text: message.content.split('\n')[0].substring(0, 100) + (message.content.length > 100 ? '...' : ''), color: theme.text.secondary, dim: true }
+      ], 0, true); // Set isEphemeral to true
+      // No spacer for ephemeral messages so it collapses cleanly
+      return; 
+    }
 
     addLine([
       { text: message.role.toUpperCase(), color: roleColor, bold: true },
@@ -164,35 +213,44 @@ function buildChatLines(
 
     if (message.toolCalls && message.toolCalls.length > 0) {
       message.toolCalls.forEach((toolCall) => {
+        const isHeavy = HEAVY_TOOLS.includes(toolCall.name);
         const statusColor =
           toolCall.status === 'success'
             ? theme.status.success
             : toolCall.status === 'error'
             ? theme.status.error
-            : theme.status.info;
+            : theme.status.warning;
+
         const durationText = toolCall.duration
           ? ` (${(toolCall.duration / 1000).toFixed(2)}s)`
           : '';
 
+        // Summary line
         addLine(
           [
             { text: `🔧 ${toolCall.name}`, color: theme.text.accent, bold: true },
             { text: ` [${toolCall.status}]${durationText}`, color: statusColor },
+            { text: isHeavy ? ' (Action minimized)' : '', color: theme.text.secondary, italic: true, dim: true }
           ],
           2
         );
 
-        addLine([{ text: 'Arguments:', color: theme.text.secondary, dim: true }], 4);
-        const argsString = JSON.stringify(toolCall.arguments, null, 2) || '{}';
-        argsString.split('\n').forEach((line) => {
-          addLine([{ text: line || ' ', color: theme.text.primary }], 6);
-        });
+        // Details - Skip for heavy tools unless they failed
+        if (!isHeavy || toolCall.status === 'error') {
+            if (toolCall.arguments && Object.keys(toolCall.arguments).length > 0) {
+                addLine([{ text: 'Arguments:', color: theme.text.secondary, dim: true }], 4);
+                const argsString = JSON.stringify(toolCall.arguments, null, 2) || '{}';
+                argsString.split('\n').forEach((line) => {
+                  addLine([{ text: line || ' ', color: theme.text.primary }], 6);
+                });
+            }
 
-        if (toolCall.result) {
-          addLine([{ text: 'Result:', color: theme.text.secondary, dim: true }], 4);
-          toolCall.result.split('\n').forEach((line) => {
-            addLine([{ text: line || ' ', color: theme.text.primary }], 6);
-          });
+            if (toolCall.result) {
+              addLine([{ text: 'Result:', color: theme.text.secondary, dim: true }], 4);
+              toolCall.result.split('\n').forEach((line) => {
+                addLine([{ text: line || ' ', color: theme.text.primary }], 6);
+              });
+            }
         }
       });
     }
@@ -213,6 +271,7 @@ function buildChatLines(
   return lines;
 }
 
+
 function formatMetricsLine(metrics: {
   tokensPerSecond: number;
   promptTokens: number;
@@ -228,8 +287,8 @@ function formatMetricsLine(metrics: {
 
   const parts: string[] = [
     `⚡ ${formatNumber(metrics.tokensPerSecond)} t/s`,
-    `📥 ${metrics.promptTokens} tokens`,
-    `📤 ${metrics.completionTokens} tokens`,
+    `📥 In: ${metrics.promptTokens}`,
+    `📤 Out: ${metrics.completionTokens}`,
     `⏱️ ${formatNumber(metrics.totalSeconds)}s`,
   ];
 
@@ -238,60 +297,4 @@ function formatMetricsLine(metrics: {
   }
 
   return parts.join(' │ ');
-}
-
-/**
- * Render inline diff with syntax highlighting
- * Only shows diffs with 5 or fewer lines inline
- */
-function renderInlineDiff(
-  content: string,
-  theme: {
-    diff: {
-      added: string;
-      removed: string;
-    };
-    text: {
-      primary: string;
-      secondary: string;
-    };
-  }
-) {
-  const lines = content.split('\n');
-  const diffLines = lines.filter(
-    (line) => line.startsWith('+') || line.startsWith('-')
-  );
-
-  // Only show inline if 5 or fewer changed lines
-  if (diffLines.length > 5) {
-    return (
-      <Box flexDirection="column">
-        <Text color={theme.text.secondary}>
-          Large diff ({diffLines.length} lines changed)
-        </Text>
-        <Text color={theme.text.secondary}>
-          → See Tools tab for full diff
-        </Text>
-      </Box>
-    );
-  }
-
-  // Show inline diff
-  return (
-    <Box flexDirection="column" borderStyle="single" borderColor={theme.text.secondary}>
-      {diffLines.map((line, index) => {
-        const color = line.startsWith('+')
-          ? theme.diff.added
-          : line.startsWith('-')
-          ? theme.diff.removed
-          : theme.text.primary;
-
-        return (
-          <Text key={index} color={color}>
-            {line}
-          </Text>
-        );
-      })}
-    </Box>
-  );
 }

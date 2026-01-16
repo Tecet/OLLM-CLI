@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Text } from 'ink';
-import { Theme } from '../../../contexts/UIContext.js';
+import { useUI, Theme } from '../../../features/context/UIContext.js';
 
 export interface ThemePickerProps {
   /** Available theme names */

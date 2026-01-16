@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Text } from 'ink';
-import { TabType } from '../../../contexts/UIContext.js';
+import { TabType } from '../../../features/context/UIContext.js';
 
 export interface Tab {
   id: TabType;
@@ -10,10 +10,10 @@ export interface Tab {
 }
 
 export const tabs: Tab[] = [
-  { id: 'chat', label: 'Chat', icon: '💬', shortcut: 'Ctrl+1' },
-  { id: 'tools', label: 'Tools', icon: '🔧', shortcut: 'Ctrl+2' },
-  { id: 'files', label: 'Files', icon: '📁', shortcut: 'Ctrl+3' },
-  { id: 'search', label: 'Search', icon: '🔍', shortcut: 'Ctrl+4' },
+  { id: 'search', label: 'Search', icon: '🔍', shortcut: 'Ctrl+1' },
+  { id: 'files', label: 'Files', icon: '📁', shortcut: 'Ctrl+2' },
+  { id: 'github', label: 'GitHub', icon: '🐙', shortcut: 'Ctrl+3' },
+  { id: 'tools', label: 'Tools', icon: '🔧', shortcut: 'Ctrl+4' },
   { id: 'docs', label: 'Docs', icon: '📚', shortcut: 'Ctrl+5' },
   { id: 'settings', label: 'Settings', icon: '⚙️', shortcut: 'Ctrl+6' },
 ];

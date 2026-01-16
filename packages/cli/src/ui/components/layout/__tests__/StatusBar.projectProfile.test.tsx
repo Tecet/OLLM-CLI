@@ -113,7 +113,7 @@ describe('StatusBar - Project Profile', () => {
 
     // Should show both
     expect(output).toContain('typescript');
-    expect(output).toContain('2 loaded');
+    expect(output).toContain('(2)');
   });
 
   it('should handle various profile names', () => {

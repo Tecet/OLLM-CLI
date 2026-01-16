@@ -7,7 +7,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fc from 'fast-check';
 import { sessionCommand } from '../sessionCommands.js';
-import type { Message } from '../../contexts/ChatContext.js';
+import { ChatContextValue } from '../../features/context/ChatContext.js';
 
 /**
  * Property 30: Session Resume

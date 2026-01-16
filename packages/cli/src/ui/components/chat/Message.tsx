@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Box, Text } from 'ink';
-import { Message as MessageType } from '../../../contexts/ChatContext.js';
+import { Message as MessageType, ToolCall as ToolCallType, ReasoningBlock as ReasoningBlockType } from '../../../features/context/ChatContext.js';
 import { MetricsDisplay } from './MetricsDisplay.js';
 import { ReasoningBox } from './ReasoningBox.js';
-import type { Theme } from '../../uiSettings.js';
+import type { Theme } from '../../../config/uiSettings.js';
 
 export interface MessageProps {
   message: MessageType;

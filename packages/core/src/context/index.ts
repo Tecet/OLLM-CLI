@@ -34,4 +34,8 @@ export * from './compressionService.js';
 export * from './memoryGuard.js';
 
 // Export context manager
+// Export context manager
 export * from './contextManager.js';
+
+// Export hot swap service
+export * from './HotSwapService.js';

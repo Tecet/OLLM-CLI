@@ -185,11 +185,22 @@ export class ShellInvocation implements ToolInvocation<ShellParams, ToolResult> 
         ? ` [PID: ${result.processId}]` 
         : '';
 
+      // Generate hint for common errors
+      let hint = '';
+      if (result.exitCode !== 0) {
+        const out = displayOutput.toLowerCase();
+        if (out.includes('command not found') || out.includes('is not recognized')) {
+          hint = '\nTip: Check if the command is installed and in your PATH.';
+        } else if (out.includes('permission denied') || out.includes('access is denied')) {
+          hint = '\nTip: Check file permissions.';
+        }
+      }
+
       return {
         llmContent: displayOutput,
         returnDisplay: `${displayOutput}${exitCodeMsg}${processIdMsg}`,
         error: result.exitCode !== 0 ? {
-          message: `Command exited with code ${result.exitCode}`,
+          message: `Command exited with code ${result.exitCode}${hint}`,
           type: 'ShellExecutionError',
         } : undefined,
       };

@@ -223,9 +223,9 @@ describe('StatusBar Property Tests', () => {
             const frame = lastFrame();
             const frameText = getTextContent(frame);
 
-            // Property: Review count should be displayed
+            // Property: Review count should be displayed with "Reviews:" prefix
             expect(frameText).toContain(String(reviews));
-            expect(frameText).toContain('review');
+            expect(frameText).toContain('Reviews:');
           }
         ),
         { numRuns: 100 }
@@ -253,8 +253,8 @@ describe('StatusBar Property Tests', () => {
             const frame = lastFrame();
             const frameText = getTextContent(frame);
 
-            // Property: Cost should be displayed with dollar sign
-            expect(frameText).toContain('$');
+            // Property: Cost should be displayed with "Cost:" prefix (2 decimal places)
+            expect(frameText).toContain('Cost:');
           }
         ),
         { numRuns: 100 }
@@ -313,9 +313,8 @@ describe('StatusBar Property Tests', () => {
             const frame = lastFrame();
             const frameText = getTextContent(frame);
 
-            // Property: Loaded models count should be displayed
-            expect(frameText).toContain(String(models.length));
-            expect(frameText).toContain('loaded');
+            // Property: Loaded models count should be displayed in parentheses
+            expect(frameText).toContain(`(${models.length})`);
           }
         ),
         { numRuns: 100 }

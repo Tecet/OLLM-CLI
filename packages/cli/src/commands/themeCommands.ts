@@ -8,7 +8,7 @@
  */
 
 import type { Command, CommandResult } from './types.js';
-import type { Theme } from '../ui/uiSettings.js';
+import type { Theme } from '../config/uiSettings.js';
 import { getThemeManager } from '../ui/services/themeManager.js';
 
 /**

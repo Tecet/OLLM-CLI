@@ -7,7 +7,7 @@
 import { describe, it, expect } from 'vitest';
 import React from 'react';
 import fc from 'fast-check';
-import { ContextStatus, type ContextStatusProps } from '../ContextStatus.js';
+import { ContextStatus, type ContextStatusProps } from '../../features/context/ContextStatus.js';
 import { render as inkRender } from 'ink';
 import { Writable } from 'stream';
 

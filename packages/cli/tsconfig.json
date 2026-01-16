@@ -5,7 +5,7 @@
     "rootDir": "./src",
     "composite": true
   },
-  "include": ["src"],
+  "include": ["src", "src/**/*.json"],
   "references": [
     { "path": "../core" },
     { "path": "../ollm-bridge" },

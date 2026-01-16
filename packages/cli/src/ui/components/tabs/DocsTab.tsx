@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Box } from 'ink';
-import { useUI } from '../../../contexts/UIContext.js';
+import { Box, Text } from 'ink';
+import { useUI } from '../../../features/context/UIContext.js';
 import { DocsService, DocEntry } from '../../services/docsService.js';
 import { DocNav } from '../docs/DocNav.js';
 import { DocViewer } from '../docs/DocViewer.js';
@@ -24,6 +24,12 @@ export function DocsTab() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [scrollPosition, setScrollPosition] = useState(0);
+
+  const handleBack = () => {
+    setSelectedPath(null);
+    setContent('');
+    setError(null);
+  };
 
   // Register docs-specific keyboard shortcuts
   useContextKeyboardShortcuts('docs', [
@@ -71,12 +77,6 @@ export function DocsTab() {
     setSelectedPath(path);
   };
 
-  const handleBack = () => {
-    setSelectedPath(null);
-    setContent('');
-    setError(null);
-  };
-
   // Show navigation list when no document is selected
   if (!selectedPath) {
     return (
@@ -87,6 +87,12 @@ export function DocsTab() {
           onSelect={handleSelect}
           theme={uiState.theme}
         />
+        {/* Footer */}
+        <Box marginTop={1} justifyContent="center" flexShrink={0}>
+          <Text color={uiState.theme.text.secondary} dimColor>
+            Press Esc to return to Chat
+          </Text>
+        </Box>
       </Box>
     );
   }
@@ -101,9 +107,14 @@ export function DocsTab() {
         content={content}
         title={title}
         theme={uiState.theme}
-        loading={loading}
         error={error || undefined}
       />
+      {/* Footer */}
+      <Box marginTop={1} justifyContent="center" flexShrink={0}>
+        <Text color={uiState.theme.text.secondary} dimColor>
+          Press Esc to return to Chat
+        </Text>
+      </Box>
     </Box>
   );
 }

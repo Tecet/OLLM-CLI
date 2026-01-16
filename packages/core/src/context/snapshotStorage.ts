@@ -73,6 +73,13 @@ export class SnapshotStorageImpl implements SnapshotStorage {
   }
 
   /**
+   * Get the base storage path
+   */
+  getBasePath(): string {
+    return this.baseDir;
+  }
+
+  /**
    * Get snapshot directory for a session
    */
   private getSnapshotDir(sessionId: string): string {
@@ -200,7 +207,7 @@ export class SnapshotStorageImpl implements SnapshotStorage {
           content: msg.content,
           timestamp: new Date(msg.timestamp),
           tokenCount: msg.tokenCount,
-          metadata: msg.metadata as any
+          metadata: msg.metadata as Record<string, unknown>
         })),
         metadata: snapshotFile.metadata
       };
@@ -431,11 +438,11 @@ export class SnapshotStorageImpl implements SnapshotStorage {
       await this.saveIndex(sessionId, entries);
 
       return entries;
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+    } catch (_error) {
+      if ((_error as NodeJS.ErrnoException).code === 'ENOENT') {
         return [];
       }
-      throw error;
+      throw _error;
     }
   }
 

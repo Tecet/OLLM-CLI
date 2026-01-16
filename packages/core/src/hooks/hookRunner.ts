@@ -11,6 +11,7 @@ import { HookTranslator } from './hookTranslator.js';
 import type { TrustedHooks } from './trustedHooks.js';
 import type { HooksConfig } from './config.js';
 import { DEFAULT_HOOKS_CONFIG } from './config.js';
+import { getHookDebugger } from './hookDebugger.js';
 
 /**
  * Result of hook execution including metadata
@@ -96,6 +97,8 @@ export class HookRunner {
    */
   private async executeHookInternal(hook: Hook, input: HookInput): Promise<HookOutput> {
     const startTime = Date.now();
+    const hookDebugger = getHookDebugger();
+    const traceId = hookDebugger.startTrace(hook, input.event, input);
     
     try {
       // Spawn the hook process
@@ -164,12 +167,16 @@ export class HookRunner {
 
       const output = this.translator.parseHookOutput(stdout.trim());
       
+      hookDebugger.endTrace(traceId, output, undefined, exitCode ?? 0);
+      
       return output;
     } catch (error) {
       // Log error but don't propagate - return error output instead
       const errorMessage = error instanceof Error ? error.message : String(error);
       const extensionInfo = hook.extensionName ? ` (from extension '${hook.extensionName}')` : '';
       console.error(`Hook execution failed for '${hook.name}'${extensionInfo}: ${errorMessage}`);
+      
+      hookDebugger.endTrace(traceId, undefined, error instanceof Error ? error : new Error(String(error)));
       
       // Return a default output that allows continuation
       return {

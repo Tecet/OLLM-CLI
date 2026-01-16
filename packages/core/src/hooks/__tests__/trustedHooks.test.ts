@@ -350,3 +350,151 @@ describe('TrustedHooks', () => {
     });
   });
 });
+
+
+  describe('Approval Callback', () => {
+    it('should use approval callback when provided', async () => {
+      let callbackCalled = false;
+      let callbackHook: Hook | null = null;
+      let callbackHash: string | null = null;
+
+      const approvalCallback = async (hook: Hook, hash: string) => {
+        callbackCalled = true;
+        callbackHook = hook;
+        callbackHash = hash;
+        return true; // Approve
+      };
+
+      const trustedHooks = new TrustedHooks({
+        storagePath,
+        approvalCallback,
+      });
+
+      const hook = createTestHook({ source: 'workspace' });
+      const approved = await trustedHooks.requestApproval(hook);
+
+      expect(callbackCalled).toBe(true);
+      expect(callbackHook).toEqual(hook);
+      expect(callbackHash).toBeDefined();
+      expect(approved).toBe(true);
+    });
+
+    it('should deny by default when no callback provided', async () => {
+      const trustedHooks = new TrustedHooks({ storagePath });
+      const hook = createTestHook({ source: 'workspace' });
+
+      const approved = await trustedHooks.requestApproval(hook);
+
+      expect(approved).toBe(false);
+    });
+
+    it('should handle callback errors gracefully', async () => {
+      const approvalCallback = async () => {
+        throw new Error('Callback error');
+      };
+
+      const trustedHooks = new TrustedHooks({
+        storagePath,
+        approvalCallback,
+      });
+
+      const hook = createTestHook({ source: 'workspace' });
+      const approved = await trustedHooks.requestApproval(hook);
+
+      // Should deny on error
+      expect(approved).toBe(false);
+    });
+
+    it('should pass correct hash to callback', async () => {
+      let receivedHash: string | null = null;
+
+      const approvalCallback = async (hook: Hook, hash: string) => {
+        receivedHash = hash;
+        return true;
+      };
+
+      const trustedHooks = new TrustedHooks({
+        storagePath,
+        approvalCallback,
+      });
+
+      const hook = createTestHook({ source: 'workspace' });
+      await trustedHooks.requestApproval(hook);
+
+      // Hash should be sha256:...
+      expect(receivedHash).toBeDefined();
+      expect(receivedHash).toMatch(/^sha256:[a-f0-9]+$/);
+    });
+
+    it('should respect callback denial', async () => {
+      const approvalCallback = async () => false; // Deny
+
+      const trustedHooks = new TrustedHooks({
+        storagePath,
+        approvalCallback,
+      });
+
+      const hook = createTestHook({ source: 'workspace' });
+      const approved = await trustedHooks.requestApproval(hook);
+
+      expect(approved).toBe(false);
+    });
+  });
+
+  describe('Username in Approval', () => {
+    it('should use environment username when available', async () => {
+      const originalUser = process.env.USER;
+      const originalUsername = process.env.USERNAME;
+
+      // Set test username
+      process.env.USER = 'testuser';
+
+      const trustedHooks = new TrustedHooks({ storagePath });
+      const hook = createTestHook({ source: 'workspace' });
+      const hash = await trustedHooks.computeHash(hook);
+
+      await trustedHooks.storeApproval(hook, hash);
+
+      const approvals = trustedHooks.getApprovals();
+      expect(approvals).toHaveLength(1);
+      expect(approvals[0].approvedBy).toBe('testuser');
+
+      // Restore original values
+      if (originalUser !== undefined) {
+        process.env.USER = originalUser;
+      } else {
+        delete process.env.USER;
+      }
+      if (originalUsername !== undefined) {
+        process.env.USERNAME = originalUsername;
+      }
+    });
+
+    it('should fallback to "user" when no username available', async () => {
+      const originalUser = process.env.USER;
+      const originalUsername = process.env.USERNAME;
+
+      // Remove username env vars
+      delete process.env.USER;
+      delete process.env.USERNAME;
+
+      const trustedHooks = new TrustedHooks({ storagePath });
+      const hook = createTestHook({ source: 'workspace' });
+      const hash = await trustedHooks.computeHash(hook);
+
+      await trustedHooks.storeApproval(hook, hash);
+
+      const approvals = trustedHooks.getApprovals();
+      expect(approvals).toHaveLength(1);
+      expect(approvals[0].approvedBy).toBe('user');
+
+      // Restore original values
+      if (originalUser !== undefined) {
+        process.env.USER = originalUser;
+      }
+      if (originalUsername !== undefined) {
+        process.env.USERNAME = originalUsername;
+      }
+    });
+  });
+});

@@ -27,8 +27,8 @@ describe('registerBuiltInTools', () => {
     expect(toolNames).toContain('memory');
     expect(toolNames).toContain('write_todos');
 
-    // Verify we have exactly 12 tools
-    expect(tools).toHaveLength(12);
+    // Verify we have exactly 13 tools
+    expect(tools).toHaveLength(13);
   });
 
   it('should register tools in alphabetical order', () => {
@@ -59,8 +59,8 @@ describe('registerBuiltInTools', () => {
       expect(typeof schema.parameters).toBe('object');
     }
 
-    // Verify we have 12 schemas
-    expect(schemas).toHaveLength(12);
+    // Verify we have 13 schemas
+    expect(schemas).toHaveLength(13);
   });
 
   it('should allow retrieving individual tools after registration', () => {

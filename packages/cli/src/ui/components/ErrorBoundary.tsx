@@ -5,7 +5,7 @@
 
 import React, { Component, ReactNode } from 'react';
 import { Box, Text } from 'ink';
-import { useUI } from '../../contexts/UIContext.js';
+import { useUI } from '../../features/context/UIContext.js';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -60,15 +60,8 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
       // Default error display
       // Use theme from UI context when available
-      let theme = undefined;
-      try {
-        theme = useUI().state.theme;
-      } catch {
-        // fallback to literal red
-      }
-
-      const borderColor = theme ? theme.border.primary : 'red';
-      const textColor = theme ? theme.status.error : 'red';
+      const borderColor = 'red';
+      const textColor = 'red';
 
       return (
         <Box flexDirection="column" padding={1} borderStyle="round" borderColor={borderColor}>

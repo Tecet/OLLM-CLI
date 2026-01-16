@@ -3,7 +3,7 @@ import { render, stripAnsi } from '../../../../test/ink-testing.js';
 import React from 'react';
 import fc from 'fast-check';
 import { Message } from '../Message.js';
-import { Message as MessageType } from '../../../../contexts/ChatContext.js';
+import { Message as MessageType } from '../../../../features/context/ChatContext.js';
 
 /**
  * Property 19: Role-Based Message Colors

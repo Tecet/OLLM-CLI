@@ -96,6 +96,17 @@ export class CompressionService implements ICompressionService {
     // Ensure originalTokens is set correctly
     result.originalTokens = originalTokens;
 
+    // Inflation Guard: Verify token reduction 
+    if (result.compressedTokens >= originalTokens && originalTokens > 0) {
+      result.status = 'inflated';
+      // If inflated, we "fail" the compression and keep original messages
+      // Note: In a real system, we might want to return the original messages here,
+      // but CompressedContext structure expects summary + preserved.
+      // We'll let the manager decide how to handle 'inflated' status.
+    } else {
+      result.status = 'success';
+    }
+
     return result;
   }
 
@@ -125,6 +136,12 @@ export class CompressionService implements ICompressionService {
   }
 
   /**
+   * The fraction of the latest chat history to keep verbatim.
+   * Ensures that as context grows, we don't truncate too aggressively.
+   */
+  private readonly COMPRESSION_PRESERVE_FRACTION = 0.3;
+
+  /**
    * Check if compression is needed
    * 
    * @param tokenCount - Current token count
@@ -135,6 +152,24 @@ export class CompressionService implements ICompressionService {
     // This would typically compare against a max token limit
     // For now, we just check if we're above the threshold
     return tokenCount > threshold;
+  }
+
+  /**
+   * Calculate how many tokens to preserve based on a fraction of total tokens
+   * 
+   * @param messages - Messages to analyze
+   * @param basePreserveRecent - The minimum tokens to preserve from config
+   * @returns Dynamic token budget for preserved messages
+   */
+  private calculatePreserveTokens(
+    messages: Message[],
+    basePreserveRecent: number
+  ): number {
+    const totalTokens = this.countMessagesTokens(messages);
+    const fractionalPreserve = Math.ceil(totalTokens * this.COMPRESSION_PRESERVE_FRACTION);
+    
+    // Use the larger of the two to ensure we keep a healthy amount of recent history
+    return Math.max(basePreserveRecent, fractionalPreserve);
   }
 
   /**
@@ -160,11 +195,14 @@ export class CompressionService implements ICompressionService {
     }
 
     // Always preserve system prompt if it exists (Requirement 5.2)
-    const systemPrompt = messages.find((m) => m.role === 'system');
+    const _systemPrompt = messages.find((m) => m.role === 'system');
     const nonSystemMessages = messages.filter((m) => m.role !== 'system');
 
-    // Calculate target tokens for preserved messages
-    const targetTokens = strategy.preserveRecent;
+    // Calculate target tokens for preserved messages (Fractional Preservation)
+    const targetTokens = this.calculatePreserveTokens(
+      messages,
+      strategy.preserveRecent
+    );
 
     // Start from the end and work backwards, keeping messages until we hit the target
     const preserved: Message[] = [];
@@ -222,7 +260,7 @@ export class CompressionService implements ICompressionService {
     }
 
     // Always preserve system prompt if it exists
-    const systemPrompt = messages.find((m) => m.role === 'system');
+    const _systemPrompt = messages.find((m) => m.role === 'system');
     const nonSystemMessages = messages.filter((m) => m.role !== 'system');
 
     if (nonSystemMessages.length === 0) {
@@ -235,8 +273,11 @@ export class CompressionService implements ICompressionService {
       };
     }
 
-    // Calculate how many recent tokens to preserve (Requirement 5.4)
-    const recentTokenBudget = strategy.preserveRecent;
+    // Calculate how many recent tokens to preserve (Fractional Preservation)
+    const recentTokenBudget = this.calculatePreserveTokens(
+      messages,
+      strategy.preserveRecent
+    );
 
     // Find recent messages to preserve
     const preserved: Message[] = [];
@@ -330,7 +371,7 @@ export class CompressionService implements ICompressionService {
     }
 
     // Always preserve system prompt if it exists
-    const systemPrompt = messages.find((m) => m.role === 'system');
+    const _systemPrompt = messages.find((m) => m.role === 'system');
     const nonSystemMessages = messages.filter((m) => m.role !== 'system');
 
     if (nonSystemMessages.length === 0) {
@@ -343,8 +384,11 @@ export class CompressionService implements ICompressionService {
       };
     }
 
-    // Calculate token budgets
-    const recentTokenBudget = strategy.preserveRecent;
+    // Calculate token budgets (Fractional Preservation)
+    const recentTokenBudget = this.calculatePreserveTokens(
+      messages,
+      strategy.preserveRecent
+    );
 
     // Find recent messages to preserve
     const preserved: Message[] = [];

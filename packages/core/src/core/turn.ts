@@ -164,6 +164,20 @@ export class Turn {
           };
         }
 
+        // Check for parsing errors propagated from provider (Output Healing)
+        // This allows the LLM to self-correct malformed JSON
+        if (toolCall.args && typeof toolCall.args === 'object' && '__parsing_error__' in toolCall.args) {
+           const errDetails = toolCall.args as any;
+           return {
+             toolCall,
+             result: { 
+               error: `System Error: Invalid JSON in tool arguments. ${errDetails.message}\n` +
+                      `Please retry calling "${toolCall.name}" with valid JSON.\n` +
+                      `Received raw arguments: ${errDetails.raw}`
+             },
+           };
+        }
+
         try {
           const result = await tool.execute(toolCall.args);
           return { toolCall, result };

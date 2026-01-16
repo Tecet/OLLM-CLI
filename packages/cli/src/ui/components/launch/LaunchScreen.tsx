@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Text, useInput, useStdout } from 'ink';
+import { Box, useInput, useStdout } from 'ink';
 import { LlamaAnimation } from '../../../components/lama/LlamaAnimation.js';
 import { VersionBanner } from './VersionBanner.js';
 import { QuickActions } from './QuickActions.js';
@@ -22,11 +22,19 @@ interface LaunchScreenProps {
       error?: string; // Opt-in
     };
   };
+  modelInfo?: {
+    name: string;
+    size?: string;
+  };
+  gpuInfo?: {
+    name: string;
+    vram: string;
+    utilization?: string;
+  };
 }
 
 // Standard animation uses 24 lines height (matches LlamaAnimation logicalHeight for 'standard' size)
 const STANDARD_ANIMATION_HEIGHT = 24;
-const STANDARD_ANIMATION_WIDTH = STANDARD_ANIMATION_HEIGHT * 2;
 
 // Fixed layout constants - these don't change with terminal size
 const LAYOUT = {
@@ -35,10 +43,10 @@ const LAYOUT = {
   afterQuickActions: 3, // Lines between quick actions and animation area
 };
 
-const LaunchHeader = React.memo(({ theme }: { theme: LaunchScreenProps['theme'] }) => (
+const LaunchHeader = React.memo(({ theme, modelInfo, gpuInfo }: { theme: LaunchScreenProps['theme'], modelInfo: LaunchScreenProps['modelInfo'], gpuInfo: LaunchScreenProps['gpuInfo'] }) => (
   <Box flexDirection="column" alignItems="center" width="100%">
     <Box marginTop={LAYOUT.topPadding}>
-      <VersionBanner theme={theme} />
+      <VersionBanner theme={theme} modelInfo={modelInfo} gpuInfo={gpuInfo} />
     </Box>
 
     <Box marginTop={LAYOUT.afterBanner}>
@@ -65,6 +73,8 @@ export const LaunchScreen: React.FC<LaunchScreenProps> = ({
   onDismiss,
   recentSessions = [],
   theme,
+  modelInfo,
+  gpuInfo,
 }) => {
   // Handle any keypress to dismiss
   useInput((_input, _key) => {
@@ -73,15 +83,8 @@ export const LaunchScreen: React.FC<LaunchScreenProps> = ({
   });
 
   const { stdout } = useStdout();
-  const termWidth = stdout?.columns || 80;
   const termHeight = stdout?.rows ?? 0;
-  const isCompact = termHeight > 0 && termHeight < 40;
   const rootHeight = termHeight > 0 ? termHeight : undefined;
-  
-  // Animation sprite is 48 chars wide (24 lines * 2), need space for movement
-  // Use 80% of terminal width but ensure at least sprite width + some movement room
-  const minAnimationWidth = STANDARD_ANIMATION_WIDTH + 20; // sprite + minimal movement
-  const animationWidth = Math.max(minAnimationWidth, Math.floor(termWidth * 0.8));
 
   return (
     <Box
@@ -91,7 +94,7 @@ export const LaunchScreen: React.FC<LaunchScreenProps> = ({
       height={rootHeight}
       overflow="hidden"
     >
-      <LaunchHeader theme={theme} />
+      <LaunchHeader theme={theme} modelInfo={modelInfo} gpuInfo={gpuInfo} />
 
       <LaunchFooter theme={theme} recentSessions={recentSessions} />
 

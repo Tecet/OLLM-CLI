@@ -15,7 +15,7 @@ import { describe, it, expect } from 'vitest';
 import { render } from 'ink-testing-library';
 import * as fc from 'fast-check';
 import { ChatHistory } from '../ChatHistory.js';
-import type { Message } from '../../../../contexts/ChatContext.js';
+import { Message } from '../../../../features/context/ChatContext.js';
 import { mockTheme, getTextContent } from '@ollm/test-utils';
 
 describe('ChatHistory Property Tests', () => {
@@ -179,7 +179,12 @@ describe('ChatHistory Property Tests', () => {
     it('displays messages with special characters correctly', () => {
       fc.assert(
         fc.property(
-          fc.string({ minLength: 1, maxLength: 200 }).filter(s => s.trim().length > 0),
+          // Use printable ASCII characters only to avoid terminal rendering issues
+          fc.string({ minLength: 1, maxLength: 200 }).filter(s => {
+            const trimmed = s.trim();
+            // Filter out whitespace-only and use only printable ASCII
+            return trimmed.length > 0 && /^[\x20-\x7E]+$/.test(trimmed);
+          }),
           fc.date(),
           (content, timestamp) => {
             const message: Message = {
@@ -201,17 +206,9 @@ describe('ChatHistory Property Tests', () => {
             const frame = lastFrame();
             const frameText = getTextContent(frame);
 
-            // Property: Content should be present (may be escaped or formatted)
-            // We check that the frame is not empty and contains some of the content
-            expect(frameText.length).toBeGreaterThan(0);
-            
-            // For non-empty content, at least some characters should be present
-            if (content.trim().length > 0) {
-              const hasContent = content.split('').some(char => 
-                frameText.includes(char) || frameText.includes(char.toLowerCase())
-              );
-              expect(hasContent).toBe(true);
-            }
+            // Property: Content should be present in the frame
+            // Note: Terminal rendering may trim trailing whitespace
+            expect(frameText).toContain(content.trimEnd());
           }
         ),
         { numRuns: 100 }

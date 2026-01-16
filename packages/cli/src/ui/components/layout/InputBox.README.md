@@ -41,7 +41,7 @@ The `InputBox` component is a multi-line input field for the OLLM CLI terminal i
 
 ```typescript
 import { InputBox } from './ui/components/layout/InputBox';
-import { ChatProvider } from './contexts/ChatContext';
+import { useChat } from '../../features/context/ChatContext.js';
 
 function MyApp() {
   return (

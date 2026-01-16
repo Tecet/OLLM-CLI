@@ -10,7 +10,18 @@
  * - /session resume <id> - Restore a session
  */
 
-import type { Command, CommandResult } from './types.js';
+import { getGlobalContextManager } from '../features/context/ContextManagerContext.js';
+
+/**
+ * Helper to check if context manager is available
+ */
+function ensureContextManager() {
+  const manager = getGlobalContextManager();
+  if (!manager) {
+    throw new Error('Context Manager is not initialized. Please wait for the application to fully load.');
+  }
+  return manager;
+}
 
 /**
  * /new command - Create new session with confirmation
@@ -43,11 +54,20 @@ export const clearCommand: Command = {
   description: 'Clear chat history but preserve system prompt',
   usage: '/clear',
   handler: async (): Promise<CommandResult> => {
-    return {
-      success: true,
-      action: 'clear-chat',
-      message: 'Chat history cleared.',
-    };
+    try {
+      const manager = ensureContextManager();
+      await manager.clear();
+      return {
+        success: true,
+        action: 'clear-chat',
+        message: 'Chat history cleared. System prompt preserved.',
+      };
+    } catch (error) {
+       return {
+        success: false,
+        message: `Error clearing context: ${error instanceof Error ? error.message : String(error)}`,
+      };
+    }
   },
 };
 
@@ -61,12 +81,19 @@ export const compactCommand: Command = {
   description: 'Compress context to reduce token usage',
   usage: '/compact',
   handler: async (): Promise<CommandResult> => {
-    // This will be handled by the context management system
-    // For now, return a placeholder
-    return {
-      success: true,
-      message: 'Context compression triggered. This feature will be implemented in context management.',
-    };
+    try {
+      const manager = ensureContextManager();
+      await manager.compress();
+      return {
+        success: true,
+        message: 'Context compression completed successfully.',
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: `Error compressing context: ${error instanceof Error ? error.message : String(error)}`,
+      };
+    }
   },
 };
 
@@ -79,7 +106,7 @@ export const compactCommand: Command = {
  * 
  * Requirements: 17.5, 19.9
  */
-async function sessionSaveHandler(args: string[]): Promise<CommandResult> {
+async function sessionSaveHandler(_args: string[]): Promise<CommandResult> {
   // This will integrate with ChatRecordingService
   // For now, return a placeholder
   return {
@@ -94,7 +121,7 @@ async function sessionSaveHandler(args: string[]): Promise<CommandResult> {
  * 
  * Requirements: 17.6, 19.9
  */
-async function sessionListHandler(args: string[]): Promise<CommandResult> {
+async function sessionListHandler(_args: string[]): Promise<CommandResult> {
   // This will integrate with ChatRecordingService
   // For now, return a placeholder with mock data
   return {

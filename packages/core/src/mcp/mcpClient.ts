@@ -11,6 +11,8 @@ import {
   MCPServerStatus,
   MCPServerInfo,
   MCPTool,
+  MCPResource,
+  MCPPrompt,
   MCPServerStatusType,
   MCPStreamChunk,
 } from './types.js';
@@ -18,6 +20,7 @@ import { MCPTransport, StdioTransport, SSETransport, HTTPTransport } from './mcp
 import { substituteEnvObject } from './envSubstitution.js';
 import type { MCPConfig } from './config.js';
 import { DEFAULT_MCP_CONFIG } from './config.js';
+import { MCPOAuthProvider } from './mcpOAuth.js';
 
 /**
  * Internal server state
@@ -28,6 +31,9 @@ interface ServerState {
   status: MCPServerStatusType;
   error?: string;
   tools: MCPTool[];
+  resources: MCPResource[];
+  prompts: MCPPrompt[];
+  oauthProvider?: MCPOAuthProvider;
 }
 
 /**
@@ -58,8 +64,32 @@ export class DefaultMCPClient implements MCPClient {
       throw new Error(`Server '${name}' is already registered`);
     }
 
-    // Create transport
-    const transport = this.createTransport(config);
+    // Initialize OAuth provider if configured
+    let oauthProvider: MCPOAuthProvider | undefined;
+    let accessToken: string | undefined;
+
+    if (config.oauth?.enabled) {
+      oauthProvider = new MCPOAuthProvider({
+        serverName: name,
+        authorizationUrl: config.oauth.authorizationUrl,
+        tokenUrl: config.oauth.tokenUrl,
+        clientId: config.oauth.clientId,
+        clientSecret: config.oauth.clientSecret,
+        scopes: config.oauth.scopes,
+        redirectPort: config.oauth.redirectPort,
+        usePKCE: config.oauth.usePKCE,
+      });
+
+      try {
+        // Try to get existing token or initiate OAuth flow
+        accessToken = await oauthProvider.getAccessToken();
+      } catch (error) {
+        throw new Error(`OAuth authentication failed for server '${name}': ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+
+    // Create transport with OAuth token if available
+    const transport = this.createTransport(config, accessToken);
 
     // Initialize server state
     const state: ServerState = {
@@ -68,6 +98,9 @@ export class DefaultMCPClient implements MCPClient {
       status: 'starting',
       error: undefined,
       tools: [],
+      resources: [],
+      prompts: [],
+      oauthProvider,
     };
 
     this.servers.set(name, state);
@@ -316,12 +349,158 @@ export class DefaultMCPClient implements MCPClient {
     }
   }
 
+  async getResources(serverName: string): Promise<MCPResource[]> {
+    const state = this.servers.get(serverName);
+    
+    if (!state) {
+      throw new Error(`Server '${serverName}' not found`);
+    }
+
+    if (state.status !== 'connected') {
+      throw new Error(`Server '${serverName}' is not connected (status: ${state.status})`);
+    }
+
+    try {
+      // Request resources list from server
+      const response = await state.transport.sendRequest({
+        method: 'resources/list',
+      });
+
+      if (response.error) {
+        throw new Error(`Failed to get resources: ${response.error.message}`);
+      }
+
+      // Extract resources from response
+      const resources = (response.result as any)?.resources || [];
+      
+      // Store resources in state
+      state.resources = resources;
+
+      return resources;
+    } catch (error) {
+      // Update server status to error
+      state.status = 'error';
+      state.error = error instanceof Error ? error.message : String(error);
+      
+      throw error;
+    }
+  }
+
+  async readResource(serverName: string, uri: string): Promise<unknown> {
+    const state = this.servers.get(serverName);
+    
+    if (!state) {
+      throw new Error(`Server '${serverName}' not found`);
+    }
+
+    if (state.status !== 'connected') {
+      throw new Error(`Server '${serverName}' is not connected (status: ${state.status})`);
+    }
+
+    try {
+      // Request resource content from server
+      const response = await state.transport.sendRequest({
+        method: 'resources/read',
+        params: { uri },
+      });
+
+      if (response.error) {
+        throw new Error(`Failed to read resource: ${response.error.message}`);
+      }
+
+      return response.result;
+    } catch (error) {
+      // Update server status to error
+      state.status = 'error';
+      state.error = error instanceof Error ? error.message : String(error);
+      
+      throw error;
+    }
+  }
+
+  async getPrompts(serverName: string): Promise<MCPPrompt[]> {
+    const state = this.servers.get(serverName);
+    
+    if (!state) {
+      throw new Error(`Server '${serverName}' not found`);
+    }
+
+    if (state.status !== 'connected') {
+      throw new Error(`Server '${serverName}' is not connected (status: ${state.status})`);
+    }
+
+    try {
+      // Request prompts list from server
+      const response = await state.transport.sendRequest({
+        method: 'prompts/list',
+      });
+
+      if (response.error) {
+        throw new Error(`Failed to get prompts: ${response.error.message}`);
+      }
+
+      // Extract prompts from response
+      const prompts = (response.result as any)?.prompts || [];
+      
+      // Store prompts in state
+      state.prompts = prompts;
+
+      return prompts;
+    } catch (error) {
+      // Update server status to error
+      state.status = 'error';
+      state.error = error instanceof Error ? error.message : String(error);
+      
+      throw error;
+    }
+  }
+
+  async getPrompt(
+    serverName: string,
+    promptName: string,
+    args?: Record<string, unknown>
+  ): Promise<unknown> {
+    const state = this.servers.get(serverName);
+    
+    if (!state) {
+      throw new Error(`Server '${serverName}' not found`);
+    }
+
+    if (state.status !== 'connected') {
+      throw new Error(`Server '${serverName}' is not connected (status: ${state.status})`);
+    }
+
+    try {
+      // Request prompt from server
+      const response = await state.transport.sendRequest({
+        method: 'prompts/get',
+        params: {
+          name: promptName,
+          arguments: args || {},
+        },
+      });
+
+      if (response.error) {
+        throw new Error(`Failed to get prompt: ${response.error.message}`);
+      }
+
+      return response.result;
+    } catch (error) {
+      // Update server status to error
+      state.status = 'error';
+      state.error = error instanceof Error ? error.message : String(error);
+      
+      throw error;
+    }
+  }
+
   /**
    * Create a transport for the given configuration
    * @param config - Server configuration
+   * @param accessToken - Optional OAuth access token
    * @returns Transport instance
    */
-  private createTransport(config: MCPServerConfig): MCPTransport {
+  private createTransport(config: MCPServerConfig, accessToken?: string): MCPTransport {
     const transport = config.transport || 'stdio';
 
     // Substitute environment variables in env config
@@ -331,11 +510,17 @@ export class DefaultMCPClient implements MCPClient {
       case 'stdio':
         return new StdioTransport(config.command, config.args, processedEnv);
       case 'sse':
-        // SSE transport requires a URL in the command field
-        return new SSETransport(config.command);
+        // SSE transport requires a URL
+        if (!config.url) {
+          throw new Error('SSE transport requires a URL in the configuration');
+        }
+        return new SSETransport(config.url, accessToken);
       case 'http':
-        // HTTP transport requires a URL in the command field
-        return new HTTPTransport(config.command);
+        // HTTP transport requires a URL
+        if (!config.url) {
+          throw new Error('HTTP transport requires a URL in the configuration');
+        }
+        return new HTTPTransport(config.url, accessToken);
       default:
         throw new Error(`Unsupported transport type: ${transport}`);
     }
