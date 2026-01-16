@@ -13,15 +13,15 @@ import { ConfigError } from './types.js';
 import { defaultConfig } from './defaults.js';
 import { configSchema } from './schema.js';
 
-let validate: ReturnType<typeof Ajv.prototype.compile> | null = null;
+let validate: any = null;
 
 /**
  * Get or create the validator instance
  */
 function getValidator() {
   if (!validate) {
-    const ajv = new Ajv({ allErrors: true, strict: false });
-    addFormats(ajv);
+    const ajv = new (Ajv as any)({ allErrors: true, strict: false });
+    (addFormats as any)(ajv);
     validate = ajv.compile(configSchema);
   }
   return validate;

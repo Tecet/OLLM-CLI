@@ -1,12 +1,12 @@
-import React from 'react';
 import { Box, Text } from 'ink';
-import { ConnectionStatus } from './StatusBar.js';
+import { ConnectionStatus, GPUInfo } from './StatusBar.js';
+import { Theme } from '../../../config/uiSettings.js';
 
 export interface HeaderBarProps {
   connection: ConnectionStatus;
   model: string;
-  gpu: any;
-  theme: any;
+  gpu: GPUInfo | null;
+  theme: Theme;
 }
 
 function formatMB(bytes: number): string {
@@ -22,54 +22,29 @@ export function HeaderBar({ connection, model, gpu, theme }: HeaderBarProps) {
     <Box 
       flexDirection="row" 
       width="100%" 
-      borderStyle="single" 
-      borderColor={theme.text.secondary} 
       alignItems="center"
+      justifyContent="center"
       paddingX={1}
+      flexWrap="wrap"
     >
-      {/* 1. Provider Section */}
-      <Box marginRight={2}>
-        <Text>
-          <Text color={theme.status.success}>🌐 </Text>
-          <Text color={theme.text.secondary}>Provider - </Text>
-          <Text color={theme.text.primary} bold>{providerName}</Text>
+      <Text>
+        <Text color={theme.status.success}>● </Text>
+        <Text color={theme.text.secondary}>{providerName}</Text>
+        <Text color={theme.text.secondary}> | </Text>
+
+        <Text color={theme.text.primary} bold>LLM: </Text>
+        <Text color={theme.text.secondary} bold>{model}</Text>
+        <Text color={theme.text.secondary}> | </Text>
+
+        <Text color={theme.text.secondary}>VRAM </Text>
+        <Text color={theme.text.primary}>
+          {gpu?.available ? `${formatMB(gpu.vramUsed)} / ${formatMB(gpu.vramTotal)}` : 'N/A'}
         </Text>
-      </Box>
+        <Text color={theme.text.secondary}> | </Text>
 
-      <Text color={theme.text.secondary}>|</Text>
-
-      {/* 2. Model Section */}
-      <Box marginX={2}>
-        <Text>
-          <Text>🧠 </Text>
-          <Text color={theme.text.secondary}>LLM Model - </Text>
-          <Text color={theme.text.accent} bold>{model}</Text>
-        </Text>
-      </Box>
-
-      <Text color={theme.text.secondary}>|</Text>
-
-      {/* 3. VRAM Section */}
-      <Box marginX={2}>
-        <Text>
-          <Text color="#4ec9b0">📏 </Text>
-          <Text color={theme.text.secondary}>VRAM - </Text>
-          <Text color={theme.text.primary}>
-            {gpu?.available ? `${formatMB(gpu.vramUsed)} / ${formatMB(gpu.vramTotal)}` : 'N/A'}
-          </Text>
-        </Text>
-      </Box>
-
-      <Text color={theme.text.secondary}>|</Text>
-
-      {/* 4. GPU Section */}
-      <Box marginLeft={2}>
-        <Text>
-          <Text color={theme.status.warning}>🌡️ </Text>
-          <Text color={theme.text.secondary}>GPU - </Text>
-          <Text color={theme.text.primary}>{gpu?.temperature || 0}°</Text>
-        </Text>
-      </Box>
+        <Text>🌡️ </Text>
+        <Text color={theme.text.primary}>{gpu?.temperature || 0}°</Text>
+      </Text>
     </Box>
   );
 }

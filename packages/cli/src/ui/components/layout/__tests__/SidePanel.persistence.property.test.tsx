@@ -1,18 +1,14 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import * as fc from 'fast-check';
 import { render } from '../../../../test/ink-testing.js';
 import { SidePanel } from '../SidePanel.js';
 import { Box, Text } from 'ink';
 import type { TabType } from '../../../../features/context/UIContext.js';
 
-// Mock ContextSection component for testing
-function MockContextSection() {
-  return (
-    <Box flexDirection="column">
-      <Text>Mock Context</Text>
-    </Box>
-  );
-}
+// Mock ContextSection
+vi.mock('../ContextSection.js', () => ({
+    ContextSection: () => <Text>Mock Context</Text>,
+}));
 
 /**
  * Property 15: Side Panel Visibility Persistence
@@ -33,16 +29,12 @@ describe('Property 15: Side Panel Visibility Persistence', () => {
       primary: '#1e1e1e',
       secondary: '#252526',
     },
-  };
-
-  const defaultSections = [
-    {
-      id: 'context',
-      title: 'Context Files',
-      component: MockContextSection,
-      collapsed: false,
-    },
-  ];
+    border: {
+        primary: '#3e3e42',
+        secondary: '#007acc',
+        active: '#007acc',
+    }
+  } as any;
 
   const defaultActiveTab: TabType = 'chat';
   const defaultNotifications = new Map<TabType, number>();
@@ -57,10 +49,10 @@ describe('Property 15: Side Panel Visibility Persistence', () => {
           const { lastFrame: firstFrame, rerender } = render(
             <SidePanel
               visible={initialVisibility}
-              sections={defaultSections}
-              activeTab={defaultActiveTab}
-              onTabChange={mockOnTabChange}
-              notifications={defaultNotifications}
+
+              connection={{ status: 'connected', provider: 'ollama' } as any}
+              model="test-model"
+              gpu={{ available: false } as any}
               theme={defaultTheme}
             />
           );
@@ -69,7 +61,7 @@ describe('Property 15: Side Panel Visibility Persistence', () => {
           
           // Verify initial state
           if (initialVisibility) {
-            expect(firstOutput).toContain('Side Panel');
+            expect(firstOutput).toContain('Active Context');
           } else {
             expect(firstOutput).toBe('');
           }
@@ -78,10 +70,10 @@ describe('Property 15: Side Panel Visibility Persistence', () => {
           rerender(
             <SidePanel
               visible={initialVisibility}
-              sections={defaultSections}
-              activeTab={defaultActiveTab}
-              onTabChange={mockOnTabChange}
-              notifications={defaultNotifications}
+
+              connection={{ status: 'connected', provider: 'ollama' } as any}
+              model="test-model"
+              gpu={{ available: false } as any}
               theme={defaultTheme}
             />
           );
@@ -90,7 +82,7 @@ describe('Property 15: Side Panel Visibility Persistence', () => {
           
           // Property: State should be maintained across re-renders
           if (initialVisibility) {
-            expect(secondOutput).toContain('Side Panel');
+            expect(secondOutput).toContain('Active Context');
           } else {
             expect(secondOutput).toBe('');
           }
@@ -112,8 +104,7 @@ describe('Property 15: Side Panel Visibility Persistence', () => {
             const { lastFrame } = render(
               <SidePanel
                 visible={visible}
-                sections={defaultSections}
-                activeTab={defaultActiveTab}
+  
                 onTabChange={mockOnTabChange}
                 notifications={defaultNotifications}
                 theme={defaultTheme}
@@ -124,7 +115,7 @@ describe('Property 15: Side Panel Visibility Persistence', () => {
             
             // Property: Each session should respect the provided visibility state
             if (visible) {
-              expect(output).toContain('Side Panel');
+              expect(output).toContain('Active Context');
             } else {
               expect(output).toBe('');
             }
@@ -151,17 +142,17 @@ describe('Property 15: Side Panel Visibility Persistence', () => {
           const { lastFrame: initialFrame } = render(
             <SidePanel
               visible={currentVisibility}
-              sections={defaultSections}
-              activeTab={defaultActiveTab}
-              onTabChange={mockOnTabChange}
-              notifications={defaultNotifications}
+
+              connection={{ status: 'connected', provider: 'ollama' } as any}
+              model="test-model"
+              gpu={{ available: false } as any}
               theme={defaultTheme}
             />
           );
 
           const initialOutput = initialFrame();
           if (currentVisibility) {
-            expect(initialOutput).toContain('Side Panel');
+            expect(initialOutput).toContain('Active Context');
           } else {
             expect(initialOutput).toBe('');
           }
@@ -173,8 +164,7 @@ describe('Property 15: Side Panel Visibility Persistence', () => {
             const { lastFrame } = render(
               <SidePanel
                 visible={currentVisibility}
-                sections={defaultSections}
-                activeTab={defaultActiveTab}
+  
                 onTabChange={mockOnTabChange}
                 notifications={defaultNotifications}
                 theme={defaultTheme}
@@ -185,54 +175,11 @@ describe('Property 15: Side Panel Visibility Persistence', () => {
             
             // Property: Each transition should result in correct visibility
             if (currentVisibility) {
-              expect(output).toContain('Side Panel');
+              expect(output).toContain('Active Context');
             } else {
               expect(output).toBe('');
             }
           });
-          
-          return true;
-        }
-      ),
-      { numRuns: 100 }
-    );
-  });
-
-  it('should persist visibility independently of other state', () => {
-    fc.assert(
-      fc.property(
-        fc.record({
-          visible: fc.boolean(),
-          sectionCount: fc.integer({ min: 1, max: 4 }),
-        }),
-        ({ visible, sectionCount }) => {
-          // Create sections based on count
-          const sections = Array.from({ length: sectionCount }, (_, i) => ({
-            id: `section-${i}`,
-            title: `Section ${i}`,
-            component: MockContextSection,
-            collapsed: false,
-          }));
-
-          const { lastFrame } = render(
-            <SidePanel
-              visible={visible}
-              sections={sections}
-              activeTab={defaultActiveTab}
-              onTabChange={mockOnTabChange}
-              notifications={defaultNotifications}
-              theme={defaultTheme}
-            />
-          );
-
-          const output = lastFrame();
-          
-          // Property: Visibility should be independent of section count
-          if (visible) {
-            expect(output).toContain('Side Panel');
-          } else {
-            expect(output).toBe('');
-          }
           
           return true;
         }

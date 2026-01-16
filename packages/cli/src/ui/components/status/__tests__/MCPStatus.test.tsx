@@ -6,7 +6,14 @@ import { describe, it, expect } from 'vitest';
 import { render } from 'ink-testing-library';
 import React from 'react';
 import { MCPStatus } from '../MCPStatus.js';
-import type { HealthCheckResult } from '@ollm/ollm-cli-core/mcp';
+// Local definition to bypass import issues
+type HealthCheckResult = {
+  serverName: string;
+  healthy: boolean;
+  status: 'connected' | 'starting' | 'disconnected' | 'error';
+  error?: string;
+  timestamp: number;
+};
 
 // Default theme for testing
 const defaultTheme = {

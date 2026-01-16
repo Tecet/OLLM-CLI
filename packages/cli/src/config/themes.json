@@ -1,0 +1,172 @@
+{
+  "default-dark": {
+    "name": "default-dark",
+    "bg": {
+      "primary": "#1e1e1e",
+      "secondary": "#252526",
+      "tertiary": "#2d2d30"
+    },
+    "text": {
+      "primary": "#d4d4d4",
+      "secondary": "#858585",
+      "accent": "#4ec9b0"
+    },
+    "role": {
+      "user": "#569cd6",
+      "assistant": "#4ec9b0",
+      "system": "#858585",
+      "tool": "#dcdcaa"
+    },
+    "status": {
+      "success": "#4ec9b0",
+      "warning": "#ce9178",
+      "error": "#f48771",
+      "info": "#569cd6"
+    },
+    "border": {
+      "primary": "#858585",
+      "secondary": "#555555",
+      "active": "green"
+    },
+    "diff": {
+      "added": "#4ec9b0",
+      "removed": "#f48771"
+    }
+  },
+  "dracula": {
+    "name": "dracula",
+    "bg": {
+      "primary": "#282a36",
+      "secondary": "#44475a",
+      "tertiary": "#6272a4"
+    },
+    "text": {
+      "primary": "#f8f8f2",
+      "secondary": "#6272a4",
+      "accent": "#50fa7b"
+    },
+    "role": {
+      "user": "#8be9fd",
+      "assistant": "#50fa7b",
+      "system": "#6272a4",
+      "tool": "#f1fa8c"
+    },
+    "status": {
+      "success": "#50fa7b",
+      "warning": "#ffb86c",
+      "error": "#ff5555",
+      "info": "#8be9fd"
+    },
+    "border": {
+      "primary": "#6272a4",
+      "secondary": "#44475a",
+      "active": "green"
+    },
+    "diff": {
+      "added": "#50fa7b",
+      "removed": "#ff5555"
+    }
+  },
+  "nord": {
+    "name": "nord",
+    "bg": {
+      "primary": "#2e3440",
+      "secondary": "#3b4252",
+      "tertiary": "#434c5e"
+    },
+    "text": {
+      "primary": "#eceff4",
+      "secondary": "#d8dee9",
+      "accent": "#88c0d0"
+    },
+    "role": {
+      "user": "#81a1c1",
+      "assistant": "#88c0d0",
+      "system": "#4c566a",
+      "tool": "#ebcb8b"
+    },
+    "status": {
+      "success": "#a3be8c",
+      "warning": "#d08770",
+      "error": "#bf616a",
+      "info": "#5e81ac"
+    },
+    "border": {
+      "primary": "#4c566a",
+      "secondary": "#3b4252",
+      "active": "green"
+    },
+    "diff": {
+      "added": "#a3be8c",
+      "removed": "#bf616a"
+    }
+  },
+  "monokai": {
+    "name": "monokai",
+    "bg": {
+      "primary": "#272822",
+      "secondary": "#3e3d32",
+      "tertiary": "#49483e"
+    },
+    "text": {
+      "primary": "#f8f8f2",
+      "secondary": "#75715e",
+      "accent": "#a6e22e"
+    },
+    "role": {
+      "user": "#66d9ef",
+      "assistant": "#a6e22e",
+      "system": "#75715e",
+      "tool": "#e6db74"
+    },
+    "status": {
+      "success": "#a6e22e",
+      "warning": "#fd971f",
+      "error": "#f92672",
+      "info": "#66d9ef"
+    },
+    "border": {
+      "primary": "#75715e",
+      "secondary": "#49483e",
+      "active": "green"
+    },
+    "diff": {
+      "added": "#a6e22e",
+      "removed": "#f92672"
+    }
+  },
+  "solarized-dark": {
+    "name": "solarized-dark",
+    "bg": {
+      "primary": "#002b36",
+      "secondary": "#073642",
+      "tertiary": "#586e75"
+    },
+    "text": {
+      "primary": "#839496",
+      "secondary": "#657b83",
+      "accent": "#2aa198"
+    },
+    "role": {
+      "user": "#268bd2",
+      "assistant": "#2aa198",
+      "system": "#586e75",
+      "tool": "#b58900"
+    },
+    "status": {
+      "success": "#859900",
+      "warning": "#cb4b16",
+      "error": "#dc322f",
+      "info": "#268bd2"
+    },
+    "border": {
+      "primary": "#586e75",
+      "secondary": "#073642",
+      "active": "green"
+    },
+    "diff": {
+      "added": "#859900",
+      "removed": "#dc322f"
+    }
+  }
+}

@@ -6,7 +6,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import * as yaml from 'js-yaml';
+import * as yaml from 'yaml';
 import { Theme, builtInThemes, defaultDarkTheme } from '../../config/uiSettings.js';
 
 export interface ThemeManagerOptions {
@@ -37,7 +37,7 @@ function deepMerge<T extends Record<string, any>>(target: T, source: Partial<T>)
         result[key] = deepMerge(targetValue, sourceValue);
       } else if (sourceValue !== undefined) {
         // Override with source value
-        result[key] = sourceValue;
+        result[key] = sourceValue as any;
       }
     }
   }
@@ -81,7 +81,7 @@ export class ThemeManager {
     try {
       // Read and parse the YAML file
       const fileContent = fs.readFileSync(themePath, 'utf-8');
-      const customThemeData = yaml.load(fileContent) as Partial<Theme>;
+      const customThemeData = yaml.parse(fileContent) as Partial<Theme>;
       
       // Validate that it's an object
       if (!customThemeData || typeof customThemeData !== 'object') {

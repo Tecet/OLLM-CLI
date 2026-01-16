@@ -1,0 +1,45 @@
+{
+  "tabNavigation": {
+    "tabChat": "ctrl+1",
+    "tabTools": "ctrl+2",
+    "tabFiles": "ctrl+3",
+    "tabSearch": "ctrl+4",
+    "tabDocs": "ctrl+5",
+    "tabSettings": "ctrl+6"
+  },
+  "layout": {
+    "togglePanel": "ctrl+p",
+    "commandPalette": "ctrl+k",
+    "toggleDebug": "ctrl+/"
+  },
+  "chat": {
+    "clearChat": "ctrl+l",
+    "saveSession": "ctrl+s",
+    "cancel": "escape",
+    "send": "return",
+    "newline": "shift+return",
+    "editPrevious": "up"
+  },
+  "review": {
+    "approve": "y",
+    "reject": "n"
+  },
+  "navigation": {
+    "scrollDown": "j",
+    "scrollUp": "k",
+    "select": "return",
+    "back": "backspace",
+    "cycleFocus": "tab",
+    "left": "left",
+    "right": "right"
+  },
+  "global": {
+    "focusChatInput": "ctrl+space",
+    "focusNavigation": "ctrl+m",
+    "focusContext": "ctrl+c",
+    "focusFileTree": "ctrl+f",
+    "focusFunctions": "ctrl+i",
+    "cycleNext": "tab",
+    "cyclePrev": "shift+tab"
+  }
+}

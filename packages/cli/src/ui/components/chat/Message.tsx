@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Box, Text } from 'ink';
-import { Message as MessageType, ToolCall as ToolCallType, ReasoningBlock as ReasoningBlockType } from '../../../features/context/ChatContext.js';
+import { Message as MessageType } from '../../../features/context/ChatContext.js';
 import { MetricsDisplay } from './MetricsDisplay.js';
 import { ReasoningBox } from './ReasoningBox.js';
 import type { Theme } from '../../../config/uiSettings.js';
@@ -59,7 +59,7 @@ export function Message({ message, theme, metricsConfig, reasoningConfig }: Mess
 
       {/* Message content */}
       <Box paddingLeft={2}>
-        <Text color={theme.text.primary}>{message.content}</Text>
+        <Text color={theme.text.primary} wrap="wrap">{message.content}</Text>
       </Box>
 
       {/* Metrics display (if present) */}

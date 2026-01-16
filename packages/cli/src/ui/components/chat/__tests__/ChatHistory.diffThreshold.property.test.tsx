@@ -4,6 +4,7 @@ import React from 'react';
 import fc from 'fast-check';
 import { ChatHistory } from '../ChatHistory.js';
 import { Message } from '../../../../features/context/ChatContext.js';
+import { mockTheme } from '../../__tests__/testUtils.js';
 
 /**
  * Property 22: Diff Size Threshold
@@ -47,6 +48,12 @@ describe('Property 22: Diff Size Threshold', () => {
           };
 
           const theme = {
+            name: 'test',
+            bg: {
+              primary: '#000000',
+              secondary: '#111111',
+              tertiary: '#222222',
+            },
             role: {
               user: '#00ff00',
               assistant: '#0000ff',
@@ -64,6 +71,10 @@ describe('Property 22: Diff Size Threshold', () => {
               error: '#ff0000',
               info: '#0000ff',
             },
+            border: {
+              primary: '#888888',
+              secondary: '#444444',
+            },
             diff: {
               added: '#00ff00',
               removed: '#ff0000',
@@ -76,6 +87,7 @@ describe('Property 22: Diff Size Threshold', () => {
               streaming={false}
               waitingForResponse={false}
               theme={theme}
+              width={80}
             />
           );
           const output = lastFrame();
@@ -119,36 +131,15 @@ describe('Property 22: Diff Size Threshold', () => {
       timestamp: new Date(),
     };
 
-    const theme = {
-      role: {
-        user: '#00ff00',
-        assistant: '#0000ff',
-        system: '#ffff00',
-        tool: '#ff00ff',
-      },
-      text: {
-        primary: '#ffffff',
-        secondary: '#888888',
-        accent: '#00ff00',
-      },
-      status: {
-        success: '#00ff00',
-        warning: '#ffff00',
-        error: '#ff0000',
-        info: '#0000ff',
-      },
-      diff: {
-        added: '#00ff00',
-        removed: '#ff0000',
-      },
-    };
+
 
     const { lastFrame } = render(
       <ChatHistory
         messages={[message]}
         streaming={false}
         waitingForResponse={false}
-        theme={theme}
+        theme={mockTheme}
+        width={80}
       />
     );
     const output = lastFrame();
@@ -174,36 +165,15 @@ describe('Property 22: Diff Size Threshold', () => {
       timestamp: new Date(),
     };
 
-    const theme = {
-      role: {
-        user: '#00ff00',
-        assistant: '#0000ff',
-        system: '#ffff00',
-        tool: '#ff00ff',
-      },
-      text: {
-        primary: '#ffffff',
-        secondary: '#888888',
-        accent: '#00ff00',
-      },
-      status: {
-        success: '#00ff00',
-        warning: '#ffff00',
-        error: '#ff0000',
-        info: '#0000ff',
-      },
-      diff: {
-        added: '#00ff00',
-        removed: '#ff0000',
-      },
-    };
+
 
     const { lastFrame } = render(
       <ChatHistory
         messages={[message]}
         streaming={false}
         waitingForResponse={false}
-        theme={theme}
+        theme={mockTheme}
+        width={80}
       />
     );
     const output = lastFrame();

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Text } from 'ink';
-import { useUI, Theme } from '../../../features/context/UIContext.js';
+import { useUI } from '../../../features/context/UIContext.js';
+import { Theme } from '../../../config/uiSettings.js';
 import { Review } from '../../../features/context/ReviewContext.js';
 
 export interface DiffViewerProps {

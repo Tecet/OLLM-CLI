@@ -13,10 +13,10 @@
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
 import React from 'react';
-import { render } from 'ink-testing-library';
 import { Message } from '../Message.js';
-import { mockTheme } from '@ollm/test-utils';
-import type { Message } from '../../../../features/context/ChatContext.js';
+import { render } from 'ink-testing-library';
+import { mockTheme } from '../../__tests__/testUtils.js';
+import type { Message as MessageType } from '../../../../features/context/ChatContext.js';
 
 describe('Property 28: Incremental Text Rendering', () => {
   /**

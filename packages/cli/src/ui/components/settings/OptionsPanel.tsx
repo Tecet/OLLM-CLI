@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Text } from 'ink';
-import { useUI, Theme } from '../../../features/context/UIContext.js';
+import { useUI } from '../../../features/context/UIContext.js';
+import { Theme } from '../../../config/uiSettings.js';
 
 export interface Options {
   temperature: number;
@@ -30,9 +31,11 @@ export interface OptionsPanelProps {
 export function OptionsPanel({ options, onChange, theme }: OptionsPanelProps) {
   return (
     <Box flexDirection="column" borderStyle="single" borderColor={theme.text.accent} paddingX={1}>
-      <Text bold color={theme.text.accent} marginBottom={1}>
-        Options
-      </Text>
+      <Box marginBottom={1}>
+        <Text bold color={theme.text.accent}>
+          Options
+        </Text>
+      </Box>
 
       <Box flexDirection="column" gap={1}>
         <Box justifyContent="space-between">

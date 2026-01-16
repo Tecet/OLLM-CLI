@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Box, Text } from 'ink';
 import { useUI } from '../../../features/context/UIContext.js';
 import { useReview, Review } from '../../../features/context/ReviewContext.js';
+import { Theme } from '../../../config/uiSettings.js';
 
 export interface ReviewActionsProps {
   /** Review ID */

@@ -174,26 +174,35 @@ export const InputBox = React.memo(function InputBox({
 
       {/* Multi-line input display */}
       <Box flexDirection="column" flexGrow={1}>
-        {lines.map((line, index) => {
-          const isCurrentLine = index === currentLineIndex;
-          const displayLine = line || ' '; // Show space for empty lines
+        {localInput.length > 100 ? (
+          <Box height={1}>
+            <Text color={theme.text.primary} italic>
+              {`[Pasted Content: ${localInput.length} chars] `}
+              <Text inverse>{' '}</Text>
+            </Text>
+          </Box>
+        ) : (
+          lines.map((line, index) => {
+            const isCurrentLine = index === currentLineIndex;
+            const displayLine = line || ' '; // Show space for empty lines
 
-          return (
-            <Box key={index} height={1}>
-              <Text color={theme.text.primary}>
-                {isCurrentLine && cursorInLine <= line.length ? (
-                  <>
-                    {displayLine.slice(0, cursorInLine)}
-                    <Text inverse>{displayLine[cursorInLine] || ' '}</Text>
-                    {displayLine.slice(cursorInLine + 1)}
-                  </>
-                ) : (
-                  displayLine
-                )}
-              </Text>
-            </Box>
-          );
-        })}
+            return (
+              <Box key={index} height={1}>
+                <Text color={theme.text.primary}>
+                  {isCurrentLine && cursorInLine <= line.length ? (
+                    <>
+                      {displayLine.slice(0, cursorInLine)}
+                      <Text inverse>{displayLine[cursorInLine] || ' '}</Text>
+                      {displayLine.slice(cursorInLine + 1)}
+                    </>
+                  ) : (
+                    displayLine
+                  )}
+                </Text>
+              </Box>
+            );
+          })
+        )}
       </Box>
     </Box>
   );

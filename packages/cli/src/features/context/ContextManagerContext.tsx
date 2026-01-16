@@ -106,6 +106,9 @@ export interface ContextManagerActions {
   /** Perform context hot swap */
   hotSwap: (newSkills?: string[]) => Promise<void>;
 
+  /** Get the current system prompt string */
+  getSystemPrompt: () => string;
+
   /** Register event listener */
   on: (event: string, callback: (data: unknown) => void) => void;
 
@@ -381,6 +384,10 @@ export function ContextManagerProvider({
     return await managerRef.current.getMessages();
   }, []);
   
+  const getSystemPrompt = useCallback(() => {
+    return managerRef.current?.getSystemPrompt() || '';
+  }, []);
+  
   // Memory level change effect
   useEffect(() => {
     onMemoryLevelChange?.(memoryLevel);
@@ -458,6 +465,7 @@ export function ContextManagerProvider({
     getContext,
     resize,
     hotSwap,
+    getSystemPrompt,
     on,
     off,
     getUsage: () => managerRef.current?.getUsage() || DEFAULT_USAGE,
@@ -478,6 +486,7 @@ export function ContextManagerProvider({
     getContext,
     resize,
     hotSwap,
+    getSystemPrompt,
     on,
     off,
   ]);

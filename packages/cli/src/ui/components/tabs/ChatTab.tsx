@@ -1,12 +1,15 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React from 'react';
 import { Box, useStdout } from 'ink';
-import { ChatHistory } from '../chat/ChatHistory.js';
-import { InputBox } from '../layout/InputBox.js';
+import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { useChat } from '../../../features/context/ChatContext.js';
 import { useUI } from '../../../features/context/UIContext.js';
-import { useContextKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts.js';
+import { ChatHistory } from '../chat/ChatHistory.js';
 
 export interface ChatTabProps {
+  /** Assigned height from layout */
+  height: number;
+  /** Whether to show debugging border */
+  showBorder?: boolean;
   columnWidth?: number;
   metricsConfig?: {
     enabled: boolean;
@@ -26,46 +29,44 @@ export interface ChatTabProps {
  * ChatTab component
  * 
  * Main chat interface with message history and input box.
- * Integrates ChatHistory and InputBox components.
- * Handles message sending and streaming state.
- * Integrates metrics collection and reasoning display.
- * 
- * Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7, 15.1-15.7, 16.1-16.7
  */
-export function ChatTab(props: ChatTabProps = {}) {
-  const { metricsConfig, reasoningConfig, columnWidth } = props;
-  const { state: chatState } = useChat();
+export function ChatTab(props: ChatTabProps) {
+  const { metricsConfig, reasoningConfig, columnWidth, height, showBorder = true } = props;
+  const { state: chatState, scrollOffset } = useChat(); 
   const { state: uiState } = useUI();
   const { stdout } = useStdout();
-  const [scrollOffset, setScrollOffset] = useState(0);
+  const { isFocused } = useFocusManager();
+  
+  const hasFocus = isFocused('chat-history');
 
   // Use provided config or defaults
   const finalMetricsConfig = metricsConfig || { enabled: true, compactMode: false };
   const finalReasoningConfig = reasoningConfig || { enabled: true, maxVisibleLines: 8 };
 
-  // Calculate fixed chat area height: terminalHeight - header(3) - input(7) - margin(2)
-  const terminalHeight = stdout?.rows || 24;
-  const chatAreaHeight = Math.max(6, terminalHeight - 3 - 7 - 2); // header=3, input+status=7, margin=2
   const leftWidth = columnWidth ?? stdout?.columns ?? 80;
-  const contentWidth = Math.max(20, Math.floor(leftWidth * 0.8));
-  const maxVisibleLines = chatAreaHeight - 2; // leave some padding
+  const contentWidth = Math.min(100, Math.max(20, Math.floor(leftWidth * 0.8)));
+  const maxVisibleLines = height - 4; // account for border and scroll indicators
 
-  // Scroll logic
-  const maxScrollOffset = Math.max(0, chatState.messages.length * 4);
-  useEffect(() => { setScrollOffset(0); }, [chatState.messages.length]);
-
-  const scrollUp = useCallback(() => setScrollOffset((prev) => Math.min(prev + 1, maxScrollOffset)), [maxScrollOffset]);
-  const scrollDown = useCallback(() => setScrollOffset((prev) => Math.max(prev - 1, 0)), []);
-  const chatShortcuts = useMemo(() => [
-    { key: 'ctrl+pageup', handler: scrollUp, description: 'Scroll chat up' },
-    { key: 'ctrl+pagedown', handler: scrollDown, description: 'Scroll chat down' },
-  ], [scrollUp, scrollDown]);
-  useContextKeyboardShortcuts('chat', chatShortcuts);
+  // Note: Scroll logic is now handled in ChatContext + App.tsx global shortcuts
+  // This ensures scrolling works even when InputBox is focused.
 
   return (
-    <Box flexDirection="column" height={chatAreaHeight} overflow="hidden" width="100%">
-      <Box flexGrow={1} flexShrink={1} minHeight={0} overflow="hidden" alignItems="center" width="100%">
-        <Box width={contentWidth}>
+    <Box 
+      flexDirection="column" 
+      height={height} 
+      overflow="hidden" 
+      width="100%" 
+      alignItems="center"
+      borderStyle={showBorder ? 'round' : undefined}
+      borderColor={hasFocus ? 'green' : 'blue'}
+    >
+        <Box 
+          width={contentWidth} 
+          flexDirection="column"
+          paddingX={1}
+          flexGrow={1}
+          flexShrink={1}
+        >
           <ChatHistory
             messages={chatState.messages}
             streaming={chatState.streaming}
@@ -74,12 +75,12 @@ export function ChatTab(props: ChatTabProps = {}) {
             theme={uiState.theme}
             scrollOffset={scrollOffset}
             maxVisibleLines={maxVisibleLines}
-            paddingY={2}
+            paddingY={1}
             metricsConfig={finalMetricsConfig}
             reasoningConfig={finalReasoningConfig}
+            width={contentWidth - 2} // Account for padding
           />
         </Box>
-      </Box>
     </Box>
   );
 }

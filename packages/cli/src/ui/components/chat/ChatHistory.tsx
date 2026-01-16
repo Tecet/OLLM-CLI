@@ -20,6 +20,7 @@ export interface ChatHistoryProps {
     enabled: boolean;
     maxVisibleLines: number;
   };
+  width: number;
 }
 
 /**
@@ -37,13 +38,14 @@ export function ChatHistory({
   paddingY = 0,
   metricsConfig,
   reasoningConfig,
+  width,
 }: ChatHistoryProps) {
   // Use _ to avoid unused var lint if they aren't used in this render cycle
   const _s = streaming;
   const _w = waitingForResponse;
   const _stb = scrollToBottom;
   const resolvedMax = Math.max(1, maxVisibleLines ?? 20);
-  const lines = buildChatLines(messages, theme, metricsConfig, reasoningConfig, paddingY);
+  const lines = buildChatLines(messages, theme, metricsConfig, reasoningConfig, paddingY, width);
   const clampedOffset = Math.min(Math.max(scrollOffset, 0), Math.max(0, lines.length - resolvedMax));
   const endIndex = Math.max(0, lines.length - clampedOffset);
   const startIndex = Math.max(0, endIndex - resolvedMax);
@@ -54,7 +56,7 @@ export function ChatHistory({
   return (
     <Box flexDirection="column" paddingX={1} paddingY={paddingY} width="100%">
       {/* Always reserve space for scroll indicator to prevent layout shift */}
-      <Box height={1}>
+      <Box height={1} width="100%" justifyContent="flex-end">
         <Text color={canScrollUp ? theme.text.secondary : undefined}>
           {canScrollUp ? '↑ Older messages (Ctrl+PageUp)' : ' '}
         </Text>
@@ -69,7 +71,7 @@ export function ChatHistory({
       {/* Status indicator removed - now shown in StaticInputArea above input box */}
 
       {/* Always reserve space for scroll-down indicator */}
-      <Box height={1}>
+      <Box height={1} width="100%" justifyContent="flex-end">
         <Text color={canScrollDown ? theme.text.secondary : undefined}>
           {canScrollDown ? '↓ Newer messages (Ctrl+PageDown)' : ' '}
         </Text>
@@ -156,20 +158,65 @@ const HEAVY_TOOLS = ['trigger_hot_swap', 'write_memory_dump', 'context_rollover'
 function buildChatLines(
   messages: MessageType[],
   theme: Theme,
-  metricsConfig?: { enabled: boolean; compactMode: boolean },
-  reasoningConfig?: { enabled: boolean; maxVisibleLines: number },
-  paddingY: number = 0
+  metricsConfig: { enabled: boolean; compactMode: boolean } | undefined,
+  reasoningConfig: { enabled: boolean; maxVisibleLines: number } | undefined,
+  paddingY: number,
+  width: number
 ): ChatLine[] {
   const lines: ChatLine[] = [];
+  
+  // Account for ChatHistory paddingX={1} (2 cells)
+  const safeWidth = width - 2;
+
   const addLine = (parts: ChatLinePart[], indent = 0, isEphemeral = false) => {
-    lines.push({ 
-      key: `line-${lines.length}`, 
-      parts, 
-      indent,
-      isEphemeral,
-      timestamp: Date.now() // Note: This will refresh on re-build, which isn't ideal for persistence across re-renders
-      // Ideally, the message timestamp should drive this, but for now we restart fade on re-render which is acceptable for "new" summaries
-    });
+    const availableWidth = Math.max(10, safeWidth - indent);
+    
+    // Helper to add a final virtual line
+    const pushLine = (lineParts: ChatLinePart[]) => {
+        lines.push({
+            key: `line-${lines.length}`,
+            parts: lineParts,
+            indent,
+            isEphemeral,
+            timestamp: Date.now()
+        });
+    };
+
+    let currentLineParts: ChatLinePart[] = [];
+    let currentLineWidth = 0;
+
+    for (const part of parts) {
+        let remainingText = part.text;
+
+        while (remainingText.length > 0) {
+            const spaceInLine = availableWidth - currentLineWidth;
+            
+            if (remainingText.length <= spaceInLine) {
+                currentLineParts.push({ ...part, text: remainingText });
+                currentLineWidth += remainingText.length;
+                break;
+            }
+
+            // Word wrap logic
+            let breakIndex = remainingText.lastIndexOf(' ', spaceInLine);
+            if (breakIndex <= 0) { // No space found or at start
+                breakIndex = spaceInLine;
+            }
+
+            const chunk = remainingText.substring(0, breakIndex);
+            currentLineParts.push({ ...part, text: chunk.trimEnd() });
+            
+            // Push current line and reset
+            pushLine(currentLineParts);
+            currentLineParts = [];
+            currentLineWidth = 0;
+            remainingText = remainingText.substring(breakIndex).trimStart();
+        }
+    }
+
+    if (currentLineParts.length > 0 || parts.length === 0) {
+        pushLine(currentLineParts.length > 0 ? currentLineParts : [{ text: ' ' }]);
+    }
   };
 
   for (let i = 0; i < paddingY; i += 1) {
@@ -182,14 +229,12 @@ function buildChatLines(
     const showMetrics = metricsConfig?.enabled !== false && message.metrics;
     const showReasoning = reasoningConfig?.enabled !== false && message.reasoning;
 
-    // Special handling for Context Rollover system messages to prevent view blocking
-    // Using includes() for broader matching and checking safe role case
+    // Special handling for Context Rollover system messages
     if (message.role.toLowerCase() === 'system' && message.content.includes('[Context Rollover]')) {
       addLine([
         { text: 'ℹ️ ', color: theme.text.accent },
         { text: message.content.split('\n')[0].substring(0, 100) + (message.content.length > 100 ? '...' : ''), color: theme.text.secondary, dim: true }
-      ], 0, true); // Set isEphemeral to true
-      // No spacer for ephemeral messages so it collapses cleanly
+      ], 0, true);
       return; 
     }
 
@@ -225,7 +270,6 @@ function buildChatLines(
           ? ` (${(toolCall.duration / 1000).toFixed(2)}s)`
           : '';
 
-        // Summary line
         addLine(
           [
             { text: `🔧 ${toolCall.name}`, color: theme.text.accent, bold: true },
@@ -235,7 +279,6 @@ function buildChatLines(
           2
         );
 
-        // Details - Skip for heavy tools unless they failed
         if (!isHeavy || toolCall.status === 'error') {
             if (toolCall.arguments && Object.keys(toolCall.arguments).length > 0) {
                 addLine([{ text: 'Arguments:', color: theme.text.secondary, dim: true }], 4);

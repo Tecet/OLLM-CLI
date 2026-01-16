@@ -4,6 +4,7 @@ import React from 'react';
 import fc from 'fast-check';
 import { ChatHistory } from '../ChatHistory.js';
 import { Message } from '../../../../features/context/ChatContext.js';
+import { mockTheme } from '../../__tests__/testUtils.js';
 
 /**
  * Property 12: Tab State Preservation
@@ -52,6 +53,12 @@ describe('Property 12: Tab State Preservation', () => {
           }));
 
           const theme = {
+            name: 'test',
+            bg: {
+              primary: '#000000',
+              secondary: '#111111',
+              tertiary: '#222222',
+            },
             role: {
               user: '#00ff00',
               assistant: '#0000ff',
@@ -69,6 +76,10 @@ describe('Property 12: Tab State Preservation', () => {
               error: '#ff0000',
               info: '#0000ff',
             },
+            border: {
+              primary: '#888888',
+              secondary: '#444444',
+            },
             diff: {
               added: '#00ff00',
               removed: '#ff0000',
@@ -82,6 +93,8 @@ describe('Property 12: Tab State Preservation', () => {
               streaming={false}
               waitingForResponse={false}
               theme={theme}
+              width={80}
+              maxVisibleLines={500}
             />
           );
           const firstOutput = firstFrame();
@@ -101,6 +114,8 @@ describe('Property 12: Tab State Preservation', () => {
               streaming={false}
               waitingForResponse={false}
               theme={theme}
+              width={80}
+              maxVisibleLines={500}
             />
           );
           const secondOutput = secondFrame();
@@ -158,7 +173,8 @@ describe('Property 12: Tab State Preservation', () => {
         messages={messages}
         streaming={true}
         waitingForResponse={false}
-        theme={theme}
+        theme={mockTheme}
+        width={80}
       />
     );
     const streamingOutput = streamingFrame();
@@ -173,7 +189,8 @@ describe('Property 12: Tab State Preservation', () => {
         messages={messages}
         streaming={false}
         waitingForResponse={false}
-        theme={theme}
+        theme={mockTheme}
+        width={80}
       />
     );
     const notStreamingOutput = streamingFrame();
@@ -193,6 +210,12 @@ describe('Property 12: Tab State Preservation', () => {
     ];
 
     const theme = {
+      name: 'test',
+      bg: {
+        primary: '#000000',
+        secondary: '#111111',
+        tertiary: '#222222',
+      },
       role: {
         user: '#00ff00',
         assistant: '#0000ff',
@@ -210,6 +233,10 @@ describe('Property 12: Tab State Preservation', () => {
         error: '#ff0000',
         info: '#0000ff',
       },
+      border: {
+        primary: '#888888',
+        secondary: '#444444',
+      },
       diff: {
         added: '#00ff00',
         removed: '#ff0000',
@@ -222,7 +249,8 @@ describe('Property 12: Tab State Preservation', () => {
         messages={messages}
         streaming={false}
         waitingForResponse={true}
-        theme={theme}
+        theme={mockTheme}
+        width={80}
       />
     );
     const waitingOutput = waitingFrame();
@@ -238,7 +266,8 @@ describe('Property 12: Tab State Preservation', () => {
         messages={messages}
         streaming={false}
         waitingForResponse={false}
-        theme={theme}
+        theme={mockTheme}
+        width={80}
       />
     );
     const notWaitingOutput = waitingFrame();

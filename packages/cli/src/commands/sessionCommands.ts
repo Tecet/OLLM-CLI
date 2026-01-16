@@ -10,6 +10,7 @@
  * - /session resume <id> - Restore a session
  */
 
+import type { Command, CommandResult } from './types.js';
 import { getGlobalContextManager } from '../features/context/ContextManagerContext.js';
 
 /**

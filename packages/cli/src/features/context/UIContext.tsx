@@ -1,4 +1,10 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { 
+  Theme, 
+  Keybinds, 
+  defaultDarkTheme, 
+  defaultKeybinds 
+} from '../../config/uiSettings.js';
 
 export type TabType = 'chat' | 'search' | 'files' | 'github' | 'tools' | 'docs' | 'settings';
 
@@ -7,74 +13,6 @@ export interface Notification {
   tab: TabType;
   count: number;
   type: 'info' | 'warning' | 'error';
-}
-
-export interface Theme {
-  name: string;
-  bg: {
-    primary: string;
-    secondary: string;
-    tertiary: string;
-  };
-  text: {
-    primary: string;
-    secondary: string;
-    accent: string;
-  };
-  border: {
-    primary: string;
-    secondary: string;
-  };
-  role: {
-    user: string;
-    assistant: string;
-    system: string;
-    tool: string;
-  };
-  status: {
-    success: string;
-    warning: string;
-    error: string;
-    info: string;
-  };
-  diff: {
-    added: string;
-    removed: string;
-  };
-}
-
-export interface Keybinds {
-  // Tab navigation
-  tabSearch: string;
-  tabFiles: string;
-  tabGithub: string;
-  tabTools: string;
-  tabDocs: string;
-  tabSettings: string;
-  
-  // Layout
-  togglePanel: string;
-  commandPalette: string;
-  toggleDebug: string;
-  
-  // Chat
-  clearChat: string;
-  saveSession: string;
-  cancel: string;
-  send: string;
-  newline: string;
-  editPrevious: string;
-  
-  // Review
-  approve: string;
-  reject: string;
-  
-  // Navigation
-  scrollDown: string;
-  scrollUp: string;
-  select: string;
-  back: string;
-  cycleFocus: string;
 }
 
 export interface UIState {
@@ -96,67 +34,6 @@ export interface UIContextValue {
   clearNotifications: (tab: TabType) => void;
 }
 
-// Default theme (Default Dark)
-const defaultTheme: Theme = {
-  name: 'default-dark',
-  bg: {
-    primary: '#1e1e1e',
-    secondary: '#252526',
-    tertiary: '#2d2d30',
-  },
-  text: {
-    primary: '#d4d4d4',
-    secondary: '#858585',
-    accent: '#4ec9b0',
-  },
-  border: {
-    primary: '#858585',
-    secondary: '#555555',
-  },
-  role: {
-    user: '#569cd6',
-    assistant: '#4ec9b0',
-    system: '#858585',
-    tool: '#dcdcaa',
-  },
-  status: {
-    success: '#4ec9b0',
-    warning: '#ce9178',
-    error: '#f48771',
-    info: '#569cd6',
-  },
-  diff: {
-    added: '#4ec9b0',
-    removed: '#f48771',
-  },
-};
-
-// Default keybinds
-const defaultKeybinds: Keybinds = {
-  tabSearch: 'ctrl+1',
-  tabFiles: 'ctrl+2',
-  tabGithub: 'ctrl+3',
-  tabTools: 'ctrl+4',
-  tabDocs: 'ctrl+5',
-  tabSettings: 'ctrl+6',
-  togglePanel: 'ctrl+p',
-  commandPalette: 'ctrl+k',
-  toggleDebug: 'ctrl+/',
-  clearChat: 'ctrl+l',
-  saveSession: 'ctrl+s',
-  cancel: 'escape',
-  send: 'enter',
-  newline: 'shift+enter',
-  editPrevious: 'up',
-  approve: 'y',
-  reject: 'n',
-  scrollDown: 'j',
-  scrollUp: 'k',
-  select: 'enter',
-  back: 'backspace',
-  cycleFocus: 'tab',
-};
-
 const UIContext = createContext<UIContextValue | undefined>(undefined);
 
 export interface UIProviderProps {
@@ -171,7 +48,7 @@ export function UIProvider({
   children,
   initialTab = 'chat',
   initialSidePanelVisible = true,
-  initialTheme = defaultTheme,
+  initialTheme = defaultDarkTheme,
   initialKeybinds = defaultKeybinds,
 }: UIProviderProps) {
   const [activeTab, setActiveTab] = useState<TabType>(initialTab);

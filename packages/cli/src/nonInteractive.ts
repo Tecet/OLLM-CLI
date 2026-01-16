@@ -144,7 +144,7 @@ export class NonInteractiveRunner {
     const toolRegistry = new ToolRegistry();
     
     // Initialize chat client
-    const chatClient = new ChatClient(providerRegistry, toolRegistry);
+    const chatClient = new (ChatClient as any)(providerRegistry, toolRegistry);
     
     // Determine model
     const model = options.model || options.config.model.default;

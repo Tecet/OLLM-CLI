@@ -11,7 +11,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { render } from 'ink-testing-library';
 import { InputBox } from '../InputBox.js';
-import { KeyboardInput, mockTheme, stripAnsi } from '@ollm/test-utils';
+import { KeyboardInput, mockTheme, stripAnsi } from '../../__tests__/testUtils.js';
+import type { Message as MessageType } from '../../../../features/context/ChatContext.js';
 
 describe('InputBox - Keyboard Navigation', () => {
   const mockOnSubmit = vi.fn();

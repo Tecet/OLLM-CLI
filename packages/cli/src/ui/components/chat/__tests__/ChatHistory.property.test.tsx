@@ -16,7 +16,7 @@ import { render } from 'ink-testing-library';
 import * as fc from 'fast-check';
 import { ChatHistory } from '../ChatHistory.js';
 import { Message } from '../../../../features/context/ChatContext.js';
-import { mockTheme, getTextContent } from '@ollm/test-utils';
+import { mockTheme, getTextContent } from '../../__tests__/testUtils.js';
 
 describe('ChatHistory Property Tests', () => {
   const defaultTheme = mockTheme;
@@ -41,6 +41,8 @@ describe('ChatHistory Property Tests', () => {
                 streaming={false}
                 waitingForResponse={false}
                 theme={defaultTheme}
+                width={80}
+                maxVisibleLines={500}
               />
             );
 
@@ -75,6 +77,8 @@ describe('ChatHistory Property Tests', () => {
                 streaming={false}
                 waitingForResponse={false}
                 theme={defaultTheme}
+                width={80}
+                maxVisibleLines={500}
               />
             );
 
@@ -120,6 +124,8 @@ describe('ChatHistory Property Tests', () => {
                 streaming={false}
                 waitingForResponse={false}
                 theme={defaultTheme}
+                width={80}
+                maxVisibleLines={500}
               />
             );
 
@@ -159,6 +165,8 @@ describe('ChatHistory Property Tests', () => {
                 streaming={false}
                 waitingForResponse={false}
                 theme={defaultTheme}
+                width={80}
+                maxVisibleLines={500}
               />
             );
 
@@ -200,6 +208,8 @@ describe('ChatHistory Property Tests', () => {
                 streaming={false}
                 waitingForResponse={false}
                 theme={defaultTheme}
+                width={80}
+                maxVisibleLines={500}
               />
             );
 
@@ -239,6 +249,8 @@ describe('ChatHistory Property Tests', () => {
                 streaming={false}
                 waitingForResponse={false}
                 theme={defaultTheme}
+                width={80}
+                maxVisibleLines={500}
               />
             );
 
@@ -261,6 +273,7 @@ describe('ChatHistory Property Tests', () => {
           streaming={false}
           waitingForResponse={false}
           theme={defaultTheme}
+          width={80}
         />
       );
 
@@ -305,6 +318,8 @@ describe('ChatHistory Property Tests', () => {
                   streaming={false}
                   waitingForResponse={false}
                   theme={defaultTheme}
+                  width={80}
+                  maxVisibleLines={500}
                 />
               );
             }).not.toThrow();

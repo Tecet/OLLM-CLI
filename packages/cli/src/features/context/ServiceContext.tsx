@@ -9,6 +9,8 @@ import { ServiceContainer, createServiceContainer } from '@ollm/ollm-cli-core/se
 import type { ProviderAdapter } from '@ollm/ollm-cli-core/provider/types.js';
 import type { Config } from '../../config/types.js';
 import { homedir } from 'os';
+import { useDialog } from '../../ui/contexts/DialogContext.js';
+import type { Hook } from '@ollm/ollm-cli-core/hooks/types.js';
 
 /**
  * Service context value
@@ -37,6 +39,9 @@ export function ServiceProvider({
   config,
   workspacePath,
 }: ServiceProviderProps) {
+  // Get dialog functions for hook approval
+  const { showHookApproval } = useDialog();
+  
   // Create service container
   const container = useMemo(() => {
     // Convert CLI config to core config format
@@ -62,6 +67,15 @@ export function ServiceProvider({
       project: {
         autoDetect: true,
       },
+      hooks: {
+        enabled: true,
+        trustWorkspace: false,
+        timeout: 30000,
+        // Wire up the approval callback to the dialog system
+        approvalCallback: async (hook: Hook, hash: string): Promise<boolean> => {
+          return await showHookApproval(hook, hash);
+        },
+      },
     };
     
     return createServiceContainer({
@@ -70,7 +84,7 @@ export function ServiceProvider({
       workspacePath,
       userHome: homedir(),
     });
-  }, [provider, config, workspacePath]);
+  }, [provider, config, workspacePath, showHookApproval]);
   
   // Initialize services on mount
   useEffect(() => {
@@ -139,4 +153,19 @@ export function useComparison() {
 export function useProjectProfile() {
   const { container } = useServices();
   return container.getProjectProfileService();
+}
+
+export function useHooks() {
+  const { container } = useServices();
+  return container.getHookService();
+}
+
+export function useExtensionManager() {
+  const { container } = useServices();
+  return container.getExtensionManager();
+}
+
+export function useExtensionRegistry() {
+  const { container } = useServices();
+  return container.getExtensionRegistry();
 }

@@ -11,7 +11,8 @@ export {
 
 export {
   ThemeManager,
-  type Theme,
+  getThemeManager,
+  resetThemeManager,
 } from './themeManager.js';
 
 export {

@@ -10,7 +10,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { render } from 'ink-testing-library';
 import { ChatHistory } from '../ChatHistory.js';
 import { Message } from '../../../../features/context/ChatContext.js';
-import { mockTheme } from '@ollm/test-utils';
+import { mockTheme } from '../../__tests__/testUtils.js';
 
 describe('ChatHistory Component', () => {
   const defaultTheme = mockTheme;
@@ -32,6 +32,7 @@ describe('ChatHistory Component', () => {
           streaming={false}
           waitingForResponse={false}
           theme={defaultTheme}
+          width={80}
         />
       );
 
@@ -62,6 +63,7 @@ describe('ChatHistory Component', () => {
           streaming={false}
           waitingForResponse={false}
           theme={defaultTheme}
+          width={80}
         />
       );
 
@@ -88,6 +90,7 @@ describe('ChatHistory Component', () => {
           streaming={false}
           waitingForResponse={false}
           theme={defaultTheme}
+          width={80}
         />
       );
 
@@ -123,6 +126,7 @@ describe('ChatHistory Component', () => {
           waitingForResponse={false}
           theme={defaultTheme}
           metricsConfig={{ enabled: true, compactMode: false }}
+          width={80}
         />
       );
 
@@ -157,6 +161,7 @@ describe('ChatHistory Component', () => {
           streaming={false}
           waitingForResponse={false}
           theme={defaultTheme}
+          width={80}
         />
       );
 
@@ -195,6 +200,7 @@ describe('ChatHistory Component', () => {
           streaming={false}
           waitingForResponse={false}
           theme={defaultTheme}
+          width={80}
         />
       );
 
@@ -214,6 +220,7 @@ describe('ChatHistory Component', () => {
           streaming={true}
           waitingForResponse={false}
           theme={defaultTheme}
+          width={80}
         />
       );
 
@@ -231,6 +238,7 @@ describe('ChatHistory Component', () => {
           streaming={false}
           waitingForResponse={true}
           theme={defaultTheme}
+          width={80}
         />
       );
 
@@ -255,6 +263,7 @@ describe('ChatHistory Component', () => {
           streaming={false}
           waitingForResponse={false}
           theme={defaultTheme}
+          width={80}
         />
       );
 
@@ -274,6 +283,7 @@ describe('ChatHistory Component', () => {
           streaming={false}
           waitingForResponse={false}
           theme={defaultTheme}
+          width={80}
         />
       );
 
@@ -320,6 +330,7 @@ describe('ChatHistory Component', () => {
           streaming={false}
           waitingForResponse={false}
           theme={defaultTheme}
+          width={80}
         />
       );
 

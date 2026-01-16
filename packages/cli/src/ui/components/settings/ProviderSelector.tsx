@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Text } from 'ink';
 import { useUI } from '../../../features/context/UIContext.js';
+import { Theme } from '../../../config/uiSettings.js';
 
 export interface Provider {
   name: string;
@@ -58,9 +59,11 @@ export function ProviderSelector({
 
   return (
     <Box flexDirection="column" borderStyle="single" borderColor={theme.text.accent} paddingX={1}>
-      <Text bold color={theme.text.accent} marginBottom={1}>
-        Provider Selection
-      </Text>
+      <Box marginBottom={1}>
+        <Text bold color={theme.text.accent}>
+          Provider Selection
+        </Text>
+      </Box>
 
       <Box flexDirection="column">
         {providers.map((provider) => {

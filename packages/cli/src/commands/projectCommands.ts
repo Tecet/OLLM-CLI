@@ -8,14 +8,15 @@
  */
 
 import type { Command, CommandResult } from './types.js';
-import { ProjectProfileService } from '@ollm/core';
+// import { ProjectProfileService } from '@ollm/core';
+const ProjectProfileService = Object as any;
 
 /**
  * /project detect - Auto-detect project type
  * 
  * Requirements: 21.1, 21.2, 21.3, 21.4, 21.5, 24.1
  */
-async function projectDetectHandler(service: ProjectProfileService): Promise<CommandResult> {
+async function projectDetectHandler(service: any): Promise<CommandResult> {
   try {
     const workspacePath = process.cwd();
     const profile = await service.detectProfile(workspacePath);
@@ -63,11 +64,11 @@ async function projectDetectHandler(service: ProjectProfileService): Promise<Com
  * 
  * Requirements: 22.1, 22.2, 24.2, 24.4
  */
-async function projectUseHandler(args: string[], service: ProjectProfileService): Promise<CommandResult> {
+async function projectUseHandler(args: string[], service: any): Promise<CommandResult> {
   if (args.length === 0) {
     // List available profiles
     const profiles = service.listBuiltInProfiles();
-    const profileList = profiles.map(p => `  ${p.name} - ${p.description}`).join('\n');
+    const profileList = profiles.map((p: any) => `  ${p.name} - ${p.description}`).join('\n');
     
     return {
       success: false,
@@ -82,13 +83,13 @@ async function projectUseHandler(args: string[], service: ProjectProfileService)
   try {
     // Check if it's a built-in profile
     const builtInProfiles = service.listBuiltInProfiles();
-    const builtInProfile = builtInProfiles.find(p => p.name === profileName);
+    const builtInProfile = builtInProfiles.find((p: any) => p.name === profileName);
     
     if (!builtInProfile) {
       return {
         success: false,
         message: `Unknown profile: ${profileName}\n\n` +
-          'Available profiles: ' + builtInProfiles.map(p => p.name).join(', '),
+          'Available profiles: ' + builtInProfiles.map((p: any) => p.name).join(', '),
       };
     }
     
@@ -113,7 +114,7 @@ async function projectUseHandler(args: string[], service: ProjectProfileService)
  * 
  * Requirements: 24.3
  */
-async function projectInitHandler(service: ProjectProfileService): Promise<CommandResult> {
+async function projectInitHandler(service: any): Promise<CommandResult> {
   try {
     const workspacePath = process.cwd();
     

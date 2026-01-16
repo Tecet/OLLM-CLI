@@ -42,10 +42,31 @@ describe('Property 19: Role-Based Message Colors', () => {
 
           // Create theme with generated colors
           const theme = {
+            name: 'test',
+            bg: {
+              primary: '#000000',
+              secondary: '#111111',
+              tertiary: '#222222',
+            },
             role: roleColors,
             text: {
               primary: '#ffffff',
               secondary: '#888888',
+              accent: '#00ff00',
+            },
+            status: {
+              success: '#00ff00',
+              warning: '#ffff00',
+              error: '#ff0000',
+              info: '#0000ff',
+            },
+            border: {
+              primary: '#888888',
+              secondary: '#444444',
+            },
+            diff: {
+              added: '#00ff00',
+              removed: '#ff0000',
             },
           };
 

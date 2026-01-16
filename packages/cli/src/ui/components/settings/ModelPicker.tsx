@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Text } from 'ink';
 import { useUI } from '../../../features/context/UIContext.js';
+import { Theme } from '../../../config/uiSettings.js';
 
 export interface Model {
   name: string;
@@ -36,9 +37,11 @@ export function ModelPicker({
 }: ModelPickerProps) {
   return (
     <Box flexDirection="column" borderStyle="single" borderColor={theme.text.accent} paddingX={1}>
-      <Text bold color={theme.text.accent} marginBottom={1}>
-        Model Selection
-      </Text>
+      <Box marginBottom={1}>
+        <Text bold color={theme.text.accent}>
+          Model Selection
+        </Text>
+      </Box>
 
       {models.length === 0 ? (
         <Box paddingY={1}>

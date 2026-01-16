@@ -12,8 +12,10 @@
  */
 
 import type { Command, CommandResult } from './types.js';
-import type { ModelManagementService } from '@ollm/ollm-cli-core/services/modelManagementService.js';
-import type { ServiceContainer } from '@ollm/ollm-cli-core/services/serviceContainer.js';
+// import type { ModelManagementService } from '@ollm/core/services/modelManagementService.js';
+// import type { ServiceContainer } from '@ollm/core/services/serviceContainer.js';
+type ModelManagementService = any;
+type ServiceContainer = any;
 
 /**
  * /model use <name> - Switch to a different model
@@ -58,7 +60,7 @@ export function createModelCommands(container: ServiceContainer): Command[] {
  */
 async function modelListHandler(service: ModelManagementService): Promise<CommandResult> {
   try {
-    const models = await service.listModels();
+    const models = await service.listModels() as any[];
     
     if (models.length === 0) {
       return {
@@ -115,7 +117,7 @@ async function modelPullHandler(args: string[], service: ModelManagementService)
 
   try {
     let lastProgress = '';
-    await service.pullModel(modelName, (progress) => {
+    await service.pullModel(modelName, (progress: any) => {
       const percent = progress.percentage.toFixed(1);
       const rate = (progress.transferRate / (1024 * 1024)).toFixed(2);
       lastProgress = `Pulling ${modelName}: ${percent}% (${rate} MB/s)`;
@@ -183,7 +185,7 @@ async function modelInfoHandler(args: string[], service: ModelManagementService)
   const modelName = args[0];
 
   try {
-    const model = await service.showModel(modelName);
+    const model = await service.showModel(modelName) as any;
     
     // Format model information
     const size = (model.size / (1024 * 1024 * 1024)).toFixed(2);

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Text } from 'ink';
-import { useUI, Theme } from '../../../features/context/UIContext.js';
+import { useUI } from '../../../features/context/UIContext.js';
+import { Theme } from '../../../config/uiSettings.js';
 
 export interface SessionStats {
   id: string;
@@ -48,9 +49,11 @@ export function SessionInfo({ stats, theme }: SessionInfoProps) {
 
   return (
     <Box flexDirection="column" borderStyle="single" borderColor={theme.text.accent} paddingX={1}>
-      <Text bold color={theme.text.accent} marginBottom={1}>
-        Session Information
-      </Text>
+      <Box marginBottom={1}>
+        <Text bold color={theme.text.accent}>
+          Session Information
+        </Text>
+      </Box>
 
       <Box flexDirection="column" gap={1}>
         <Box>

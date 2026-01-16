@@ -41,7 +41,7 @@ export interface ReasoningBoxProps {
 export const ReasoningBox: React.FC<ReasoningBoxProps> = ({
   reasoning,
   expanded: controlledExpanded,
-  onToggle,
+  onToggle: _onToggle,
   maxVisibleLines = 8,
   autoScroll = true,
   autoCollapseOnComplete = true,
@@ -64,14 +64,7 @@ export const ReasoningBox: React.FC<ReasoningBoxProps> = ({
   // Use controlled or internal expanded state
   const isExpanded = controlledExpanded !== undefined ? controlledExpanded : internalExpanded;
 
-  // Handle toggle
-  const handleToggle = () => {
-    if (onToggle) {
-      onToggle();
-    } else {
-      setInternalExpanded(!internalExpanded);
-    }
-  };
+  // Handle toggle via controls (kept in sink for future use or parent control)
 
   // Auto-collapse when reasoning completes
   useEffect(() => {
@@ -159,8 +152,8 @@ export const ReasoningBox: React.FC<ReasoningBoxProps> = ({
 
         {/* Visible content */}
         <Box flexDirection="column" minHeight={maxVisibleLines}>
-          {visibleLines.map((line, index) => (
-            <Text key={scrollOffset + index} color={theme.text.primary}>
+          {visibleLines.map((line: string, index: number) => (
+            <Text key={scrollOffset + index} color={theme.text.primary} wrap="wrap">
               {line || ' '}
             </Text>
           ))}

@@ -33,16 +33,17 @@ describe('Property 14: Side Panel Toggle', () => {
       primary: '#1e1e1e',
       secondary: '#252526',
     },
-  };
+    border: {
+        primary: '#3e3e42',
+        secondary: '#007acc',
+        active: '#007acc',
+    }
+  } as any;
 
-  const defaultSections = [
-    {
-      id: 'context',
-      title: 'Context Files',
-      component: MockContextSection,
-      collapsed: false,
-    },
-  ];
+  // Mock ContextSection
+  vi.mock('../ContextSection.js', () => ({
+    ContextSection: () => <Text>Mock Context</Text>,
+  }));
 
   const defaultActiveTab: TabType = 'chat';
   const defaultNotifications = new Map<TabType, number>();
@@ -56,10 +57,10 @@ describe('Property 14: Side Panel Toggle', () => {
           const { lastFrame } = render(
             <SidePanel
               visible={visible}
-              sections={defaultSections}
-              activeTab={defaultActiveTab}
-              onTabChange={mockOnTabChange}
-              notifications={defaultNotifications}
+
+              connection={{ status: 'connected', provider: 'ollama' } as any}
+              model="test-model"
+              gpu={{ available: false } as any}
               theme={defaultTheme}
             />
           );
@@ -67,8 +68,9 @@ describe('Property 14: Side Panel Toggle', () => {
           const output = lastFrame();
           
           // Property: When visible, the side panel should render content
-          expect(output).toContain('Side Panel');
-          expect(output).toContain('Context Files');
+          expect(output).toContain('Active Context');
+          expect(output).toContain('Mock Context');
+          expect(output).toContain('File Tree');
           
           return true;
         }
@@ -85,10 +87,10 @@ describe('Property 14: Side Panel Toggle', () => {
           const { lastFrame } = render(
             <SidePanel
               visible={visible}
-              sections={defaultSections}
-              activeTab={defaultActiveTab}
-              onTabChange={mockOnTabChange}
-              notifications={defaultNotifications}
+
+              connection={{ status: 'connected', provider: 'ollama' } as any}
+              model="test-model"
+              gpu={{ available: false } as any}
               theme={defaultTheme}
             />
           );
@@ -115,8 +117,7 @@ describe('Property 14: Side Panel Toggle', () => {
             const { lastFrame } = render(
               <SidePanel
                 visible={visible}
-                sections={defaultSections}
-                activeTab={defaultActiveTab}
+  
                 onTabChange={mockOnTabChange}
                 notifications={defaultNotifications}
                 theme={defaultTheme}
@@ -127,7 +128,7 @@ describe('Property 14: Side Panel Toggle', () => {
             
             // Property: Visibility should match the expected state
             if (visible) {
-              expect(output).toContain('Side Panel');
+              expect(output).toContain('Active Context');
             } else {
               expect(output).toBe('');
             }
@@ -154,8 +155,7 @@ describe('Property 14: Side Panel Toggle', () => {
             const { lastFrame } = render(
               <SidePanel
                 visible={currentVisibility}
-                sections={defaultSections}
-                activeTab={defaultActiveTab}
+  
                 onTabChange={mockOnTabChange}
                 notifications={defaultNotifications}
                 theme={defaultTheme}
@@ -166,7 +166,7 @@ describe('Property 14: Side Panel Toggle', () => {
             
             // Property: Visibility should match current state
             if (currentVisibility) {
-              expect(output).toContain('Side Panel');
+              expect(output).toContain('Active Context');
             } else {
               expect(output).toBe('');
             }

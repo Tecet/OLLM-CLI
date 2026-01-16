@@ -1,724 +1,393 @@
 /**
- * Extension management commands
+ * Extension commands for marketplace functionality
  * 
- * Provides CLI commands for extension marketplace, installation,
- * and permission management.
+ * Provides commands for:
+ * - Searching extensions
+ * - Installing extensions
+ * - Listing installed extensions
+ * - Removing extensions
+ * - Updating extensions
  */
 
-import type { Command, CommandHandler, CommandContext, CommandResult } from './types.js';
-import type {
-  ExtensionRegistry,
-  ExtensionManager,
-  ExtensionWatcher,
-  ExtensionSandbox,
-} from '@ollm/ollm-cli-core/extensions';
+import type { Command, CommandResult } from './types.js';
+import type { ExtensionManager } from '@ollm/ollm-cli-core/extensions/extensionManager.js';
+import type { ExtensionRegistry } from '@ollm/ollm-cli-core/extensions/extensionRegistry.js';
 
 /**
- * Extension search command
- * 
- * Usage: /extensions search <query> [--tags tag1,tag2] [--sort relevance|downloads|updated]
+ * Create extension commands with dependency injection
  */
-export const extensionSearchCommand: CommandHandler = async (
-  args: string[],
-  context: CommandContext
-) => {
-  const registry = context.extensionRegistry as ExtensionRegistry;
-  if (!registry) {
-    return {
-      success: false,
-      message: 'Extension registry not available',
-    };
-  }
+export function createExtensionCommands(
+  extensionManager: ExtensionManager,
+  extensionRegistry: ExtensionRegistry
+): Command[] {
+  return [
+    // Search for extensions
+    {
+      name: 'extensions search',
+      aliases: ['ext search', 'ext find'],
+      description: 'Search for extensions in the marketplace',
+      usage: '/extensions search <query> [--limit <n>]',
+      examples: [
+        '/extensions search github',
+        '/extensions search mcp --limit 10',
+        '/ext search hooks',
+      ],
+      async execute(args: string[]): Promise<CommandResult> {
+        if (args.length === 0) {
+          return {
+            success: false,
+            message: 'Usage: /extensions search <query> [--limit <n>]',
+          };
+        }
 
-  // Parse arguments
-  const query = args[0] || '';
-  const tags = context.flags?.tags?.split(',') || undefined;
-  const sortBy = (context.flags?.sort as 'relevance' | 'downloads' | 'updated') || 'relevance';
-  const limit = parseInt(context.flags?.limit as string) || 20;
+        // Parse arguments
+        const query = args.filter(arg => !arg.startsWith('--')).join(' ');
+        const limitIndex = args.indexOf('--limit');
+        const limit = limitIndex !== -1 && args[limitIndex + 1] 
+          ? parseInt(args[limitIndex + 1], 10) 
+          : 10;
 
-  if (!query) {
-    return {
-      success: false,
-      message: 'Usage: /extensions search <query> [--tags tag1,tag2] [--sort relevance|downloads|updated] [--limit 20]',
-    };
-  }
+        try {
+          const results = await extensionRegistry.search(query, { limit });
 
-  try {
-    const results = await registry.search(query, { tags, sortBy, limit });
+          if (results.length === 0) {
+            return {
+              success: true,
+              message: `No extensions found matching "${query}"`,
+            };
+          }
 
-    if (results.length === 0) {
-      return {
-        success: true,
-        message: `No extensions found matching "${query}"`,
-      };
-    }
+          // Format results
+          const formatted = results.map((result, index) => {
+            const { metadata, score } = result;
+            return [
+              `${index + 1}. **${metadata.name}** v${metadata.version}`,
+              `   ${metadata.description}`,
+              `   Author: ${metadata.author}`,
+              `   Tags: ${metadata.tags.join(', ')}`,
+              `   Downloads: ${metadata.downloads}`,
+              `   Match: ${(score * 100).toFixed(0)}%`,
+              '',
+            ].join('\n');
+          }).join('\n');
 
-    // Format results
-    const output = [
-      `Found ${results.length} extension(s) matching "${query}":\n`,
-      ...results.map((result, index) => {
-        const { metadata, score } = result;
-        return [
-          `${index + 1}. ${metadata.name} v${metadata.version}`,
-          `   ${metadata.description}`,
-          `   Author: ${metadata.author}`,
-          `   Tags: ${metadata.tags.join(', ')}`,
-          `   Downloads: ${metadata.downloads}`,
-          `   Score: ${(score * 100).toFixed(0)}%`,
-          '',
-        ].join('\n');
-      }),
-    ].join('\n');
+          return {
+            success: true,
+            message: `Found ${results.length} extension(s) matching "${query}":\n\n${formatted}`,
+          };
+        } catch (error) {
+          return {
+            success: false,
+            message: `Failed to search extensions: ${error instanceof Error ? error.message : String(error)}`,
+          };
+        }
+      },
+    },
 
-    return {
-      success: true,
-      message: output,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      message: `Failed to search extensions: ${error instanceof Error ? error.message : String(error)}`,
-    };
-  }
-};
+    // Install an extension
+    {
+      name: 'extensions install',
+      aliases: ['ext install', 'ext add'],
+      description: 'Install an extension from the marketplace',
+      usage: '/extensions install <name> [version]',
+      examples: [
+        '/extensions install github-integration',
+        '/extensions install mcp-server 1.2.0',
+        '/ext install hooks-debugger',
+      ],
+      async execute(args: string[]): Promise<CommandResult> {
+        if (args.length === 0) {
+          return {
+            success: false,
+            message: 'Usage: /extensions install <name> [version]',
+          };
+        }
 
-/**
- * Extension install command
- * 
- * Usage: /extensions install <name> [version]
- */
-export const extensionInstallCommand: CommandHandler = async (
-  args: string[],
-  context: CommandContext
-) => {
-  const registry = context.extensionRegistry as ExtensionRegistry;
-  const manager = context.extensionManager as ExtensionManager;
+        const name = args[0];
+        const version = args[1];
 
-  if (!registry || !manager) {
-    return {
-      success: false,
-      message: 'Extension system not available',
-    };
-  }
+        try {
+          const result = await extensionRegistry.install(name, version);
 
-  const name = args[0];
-  const version = args[1];
+          if (!result.success) {
+            return {
+              success: false,
+              message: `Failed to install extension "${name}": ${result.error || 'Unknown error'}`,
+            };
+          }
 
-  if (!name) {
-    return {
-      success: false,
-      message: 'Usage: /extensions install <name> [version]',
-    };
-  }
+          // Reload extensions to pick up the new one
+          await extensionManager.loadExtensions();
 
-  try {
-    // Install extension
-    const result = await registry.install(name, version);
+          return {
+            success: true,
+            message: [
+              `✅ Successfully installed **${result.name}** v${result.version}`,
+              `   Installed to: ${result.path}`,
+              '',
+              'Extension is now active. Use `/extensions list` to see all installed extensions.',
+            ].join('\n'),
+          };
+        } catch (error) {
+          return {
+            success: false,
+            message: `Failed to install extension: ${error instanceof Error ? error.message : String(error)}`,
+          };
+        }
+      },
+    },
 
-    if (!result.success) {
-      return {
-        success: false,
-        message: `Failed to install extension: ${result.error}`,
-      };
-    }
+    // List installed extensions
+    {
+      name: 'extensions list',
+      aliases: ['ext list', 'ext ls'],
+      description: 'List all installed extensions',
+      usage: '/extensions list [--all]',
+      examples: [
+        '/extensions list',
+        '/extensions list --all',
+        '/ext ls',
+      ],
+      async execute(args: string[]): Promise<CommandResult> {
+        const showAll = args.includes('--all');
 
-    // Reload extensions to pick up the new one
-    await manager.loadExtensions();
+        try {
+          const extensions = extensionManager.getExtensions();
 
-    // Enable the extension
-    await manager.enableExtension(name);
+          if (extensions.length === 0) {
+            return {
+              success: true,
+              message: 'No extensions installed. Use `/extensions search` to find extensions.',
+            };
+          }
 
-    return {
-      success: true,
-      message: `Successfully installed and enabled extension '${name}' v${result.version}`,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      message: `Failed to install extension: ${error instanceof Error ? error.message : String(error)}`,
-    };
-  }
-};
+          // Filter by enabled status if not showing all
+          const filtered = showAll 
+            ? extensions 
+            : extensions.filter(ext => ext.enabled);
 
-/**
- * Extension uninstall command
- * 
- * Usage: /extensions uninstall <name>
- */
-export const extensionUninstallCommand: CommandHandler = async (
-  args: string[],
-  context: CommandContext
-) => {
-  const registry = context.extensionRegistry as ExtensionRegistry;
-  const manager = context.extensionManager as ExtensionManager;
+          if (filtered.length === 0) {
+            return {
+              success: true,
+              message: 'No enabled extensions. Use `/extensions list --all` to see all extensions.',
+            };
+          }
 
-  if (!registry || !manager) {
-    return {
-      success: false,
-      message: 'Extension system not available',
-    };
-  }
+          // Format extensions
+          const formatted = filtered.map((ext, index) => {
+            const status = ext.enabled ? '✅' : '❌';
+            const hooks = ext.hooks?.length || 0;
+            const mcpServers = Object.keys(ext.mcpServers || {}).length;
+            const skills = ext.skills?.length || 0;
 
-  const name = args[0];
+            return [
+              `${index + 1}. ${status} **${ext.name}** v${ext.version}`,
+              `   ${ext.description}`,
+              `   Author: ${ext.author}`,
+              `   Hooks: ${hooks}, MCP Servers: ${mcpServers}, Skills: ${skills}`,
+              `   Path: ${ext.path}`,
+              '',
+            ].join('\n');
+          }).join('\n');
 
-  if (!name) {
-    return {
-      success: false,
-      message: 'Usage: /extensions uninstall <name>',
-    };
-  }
+          return {
+            success: true,
+            message: `Installed extensions (${filtered.length}):\n\n${formatted}`,
+          };
+        } catch (error) {
+          return {
+            success: false,
+            message: `Failed to list extensions: ${error instanceof Error ? error.message : String(error)}`,
+          };
+        }
+      },
+    },
 
-  try {
-    // Disable extension first
-    await manager.disableExtension(name);
+    // Enable an extension
+    {
+      name: 'extensions enable',
+      aliases: ['ext enable', 'ext on'],
+      description: 'Enable a disabled extension',
+      usage: '/extensions enable <name>',
+      examples: [
+        '/extensions enable github-integration',
+        '/ext enable mcp-server',
+      ],
+      async execute(args: string[]): Promise<CommandResult> {
+        if (args.length === 0) {
+          return {
+            success: false,
+            message: 'Usage: /extensions enable <name>',
+          };
+        }
 
-    // Uninstall extension
-    await registry.uninstall(name);
+        const name = args[0];
+
+        try {
+          await extensionManager.enableExtension(name);
+
+          return {
+            success: true,
+            message: `✅ Enabled extension "${name}"`,
+          };
+        } catch (error) {
+          return {
+            success: false,
+            message: `Failed to enable extension: ${error instanceof Error ? error.message : String(error)}`,
+          };
+        }
+      },
+    },
+
+    // Disable an extension
+    {
+      name: 'extensions disable',
+      aliases: ['ext disable', 'ext off'],
+      description: 'Disable an enabled extension',
+      usage: '/extensions disable <name>',
+      examples: [
+        '/extensions disable github-integration',
+        '/ext disable mcp-server',
+      ],
+      async execute(args: string[]): Promise<CommandResult> {
+        if (args.length === 0) {
+          return {
+            success: false,
+            message: 'Usage: /extensions disable <name>',
+          };
+        }
+
+        const name = args[0];
+
+        try {
+          await extensionManager.disableExtension(name);
+
+          return {
+            success: true,
+            message: `❌ Disabled extension "${name}"`,
+          };
+        } catch (error) {
+          return {
+            success: false,
+            message: `Failed to disable extension: ${error instanceof Error ? error.message : String(error)}`,
+          };
+        }
+      },
+    },
+
+    // Show extension info
+    {
+      name: 'extensions info',
+      aliases: ['ext info', 'ext show'],
+      description: 'Show detailed information about an extension',
+      usage: '/extensions info <name>',
+      examples: [
+        '/extensions info github-integration',
+        '/ext info mcp-server',
+      ],
+      async execute(args: string[]): Promise<CommandResult> {
+        if (args.length === 0) {
+          return {
+            success: false,
+            message: 'Usage: /extensions info <name>',
+          };
+        }
+
+        const name = args[0];
+
+        try {
+          const extension = extensionManager.getExtension(name);
+
+          if (!extension) {
+            return {
+              success: false,
+              message: `Extension "${name}" not found`,
+            };
+          }
+
+          // Format extension info
+          const hooks = extension.hooks?.length || 0;
+          const mcpServers = Object.keys(extension.mcpServers || {}).length;
+          const skills = extension.skills?.length || 0;
+          const status = extension.enabled ? '✅ Enabled' : '❌ Disabled';
+
+          const info = [
+            `**${extension.name}** v${extension.version}`,
+            `Status: ${status}`,
+            '',
+            `**Description:**`,
+            extension.description,
+            '',
+            `**Author:** ${extension.author}`,
+            `**Repository:** ${extension.repository || 'N/A'}`,
+            `**License:** ${extension.license || 'N/A'}`,
+            '',
+            `**Components:**`,
+            `- Hooks: ${hooks}`,
+            `- MCP Servers: ${mcpServers}`,
+            `- Skills: ${skills}`,
+            '',
+            `**Installation Path:**`,
+            extension.path,
+          ];
+
+          // Add hooks info if available
+          if (extension.hooks && extension.hooks.length > 0) {
+            info.push('', '**Hooks:**');
+            extension.hooks.forEach(hook => {
+              info.push(`- ${hook.name} (${hook.event})`);
+            });
+          }
+
+          // Add MCP servers info if available
+          if (extension.mcpServers && Object.keys(extension.mcpServers).length > 0) {
+            info.push('', '**MCP Servers:**');
+            Object.entries(extension.mcpServers).forEach(([name, config]) => {
+              info.push(`- ${name}: ${config.command} ${(config.args || []).join(' ')}`);
+            });
+          }
+
+          return {
+            success: true,
+            message: info.join('\n'),
+          };
+        } catch (error) {
+          return {
+            success: false,
+            message: `Failed to get extension info: ${error instanceof Error ? error.message : String(error)}`,
+          };
+        }
+      },
+    },
 
     // Reload extensions
-    await manager.loadExtensions();
+    {
+      name: 'extensions reload',
+      aliases: ['ext reload', 'ext refresh'],
+      description: 'Reload all extensions',
+      usage: '/extensions reload',
+      examples: [
+        '/extensions reload',
+        '/ext reload',
+      ],
+      async execute(): Promise<CommandResult> {
+        try {
+          await extensionManager.loadExtensions();
 
-    return {
-      success: true,
-      message: `Successfully uninstalled extension '${name}'`,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      message: `Failed to uninstall extension: ${error instanceof Error ? error.message : String(error)}`,
-    };
-  }
-};
+          const extensions = extensionManager.getExtensions();
+          const enabled = extensions.filter(ext => ext.enabled).length;
 
-/**
- * Extension list command
- * 
- * Usage: /extensions list [--enabled|--disabled|--all]
- */
-export const extensionListCommand: CommandHandler = async (
-  args: string[],
-  context: CommandContext
-) => {
-  const manager = context.extensionManager as ExtensionManager;
-
-  if (!manager) {
-    return {
-      success: false,
-      message: 'Extension manager not available',
-    };
-  }
-
-  const filter = context.flags?.enabled ? 'enabled' 
-    : context.flags?.disabled ? 'disabled' 
-    : 'all';
-
-  try {
-    const extensions = manager.getAllExtensions();
-
-    // Filter extensions
-    const filtered = extensions.filter((ext) => {
-      if (filter === 'enabled') return ext.enabled;
-      if (filter === 'disabled') return !ext.enabled;
-      return true;
-    });
-
-    if (filtered.length === 0) {
-      return {
-        success: true,
-        message: `No ${filter === 'all' ? '' : filter + ' '}extensions found`,
-      };
-    }
-
-    // Format output
-    const output = [
-      `${filtered.length} ${filter === 'all' ? '' : filter + ' '}extension(s):\n`,
-      ...filtered.map((ext, index) => {
-        const status = ext.enabled ? '✓' : '✗';
-        return [
-          `${index + 1}. [${status}] ${ext.name} v${ext.version}`,
-          `   ${ext.description}`,
-          `   Path: ${ext.path}`,
-          `   Hooks: ${ext.hooks.length}`,
-          `   MCP Servers: ${ext.mcpServers.length}`,
-          `   Skills: ${ext.skills.length}`,
-          '',
-        ].join('\n');
-      }),
-    ].join('\n');
-
-    return {
-      success: true,
-      message: output,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      message: `Failed to list extensions: ${error instanceof Error ? error.message : String(error)}`,
-    };
-  }
-};
-
-/**
- * Extension update command
- * 
- * Usage: /extensions update [name]
- */
-export const extensionUpdateCommand: CommandHandler = async (
-  args: string[],
-  context: CommandContext
-) => {
-  const registry = context.extensionRegistry as ExtensionRegistry;
-  const manager = context.extensionManager as ExtensionManager;
-
-  if (!registry || !manager) {
-    return {
-      success: false,
-      message: 'Extension system not available',
-    };
-  }
-
-  const name = args[0];
-
-  try {
-    if (name) {
-      // Update specific extension
-      const extension = manager.getExtension(name);
-      if (!extension) {
-        return {
-          success: false,
-          message: `Extension '${name}' not found`,
-        };
-      }
-
-      const newVersion = await registry.checkUpdate(name, extension.version);
-      if (!newVersion) {
-        return {
-          success: true,
-          message: `Extension '${name}' is up to date (v${extension.version})`,
-        };
-      }
-
-      return {
-        success: true,
-        message: `Update available for '${name}': v${extension.version} → v${newVersion}\nRun: /extensions install ${name} ${newVersion}`,
-      };
-    } else {
-      // Check all extensions for updates
-      const extensions = manager.getAllExtensions();
-      const updates: string[] = [];
-
-      for (const ext of extensions) {
-        const newVersion = await registry.checkUpdate(ext.name, ext.version);
-        if (newVersion) {
-          updates.push(`${ext.name}: v${ext.version} → v${newVersion}`);
-        }
-      }
-
-      if (updates.length === 0) {
-        return {
-          success: true,
-          message: 'All extensions are up to date',
-        };
-      }
-
-      const output = [
-        `${updates.length} update(s) available:\n`,
-        ...updates.map((update, index) => `${index + 1}. ${update}`),
-        '\nRun /extensions install <name> to update',
-      ].join('\n');
-
-      return {
-        success: true,
-        message: output,
-      };
-    }
-  } catch (error) {
-    return {
-      success: false,
-      message: `Failed to check for updates: ${error instanceof Error ? error.message : String(error)}`,
-    };
-  }
-};
-
-/**
- * Extension watch command
- * 
- * Usage: /extensions watch [on|off|status]
- */
-export const extensionWatchCommand: CommandHandler = async (
-  args: string[],
-  context: CommandContext
-) => {
-  const watcher = context.extensionWatcher as ExtensionWatcher;
-
-  if (!watcher) {
-    return {
-      success: false,
-      message: 'Extension watcher not available',
-    };
-  }
-
-  const action = args[0] || 'status';
-
-  try {
-    switch (action) {
-      case 'on':
-        if (watcher.isEnabled()) {
           return {
             success: true,
-            message: 'Extension watcher is already enabled',
+            message: `✅ Reloaded ${extensions.length} extension(s) (${enabled} enabled)`,
           };
-        }
-        watcher.start();
-        return {
-          success: true,
-          message: 'Extension watcher enabled - extensions will auto-reload on changes',
-        };
-
-      case 'off':
-        if (!watcher.isEnabled()) {
+        } catch (error) {
           return {
-            success: true,
-            message: 'Extension watcher is already disabled',
+            success: false,
+            message: `Failed to reload extensions: ${error instanceof Error ? error.message : String(error)}`,
           };
         }
-        watcher.stop();
-        return {
-          success: true,
-          message: 'Extension watcher disabled',
-        };
-
-      case 'status':
-        const enabled = watcher.isEnabled();
-        const watched = watcher.getWatchedExtensions();
-        return {
-          success: true,
-          message: [
-            `Extension watcher: ${enabled ? 'enabled' : 'disabled'}`,
-            enabled ? `Watching ${watched.length} extension(s): ${watched.join(', ')}` : '',
-          ].filter(Boolean).join('\n'),
-        };
-
-      default:
-        return {
-          success: false,
-          message: 'Usage: /extensions watch [on|off|status]',
-        };
-    }
-  } catch (error) {
-    return {
-      success: false,
-      message: `Failed to manage watcher: ${error instanceof Error ? error.message : String(error)}`,
-    };
-  }
-};
-
-/**
- * Extension permissions command
- * 
- * Usage: /extensions permissions <name> [--grant|--revoke type:scope]
- */
-export const extensionPermissionsCommand: CommandHandler = async (
-  args: string[],
-  context: CommandContext
-) => {
-  const sandbox = context.extensionSandbox as ExtensionSandbox;
-
-  if (!sandbox) {
-    return {
-      success: false,
-      message: 'Extension sandbox not available',
-    };
-  }
-
-  const name = args[0];
-
-  if (!name) {
-    return {
-      success: false,
-      message: 'Usage: /extensions permissions <name> [--grant|--revoke type:scope]',
-    };
-  }
-
-  try {
-    const permissions = sandbox.getPermissions(name);
-    if (!permissions) {
-      return {
-        success: false,
-        message: `No permissions found for extension '${name}'`,
-      };
-    }
-
-    // Handle grant/revoke
-    if (context.flags?.grant) {
-      const [type, ...scopeParts] = (context.flags.grant as string).split(':');
-      const scope = scopeParts.join(':');
-      
-      sandbox.grantPermission(name, {
-        type: type as any,
-        scope: [scope],
-        granted: true,
-      });
-
-      return {
-        success: true,
-        message: `Granted ${type} permission to '${name}': ${scope}`,
-      };
-    }
-
-    if (context.flags?.revoke) {
-      const [type, ...scopeParts] = (context.flags.revoke as string).split(':');
-      const scope = scopeParts.join(':');
-      
-      sandbox.revokePermission(name, {
-        type: type as any,
-        scope: [scope],
-        granted: false,
-      });
-
-      return {
-        success: true,
-        message: `Revoked ${type} permission from '${name}': ${scope}`,
-      };
-    }
-
-    // Display permissions
-    const output = [
-      `Permissions for '${name}':\n`,
-      `Filesystem: ${permissions.filesystem.length > 0 ? permissions.filesystem.join(', ') : 'none'}`,
-      `Network: ${permissions.network.length > 0 ? permissions.network.join(', ') : 'none'}`,
-      `Environment: ${permissions.env.length > 0 ? permissions.env.join(', ') : 'none'}`,
-      `Shell: ${permissions.shell ? 'granted' : 'denied'}`,
-      `MCP: ${permissions.mcp ? 'granted' : 'denied'}`,
-    ].join('\n');
-
-    return {
-      success: true,
-      message: output,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      message: `Failed to manage permissions: ${error instanceof Error ? error.message : String(error)}`,
-    };
-  }
-};
-
-/**
- * Extension enable command
- * 
- * Usage: /extensions enable <name>
- */
-export const extensionEnableCommand: CommandHandler = async (
-  args: string[],
-  context: CommandContext
-) => {
-  const manager = context.extensionManager as ExtensionManager;
-
-  if (!manager) {
-    return {
-      success: false,
-      message: 'Extension manager not available',
-    };
-  }
-
-  const name = args[0];
-
-  if (!name) {
-    return {
-      success: false,
-      message: 'Usage: /extensions enable <name>',
-    };
-  }
-
-  try {
-    await manager.enableExtension(name);
-    return {
-      success: true,
-      message: `Enabled extension '${name}'`,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      message: `Failed to enable extension: ${error instanceof Error ? error.message : String(error)}`,
-    };
-  }
-};
-
-/**
- * Extension disable command
- * 
- * Usage: /extensions disable <name>
- */
-export const extensionDisableCommand: CommandHandler = async (
-  args: string[],
-  context: CommandContext
-) => {
-  const manager = context.extensionManager as ExtensionManager;
-
-  if (!manager) {
-    return {
-      success: false,
-      message: 'Extension manager not available',
-    };
-  }
-
-  const name = args[0];
-
-  if (!name) {
-    return {
-      success: false,
-      message: 'Usage: /extensions disable <name>',
-    };
-  }
-
-  try {
-    await manager.disableExtension(name);
-    return {
-      success: true,
-      message: `Disabled extension '${name}'`,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      message: `Failed to disable extension: ${error instanceof Error ? error.message : String(error)}`,
-    };
-  }
-};
-
-/**
- * Extension info command
- * 
- * Usage: /extensions info <name>
- */
-export const extensionInfoCommand: CommandHandler = async (
-  args: string[],
-  context: CommandContext
-) => {
-  const manager = context.extensionManager as ExtensionManager;
-  const sandbox = context.extensionSandbox as ExtensionSandbox;
-
-  if (!manager) {
-    return {
-      success: false,
-      message: 'Extension manager not available',
-    };
-  }
-
-  const name = args[0];
-
-  if (!name) {
-    return {
-      success: false,
-      message: 'Usage: /extensions info <name>',
-    };
-  }
-
-  try {
-    const extension = manager.getExtension(name);
-    if (!extension) {
-      return {
-        success: false,
-        message: `Extension '${name}' not found`,
-      };
-    }
-
-    const permissions = sandbox?.getPermissions(name);
-
-    const output = [
-      `Extension: ${extension.name} v${extension.version}`,
-      `Status: ${extension.enabled ? 'enabled' : 'disabled'}`,
-      `Description: ${extension.description}`,
-      `Path: ${extension.path}`,
-      '',
-      `Hooks: ${extension.hooks.length}`,
-      ...extension.hooks.map((hook) => `  - ${hook.name} (${hook.source})`),
-      '',
-      `MCP Servers: ${extension.mcpServers.length}`,
-      ...Object.keys(extension.manifest.mcpServers || {}).map((server) => `  - ${server}`),
-      '',
-      `Skills: ${extension.skills.length}`,
-      ...extension.skills.map((skill) => `  - ${skill.name}: ${skill.description}`),
-      '',
-      `Settings: ${extension.settings.length}`,
-      ...extension.settings.map((setting) => `  - ${setting.name}: ${setting.description}`),
-    ];
-
-    if (permissions) {
-      output.push('');
-      output.push('Permissions:');
-      output.push(`  Filesystem: ${permissions.filesystem.length > 0 ? permissions.filesystem.join(', ') : 'none'}`);
-      output.push(`  Network: ${permissions.network.length > 0 ? permissions.network.join(', ') : 'none'}`);
-      output.push(`  Environment: ${permissions.env.length > 0 ? permissions.env.join(', ') : 'none'}`);
-      output.push(`  Shell: ${permissions.shell ? 'granted' : 'denied'}`);
-      output.push(`  MCP: ${permissions.mcp ? 'granted' : 'denied'}`);
-    }
-
-    return {
-      success: true,
-      message: output.join('\n'),
-    };
-  } catch (error) {
-    return {
-      success: false,
-      message: `Failed to get extension info: ${error instanceof Error ? error.message : String(error)}`,
-    };
-  }
-};
-/**
- * Extension command dispatcher
- */
-export const extensionCommand: Command = {
-  name: '/extensions',
-  aliases: ['/ext'],
-  description: 'Manage extensions, plugins, and MCP servers',
-  usage: '/extensions <search|install|uninstall|list|update|watch|permissions|enable|disable|info> [args]',
-  handler: async (args: string[], context: CommandContext): Promise<CommandResult> => {
-    if (args.length === 0) {
-      return {
-        success: false,
-        message: 'Usage: /extensions <search|install|uninstall|list|update|watch|permissions|enable|disable|info> [args]\n\n' +
-          'Subcommands:\n' +
-          '  search <query>      - Search for extensions in the registry\n' +
-          '  install <name>      - Install an extension\n' +
-          '  uninstall <name>    - Uninstall an extension\n' +
-          '  list                - List installed extensions\n' +
-          '  update [name]       - Check for or install updates\n' +
-          '  watch [on|off]      - Manage auto-reload watcher\n' +
-          '  permissions <name>  - Manage extension permissions\n' +
-          '  enable <name>       - Enable an extension\n' +
-          '  disable <name>      - Disable an extension\n' +
-          '  info <name>         - Show detailed information about an extension',
-      };
-    }
-
-    const action = args[0];
-    const actionArgs = args.slice(1);
-
-    switch (action) {
-      case 'search': return extensionSearchCommand(actionArgs, context);
-      case 'install': return extensionInstallCommand(actionArgs, context);
-      case 'uninstall': return extensionUninstallCommand(actionArgs, context);
-      case 'list': return extensionListCommand(actionArgs, context);
-      case 'update': return extensionUpdateCommand(actionArgs, context);
-      case 'watch': return extensionWatchCommand(actionArgs, context);
-      case 'permissions': return extensionPermissionsCommand(actionArgs, context);
-      case 'enable': return extensionEnableCommand(actionArgs, context);
-      case 'disable': return extensionDisableCommand(actionArgs, context);
-      case 'info': return extensionInfoCommand(actionArgs, context);
-      default:
-        return {
-          success: false,
-          message: `Unknown extension action: ${action}\n\n` +
-            'Available actions: search, install, uninstall, list, update, watch, permissions, enable, disable, info',
-        };
-    }
-  },
-};
-
-/**
- * All extension-related commands
- */
-export const extensionCommands: Command[] = [
-  extensionCommand,
-];
+      },
+    },
+  ];
+}

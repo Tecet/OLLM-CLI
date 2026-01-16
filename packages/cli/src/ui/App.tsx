@@ -12,7 +12,7 @@
  * - Uses alternate screen buffer for flicker-free rendering
  */
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { Box, Text, useStdout } from 'ink';
 import { UIProvider, useUI, TabType } from '../features/context/UIContext.js';
 import { ChatProvider, useChat } from '../features/context/ChatContext.js';
@@ -29,11 +29,14 @@ import { createWelcomeMessage, CONTEXT_OPTIONS } from '../features/context/Syste
 import type { MenuOption } from '../features/context/ChatContext.js';
 import { profileManager } from '../features/context/../profiles/ProfileManager.js';
 import { settingsManager } from '../features/settings/SettingsManager.js';
+import { FocusProvider, useFocusManager } from '../features/context/FocusContext.js';
+import keybinds from '../config/keybinds.json' with { type: 'json' };
 
 import { HeaderBar } from './components/layout/HeaderBar.js';
+import { TabBar } from './components/layout/TabBar.js';
 import { ChatInputArea } from './components/layout/ChatInputArea.js';
+import { SystemBar } from './components/layout/SystemBar.js';
 import { SidePanel } from './components/layout/SidePanel.js';
-import { ContextSection } from './components/layout/ContextSection.js';
 
 import { ChatTab } from './components/tabs/ChatTab.js';
 import { ToolsTab } from './components/tabs/ToolsTab.js';
@@ -61,52 +64,37 @@ function AppContent({ config }: AppContentProps) {
   
   // Get terminal dimensions
   const { stdout } = useStdout();
-  const terminalHeight = stdout?.rows || 24; // Default to 24 if not available
-  const terminalWidth = stdout?.columns || 80;
+  const terminalHeight = (stdout?.rows || 24) - 1; // reserve 1 for system
+  const rawTerminalWidth = stdout?.columns || 80;
+  
+  // Apply requested 3-char margin on both sides
+  const terminalWidth = Math.max(40, rawTerminalWidth - 6); 
+
+  // Layout Calculations for 4-Row Restructuring
+  const row1Height = Math.max(3, Math.floor(terminalHeight * 0.05));
+  const row3Height = 3; // Fixed height for single line of text + borders
+  const row4Height = Math.max(8, Math.floor(terminalHeight * 0.25));
+  
+  // Calculate Row 2 (Chat) as remaining space to prevent gaps
+  const row2Height = Math.max(18, terminalHeight - row1Height - row3Height - row4Height);
+
   const leftColumnWidth = Math.max(20, Math.floor(terminalWidth * 0.7));
   const rightColumnWidth = Math.max(20, terminalWidth - leftColumnWidth);
   
-  const { state: chatState, clearChat, cancelGeneration, contextUsage, addMessage, activateMenu } = useChat();
+  const { state: chatState, clearChat, cancelGeneration, contextUsage, addMessage, activateMenu, scrollUp, scrollDown } = useChat();
+  
+  // Helper object for shortcuts (so we don't need to change all callbacks below)
+  const chatActions = { scrollUp, scrollDown };
   useReview();
   const { info: gpuInfo } = useGPU();
   const { currentModel } = useModel();
   const { actions: contextActions } = useContextManager();
-
-
-  // Apply configuration settings on mount
-  useEffect(() => {
-    // Load custom theme if specified in config
-    // Theme manager would be used here to load custom themes
-    // For now, we use the default theme from UIContext
-  }, [config]);
-
-  // Persist hardware info when available
-  useEffect(() => {
-    if (gpuInfo) {
-      settingsManager.updateHardwareInfo({
-        gpuCount: 1, // Default/Placeholder
-        totalVRAM: gpuInfo.total,
-        gpuName: gpuInfo.name
-      });
-    }
-  }, [gpuInfo]);
-
-  // Persist hardware info when available
-  useEffect(() => {
-    if (gpuInfo) {
-      settingsManager.updateHardwareInfo({
-        gpuCount: 1, // Default/Placeholder as useGPU doesn't seem to export count based on file view
-        totalVRAM: gpuInfo.total,
-        gpuName: 'Unknown' // Placeholder
-      });
-    }
-  }, [gpuInfo]);
+  const focusManager = useFocusManager();
 
   // Handle launch screen dismiss
   const handleDismissLaunch = useCallback(() => {
     setLaunchScreenVisible(false);
     
-    // Create and show welcome message
     // Create and show welcome message
     const currentContextSize = contextUsage?.maxTokens || 4096;
     const modelName = currentModel || 'Unknown Model';
@@ -114,12 +102,11 @@ function AppContent({ config }: AppContentProps) {
     // Lookup profile
     const profile = profileManager.findProfile(modelName);
     
-    const welcomeMsg = createWelcomeMessage(modelName, currentContextSize, profile, gpuInfo);
+    const welcomeMsg = createWelcomeMessage(modelName, currentContextSize, profile, gpuInfo as any);
     
     addMessage(welcomeMsg);
     
     // Calculate max safe context for "Auto" logic
-    // Same logic as in SystemMessages to ensure consistency
     const persistedHW = settingsManager.getHardwareInfo();
     const effectiveTotalVRAM = gpuInfo ? gpuInfo.total : (persistedHW?.totalVRAM || 0);
 
@@ -133,7 +120,6 @@ function AppContent({ config }: AppContentProps) {
     if (profile) {
         for (const opt of profile.context_profiles) {
             const vramNum = parseFloat(opt.vram_estimate.replace(' GB', ''));
-            // Use 80% rule
             if (!isNaN(vramNum) && vramNum <= targetVRAM) {
                 maxSafeSize = opt.size;
             }
@@ -146,12 +132,9 @@ function AppContent({ config }: AppContentProps) {
         id: 'opt-context',
         label: 'Change Context Size',
         action: () => {
-          // Sub-menu: Context Size
           const optionsToUse = profile ? profile.context_profiles : CONTEXT_OPTIONS;
-          
           const sizeOptions: MenuOption[] = [];
           
-          // 1. Auto Option
           sizeOptions.push({
              id: 'size-auto',
              label: 'Auto (Dynamic based on VRAM)',
@@ -167,11 +150,8 @@ function AppContent({ config }: AppContentProps) {
              }
           });
 
-          // 2...N Size Options
           optionsToUse.forEach(opt => {
              const val = 'size' in opt ? opt.size : opt.value;
-             
-             // Use JSON label if available (e.g. "4k") or fallback to calculation
              let sizeStr = `${val}`;
              if ('size_label' in opt && opt.size_label) {
                  sizeStr = opt.size_label;
@@ -179,18 +159,14 @@ function AppContent({ config }: AppContentProps) {
                  sizeStr = val >= 1024 ? `${val/1024}k` : `${val}`;
              }
              
-             // Get VRAM estimate if available
              let vramStr = '';
              if ('vram_estimate' in opt) {
                  vramStr = ` - ${opt.vram_estimate}`;
              }
 
              let label = `${sizeStr}${vramStr}`;
-             
-             // Check if within hard VRAM limit (not just recommended)
              let disabled = false;
              let vramNum = 0;
-             // Handle both naming conventions (camelCase vs snake_case)
              const vramEst = 'vram_estimate' in opt ? opt.vram_estimate : ('vramEstimate' in opt ? opt.vramEstimate : '');
              
              if (vramEst) {
@@ -218,7 +194,6 @@ function AppContent({ config }: AppContentProps) {
                         content: `**⚠️ Cannot Select Context Size**\nRequired VRAM (~${vramEst}) exceeds available system resources (~${availableForContextGB.toFixed(1)} GB).`,
                         excludeFromContext: true
                       });
-                      // Don't close menu, just show warning
                       return;
                   }
                   await contextActions.resize(val);
@@ -232,7 +207,6 @@ function AppContent({ config }: AppContentProps) {
              });
           });
 
-          // 9. Back Option (Mapped to 9 key by ChatInputArea)
           sizeOptions.push({
               id: 'opt-back',
               label: 'Back',
@@ -241,13 +215,10 @@ function AppContent({ config }: AppContentProps) {
               }
           });
           
-          // 0. Exit Option (Mapped to 0 key by ChatInputArea)
           sizeOptions.push({
              id: 'opt-exit',
              label: 'Move to Chat',
-             action: async () => {
-                 // Nothing needed, ChatInputArea handles closure
-             }
+             action: async () => {}
           });
           
           activateMenu(sizeOptions, welcomeMsg.id);
@@ -257,15 +228,12 @@ function AppContent({ config }: AppContentProps) {
         id: 'opt-model',
         label: 'Change Model',
         action: () => {
-           // Sub-menu: Change Model
            const profiles = profileManager.getProfiles();
            const modelOptions: MenuOption[] = profiles.map(p => ({
                id: `model-${p.id}`,
                label: p.name,
                action: async () => {
-                   // In a real scenario, this would trigger model loading.
-                   // Show model info
-                   const infoMsg = `
+                    const infoMsg = `
 **Selected Model:** ${p.name}
 *${p.description}*
 **Abilities:** ${p.abilities.join(', ')}
@@ -280,13 +248,10 @@ ${p.tool_support ? '🛠️ **Tool Support:** Enabled' : ''}
                         excludeFromContext: true
                     });
 
-                    // Re-calculate safe size for this specific model (80% rule)
                     let safeSizeForModel = 4096;
-                    
                     const persistedHW = settingsManager.getHardwareInfo();
                     const cardTotal = gpuInfo ? gpuInfo.total : (persistedHW?.totalVRAM || 0);
                     const safeLimit = cardTotal * 0.8;
-                    // To be consistent with handleDismissLaunch, let's recalculate accurately:
                     const safetyBuffer = cardTotal > 0 ? Math.max(1.5, cardTotal * 0.1) : 0;
                     const availableForCtx = cardTotal > 0 ? (cardTotal - safetyBuffer) : 0;
 
@@ -298,12 +263,10 @@ ${p.tool_support ? '🛠️ **Tool Support:** Enabled' : ''}
                     }
 
                     const modelContextOptions: MenuOption[] = [];
-                    // Auto
                     modelContextOptions.push({
                         id: 'model-size-auto',
                         label: 'Auto (Dynamic)',
                         action: async () => {
-                            // "Load" model logic here in future
                             await contextActions.resize(safeSizeForModel);
                              addMessage({
                                 role: 'system',
@@ -314,14 +277,13 @@ ${p.tool_support ? '🛠️ **Tool Support:** Enabled' : ''}
                         }
                     });
 
-                    // Sizes
                     p.context_profiles.forEach(opt => {
                          const sizeStr = opt.size_label || (opt.size >= 1024 ? `${opt.size/1024}k` : `${opt.size}`);
                          const vramStr = ` - ${opt.vram_estimate}`;
                          
                          let disabled = false;
                          const vramNum = parseFloat(opt.vram_estimate.replace(' GB', ''));
-                         if (!isNaN(vramNum) && vramNum > availableForCtx) { // Hard limit check
+                         if (!isNaN(vramNum) && vramNum > availableForCtx) {
                              disabled = true;
                          }
 
@@ -357,17 +319,14 @@ ${p.tool_support ? '🛠️ **Tool Support:** Enabled' : ''}
                          });
                     });
 
-                    // Back
                     modelContextOptions.push({
                         id: 'opt-back',
                         label: 'Back to Models',
                         action: () => {
-                             // Go back to model list
                              activateMenu(modelOptions, welcomeMsg.id); 
                         }
                     });
                     
-                    // Exit
                     modelContextOptions.push({
                         id: 'opt-exit',
                         label: 'Move to Chat',
@@ -378,7 +337,6 @@ ${p.tool_support ? '🛠️ **Tool Support:** Enabled' : ''}
                }
            }));
 
-           // Back to Main
            modelOptions.push({
                id: 'opt-back',
                label: 'Back',
@@ -387,7 +345,6 @@ ${p.tool_support ? '🛠️ **Tool Support:** Enabled' : ''}
                }
            });
            
-           // Exit
            modelOptions.push({
                id: 'opt-exit',
                label: 'Move to Chat',
@@ -398,7 +355,6 @@ ${p.tool_support ? '🛠️ **Tool Support:** Enabled' : ''}
         }
       },
       {
-         // Main Menu Exit Option
          id: 'opt-exit',
          label: 'Move to Chat',
          action: async () => {}
@@ -410,7 +366,6 @@ ${p.tool_support ? '🛠️ **Tool Support:** Enabled' : ''}
 
   // Handle save session
   const handleSaveSession = useCallback(async () => {
-    // TODO: Implement session save
     console.log('Save session');
   }, []);
 
@@ -426,7 +381,6 @@ ${p.tool_support ? '🛠️ **Tool Support:** Enabled' : ''}
 
   // Register global keyboard shortcuts
   useGlobalKeyboardShortcuts([
-    // Tab navigation (Ctrl+1-6)
     {
       key: 'ctrl+1',
       handler: () => setActiveTab('search'),
@@ -457,8 +411,6 @@ ${p.tool_support ? '🛠️ **Tool Support:** Enabled' : ''}
       handler: () => setActiveTab('settings'),
       description: 'Switch to Settings tab',
     },
-    
-    // Layout shortcuts
     {
       key: 'ctrl+p',
       handler: toggleSidePanel,
@@ -474,8 +426,6 @@ ${p.tool_support ? '🛠️ **Tool Support:** Enabled' : ''}
       handler: handleToggleDebug,
       description: 'Toggle debug mode',
     },
-    
-    // Chat shortcuts
     {
       key: 'ctrl+l',
       handler: clearChat,
@@ -491,6 +441,64 @@ ${p.tool_support ? '🛠️ **Tool Support:** Enabled' : ''}
       handler: cancelGeneration,
       description: 'Cancel current action',
     },
+    // Global support for Chat Scrolling (Capture keys anywhere)
+    {
+        key: 'ctrl+pageup',
+        handler: () => chatActions.scrollUp(),
+        description: 'Scroll Chat Up'
+    },
+    {
+        key: 'ctrl+pagedown',
+        handler: () => chatActions.scrollDown(),
+        description: 'Scroll Chat Down'
+    },
+    // Alternative keys for better terminal compatibility
+    {
+        key: 'meta+up', // Alt+Up
+        handler: () => chatActions.scrollUp(),
+        description: 'Scroll Chat Up (Alt)'
+    },
+    {
+        key: 'meta+down', // Alt+Down
+        handler: () => chatActions.scrollDown(),
+        description: 'Scroll Chat Down (Alt)'
+    },
+    // Focus Management Shortcuts
+    {
+        key: keybinds.global.cycleNext,
+        handler: () => focusManager.cycleFocus('next'),
+        description: 'Next Pane'
+    },
+    {
+        key: keybinds.global.cyclePrev,
+        handler: () => focusManager.cycleFocus('previous'),
+        description: 'Previous Pane'
+    },
+    {
+        key: keybinds.global.focusChatInput,
+        handler: () => focusManager.setFocus('chat-input'),
+        description: 'Focus Chat Input'
+    },
+    {
+        key: keybinds.global.focusNavigation,
+        handler: () => focusManager.setFocus('nav-bar'),
+        description: 'Focus Navigation'
+    },
+    {
+        key: keybinds.global.focusContext,
+        handler: () => focusManager.setFocus('context-panel'),
+        description: 'Focus Context Panel'
+    },
+    {
+        key: keybinds.global.focusFileTree,
+        handler: () => focusManager.setFocus('file-tree'),
+        description: 'Focus File Tree'
+    },
+    {
+        key: keybinds.global.focusFunctions,
+        handler: () => focusManager.setFocus('functions'),
+        description: 'Focus Functions'
+    }
   ]);
 
   // Show launch screen
@@ -505,11 +513,13 @@ ${p.tool_support ? '🛠️ **Tool Support:** Enabled' : ''}
   }
 
   // Render active tab
-  const renderActiveTab = () => {
+  const renderActiveTab = (height: number) => {
     switch (uiState.activeTab) {
       case 'chat':
         return (
           <ChatTab
+            height={height}
+            showBorder={true}
             metricsConfig={{
                 enabled: config.ui?.metrics?.enabled !== false,
                 compactMode: config.ui?.metrics?.compactMode || false,
@@ -525,31 +535,18 @@ ${p.tool_support ? '🛠️ **Tool Support:** Enabled' : ''}
             columnWidth={leftColumnWidth}
           />
         );
-      case 'github':
-        return (
-          <Box flexDirection="column" alignItems="center" justifyContent="center" height="100%">
-            <Text color={uiState.theme.text.accent} bold>
-              GitHub Integration (Coming Soon)
-            </Text>
-            <Box marginTop={1} justifyContent="center" flexShrink={0}>
-                <Text color={uiState.theme.text.secondary} dimColor>
-                Press Esc to return to Chat
-                </Text>
-            </Box>
-          </Box>
-        );
       case 'tools':
-        return <ToolsTab />;
+        return <Box height={height}><ToolsTab /></Box>;
       case 'files':
-        return <FilesTab />;
+        return <Box height={height}><FilesTab /></Box>;
       case 'search':
-        return <SearchTab />;
+        return <Box height={height}><SearchTab /></Box>;
       case 'docs':
-        return <DocsTab />;
+        return <Box height={height}><DocsTab /></Box>;
       case 'settings':
-        return <SettingsTab />;
+        return <Box height={height}><SettingsTab /></Box>;
       default:
-        return <SearchTab />;
+        return <Box height={height}><SearchTab /></Box>;
     }
   };
 
@@ -562,41 +559,38 @@ ${p.tool_support ? '🛠️ **Tool Support:** Enabled' : ''}
 
 
   return (
-    <Box flexDirection="column" height={terminalHeight - 1} width="100%">
-      {/* Main content row: left = header + chat content + input, right = full-height side panel */}
-      <Box flexDirection="row" flexGrow={1} minHeight={0} width="100%">
-        {/* Left: Header + Chat/Tab Content + Input Area (70%) */}
+    <Box flexDirection="column" height={terminalHeight} width="100%">
+      {/* Main content row: left = 4-row system, right = full-height side panel */}
+      {/* Added 3-char margin to left and right via paddingX={3} */}
+      <Box flexDirection="row" flexGrow={1} minHeight={0} width="100%" paddingX={3}>
+        {/* Left Column (70%): Restructured into 4 distinct rows */}
         <Box 
             width={leftColumnWidth} 
             flexDirection="column" 
             flexShrink={0} 
             minHeight={0}
         >
-          <HeaderBar
-            connection={{ status: 'connected', provider: config.provider.default }}
-            model={currentModel || 'model'}
-            gpu={gpuInfo}
-            theme={uiState.theme}
-          />
-          <Box flexGrow={1} minHeight={0} overflow="hidden">
-            {renderActiveTab()}
+          {/* Row 1: Top Bar (5%, Green) */}
+          <Box height={row1Height} borderStyle="single" borderColor={focusManager.isFocused('nav-bar') ? uiState.theme.border.active : uiState.theme.border.primary}>
+            <TabBar
+              activeTab={uiState.activeTab}
+              onTabChange={setActiveTab}
+              notifications={notificationCounts}
+              theme={uiState.theme}
+              noBorder
+            />
+          </Box>
+
+          {/* Row 2: Chat Box (60%, Blue) */}
+          <Box flexGrow={1} minHeight={row2Height}>
+            {renderActiveTab(row2Height)}
           </Box>
           
-          {/* New: Context Tokens Display area (Yellow Box) */}
-          <Box flexDirection="row" justifyContent="flex-end" paddingX={1}>
-            <Box 
-              borderStyle="single" 
-              borderColor="#dcdcaa" 
-              paddingX={1}
-            >
-              <Text color={uiState.theme.text.secondary}>Context: </Text>
-              <Text color={uiState.theme.text.accent} bold>
-                {contextUsage ? `${contextUsage.currentTokens}/${contextUsage.maxTokens}` : `0/${config.context?.maxSize || 4096}`}
-              </Text>
-            </Box>
-          </Box>
+          {/* Row 3: System Bar (10%, Yellow) */}
+          <SystemBar height={row3Height} showBorder={true} />
           
-          <ChatInputArea />
+          {/* Row 4: User Input Box (25%, Red) */}
+          <ChatInputArea height={row4Height} showBorder={true} />
         </Box>
 
         {/* Right: Full-Height Side Panel (30%) */}
@@ -604,18 +598,10 @@ ${p.tool_support ? '🛠️ **Tool Support:** Enabled' : ''}
           <Box width={rightColumnWidth} flexShrink={0} minHeight={0}>
             <SidePanel
               visible={uiState.sidePanelVisible}
-              activeTab={uiState.activeTab}
-              onTabChange={setActiveTab}
-              notifications={notificationCounts}
-              sections={[
-                {
-                  id: 'context',
-                  title: 'Active Context',
-                  component: ContextSection,
-                  collapsed: false,
-                },
-              ]}
-              theme={uiState.theme}
+              connection={{ status: 'connected', provider: config.provider.default }}
+              model={currentModel || 'model'}
+              gpu={gpuInfo}
+              theme={uiState.theme as any}
             />
           </Box>
         )}
@@ -657,12 +643,12 @@ ${p.tool_support ? '🛠️ **Tool Support:** Enabled' : ''}
             <LaunchScreen 
                 onDismiss={handleDismissLaunch}
                 recentSessions={[]} // TODO: wire up recent sessions
-                theme={uiState.theme}
+                theme={uiState.theme as any}
                 modelInfo={{
                     name: currentModel || 'Unknown',
                     size: 'Unknown' // TODO: get size
                 }}
-                gpuInfo={gpuInfo}
+                gpuInfo={gpuInfo || undefined}
             />
         </Box>
       )}
@@ -772,11 +758,13 @@ export function App({ config }: AppProps) {
               >
                 <ChatProvider>
                   <ReviewProvider>
-                    <ActiveContextProvider>
-                      <ErrorBoundary>
-                        <AppContent config={config} />
-                      </ErrorBoundary>
-                    </ActiveContextProvider>
+                    <FocusProvider>
+                      <ActiveContextProvider>
+                        <ErrorBoundary>
+                          <AppContent config={config} />
+                        </ErrorBoundary>
+                      </ActiveContextProvider>
+                    </FocusProvider>
                   </ReviewProvider>
                 </ChatProvider>
               </ModelProvider>

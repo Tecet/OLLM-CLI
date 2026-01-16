@@ -1,13 +1,8 @@
 export { TabBar, type TabBarProps, type Tab, tabs } from './TabBar.js';
-export {
-  SidePanel,
-  type SidePanelProps,
-  type SectionConfig,
-  ContextSection,
-  GitSection,
-  ReviewSection,
-  ToolsSection,
-} from './SidePanel.js';
+export { SidePanel, type SidePanelProps } from './SidePanel.js';
+export { ContextSection } from './ContextSection.js';
+export { HeaderBar } from './HeaderBar.js';
+export { SystemBar } from './SystemBar.js';
 export {
   StatusBar,
   type StatusBarProps,

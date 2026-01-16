@@ -8,7 +8,7 @@
  */
 
 import React, { createContext, useContext, useState, useCallback, useRef, ReactNode } from 'react';
-import type { ProviderAdapter, Message as ProviderMessage, ToolCall, ToolSchema } from '@ollm/core';
+import type { ProviderAdapter, Message as ProviderMessage, ToolCall, ToolSchema, ProviderMetrics } from '@ollm/core';
 
 /**
  * Model context value
@@ -30,16 +30,10 @@ export interface ModelContextValue {
     }>,
     onText: (text: string) => void,
     onError: (error: string) => void,
-    onComplete: (metrics?: {
-      totalDuration: number;
-      loadDuration: number;
-      promptEvalCount: number;
-      promptEvalDuration: number;
-      evalCount: number;
-      evalDuration: number;
-    }) => void,
+    onComplete: (metrics?: ProviderMetrics) => void,
     onToolCall?: (toolCall: ToolCall) => void,
-    tools?: ToolSchema[]
+    tools?: ToolSchema[],
+    systemPrompt?: string
   ) => Promise<void>;
   
   /** Cancel the current LLM request */
@@ -84,16 +78,10 @@ export function ModelProvider({
     }>,
     onText: (text: string) => void,
     onError: (error: string) => void,
-    onComplete: (metrics?: {
-      totalDuration: number;
-      loadDuration: number;
-      promptEvalCount: number;
-      promptEvalDuration: number;
-      evalCount: number;
-      evalDuration: number;
-    }) => void,
+    onComplete: (metrics?: ProviderMetrics) => void,
     onToolCall?: (toolCall: ToolCall) => void,
-    tools?: ToolSchema[]
+    tools?: ToolSchema[],
+    systemPrompt?: string
   ) => {
     // Cancel any existing request
     cancelRequest();
@@ -116,6 +104,7 @@ export function ModelProvider({
         model: currentModel,
         messages: providerMessages,
         tools: tools,
+        systemPrompt: systemPrompt,
         abortSignal: abortController.signal,
       });
 
@@ -136,7 +125,7 @@ export function ModelProvider({
             return; // Break out of the entire sendToLLM function on error
           case 'finish':
             onComplete(event.metrics);
-            return; // Break out of the entire sendToLLM function on finish
+            return;
         }
       }
     } catch (error) {

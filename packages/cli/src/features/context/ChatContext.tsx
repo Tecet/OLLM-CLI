@@ -156,6 +156,11 @@ export interface ChatContextValue {
   
   /** Activate menu for a message */
   activateMenu: (options: MenuOption[], messageId?: string) => void;
+
+  /** Scroll State */
+  scrollOffset: number;
+  scrollUp: () => void;
+  scrollDown: () => void;
 }
 
 const ChatContext = createContext<ChatContextValue | undefined>(undefined);
@@ -316,16 +321,18 @@ export function ChatProvider({
         
         // Prepare history from authoritative context manager
         const currentContext = await contextActions.getContext();
-        const history = currentContext.map((m: ContextMessage) => ({
-          role: m.role as 'user' | 'assistant' | 'system' | 'tool',
-          content: m.content || '',
-          toolCalls: m.toolCalls?.map(tc => ({
-              id: tc.id,
-              name: tc.name,
-              args: tc.args
-          })),
-          toolCallId: m.toolCallId
-        }));
+        const history = currentContext
+          .filter((m: ContextMessage) => m.role !== 'system') // Filter out system messages
+          .map((m: ContextMessage) => ({
+            role: m.role as 'user' | 'assistant' | 'system' | 'tool',
+            content: m.content || '',
+            toolCalls: m.toolCalls?.map(tc => ({
+                id: tc.id,
+                name: tc.name,
+                args: tc.args
+            })),
+            toolCallId: m.toolCallId
+          }));
 
         let toolCallReceived: CoreToolCall | null = null;
         let assistantContent = '';
@@ -348,7 +355,7 @@ export function ChatProvider({
               const targetId = currentAssistantMsgId;
               setMessages((prev) =>
                 prev.map((msg) =>
-                  msg.id === targetId ? { ...msg, content: msg.content || `Error: ${error}` } : msg
+                  msg.id === targetId ? { ...msg, content: msg.content ? `${msg.content}\n\n**Error:** ${error}` : `Error: ${error}` } : msg
                 )
               );
               stopLoop = true;
@@ -373,11 +380,11 @@ export function ChatProvider({
                  } : msg));
               }
             },
-            // onToolCall
             (toolCall: CoreToolCall) => {
                toolCallReceived = toolCall;
             },
-            toolRegistry.list().map(t => t.schema)
+            toolRegistry.list().map(t => t.schema),
+            contextActions.getSystemPrompt()
           );
 
           // ALWAYS add assistant turn to context manager if it produced content OR tool calls
@@ -542,10 +549,41 @@ export function ChatProvider({
             messageId
         });
         setInputMode('menu');
-    }
+    },
+    // Scroll Logic
+    scrollOffset: 0, // Placeholder, see below implementation
+    scrollUp: () => {},
+    scrollDown: () => {},
   };
 
-  return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
+  // State for Scroll
+  const [scrollOffset, setScrollOffset] = useState(0);
+
+  // Reset scroll when messages change (new message usually means scroll to bottom)
+  // BUT: user might be reading old history. We only reset if we were at 0? 
+  // Standard behavior: auto-scroll to bottom if at bottom.
+  // For now to match previous behavior: reset to 0 on new message IF we are not in deep history?
+  // Let's keep it simple: Reset to 0 (bottom) when new user message sent.
+  useEffect(() => {
+      // If we are streaming (assistant typing), we want to stay at 0.
+      if (streaming) setScrollOffset(0);
+  }, [messages.length, streaming]);
+
+  const contextValue: ChatContextValue = {
+      ...value,
+      scrollOffset,
+      scrollUp: useCallback(() => {
+          // Limit max scroll is tricky without knowing height. 
+          // We'll allow "some" scrolling and let UI clamp it.
+          // Or we can use an arbitrary high number since UI clamps it.
+          setScrollOffset(prev => prev + 1);
+      }, []),
+      scrollDown: useCallback(() => {
+          setScrollOffset(prev => Math.max(0, prev - 1));
+      }, [])
+  };
+
+  return <ChatContext.Provider value={contextValue}>{children}</ChatContext.Provider>;
 }
 
 export function useChat(): ChatContextValue {

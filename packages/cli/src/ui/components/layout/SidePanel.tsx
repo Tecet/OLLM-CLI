@@ -1,129 +1,88 @@
 import React from 'react';
 import { Box, Text } from 'ink';
-import { TabBar } from './TabBar.js';
-import { TabType } from '../../../features/context/UIContext.js';
-
-export interface SectionConfig {
-  id: string;
-  title: string;
-  component: React.ComponentType;
-  collapsed: boolean;
-}
+import { HeaderBar } from './HeaderBar.js';
+import { ConnectionStatus, GPUInfo } from './StatusBar.js';
+import { Theme } from '../../../config/uiSettings.js';
+import { ContextSection } from './ContextSection.js'; // Import directly
 
 export interface SidePanelProps {
   visible: boolean;
-  sections: SectionConfig[];
-  activeTab: TabType;
-  onTabChange: (tab: TabType) => void;
-  notifications: Map<TabType, number>;
-  theme: {
-    text: {
-      primary: string;
-      secondary: string;
-      accent: string;
-    };
-    bg: {
-      primary: string;
-      secondary: string;
-    };
-  };
+  connection: ConnectionStatus;
+  model: string;
+  gpu: GPUInfo | null;
+  theme: Theme;
 }
 
-interface SidePanelSectionProps {
-  title: string;
-  collapsed: boolean;
-  onToggle: () => void;
-  children: React.ReactNode;
-  theme: SidePanelProps['theme'];
-}
+import { useFocusManager } from '../../../features/context/FocusContext.js';
 
-function SidePanelSection({ title, collapsed, children, theme }: Omit<SidePanelSectionProps, 'onToggle'>) {
-  return (
-    <Box flexDirection="column" marginBottom={1}>
-      <Box>
-        <Text color={theme.text.accent} bold>
-          {collapsed ? '▶' : '▼'} {title}
-        </Text>
-      </Box>
-      {!collapsed && (
-        <Box flexDirection="column" paddingLeft={2}>
-          {children}
-        </Box>
-      )}
-    </Box>
-  );
-}
-
-export function SidePanel({ visible, sections, activeTab, onTabChange, notifications, theme }: SidePanelProps) {
-  const collapsedSections = new Set(sections.filter(s => s.collapsed).map(s => s.id));
-
+export function SidePanel({ visible, connection, model, gpu, theme }: SidePanelProps) {
+  const { isFocused } = useFocusManager();
+  
   if (!visible) {
     return null;
   }
+
+  const contextFocused = isFocused('context-panel');
+  const fileTreeFocused = isFocused('file-tree');
+  const functionsFocused = isFocused('functions');
 
   return (
     <Box
       flexDirection="column"
       flexGrow={1}
-      borderStyle="single"
-      borderColor={theme.text.secondary}
-      paddingX={1}
     >
-      {/* Navigation Tabs at the top of side panel */}
+      {/* Row 1: Status Info (Not focusable, mostly static) */}
       <Box 
         borderStyle="single" 
-        borderColor={theme.text.secondary} 
-        marginY={1}
-        paddingX={1}
+        borderColor={theme.border.primary} 
+        marginY={0} // Tight fit
+        paddingX={0}
+        flexShrink={0}
       >
-        <TabBar
-          activeTab={activeTab}
-          onTabChange={onTabChange}
-          notifications={notifications}
+        <HeaderBar
+          connection={connection}
+          model={model}
+          gpu={gpu}
           theme={theme}
-          noBorder
         />
       </Box>
 
-      {sections.map(section => {
-        const Component = section.component;
-        const isCollapsed = collapsedSections.has(section.id);
-        
-        return (
-          <SidePanelSection
-            key={section.id}
-            title={section.title}
-            collapsed={isCollapsed}
-            theme={theme}
-          >
-            <Component />
-          </SidePanelSection>
-        );
-      })}
-    </Box>
-  );
-}
+      {/* Row 2: Active Context */}
+      <Box 
+        height={20} 
+        borderStyle="single" 
+        borderColor={contextFocused ? theme.border.active : theme.border.primary}
+        marginBottom={0}
+        flexShrink={0}
+        flexDirection="column"
+      >
+        <Box paddingX={1} marginBottom={0}>
+             <Text color={theme.text.accent} bold>▼ Active Context</Text>
+        </Box>
+        <ContextSection />
+      </Box>
 
-export function GitSection() {
-  return (
-    <Box flexDirection="column">
-      <Text dimColor>No git repository</Text>
-    </Box>
-  );
-}
+      {/* Row 3: File Tree (Flexible Height) */}
+      <Box 
+        flexGrow={1}
+        borderStyle="single" 
+        borderColor={fileTreeFocused ? theme.border.active : theme.border.primary}
+        marginBottom={0}
+        padding={1}
+      >
+        <Text color="yellow">File Tree (Coming Soon)</Text>
+      </Box>
 
-export function ReviewSection() {
-  return (
-    <Box flexDirection="column">
-      <Text dimColor>No pending reviews</Text>
-    </Box>
-  );
-}
-
-export function ToolsSection() {
-  return (
-    <Box flexDirection="column">
-      <Text dimColor>No active tools</Text>
+      {/* Row 4: Functions / Info */}
+      <Box 
+        height={5} 
+        borderStyle="single" 
+        borderColor={functionsFocused ? theme.border.active : theme.border.primary}
+        flexShrink={0}
+        paddingX={1}
+      >
+         <Text>Functions / Info</Text>
+      </Box>
     </Box>
   );
 }

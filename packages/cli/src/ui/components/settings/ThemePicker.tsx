@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Text } from 'ink';
-import { useUI, Theme } from '../../../features/context/UIContext.js';
+import { useUI } from '../../../features/context/UIContext.js';
+import { Theme } from '../../../config/uiSettings.js';
 
 export interface ThemePickerProps {
   /** Available theme names */
@@ -30,9 +31,11 @@ export function ThemePicker({
 }: ThemePickerProps) {
   return (
     <Box flexDirection="column" borderStyle="single" borderColor={theme.text.accent} paddingX={1}>
-      <Text bold color={theme.text.accent} marginBottom={1}>
-        Theme Selection
-      </Text>
+      <Box marginBottom={1}>
+        <Text bold color={theme.text.accent}>
+          Theme Selection
+        </Text>
+      </Box>
 
       <Box flexDirection="column">
         {themes.map((themeName) => {

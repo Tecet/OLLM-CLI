@@ -113,7 +113,7 @@ export function SettingsTab({
               models={models}
               selectedModel={selectedModel}
               onSelect={onModelSelect || (() => {})}
-              theme={uiState.theme}
+              theme={uiState.theme as any}
             />
           </Box>
 

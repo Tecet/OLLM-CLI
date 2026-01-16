@@ -28,7 +28,7 @@ async function templateListHandler(service: TemplateService): Promise<CommandRes
     }
     
     // Format template list
-    const templateList = templates.map(template => {
+    const templateList = (templates as any[]).map(template => {
       const varCount = template.variableCount;
       const varText = varCount === 0 ? 'no variables' : 
                       varCount === 1 ? '1 variable' : 

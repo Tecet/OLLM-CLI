@@ -9,7 +9,7 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render } from 'ink-testing-library';
 import { InputBox } from '../InputBox.js';
-import { mockTheme, stripAnsi } from '@ollm/test-utils';
+import { mockTheme, stripAnsi } from '../../__tests__/testUtils.js';
 
 describe('InputBox Component', () => {
   const defaultTheme = mockTheme;

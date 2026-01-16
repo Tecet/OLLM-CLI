@@ -42,12 +42,21 @@ export const helpCommand: Command = {
         'Model & Provider:\n' +
         '  /model            - Manage models (list, use, pull, rm, info)\n' +
         '  /provider         - Manage providers (list, use)\n\n' +
+        'MCP (Model Context Protocol):\n' +
+        '  /mcp              - List MCP servers and status\n' +
+        '  /mcp health       - Check server health status\n' +
+        '  /mcp restart      - Restart an MCP server\n' +
+        '  /mcp oauth        - Manage OAuth authentication\n\n' +
+        'Extensions:\n' +
+        '  /extensions       - Manage extensions (search, install, list)\n' +
+        '  /ext search       - Search extension marketplace\n' +
+        '  /ext install      - Install an extension\n\n' +
         'Development:\n' +
         '  /git              - Git operations (status, commit, undo)\n' +
         '  /review           - Manage diff reviews (enable, disable, pending)\n\n' +
         'Customization:\n' +
         '  /theme            - Manage themes (list, use, preview)\n' +
-        '  /extensions       - Manage extensions (list, enable, disable)\n\n' +
+        '  /hooks            - Manage hooks (list, debug)\n\n' +
         'Display:\n' +
         '  /metrics          - Manage metrics (show, toggle, reset)\n' +
         '  /reasoning        - Manage reasoning display (toggle, expand, collapse)\n\n' +

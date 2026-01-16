@@ -9,18 +9,21 @@ import { Box, Text, useInput } from 'ink';
 import { InputBox } from './InputBox.js';
 import { useChat } from '../../../features/context/ChatContext.js';
 import { useUI } from '../../../features/context/UIContext.js';
+import { useFocusManager } from '../../../features/context/FocusContext.js';
 
 export interface ChatInputAreaProps {
-  /** Optional status text override */
-  statusText?: string;
+  /** Optional assigned height from layout */
+  height: number;
+  /** Whether to show debugging border */
+  showBorder?: boolean;
 }
 
-/**
- * Memoized input area that only re-renders when necessary
- */
-export const ChatInputArea = memo(function ChatInputArea({ statusText }: ChatInputAreaProps) {
+export const ChatInputArea = memo(function ChatInputArea({ height, showBorder = true }: ChatInputAreaProps) {
   const { state: chatState, setCurrentInput, sendMessage, executeMenuOption, navigateMenu, setInputMode, setMenuState } = useChat();
   const { state: uiState } = useUI();
+  const { isFocused } = useFocusManager();
+  
+  const hasFocus = isFocused('chat-input');
   
   const { currentInput, streaming, waitingForResponse, messages } = chatState;
   const theme = uiState.theme;
@@ -38,19 +41,10 @@ export const ChatInputArea = memo(function ChatInputArea({ statusText }: ChatInp
     }
   }, [sendMessage]);
 
-  // Determine status text - static, no animations
-  let displayStatus = ' ';
-  if (chatState.inputMode === 'menu') {
-      displayStatus = 'Interactive Menu Active - Use Arrow Keys or Numbers';
-  } else if (statusText) {
-    displayStatus = statusText;
-  } else if (streaming) {
-    displayStatus = '● Assistant is typing...';
-  } else if (waitingForResponse) {
-    displayStatus = '○ Waiting for response...';
-  }
-
   useInput(async (input, key) => {
+      // Input Logic only works if we have focus!
+      if (!hasFocus) return;
+
       if (chatState.inputMode !== 'menu') return;
 
       if (key.upArrow) {
@@ -77,11 +71,8 @@ export const ChatInputArea = memo(function ChatInputArea({ statusText }: ChatInp
               }
           } else if (input === '9') {
               // 9 -> Back (look for opt-back)
-              // If no opt-back, maybe fall back to 9th item? 
-              // But user explicitly requested "9 back", so let's stick to searching for the specific ID or label logic
               targetOption = chatState.menuState.options.find(o => o.id === 'opt-back');
               
-              // If no specific 'back' option found, check if there is actually a 9th item (index 8)
               if (!targetOption && chatState.menuState.options.length >= 9) {
                   targetOption = chatState.menuState.options[8];
               }
@@ -97,51 +88,53 @@ export const ChatInputArea = memo(function ChatInputArea({ statusText }: ChatInp
               await targetOption.action();
           }
       }
-  }, { isActive: chatState.inputMode === 'menu' });
+  }, { isActive: chatState.inputMode === 'menu' || hasFocus }); // Allow hook to run to check hasFocus condition
+
+  // Border Color Logic
+  let borderColor = theme.border.primary;
+  if (hasFocus) borderColor = theme.border.active;
+  else if (chatState.inputMode === 'menu') borderColor = theme.text.accent;
 
   return (
-    <Box flexDirection="column" width="100%">
-      {/* Fixed height status area - static text only */}
-      <Box height={1} paddingX={1}>
-        <Text color={theme.text.secondary}>{displayStatus}</Text>
-      </Box>
-      {/* Input box with border - static container */}
-      <Box height={9} borderStyle="single" borderColor={chatState.inputMode === 'menu' ? theme.text.accent : theme.text.secondary}>
-        {chatState.inputMode === 'text' ? (
+    <Box 
+      height={height} 
+      width="100%" 
+      borderStyle={showBorder ? 'single' : undefined} 
+      borderColor={borderColor}
+    >
+      {chatState.inputMode === 'text' ? (
         <InputBox
           value={currentInput}
           onChange={setCurrentInput}
           onSubmit={handleSubmit}
           userMessages={userMessages}
-          placeholder={'Type a message... (Enter to send, Shift+Enter for newline)'}
-          disabled={streaming || waitingForResponse}
+          placeholder={hasFocus ? 'Type a message... (Enter to send)' : 'Focus elsewhere... (Ctrl+Space to focus)'}
+          disabled={streaming || waitingForResponse || !hasFocus} 
           theme={theme}
         />
-        ) : (
-            <Box flexDirection="column" paddingX={1}>
-                {chatState.menuState.options.map((option, index) => {
-                    const isSelected = chatState.menuState.selectedIndex === index;
-                    const prefix = isSelected ? '> ' : '  ';
-                    
-                    // Determine display number
-                    let numPrefix = '';
-                    if (option.id === 'opt-exit') {
-                        numPrefix = '0. ';
-                    } else if (option.id === 'opt-back') {
-                        numPrefix = '9. ';
-                    } else if (index < 8) {
-                        numPrefix = `${index + 1}. `;
-                    }
+      ) : (
+        <Box flexDirection="column" paddingX={1} paddingTop={1}>
+          {chatState.menuState.options.map((option, index) => {
+            const isSelected = chatState.menuState.selectedIndex === index;
+            const prefix = isSelected ? '> ' : '  ';
+            
+            let numPrefix = '';
+            if (option.id === 'opt-exit') {
+              numPrefix = '0. ';
+            } else if (option.id === 'opt-back') {
+              numPrefix = '9. ';
+            } else if (index < 8) {
+              numPrefix = `${index + 1}. `;
+            }
 
-                    return (
-                        <Text key={option.id} color={option.disabled ? 'gray' : (isSelected ? theme.text.accent : theme.text.secondary)}>
-                            {prefix}{numPrefix}{option.label}
-                        </Text>
-                    );
-                })}
-            </Box>
-        )}
-      </Box>
+            return (
+              <Text key={option.id} color={option.disabled ? 'gray' : (isSelected ? theme.text.accent : theme.text.secondary)}>
+                {prefix}{numPrefix}{option.label}
+              </Text>
+            );
+          })}
+        </Box>
+      )}
     </Box>
   );
 });

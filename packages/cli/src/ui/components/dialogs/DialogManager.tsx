@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { Box, useInput } from 'ink';
+import { Box, Text, useInput } from 'ink';
 import { useDialog } from '../../contexts/DialogContext.js';
 import { useUI } from '../../../features/context/UIContext.js';
 import { HookApprovalDialog } from './HookApprovalDialog.js';
@@ -113,19 +113,19 @@ export function DialogManager() {
             width="60%"
           >
             <Box marginBottom={1}>
-              <Box color={uiState.theme.text.accent} bold>
+              <Text color={uiState.theme.text.accent} bold>
                 {state.activeDialog.title}
-              </Box>
+              </Text>
             </Box>
             <Box marginBottom={1}>
-              <Box color={uiState.theme.text.primary}>
+              <Text color={uiState.theme.text.primary}>
                 {state.activeDialog.message}
-              </Box>
+              </Text>
             </Box>
             <Box>
-              <Box color={uiState.theme.text.muted} dimColor>
+              <Text color={uiState.theme.text.muted} dimColor>
                 Press Y to confirm, N to cancel, or Esc to close
-              </Box>
+              </Text>
             </Box>
           </Box>
         )}
@@ -139,19 +139,19 @@ export function DialogManager() {
             width="60%"
           >
             <Box marginBottom={1}>
-              <Box color={uiState.theme.status.error} bold>
+              <Text color={uiState.theme.status.error} bold>
                 ❌ {state.activeDialog.title}
-              </Box>
+              </Text>
             </Box>
             <Box marginBottom={1}>
-              <Box color={uiState.theme.text.primary}>
+              <Text color={uiState.theme.text.primary}>
                 {state.activeDialog.message}
-              </Box>
+              </Text>
             </Box>
             <Box>
-              <Box color={uiState.theme.text.muted} dimColor>
+              <Text color={uiState.theme.text.muted} dimColor>
                 Press Enter or Space to close
-              </Box>
+              </Text>
             </Box>
           </Box>
         )}
@@ -165,19 +165,19 @@ export function DialogManager() {
             width="60%"
           >
             <Box marginBottom={1}>
-              <Box color={uiState.theme.text.accent} bold>
+              <Text color={uiState.theme.text.accent} bold>
                 ℹ️  {state.activeDialog.title}
-              </Box>
+              </Text>
             </Box>
             <Box marginBottom={1}>
-              <Box color={uiState.theme.text.primary}>
+              <Text color={uiState.theme.text.primary}>
                 {state.activeDialog.message}
-              </Box>
+              </Text>
             </Box>
             <Box>
-              <Box color={uiState.theme.text.muted} dimColor>
+              <Text color={uiState.theme.text.muted} dimColor>
                 Press Enter or Space to close
-              </Box>
+              </Text>
             </Box>
           </Box>
         )}

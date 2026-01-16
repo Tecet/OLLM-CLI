@@ -7,10 +7,13 @@ import { memoryCommands, createMemoryCommands } from './memoryCommands.js';
 import { templateCommands, createTemplateCommands } from './templateCommands.js';
 import { comparisonCommands, createComparisonCommands } from './comparisonCommands.js';
 import { projectCommands, createProjectCommands } from './projectCommands.js';
+import { createExtensionCommands } from './extensionCommands.js';
+import { createMCPOAuthCommands } from './mcpOAuthCommands.js';
+import { createMCPHealthCommands } from './mcpHealthCommands.js';
+import { hookCommands } from './hookCommands.js';
 import { providerCommands } from './providerCommands.js';
 import { gitCommands } from './gitCommands.js';
 import { reviewCommands } from './reviewCommands.js';
-import { extensionCommands } from './extensionCommands.js';
 import { themeCommands, createThemeCommands } from './themeCommands.js';
 import { contextCommands } from './contextCommands.js';
 import { metricsCommands } from './metricsCommands.js';
@@ -28,6 +31,7 @@ export class CommandRegistry {
   private aliases: Map<string, string> = new Map();
   private serviceContainer?: ServiceContainer;
   private setTheme?: (theme: Theme) => void;
+  private mcpClient?: any;
 
   constructor(serviceContainer?: ServiceContainer, setTheme?: (theme: Theme) => void) {
     this.serviceContainer = serviceContainer;
@@ -84,11 +88,6 @@ export class CommandRegistry {
       this.register(command);
     }
     
-    // Register extension commands
-    for (const command of extensionCommands) {
-      this.register(command);
-    }
-    
     // Register theme commands with setTheme callback
     const themeCommandsToRegister = this.setTheme 
       ? createThemeCommands(this.setTheme)
@@ -114,6 +113,11 @@ export class CommandRegistry {
     
     // Register utility commands
     for (const command of utilityCommands) {
+      this.register(command);
+    }
+    
+    // Register hook commands
+    for (const command of hookCommands) {
       this.register(command);
     }
   }
@@ -146,6 +150,27 @@ export class CommandRegistry {
     for (const command of createProjectCommands(serviceContainer)) {
       this.register(command);
     }
+    
+    // Register extension commands
+    const extensionManager = serviceContainer.getExtensionManager();
+    const extensionRegistry = serviceContainer.getExtensionRegistry();
+    for (const command of createExtensionCommands(extensionManager, extensionRegistry)) {
+      this.register(command);
+    }
+    
+    // Register MCP OAuth commands
+    const oauthProvider = serviceContainer.getMCPOAuthProvider();
+    for (const command of createMCPOAuthCommands(oauthProvider)) {
+      this.register(command);
+    }
+    
+    // Register MCP Health commands (if MCP client is available)
+    if (this.mcpClient) {
+      const healthMonitor = serviceContainer.getMCPHealthMonitor();
+      for (const command of createMCPHealthCommands(healthMonitor, this.mcpClient)) {
+        this.register(command);
+      }
+    }
   }
   
   /**
@@ -177,6 +202,32 @@ export class CommandRegistry {
     const themeCommandsToRegister = createThemeCommands(setTheme);
     for (const command of themeCommandsToRegister) {
       this.register(command);
+    }
+  }
+
+  /**
+   * Set the MCP client
+   * This allows MCP-related commands to access the client
+   */
+  setMCPClient(mcpClient: any): void {
+    this.mcpClient = mcpClient;
+    
+    // Re-register MCP health commands if service container is available
+    if (this.serviceContainer) {
+      // Remove existing MCP health commands
+      this.commands.delete('mcp health');
+      this.commands.delete('mcp health check');
+      this.commands.delete('mcp restart');
+      this.commands.delete('mcp health start');
+      this.commands.delete('mcp health stop');
+      this.commands.delete('mcp health status');
+      this.commands.delete('mcp health help');
+      
+      // Register new commands with MCP client
+      const healthMonitor = this.serviceContainer.getMCPHealthMonitor();
+      for (const command of createMCPHealthCommands(healthMonitor, mcpClient)) {
+        this.register(command);
+      }
     }
   }
 

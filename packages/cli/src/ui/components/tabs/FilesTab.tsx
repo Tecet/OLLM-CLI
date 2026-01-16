@@ -55,6 +55,7 @@ export function FilesTab({
   onGitAction,
 }: FilesTabProps) {
   const { state: uiState } = useUI();
+  const theme = uiState.theme as any;
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
 
   const handleAddFile = () => {
@@ -126,7 +127,7 @@ export function FilesTab({
                       </Text>
                     )}
                   </Box>
-                  <Text color={uiState.theme.status.error}>
+                  <Text color={theme.status.error}>
                     [×] Remove
                   </Text>
                 </Box>
@@ -226,7 +227,7 @@ export function FilesTab({
           paddingX={1}
           flexShrink={0}
         >
-          <Text color={uiState.theme.text.secondary}>
+          <Text color={theme.text.secondary}>
             Not in a git repository
           </Text>
         </Box>
