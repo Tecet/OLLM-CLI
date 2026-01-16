@@ -11,7 +11,6 @@ import {
 } from './types.js';
 import type {
   MemoryGuard,
-  MemoryThresholds,
   VRAMMonitor,
   ContextPool,
   SnapshotManager,
@@ -46,7 +45,7 @@ export class MemoryGuardImpl extends EventEmitter implements MemoryGuard {
   private contextPool: ContextPool;
   private snapshotManager?: SnapshotManager;
   private compressionService?: ICompressionService;
-  private thresholdCallbacks: Map<MemoryLevel, Array<() => void>> = new Map();
+  private thresholdCallbacks: Map<MemoryLevel, Array<() => void | Promise<void>>> = new Map();
   private currentContext?: ConversationContext;
 
   constructor(
@@ -117,7 +116,7 @@ export class MemoryGuardImpl extends EventEmitter implements MemoryGuard {
    * Handle memory threshold events
    * Register callbacks for different memory levels
    */
-  onThreshold(level: MemoryLevel, callback: () => void): void {
+  onThreshold(level: MemoryLevel, callback: () => void | Promise<void>): void {
     const callbacks = this.thresholdCallbacks.get(level);
     if (callbacks) {
       callbacks.push(callback);
@@ -142,14 +141,20 @@ export class MemoryGuardImpl extends EventEmitter implements MemoryGuard {
     // Trigger callbacks for this level
     const callbacks = this.thresholdCallbacks.get(level);
     if (callbacks) {
-      callbacks.forEach(cb => cb());
+      for (const cb of callbacks) {
+        try {
+          await cb();
+        } catch (error) {
+          console.error(`Error in memory guard threshold callback for ${level}:`, error);
+        }
+      }
     }
 
     // Trigger automatic actions based on level
     switch (level) {
       case MemoryLevel.WARNING:
-        // 80-90%: Trigger compression
-        await this.triggerCompression();
+        // 80-90%: Emit event. ContextManager handles compression.
+        this.emit('threshold-reached', { level, percentage: this.contextPool.getUsage().percentage });
         break;
       case MemoryLevel.CRITICAL:
         // 90-95%: Force context reduction
@@ -181,32 +186,7 @@ export class MemoryGuardImpl extends EventEmitter implements MemoryGuard {
     }
   }
 
-  /**
-   * Trigger automatic compression (80% threshold)
-   */
-  private async triggerCompression(): Promise<void> {
-    if (!this.compressionService || !this.currentContext) {
-      return;
-    }
 
-    try {
-      // Trigger compression with default strategy
-      const strategy = {
-        type: 'hybrid' as const,
-        preserveRecent: 4096,
-        summaryMaxTokens: 1024
-      };
-
-      await this.compressionService.compress(
-        this.currentContext.messages,
-        strategy
-      );
-
-      this.emit('compression-triggered', { level: MemoryLevel.WARNING });
-    } catch (error) {
-      console.error('Failed to trigger compression:', error);
-    }
-  }
 
   /**
    * Force context size reduction (90% threshold)
@@ -244,7 +224,11 @@ export class MemoryGuardImpl extends EventEmitter implements MemoryGuard {
           const snapshot = await this.snapshotManager.createSnapshot(
             this.currentContext
           );
-          actions.push(`Created emergency snapshot: ${snapshot.id}`);
+          if (snapshot && snapshot.id) {
+            actions.push(`Created emergency snapshot: ${snapshot.id}`);
+          } else {
+            actions.push('Snapshot created but no ID returned');
+          }
         } catch (error) {
           console.error('Failed to create emergency snapshot:', error);
           actions.push('Failed to create snapshot');
@@ -259,6 +243,9 @@ export class MemoryGuardImpl extends EventEmitter implements MemoryGuard {
         
         this.currentContext.messages = systemPrompt ? [systemPrompt] : [];
         this.currentContext.tokenCount = systemPrompt?.tokenCount || 0;
+        
+        // Synchronize with context pool
+        this.contextPool.setCurrentTokens(this.currentContext.tokenCount);
         
         actions.push('Cleared context to prevent OOM');
       }

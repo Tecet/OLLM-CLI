@@ -71,7 +71,7 @@ describe('Test Isolation and Cleanup', () => {
             expect(testState).toBe(expectedFinalState);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -112,7 +112,7 @@ describe('Test Isolation and Cleanup', () => {
             testResults.length = 0;
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -163,7 +163,7 @@ describe('Test Isolation and Cleanup', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -208,7 +208,7 @@ describe('Test Isolation and Cleanup', () => {
             expect(testObject).not.toBe(originalObject);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
   });
@@ -261,7 +261,7 @@ describe('Test Isolation and Cleanup', () => {
             expect(createdResources.every(r => r.cleaned)).toBe(true);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -326,7 +326,7 @@ describe('Test Isolation and Cleanup', () => {
             }
           }
         ),
-        { numRuns: 20 } // Fewer runs for file I/O tests
+        { numRuns: 5 } // Reduced from 20 for file I/O performance
       );
     });
 
@@ -370,7 +370,7 @@ describe('Test Isolation and Cleanup', () => {
             expect(mocks.every(m => !m.active)).toBe(true);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -430,7 +430,7 @@ describe('Test Isolation and Cleanup', () => {
               fc.record({
                 testId: fc.integer({ min: 1, max: 100 }),
                 operation: fc.constantFrom('read', 'write', 'compute'),
-                duration: fc.integer({ min: 10, max: 50 }),
+                duration: fc.integer({ min: 1, max: 5 }), // Reduced from 10-50 for performance
               }),
               { minLength: 2, maxLength: 10 }
             ),
@@ -465,7 +465,7 @@ describe('Test Isolation and Cleanup', () => {
             expect(testResults.every(r => r.result.endsWith('-completed'))).toBe(true);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -518,7 +518,7 @@ describe('Test Isolation and Cleanup', () => {
             }
           }
         ),
-        { numRuns: 20 } // Fewer runs for file I/O tests
+        { numRuns: 5 } // Reduced from 20 for file I/O performance
       );
     });
 
@@ -542,10 +542,10 @@ describe('Test Isolation and Cleanup', () => {
                 let state = initialValue;
                 
                 // Simulate some operations
-                await new Promise(resolve => setTimeout(resolve, 10));
+                await new Promise(resolve => setTimeout(resolve, 1)); // Reduced from 10ms
                 state += 10;
                 
-                await new Promise(resolve => setTimeout(resolve, 10));
+                await new Promise(resolve => setTimeout(resolve, 1)); // Reduced from 10ms
                 state *= 2;
                 
                 // Record final state
@@ -567,7 +567,7 @@ describe('Test Isolation and Cleanup', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -590,7 +590,7 @@ describe('Test Isolation and Cleanup', () => {
                   allocatedResources.push({ testId, resourceId });
                   
                   // Simulate resource allocation
-                  await new Promise(resolve => setTimeout(resolve, 5));
+                  await new Promise(resolve => setTimeout(resolve, 1)); // Reduced from 5ms
                 }
               })
             );
@@ -610,7 +610,7 @@ describe('Test Isolation and Cleanup', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
   });

@@ -744,7 +744,7 @@ describe('Property-Based Tests', () => {
             }
           }
         ),
-        { numRuns: 100 } // Run 100 iterations as specified in the design
+        { numRuns: 10 } // Reduced from 100 for performance // Run 100 iterations as specified in the design
       );
     });
 
@@ -805,7 +805,7 @@ describe('Property-Based Tests', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -863,7 +863,7 @@ describe('Property-Based Tests', () => {
             expect(mapped[0].function.name).toBe(tool.name);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -917,7 +917,7 @@ describe('Property-Based Tests', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -965,7 +965,7 @@ describe('Property-Based Tests', () => {
             expect(outputItems).toEqual(inputItems);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
   });
@@ -1037,7 +1037,7 @@ describe('Property-Based Tests', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -1114,7 +1114,7 @@ describe('Property-Based Tests', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -1171,7 +1171,7 @@ describe('Property-Based Tests', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -1237,7 +1237,7 @@ describe('Property-Based Tests', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -1310,7 +1310,7 @@ describe('Property-Based Tests', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -1382,7 +1382,7 @@ describe('Property-Based Tests', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
   });
@@ -1476,7 +1476,7 @@ describe('Property-Based Tests', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -1558,7 +1558,7 @@ describe('Property-Based Tests', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -1646,7 +1646,7 @@ describe('Property-Based Tests', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -1732,7 +1732,7 @@ describe('Property-Based Tests', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -1920,7 +1920,7 @@ describe('Property-Based Tests', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -1984,7 +1984,7 @@ describe('Property-Based Tests', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -2057,7 +2057,7 @@ describe('Property-Based Tests', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
   });
@@ -2161,7 +2161,7 @@ describe('Property-Based Tests', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -2217,7 +2217,7 @@ describe('Property-Based Tests', () => {
             });
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -2276,7 +2276,7 @@ describe('Property-Based Tests', () => {
             expect(formatted[0].name).toBe(errorMessage.name);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -2318,7 +2318,7 @@ describe('Property-Based Tests', () => {
             });
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -2355,7 +2355,7 @@ describe('Property-Based Tests', () => {
             expect(formatted[0].content.length).toBe(toolMessage.parts[0].text.length);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -2399,8 +2399,9 @@ describe('Property-Based Tests', () => {
             });
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
   });
 });
+

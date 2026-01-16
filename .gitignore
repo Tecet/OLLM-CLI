@@ -35,3 +35,6 @@ test-session-*/
 
 # Development documentation and debugging
 .dev/
+
+# OLLM runtime data and memory
+.ollm/

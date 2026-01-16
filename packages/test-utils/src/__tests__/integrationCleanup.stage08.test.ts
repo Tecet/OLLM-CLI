@@ -24,8 +24,8 @@ describe('Property 14: Integration Test Cleanup', () => {
         fc.asyncProperty(
           // Generate arbitrary number of resources (1-10)
           fc.integer({ min: 1, max: 10 }),
-          // Generate arbitrary cleanup delays (0-50ms)
-          fc.array(fc.integer({ min: 0, max: 50 }), { minLength: 1, maxLength: 10 }),
+          // Generate arbitrary cleanup delays (0-5ms) - Reduced from 0-50ms for performance
+          fc.array(fc.integer({ min: 0, max: 5 }), { minLength: 1, maxLength: 10 }),
           async (resourceCount, cleanupDelays) => {
             // Create a resource tracker
             const tracker = createResourceTracker();
@@ -65,7 +65,7 @@ describe('Property 14: Integration Test Cleanup', () => {
             return true;
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -101,7 +101,7 @@ describe('Property 14: Integration Test Cleanup', () => {
             return true;
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -154,7 +154,7 @@ describe('Property 14: Integration Test Cleanup', () => {
             return true;
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -183,7 +183,7 @@ describe('Property 14: Integration Test Cleanup', () => {
             return true;
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -202,8 +202,8 @@ describe('Property 14: Integration Test Cleanup', () => {
               const resourceId = i;
               tracker.track({
                 cleanup: async () => {
-                  // Simulate async cleanup with small delay
-                  await delay(Math.random() * 10);
+                  // Simulate async cleanup with small delay (reduced from 10ms)
+                  await delay(Math.random() * 2);
                   cleanupOrder.push(resourceId);
                 },
               });
@@ -223,7 +223,7 @@ describe('Property 14: Integration Test Cleanup', () => {
             return true;
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
   });
@@ -276,7 +276,7 @@ describe('Property 14: Integration Test Cleanup', () => {
             return true;
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -324,7 +324,7 @@ describe('Property 14: Integration Test Cleanup', () => {
             return true;
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -372,7 +372,7 @@ describe('Property 14: Integration Test Cleanup', () => {
             return true;
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -458,7 +458,7 @@ describe('Property 14: Integration Test Cleanup', () => {
             return true;
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
   });

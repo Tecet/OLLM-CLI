@@ -401,7 +401,7 @@ export interface MemoryGuard {
   /** Get safe allocation limit */
   getSafeLimit(): number;
   /** Handle memory threshold events */
-  onThreshold(level: MemoryLevel, callback: () => void): void;
+  onThreshold(level: MemoryLevel, callback: () => void | Promise<void>): void;
   /** Execute emergency actions */
   executeEmergencyActions(): Promise<void>;
   /** Set services for memory guard */
@@ -412,8 +412,10 @@ export interface MemoryGuard {
   checkMemoryLevel(): MemoryLevel;
   /** Update configuration */
   updateConfig(config: Partial<MemoryGuardConfig>): void;
+  /** Check current memory level and trigger appropriate actions */
+  checkMemoryLevelAndAct(): Promise<void>;
   /** Register event listener */
-  on(event: string, callback: (data: any) => void): void;
+  on(event: string, callback: (data: unknown) => void): void;
 }
 
 // ============================================================================
@@ -565,12 +567,14 @@ export interface ContextManager {
   setActiveSkills(skills: string[]): void;
   /** Set system prompt */
   setSystemPrompt(prompt: string): void;
+  /** Get system prompt */
+  getSystemPrompt(): string;
   /** Register event listener */
-  on(event: string, callback: (data: any) => void): void;
+  on(event: string, callback: (data: unknown) => void): void;
   /** Unregister event listener */
-  off(event: string, callback: (data: any) => void): void;
+  off(event: string, callback: (data: unknown) => void): void;
   /** Emit event */
-  emit(event: string, data?: any): boolean;
+  emit(event: string, data?: unknown): boolean;
   /** Get current messages in context */
   getMessages(): Promise<Message[]>;
 }

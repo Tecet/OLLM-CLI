@@ -365,15 +365,39 @@ export class ContextManagerImpl extends EventEmitter implements ContextManager {
     
     // Check if allocation is safe
     if (!this.memoryGuard.canAllocate(tokenCount)) {
-      // Check memory level and trigger actions
-      await this.memoryGuard.checkMemoryLevel();
+      // Check memory level and trigger actions (compression, resizing, etc.)
+      await this.memoryGuard.checkMemoryLevelAndAct();
       
       // Try again after memory management actions
       if (!this.memoryGuard.canAllocate(tokenCount)) {
-        throw new Error(
-          'Cannot add message: would exceed memory safety limit. ' +
-          'Try compressing context or creating a snapshot.'
-        );
+        // FIFO Fallback: Remove oldest messages (preserving system prompt) until space is available
+        // This is a "hard" truncation used when compression is disabled or insufficient
+        const systemPrompt = this.currentContext.messages.find(m => m.role === 'system');
+        const nonSystemMessages = this.currentContext.messages.filter(m => m.role !== 'system');
+        
+        while (nonSystemMessages.length > 0 && !this.memoryGuard.canAllocate(tokenCount)) {
+          nonSystemMessages.shift();
+          
+          // Reconstruct messages to check allocation again
+          this.currentContext.messages = [
+            ...(systemPrompt ? [systemPrompt] : []),
+            ...nonSystemMessages
+          ];
+          
+          // Update tokens for canAllocate check
+          this.currentContext.tokenCount = this.tokenCounter.countConversationTokens(
+            this.currentContext.messages
+          );
+          this.contextPool.setCurrentTokens(this.currentContext.tokenCount);
+        }
+
+        // Final check after emergency truncation
+        if (!this.memoryGuard.canAllocate(tokenCount)) {
+          throw new Error(
+            'Cannot add message: would exceed memory safety limit even after truncation. ' +
+            'The message itself might be too large for the current context window.'
+          );
+        }
       }
     }
     
@@ -390,7 +414,7 @@ export class ContextManagerImpl extends EventEmitter implements ContextManager {
       this.currentContext.maxTokens
     );
     
-    // Check if compression is needed
+    // Check if compression is needed (proactive check)
     if (this.config.compression.enabled) {
       const usage = this.getUsage();
       if (usage.percentage >= this.config.compression.threshold * 100) {
@@ -635,6 +659,14 @@ export class ContextManagerImpl extends EventEmitter implements ContextManager {
     
     this.emit('system-prompt-updated', { content });
   }
+
+  /**
+   * Get current system prompt
+   */
+  getSystemPrompt(): string {
+    return this.currentContext.systemPrompt.content;
+  }
+
   /**
    * Get current messages in context
    */

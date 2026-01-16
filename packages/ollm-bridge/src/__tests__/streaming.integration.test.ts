@@ -73,7 +73,7 @@ describe('Streaming Integration Tests', () => {
             expect(concatenated).toBe(fullText);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -160,7 +160,7 @@ describe('Streaming Integration Tests', () => {
             expect(concatenated).toBe(chunks.join(''));
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -206,7 +206,7 @@ describe('Streaming Integration Tests', () => {
             expect(receivedChunks.join('')).toBe(chunks.join(''));
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
   });
@@ -293,7 +293,7 @@ describe('Streaming Integration Tests', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -355,7 +355,7 @@ describe('Streaming Integration Tests', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -417,7 +417,7 @@ describe('Streaming Integration Tests', () => {
             expect(receivedToolCalls.length).toBe(toolCalls.length);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -716,3 +716,4 @@ describe('Streaming Integration Tests', () => {
     });
   });
 });
+

@@ -19,13 +19,13 @@ export class MemoryDumpTool implements DeclarativeTool<MemoryDumpParams, ToolRes
   displayName = 'Write Memory Dump';
   schema: ToolSchema = {
     name: 'write_memory_dump',
-    description: 'Writes a "brain dump" of your current thoughts, confusion, or plan to a file. Use this when you are stuck, confused, or need to rethink your approach without consuming context window.',
+    description: 'Writes a "brain dump" of your internal reasoning, current thoughts, or complex plans to a file. Use this for your own memory management when you need to offload context or rethink a problem. DO NOT use this to provide final responses requested by the user, as the user will only see the file location, not the content.',
     parameters: {
       type: 'object',
       properties: {
         content: {
           type: 'string',
-          description: 'The thought process, analysis, or plan to write.',
+          description: 'The internal thought process, analysis, or detailed plan to offload from context.',
         },
         filename: {
           type: 'string',
@@ -73,7 +73,8 @@ export class MemoryDumpInvocation implements ToolInvocation<MemoryDumpParams, To
 
       await fs.writeFile(filePath, this.params.content, 'utf8');
 
-      const msg = `Memory dump written to ${filePath}. Use 'read_file' if you need to recall this later.`;
+      const absolutePath = path.resolve(filePath);
+      const msg = `Memory dump written to ${absolutePath}. Use 'read_file' if you need to recall this later.`;
       return {
         llmContent: msg,
         returnDisplay: msg,

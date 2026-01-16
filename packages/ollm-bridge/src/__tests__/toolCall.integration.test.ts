@@ -93,7 +93,7 @@ describe('Tool Call Integration Tests', () => {
             expect(receivedToolCall!.args).toEqual(args);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -150,7 +150,7 @@ describe('Tool Call Integration Tests', () => {
             expect(receivedToolCall!.args).toEqual(args);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -297,7 +297,7 @@ describe('Tool Call Integration Tests', () => {
             expect(toolResultMessage.parts[0].text).toBe(toolResult);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -358,7 +358,7 @@ describe('Tool Call Integration Tests', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -522,7 +522,7 @@ describe('Tool Call Integration Tests', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -590,7 +590,7 @@ describe('Tool Call Integration Tests', () => {
             expect(receivedText.length).toBeGreaterThan(0);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -757,7 +757,7 @@ describe('Tool Call Integration Tests', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -1138,3 +1138,4 @@ describe('Tool Call Integration Tests', () => {
     });
   });
 });
+

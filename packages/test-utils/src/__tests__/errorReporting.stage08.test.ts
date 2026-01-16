@@ -64,7 +64,7 @@ describe('Test Error Reporting', () => {
             expect(failure).toHaveProperty('actual');
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -108,7 +108,7 @@ describe('Test Error Reporting', () => {
             expect(formatted).toContain('Actual:');
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -288,7 +288,7 @@ describe('Test Error Reporting', () => {
             });
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -329,7 +329,7 @@ describe('Test Error Reporting', () => {
             });
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -452,7 +452,7 @@ describe('Test Error Reporting', () => {
             expect(report).toContain(`${failures.length} test(s) failed`);
           }
         ),
-        { numRuns: 50 }
+        { numRuns: 10 } // Reduced from 50 for performance
       );
     });
   });

@@ -175,7 +175,12 @@ ollm -p "List the top 3 JavaScript frameworks" --output json
 ### Core Documentation
 - **[Configuration Guide](docs/configuration.md)** - Complete settings reference
 - **[Troubleshooting](docs/troubleshooting.md)** - Common issues and solutions
-- **[Architecture](docs/architecture.md)** - System design and components
+
+### Feature Documentation
+- **[MCP Integration](docs/MCP/)** - Model Context Protocol integration
+- **[Context Management](docs/Context/)** - Intelligent context and VRAM management
+- **[Model Management](docs/Models/)** - Model routing, profiles, and templates
+- **[Model Compatibility](docs/Models/model-compatibility.md)** - Tested models and compatibility matrix
 
 ### Development Documentation
 - **[Development Setup](#development-setup)** - Contributing guide
@@ -183,9 +188,10 @@ ollm -p "List the top 3 JavaScript frameworks" --output json
 - **[Tech Stack](docs/tech.md)** - Dependencies and tools
 
 ### Roadmap & Future Features
-- **[Roadmap](docs/ROADMAP.md)** - Detailed development roadmap
-- **[Visual Roadmap](docs/ROADMAP_VISUAL.md)** - Timeline and dependencies
-- **[Future Features](docs/FUTURE_FEATURES.md)** - Quick reference for planned features
+- **[Development Roadmap](docs/Development-Roadmap/)** - Complete roadmap documentation
+- **[Roadmap Overview](docs/Development-Roadmap/roadmap.md)** - Completed and planned features
+- **[Future Features](docs/Development-Roadmap/future-features.md)** - Quick reference for planned features
+- **[Visual Roadmap](docs/Development-Roadmap/road_map_visual.md)** - Timeline and dependencies
 
 ---
 
@@ -480,7 +486,7 @@ All future features are clearly marked as **"Planned for future development"** i
 - **📁 File Upload System** - Share images, code, and documents with the LLM through multiple upload methods
 - **🧠 Intelligence Layer** - Semantic codebase search, structured output, sandboxed code execution, and vision support
 
-**📋 [View Full Roadmap](docs/ROADMAP.md)** - Detailed specifications, timelines, and contribution opportunities for each planned stage.
+**📋 [View Full Roadmap](docs/Development-Roadmap/)** - Detailed specifications, timelines, and contribution opportunities for each planned stage.
 
 ---
 

@@ -284,8 +284,8 @@ export const mockTheme = {
     highlight: '#2a2d2e',
   },
   border: {
-    default: '#3e3e42',
-    active: '#007acc',
+    primary: '#3e3e42',
+    secondary: '#007acc',
   },
   status: {
     success: '#4ec9b0',

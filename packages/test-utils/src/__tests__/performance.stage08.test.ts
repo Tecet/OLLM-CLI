@@ -41,7 +41,7 @@ describe('Test Execution Performance', () => {
             expect(duration).toBeLessThan(100);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 

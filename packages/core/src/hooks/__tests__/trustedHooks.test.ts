@@ -349,7 +349,7 @@ describe('TrustedHooks', () => {
       });
     });
   });
-});
+
 
 
   describe('Approval Callback', () => {

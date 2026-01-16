@@ -16,6 +16,12 @@ import { MemoryService } from './memoryService.js';
 import { TemplateService } from './templateService.js';
 import { ComparisonService } from './comparisonService.js';
 import { ProjectProfileService } from './projectProfileService.js';
+import { HookService } from './hookService.js';
+import type { ApprovalCallback } from '../hooks/trustedHooks.js';
+import { ExtensionManager } from '../extensions/extensionManager.js';
+import { ExtensionRegistry } from '../extensions/extensionRegistry.js';
+import { MCPOAuthProvider, KeytarTokenStorage, FileTokenStorage } from '../mcp/mcpOAuth.js';
+import { MCPHealthMonitor } from '../mcp/mcpHealthMonitor.js';
 
 /**
  * Configuration for model management
@@ -51,6 +57,36 @@ export interface ProjectConfig {
 }
 
 /**
+ * Configuration for hook service
+ */
+export interface HookConfig {
+  enabled?: boolean;
+  trustWorkspace?: boolean;
+  timeout?: number;
+  approvalCallback?: ApprovalCallback;
+}
+
+/**
+ * Configuration for extension system
+ */
+export interface ExtensionConfig {
+  enabled?: boolean;
+  userExtensionsDir?: string;
+  workspaceExtensionsDir?: string;
+  registryUrl?: string;
+}
+
+/**
+ * Configuration for MCP health monitoring
+ */
+export interface MCPHealthConfig {
+  enabled?: boolean;
+  checkInterval?: number;
+  maxRestartAttempts?: number;
+  autoRestart?: boolean;
+}
+
+/**
  * Core configuration interface
  * This is a subset of the full CLI config that the service container needs
  */
@@ -58,6 +94,9 @@ export interface CoreConfig {
   model?: ModelManagementConfig;
   memory?: MemoryConfig;
   project?: ProjectConfig;
+  hooks?: HookConfig;
+  extensions?: ExtensionConfig;
+  mcpHealth?: MCPHealthConfig;
 }
 
 /**
@@ -93,6 +132,11 @@ export class ServiceContainer {
   private _templateService?: TemplateService;
   private _comparisonService?: ComparisonService;
   private _projectProfileService?: ProjectProfileService;
+  private _hookService?: HookService;
+  private _extensionManager?: ExtensionManager;
+  private _extensionRegistry?: ExtensionRegistry;
+  private _mcpOAuthProvider?: MCPOAuthProvider;
+  private _mcpHealthMonitor?: MCPHealthMonitor;
   
   constructor(config: ServiceContainerConfig) {
     this.provider = config.provider;
@@ -214,6 +258,105 @@ export class ServiceContainer {
   }
   
   /**
+   * Get the Hook Service
+   */
+  getHookService(): HookService {
+    if (!this._hookService) {
+      const hookConfig = this.config.hooks || {
+        enabled: true,
+        trustWorkspace: false,
+        timeout: 30000,
+      };
+      
+      this._hookService = new HookService({
+        trustWorkspace: hookConfig.trustWorkspace,
+        timeout: hookConfig.timeout,
+        approvalCallback: hookConfig.approvalCallback,
+      });
+    }
+    return this._hookService;
+  }
+  
+  /**
+   * Get the Extension Manager
+   */
+  getExtensionManager(): ExtensionManager {
+    if (!this._extensionManager) {
+      const extensionConfig = this.config.extensions || {
+        enabled: true,
+      };
+      
+      const userExtensionsDir = extensionConfig.userExtensionsDir || `${this.userHome}/.ollm/extensions`;
+      const workspaceExtensionsDir = this.workspacePath 
+        ? (extensionConfig.workspaceExtensionsDir || `${this.workspacePath}/.ollm/extensions`)
+        : undefined;
+      
+      this._extensionManager = new ExtensionManager([
+        userExtensionsDir,
+        ...(workspaceExtensionsDir ? [workspaceExtensionsDir] : []),
+      ]);
+    }
+    return this._extensionManager;
+  }
+  
+  /**
+   * Get the Extension Registry
+   */
+  getExtensionRegistry(): ExtensionRegistry {
+    if (!this._extensionRegistry) {
+      const extensionConfig = this.config.extensions || {};
+      
+      this._extensionRegistry = new ExtensionRegistry({
+        registryUrl: extensionConfig.registryUrl,
+        installDir: extensionConfig.userExtensionsDir || `${this.userHome}/.ollm/extensions`,
+        verifyChecksums: true,
+      });
+    }
+    return this._extensionRegistry;
+  }
+  
+  /**
+   * Get the MCP OAuth Provider
+   */
+  getMCPOAuthProvider(): MCPOAuthProvider {
+    if (!this._mcpOAuthProvider) {
+      // Try keytar storage first, fall back to file storage
+      let tokenStorage;
+      try {
+        tokenStorage = new KeytarTokenStorage();
+      } catch {
+        // Keytar not available, use file storage
+        const tokenPath = `${this.userHome}/.ollm/oauth-tokens.json`;
+        tokenStorage = new FileTokenStorage(tokenPath);
+      }
+      
+      this._mcpOAuthProvider = new MCPOAuthProvider(tokenStorage);
+    }
+    return this._mcpOAuthProvider;
+  }
+  
+  /**
+   * Get the MCP Health Monitor
+   */
+  getMCPHealthMonitor(): MCPHealthMonitor {
+    if (!this._mcpHealthMonitor) {
+      const healthConfig = this.config.mcpHealth || {
+        enabled: true,
+        checkInterval: 30000,
+        maxRestartAttempts: 3,
+        autoRestart: true,
+      };
+      
+      this._mcpHealthMonitor = new MCPHealthMonitor({
+        checkInterval: healthConfig.checkInterval,
+        maxRestartAttempts: healthConfig.maxRestartAttempts,
+        autoRestart: healthConfig.autoRestart,
+      });
+    }
+    return this._mcpHealthMonitor;
+  }
+  
+  /**
    * Initialize all services
    * This can be called to eagerly initialize services instead of lazy loading
    */
@@ -222,6 +365,8 @@ export class ServiceContainer {
     await Promise.all([
       this.getMemoryService().load(),
       this.getTemplateService().loadTemplates(),
+      this.getHookService().initialize(),
+      this.getExtensionManager().loadExtensions(),
     ]);
     
     // Initialize other services (they don't need async setup)
@@ -229,6 +374,7 @@ export class ServiceContainer {
     this.getModelRouter();
     this.getComparisonService();
     this.getProjectProfileService();
+    this.getExtensionRegistry();
   }
   
   /**
@@ -238,6 +384,16 @@ export class ServiceContainer {
     // Save memory service state
     if (this._memoryService) {
       await this._memoryService.save();
+    }
+    
+    // Shutdown hook service
+    if (this._hookService) {
+      await this._hookService.shutdown();
+    }
+    
+    // Stop MCP health monitoring
+    if (this._mcpHealthMonitor) {
+      this._mcpHealthMonitor.stop();
     }
     
     // Cancel any ongoing comparisons
@@ -252,6 +408,11 @@ export class ServiceContainer {
     this._templateService = undefined;
     this._comparisonService = undefined;
     this._projectProfileService = undefined;
+    this._hookService = undefined;
+    this._extensionManager = undefined;
+    this._extensionRegistry = undefined;
+    this._mcpOAuthProvider = undefined;
+    this._mcpHealthMonitor = undefined;
   }
   
   /**

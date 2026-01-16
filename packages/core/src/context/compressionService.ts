@@ -31,6 +31,11 @@ export interface ProviderAdapter {
 }
 
 /**
+ * Default tool call overhead in tokens
+ */
+const TOOL_CALL_OVERHEAD = 50;
+
+/**
  * Compression Service Implementation
  * 
  * Implements three compression strategies:
@@ -589,7 +594,14 @@ Summary:`;
   private countMessageTokens(message: Message): number {
     const contentTokens = Math.ceil(message.content.length / 4);
     // Add overhead for role and structure
-    return contentTokens + 10;
+    let total = contentTokens + 10;
+    
+    // Add tool call overhead if present
+    if (message.metadata?.toolCalls) {
+      total += message.metadata.toolCalls.length * TOOL_CALL_OVERHEAD;
+    }
+    
+    return total;
   }
 
   /**

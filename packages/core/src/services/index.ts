@@ -98,3 +98,21 @@ export {
   type BuiltInProfile,
   type ProjectProfileServiceConfig,
 } from './projectProfileService.js';
+
+// Export hook service
+export {
+  HookService,
+  type HookServiceConfig,
+} from './hookService.js';
+
+// Export service container
+export {
+  ServiceContainer,
+  createServiceContainer,
+  type ServiceContainerConfig,
+  type CoreConfig,
+  type ModelManagementConfig,
+  type MemoryConfig,
+  type ProjectConfig,
+  type HookConfig,
+} from './serviceContainer.js';

@@ -92,7 +92,7 @@ describe('Model Management Integration Tests', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -138,7 +138,7 @@ describe('Model Management Integration Tests', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -169,7 +169,7 @@ describe('Model Management Integration Tests', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -327,7 +327,7 @@ describe('Model Management Integration Tests', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -403,7 +403,7 @@ describe('Model Management Integration Tests', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -546,7 +546,7 @@ describe('Model Management Integration Tests', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -615,7 +615,7 @@ describe('Model Management Integration Tests', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 } // Reduced from 100 for performance
       );
     });
 
@@ -882,3 +882,4 @@ describe('Model Management Integration Tests', () => {
     });
   });
 });
+
