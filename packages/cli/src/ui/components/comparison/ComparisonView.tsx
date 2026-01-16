@@ -1,6 +1,19 @@
 import React, { useState } from 'react';
 import { Box, Text } from 'ink';
-import type { ComparisonResult, ModelResult } from '@ollm/ollm-cli-core/services/comparisonService.js';
+export interface ModelResult {
+  model: string;
+  response: string;
+  tokenCount: number;
+  latencyMs: number;
+  tokensPerSecond: number;
+  error?: string;
+}
+
+export interface ComparisonResult {
+  prompt: string;
+  timestamp: Date;
+  results: ModelResult[];
+}
 
 export interface ComparisonViewProps {
   result: ComparisonResult;
@@ -34,7 +47,7 @@ function formatTokensPerSecond(tps: number): string {
 export function ComparisonView({ result, onSelectPreferred, theme }: ComparisonViewProps) {
   const [selectedModel, setSelectedModel] = useState<string | null>(null);
 
-  const handleSelect = (model: string) => {
+  const _handleSelect = (model: string) => {
     setSelectedModel(model);
     if (onSelectPreferred) {
       onSelectPreferred(model);

@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { render, stripAnsi } from '../../../../test/ink-testing.js';
+import { render } from '../../../../test/ink-testing.js';
 import React from 'react';
 import fc from 'fast-check';
 import { ToolCall } from '../ToolCall.js';
-import type { ToolCall } from '../../../../features/context/ChatContext.js';
+import type { ToolCall as ToolCallType } from '../../../../features/context/ChatContext.js';
 
 /**
  * Property 20: Tool Call Display Completeness
@@ -60,7 +60,6 @@ describe('Property 20: Tool Call Display Completeness', () => {
           expect(output).toContain(toolCall.status);
 
           // Verify arguments are displayed (as JSON)
-          const argsString = JSON.stringify(toolCall.arguments);
           // Check if at least part of the arguments are visible
           expect(output).toBeTruthy();
 

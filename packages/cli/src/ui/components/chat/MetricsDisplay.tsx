@@ -7,8 +7,19 @@
 
 import React from 'react';
 import { Box, Text } from 'ink';
-import type { InferenceMetrics } from '../../../../../core/src/types/metrics.js';
 import type { Theme } from '../../../config/uiSettings.js';
+
+export interface InferenceMetrics {
+  promptTokens: number;
+  completionTokens: number;
+  totalDuration: number;
+  promptDuration: number;
+  evalDuration: number;
+  tokensPerSecond: number;
+  timeToFirstToken: number;
+  totalSeconds: number;
+  loadDuration?: number;
+}
 
 export interface MetricsDisplayProps {
   metrics: InferenceMetrics;

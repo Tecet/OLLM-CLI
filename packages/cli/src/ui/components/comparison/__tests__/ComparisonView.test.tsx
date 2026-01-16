@@ -1,21 +1,54 @@
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
-import { render, stripAnsi } from '../../../../test/ink-testing.js';
+import { render } from '../../../../test/ink-testing.js';
 import { ComparisonView } from '../ComparisonView.js';
-import type { ComparisonResult } from '@ollm/ollm-cli-core/services/comparisonService.js';
+
+interface ComparisonResult {
+  prompt: string;
+  timestamp: Date;
+  results: {
+    model: string;
+    response: string;
+    tokenCount: number;
+    latencyMs: number;
+    tokensPerSecond: number;
+    error?: string;
+  }[];
+}
 
 describe('ComparisonView', () => {
   const defaultTheme = {
+    name: 'test-theme',
+    bg: {
+      primary: '#1e1e1e',
+      secondary: '#252526',
+      tertiary: '#2d2d30',
+    },
     text: {
       primary: '#d4d4d4',
       secondary: '#858585',
       accent: '#4ec9b0',
+    },
+    role: {
+      user: '#569cd6',
+      assistant: '#4ec9b0',
+      system: '#858585',
+      tool: '#dcdcaa',
     },
     status: {
       success: '#4ec9b0',
       warning: '#ce9178',
       error: '#f48771',
       info: '#569cd6',
+    },
+    border: {
+      primary: '#858585',
+      secondary: '#555555',
+      active: 'green',
+    },
+    diff: {
+      added: '#4ec9b0',
+      removed: '#f48771',
     },
   };
 
@@ -46,7 +79,7 @@ describe('ComparisonView', () => {
         <ComparisonView result={mockResult} theme={defaultTheme} />
       );
 
-      const output = lastFrame();
+      const output = lastFrame() || '';
 
       // Should show header
       expect(output).toContain('Model Comparison Results');
@@ -69,7 +102,7 @@ describe('ComparisonView', () => {
         <ComparisonView result={mockResult} theme={defaultTheme} />
       );
 
-      const output = lastFrame();
+      const output = lastFrame() || '';
 
       // Should show latency
       expect(output).toContain('Latency:');
@@ -92,7 +125,7 @@ describe('ComparisonView', () => {
         <ComparisonView result={mockResult} theme={defaultTheme} />
       );
 
-      const output = lastFrame();
+      const output = lastFrame() || '';
 
       expect(output).toContain('Compared at:');
       // Timestamp will be locale-specific, just check it's present
@@ -119,7 +152,7 @@ describe('ComparisonView', () => {
         <ComparisonView result={resultWithError} theme={defaultTheme} />
       );
 
-      const output = lastFrame();
+      const output = lastFrame() || '';
 
       // Should show error
       expect(output).toContain('Error:');
@@ -149,7 +182,7 @@ describe('ComparisonView', () => {
         <ComparisonView result={resultWithError} theme={defaultTheme} />
       );
 
-      const output = lastFrame();
+      const output = lastFrame() || '';
 
       // Should not show performance metrics for failed model
       const lines = output.split('\n');
@@ -177,7 +210,7 @@ describe('ComparisonView', () => {
         />
       );
 
-      const output = lastFrame();
+      const output = lastFrame() || '';
 
       // Should show selection instructions
       expect(output).toContain('Press');
@@ -189,7 +222,7 @@ describe('ComparisonView', () => {
         <ComparisonView result={mockResult} theme={defaultTheme} />
       );
 
-      const output = lastFrame();
+      const output = lastFrame() || '';
 
       // Should not show selection instructions
       expect(output).not.toContain('to select');
@@ -220,7 +253,7 @@ describe('ComparisonView', () => {
         />
       );
 
-      const output = lastFrame();
+      const output = lastFrame() || '';
 
       // Should not show selection for failed model
       const lines = output.split('\n');
@@ -251,7 +284,7 @@ describe('ComparisonView', () => {
         <ComparisonView result={result} theme={defaultTheme} />
       );
 
-      const output = lastFrame();
+      const output = lastFrame() || '';
       expect(output).toContain('250ms');
     });
 
@@ -273,7 +306,7 @@ describe('ComparisonView', () => {
         <ComparisonView result={result} theme={defaultTheme} />
       );
 
-      const output = lastFrame();
+      const output = lastFrame() || '';
       expect(output).toContain('2.50s');
     });
 
@@ -295,7 +328,7 @@ describe('ComparisonView', () => {
         <ComparisonView result={result} theme={defaultTheme} />
       );
 
-      const output = lastFrame();
+      const output = lastFrame() || '';
       expect(output).toContain('123.5 tok/s');
     });
   });
@@ -306,7 +339,7 @@ describe('ComparisonView', () => {
         <ComparisonView result={mockResult} theme={defaultTheme} />
       );
 
-      const output = lastFrame();
+      const output = lastFrame() || '';
       const lines = output.split('\n');
 
       // Find lines containing model names
@@ -328,7 +361,7 @@ describe('ComparisonView', () => {
         <ComparisonView result={singleResult} theme={defaultTheme} />
       );
 
-      const output = lastFrame();
+      const output = lastFrame() || '';
 
       // Should render without errors
       expect(output).toContain('llama3.1:8b');

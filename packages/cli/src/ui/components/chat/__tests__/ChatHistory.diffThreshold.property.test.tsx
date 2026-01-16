@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { render, stripAnsi } from '../../../../test/ink-testing.js';
+import { render } from '../../../../test/ink-testing.js';
 import React from 'react';
 import fc from 'fast-check';
 import { ChatHistory } from '../ChatHistory.js';
@@ -26,7 +26,7 @@ describe('Property 22: Diff Size Threshold', () => {
         // Generate diffs with varying numbers of changed lines
         fc.integer({ min: 1, max: 20 }),
         fc.string({ minLength: 5, maxLength: 20 }),
-        (numLines, fileName) => {
+        (numLines, _fileName) => {
           // Generate a diff with the specified number of lines
           const diffLines: string[] = ['diff --git a/file.txt b/file.txt'];
           
@@ -74,6 +74,7 @@ describe('Property 22: Diff Size Threshold', () => {
             border: {
               primary: '#888888',
               secondary: '#444444',
+              active: 'green',
             },
             diff: {
               added: '#00ff00',

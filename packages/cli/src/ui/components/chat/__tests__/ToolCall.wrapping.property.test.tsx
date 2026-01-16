@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { render, stripAnsi } from '../../../../test/ink-testing.js';
+import { render } from '../../../../test/ink-testing.js';
 import React from 'react';
 import fc from 'fast-check';
 import { ToolCall } from '../ToolCall.js';
-import type { ToolCall } from '../../../../features/context/ChatContext.js';
+import type { ToolCall as ToolCallType } from '../../../../features/context/ChatContext.js';
 
 /**
  * Property 21: Long Argument Wrapping
