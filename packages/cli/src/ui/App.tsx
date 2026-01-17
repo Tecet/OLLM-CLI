@@ -316,7 +316,11 @@ function AppContent({ config }: AppContentProps) {
         id: 'opt-model',
         label: 'Change Model',
         action: () => {
-          const userModels = profileManager.getUserModels();
+          const userModels = profileManager.getUserModels().slice().sort((a, b) => {
+            const aLabel = (a.name || a.id).toLowerCase();
+            const bLabel = (b.name || b.id).toLowerCase();
+            return aLabel.localeCompare(bLabel);
+          });
           if (userModels.length === 0) {
             addMessage({
               role: 'system',

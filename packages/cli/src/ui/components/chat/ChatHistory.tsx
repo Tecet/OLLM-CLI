@@ -21,6 +21,11 @@ export interface ChatHistoryProps {
     maxVisibleLines: number;
   };
   width: number;
+  selectedLineIndex?: number;
+  lines?: ChatLine[];
+  scrollHintTop?: string;
+  scrollHintBottom?: string;
+  toggleHint?: string;
 }
 
 /**
@@ -39,33 +44,52 @@ export function ChatHistory({
   metricsConfig,
   reasoningConfig,
   width,
+  selectedLineIndex,
+  lines: providedLines,
+  scrollHintTop,
+  scrollHintBottom,
+  toggleHint,
 }: ChatHistoryProps) {
   // Use _ to avoid unused var lint if they aren't used in this render cycle
   const _s = streaming;
   const _w = waitingForResponse;
   const _stb = scrollToBottom;
   const resolvedMax = Math.max(1, maxVisibleLines ?? 20);
-  const lines = buildChatLines(messages, theme, metricsConfig, reasoningConfig, paddingY, width);
+  const showCursor = typeof selectedLineIndex === 'number';
+  const lines = providedLines ?? buildChatLines(messages, theme, metricsConfig, reasoningConfig, paddingY, width, showCursor ? 2 : 0);
+  const clampedSelectedIndex = typeof selectedLineIndex === 'number'
+    ? Math.min(Math.max(selectedLineIndex, 0), Math.max(0, lines.length - 1))
+    : null;
   const clampedOffset = Math.min(Math.max(scrollOffset, 0), Math.max(0, lines.length - resolvedMax));
-  const endIndex = Math.max(0, lines.length - clampedOffset);
-  const startIndex = Math.max(0, endIndex - resolvedMax);
+  const endIndex = clampedSelectedIndex === null
+    ? Math.max(0, lines.length - clampedOffset)
+    : Math.min(lines.length, Math.max(clampedSelectedIndex + 1, resolvedMax));
+  const startIndex = clampedSelectedIndex === null
+    ? Math.max(0, endIndex - resolvedMax)
+    : Math.max(0, Math.min(clampedSelectedIndex, endIndex - resolvedMax));
   const visibleLines = lines.slice(startIndex, endIndex);
   const canScrollUp = startIndex > 0;
   const canScrollDown = endIndex < lines.length;
+  const topHint = toggleHint || (canScrollUp ? scrollHintTop : undefined);
+  const bottomHint = canScrollDown ? scrollHintBottom : undefined;
 
   return (
     <Box flexDirection="column" paddingX={1} paddingY={paddingY} width="100%">
       {/* Always reserve space for scroll indicator to prevent layout shift */}
       <Box height={1} width="100%" justifyContent="flex-end">
         <Text color={canScrollUp ? theme.text.secondary : undefined}>
-          {canScrollUp ? '↑ Older messages (Ctrl+PageUp)' : ' '}
+          {topHint ? topHint : ' '}
         </Text>
       </Box>
 
       {/* Render visible lines */}
-      {visibleLines.map((line) => (
-        <ChatLineItem key={line.key} line={line} theme={theme} />
-      ))}
+      {visibleLines.map((line, index) => {
+        const absoluteIndex = startIndex + index;
+        const isSelected = clampedSelectedIndex !== null && absoluteIndex === clampedSelectedIndex;
+        return (
+          <ChatLineItem key={line.key} line={line} theme={theme} isSelected={isSelected} showCursor={showCursor} />
+        );
+      })}
 
 
       {/* Status indicator removed - now shown in StaticInputArea above input box */}
@@ -73,7 +97,7 @@ export function ChatHistory({
       {/* Always reserve space for scroll-down indicator */}
       <Box height={1} width="100%" justifyContent="flex-end">
         <Text color={canScrollDown ? theme.text.secondary : undefined}>
-          {canScrollDown ? '↓ Newer messages (Ctrl+PageDown)' : ' '}
+          {bottomHint ? bottomHint : ' '}
         </Text>
       </Box>
     </Box>
@@ -88,16 +112,18 @@ type ChatLinePart = {
   dim?: boolean;
 };
 
-type ChatLine = {
+export type ChatLine = {
   key: string;
   parts: ChatLinePart[];
   indent?: number;
   isEphemeral?: boolean; // New flag for fading messages
   timestamp?: number;    // Creation time for ephemeral check
+  messageId?: string;
+  kind?: 'header' | 'reasoning' | 'tool' | 'content' | 'metrics' | 'spacer';
 };
 
 // New component to handle individual line rendering and state
-const ChatLineItem = ({ line, theme }: { line: ChatLine; theme: Theme }) => {
+const ChatLineItem = ({ line, theme, isSelected, showCursor }: { line: ChatLine; theme: Theme; isSelected: boolean; showCursor: boolean }) => {
   const [visible, setVisible] = React.useState(true);
   const [opacity, setOpacity] = React.useState<'normal' | 'dim' | 'hidden'>('normal');
 
@@ -138,6 +164,9 @@ const ChatLineItem = ({ line, theme }: { line: ChatLine; theme: Theme }) => {
 
   return (
     <Box>
+      {showCursor && (
+        <Text color={isSelected ? theme.text.accent : theme.text.secondary}>{isSelected ? '> ' : '  '}</Text>
+      )}
       {parts.map((part, index) => (
         <Text
           key={`${line.key}-${index}`}
@@ -155,20 +184,21 @@ const ChatLineItem = ({ line, theme }: { line: ChatLine; theme: Theme }) => {
 
 const HEAVY_TOOLS = ['trigger_hot_swap', 'write_memory_dump', 'context_rollover', 'memory_guard_action'];
 
-function buildChatLines(
+export function buildChatLines(
   messages: MessageType[],
   theme: Theme,
   metricsConfig: { enabled: boolean; compactMode: boolean } | undefined,
   reasoningConfig: { enabled: boolean; maxVisibleLines: number } | undefined,
   paddingY: number,
-  width: number
+  width: number,
+  cursorWidth = 0
 ): ChatLine[] {
   const lines: ChatLine[] = [];
   
-  // Account for ChatHistory paddingX={1} (2 cells)
-  const safeWidth = width - 2;
+  // Account for ChatHistory paddingX={1} (2 cells) and cursor prefix
+  const safeWidth = width - 2 - cursorWidth;
 
-  const addLine = (parts: ChatLinePart[], indent = 0, isEphemeral = false) => {
+  const addLine = (parts: ChatLinePart[], indent = 0, isEphemeral = false, messageId?: string, kind?: ChatLine["kind"]) => {
     const availableWidth = Math.max(10, safeWidth - indent);
     
     // Helper to add a final virtual line
@@ -178,7 +208,9 @@ function buildChatLines(
             parts: lineParts,
             indent,
             isEphemeral,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            messageId,
+            kind
         });
     };
 
@@ -224,6 +256,7 @@ function buildChatLines(
   }
 
   messages.forEach((message) => {
+    const isExpanded = message.expanded !== false;
     const roleColor = theme.role[message.role];
     const timestamp = message.timestamp.toLocaleTimeString();
     const showMetrics = metricsConfig?.enabled !== false && message.metrics;
@@ -234,26 +267,30 @@ function buildChatLines(
       addLine([
         { text: 'ℹ️ ', color: theme.text.accent },
         { text: message.content.split('\n')[0].substring(0, 100) + (message.content.length > 100 ? '...' : ''), color: theme.text.secondary, dim: true }
-      ], 0, true);
+      ], 0, true, message.id, 'header');
       return; 
     }
 
     addLine([
       { text: message.role.toUpperCase(), color: roleColor, bold: true },
       { text: ` • ${timestamp}`, color: theme.text.secondary, dim: true },
-    ]);
+    ], 0, false, message.id, 'header');
 
     if (showReasoning && message.reasoning) {
-      addLine([{ text: 'Reasoning:', color: theme.text.secondary, dim: true }], 2);
-      const reasoningLines = message.reasoning.content.split('\n');
-      reasoningLines.forEach((line) => {
-        addLine([{ text: line || ' ', color: theme.text.primary }], 4);
-      });
+      if (isExpanded) {
+        addLine([{ text: 'Reasoning:', color: theme.text.secondary, dim: true }], 2, false, message.id, 'reasoning');
+        const reasoningLines = message.reasoning.content.split('\n');
+        reasoningLines.forEach((line) => {
+          addLine([{ text: line || ' ', color: theme.text.primary }], 4, false, message.id, 'reasoning');
+        });
+      } else {
+        addLine([{ text: 'Reasoning: (collapsed)', color: theme.text.secondary, dim: true }], 2, false, message.id, 'reasoning');
+      }
     }
 
     const contentLines = message.content.split('\n');
     contentLines.forEach((line) => {
-      addLine([{ text: line || ' ', color: theme.text.primary }], 2);
+      addLine([{ text: line || ' ', color: theme.text.primary }], 2, false, message.id, 'content');
     });
 
     if (message.toolCalls && message.toolCalls.length > 0) {
@@ -270,28 +307,38 @@ function buildChatLines(
           ? ` (${(toolCall.duration / 1000).toFixed(2)}s)`
           : '';
 
+        const hasArgs = toolCall.arguments && Object.keys(toolCall.arguments).length > 0;
+        const hasResult = Boolean(toolCall.result);
+        const shouldShowDetails = isExpanded || !isHeavy || toolCall.status === 'error';
+        const collapsedNote = !shouldShowDetails && (hasArgs || hasResult)
+          ? ' (collapsed)'
+          : '';
+
         addLine(
           [
             { text: `🔧 ${toolCall.name}`, color: theme.text.accent, bold: true },
-            { text: ` [${toolCall.status}]${durationText}`, color: statusColor },
+            { text: ` [${toolCall.status}]${durationText}${collapsedNote}`, color: statusColor },
             { text: isHeavy ? ' (Action minimized)' : '', color: theme.text.secondary, italic: true, dim: true }
           ],
-          2
+          2,
+          false,
+          message.id,
+          'tool'
         );
 
-        if (!isHeavy || toolCall.status === 'error') {
-            if (toolCall.arguments && Object.keys(toolCall.arguments).length > 0) {
-                addLine([{ text: 'Arguments:', color: theme.text.secondary, dim: true }], 4);
+        if (shouldShowDetails) {
+            if (hasArgs) {
+                addLine([{ text: 'Arguments:', color: theme.text.secondary, dim: true }], 4, false, message.id, 'tool');
                 const argsString = JSON.stringify(toolCall.arguments, null, 2) || '{}';
                 argsString.split('\n').forEach((line) => {
-                  addLine([{ text: line || ' ', color: theme.text.primary }], 6);
+                  addLine([{ text: line || ' ', color: theme.text.primary }], 6, false, message.id, 'tool');
                 });
             }
 
-            if (toolCall.result) {
-              addLine([{ text: 'Result:', color: theme.text.secondary, dim: true }], 4);
+            if (hasResult) {
+              addLine([{ text: 'Result:', color: theme.text.secondary, dim: true }], 4, false, message.id, 'tool');
               toolCall.result.split('\n').forEach((line) => {
-                addLine([{ text: line || ' ', color: theme.text.primary }], 6);
+                  addLine([{ text: line || ' ', color: theme.text.primary }], 6, false, message.id, 'tool');
               });
             }
         }
@@ -301,10 +348,10 @@ function buildChatLines(
     if (showMetrics && message.metrics) {
       addLine([
         { text: formatMetricsLine(message.metrics, metricsConfig?.compactMode || false), color: theme.text.secondary },
-      ], 2);
+      ], 2, false, message.id, 'metrics');
     }
 
-    addLine([{ text: ' ' }]);
+    addLine([{ text: ' ' }], 0, false, message.id, 'spacer');
   });
 
   for (let i = 0; i < paddingY; i += 1) {

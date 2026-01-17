@@ -162,6 +162,8 @@ export interface ChatContextValue {
   requestManualContextInput: (modelId: string, onComplete: (value: number) => void | Promise<void>) => void;
 
   /** Scroll State */
+  selectedLineIndex: number;
+  setSelectedLineIndex: (index: number) => void;
   scrollOffset: number;
   scrollUp: () => void;
   scrollDown: () => void;
@@ -192,6 +194,7 @@ export function ChatProvider({
   const [streaming, setStreaming] = useState(false);
   const [waitingForResponse, setWaitingForResponse] = useState(false);
   const [currentInput, setCurrentInput] = useState('');
+  const [selectedLineIndex, setSelectedLineIndex] = useState(0);
   
   // Menu State
   const [inputMode, setInputMode] = useState<'text' | 'menu'>('text');
@@ -595,9 +598,14 @@ export function ChatProvider({
         });
     },
     activateMenu: (options, messageId) => {
+        const orderedOptions = [
+            ...options.filter(option => option.id === 'opt-back'),
+            ...options.filter(option => option.id === 'opt-exit'),
+            ...options.filter(option => option.id !== 'opt-back' && option.id !== 'opt-exit'),
+        ];
         setMenuState({
             active: true,
-            options,
+            options: orderedOptions,
             selectedIndex: 0,
             messageId
         });
@@ -609,6 +617,8 @@ export function ChatProvider({
         setInputMode('text');
     },
     // Scroll Logic
+    selectedLineIndex,
+    setSelectedLineIndex,
     scrollOffset: 0, // Placeholder, see below implementation
     scrollUp: () => {},
     scrollDown: () => {},
@@ -629,15 +639,14 @@ export function ChatProvider({
 
   const contextValue: ChatContextValue = {
       ...value,
+      selectedLineIndex,
+      setSelectedLineIndex,
       scrollOffset,
       scrollUp: useCallback(() => {
-          // Limit max scroll is tricky without knowing height. 
-          // We'll allow "some" scrolling and let UI clamp it.
-          // Or we can use an arbitrary high number since UI clamps it.
-          setScrollOffset(prev => prev + 1);
+          setSelectedLineIndex(prev => Math.max(0, prev - 1));
       }, []),
       scrollDown: useCallback(() => {
-          setScrollOffset(prev => Math.max(0, prev - 1));
+          setSelectedLineIndex(prev => prev + 1);
       }, [])
   };
 

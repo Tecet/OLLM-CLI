@@ -56,37 +56,6 @@ export const ChatInputArea = memo(function ChatInputArea({ height, showBorder = 
       } else if (key.escape) {
           setInputMode('text');
           setMenuState({ active: false });
-      } else {
-          // Key Handling for 0-9
-          let targetOption = null;
-          
-          if (input === '0') {
-              // 0 -> Exit (look for opt-exit or hard exit)
-              targetOption = chatState.menuState.options.find(o => o.id === 'opt-exit');
-              if (!targetOption) {
-                  // Fallback: Hard exit
-                  setInputMode('text');
-                  setMenuState({ active: false });
-                  return;
-              }
-          } else if (input === '9') {
-              // 9 -> Back (look for opt-back)
-              targetOption = chatState.menuState.options.find(o => o.id === 'opt-back');
-              
-              if (!targetOption && chatState.menuState.options.length >= 9) {
-                  targetOption = chatState.menuState.options[8];
-              }
-          } else if (input.match(/^[1-8]$/)) {
-              // 1-8 -> Index 0-7
-              const index = parseInt(input) - 1;
-              targetOption = chatState.menuState.options[index];
-          }
-
-          if (targetOption) {
-              setInputMode('text');
-              setMenuState({ active: false });
-              await targetOption.action();
-          }
       }
   }, { isActive: chatState.inputMode === 'menu' || hasFocus }); // Allow hook to run to check hasFocus condition
 
@@ -94,6 +63,25 @@ export const ChatInputArea = memo(function ChatInputArea({ height, showBorder = 
   let borderColor = theme.border.primary;
   if (hasFocus) borderColor = theme.border.active;
   else if (chatState.inputMode === 'menu') borderColor = theme.text.accent;
+
+  const totalMenuOptions = chatState.menuState.options.length;
+  const menuPaddingTop = 1;
+  const menuBorderRows = showBorder ? 2 : 0;
+  const maxVisibleMenuOptions = Math.max(1, height - menuBorderRows - menuPaddingTop);
+  const menuWindowSize = totalMenuOptions === 0 ? 0 : Math.min(maxVisibleMenuOptions, totalMenuOptions);
+  const menuStartIndex = totalMenuOptions === 0
+    ? 0
+    : Math.max(
+        0,
+        Math.min(
+          chatState.menuState.selectedIndex - menuWindowSize + 1,
+          totalMenuOptions - menuWindowSize
+        )
+      );
+  const visibleMenuOptions = chatState.menuState.options.slice(
+    menuStartIndex,
+    menuStartIndex + menuWindowSize
+  );
 
   return (
     <Box 
@@ -113,19 +101,12 @@ export const ChatInputArea = memo(function ChatInputArea({ height, showBorder = 
           theme={theme}
         />
       ) : (
-        <Box flexDirection="column" paddingX={1} paddingTop={1}>
-          {chatState.menuState.options.map((option, index) => {
-            const isSelected = chatState.menuState.selectedIndex === index;
+        <Box flexDirection="column" paddingX={1} paddingTop={menuPaddingTop}>
+          {visibleMenuOptions.map((option, index) => {
+            const absoluteIndex = menuStartIndex + index;
+            const isSelected = chatState.menuState.selectedIndex === absoluteIndex;
             const prefix = isSelected ? '> ' : '  ';
-            
-            let numPrefix = '';
-            if (option.id === 'opt-exit') {
-              numPrefix = '0. ';
-            } else if (option.id === 'opt-back') {
-              numPrefix = '9. ';
-            } else if (index < 8) {
-              numPrefix = `${index + 1}. `;
-            }
+            const numPrefix = `${absoluteIndex + 1}. `;
 
             return (
               <Text key={option.id} color={option.disabled ? 'gray' : (isSelected ? theme.text.accent : theme.text.secondary)}>

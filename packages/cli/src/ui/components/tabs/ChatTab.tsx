@@ -1,9 +1,9 @@
-import React from 'react';
-import { Box, useStdout } from 'ink';
+import React, { useEffect, useMemo, useRef } from 'react';
+import { Box, useInput, useStdout } from 'ink';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { useChat } from '../../../features/context/ChatContext.js';
 import { useUI } from '../../../features/context/UIContext.js';
-import { ChatHistory } from '../chat/ChatHistory.js';
+import { buildChatLines, ChatHistory } from '../chat/ChatHistory.js';
 
 export interface ChatTabProps {
   /** Assigned height from layout */
@@ -32,7 +32,7 @@ export interface ChatTabProps {
  */
 export function ChatTab(props: ChatTabProps) {
   const { metricsConfig, reasoningConfig, columnWidth, height, showBorder = true } = props;
-  const { state: chatState, scrollOffset } = useChat(); 
+  const { state: chatState, scrollOffset, selectedLineIndex, setSelectedLineIndex, updateMessage } = useChat(); 
   const { state: uiState } = useUI();
   const { stdout } = useStdout();
   const { isFocused } = useFocusManager();
@@ -46,9 +46,74 @@ export function ChatTab(props: ChatTabProps) {
   const leftWidth = columnWidth ?? stdout?.columns ?? 80;
   const contentWidth = Math.min(100, Math.max(20, Math.floor(leftWidth * 0.8)));
   const maxVisibleLines = height - 4; // account for border and scroll indicators
+  const lines = useMemo(() => buildChatLines(
+    chatState.messages,
+    uiState.theme,
+    finalMetricsConfig,
+    finalReasoningConfig,
+    0,
+    contentWidth - 2,
+    2
+  ), [chatState.messages, uiState.theme, finalMetricsConfig, finalReasoningConfig, contentWidth]);
+  const lastLineCountRef = useRef(0);
+  const selectedLine = lines[Math.min(Math.max(selectedLineIndex, 0), Math.max(0, lines.length - 1))];
+  const selectedMessage = selectedLine?.messageId
+    ? chatState.messages.find(item => item.id === selectedLine.messageId)
+    : undefined;
+  const selectedHasToggle = Boolean(
+    selectedLine?.kind === 'header' &&
+    selectedMessage &&
+    (selectedMessage.reasoning || selectedMessage.toolCalls?.some(tc => {
+      const hasArgs = tc.arguments && Object.keys(tc.arguments).length > 0;
+      return hasArgs || Boolean(tc.result);
+    }))
+  );
+  const toggleHint = selectedHasToggle ? 'Left/Right to toggle details' : undefined;
+
+  useEffect(() => {
+    const total = lines.length;
+    const lastLineIndex = Math.max(0, total - 1);
+    const previousTotal = lastLineCountRef.current;
+    const wasAtBottom = selectedLineIndex >= Math.max(0, previousTotal - 1);
+
+    if (total === 0) {
+      setSelectedLineIndex(0);
+    } else if (selectedLineIndex > lastLineIndex) {
+      setSelectedLineIndex(lastLineIndex);
+    } else if (total !== previousTotal && wasAtBottom) {
+      setSelectedLineIndex(lastLineIndex);
+    }
+
+    lastLineCountRef.current = total;
+  }, [lines.length, selectedLineIndex, setSelectedLineIndex]);
 
   // Note: Scroll logic is now handled in ChatContext + App.tsx global shortcuts
   // This ensures scrolling works even when InputBox is focused.
+  useInput((_input, key) => {
+    if (!hasFocus) return;
+    if (key.upArrow) {
+      setSelectedLineIndex(prev => Math.max(0, prev - 1));
+      return;
+    }
+    if (key.downArrow) {
+      setSelectedLineIndex(prev => Math.min(Math.max(0, lines.length - 1), prev + 1));
+      return;
+    }
+    if (key.rightArrow || key.leftArrow) {
+      const clampedIndex = Math.min(Math.max(selectedLineIndex, 0), Math.max(0, lines.length - 1));
+      const line = lines[clampedIndex];
+      if (!line?.messageId) return;
+      const message = chatState.messages.find(item => item.id === line.messageId);
+      if (!message) return;
+      const hasExpandableReasoning = Boolean(message.reasoning);
+      const hasExpandableTools = Boolean(message.toolCalls?.some(tc => {
+        const hasArgs = tc.arguments && Object.keys(tc.arguments).length > 0;
+        return hasArgs || Boolean(tc.result);
+      }));
+      if (!hasExpandableReasoning && !hasExpandableTools) return;
+      updateMessage(message.id, { expanded: key.rightArrow ? true : false });
+    }
+  }, { isActive: hasFocus });
 
   return (
     <Box 
@@ -79,6 +144,11 @@ export function ChatTab(props: ChatTabProps) {
             metricsConfig={finalMetricsConfig}
             reasoningConfig={finalReasoningConfig}
             width={contentWidth - 2} // Account for padding
+            selectedLineIndex={selectedLineIndex}
+            lines={lines}
+            scrollHintTop="Keyboard Up to scroll"
+            scrollHintBottom="Keyboard Down to scroll"
+            toggleHint={toggleHint}
           />
         </Box>
     </Box>
