@@ -32,7 +32,7 @@ export function createExtensionCommands(
         '/extensions search mcp --limit 10',
         '/ext search hooks',
       ],
-      async execute(args: string[]): Promise<CommandResult> {
+      handler: async (args: string[]): Promise<CommandResult> => {
         if (args.length === 0) {
           return {
             success: false,
@@ -95,7 +95,7 @@ export function createExtensionCommands(
         '/extensions install mcp-server 1.2.0',
         '/ext install hooks-debugger',
       ],
-      async execute(args: string[]): Promise<CommandResult> {
+      handler: async (args: string[]): Promise<CommandResult> => {
         if (args.length === 0) {
           return {
             success: false,
@@ -148,7 +148,7 @@ export function createExtensionCommands(
         '/extensions list --all',
         '/ext ls',
       ],
-      async execute(args: string[]): Promise<CommandResult> {
+      handler: async (args: string[]): Promise<CommandResult> => {
         const showAll = args.includes('--all');
 
         try {
@@ -213,7 +213,7 @@ export function createExtensionCommands(
         '/extensions enable github-integration',
         '/ext enable mcp-server',
       ],
-      async execute(args: string[]): Promise<CommandResult> {
+      handler: async (args: string[]): Promise<CommandResult> => {
         if (args.length === 0) {
           return {
             success: false,
@@ -249,7 +249,7 @@ export function createExtensionCommands(
         '/extensions disable github-integration',
         '/ext disable mcp-server',
       ],
-      async execute(args: string[]): Promise<CommandResult> {
+      handler: async (args: string[]): Promise<CommandResult> => {
         if (args.length === 0) {
           return {
             success: false,
@@ -285,7 +285,7 @@ export function createExtensionCommands(
         '/extensions info github-integration',
         '/ext info mcp-server',
       ],
-      async execute(args: string[]): Promise<CommandResult> {
+      handler: async (args: string[]): Promise<CommandResult> => {
         if (args.length === 0) {
           return {
             success: false,
@@ -370,7 +370,7 @@ export function createExtensionCommands(
         '/extensions reload',
         '/ext reload',
       ],
-      async execute(): Promise<CommandResult> {
+      handler: async (): Promise<CommandResult> => {
         try {
           await extensionManager.loadExtensions();
 

@@ -249,19 +249,17 @@ export class CommandRegistry {
    * Execute a command
    */
   async execute(input: string): Promise<CommandResult> {
-    const parts = input.trim().split(/\s+/);
-    const commandName = parts[0];
-    const args = parts.slice(1);
-
-    // Resolve alias
-    const resolvedName = this.aliases.get(commandName) || commandName;
+    const parts = input.trim().split(/\s+/).filter(Boolean);
+    const commandName = parts[0] || '';
+    const { name: resolvedName, args } = this.resolveCommand(parts);
     
     // Find command
-    const command = this.commands.get(resolvedName);
+    const command = resolvedName ? this.commands.get(resolvedName) : undefined;
     
     if (!command) {
       // Suggest similar commands
-      const suggestions = this.getSuggestions(commandName);
+      const suggestionInput = this.normalizeSuggestionInput(parts);
+      const suggestions = this.getSuggestions(suggestionInput);
       const suggestionText = suggestions.length > 0
         ? `\n\nDid you mean: ${suggestions.join(', ')}?`
         : '';
@@ -280,6 +278,44 @@ export class CommandRegistry {
         message: `Command error: ${error instanceof Error ? error.message : String(error)}`,
       };
     }
+  }
+
+  private resolveCommand(parts: string[]): { name?: string; args: string[] } {
+    if (parts.length === 0) {
+      return { name: undefined, args: [] };
+    }
+
+    const first = parts[0];
+    const rest = parts.slice(1);
+    const candidates: string[][] = [];
+
+    if (first.startsWith('/')) {
+      candidates.push([first, ...rest]);
+      if (first.length > 1) {
+        candidates.push([first.slice(1), ...rest]);
+      }
+    } else {
+      candidates.push(parts);
+    }
+
+    for (const tokens of candidates) {
+      for (let i = tokens.length; i >= 1; i--) {
+        const candidate = tokens.slice(0, i).join(' ');
+        const resolved = this.aliases.get(candidate) || candidate;
+        if (this.commands.has(resolved)) {
+          return { name: resolved, args: tokens.slice(i) };
+        }
+      }
+    }
+
+    return { name: undefined, args: rest };
+  }
+
+  private normalizeSuggestionInput(parts: string[]): string {
+    if (parts.length === 0) return '';
+    const [first, ...rest] = parts;
+    const normalizedFirst = first.startsWith('/') ? first.slice(1) : first;
+    return [normalizedFirst, ...rest].join(' ').trim();
   }
 
   /**

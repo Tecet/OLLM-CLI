@@ -9,6 +9,7 @@ import type { ToolCall as CoreToolCall, ContextMessage, ProviderMetrics } from '
 
 declare global {
   var __ollmModelSwitchCallback: ((model: string) => void) | undefined;
+  var __ollmOpenModelMenu: (() => void) | undefined;
 }
 
 /**
@@ -157,6 +158,9 @@ export interface ChatContextValue {
   /** Activate menu for a message */
   activateMenu: (options: MenuOption[], messageId?: string) => void;
 
+  /** Request manual context input */
+  requestManualContextInput: (modelId: string, onComplete: (value: number) => void | Promise<void>) => void;
+
   /** Scroll State */
   scrollOffset: number;
   scrollUp: () => void;
@@ -205,6 +209,7 @@ export function ChatProvider({
   const { sendToLLM, cancelRequest, setCurrentModel, provider, currentModel } = useModel();
   
   const assistantMessageIdRef = useRef<string | null>(null);
+  const manualContextRequestRef = useRef<{ modelId: string; onComplete: (value: number) => void | Promise<void> } | null>(null);
   
   useEffect(() => {
     if (serviceContainer) {
@@ -249,6 +254,32 @@ export function ChatProvider({
 
   const sendMessage = useCallback(
     async (content: string) => {
+      if (manualContextRequestRef.current) {
+        const request = manualContextRequestRef.current;
+        const trimmed = content.trim();
+        const normalized = trimmed.toLowerCase();
+        if (normalized === 'cancel' || normalized === 'back' || normalized === 'exit') {
+          manualContextRequestRef.current = null;
+          addMessage({
+            role: 'system',
+            content: 'Manual context entry cancelled.',
+            excludeFromContext: true
+          });
+          return;
+        }
+        const value = Number.parseInt(trimmed, 10);
+        if (!Number.isFinite(value) || value <= 0) {
+          addMessage({
+            role: 'system',
+            content: 'Invalid context size. Enter a positive integer, or type "cancel" to abort.',
+            excludeFromContext: true
+          });
+          return;
+        }
+        manualContextRequestRef.current = null;
+        await request.onComplete(value);
+        return;
+      }
       // Add user message to UI
       addMessage({
         role: 'user',
@@ -571,6 +602,11 @@ export function ChatProvider({
             messageId
         });
         setInputMode('menu');
+    },
+    requestManualContextInput: (modelId, onComplete) => {
+        manualContextRequestRef.current = { modelId, onComplete };
+        setMenuState(prev => ({ ...prev, active: false }));
+        setInputMode('text');
     },
     // Scroll Logic
     scrollOffset: 0, // Placeholder, see below implementation

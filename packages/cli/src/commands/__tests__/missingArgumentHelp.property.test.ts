@@ -61,8 +61,8 @@ describe('Property 34: Missing Argument Help', () => {
           // Note: /git commit has optional args, so excluded
           '/theme use',
           '/theme preview',
-          '/extensions enable',
-          '/extensions disable',
+          '/extensions search',
+          '/extensions install',
         ),
         async (commandWithoutArgs) => {
           const mockServiceContainer = createMockServiceContainer();
@@ -170,18 +170,18 @@ describe('Property 34: Missing Argument Help', () => {
   it('should show specific usage for extension subcommands', async () => {
     await fc.assert(
       fc.asyncProperty(
-        fc.constantFrom('enable', 'disable'),
+        fc.constantFrom('search', 'install'),
         async (subcommand) => {
           const mockServiceContainer = createMockServiceContainer();
           const registry = new CommandRegistry(mockServiceContainer);
           const result = await registry.execute(`/extensions ${subcommand}`);
 
-          // Property: Should fail without extension name
+          // Property: Should fail without required args
           expect(result.success).toBe(false);
 
-          // Property: Should show usage with extension-name placeholder
+          // Property: Should show usage with required placeholders
           expect(result.message).toContain('Usage');
-          expect(result.message).toContain('extension-name');
+          expect(result.message).toMatch(/query|name/i);
         }
       ),
       { numRuns: 100 }
@@ -192,12 +192,10 @@ describe('Property 34: Missing Argument Help', () => {
     await fc.assert(
       fc.asyncProperty(
         fc.constantFrom(
-          '/model',
           '/provider',
           '/session',
           '/git',
           '/review',
-          '/extensions',
           '/theme',
           // Note: /metrics shows current metrics when called without subcommand, so excluded
           '/reasoning',
@@ -227,7 +225,7 @@ describe('Property 34: Missing Argument Help', () => {
           { command: '/provider use', expectedInMessage: '/provider' },
           { command: '/session resume', expectedInMessage: '/session' },
           { command: '/theme use', expectedInMessage: '/theme' },
-          { command: '/extensions enable', expectedInMessage: '/extensions' },
+          { command: '/extensions search', expectedInMessage: '/extensions search' },
         ),
         async (testCase) => {
           const mockServiceContainer = createMockServiceContainer();
@@ -250,12 +248,10 @@ describe('Property 34: Missing Argument Help', () => {
       fc.asyncProperty(
         fc.record({
           command: fc.constantFrom(
-            '/model',
             '/provider',
             '/session',
             '/git',
             '/theme',
-            '/extensions',
           ),
           subcommand: fc.constantFrom('use', 'enable', 'resume', 'pull'),
         }),
@@ -312,7 +308,7 @@ describe('Property 34: Missing Argument Help', () => {
           const registry = new CommandRegistry(mockServiceContainer);
 
           // Test missing subcommand
-          const noSubcommand = await registry.execute('/model');
+          const noSubcommand = await registry.execute('/provider');
           expect(noSubcommand.success).toBe(false);
           expect(noSubcommand.message).toContain('Subcommands');
 

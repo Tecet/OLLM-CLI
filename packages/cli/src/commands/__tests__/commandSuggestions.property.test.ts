@@ -61,7 +61,6 @@ describe('Property 33: Command Suggestions', () => {
           '/exti',       // typo of /exit
           '/metrcs',     // typo of /metrics
           '/reviw',      // typo of /review
-          '/extnsions',  // typo of /extensions
           '/reasonig',   // typo of /reasoning
           '/contxt',     // typo of /context
         ),
@@ -79,7 +78,7 @@ describe('Property 33: Command Suggestions', () => {
           // Property: For typos (not exact matches), should suggest similar commands
           const knownCommands = [
             '/model', '/provider', '/session', '/theme', '/git',
-            '/help', '/exit', '/metrics', '/review', '/extensions',
+            '/help', '/exit', '/metrics', '/review',
             '/reasoning', '/context', '/home', '/new', '/clear',
           ];
 
@@ -206,7 +205,7 @@ describe('Property 33: Command Suggestions', () => {
           // Test that aliases are included in suggestions
           const testCases = [
             { input: '/cls', expectedSuggestion: '/cls' },      // alias for /clear
-            { input: '/ext', expectedSuggestion: '/ext' },      // alias for /extensions
+            { input: 'ext search', expectedSuggestion: 'ext search' }, // alias for extensions search
             { input: '/quit', expectedSuggestion: '/quit' },    // alias for /exit
           ];
 

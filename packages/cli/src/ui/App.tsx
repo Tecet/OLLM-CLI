@@ -81,7 +81,7 @@ function AppContent({ config }: AppContentProps) {
   const leftColumnWidth = Math.max(20, Math.floor(terminalWidth * 0.7));
   const rightColumnWidth = Math.max(20, terminalWidth - leftColumnWidth);
   
-  const { state: chatState, clearChat, cancelGeneration, contextUsage, addMessage, activateMenu, scrollUp, scrollDown } = useChat();
+  const { state: chatState, clearChat, cancelGeneration, contextUsage, addMessage, activateMenu, requestManualContextInput, scrollUp, scrollDown } = useChat();
   
   // Helper object for shortcuts (so we don't need to change all callbacks below)
   const chatActions = { scrollUp, scrollDown };
@@ -141,14 +141,8 @@ function AppContent({ config }: AppContentProps) {
     return createWelcomeMessage(modelName, currentContextSize, profile, effectiveGPUInfo as any);
   }, [contextUsage, currentModel, gpuInfo]);
 
-  // Handle launch screen dismiss
-  const handleDismissLaunch = useCallback(() => {
-    setLaunchScreenVisible(false);
-
-    const welcomeMsg = buildWelcomeMessage();
-    addMessage(welcomeMsg);
-    lastWelcomeModelRef.current = currentModel || null;
-
+  const openModelContextMenu = useCallback((messageId?: string) => {
+    const menuMessageId = messageId;
     // Calculate max safe context for "Auto" logic
     const currentContextSize = contextUsage?.maxTokens || 4096;
     const modelName = currentModel || 'Unknown Model';
@@ -156,46 +150,43 @@ function AppContent({ config }: AppContentProps) {
     const settings = SettingsService.getInstance().getSettings();
     const persistedHW = settings.hardware;
 
-    // Logic: 
+    // Logic:
     // 1. prefer live gpuInfo.vramTotal (Bytes) converted to GB
     // 2. fallback to persistedHW.totalVRAM (GB)
     // 3. fallback to default (0)
-   
     let effectiveTotalVRAM_GB = 0;
-    
+
     if (gpuInfo) {
-        if (typeof gpuInfo.vramTotal === 'number' && gpuInfo.vramTotal > 0) {
-             effectiveTotalVRAM_GB = gpuInfo.vramTotal / (1024 * 1024 * 1024);
-        } else if (typeof gpuInfo.total === 'number' && gpuInfo.total > 0) {
-             effectiveTotalVRAM_GB = gpuInfo.total;
-        }
+      if (typeof gpuInfo.vramTotal === 'number' && gpuInfo.vramTotal > 0) {
+        effectiveTotalVRAM_GB = gpuInfo.vramTotal / (1024 * 1024 * 1024);
+      } else if (typeof gpuInfo.total === 'number' && gpuInfo.total > 0) {
+        effectiveTotalVRAM_GB = gpuInfo.total;
+      }
     }
-    
+
     // Fallback to persisted if live detection failed to find a value
     if (effectiveTotalVRAM_GB === 0) {
-         if (persistedHW?.totalVRAM) {
-            effectiveTotalVRAM_GB = persistedHW.totalVRAM;
-         } else if (persistedHW?.gpuCount) {
-            effectiveTotalVRAM_GB = 24; // Default fallback
-         }
+      if (persistedHW?.totalVRAM) {
+        effectiveTotalVRAM_GB = persistedHW.totalVRAM;
+      } else if (persistedHW?.gpuCount) {
+        effectiveTotalVRAM_GB = 24; // Default fallback
+      }
     }
-
-
 
     const SAFETY_BUFFER_GB = effectiveTotalVRAM_GB > 0 ? Math.max(1.5, effectiveTotalVRAM_GB * 0.1) : 0;
     const availableForContextGB = effectiveTotalVRAM_GB > 0 ? (effectiveTotalVRAM_GB - SAFETY_BUFFER_GB) : 0;
-    
+
     // Calculate max safe context for "Auto" logic (80% rule)
     const targetVRAM = effectiveTotalVRAM_GB * 0.8;
-    
-    let maxSafeSize = 4096; 
+
+    let maxSafeSize = 4096;
     if (profile) {
-        for (const opt of profile.context_profiles) {
-            const vramNum = parseFloat(opt.vram_estimate.replace(' GB', ''));
-            if (!isNaN(vramNum) && vramNum <= targetVRAM) {
-                maxSafeSize = opt.size;
-            }
+      for (const opt of profile.context_profiles) {
+        const vramNum = parseFloat(opt.vram_estimate.replace(' GB', ''));
+        if (!isNaN(vramNum) && vramNum <= targetVRAM) {
+          maxSafeSize = opt.size;
         }
+      }
     }
 
     // Define main menu options
@@ -206,253 +197,336 @@ function AppContent({ config }: AppContentProps) {
         action: () => {
           const optionsToUse = profile ? profile.context_profiles : CONTEXT_OPTIONS;
           const sizeOptions: MenuOption[] = [];
+
+          sizeOptions.push({
+            id: 'size-auto',
+            label: 'Auto (Dynamic based on VRAM)',
+            action: async () => {
+              const targetSize = maxSafeSize;
+              await contextActions.resize(targetSize);
+              SettingsService.getInstance().setContextSize(targetSize); // Persist
+              addMessage({
+                role: 'system',
+                content: `Context size automatically set to **${targetSize}** tokens based on available VRAM (${effectiveTotalVRAM_GB.toFixed(1)} GB).`,
+                excludeFromContext: true
+              });
+              activateMenu(mainMenuOptions, menuMessageId); // Return to main menu
+            }
+          });
           
           sizeOptions.push({
-             id: 'size-auto',
-             label: 'Auto (Dynamic based on VRAM)',
-             action: async () => {
-                const targetSize = maxSafeSize;
-                await contextActions.resize(targetSize);
-                SettingsService.getInstance().setContextSize(targetSize); // Persist
+            id: 'size-manual',
+            label: 'Manual...',
+            action: async () => {
+              addMessage({
+                role: 'system',
+                content: 'Enter a manual context size in tokens. Type "cancel" to abort.',
+                excludeFromContext: true
+              });
+              requestManualContextInput(modelName, async (value) => {
+                profileManager.setManualContext(modelName, value);
+                await contextActions.resize(value);
+                SettingsService.getInstance().setContextSize(value);
                 addMessage({
-                    role: 'system',
-                    content: `Context size automatically set to **${targetSize}** tokens based on available VRAM (${effectiveTotalVRAM_GB.toFixed(1)} GB).`,
-                    excludeFromContext: true
+                  role: 'system',
+                  content: `Manual context size set to **${value}** tokens.`,
+                  excludeFromContext: true
                 });
-                activateMenu(mainMenuOptions, welcomeMsg.id); // Return to main menu
-             }
+                activateMenu(mainMenuOptions, menuMessageId);
+              });
+            }
           });
 
           optionsToUse.forEach(opt => {
-             const val = 'size' in opt ? opt.size : opt.value;
-             let sizeStr = `${val}`;
-             if ('size_label' in opt && opt.size_label) {
-                 sizeStr = opt.size_label;
-             } else {
-                 sizeStr = val >= 1024 ? `${val/1024}k` : `${val}`;
-             }
-             
-             let vramStr = '';
-             if ('vram_estimate' in opt) {
-                 vramStr = ` - ${opt.vram_estimate}`;
-             }
+            const val = 'size' in opt ? opt.size : opt.value;
+            let sizeStr = `${val}`;
+            if ('size_label' in opt && opt.size_label) {
+              sizeStr = opt.size_label;
+            } else {
+              sizeStr = val >= 1024 ? `${val / 1024}k` : `${val}`;
+            }
 
-             let label = `${sizeStr}${vramStr}`;
-             let disabled = false;
-             let vramNum = 0;
-             const vramEst = 'vram_estimate' in opt ? opt.vram_estimate : ('vramEstimate' in opt ? opt.vramEstimate : '');
-             
-             if (vramEst) {
-                 vramNum = parseFloat(vramEst.replace(' GB', ''));
-                 if (!isNaN(vramNum) && vramNum > availableForContextGB) {
-                     disabled = true;
-                 }
-             }
+            let vramStr = '';
+            if ('vram_estimate' in opt) {
+              vramStr = ` - ${opt.vram_estimate}`;
+            }
 
-             if (disabled) {
-                 label += ' (Unsafe - Low VRAM)';
-             } else if (val === maxSafeSize) {
-                 label += ' (Recommended)';
-             }
+            let label = `${sizeStr}${vramStr}`;
+            let disabled = false;
+            let vramNum = 0;
+            const vramEst = 'vram_estimate' in opt ? opt.vram_estimate : ('vramEstimate' in opt ? opt.vramEstimate : '');
 
-             sizeOptions.push({
-                id: `size-${val}`,
-                label: label,
-                value: val,
-                disabled: disabled,
-                action: async () => {
-                  if (disabled) {
-                       addMessage({
-                        role: 'system',
-                        content: `**⚠️ Cannot Select Context Size**\nRequired VRAM (~${vramEst}) exceeds available system resources (~${availableForContextGB.toFixed(1)} GB).`,
-                        excludeFromContext: true
-                      });
-                      return;
-                  }
-                  await contextActions.resize(val);
-                  SettingsService.getInstance().setContextSize(val); // Persist
+            if (vramEst) {
+              vramNum = parseFloat(vramEst.replace(' GB', ''));
+              if (!isNaN(vramNum) && vramNum > availableForContextGB) {
+                disabled = true;
+              }
+            }
+
+            if (disabled) {
+              label += ' (Unsafe - Low VRAM)';
+            } else if (val === maxSafeSize) {
+              label += ' (Recommended)';
+            }
+
+            sizeOptions.push({
+              id: `size-${val}`,
+              label: label,
+              value: val,
+              disabled: disabled,
+              action: async () => {
+                if (disabled) {
                   addMessage({
                     role: 'system',
-                    content: `Context size updated to **${sizeStr}** (${val} tokens).`,
+                    content: `**ƒsÿ‹÷? Cannot Select Context Size**\nRequired VRAM (~${vramEst}) exceeds available system resources (~${availableForContextGB.toFixed(1)} GB).`,
                     excludeFromContext: true
                   });
-                   activateMenu(mainMenuOptions, welcomeMsg.id); // Return to main menu
+                  return;
                 }
-             });
+                await contextActions.resize(val);
+                SettingsService.getInstance().setContextSize(val); // Persist
+                addMessage({
+                  role: 'system',
+                  content: `Context size updated to **${sizeStr}** (${val} tokens).`,
+                  excludeFromContext: true
+                });
+                activateMenu(mainMenuOptions, menuMessageId); // Return to main menu
+              }
+            });
           });
 
           sizeOptions.push({
-              id: 'opt-back',
-              label: 'Back',
-              action: () => {
-                  activateMenu(mainMenuOptions, welcomeMsg.id);
-              }
+            id: 'opt-back',
+            label: 'Back',
+            action: () => {
+              activateMenu(mainMenuOptions, menuMessageId);
+            }
           });
-          
+
           sizeOptions.push({
-             id: 'opt-exit',
-             label: 'Move to Chat',
-             action: async () => {}
+            id: 'opt-exit',
+            label: 'Move to Chat',
+            action: async () => { }
           });
-          
-          activateMenu(sizeOptions, welcomeMsg.id);
+
+          activateMenu(sizeOptions, menuMessageId);
         }
       },
       {
         id: 'opt-model',
         label: 'Change Model',
         action: () => {
-           const profiles = profileManager.getProfiles();
-           const modelOptions: MenuOption[] = profiles.map(p => ({
-               id: `model-${p.id}`,
-               label: p.name,
-               action: async () => {
-                    const infoMsg = `
-**Selected Model:** ${p.name}
-*${p.description}*
-**Abilities:** ${p.abilities.join(', ')}
-${p.tool_support ? '🛠️ **Tool Support:** Enabled' : ''}
+          const userModels = profileManager.getUserModels();
+          if (userModels.length === 0) {
+            addMessage({
+              role: 'system',
+              content: 'No installed models found. Run `/model list` to refresh the model list.',
+              excludeFromContext: true
+            });
+            return;
+          }
+          const modelOptions: MenuOption[] = userModels.map(entry => {
+            const modelLabel = entry.name || entry.id;
+            return {
+            id: `model-${entry.id}`,
+            label: modelLabel,
+            action: async () => {
+              const description = entry.description ? `*${entry.description}*` : '';
+              const abilities = entry.abilities?.length ? `**Abilities:** ${entry.abilities.join(', ')}` : '';
+              const toolSupport = entry.tool_support ? '**Tool Support:** Enabled' : '';
+              const infoMsg = `
+**Selected Model:** ${modelLabel}
+${description}
+${abilities}
+${toolSupport}
 
 **Select Context Size for this model:**
 `.trim();
-                    
+
+              addMessage({
+                role: 'system',
+                content: infoMsg,
+                excludeFromContext: true
+              });
+
+              SettingsService.getInstance().setModel(entry.id); // Persist Model Selection
+              setCurrentModel(entry.id); // Update UI State
+
+              let safeSizeForModel = 4096;
+              const settings = SettingsService.getInstance().getSettings();
+              const persistedHW = settings.hardware;
+              let cardTotal = 0;
+              if (gpuInfo) {
+                if (typeof gpuInfo.vramTotal === 'number' && gpuInfo.vramTotal > 0) {
+                  cardTotal = gpuInfo.vramTotal / (1024 * 1024 * 1024);
+                } else if (typeof gpuInfo.total === 'number' && gpuInfo.total > 0) {
+                  cardTotal = gpuInfo.total;
+                }
+              }
+              if (cardTotal === 0 && persistedHW) {
+                cardTotal = persistedHW.totalVRAM || (persistedHW.gpuCount ? 24 : 0);
+              }
+              const safeLimit = cardTotal * 0.8;
+              const safetyBuffer = cardTotal > 0 ? Math.max(1.5, cardTotal * 0.1) : 0;
+              const availableForCtx = cardTotal > 0 ? (cardTotal - safetyBuffer) : 0;
+
+              safeSizeForModel = entry.default_context || safeSizeForModel;
+
+              const modelContextOptions: MenuOption[] = [];
+              modelContextOptions.push({
+                id: 'model-size-auto',
+                label: 'Auto (Dynamic)',
+                action: async () => {
+                  await contextActions.resize(safeSizeForModel);
+                  SettingsService.getInstance().setContextSize(safeSizeForModel); // Persist
+                  addMessage({
+                    role: 'system',
+                    content: `Selected **${modelLabel}** with Auto context (**${safeSizeForModel}** tokens).`,
+                    excludeFromContext: true
+                  });
+                  activateMenu(mainMenuOptions, menuMessageId);
+                }
+              });
+              
+              modelContextOptions.push({
+                id: 'model-size-manual',
+                label: 'Manual...',
+                action: async () => {
+                  addMessage({
+                    role: 'system',
+                    content: 'Enter a manual context size in tokens. Type "cancel" to abort.',
+                    excludeFromContext: true
+                  });
+                  requestManualContextInput(entry.id, async (value) => {
+                    profileManager.setManualContext(entry.id, value);
+                    await contextActions.resize(value);
+                    SettingsService.getInstance().setContextSize(value);
                     addMessage({
+                      role: 'system',
+                      content: `Manual context size set to **${value}** tokens.`,
+                      excludeFromContext: true
+                    });
+                    activateMenu(mainMenuOptions, menuMessageId);
+                  });
+                }
+              });
+
+              const contextProfiles = entry.context_profiles || CONTEXT_OPTIONS;
+              const manualContext = entry.manual_context;
+              const contextOptions = manualContext
+                ? [{ size: manualContext, size_label: `Manual (${manualContext})`, vram_estimate: '' }, ...contextProfiles]
+                : contextProfiles;
+
+              contextOptions.forEach(opt => {
+                const sizeStr = opt.size_label || (opt.size >= 1024 ? `${opt.size / 1024}k` : `${opt.size}`);
+                const vramEstimate = 'vram_estimate' in opt ? opt.vram_estimate : ('vramEstimate' in opt ? opt.vramEstimate : '');
+                const vramStr = vramEstimate ? ` - ${vramEstimate}` : '';
+
+                let disabled = false;
+                if (vramEstimate) {
+                  const vramNum = parseFloat(vramEstimate.replace(' GB', ''));
+                  if (!isNaN(vramNum) && vramNum > availableForCtx) {
+                    disabled = true;
+                  }
+                }
+
+                let label = `${sizeStr}${vramStr}`;
+                if (disabled) {
+                  label += ' (Unsafe - Low VRAM)';
+                } else if (opt.size === safeSizeForModel) {
+                  label += ' (Recommended)';
+                }
+
+                modelContextOptions.push({
+                  id: `model-size-${opt.size}`,
+                  label: label,
+                  disabled: disabled,
+                  action: async () => {
+                    if (disabled) {
+                      addMessage({
                         role: 'system',
-                        content: infoMsg,
+                        content: `**?'s???????? Cannot Select Context Size**\nRequired VRAM (~${vramEstimate}) exceeds available system resources (~${availableForContextGB.toFixed(1)} GB).`,
                         excludeFromContext: true
-                    });
-                    
-                    SettingsService.getInstance().setModel(p.id); // Persist Model Selection
-                    setCurrentModel(p.id); // Update UI State
-
-                    let safeSizeForModel = 4096;
-                    const settings = SettingsService.getInstance().getSettings();
-                    const persistedHW = settings.hardware;
-                    let cardTotal = 0;
-                    if (gpuInfo) {
-                        if (typeof gpuInfo.vramTotal === 'number' && gpuInfo.vramTotal > 0) {
-                             cardTotal = gpuInfo.vramTotal / (1024 * 1024 * 1024);
-                        } else if (typeof gpuInfo.total === 'number' && gpuInfo.total > 0) {
-                             cardTotal = gpuInfo.total;
-                        }
-                    }
-                    if (cardTotal === 0 && persistedHW) {
-                        cardTotal = persistedHW.totalVRAM || (persistedHW.gpuCount ? 24 : 0);
-                    }
-                    const safeLimit = cardTotal * 0.8;
-                    const safetyBuffer = cardTotal > 0 ? Math.max(1.5, cardTotal * 0.1) : 0;
-                    const availableForCtx = cardTotal > 0 ? (cardTotal - safetyBuffer) : 0;
-
-                    for (const opt of p.context_profiles) {
-                        const vramNum = parseFloat(opt.vram_estimate.replace(' GB', ''));
-                        if (!isNaN(vramNum) && vramNum <= safeLimit) {
-                            safeSizeForModel = opt.size;
-                        }
+                      });
+                      return;
                     }
 
-                    const modelContextOptions: MenuOption[] = [];
-                    modelContextOptions.push({
-                        id: 'model-size-auto',
-                        label: 'Auto (Dynamic)',
-                        action: async () => {
-                            await contextActions.resize(safeSizeForModel);
-                            SettingsService.getInstance().setContextSize(safeSizeForModel); // Persist
-                             addMessage({
-                                role: 'system',
-                                content: `Selected **${p.name}** with Auto context (**${safeSizeForModel}** tokens).`,
-                                excludeFromContext: true
-                            });
-                             activateMenu(mainMenuOptions, welcomeMsg.id);
-                        }
+                    await contextActions.resize(opt.size);
+                    SettingsService.getInstance().setContextSize(opt.size); // Persist
+                    addMessage({
+                      role: 'system',
+                      content: `Selected **${modelLabel}** with **${sizeStr}** context.`,
+                      excludeFromContext: true
                     });
+                    activateMenu(mainMenuOptions, menuMessageId);
+                  }
+                });
+              });
 
-                    p.context_profiles.forEach(opt => {
-                         const sizeStr = opt.size_label || (opt.size >= 1024 ? `${opt.size/1024}k` : `${opt.size}`);
-                         const vramStr = ` - ${opt.vram_estimate}`;
-                         
-                         let disabled = false;
-                         const vramNum = parseFloat(opt.vram_estimate.replace(' GB', ''));
-                         if (!isNaN(vramNum) && vramNum > availableForCtx) {
-                             disabled = true;
-                         }
+              modelContextOptions.push({
+                id: 'opt-back',
+                label: 'Back to Models',
+                action: () => {
+                  activateMenu(modelOptions, menuMessageId);
+                }
+              });
 
-                         let label = `${sizeStr}${vramStr}`;
-                         if (disabled) {
-                             label += ' (Unsafe - Low VRAM)';
-                         } else if (opt.size === safeSizeForModel) {
-                             label += ' (Recommended)';
-                         }
-                         
-                         modelContextOptions.push({
-                             id: `model-size-${opt.size}`,
-                             label: label,
-                             disabled: disabled,
-                             action: async () => {
-                                 if (disabled) {
-                                      addMessage({
-                                        role: 'system',
-                                        content: `**⚠️ Cannot Select Context Size**\nRequired VRAM (~${opt.vram_estimate}) exceeds available system resources (~${availableForContextGB.toFixed(1)} GB).`,
-                                        excludeFromContext: true
-                                      });
-                                      return;
-                                 }
+              modelContextOptions.push({
+                id: 'opt-exit',
+                label: 'Move to Chat',
+                action: async () => { }
+              });
 
-                                 await contextActions.resize(opt.size);
-                                 SettingsService.getInstance().setContextSize(opt.size); // Persist
-                                 addMessage({
-                                    role: 'system',
-                                    content: `Selected **${p.name}** with **${sizeStr}** context.`,
-                                    excludeFromContext: true
-                                });
-                                 activateMenu(mainMenuOptions, welcomeMsg.id);
-                             }
-                         });
-                    });
+              activateMenu(modelContextOptions, menuMessageId);
+            }
+          };
+          });
+          modelOptions.push({
+            id: 'opt-back',
+            label: 'Back',
+            action: () => {
+              activateMenu(mainMenuOptions, menuMessageId);
+            }
+          });
 
-                    modelContextOptions.push({
-                        id: 'opt-back',
-                        label: 'Back to Models',
-                        action: () => {
-                             activateMenu(modelOptions, welcomeMsg.id); 
-                        }
-                    });
-                    
-                    modelContextOptions.push({
-                        id: 'opt-exit',
-                        label: 'Move to Chat',
-                        action: async () => {} 
-                    });
+          modelOptions.push({
+            id: 'opt-exit',
+            label: 'Move to Chat',
+            action: async () => { }
+          });
 
-                    activateMenu(modelContextOptions, welcomeMsg.id);
-               }
-           }));
-
-           modelOptions.push({
-               id: 'opt-back',
-               label: 'Back',
-               action: () => {
-                   activateMenu(mainMenuOptions, welcomeMsg.id);
-               }
-           });
-           
-           modelOptions.push({
-               id: 'opt-exit',
-               label: 'Move to Chat',
-               action: async () => {} 
-           });
-
-           activateMenu(modelOptions, welcomeMsg.id);
+          activateMenu(modelOptions, menuMessageId);
         }
       },
       {
-         id: 'opt-exit',
-         label: 'Move to Chat',
-         action: async () => {}
+        id: 'opt-exit',
+        label: 'Move to Chat',
+        action: async () => { }
       }
     ];
 
-    activateMenu(mainMenuOptions, welcomeMsg.id);
-  }, [setLaunchScreenVisible, contextUsage, currentModel, addMessage, activateMenu, contextActions, gpuInfo, buildWelcomeMessage]);
+    activateMenu(mainMenuOptions, menuMessageId);
+  }, [currentModel, addMessage, activateMenu, contextActions, gpuInfo, setCurrentModel]);
+
+  // Handle launch screen dismiss
+  const handleDismissLaunch = useCallback(() => {
+    setLaunchScreenVisible(false);
+
+    const welcomeMsg = buildWelcomeMessage();
+    addMessage(welcomeMsg);
+    lastWelcomeModelRef.current = currentModel || null;
+    openModelContextMenu(welcomeMsg.id);
+    return;
+  }, [setLaunchScreenVisible, currentModel, addMessage, buildWelcomeMessage, openModelContextMenu]);
+
+  useEffect(() => {
+    globalThis.__ollmOpenModelMenu = () => openModelContextMenu();
+    return () => {
+      if (globalThis.__ollmOpenModelMenu) {
+        globalThis.__ollmOpenModelMenu = undefined;
+      }
+    };
+  }, [openModelContextMenu]);
 
   useEffect(() => {
     const wasLoading = prevModelLoadingRef.current;

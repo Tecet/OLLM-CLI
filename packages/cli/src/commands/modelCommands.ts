@@ -13,6 +13,7 @@
 
 import type { Command, CommandResult } from './types.js';
 import { SettingsService } from '../config/settingsService.js';
+import { profileManager } from '../features/profiles/ProfileManager.js';
 // import type { ModelManagementService } from '@ollm/core/services/modelManagementService.js';
 // import type { ServiceContainer } from '@ollm/core/services/serviceContainer.js';
 type ModelManagementService = any;
@@ -51,6 +52,19 @@ async function modelUseHandler(args: string[]): Promise<CommandResult> {
   };
 }
 
+function getModelHelpMessage(): string {
+  return 'Usage: /model <list|use|pull|delete|info|keep|unload|help> [args]\n\n' +
+    'Subcommands:\n' +
+    '  list              - List available models\n' +
+    '  use <name>        - Switch to a different model\n' +
+    '  pull <name>       - Download a model\n' +
+    '  delete <name>     - Remove a model\n' +
+    '  info <name>       - Show model details\n' +
+    '  keep <name>       - Keep model loaded in memory\n' +
+    '  unload <name>     - Unload model from memory\n' +
+    '  help              - Show this help';
+}
+
 /**
  * Create model commands with service container dependency injection
  */
@@ -73,6 +87,8 @@ async function modelListHandler(service: ModelManagementService): Promise<Comman
         data: { models: [] },
       };
     }
+
+    profileManager.updateUserModelsFromList(models);
     
     // Format model list
     const modelList = models.map(model => {
@@ -99,7 +115,7 @@ async function modelListHandler(service: ModelManagementService): Promise<Comman
   } catch (error) {
     return {
       success: false,
-      message: `Failed to list models: ${error instanceof Error ? error.message : String(error)}`,
+      message: `Failed to list models: ${error instanceof Error ? error.message : String(error)}\nCheck that your Ollama instance is running.`,
     };
   }
 }
@@ -297,17 +313,16 @@ async function modelUnloadHandler(args: string[], service: ModelManagementServic
     usage: '/model <list|use|pull|delete|info|keep|unload> [args]',
     handler: async (args: string[]): Promise<CommandResult> => {
       if (args.length === 0) {
+        if (typeof (globalThis as any).__ollmOpenModelMenu === 'function') {
+          (globalThis as any).__ollmOpenModelMenu();
+          return {
+            success: true,
+            message: 'Opening model and context menu...',
+          };
+        }
         return {
           success: false,
-          message: 'Usage: /model <list|use|pull|delete|info|keep|unload> [args]\n\n' +
-            'Subcommands:\n' +
-            '  list              - List available models\n' +
-            '  use <name>        - Switch to a different model\n' +
-            '  pull <name>       - Download a model\n' +
-            '  delete <name>     - Remove a model\n' +
-            '  info <name>       - Show model details\n' +
-            '  keep <name>       - Keep model loaded in memory\n' +
-            '  unload <name>     - Unload model from memory',
+          message: getModelHelpMessage(),
         };
       }
 
@@ -318,14 +333,20 @@ async function modelUnloadHandler(args: string[], service: ModelManagementServic
       if (subcommand === 'use') {
         return modelUseHandler(subcommandArgs);
       }
+      if (subcommand === 'help') {
+        return {
+          success: true,
+          message: getModelHelpMessage(),
+        };
+      }
 
       // Check for unknown subcommands
-      const validSubcommands = ['list', 'pull', 'delete', 'rm', 'remove', 'info', 'keep', 'unload'];
+      const validSubcommands = ['list', 'pull', 'delete', 'rm', 'remove', 'info', 'keep', 'unload', 'help'];
       if (!validSubcommands.includes(subcommand)) {
         return {
           success: false,
           message: `Unknown subcommand: ${subcommand}\n\n` +
-            'Available subcommands: list, use, pull, delete, info, keep, unload',
+            'Available subcommands: list, use, pull, delete, info, keep, unload, help',
         };
       }
 
@@ -383,17 +404,16 @@ export const modelCommands: Command[] = [
     usage: '/model <list|use|pull|delete|info|keep|unload> [args]',
     handler: async (args: string[]): Promise<CommandResult> => {
       if (args.length === 0) {
+        if (typeof (globalThis as any).__ollmOpenModelMenu === 'function') {
+          (globalThis as any).__ollmOpenModelMenu();
+          return {
+            success: true,
+            message: 'Opening model and context menu...',
+          };
+        }
         return {
           success: false,
-          message: 'Usage: /model <list|use|pull|delete|info|keep|unload> [args]\n\n' +
-            'Subcommands:\n' +
-            '  list              - List available models\n' +
-            '  use <name>        - Switch to a different model\n' +
-            '  pull <name>       - Download a model\n' +
-            '  delete <name>     - Remove a model\n' +
-            '  info <name>       - Show model details\n' +
-            '  keep <name>       - Keep model loaded in memory\n' +
-            '  unload <name>     - Unload model from memory',
+          message: getModelHelpMessage(),
         };
       }
 
@@ -404,14 +424,20 @@ export const modelCommands: Command[] = [
       if (subcommand === 'use') {
         return modelUseHandler(subcommandArgs);
       }
+      if (subcommand === 'help') {
+        return {
+          success: true,
+          message: getModelHelpMessage(),
+        };
+      }
 
       // Check for unknown subcommands
-      const validSubcommands = ['list', 'pull', 'delete', 'rm', 'remove', 'info', 'keep', 'unload'];
+      const validSubcommands = ['list', 'pull', 'delete', 'rm', 'remove', 'info', 'keep', 'unload', 'help'];
       if (!validSubcommands.includes(subcommand)) {
         return {
           success: false,
           message: `Unknown subcommand: ${subcommand}\n\n` +
-            'Available subcommands: list, use, pull, delete, info, keep, unload',
+            'Available subcommands: list, use, pull, delete, info, keep, unload, help',
         };
       }
 

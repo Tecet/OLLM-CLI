@@ -9,6 +9,7 @@
 
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from 'react';
 import type { ProviderAdapter, Message as ProviderMessage, ToolCall, ToolSchema, ProviderMetrics } from '@ollm/core';
+import { profileManager } from '../profiles/ProfileManager.js';
 
 /**
  * Model context value
@@ -67,11 +68,15 @@ export function ModelProvider({
   const abortControllerRef = useRef<AbortController | null>(null);
   const warmupAbortRef = useRef<AbortController | null>(null);
   const warmupModelRef = useRef<string | null>(null);
+  const warmupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const warmupAttemptsRef = useRef<Map<string, number>>(new Map());
+  const toolSupportOverridesRef = useRef<Map<string, boolean>>(new Map());
 
   const setModelAndLoading = useCallback((model: string) => {
     const changed = currentModel !== model;
     if (changed) {
       const previousModel = currentModel;
+      warmupAttemptsRef.current.delete(model);
       setCurrentModel(model);
       setModelLoading(true);
       if (previousModel && provider.unloadModel) {
@@ -83,6 +88,24 @@ export function ModelProvider({
     }
   }, [currentModel, provider]);
 
+  const isTimeoutError = useCallback((message: string): boolean => {
+    return /timed out|timeout/i.test(message);
+  }, []);
+
+  const isToolUnsupportedError = useCallback((message: string): boolean => {
+    return /tools?|tool_calls?|unknown field/i.test(message);
+  }, []);
+
+  const modelSupportsTools = useCallback((model: string): boolean => {
+    const override = toolSupportOverridesRef.current.get(model);
+    if (override === false) return false;
+
+    const profile = profileManager.findProfile(model);
+    if (profile && profile.tool_support === false) return false;
+
+    return true;
+  }, []);
+
   useEffect(() => {
     if (!modelLoading || !currentModel) return;
     if (warmupModelRef.current === currentModel) return;
@@ -90,12 +113,34 @@ export function ModelProvider({
     if (warmupAbortRef.current) {
       warmupAbortRef.current.abort();
     }
+    if (warmupTimerRef.current) {
+      clearTimeout(warmupTimerRef.current);
+      warmupTimerRef.current = null;
+    }
 
     warmupModelRef.current = currentModel;
     const controller = new AbortController();
     warmupAbortRef.current = controller;
+    const modelName = currentModel;
+    const retryDelaysMs = [1000, 2000, 4000];
 
-    const runWarmup = async () => {
+    const scheduleRetry = () => {
+      const previousAttempts = warmupAttemptsRef.current.get(modelName) ?? 0;
+      const nextAttempts = previousAttempts + 1;
+      warmupAttemptsRef.current.set(modelName, nextAttempts);
+      const delay = retryDelaysMs[nextAttempts - 1];
+      if (!delay) {
+        setModelLoading(false);
+        return;
+      }
+      warmupTimerRef.current = setTimeout(() => {
+        if (controller.signal.aborted) return;
+        if (warmupModelRef.current !== modelName) return;
+        void runWarmup();
+      }, delay);
+    };
+
+    const runWarmup = async (): Promise<void> => {
       try {
         const stream = provider.chatStream({
           model: currentModel,
@@ -109,27 +154,34 @@ export function ModelProvider({
           if (controller.signal.aborted) return;
           if (event.type === 'error') {
             const message = event.error.message || '';
-            const isTimeout = /timed out|timeout/i.test(message);
-            if (!isTimeout) {
-              setModelLoading(false);
+            const isTimeout = isTimeoutError(message);
+            if (isTimeout) {
+              scheduleRetry();
+              return;
             }
+            setModelLoading(false);
             return;
           }
 
           setModelLoading(false);
+          warmupAttemptsRef.current.delete(modelName);
           return;
         }
       } catch (error) {
         if (error instanceof Error && error.name === 'AbortError') return;
-        setModelLoading(false);
+        scheduleRetry();
       }
     };
 
     void runWarmup();
     return () => {
+      if (warmupTimerRef.current) {
+        clearTimeout(warmupTimerRef.current);
+        warmupTimerRef.current = null;
+      }
       controller.abort();
     };
-  }, [modelLoading, currentModel, provider]);
+  }, [modelLoading, currentModel, provider, isTimeoutError]);
 
   const cancelRequest = useCallback(() => {
     if (abortControllerRef.current) {
@@ -172,7 +224,7 @@ export function ModelProvider({
       const stream = provider.chatStream({
         model: currentModel,
         messages: providerMessages,
-        tools: tools,
+        tools: tools && tools.length > 0 && modelSupportsTools(currentModel) ? tools : undefined,
         systemPrompt: systemPrompt,
         abortSignal: abortController.signal,
       });
@@ -197,7 +249,11 @@ export function ModelProvider({
             break;
           case 'error': {
             const message = event.error.message || '';
-            const isTimeout = /timed out|timeout/i.test(message);
+            const isTimeout = isTimeoutError(message);
+            const isToolError = isToolUnsupportedError(message);
+            if (isToolError) {
+              toolSupportOverridesRef.current.set(currentModel, false);
+            }
             if (modelLoading && !isTimeout) {
               setModelLoading(false);
             }
@@ -222,7 +278,7 @@ export function ModelProvider({
     } finally {
       abortControllerRef.current = null;
     }
-  }, [provider, currentModel, cancelRequest, modelLoading]);
+  }, [provider, currentModel, cancelRequest, modelLoading, modelSupportsTools, isTimeoutError, isToolUnsupportedError]);
 
   const value: ModelContextValue = {
     currentModel,

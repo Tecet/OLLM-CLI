@@ -274,8 +274,22 @@ export interface LLMProfile {
   tool_support?: boolean;
   reasoning_buffer?: string;
   ollama_url?: string;
+  default_context?: number;
   context_window: number;
   context_profiles: ContextProfile[];
+}
+
+export interface UserModelEntry {
+  id: string;
+  name?: string;
+  source?: string;
+  last_seen?: string;
+  description?: string;
+  abilities?: string[];
+  tool_support?: boolean;
+  context_profiles?: ContextProfile[];
+  default_context?: number;
+  manual_context?: number;
 }
 
 export interface ContextBehaviorProfile {
@@ -293,6 +307,13 @@ export interface ContextSettings {
 }
 
 export interface ProfilesData {
-  context_behavior: ContextSettings;
+  version?: string;
+  context_behavior?: ContextSettings;
+  fallback_model?: {
+    description?: string;
+    tool_support?: boolean;
+    context_sizes?: number[];
+    default_context?: number;
+  };
   models: LLMProfile[];
 }
