@@ -19,7 +19,7 @@ import { contextCommands } from './contextCommands.js';
 import { metricsCommands } from './metricsCommands.js';
 import { reasoningCommands } from './reasoningCommands.js';
 import { utilityCommands } from './utilityCommands.js';
-import type { Theme } from '../config/uiSettings.js';
+import type { Theme } from '../config/types.js';
 
 /**
  * Command Registry

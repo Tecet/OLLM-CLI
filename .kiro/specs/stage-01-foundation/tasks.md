@@ -38,7 +38,7 @@ This implementation plan creates the foundational monorepo structure for OLLM CL
 - [x] 3. Set up build pipeline
   - [x] 3.1 Create `esbuild.config.js` for CLI bundling
     - Entry point: packages/cli/src/cli.tsx
-    - Output: dist/cli.js
+    - Output: packages/cli/dist/cli.js
     - Platform: node, target: node20, format: esm
     - Add shebang banner: #!/usr/bin/env node
     - External: node built-ins
@@ -98,11 +98,11 @@ This implementation plan creates the foundational monorepo structure for OLLM CL
 
 - [x] 7. Checkpoint - Verify foundation setup
   - Run `npm install` and verify success
-  - Run `npm run build` and verify dist/cli.js exists
+  - Run `npm run build` and verify packages/cli/dist/cli.js exists
   - Run `npm run lint` and verify no errors
   - Run `npm run format` and verify completion
   - Run `npm run test` and verify Vitest runs
-  - Run `node dist/cli.js --version` and verify output
+  - Run `node packages/cli/dist/cli.js --version` and verify output
   - Ensure all tests pass, ask the user if questions arise.
 
 - [x] 8. Create source file placeholders

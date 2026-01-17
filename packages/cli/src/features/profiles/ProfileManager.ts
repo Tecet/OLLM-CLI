@@ -1,53 +1,63 @@
-import profilesData from '../../config/profiles.json' with { type: 'json' };
-
-export interface ContextProfile {
-  size: number;
-  size_label?: string;
-  vram_estimate: string;
-}
-
-export interface LLMProfile {
-  id: string;
-  name: string;
-  creator: string;
-  parameters: string;
-  quantization: string;
-  description: string;
-  abilities: string[];
-  tool_support?: boolean;
-  reasoning_buffer?: string;
-  ollama_url?: string;
-  context_window: number;
-  context_profiles: ContextProfile[];
-}
-
-export interface ContextBehaviorProfile {
-  name: string;
-  contextWindow: number;
-  compressionThreshold: number;
-  retentionRatio: number;
-  strategy: string;
-  summaryPrompt: string;
-}
-
-export interface ContextSettings {
-  activeProfile: string;
-  profiles: Record<string, ContextBehaviorProfile>;
-}
-
-interface ProfilesData {
-  context_behavior: ContextSettings;
-  models: LLMProfile[];
-}
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
+import { join } from 'path';
+import { homedir } from 'os';
+import modelsData from '../../config/LLM_models.json' with { type: 'json' };
+import { defaultContextBehavior } from '../../config/defaults.js';
+import type { LLMProfile, ContextSettings, ContextBehaviorProfile } from '../../config/types.js';
 
 export class ProfileManager {
   private profiles: LLMProfile[];
   private contextSettings: ContextSettings;
+  private configPath: string;
 
   constructor() {
-    const data = profilesData as unknown as ProfilesData;
-    this.profiles = data.models || [];
-    this.contextSettings = data.context_behavior || { activeProfile: 'standard', profiles: {} };
+    this.contextSettings = defaultContextBehavior;
+    
+    // Strategy: Use ~/.ollm/LLM_models.json
+    const homeDir = homedir();
+    const configDir = join(homeDir, '.ollm');
+    this.configPath = join(configDir, 'LLM_models.json');
+    
+    this.ensureConfigExists(configDir);
+    this.profiles = this.loadProfiles();
+  }
+
+  private ensureConfigExists(configDir: string): void {
+      try {
+          if (!existsSync(configDir)) {
+              mkdirSync(configDir, { recursive: true });
+          }
+          
+          // If file doesn't exist, save our defaults there immediately
+          if (!existsSync(this.configPath)) {
+              this.saveProfiles((modelsData as any).models || []);
+          }
+      } catch (error) {
+          console.warn('Failed to initialize models config:', error);
+      }
+  }
+
+  private loadProfiles(): LLMProfile[] {
+      try {
+          if (existsSync(this.configPath)) {
+              const content = readFileSync(this.configPath, 'utf-8');
+              const data = JSON.parse(content);
+              return data.models || [];
+          }
+      } catch (error) {
+          console.error('Failed to load user models config:', error);
+      }
+      // Fallback to internal defaults
+      return (modelsData as any).models || [];
+  }
+
+  private saveProfiles(profiles: LLMProfile[]): void {
+      try {
+          const data = { models: profiles };
+          writeFileSync(this.configPath, JSON.stringify(data, null, 2), 'utf-8');
+      } catch (error) {
+          console.error('Failed to save user models config:', error);
+      }
   }
 
   public getProfiles(): LLMProfile[] {

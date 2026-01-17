@@ -144,13 +144,13 @@ export const InputBox = React.memo(function InputBox({
   const currentLineStart = localInput.slice(0, cursorPosition).lastIndexOf('\n') + 1;
   const cursorInLine = cursorPosition - currentLineStart;
 
+
   return (
     <Box
       flexDirection="column"
       paddingX={1}
       paddingY={0}
       width="100%"
-      overflow="hidden"
     >
       {/* History indicator - always reserve space to prevent layout shift */}
       <Box height={1}>
@@ -162,20 +162,23 @@ export const InputBox = React.memo(function InputBox({
       </Box>
 
       {/* Input prompt - static, no animations */}
-      <Box height={1}>
-        <Text color={theme.text.accent} bold>{'> '}</Text>
-        <Text color={theme.text.secondary} dimColor={disabled}>
-          {disabled 
-            ? 'Waiting for response'
-            : (placeholder || 'Type your message (Enter to send, Shift+Enter for newline)')
-          }
-        </Text>
-      </Box>
-
-      {/* Multi-line input display */}
+      {/* Unified Input Area */}
       <Box flexDirection="column" flexGrow={1}>
-        {localInput.length > 100 ? (
-          <Box height={1}>
+        {disabled ? (
+          <Box flexDirection="row">
+            <Text bold color={theme.text.accent}>{'> '}</Text>
+            <Text color={theme.text.secondary} dimColor>Waiting for response</Text>
+          </Box>
+        ) : localInput.trim().length === 0 ? (
+          <Box flexDirection="row">
+            <Text bold color={theme.text.accent}>{'> '}</Text>
+            <Text color={theme.text.secondary}>
+              {placeholder || 'Type your message (Enter to send, Shift+Enter for newline)'}
+            </Text>
+          </Box>
+        ) : localInput.length > 500 ? (
+          <Box flexDirection="row">
+            <Text bold color={theme.text.accent}>{'> '}</Text>
             <Text color={theme.text.primary} italic>
               {`[Pasted Content: ${localInput.length} chars] `}
               <Text inverse>{' '}</Text>
@@ -187,14 +190,17 @@ export const InputBox = React.memo(function InputBox({
             const displayLine = line || ' '; // Show space for empty lines
 
             return (
-              <Box key={index} height={1}>
+              <Box key={index} flexDirection="row">
+                <Box width={2}>
+                  {index === 0 ? <Text bold color={theme.text.accent}>{'> '}</Text> : <Text> </Text>}
+                </Box>
                 <Text color={theme.text.primary}>
                   {isCurrentLine && cursorInLine <= line.length ? (
-                    <>
-                      {displayLine.slice(0, cursorInLine)}
+                    <Text>
+                      <Text>{displayLine.slice(0, cursorInLine)}</Text>
                       <Text inverse>{displayLine[cursorInLine] || ' '}</Text>
-                      {displayLine.slice(cursorInLine + 1)}
-                    </>
+                      <Text>{displayLine.slice(cursorInLine + 1)}</Text>
+                    </Text>
                   ) : (
                     displayLine
                   )}

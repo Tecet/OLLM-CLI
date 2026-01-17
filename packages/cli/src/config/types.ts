@@ -41,6 +41,7 @@ export interface ReasoningConfig {
 export interface UIConfig {
   layout: 'hybrid' | 'simple';
   sidePanel: boolean;
+  theme?: string;
   showGpuStats: boolean;
   showCost: boolean;
   metrics: MetricsConfig;
@@ -152,4 +153,146 @@ export class ConfigError extends Error {
     
     return result;
   }
+}
+
+/**
+ * Visual Theme Definition
+ */
+export interface Theme {
+  name: string;
+  bg: {
+    primary: string;
+    secondary: string;
+    tertiary: string;
+  };
+  text: {
+    primary: string;
+    secondary: string;
+    accent: string;
+  };
+  role: {
+    user: string;
+    assistant: string;
+    system: string;
+    tool: string;
+  };
+  status: {
+    success: string;
+    warning: string;
+    error: string;
+    info: string;
+  };
+  border: {
+    primary: string;
+    secondary: string;
+    active: string;
+  };
+  diff: {
+    added: string;
+    removed: string;
+  };
+}
+
+/**
+ * Typography Definition
+ */
+export interface Typography {
+  headers: { bold: boolean; underline: boolean };
+  code: { dim: boolean; italic: boolean };
+  emphasis: { bold: boolean };
+  bullets: string;
+  checkmark: string;
+  cross: string;
+  arrow: string;
+  spinner: 'dots' | 'line' | 'arc' | 'bounce';
+  borders: 'round' | 'single' | 'double' | 'bold' | 'ascii';
+}
+
+/**
+ * Keyboard Shortcuts Definition
+ */
+export interface Keybinds {
+  // Tab navigation
+  tabChat: string;
+  tabTools: string;
+  tabFiles: string;
+  tabSearch: string;
+  tabDocs: string;
+  tabSettings: string;
+  
+  // Layout
+  togglePanel: string;
+  commandPalette: string;
+  toggleDebug: string;
+  
+  // Chat
+  clearChat: string;
+  saveSession: string;
+  cancel: string;
+  send: string;
+  newline: string;
+  editPrevious: string;
+  
+  // Review
+  approve: string;
+  reject: string;
+  
+  // Navigation
+  scrollDown: string;
+  scrollUp: string;
+  select: string;
+  back: string;
+  cycleFocus: string;
+}
+
+/**
+ * Combined UI Settings (Theme + Look & Feel)
+ */
+export interface UISettings {
+  theme: Theme;
+  typography: Typography;
+  keybinds: Keybinds;
+}
+
+/**
+ * Profile Configuration Types
+ */
+export interface ContextProfile {
+  size: number;
+  size_label?: string;
+  vram_estimate: string;
+}
+
+export interface LLMProfile {
+  id: string;
+  name: string;
+  creator: string;
+  parameters: string;
+  quantization: string;
+  description: string;
+  abilities: string[];
+  tool_support?: boolean;
+  reasoning_buffer?: string;
+  ollama_url?: string;
+  context_window: number;
+  context_profiles: ContextProfile[];
+}
+
+export interface ContextBehaviorProfile {
+  name: string;
+  contextWindow: number;
+  compressionThreshold: number;
+  retentionRatio: number;
+  strategy: string;
+  summaryPrompt: string;
+}
+
+export interface ContextSettings {
+  activeProfile: string;
+  profiles: Record<string, ContextBehaviorProfile>;
+}
+
+export interface ProfilesData {
+  context_behavior: ContextSettings;
+  models: LLMProfile[];
 }

@@ -151,10 +151,9 @@ export class MessageBus {
    * Emit an event without waiting for listeners to complete
    */
   emitSync(event: HookEvent, data: any): void {
-    // History recording and sync execution (standard pattern)
-    // Even if listener is async, it starts execution but we don't await.
-    // In many implementations emitSync still emits history.
-    this.emit(event, data).catch(() => {});
+    queueMicrotask(() => {
+      this.emit(event, data).catch(() => {});
+    });
   }
 
   /**

@@ -2,8 +2,8 @@ import { describe, it, expect, vi } from 'vitest';
 import * as fc from 'fast-check';
 import { render } from '../../../../test/ink-testing.js';
 import { SidePanel } from '../SidePanel.js';
+import { FocusProvider } from '../../../../features/context/FocusContext.js';
 import { Box, Text } from 'ink';
-import type { TabType } from '../../../../features/context/UIContext.js';
 
 // Mock ContextSection
 vi.mock('../ContextSection.js', () => ({
@@ -36,9 +36,6 @@ describe('Property 15: Side Panel Visibility Persistence', () => {
     }
   } as any;
 
-  const defaultActiveTab: TabType = 'chat';
-  const defaultNotifications = new Map<TabType, number>();
-  const mockOnTabChange = () => {};
 
   it('should maintain visibility state across re-renders', () => {
     fc.assert(
@@ -47,14 +44,15 @@ describe('Property 15: Side Panel Visibility Persistence', () => {
         (initialVisibility) => {
           // First render with initial visibility
           const { lastFrame: firstFrame, rerender } = render(
-            <SidePanel
-              visible={initialVisibility}
-
-              connection={{ status: 'connected', provider: 'ollama' } as any}
-              model="test-model"
-              gpu={{ available: false } as any}
-              theme={defaultTheme}
-            />
+            <FocusProvider>
+              <SidePanel
+                visible={initialVisibility}
+                connection={{ status: 'connected', provider: 'ollama' } as any}
+                model="test-model"
+                gpu={{ available: false } as any}
+                theme={defaultTheme}
+              />
+            </FocusProvider>
           );
 
           const firstOutput = firstFrame();
@@ -68,14 +66,15 @@ describe('Property 15: Side Panel Visibility Persistence', () => {
 
           // Re-render with same visibility
           rerender(
-            <SidePanel
-              visible={initialVisibility}
-
-              connection={{ status: 'connected', provider: 'ollama' } as any}
-              model="test-model"
-              gpu={{ available: false } as any}
-              theme={defaultTheme}
-            />
+            <FocusProvider>
+              <SidePanel
+                visible={initialVisibility}
+                connection={{ status: 'connected', provider: 'ollama' } as any}
+                model="test-model"
+                gpu={{ available: false } as any}
+                theme={defaultTheme}
+              />
+            </FocusProvider>
           );
 
           const secondOutput = firstFrame();
@@ -102,13 +101,15 @@ describe('Property 15: Side Panel Visibility Persistence', () => {
           // Simulate multiple sessions by rendering with each state
           visibilityStates.forEach(visible => {
             const { lastFrame } = render(
-              <SidePanel
-                visible={visible}
-  
-                onTabChange={mockOnTabChange}
-                notifications={defaultNotifications}
-                theme={defaultTheme}
-              />
+              <FocusProvider>
+                <SidePanel
+                  visible={visible}
+                  connection={{ status: 'connected', provider: 'ollama' } as any}
+                  model="test-model"
+                  gpu={{ available: false } as any}
+                  theme={defaultTheme}
+                />
+              </FocusProvider>
             );
 
             const output = lastFrame();
@@ -140,14 +141,15 @@ describe('Property 15: Side Panel Visibility Persistence', () => {
           
           // Test initial state
           const { lastFrame: initialFrame } = render(
-            <SidePanel
-              visible={currentVisibility}
-
-              connection={{ status: 'connected', provider: 'ollama' } as any}
-              model="test-model"
-              gpu={{ available: false } as any}
-              theme={defaultTheme}
-            />
+            <FocusProvider>
+              <SidePanel
+                visible={currentVisibility}
+                connection={{ status: 'connected', provider: 'ollama' } as any}
+                model="test-model"
+                gpu={{ available: false } as any}
+                theme={defaultTheme}
+              />
+            </FocusProvider>
           );
 
           const initialOutput = initialFrame();
@@ -162,13 +164,15 @@ describe('Property 15: Side Panel Visibility Persistence', () => {
             currentVisibility = newVisibility;
             
             const { lastFrame } = render(
-              <SidePanel
-                visible={currentVisibility}
-  
-                onTabChange={mockOnTabChange}
-                notifications={defaultNotifications}
-                theme={defaultTheme}
-              />
+              <FocusProvider>
+                <SidePanel
+                  visible={currentVisibility}
+                  connection={{ status: 'connected', provider: 'ollama' } as any}
+                  model="test-model"
+                  gpu={{ available: false } as any}
+                  theme={defaultTheme}
+                />
+              </FocusProvider>
             );
 
             const output = lastFrame();

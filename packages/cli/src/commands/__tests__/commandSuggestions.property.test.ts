@@ -4,9 +4,36 @@
  * Tests universal properties of command suggestion system
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import * as fc from 'fast-check';
 import { CommandRegistry } from '../commandRegistry.js';
+import type { ServiceContainer } from '@ollm/ollm-cli-core/services/serviceContainer.js';
+
+// Create a mock ServiceContainer for testing
+function createMockServiceContainer(): ServiceContainer {
+  return {
+    getExtensionManager: vi.fn().mockReturnValue({
+      loadExtensions: vi.fn(),
+      getExtensions: vi.fn().mockReturnValue([]),
+    }),
+    getExtensionRegistry: vi.fn().mockReturnValue({
+      search: vi.fn().mockResolvedValue([]),
+      install: vi.fn(),
+    }),
+    getMCPOAuthProvider: vi.fn().mockReturnValue({
+      authorize: vi.fn(),
+    }),
+    getMCPHealthMonitor: vi.fn().mockReturnValue({
+      start: vi.fn(),
+      stop: vi.fn(),
+    }),
+    getModelManagementService: vi.fn().mockReturnValue({}),
+    getMemoryService: vi.fn().mockReturnValue({}),
+    getTemplateService: vi.fn().mockReturnValue({}),
+    getComparisonService: vi.fn().mockReturnValue({}),
+    getProjectProfileService: vi.fn().mockReturnValue({}),
+  } as any;
+}
 
 /**
  * Property 33: Command Suggestions
@@ -39,7 +66,8 @@ describe('Property 33: Command Suggestions', () => {
           '/contxt',     // typo of /context
         ),
         async (typoCommand) => {
-          const registry = new CommandRegistry();
+          const mockServiceContainer = createMockServiceContainer();
+          const registry = new CommandRegistry(mockServiceContainer);
           const result = await registry.execute(typoCommand);
 
           // Property: Unrecognized command should fail
@@ -72,7 +100,8 @@ describe('Property 33: Command Suggestions', () => {
       fc.asyncProperty(
         fc.constant(undefined),
         async () => {
-          const registry = new CommandRegistry();
+          const mockServiceContainer = createMockServiceContainer();
+          const registry = new CommandRegistry(mockServiceContainer);
 
           // Test specific typos with known expected suggestions
           const testCases = [
@@ -108,7 +137,8 @@ describe('Property 33: Command Suggestions', () => {
                !['model', 'provider', 'session', 'theme', 'git', 'help'].some(cmd => s.includes(cmd))
         ),
         async (randomString) => {
-          const registry = new CommandRegistry();
+          const mockServiceContainer = createMockServiceContainer();
+          const registry = new CommandRegistry(mockServiceContainer);
           const suggestions = registry.getSuggestions(`/${randomString}`);
 
           // Property: Very different strings should have few or no suggestions
@@ -125,7 +155,8 @@ describe('Property 33: Command Suggestions', () => {
       fc.asyncProperty(
         fc.constantFrom('/m', '/s', '/e', '/t', '/g', '/h', '/r', '/c'),
         async (shortCommand) => {
-          const registry = new CommandRegistry();
+          const mockServiceContainer = createMockServiceContainer();
+          const registry = new CommandRegistry(mockServiceContainer);
           const suggestions = registry.getSuggestions(shortCommand);
 
           // Property: Should return at most 3 suggestions
@@ -148,7 +179,8 @@ describe('Property 33: Command Suggestions', () => {
           '/Session',
         ),
         async (upperCaseCommand) => {
-          const registry = new CommandRegistry();
+          const mockServiceContainer = createMockServiceContainer();
+          const registry = new CommandRegistry(mockServiceContainer);
           const suggestions = registry.getSuggestions(upperCaseCommand);
 
           // Property: Should find suggestions regardless of case
@@ -168,7 +200,8 @@ describe('Property 33: Command Suggestions', () => {
       fc.asyncProperty(
         fc.constant(undefined),
         async () => {
-          const registry = new CommandRegistry();
+          const mockServiceContainer = createMockServiceContainer();
+          const registry = new CommandRegistry(mockServiceContainer);
 
           // Test that aliases are included in suggestions
           const testCases = [
@@ -194,7 +227,8 @@ describe('Property 33: Command Suggestions', () => {
       fc.asyncProperty(
         fc.constant(undefined),
         async () => {
-          const registry = new CommandRegistry();
+          const mockServiceContainer = createMockServiceContainer();
+          const registry = new CommandRegistry(mockServiceContainer);
 
           // Test that closer matches come first
           const suggestions = registry.getSuggestions('/modl');
@@ -215,7 +249,8 @@ describe('Property 33: Command Suggestions', () => {
       fc.asyncProperty(
         fc.constantFrom('', '   ', '\t', '\n'),
         async (emptyInput) => {
-          const registry = new CommandRegistry();
+          const mockServiceContainer = createMockServiceContainer();
+          const registry = new CommandRegistry(mockServiceContainer);
           const suggestions = registry.getSuggestions(emptyInput);
 
           // Property: Empty input should return empty or minimal suggestions

@@ -12,7 +12,7 @@
  * - Uses alternate screen buffer for flicker-free rendering
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Box, Text, useStdout } from 'ink';
 import { UIProvider, useUI, TabType } from '../features/context/UIContext.js';
 import { ChatProvider, useChat } from '../features/context/ChatContext.js';
@@ -25,14 +25,14 @@ import { ActiveContextProvider } from '../features/context/ActiveContextState.js
 import { DialogProvider } from './contexts/DialogContext.js';
 import { LaunchScreen } from './components/launch/LaunchScreen.js';
 import type { ProviderAdapter, ProviderRequest, ProviderEvent } from '@ollm/core';
-import { createWelcomeMessage, CONTEXT_OPTIONS } from '../features/context/SystemMessages.js';
+import { createWelcomeMessage, createCompactWelcomeMessage, CONTEXT_OPTIONS } from '../features/context/SystemMessages.js';
 import type { MenuOption } from '../features/context/ChatContext.js';
 import { profileManager } from '../features/context/../profiles/ProfileManager.js';
-import { settingsManager } from '../features/settings/SettingsManager.js';
+import { SettingsService } from '../config/settingsService.js';
 import { FocusProvider, useFocusManager } from '../features/context/FocusContext.js';
-import keybinds from '../config/keybinds.json' with { type: 'json' };
+import { keybindsData as keybinds } from '../config/keybinds.js';
+import { defaultDarkTheme } from '../config/styles.js';
 
-import { HeaderBar } from './components/layout/HeaderBar.js';
 import { TabBar } from './components/layout/TabBar.js';
 import { ChatInputArea } from './components/layout/ChatInputArea.js';
 import { SystemBar } from './components/layout/SystemBar.js';
@@ -73,7 +73,7 @@ function AppContent({ config }: AppContentProps) {
   // Layout Calculations for 4-Row Restructuring
   const row1Height = Math.max(3, Math.floor(terminalHeight * 0.05));
   const row3Height = 3; // Fixed height for single line of text + borders
-  const row4Height = Math.max(8, Math.floor(terminalHeight * 0.25));
+  const row4Height = 11; // Fixed height as per user request (reduced padding)
   
   // Calculate Row 2 (Chat) as remaining space to prevent gaps
   const row2Height = Math.max(18, terminalHeight - row1Height - row3Height - row4Height);
@@ -87,34 +87,106 @@ function AppContent({ config }: AppContentProps) {
   const chatActions = { scrollUp, scrollDown };
   useReview();
   const { info: gpuInfo } = useGPU();
-  const { currentModel } = useModel();
+  const { currentModel, setCurrentModel, modelLoading } = useModel();
   const { actions: contextActions } = useContextManager();
   const focusManager = useFocusManager();
+  const lastWelcomeModelRef = useRef<string | null>(null);
+  const prevModelLoadingRef = useRef<boolean>(modelLoading);
+
+    // Persist hardware info if newfound or better than what we have
+  useEffect(() => {
+      if (!gpuInfo) return;
+
+      const currentSettings = SettingsService.getInstance().getSettings();
+      const savedHW = currentSettings.hardware || {};
+
+      const liveName = (gpuInfo as any).model || gpuInfo.vendor || 'Unknown';
+      // Convert to GB for storage
+      const liveVRAM_GB = typeof gpuInfo.vramTotal === 'number' ? gpuInfo.vramTotal / (1024 * 1024 * 1024) : 0;
+
+      // Conditions to update:
+      // 1. We have no saved info at all
+      // 2. Saved name is 'Unknown' but we have a real name now
+      // 3. Saved VRAM is missing/0 but we have real VRAM now
+      
+      const isBetterName = liveName !== 'Unknown' && savedHW.gpuName === 'Unknown';
+      const isBetterVRAM = liveVRAM_GB > 0 && (!savedHW.totalVRAM || savedHW.totalVRAM === 0);
+      const isMissing = !savedHW.gpuName;
+
+      if (isMissing || isBetterName || isBetterVRAM) {
+            SettingsService.getInstance().setHardwareInfo({
+              gpuCount: 1, 
+              gpuName: liveName,
+              totalVRAM: liveVRAM_GB
+          });
+      }
+  }, [gpuInfo]); // Only run when gpuInfo updates
+
+  const buildWelcomeMessage = useCallback(() => {
+    const currentContextSize = contextUsage?.maxTokens || 4096;
+    const modelName = currentModel || 'Unknown Model';
+    const profile = profileManager.findProfile(modelName);
+
+    const settings = SettingsService.getInstance().getSettings();
+    const persistedHW = settings.hardware;
+
+    const effectiveGPUInfo = gpuInfo || {
+      model: persistedHW?.gpuName || 'Unknown GPU',
+      vendor: 'Unknown',
+      total: persistedHW?.totalVRAM || 0,
+      vramTotal: (persistedHW?.totalVRAM || 0) * 1024 * 1024 * 1024,
+      count: persistedHW?.gpuCount || 1,
+    };
+
+    return createWelcomeMessage(modelName, currentContextSize, profile, effectiveGPUInfo as any);
+  }, [contextUsage, currentModel, gpuInfo]);
 
   // Handle launch screen dismiss
   const handleDismissLaunch = useCallback(() => {
     setLaunchScreenVisible(false);
-    
-    // Create and show welcome message
+
+    const welcomeMsg = buildWelcomeMessage();
+    addMessage(welcomeMsg);
+    lastWelcomeModelRef.current = currentModel || null;
+
+    // Calculate max safe context for "Auto" logic
     const currentContextSize = contextUsage?.maxTokens || 4096;
     const modelName = currentModel || 'Unknown Model';
-    
-    // Lookup profile
     const profile = profileManager.findProfile(modelName);
-    
-    const welcomeMsg = createWelcomeMessage(modelName, currentContextSize, profile, gpuInfo as any);
-    
-    addMessage(welcomeMsg);
-    
-    // Calculate max safe context for "Auto" logic
-    const persistedHW = settingsManager.getHardwareInfo();
-    const effectiveTotalVRAM = gpuInfo ? gpuInfo.total : (persistedHW?.totalVRAM || 0);
+    const settings = SettingsService.getInstance().getSettings();
+    const persistedHW = settings.hardware;
 
-    const SAFETY_BUFFER_GB = effectiveTotalVRAM > 0 ? Math.max(1.5, effectiveTotalVRAM * 0.1) : 0;
-    const availableForContextGB = effectiveTotalVRAM > 0 ? (effectiveTotalVRAM - SAFETY_BUFFER_GB) : 0;
+    // Logic: 
+    // 1. prefer live gpuInfo.vramTotal (Bytes) converted to GB
+    // 2. fallback to persistedHW.totalVRAM (GB)
+    // 3. fallback to default (0)
+   
+    let effectiveTotalVRAM_GB = 0;
+    
+    if (gpuInfo) {
+        if (typeof gpuInfo.vramTotal === 'number' && gpuInfo.vramTotal > 0) {
+             effectiveTotalVRAM_GB = gpuInfo.vramTotal / (1024 * 1024 * 1024);
+        } else if (typeof gpuInfo.total === 'number' && gpuInfo.total > 0) {
+             effectiveTotalVRAM_GB = gpuInfo.total;
+        }
+    }
+    
+    // Fallback to persisted if live detection failed to find a value
+    if (effectiveTotalVRAM_GB === 0) {
+         if (persistedHW?.totalVRAM) {
+            effectiveTotalVRAM_GB = persistedHW.totalVRAM;
+         } else if (persistedHW?.gpuCount) {
+            effectiveTotalVRAM_GB = 24; // Default fallback
+         }
+    }
+
+
+
+    const SAFETY_BUFFER_GB = effectiveTotalVRAM_GB > 0 ? Math.max(1.5, effectiveTotalVRAM_GB * 0.1) : 0;
+    const availableForContextGB = effectiveTotalVRAM_GB > 0 ? (effectiveTotalVRAM_GB - SAFETY_BUFFER_GB) : 0;
     
     // Calculate max safe context for "Auto" logic (80% rule)
-    const targetVRAM = effectiveTotalVRAM * 0.8;
+    const targetVRAM = effectiveTotalVRAM_GB * 0.8;
     
     let maxSafeSize = 4096; 
     if (profile) {
@@ -141,9 +213,10 @@ function AppContent({ config }: AppContentProps) {
              action: async () => {
                 const targetSize = maxSafeSize;
                 await contextActions.resize(targetSize);
+                SettingsService.getInstance().setContextSize(targetSize); // Persist
                 addMessage({
                     role: 'system',
-                    content: `Context size automatically set to **${targetSize}** tokens based on available VRAM.`,
+                    content: `Context size automatically set to **${targetSize}** tokens based on available VRAM (${effectiveTotalVRAM_GB.toFixed(1)} GB).`,
                     excludeFromContext: true
                 });
                 activateMenu(mainMenuOptions, welcomeMsg.id); // Return to main menu
@@ -197,6 +270,7 @@ function AppContent({ config }: AppContentProps) {
                       return;
                   }
                   await contextActions.resize(val);
+                  SettingsService.getInstance().setContextSize(val); // Persist
                   addMessage({
                     role: 'system',
                     content: `Context size updated to **${sizeStr}** (${val} tokens).`,
@@ -247,10 +321,24 @@ ${p.tool_support ? '🛠️ **Tool Support:** Enabled' : ''}
                         content: infoMsg,
                         excludeFromContext: true
                     });
+                    
+                    SettingsService.getInstance().setModel(p.id); // Persist Model Selection
+                    setCurrentModel(p.id); // Update UI State
 
                     let safeSizeForModel = 4096;
-                    const persistedHW = settingsManager.getHardwareInfo();
-                    const cardTotal = gpuInfo ? gpuInfo.total : (persistedHW?.totalVRAM || 0);
+                    const settings = SettingsService.getInstance().getSettings();
+                    const persistedHW = settings.hardware;
+                    let cardTotal = 0;
+                    if (gpuInfo) {
+                        if (typeof gpuInfo.vramTotal === 'number' && gpuInfo.vramTotal > 0) {
+                             cardTotal = gpuInfo.vramTotal / (1024 * 1024 * 1024);
+                        } else if (typeof gpuInfo.total === 'number' && gpuInfo.total > 0) {
+                             cardTotal = gpuInfo.total;
+                        }
+                    }
+                    if (cardTotal === 0 && persistedHW) {
+                        cardTotal = persistedHW.totalVRAM || (persistedHW.gpuCount ? 24 : 0);
+                    }
                     const safeLimit = cardTotal * 0.8;
                     const safetyBuffer = cardTotal > 0 ? Math.max(1.5, cardTotal * 0.1) : 0;
                     const availableForCtx = cardTotal > 0 ? (cardTotal - safetyBuffer) : 0;
@@ -268,9 +356,10 @@ ${p.tool_support ? '🛠️ **Tool Support:** Enabled' : ''}
                         label: 'Auto (Dynamic)',
                         action: async () => {
                             await contextActions.resize(safeSizeForModel);
+                            SettingsService.getInstance().setContextSize(safeSizeForModel); // Persist
                              addMessage({
                                 role: 'system',
-                                content: `Selected **${p.name}** with Auto context (**${safeSizeForModel}** tokens). \n*(Note: Model switching is simulated)*`,
+                                content: `Selected **${p.name}** with Auto context (**${safeSizeForModel}** tokens).`,
                                 excludeFromContext: true
                             });
                              activateMenu(mainMenuOptions, welcomeMsg.id);
@@ -309,9 +398,10 @@ ${p.tool_support ? '🛠️ **Tool Support:** Enabled' : ''}
                                  }
 
                                  await contextActions.resize(opt.size);
+                                 SettingsService.getInstance().setContextSize(opt.size); // Persist
                                  addMessage({
                                     role: 'system',
-                                    content: `Selected **${p.name}** with **${sizeStr}** context. \n*(Note: Model switching is simulated)*`,
+                                    content: `Selected **${p.name}** with **${sizeStr}** context.`,
                                     excludeFromContext: true
                                 });
                                  activateMenu(mainMenuOptions, welcomeMsg.id);
@@ -362,7 +452,21 @@ ${p.tool_support ? '🛠️ **Tool Support:** Enabled' : ''}
     ];
 
     activateMenu(mainMenuOptions, welcomeMsg.id);
-  }, [setLaunchScreenVisible, contextUsage, currentModel, addMessage, activateMenu, contextActions, gpuInfo]);
+  }, [setLaunchScreenVisible, contextUsage, currentModel, addMessage, activateMenu, contextActions, gpuInfo, buildWelcomeMessage]);
+
+  useEffect(() => {
+    const wasLoading = prevModelLoadingRef.current;
+    prevModelLoadingRef.current = modelLoading;
+
+    if (wasLoading && !modelLoading && currentModel) {
+      if (lastWelcomeModelRef.current !== currentModel) {
+        const profile = profileManager.findProfile(currentModel);
+        const welcomeMsg = createCompactWelcomeMessage(currentModel, profile);
+        addMessage(welcomeMsg);
+        lastWelcomeModelRef.current = currentModel;
+      }
+    }
+  }, [modelLoading, currentModel, buildWelcomeMessage, addMessage]);
 
   // Handle save session
   const handleSaveSession = useCallback(async () => {
@@ -382,32 +486,32 @@ ${p.tool_support ? '🛠️ **Tool Support:** Enabled' : ''}
   // Register global keyboard shortcuts
   useGlobalKeyboardShortcuts([
     {
-      key: 'ctrl+1',
-      handler: () => setActiveTab('search'),
-      description: 'Switch to Search tab',
+      key: keybinds.tabNavigation.tabChat,
+      handler: () => setActiveTab('chat'),
+      description: 'Switch to Chat tab',
     },
     {
-      key: 'ctrl+2',
-      handler: () => setActiveTab('files'),
-      description: 'Switch to Files tab',
-    },
-    {
-      key: 'ctrl+3',
-      handler: () => setActiveTab('github'),
-      description: 'Switch to GitHub tab',
-    },
-    {
-      key: 'ctrl+4',
+      key: keybinds.tabNavigation.tabTools,
       handler: () => setActiveTab('tools'),
       description: 'Switch to Tools tab',
     },
     {
-      key: 'ctrl+5',
+      key: keybinds.tabNavigation.tabFiles,
+      handler: () => setActiveTab('files'),
+      description: 'Switch to Files tab',
+    },
+    {
+      key: keybinds.tabNavigation.tabSearch,
+      handler: () => setActiveTab('search'),
+      description: 'Switch to Search tab',
+    },
+    {
+      key: keybinds.tabNavigation.tabDocs,
       handler: () => setActiveTab('docs'),
       description: 'Switch to Docs tab',
     },
     {
-      key: 'ctrl+6',
+      key: keybinds.tabNavigation.tabSettings,
       handler: () => setActiveTab('settings'),
       description: 'Switch to Settings tab',
     },
@@ -661,6 +765,12 @@ export interface AppProps {
 }
 
 export function App({ config }: AppProps) {
+  // Load persisted model preference
+  const settings = SettingsService.getInstance().getSettings();
+  const persistedModel = settings.llm?.model;
+  const persistedContextSize = settings.llm?.contextSize;
+  const initialModel = persistedModel || config.model.default;
+
   // Extract UI settings from config
   const initialSidePanelVisible = config.ui?.sidePanel !== false;
   
@@ -670,12 +780,12 @@ export function App({ config }: AppProps) {
   // Model info for context sizing (from config or defaults)
   const modelInfo = {
     parameters: 7, // 7B default - could be derived from model name
-    contextLimit: config.context?.maxSize || 8192,
+    contextLimit: persistedContextSize || config.context?.maxSize || 8192,
   };
   
   // Context manager configuration - maps CLI config to core config format
   const contextConfig = config.context ? {
-    targetSize: config.context.targetSize,
+    targetSize: persistedContextSize || config.context.targetSize,
     minSize: config.context.minSize,
     maxSize: config.context.maxSize,
     autoSize: config.context.autoSize,
@@ -727,6 +837,19 @@ export function App({ config }: AppProps) {
     });
   })();
   
+  // Load initial theme
+  const initialThemeName = settings.ui?.theme || config.ui?.theme || 'default-dark';
+  let initialTheme = defaultDarkTheme;
+  try {
+    const { getThemeManager } = require('./services/themeManager.js');
+    const themeManager = getThemeManager();
+    if (themeManager.hasTheme(initialThemeName)) {
+      initialTheme = themeManager.loadTheme(initialThemeName);
+    }
+  } catch (e) {
+    console.error('Failed to load theme:', e);
+  }
+  
   // Get workspace path (if available)
   const workspacePath = process.cwd();
   
@@ -734,6 +857,7 @@ export function App({ config }: AppProps) {
     <ErrorBoundary>
       <UIProvider 
         initialSidePanelVisible={initialSidePanelVisible}
+        initialTheme={initialTheme}
       >
         <DialogProvider>
           <GPUProvider 
@@ -748,13 +872,13 @@ export function App({ config }: AppProps) {
             <ContextManagerProvider
               sessionId={sessionId}
               modelInfo={modelInfo}
-              modelId={config.model.default}
+              modelId={initialModel}
               config={contextConfig}
               provider={provider}
             >
               <ModelProvider
                 provider={provider}
-                initialModel={config.model.default}
+                initialModel={initialModel}
               >
                 <ChatProvider>
                   <ReviewProvider>

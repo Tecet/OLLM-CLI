@@ -55,8 +55,8 @@ describe('Property 29: Reasoning Box Toggle', () => {
 
         // Property: Initially expanded should show content
         const initialOutput = lastFrame();
-        expect(initialOutput).toContain('🧠 Reasoning');
-        expect(initialOutput).toContain('[▼ Collapse]');
+        expect(initialOutput).toContain('Reasoning');
+        expect(initialOutput).toContain('Collapse');
 
         // Simulate toggle
         onToggle();
@@ -73,7 +73,7 @@ describe('Property 29: Reasoning Box Toggle', () => {
 
         // Property: After toggle, should be collapsed
         const collapsedOutput = lastFrame();
-        expect(collapsedOutput).toContain('[▶ Expand]');
+        expect(collapsedOutput).toContain('Expand');
         expect(collapsedOutput).toContain(`${reasoning.tokenCount} tokens`);
 
         return true;
@@ -101,7 +101,7 @@ describe('Property 29: Reasoning Box Toggle', () => {
 
         // Property: Initially collapsed should show summary
         const initialOutput = lastFrame();
-        expect(initialOutput).toContain('[▶ Expand]');
+        expect(initialOutput).toContain('Expand');
         expect(initialOutput).toContain(`${reasoning.tokenCount} tokens`);
 
         // Simulate toggle
@@ -119,7 +119,7 @@ describe('Property 29: Reasoning Box Toggle', () => {
 
         // Property: After toggle, should be expanded
         const expandedOutput = lastFrame();
-        expect(expandedOutput).toContain('[▼ Collapse]');
+        expect(expandedOutput).toContain('Collapse');
 
         return true;
       }),
@@ -165,9 +165,9 @@ describe('Property 29: Reasoning Box Toggle', () => {
           // Property: Final state should match expected state after toggles
           const expectedExpanded = toggleCount % 2 === 1 ? false : true;
           if (expectedExpanded) {
-            expect(finalOutput).toContain('[▼ Collapse]');
+            expect(finalOutput).toContain('Collapse');
           } else {
-            expect(finalOutput).toContain('[▶ Expand]');
+            expect(finalOutput).toContain('Expand');
           }
 
           return true;
@@ -247,7 +247,7 @@ describe('Property 29: Reasoning Box Toggle', () => {
         // Property: Collapsed state should not show the actual content
         // (only summary with token count and duration)
         const lines = output.split('\n');
-        
+
         // Should be compact (few lines)
         expect(lines.length).toBeLessThan(5);
 
@@ -271,8 +271,8 @@ describe('Property 29: Reasoning Box Toggle', () => {
         const output = lastFrame();
 
         // Property: Collapsed state should show expand indicator
-        expect(output).toContain('[▶ Expand]');
-        expect(output).not.toContain('[▼ Collapse]');
+        expect(output).toContain('Expand');
+        expect(output).not.toContain('Collapse');
 
         return true;
       }),
@@ -294,8 +294,8 @@ describe('Property 29: Reasoning Box Toggle', () => {
         const output = lastFrame();
 
         // Property: Expanded state should show collapse indicator
-        expect(output).toContain('[▼ Collapse]');
-        expect(output).not.toContain('[▶ Expand]');
+        expect(output).toContain('Collapse');
+        expect(output).not.toContain('Expand');
 
         return true;
       }),
@@ -321,7 +321,7 @@ describe('Property 29: Reasoning Box Toggle', () => {
         );
 
         // Get initial content
-        const initialOutput = lastFrame();
+        lastFrame();
 
         // Toggle to collapsed
         onToggle();
@@ -349,8 +349,8 @@ describe('Property 29: Reasoning Box Toggle', () => {
 
         // Property: Content should be the same after toggle cycle
         // (both should show collapse indicator and reasoning header)
-        expect(finalOutput).toContain('[▼ Collapse]');
-        expect(finalOutput).toContain('🧠 Reasoning');
+        expect(finalOutput).toContain('Collapse');
+        expect(finalOutput).toContain('Reasoning');
 
         return true;
       }),
@@ -374,9 +374,9 @@ describe('Property 29: Reasoning Box Toggle', () => {
 
         // Property: Component should respect controlled state
         if (initialExpanded) {
-          expect(output).toContain('[▼ Collapse]');
+          expect(output).toContain('Collapse');
         } else {
-          expect(output).toContain('[▶ Expand]');
+          expect(output).toContain('Expand');
         }
 
         return true;
@@ -430,7 +430,7 @@ describe('Property 29: Reasoning Box Toggle', () => {
         // Property: Theme should be applied consistently
         // (we can't directly test colors in terminal output, but structure should be consistent)
         const output = lastFrame();
-        expect(output).toContain('🧠 Reasoning');
+        expect(output).toContain('Reasoning');
 
         return true;
       }),

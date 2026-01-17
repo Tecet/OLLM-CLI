@@ -7,7 +7,7 @@
 
 import React from 'react';
 import { Box, Text } from 'ink';
-import type { Theme } from '../../../config/uiSettings.js';
+import type { Theme } from '../../../config/types.js';
 
 export interface InferenceMetrics {
   promptTokens: number;

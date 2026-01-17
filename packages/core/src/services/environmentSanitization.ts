@@ -15,6 +15,12 @@ import { sanitizeErrorMessage } from './errorSanitization.js';
  */
 const DEFAULT_ALLOW_LIST = [
   'PATH',
+  'PATHEXT',
+  'SYSTEMROOT',
+  'COMSPEC',
+  'WINDIR',
+  'TEMP',
+  'TMP',
   'HOME',
   'USER',
   'SHELL',

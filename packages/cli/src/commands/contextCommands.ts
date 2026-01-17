@@ -13,6 +13,7 @@
 
 import type { Command, CommandResult } from './types.js';
 import { getGlobalContextManager } from '../features/context/ContextManagerContext.js';
+import { SettingsService } from '../config/settingsService.js';
 
 /**
  * Helper to check if context manager is available
@@ -39,9 +40,6 @@ export const contextCommand: Command = {
       // Default: Show status
       if (args.length === 0) {
         const messages = await manager.getContext();
-        // Since we can't sync get usage here easily without duplicates, we rely on the component to show it
-        // OR we could fetch it if we exposed getUsage. But getContext returns messages.
-        // Let's just return a success message that context is active.
         return {
           success: true,
           message: `Context System Active\nMessages: ${messages.length}`,
@@ -61,6 +59,7 @@ export const contextCommand: Command = {
             return { success: false, message: 'Invalid size. Must be a positive number.' };
           }
           await manager.resize(size);
+          SettingsService.getInstance().setContextSize(size); // Persist
           return { success: true, message: `Context target size set to ${size} tokens` };
         }
 

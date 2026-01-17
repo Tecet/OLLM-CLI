@@ -1,4 +1,52 @@
-{
+/**
+ * Model & Context Profiles Configuration
+ * 
+ * This file defines the built-in profiles for:
+ * 1. AI Models (LLMs): Capabilities, VRAM usage, and descriptions.
+ * 2. Context Behavior: Strategies for managing context window overflow.
+ */
+
+export interface ContextProfile {
+  size: number;
+  size_label?: string;
+  vram_estimate: string;
+}
+
+export interface LLMProfile {
+  id: string;
+  name: string;
+  creator: string;
+  parameters: string;
+  quantization: string;
+  description: string;
+  abilities: string[];
+  tool_support?: boolean;
+  reasoning_buffer?: string;
+  ollama_url?: string;
+  context_window: number;
+  context_profiles: ContextProfile[];
+}
+
+export interface ContextBehaviorProfile {
+  name: string;
+  contextWindow: number;
+  compressionThreshold: number;
+  retentionRatio: number;
+  strategy: string;
+  summaryPrompt: string;
+}
+
+export interface ContextSettings {
+  activeProfile: string;
+  profiles: Record<string, ContextBehaviorProfile>;
+}
+
+export interface ProfilesData {
+  context_behavior: ContextSettings;
+  models: LLMProfile[];
+}
+
+export const profilesData: ProfilesData = {
   "context_behavior": {
     "activeProfile": "standard",
     "profiles": {
@@ -225,4 +273,4 @@
       ]
     }
   ]
-}
+};

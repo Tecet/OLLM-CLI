@@ -33,7 +33,7 @@ The architecture follows a modular design where:
 │         │                                                    │
 │         ▼                                                    │
 │  ┌──────────────┐                                           │
-│  │   dist/      │                                           │
+│  │   packages/cli/dist/      │                                           │
 │  │   cli.js     │  ◄── esbuild bundle                       │
 │  └──────────────┘                                           │
 │                                                              │
@@ -102,7 +102,7 @@ esbuild configuration for bundling:
 ```typescript
 interface BuildConfig {
   entryPoints: string[];      // ["packages/cli/src/cli.tsx"]
-  outfile: string;            // "dist/cli.js"
+  outfile: string;            // "packages/cli/dist/cli.js"
   bundle: true;
   platform: "node";
   target: "node20";
@@ -181,7 +181,7 @@ interface ESLintConfig {
 
 ### Property 2: Build Output Shebang
 
-*For any* build of the CLI, the output file in `dist/cli.js` SHALL begin with the shebang `#!/usr/bin/env node`, making it directly executable as a Node.js script.
+*For any* build of the CLI, the output file in `packages/cli/dist/cli.js` SHALL begin with the shebang `#!/usr/bin/env node`, making it directly executable as a Node.js script.
 
 **Validates: Requirements 3.4**
 
@@ -244,7 +244,7 @@ This foundation stage uses both unit tests and property-based tests:
 - Unknown flags exit with error
 
 #### Build Integration Tests (Unit)
-- `npm run build` produces output in `dist/`
+- `npm run build` produces output in `packages/cli/dist/`
 - Output file has correct shebang
 - TypeScript and JSX are transformed correctly
 

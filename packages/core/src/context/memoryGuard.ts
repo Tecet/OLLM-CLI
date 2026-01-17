@@ -153,7 +153,14 @@ export class MemoryGuardImpl extends EventEmitter implements MemoryGuard {
     // Trigger automatic actions based on level
     switch (level) {
       case MemoryLevel.WARNING:
-        // 80-90%: Emit event. ContextManager handles compression.
+        // 80-90%: Trigger compression if available, then notify.
+        if (this.compressionService && this.currentContext) {
+          try {
+            await this.compressionService.compress(this.currentContext);
+          } catch (error) {
+            console.error('Failed to compress context:', error);
+          }
+        }
         this.emit('threshold-reached', { level, percentage: this.contextPool.getUsage().percentage });
         break;
       case MemoryLevel.CRITICAL:

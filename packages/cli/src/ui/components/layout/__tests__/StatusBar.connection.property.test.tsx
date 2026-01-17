@@ -10,7 +10,7 @@ import { StatusBar, ConnectionStatus } from '../StatusBar.js';
  * Validates: Requirements 6.1
  * 
  * For any provider connection state (connected, connecting, disconnected),
- * the status bar should display the corresponding color indicator (🟢, 🟡, 🔴).
+ * the status bar should display the corresponding color indicator (OK, ..., OFF).
  */
 describe('Property 16: Connection Status Indicators', () => {
   const defaultTheme = {
@@ -54,7 +54,7 @@ describe('Property 16: Connection Status Indicators', () => {
           const output = lastFrame();
           
           // Property: Connected status should show green indicator
-          expect(output).toContain('🟢');
+          expect(output).toContain('OK');
           expect(output).toContain(provider);
           
           return true;
@@ -81,7 +81,7 @@ describe('Property 16: Connection Status Indicators', () => {
           const output = lastFrame();
           
           // Property: Connecting status should show yellow indicator
-          expect(output).toContain('🟡');
+          expect(output).toContain('...');
           expect(output).toContain(provider);
           
           return true;
@@ -108,7 +108,7 @@ describe('Property 16: Connection Status Indicators', () => {
           const output = lastFrame();
           
           // Property: Disconnected status should show red indicator
-          expect(output).toContain('🔴');
+          expect(output).toContain('OFF');
           expect(output).toContain(provider);
           
           return true;
@@ -136,9 +136,9 @@ describe('Property 16: Connection Status Indicators', () => {
           
           // Property: Each status should have a unique indicator
           const indicators = {
-            connected: '🟢',
-            connecting: '🟡',
-            disconnected: '🔴',
+            connected: 'OK',
+            connecting: '...',
+            disconnected: 'OFF',
           };
           
           expect(output).toContain(indicators[status]);
@@ -168,9 +168,9 @@ describe('Property 16: Connection Status Indicators', () => {
           const firstOutput = firstFrame();
           
           const indicators = {
-            connected: '🟢',
-            connecting: '🟡',
-            disconnected: '🔴',
+            connected: 'OK',
+            connecting: '...',
+            disconnected: 'OFF',
           };
           
           expect(firstOutput).toContain(indicators[status]);

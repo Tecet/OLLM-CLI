@@ -24,6 +24,10 @@ export interface LocalProviderConfig {
   timeout?: number;
 }
 
+function payloadHasTools(payload: { tools?: unknown }): boolean {
+  return Array.isArray(payload.tools) && payload.tools.length > 0;
+}
+
 /**
  * Local provider adapter for Ollama-compatible servers.
  */
@@ -37,6 +41,19 @@ export class LocalProvider implements ProviderAdapter {
    */
   async *chatStream(request: ProviderRequest): AsyncIterable<ProviderEvent> {
     const url = `${this.config.baseUrl}/api/chat`;
+    const defaultFinishEvent: ProviderEvent = {
+      type: 'finish',
+      reason: 'stop',
+      metrics: {
+        totalDuration: 0,
+        loadDuration: 0,
+        promptEvalCount: 0,
+        promptEvalDuration: 0,
+        evalCount: 0,
+        evalDuration: 0,
+      },
+    };
+    let sawFinish = false;
 
     const body = {
       model: request.model,
@@ -70,23 +87,45 @@ export class LocalProvider implements ProviderAdapter {
     }, timeout);
 
     try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-        signal,
-      });
+      const sendRequest = async (payload: typeof body): Promise<Response> => {
+        return fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          signal,
+        });
+      };
+
+      let response = await sendRequest(body);
 
       if (!response.ok) {
-        clearTimeout(timeoutId);
-        yield {
-          type: 'error',
-          error: {
-            message: `HTTP ${response.status}: ${response.statusText}`,
-            code: String(response.status),
-          },
-        };
-        return;
+        let errorText = await response.text();
+        const looksLikeToolError = response.status === 400
+          && payloadHasTools(body)
+          && /tools?|tool_calls?|unknown field/i.test(errorText);
+
+        if (looksLikeToolError) {
+          const retryBody = { ...body, tools: undefined };
+          response = await sendRequest(retryBody);
+          if (!response.ok) {
+            errorText = await response.text();
+          }
+        }
+
+        if (!response.ok) {
+          clearTimeout(timeoutId);
+          const details = errorText.trim();
+          yield {
+            type: 'error',
+            error: {
+              message: details.length > 0
+                ? `HTTP ${response.status}: ${response.statusText} - ${details}`
+                : `HTTP ${response.status}: ${response.statusText}`,
+              code: String(response.status),
+            },
+          };
+          return;
+        }
       }
 
       if (!response.body) {
@@ -116,6 +155,9 @@ export class LocalProvider implements ProviderAdapter {
 
           try {
             const chunk = JSON.parse(line);
+            if (chunk && typeof chunk === 'object' && 'done' in chunk && chunk.done) {
+              sawFinish = true;
+            }
             yield* this.mapChunkToEvents(chunk);
           } catch (_error) {
             // Skip malformed JSON
@@ -123,10 +165,29 @@ export class LocalProvider implements ProviderAdapter {
         }
       }
 
+      const trailing = buffer.trim();
+      if (trailing.length > 0) {
+        try {
+          const chunk = JSON.parse(trailing);
+          if (chunk && typeof chunk === 'object' && 'done' in chunk && chunk.done) {
+            sawFinish = true;
+          }
+          yield* this.mapChunkToEvents(chunk);
+        } catch (_error) {
+          // Skip malformed JSON in trailing buffer
+        }
+      }
+
+      if (!sawFinish) {
+        yield defaultFinishEvent;
+      }
     } catch (error) {
       if (error instanceof Error) {
         if (error.name === 'AbortError') {
-          return; // Aborted, finish normally
+          if (!sawFinish) {
+            yield defaultFinishEvent;
+          }
+          return;
         }
         yield {
           type: 'error',
@@ -431,9 +492,13 @@ export class LocalProvider implements ProviderAdapter {
         } else {
           const stringArgs = typeof rawArgs === 'string' ? rawArgs : '{}';
           try {
+            if (typeof rawArgs === 'string' && rawArgs.trim().length === 0) {
+              args = {};
+            } else {
             const parsed = JSON.parse(stringArgs);
             // Ensure args is always an object, even if JSON.parse returns a primitive
             args = typeof parsed === 'object' && parsed !== null ? (parsed as Record<string, unknown>) : {};
+            }
           } catch (error) {
             // If JSON parsing fails, propagate the error so the system can heal it
             const err = error as Error;

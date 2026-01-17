@@ -2,7 +2,7 @@ import React from 'react';
 import { Box, Text } from 'ink';
 import { HeaderBar } from './HeaderBar.js';
 import { ConnectionStatus, GPUInfo } from './StatusBar.js';
-import { Theme } from '../../../config/uiSettings.js';
+import { Theme } from '../../../config/types.js';
 import { ContextSection } from './ContextSection.js'; // Import directly
 
 export interface SidePanelProps {

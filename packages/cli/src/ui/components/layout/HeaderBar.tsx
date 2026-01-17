@@ -1,6 +1,6 @@
-import { Box, Text } from 'ink';
+﻿import { Box, Text } from 'ink';
 import { ConnectionStatus, GPUInfo } from './StatusBar.js';
-import { Theme } from '../../../config/uiSettings.js';
+import { Theme } from '../../../config/types.js';
 
 export interface HeaderBarProps {
   connection: ConnectionStatus;
@@ -17,33 +17,33 @@ function formatMB(bytes: number): string {
 
 export function HeaderBar({ connection, model, gpu, theme }: HeaderBarProps) {
   const providerName = connection.provider || 'Ollama';
-  
+
   return (
-    <Box 
-      flexDirection="row" 
-      width="100%" 
+    <Box
+      flexDirection="row"
+      width="100%"
       alignItems="center"
       justifyContent="center"
       paddingX={1}
       flexWrap="wrap"
     >
       <Text>
-        <Text color={theme.status.success}>● </Text>
+        <Text color={theme.text.accent}>* </Text>
         <Text color={theme.text.secondary}>{providerName}</Text>
         <Text color={theme.text.secondary}> | </Text>
 
-        <Text color={theme.text.primary} bold>LLM: </Text>
+        <Text color={theme.text.primary} bold>LLM:</Text>
         <Text color={theme.text.secondary} bold>{model}</Text>
         <Text color={theme.text.secondary}> | </Text>
 
         <Text color={theme.text.secondary}>VRAM </Text>
         <Text color={theme.text.primary}>
-          {gpu?.available ? `${formatMB(gpu.vramUsed)} / ${formatMB(gpu.vramTotal)}` : 'N/A'}
+          {gpu?.available ? `${formatMB(gpu.vramUsed)}/${formatMB(gpu.vramTotal)}` : 'N/A'}
         </Text>
         <Text color={theme.text.secondary}> | </Text>
 
-        <Text>🌡️ </Text>
-        <Text color={theme.text.primary}>{gpu?.temperature || 0}°</Text>
+        <Text color={theme.text.secondary}>{'\u{1F321}'}</Text>
+        <Text color={theme.text.primary}>  {gpu?.temperature || 0}C</Text>
       </Text>
     </Box>
   );

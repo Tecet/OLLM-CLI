@@ -94,6 +94,7 @@ const HelpDisplay: React.FC = () => (
 
 // Parse arguments
 const argv = Yargs(hideBin(process.argv))
+  .parserConfiguration({ 'case-sensitive': true })
   .version(false)
   .help(false)
   .strict()
@@ -308,6 +309,13 @@ if (argv.prompt) {
   } catch (error) {
     runner.handleError(error instanceof Error ? error : new Error(String(error)));
   }
+}
+
+// Ink requires a TTY-capable stdin for raw mode input handling.
+if (!process.stdin.isTTY) {
+  console.error('Error: interactive mode requires a TTY-capable stdin.');
+  console.error('Tip: use --prompt for non-interactive mode.');
+  process.exit(1);
 }
 
 // Interactive mode - render the TUI

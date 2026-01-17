@@ -1,7 +1,8 @@
-import React from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { Box, Text } from 'ink';
 import { useChat } from '../../../features/context/ChatContext.js';
 import { useUI } from '../../../features/context/UIContext.js';
+import { useModel } from '../../../features/context/ModelContext.js';
 
 export interface SystemBarProps {
   height: number;
@@ -14,32 +15,46 @@ export interface SystemBarProps {
  */
 export function SystemBar({ height, showBorder = true }: SystemBarProps) {
   const { state: chatState, contextUsage } = useChat();
+  const { modelLoading } = useModel();
   const { state: uiState } = useUI();
   const { theme } = uiState;
 
   const { streaming, waitingForResponse, inputMode } = chatState;
 
+  const [spinnerIndex, setSpinnerIndex] = useState(0);
+  const spinnerFrames = ['|', '/', '-', '\\'];
+
+  useEffect(() => {
+    if (!modelLoading) return;
+    const interval = setInterval(() => {
+      setSpinnerIndex((prev) => (prev + 1) % spinnerFrames.length);
+    }, 200);
+    return () => clearInterval(interval);
+  }, [modelLoading, spinnerFrames.length]);
+
   // Determine status text
   let displayStatus = ' ';
   if (inputMode === 'menu') {
     displayStatus = 'Interactive Menu Active';
+  } else if (modelLoading) {
+    displayStatus = `Model Loading ${spinnerFrames[spinnerIndex]}`;
   } else if (streaming) {
-    displayStatus = '● Assistant is typing...';
+    displayStatus = 'Assistant is typing...';
   } else if (waitingForResponse) {
-    displayStatus = '○ Waiting for response...';
+    displayStatus = 'Waiting for response...';
   } else {
     displayStatus = 'IDLE';
   }
 
-  const contextText = contextUsage 
-    ? `${contextUsage.currentTokens}/${contextUsage.maxTokens}` 
+  const contextText = contextUsage
+    ? `${contextUsage.currentTokens}/${contextUsage.maxTokens}`
     : '0/0';
 
   return (
-    <Box 
-      height={height} 
-      width="100%" 
-      borderStyle={showBorder ? 'single' : undefined} 
+    <Box
+      height={height}
+      width="100%"
+      borderStyle={showBorder ? 'single' : undefined}
       borderColor={theme.border.primary}
       paddingX={1}
       flexDirection="row"

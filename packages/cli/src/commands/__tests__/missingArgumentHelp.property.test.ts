@@ -4,9 +4,36 @@
  * Tests universal properties of missing argument error messages
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import * as fc from 'fast-check';
 import { CommandRegistry } from '../commandRegistry.js';
+import type { ServiceContainer } from '@ollm/ollm-cli-core/services/serviceContainer.js';
+
+// Create a mock ServiceContainer for testing
+function createMockServiceContainer(): ServiceContainer {
+  return {
+    getExtensionManager: vi.fn().mockReturnValue({
+      loadExtensions: vi.fn(),
+      getExtensions: vi.fn().mockReturnValue([]),
+    }),
+    getExtensionRegistry: vi.fn().mockReturnValue({
+      search: vi.fn().mockResolvedValue([]),
+      install: vi.fn(),
+    }),
+    getMCPOAuthProvider: vi.fn().mockReturnValue({
+      authorize: vi.fn(),
+    }),
+    getMCPHealthMonitor: vi.fn().mockReturnValue({
+      start: vi.fn(),
+      stop: vi.fn(),
+    }),
+    getModelManagementService: vi.fn().mockReturnValue({}),
+    getMemoryService: vi.fn().mockReturnValue({}),
+    getTemplateService: vi.fn().mockReturnValue({}),
+    getComparisonService: vi.fn().mockReturnValue({}),
+    getProjectProfileService: vi.fn().mockReturnValue({}),
+  } as any;
+}
 
 /**
  * Property 34: Missing Argument Help
@@ -38,7 +65,8 @@ describe('Property 34: Missing Argument Help', () => {
           '/extensions disable',
         ),
         async (commandWithoutArgs) => {
-          const registry = new CommandRegistry();
+          const mockServiceContainer = createMockServiceContainer();
+          const registry = new CommandRegistry(mockServiceContainer);
           const result = await registry.execute(commandWithoutArgs);
 
           // Property: Command without required args should fail
@@ -60,7 +88,8 @@ describe('Property 34: Missing Argument Help', () => {
       fc.asyncProperty(
         fc.constantFrom('use', 'pull', 'rm', 'info'),
         async (subcommand) => {
-          const registry = new CommandRegistry();
+          const mockServiceContainer = createMockServiceContainer();
+          const registry = new CommandRegistry(mockServiceContainer);
           const result = await registry.execute(`/model ${subcommand}`);
 
           // Property: Should fail without model name
@@ -80,7 +109,8 @@ describe('Property 34: Missing Argument Help', () => {
       fc.asyncProperty(
         fc.constantFrom('use'),
         async (subcommand) => {
-          const registry = new CommandRegistry();
+          const mockServiceContainer = createMockServiceContainer();
+          const registry = new CommandRegistry(mockServiceContainer);
           const result = await registry.execute(`/provider ${subcommand}`);
 
           // Property: Should fail without provider name
@@ -100,7 +130,8 @@ describe('Property 34: Missing Argument Help', () => {
       fc.asyncProperty(
         fc.constantFrom('resume', 'delete', 'export'),
         async (subcommand) => {
-          const registry = new CommandRegistry();
+          const mockServiceContainer = createMockServiceContainer();
+          const registry = new CommandRegistry(mockServiceContainer);
           const result = await registry.execute(`/session ${subcommand}`);
 
           // Property: Should fail without session ID
@@ -120,7 +151,8 @@ describe('Property 34: Missing Argument Help', () => {
       fc.asyncProperty(
         fc.constantFrom('use', 'preview'),
         async (subcommand) => {
-          const registry = new CommandRegistry();
+          const mockServiceContainer = createMockServiceContainer();
+          const registry = new CommandRegistry(mockServiceContainer);
           const result = await registry.execute(`/theme ${subcommand}`);
 
           // Property: Should fail without theme name
@@ -140,7 +172,8 @@ describe('Property 34: Missing Argument Help', () => {
       fc.asyncProperty(
         fc.constantFrom('enable', 'disable'),
         async (subcommand) => {
-          const registry = new CommandRegistry();
+          const mockServiceContainer = createMockServiceContainer();
+          const registry = new CommandRegistry(mockServiceContainer);
           const result = await registry.execute(`/extensions ${subcommand}`);
 
           // Property: Should fail without extension name
@@ -170,7 +203,8 @@ describe('Property 34: Missing Argument Help', () => {
           '/reasoning',
         ),
         async (mainCommand) => {
-          const registry = new CommandRegistry();
+          const mockServiceContainer = createMockServiceContainer();
+          const registry = new CommandRegistry(mockServiceContainer);
           const result = await registry.execute(mainCommand);
 
           // Property: Should fail without subcommand
@@ -196,7 +230,8 @@ describe('Property 34: Missing Argument Help', () => {
           { command: '/extensions enable', expectedInMessage: '/extensions' },
         ),
         async (testCase) => {
-          const registry = new CommandRegistry();
+          const mockServiceContainer = createMockServiceContainer();
+          const registry = new CommandRegistry(mockServiceContainer);
           const result = await registry.execute(testCase.command);
 
           // Property: Should fail
@@ -225,7 +260,8 @@ describe('Property 34: Missing Argument Help', () => {
           subcommand: fc.constantFrom('use', 'enable', 'resume', 'pull'),
         }),
         async ({ command, subcommand }) => {
-          const registry = new CommandRegistry();
+          const mockServiceContainer = createMockServiceContainer();
+          const registry = new CommandRegistry(mockServiceContainer);
           const fullCommand = `${command} ${subcommand}`;
           const result = await registry.execute(fullCommand);
 
@@ -254,7 +290,8 @@ describe('Property 34: Missing Argument Help', () => {
           '/help',          // command name is optional
         ),
         async (command) => {
-          const registry = new CommandRegistry();
+          const mockServiceContainer = createMockServiceContainer();
+          const registry = new CommandRegistry(mockServiceContainer);
           const result = await registry.execute(command);
 
           // Property: Commands with optional args should succeed or provide clear guidance
@@ -271,7 +308,8 @@ describe('Property 34: Missing Argument Help', () => {
       fc.asyncProperty(
         fc.constant(undefined),
         async () => {
-          const registry = new CommandRegistry();
+          const mockServiceContainer = createMockServiceContainer();
+          const registry = new CommandRegistry(mockServiceContainer);
 
           // Test missing subcommand
           const noSubcommand = await registry.execute('/model');

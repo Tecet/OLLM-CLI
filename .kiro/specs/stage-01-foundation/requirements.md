@@ -43,7 +43,7 @@ This document defines the requirements for Stage 01 of OLLM CLI: Foundation and 
 #### Acceptance Criteria
 
 1. WHEN `npm run build` is executed, THE Build_Pipeline SHALL bundle the CLI entry point using esbuild
-2. THE Build_Pipeline SHALL output bundled files to the `dist/` directory
+2. THE Build_Pipeline SHALL output bundled files to the `packages/cli/dist/` directory
 3. THE Build_Pipeline SHALL support TypeScript and React/JSX transformation
 4. THE Build_Pipeline SHALL generate a Node.js executable with proper shebang
 
@@ -64,7 +64,7 @@ This document defines the requirements for Stage 01 of OLLM CLI: Foundation and 
 
 #### Acceptance Criteria
 
-1. WHEN a user runs `ollm --version` or `node dist/cli.js --version`, THE CLI SHALL print the current version and exit with code 0
+1. WHEN a user runs `ollm --version` or `node packages/cli/dist/cli.js --version`, THE CLI SHALL print the current version and exit with code 0
 2. WHEN a user runs `ollm --help`, THE CLI SHALL display usage information
 3. THE CLI SHALL be implemented using React and Ink for terminal UI capability
 4. IF an unknown flag is provided, THEN THE CLI SHALL display an error message and exit with non-zero code

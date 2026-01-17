@@ -113,6 +113,8 @@ export {
   TemplateService,
   ComparisonService,
   ProjectProfileService,
+  createGPUMonitor,
+  DefaultGPUMonitor,
 } from './services/index.js';
 
 // Context Management System

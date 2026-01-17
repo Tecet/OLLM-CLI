@@ -3,6 +3,7 @@ import * as fc from 'fast-check';
 import React from 'react';
 import { render, stripAnsi } from '../../../../test/ink-testing.js';
 import { TabBar } from '../TabBar.js';
+import { FocusProvider } from '../../../../features/context/FocusContext.js';
 import { TabType } from '../../../../features/context/UIContext.js';
 
 /**
@@ -38,12 +39,15 @@ describe('Property 11: Notification Badge Display', () => {
           notifications.set(tab, count);
 
           const { lastFrame } = render(
-            <TabBar
-              activeTab="chat"
-              onTabChange={() => {}}
-              notifications={notifications}
-              theme={defaultTheme}
-            />
+            <FocusProvider>
+              <TabBar
+                activeTab="chat"
+                onTabChange={() => {}}
+                notifications={notifications}
+                theme={defaultTheme}
+                noBorder
+              />
+            </FocusProvider>
           );
 
           const output = lastFrame();
@@ -67,12 +71,15 @@ describe('Property 11: Notification Badge Display', () => {
           notifications.set(tab, 0);
 
           const { lastFrame } = render(
-            <TabBar
-              activeTab="chat"
-              onTabChange={() => {}}
-              notifications={notifications}
-              theme={defaultTheme}
-            />
+            <FocusProvider>
+              <TabBar
+                activeTab="chat"
+                onTabChange={() => {}}
+                notifications={notifications}
+                theme={defaultTheme}
+                noBorder
+              />
+            </FocusProvider>
           );
 
           const output = lastFrame();
@@ -107,12 +114,15 @@ describe('Property 11: Notification Badge Display', () => {
           });
 
           const { lastFrame } = render(
-            <TabBar
-              activeTab="chat"
-              onTabChange={() => {}}
-              notifications={notifications}
-              theme={defaultTheme}
-            />
+            <FocusProvider>
+              <TabBar
+                activeTab="chat"
+                onTabChange={() => {}}
+                notifications={notifications}
+                theme={defaultTheme}
+                noBorder
+              />
+            </FocusProvider>
           );
 
           const output = lastFrame();

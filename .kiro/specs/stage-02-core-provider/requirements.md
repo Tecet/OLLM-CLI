@@ -77,30 +77,32 @@ This document defines the requirements for the core runtime and provider interfa
 4. IF the connection fails, THEN THE Local_Provider SHALL emit an error event with connection details
 5. WHEN tool schemas are provided, THE Local_Provider SHALL format them according to the server's function calling specification
 
-### Requirement 6: ReAct Fallback for Tool Calling
+### Requirement 6: ReAct Tool Handler Utilities
 
-**User Story:** As a user, I want to use tools with models that don't support native function calling, so that I can access tool functionality regardless of model capabilities.
+**User Story:** As a developer, I want a ReAct tool handler utility to format and parse ReAct outputs, so models without native tool calling can be supported in a later integration.
 
 #### Acceptance Criteria
 
 1. WHEN native tool calling is unavailable, THE ReAct_Handler SHALL format tool schemas as text instructions
-2. WHEN the model outputs a ReAct-formatted response, THE ReAct_Handler SHALL parse the Thought, Action, and Action Input fields
-3. WHEN Action Input is parsed, THE ReAct_Handler SHALL validate it as valid JSON before execution
-4. IF Action Input is invalid JSON, THEN THE ReAct_Handler SHALL emit an error and request correction
+2. WHEN the model outputs a ReAct-formatted response, THE ReAct_Handler SHALL parse the Thought, Action, Action Input, and Final Answer fields
+3. WHEN Action Input is parsed, THE ReAct_Handler SHALL validate it as JSON and surface invalid JSON (e.g., via a flag or validation helper)
+4. IF Action Input is invalid JSON, THEN THE ReAct_Handler SHALL provide a correction request message that can be added to the conversation
 5. WHEN a tool result is received, THE ReAct_Handler SHALL format it as an Observation for the next turn
-6. WHEN the model outputs "Final Answer", THE ReAct_Handler SHALL treat it as the completion of the turn
+6. WHEN the model outputs "Final Answer", THE ReAct_Handler SHALL expose it as the completion of the turn
 
-### Requirement 7: Token Limit Enforcement
+### Requirement 7: Token Counting and Limit Checks
 
-**User Story:** As a user, I want the system to prevent context overflow, so that requests don't fail due to exceeding model limits.
+**User Story:** As a user, I want the system to estimate token usage and evaluate limits, so callers can prevent context overflow.
 
 #### Acceptance Criteria
 
 1. WHEN a chat request is prepared, THE Token_Counter SHALL estimate the total token count
 2. WHERE the provider supports token counting, THE Token_Counter SHALL use the provider's tokenizer
 3. WHERE the provider does not support token counting, THE Token_Counter SHALL use a fallback estimation of text length divided by 4
-4. WHEN the estimated tokens approach 90% of the model's limit, THE Chat_Runtime SHALL emit a warning
-5. WHEN the estimated tokens exceed the model's limit, THE Chat_Runtime SHALL block the request and return an error
+4. WHEN estimated tokens approach the configured warning threshold, THE Token_Counter SHALL report a warning state
+5. WHEN estimated tokens exceed the model's limit, THE Token_Counter SHALL report an over-limit state
+
+Note: Runtime warning emission and request blocking are deferred to a later integration.
 
 ### Requirement 8: Turn Management
 
@@ -134,6 +136,6 @@ This document defines the requirements for the core runtime and provider interfa
 
 1. WHEN a provider connection fails, THE Chat_Runtime SHALL emit an error event with connection details
 2. WHEN a tool execution fails, THE Chat_Runtime SHALL include the error in the tool result and continue
-3. WHEN JSON parsing fails in ReAct mode, THE Chat_Runtime SHALL request the model to correct the format
+3. WHEN JSON parsing fails in ReAct mode, THE ReAct_Handler SHALL provide a correction request message for the conversation
 4. WHEN the abort signal is triggered, THE Chat_Runtime SHALL clean up resources and emit a cancellation event
 5. WHEN an unexpected error occurs, THE Chat_Runtime SHALL emit an error event without crashing the process

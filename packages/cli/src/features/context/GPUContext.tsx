@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, Rea
 interface GPUInfo {
   name: string;
   vendor: any;
+  model?: string;
   load: number;
   memory: {
     used: number;

@@ -50,6 +50,7 @@ export const configSchema = {
       properties: {
         layout: { type: 'string', enum: ['hybrid', 'simple'] },
         sidePanel: { type: 'boolean' },
+        theme: { type: 'string' },
         showGpuStats: { type: 'boolean' },
         showCost: { type: 'boolean' },
         metrics: {

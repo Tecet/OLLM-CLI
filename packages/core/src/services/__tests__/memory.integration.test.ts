@@ -15,19 +15,20 @@ describe('Memory Service Integration', () => {
   let memoryPath: string;
   
   beforeEach(async () => {
-    // Create unique temp directory for each test
-    tempDir = join(tmpdir(), `memory-test-${Date.now()}-${Math.random().toString(36).substring(7)}`);
+    // Create unique temp directory for each test with integration-specific prefix
+    tempDir = join(tmpdir(), `memory-integration-${Date.now()}-${Math.random().toString(36).substring(7)}`);
     await fs.mkdir(tempDir, { recursive: true });
     memoryPath = join(tempDir, 'memory.json');
   });
   
   afterEach(async () => {
-    // Cleanup - wait a bit to ensure file handles are closed
-    await new Promise(resolve => setTimeout(resolve, 10));
+    // Cleanup - wait longer to ensure file handles are closed on Windows
+    await new Promise(resolve => setTimeout(resolve, 50));
     try {
-      await fs.rm(tempDir, { recursive: true, force: true });
+      await fs.rm(tempDir, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
     } catch (error) {
-      // Ignore cleanup errors
+      // Ignore cleanup errors - Windows may still have file handles open
+      console.warn(`Cleanup warning for ${tempDir}:`, error);
     }
   });
   
@@ -230,6 +231,9 @@ describe('Memory Service Integration', () => {
         service.save().catch(() => {}),
       ];
       await Promise.all(savePromises);
+      
+      // Wait a bit for file system to settle on Windows
+      await new Promise(resolve => setTimeout(resolve, 50));
       
       // At least one save should have succeeded - verify file is valid
       const service2 = new MemoryService({ memoryPath, tokenBudget: 500 });

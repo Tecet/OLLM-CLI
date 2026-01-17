@@ -33,6 +33,8 @@ import type {
   ProviderAdapter,
 } from '@ollm/core';
 
+import { SettingsService } from '../../config/settingsService.js';
+
 // Global reference for CLI commands
 let globalContextManager: ContextManagerActions | null = null;
 
@@ -409,6 +411,10 @@ export function ContextManagerProvider({
     
     // Update config which will trigger internal resize
     managerRef.current.updateConfig({ targetSize: size, autoSize: false });
+    
+    // Persist settings
+    SettingsService.getInstance().setContextSize(size);
+
     setUsage(managerRef.current.getUsage());
   }, []);
 

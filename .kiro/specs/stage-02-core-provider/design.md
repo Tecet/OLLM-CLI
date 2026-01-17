@@ -6,7 +6,7 @@ This design defines the core runtime system that enables OLLM CLI to interact wi
 
 1. **Provider Layer**: Standardized interfaces and registry for LLM backend adapters
 2. **Runtime Layer**: Chat client, turn management, and streaming event handling
-3. **Tool Integration Layer**: Tool call detection, execution, and ReAct fallback
+3. **Tool Integration Layer**: Tool call detection, execution, and ReAct handler utilities (runtime integration deferred)
 
 The design prioritizes flexibility (supporting multiple providers), reliability (graceful error handling), and extensibility (easy addition of new providers and capabilities).
 
@@ -496,7 +496,7 @@ export class TokenCounter {
 
 ### ReAct Tool Handler (`packages/core/src/core/reactToolHandler.ts`)
 
-**Purpose**: Provides tool calling fallback for models without native function calling support.
+**Purpose**: Provides ReAct formatting and parsing utilities for models without native function calling support. Runtime integration is deferred.
 
 **ReAct Format:**
 
@@ -891,10 +891,10 @@ The error is included in the tool result and sent back to the model, allowing it
 
 ### ReAct Parsing Errors
 
-When ReAct output contains invalid JSON:
+When ReAct output contains invalid JSON, the ReAct handler can provide a correction request message for the conversation:
 
 ```typescript
-// Add error message to conversation
+// Use ReActToolHandler.createJsonCorrectionMessage(...) to build a user message
 {
   role: 'user',
   parts: [{
@@ -904,14 +904,19 @@ When ReAct output contains invalid JSON:
 }
 ```
 
+Note: Runtime insertion of this message is deferred; callers can insert it when integrating ReAct flows.
+
 ### Token Limit Errors
 
-When estimated tokens exceed model limit:
+When estimated tokens exceed the model limit, TokenCounter.checkLimit reports withinLimit: false and callers can decide to block:
 
 ```typescript
-throw new Error(
-  `Request exceeds token limit: ${estimatedTokens} > ${limit} for model ${model}`
-);
+const check = tokenCounter.checkLimit(model, estimatedTokens);
+if (!check.withinLimit) {
+  throw new Error(
+    `Request exceeds token limit: ${estimatedTokens} > ${check.limit} for model ${model}`
+  );
+}
 ```
 
 ### Abort Signal Handling
@@ -1059,7 +1064,7 @@ A property is a characteristic or behavior that should hold true across all vali
 
 ### Property 21: ReAct Turn Completion
 
-*For any* model output containing "Final Answer", the ReAct_Handler should treat it as the completion of the turn and not attempt further tool calls.
+*For any* model output containing "Final Answer", the ReAct_Handler should expose the final answer in its parsed output.
 
 **Validates: Requirements 6.6**
 
@@ -1083,13 +1088,13 @@ A property is a characteristic or behavior that should hold true across all vali
 
 ### Property 25: Token Limit Warning
 
-*For any* chat request where estimated tokens are between 90% and 100% of the model's limit, the system should emit a warning.
+*For any* chat request where estimated tokens are between the configured warning threshold and the model's limit, Token_Counter.checkLimit should report isWarning: true.
 
 **Validates: Requirements 7.4**
 
 ### Property 26: Token Limit Enforcement
 
-*For any* chat request where estimated tokens exceed the model's limit, the system should block the request and throw an error.
+*For any* chat request where estimated tokens exceed the model's limit, Token_Counter.checkLimit should report withinLimit: false.
 
 **Validates: Requirements 7.5**
 
@@ -1131,7 +1136,7 @@ A property is a characteristic or behavior that should hold true across all vali
 
 ### Property 33: ReAct JSON Error Recovery
 
-*For any* invalid JSON in ReAct Action Input, the system should add an error message to the conversation requesting the model to correct the format.
+*For any* invalid JSON in ReAct Action Input, the ReAct_Handler should provide a correction request message for the conversation.
 
 **Validates: Requirements 10.3**
 
@@ -1208,7 +1213,7 @@ describe('Provider Registry', () => {
 3. **Event Streaming**: Forwarding, ordering, completion
 4. **Tool Call Execution**: Queuing, parallel execution, result handling
 5. **ReAct Parsing**: Format validation, JSON parsing, error recovery
-6. **Token Counting**: Estimation accuracy, limit enforcement, warnings
+6. **Token Counting**: Estimation accuracy, limit checks, warnings
 7. **Error Handling**: Connection failures, tool errors, abort signals
 8. **Turn Management**: State initialization, event collection, history updates
 

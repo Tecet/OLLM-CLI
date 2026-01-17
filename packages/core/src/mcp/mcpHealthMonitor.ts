@@ -4,7 +4,7 @@
  * Monitors the health of MCP servers and automatically restarts failed servers.
  */
 
-import type { MCPClient, MCPServerStatus, MCPServerStatusType } from './types.js';
+import type { MCPClient, MCPServerConfig, MCPServerStatus, MCPServerStatusType } from './types.js';
 
 /**
  * Health check result
@@ -46,6 +46,8 @@ interface ServerHealthState {
   name: string;
   /** Last known status */
   lastStatus: MCPServerStatusType;
+  /** Server configuration */
+  config?: MCPServerConfig;
   /** Number of consecutive failures */
   consecutiveFailures: number;
   /** Number of restart attempts */
@@ -236,6 +238,18 @@ export class MCPHealthMonitor {
       throw new Error(`Server '${serverName}' not found`);
     }
 
+    state.restartAttempts++;
+    state.lastRestartTime = Date.now();
+    this.emitEvent({
+      type: 'restart-attempt',
+      serverName,
+      timestamp: state.lastRestartTime,
+      data: {
+        attempt: state.restartAttempts,
+        maxAttempts: this.config.maxRestartAttempts,
+      },
+    });
+
     // Attempt restart
     await this.attemptRestart(serverName, serverInfo.config);
   }
@@ -251,11 +265,17 @@ export class MCPHealthMonitor {
         this.serverStates.set(server.name, {
           name: server.name,
           lastStatus: server.status.status,
+          config: server.config,
           consecutiveFailures: 0,
           restartAttempts: 0,
           lastCheckTime: Date.now(),
           currentBackoffDelay: this.config.initialBackoffDelay,
         });
+      } else {
+        const state = this.serverStates.get(server.name);
+        if (state) {
+          state.config = server.config;
+        }
       }
     }
   }
@@ -263,13 +283,13 @@ export class MCPHealthMonitor {
   /**
    * Perform health checks on all servers
    */
-  private async performHealthChecks(): Promise<void> {
+  private performHealthChecks(): void {
     // Update server states list
     this.initializeServerStates();
 
     // Check each server
     for (const [serverName, state] of this.serverStates.entries()) {
-      await this.checkServerHealth(serverName, state);
+      this.checkServerHealth(serverName, state);
     }
   }
 
@@ -278,7 +298,7 @@ export class MCPHealthMonitor {
    * @param serverName - Server name
    * @param state - Server health state
    */
-  private async checkServerHealth(serverName: string, state: ServerHealthState): Promise<void> {
+  private checkServerHealth(serverName: string, state: ServerHealthState): void {
     const now = Date.now();
     const status = this.client.getServerStatus(serverName);
 
@@ -297,35 +317,48 @@ export class MCPHealthMonitor {
     const wasHealthy = state.lastStatus === 'connected';
     const isHealthy = status.status === 'connected';
 
-    if (wasHealthy && !isHealthy) {
-      // Server became unhealthy
+    if (!isHealthy) {
+      // Server is unhealthy
       state.consecutiveFailures++;
-      
-      this.emitEvent({
-        type: 'server-unhealthy',
-        serverName,
-        timestamp: now,
-        data: { 
-          status: status.status,
-          error: status.error,
-          consecutiveFailures: state.consecutiveFailures,
-        },
-      });
+
+      if (wasHealthy) {
+        this.emitEvent({
+          type: 'server-unhealthy',
+          serverName,
+          timestamp: now,
+          data: {
+            status: status.status,
+            error: status.error,
+            consecutiveFailures: state.consecutiveFailures,
+          },
+        });
+      }
 
       // Attempt restart if auto-restart is enabled
       if (this.config.autoRestart && state.restartAttempts < this.config.maxRestartAttempts) {
         // Check if enough time has passed since last restart (backoff)
-        const timeSinceLastRestart = state.lastRestartTime 
-          ? now - state.lastRestartTime 
-          : Infinity;
+        if (state.lastRestartTime === undefined) {
+          // Start the backoff window on first failure.
+          state.lastRestartTime = now;
+        }
+        const timeSinceLastRestart = state.lastRestartTime
+          ? now - state.lastRestartTime
+          : 0;
 
         if (timeSinceLastRestart >= state.currentBackoffDelay) {
-          // Get server config
-          const servers = this.client.listServers();
-          const serverInfo = servers.find(s => s.name === serverName);
-          
-          if (serverInfo) {
-            await this.attemptRestart(serverName, serverInfo.config);
+          state.restartAttempts++;
+          state.lastRestartTime = now;
+          this.emitEvent({
+            type: 'restart-attempt',
+            serverName,
+            timestamp: now,
+            data: {
+              attempt: state.restartAttempts,
+              maxAttempts: this.config.maxRestartAttempts,
+            },
+          });
+          if (state.config) {
+            void this.attemptRestart(serverName, state.config);
           }
         }
       } else if (state.restartAttempts >= this.config.maxRestartAttempts) {
@@ -334,7 +367,7 @@ export class MCPHealthMonitor {
           type: 'max-restarts-exceeded',
           serverName,
           timestamp: now,
-          data: { 
+          data: {
             maxAttempts: this.config.maxRestartAttempts,
             error: status.error,
           },
@@ -368,26 +401,12 @@ export class MCPHealthMonitor {
       return;
     }
 
-    const now = Date.now();
-    state.restartAttempts++;
-    state.lastRestartTime = now;
-
-    this.emitEvent({
-      type: 'restart-attempt',
-      serverName,
-      timestamp: now,
-      data: { 
-        attempt: state.restartAttempts,
-        maxAttempts: this.config.maxRestartAttempts,
-      },
-    });
-
     try {
       // Stop the server
       await this.client.stopServer(serverName);
 
-      // Wait a bit before restarting
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Allow async listeners to flush before restarting.
+      await new Promise(resolve => queueMicrotask(resolve));
 
       // Start the server
       await this.client.startServer(serverName, config);

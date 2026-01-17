@@ -1,4 +1,22 @@
-{
+/**
+ * Built-in Application Themes
+ * 
+ * This file defines the standard color schemes used throughout the CLI.
+ * Each theme defines colors for:
+ * - Backgrounds (primary, secondary, tertiary)
+ * - Text (primary, secondary, accent)
+ * - Roles (user, assistant, system, tool)
+ * - Status states (success, warning, error, info)
+ * - Borders and Diff highlighting
+ */
+
+import type { Theme } from './types.js';
+
+export const themesData: Record<string, Theme> = {
+  /**
+   * Default Dark Theme
+   * A balanced dark theme suitable for most terminals.
+   */
   "default-dark": {
     "name": "default-dark",
     "bg": {
@@ -24,7 +42,7 @@
       "info": "#569cd6"
     },
     "border": {
-      "primary": "#858585",
+      "primary": "#4ec9b0",
       "secondary": "#555555",
       "active": "green"
     },
@@ -33,6 +51,11 @@
       "removed": "#f48771"
     }
   },
+
+  /**
+   * Dracula
+   * A high-contrast theme based on the popular Dracula specification.
+   */
   "dracula": {
     "name": "dracula",
     "bg": {
@@ -43,11 +66,11 @@
     "text": {
       "primary": "#f8f8f2",
       "secondary": "#6272a4",
-      "accent": "#50fa7b"
+      "accent": "#bd93f9"
     },
     "role": {
       "user": "#8be9fd",
-      "assistant": "#50fa7b",
+      "assistant": "#bd93f9",
       "system": "#6272a4",
       "tool": "#f1fa8c"
     },
@@ -58,7 +81,7 @@
       "info": "#8be9fd"
     },
     "border": {
-      "primary": "#6272a4",
+      "primary": "#bd93f9",
       "secondary": "#44475a",
       "active": "green"
     },
@@ -67,6 +90,11 @@
       "removed": "#ff5555"
     }
   },
+
+  /**
+   * Nord
+   * An arctic, north-bluish color palette.
+   */
   "nord": {
     "name": "nord",
     "bg": {
@@ -92,7 +120,7 @@
       "info": "#5e81ac"
     },
     "border": {
-      "primary": "#4c566a",
+      "primary": "#88c0d0",
       "secondary": "#3b4252",
       "active": "green"
     },
@@ -101,6 +129,11 @@
       "removed": "#bf616a"
     }
   },
+
+  /**
+   * Monokai
+   * A vibrant, high-contrast theme popular in Sublime Text.
+   */
   "monokai": {
     "name": "monokai",
     "bg": {
@@ -111,7 +144,7 @@
     "text": {
       "primary": "#f8f8f2",
       "secondary": "#75715e",
-      "accent": "#a6e22e"
+      "accent": "#fd971f"
     },
     "role": {
       "user": "#66d9ef",
@@ -126,7 +159,7 @@
       "info": "#66d9ef"
     },
     "border": {
-      "primary": "#75715e",
+      "primary": "#f92672",
       "secondary": "#49483e",
       "active": "green"
     },
@@ -135,6 +168,11 @@
       "removed": "#f92672"
     }
   },
+
+  /**
+   * Solarized Dark
+   * A precision theme designed to decrease eye strain.
+   */
   "solarized-dark": {
     "name": "solarized-dark",
     "bg": {
@@ -145,7 +183,7 @@
     "text": {
       "primary": "#839496",
       "secondary": "#657b83",
-      "accent": "#2aa198"
+      "accent": "#b58900"
     },
     "role": {
       "user": "#268bd2",
@@ -160,7 +198,7 @@
       "info": "#268bd2"
     },
     "border": {
-      "primary": "#586e75",
+      "primary": "#268bd2",
       "secondary": "#073642",
       "active": "green"
     },
@@ -169,4 +207,4 @@
       "removed": "#dc322f"
     }
   }
-}
+};

@@ -7,7 +7,7 @@
  * - Sends messages to the LLM and handles streaming responses
  */
 
-import React, { createContext, useContext, useState, useCallback, useRef, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from 'react';
 import type { ProviderAdapter, Message as ProviderMessage, ToolCall, ToolSchema, ProviderMetrics } from '@ollm/core';
 
 /**
@@ -16,9 +16,12 @@ import type { ProviderAdapter, Message as ProviderMessage, ToolCall, ToolSchema,
 export interface ModelContextValue {
   /** Current model name */
   currentModel: string;
-  
+
   /** Switch to a different model */
   setCurrentModel: (model: string) => void;
+
+  /** Model loading state after a swap */
+  modelLoading: boolean;
   
   /** Send a message to the LLM and stream the response */
   sendToLLM: (
@@ -60,7 +63,66 @@ export function ModelProvider({
   initialModel,
 }: ModelProviderProps) {
   const [currentModel, setCurrentModel] = useState(initialModel);
+  const [modelLoading, setModelLoading] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const warmupAbortRef = useRef<AbortController | null>(null);
+  const warmupModelRef = useRef<string | null>(null);
+
+  const setModelAndLoading = useCallback((model: string) => {
+    const changed = currentModel !== model;
+    if (changed) {
+      setCurrentModel(model);
+      setModelLoading(true);
+    }
+  }, [currentModel]);
+
+  useEffect(() => {
+    if (!modelLoading || !currentModel) return;
+    if (warmupModelRef.current === currentModel) return;
+
+    if (warmupAbortRef.current) {
+      warmupAbortRef.current.abort();
+    }
+
+    warmupModelRef.current = currentModel;
+    const controller = new AbortController();
+    warmupAbortRef.current = controller;
+
+    const runWarmup = async () => {
+      try {
+        const stream = provider.chatStream({
+          model: currentModel,
+          messages: [
+            { role: 'user', parts: [{ type: 'text' as const, text: 'warmup' }] },
+          ],
+          abortSignal: controller.signal,
+        });
+
+        for await (const event of stream) {
+          if (controller.signal.aborted) return;
+          if (event.type === 'error') {
+            const message = event.error.message || '';
+            const isTimeout = /timed out|timeout/i.test(message);
+            if (!isTimeout) {
+              setModelLoading(false);
+            }
+            return;
+          }
+
+          setModelLoading(false);
+          return;
+        }
+      } catch (error) {
+        if (error instanceof Error && error.name === 'AbortError') return;
+        setModelLoading(false);
+      }
+    };
+
+    void runWarmup();
+    return () => {
+      controller.abort();
+    };
+  }, [modelLoading, currentModel, provider]);
 
   const cancelRequest = useCallback(() => {
     if (abortControllerRef.current) {
@@ -115,15 +177,30 @@ export function ModelProvider({
 
         switch (event.type) {
           case 'text':
+            if (modelLoading) {
+              setModelLoading(false);
+            }
             onText(event.value);
             break;
           case 'tool_call':
+            if (modelLoading) {
+              setModelLoading(false);
+            }
             onToolCall?.(event.value);
             break;
-          case 'error':
-            onError(event.error.message);
+          case 'error': {
+            const message = event.error.message || '';
+            const isTimeout = /timed out|timeout/i.test(message);
+            if (modelLoading && !isTimeout) {
+              setModelLoading(false);
+            }
+            onError(message);
             return; // Break out of the entire sendToLLM function on error
+          }
           case 'finish':
+            if (modelLoading) {
+              setModelLoading(false);
+            }
             onComplete(event.metrics);
             return;
         }
@@ -138,11 +215,12 @@ export function ModelProvider({
     } finally {
       abortControllerRef.current = null;
     }
-  }, [provider, currentModel, cancelRequest]);
+  }, [provider, currentModel, cancelRequest, modelLoading]);
 
   const value: ModelContextValue = {
     currentModel,
-    setCurrentModel,
+    setCurrentModel: setModelAndLoading,
+    modelLoading,
     sendToLLM,
     cancelRequest,
     provider,

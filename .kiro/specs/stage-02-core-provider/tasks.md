@@ -190,9 +190,9 @@ This implementation plan breaks down the core runtime and provider interface sys
     - Clean up on abort signal
     - _Requirements: 10.2, 10.4, 10.5_
 
-  - [x] 9.3 Add ReAct error recovery
+- [x] 9.3 Add ReAct error recovery
     - Detect invalid JSON in Action Input
-    - Add correction request to conversation
+    - Provide a correction request message helper for callers
     - _Requirements: 10.3_
 
   - [x] 9.4 Write property tests for error handling

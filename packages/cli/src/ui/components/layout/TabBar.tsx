@@ -1,8 +1,8 @@
-import React from 'react';
+﻿import React from 'react';
 import { Box, Text, useInput } from 'ink';
 import { TabType } from '../../../features/context/UIContext.js';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
-import { Theme } from '../../../config/uiSettings.js';
+import { Theme } from '../../../config/types.js';
 
 export interface Tab {
   id: TabType;
@@ -12,12 +12,12 @@ export interface Tab {
 }
 
 export const tabs: Tab[] = [
-  { id: 'search', label: 'Search', icon: '🔍', shortcut: 'Ctrl+1' },
-  { id: 'files', label: 'Files', icon: '📁', shortcut: 'Ctrl+2' },
-  { id: 'github', label: 'GitHub', icon: '🐙', shortcut: 'Ctrl+3' },
-  { id: 'tools', label: 'Tools', icon: '🔧', shortcut: 'Ctrl+4' },
-  { id: 'docs', label: 'Docs', icon: '📚', shortcut: 'Ctrl+5' },
-  { id: 'settings', label: 'Settings', icon: '⚙️', shortcut: 'Ctrl+6' },
+  { id: 'chat', label: 'Chat', icon: '\u{1F4AC}', shortcut: 'Ctrl+1' },
+  { id: 'tools', label: 'Tools', icon: '\u{1F6E0}', shortcut: 'Ctrl+2' },
+  { id: 'files', label: 'Files', icon: '\u{1F4C1}', shortcut: 'Ctrl+3' },
+  { id: 'search', label: 'Search', icon: '\u{1F50D}', shortcut: 'Ctrl+4' },
+  { id: 'docs', label: 'Docs', icon: '\u{1F4DA}', shortcut: 'Ctrl+5' },
+  { id: 'settings', label: 'Settings', icon: '\u{2699}', shortcut: 'Ctrl+6' },
 ];
 
 export interface TabBarProps {
@@ -48,11 +48,11 @@ export function TabBar({ activeTab, onTabChange, notifications, theme, noBorder 
 
   return (
     <Box flexDirection="row" {...(!noBorder && { borderStyle: "single", borderColor: hasFocus ? theme.border.active : theme.border.primary })}>
-      {tabs.map((tab, index) => {
+      {tabs.map((tab) => {
         const isActive = tab.id === activeTab;
         const notificationCount = notifications.get(tab.id) || 0;
         const hasNotifications = notificationCount > 0;
-        
+
         // Active Text Color: Yellow if Focused, Accent if Active but not focused, Secondary otherwise
         let textColor = theme.text.secondary;
         if (isActive) {
@@ -64,9 +64,9 @@ export function TabBar({ activeTab, onTabChange, notifications, theme, noBorder 
             <Text
               color={textColor}
               bold={isActive}
-              backgroundColor={isActive && hasFocus ? undefined : undefined} // Could add bg if needed
+              backgroundColor={isActive && hasFocus ? undefined : undefined}
             >
-              {tab.icon} {tab.label}
+              {tab.icon}  {tab.label}
               {hasNotifications && (
                 <Text color={theme.text.accent}> ({notificationCount})</Text>
               )}

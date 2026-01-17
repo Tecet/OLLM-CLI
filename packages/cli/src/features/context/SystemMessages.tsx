@@ -37,16 +37,27 @@ export const CONTEXT_OPTIONS: ContextSizeOption[] = DEFAULT_CONTEXT_OPTIONS.map(
 
 import type { VRAMInfo } from '@ollm/core';
 
-export function createWelcomeMessage(model: string, currentContextSize: number, profile?: LLMProfile, gpuInfo?: VRAMInfo | null): Message {
+export function createWelcomeMessage(model: string, currentContextSize: number, profile?: LLMProfile, gpuInfo?: any): Message {
   let vramUsage = 'Unknown';
   let contextTableRows: string[] = [];
   let maxContextSize = 0;
   let recommendedSize = 0;
   
   // Calculate max safe context if VRAM info is available
-  // Safety buffer: 1.5GB or 10% which ever is larger for system overhead + display
-  const SAFETY_BUFFER_GB = gpuInfo ? Math.max(1.5, gpuInfo.total * 0.1) : 1.5;
-  const availableForContextGB = gpuInfo ? (gpuInfo.total - SAFETY_BUFFER_GB) : 0;
+  // Handle various shapes of gpuInfo (Live object uses vramTotal in bytes, Persisted uses total in GB)
+  let gpuTotalGB = 0;
+  if (gpuInfo) {
+      if (typeof gpuInfo.vramTotal === 'number' && gpuInfo.vramTotal > 0) {
+          // Live object typically has vramTotal in bytes, convert to GB
+          gpuTotalGB = gpuInfo.vramTotal / (1024 * 1024 * 1024);
+      } else if (typeof gpuInfo.total === 'number' && gpuInfo.total > 0) {
+          // Persisted fallback object uses total in GB
+          gpuTotalGB = gpuInfo.total;
+      }
+  }
+
+  const SAFETY_BUFFER_GB = gpuTotalGB > 0 ? Math.max(1.5, gpuTotalGB * 0.1) : 1.5;
+  const availableForContextGB = gpuTotalGB > 0 ? (gpuTotalGB - SAFETY_BUFFER_GB) : 0;
 
   if (profile) {
     // Exact match from profile
@@ -65,10 +76,7 @@ export function createWelcomeMessage(model: string, currentContextSize: number, 
     contextTableRows = profile.context_profiles.map(opt => {
         const sizeLabel = opt.size_label || (opt.size >= 1024 ? `${opt.size/1024}k` : `${opt.size}`);
         let row = `| ${sizeLabel.padEnd(5)} | ${opt.vram_estimate.padEnd(10)} |`;
-        
-        if (opt.size === recommendedSize) {
-           row += " <-- Recommended";
-        }
+        // Removed explicit recommendation marker from table to keep it clean as per user design
         return row;
     });
   } else {
@@ -87,24 +95,59 @@ export function createWelcomeMessage(model: string, currentContextSize: number, 
   const desc = profile?.description ? `*${profile.description}*\n` : '';
   const toolsInfo = profile?.tool_support ? "🛠️ **Tool Support:** Enabled\n" : "";
   
-  const systemDetectedMsg = maxContextSize > 0 
-      ? `\n**System detected maximum safe context size:** ${Math.floor(maxContextSize/1024)}k (based on ${availableForContextGB.toFixed(1)}GB usable VRAM)\n` 
-      : '';
+  // Hardware Info Construction
+  const gpuCount = gpuInfo?.count || 1;
+  const gpuName = gpuInfo?.model || gpuInfo?.vendor || 'Unknown GPU';
+  const vramDisplay = gpuTotalGB > 0 ? `${gpuTotalGB.toFixed(1)} GB` : 'Unknown';
+
+  let gpuListString = '';
+  if (gpuCount > 1) {
+      const lines = [];
+      for (let i = 1; i <= gpuCount; i++) {
+          lines.push(`${i} - GPU Type - ${gpuName}`);
+      }
+      gpuListString = lines.join('\n');
+  } else {
+      gpuListString = `GPU Type - ${gpuName}`;
+  }
 
   const content = `
-Welcome to OLLM CLI! 
+**Current Configuration:** 
 
-**Current Configuration:**
-- Model: **${profile ? profile.name : model}**
-- Context: **${currentContextSize}** tokens (~${vramUsage})
-${desc}${abilities}${toolsInfo}${systemDetectedMsg}
+Hardware: 
+GPU Number - ${gpuCount}
+${gpuListString}
+VRAM avalible - ${vramDisplay}
+
+LLM Model: **${profile ? profile.name : model}**
+Context: **${currentContextSize}** tokens (~${vramUsage})
+
+Description : 
+${desc}${abilities}${toolsInfo}
 **Context Size Options & VRAM Requirements:**
+
 | Size  | VRAM       |
 |-------|------------|
 ${optionsTable}
 
 *Use the interactive menu below to select options.*
+type /help for more options
 `.trim();
+
+  return {
+    id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    role: 'system',
+    content,
+    timestamp: new Date(),
+  };
+}
+
+export function createCompactWelcomeMessage(model: string, profile?: LLMProfile): Message {
+  const name = profile ? profile.name : model;
+  const abilities = profile?.abilities ? `Abilities: ${profile.abilities.join(', ')}` : '';
+  const toolsInfo = profile?.tool_support ? 'Tools: Enabled' : 'Tools: Disabled';
+  const desc = profile?.description ? ` - ${profile.description}` : '';
+  const content = `Model loaded: ${name}${desc}\n${toolsInfo}${abilities ? ` | ${abilities}` : ''}`;
 
   return {
     id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,

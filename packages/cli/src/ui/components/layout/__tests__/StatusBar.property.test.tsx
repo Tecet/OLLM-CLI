@@ -195,7 +195,7 @@ describe('StatusBar Property Tests', () => {
             const frameText = getTextContent(frame);
 
             // Property: Temperature should be displayed
-            expect(frameText).toContain(`${temperature}°C`);
+            expect(frameText).toContain(`${temperature}C`);
           }
         ),
         { numRuns: 100 }

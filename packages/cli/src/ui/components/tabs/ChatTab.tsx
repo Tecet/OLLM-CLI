@@ -58,7 +58,7 @@ export function ChatTab(props: ChatTabProps) {
       width="100%" 
       alignItems="center"
       borderStyle={showBorder ? 'round' : undefined}
-      borderColor={hasFocus ? 'green' : 'blue'}
+      borderColor={hasFocus ? uiState.theme.border.active : uiState.theme.border.primary}
     >
         <Box 
           width={contentWidth} 
@@ -75,7 +75,7 @@ export function ChatTab(props: ChatTabProps) {
             theme={uiState.theme}
             scrollOffset={scrollOffset}
             maxVisibleLines={maxVisibleLines}
-            paddingY={1}
+            paddingY={0}
             metricsConfig={finalMetricsConfig}
             reasoningConfig={finalReasoningConfig}
             width={contentWidth - 2} // Account for padding

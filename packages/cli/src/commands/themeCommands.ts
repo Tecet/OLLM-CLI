@@ -8,8 +8,9 @@
  */
 
 import type { Command, CommandResult } from './types.js';
-import type { Theme } from '../config/uiSettings.js';
+import type { Theme } from '../config/types.js';
 import { getThemeManager } from '../ui/services/themeManager.js';
+import { SettingsService } from '../config/settingsService.js';
 
 /**
  * /theme list - List available themes
@@ -70,6 +71,9 @@ function createThemeUseHandler(setTheme?: (theme: Theme) => void) {
       if (setTheme) {
         setTheme(theme);
       }
+
+      // Persist selection
+      SettingsService.getInstance().setTheme(themeName);
       
       return {
         success: true,

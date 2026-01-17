@@ -58,11 +58,11 @@ function formatBytes(bytes: number): string {
 function getConnectionIndicator(status: ConnectionStatus['status']): string {
   switch (status) {
     case 'connected':
-      return '🟢';
+      return 'OK';
     case 'connecting':
-      return '🟡';
+      return '...';
     case 'disconnected':
-      return '🔴';
+      return 'OFF';
   }
 }
 
@@ -92,11 +92,13 @@ export function StatusBar({
 }: StatusBarProps) {
   const connectionIndicator = getConnectionIndicator(connection.status);
   const connectionColor = getConnectionColor(connection.status, theme);
+  const separator = ' | ';
+
   if (compact) {
     return (
       <Box flexDirection="row" alignItems="center">
         <Text color={connectionColor}>{connectionIndicator} {connection.provider}</Text>
-        <Text color={theme.text.secondary}> │ </Text>
+        <Text color={theme.text.secondary}>{separator}</Text>
         <Text color={theme.text.accent}>{model}</Text>
 
         {loadedModels && loadedModels.length > 0 && (
@@ -108,44 +110,44 @@ export function StatusBar({
 
         {projectProfile && (
           <>
-            <Text color={theme.text.secondary}> │ </Text>
+            <Text color={theme.text.secondary}>{separator}</Text>
             <Text color={theme.status.info}>{projectProfile}</Text>
           </>
         )}
 
         {git && (
           <>
-            <Text color={theme.text.secondary}> │ </Text>
+            <Text color={theme.text.secondary}>{separator}</Text>
             <Text color={theme.text.secondary}>{git.branch}</Text>
-            <Text color={theme.text.secondary}> • </Text>
+            <Text color={theme.text.secondary}>{separator}</Text>
             <Text color={theme.text.secondary}>+{git.staged} ~{git.modified}</Text>
           </>
         )}
 
-        {(typeof reviews === 'number' && reviews > 0) && (
+        {typeof reviews === 'number' && reviews > 0 && (
           <>
-            <Text color={theme.text.secondary}> │ </Text>
+            <Text color={theme.text.secondary}>{separator}</Text>
             <Text color={theme.text.secondary}>Reviews: </Text>
             <Text color={theme.text.accent}>{reviews}</Text>
           </>
         )}
 
-        {(typeof cost === 'number') && (
+        {typeof cost === 'number' && (
           <>
-            <Text color={theme.text.secondary}> │ </Text>
+            <Text color={theme.text.secondary}>{separator}</Text>
             <Text color={theme.text.secondary}>Cost: </Text>
             <Text color={theme.text.secondary}>{cost.toFixed(2)}</Text>
           </>
         )}
 
-        <Text color={theme.text.secondary}> │ </Text>
+        <Text color={theme.text.secondary}>{separator}</Text>
         <Text color={theme.text.secondary}>{tokens.current}/{tokens.max}</Text>
 
         {gpu && gpu.available && (
           <>
-            <Text color={theme.text.secondary}> │ </Text>
+            <Text color={theme.text.secondary}>{separator}</Text>
             <Text color={gpu.temperature > 80 ? theme.status.warning : theme.text.secondary}>
-              {gpu.temperature}°C {formatBytes(gpu.vramUsed)}/{formatBytes(gpu.vramTotal)}
+              {gpu.temperature}C {formatBytes(gpu.vramUsed)}/{formatBytes(gpu.vramTotal)}
             </Text>
           </>
         )}
@@ -161,7 +163,7 @@ export function StatusBar({
           {connectionIndicator} {connection.provider}
         </Text>
 
-        <Text color={theme.text.secondary}> │ </Text>
+        <Text color={theme.text.secondary}>{separator}</Text>
 
         <Text color={theme.text.accent}>{model}</Text>
 
@@ -174,31 +176,31 @@ export function StatusBar({
 
         {projectProfile && (
           <>
-            <Text color={theme.text.secondary}> │ </Text>
+            <Text color={theme.text.secondary}>{separator}</Text>
             <Text color={theme.status.info}>{projectProfile}</Text>
           </>
         )}
 
         {git && (
           <>
-            <Text color={theme.text.secondary}> │ </Text>
+            <Text color={theme.text.secondary}>{separator}</Text>
             <Text color={theme.text.secondary}>{git.branch}</Text>
-            <Text color={theme.text.secondary}> • </Text>
+            <Text color={theme.text.secondary}>{separator}</Text>
             <Text color={theme.text.secondary}>+{git.staged} ~{git.modified}</Text>
           </>
         )}
 
-        {(typeof reviews === 'number' && reviews > 0) && (
+        {typeof reviews === 'number' && reviews > 0 && (
           <>
-            <Text color={theme.text.secondary}> │ </Text>
+            <Text color={theme.text.secondary}>{separator}</Text>
             <Text color={theme.text.secondary}>Reviews: </Text>
             <Text color={theme.text.accent}>{reviews}</Text>
           </>
         )}
 
-        {(typeof cost === 'number') && (
+        {typeof cost === 'number' && (
           <>
-            <Text color={theme.text.secondary}> │ </Text>
+            <Text color={theme.text.secondary}>{separator}</Text>
             <Text color={theme.text.secondary}>Cost: </Text>
             <Text color={theme.text.secondary}>{cost.toFixed(2)}</Text>
           </>
@@ -216,9 +218,9 @@ export function StatusBar({
       <Box flexDirection="row" alignItems="center" paddingLeft={1}>
         {gpu && gpu.available ? (
           <>
-            <Text color={theme.text.secondary}> │ </Text>
+            <Text color={theme.text.secondary}>{separator}</Text>
             <Text color={gpu.temperature > 80 ? theme.status.warning : theme.text.secondary}>
-              {gpu.temperature}°C {formatBytes(gpu.vramUsed)}/{formatBytes(gpu.vramTotal)}
+              {gpu.temperature}C {formatBytes(gpu.vramUsed)}/{formatBytes(gpu.vramTotal)}
             </Text>
           </>
         ) : (

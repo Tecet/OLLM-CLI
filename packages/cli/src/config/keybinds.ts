@@ -1,4 +1,21 @@
-{
+/**
+ * Default Keybinding Configuration
+ * 
+ * This file defines the default keyboard shortcuts for the application.
+ * Bindings are grouped by functional area:
+ * - Tab Navigation: Switching between main views
+ * - Layout: Toggling panels and debug modes
+ * - Chat: Interactive chat controls
+ * - Review: Code diff review actions
+ * - Navigation: Global movement keys
+ * - Global: Focus management
+ */
+
+export const keybindsData = {
+  /**
+   * Shortcuts for switching main tabs.
+   * Typically Ctrl + Number.
+   */
   "tabNavigation": {
     "tabChat": "ctrl+1",
     "tabTools": "ctrl+2",
@@ -7,11 +24,19 @@
     "tabDocs": "ctrl+5",
     "tabSettings": "ctrl+6"
   },
+
+  /**
+   * Global layout controls.
+   */
   "layout": {
     "togglePanel": "ctrl+p",
     "commandPalette": "ctrl+k",
     "toggleDebug": "ctrl+/"
   },
+
+  /**
+   * Chat interaction shortcuts.
+   */
   "chat": {
     "clearChat": "ctrl+l",
     "saveSession": "ctrl+s",
@@ -20,10 +45,18 @@
     "newline": "shift+return",
     "editPrevious": "up"
   },
+
+  /**
+   * Review mode shortcuts (diff viewer).
+   */
   "review": {
     "approve": "y",
     "reject": "n"
   },
+
+  /**
+   * Standard navigation keys (Vim-style fallback included).
+   */
   "navigation": {
     "scrollDown": "j",
     "scrollUp": "k",
@@ -33,6 +66,10 @@
     "left": "left",
     "right": "right"
   },
+
+  /**
+   * Global focus management shortcuts.
+   */
   "global": {
     "focusChatInput": "ctrl+space",
     "focusNavigation": "ctrl+m",
@@ -42,4 +79,4 @@
     "cycleNext": "tab",
     "cyclePrev": "shift+tab"
   }
-}
+};

@@ -1,12 +1,10 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import { 
-  Theme, 
-  Keybinds, 
-  defaultDarkTheme, 
-  defaultKeybinds 
-} from '../../config/uiSettings.js';
 
-export type TabType = 'chat' | 'search' | 'files' | 'github' | 'tools' | 'docs' | 'settings';
+import { Theme, Keybinds } from '../../config/types.js';
+import { defaultKeybinds } from '../../config/defaults.js';
+import { defaultDarkTheme } from '../../config/styles.js';
+
+export type TabType = 'chat' | 'search' | 'files' | 'tools' | 'docs' | 'settings';
 
 export interface Notification {
   id: string;

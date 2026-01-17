@@ -24,6 +24,9 @@ export interface GPUInfo {
   
   /** GPU vendor */
   vendor: GPUVendor;
+
+  /** GPU Model Name (e.g. NVIDIA GeForce RTX 3090) */
+  model?: string;
   
   /** Total VRAM in bytes */
   vramTotal: number;
@@ -98,6 +101,7 @@ export class DefaultGPUMonitor implements GPUMonitor {
   private retryCount: number = 0;
   private maxRetries: number = 3;
   private baseRetryDelay: number = 1000; // 1 second
+  private cachedModelName: string | undefined;
 
   /**
    * Log warning to debug output
@@ -205,12 +209,31 @@ export class DefaultGPUMonitor implements GPUMonitor {
   async queryNVIDIA(): Promise<GPUInfo> {
     for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
       try {
+        // Include name in query if not cached
+        const query = this.cachedModelName 
+            ? 'memory.total,memory.used,memory.free,temperature.gpu,temperature.gpu.tlimit,utilization.gpu' 
+            : 'memory.total,memory.used,memory.free,temperature.gpu,temperature.gpu.tlimit,utilization.gpu,name';
+
         const { stdout } = await execAsync(
-          'nvidia-smi --query-gpu=memory.total,memory.used,memory.free,temperature.gpu,temperature.gpu.tlimit,utilization.gpu --format=csv,noheader,nounits'
+          `nvidia-smi --query-gpu=${query} --format=csv,noheader,nounits`
         );
 
-        const values = stdout.trim().split(',').map(v => parseFloat(v.trim()));
-        const [memTotal, memUsed, memFree, temp, tempMax, util] = values;
+        const parts = stdout.trim().split(',').map(v => v.trim());
+        
+        let memTotal = parseFloat(parts[0]);
+        let memUsed = parseFloat(parts[1]);
+        let memFree = parseFloat(parts[2]);
+        let temp = parseFloat(parts[3]);
+        let tempMax = parseFloat(parts[4]);
+        let util = parseFloat(parts[5]);
+        
+        // If name was requested, it's the last item
+        if (!this.cachedModelName && parts.length > 6) {
+             this.cachedModelName = parts.slice(6).join(' '); // Name might contain commas? nvidia-smi csv usually handles it or splits. Better safe logic later if needed.
+             // Actually, nvidia-smi format=csv quotes strings if they contain delimiter. 
+             // Simplest assumption: Name is the last part.
+             this.cachedModelName = parts[parts.length-1]; 
+        }
 
         // Reset retry count on success
         this.retryCount = 0;
@@ -218,6 +241,7 @@ export class DefaultGPUMonitor implements GPUMonitor {
         return {
           available: true,
           vendor: 'nvidia',
+          model: this.cachedModelName,
           vramTotal: memTotal * 1024 * 1024, // Convert MiB to bytes
           vramUsed: memUsed * 1024 * 1024,
           vramFree: memFree * 1024 * 1024,
@@ -265,12 +289,22 @@ export class DefaultGPUMonitor implements GPUMonitor {
         const utilMatch = utilOutput.match(/GPU use \(%\):\s*([\d.]+)/);
         const util = utilMatch ? parseFloat(utilMatch[1]) : 0;
 
+        if (!this.cachedModelName) {
+            // Try to get product name
+            try {
+                const { stdout: nameOutput } = await execAsync('rocm-smi --showproductname');
+                const nameMatch = nameOutput.match(/Card Series:\s*(.+)/);
+                if (nameMatch) this.cachedModelName = nameMatch[1].trim();
+            } catch (e) { /* ignore */ }
+        }
+
         // Reset retry count on success
         this.retryCount = 0;
 
         return {
           available: true,
           vendor: 'amd',
+          model: this.cachedModelName || 'AMD Radeon',
           vramTotal: memTotal,
           vramUsed: memUsed,
           vramFree: memTotal - memUsed,
@@ -299,6 +333,12 @@ export class DefaultGPUMonitor implements GPUMonitor {
   async queryApple(): Promise<GPUInfo> {
     for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
       try {
+        if (!this.cachedModelName) {
+             const { stdout } = await execAsync('system_profiler SPDisplaysDataType');
+             const match = stdout.match(/Chipset Model:\s*(.+)/);
+             if (match) this.cachedModelName = match[1].trim();
+        }
+
         // Apple Silicon doesn't expose detailed GPU metrics easily
         // We'll use system_profiler for basic info
         const { stdout } = await execAsync('system_profiler SPDisplaysDataType');
@@ -327,6 +367,7 @@ export class DefaultGPUMonitor implements GPUMonitor {
         return {
           available: true,
           vendor: 'apple',
+          model: this.cachedModelName || 'Apple Silicon GPU',
           vramTotal: vramTotal || memUsed + memFree,
           vramUsed: memUsed,
           vramFree: memFree,
@@ -366,6 +407,7 @@ export class DefaultGPUMonitor implements GPUMonitor {
         return {
           available: false,
           vendor: 'cpu',
+          model: 'System RAM (CPU Mode)',
           vramTotal: total,
           vramUsed: total - free,
           vramFree: free,
@@ -388,6 +430,7 @@ export class DefaultGPUMonitor implements GPUMonitor {
           return {
             available: false,
             vendor: 'cpu',
+            model: 'System RAM (CPU Mode)',
             vramTotal: total,
             vramUsed: used,
             vramFree: free,
@@ -402,6 +445,7 @@ export class DefaultGPUMonitor implements GPUMonitor {
       return {
         available: false,
         vendor: 'cpu',
+        model: 'CPU Fallback',
         vramTotal: 0,
         vramUsed: 0,
         vramFree: 0,
@@ -431,6 +475,19 @@ export class DefaultGPUMonitor implements GPUMonitor {
   async queryWindowsGPU(): Promise<GPUInfo> {
     for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
       try {
+        // Attempt to fetch model name if not cached
+        if (!this.cachedModelName) {
+            try {
+                const { stdout } = await execAsync(
+                    `powershell -NoProfile -Command "Get-CimInstance Win32_VideoController | Select-Object -ExpandProperty Name -First 1"`,
+                    { timeout: 5000, windowsHide: true } 
+                );
+                this.cachedModelName = stdout.trim();
+            } catch (e) {
+                this.cachedModelName = 'Windows Generic GPU';
+            }
+        }
+
         // Query GPU adapter memory counters
         // These counters work with any GPU vendor on Windows
         const { stdout: memOutput } = await execAsync(
@@ -476,6 +533,7 @@ export class DefaultGPUMonitor implements GPUMonitor {
         return {
           available: true,
           vendor: 'windows',
+          model: this.cachedModelName,
           vramTotal,
           vramUsed,
           vramFree,

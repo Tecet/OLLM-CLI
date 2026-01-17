@@ -3,6 +3,7 @@ import * as fc from 'fast-check';
 import React from 'react';
 import { render, stripAnsi } from '../../../../test/ink-testing.js';
 import { TabBar, tabs } from '../TabBar.js';
+import { FocusProvider } from '../../../../features/context/FocusContext.js';
 import { TabType } from '../../../../features/context/UIContext.js';
 
 /**
@@ -32,12 +33,15 @@ describe('Property 13: Active Tab Highlighting', () => {
         fc.constantFrom<TabType>('chat', 'tools', 'files', 'search', 'docs', 'settings'),
         (activeTab) => {
           const { lastFrame } = render(
-            <TabBar
-              activeTab={activeTab}
-              onTabChange={() => {}}
-              notifications={new Map()}
-              theme={defaultTheme}
-            />
+            <FocusProvider>
+              <TabBar
+                activeTab={activeTab}
+                onTabChange={() => {}}
+                notifications={new Map()}
+                theme={defaultTheme}
+                noBorder
+              />
+            </FocusProvider>
           );
 
           const output = lastFrame();
@@ -65,12 +69,15 @@ describe('Property 13: Active Tab Highlighting', () => {
         fc.constantFrom<TabType>('chat', 'tools', 'files', 'search', 'docs', 'settings'),
         (activeTab) => {
           const { lastFrame } = render(
-            <TabBar
-              activeTab={activeTab}
-              onTabChange={() => {}}
-              notifications={new Map()}
-              theme={defaultTheme}
-            />
+            <FocusProvider>
+              <TabBar
+                activeTab={activeTab}
+                onTabChange={() => {}}
+                notifications={new Map()}
+                theme={defaultTheme}
+                noBorder
+              />
+            </FocusProvider>
           );
 
           const output = lastFrame();
@@ -100,12 +107,15 @@ describe('Property 13: Active Tab Highlighting', () => {
           // Test each tab in the sequence
           tabSequence.forEach(activeTab => {
             const { lastFrame } = render(
-              <TabBar
-                activeTab={activeTab}
-                onTabChange={() => {}}
-                notifications={new Map()}
-                theme={defaultTheme}
-              />
+              <FocusProvider>
+                <TabBar
+                  activeTab={activeTab}
+                  onTabChange={() => {}}
+                  notifications={new Map()}
+                  theme={defaultTheme}
+                  noBorder
+                />
+              </FocusProvider>
             );
 
             const output = lastFrame();

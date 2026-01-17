@@ -1,0 +1,13 @@
+{
+  "ui": {
+    "theme": "default"
+  },
+  "llm": {
+    "model": "llama3.2:3b",
+    "contextSize": 4096
+  },
+  "hardware": {
+    "gpuCount": 1,
+    "gpuName": "Unknown"
+  }
+}

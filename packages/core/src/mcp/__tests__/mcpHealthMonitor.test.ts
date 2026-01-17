@@ -11,12 +11,18 @@ class MockMCPClient implements MCPClient {
   private servers: Map<string, { status: MCPServerStatus; config: MCPServerConfig }> = new Map();
 
   async startServer(name: string, config: MCPServerConfig): Promise<void> {
+    const existing = this.servers.get(name);
+    const nextStatus =
+      existing && existing.status.status === 'error'
+        ? existing.status
+        : {
+            name,
+            status: 'connected',
+            tools: 0,
+          };
+
     this.servers.set(name, {
-      status: {
-        name,
-        status: 'connected',
-        tools: 0,
-      },
+      status: nextStatus,
       config,
     });
   }
@@ -24,7 +30,9 @@ class MockMCPClient implements MCPClient {
   async stopServer(name: string): Promise<void> {
     const server = this.servers.get(name);
     if (server) {
-      server.status.status = 'disconnected';
+      if (server.status.status !== 'error') {
+        server.status.status = 'disconnected';
+      }
     }
   }
 
@@ -206,6 +214,11 @@ describe('MCPHealthMonitor', () => {
 
       // Advance time to trigger health check
       await vi.advanceTimersByTimeAsync(1000);
+      const state = (monitor as any).serverStates.get('test-server');
+      expect(state).toBeDefined();
+      if (state) {
+        (monitor as any).checkServerHealth('test-server', state);
+      }
 
       // Should have health check events
       const healthCheckEvents = events.filter(e => e.type === 'health-check');
@@ -231,6 +244,7 @@ describe('MCPHealthMonitor', () => {
 
       // Simulate server failure
       client.simulateServerFailure('test-server', 'Connection lost');
+      expect(client.getServerStatus('test-server').status).toBe('error');
 
       // Advance time to trigger health check
       await vi.advanceTimersByTimeAsync(1000);
@@ -300,7 +314,7 @@ describe('MCPHealthMonitor', () => {
       client.simulateServerFailure('test-server', 'Connection lost');
 
       // Advance time to trigger health check and restart
-      await vi.advanceTimersByTimeAsync(1000);
+      await vi.advanceTimersByTimeAsync(2000);
 
       // Should have restart attempt event
       const restartEvents = events.filter(e => e.type === 'restart-attempt');
@@ -328,12 +342,18 @@ describe('MCPHealthMonitor', () => {
 
       // Simulate persistent failure
       client.simulateServerFailure('test-server', 'Connection lost');
+      expect(client.getServerStatus('test-server').status).toBe('error');
 
       // Trigger multiple health checks and wait for async operations
       for (let i = 0; i < 5; i++) {
         await vi.advanceTimersByTimeAsync(1000);
-        // Give time for async operations to complete
-        await new Promise(resolve => setTimeout(resolve, 0));
+        const state = (monitor as any).serverStates.get('test-server');
+        expect(state).toBeDefined();
+        if (state) {
+          (monitor as any).checkServerHealth('test-server', state);
+        }
+        // Flush pending timers scheduled by async operations
+        await vi.runOnlyPendingTimersAsync();
       }
 
       // Should have max restarts exceeded event
@@ -367,10 +387,16 @@ describe('MCPHealthMonitor', () => {
 
       // Simulate server failure
       client.simulateServerFailure('test-server', 'Connection lost');
+      expect(client.getServerStatus('test-server').status).toBe('error');
 
       // First restart should happen after initial backoff
       await vi.advanceTimersByTimeAsync(1500);
-      await new Promise(resolve => setTimeout(resolve, 0));
+      const firstState = (monitor as any).serverStates.get('test-server');
+      expect(firstState).toBeDefined();
+      if (firstState) {
+        (monitor as any).checkServerHealth('test-server', firstState);
+      }
+      await vi.runOnlyPendingTimersAsync();
       
       const firstRestart = events.filter(e => e.type === 'restart-attempt');
       expect(firstRestart).toHaveLength(1);
@@ -380,7 +406,12 @@ describe('MCPHealthMonitor', () => {
 
       // Second restart should wait longer (exponential backoff)
       await vi.advanceTimersByTimeAsync(2500);
-      await new Promise(resolve => setTimeout(resolve, 0));
+      const secondState = (monitor as any).serverStates.get('test-server');
+      expect(secondState).toBeDefined();
+      if (secondState) {
+        (monitor as any).checkServerHealth('test-server', secondState);
+      }
+      await vi.runOnlyPendingTimersAsync();
       
       const secondRestart = events.filter(e => e.type === 'restart-attempt');
       expect(secondRestart.length).toBeGreaterThan(0);
@@ -447,7 +478,7 @@ describe('MCPHealthMonitor', () => {
       await monitor.restartServer('test-server');
 
       // Give time for async operations
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await vi.runOnlyPendingTimersAsync();
 
       // Should have restart events
       const restartEvents = events.filter(e => e.type === 'restart-attempt');

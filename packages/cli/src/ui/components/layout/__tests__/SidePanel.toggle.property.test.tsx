@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
 import { render } from '../../../../test/ink-testing.js';
 import { SidePanel } from '../SidePanel.js';
+import { FocusProvider } from '../../../../features/context/FocusContext.js';
 import { Box, Text } from 'ink';
-import type { TabType } from '../../../../features/context/UIContext.js';
 
 // Mock ContextSection component for testing
 function MockContextSection() {
@@ -45,9 +45,6 @@ describe('Property 14: Side Panel Toggle', () => {
     ContextSection: () => <Text>Mock Context</Text>,
   }));
 
-  const defaultActiveTab: TabType = 'chat';
-  const defaultNotifications = new Map<TabType, number>();
-  const mockOnTabChange = () => {};
 
   it('should render when visible is true', () => {
     fc.assert(
@@ -55,14 +52,15 @@ describe('Property 14: Side Panel Toggle', () => {
         fc.constant(true),
         (visible) => {
           const { lastFrame } = render(
-            <SidePanel
-              visible={visible}
-
-              connection={{ status: 'connected', provider: 'ollama' } as any}
-              model="test-model"
-              gpu={{ available: false } as any}
-              theme={defaultTheme}
-            />
+            <FocusProvider>
+              <SidePanel
+                visible={visible}
+                connection={{ status: 'connected', provider: 'ollama' } as any}
+                model="test-model"
+                gpu={{ available: false } as any}
+                theme={defaultTheme}
+              />
+            </FocusProvider>
           );
 
           const output = lastFrame();
@@ -85,14 +83,15 @@ describe('Property 14: Side Panel Toggle', () => {
         fc.constant(false),
         (visible) => {
           const { lastFrame } = render(
-            <SidePanel
-              visible={visible}
-
-              connection={{ status: 'connected', provider: 'ollama' } as any}
-              model="test-model"
-              gpu={{ available: false } as any}
-              theme={defaultTheme}
-            />
+            <FocusProvider>
+              <SidePanel
+                visible={visible}
+                connection={{ status: 'connected', provider: 'ollama' } as any}
+                model="test-model"
+                gpu={{ available: false } as any}
+                theme={defaultTheme}
+              />
+            </FocusProvider>
           );
 
           const output = lastFrame();
@@ -115,13 +114,15 @@ describe('Property 14: Side Panel Toggle', () => {
           // Test each visibility state in the sequence
           visibilitySequence.forEach(visible => {
             const { lastFrame } = render(
-              <SidePanel
-                visible={visible}
-  
-                onTabChange={mockOnTabChange}
-                notifications={defaultNotifications}
-                theme={defaultTheme}
-              />
+              <FocusProvider>
+                <SidePanel
+                  visible={visible}
+                  connection={{ status: 'connected', provider: 'ollama' } as any}
+                  model="test-model"
+                  gpu={{ available: false } as any}
+                  theme={defaultTheme}
+                />
+              </FocusProvider>
             );
 
             const output = lastFrame();
@@ -153,13 +154,15 @@ describe('Property 14: Side Panel Toggle', () => {
             currentVisibility = !currentVisibility;
             
             const { lastFrame } = render(
-              <SidePanel
-                visible={currentVisibility}
-  
-                onTabChange={mockOnTabChange}
-                notifications={defaultNotifications}
-                theme={defaultTheme}
-              />
+              <FocusProvider>
+                <SidePanel
+                  visible={currentVisibility}
+                  connection={{ status: 'connected', provider: 'ollama' } as any}
+                  model="test-model"
+                  gpu={{ available: false } as any}
+                  theme={defaultTheme}
+                />
+              </FocusProvider>
             );
 
             const output = lastFrame();

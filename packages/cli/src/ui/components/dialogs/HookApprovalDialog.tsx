@@ -8,7 +8,7 @@
 import React, { useState } from 'react';
 import { Box, Text } from 'ink';
 import type { Hook } from '@ollm/ollm-cli-core/hooks/types.js';
-import { Theme } from '../../../config/uiSettings.js';
+import { Theme } from '../../../config/types.js';
 
 export interface HookApprovalDialogProps {
   /** The hook requesting approval */

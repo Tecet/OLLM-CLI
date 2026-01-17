@@ -12,6 +12,7 @@
  */
 
 import type { Command, CommandResult } from './types.js';
+import { SettingsService } from '../config/settingsService.js';
 // import type { ModelManagementService } from '@ollm/core/services/modelManagementService.js';
 // import type { ServiceContainer } from '@ollm/core/services/serviceContainer.js';
 type ModelManagementService = any;
@@ -37,6 +38,9 @@ async function modelUseHandler(args: string[]): Promise<CommandResult> {
   if (typeof (globalThis as any).__ollmModelSwitchCallback === 'function') {
     (globalThis as any).__ollmModelSwitchCallback(modelName);
   }
+
+  // Persist selection
+  SettingsService.getInstance().setModel(modelName);
 
   return {
     success: true,
