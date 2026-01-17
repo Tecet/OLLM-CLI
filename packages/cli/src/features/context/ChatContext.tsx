@@ -267,6 +267,28 @@ export function ChatProvider({
               clearChat();
           }
           if (result.action === 'exit') {
+            if (provider?.unloadModel && currentModel) {
+              try {
+                addMessage({
+                  role: 'system',
+                  content: `Unloading model "${currentModel}"...`,
+                  excludeFromContext: true
+                });
+                await provider.unloadModel(currentModel);
+                addMessage({
+                  role: 'system',
+                  content: `Model "${currentModel}" unloaded.`,
+                  excludeFromContext: true
+                });
+                await new Promise(resolve => setTimeout(resolve, 250));
+              } catch (error) {
+                addMessage({
+                  role: 'system',
+                  content: `Failed to unload model "${currentModel}": ${error instanceof Error ? error.message : String(error)}`,
+                  excludeFromContext: true
+                });
+              }
+            }
             process.exit(0);
           }
           addMessage({

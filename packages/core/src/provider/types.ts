@@ -165,4 +165,10 @@ export interface ProviderAdapter {
    * @returns Model information
    */
   showModel?(name: string): Promise<ModelInfo>;
+
+  /**
+   * Unload a model from memory (optional).
+   * @param name Model name
+   */
+  unloadModel?(name: string): Promise<void>;
 }

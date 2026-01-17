@@ -641,6 +641,33 @@ export class LocalProvider implements ProviderAdapter {
   }
 
   /**
+   * Unload a model from memory (Ollama keep_alive=0).
+   */
+  async unloadModel(name: string): Promise<void> {
+    const url = `${this.config.baseUrl}/api/generate`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: name,
+        prompt: '',
+        keep_alive: 0,
+        stream: false,
+      }),
+    });
+
+    if (!response.ok) {
+      const details = await response.text();
+      const suffix = details.trim();
+      throw new Error(
+        suffix.length > 0
+          ? `Failed to unload model "${name}": HTTP ${response.status} ${response.statusText} - ${suffix}`
+          : `Failed to unload model "${name}": HTTP ${response.status} ${response.statusText}`
+      );
+    }
+  }
+
+  /**
    * Get detailed information about a model.
    */
   async showModel(name: string): Promise<ModelInfo> {

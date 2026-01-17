@@ -71,10 +71,17 @@ export function ModelProvider({
   const setModelAndLoading = useCallback((model: string) => {
     const changed = currentModel !== model;
     if (changed) {
+      const previousModel = currentModel;
       setCurrentModel(model);
       setModelLoading(true);
+      if (previousModel && provider.unloadModel) {
+        provider.unloadModel(previousModel).catch((error: unknown) => {
+          const message = error instanceof Error ? error.message : String(error);
+          console.warn(`Failed to unload model "${previousModel}": ${message}`);
+        });
+      }
     }
-  }, [currentModel]);
+  }, [currentModel, provider]);
 
   useEffect(() => {
     if (!modelLoading || !currentModel) return;
