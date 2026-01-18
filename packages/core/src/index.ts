@@ -256,4 +256,27 @@ export {
   type PromptDefinition,
   type RegisteredPrompt,
   type PromptTemplateParams,
+  // Context Analyzer
+  ContextAnalyzer,
+  type ContextAnalysis,
+  type ModeType,
+  // Prompt Mode Manager
+  PromptModeManager,
+  type ModeConfig,
+  type ModeTransition,
+  type PromptBuildOptions,
+  // Snapshot Manager
+  SnapshotManager,
+  type ModeTransitionSnapshot,
+  type ModeFindings,
+  // Mode Templates
+  ASSISTANT_MODE_TEMPLATE,
+  PLANNING_MODE_TEMPLATE,
+  DEVELOPER_MODE_TEMPLATE,
+  TOOL_MODE_TEMPLATE,
+  DEBUGGER_MODE_TEMPLATE,
+  SECURITY_MODE_TEMPLATE,
+  REVIEWER_MODE_TEMPLATE,
+  PERFORMANCE_MODE_TEMPLATE,
+  MODE_TEMPLATES,
 } from './prompts/index.js';

@@ -748,16 +748,18 @@ describe('Chat Client - Unit Tests', () => {
             providerRegistry.setDefault('mock');
 
             const client = new ChatClient(providerRegistry, toolRegistry);
+            const events: ChatEvent[] = [];
 
             // Should not throw - should emit error event instead
-      // Test that error is propagated
-      let didThrow = false;
-      try {
-        await client.chat('test message');
-      } catch (_error) {
-        didThrow = true;
-      }
-      expect(didThrow).toBe(true);
+            let didThrow = false;
+            try {
+              for await (const event of client.chat('test message')) {
+                events.push(event);
+              }
+            } catch (_error) {
+              didThrow = true;
+            }
+            expect(didThrow).toBe(false);
 
             // Should have error event
             const errorEvents = events.filter((e) => e.type === 'error');

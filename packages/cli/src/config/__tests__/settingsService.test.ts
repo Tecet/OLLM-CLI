@@ -18,7 +18,7 @@ describe('SettingsService - Tool State Management', () => {
 
   beforeEach(() => {
     // Create a temporary directory for testing
-    testDir = join(tmpdir(), `ollm-test-${Date.now()}`);
+    testDir = join(tmpdir(), `ollm-test-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`);
     mkdirSync(testDir, { recursive: true });
     
     // Mock homedir to use test directory
@@ -178,3 +178,178 @@ describe('SettingsService - Tool State Management', () => {
     });
   });
 });
+
+describe('SettingsService - Mode Persistence', () => {
+  let testDir: string;
+
+  beforeEach(() => {
+    // Create a temporary directory for testing
+    testDir = join(tmpdir(), `ollm-test-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`);
+    mkdirSync(testDir, { recursive: true });
+    
+    // Mock homedir to use test directory
+    vi.mocked(homedir).mockReturnValue(testDir);
+    
+    // Reset singleton instance
+    // @ts-expect-error - accessing private static field for testing
+    SettingsService.instance = undefined;
+  });
+
+  afterEach(() => {
+    // Clean up test directory
+    if (existsSync(testDir)) {
+      rmSync(testDir, { recursive: true, force: true });
+    }
+    
+    // Reset singleton instance
+    // @ts-expect-error - accessing private static field for testing
+    SettingsService.instance = undefined;
+    
+    vi.clearAllMocks();
+  });
+
+  describe('getMode', () => {
+    it('should return undefined by default', () => {
+      const service = SettingsService.getInstance();
+      expect(service.getMode()).toBeUndefined();
+    });
+
+    it('should return saved mode', () => {
+      const service = SettingsService.getInstance();
+      service.setMode('developer');
+      expect(service.getMode()).toBe('developer');
+    });
+  });
+
+  describe('setMode', () => {
+    it('should persist mode to settings file', () => {
+      const service = SettingsService.getInstance();
+      service.setMode('planning');
+      
+      // Create new instance to verify persistence
+      // @ts-expect-error - accessing private static field for testing
+      SettingsService.instance = undefined;
+      const newService = SettingsService.getInstance();
+      
+      expect(newService.getMode()).toBe('planning');
+    });
+
+    it('should update mode when called multiple times', () => {
+      const service = SettingsService.getInstance();
+      
+      service.setMode('assistant');
+      expect(service.getMode()).toBe('assistant');
+      
+      service.setMode('developer');
+      expect(service.getMode()).toBe('developer');
+      
+      service.setMode('debugger');
+      expect(service.getMode()).toBe('debugger');
+    });
+  });
+
+  describe('getAutoSwitch', () => {
+    it('should return true by default', () => {
+      const service = SettingsService.getInstance();
+      expect(service.getAutoSwitch()).toBe(true);
+    });
+
+    it('should return saved auto-switch preference', () => {
+      const service = SettingsService.getInstance();
+      service.setAutoSwitch(false);
+      expect(service.getAutoSwitch()).toBe(false);
+    });
+  });
+
+  describe('setAutoSwitch', () => {
+    it('should persist auto-switch preference to settings file', () => {
+      const service = SettingsService.getInstance();
+      service.setAutoSwitch(false);
+      
+      // Create new instance to verify persistence
+      // @ts-expect-error - accessing private static field for testing
+      SettingsService.instance = undefined;
+      const newService = SettingsService.getInstance();
+      
+      expect(newService.getAutoSwitch()).toBe(false);
+    });
+
+    it('should allow toggling auto-switch', () => {
+      const service = SettingsService.getInstance();
+      
+      service.setAutoSwitch(false);
+      expect(service.getAutoSwitch()).toBe(false);
+      
+      service.setAutoSwitch(true);
+      expect(service.getAutoSwitch()).toBe(true);
+    });
+  });
+
+  describe('mode persistence integration', () => {
+    it('should preserve other settings when updating mode', () => {
+      const service = SettingsService.getInstance();
+      
+      // Set some other settings
+      service.setTheme('dark');
+      service.setModel('llama3.2:3b');
+      service.setContextSize(8192);
+      
+      // Set mode
+      service.setMode('developer');
+      service.setAutoSwitch(false);
+      
+      // Verify all settings are preserved
+      expect(service.getTheme()).toBe('dark');
+      expect(service.getModel()).toBe('llama3.2:3b');
+      expect(service.getContextSize()).toBe(8192);
+      expect(service.getMode()).toBe('developer');
+      expect(service.getAutoSwitch()).toBe(false);
+    });
+
+    it('should load existing mode settings from settings file', () => {
+      // Create settings file with mode settings
+      const settingsDir = join(testDir, '.ollm');
+      mkdirSync(settingsDir, { recursive: true });
+      const settingsPath = join(settingsDir, 'settings.json');
+      
+      writeFileSync(settingsPath, JSON.stringify({
+        ui: { theme: 'default' },
+        llm: { model: 'llama3.2:3b' },
+        prompt: {
+          mode: 'planning',
+          autoSwitch: false,
+        }
+      }, null, 2));
+      
+      // Create service instance
+      const service = SettingsService.getInstance();
+      
+      // Verify mode settings are loaded
+      expect(service.getMode()).toBe('planning');
+      expect(service.getAutoSwitch()).toBe(false);
+    });
+
+    it('should handle undefined prompt field in loaded settings', () => {
+      // Create settings file without prompt field
+      const settingsDir = join(testDir, '.ollm');
+      mkdirSync(settingsDir, { recursive: true });
+      const settingsPath = join(settingsDir, 'settings.json');
+      
+      writeFileSync(settingsPath, JSON.stringify({
+        ui: { theme: 'default' },
+        llm: { model: 'llama3.2:3b' }
+      }, null, 2));
+      
+      const service = SettingsService.getInstance();
+      
+      // Should default to undefined for mode and true for autoSwitch
+      expect(service.getMode()).toBeUndefined();
+      expect(service.getAutoSwitch()).toBe(true);
+      
+      // Should be able to set mode
+      service.setMode('developer');
+      expect(service.getMode()).toBe('developer');
+    });
+  });
+});
+

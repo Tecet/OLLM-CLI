@@ -451,7 +451,7 @@ describe('Tool Schema Mapping', () => {
 
   describe('Tool Schema Validation', () => {
     it('should reject malformed tool schemas with descriptive errors', () => {
-      const provider = new LocalProvider({ baseUrl: 'http://localhost:11434' });
+
 
       // Test with various edge cases that should throw errors
       const edgeCases: ToolSchema[] = [
@@ -467,7 +467,7 @@ describe('Tool Schema Mapping', () => {
     });
 
     it('should preserve undefined vs null in parameters', () => {
-      const provider = new LocalProvider({ baseUrl: 'http://localhost:11434' });
+
 
       const tools: ToolSchema[] = [
         {
@@ -673,7 +673,7 @@ describe('Property-Based Tests', () => {
      */
     it('should accept any valid tool schema without errors', async () => {
       const fc = await import('fast-check');
-      const provider = new LocalProvider({ baseUrl: 'http://localhost:11434' });
+
 
       // Generator for valid JSON Schema types
       const arbJsonSchemaType = fc.constantFrom(
@@ -775,7 +775,7 @@ describe('Property-Based Tests', () => {
 
     it('should preserve all schema properties during mapping', async () => {
       const fc = await import('fast-check');
-      const provider = new LocalProvider({ baseUrl: 'http://localhost:11434' });
+
 
       // Generator for schemas with various JSON Schema properties
       const arbSchemaWithProperties = fc.record({
@@ -836,7 +836,7 @@ describe('Property-Based Tests', () => {
 
     it('should handle edge cases in valid schemas', async () => {
       const fc = await import('fast-check');
-      const provider = new LocalProvider({ baseUrl: 'http://localhost:11434' });
+
 
       // Generator for edge case schemas
       const arbEdgeCaseSchema = fc.oneof(
@@ -894,7 +894,7 @@ describe('Property-Based Tests', () => {
 
     it('should handle nested object schemas correctly', async () => {
       const fc = await import('fast-check');
-      const provider = new LocalProvider({ baseUrl: 'http://localhost:11434' });
+
 
       // Generator for nested object schemas (2 levels deep)
       const arbNestedSchema = fc.record({
@@ -948,7 +948,7 @@ describe('Property-Based Tests', () => {
 
     it('should handle array schemas with various item types', async () => {
       const fc = await import('fast-check');
-      const provider = new LocalProvider({ baseUrl: 'http://localhost:11434' });
+
 
       const arbArraySchema = fc.record({
         name: fc.string({ minLength: 1, maxLength: 20 }).filter(name => /^[a-zA-Z_][a-zA-Z0-9_-]*$/.test(name)),
@@ -1005,7 +1005,7 @@ describe('Property-Based Tests', () => {
      */
     it('should reject tool schemas with invalid names', async () => {
       const fc = await import('fast-check');
-      const provider = new LocalProvider({ baseUrl: 'http://localhost:11434' });
+
 
       // Generator for invalid tool names
       const arbInvalidName = fc.oneof<unknown>(
@@ -1068,7 +1068,7 @@ describe('Property-Based Tests', () => {
 
     it('should reject tool schemas with invalid parameter types', async () => {
       const fc = await import('fast-check');
-      const provider = new LocalProvider({ baseUrl: 'http://localhost:11434' });
+
 
       // Generator for invalid parameter schemas
       const arbInvalidParameters = fc.oneof(
@@ -1145,7 +1145,7 @@ describe('Property-Based Tests', () => {
 
     it('should reject tool schemas with circular references', async () => {
       const fc = await import('fast-check');
-      const provider = new LocalProvider({ baseUrl: 'http://localhost:11434' });
+
 
       // Create a schema with circular reference
       const createCircularSchema = () => {
@@ -1211,7 +1211,7 @@ describe('Property-Based Tests', () => {
 
     it('should reject tool schemas with invalid enum values', async () => {
       const fc = await import('fast-check');
-      const provider = new LocalProvider({ baseUrl: 'http://localhost:11434' });
+
 
       // Generator for invalid enum schemas
       const arbInvalidEnumSchema = fc.record({
@@ -1277,7 +1277,7 @@ describe('Property-Based Tests', () => {
 
     it('should reject tool schemas with conflicting constraints', async () => {
       const fc = await import('fast-check');
-      const provider = new LocalProvider({ baseUrl: 'http://localhost:11434' });
+
 
       // Generator for schemas with conflicting constraints
       const arbConflictingSchema = fc.record({
@@ -1350,7 +1350,7 @@ describe('Property-Based Tests', () => {
 
     it('should provide descriptive error messages for all invalid schemas', async () => {
       const fc = await import('fast-check');
-      const provider = new LocalProvider({ baseUrl: 'http://localhost:11434' });
+
 
       // Generator for various types of invalid schemas
       const arbAnyInvalidSchema = fc.oneof(
@@ -1431,7 +1431,7 @@ describe('Property-Based Tests', () => {
      */
     it('should preserve string parameter values and types', async () => {
       const fc = await import('fast-check');
-      const provider = new LocalProvider({ baseUrl: 'http://localhost:11434' });
+
 
       // Generator for string parameter schemas with various constraints
       const arbStringParameter = fc.record({
@@ -1516,7 +1516,7 @@ describe('Property-Based Tests', () => {
 
     it('should preserve number parameter values and types', async () => {
       const fc = await import('fast-check');
-      const provider = new LocalProvider({ baseUrl: 'http://localhost:11434' });
+
 
       // Generator for number parameter schemas with various constraints
       const arbNumberParameter = fc.record({
@@ -1598,7 +1598,7 @@ describe('Property-Based Tests', () => {
 
     it('should preserve object parameter values and types', async () => {
       const fc = await import('fast-check');
-      const provider = new LocalProvider({ baseUrl: 'http://localhost:11434' });
+
 
       // Generator for simple property schemas (to avoid infinite recursion)
       const arbSimpleProperty = fc.oneof(
@@ -1686,7 +1686,7 @@ describe('Property-Based Tests', () => {
 
     it('should preserve array parameter values and types', async () => {
       const fc = await import('fast-check');
-      const provider = new LocalProvider({ baseUrl: 'http://localhost:11434' });
+
 
       // Generator for array item schemas
       const arbArrayItemSchema = fc.oneof(
@@ -1771,7 +1771,7 @@ describe('Property-Based Tests', () => {
     });
 
     it('should preserve boolean parameter values and types', () => {
-      const provider = new LocalProvider({ baseUrl: 'http://localhost:11434' });
+
 
       // Test with true default value
       const toolWithTrueDefault: ToolSchema[] = [
@@ -1886,7 +1886,7 @@ describe('Property-Based Tests', () => {
 
     it('should preserve mixed parameter types in a single tool', async () => {
       const fc = await import('fast-check');
-      const provider = new LocalProvider({ baseUrl: 'http://localhost:11434' });
+
 
       // Generator for mixed parameter types
       const arbMixedParameter = fc.oneof(
@@ -1960,7 +1960,7 @@ describe('Property-Based Tests', () => {
 
     it('should preserve deeply nested parameter structures', async () => {
       const fc = await import('fast-check');
-      const provider = new LocalProvider({ baseUrl: 'http://localhost:11434' });
+
 
       // Generator for 2-level nested object parameters
       const arbNestedParameter = fc.record({
@@ -2024,7 +2024,7 @@ describe('Property-Based Tests', () => {
 
     it('should preserve parameter metadata and constraints', async () => {
       const fc = await import('fast-check');
-      const provider = new LocalProvider({ baseUrl: 'http://localhost:11434' });
+
 
       // Generator for parameters with rich metadata
       const arbParameterWithMetadata = fc.record({
@@ -2106,7 +2106,7 @@ describe('Property-Based Tests', () => {
      */
     it('should format tool results consistently for the model', async () => {
       const fc = await import('fast-check');
-      const provider = new LocalProvider({ baseUrl: 'http://localhost:11434' });
+
 
       // Generator for tool result messages (successful results)
       const arbToolResultMessage = fc.record({
@@ -2201,7 +2201,7 @@ describe('Property-Based Tests', () => {
 
     it('should format tool results with various content types consistently', async () => {
       const fc = await import('fast-check');
-      const provider = new LocalProvider({ baseUrl: 'http://localhost:11434' });
+
 
       // Generator for different content types
       const arbToolContent = fc.oneof(
@@ -2257,7 +2257,7 @@ describe('Property-Based Tests', () => {
 
     it('should format tool errors with consistent structure', async () => {
       const fc = await import('fast-check');
-      const provider = new LocalProvider({ baseUrl: 'http://localhost:11434' });
+
 
       // Generator for error messages in various formats
       const arbErrorContent = fc.oneof(
@@ -2316,7 +2316,7 @@ describe('Property-Based Tests', () => {
 
     it('should handle tool results with multiple parts consistently', async () => {
       const fc = await import('fast-check');
-      const provider = new LocalProvider({ baseUrl: 'http://localhost:11434' });
+
 
       // Generator for tool messages with multiple text parts
       const arbMultiPartToolMessage = fc.record({
@@ -2358,7 +2358,7 @@ describe('Property-Based Tests', () => {
 
     it('should format tool results consistently regardless of content length', async () => {
       const fc = await import('fast-check');
-      const provider = new LocalProvider({ baseUrl: 'http://localhost:11434' });
+
 
       // Generator for tool messages with varying content lengths
       const arbVariableLengthToolMessage = fc.record({
@@ -2395,7 +2395,7 @@ describe('Property-Based Tests', () => {
 
     it('should format tool results with special characters consistently', async () => {
       const fc = await import('fast-check');
-      const provider = new LocalProvider({ baseUrl: 'http://localhost:11434' });
+
 
       // Generator for content with special characters
       const arbSpecialCharContent = fc.oneof(

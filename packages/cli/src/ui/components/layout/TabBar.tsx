@@ -29,7 +29,7 @@ export interface TabBarProps {
 }
 
 export function TabBar({ activeTab, onTabChange, notifications, theme, noBorder }: TabBarProps & { noBorder?: boolean }) {
-  const { isFocused } = useFocusManager();
+  const { isFocused, activateContent, setFocus } = useFocusManager();
   const hasFocus = isFocused('nav-bar');
 
   useInput((input, key) => {
@@ -44,6 +44,15 @@ export function TabBar({ activeTab, onTabChange, notifications, theme, noBorder 
        const currentIndex = tabs.findIndex(t => t.id === activeTab);
        const nextIndex = (currentIndex + 1) % tabs.length;
        onTabChange(tabs[nextIndex].id);
+    }
+    if (key.return) {
+       // Activate current tab content (switch to active mode)
+       activateContent(activeTab);
+    }
+    if (key.escape) {
+       // Return to chat tab
+       onTabChange('chat');
+       setFocus('chat-input');
     }
   }, { isActive: hasFocus });
 

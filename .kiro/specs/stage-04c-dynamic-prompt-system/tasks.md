@@ -45,48 +45,48 @@
   - [x] 3.9 Create `performance.ts` template
   - [x] 3.10 Create `index.ts` to export all templates
 
-- [-] 4. Create Snapshot Manager
-  - [-] 4.1 Create `SnapshotManager.ts` class
-  - [ ] 4.2 Implement `createTransitionSnapshot()` for JSON snapshots
-  - [ ] 4.3 Implement `createFullSnapshot()` for XML snapshots
-  - [ ] 4.4 Implement in-memory cache (last 10 snapshots)
-  - [ ] 4.5 Implement disk storage for snapshots
-  - [ ] 4.6 Implement snapshot retrieval by mode transition
-  - [ ] 4.7 Implement snapshot pruning (remove > 1 hour old)
-  - [ ] 4.8 Implement findings injection for specialized modes
-  - [ ] 4.9 Write unit tests for SnapshotManager
+- [x] 4. Create Snapshot Manager
+  - [x] 4.1 Create `SnapshotManager.ts` class
+  - [x] 4.2 Implement `createTransitionSnapshot()` for JSON snapshots
+  - [x] 4.3 Implement `createFullSnapshot()` for XML snapshots
+  - [x] 4.4 Implement in-memory cache (last 10 snapshots)
+  - [x] 4.5 Implement disk storage for snapshots
+  - [x] 4.6 Implement snapshot retrieval by mode transition
+  - [x] 4.7 Implement snapshot pruning (remove > 1 hour old)
+  - [x] 4.8 Implement findings injection for specialized modes
+  - [x] 4.9 Write unit tests for SnapshotManager
 
-- [~] 5. Export New Classes
-  - [ ] 5.1 Export ContextAnalyzer from `packages/core/src/index.ts`
-  - [ ] 5.2 Export PromptModeManager from `packages/core/src/index.ts`
-  - [ ] 5.3 Export SnapshotManager from `packages/core/src/index.ts`
-  - [ ] 5.4 Export mode templates from `packages/core/src/index.ts`
-  - [ ] 5.5 Export mode types and interfaces
+- [x] 5. Export New Classes
+  - [x] 5.1 Export ContextAnalyzer from `packages/core/src/index.ts`
+  - [x] 5.2 Export PromptModeManager from `packages/core/src/index.ts`
+  - [x] 5.3 Export SnapshotManager from `packages/core/src/index.ts`
+  - [x] 5.4 Export mode templates from `packages/core/src/index.ts`
+  - [x] 5.5 Export mode types and interfaces
 
 ---
 
 ### Phase 2: Integration with Context Manager (2-3 hours)
 
-- [~] 6. Initialize Mode Manager on App Start
-  - [ ] 6.1 Update `ContextManagerContext.tsx` to create PromptModeManager
-  - [ ] 6.2 Create SnapshotManager instance
-  - [ ] 6.3 Load saved mode preference from settings (or default to assistant)
-  - [ ] 6.4 Build initial system prompt for loaded mode
-  - [ ] 6.5 Set system prompt in ContextManager
-  - [ ] 6.6 Store mode manager reference for later use
-  - [ ] 6.7 Register 'mode-changed' event listener
+- [ ] 6. Initialize Mode Manager on App Start
+  - [x] 6.1 Update `ContextManagerContext.tsx` to create PromptModeManager
+  - [x] 6.2 Create SnapshotManager instance
+  - [x] 6.3 Load saved mode preference from settings (or default to assistant)
+  - [x] 6.4 Build initial system prompt for loaded mode
+  - [x] 6.5 Set system prompt in ContextManager
+  - [x] 6.6 Store mode manager reference for later use
+  - [x] 6.7 Register 'mode-changed' event listener
 
-- [ ] 7. Update Message Send Flow
-  - [ ] 7.1 Update `ChatContext.tsx` sendMessage function
-  - [ ] 7.2 Analyze message with ContextAnalyzer before sending
-  - [ ] 7.3 Check if mode should switch based on analysis
-  - [ ] 7.4 Create transition snapshot if switching to specialized mode
-  - [ ] 7.5 Switch mode if confidence threshold met
-  - [ ] 7.6 Rebuild system prompt with new mode
-  - [ ] 7.7 Update system prompt in ContextManager
-  - [ ] 7.8 Continue with normal message flow
+- [x] 7. Update Message Send Flow
+  - [x] 7.1 Update `ChatContext.tsx` sendMessage function
+  - [x] 7.2 Analyze message with ContextAnalyzer before sending
+  - [x] 7.3 Check if mode should switch based on analysis
+  - [x] 7.4 Create transition snapshot if switching to specialized mode
+  - [x] 7.5 Switch mode if confidence threshold met
+  - [x] 7.6 Rebuild system prompt with new mode
+  - [x] 7.7 Update system prompt in ContextManager
+  - [x] 7.8 Continue with normal message flow
 
-- [ ] 8. Update Tool Execution Flow
+- [-] 8. Update Tool Execution Flow
   - [ ] 8.1 Update `chatClient.ts` executeTool function
   - [ ] 8.2 Get current mode from ModeManager
   - [ ] 8.3 Check if tool is allowed in current mode
@@ -100,7 +100,7 @@
 
 ### Phase 3: UI Integration (2-3 hours)
 
-- [ ] 9. Update Active Context State
+- [~] 9. Update Active Context State
   - [ ] 9.1 Update `ActiveContextState.tsx` interface
   - [ ] 9.2 Add `currentMode` field
   - [ ] 9.3 Add `allowedTools` field
@@ -110,7 +110,7 @@
   - [ ] 9.7 Update state when mode changes
   - [ ] 9.8 Update allowed tools list when mode changes
 
-- [ ] 10. Update Context Section Display
+- [~] 10. Update Context Section Display
   - [ ] 10.1 Update `ContextSection.tsx` component
   - [ ] 10.2 Display current mode with icon and color
   - [ ] 10.3 Display current persona

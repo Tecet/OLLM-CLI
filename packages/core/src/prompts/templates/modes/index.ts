@@ -5,14 +5,25 @@
  * Each template defines the persona, behavior, and guidelines for a specific mode.
  */
 
-export { ASSISTANT_MODE_TEMPLATE } from './assistant.js';
-export { PLANNING_MODE_TEMPLATE } from './planning.js';
-export { DEVELOPER_MODE_TEMPLATE } from './developer.js';
-export { TOOL_MODE_TEMPLATE } from './tool.js';
-export { DEBUGGER_MODE_TEMPLATE } from './debugger.js';
-export { SECURITY_MODE_TEMPLATE } from './security.js';
-export { REVIEWER_MODE_TEMPLATE } from './reviewer.js';
-export { PERFORMANCE_MODE_TEMPLATE } from './performance.js';
+import { ASSISTANT_MODE_TEMPLATE } from './assistant.js';
+import { PLANNING_MODE_TEMPLATE } from './planning.js';
+import { DEVELOPER_MODE_TEMPLATE } from './developer.js';
+import { TOOL_MODE_TEMPLATE } from './tool.js';
+import { DEBUGGER_MODE_TEMPLATE } from './debugger.js';
+import { SECURITY_MODE_TEMPLATE } from './security.js';
+import { REVIEWER_MODE_TEMPLATE } from './reviewer.js';
+import { PERFORMANCE_MODE_TEMPLATE } from './performance.js';
+
+export {
+  ASSISTANT_MODE_TEMPLATE,
+  PLANNING_MODE_TEMPLATE,
+  DEVELOPER_MODE_TEMPLATE,
+  TOOL_MODE_TEMPLATE,
+  DEBUGGER_MODE_TEMPLATE,
+  SECURITY_MODE_TEMPLATE,
+  REVIEWER_MODE_TEMPLATE,
+  PERFORMANCE_MODE_TEMPLATE
+};
 
 /**
  * Map of mode types to their corresponding templates

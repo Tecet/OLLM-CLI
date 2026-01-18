@@ -5,7 +5,7 @@ import { useServices } from './ServiceContext.js';
 import { useModel } from './ModelContext.js';
 import { useUI } from './UIContext.js';
 import { ToolRegistry, HotSwapTool, MemoryDumpTool, PromptRegistry } from '@ollm/core';
-import type { ToolCall as CoreToolCall, ContextMessage, ProviderMetrics } from '@ollm/core';
+import type { ToolCall as CoreToolCall, ContextMessage, ProviderMetrics, ToolSchema } from '@ollm/core';
 import { SettingsService } from '../../config/settingsService.js';
 
 declare global {
@@ -238,7 +238,7 @@ export function ChatProvider({
     setWaitingForResponse(false);
     if (contextActions) {
       contextActions.clear().catch(console.error);
-      contextActions.setSystemPrompt(''); // Clear system prompt to prevent old context
+      // System prompt will be rebuilt by ContextManager on next message
     }
   }, [contextActions]);
   
@@ -303,6 +303,11 @@ export function ChatProvider({
         await request.onComplete(value);
         return;
       }
+      
+      // TASK 7.2: Analyze message with ContextAnalyzer before sending
+      // Get the mode manager and context analyzer
+      const modeManager = contextActions.getModeManager();
+      
       // Add user message to UI
       addMessage({
         role: 'user',
@@ -359,7 +364,77 @@ export function ChatProvider({
         }
         return;
       }
+      
+      // TASK 7.2-7.7: Mode switching logic
+      if (modeManager) {
+        try {
+          // Get current context for analysis
+          const currentContext = await contextActions.getContext();
+          
+          // Convert context messages to format expected by ContextAnalyzer
+          const messagesForAnalysis = currentContext.map(msg => ({
+            role: msg.role as 'user' | 'assistant' | 'system' | 'tool',
+            parts: [{ type: 'text' as const, text: msg.content || '' }],
+            toolCalls: msg.toolCalls
+          }));
+          
+          // Analyze conversation context
+          const analysis = modeManager['contextAnalyzer'].analyzeConversation(messagesForAnalysis);
+          
+          // TASK 7.3: Check if mode should switch based on analysis
+          const currentMode = modeManager.getCurrentMode();
+          const shouldSwitch = modeManager.shouldSwitchMode(currentMode, analysis);
+          
+          if (shouldSwitch) {
+            // TASK 7.4: Create transition snapshot if switching to specialized mode
+            // Specialized modes: debugger, security, reviewer, performance
+            const specializedModes = ['debugger', 'security', 'reviewer', 'performance'];
+            if (specializedModes.includes(analysis.mode)) {
+              // Create snapshot before switching
+              try {
+                await contextActions.createSnapshot();
+              } catch (snapshotError) {
+                console.warn('Failed to create transition snapshot:', snapshotError);
+                // Continue with mode switch even if snapshot fails
+              }
+            }
+            
+            // TASK 7.5: Switch mode if confidence threshold met
+            modeManager.switchMode(analysis.mode, 'auto', analysis.confidence);
+            
+            // TASK 7.6: Rebuild system prompt with new mode
+            // Get current tools for prompt building
+            const settingsService = SettingsService.getInstance();
+            const toolRegistry = new ToolRegistry(settingsService);
+            const toolSchemas = toolRegistry.getFunctionSchemas();
+            const tools = toolSchemas.map(t => ({ name: t.name }));
+            
+            const newPrompt = modeManager.buildPrompt({
+              mode: analysis.mode,
+              skills: modeManager.getActiveSkills(),
+              tools,
+              workspace: {
+                path: process.cwd()
+              }
+            });
+            
+            // TASK 7.7: Update system prompt in ContextManager
+            contextActions.setSystemPrompt(newPrompt);
+            
+            // Add system message to notify user of mode change
+            addMessage({
+              role: 'system',
+              content: `Mode switched to ${analysis.mode} (confidence: ${(analysis.confidence * 100).toFixed(0)}%)`,
+              excludeFromContext: true
+            });
+          }
+        } catch (modeError) {
+          console.error('Mode switching error:', modeError);
+          // Continue with normal flow even if mode switching fails
+        }
+      }
 
+      // TASK 7.8: Continue with normal message flow
       setWaitingForResponse(true);
       setStreaming(true);
 

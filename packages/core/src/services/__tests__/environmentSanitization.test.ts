@@ -387,11 +387,6 @@ describe('EnvironmentSanitizationService', () => {
       // Spy on console.warn to verify warning is logged
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       
-      // Mock picomatch to throw an error
-      const originalPicomatch = vi.fn().mockImplementation(() => {
-        throw new Error('Invalid pattern');
-      });
-      
       // Try to configure - this would trigger the error handling
       // In real scenarios, picomatch might throw for truly invalid patterns
       // For this test, we're verifying the error handling path exists

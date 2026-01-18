@@ -30,7 +30,7 @@ function createMockTool(
         properties: {},
       },
     },
-    createInvocation: (params: any, context: ToolContext) => {
+    createInvocation: (params: any, _context: ToolContext) => {
       return {
         params,
         getDescription: () => `Mock invocation of ${name}`,
@@ -763,7 +763,7 @@ describe('Tool Registry', () => {
             required: ['required_param'],
           },
         },
-        createInvocation: (params: any, context: any) => {
+        createInvocation: (params: any, _context: any) => {
           return {
             params,
             getDescription: () => 'Test',
@@ -807,7 +807,7 @@ describe('Tool Registry', () => {
             required: ['required_param'],
           },
         },
-        createInvocation: (params: any, context: any) => {
+        createInvocation: (params: any, _context: any) => {
           return {
             params,
             getDescription: () => 'Test',

@@ -826,7 +826,7 @@ describe('FileDiscoveryService', () => {
         const loopLink = path.join(dir2, 'loop');
         try {
           await fs.symlink(dir1, loopLink, 'dir');
-        } catch (error) {
+        } catch (_) {
           // If we can't create symlinks, skip this test
           return;
         }
@@ -844,8 +844,6 @@ describe('FileDiscoveryService', () => {
         expect(foundNames).toContain('file.txt');
 
         // Symlink should be skipped (not followed)
-        const foundPaths = files.map(f => f.relativePath);
-        const hasLoopInPath = foundPaths.some(p => p.includes('loop'));
         
         // With followSymlinks: false (default), the symlink itself might be listed
         // but it shouldn't cause infinite recursion

@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Box, Text } from 'ink';
+import { Box, Text, useInput } from 'ink';
 import { useUI } from '../../../features/context/UIContext.js';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { SettingsService } from '../../../config/settingsService.js';
 import { getAllCategories, getToolsByCategory, getCategoryDisplayName, ToolCategory } from '../../../config/toolsConfig.js';
 import { ToolItem } from './ToolItem.js';
-import { useContextKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts.js';
 
 // Category icon mapping
 const getCategoryIcon = (category: ToolCategory): string => {
@@ -35,7 +34,7 @@ export interface ToolsPanelProps {
  */
 export function ToolsPanel({ modelSupportsTools = true, windowSize = 15 }: ToolsPanelProps) {
   const { state: uiState } = useUI();
-  const { isFocused } = useFocusManager();
+  const { isFocused, exitToNavBar } = useFocusManager();
   const settingsService = SettingsService.getInstance();
   
   // Check if this panel has focus
@@ -45,6 +44,7 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 15 }: Tools
   const [selectedCategoryIndex, setSelectedCategoryIndex] = useState(0);
   const [selectedToolIndex, setSelectedToolIndex] = useState(0);
   const [scrollOffset, setScrollOffset] = useState(0);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   
   // Get all categories and their tools
   const categories = useMemo(() => getAllCategories(), []);
@@ -115,6 +115,24 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 15 }: Tools
     const newState = !toolStates[toolId];
     settingsService.setToolState(toolId, newState);
     setToolStates(prev => ({ ...prev, [toolId]: newState }));
+    setHasUnsavedChanges(true); // Mark as changed
+  };
+
+  // Handle save
+  const handleSave = () => {
+    // Settings are already persisted via settingsService.setToolState
+    // Just clear the unsaved changes flag
+    setHasUnsavedChanges(false);
+  };
+
+  // Handle exit
+  const handleExit = () => {
+    if (hasUnsavedChanges) {
+      // TODO: Show save prompt dialog when DialogManager is ready
+      // For now, just save automatically
+      handleSave();
+    }
+    exitToNavBar();
   };
 
   // Navigation handlers
@@ -148,34 +166,20 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 15 }: Tools
     }
   };
 
-  // Register keyboard shortcuts
-  useContextKeyboardShortcuts('tools-panel', [
-    {
-      key: 'upArrow',
-      handler: handleNavigateUp,
-      description: 'Navigate up',
-    },
-    {
-      key: 'downArrow',
-      handler: handleNavigateDown,
-      description: 'Navigate down',
-    },
-    {
-      key: 'leftArrow',
-      handler: handleToggleCurrent,
-      description: 'Toggle tool',
-    },
-    {
-      key: 'rightArrow',
-      handler: handleToggleCurrent,
-      description: 'Toggle tool',
-    },
-    {
-      key: 'return',
-      handler: handleToggleCurrent,
-      description: 'Toggle tool',
-    },
-  ]);
+  // Handle keyboard input directly
+  useInput((input, key) => {
+    if (!hasFocus) return;
+
+    if (key.upArrow) {
+      handleNavigateUp();
+    } else if (key.downArrow) {
+      handleNavigateDown();
+    } else if (key.leftArrow || key.rightArrow || key.return) {
+      handleToggleCurrent();
+    } else if (key.escape) {
+      handleExit();
+    }
+  }, { isActive: hasFocus });
 
   // Auto-scroll to keep selected item visible
   useEffect(() => {
@@ -262,7 +266,6 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 15 }: Tools
         {visibleItems.map((item) => {
           if (item.type === 'category') {
             const categoryInfo = categoryData[item.categoryIndex];
-            const isSelectedCategory = item.categoryIndex === selectedCategoryIndex;
             
             // Only show category header if at least one tool from this category is visible
             const hasVisibleTools = visibleItems.some(
@@ -272,30 +275,11 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 15 }: Tools
             if (!hasVisibleTools) return null;
 
             return (
-              <Box key={`cat-${item.categoryIndex}`} flexDirection="column" marginBottom={1}>
-                <Box
-                  borderStyle="round"
-                  borderColor={
-                    hasFocus && isSelectedCategory 
-                      ? uiState.theme.text.accent 
-                      : uiState.theme.text.secondary
-                  }
-                  paddingX={1}
-                >
-                  <Text
-                    bold
-                    color={
-                      hasFocus && isSelectedCategory 
-                        ? uiState.theme.text.accent 
-                        : uiState.theme.text.primary
-                    }
-                  >
-                    {hasFocus && isSelectedCategory ? '▶ ' : ''}{getCategoryIcon(categoryInfo.category)} {categoryInfo.displayName}
-                  </Text>
-                  <Text color={uiState.theme.text.secondary}>
-                    {' '}({categoryInfo.tools.length} tools)
-                  </Text>
-                </Box>
+              <Box key={`cat-${item.categoryIndex}`} flexDirection="column" marginTop={item.categoryIndex > 0 ? 1 : 0}>
+                {/* Simple plain header */}
+                <Text bold color={uiState.theme.text.primary}>
+                  {getCategoryIcon(categoryInfo.category)} {categoryInfo.displayName}
+                </Text>
               </Box>
             );
           } else {
@@ -307,7 +291,7 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 15 }: Tools
             const isEnabled = toolStates[tool.id] ?? true;
 
             return (
-              <Box key={`tool-${tool.id}`} paddingLeft={2} marginBottom={1}>
+              <Box key={`tool-${tool.id}`} paddingLeft={2}>
                 <ToolItem
                   tool={tool}
                   isEnabled={isEnabled}
@@ -338,7 +322,7 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 15 }: Tools
         flexShrink={0}
       >
         <Text color={hasFocus ? uiState.theme.text.primary : uiState.theme.text.secondary}>
-          {hasFocus ? '⌨ ' : ''}↑/↓: Navigate  •  ←/→/Enter: Toggle  •  Tab: Switch tabs
+          {hasFocus ? '⌨ ' : ''}↑/↓: Navigate  •  ←/→/Enter: Toggle  •  Esc: Exit{hasUnsavedChanges ? ' (unsaved)' : ''}
         </Text>
       </Box>
     </Box>

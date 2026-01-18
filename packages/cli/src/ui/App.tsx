@@ -653,12 +653,22 @@ ${toolSupport}
     // Focus Management Shortcuts
     {
         key: keybinds.global.cycleNext,
-        handler: () => focusManager.cycleFocus('next'),
+        handler: () => {
+          // Disable Tab cycling in active mode
+          if (!focusManager.isActive()) {
+            focusManager.cycleFocus('next');
+          }
+        },
         description: 'Next Pane'
     },
     {
         key: keybinds.global.cyclePrev,
-        handler: () => focusManager.cycleFocus('previous'),
+        handler: () => {
+          // Disable Shift+Tab cycling in active mode
+          if (!focusManager.isActive()) {
+            focusManager.cycleFocus('previous');
+          }
+        },
         description: 'Previous Pane'
     },
     {

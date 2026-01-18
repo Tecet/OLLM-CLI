@@ -20,6 +20,9 @@ import {
   createContextManager,
   HotSwapService,
   PromptRegistry,
+  PromptModeManager,
+  ContextAnalyzer,
+  SnapshotManager,
 } from '@ollm/core';
 
 import type {
@@ -31,6 +34,8 @@ import type {
   ContextModelInfo,
   ContextMessage,
   ProviderAdapter,
+  ModeType,
+  ModeTransition,
 } from '@ollm/core';
 
 import { SettingsService } from '../../config/settingsService.js';
@@ -69,6 +74,12 @@ export interface ContextManagerState {
   
   /** Error message if any operation failed */
   error: string | null;
+  
+  /** Current prompt mode */
+  currentMode: ModeType;
+  
+  /** Whether auto-switching is enabled */
+  autoSwitchEnabled: boolean;
 }
 
 /**
@@ -110,6 +121,9 @@ export interface ContextManagerActions {
 
   /** Get the current system prompt string */
   getSystemPrompt: () => string;
+  
+  /** Set the system prompt */
+  setSystemPrompt: (prompt: string) => void;
 
   /** Register event listener */
   on: (event: string, callback: (data: unknown) => void) => void;
@@ -125,6 +139,18 @@ export interface ContextManagerActions {
 
   /** Get raw manager instance (use with caution) */
   getManager: () => ContextManagerInterface | null;
+  
+  /** Get the PromptModeManager instance */
+  getModeManager: () => PromptModeManager | null;
+  
+  /** Switch to a specific mode */
+  switchMode: (mode: ModeType) => void;
+  
+  /** Enable or disable auto-switching */
+  setAutoSwitch: (enabled: boolean) => void;
+  
+  /** Get current mode */
+  getCurrentMode: () => ModeType;
 }
 
 export interface ContextManagerContextValue {
@@ -188,9 +214,20 @@ export function ContextManagerProvider({
   const [compressing, setCompressing] = useState(false);
   const [snapshots, setSnapshots] = useState<ContextSnapshot[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [currentMode, setCurrentMode] = useState<ModeType>('assistant');
+  const [autoSwitchEnabled, setAutoSwitchEnabled] = useState(true);
   
   // Context manager reference
   const managerRef = useRef<ContextManagerInterface | null>(null);
+  
+  // Prompt mode manager reference
+  const modeManagerRef = useRef<PromptModeManager | null>(null);
+  
+  // Snapshot manager reference
+  const snapshotManagerRef = useRef<SnapshotManager | null>(null);
+  
+  // Mode change callback reference for cleanup
+  const modeChangeCallbackRef = useRef<((transition: ModeTransition) => void) | null>(null);
   
   // Initialize context manager
   useEffect(() => {
@@ -200,12 +237,100 @@ export function ContextManagerProvider({
         const manager = createContextManager(sessionId, modelInfo, config);
         managerRef.current = manager;
         
+        // Create PromptModeManager
+        // Note: SystemPromptBuilder is created internally by ContextManager
+        // We need to get the PromptRegistry and create the mode manager
+        const promptRegistry = new PromptRegistry();
+        const contextAnalyzer = new ContextAnalyzer();
+        
+        // For now, we'll create a simple SystemPromptBuilder wrapper
+        // In a full implementation, this would be passed from ContextManager
+        const systemPromptBuilder = {
+          build: (config: any) => {
+            // This is a simplified version - the real implementation
+            // would use the actual SystemPromptBuilder from ContextManager
+            return manager.getSystemPrompt();
+          }
+        };
+        
+        const modeManager = new PromptModeManager(
+          systemPromptBuilder as any,
+          promptRegistry,
+          contextAnalyzer
+        );
+        
+        modeManagerRef.current = modeManager;
+        
+        // Create SnapshotManager
+        const snapshotManager = new SnapshotManager({
+          sessionId,
+          storagePath: undefined, // Use default path
+          maxCacheSize: 10,
+          pruneAfterMs: 3600000, // 1 hour
+        });
+        
+        // Initialize the snapshot manager
+        await snapshotManager.initialize();
+        
+        snapshotManagerRef.current = snapshotManager;
+        
+        // Listen for mode changes
+        const modeChangeCallback = (transition: ModeTransition) => {
+          setCurrentMode(transition.to);
+          console.log(`Mode changed: ${transition.from} → ${transition.to} (${transition.trigger})`);
+          
+          // Persist mode changes to settings (for both auto and manual)
+          SettingsService.getInstance().setMode(transition.to);
+          
+          // Rebuild system prompt with new mode
+          // Note: Tools and skills will be populated by the caller (ChatContext)
+          // This ensures the prompt is updated even for automatic mode switches
+          const newPrompt = modeManager.buildPrompt({
+            mode: transition.to,
+            tools: [], // Will be populated by ChatContext when available
+            skills: modeManager.getActiveSkills(),
+            workspace: undefined, // Will be populated by ChatContext when available
+          });
+          
+          // Update system prompt in ContextManager
+          manager.setSystemPrompt(newPrompt);
+        };
+        
+        modeChangeCallbackRef.current = modeChangeCallback;
+        modeManager.onModeChange(modeChangeCallback);
+        
         // Start the context manager
         await manager.start();
         setActive(true);
         
         // Get initial usage
         setUsage(manager.getUsage());
+        
+        // Load saved mode preference from settings (or default to assistant)
+        const settingsService = SettingsService.getInstance();
+        const savedMode = settingsService.getMode() || 'assistant';
+        const savedAutoSwitch = settingsService.getAutoSwitch();
+        
+        // Set the mode (this will be a manual override initially)
+        modeManager.forceMode(savedMode as ModeType);
+        
+        // Restore auto-switch preference
+        modeManager.setAutoSwitch(savedAutoSwitch);
+        
+        // Build initial system prompt for loaded mode
+        const initialPrompt = modeManager.buildPrompt({
+          mode: savedMode as ModeType,
+          tools: [], // Will be populated later when tools are registered
+          skills: [], // Will be populated later when skills are loaded
+          workspace: undefined, // Will be populated later when workspace is loaded
+        });
+        
+        // Set system prompt in ContextManager
+        manager.setSystemPrompt(initialPrompt);
+        
+        // Update state
+        setCurrentMode(savedMode as ModeType);
+        setAutoSwitchEnabled(savedAutoSwitch);
         
         setError(null);
       } catch (err) {
@@ -224,6 +349,15 @@ export function ContextManagerProvider({
         managerRef.current.stop().catch(console.error);
         managerRef.current = null;
       }
+      if (modeManagerRef.current && modeChangeCallbackRef.current) {
+        modeManagerRef.current.offModeChange(modeChangeCallbackRef.current);
+        modeManagerRef.current = null;
+      }
+      if (snapshotManagerRef.current) {
+        snapshotManagerRef.current.clearCache();
+        snapshotManagerRef.current = null;
+      }
+      modeChangeCallbackRef.current = null;
     };
   }, [sessionId, modelInfo, config]);
   
@@ -390,6 +524,14 @@ export function ContextManagerProvider({
     return managerRef.current?.getSystemPrompt() || '';
   }, []);
   
+  const setSystemPrompt = useCallback((prompt: string) => {
+    if (!managerRef.current) {
+      console.warn('ContextManager not initialized');
+      return;
+    }
+    managerRef.current.setSystemPrompt(prompt);
+  }, []);
+  
   // Memory level change effect
   useEffect(() => {
     onMemoryLevelChange?.(memoryLevel);
@@ -403,6 +545,8 @@ export function ContextManagerProvider({
     compressing,
     snapshots,
     error,
+    currentMode,
+    autoSwitchEnabled,
   };
   
   // Resize action
@@ -458,6 +602,43 @@ export function ContextManagerProvider({
         managerRef.current.off(event, callback);
     }
   }, []);
+  
+  // Mode management actions
+  const getModeManager = useCallback(() => {
+    return modeManagerRef.current;
+  }, []);
+  
+  const switchMode = useCallback((mode: ModeType) => {
+    if (!modeManagerRef.current) {
+      console.warn('PromptModeManager not initialized');
+      return;
+    }
+    
+    modeManagerRef.current.forceMode(mode);
+    setCurrentMode(mode);
+    setAutoSwitchEnabled(false);
+    
+    // Persist mode preference to settings
+    SettingsService.getInstance().setMode(mode);
+    SettingsService.getInstance().setAutoSwitch(false);
+  }, []);
+  
+  const setAutoSwitchAction = useCallback((enabled: boolean) => {
+    if (!modeManagerRef.current) {
+      console.warn('PromptModeManager not initialized');
+      return;
+    }
+    
+    modeManagerRef.current.setAutoSwitch(enabled);
+    setAutoSwitchEnabled(enabled);
+    
+    // Persist auto-switch preference to settings
+    SettingsService.getInstance().setAutoSwitch(enabled);
+  }, []);
+  
+  const getCurrentModeAction = useCallback(() => {
+    return modeManagerRef.current?.getCurrentMode() || 'assistant';
+  }, []);
 
   const actions: ContextManagerActions = useMemo(() => ({
     addMessage,
@@ -472,6 +653,7 @@ export function ContextManagerProvider({
     resize,
     hotSwap,
     getSystemPrompt,
+    setSystemPrompt,
     on,
     off,
     getUsage: () => managerRef.current?.getUsage() || DEFAULT_USAGE,
@@ -479,7 +661,11 @@ export function ContextManagerProvider({
         if (!managerRef.current) throw new Error("ContextManager not initialized");
         return managerRef.current.config;
     },
-    getManager: () => managerRef.current
+    getManager: () => managerRef.current,
+    getModeManager,
+    switchMode,
+    setAutoSwitch: setAutoSwitchAction,
+    getCurrentMode: getCurrentModeAction,
   }), [
     addMessage,
     compress,
@@ -493,8 +679,13 @@ export function ContextManagerProvider({
     resize,
     hotSwap,
     getSystemPrompt,
+    setSystemPrompt,
     on,
     off,
+    getModeManager,
+    switchMode,
+    setAutoSwitchAction,
+    getCurrentModeAction,
   ]);
   
   // Update global reference

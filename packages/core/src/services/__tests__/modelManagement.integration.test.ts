@@ -62,11 +62,11 @@ class MockProviderAdapter implements Partial<ProviderAdapter> {
     return model;
   }
   
-  async keepModelLoaded(name: string): Promise<void> {
+  async keepModelLoaded(_name: string): Promise<void> {
     // Mock implementation
   }
   
-  async unloadModel(name: string): Promise<void> {
+  async unloadModel(_name: string): Promise<void> {
     // Mock implementation
   }
 }

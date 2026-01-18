@@ -28,7 +28,7 @@ import { MemoryTool } from '../memory.js';
 import { WriteTodosTool } from '../write-todos.js';
 import { ShellExecutionService } from '../../services/shellExecutionService.js';
 import { EnvironmentSanitizationService } from '../../services/environmentSanitization.js';
-import type { ToolContext, DeclarativeTool, ToolResult } from '../types.js';
+import type { ToolContext } from '../types.js';
 
 /**
  * Test fixture for managing temporary files and directories
@@ -1283,12 +1283,12 @@ describe('Tool System Integration', () => {
       ).execute(abortController.signal);
 
       // Add todos
-      const todo1Result = await todosTool.createInvocation(
+      await todosTool.createInvocation(
         { action: 'add', task: 'Implement feature A' },
         context
       ).execute(abortController.signal);
 
-      const todo2Result = await todosTool.createInvocation(
+      await todosTool.createInvocation(
         { action: 'add', task: 'Write tests' },
         context
       ).execute(abortController.signal);

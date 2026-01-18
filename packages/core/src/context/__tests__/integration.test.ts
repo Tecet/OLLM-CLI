@@ -366,7 +366,7 @@ describe('Context Management Integration Tests', () => {
       });
 
       // Execute emergency actions
-      await memoryGuard.executeEmergencyActions();
+      await memoryGuard.checkMemoryLevelAndAct();
 
       expect(emergencyCalled).toBe(true);
 
