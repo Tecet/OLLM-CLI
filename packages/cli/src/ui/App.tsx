@@ -24,6 +24,7 @@ import { ModelProvider, useModel } from '../features/context/ModelContext.js';
 import { ActiveContextProvider } from '../features/context/ActiveContextState.js';
 import { DialogProvider } from './contexts/DialogContext.js';
 import { UserPromptProvider } from '../features/context/UserPromptContext.js';
+import { HooksProvider } from './contexts/HooksContext.js';
 import { LaunchScreen } from './components/launch/LaunchScreen.js';
 import type { ProviderAdapter, ProviderRequest, ProviderEvent } from '@ollm/core';
 import { createWelcomeMessage, createCompactWelcomeMessage, CONTEXT_OPTIONS } from '../features/context/SystemMessages.js';
@@ -43,6 +44,7 @@ import { Clock } from './components/layout/Clock.js';
 
 import { ChatTab } from './components/tabs/ChatTab.js';
 import { ToolsTab } from './components/tabs/ToolsTab.js';
+import { HooksTab } from './components/tabs/HooksTab.js';
 import { FilesTab } from './components/tabs/FilesTab.js';
 import { SearchTab } from './components/tabs/SearchTab.js';
 import { DocsTab } from './components/tabs/DocsTab.js';
@@ -732,6 +734,8 @@ ${toolSupport}
         );
       case 'tools':
         return <Box height={height}><ToolsTab /></Box>;
+      case 'hooks':
+        return <Box height={height}><HooksTab /></Box>;
       case 'files':
         return <Box height={height}><FilesTab /></Box>;
       case 'search':
@@ -968,44 +972,46 @@ export function App({ config }: AppProps) {
       >
         <SettingsProvider>
           <DialogProvider>
-            <UserPromptProvider>
-              <UserPromptBridge />
-              <GPUProvider 
-                pollingInterval={config.status?.pollInterval || 5000}
-                autoStart={config.ui?.showGpuStats !== false}
-              >
-              <ServiceProvider
-                provider={provider}
-                config={config}
-                workspacePath={workspacePath}
-              >
-                <ContextManagerProvider
-                  sessionId={sessionId}
-                  modelInfo={modelInfo}
-                  modelId={initialModel}
-                  config={contextConfig}
-                  provider={provider}
+            <HooksProvider>
+              <UserPromptProvider>
+                <UserPromptBridge />
+                <GPUProvider 
+                  pollingInterval={config.status?.pollInterval || 5000}
+                  autoStart={config.ui?.showGpuStats !== false}
                 >
-                  <ModelProvider
+                <ServiceProvider
+                  provider={provider}
+                  config={config}
+                  workspacePath={workspacePath}
+                >
+                  <ContextManagerProvider
+                    sessionId={sessionId}
+                    modelInfo={modelInfo}
+                    modelId={initialModel}
+                    config={contextConfig}
                     provider={provider}
-                    initialModel={initialModel}
                   >
-                    <ChatProvider>
-                      <ReviewProvider>
-                        <FocusProvider>
-                          <ActiveContextProvider>
-                            <ErrorBoundary>
-                              <AppContent config={config} />
-                            </ErrorBoundary>
-                          </ActiveContextProvider>
-                        </FocusProvider>
-                      </ReviewProvider>
-                    </ChatProvider>
-                  </ModelProvider>
-                </ContextManagerProvider>
-              </ServiceProvider>
-            </GPUProvider>
-            </UserPromptProvider>
+                    <ModelProvider
+                      provider={provider}
+                      initialModel={initialModel}
+                    >
+                      <ChatProvider>
+                        <ReviewProvider>
+                          <FocusProvider>
+                            <ActiveContextProvider>
+                              <ErrorBoundary>
+                                <AppContent config={config} />
+                              </ErrorBoundary>
+                            </ActiveContextProvider>
+                          </FocusProvider>
+                        </ReviewProvider>
+                      </ChatProvider>
+                    </ModelProvider>
+                  </ContextManagerProvider>
+                </ServiceProvider>
+              </GPUProvider>
+              </UserPromptProvider>
+            </HooksProvider>
           </DialogProvider>
         </SettingsProvider>
       </UIProvider>

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useContextManager } from './ContextManagerContext.js';
-import type { ModeType } from '@ollm/ollm-cli-core';
+import type { ModeType, Role, MessagePart } from '@ollm/ollm-cli-core';
 
 interface ActiveContextState {
   activeSkills: string[];
@@ -36,13 +36,8 @@ interface DataEvent {
   servers?: string[];
 }
 
-interface ModeChangedEvent {
-  from: ModeType;
-  to: ModeType;
-  timestamp: Date;
-  trigger: 'auto' | 'manual' | 'tool' | 'explicit';
-  confidence: number;
-}
+    // ModeChangedEvent interface removed as it was unused and replaced by ModeTransitionPayload locally
+
 
 /**
  * Get mode metadata (icon, color, persona)
@@ -64,30 +59,15 @@ function getModeMetadata(mode: ModeType): { icon: string; color: string; persona
       color: 'green',
       persona: 'Senior Software Engineer'
     },
-    tool: {
-      icon: '🔧',
-      color: 'cyan',
-      persona: 'Senior Software Engineer + Tool Expert'
-    },
     debugger: {
       icon: '🐛',
       color: 'red',
       persona: 'Senior Debugging Specialist'
     },
-    security: {
-      icon: '🔒',
-      color: 'purple',
-      persona: 'Security Auditor & Specialist'
-    },
     reviewer: {
       icon: '👀',
       color: 'orange',
       persona: 'Senior Code Reviewer'
-    },
-    performance: {
-      icon: '⚡',
-      color: 'magenta',
-      persona: 'Performance Engineer'
     }
   };
   
@@ -98,7 +78,7 @@ const ActiveContextContext = createContext<ActiveContextContextType | undefined>
 
 export const ActiveContextProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   // Use the correct hook which returns { state, actions }
-  const { actions } = useContextManager();
+  const { state: contextState, actions } = useContextManager();
   
   const [state, setState] = useState<ActiveContextState>({
     activeSkills: [],
@@ -130,7 +110,33 @@ export const ActiveContextProvider: React.FC<{ children: ReactNode }> = ({ child
     return () => clearInterval(interval);
   }, [modeStartTime]);
 
+  // Initial Sync with ModeManager
   useEffect(() => {
+    // Only sync if context manager is active
+    if (!contextState.active) return;
+
+    const modeManager = actions.getModeManager();
+    if (modeManager) {
+      const mode = modeManager.getCurrentMode();
+      // Apply initial metadata
+      const metadata = getModeMetadata(mode);
+      const allowedTools = modeManager.getAllowedTools(mode);
+      
+      setState(prev => ({
+        ...prev,
+        currentMode: mode,
+        currentPersona: metadata.persona,
+        modeIcon: metadata.icon,
+        modeColor: metadata.color,
+        allowedTools
+      }));
+    }
+  }, [contextState.active, actions]); // Run whenever active state changes
+
+  useEffect(() => {
+    // Only attach listeners if context manager is active
+    if (!contextState.active) return;
+
     // Listen for events from ContextManager
     const handleClear = () => {
        setState(prev => ({ 
@@ -145,8 +151,20 @@ export const ActiveContextProvider: React.FC<{ children: ReactNode }> = ({ child
        }));
     };
     
-    const handleModeChanged = (data: unknown) => {
-      const event = data as ModeChangedEvent;
+    // Define the event payload type from ContextManager
+    interface ModeTransitionPayload {
+      from: ModeType;
+      to: ModeType;
+      timestamp: string; // ISO string from ContextManager
+      trigger: 'auto' | 'manual' | 'tool' | 'explicit';
+      confidence: number;
+    }
+    
+    const handleModeTransition = async (data: unknown) => {
+      // Cast safely and validate
+      const event = data as ModeTransitionPayload;
+      if (!event || !event.to) return;
+      
       const metadata = getModeMetadata(event.to);
       
       // Get allowed tools from ModeManager
@@ -154,14 +172,28 @@ export const ActiveContextProvider: React.FC<{ children: ReactNode }> = ({ child
       const allowedTools = modeManager ? modeManager.getAllowedTools(event.to) : [];
       
       // Get suggested modes from ContextAnalyzer
+      // Helper function to get messages safely
+      let messages: Array<{ role: Role; parts: MessagePart[] }> = [];
+      try {
+          if (actions.getContext) {
+            const contextMessages = await actions.getContext();
+            // Convert to provider messages expected by ContextAnalyzer
+            messages = contextMessages.map(msg => ({
+              role: msg.role,
+              parts: [{ type: 'text', text: msg.content || '' }]
+            }));
+          }
+      } catch (err) {
+          console.warn('Failed to get context for analysis:', err);
+      }
+
       const contextAnalyzer = modeManager?.getContextAnalyzer();
-      const messages = actions.getMessages ? actions.getMessages() : [];
       const suggestedModes = contextAnalyzer && messages.length > 0
         ? contextAnalyzer.getSuggestedModes(messages, event.to, 3)
         : [];
       
       // Reset mode start time
-      setModeStartTime(new Date());
+      setModeStartTime(new Date(event.timestamp || new Date()));
       
       setState(prev => ({
         ...prev,
@@ -194,7 +226,23 @@ export const ActiveContextProvider: React.FC<{ children: ReactNode }> = ({ child
             const d = data as DataEvent;
             setState(prev => ({ ...prev, activeMcpServers: d.servers || [] }));
         });
-        actions.on('mode-changed', handleModeChanged);
+        
+        // Listen for mode-transition from manager (legacy/proxy)
+        actions.on('mode-transition', handleModeTransition);
+
+        // Listen DIRECTLY to ModeManager for robust updates
+        const modeManager = actions.getModeManager();
+        if (modeManager) {
+            // We can reuse the same handler as the payload structure is compatible
+            // But we need to be careful about not doubling up if manager also re-emits.
+            // However, React batching usually handles this, or we can debounce.
+            // For now, robust updates are better than no updates.
+            modeManager.on('mode-changed', handleModeTransition);
+            modeManager.on('skills-changed', (skills: string[]) => {
+                setState(prev => ({ ...prev, activeSkills: skills }));
+            });
+        }
+        
         actions.on('cleared', handleClear);
     }
 
@@ -204,11 +252,18 @@ export const ActiveContextProvider: React.FC<{ children: ReactNode }> = ({ child
           actions.off('active-tools-updated', () => {});
           actions.off('active-hooks-updated', () => {});
           actions.off('active-mcp-updated', () => {});
-          actions.off('mode-changed', handleModeChanged);
+          
+          actions.off('mode-transition', handleModeTransition);
           actions.off('cleared', handleClear);
       }
+      
+      const modeManager = actions.getModeManager();
+      if (modeManager) {
+          modeManager.off('mode-changed', handleModeTransition);
+          modeManager.off('skills-changed', () => {});
+      }
     };
-  }, [actions]);
+  }, [contextState.active, actions]);
 
   const updateContextState = (newState: Partial<ActiveContextState>) => {
     setState(prev => ({ ...prev, ...newState }));

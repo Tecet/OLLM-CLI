@@ -15,6 +15,7 @@ import { SnapshotManager } from '../prompts/SnapshotManager.js';
 
 export interface HotSwapParams {
   skills?: string[];
+  [key: string]: unknown;
 }
 
 /**
@@ -27,7 +28,7 @@ export class HotSwapTool implements DeclarativeTool<HotSwapParams, ToolResult> {
   displayName = 'Trigger Hot Swap';
   schema: ToolSchema = {
     name: 'trigger_hot_swap',
-    description: 'Triggers a context hot swap to switch specialties or clear memory while preserving state. This will create a mode transition snapshot, summarize the current conversation, clear history to free context window, and switch to developer mode for implementation. The snapshot preserves recent context and findings for seamless mode restoration.',
+    description: 'Triggers a context hot swap to switch specialties or add skills. By default, this preserves your conversation history. Set preserveHistory=false only if you explicitly want to clear memory for a fresh start. CRITICAL: ONLY use this tool if the user EXPLICITLY asks to switch modes (e.g. "switch to developer mode") or add/change skills.',
     parameters: {
       type: 'object',
       properties: {
@@ -37,6 +38,11 @@ export class HotSwapTool implements DeclarativeTool<HotSwapParams, ToolResult> {
             type: 'string'
           },
           description: 'The IDs of the skills to activate in the new context.',
+        },
+        preserveHistory: {
+          type: 'boolean',
+          description: 'Whether to preserve the current conversation history. Defaults to true. Set to false for a clean slate.',
+          default: true
         }
       }
     },
@@ -89,10 +95,11 @@ export class HotSwapInvocation implements ToolInvocation<HotSwapParams, ToolResu
   async shouldConfirmExecute(
     _abortSignal: AbortSignal
   ): Promise<ToolCallConfirmationDetails | false> {
+    const preserve = this.params.preserveHistory !== false;
     return {
       toolName: 'trigger_hot_swap',
-      description: `Trigger a context hot swap to skills: ${this.params.skills?.join(', ') || 'Standard'}. This will create a mode transition snapshot, clear your current conversation history, and switch to developer mode.`,
-      risk: 'medium'
+      description: `Switching to skills: ${this.params.skills?.join(', ') || 'Standard'}${preserve ? ' (Preserving history)' : ' (Clearing history!)'}. This moves you to developer mode.`,
+      risk: preserve ? 'low' : 'medium'
     };
   }
 
@@ -101,6 +108,29 @@ export class HotSwapInvocation implements ToolInvocation<HotSwapParams, ToolResu
     _updateOutput?: (output: string) => void
   ): Promise<ToolResult> {
     try {
+      const currentMode = this.modeManager?.getCurrentMode();
+      
+      // Heuristic Safety Guard for Assistant Context
+      if (currentMode === 'assistant') {
+          const history = await this.manager.getMessages();
+          const lastUserMsg = [...history].reverse().find(m => m.role === 'user');
+          const content = lastUserMsg?.content?.trim().toLowerCase() || '';
+          
+          const commonGreetings = ['hi', 'hello', 'hey', 'yo', 'good morning', 'good afternoon', 'good evening'];
+          const isGreeting = commonGreetings.includes(content) || (content.length < 10 && !content.includes('mode') && !content.includes('switch'));
+          
+          if (isGreeting) {
+              return {
+                 llmContent: `Hot swap ignored. I detected a simple greeting or very short message. I should only trigger a hot swap when the user explicitly asks to switch specialties or modes.`,
+                 returnDisplay: `Refused: Hot swap ignored for simple greeting to prevent loop.`,
+                 error: {
+                     message: `Hot swap heuristic guard triggered.`,
+                     type: "GuardRefusal"
+                 }
+              };
+          }
+      }
+
       // Simplified parameter extraction
       let skills: string[] = [];
       
@@ -119,6 +149,8 @@ export class HotSwapInvocation implements ToolInvocation<HotSwapParams, ToolResu
         };
       }
 
+      const preserveHistory = this.params.preserveHistory !== false;
+
       const hotSwapService = new HotSwapService(
         this.manager,
         this.promptRegistry,
@@ -128,7 +160,7 @@ export class HotSwapInvocation implements ToolInvocation<HotSwapParams, ToolResu
         this.snapshotManager
       );
 
-      await hotSwapService.swap(skills);
+      await hotSwapService.swap(skills, preserveHistory);
 
       // Build success message with mode and snapshot info
       let msg = `Hot swap completed successfully. `;
@@ -138,7 +170,11 @@ export class HotSwapInvocation implements ToolInvocation<HotSwapParams, ToolResu
       }
       
       msg += `Current active skills: ${skills.join(', ') || 'Standard'}. `;
-      msg += `Context has been cleared and reseeded. `;
+      if (preserveHistory) {
+        msg += `Conversation history has been preserved. `;
+      } else {
+        msg += `Context has been cleared and reseeded from snapshot. `;
+      }
       msg += `Mode switched to developer for implementation.`;
       
       if (this.snapshotManager) {

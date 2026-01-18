@@ -333,5 +333,139 @@ describe('HookRegistry', () => {
         expect(retrieved).toBeUndefined();
       });
     });
+
+    describe('getHooksByCategory', () => {
+      it('should return hooks organized by event type', () => {
+        const hook1 = createTestHook({ id: 'hook-1', name: 'Hook 1' });
+        const hook2 = createTestHook({ id: 'hook-2', name: 'Hook 2' });
+        const hook3 = createTestHook({ id: 'hook-3', name: 'Hook 3' });
+
+        registry.registerHook('before_model', hook1);
+        registry.registerHook('before_model', hook2);
+        registry.registerHook('after_model', hook3);
+
+        const categories = registry.getHooksByCategory();
+        expect(categories.size).toBe(2);
+        expect(categories.get('before_model')).toHaveLength(2);
+        expect(categories.get('after_model')).toHaveLength(1);
+      });
+
+      it('should return empty map when no hooks registered', () => {
+        const categories = registry.getHooksByCategory();
+        expect(categories.size).toBe(0);
+      });
+    });
+
+    describe('getUserHooks', () => {
+      it('should return only user-created hooks', () => {
+        const userHook1 = createTestHook({ id: 'user-1', name: 'User Hook 1', source: 'user' });
+        const userHook2 = createTestHook({ id: 'user-2', name: 'User Hook 2', source: 'user' });
+        const builtinHook = createTestHook({ id: 'builtin-1', name: 'Builtin Hook', source: 'builtin' });
+        const workspaceHook = createTestHook({ id: 'workspace-1', name: 'Workspace Hook', source: 'workspace' });
+
+        registry.registerHook('before_model', userHook1);
+        registry.registerHook('after_model', userHook2);
+        registry.registerHook('before_tool', builtinHook);
+        registry.registerHook('after_tool', workspaceHook);
+
+        const userHooks = registry.getUserHooks();
+        expect(userHooks).toHaveLength(2);
+        expect(userHooks).toContainEqual(userHook1);
+        expect(userHooks).toContainEqual(userHook2);
+        expect(userHooks).not.toContainEqual(builtinHook);
+        expect(userHooks).not.toContainEqual(workspaceHook);
+      });
+
+      it('should return empty array when no user hooks exist', () => {
+        const builtinHook = createTestHook({ id: 'builtin-1', name: 'Builtin Hook', source: 'builtin' });
+        registry.registerHook('before_model', builtinHook);
+
+        const userHooks = registry.getUserHooks();
+        expect(userHooks).toHaveLength(0);
+      });
+    });
+
+    describe('getBuiltinHooks', () => {
+      it('should return only built-in hooks', () => {
+        const builtinHook1 = createTestHook({ id: 'builtin-1', name: 'Builtin Hook 1', source: 'builtin' });
+        const builtinHook2 = createTestHook({ id: 'builtin-2', name: 'Builtin Hook 2', source: 'builtin' });
+        const userHook = createTestHook({ id: 'user-1', name: 'User Hook', source: 'user' });
+        const workspaceHook = createTestHook({ id: 'workspace-1', name: 'Workspace Hook', source: 'workspace' });
+
+        registry.registerHook('before_model', builtinHook1);
+        registry.registerHook('after_model', builtinHook2);
+        registry.registerHook('before_tool', userHook);
+        registry.registerHook('after_tool', workspaceHook);
+
+        const builtinHooks = registry.getBuiltinHooks();
+        expect(builtinHooks).toHaveLength(2);
+        expect(builtinHooks).toContainEqual(builtinHook1);
+        expect(builtinHooks).toContainEqual(builtinHook2);
+        expect(builtinHooks).not.toContainEqual(userHook);
+        expect(builtinHooks).not.toContainEqual(workspaceHook);
+      });
+
+      it('should return empty array when no builtin hooks exist', () => {
+        const userHook = createTestHook({ id: 'user-1', name: 'User Hook', source: 'user' });
+        registry.registerHook('before_model', userHook);
+
+        const builtinHooks = registry.getBuiltinHooks();
+        expect(builtinHooks).toHaveLength(0);
+      });
+    });
+
+    describe('isEditable', () => {
+      it('should return true for user hooks', () => {
+        const userHook = createTestHook({ id: 'user-1', name: 'User Hook', source: 'user' });
+        registry.registerHook('before_model', userHook);
+
+        expect(registry.isEditable('user-1')).toBe(true);
+      });
+
+      it('should return false for builtin hooks', () => {
+        const builtinHook = createTestHook({ id: 'builtin-1', name: 'Builtin Hook', source: 'builtin' });
+        registry.registerHook('before_model', builtinHook);
+
+        expect(registry.isEditable('builtin-1')).toBe(false);
+      });
+
+      it('should return false for workspace hooks', () => {
+        const workspaceHook = createTestHook({ id: 'workspace-1', name: 'Workspace Hook', source: 'workspace' });
+        registry.registerHook('before_model', workspaceHook);
+
+        expect(registry.isEditable('workspace-1')).toBe(false);
+      });
+
+      it('should return false for non-existent hooks', () => {
+        expect(registry.isEditable('non-existent')).toBe(false);
+      });
+    });
+
+    describe('isDeletable', () => {
+      it('should return true for user hooks', () => {
+        const userHook = createTestHook({ id: 'user-1', name: 'User Hook', source: 'user' });
+        registry.registerHook('before_model', userHook);
+
+        expect(registry.isDeletable('user-1')).toBe(true);
+      });
+
+      it('should return false for builtin hooks', () => {
+        const builtinHook = createTestHook({ id: 'builtin-1', name: 'Builtin Hook', source: 'builtin' });
+        registry.registerHook('before_model', builtinHook);
+
+        expect(registry.isDeletable('builtin-1')).toBe(false);
+      });
+
+      it('should return false for workspace hooks', () => {
+        const workspaceHook = createTestHook({ id: 'workspace-1', name: 'Workspace Hook', source: 'workspace' });
+        registry.registerHook('before_model', workspaceHook);
+
+        expect(registry.isDeletable('workspace-1')).toBe(false);
+      });
+
+      it('should return false for non-existent hooks', () => {
+        expect(registry.isDeletable('non-existent')).toBe(false);
+      });
+    });
   });
 });

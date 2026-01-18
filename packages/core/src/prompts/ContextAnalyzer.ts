@@ -14,13 +14,8 @@ export type ModeType =
   | 'assistant'
   | 'planning'
   | 'developer'
-  | 'tool'
   | 'debugger'
-  | 'security'
-  | 'reviewer'
-  | 'performance'
-  | 'prototype'
-  | 'teacher';
+  | 'reviewer';
 
 /**
  * Result of context analysis
@@ -72,50 +67,37 @@ export interface KeywordDetection {
  */
 const MODE_KEYWORDS: Record<ModeType, string[]> = {
   assistant: [
-    'what', 'why', 'how', 'explain', 'tell me', 'describe', 'discuss',
-    'chat', 'talk', 'help me understand', 'can you explain'
+    'help', 'chat', 'tell me', 'hello', 'hi', 'who are you', 'what can you do',
+    'explain', 'teach me', 'how does', 'why', 'understand', 'learn',
+    'what is', 'tutorial', 'show me', 'walk me through', 'educational'
   ],
   planning: [
-    'plan', 'design', 'architecture', 'architect', 'strategy', 'research',
-    'investigate', 'explore', 'analyze', 'study', 'approach', 'roadmap',
-    'outline', 'blueprint', 'structure', 'organize', 'prepare'
+    'plan', 'architecture', 'design', 'how to implement', 'approach', 'strategy',
+    'todo list', 'steps', 'requirements', 'specification', 'outline', 'structuring',
+    'break down the task', 'sequence of actions', 'pre-implementation', 'brainstorm'
   ],
   developer: [
-    'implement', 'write', 'create', 'build', 'code', 'refactor', 'fix',
-    'modify', 'update', 'add feature', 'change', 'edit', 'develop',
-    'construct', 'make', 'generate'
-  ],
-  tool: [
-    'tool', 'use tool', 'run command', 'execute', 'call', 'invoke'
+    'code', 'implement', 'feature', 'build', 'create', 'write', 'refactor',
+    'add', 'new', 'function', 'class', 'component', 'script', 'logic',
+    'setup', 'config', 'install', 'update', 'modify', 'change',
+    'prototype', 'experiment', 'quick test', 'proof of concept', 'spike',
+    'throwaway', 'poc', 'rapid', 'quick and dirty',
+    'run', 'execute', 'call tool', 'use tool', 'list tools', 'get help with tools',
+    'how to use', 'tool syntax', 'what tools', 'automated', 'scripted'
   ],
   debugger: [
-    'debug', 'error', 'bug', 'crash', 'issue', 'problem', 'failing',
-    'broken', 'exception', 'stack trace', 'traceback', 'fails', 'not working',
-    'TypeError', 'ReferenceError', 'SyntaxError', 'undefined', 'null pointer'
-  ],
-  security: [
-    'security', 'vulnerability', 'audit', 'exploit', 'injection', 'XSS',
-    'CSRF', 'authentication', 'authorization', 'encrypt', 'sanitize',
-    'secure', 'attack', 'breach', 'CVE', 'OWASP'
+    'debug', 'fix', 'bug', 'error', 'exception', 'stack trace', 'failing',
+    'broken', 'not working', 'investigate', 'diagnose', 'root cause', 'crash',
+    'logs', 'output', 'console', 'terminal', 'test failure', 'issue',
+    'performance', 'slow', 'latency', 'high cpu', 'memory leak', 'optimize',
+    'profiling', 'benchmark', 'efficient', 'bottleneck'
   ],
   reviewer: [
-    'review', 'check', 'assess', 'evaluate', 'quality', 'best practices',
-    'code review', 'feedback', 'critique', 'examine', 'inspect'
-  ],
-  performance: [
-    'performance', 'optimize', 'slow', 'fast', 'benchmark', 'profile',
-    'latency', 'throughput', 'memory', 'CPU', 'speed', 'bottleneck',
-    'efficiency', 'faster'
-  ],
-  prototype: [
-    'prototype', 'experiment', 'quick test', 'proof of concept', 'spike',
-    'try out', 'throwaway', 'poc', 'quick demo', 'test idea', 'validate',
-    'explore solution', 'rapid', 'quick and dirty'
-  ],
-  teacher: [
-    'explain', 'teach me', 'how does', 'why', 'understand', 'learn',
-    'what is', 'tutorial', 'show me', 'walk me through', 'help me learn',
-    'educate', 'clarify', 'break down', 'simplify', 'demonstrate'
+    'review', 'audit', 'best practices', 'improve', 'quality', 'style',
+    'readability', 'structure', 'conventions', 'feedback', 'linter', 'prettier',
+    'consistency', 'refactor suggestion', 'logic check', 'complexity',
+    'security', 'vulnerability', 'secure', 'exploit', 'injection', 'auth',
+    'encryption', 'mitigate', 'sanitize', 'hardened', 'risk'
   ]
 };
 
@@ -132,106 +114,64 @@ export class ContextAnalyzer {
    * @returns Context analysis with mode recommendation and confidence
    */
   analyzeConversation(messages: Message[]): ContextAnalysis {
-    // Analyze last 5 messages for context
-    const recentMessages = messages.slice(-5);
-    
-    // Calculate confidence for each mode
-    const modeConfidences: Record<ModeType, number> = {
-      assistant: this.calculateModeConfidence(recentMessages, 'assistant'),
-      planning: this.calculateModeConfidence(recentMessages, 'planning'),
-      developer: this.calculateModeConfidence(recentMessages, 'developer'),
-      tool: this.calculateModeConfidence(recentMessages, 'tool'),
-      debugger: this.calculateModeConfidence(recentMessages, 'debugger'),
-      security: this.calculateModeConfidence(recentMessages, 'security'),
-      reviewer: this.calculateModeConfidence(recentMessages, 'reviewer'),
-      performance: this.calculateModeConfidence(recentMessages, 'performance'),
-      prototype: this.calculateModeConfidence(recentMessages, 'prototype'),
-      teacher: this.calculateModeConfidence(recentMessages, 'teacher')
-    };
-    
-    // Find mode with highest confidence
-    let recommendedMode: ModeType = 'assistant';
-    let maxConfidence = 0;
-    
-    for (const [mode, confidence] of Object.entries(modeConfidences)) {
-      if (confidence > maxConfidence) {
-        maxConfidence = confidence;
-        recommendedMode = mode as ModeType;
-      }
-    }
-    
-    // Detect keywords and metadata
-    const allText = recentMessages
-      .map(m => m.parts.filter(p => p.type === 'text').map(p => (p as any).text).join(' '))
-      .join(' ');
-    
-    const keywordDetections = this.detectKeywords(allText);
-    const triggers = keywordDetections
-      .filter(d => d.mode === recommendedMode)
-      .flatMap(d => d.keywords);
-    
-    const allKeywords = keywordDetections.flatMap(d => d.keywords);
-    const codeBlocksPresent = /```[\s\S]*?```/.test(allText);
-    const errorMessagesPresent = this.detectErrorMessages(allText);
-    
-    // Extract tool usage
-    const toolsUsed = recentMessages
-      .filter(m => m.role === 'assistant' && m.toolCalls)
-      .flatMap(m => m.toolCalls?.map(tc => tc.name) || []);
-    
-    // Extract recent topics (simple heuristic: first few words of user messages)
-    const recentTopics = recentMessages
-      .filter(m => m.role === 'user')
-      .map(m => {
-        const text = m.parts.find(p => p.type === 'text');
-        if (text && 'text' in text) {
-          const words = text.text.split(' ').slice(0, 5).join(' ');
-          return words.length > 50 ? words.substring(0, 50) + '...' : words;
-        }
-        return '';
-      })
-      .filter(t => t.length > 0);
-    
+    const confidences = this.calculateAllModeConfidences(messages);
+    const sortedModes = (Object.keys(confidences) as ModeType[])
+      .sort((a, b) => confidences[b] - confidences[a]);
+
+    const topMode = sortedModes[0];
+    const topConfidence = confidences[topMode];
+    const metadata = this.analyzeMetadataForResponse(messages);
+
     return {
-      mode: recommendedMode,
-      confidence: maxConfidence,
-      triggers,
-      metadata: {
-        keywords: allKeywords,
-        toolsUsed,
-        recentTopics,
-        codeBlocksPresent,
-        errorMessagesPresent
-      }
+      mode: topMode,
+      confidence: topConfidence,
+      triggers: [], // Keywords that triggered this recommendation
+      metadata
     };
   }
-  
+
   /**
    * Calculate confidence scores for all modes
-   * 
+   *
    * @param messages - Conversation messages to analyze
    * @returns Object with confidence scores for each mode
    */
   calculateAllModeConfidences(messages: Message[]): AllModeConfidences {
     const recentMessages = messages.slice(-5);
-    
-    return {
+
+    const modeConfidences: Record<ModeType, number> = {
       assistant: this.calculateModeConfidence(recentMessages, 'assistant'),
       planning: this.calculateModeConfidence(recentMessages, 'planning'),
       developer: this.calculateModeConfidence(recentMessages, 'developer'),
-      tool: this.calculateModeConfidence(recentMessages, 'tool'),
       debugger: this.calculateModeConfidence(recentMessages, 'debugger'),
-      security: this.calculateModeConfidence(recentMessages, 'security'),
-      reviewer: this.calculateModeConfidence(recentMessages, 'reviewer'),
-      performance: this.calculateModeConfidence(recentMessages, 'performance'),
-      prototype: this.calculateModeConfidence(recentMessages, 'prototype'),
-      teacher: this.calculateModeConfidence(recentMessages, 'teacher')
+      reviewer: this.calculateModeConfidence(recentMessages, 'reviewer')
     };
+
+    // Detect keywords and metadata
+    const allText = recentMessages
+      .map(m => m.parts.filter(p => p.type === 'text').map(p => (p as { type: 'text'; text: string }).text).join(' '))
+      .join(' ');
+
+    // Adjust for specific patterns
+    if (/error|exception|stack trace|failed/i.test(allText)) {
+      modeConfidences.debugger += 0.2;
+    }
+
+    if (/```/.test(allText)) {
+      modeConfidences.developer += 0.15;
+    }
+
+    // Ensure confidences don't exceed 1.0 after adjustments
+    for (const mode in modeConfidences) {
+      modeConfidences[mode as ModeType] = Math.min(modeConfidences[mode as ModeType], 1.0);
+    }
+
+    return modeConfidences;
   }
-  
+
   /**
    * Get suggested modes with reasons
-   * 
+   *
    * @param messages - Conversation messages to analyze
    * @param currentMode - Current active mode
    * @param topN - Number of suggestions to return (default: 3)
@@ -241,103 +181,46 @@ export class ContextAnalyzer {
     const confidences = this.calculateAllModeConfidences(messages);
     const analysis = this.analyzeConversation(messages);
     
-    // Get mode metadata
-    const getModeIcon = (mode: ModeType): string => {
+    const getIcon = (mode: ModeType): string => {
       const icons: Record<ModeType, string> = {
         assistant: '💬',
         planning: '📋',
         developer: '👨‍💻',
-        tool: '🔧',
         debugger: '🐛',
-        security: '🔒',
-        reviewer: '👀',
-        performance: '⚡',
-        prototype: '⚡🔬',
-        teacher: '👨‍🏫'
+        reviewer: '👀'
       };
       return icons[mode] || '💬';
     };
-    
-    // Generate reasons for each mode
-    const generateReason = (mode: ModeType, confidence: number): string => {
+
+    const generateReason = (mode: ModeType, _confidence: number): string => {
       const { metadata } = analysis;
-      
+
       switch (mode) {
         case 'debugger':
-          if (metadata.errorMessagesPresent) {
-            return 'Multiple errors detected';
-          }
-          return 'Error analysis recommended';
-          
-        case 'security':
-          if (metadata.keywords.some(k => k.includes('security') || k.includes('vulnerability'))) {
-            return 'Security concerns detected';
-          }
-          return 'Security review recommended';
-          
+          return metadata.errorMessagesPresent ? 'Error analysis recommended' : 'Root cause investigation';
         case 'reviewer':
-          if (metadata.keywords.some(k => k.includes('review') || k.includes('check'))) {
-            return 'Code review requested';
-          }
-          return 'Quality assessment suggested';
-          
-        case 'performance':
-          if (metadata.keywords.some(k => k.includes('slow') || k.includes('optimize'))) {
-            return 'Performance issues detected';
-          }
-          return 'Optimization opportunities';
-          
+          return 'Code quality assessment';
         case 'planning':
-          if (metadata.keywords.some(k => k.includes('plan') || k.includes('design'))) {
-            return 'Planning phase detected';
-          }
-          return 'Consider planning first';
-          
+          return 'Strategic approach needed';
         case 'developer':
-          if (metadata.keywords.some(k => k.includes('implement') || k.includes('build'))) {
-            return 'Implementation ready';
-          }
-          return 'Ready to implement';
-          
-        case 'prototype':
-          if (metadata.keywords.some(k => k.includes('experiment') || k.includes('quick'))) {
-            return 'Quick experiment suggested';
-          }
-          return 'Rapid prototyping mode';
-          
-        case 'teacher':
-          if (metadata.keywords.some(k => k.includes('explain') || k.includes('learn'))) {
-            return 'Learning opportunity';
-          }
-          return 'Educational context';
-          
+          return metadata.toolsUsed.length > 0 ? 'Tool usage detected' : 'Implementation ready';
         case 'assistant':
-          return 'General conversation';
-          
-        case 'tool':
-          if (metadata.toolsUsed.length > 0) {
-            return 'Tool usage detected';
-          }
-          return 'Enhanced tool guidance';
-          
+          return 'General assistance';
         default:
-          return 'Suggested mode';
+          return 'Suggested context switch';
       }
     };
     
-    // Sort modes by confidence (excluding current mode)
-    const sortedModes = Object.entries(confidences)
+    return Object.entries(confidences)
       .filter(([mode]) => mode !== currentMode)
       .sort(([, a], [, b]) => b - a)
       .slice(0, topN)
       .map(([mode, confidence]) => ({
         mode: mode as ModeType,
-        icon: getModeIcon(mode as ModeType),
+        icon: getIcon(mode as ModeType),
         confidence,
         reason: generateReason(mode as ModeType, confidence)
       }));
-    
-    return sortedModes;
   }
   
   /**
@@ -347,16 +230,16 @@ export class ContextAnalyzer {
    * @param mode - Mode to calculate confidence for
    * @returns Confidence score (0.0 to 1.0)
    */
-  calculateModeConfidence(messages: Message[], mode: ModeType): number {
+  private calculateModeConfidence(messages: Message[], mode: ModeType): number {
     let confidence = 0.0;
-    const keywords = MODE_KEYWORDS[mode];
+    const keywords = MODE_KEYWORDS[mode] || [];
     
     // Analyze each message with exponential decay (recent messages weighted higher)
     messages.forEach((message, index) => {
-      const weight = Math.pow(1.5, index); // Exponential weight: 1, 1.5, 2.25, 3.375, 5.0625
+      const weight = Math.pow(1.5, index);
       const text = message.parts
         .filter(p => p.type === 'text')
-        .map(p => (p as any).text)
+        .map(p => (p as { type: 'text'; text: string }).text)
         .join(' ')
         .toLowerCase();
       
@@ -368,38 +251,18 @@ export class ContextAnalyzer {
         }
       }
       
-      // Add weighted confidence based on matches
       if (matchCount > 0) {
-        confidence += (matchCount / keywords.length) * weight * 0.2;
+        const keywordScore = Math.min(matchCount, 3) / 3;
+        confidence += keywordScore * weight * 0.4;
       }
       
       // Boost for explicit mode requests
       if (this.detectExplicitModeRequest(text, mode)) {
-        confidence += 0.5 * weight;
-      }
-      
-      // Boost for code blocks in developer mode
-      if (mode === 'developer' && /```[\s\S]*?```/.test(text)) {
-        confidence += 0.2 * weight;
-      }
-      
-      // Boost for error messages in debugger mode
-      if (mode === 'debugger' && this.detectErrorMessages(text)) {
-        confidence += 0.3 * weight;
-      }
-      
-      // Boost for security keywords
-      if (mode === 'security' && this.detectSecurityKeywords(text)) {
-        confidence += 0.3 * weight;
+        confidence += 0.8 * weight;
       }
     });
     
-    // Normalize confidence to 0-1 range
-    // Maximum possible confidence with 5 messages and exponential weights is roughly:
-    // 5 messages * max_weight(5.0625) * max_boost(0.7) ≈ 17.7
-    const normalizedConfidence = Math.min(confidence / 15.0, 1.0);
-    
-    return normalizedConfidence;
+    return Math.min(confidence / 4.0, 1.0);
   }
   
   /**
@@ -443,12 +306,26 @@ export class ContextAnalyzer {
     );
     
     if (hasToolCalls) {
-      return 'tool';
+      return 'developer';
     }
     
     return null;
   }
   
+  private analyzeMetadataForResponse(messages: Message[]): ContextAnalysis['metadata'] {
+    const allText = messages
+      .map(m => m.parts.filter(p => p.type === 'text').map(p => (p as { type: 'text'; text: string }).text).join(' '))
+      .join(' ');
+    
+    return {
+      keywords: [],
+      toolsUsed: [],
+      recentTopics: [],
+      codeBlocksPresent: /```/.test(allText),
+      errorMessagesPresent: /error|exception|stack trace|failed/i.test(allText)
+    };
+  }
+
   /**
    * Detect explicit mode request in text
    * 
@@ -461,10 +338,8 @@ export class ContextAnalyzer {
       `switch to ${mode}`,
       `use ${mode} mode`,
       `enter ${mode} mode`,
-      `go to ${mode}`,
       `/mode ${mode}`
     ];
-    
     return patterns.some(pattern => text.includes(pattern));
   }
   

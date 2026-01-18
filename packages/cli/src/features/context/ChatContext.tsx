@@ -4,7 +4,7 @@ import { commandRegistry } from '../../commands/index.js';
 import { useServices } from './ServiceContext.js';
 import { useModel } from './ModelContext.js';
 import { useUI } from './UIContext.js';
-import { ToolRegistry, HotSwapTool, MemoryDumpTool, PromptRegistry } from '@ollm/core';
+import { ToolRegistry, HotSwapTool, MemoryDumpTool, PromptRegistry, MODE_METADATA } from '@ollm/core';
 import type { ToolCall as CoreToolCall, ContextMessage, ProviderMetrics, ToolSchema } from '@ollm/core';
 import { SettingsService } from '../../config/settingsService.js';
 
@@ -402,29 +402,10 @@ export function ChatProvider({
             // TASK 7.5: Switch mode if confidence threshold met
             modeManager.switchMode(analysis.mode, 'auto', analysis.confidence);
             
-            // TASK 7.6: Rebuild system prompt with new mode
-            // Get current tools for prompt building
-            const settingsService = SettingsService.getInstance();
-            const toolRegistry = new ToolRegistry(settingsService);
-            const toolSchemas = toolRegistry.getFunctionSchemas();
-            const tools = toolSchemas.map(t => ({ name: t.name }));
-            
-            const newPrompt = modeManager.buildPrompt({
-              mode: analysis.mode,
-              skills: modeManager.getActiveSkills(),
-              tools,
-              workspace: {
-                path: process.cwd()
-              }
-            });
-            
-            // TASK 7.7: Update system prompt in ContextManager
-            contextActions.setSystemPrompt(newPrompt);
-            
-            // Add system message to notify user of mode change
+            // TASK 7.6-7.7: Prompt rebuilding is now unified below to ensure consistency
             addMessage({
               role: 'system',
-              content: `Mode switched to ${analysis.mode} (confidence: ${(analysis.confidence * 100).toFixed(0)}%)`,
+              content: `Switched to ${analysis.mode in MODE_METADATA ? (MODE_METADATA as Record<string, { icon: string }>)[analysis.mode].icon : '🔄'} ${analysis.mode} (${(analysis.confidence * 100).toFixed(0)}%)`,
               excludeFromContext: true
             });
           }
@@ -454,14 +435,66 @@ export function ChatProvider({
         if (manager && provider) {
             const modeManager = contextActions.getModeManager();
             const snapshotManager = contextActions.getSnapshotManager();
+            
+            // Register tools - filtering is handled by PromptModeManager.isToolAllowed
             toolRegistry.register(new HotSwapTool(manager, promptRegistry, provider, currentModel, modeManager || undefined, snapshotManager || undefined));
-            toolRegistry.register(new MemoryDumpTool());
+            toolRegistry.register(new MemoryDumpTool(modeManager || undefined));
+            
             const toolNames = toolRegistry.list().map(t => t.name);
             manager.emit('active-tools-updated', toolNames);
         }
         
         // Use getFunctionSchemas() which applies user preference filtering
         toolSchemas = toolRegistry.getFunctionSchemas();
+        
+        // DEBUG: Log tool schemas before filtering
+        console.log('[DEBUG] Tool schemas BEFORE filtering:', toolSchemas?.map(s => s.name));
+        
+        // Filter tools based on active mode permissions
+        // Get modeManager from contextActions (it's safe to call here as context is available)
+
+        const modeManager = contextActions.getModeManager();
+        
+        // DEBUG: Write to file to bypass Ink's console capture
+        // We use dynamic import for fs to be safer with some bundlers, but standard require is fine in Node context usually.
+        // Since we had ESM issues before, let's try a different approach: just use the logic we have but assume logging works if we use process.stderr.write
+        // But process.stderr might be captured too.
+        // Let's use a very safe file write check if possible, or just trust our logic change below.
+        
+        if (modeManager) {
+          const currentMode = modeManager.getCurrentMode();
+          
+          toolSchemas = toolSchemas.filter(schema => {
+            const allowed = modeManager.isToolAllowed(schema.name, currentMode);
+            return allowed;
+          });
+        } else {
+          // CRITICAL FIX: If modeManager is not initialized yet (race condition),
+          // default to NO tools rather than exposing all tools unfiltered.
+          toolSchemas = [];
+        }
+      }
+
+      if (modeManager) {
+        const currentMode = modeManager.getCurrentMode();
+        
+        // Rebuild system prompt to ensure it matches current mode and filtered tools
+        // This prevents the LLM from seeing tools it shouldn't call (Requirement 8.4)
+        const allToolSchemas = toolRegistry?.getFunctionSchemas() || [];
+        const filteredToolsForPrompt = allToolSchemas
+          .filter(s => modeManager.isToolAllowed(s.name, currentMode))
+          .map(t => ({ name: t.name }));
+
+        const updatedPrompt = modeManager.buildPrompt({
+          mode: currentMode,
+          skills: modeManager.getActiveSkills(),
+          tools: filteredToolsForPrompt,
+          workspace: {
+            path: process.cwd()
+          }
+        });
+        
+        contextActions.setSystemPrompt(updatedPrompt);
       }
 
       // Get system prompt and add tool support note if needed
@@ -525,6 +558,14 @@ export function ChatProvider({
         let toolCallReceived: CoreToolCall | null = null;
         let assistantContent = '';
         let thinkingContent = ''; // Track thinking content from Ollama
+
+        // DEBUG: Log exact request being sent to LLM
+        console.log('=== LLM REQUEST DEBUG ===');
+        console.log('[DEBUG] System Prompt (first 500 chars):', systemPrompt?.substring(0, 500));
+        console.log('[DEBUG] History length:', history.length);
+        console.log('[DEBUG] History roles:', history.map((m: {role: string}) => m.role));
+        console.log('[DEBUG] Tools being sent:', toolSchemas?.map(t => t.name) || 'NONE');
+        console.log('=========================');
 
         try {
           await sendToLLM(
@@ -655,42 +696,55 @@ export function ChatProvider({
                   } : msg
               ));
 
-              if (tool) {
-                  const toolContext = {
-                      messageBus: { requestConfirmation: async () => true },
-                      policyEngine: { evaluate: () => 'allow' as const, getRiskLevel: () => 'low' as const }
-                  };
-                  const invocation = tool.createInvocation(tc.args, toolContext);
-                  const result = await invocation.execute(new AbortController().signal);
-                  
-                  // Add tool result to context manager
-                  await contextActions.addMessage({
-                      role: 'tool',
-                      content: result.llmContent,
-                      toolCallId: tc.id
-                  });
+              // Verify tool permission before execution (prevents hallucinated calls)
+              let toolAllowed = true;
+              if (modeManager) {
+                  const currentMode = modeManager.getCurrentMode();
+                  if (!modeManager.isToolAllowed(tc.name, currentMode)) {
+                      toolAllowed = false;
+                  }
+              }
 
-                  // Update UI with result
-                  const targetId = currentAssistantMsgId;
-                  setMessages(prev => prev.map(msg => 
-                      msg.id === targetId ? {
-                          ...msg,
-                          toolCalls: msg.toolCalls?.map(item => 
-                              item.id === tc.id ? { ...item, status: 'success', result: result.returnDisplay } : item
-                          )
-                      } : msg
-                  ));
+              if (tool && toolAllowed) {
+                  try {
+                      const toolContext = {
+                          messageBus: { requestConfirmation: async () => true },
+                          policyEngine: { evaluate: () => 'allow' as const, getRiskLevel: () => 'low' as const }
+                      };
+                      const invocation = tool.createInvocation(tc.args, toolContext);
+                      const result = await invocation.execute(new AbortController().signal) as { llmContent: string; returnDisplay: string };
+                      
+                      // Add tool result to context manager
+                      await contextActions.addMessage({
+                          role: 'tool',
+                          content: result.llmContent,
+                          toolCallId: tc.id
+                      });
 
-                  if (tc.name === 'trigger_hot_swap') {
-                      // Post-swap: start a fresh assistant message for the next turn
-                      const swapMsg = addMessage({ role: 'assistant', content: '', expanded: true });
-                      currentAssistantMsgId = swapMsg.id;
-                      assistantMessageIdRef.current = currentAssistantMsgId;
+                      // Update UI with result
+                      const targetId = currentAssistantMsgId;
+                      setMessages(prev => prev.map(msg => 
+                          msg.id === targetId ? {
+                              ...msg,
+                              toolCalls: msg.toolCalls?.map(item => 
+                                  item.id === tc.id ? { ...item, status: 'success', result: result.returnDisplay } : item
+                              )
+                          } : msg
+                      ));
+
+                      if (tc.name === 'trigger_hot_swap') {
+                          // Post-swap: start a fresh assistant message for the next turn
+                          const swapMsg = addMessage({ role: 'assistant', content: '', expanded: true });
+                          currentAssistantMsgId = swapMsg.id;
+                          assistantMessageIdRef.current = currentAssistantMsgId;
+                      }
+                  } finally {
+                      // Tool execution completed
                   }
               } else {
                   await contextActions.addMessage({
                       role: 'tool',
-                      content: `Error: Tool ${tc.name} not found`,
+                      content: `Error: Tool ${tc.name} not found or denied`,
                       toolCallId: tc.id
                   });
                   stopLoop = true;

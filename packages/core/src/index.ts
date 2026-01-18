@@ -311,6 +311,7 @@ export {
   REVIEWER_MODE_TEMPLATE,
   PERFORMANCE_MODE_TEMPLATE,
   MODE_TEMPLATES,
+  MODE_METADATA,
   // Mode Transition Animator
   ModeTransitionAnimator,
   type TransitionAnimation,

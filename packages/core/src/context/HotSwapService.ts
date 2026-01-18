@@ -6,7 +6,6 @@ import { SystemPromptBuilder } from './SystemPromptBuilder.js';
 import { STATE_SNAPSHOT_PROMPT } from '../prompts/templates/stateSnapshot.js';
 import { PromptModeManager } from '../prompts/PromptModeManager.js';
 import { SnapshotManager } from '../prompts/SnapshotManager.js';
-import type { ModeType } from '../prompts/ContextAnalyzer.js';
 
 export class HotSwapService {
   constructor(
@@ -24,8 +23,9 @@ export class HotSwapService {
   /**
    * Performs a hot swap: Snapshot -> Clear -> Reseed.
    * @param newSkills Optional list of skill IDs to activate in the new session.
+   * @param preserveHistory Whether to keep existing message history (Soft Swap).
    */
-  async swap(newSkills?: string[]): Promise<void> {
+  async swap(newSkills?: string[], preserveHistory: boolean = true): Promise<void> {
     const messages = await this.contextManager.getMessages();
     const userMessages = messages.filter(m => m.role === 'user' || m.role === 'assistant');
     
@@ -33,7 +33,8 @@ export class HotSwapService {
     const currentMode = this.modeManager?.getCurrentMode() || 'assistant';
     
     // 1. Create mode transition snapshot if managers are available
-    if (this.modeManager && this.snapshotManager && userMessages.length >= 3) {
+    // Snapshotting is always good, but only if we have enough history
+    if (!preserveHistory && this.modeManager && this.snapshotManager && userMessages.length >= 3) {
       try {
         const snapshot = this.snapshotManager.createTransitionSnapshot(
           currentMode,
@@ -60,15 +61,20 @@ export class HotSwapService {
     
     // 2. Generate XML snapshot with Hallucination Guard
     let snapshotXml = '';
-    // Only snapshot if we have a meaningful conversation (3+ turns)
-    if (userMessages.length >= 3) {
+    // Only snapshot if we are clearing history and have a meaningful conversation (3+ turns)
+    if (!preserveHistory && userMessages.length >= 3) {
       snapshotXml = await this.generateSnapshot(messages);
     } else {
-      console.log(`[HotSwap] Skipping XML snapshot due to short conversation (${userMessages.length} messages).`);
+      console.log(`[HotSwap] Skipping XML snapshot (preserveHistory=${preserveHistory}, messages=${userMessages.length}).`);
     }
     
-    // 3. Clear Context
-    await this.contextManager.clear();
+    // 3. Clear Context (Only if NOT preserving history)
+    if (!preserveHistory) {
+      console.log('[HotSwap] Clearing context for fresh start');
+      await this.contextManager.clear();
+    } else {
+      console.log('[HotSwap] Preserving conversation history (Soft Swap)');
+    }
 
     // 4. Update skills in ModeManager if available
     if (this.modeManager && newSkills) {
@@ -122,7 +128,7 @@ export class HotSwapService {
     if (newSkills) {
       console.log('[HotSwap] Switching to new skills:', newSkills);
       // Emit custom event for UI updates
-      this.contextManager.emit('active-skills-updated', newSkills);
+      this.contextManager.emit('active-skills-updated', { skills: newSkills });
     }
     
     // Note: mode-changed event is already emitted by ModeManager.switchMode()

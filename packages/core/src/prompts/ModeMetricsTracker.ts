@@ -4,7 +4,7 @@
  * Tracks mode usage, transitions, and mode-specific events for analytics and insights.
  */
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, unlinkSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
 import type { ModeType } from './ContextAnalyzer.js';
@@ -241,15 +241,15 @@ export type ModeEvent =
 export interface SerializableMetrics {
   timeMetrics: Array<[ModeType, ModeTimeMetrics]>;
   transitionMetrics: Array<[string, ModeTransitionMetrics]>;
-  debuggerMetrics: DebuggerModeMetrics & { commonErrorTypes: Array<[string, number]> };
-  securityMetrics: SecurityModeMetrics & { commonVulnerabilityTypes: Array<[string, number]> };
+  debuggerMetrics: Omit<DebuggerModeMetrics, 'commonErrorTypes'> & { commonErrorTypes: Array<[string, number]> };
+  securityMetrics: Omit<SecurityModeMetrics, 'commonVulnerabilityTypes'> & { commonVulnerabilityTypes: Array<[string, number]> };
   reviewerMetrics: ReviewerModeMetrics;
-  performanceMetrics: PerformanceModeMetrics & { optimizationCategories: Array<[string, number]> };
+  performanceMetrics: Omit<PerformanceModeMetrics, 'optimizationCategories'> & { optimizationCategories: Array<[string, number]> };
   planningMetrics: PlanningModeMetrics;
   developerMetrics: DeveloperModeMetrics;
   prototypeMetrics: PrototypeModeMetrics;
   teacherMetrics: TeacherModeMetrics;
-  toolMetrics: ToolModeMetrics & { mostUsedTools: Array<[string, number]> };
+  toolMetrics: Omit<ToolModeMetrics, 'mostUsedTools'> & { mostUsedTools: Array<[string, number]> };
   sessionStart: string;
   sessionDuration: number;
   totalTransitions: number;
@@ -519,7 +519,7 @@ export class ModeMetricsTracker {
         this.metrics.debuggerMetrics.bugsFound++;
         break;
       
-      case 'debugger:fix-applied':
+      case 'debugger:fix-applied': {
         this.metrics.debuggerMetrics.fixesApplied++;
         
         // Update average time to fix (for all fixes, successful or not)
@@ -537,6 +537,7 @@ export class ModeMetricsTracker {
             this.metrics.debuggerMetrics.fixesApplied;
         }
         break;
+      }
       
       // Security events
       case 'security:vulnerability-found':
@@ -569,7 +570,7 @@ export class ModeMetricsTracker {
         break;
       
       // Reviewer events
-      case 'reviewer:review-performed':
+      case 'reviewer:review-performed': {
         this.metrics.reviewerMetrics.reviewsPerformed++;
         this.metrics.reviewerMetrics.filesReviewed += event.filesReviewed;
         this.metrics.reviewerMetrics.linesReviewed += event.linesReviewed;
@@ -578,6 +579,7 @@ export class ModeMetricsTracker {
         const totalReviewTime = this.metrics.reviewerMetrics.averageReviewTime * (this.metrics.reviewerMetrics.reviewsPerformed - 1);
         this.metrics.reviewerMetrics.averageReviewTime = (totalReviewTime + event.timeSpent) / this.metrics.reviewerMetrics.reviewsPerformed;
         break;
+      }
       
       case 'reviewer:issue-found':
         this.metrics.reviewerMetrics.issuesFound++;
@@ -597,7 +599,7 @@ export class ModeMetricsTracker {
         this.incrementMapCounter(this.metrics.performanceMetrics.optimizationCategories, event.category);
         break;
       
-      case 'performance:optimization-applied':
+      case 'performance:optimization-applied': {
         this.metrics.performanceMetrics.optimizationsApplied++;
         this.incrementMapCounter(this.metrics.performanceMetrics.optimizationCategories, event.category);
         
@@ -605,6 +607,7 @@ export class ModeMetricsTracker {
         const totalImprovement = this.metrics.performanceMetrics.averageImprovement * (this.metrics.performanceMetrics.optimizationsApplied - 1);
         this.metrics.performanceMetrics.averageImprovement = (totalImprovement + event.improvement) / this.metrics.performanceMetrics.optimizationsApplied;
         break;
+      }
       
       case 'performance:benchmark-run':
         this.metrics.performanceMetrics.benchmarksRun++;
@@ -681,13 +684,14 @@ export class ModeMetricsTracker {
         break;
       
       // Teacher events
-      case 'teacher:concept-explained':
+      case 'teacher:concept-explained': {
         this.metrics.teacherMetrics.conceptsExplained++;
         
         // Update average explanation time
         const totalExplanationTime = this.metrics.teacherMetrics.averageExplanationTime * (this.metrics.teacherMetrics.conceptsExplained - 1);
         this.metrics.teacherMetrics.averageExplanationTime = (totalExplanationTime + event.timeSpent) / this.metrics.teacherMetrics.conceptsExplained;
         break;
+      }
       
       case 'teacher:example-provided':
         this.metrics.teacherMetrics.examplesProvided++;
@@ -706,7 +710,7 @@ export class ModeMetricsTracker {
         break;
       
       // Tool events
-      case 'tool:tool-executed':
+      case 'tool:tool-executed': {
         this.metrics.toolMetrics.toolsExecuted++;
         this.incrementMapCounter(this.metrics.toolMetrics.mostUsedTools, event.toolName);
         
@@ -720,6 +724,7 @@ export class ModeMetricsTracker {
         const totalExecutionTime = this.metrics.toolMetrics.averageExecutionTime * (this.metrics.toolMetrics.toolsExecuted - 1);
         this.metrics.toolMetrics.averageExecutionTime = (totalExecutionTime + event.executionTime) / this.metrics.toolMetrics.toolsExecuted;
         break;
+      }
     }
   }
   
@@ -979,34 +984,6 @@ export class ModeMetricsTracker {
           averageTimeToFix: `${(metrics.debuggerMetrics.averageTimeToFix / 1000).toFixed(1)}s`
         };
       
-      case 'security':
-        return {
-          vulnerabilitiesFound: metrics.securityMetrics.vulnerabilitiesFound,
-          criticalVulnerabilities: metrics.securityMetrics.criticalVulnerabilities,
-          highVulnerabilities: metrics.securityMetrics.highVulnerabilities,
-          fixesApplied: metrics.securityMetrics.fixesApplied,
-          auditsPerformed: metrics.securityMetrics.auditsPerformed
-        };
-      
-      case 'reviewer':
-        return {
-          reviewsPerformed: metrics.reviewerMetrics.reviewsPerformed,
-          issuesFound: metrics.reviewerMetrics.issuesFound,
-          suggestionsGiven: metrics.reviewerMetrics.suggestionsGiven,
-          filesReviewed: metrics.reviewerMetrics.filesReviewed,
-          linesReviewed: metrics.reviewerMetrics.linesReviewed,
-          averageReviewTime: `${(metrics.reviewerMetrics.averageReviewTime / 1000).toFixed(1)}s`
-        };
-      
-      case 'performance':
-        return {
-          bottlenecksFound: metrics.performanceMetrics.bottlenecksFound,
-          optimizationsApplied: metrics.performanceMetrics.optimizationsApplied,
-          averageImprovement: `${metrics.performanceMetrics.averageImprovement.toFixed(1)}%`,
-          benchmarksRun: metrics.performanceMetrics.benchmarksRun,
-          profilesGenerated: metrics.performanceMetrics.profilesGenerated
-        };
-      
       case 'planning':
         return {
           plansCreated: metrics.planningMetrics.plansCreated,
@@ -1027,36 +1004,16 @@ export class ModeMetricsTracker {
           commitsCreated: metrics.developerMetrics.commitsCreated
         };
       
-      case 'prototype':
+      case 'reviewer':
         return {
-          prototypesCreated: metrics.prototypeMetrics.prototypesCreated,
-          experimentsRun: metrics.prototypeMetrics.experimentsRun,
-          successfulPrototypes: metrics.prototypeMetrics.successfulPrototypes,
-          failedPrototypes: metrics.prototypeMetrics.failedPrototypes,
-          transitionsToProduction: metrics.prototypeMetrics.transitionsToProduction
+          reviewsPerformed: metrics.reviewerMetrics.reviewsPerformed,
+          issuesFound: metrics.reviewerMetrics.issuesFound,
+          suggestionsGiven: metrics.reviewerMetrics.suggestionsGiven,
+          filesReviewed: metrics.reviewerMetrics.filesReviewed,
+          linesReviewed: metrics.reviewerMetrics.linesReviewed,
+          averageReviewTime: `${(metrics.reviewerMetrics.averageReviewTime / 1000).toFixed(1)}s`
         };
-      
-      case 'teacher':
-        return {
-          conceptsExplained: metrics.teacherMetrics.conceptsExplained,
-          examplesProvided: metrics.teacherMetrics.examplesProvided,
-          questionsAsked: metrics.teacherMetrics.questionsAsked,
-          analogiesUsed: metrics.teacherMetrics.analogiesUsed,
-          tutorialsSuggested: metrics.teacherMetrics.tutorialsSuggested,
-          averageExplanationTime: `${(metrics.teacherMetrics.averageExplanationTime / 1000).toFixed(1)}s`
-        };
-      
-      case 'tool':
-        return {
-          toolsExecuted: metrics.toolMetrics.toolsExecuted,
-          successfulExecutions: metrics.toolMetrics.successfulExecutions,
-          failedExecutions: metrics.toolMetrics.failedExecutions,
-          successRate: metrics.toolMetrics.toolsExecuted > 0 
-            ? `${((metrics.toolMetrics.successfulExecutions / metrics.toolMetrics.toolsExecuted) * 100).toFixed(1)}%`
-            : '0%',
-          averageExecutionTime: `${metrics.toolMetrics.averageExecutionTime.toFixed(0)}ms`
-        };
-      
+
       default:
         return {};
     }
@@ -1207,8 +1164,7 @@ export class ModeMetricsTracker {
       const metricsPath = join(homeDir, '.ollm', 'metrics', 'mode-metrics.json');
       
       if (existsSync(metricsPath)) {
-        const fs = require('fs');
-        fs.unlinkSync(metricsPath);
+        unlinkSync(metricsPath);
       }
     } catch (error) {
       console.error('Failed to clear persisted metrics:', error);

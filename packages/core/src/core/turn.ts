@@ -11,7 +11,7 @@ import type {
   GenerationOptions,
 } from '../provider/types.js';
 import type { PromptModeManager } from '../prompts/PromptModeManager.js';
-import type { SnapshotManager, ModeFindings } from '../prompts/SnapshotManager.js';
+import type { SnapshotManager } from '../prompts/SnapshotManager.js';
 import type { ModeType } from '../prompts/ContextAnalyzer.js';
 
 /**
@@ -43,6 +43,7 @@ export interface ChatOptions {
   abortSignal?: AbortSignal;
   modeManager?: PromptModeManager;
   snapshotManager?: SnapshotManager;
+  useModeLinkedTemperature?: boolean;
 }
 
 /**
@@ -294,17 +295,12 @@ export class Turn {
     // Task 8.7: Switch back to previous mode after execution
     // Task 8.8: Restore snapshot if returning from specialized mode
     if (shouldRestoreMode && this.modeManager && this.modeBeforeToolExecution) {
-      // Get snapshot to check for findings
-      const snapshot = this.snapshotManager?.getSnapshot('tool', this.modeBeforeToolExecution);
-      
       // Switch back to previous mode
       this.modeManager.switchMode(this.modeBeforeToolExecution, 'auto', 0.7);
-      
-      // If snapshot has findings, they will be available for the next turn
-      // The findings are already stored in the snapshot and can be retrieved
-      // by the context manager or prompt builder
     }
   }
+
+
 
   /**
    * Build generation options from chat options.
@@ -315,9 +311,16 @@ export class Turn {
     }
 
     const opts: GenerationOptions = {};
+    
+    // Determine temperature: options.temperature or mode-linked temperature
     if (this.options.temperature !== undefined) {
       opts.temperature = this.options.temperature;
+    } else if (this.options.useModeLinkedTemperature && this.options.modeManager) {
+      const currentMode = this.options.modeManager.getCurrentMode();
+      opts.temperature = this.options.modeManager.getPreferredTemperature(currentMode);
+      console.log(`[Turn] Using mode-linked temperature: ${opts.temperature} for mode: ${currentMode}`);
     }
+
     if (this.options.maxTokens !== undefined) {
       opts.maxTokens = this.options.maxTokens;
     }

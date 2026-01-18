@@ -254,7 +254,7 @@ ${currentPlan.map(p => `    ${this.escapeXml(p)}`).join('\n')}
           }
         }
       }
-    } catch (error) {
+    } catch (_error) {
       // Ignore errors during pruning
     }
     

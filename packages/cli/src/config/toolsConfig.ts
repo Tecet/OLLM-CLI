@@ -124,7 +124,7 @@ export const DEFAULT_TOOLS: ToolMetadata[] = [
     risk: 'low',
   },
   {
-    id: 'memory-dump',
+    id: 'write_memory_dump',
     displayName: 'Memory Dump',
     category: 'memory',
     description: 'Retrieve all stored memory entries',
@@ -140,7 +140,7 @@ export const DEFAULT_TOOLS: ToolMetadata[] = [
 
   // Context (3 tools)
   {
-    id: 'hot-swap',
+    id: 'trigger_hot_swap',
     displayName: 'Model Hot Swap',
     category: 'context',
     description: 'Switch to a different model mid-conversation',

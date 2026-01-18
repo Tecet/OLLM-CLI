@@ -150,12 +150,12 @@ export function isFileExtensionAllowed(filePath: string): boolean {
   const ext = getFileExtension(filePath);
   
   // Check if explicitly allowed
-  if (ALLOWED_FILE_EXTENSIONS.includes(ext as any)) {
+  if (ALLOWED_FILE_EXTENSIONS.includes(ext as (typeof ALLOWED_FILE_EXTENSIONS)[number])) {
     return true;
   }
   
   // Check if explicitly denied
-  if (DENIED_FILE_EXTENSIONS.includes(ext as any)) {
+  if (DENIED_FILE_EXTENSIONS.includes(ext as (typeof DENIED_FILE_EXTENSIONS)[number])) {
     return false;
   }
   
@@ -202,7 +202,7 @@ export function getRestrictionErrorMessage(filePath: string): string {
   const normalizedPath = normalizePath(filePath);
   
   // Check extension first
-  if (DENIED_FILE_EXTENSIONS.includes(ext as any)) {
+  if (DENIED_FILE_EXTENSIONS.includes(ext as (typeof DENIED_FILE_EXTENSIONS)[number])) {
     return `Planning mode cannot write to source code files (${ext}). ` +
            `Switch to Developer mode to modify code. ` +
            `Planning mode is for documentation and design only.`;
@@ -232,7 +232,7 @@ export function getRestrictionErrorMessage(filePath: string): string {
   }
   
   // Unknown extension
-  if (!ALLOWED_FILE_EXTENSIONS.includes(ext as any)) {
+  if (!ALLOWED_FILE_EXTENSIONS.includes(ext as (typeof ALLOWED_FILE_EXTENSIONS)[number])) {
     return `Planning mode cannot write to ${ext} files. ` +
            `Allowed file types: ${ALLOWED_FILE_EXTENSIONS.join(', ')}. ` +
            `Switch to Developer mode for code changes.`;

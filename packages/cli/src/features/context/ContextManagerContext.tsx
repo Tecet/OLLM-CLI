@@ -377,20 +377,21 @@ export function ContextManagerProvider({
         // Get initial usage
         setUsage(manager.getUsage());
         
-        // Load saved mode preference from settings (or default to assistant)
+        // Always start in assistant mode for a fresh session, regardless of saved preference
+        // This ensures safety guards are active and the user starts with a clean slate.
         const settingsService = SettingsService.getInstance();
-        const savedMode = settingsService.getMode() || 'assistant';
+        const startMode = 'assistant';
         const savedAutoSwitch = settingsService.getAutoSwitch();
         
-        // Set the mode (this will be a manual override initially)
-        modeManager.forceMode(savedMode as ModeType);
+        // Set the mode
+        modeManager.forceMode(startMode as ModeType);
         
         // Restore auto-switch preference
         modeManager.setAutoSwitch(savedAutoSwitch);
         
-        // Build initial system prompt for loaded mode
+        // Build initial system prompt for Assistant mode
         const initialPrompt = modeManager.buildPrompt({
-          mode: savedMode as ModeType,
+          mode: startMode as ModeType,
           tools: [], // Will be populated later when tools are registered
           skills: [], // Will be populated later when skills are loaded
           workspace: undefined, // Will be populated later when workspace is loaded
@@ -400,7 +401,7 @@ export function ContextManagerProvider({
         manager.setSystemPrompt(initialPrompt);
         
         // Update state
-        setCurrentMode(savedMode as ModeType);
+        setCurrentMode(startMode as ModeType);
         setAutoSwitchEnabled(savedAutoSwitch);
         
         // Listen for compression event (Subtask 15.1)
@@ -674,7 +675,9 @@ export function ContextManagerProvider({
             managerRef.current,
             promptRegistry,
             provider,
-            modelId
+            modelId,
+            modeManagerRef.current || undefined,
+            snapshotManagerRef.current || undefined
         );
         
         await hotSwapService.swap(newSkills);

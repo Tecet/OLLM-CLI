@@ -9,7 +9,9 @@ The hook system enables event-driven automation, allowing you to run custom code
 ## 📚 Documentation
 
 ### User Documentation
-- **[User Guide](user-guide.md)** - Using hooks in your workflow ⏳ Coming soon
+- **[User Guide](user-guide.md)** - Complete guide to using hooks
+- **[Keyboard Shortcuts](keyboard-shortcuts.md)** - Quick reference for Hooks Panel UI
+- **[Visual Guide](visual-guide.md)** - Visual examples and screenshots
 - **[Hook Protocol](protocol.md)** - Hook communication protocol ⏳ Coming soon
 
 ### Developer Documentation  
@@ -56,7 +58,30 @@ OLLM CLI supports 12 hook events:
 
 ## 🚀 Quick Start
 
-### Create Your First Hook
+### Using the Hooks Panel UI
+
+The easiest way to manage hooks is through the interactive Hooks Panel:
+
+1. **Open Hooks Panel:**
+   - Press **Tab** to navigate to "Hooks" tab
+   - Press **Enter** to activate the panel
+
+2. **Browse Hooks:**
+   - Use **↑** and **↓** to navigate
+   - View details in the right panel
+
+3. **Enable/Disable Hooks:**
+   - Select a hook
+   - Press **Enter** to toggle
+
+4. **Add New Hook:**
+   - Press **A** to open Add dialog
+   - Fill in name, command, and arguments
+   - Press **S** to save
+
+**See:** [User Guide](user-guide.md#hooks-panel-ui) for complete Hooks Panel documentation
+
+### Create Your First Hook (Command Line)
 
 ```bash
 # Simple command hook
@@ -328,6 +353,7 @@ Want to contribute hook examples or improvements?
 
 ---
 
-**Last Updated:** 2026-01-16  
+**Last Updated:** 2026-01-18  
 **Version:** 0.1.0  
+**Features:** Hooks Panel UI added in v0.1.0  
 **Status:** Active Development

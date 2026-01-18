@@ -525,12 +525,12 @@ export class ContextManagerImpl extends EventEmitter implements ContextManager {
     }
     
     // Replace messages with compressed version
-    const systemPrompt = this.currentContext.messages.find(
+    const systemMessages = this.currentContext.messages.filter(
       m => m.role === 'system'
     );
     
     this.currentContext.messages = [
-      ...(systemPrompt ? [systemPrompt] : []),
+      ...systemMessages,
       compressed.summary,
       ...compressed.preserved
     ];

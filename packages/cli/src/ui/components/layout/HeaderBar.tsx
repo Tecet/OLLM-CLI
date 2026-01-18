@@ -32,18 +32,18 @@ export function HeaderBar({ connection, model, gpu, theme }: HeaderBarProps) {
         <Text color={theme.text.secondary}>{providerName}</Text>
         <Text color={theme.text.secondary}> | </Text>
 
-        <Text color={theme.text.primary} bold>LLM:</Text>
+        <Text color={theme.text.primary} bold>L:</Text>
         <Text color={theme.text.secondary} bold>{model}</Text>
         <Text color={theme.text.secondary}> | </Text>
 
-        <Text color={theme.text.secondary}>VRAM </Text>
+        <Text color={theme.text.secondary}>V:</Text>
         <Text color={theme.text.primary}>
           {gpu?.available ? `${formatMB(gpu.vramUsed)}/${formatMB(gpu.vramTotal)}` : 'N/A'}
         </Text>
         <Text color={theme.text.secondary}> | </Text>
 
         <Text color={theme.text.secondary}>{'\u{1F321}'}</Text>
-        <Text color={theme.text.primary}>  {gpu?.temperature || 0}C</Text>
+        <Text color={theme.text.primary}>{gpu?.temperature || 0}C</Text>
       </Text>
     </Box>
   );

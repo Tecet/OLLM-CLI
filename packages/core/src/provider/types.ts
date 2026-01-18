@@ -56,6 +56,7 @@ export interface GenerationOptions {
   topK?: number;
   repeatPenalty?: number;
   seed?: number;
+  num_ctx?: number;
 }
 
 /**

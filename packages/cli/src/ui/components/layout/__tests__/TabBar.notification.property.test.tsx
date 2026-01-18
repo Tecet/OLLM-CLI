@@ -31,7 +31,7 @@ describe('Property 11: Notification Badge Display', () => {
     fc.assert(
       fc.property(
         fc.record({
-          tab: fc.constantFrom<TabType>('chat', 'tools', 'files', 'search', 'docs', 'settings'),
+          tab: fc.constantFrom<TabType>('chat', 'tools', 'hooks', 'files', 'search', 'docs', 'settings'),
           count: fc.integer({ min: 1, max: 999 }),
         }),
         ({ tab, count }) => {
@@ -65,7 +65,7 @@ describe('Property 11: Notification Badge Display', () => {
   it('should not display badge for tabs with notification count = 0', () => {
     fc.assert(
       fc.property(
-        fc.constantFrom<TabType>('chat', 'tools', 'files', 'search', 'docs', 'settings'),
+        fc.constantFrom<TabType>('chat', 'tools', 'hooks', 'files', 'search', 'docs', 'settings'),
         (tab) => {
           const notifications = new Map<TabType, number>();
           notifications.set(tab, 0);
@@ -101,10 +101,10 @@ describe('Property 11: Notification Badge Display', () => {
       fc.property(
         fc.array(
           fc.record({
-            tab: fc.constantFrom<TabType>('chat', 'tools', 'files', 'search', 'docs', 'settings'),
+            tab: fc.constantFrom<TabType>('chat', 'tools', 'hooks', 'files', 'search', 'docs', 'settings'),
             count: fc.integer({ min: 1, max: 99 }),
           }),
-          { minLength: 1, maxLength: 6 }
+          { minLength: 1, maxLength: 7 }
         ),
         (notificationData) => {
           // Create unique notifications (last one wins for duplicates)

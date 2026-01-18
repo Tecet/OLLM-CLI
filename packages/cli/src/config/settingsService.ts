@@ -11,6 +11,7 @@ export interface UserSettings {
     model: string;
     contextSize?: number;
     temperature?: number;
+    modeLinkedTemperature?: boolean;
     [key: string]: unknown;
   };
   hardware?: {
@@ -24,6 +25,11 @@ export interface UserSettings {
   prompt?: {
     mode?: string;
     autoSwitch?: boolean;
+  };
+  hooks?: {
+    enabled: {
+      [hookId: string]: boolean;
+    };
   };
 }
 
@@ -44,7 +50,10 @@ export class SettingsService {
     // Default settings
     this.settings = { 
         ui: { theme: 'default' }, 
-        llm: { model: 'llama3.2:3b' },
+        llm: { 
+            model: 'llama3.2:3b',
+            modeLinkedTemperature: true
+        },
         tools: {}
     }; 
     
@@ -260,6 +269,56 @@ export class SettingsService {
       this.settings.prompt = {};
     }
     this.settings.prompt.autoSwitch = enabled;
+    this.saveSettings();
+  }
+
+  /**
+   * Get all hook settings
+   * 
+   * @returns Object containing enabled state for all hooks
+   */
+  public getHookSettings(): { enabled: Record<string, boolean> } {
+    return this.settings.hooks || { enabled: {} };
+  }
+
+  /**
+   * Set the enabled state of a hook
+   * 
+   * @param hookId The ID of the hook to configure
+   * @param enabled Whether the hook should be enabled
+   */
+  public setHookEnabled(hookId: string, enabled: boolean): void {
+    if (!this.settings.hooks) {
+      this.settings.hooks = { enabled: {} };
+    }
+    this.settings.hooks.enabled[hookId] = enabled;
+    this.saveSettings();
+  }
+
+  /**
+   * Remove a hook setting (cleanup when hook is deleted)
+   * 
+   * @param hookId The ID of the hook to remove from settings
+   */
+  public removeHookSetting(hookId: string): void {
+    if (this.settings.hooks?.enabled) {
+      delete this.settings.hooks.enabled[hookId];
+      this.saveSettings();
+    }
+  }
+
+  /**
+   * Get whether temperature is linked to mode
+   */
+  public isModeLinkedTemperature(): boolean {
+    return this.settings.llm.modeLinkedTemperature ?? true;
+  }
+
+  /**
+   * Set whether temperature should be linked to mode
+   */
+  public setModeLinkedTemperature(enabled: boolean): void {
+    this.settings.llm.modeLinkedTemperature = enabled;
     this.saveSettings();
   }
 }

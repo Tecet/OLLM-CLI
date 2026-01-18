@@ -8,199 +8,305 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│ User Action: Navigate to Hooks Tab                          │
+│ User Action: Navigate to Hooks Tab (Tab key)                │
 └────────────────┬────────────────────────────────────────────┘
                  │
                  ▼
 ┌─────────────────────────────────────────────────────────────┐
-│ HooksTab Component                                           │
-│ - Load hooks from HookRegistry                               │
-│ - Load enabled state from SettingsService                    │
-│ - Organize hooks by category                                 │
-│ - Render hook list with navigation                           │
-└────────────────┬────────────────────────────────────────────┘
-                 │
-         ┌───────┴───────┐
-         │               │
-    User Action      User Action
-    Toggle Hook      Add/Edit/Delete
-         │               │
-         ▼               ▼
-┌──────────────┐  ┌──────────────────────────────────────────┐
-│ Update       │  │ Show Dialog                               │
-│ Settings     │  │ - AddHookDialog                           │
-│              │  │ - EditHookDialog                          │
-│              │  │ - DeleteConfirmationDialog                │
-│              │  │ - TestHookDialog                          │
-└──────────────┘  └──────────────────────────────────────────┘
+│ HooksPanel Component (Two-Column Layout)                     │
+│                                                              │
+│ ┌──────────────┬─────────────────────────────────────────┐ │
+│ │ Left (30%)   │ Right (70%)                             │ │
+│ │              │                                         │ │
+│ │ ← Exit       │ Hook Details:                           │ │
+│ │              │ - Name (bold, yellow)                   │ │
+│ │ 📝 File      │ - Version                               │ │
+│ │  ● Hook 1    │ - Description                           │ │
+│ │  ○ Hook 2    │ - Trigger: when.type + patterns         │ │
+│ │              │ - Action: then.type + prompt/command    │ │
+│ │ 💬 Prompt    │ - Source: builtin/user/workspace        │ │
+│ │  ● Hook 3    │ - Status: ✓ Enabled / ✗ Disabled       │ │
+│ │              │                                         │ │
+│ │ 👤 User      │                                         │ │
+│ │  ○ Hook 4    │                                         │ │
+│ └──────────────┴─────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Navigation Flow:**
+```
+Browse Mode (Tab cycling)
+    ↓ Enter on Hooks tab
+Active Mode (Hook list navigation)
+    ↓ Esc/0
+Browse Mode (Returns to nav-bar)
 ```
 
 ## Component Design
 
-### 1. HooksContext
+### 1. HooksPanel Component (Main Panel)
 
-**File:** `packages/cli/src/ui/contexts/HooksContext.tsx`
+**File:** `packages/cli/src/ui/components/hooks/HooksPanel.tsx`
 
-Provides hook data and management functions to all hook-related components.
+Main container implementing the two-column layout pattern from ToolsPanel.
 
 ```typescript
-interface HooksContextValue {
-  // Data
-  hooks: Hook[];
-  categories: HookCategory[];
-  enabledHooks: Set<string>;
-  loading: boolean;
-  error: string | null;
-  
-  // Actions
-  toggleHook: (hookId: string) => Promise<void>;
-  addHook: (hook: Omit<Hook, 'id'>) => Promise<void>;
-  editHook: (hookId: string, updates: Partial<Hook>) => Promise<void>;
-  deleteHook: (hookId: string) => Promise<void>;
-  testHook: (hookId: string) => Promise<HookTestResult>;
-  refreshHooks: () => Promise<void>;
+export interface HooksPanelProps {
+  windowSize?: number; // Default: 15
 }
-```
 
-
-### 2. HooksTab Component
-
-**File:** `packages/cli/src/ui/components/tabs/HooksTab.tsx`
-
-Main container for the hooks panel UI.
-
-```typescript
-export const HooksTab: React.FC = () => {
-  const { categories, loading, error } = useHooks();
-  const { 
-    focusedIndex, 
-    expandedCategories,
-    handleKeyPress,
-    toggleCategory
-  } = useHookNavigation();
+export function HooksPanel({ windowSize = 15 }: HooksPanelProps) {
+  const { state: uiState } = useUI();
+  const { isFocused, exitToNavBar } = useFocusManager();
+  const { hooks, categories, enabledHooks, toggleHook } = useHooks();
   
-  const [dialogState, setDialogState] = useState<DialogState | null>(null);
+  const hasFocus = isFocused('hooks-panel');
   
-  if (loading) return <LoadingSpinner />;
-  if (error) return <ErrorMessage message={error} />;
+  // Navigation state
+  const [selectedCategoryIndex, setSelectedCategoryIndex] = useState(0);
+  const [selectedHookIndex, setSelectedHookIndex] = useState(0);
+  const [scrollOffset, setScrollOffset] = useState(0);
+  const [isOnExitItem, setIsOnExitItem] = useState(false);
+  
+  // Windowed rendering
+  const totalItems = useMemo(() => {
+    return categories.reduce((sum, cat) => sum + cat.hooks.length + 1, 0) + 1;
+  }, [categories]);
+  
+  const visibleItems = useMemo(() => {
+    // Calculate visible window (Exit + categories + hooks)
+    // Filter to scrollOffset...scrollOffset+windowSize
+  }, [categories, scrollOffset, windowSize]);
+  
+  // Navigation handlers
+  const handleNavigateUp = () => {
+    if (isOnExitItem) return; // Already at top
+    
+    if (selectedHookIndex > 0) {
+      setSelectedHookIndex(prev => prev - 1);
+    } else if (selectedCategoryIndex > 0) {
+      // Move to previous category's last hook
+      const prevCategory = categories[selectedCategoryIndex - 1];
+      setSelectedCategoryIndex(prev => prev - 1);
+      setSelectedHookIndex(prevCategory.hooks.length - 1);
+    } else {
+      // Move to Exit item
+      setIsOnExitItem(true);
+      setScrollOffset(0);
+    }
+  };
+  
+  const handleNavigateDown = () => {
+    if (isOnExitItem) {
+      // Move from Exit to first hook
+      setIsOnExitItem(false);
+      setSelectedCategoryIndex(0);
+      setSelectedHookIndex(0);
+      return;
+    }
+    
+    const currentCategory = categories[selectedCategoryIndex];
+    if (selectedHookIndex < currentCategory.hooks.length - 1) {
+      setSelectedHookIndex(prev => prev + 1);
+    } else if (selectedCategoryIndex < categories.length - 1) {
+      // Move to next category
+      setSelectedCategoryIndex(prev => prev + 1);
+      setSelectedHookIndex(0);
+    }
+  };
+  
+  const handleToggleCurrent = () => {
+    if (isOnExitItem) {
+      exitToNavBar();
+      return;
+    }
+    
+    const currentCategory = categories[selectedCategoryIndex];
+    const currentHook = currentCategory.hooks[selectedHookIndex];
+    if (currentHook) {
+      toggleHook(currentHook.id);
+    }
+  };
+  
+  // Keyboard input
+  useInput((input, key) => {
+    if (!hasFocus) return;
+    
+    if (key.upArrow) handleNavigateUp();
+    else if (key.downArrow) handleNavigateDown();
+    else if (key.leftArrow || key.rightArrow || key.return) handleToggleCurrent();
+    else if (key.escape || input === '0') exitToNavBar();
+    else if (input === 'a' || input === 'A') openAddDialog();
+    else if (input === 'e' || input === 'E') openEditDialog();
+    else if (input === 'd' || input === 'D') openDeleteDialog();
+    else if (input === 't' || input === 'T') openTestDialog();
+  }, { isActive: hasFocus });
   
   return (
     <Box flexDirection="column" height="100%">
-      <HookCategories 
-        categories={categories}
-        focusedIndex={focusedIndex}
-        expandedCategories={expandedCategories}
-        onToggleCategory={toggleCategory}
-      />
-      <HookActions 
-        onAdd={() => setDialogState({ type: 'add' })}
-        onEdit={() => setDialogState({ type: 'edit', hookId: getFocusedHookId() })}
-        onDelete={() => setDialogState({ type: 'delete', hookId: getFocusedHookId() })}
-        onTest={() => setDialogState({ type: 'test', hookId: getFocusedHookId() })}
-      />
-      {dialogState && (
-        <HookDialog 
-          state={dialogState} 
-          onClose={() => setDialogState(null)} 
-        />
-      )}
-    </Box>
-  );
-};
-```
-
-### 3. HookCategory Component
-
-**File:** `packages/cli/src/ui/components/hooks/HookCategory.tsx`
-
-Renders a collapsible category of hooks.
-
-```typescript
-export const HookCategory: React.FC<{
-  category: HookCategory;
-  expanded: boolean;
-  focused: boolean;
-  onToggle: () => void;
-}> = ({ category, expanded, focused, onToggle }) => {
-  return (
-    <Box flexDirection="column">
-      <Box>
-        <Text color={focused ? 'cyan' : undefined}>
-          {expanded ? '▼' : '▶'} {category.name} ({category.hooks.length} hooks)
-        </Text>
-      </Box>
-      {expanded && (
-        <Box flexDirection="column" marginLeft={2}>
-          {category.hooks.map(hook => (
-            <HookItem key={hook.id} hook={hook} />
-          ))}
-        </Box>
-      )}
-    </Box>
-  );
-};
-```
-
-### 4. HookItem Component
-
-**File:** `packages/cli/src/ui/components/hooks/HookItem.tsx`
-
-Renders individual hook with toggle and details.
-
-```typescript
-export const HookItem: React.FC<{
-  hook: Hook;
-  focused: boolean;
-  onToggle: () => void;
-}> = ({ hook, focused, onToggle }) => {
-  const { enabledHooks } = useHooks();
-  const enabled = enabledHooks.has(hook.id);
-  
-  return (
-    <Box flexDirection="column" marginY={1}>
-      <Box>
-        <Text color={focused ? 'cyan' : undefined}>
-          {focused ? '> ' : '  '}
-          {hook.name}
-        </Text>
-        <Box marginLeft={2}>
-          <Text color={enabled ? 'green' : 'gray'}>
-            [{enabled ? '●' : '○'}] {enabled ? 'Enabled' : 'Disabled'}
+      {/* Header */}
+      <Box flexDirection="column" paddingX={1} flexShrink={0}>
+        <Box justifyContent="space-between">
+          <Text bold color={hasFocus ? 'yellow' : uiState.theme.text.primary}>
+            Hooks Configuration
+          </Text>
+          <Text color={hasFocus ? uiState.theme.text.primary : uiState.theme.text.secondary}>
+            ↑↓:Nav Enter:Toggle A:Add E:Edit D:Del T:Test 0/Esc:Exit
           </Text>
         </Box>
       </Box>
-      <Box marginLeft={4}>
-        <Text dimColor>{hook.description}</Text>
+      
+      {/* Two-column layout */}
+      <Box flexGrow={1} overflow="hidden">
+        {/* Left column: Hook list (30%) */}
+        <Box 
+          flexDirection="column" 
+          width="30%" 
+          borderStyle="single" 
+          borderColor={hasFocus ? uiState.theme.border.active : uiState.theme.border.primary}
+        >
+          {/* Scroll indicator at top */}
+          {scrollOffset > 0 && (
+            <>
+              <Box justifyContent="center" paddingX={1}>
+                <Text color={uiState.theme.text.secondary}>
+                  ▲ Scroll up for more
+                </Text>
+              </Box>
+              <Text> </Text>
+            </>
+          )}
+          
+          {/* Scrollable content */}
+          <Box flexDirection="column" flexGrow={1} paddingX={1}>
+            {/* Exit item */}
+            <Box>
+              <Text
+                bold={isOnExitItem && hasFocus}
+                color={isOnExitItem && hasFocus ? 'yellow' : uiState.theme.text.primary}
+              >
+                ← Exit
+              </Text>
+            </Box>
+            <Text> </Text>
+            <Text> </Text>
+            
+            {/* Render visible items (categories + hooks) */}
+            {visibleItems.map((item) => {
+              if (item.type === 'category') {
+                return (
+                  <Box key={`cat-${item.categoryIndex}`} marginTop={item.categoryIndex > 0 ? 1 : 0}>
+                    <Text bold color={uiState.theme.text.primary}>
+                      {getCategoryIcon(item.category)} {item.category.name}
+                    </Text>
+                  </Box>
+                );
+              } else {
+                // Hook item
+                const hook = item.hook;
+                const isSelected = hasFocus && 
+                  item.categoryIndex === selectedCategoryIndex && 
+                  item.hookIndex === selectedHookIndex;
+                const isEnabled = enabledHooks.has(hook.id);
+                
+                return (
+                  <Box key={`hook-${hook.id}`} paddingLeft={2}>
+                    <Box gap={1}>
+                      <Text color={isEnabled ? 'green' : 'gray'}>
+                        {isEnabled ? '●' : '○'}
+                      </Text>
+                      <Text
+                        bold={isSelected}
+                        color={isSelected ? 'yellow' : uiState.theme.text.primary}
+                        dimColor={!isEnabled}
+                      >
+                        {hook.name}
+                      </Text>
+                    </Box>
+                  </Box>
+                );
+              }
+            })}
+          </Box>
+          
+          {/* Scroll indicator at bottom */}
+          {scrollOffset + windowSize < totalItems && (
+            <>
+              <Text> </Text>
+              <Box justifyContent="center" paddingX={1}>
+                <Text color={uiState.theme.text.secondary}>
+                  ▼ Scroll down for more
+                </Text>
+              </Box>
+            </>
+          )}
+        </Box>
+        
+        {/* Right column: Hook details (70%) */}
+        <Box 
+          flexDirection="column" 
+          width="70%" 
+          borderStyle="single" 
+          borderColor={uiState.theme.border.primary} 
+          paddingX={2} 
+          paddingY={2}
+        >
+          {selectedHook ? (
+            <>
+              <Text bold color="yellow">{selectedHook.name}</Text>
+              <Box marginTop={1}>
+                <Text color={uiState.theme.text.secondary}>
+                  Version: {selectedHook.version}
+                </Text>
+              </Box>
+              <Box marginTop={2}>
+                <Text color={uiState.theme.text.primary}>
+                  {selectedHook.description}
+                </Text>
+              </Box>
+              <Box marginTop={2}>
+                <Text color={uiState.theme.text.secondary}>
+                  Trigger: {selectedHook.when.type}
+                  {selectedHook.when.patterns && ` (${selectedHook.when.patterns.join(', ')})`}
+                </Text>
+              </Box>
+              <Box marginTop={1}>
+                <Text color={uiState.theme.text.secondary}>
+                  Action: {selectedHook.then.type} - {selectedHook.then.prompt || selectedHook.then.command}
+                </Text>
+              </Box>
+              <Box marginTop={1}>
+                <Text color={uiState.theme.text.secondary}>
+                  Source: {selectedHook.source}
+                </Text>
+              </Box>
+              <Box marginTop={2}>
+                <Text color={selectedHook.enabled ? uiState.theme.status.success : uiState.theme.status.error}>
+                  Status: {selectedHook.enabled ? '✓ Enabled' : '✗ Disabled'}
+                </Text>
+              </Box>
+            </>
+          ) : (
+            <Text color={uiState.theme.text.secondary}>
+              Select a hook to view details
+            </Text>
+          )}
+        </Box>
       </Box>
-      <HookDetails hook={hook} />
     </Box>
   );
-};
+}
 ```
 
-
-### 5. HookDetails Component
-
-**File:** `packages/cli/src/ui/components/hooks/HookDetails.tsx`
-
-Shows hook trigger and action details.
-
+**Category Icons:**
 ```typescript
-export const HookDetails: React.FC<{ hook: Hook }> = ({ hook }) => {
-  return (
-    <Box flexDirection="column" marginLeft={4}>
-      <Text dimColor>
-        Trigger: {hook.when.type}
-        {hook.when.patterns && ` (${hook.when.patterns.join(', ')})`}
-      </Text>
-      <Text dimColor>
-        Action: {hook.then.type} - {hook.then.prompt || hook.then.command}
-      </Text>
-      <Text dimColor>
-        Source: {hook.source} | Trusted: {hook.trusted ? 'Yes' : 'No'}
-      </Text>
-    </Box>
-  );
+const getCategoryIcon = (category: HookCategory): string => {
+  const icons: Record<string, string> = {
+    'File Events': '📝',
+    'Prompt Events': '💬',
+    'User Triggered': '👤',
+  };
+  return icons[category.name] || '📦';
 };
 ```
 

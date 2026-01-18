@@ -353,3 +353,255 @@ describe('SettingsService - Mode Persistence', () => {
   });
 });
 
+
+describe('SettingsService - Hook State Management', () => {
+  let testDir: string;
+
+  beforeEach(() => {
+    // Create a temporary directory for testing
+    testDir = join(tmpdir(), `ollm-test-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`);
+    mkdirSync(testDir, { recursive: true });
+    
+    // Mock homedir to use test directory
+    vi.mocked(homedir).mockReturnValue(testDir);
+    
+    // Reset singleton instance
+    // @ts-expect-error - accessing private static field for testing
+    SettingsService.instance = undefined;
+  });
+
+  afterEach(() => {
+    // Clean up test directory
+    if (existsSync(testDir)) {
+      rmSync(testDir, { recursive: true, force: true });
+    }
+    
+    // Reset singleton instance
+    // @ts-expect-error - accessing private static field for testing
+    SettingsService.instance = undefined;
+    
+    vi.clearAllMocks();
+  });
+
+  describe('getHookSettings', () => {
+    it('should return empty enabled object by default', () => {
+      const service = SettingsService.getInstance();
+      const hookSettings = service.getHookSettings();
+      expect(hookSettings).toEqual({ enabled: {} });
+    });
+
+    it('should return saved hook settings', () => {
+      const service = SettingsService.getInstance();
+      service.setHookEnabled('lint-on-save', true);
+      service.setHookEnabled('format-on-save', false);
+      
+      const hookSettings = service.getHookSettings();
+      expect(hookSettings.enabled['lint-on-save']).toBe(true);
+      expect(hookSettings.enabled['format-on-save']).toBe(false);
+    });
+  });
+
+  describe('setHookEnabled', () => {
+    it('should persist hook enabled state to settings file', () => {
+      const service = SettingsService.getInstance();
+      service.setHookEnabled('test-hook', true);
+      
+      // Create new instance to verify persistence
+      // @ts-expect-error - accessing private static field for testing
+      SettingsService.instance = undefined;
+      const newService = SettingsService.getInstance();
+      
+      const hookSettings = newService.getHookSettings();
+      expect(hookSettings.enabled['test-hook']).toBe(true);
+    });
+
+    it('should handle multiple hook states', () => {
+      const service = SettingsService.getInstance();
+      service.setHookEnabled('hook-1', true);
+      service.setHookEnabled('hook-2', false);
+      service.setHookEnabled('hook-3', true);
+      
+      const hookSettings = service.getHookSettings();
+      expect(hookSettings.enabled['hook-1']).toBe(true);
+      expect(hookSettings.enabled['hook-2']).toBe(false);
+      expect(hookSettings.enabled['hook-3']).toBe(true);
+    });
+
+    it('should allow toggling hook state', () => {
+      const service = SettingsService.getInstance();
+      
+      service.setHookEnabled('toggle-hook', false);
+      let hookSettings = service.getHookSettings();
+      expect(hookSettings.enabled['toggle-hook']).toBe(false);
+      
+      service.setHookEnabled('toggle-hook', true);
+      hookSettings = service.getHookSettings();
+      expect(hookSettings.enabled['toggle-hook']).toBe(true);
+    });
+
+    it('should initialize hooks object if not present', () => {
+      const service = SettingsService.getInstance();
+      service.setHookEnabled('first-hook', true);
+      
+      const hookSettings = service.getHookSettings();
+      expect(hookSettings.enabled['first-hook']).toBe(true);
+    });
+  });
+
+  describe('removeHookSetting', () => {
+    it('should remove hook from settings', () => {
+      const service = SettingsService.getInstance();
+      service.setHookEnabled('hook-to-remove', true);
+      
+      let hookSettings = service.getHookSettings();
+      expect(hookSettings.enabled['hook-to-remove']).toBe(true);
+      
+      service.removeHookSetting('hook-to-remove');
+      
+      hookSettings = service.getHookSettings();
+      expect(hookSettings.enabled['hook-to-remove']).toBeUndefined();
+    });
+
+    it('should persist removal to settings file', () => {
+      const service = SettingsService.getInstance();
+      service.setHookEnabled('hook-to-remove', true);
+      service.removeHookSetting('hook-to-remove');
+      
+      // Create new instance to verify persistence
+      // @ts-expect-error - accessing private static field for testing
+      SettingsService.instance = undefined;
+      const newService = SettingsService.getInstance();
+      
+      const hookSettings = newService.getHookSettings();
+      expect(hookSettings.enabled['hook-to-remove']).toBeUndefined();
+    });
+
+    it('should handle removing non-existent hook gracefully', () => {
+      const service = SettingsService.getInstance();
+      
+      // Should not throw
+      expect(() => {
+        service.removeHookSetting('non-existent-hook');
+      }).not.toThrow();
+    });
+
+    it('should not affect other hooks when removing one', () => {
+      const service = SettingsService.getInstance();
+      service.setHookEnabled('hook-1', true);
+      service.setHookEnabled('hook-2', false);
+      service.setHookEnabled('hook-3', true);
+      
+      service.removeHookSetting('hook-2');
+      
+      const hookSettings = service.getHookSettings();
+      expect(hookSettings.enabled['hook-1']).toBe(true);
+      expect(hookSettings.enabled['hook-2']).toBeUndefined();
+      expect(hookSettings.enabled['hook-3']).toBe(true);
+    });
+  });
+
+  describe('hooks persistence integration', () => {
+    it('should preserve other settings when updating hook state', () => {
+      const service = SettingsService.getInstance();
+      
+      // Set some other settings
+      service.setTheme('dark');
+      service.setModel('llama3.2:3b');
+      service.setContextSize(8192);
+      service.setToolState('read-file', false);
+      
+      // Set hook state
+      service.setHookEnabled('test-hook', true);
+      
+      // Verify all settings are preserved
+      expect(service.getTheme()).toBe('dark');
+      expect(service.getModel()).toBe('llama3.2:3b');
+      expect(service.getContextSize()).toBe(8192);
+      expect(service.getToolState('read-file')).toBe(false);
+      
+      const hookSettings = service.getHookSettings();
+      expect(hookSettings.enabled['test-hook']).toBe(true);
+    });
+
+    it('should load existing hook settings from settings file', () => {
+      // Create settings file with hook settings
+      const settingsDir = join(testDir, '.ollm');
+      mkdirSync(settingsDir, { recursive: true });
+      const settingsPath = join(settingsDir, 'settings.json');
+      
+      writeFileSync(settingsPath, JSON.stringify({
+        ui: { theme: 'default' },
+        llm: { model: 'llama3.2:3b' },
+        hooks: {
+          enabled: {
+            'lint-on-save': true,
+            'format-on-save': false,
+            'test-on-change': true,
+          }
+        }
+      }, null, 2));
+      
+      // Create service instance
+      const service = SettingsService.getInstance();
+      
+      // Verify hook settings are loaded
+      const hookSettings = service.getHookSettings();
+      expect(hookSettings.enabled['lint-on-save']).toBe(true);
+      expect(hookSettings.enabled['format-on-save']).toBe(false);
+      expect(hookSettings.enabled['test-on-change']).toBe(true);
+    });
+
+    it('should handle undefined hooks field in loaded settings', () => {
+      // Create settings file without hooks field
+      const settingsDir = join(testDir, '.ollm');
+      mkdirSync(settingsDir, { recursive: true });
+      const settingsPath = join(settingsDir, 'settings.json');
+      
+      writeFileSync(settingsPath, JSON.stringify({
+        ui: { theme: 'default' },
+        llm: { model: 'llama3.2:3b' }
+      }, null, 2));
+      
+      const service = SettingsService.getInstance();
+      
+      // Should return empty enabled object
+      const hookSettings = service.getHookSettings();
+      expect(hookSettings).toEqual({ enabled: {} });
+      
+      // Should be able to set hook state
+      service.setHookEnabled('new-hook', true);
+      const updatedSettings = service.getHookSettings();
+      expect(updatedSettings.enabled['new-hook']).toBe(true);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('should handle empty hooks object', () => {
+      const service = SettingsService.getInstance();
+      const hookSettings = service.getHookSettings();
+      expect(hookSettings).toEqual({ enabled: {} });
+    });
+
+    it('should handle removing hook when hooks object does not exist', () => {
+      const service = SettingsService.getInstance();
+      
+      // Should not throw
+      expect(() => {
+        service.removeHookSetting('any-hook');
+      }).not.toThrow();
+    });
+
+    it('should handle removing hook when enabled object does not exist', () => {
+      const service = SettingsService.getInstance();
+      
+      // Manually set hooks to empty object (edge case)
+      const settings = service.getSettings();
+      settings.hooks = { enabled: {} };
+      
+      // Should not throw
+      expect(() => {
+        service.removeHookSetting('any-hook');
+      }).not.toThrow();
+    });
+  });
+});

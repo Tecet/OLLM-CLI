@@ -23,11 +23,16 @@ Users currently need to manually edit JSON files to create, configure, and manag
 **So that** I can understand what hooks are available and when they trigger
 
 **Acceptance Criteria:**
-- 1.1: Hooks are grouped by event type (File Events, Prompt Events, User Triggered)
-- 1.2: Each category shows hook count
-- 1.3: Categories can be expanded/collapsed with Enter key
-- 1.4: Hook details show name, description, trigger conditions, and action
-- 1.5: Visual distinction between enabled and disabled hooks
+- 1.1: Two-column layout (30% list, 70% details) matching ToolsPanel design
+- 1.2: Left column shows hooks grouped by category with icons (📝 File, 💬 Prompt, 👤 User)
+- 1.3: Exit item at top of list (position 0) with "← Exit" label
+- 1.4: Category headers are visual-only (not selectable)
+- 1.5: Right column shows detailed information for selected hook
+- 1.6: Hook details include name, version, description, trigger conditions, action, and status
+- 1.7: Visual distinction between enabled (●) and disabled (○) hooks
+- 1.8: Selected hook highlighted in yellow when panel has focus
+- 1.9: Windowed rendering for large hook lists (> 15 hooks)
+- 1.10: Sticky scroll indicators (▲/▼) at top/bottom when scrolling
 
 ### US-2: Enable/Disable Hooks
 **As a** user  
@@ -99,13 +104,16 @@ Users currently need to manually edit JSON files to create, configure, and manag
 **So that** I can manage hooks efficiently
 
 **Acceptance Criteria:**
-- 7.1: Up/Down arrows navigate between hooks
-- 7.2: Left/Right arrows toggle enabled/disabled
-- 7.3: Enter expands/collapses categories
-- 7.4: Tab returns to main navigation bar
-- 7.5: A/E/D/T keys trigger respective actions
-- 7.6: Esc closes dialogs
-- 7.7: Focus indicator shows current selection
+- 7.1: Up/Down arrows navigate between hooks (skipping category headers)
+- 7.2: Up from first hook moves to Exit item
+- 7.3: Down from Exit item moves to first hook
+- 7.4: Enter on Exit item triggers exit (same as Esc/0)
+- 7.5: Enter/Left/Right on hook toggles enabled/disabled
+- 7.6: Esc or 0 key exits to nav-bar (Browse Mode)
+- 7.7: Tab enters panel from nav-bar (Active Mode)
+- 7.8: A/E/D/T keys trigger respective actions (Add/Edit/Delete/Test)
+- 7.9: Focus indicator shows current selection (yellow highlight)
+- 7.10: Auto-scroll keeps selected item visible
 
 ### US-8: Hook Status Visibility
 **As a** user  

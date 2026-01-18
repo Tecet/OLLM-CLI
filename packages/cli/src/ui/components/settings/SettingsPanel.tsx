@@ -14,6 +14,22 @@ interface Section {
   name: string;
 }
 
+type SettingType = 'header' | 'info' | 'choice' | 'toggle' | 'numeric' | 'select';
+
+interface SettingItem {
+  id: string;
+  label: string;
+  value: string | number | boolean;
+  type: SettingType;
+  category: 'llm' | 'ui' | 'prompt';
+  muted?: boolean;
+  muted_value?: boolean;
+  active?: boolean;
+  min?: number;
+  max?: number;
+  step?: number;
+}
+
 const sections: Section[] = [
   { id: 'provider', name: 'Provider Selection' },
   { id: 'model', name: 'LLM Models' },
@@ -75,7 +91,7 @@ export function SettingsPanel() {
   }, []);
 
   // Get settings for current section
-  const currentSettings = useMemo(() => {
+  const currentSettings = useMemo((): SettingItem[] => {
     if (!currentSection) return [];
 
     switch (currentSection.id) {
@@ -119,7 +135,7 @@ export function SettingsPanel() {
         const modelEntry = userModels.find(m => m.id === currentModel);
         const profile = profileManager.getProfileById(currentModel) || profileManager.findProfile(currentModel);
         
-        const settingsList: any[] = [
+        const settingsList: SettingItem[] = [
           { id: 'model_name', label: 'Model', value: currentModel, type: 'info', category: 'llm' },
         ];
 
@@ -165,21 +181,32 @@ export function SettingsPanel() {
 
         return settingsList;
       }
-      case 'options':
-        return [
-          { id: 'temperature', label: 'Temperature', value: settings.llm.temperature || 0.7, type: 'numeric' as const, min: 0, max: 2, step: 0.1, category: 'llm' },
-          { id: 'contextSize', label: 'Max Tokens', value: settings.llm.contextSize || 4096, type: 'numeric' as const, category: 'llm' },
-          { id: 'reviewMode', label: 'Review Mode', value: (settings as any).prompt?.mode === 'review', type: 'toggle' as const, category: 'prompt' },
-          { id: 'metricsEnabled', label: 'Metrics', value: settings.ui.metricsEnabled ?? true, type: 'toggle' as const, category: 'ui' },
-          { id: 'reasoningEnabled', label: 'Reasoning', value: settings.ui.reasoningEnabled ?? true, type: 'toggle' as const, category: 'ui' },
+      case 'options': {
+        const isModeLinked = settings.llm.modeLinkedTemperature ?? true;
+        
+        const options: SettingItem[] = [
+          { id: 'modeLinkedTemperature', label: 'Mode-Linked Temperature', value: isModeLinked, type: 'toggle', category: 'llm' },
+          { id: 'temperature', label: 'Temperature', value: settings.llm.temperature || 0.3, type: 'numeric', min: 0, max: 2, step: 0.1, category: 'llm', muted: isModeLinked },
+          { id: 'temp_info', label: 'Effective Temp', value: isModeLinked ? 'Managed by Mode' : String(settings.llm.temperature || 0.3), type: 'info', category: 'llm' },
+          { id: 'spacer_opt_1', label: '', value: '', type: 'info', category: 'llm' },
+          { id: 'tiers_header', label: 'Temperature Tiers:', value: '', type: 'header', category: 'llm' },
+          { id: 'tier_1', label: 'Tier 1 - Tech', value: '0.1 (Dev, Debug, Security)', type: 'info', category: 'llm' },
+          { id: 'tier_2', label: 'Tier 2 - Standard', value: '0.3 (Planning, Review)', type: 'info', category: 'llm' },
+          { id: 'tier_3', label: 'Tier 3 - Creative', value: '0.5 (Assistant, Proto)', type: 'info', category: 'llm' },
+          { id: 'spacer_opt_2', label: '', value: '', type: 'info', category: 'llm' },
+          { id: 'contextSize', label: 'Max Tokens', value: settings.llm.contextSize || 4096, type: 'numeric', category: 'llm' },
+          { id: 'metricsEnabled', label: 'Metrics', value: settings.ui.metricsEnabled ?? true, type: 'toggle', category: 'ui' },
+          { id: 'reasoningEnabled', label: 'Reasoning', value: settings.ui.reasoningEnabled ?? true, type: 'toggle', category: 'ui' },
         ];
+        return options;
+      }
       case 'theme':
         return Object.keys(builtInThemes).map(themeId => ({
           id: 'theme',
           label: themeId,
           value: themeId,
           active: (settings.ui.theme || uiState.theme.name) === themeId,
-          type: 'choice' as const,
+          type: 'choice',
           category: 'ui'
         }));
       default:
@@ -188,7 +215,7 @@ export function SettingsPanel() {
   }, [currentSection, settings, uiState.theme.name, currentModel]);
 
   // Is focusable helper
-  const isFocusable = (setting: any) => {
+  const isFocusable = (setting: SettingItem) => {
     return setting.type !== 'info' && setting.type !== 'header' && !setting.muted;
   };
 
@@ -524,32 +551,32 @@ export function SettingsPanel() {
                   const isEditing = isEditingValue && isSelected;
                   const prevSetting = idx > 0 ? currentSettings[idx - 1] : null;
 
-                  if ((setting as any).type === 'header') {
+                  if (setting.type === 'header') {
                     return (
                       <Box key={`header-${idx}`} marginTop={1} paddingLeft={1}>
-                        <Text bold color={(setting as any).muted ? uiState.theme.text.secondary : "yellow"} dimColor={(setting as any).muted}>
+                        <Text bold color={setting.muted ? uiState.theme.text.secondary : "yellow"} dimColor={setting.muted}>
                           {setting.label}
                         </Text>
                       </Box>
                     );
                   }
 
-                  if ((setting as any).type === 'info') {
+                  if (setting.type === 'info') {
                      return (
-                      <Box key={`info-${idx}`} marginTop={idx > 0 && (currentSettings[idx-1] as any).type !== 'header' ? 1 : 0} paddingLeft={1}>
+                      <Box key={`info-${idx}`} marginTop={idx > 0 && currentSettings[idx-1].type !== 'header' ? 1 : 0} paddingLeft={1}>
                         <Box width="30%">
                           <Text 
-                            color={(setting as any).muted ? uiState.theme.text.secondary : uiState.theme.text.secondary} 
-                            dimColor={(setting as any).muted}
+                            color={setting.muted ? uiState.theme.text.secondary : uiState.theme.text.secondary} 
+                            dimColor={setting.muted}
                           >
                             {setting.label}{setting.label ? ':' : ''}
                           </Text>
                         </Box>
                         <Box flexGrow={1} flexShrink={1}>
                           <Text 
-                            color={((setting as any).muted || (setting as any).muted_value) ? uiState.theme.text.secondary : uiState.theme.text.primary} 
+                            color={(setting.muted || setting.muted_value) ? uiState.theme.text.secondary : uiState.theme.text.primary} 
                             wrap="wrap" 
-                            dimColor={(setting as any).muted || (setting as any).muted_value}
+                            dimColor={setting.muted || setting.muted_value}
                           >
                             {String(setting.value)}
                           </Text>
@@ -559,19 +586,19 @@ export function SettingsPanel() {
                   }
 
                   // Determine if we should add marginTop
-                  const isCompactChoice = (setting as any).type === 'choice' && prevSetting && (prevSetting as any).type === 'choice';
-                  const marginTop = (idx > 0 && (prevSetting as any).type !== 'header' && !isCompactChoice) ? 1 : 0;
+                  const isCompactChoice = setting.type === 'choice' && prevSetting && prevSetting.type === 'choice';
+                  const marginTop = (idx > 0 && prevSetting && prevSetting.type !== 'header' && !isCompactChoice) ? 1 : 0;
 
                   return (
                     <Box key={`${setting.id}-${idx}`} marginTop={marginTop} paddingLeft={1}>
-                      {(setting as any).type === 'choice' ? (
+                      {setting.type === 'choice' ? (
                         <Box>
                           <Text
                             bold={isSelected && hasFocus}
-                            color={(setting as any).muted ? uiState.theme.text.secondary : (isSelected && hasFocus ? 'yellow' : uiState.theme.text.primary)}
-                            dimColor={(setting as any).muted}
+                            color={setting.muted ? uiState.theme.text.secondary : (isSelected && hasFocus ? 'yellow' : uiState.theme.text.primary)}
+                            dimColor={setting.muted}
                           >
-                            {(setting as any).active ? '●' : '○'} {setting.label}
+                            {setting.active ? '●' : '○'} {setting.label}
                           </Text>
                         </Box>
                       ) : (
@@ -579,8 +606,8 @@ export function SettingsPanel() {
                           <Box width="40%">
                             <Text
                               bold={isSelected && hasFocus}
-                              color={(setting as any).muted ? uiState.theme.text.secondary : (isSelected && hasFocus ? 'yellow' : uiState.theme.text.primary)}
-                              dimColor={(setting as any).muted}
+                              color={setting.muted ? uiState.theme.text.secondary : (isSelected && hasFocus ? 'yellow' : uiState.theme.text.primary)}
+                              dimColor={setting.muted}
                             >
                               {setting.label}:
                             </Text>
@@ -591,7 +618,7 @@ export function SettingsPanel() {
                                 [{editValue}_] <Text dimColor>↵ Save Esc Cancel</Text>
                               </Text>
                             ) : (
-                              <Text color={(setting as any).muted ? uiState.theme.text.secondary : uiState.theme.text.primary} dimColor={(setting as any).muted}>
+                              <Text color={setting.muted ? uiState.theme.text.secondary : uiState.theme.text.primary} dimColor={setting.muted}>
                                 {setting.type === 'toggle' 
                                   ? (setting.value ? '✓ Enabled' : '✗ Disabled')
                                   : String(setting.value)

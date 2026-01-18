@@ -9,6 +9,7 @@ export type FocusableId =
   | 'file-tree' 
   | 'functions'
   | 'tools-panel'
+  | 'hooks-panel'
   | 'docs-panel'
   | 'settings-panel'
   | 'search-panel';
@@ -44,6 +45,7 @@ export function FocusProvider({ children }: { children: ReactNode }) {
     const tabToFocusMap: Record<string, FocusableId> = {
       'chat': 'chat-history',
       'tools': 'tools-panel',
+      'hooks': 'hooks-panel',
       'docs': 'docs-panel',
       'settings': 'settings-panel',
       'search': 'search-panel',
@@ -85,6 +87,7 @@ export function FocusProvider({ children }: { children: ReactNode }) {
       // Map tab to focusable ID and set focus
       const tabToFocusMap: Record<string, FocusableId> = {
         'tools': 'tools-panel',
+        'hooks': 'hooks-panel',
         'files': 'context-panel',
         'search': 'search-panel',
         'docs': 'docs-panel',

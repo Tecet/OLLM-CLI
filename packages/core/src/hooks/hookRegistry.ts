@@ -144,4 +144,59 @@ export class HookRegistry {
   getHook(hookId: string): Hook | undefined {
     return this.hookById.get(hookId);
   }
+
+  /**
+   * Get all hooks organized by event type (category)
+   * 
+   * @returns Map of event types to their hooks
+   */
+  getHooksByCategory(): Map<HookEvent, Hook[]> {
+    return this.getAllHooks();
+  }
+
+  /**
+   * Get all user-created hooks
+   * 
+   * @returns Array of hooks with source 'user'
+   */
+  getUserHooks(): Hook[] {
+    return Array.from(this.hookById.values()).filter(
+      (hook) => hook.source === 'user'
+    );
+  }
+
+  /**
+   * Get all built-in hooks
+   * 
+   * @returns Array of hooks with source 'builtin'
+   */
+  getBuiltinHooks(): Hook[] {
+    return Array.from(this.hookById.values()).filter(
+      (hook) => hook.source === 'builtin'
+    );
+  }
+
+  /**
+   * Check if a hook can be edited
+   * Only user-created hooks can be edited
+   * 
+   * @param hookId - The ID of the hook to check
+   * @returns true if the hook can be edited
+   */
+  isEditable(hookId: string): boolean {
+    const hook = this.hookById.get(hookId);
+    return hook?.source === 'user';
+  }
+
+  /**
+   * Check if a hook can be deleted
+   * Only user-created hooks can be deleted
+   * 
+   * @param hookId - The ID of the hook to check
+   * @returns true if the hook can be deleted
+   */
+  isDeletable(hookId: string): boolean {
+    const hook = this.hookById.get(hookId);
+    return hook?.source === 'user';
+  }
 }

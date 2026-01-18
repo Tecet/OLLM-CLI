@@ -49,22 +49,19 @@ export function SidePanel({ visible, connection, model, gpu, theme }: SidePanelP
 
       {/* Row 2: Active Context */}
       <Box 
-        height={20} 
+        flexGrow={1} 
         borderStyle="single" 
         borderColor={contextFocused ? theme.border.active : theme.border.primary}
         marginBottom={0}
         flexShrink={0}
         flexDirection="column"
       >
-        <Box paddingX={1} marginBottom={0}>
-             <Text color={theme.text.accent} bold>▼ Active Context</Text>
-        </Box>
         <ContextSection />
       </Box>
 
-      {/* Row 3: File Tree (Flexible Height) */}
+      {/* Row 3: File Tree (Reduced height) */}
       <Box 
-        flexGrow={1}
+        height={10}
         borderStyle="single" 
         borderColor={fileTreeFocused ? theme.border.active : theme.border.primary}
         marginBottom={0}

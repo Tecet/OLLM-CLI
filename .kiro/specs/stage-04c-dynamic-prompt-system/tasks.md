@@ -157,7 +157,7 @@
 
 **Status:** Not started - This is a major future enhancement for the intelligence layer.
 
-- [-] 33. Setup LanceDB Infrastructure
+- [x] 33. Setup LanceDB Infrastructure
   - [x] 33.1 Add `vectordb` or `lancedb` dependency to package.json
   - [x] 33.2 Add `@xenova/transformers` dependency for local embeddings
   - [x] 33.3 Create `packages/core/src/rag/` directory
@@ -166,7 +166,7 @@
   - [x] 33.6 Implement database initialization with proper error handling
   - [x] 33.7 Create table schema for codebase index (file paths, chunks, embeddings)
   - [x] 33.8 Create tables for mode-specific knowledge (debugger, security, performance, planning)
-  - [-] 33.9 Write unit tests for LanceDB setup and initialization
+  - [x] 33.9 Write unit tests for LanceDB setup and initialization
 
 - [ ] 34. Implement Embedding Service
   - [ ] 34.1 Create `EmbeddingService.ts` interface

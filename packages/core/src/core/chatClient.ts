@@ -14,6 +14,7 @@ import type { ContextManager as ContextMgmtManager } from '../context/types.js';
 import type { SessionMessage, SessionToolCall, ServicesConfig } from '../services/types.js';
 import { mergeServicesConfig } from '../services/config.js';
 import { ModelDatabase, modelDatabase } from '../routing/modelDatabase.js';
+import { getMessageBus } from '../hooks/messageBus.js';
 
 /**
  * Configuration for the chat client.
@@ -55,6 +56,8 @@ export class ChatClient {
   private contextMgmtManager?: ContextMgmtManager;
   private servicesConfig: Required<ServicesConfig>;
   private modelDatabase: ModelDatabase;
+
+  private messageBus = getMessageBus();
 
   constructor(
     private providerRegistry: ProviderRegistry,
@@ -111,6 +114,14 @@ export class ChatClient {
         const model = options?.model ?? this.config.defaultModel ?? 'unknown';
         const providerName = options?.provider ?? 'default';
         sessionId = await this.recordingService.createSession(model, providerName);
+        
+        // Emit session_start event
+        this.messageBus.emit('session_start', {
+          sessionId,
+          model,
+          provider: providerName,
+          timestamp: new Date().toISOString(),
+        });
       } catch (error) {
         // Log error but continue without recording (Requirement 10.1)
         console.error('Failed to create session:', error);
@@ -203,6 +214,16 @@ export class ChatClient {
           const sessionMessages = messages.map(msg => this.messageToSessionMessage(msg));
           
           if (this.compressionService.shouldCompress(sessionMessages, tokenLimit, threshold)) {
+            // Emit pre_compress event
+            this.messageBus.emit('pre_compress', {
+              contextSize: sessionMessages.length,
+              tokenCount: sessionMessages.reduce((sum, msg) => 
+                sum + msg.parts.reduce((s, p) => s + p.text.length, 0), 0
+              ),
+              maxSize: tokenLimit,
+              sessionId,
+            });
+            
             // Trigger compression (Requirement 8.3)
             const compressionResult = await this.compressionService.compress(
               sessionMessages,
@@ -212,6 +233,18 @@ export class ChatClient {
                 targetTokens: Math.floor(tokenLimit * 0.7), // Target 70% of limit after compression
               }
             );
+
+            // Emit post_compress event
+            this.messageBus.emit('post_compress', {
+              originalSize: sessionMessages.length,
+              compressedSize: compressionResult.compressedMessages.length,
+              originalTokenCount: sessionMessages.reduce((sum, msg) => 
+                sum + msg.parts.reduce((s, p) => s + p.text.length, 0), 0
+              ),
+              compressedTokenCount: compressionResult.compressedTokenCount,
+              compressionRatio: compressionResult.compressionRatio,
+              sessionId,
+            });
 
             // Update message history with compressed messages
             messages.length = 0; // Clear existing messages
@@ -287,6 +320,15 @@ export class ChatClient {
         systemPrompt: systemPromptWithContext,
       };
 
+      // Emit before_agent event
+      this.messageBus.emit('before_agent', {
+        prompt: turnNumber === 1 ? prompt : messages[messages.length - 1],
+        context: messages.slice(0, -1),
+        sessionId,
+        turnNumber,
+        model: options?.model ?? this.config.defaultModel,
+      });
+
       // Create and execute turn
       const turn = new Turn(provider, this.toolRegistry, messages, turnOptions);
 
@@ -319,11 +361,29 @@ export class ChatClient {
             assistantOutput += event.value;
           } else if (event.type === 'tool_call') {
             hasToolCalls = true;
+            
+            // Emit before_tool event
+            this.messageBus.emit('before_tool', {
+              toolName: event.toolCall.name,
+              args: event.toolCall.args,
+              sessionId,
+              turnNumber,
+            });
+            
             // Record tool call for loop detection (Requirement 4.1, 4.4)
             if (this.loopDetectionService) {
               this.loopDetectionService.recordToolCall(event.toolCall.name, event.toolCall.args);
             }
           } else if (event.type === 'tool_result') {
+            // Emit after_tool event
+            this.messageBus.emit('after_tool', {
+              toolName: event.toolCall.name,
+              args: event.toolCall.args,
+              result: event.result,
+              sessionId,
+              turnNumber,
+            });
+            
             // Store tool call and result for recording
             turnToolCalls.push({ toolCall: event.toolCall, result: event.result });
           } else if (event.type === 'error') {
@@ -346,6 +406,15 @@ export class ChatClient {
       if (this.loopDetectionService && assistantOutput) {
         this.loopDetectionService.recordOutput(assistantOutput);
       }
+
+      // Emit after_agent event
+      this.messageBus.emit('after_agent', {
+        prompt: turnNumber === 1 ? prompt : messages[messages.length - 1],
+        response: assistantOutput,
+        toolCalls: turnToolCalls.map(tc => tc.toolCall),
+        sessionId,
+        turnNumber,
+      });
 
       // Record assistant message (Requirement 1.2)
       if (sessionId && this.recordingService && assistantMessage && assistantMessage.parts.length > 0) {
@@ -440,6 +509,14 @@ export class ChatClient {
     if (sessionId && this.recordingService) {
       try {
         await this.recordingService.saveSession(sessionId);
+        
+        // Emit session_end event
+        this.messageBus.emit('session_end', {
+          sessionId,
+          duration: Date.now() - (new Date().getTime()), // Approximate
+          turnCount: turnNumber,
+          messageCount: messages.length,
+        });
       } catch (error) {
         // Log error but don't fail (Requirement 10.1)
         console.error('Failed to save session on exit:', error);

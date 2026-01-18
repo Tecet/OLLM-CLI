@@ -49,7 +49,8 @@ export interface ModelContextValue {
     onToolCall?: (toolCall: ToolCall) => void,
     onThinking?: (thinking: string) => void,
     tools?: ToolSchema[],
-    systemPrompt?: string
+    systemPrompt?: string,
+    temperature?: number
   ) => Promise<void>;
   
   /** Cancel the current LLM request */
@@ -683,7 +684,8 @@ export function ModelProvider({
     onThinking?: (thinking: string) => void,
     tools?: ToolSchema[],
     systemPrompt?: string,
-    timeout?: number
+    timeout?: number,
+    temperatureOverride?: number
   ) => {
     // Cancel any existing request
     cancelRequest();
@@ -714,6 +716,9 @@ export function ModelProvider({
       const contextSize = settings.llm?.contextSize ?? 4096;
       const temperature = settings.llm?.temperature ?? 0.1;
 
+      // DEBUG removed - was causing ESM require error
+
+
       // Stream the response
       const stream = provider.chatStream({
         model: currentModel,
@@ -725,7 +730,7 @@ export function ModelProvider({
         think: thinkingEnabled, // Enable thinking for supported models
         options: {
           num_ctx: contextSize,
-          temperature: temperature,
+          temperature: temperatureOverride ?? temperature,
         },
       });
 

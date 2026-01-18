@@ -14,11 +14,12 @@ export interface Tab {
 export const tabs: Tab[] = [
   { id: 'chat', label: 'Chat', icon: '\u{1F4AC}', shortcut: 'Ctrl+1' },
   { id: 'tools', label: 'Tools', icon: '\u{1F6E0}', shortcut: 'Ctrl+2' },
-  { id: 'files', label: 'Files', icon: '\u{1F4C1}', shortcut: 'Ctrl+3' },
-  { id: 'search', label: 'Search', icon: '\u{1F50D}', shortcut: 'Ctrl+4' },
-  { id: 'docs', label: 'Docs', icon: '\u{1F4DA}', shortcut: 'Ctrl+5' },
-  { id: 'github', label: 'GitHub', icon: '\u{1F680}', shortcut: 'Ctrl+6' },
-  { id: 'settings', label: 'Settings', icon: '\u{2699}', shortcut: 'Ctrl+7' },
+  { id: 'hooks', label: 'Hooks', icon: '\u{1F4CC}', shortcut: 'Ctrl+3' },
+  { id: 'files', label: 'Files', icon: '\u{1F4C1}', shortcut: 'Ctrl+4' },
+  { id: 'search', label: 'Search', icon: '\u{1F50D}', shortcut: 'Ctrl+5' },
+  { id: 'docs', label: 'Docs', icon: '\u{1F4DA}', shortcut: 'Ctrl+6' },
+  { id: 'github', label: 'GitHub', icon: '\u{1F680}', shortcut: 'Ctrl+7' },
+  { id: 'settings', label: 'Settings', icon: '\u{2699}', shortcut: 'Ctrl+8' },
 ];
 
 export interface TabBarProps {

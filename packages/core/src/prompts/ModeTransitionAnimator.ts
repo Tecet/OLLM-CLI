@@ -64,46 +64,16 @@ const MODE_ANIMATIONS: Record<ModeType, ModeAnimationConfig> = {
     completionVerb: 'Development mode ready',
     duration: 500
   },
-  tool: {
-    icon: '🔧',
-    loadingVerb: 'Loading tool schemas',
-    completionVerb: 'Tool mode active',
-    duration: 400
-  },
   debugger: {
     icon: '🐛',
     loadingVerb: 'Analyzing error patterns',
     completionVerb: 'Debugger mode active',
     duration: 700
   },
-  security: {
-    icon: '🔒',
-    loadingVerb: 'Initializing security scanner',
-    completionVerb: 'Security mode active',
-    duration: 700
-  },
   reviewer: {
     icon: '👀',
     loadingVerb: 'Loading review checklist',
     completionVerb: 'Review mode active',
-    duration: 600
-  },
-  performance: {
-    icon: '⚡',
-    loadingVerb: 'Preparing profiling tools',
-    completionVerb: 'Performance mode active',
-    duration: 600
-  },
-  prototype: {
-    icon: '🔬',
-    loadingVerb: 'Entering rapid prototyping mode',
-    completionVerb: 'Prototype mode active',
-    duration: 500
-  },
-  teacher: {
-    icon: '👨‍🏫',
-    loadingVerb: 'Preparing teaching materials',
-    completionVerb: 'Teacher mode active',
     duration: 600
   }
 };
@@ -214,7 +184,7 @@ export class ModeTransitionAnimator {
     transition: ModeTransition,
     config: ModeAnimationConfig
   ): string {
-    const { trigger, from, to } = transition;
+    const { trigger, to } = transition;
     
     // Different messages based on trigger type
     switch (trigger) {
@@ -260,13 +230,8 @@ export class ModeTransitionAnimator {
       assistant: 'Assistant',
       planning: 'Planning',
       developer: 'Developer',
-      tool: 'Tool',
       debugger: 'Debugger',
-      security: 'Security',
-      reviewer: 'Reviewer',
-      performance: 'Performance',
-      prototype: 'Prototype',
-      teacher: 'Teacher'
+      reviewer: 'Reviewer'
     };
     
     return names[mode] || mode;

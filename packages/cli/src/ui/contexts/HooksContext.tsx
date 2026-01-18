@@ -1,0 +1,305 @@
+/**
+ * HooksContext - Manages hook state and operations for the Hooks Panel UI
+ * 
+ * Provides centralized state management for:
+ * - Loading hooks from HookRegistry
+ * - Managing enabled/disabled state via SettingsService
+ * - Categorizing hooks by event type
+ * - Error handling for corrupted hooks
+ */
+
+import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode, useMemo } from 'react';
+import { HookRegistry } from '@ollm/ollm-cli-core/hooks/hookRegistry.js';
+import type { Hook, HookEvent } from '@ollm/ollm-cli-core/hooks/types.js';
+import { SettingsService } from '../../config/settingsService.js';
+import { loadHooksFromFiles } from '../../services/hookLoader.js';
+
+/**
+ * Hook category for organizing hooks in the UI
+ */
+export interface HookCategory {
+  /** Category display name */
+  name: string;
+  /** Event types included in this category */
+  eventTypes: HookEvent[];
+  /** Hooks in this category */
+  hooks: Hook[];
+  /** Icon for the category */
+  icon: string;
+}
+
+/**
+ * Hook state in the context
+ */
+export interface HooksState {
+  /** All hooks organized by category */
+  categories: HookCategory[];
+  /** All hooks as a flat array */
+  allHooks: Hook[];
+  /** Set of enabled hook IDs */
+  enabledHooks: Set<string>;
+  /** Loading state */
+  isLoading: boolean;
+  /** Error state */
+  error: string | null;
+  /** Corrupted hooks that failed to load */
+  corruptedHooks: Array<{ id: string; error: string }>;
+}
+
+/**
+ * Hook context value
+ */
+export interface HooksContextValue {
+  /** Current state */
+  state: HooksState;
+  /** Reload hooks from registry */
+  refreshHooks: () => Promise<void>;
+  /** Toggle hook enabled state */
+  toggleHook: (hookId: string) => Promise<void>;
+  /** Check if a hook is enabled */
+  isHookEnabled: (hookId: string) => boolean;
+  /** Get hook by ID */
+  getHook: (hookId: string) => Hook | undefined;
+}
+
+const HooksContext = createContext<HooksContextValue | undefined>(undefined);
+
+/**
+ * Hook to access hooks context
+ */
+export function useHooks(): HooksContextValue {
+  const context = useContext(HooksContext);
+  if (!context) {
+    throw new Error('useHooks must be used within a HooksProvider');
+  }
+  return context;
+}
+
+export interface HooksProviderProps {
+  children: ReactNode;
+  /** Optional HookRegistry instance (for testing) */
+  hookRegistry?: HookRegistry;
+  /** Optional SettingsService instance (for testing) */
+  settingsService?: SettingsService;
+}
+
+/**
+ * Provider for hooks management
+ */
+export function HooksProvider({ 
+  children, 
+  hookRegistry: customRegistry,
+  settingsService: customSettings
+}: HooksProviderProps) {
+  const [state, setState] = useState<HooksState>({
+    categories: [],
+    allHooks: [],
+    enabledHooks: new Set(),
+    isLoading: true,
+    error: null,
+    corruptedHooks: [],
+  });
+
+  // Use provided instances or create defaults
+  const hookRegistry = useMemo(() => customRegistry || new HookRegistry(), [customRegistry]);
+  const settingsService = useMemo(() => customSettings || SettingsService.getInstance(), [customSettings]);
+
+  /**
+   * Categorize hooks by event type
+   */
+  const categorizeHooks = useCallback((hooksMap: Map<HookEvent, Hook[]>): HookCategory[] => {
+    // Define category mappings
+    const categoryMap: Record<string, { name: string; eventTypes: HookEvent[]; icon: string }> = {
+      session: {
+        name: 'Session Events',
+        eventTypes: ['session_start', 'session_end'],
+        icon: '🔄',
+      },
+      agent: {
+        name: 'Agent Events',
+        eventTypes: ['before_agent', 'after_agent'],
+        icon: '🤖',
+      },
+      model: {
+        name: 'Model Events',
+        eventTypes: ['before_model', 'after_model'],
+        icon: '🧠',
+      },
+      tool: {
+        name: 'Tool Events',
+        eventTypes: ['before_tool_selection', 'before_tool', 'after_tool'],
+        icon: '🔧',
+      },
+      compression: {
+        name: 'Compression Events',
+        eventTypes: ['pre_compress', 'post_compress'],
+        icon: '📦',
+      },
+      notification: {
+        name: 'Notifications',
+        eventTypes: ['notification'],
+        icon: '🔔',
+      },
+    };
+
+    // Group hooks by category
+    const categories: HookCategory[] = [];
+    
+    for (const [categoryKey, categoryDef] of Object.entries(categoryMap)) {
+      const categoryHooks: Hook[] = [];
+      
+      // Collect hooks from all event types in this category
+      for (const eventType of categoryDef.eventTypes) {
+        const hooksForEvent = hooksMap.get(eventType) || [];
+        categoryHooks.push(...hooksForEvent);
+      }
+
+      if (categoryHooks.length > 0) {
+        categories.push({
+          name: categoryDef.name,
+          eventTypes: categoryDef.eventTypes,
+          hooks: categoryHooks,
+          icon: categoryDef.icon,
+        });
+      }
+    }
+
+    return categories;
+  }, []);
+
+  /**
+   * Load hooks from registry and settings
+   */
+  const refreshHooks = useCallback(async () => {
+    setState(prev => ({ ...prev, isLoading: true, error: null }));
+
+    try {
+      // Get all hooks from registry organized by event
+      const allHooksMap = hookRegistry.getAllHooks();
+      const allHooks: Hook[] = [];
+      const corruptedHooks: Array<{ id: string; error: string }> = [];
+
+      // Flatten hooks from all events
+      for (const [event, hooks] of allHooksMap.entries()) {
+        for (const hook of hooks) {
+          try {
+            // Validate hook structure
+            if (!hook.id || !hook.name || !hook.command) {
+              corruptedHooks.push({
+                id: hook.id || 'unknown',
+                error: 'Missing required fields (id, name, or command)',
+              });
+              continue;
+            }
+            allHooks.push(hook);
+          } catch (error) {
+            corruptedHooks.push({
+              id: hook.id || 'unknown',
+              error: error instanceof Error ? error.message : 'Unknown error',
+            });
+          }
+        }
+      }
+
+      // Get enabled state from settings
+      const hookSettings = settingsService.getHookSettings();
+      const enabledHooks = new Set<string>();
+      
+      for (const hook of allHooks) {
+        // Default to enabled if not explicitly set
+        const isEnabled = hookSettings.enabled[hook.id] ?? true;
+        if (isEnabled) {
+          enabledHooks.add(hook.id);
+        }
+      }
+
+      // Categorize hooks using the map
+      const categories = categorizeHooks(allHooksMap);
+
+      setState({
+        categories,
+        allHooks,
+        enabledHooks,
+        isLoading: false,
+        error: null,
+        corruptedHooks,
+      });
+    } catch (error) {
+      setState(prev => ({
+        ...prev,
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'Failed to load hooks',
+      }));
+    }
+  }, [hookRegistry, settingsService, categorizeHooks]);
+
+  /**
+   * Toggle hook enabled state
+   */
+  const toggleHook = useCallback(async (hookId: string) => {
+    try {
+      const currentlyEnabled = state.enabledHooks.has(hookId);
+      const newEnabledState = !currentlyEnabled;
+
+      // Update settings
+      settingsService.setHookEnabled(hookId, newEnabledState);
+
+      // Update local state
+      setState(prev => {
+        const newEnabledHooks = new Set(prev.enabledHooks);
+        if (newEnabledState) {
+          newEnabledHooks.add(hookId);
+        } else {
+          newEnabledHooks.delete(hookId);
+        }
+
+        return {
+          ...prev,
+          enabledHooks: newEnabledHooks,
+        };
+      });
+    } catch (error) {
+      // Revert on error
+      setState(prev => ({
+        ...prev,
+        error: error instanceof Error ? error.message : 'Failed to toggle hook',
+      }));
+    }
+  }, [state.enabledHooks, settingsService]);
+
+  /**
+   * Check if a hook is enabled
+   */
+  const isHookEnabled = useCallback((hookId: string): boolean => {
+    return state.enabledHooks.has(hookId);
+  }, [state.enabledHooks]);
+
+  /**
+   * Get hook by ID
+   */
+  const getHook = useCallback((hookId: string): Hook | undefined => {
+    return state.allHooks.find(h => h.id === hookId);
+  }, [state.allHooks]);
+
+  // Load hooks from files and then refresh
+  useEffect(() => {
+    const initializeHooks = async () => {
+      // Load hooks from JSON files
+      await loadHooksFromFiles(hookRegistry);
+      // Refresh the UI state
+      await refreshHooks();
+    };
+    
+    initializeHooks();
+  }, [hookRegistry, refreshHooks]);
+
+  const value: HooksContextValue = {
+    state,
+    refreshHooks,
+    toggleHook,
+    isHookEnabled,
+    getHook,
+  };
+
+  return <HooksContext.Provider value={value}>{children}</HooksContext.Provider>;
+}

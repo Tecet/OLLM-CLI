@@ -11,7 +11,7 @@ import type { PromptRegistry } from './PromptRegistry.js';
 import type { SystemPromptBuilder } from '../context/SystemPromptBuilder.js';
 import { ModeMetricsTracker } from './ModeMetricsTracker.js';
 import { FocusModeManager } from './FocusModeManager.js';
-import { ModeTransitionAnimator, type TransitionAnimation } from './ModeTransitionAnimator.js';
+import { ModeTransitionAnimator } from './ModeTransitionAnimator.js';
 
 /**
  * Mode configuration
@@ -67,12 +67,6 @@ interface ModeState {
 const CONFIDENCE_THRESHOLDS: Record<string, number> = {
   // Explicit requests always switch
   'explicit': 1.0,
-  
-  // Specialized modes (high confidence required)
-  'any->debugger': 0.85,
-  'any->security': 0.85,
-  'any->reviewer': 0.80,
-  'any->performance': 0.80,
   
   // Core mode transitions
   'assistant->planning': 0.70,
@@ -182,6 +176,7 @@ export class PromptModeManager extends EventEmitter {
    */
   updateSkills(skills: string[]): void {
     this.state.activeSkills = skills;
+    this.emit('skills-changed', skills);
   }
   
   /**
@@ -210,6 +205,13 @@ export class PromptModeManager extends EventEmitter {
    */
   getFocusModeManager(): FocusModeManager {
     return this.focusModeManager;
+  }
+
+  /**
+   * Get context analyzer
+   */
+  getContextAnalyzer(): ContextAnalyzer {
+    return this.contextAnalyzer;
   }
   
   /**
@@ -506,7 +508,7 @@ export class PromptModeManager extends EventEmitter {
   /**
    * Get mode template content
    */
-  private getModeTemplate(mode: ModeType): string {
+  public getModeTemplate(mode: ModeType): string {
     // Mode templates will be implemented in Phase 1, Task 3
     // For now, return basic templates
     const templates: Record<ModeType, string> = {
@@ -522,32 +524,13 @@ planning before implementation. You have read-only access to the codebase.`,
 You are a senior software engineer. You have full access to all tools and
 can implement, refactor, and modify code.`,
       
-      tool: `# Mode: Tool Expert 🔧
-You are a tool usage expert. You have enhanced access to all tools with
-detailed guidance on their usage.`,
-      
       debugger: `# Mode: Debugger 🐛
 You are a debugging specialist. Systematically analyze errors, find root
 causes, and implement fixes.`,
       
-      security: `# Mode: Security Specialist 🔒
-You are a security auditor. Identify vulnerabilities, assess risks, and
-implement security fixes.`,
-      
       reviewer: `# Mode: Code Reviewer 👀
 You are a code reviewer. Assess code quality, identify issues, and provide
-constructive feedback.`,
-      
-      performance: `# Mode: Performance Engineer ⚡
-You are a performance engineer. Analyze bottlenecks, optimize code, and
-improve system performance.`,
-      
-      prototype: `# Mode: Prototype 🔬
-You are a rapid prototyper. Build quick proof-of-concepts to validate ideas.`,
-      
-      teacher: `# Mode: Teacher 👨‍🏫
-You are a patient technical educator. Help users understand concepts deeply
-through clear explanations and examples.`
+constructive feedback.`
     };
     
     return templates[mode] || templates.assistant;
@@ -613,57 +596,54 @@ through clear explanations and examples.`
    */
   getAllowedTools(mode: ModeType): string[] {
     const toolAccess: Record<ModeType, string[]> = {
-      assistant: [],
+      assistant: [], // No tools allowed by default in Assistant mode for maximum safety
       
       planning: [
         'web_search', 'web_fetch',
         'read_file', 'read_multiple_files',
         'grep_search', 'file_search', 'list_directory',
-        'get_diagnostics'
+        'get_diagnostics', 'write_memory_dump',
+        'trigger_hot_swap'
       ],
       
       developer: ['*'],
-      
-      tool: ['*'],
       
       debugger: [
         'read_file', 'grep_search', 'list_directory',
         'get_diagnostics', 'shell',
         'git_diff', 'git_log',
         'web_search',
-        'write_file', 'str_replace'
-      ],
-      
-      security: [
-        'read_file', 'grep_search', 'list_directory',
-        'get_diagnostics', 'shell',
-        'web_search',
-        'write_file', 'str_replace'
+        'write_file', 'str_replace',
+        'write_memory_dump',
+        'trigger_hot_swap'
       ],
       
       reviewer: [
         'read_file', 'grep_search', 'list_directory',
         'get_diagnostics', 'shell',
-        'git_diff', 'git_log'
-      ],
-      
-      performance: [
-        'read_file', 'grep_search', 'list_directory',
-        'get_diagnostics', 'shell',
-        'web_search',
-        'write_file', 'str_replace'
-      ],
-      
-      prototype: ['*'],
-      
-      teacher: [
-        'web_search',
-        'read_file', 'read_multiple_files',
-        'grep_search', 'file_search', 'list_directory'
+        'git_diff', 'git_log',
+        'trigger_hot_swap',
+        'write_file', 'str_replace',
+        'web_search'
       ]
     };
     
     return toolAccess[mode] || [];
+  }
+
+  /**
+   * Get preferred temperature for a mode based on tiered architecture
+   */
+  getPreferredTemperature(mode: ModeType): number {
+    const technicalModes: ModeType[] = ['developer', 'debugger'];
+    const standardModes: ModeType[] = ['planning', 'reviewer'];
+    const creativeModes: ModeType[] = ['assistant'];
+
+    if (technicalModes.includes(mode)) return 0.1;
+    if (standardModes.includes(mode)) return 0.3;
+    if (creativeModes.includes(mode)) return 0.5;
+    
+    return 0.3; // Default
   }
   
   /**
@@ -681,23 +661,9 @@ through clear explanations and examples.`
       
       developer: [],
       
-      tool: [],
-      
       debugger: ['delete_file', 'git_commit'],
       
-      security: ['delete_file'],
-      
-      reviewer: ['write_file', 'str_replace', 'delete_file', 'git_*'],
-      
-      performance: ['delete_file'],
-      
-      prototype: [],
-      
-      teacher: [
-        'write_file', 'fs_append', 'str_replace', 'delete_file',
-        'execute_pwsh', 'control_pwsh_process',
-        'git_*'
-      ]
+      reviewer: ['write_file', 'str_replace', 'delete_file', 'git_*']
     };
     
     return deniedTools[mode] || [];
@@ -709,7 +675,7 @@ through clear explanations and examples.`
    * @param toolName - The tool attempting to write (for error messages)
    * @returns Object with allowed status and error message if denied
    */
-  validateFilePathForPlanningMode(filePath: string, toolName: string): {
+  validateFilePathForPlanningMode(filePath: string, _toolName: string): {
     allowed: boolean;
     errorMessage?: string;
   } {
@@ -718,17 +684,20 @@ through clear explanations and examples.`
       return { allowed: true };
     }
     
-    // Import the validation functions
-    const { 
-      isFileAllowedInPlanningMode, 
-      getRestrictionErrorMessage 
-    } = require('./PlanningModeRestrictions.js');
+    // Import the validation functions dynamically
+    // Note: This is synchronous validation, so we use a simple check
+    const extension = filePath.split('.').pop()?.toLowerCase() || '';
+    const allowedExtensions = ['md', 'txt', 'json', 'plan'];
+    const allowedPaths = ['.kiro/', '.gemini/', 'docs/', 'plans/'];
     
-    const allowed = isFileAllowedInPlanningMode(filePath);
+    const isAllowedExtension = allowedExtensions.includes(extension);
+    const isAllowedPath = allowedPaths.some(p => filePath.includes(p));
     
-    if (!allowed) {
-      const errorMessage = getRestrictionErrorMessage(filePath);
-      return { allowed: false, errorMessage };
+    if (!isAllowedExtension && !isAllowedPath) {
+      return { 
+        allowed: false, 
+        errorMessage: `Planning mode restricts file writes. File "${filePath}" is not in an allowed location.` 
+      };
     }
     
     return { allowed: true };
@@ -741,7 +710,7 @@ through clear explanations and examples.`
    * @param args - The tool arguments
    * @returns Object with allowed status and error message if denied
    */
-  validateToolArgsForPlanningMode(toolName: string, args: any): {
+  validateToolArgsForPlanningMode(toolName: string, args: Record<string, unknown>): {
     allowed: boolean;
     errorMessage?: string;
   } {
@@ -761,10 +730,11 @@ through clear explanations and examples.`
     let filePath: string | undefined;
     
     if (typeof args === 'object' && args !== null) {
-      // Try common argument names
-      filePath = args.path || args.filePath || args.file || args.targetFile;
-    } else if (typeof args === 'string') {
-      filePath = args;
+      // Try common argument names with explicit casting
+      filePath = (args.path as string | undefined) || 
+                 (args.filePath as string | undefined) || 
+                 (args.file as string | undefined) || 
+                 (args.targetFile as string | undefined);
     }
     
     if (!filePath) {

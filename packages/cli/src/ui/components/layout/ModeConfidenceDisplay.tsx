@@ -5,6 +5,7 @@ import type { ModeType } from '@ollm/ollm-cli-core';
 interface ModeConfidenceDisplayProps {
   currentMode: ModeType;
   currentModeIcon: string;
+  currentModeColor: string;
   currentModeConfidence: number;
   modeDuration: number;
   suggestedModes: Array<{
@@ -13,6 +14,7 @@ interface ModeConfidenceDisplayProps {
     confidence: number;
     reason: string;
   }>;
+  allowedTools: string[];
 }
 
 /**
@@ -49,32 +51,51 @@ function renderConfidenceBar(confidence: number, width: number = 10): string {
 export function ModeConfidenceDisplay({
   currentMode,
   currentModeIcon,
+  currentModeColor,
   currentModeConfidence,
   modeDuration,
-  suggestedModes
+  suggestedModes,
+  allowedTools
 }: ModeConfidenceDisplayProps) {
   return (
     <Box flexDirection="column" paddingX={1}>
+      {/* 1. Indicators at the very top */}
       <Box flexDirection="column" marginBottom={1}>
-        <Text bold color="cyan">Current Mode</Text>
-        <Box flexDirection="column" marginTop={1}>
-          <Text>
-            {currentModeIcon} {currentMode.charAt(0).toUpperCase() + currentMode.slice(1)}
-          </Text>
-          <Box marginTop={0}>
-            <Text dimColor>Confidence: </Text>
-            <Text>{renderConfidenceBar(currentModeConfidence)} </Text>
-            <Text color="yellow">{(currentModeConfidence * 100).toFixed(0)}%</Text>
-          </Box>
-          <Box marginTop={0}>
-            <Text dimColor>Duration: </Text>
-            <Text color="green">{formatDuration(modeDuration)}</Text>
-          </Box>
+        <Box marginTop={0}>
+          <Text dimColor>Conf: </Text>
+          <Text>{renderConfidenceBar(currentModeConfidence, 8)} </Text>
+          <Text color="yellow">{(currentModeConfidence * 100).toFixed(0)}%</Text>
+        </Box>
+        <Box marginTop={0}>
+          <Text dimColor>Time: </Text>
+          <Text color="green">{formatDuration(modeDuration)}</Text>
         </Box>
       </Box>
-      
+
+      {/* 2. Current Mode Identity with padding */}
+      <Box flexDirection="column" marginBottom={1}>
+        <Box>
+          <Text bold color="cyan">Mode: </Text>
+          <Text bold color={currentModeColor}>{currentModeIcon} </Text>
+          <Text bold color={currentModeColor}>
+            {currentMode ? currentMode.charAt(0).toUpperCase() + currentMode.slice(1) : 'Unknown'}
+          </Text>
+        </Box>
+        <Box marginTop={0}>
+          <Text dimColor>Tools: </Text>
+          {allowedTools.length === 0 ? (
+            <Text dimColor>None</Text>
+          ) : allowedTools.includes('*') ? (
+            <Text color="green">All</Text>
+          ) : (
+            <Text dimColor>({allowedTools.length})</Text>
+          )}
+        </Box>
+      </Box>
+
+      {/* 3. Suggested Modes with padding */}
       {suggestedModes.length > 0 && (
-        <Box flexDirection="column">
+        <Box flexDirection="column" marginTop={0}>
           <Text bold color="cyan">Suggested Modes</Text>
           <Box flexDirection="column" marginTop={1}>
             {suggestedModes.map((suggested, index) => (

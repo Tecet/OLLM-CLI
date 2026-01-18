@@ -6,11 +6,7 @@
  * - /mode planning - Switch to planning mode
  * - /mode developer - Switch to developer mode
  * - /mode debugger - Switch to debugger mode
- * - /mode security - Switch to security mode
  * - /mode reviewer - Switch to reviewer mode
- * - /mode performance - Switch to performance mode
- * - /mode prototype - Switch to prototype mode
- * - /mode teacher - Switch to teacher mode
  * - /mode auto - Enable automatic mode switching
  * - /mode status - Show current mode and auto-switch status
  * - /mode history - Show recent mode transitions
@@ -24,6 +20,7 @@
 import type { Command, CommandResult } from './types.js';
 import { getGlobalContextManager } from '../features/context/ContextManagerContext.js';
 import type { ModeType, ModeTransition } from '@ollm/core';
+import { MODE_METADATA } from '@ollm/core';
 
 /**
  * Helper to check if context manager is available
@@ -51,34 +48,18 @@ function ensureModeManager() {
 /**
  * Mode icons for display
  */
-const MODE_ICONS: Record<ModeType, string> = {
-  assistant: '💬',
-  planning: '📋',
-  developer: '👨‍💻',
-  tool: '🔧',
-  debugger: '🐛',
-  security: '🔒',
-  reviewer: '👀',
-  performance: '⚡',
-  prototype: '⚡🔬',
-  teacher: '👨‍🏫',
-};
+const MODE_ICONS: Record<ModeType, string> = Object.entries(MODE_METADATA).reduce((acc, [key, meta]) => {
+  acc[key as ModeType] = meta.icon;
+  return acc;
+}, {} as Record<ModeType, string>);
 
 /**
  * Mode descriptions
  */
-const MODE_DESCRIPTIONS: Record<ModeType, string> = {
-  assistant: 'General conversation and explanations',
-  planning: 'Research, design, and planning (read-only)',
-  developer: 'Full implementation with all tools',
-  tool: 'Enhanced tool usage with detailed guidance',
-  debugger: 'Systematic debugging and error analysis',
-  security: 'Security audits and vulnerability detection',
-  reviewer: 'Code review and quality assessment',
-  performance: 'Performance analysis and optimization',
-  prototype: 'Quick experiments and proof-of-concepts',
-  teacher: 'Explain concepts and teach best practices',
-};
+const MODE_DESCRIPTIONS: Record<ModeType, string> = Object.entries(MODE_METADATA).reduce((acc, [key, meta]) => {
+  acc[key as ModeType] = meta.description;
+  return acc;
+}, {} as Record<ModeType, string>);
 
 /**
  * Format a mode transition for display
@@ -101,7 +82,7 @@ function formatTransition(transition: ModeTransition): string {
 export const modeCommand: Command = {
   name: '/mode',
   aliases: ['/m'],
-  description: 'Manage prompt modes (usage: /mode [assistant|planning|developer|debugger|security|reviewer|performance|auto|status|history])',
+  description: 'Manage prompt modes (usage: /mode [assistant|planning|developer|debugger|reviewer|auto|status|history])',
   usage: '/mode [subcommand]',
   handler: async (args: string[]): Promise<CommandResult> => {
     try {
@@ -129,24 +110,22 @@ export const modeCommand: Command = {
 
       // Handle mode switching commands
       const validModes: ModeType[] = [
-        'assistant', 'planning', 'developer', 'tool',
-        'debugger', 'security', 'reviewer', 'performance',
-        'prototype', 'teacher'
+        'assistant', 'planning', 'developer',
+        'debugger', 'reviewer'
       ];
       
       if (validModes.includes(subcommand as ModeType)) {
         const mode = subcommand as ModeType;
         manager.switchMode(mode);
         
-        const icon = MODE_ICONS[mode] || '';
-        const description = MODE_DESCRIPTIONS[mode] || '';
+        const metadata = (MODE_METADATA as any)[mode];
+        const icon = metadata?.icon || '';
         
         return {
           success: true,
           message: 
-            `Switched to ${icon} ${mode} mode\n` +
-            `${description}\n\n` +
-            `Auto-switching has been disabled. Use /mode auto to re-enable.`,
+            `Switched to ${icon} ${mode}\n` +
+            `Auto-switching disabled. Use /mode auto to re-enable.`,
         };
       }
 
@@ -160,9 +139,8 @@ export const modeCommand: Command = {
           return {
             success: true,
             message: 
-              `Automatic mode switching enabled ✓\n` +
-              `Current mode: ${icon} ${currentMode}\n\n` +
-              `The system will now automatically switch modes based on conversation context.`,
+              `Auto-switch: Enabled ✓\n` +
+              `Current mode: ${icon} ${currentMode}`,
           };
         }
 
@@ -272,7 +250,7 @@ export const modeCommand: Command = {
                 statusMsg += `\nOptimizations: ${productivity.totalOptimizations}`;
               }
             }
-          } catch (error) {
+          } catch (_error) {
             // If metrics display fails, just continue without metrics
             // This ensures the command still works even if metrics tracking has issues
           }
@@ -596,13 +574,8 @@ export const modeCommand: Command = {
               `  assistant   - ${MODE_DESCRIPTIONS.assistant}\n` +
               `  planning    - ${MODE_DESCRIPTIONS.planning}\n` +
               `  developer   - ${MODE_DESCRIPTIONS.developer}\n` +
-              `  tool        - ${MODE_DESCRIPTIONS.tool}\n` +
               `  debugger    - ${MODE_DESCRIPTIONS.debugger}\n` +
-              `  security    - ${MODE_DESCRIPTIONS.security}\n` +
-              `  reviewer    - ${MODE_DESCRIPTIONS.reviewer}\n` +
-              `  performance - ${MODE_DESCRIPTIONS.performance}\n` +
-              `  prototype   - ${MODE_DESCRIPTIONS.prototype}\n` +
-              `  teacher     - ${MODE_DESCRIPTIONS.teacher}\n\n` +
+              `  reviewer    - ${MODE_DESCRIPTIONS.reviewer}\n\n` +
               `Special commands:\n` +
               `  auto    - Enable automatic mode switching\n` +
               `  status  - Show current mode and settings\n` +
