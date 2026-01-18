@@ -16,6 +16,18 @@ export default defineConfig({
     include: ['**/*.test.ts', '**/*.test.tsx'],
     testTimeout: 120000, // 2 minutes for integration tests
     hookTimeout: 30000, // 30 seconds for setup/teardown
+    // Memory optimization settings
+    pool: 'forks', // Use forks instead of threads for better memory isolation
+    poolOptions: {
+      forks: {
+        singleFork: false, // Allow multiple forks
+        maxForks: 4, // Limit concurrent forks to reduce memory usage (was unlimited)
+        minForks: 1,
+        execArgv: ['--max-old-space-size=4096'], // 4GB per worker
+      },
+    },
+    maxConcurrency: 4, // Limit concurrent tests within a file
+    isolate: true, // Isolate test environments
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

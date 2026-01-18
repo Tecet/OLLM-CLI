@@ -27,7 +27,7 @@ class FileTestFixture {
     // Clean up all created files and the temp directory
     try {
       await fs.rm(this.tempDir, { recursive: true, force: true });
-    } catch (error) {
+    } catch (_error) {
       // Ignore cleanup errors
     }
     this.createdFiles = [];
