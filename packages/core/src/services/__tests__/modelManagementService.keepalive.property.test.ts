@@ -14,12 +14,14 @@ describe('Model Management Service Keep-Alive Properties', () => {
 
   beforeEach(() => {
     mockProvider = new MockProvider();
+    vi.useFakeTimers();
   });
 
   afterEach(() => {
     if (service) {
       service.dispose();
     }
+    vi.useRealTimers();
   });
 
   /**
@@ -28,7 +30,7 @@ describe('Model Management Service Keep-Alive Properties', () => {
    * keep-alive requests to the Provider_Adapter
    * Validates: Requirements 19.1, 20.1
    */
-  it('Property 38: Keep-alive request sending', { timeout: 15000 }, async () => {
+  it('Property 38: Keep-alive request sending', async () => {
     await fc.assert(
       fc.asyncProperty(
         fc.string({ minLength: 1, maxLength: 50 }),
@@ -48,7 +50,7 @@ describe('Model Management Service Keep-Alive Properties', () => {
             expect(loadedModels).toContain(modelName);
 
             // Wait a bit to ensure keep-alive interval is set up
-            await new Promise((resolve) => setTimeout(resolve, 100));
+            await vi.advanceTimersByTimeAsync(100);
 
             // Model should still be loaded
             expect(svc.getLoadedModels()).toContain(modelName);
@@ -88,7 +90,7 @@ describe('Model Management Service Keep-Alive Properties', () => {
             const firstTimestamp = status1.lastUsed!;
 
             // Wait a bit
-            await new Promise((resolve) => setTimeout(resolve, 50));
+            await vi.advanceTimersByTimeAsync(50);
 
             // Keep model loaded again (simulates usage)
             await svc.keepModelLoaded(modelName);
@@ -107,7 +109,7 @@ describe('Model Management Service Keep-Alive Properties', () => {
           }
         }
       ),
-      { numRuns: 50 } // Fewer runs due to delays
+      { numRuns: 50 }
     );
   });
 
@@ -117,7 +119,7 @@ describe('Model Management Service Keep-Alive Properties', () => {
    * allow it to unload
    * Validates: Requirements 19.3, 20.2
    */
-  it('Property 40: Idle timeout unloading', { timeout: 40000 }, async () => {
+  it('Property 40: Idle timeout unloading', async () => {
     await fc.assert(
       fc.asyncProperty(
         fc.string({ minLength: 1, maxLength: 50 }),
@@ -134,7 +136,7 @@ describe('Model Management Service Keep-Alive Properties', () => {
             expect(svc.getLoadedModels()).toContain(modelName);
 
             // Wait for timeout to expire
-            await new Promise((resolve) => setTimeout(resolve, 1500));
+            await vi.advanceTimersByTimeAsync(1500);
 
             // Check loaded models (should trigger cleanup)
             const loadedModels = svc.getLoadedModels();
@@ -146,7 +148,7 @@ describe('Model Management Service Keep-Alive Properties', () => {
           }
         }
       ),
-      { numRuns: 20 } // Fewer runs due to long delays
+      { numRuns: 20 }
     );
   });
 
@@ -242,7 +244,7 @@ describe('Model Management Service Keep-Alive Properties', () => {
    * Additional property: Keep-alive models list
    * Models in the keep-alive list should not be unloaded due to timeout
    */
-  it('Keep-alive models list prevents timeout unloading', { timeout: 40000 }, async () => {
+  it('Keep-alive models list prevents timeout unloading', async () => {
     await fc.assert(
       fc.asyncProperty(
         fc.string({ minLength: 1, maxLength: 50 }),
@@ -260,7 +262,7 @@ describe('Model Management Service Keep-Alive Properties', () => {
             expect(svc.getLoadedModels()).toContain(modelName);
 
             // Wait for timeout to expire
-            await new Promise((resolve) => setTimeout(resolve, 1500));
+            await vi.advanceTimersByTimeAsync(1500);
 
             // Check loaded models (should trigger cleanup)
             const loadedModels = svc.getLoadedModels();
@@ -272,7 +274,7 @@ describe('Model Management Service Keep-Alive Properties', () => {
           }
         }
       ),
-      { numRuns: 20 } // Fewer runs due to long delays
+      { numRuns: 20 }
     );
   });
 
@@ -323,7 +325,7 @@ describe('Model Management Service Keep-Alive Properties', () => {
    * Additional property: Unload clears keep-alive
    * Unloading a model should stop its keep-alive interval
    */
-  it('Unload clears keep-alive interval', { timeout: 15000 }, async () => {
+  it('Unload clears keep-alive interval', async () => {
     await fc.assert(
       fc.asyncProperty(
         fc.string({ minLength: 1, maxLength: 50 }),
@@ -345,7 +347,7 @@ describe('Model Management Service Keep-Alive Properties', () => {
             expect(svc.getLoadedModels()).not.toContain(modelName);
 
             // Wait a bit to ensure interval is cleared
-            await new Promise((resolve) => setTimeout(resolve, 100));
+            await vi.advanceTimersByTimeAsync(100);
 
             // Model should still not be loaded
             expect(svc.getLoadedModels()).not.toContain(modelName);
