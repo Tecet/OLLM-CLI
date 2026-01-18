@@ -4,7 +4,7 @@ import { commandRegistry } from '../../commands/index.js';
 import { useServices } from './ServiceContext.js';
 import { useModel } from './ModelContext.js';
 import { useUI } from './UIContext.js';
-import { ToolRegistry, HotSwapTool, MemoryDumpTool, PromptRegistry } from '@ollm/core';
+import { ToolRegistry, HotSwapTool, MemoryDumpTool, PromptRegistry, ReasoningParser } from '@ollm/core';
 import type { ToolCall as CoreToolCall, ContextMessage, ProviderMetrics } from '@ollm/core';
 import { SettingsService } from '../../config/settingsService.js';
 
@@ -216,6 +216,10 @@ export function ChatProvider({
   
   const assistantMessageIdRef = useRef<string | null>(null);
   const manualContextRequestRef = useRef<{ modelId: string; onComplete: (value: number) => void | Promise<void> } | null>(null);
+  
+  // Reasoning parser for extracting <think> blocks
+  const reasoningParserRef = useRef(new ReasoningParser());
+  const reasoningStateRef = useRef<Map<string, any>>(new Map());
   
   // Define addMessage before it's used in useEffect
   const addMessage = useCallback((message: Omit<Message, 'id' | 'timestamp'>) => {
@@ -439,6 +443,7 @@ export function ChatProvider({
 
         let toolCallReceived: CoreToolCall | null = null;
         let assistantContent = '';
+        let rawContent = ''; // Track raw content with <think> tags
 
         try {
           await sendToLLM(
@@ -447,10 +452,33 @@ export function ChatProvider({
             (text: string) => {
               const targetId = currentAssistantMsgId;
               assistantContent += text;
+              rawContent += text;
+              
+              // Parse reasoning from accumulated content
+              const parser = reasoningParserRef.current;
+              const parseResult = parser.parse(rawContent);
+              
+              // Update message with parsed content and reasoning
               setMessages((prev) =>
-                prev.map((msg) =>
-                  msg.id === targetId ? { ...msg, content: msg.content + text } : msg
-                )
+                prev.map((msg) => {
+                  if (msg.id !== targetId) return msg;
+                  
+                  const updates: Partial<Message> = {
+                    content: parseResult.response,
+                  };
+                  
+                  // Add reasoning block if present
+                  if (parseResult.reasoning) {
+                    updates.reasoning = {
+                      content: parseResult.reasoning,
+                      tokenCount: parseResult.reasoning.split(/\s+/).length,
+                      duration: 0, // Will be updated on complete
+                      complete: false,
+                    };
+                  }
+                  
+                  return { ...msg, ...updates };
+                })
               );
             },
             // onError
@@ -467,8 +495,10 @@ export function ChatProvider({
             (metrics?: ProviderMetrics) => {
               const targetId = currentAssistantMsgId;
               if (metrics && assistantMessageIdRef.current === targetId) {
-                 setMessages(prev => prev.map(msg => msg.id === targetId ? {
-                     ...msg,
+                 setMessages(prev => prev.map(msg => {
+                   if (msg.id !== targetId) return msg;
+                   
+                   const updates: Partial<Message> = {
                      metrics: {
                         promptTokens: metrics.promptEvalCount,
                         completionTokens: metrics.evalCount,
@@ -480,7 +510,19 @@ export function ChatProvider({
                         totalSeconds: Math.round((metrics.totalDuration / 1e9) * 100) / 100,
                         loadDuration: metrics.loadDuration
                      }
-                 } : msg));
+                   };
+                   
+                   // Mark reasoning as complete and calculate duration
+                   if (msg.reasoning) {
+                     updates.reasoning = {
+                       ...msg.reasoning,
+                       complete: true,
+                       duration: metrics.evalDuration > 0 ? metrics.evalDuration / 1e9 : 0,
+                     };
+                   }
+                   
+                   return { ...msg, ...updates };
+                 }));
               }
             },
             (toolCall: CoreToolCall) => {

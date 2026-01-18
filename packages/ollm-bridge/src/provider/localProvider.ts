@@ -63,7 +63,8 @@ export class LocalProvider implements ProviderAdapter {
       stream: true,
     };
 
-    const timeout = this.config.timeout || 30000;
+    // Use request-specific timeout if provided, otherwise use config timeout, default to 30s
+    const timeout = request.timeout ?? this.config.timeout ?? 30000;
     const controller = new AbortController();
     const { signal } = controller;
 

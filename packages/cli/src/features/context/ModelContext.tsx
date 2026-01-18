@@ -576,12 +576,17 @@ export function ModelProvider({
 
     const runWarmup = async (): Promise<void> => {
       try {
+        // Get model-specific timeout from profile (default: 30s, reasoning models: 120s)
+        const profile = profileManager.findProfile(currentModel);
+        const warmupTimeout = profile?.warmup_timeout ?? 30000;
+
         const stream = provider.chatStream({
           model: currentModel,
           messages: [
             { role: 'user', parts: [{ type: 'text' as const, text: 'warmup' }] },
           ],
           abortSignal: controller.signal,
+          timeout: warmupTimeout,
         });
 
         for await (const event of stream) {

@@ -69,6 +69,7 @@ export interface ProviderRequest {
   toolChoice?: 'auto' | 'none' | { name: string };
   options?: GenerationOptions;
   abortSignal?: AbortSignal;
+  timeout?: number; // Request-specific timeout in milliseconds
 }
 
 /**

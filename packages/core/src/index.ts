@@ -116,6 +116,7 @@ export {
   ProjectProfileService,
   createGPUMonitor,
   DefaultGPUMonitor,
+  ReasoningParser,
 } from './services/index.js';
 
 // Context Management System
@@ -188,6 +189,9 @@ export type {
   Disposable,
   SanitizationConfig,
   ServicesConfig,
+  ReasoningBlock,
+  ParserState,
+  ParseResult,
 } from './services/index.js';
 
 // Commands

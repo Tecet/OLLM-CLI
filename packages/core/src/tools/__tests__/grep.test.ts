@@ -24,7 +24,7 @@ class FileTestFixture {
   async cleanup(): Promise<void> {
     try {
       await fs.rm(this.tempDir, { recursive: true, force: true });
-    } catch (error) {
+    } catch (_error) {
       // Ignore cleanup errors
     }
     this.createdFiles = [];

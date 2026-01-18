@@ -63,8 +63,9 @@
         "Math",
         "Logic"
       ],
-      "tool_support": true,
+      "tool_support": false,
       "reasoning_buffer": "Variable",
+      "warmup_timeout": 120000,
       "ollama_url": "https://ollama.com/library/deepseek-r1",
       "context_window": 131072,
       "context_profiles": [
@@ -113,7 +114,7 @@
         "Coding",
         "Mobile Optimized"
       ],
-      "tool_support": true,
+      "tool_support": false,
       "ollama_url": "https://ollama.com/library/phi3",
       "context_window": 131072,
       "context_profiles": [
@@ -260,8 +261,9 @@
         "Math",
         "Efficiency"
       ],
-      "tool_support": true,
+      "tool_support": false,
       "reasoning_buffer": "Variable",
+      "warmup_timeout": 120000,
       "ollama_url": "https://ollama.com/library/deepseek-r1",
       "context_window": 131072,
       "context_profiles": [
@@ -456,8 +458,9 @@
         "Coding",
         "Math"
       ],
-      "tool_support": true,
+      "tool_support": false,
       "reasoning_buffer": "Variable",
+      "warmup_timeout": 120000,
       "ollama_url": "https://ollama.com/library/deepseek-r1",
       "context_window": 131072,
       "context_profiles": [
