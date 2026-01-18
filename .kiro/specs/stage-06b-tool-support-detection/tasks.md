@@ -1,8 +1,9 @@
 # Tool Support Detection - Implementation Tasks
 
 **Feature:** Robust tool support detection and filtering for model hot-swapping  
-**Status:** Ready for Implementation  
-**Created:** 2026-01-17
+**Status:** ✅ COMPLETE  
+**Created:** 2026-01-17  
+**Completed:** 2026-01-18
 
 ## Task List
 
@@ -112,86 +113,86 @@
   - [x] 17.3 Format auto-detect progress messages
 
 ### Phase 7: Testing & Validation
-- [ ] 18. Core unit tests
-  - [ ] 18.1 Test modelSupportsTools() with various scenarios
-  - [ ] 18.2 Test override precedence logic
-  - [ ] 18.3 Test saveToolSupport() persistence
-  - [ ] 18.4 Test system prompt modification
+- [x] 18. Core unit tests
+  - [x] 18.1 Test modelSupportsTools() with various scenarios
+  - [x] 18.2 Test override precedence logic
+  - [x] 18.3 Test saveToolSupport() persistence
+  - [x] 18.4 Test system prompt modification
 
-- [ ] 19. Property-based tests (critical correctness properties)
-  - [ ] 19.1 Property: Tools never sent to non-supporting models
+- [x] 19. Property-based tests (critical correctness properties)
+  - [x] 19.1 Property: Tools never sent to non-supporting models
     - **Validates: Core safety requirement**
-  - [ ] 19.2 Property: Unknown models always prompt or use safe default
+  - [x] 19.2 Property: Unknown models always prompt or use safe default
     - **Validates: Safe defaults requirement**
-  - [ ] 19.3 Property: Metadata persistence is consistent
+  - [x] 19.3 Property: Metadata persistence is consistent
     - **Validates: Data integrity requirement**
-  - [ ] 19.4 Property: Override precedence is correct
+  - [x] 19.4 Property: Override precedence is correct
     - **Validates: Configuration precedence requirement**
 
-- [ ] 20. Checkpoint - Run focused tests after Phase 6 completion
+- [x] 20. Checkpoint - Run focused tests after Phase 6 completion
   - Run unit tests for Phases 1-6
   - Run property-based tests
   - Fix any failures before proceeding to Phase 8
 
 ### Phase 8: Interactive Tools Panel (UI)
-- [ ] 21. Tool configuration data layer
-  - [ ] 21.1 Create default tool registry in `packages/cli/src/config/toolsConfig.ts`
-  - [ ] 21.2 Define all 15 tools with metadata (id, displayName, category, description, docLink, risk)
-  - [ ] 21.3 Add `tools` field to settings.json schema (map of toolId -> enabled boolean)
-  - [ ] 21.4 Implement getToolState(toolId) in SettingsService (default: true)
-  - [ ] 21.5 Implement setToolState(toolId, enabled) in SettingsService
+- [x] 21. Tool configuration data layer
+  - [x] 21.1 Create default tool registry in `packages/cli/src/config/toolsConfig.ts`
+  - [x] 21.2 Define all 15 tools with metadata (id, displayName, category, description, docLink, risk)
+  - [x] 21.3 Add `tools` field to settings.json schema (map of toolId -> enabled boolean)
+  - [x] 21.4 Implement getToolState(toolId) in SettingsService (default: true)
+  - [x] 21.5 Implement setToolState(toolId, enabled) in SettingsService
 
-- [ ] 22. Tool filtering integration
-  - [ ] 22.1 Update ToolRegistry.getFunctionSchemas() to filter by enabled state
-  - [ ] 22.2 Two-stage filtering: (1) model capability check, (2) user preference check
-  - [ ] 22.3 Add getEnabledTools() helper function
-  - [ ] 22.4 Ensure disabled tools are never exposed to LLM
+- [x] 22. Tool filtering integration
+  - [x] 22.1 Update ToolRegistry.getFunctionSchemas() to filter by enabled state
+  - [x] 22.2 Two-stage filtering: (1) model capability check, (2) user preference check
+  - [x] 22.3 Add getEnabledTools() helper function
+  - [x] 22.4 Ensure disabled tools are never exposed to LLM
 
-- [ ] 23. ToolsPanel UI components
-  - [ ] 23.1 Create `packages/cli/src/ui/components/tools/ToolsPanel.tsx`
-  - [ ] 23.2 Create `packages/cli/src/ui/components/tools/CategorySection.tsx`
-  - [ ] 23.3 Create `packages/cli/src/ui/components/tools/ToolItem.tsx`
-  - [ ] 23.4 Create `packages/cli/src/ui/components/tools/ToolToggle.tsx`
-  - [ ] 23.5 Implement windowed rendering for scrolling (like menu system)
+- [x] 23. ToolsPanel UI components
+  - [x] 23.1 Create `packages/cli/src/ui/components/tools/ToolsPanel.tsx`
+  - [x] 23.2 Create `packages/cli/src/ui/components/tools/CategorySection.tsx`
+  - [x] 23.3 Create `packages/cli/src/ui/components/tools/ToolItem.tsx`
+  - [x] 23.4 Create `packages/cli/src/ui/components/tools/ToolToggle.tsx`
+  - [x] 23.5 Implement windowed rendering for scrolling (like menu system)
 
-- [ ] 24. Tools Panel navigation
-  - [ ] 24.1 Add 'tools-panel' to FocusableId in FocusContext
-  - [ ] 24.2 Register keyboard shortcuts: up/down (navigate), left/right/enter (toggle)
-  - [ ] 24.3 Implement focus state handling and visual indicators
-  - [ ] 24.4 Add help footer showing keyboard shortcuts
+- [x] 24. Tools Panel navigation
+  - [x] 24.1 Add 'tools-panel' to FocusableId in FocusContext
+  - [x] 24.2 Register keyboard shortcuts: up/down (navigate), left/right/enter (toggle)
+  - [x] 24.3 Implement focus state handling and visual indicators
+  - [x] 24.4 Add help footer showing keyboard shortcuts
 
-- [ ] 25. ToolsTab integration
-  - [ ] 25.1 Replace ToolsTab content with ToolsPanel component
-  - [ ] 25.2 Show tool count and enabled/disabled status
-  - [ ] 25.3 Display categories: File Operations, File Discovery, Shell, Web, Memory, Context
-  - [ ] 25.4 Show "Model doesn't support tools" message when applicable
+- [x] 25. ToolsTab integration
+  - [x] 25.1 Replace ToolsTab content with ToolsPanel component
+  - [x] 25.2 Show tool count and enabled/disabled status
+  - [x] 25.3 Display categories: File Operations, File Discovery, Shell, Web, Memory, Context
+  - [x] 25.4 Show "Model doesn't support tools" message when applicable
 
-- [ ] 26. Checkpoint - Run full test suite after Tools Panel completion
+- [x] 26. Checkpoint - Run full test suite after Tools Panel completion
   - Run all unit tests
   - Run all property-based tests
   - Run integration tests for Tools Panel
   - Verify UI rendering and navigation
 
 ### Phase 9: Documentation & Cleanup
-- [ ] 27. Update documentation
-  - [ ] 27.1 Update model database docs with new fields
-  - [ ] 27.2 Add user guide for unknown model handling
-  - [ ] 27.3 Document auto-detect behavior
-  - [ ] 27.4 Add Tools Panel user guide
-  - [ ] 27.5 Document tool enable/disable persistence
-  - [ ] 27.6 Add troubleshooting section
+- [x] 27. Update documentation
+  - [x] 27.1 Update model database docs with new fields
+  - [x] 27.2 Add user guide for unknown model handling
+  - [x] 27.3 Document auto-detect behavior
+  - [x] 27.4 Add Tools Panel user guide
+  - [x] 27.5 Document tool enable/disable persistence
+  - [x] 27.6 Add troubleshooting section
 
-- [ ] 28. Code cleanup
-  - [ ] 28.1 Remove debug logging
-  - [ ] 28.2 Add JSDoc comments to new functions
-  - [ ] 28.3 Ensure TypeScript strict mode compliance
-  - [ ] 28.4 Run linter and fix warnings
+- [x] 28. Code cleanup
+  - [x] 28.1 Remove debug logging
+  - [x] 28.2 Add JSDoc comments to new functions
+  - [x] 28.3 Ensure TypeScript strict mode compliance
+  - [x] 28.4 Run linter and fix warnings
 
-- [ ] 29. Final validation checkpoint
-  - [ ] 29.1 Run complete test suite
-  - [ ] 29.2 Verify all success criteria met
-  - [ ] 29.3 Update bugtracker with resolution
-  - [ ] 29.4 Mark feature as complete
+- [x] 29. Final validation checkpoint
+  - [x] 29.1 Run complete test suite
+  - [x] 29.2 Verify all success criteria met
+  - [x] 29.3 Update bugtracker with resolution
+  - [x] 29.4 Mark feature as complete
 
 ## Task Dependencies
 

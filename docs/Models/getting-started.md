@@ -189,6 +189,82 @@ Keep frequently-used models in memory for faster responses:
 - Reduces latency for subsequent requests
 - Useful for interactive sessions
 
+### Unknown Model Handling
+
+When you switch to a model that isn't in the system's database, OLLM CLI will prompt you to configure its tool support:
+
+```bash
+/model use custom-model:latest
+```
+
+**Prompt:**
+```
+Unknown model detected: custom-model:latest
+Does this model support function calling (tools)?
+  [y] Yes, it supports tools
+  [n] No, it doesn't support tools
+  [a] Auto-detect (test with a sample request)
+```
+
+**Options:**
+
+1. **Yes (y)**: Manually confirm the model supports tools
+   - Tools will be enabled for this model
+   - Choice is saved to `~/.ollm/user_models.json`
+
+2. **No (n)**: Manually confirm the model doesn't support tools
+   - Tools will be disabled for this model
+   - Choice is saved to `~/.ollm/user_models.json`
+
+3. **Auto-detect (a)**: Let the system test the model
+   - Sends a test request with a minimal tool schema
+   - Detects whether the model accepts or rejects tools
+   - Takes ~5 seconds with timeout
+   - Result is saved automatically
+
+**Timeout:** If you don't respond within 30 seconds, the system defaults to tools disabled (safe default).
+
+**Why this matters:**
+- Sending tools to models that don't support them causes errors
+- Proper configuration ensures smooth operation
+- Your choice is remembered for future sessions
+
+### Auto-Detect Details
+
+When you choose auto-detect, here's what happens:
+
+**Process:**
+1. System sends a test request to the model with a minimal tool schema
+2. Monitors the response for tool-related errors
+3. Times out after 5 seconds if no response
+4. Saves the result to `~/.ollm/user_models.json`
+
+**Success indicators:**
+- Model accepts the request without tool-related errors
+- Tool support is enabled and saved
+
+**Failure indicators:**
+- Model returns errors like "unknown field: tools"
+- Model returns 400 status with tool-related error messages
+- Tool support is disabled and saved
+
+**Fallback:**
+- If auto-detect fails or times out, tools are disabled (safe default)
+- You can manually update the setting later
+
+**System messages:**
+```
+Auto-detecting tool support for custom-model:latest...
+Tool support detected: Enabled
+```
+
+or
+
+```
+Auto-detecting tool support for custom-model:latest...
+Tool support detected: Disabled
+```
+
 ---
 
 ## Using Model Routing
@@ -487,6 +563,101 @@ options:
 **Documentation Profile:**
 - Writing-optimized model
 - Creative routing profile
+
+---
+
+## Managing Tools
+
+### What are Tools?
+
+Tools are functions that the LLM can call to perform actions like reading files, executing shell commands, searching the web, and more. OLLM CLI provides 15 built-in tools organized into 6 categories.
+
+### Tools Panel
+
+Access the Tools Panel to enable or disable individual tools:
+
+**Navigation:**
+- Switch to the Tools tab in the UI
+- Use keyboard shortcuts to navigate:
+  - `↑/↓`: Navigate between tools
+  - `←/→/Enter`: Toggle tool on/off
+  - `Tab`: Switch between tabs
+
+**Tool Categories:**
+
+1. **File Operations** (4 tools)
+   - `fsWrite`: Create or overwrite files
+   - `fsAppend`: Append content to files
+   - `strReplace`: Replace text in files
+   - `deleteFile`: Delete files
+
+2. **File Discovery** (5 tools)
+   - `readFile`: Read file contents
+   - `readMultipleFiles`: Read multiple files at once
+   - `listDirectory`: List directory contents
+   - `fileSearch`: Search for files by name
+   - `grepSearch`: Search file contents with regex
+
+3. **Shell** (4 tools)
+   - `executePwsh`: Execute shell commands
+   - `controlPwshProcess`: Manage background processes
+   - `listProcesses`: List running processes
+   - `getProcessOutput`: Read process output
+
+4. **Web** (2 tools)
+   - `remote_web_search`: Search the web
+   - `webFetch`: Fetch content from URLs
+
+5. **Memory** (1 tool)
+   - `userInput`: Get input from the user
+
+6. **Context** (4 tools)
+   - `prework`: Acceptance criteria testing prework
+   - `taskStatus`: Update task status
+   - `updatePBTStatus`: Update property-based test status
+   - `invokeSubAgent`: Delegate to specialized agents
+
+### Enabling/Disabling Tools
+
+**Why disable tools?**
+- Reduce the number of tools sent to the LLM (improves focus)
+- Prevent certain actions (e.g., disable shell execution for safety)
+- Customize tool availability per project
+
+**How to disable:**
+1. Navigate to the Tools tab
+2. Use arrow keys to select a tool
+3. Press Enter or Left/Right to toggle
+
+**Visual indicators:**
+- `[✓]` Tool is enabled
+- `[ ]` Tool is disabled
+
+**Persistence:**
+- Tool settings are saved to `~/.ollm/settings.json`
+- Settings persist across sessions
+- Workspace-specific settings can override user settings
+
+### Tool Filtering
+
+Tools are filtered in two stages:
+
+1. **Model Capability Check**: If the current model doesn't support function calling, all tools are automatically disabled
+2. **User Preference Check**: Even if the model supports tools, you can disable specific tools via the Tools Panel
+
+**System message when tools are disabled:**
+```
+Switched to gemma3:1b. Tools: Disabled
+```
+
+### Model Tool Support
+
+Some models don't support function calling. When you switch to such a model:
+
+- Tools are automatically disabled
+- System prompt includes a note: "This model does not support function calling"
+- Tools Panel shows: "Model doesn't support tools"
+- You can still view and configure tool preferences for when you switch back to a tool-capable model
 
 ---
 

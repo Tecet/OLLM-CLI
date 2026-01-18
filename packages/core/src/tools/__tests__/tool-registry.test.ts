@@ -516,6 +516,204 @@ describe('Tool Registry', () => {
     });
   });
 
+  describe('Tool Filtering with ToolStateProvider', () => {
+    it('should filter tools based on ToolStateProvider in getFunctionSchemas', () => {
+      // Feature: stage-06b-tool-support-detection, Task 22.1, 22.2
+      fc.assert(
+        fc.property(
+          fc.array(
+            fc
+              .string({ minLength: 1, maxLength: 50 })
+              .filter((s) => s.trim().length > 0),
+            { minLength: 2, maxLength: 10 }
+          ),
+          (toolNames) => {
+            const uniqueNames = Array.from(new Set(toolNames));
+            if (uniqueNames.length < 2) return true;
+
+            // Create a mock ToolStateProvider that disables the first tool
+            const disabledTool = uniqueNames[0];
+            const mockProvider = {
+              getToolState: (toolId: string) => toolId !== disabledTool,
+            };
+
+            const registry = new ToolRegistry(mockProvider);
+
+            // Register all tools
+            uniqueNames.forEach((name) => {
+              registry.register(createMockTool(name));
+            });
+
+            // Get schemas - should exclude disabled tool
+            const schemas = registry.getFunctionSchemas();
+
+            // Should have one less schema than registered tools
+            expect(schemas).toHaveLength(uniqueNames.length - 1);
+
+            // Disabled tool should not be in schemas
+            const schemaNames = schemas.map((s) => s.name);
+            expect(schemaNames).not.toContain(disabledTool);
+
+            // All other tools should be present
+            uniqueNames
+              .filter((name) => name !== disabledTool)
+              .forEach((name) => {
+                expect(schemaNames).toContain(name);
+              });
+
+            return true;
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
+
+    it('should filter tools based on ToolStateProvider in getEnabledTools', () => {
+      // Feature: stage-06b-tool-support-detection, Task 22.3
+      fc.assert(
+        fc.property(
+          fc.array(
+            fc
+              .string({ minLength: 1, maxLength: 50 })
+              .filter((s) => s.trim().length > 0),
+            { minLength: 2, maxLength: 10 }
+          ),
+          (toolNames) => {
+            const uniqueNames = Array.from(new Set(toolNames));
+            if (uniqueNames.length < 2) return true;
+
+            // Create a mock ToolStateProvider that disables the first tool
+            const disabledTool = uniqueNames[0];
+            const mockProvider = {
+              getToolState: (toolId: string) => toolId !== disabledTool,
+            };
+
+            const registry = new ToolRegistry(mockProvider);
+
+            // Register all tools
+            uniqueNames.forEach((name) => {
+              registry.register(createMockTool(name));
+            });
+
+            // Get enabled tools - should exclude disabled tool
+            const enabledTools = registry.getEnabledTools();
+
+            // Should have one less tool than registered
+            expect(enabledTools).toHaveLength(uniqueNames.length - 1);
+
+            // Disabled tool should not be in enabled tools
+            const enabledNames = enabledTools.map((t) => t.name);
+            expect(enabledNames).not.toContain(disabledTool);
+
+            // All other tools should be present
+            uniqueNames
+              .filter((name) => name !== disabledTool)
+              .forEach((name) => {
+                expect(enabledNames).toContain(name);
+              });
+
+            return true;
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
+
+    it('should include all tools when no ToolStateProvider is provided', () => {
+      // Feature: stage-06b-tool-support-detection, Task 22.4
+      fc.assert(
+        fc.property(
+          fc.array(
+            fc
+              .string({ minLength: 1, maxLength: 50 })
+              .filter((s) => s.trim().length > 0),
+            { minLength: 1, maxLength: 10 }
+          ),
+          (toolNames) => {
+            const uniqueNames = Array.from(new Set(toolNames));
+
+            // Create registry without ToolStateProvider
+            const registry = new ToolRegistry();
+
+            // Register all tools
+            uniqueNames.forEach((name) => {
+              registry.register(createMockTool(name));
+            });
+
+            // Get schemas - should include all tools
+            const schemas = registry.getFunctionSchemas();
+            expect(schemas).toHaveLength(uniqueNames.length);
+
+            // Get enabled tools - should include all tools
+            const enabledTools = registry.getEnabledTools();
+            expect(enabledTools).toHaveLength(uniqueNames.length);
+
+            return true;
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
+
+    it('should never expose disabled tools to LLM', () => {
+      // Feature: stage-06b-tool-support-detection, Task 22.4
+      // This property ensures disabled tools are NEVER in the schemas sent to LLM
+      fc.assert(
+        fc.property(
+          fc.array(
+            fc
+              .string({ minLength: 1, maxLength: 50 })
+              .filter((s) => s.trim().length > 0),
+            { minLength: 1, maxLength: 10 }
+          ),
+          fc.array(fc.boolean(), { minLength: 1, maxLength: 10 }),
+          (toolNames, enabledStates) => {
+            const uniqueNames = Array.from(new Set(toolNames));
+            if (uniqueNames.length === 0) return true;
+
+            // Create state map
+            const stateMap = new Map<string, boolean>();
+            uniqueNames.forEach((name, idx) => {
+              stateMap.set(
+                name,
+                enabledStates[idx % enabledStates.length] ?? true
+              );
+            });
+
+            // Create mock provider
+            const mockProvider = {
+              getToolState: (toolId: string) => stateMap.get(toolId) ?? true,
+            };
+
+            const registry = new ToolRegistry(mockProvider);
+
+            // Register all tools
+            uniqueNames.forEach((name) => {
+              registry.register(createMockTool(name));
+            });
+
+            // Get schemas
+            const schemas = registry.getFunctionSchemas();
+            const schemaNames = new Set(schemas.map((s) => s.name));
+
+            // CRITICAL: Verify no disabled tools are in schemas
+            uniqueNames.forEach((name) => {
+              const isEnabled = stateMap.get(name) ?? true;
+              if (!isEnabled) {
+                expect(schemaNames.has(name)).toBe(false);
+              } else {
+                expect(schemaNames.has(name)).toBe(true);
+              }
+            });
+
+            return true;
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
+  });
+
   describe('createInvocation', () => {
     it('should create a valid invocation for valid parameters', () => {
       const registry = new ToolRegistry();

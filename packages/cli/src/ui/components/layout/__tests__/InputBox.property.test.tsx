@@ -15,7 +15,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render } from 'ink-testing-library';
 import * as fc from 'fast-check';
 import { InputBox } from '../InputBox.js';
-import { mockTheme, getTextContent, stripAnsi } from '../../__tests__/testUtils.js';
+import { mockTheme, getTextContent } from '../../__tests__/testUtils.js';
 
 describe('InputBox Property Tests', () => {
   const defaultTheme = mockTheme;

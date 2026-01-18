@@ -305,6 +305,80 @@ This guide covers common issues you might encounter when using OLLM CLI and thei
 
 ## Tool Execution Issues
 
+### Tool support errors
+
+**Symptoms:**
+- Error message: `unknown field: tools`
+- Error message: `400 Bad Request` when using tools
+- Model returns errors about function calling
+- Tools don't work with certain models
+
+**Causes:**
+- Model doesn't support function calling
+- Tool support metadata is incorrect
+- Model was updated and capabilities changed
+- Custom/unknown model without proper configuration
+
+**Solutions:**
+
+1. **Check model tool support:**
+   ```bash
+   /model info model-name
+   ```
+   Look for "Tool calling" in capabilities.
+
+2. **For unknown models, configure tool support:**
+   When switching to an unknown model, you'll be prompted:
+   ```
+   Does this model support function calling (tools)?
+     [y] Yes, it supports tools
+     [n] No, it doesn't support tools
+     [a] Auto-detect (test with a sample request)
+   ```
+   Choose the appropriate option.
+
+3. **Manually update tool support in user_models.json:**
+   ```json
+   {
+     "user_models": [
+       {
+         "id": "custom-model:latest",
+         "tool_support": false,
+         "tool_support_source": "user_confirmed",
+         "tool_support_confirmed_at": "2026-01-17T10:00:00Z"
+       }
+     ]
+   }
+   ```
+
+4. **Use auto-detect for uncertain models:**
+   - Select "auto-detect" when prompted
+   - System will test the model with a sample tool request
+   - Result is saved automatically
+
+5. **Runtime learning:**
+   If tool errors occur during usage, you'll be prompted:
+   ```
+   This model appears to not support tools. Update metadata? (y/n)
+   ```
+   Confirm to save the updated metadata.
+
+6. **Check system messages:**
+   When switching models, look for:
+   ```
+   Switched to model-name. Tools: Enabled/Disabled
+   ```
+
+7. **Verify tool filtering:**
+   - Tools are automatically disabled for non-supporting models
+   - Check the Tools Panel to see current tool status
+   - System prompt includes note when tools are disabled
+
+**Prevention:**
+- Use models from the shipped profiles (LLM_profiles.json)
+- Confirm tool support when adding custom models
+- Keep user_models.json up to date with `/model list`
+
 ### Shell command timeout
 
 **Symptoms:**
@@ -413,6 +487,86 @@ This guide covers common issues you might encounter when using OLLM CLI and thei
    cd /path/to/workspace
    ollm
    ```
+
+### Tools Panel issues
+
+**Symptoms:**
+- Tool settings don't persist across sessions
+- Disabled tools still appear to be called
+- Tools Panel shows incorrect state
+- Cannot toggle tools on/off
+
+**Causes:**
+- Settings file is corrupted or has wrong permissions
+- Workspace settings override user settings
+- Model doesn't support tools (all tools disabled)
+- Cache not refreshed after settings change
+
+**Solutions:**
+
+1. **Check settings file location:**
+   ```bash
+   # User settings
+   cat ~/.ollm/settings.json
+   
+   # Workspace settings (overrides user)
+   cat .ollm/settings.json
+   ```
+
+2. **Verify settings file format:**
+   ```json
+   {
+     "tools": {
+       "executePwsh": false,
+       "remote_web_search": true,
+       "fsWrite": true
+     }
+   }
+   ```
+
+3. **Fix file permissions:**
+   ```bash
+   # macOS/Linux
+   chmod 644 ~/.ollm/settings.json
+   
+   # Windows
+   # Check file properties and ensure you have write access
+   ```
+
+4. **Reset to defaults:**
+   ```bash
+   # Backup current settings
+   cp ~/.ollm/settings.json ~/.ollm/settings.json.backup
+   
+   # Remove settings file to reset
+   rm ~/.ollm/settings.json
+   
+   # Restart OLLM CLI - new settings file will be created
+   ```
+
+5. **Check model tool support:**
+   - If model doesn't support tools, all tools are disabled
+   - Switch to a tool-capable model to enable tools
+   - Check system message: "Switched to model. Tools: Enabled/Disabled"
+
+6. **Verify workspace overrides:**
+   ```bash
+   # Check if workspace has tool settings
+   cat .ollm/settings.json
+   
+   # Remove workspace settings to use user settings
+   rm .ollm/settings.json
+   ```
+
+7. **Debug tool filtering:**
+   - Enable debug mode: `ollm --debug`
+   - Check logs for tool filtering messages
+   - Verify two-stage filtering: model capability + user preference
+
+**Prevention:**
+- Don't manually edit settings.json (use Tools Panel)
+- Keep backups of working configurations
+- Use version control for workspace settings
 
 ---
 

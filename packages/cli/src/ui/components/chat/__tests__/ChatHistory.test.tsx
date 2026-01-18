@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { render } from 'ink-testing-library';
 import { ChatHistory } from '../ChatHistory.js';
 import { Message } from '../../../../features/context/ChatContext.js';

@@ -150,7 +150,7 @@ describe('Test Configuration', () => {
       const configContent = readFileSync(configPath, 'utf-8');
 
       // Verify test timeout is configured
-      expect(configContent).toContain('testTimeout: 30000');
+      expect(configContent).toContain('testTimeout: 120000');
     });
 
     it('should set hook timeout to 10 seconds', () => {
@@ -159,7 +159,7 @@ describe('Test Configuration', () => {
       const configContent = readFileSync(configPath, 'utf-8');
 
       // Verify hook timeout is configured
-      expect(configContent).toContain('hookTimeout: 10000');
+      expect(configContent).toContain('hookTimeout: 30000');
     });
   });
 

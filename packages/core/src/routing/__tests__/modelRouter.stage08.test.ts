@@ -6,7 +6,7 @@
  * and capability-based filtering.
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
 import { ModelRouter, ModelInfo, ModelRouterConfig } from '../modelRouter.js';
 import { ModelDatabase, ModelEntry, ModelCapabilities } from '../modelDatabase.js';

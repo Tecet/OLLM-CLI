@@ -194,7 +194,7 @@ describe('ChatContext - Conditional Tool Registry Creation', () => {
 
   describe('Edge cases', () => {
     it('should handle undefined toolRegistry gracefully', () => {
-      let toolRegistry: any = undefined;
+      const toolRegistry: any = undefined;
 
       // Should not throw when accessing undefined registry
       expect(() => {

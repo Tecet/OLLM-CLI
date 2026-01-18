@@ -7,6 +7,10 @@
 
 /**
  * Format a tool support status message for display
+ * @param modelName - The name of the model
+ * @param toolSupport - Whether the model supports tools
+ * @param source - The source of the tool support information
+ * @returns Formatted status message with emoji and source label
  */
 export function formatToolSupportStatus(
   modelName: string,
@@ -26,6 +30,9 @@ export function formatToolSupportStatus(
 
 /**
  * Format an auto-detect progress message
+ * @param modelName - The name of the model being tested
+ * @param stage - The current stage of auto-detection
+ * @returns Formatted progress message with appropriate emoji
  */
 export function formatAutoDetectProgress(modelName: string, stage: 'starting' | 'testing' | 'success' | 'failure'): string {
   const messages = {
@@ -40,6 +47,9 @@ export function formatAutoDetectProgress(modelName: string, stage: 'starting' | 
 
 /**
  * Format a tool error detection message
+ * @param modelName - The name of the model that encountered an error
+ * @param errorMessage - The error message from the provider
+ * @returns Formatted error message
  */
 export function formatToolErrorDetected(modelName: string, errorMessage: string): string {
   return `⚠️ Tool error detected for "${modelName}": ${errorMessage}`;
@@ -47,6 +57,9 @@ export function formatToolErrorDetected(modelName: string, errorMessage: string)
 
 /**
  * Format a metadata save confirmation message
+ * @param modelName - The name of the model
+ * @param toolSupport - Whether tool support is enabled
+ * @returns Formatted confirmation message
  */
 export function formatMetadataSaved(modelName: string, toolSupport: boolean): string {
   const status = toolSupport ? 'enabled' : 'disabled';
@@ -55,6 +68,9 @@ export function formatMetadataSaved(modelName: string, toolSupport: boolean): st
 
 /**
  * Format a session-only override message
+ * @param modelName - The name of the model
+ * @param toolSupport - Whether tool support is enabled
+ * @returns Formatted session-only message
  */
 export function formatSessionOnlyOverride(modelName: string, toolSupport: boolean): string {
   const status = toolSupport ? 'enabled' : 'disabled';
@@ -63,6 +79,8 @@ export function formatSessionOnlyOverride(modelName: string, toolSupport: boolea
 
 /**
  * Format an unknown model prompt message
+ * @param modelName - The name of the unknown model
+ * @returns Formatted prompt message
  */
 export function formatUnknownModelPrompt(modelName: string): string {
   return `❓ Unknown model "${modelName}" - tool support status unclear`;
@@ -70,6 +88,11 @@ export function formatUnknownModelPrompt(modelName: string): string {
 
 /**
  * Format a model switch notification with tool support info
+ * @param fromModel - The previous model name
+ * @param toModel - The new model name
+ * @param toolSupportChanged - Whether tool support status changed
+ * @param newToolSupport - The new tool support status
+ * @returns Formatted model switch notification
  */
 export function formatModelSwitchNotification(
   fromModel: string,
@@ -89,6 +112,9 @@ export function formatModelSwitchNotification(
 
 /**
  * Format a timeout warning message
+ * @param modelName - The name of the model
+ * @param defaultChoice - The default choice applied
+ * @returns Formatted timeout warning
  */
 export function formatTimeoutWarning(modelName: string, defaultChoice: boolean): string {
   const status = defaultChoice ? 'disabled' : 'enabled';
@@ -97,6 +123,9 @@ export function formatTimeoutWarning(modelName: string, defaultChoice: boolean):
 
 /**
  * Format a user confirmation request message
+ * @param modelName - The name of the model
+ * @param action - The action being requested ('save' or 'detect')
+ * @returns Formatted confirmation request
  */
 export function formatUserConfirmationRequest(modelName: string, action: 'save' | 'detect'): string {
   if (action === 'save') {
@@ -109,6 +138,7 @@ export function formatUserConfirmationRequest(modelName: string, action: 'save' 
 /**
  * Add a system message to the chat
  * This is a helper that uses the global callback registered by ChatContext
+ * @param message - The system message to add
  */
 export function addSystemMessage(message: string): void {
   if (globalThis.__ollmAddSystemMessage) {
@@ -121,6 +151,9 @@ export function addSystemMessage(message: string): void {
 
 /**
  * Add a tool support status message to the chat
+ * @param modelName - The name of the model
+ * @param toolSupport - Whether the model supports tools
+ * @param source - The source of the tool support information
  */
 export function addToolSupportStatusMessage(
   modelName: string,
@@ -133,6 +166,8 @@ export function addToolSupportStatusMessage(
 
 /**
  * Add an auto-detect progress message to the chat
+ * @param modelName - The name of the model being tested
+ * @param stage - The current stage of auto-detection
  */
 export function addAutoDetectProgressMessage(
   modelName: string,
@@ -144,6 +179,8 @@ export function addAutoDetectProgressMessage(
 
 /**
  * Add a tool error detection message to the chat
+ * @param modelName - The name of the model that encountered an error
+ * @param errorMessage - The error message from the provider
  */
 export function addToolErrorMessage(modelName: string, errorMessage: string): void {
   const message = formatToolErrorDetected(modelName, errorMessage);
@@ -152,6 +189,8 @@ export function addToolErrorMessage(modelName: string, errorMessage: string): vo
 
 /**
  * Add a metadata saved confirmation message to the chat
+ * @param modelName - The name of the model
+ * @param toolSupport - Whether tool support is enabled
  */
 export function addMetadataSavedMessage(modelName: string, toolSupport: boolean): void {
   const message = formatMetadataSaved(modelName, toolSupport);
@@ -160,6 +199,8 @@ export function addMetadataSavedMessage(modelName: string, toolSupport: boolean)
 
 /**
  * Add a session-only override message to the chat
+ * @param modelName - The name of the model
+ * @param toolSupport - Whether tool support is enabled
  */
 export function addSessionOnlyMessage(modelName: string, toolSupport: boolean): void {
   const message = formatSessionOnlyOverride(modelName, toolSupport);
@@ -168,6 +209,10 @@ export function addSessionOnlyMessage(modelName: string, toolSupport: boolean): 
 
 /**
  * Add a model switch notification to the chat
+ * @param fromModel - The previous model name
+ * @param toModel - The new model name
+ * @param toolSupportChanged - Whether tool support status changed
+ * @param newToolSupport - The new tool support status
  */
 export function addModelSwitchMessage(
   fromModel: string,

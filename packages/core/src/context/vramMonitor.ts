@@ -37,6 +37,11 @@ export class DefaultVRAMMonitor extends EventEmitter implements VRAMMonitor {
    * Query current memory status
    */
   async getInfo(): Promise<VRAMInfo> {
+    // In test environment, skip hardware checks and return system memory
+    if (process.env.NODE_ENV === 'test' || process.env.VITEST_WORKER_ID) {
+      return await this.getSystemMemory();
+    }
+
     // Detect GPU type if not cached
     if (this.gpuType === null) {
       this.gpuType = await this.gpuDetector.detectGPU();

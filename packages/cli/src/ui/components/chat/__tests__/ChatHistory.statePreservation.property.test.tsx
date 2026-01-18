@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { render, stripAnsi } from '../../../../test/ink-testing.js';
+import { render } from '../../../../test/ink-testing.js';
 import React from 'react';
 import fc from 'fast-check';
 import { ChatHistory } from '../ChatHistory.js';

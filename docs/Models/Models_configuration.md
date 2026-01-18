@@ -183,6 +183,72 @@ models:
 - `true`: Convenient, but may download large files unexpectedly
 - `false`: Manual control, but requires explicit pull commands
 
+### Tool Configuration
+
+**Option:** `tools`  
+**Type:** Object (map of tool ID to boolean)  
+**Default:** All tools enabled  
+**Description:** Enable or disable individual tools
+
+**Example:**
+```yaml
+tools:
+  executePwsh: false        # Disable shell execution
+  controlPwshProcess: false # Disable process management
+  remote_web_search: true   # Enable web search
+  webFetch: true            # Enable web fetch
+```
+
+**Available Tools:**
+
+**File Operations:**
+- `fsWrite`: Create or overwrite files
+- `fsAppend`: Append content to files
+- `strReplace`: Replace text in files
+- `deleteFile`: Delete files
+
+**File Discovery:**
+- `readFile`: Read file contents
+- `readMultipleFiles`: Read multiple files
+- `listDirectory`: List directory contents
+- `fileSearch`: Search for files by name
+- `grepSearch`: Search file contents with regex
+
+**Shell:**
+- `executePwsh`: Execute shell commands
+- `controlPwshProcess`: Manage background processes
+- `listProcesses`: List running processes
+- `getProcessOutput`: Read process output
+
+**Web:**
+- `remote_web_search`: Search the web
+- `webFetch`: Fetch content from URLs
+
+**Memory:**
+- `userInput`: Get input from the user
+
+**Context:**
+- `prework`: Acceptance criteria testing prework
+- `taskStatus`: Update task status
+- `updatePBTStatus`: Update property-based test status
+- `invokeSubAgent`: Delegate to specialized agents
+
+**Persistence:**
+- Tool settings are saved to `~/.ollm/settings.json`
+- Settings persist across sessions
+- Workspace settings (`.ollm/settings.json`) override user settings
+
+**Tool Filtering:**
+Tools are filtered in two stages:
+1. **Model Capability**: If model doesn't support function calling, all tools are disabled
+2. **User Preference**: Disabled tools are never sent to the LLM
+
+**Use Cases:**
+- Disable shell tools for safety in untrusted environments
+- Disable web tools for offline work
+- Reduce tool count to improve LLM focus
+- Project-specific tool restrictions
+
 ---
 
 ## Model Routing

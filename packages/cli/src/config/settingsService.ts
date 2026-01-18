@@ -17,6 +17,9 @@ export interface UserSettings {
     gpuName?: string;
     totalVRAM?: number;
   };
+  tools?: {
+    [toolId: string]: boolean;
+  };
 }
 
 export class SettingsService {
@@ -35,13 +38,18 @@ export class SettingsService {
     // Default settings
     this.settings = { 
         ui: { theme: 'default' }, 
-        llm: { model: 'llama3.2:3b' } 
+        llm: { model: 'llama3.2:3b' },
+        tools: {}
     }; 
     
     this.ensureConfigExists(configDir);
     this.loadSettings();
   }
 
+  /**
+   * Get singleton instance of SettingsService
+   * @returns The SettingsService instance
+   */
   public static getInstance(): SettingsService {
     if (!SettingsService.instance) {
       SettingsService.instance = new SettingsService();
@@ -75,7 +83,8 @@ export class SettingsService {
             ...loaded,
             ui: { ...this.settings.ui, ...(loaded.ui || {}) },
             llm: { ...this.settings.llm, ...(loaded.llm || {}) },
-            hardware: loaded.hardware 
+            hardware: loaded.hardware,
+            tools: loaded.tools || {}
         };
       }
     } catch (error) {
@@ -91,36 +100,69 @@ export class SettingsService {
     }
   }
 
+  /**
+   * Get a copy of all settings
+   * @returns A deep copy of the current settings
+   */
   public getSettings(): UserSettings {
     return JSON.parse(JSON.stringify(this.settings));
   }
 
+  /**
+   * Set the UI theme
+   * @param theme - The theme name to set
+   */
   public setTheme(theme: string): void {
     this.settings.ui.theme = theme;
     this.saveSettings();
   }
 
+  /**
+   * Get the current UI theme
+   * @returns The current theme name
+   */
   public getTheme(): string {
     return this.settings.ui.theme;
   }
 
+  /**
+   * Set the default LLM model
+   * @param model - The model ID to set as default
+   */
   public setModel(model: string): void {
     this.settings.llm.model = model;
     this.saveSettings();
   }
 
+  /**
+   * Get the default LLM model
+   * @returns The default model ID
+   */
   public getModel(): string {
     return this.settings.llm.model;
   }
 
+  /**
+   * Set the context size for the LLM
+   * @param size - The context size in tokens
+   */
   public setContextSize(size: number): void {
     this.settings.llm.contextSize = size;
     this.saveSettings();
   }
 
+  /**
+   * Get the context size for the LLM
+   * @returns The context size in tokens, or undefined if not set
+   */
   public getContextSize(): number | undefined {
     return this.settings.llm.contextSize;
   }
+
+  /**
+   * Set hardware information
+   * @param info - Hardware information to store
+   */
   public setHardwareInfo(info: { gpuCount?: number; gpuName?: string; totalVRAM?: number }): void {
     this.settings.hardware = {
       ...this.settings.hardware,
@@ -129,7 +171,39 @@ export class SettingsService {
     this.saveSettings();
   }
 
+  /**
+   * Get hardware information
+   * @returns The stored hardware information
+   */
   public getHardwareInfo(): UserSettings['hardware'] {
     return this.settings.hardware;
+  }
+
+  /**
+   * Get the enabled state of a tool
+   * 
+   * @param toolId The ID of the tool to check
+   * @returns true if enabled (default), false if disabled
+   */
+  public getToolState(toolId: string): boolean {
+    // Default to true (enabled) if not explicitly set
+    if (!this.settings.tools) {
+      return true;
+    }
+    return this.settings.tools[toolId] ?? true;
+  }
+
+  /**
+   * Set the enabled state of a tool
+   * 
+   * @param toolId The ID of the tool to configure
+   * @param enabled Whether the tool should be enabled
+   */
+  public setToolState(toolId: string, enabled: boolean): void {
+    if (!this.settings.tools) {
+      this.settings.tools = {};
+    }
+    this.settings.tools[toolId] = enabled;
+    this.saveSettings();
   }
 }

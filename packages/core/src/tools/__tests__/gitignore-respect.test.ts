@@ -26,9 +26,9 @@ class GitignoreTestFixture {
 
   async cleanup(): Promise<void> {
     try {
-      await fs.rm(this.tempDir, { recursive: true, force: true });
-    } catch (error) {
-      // Ignore cleanup errors
+      await fs.rm(testDir, { recursive: true, force: true });
+    } catch (_error) {
+      // Ignore
     }
   }
 

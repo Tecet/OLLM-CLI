@@ -9,7 +9,7 @@
 
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
-import { render, stripAnsi } from '../../../../test/ink-testing.js';
+import { render } from '../../../../test/ink-testing.js';
 import { MetricsDisplay } from '../MetricsDisplay.js';
 import type { InferenceMetrics } from '../../../../../../core/src/types/metrics.js';
 

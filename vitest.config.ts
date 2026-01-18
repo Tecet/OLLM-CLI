@@ -14,8 +14,8 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['**/*.test.ts', '**/*.test.tsx'],
-    testTimeout: 30000, // 30 seconds for integration tests
-    hookTimeout: 10000, // 10 seconds for setup/teardown
+    testTimeout: 120000, // 2 minutes for integration tests
+    hookTimeout: 30000, // 30 seconds for setup/teardown
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

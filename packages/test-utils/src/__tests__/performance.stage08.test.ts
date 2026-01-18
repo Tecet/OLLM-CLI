@@ -6,7 +6,7 @@
  * Requirements: 15.1, 15.2, 15.3, 15.4, 15.5
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
 import { measureTestTime, assertTestSpeed, delay } from '../testHelpers';
 

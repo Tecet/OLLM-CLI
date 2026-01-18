@@ -6,6 +6,7 @@ import { useModel } from './ModelContext.js';
 import { useUI } from './UIContext.js';
 import { ToolRegistry, HotSwapTool, MemoryDumpTool, PromptRegistry } from '@ollm/core';
 import type { ToolCall as CoreToolCall, ContextMessage, ProviderMetrics } from '@ollm/core';
+import { SettingsService } from '../../config/settingsService.js';
 
 declare global {
   var __ollmModelSwitchCallback: ((model: string) => void) | undefined;
@@ -355,14 +356,16 @@ export function ChatProvider({
       setWaitingForResponse(true);
       setStreaming(true);
 
-      // Check tool support BEFORE creating registry
+      // Stage 1: Check tool support (model capability check)
       const supportsTools = modelSupportsTools(currentModel);
       
       let toolRegistry: ToolRegistry | undefined;
       let toolSchemas: ToolSchema[] | undefined;
       
       if (supportsTools) {
-        toolRegistry = new ToolRegistry();
+        // Stage 2: Create registry with user preference filtering
+        const settingsService = SettingsService.getInstance();
+        toolRegistry = new ToolRegistry(settingsService);
         const promptRegistry = new PromptRegistry();
         
         const manager = contextActions.getManager();
@@ -373,7 +376,8 @@ export function ChatProvider({
             manager.emit('active-tools-updated', toolNames);
         }
         
-        toolSchemas = toolRegistry.list().map(t => t.schema);
+        // Use getFunctionSchemas() which applies user preference filtering
+        toolSchemas = toolRegistry.getFunctionSchemas();
       }
 
       // Get system prompt and add tool support note if needed

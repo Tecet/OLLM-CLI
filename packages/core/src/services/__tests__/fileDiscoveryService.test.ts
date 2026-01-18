@@ -3,7 +3,7 @@
  * Feature: services-sessions
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
 import { FileDiscoveryService } from '../fileDiscoveryService.js';
 import { promises as fs } from 'fs';

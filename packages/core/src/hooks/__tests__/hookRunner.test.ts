@@ -31,8 +31,8 @@ describe('HookRunner', () => {
     // Clean up test directory
     try {
       rmSync(testDir, { recursive: true, force: true });
-    } catch (error) {
-      // Ignore cleanup errors
+    } catch (_error) {
+      // Ignore
     }
   });
 

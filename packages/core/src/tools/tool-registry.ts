@@ -9,6 +9,14 @@ import type { DeclarativeTool, ToolSchema, ToolContext, ToolInvocation } from '.
 import { globalValidator, type ValidationError } from './validation.js';
 
 /**
+ * Interface for checking tool enabled state
+ * This allows the ToolRegistry to filter tools based on user preferences
+ */
+export interface ToolStateProvider {
+  getToolState(toolId: string): boolean;
+}
+
+/**
  * Central registry for managing tools
  * 
  * The Tool Registry stores all registered tools and provides methods to:
@@ -16,14 +24,16 @@ import { globalValidator, type ValidationError } from './validation.js';
  * - Unregister existing tools
  * - Retrieve tools by name
  * - List all registered tools
- * - Generate function schemas for LLM consumption
+ * - Generate function schemas for LLM consumption (with filtering)
  * - Validate parameters and create tool invocations
  */
 export class ToolRegistry {
   private tools: Map<string, DeclarativeTool<Record<string, unknown>, unknown>>;
+  private toolStateProvider?: ToolStateProvider;
 
-  constructor() {
+  constructor(toolStateProvider?: ToolStateProvider) {
     this.tools = new Map();
+    this.toolStateProvider = toolStateProvider;
   }
 
   /**
@@ -79,10 +89,41 @@ export class ToolRegistry {
    * for LLM consumption. The schemas are returned in the same order
    * as list() (alphabetically by name).
    * 
-   * @returns Array of tool schemas
+   * This method applies user preference filtering - only tools that are
+   * enabled in the user's settings will be included.
+   * 
+   * @returns Array of tool schemas for enabled tools only
    */
   getFunctionSchemas(): ToolSchema[] {
-    return this.list().map((tool) => tool.schema);
+    return this.list()
+      .filter((tool) => {
+        // If no tool state provider, include all tools (backward compatibility)
+        if (!this.toolStateProvider) {
+          return true;
+        }
+        // Filter based on user preference
+        return this.toolStateProvider.getToolState(tool.name);
+      })
+      .map((tool) => tool.schema);
+  }
+
+  /**
+   * Get all enabled tools
+   * 
+   * Returns only the tools that are enabled according to user preferences.
+   * If no tool state provider is configured, returns all tools.
+   * 
+   * @returns Array of enabled tools, sorted alphabetically by name
+   */
+  getEnabledTools(): DeclarativeTool<Record<string, unknown>, unknown>[] {
+    return this.list().filter((tool) => {
+      // If no tool state provider, include all tools (backward compatibility)
+      if (!this.toolStateProvider) {
+        return true;
+      }
+      // Filter based on user preference
+      return this.toolStateProvider.getToolState(tool.name);
+    });
   }
 
   /**

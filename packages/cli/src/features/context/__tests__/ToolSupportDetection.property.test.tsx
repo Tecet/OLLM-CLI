@@ -10,7 +10,6 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import fc from 'fast-check';
-import { profileManager } from '../../profiles/ProfileManager.js';
 import type { UserModel } from '../../profiles/types.js';
 
 describe('Tool Support Detection - Property Tests', () => {
@@ -41,7 +40,7 @@ describe('Tool Support Detection - Property Tests', () => {
               id: config.modelId,
               name: config.modelId,
               tool_support: config.toolSupport,
-              tool_support_source: config.source as any,
+              tool_support_source: config.source,
             };
 
             // Property: If tool_support is false, tools should never be sent
@@ -174,7 +173,7 @@ describe('Tool Support Detection - Property Tests', () => {
       fc.assert(
         fc.property(
           fc.string({ minLength: 1, maxLength: 50 }),
-          (modelId) => {
+          (_modelId) => {
             // Property: Timeout always results in safe default (tools disabled)
             const TIMEOUT_MS = 30000;
             const SAFE_DEFAULT = false;
@@ -286,7 +285,7 @@ describe('Tool Support Detection - Property Tests', () => {
             const savedModel: Partial<UserModel> = {
               id: config.modelId,
               tool_support: config.toolSupport,
-              tool_support_source: config.source as any,
+              tool_support_source: config.source,
               tool_support_confirmed_at: new Date().toISOString(),
             };
 
@@ -522,7 +521,7 @@ describe('Tool Support Detection - Property Tests', () => {
             }
 
             // Verify all overrides respect precedence
-            for (const [modelId, override] of overrides) {
+            for (const [_modelId, override] of overrides) {
               expect(override.precedence).toBeGreaterThanOrEqual(1);
               expect(override.precedence).toBeLessThanOrEqual(4);
             }

@@ -5,7 +5,7 @@
  * Validates: Requirements 14.1, 14.2, 14.3, 14.4, 14.5, 14.6
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
 import { SkillRegistry, substitutePromptPlaceholders, extractPlaceholders } from '../skillRegistry.js';
 import type { Skill } from '../types.js';

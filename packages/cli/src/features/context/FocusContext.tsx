@@ -6,7 +6,8 @@ export type FocusableId =
   | 'nav-bar' 
   | 'context-panel' 
   | 'file-tree' 
-  | 'functions';
+  | 'functions'
+  | 'tools-panel';
 
 // Order of cycling
 const CYCLE_ORDER: FocusableId[] = [
@@ -15,7 +16,8 @@ const CYCLE_ORDER: FocusableId[] = [
   'nav-bar',
   'context-panel',
   'file-tree',
-  'functions'
+  'functions',
+  'tools-panel'
 ];
 
 export interface FocusContextValue {

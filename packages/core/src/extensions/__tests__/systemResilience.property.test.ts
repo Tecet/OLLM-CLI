@@ -15,6 +15,16 @@ import { join } from 'path';
 import { tmpdir } from 'os';
 
 describe('Property 31: System Resilience After Extension Errors', () => {
+  beforeEach(() => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   // Helper function to create isolated test environment for each property run
   async function createTestEnvironment() {
     // Create unique test directory for this run
@@ -282,7 +292,7 @@ describe('Property 31: System Resilience After Extension Errors', () => {
             // Try to enable extension - should not throw
             try {
               await extensionManager.enableExtension(extName);
-            } catch (error) {
+            } catch (_error) {
               // Some servers may fail, but extension should still be enabled
             }
 

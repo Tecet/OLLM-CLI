@@ -398,7 +398,6 @@ describe('ModelContext - Tool Support Detection', () => {
       globalThis.__ollmAddSystemMessage = mockAddSystemMessage;
 
       const modelName = 'test-model:latest';
-      const errorMessage = 'unknown field: tools';
       
       // Simulate calling handleToolError with model name
       // The prompt should include the model name
@@ -511,7 +510,6 @@ describe('ModelContext - Tool Support Detection', () => {
       globalThis.__ollmAddSystemMessage = mockAddSystemMessage;
 
       // Simulate runtime tool error detection
-      const errorMessage = 'unknown field: tools';
       
       // The handleToolError function would be called here
       // It should prompt the user with the correct message

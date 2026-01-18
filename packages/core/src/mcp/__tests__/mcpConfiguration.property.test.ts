@@ -62,7 +62,7 @@ describe('Property 40: MCP Configuration Effects', () => {
           // Attempt to start server (should fail/timeout)
           try {
             await client.startServer('test-server', serverConfig);
-          } catch (error) {
+          } catch (_error) {
             // Expected to fail
           }
 

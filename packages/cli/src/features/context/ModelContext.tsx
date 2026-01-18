@@ -106,6 +106,10 @@ export function ModelProvider({
 
   /**
    * Save tool support metadata to user_models.json
+   * Updates both the runtime override and persists to the user models file
+   * @param model - The model ID
+   * @param supported - Whether the model supports tools
+   * @param source - The source of this information (user_confirmed or auto_detected)
    */
   const saveToolSupport = useCallback(async (
     model: string,
@@ -147,10 +151,20 @@ export function ModelProvider({
     profileManager.setUserModels(userModels);
   }, []);
 
+  /**
+   * Check if an error message indicates a timeout
+   * @param message - The error message to check
+   * @returns True if the message indicates a timeout
+   */
   const isTimeoutError = useCallback((message: string): boolean => {
     return /timed out|timeout/i.test(message);
   }, []);
 
+  /**
+   * Check if an error message indicates tool unsupported error
+   * @param message - The error message to check
+   * @returns True if the message indicates tools are not supported
+   */
   const isToolUnsupportedError = useCallback((message: string): boolean => {
     return /tools?|tool_calls?|unknown field/i.test(message);
   }, []);
@@ -233,8 +247,11 @@ export function ModelProvider({
   }, [isToolUnsupportedError, saveToolSupport]);
 
   /**
-   * Check override precedence
+   * Check if a new override source should take precedence over an existing one
    * Priority: user_confirmed > auto_detected > runtime_error > profile
+   * @param existing - The existing override entry
+   * @param newSource - The new source to check
+   * @returns True if the new source should override the existing one
    */
   const checkOverridePrecedence = useCallback((
     existing: { source: string; timestamp: number } | undefined,
@@ -254,6 +271,9 @@ export function ModelProvider({
 
   /**
    * Auto-detect tool support by sending a test request with minimal tool schema
+   * Sends a test message with a minimal tool to check if the model supports function calling
+   * @param model - The model ID to test
+   * @returns Promise resolving to true if tools are supported, false otherwise
    */
   const autoDetectToolSupport = useCallback(async (model: string): Promise<boolean> => {
     const addSystemMessage = globalThis.__ollmAddSystemMessage;
@@ -337,7 +357,11 @@ export function ModelProvider({
   }, [provider, saveToolSupport, isToolUnsupportedError]);
 
   /**
-   * Handle unknown model by prompting user
+   * Handle unknown model by prompting user for tool support information
+   * Prompts the user to specify if the model supports tools, with options for manual
+   * confirmation or auto-detection. Includes a 30-second timeout with safe default.
+   * @param model - The unknown model ID
+   * @returns Promise resolving to true if tools are supported, false otherwise
    */
   const handleUnknownModel = useCallback(async (model: string): Promise<boolean> => {
     const promptUser = globalThis.__ollmPromptUser;
@@ -485,6 +509,12 @@ export function ModelProvider({
     }
   }, [currentModel, provider, checkOverridePrecedence, handleUnknownModel]);
 
+  /**
+   * Check if a model supports tools based on overrides and profile metadata
+   * Checks runtime overrides first, then falls back to profile data
+   * @param model - The model ID to check
+   * @returns True if the model supports tools, false otherwise
+   */
   const modelSupportsTools = useCallback((model: string): boolean => {
     const override = toolSupportOverridesRef.current.get(model);
     if (override !== undefined) {

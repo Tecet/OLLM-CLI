@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
 import React from 'react';
-import { render, stripAnsi } from '../../../../test/ink-testing.js';
+import { render } from '../../../../test/ink-testing.js';
 import { TabBar } from '../TabBar.js';
 import { FocusProvider } from '../../../../features/context/FocusContext.js';
 import { TabType } from '../../../../features/context/UIContext.js';

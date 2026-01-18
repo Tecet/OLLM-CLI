@@ -27,10 +27,9 @@ describe('ExtensionManager', () => {
     // Clean up test directory
     try {
       await rm(testDir, { recursive: true, force: true });
-    } catch (error) {
-      // Ignore cleanup errors
-    }
-  });
+          } catch (_error) {
+            // Expected error
+          }  });
 
   describe('Extension Discovery', () => {
     // Feature: stage-05-hooks-extensions-mcp, Property 12: Extension Discovery
@@ -163,10 +162,9 @@ describe('ExtensionManager', () => {
               // Clean up iteration directory
               try {
                 await rm(iterationDir, { recursive: true, force: true });
-              } catch (error) {
-                // Ignore cleanup errors
-              }
-            }
+                    } catch (_error) {
+                      // Expected error
+                    }            }
           }
         ),
         { numRuns: 100 }

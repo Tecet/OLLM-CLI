@@ -1,5 +1,15 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 
+// Helper to wait for a condition
+const waitFor = async (condition: () => boolean | Promise<boolean>, timeout = 1000) => {
+  const start = Date.now();
+  while (Date.now() - start < timeout) {
+    if (await condition()) return;
+    await new Promise(resolve => setTimeout(resolve, 50));
+  }
+  throw new Error('Timeout waiting for condition');
+};
+
 const fileStore = new Map<string, string>();
 const dirStore = new Set<string>();
 
@@ -169,7 +179,7 @@ describe('ProfileManager', () => {
     expect(() => new ProfileManager()).not.toThrow();
     
     // Wait a bit for async refresh to complete
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise(resolve => setTimeout(resolve, 300));
   });
 
   it('refreshMetadataAsync handles timeout gracefully', async () => {
@@ -186,7 +196,7 @@ describe('ProfileManager', () => {
     expect(() => new ProfileManager()).not.toThrow();
     
     // Wait a bit for async refresh to complete
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise(resolve => setTimeout(resolve, 300));
   });
 
   it('refreshMetadataAsync updates models when Ollama is available', async () => {
@@ -205,7 +215,7 @@ describe('ProfileManager', () => {
     const manager = new ProfileManager();
     
     // Wait for async refresh to complete
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await waitFor(() => manager.getUserModels().length > 0);
     
     const models = manager.getUserModels();
     expect(models.length).toBeGreaterThan(0);
@@ -244,7 +254,10 @@ describe('ProfileManager', () => {
     const manager2 = new ProfileManager();
     
     // Wait for async refresh to complete
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await waitFor(() => {
+        const m = manager2.getUserModels();
+        return m.some(x => x.id === 'llama3:8b');
+    });
     
     const models = manager2.getUserModels();
     const llama3 = models.find(m => m.id === 'llama3:8b');

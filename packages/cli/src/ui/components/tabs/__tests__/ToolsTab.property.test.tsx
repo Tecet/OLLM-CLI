@@ -1,17 +1,29 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import * as fc from 'fast-check';
 import React from 'react';
-import { render, stripAnsi, cleanup } from '../../../../test/ink-testing.js';
+import { render, cleanup } from '../../../../test/ink-testing.js';
 import { ToolsTab } from '../ToolsTab.js';
-import { ReviewProvider, Review } from '../../../../features/context/ReviewContext.js';
 import { UIProvider } from '../../../../features/context/UIContext.js';
+import { FocusProvider } from '../../../../features/context/FocusContext.js';
+import { ModelProvider } from '../../../../features/context/ModelContext.js';
 import { keyboardHandler } from '../../../services/keyboardHandler.js';
+import { ProviderAdapter } from '@ollm/ollm-cli-core/provider/types.js';
 
 /**
  * Property-based tests for ToolsTab component
  * 
- * Feature: stage-06-cli-ui
+ * Feature: stage-06b-tool-support-detection
  */
+
+// Mock provider for testing
+const createMockProvider = (): ProviderAdapter => ({
+  name: 'mock',
+  chatStream: vi.fn(),
+  listModels: vi.fn(),
+  pullModel: vi.fn(),
+  deleteModel: vi.fn(),
+  showModel: vi.fn(),
+});
 
 describe('ToolsTab - Property Tests', () => {
   beforeEach(() => {
@@ -20,66 +32,52 @@ describe('ToolsTab - Property Tests', () => {
   });
 
   /**
-   * Property 23: Review List Completeness
+   * Property 25: Tools Panel Display
    * 
-   * For any set of pending reviews, the Tools tab should display all reviews
-   * with their file names and line counts.
+   * The ToolsTab should display the ToolsPanel with tool configuration
+   * when the model supports tools.
    * 
-   * Validates: Requirements 9.1
+   * Validates: Requirements 25.1, 25.2, 25.3
    * 
-   * Feature: stage-06-cli-ui, Property 23: Review List Completeness
+   * Feature: stage-06b-tool-support-detection, Property 25: Tools Panel Display
    */
-  it('should display all pending reviews with file names and line counts', () => {
+  it('should display tools configuration panel when model supports tools', () => {
     fc.assert(
       fc.property(
-        // Generate an array of reviews
-        fc.array(
-          fc.record({
-            file: fc.string({ minLength: 1, maxLength: 50 }).map(s => s || 'file.txt'),
-            diff: fc.string(),
-            linesAdded: fc.nat({ max: 1000 }),
-            linesRemoved: fc.nat({ max: 1000 }),
-          }),
-          { minLength: 1, maxLength: 10 }
-        ),
-        (reviewData) => {
+        fc.boolean(), // modelSupportsTools
+        (supportsTools) => {
           cleanup();
           keyboardHandler.clear();
 
-          // Create reviews with proper structure
-          const reviews: Review[] = reviewData.map((data, index) => ({
-            id: `review-${index}`,
-            file: data.file,
-            diff: data.diff,
-            linesAdded: data.linesAdded,
-            linesRemoved: data.linesRemoved,
-            status: 'pending' as const,
-            timestamp: new Date(),
-          }));
+          // Create a mock provider
+          const mockProvider = createMockProvider();
 
-          // Render the component with reviews
+          // Render the component
           const { lastFrame } = render(
             <UIProvider>
-              <ReviewProvider initialReviews={reviews}>
-                <ToolsTab />
-              </ReviewProvider>
+              <FocusProvider>
+                <ModelProvider 
+                  provider={mockProvider}
+                  initialModel={supportsTools ? 'llama3.2:latest' : 'gemma3:1b'}
+                >
+                  <ToolsTab />
+                </ModelProvider>
+              </FocusProvider>
             </UIProvider>
           );
 
           const output = lastFrame();
 
-          // Verify all reviews are displayed
-          for (const review of reviews) {
-            // Check that file name appears in output
-            expect(output).toContain(review.file);
-            
-            // Check that line counts appear in output
-            expect(output).toContain(`+${review.linesAdded}`);
-            expect(output).toContain(`-${review.linesRemoved}`);
+          if (supportsTools) {
+            // Should display tools configuration
+            expect(output).toContain('Tools Configuration');
+            expect(output).toContain('Enabled:');
+            expect(output).toContain('Disabled:');
+          } else {
+            // Should display "Model doesn't support tools" message
+            expect(output).toContain("Model doesn't support tools");
+            expect(output).toContain('does not support function calling');
           }
-
-          // Verify pending count is displayed
-          expect(output).toContain(`Pending Reviews (${reviews.length})`);
         }
       ),
       { numRuns: 30 }
@@ -87,101 +85,51 @@ describe('ToolsTab - Property Tests', () => {
   });
 
   /**
-   * Property 24: Review Approval Removal
+   * Property 26: Category Display
    * 
-   * For any review that is approved or rejected, the Tools tab should remove it
-   * from the pending list.
+   * The ToolsTab should display tool categories (at least some visible in the window).
    * 
-   * Validates: Requirements 9.3, 9.4
+   * Validates: Requirements 25.3
    * 
-   * Feature: stage-06-cli-ui, Property 24: Review Approval Removal
+   * Feature: stage-06b-tool-support-detection, Property 26: Category Display
    */
-  it('should remove reviews from pending list when approved or rejected', async () => {
-    await fc.assert(
-      fc.asyncProperty(
-        // Generate an array of reviews with valid file names
-        fc.array(
-          fc.record({
-            file: fc.string({ minLength: 5, maxLength: 20 })
-              .filter(s => s.trim().length >= 5)
-              .map(s => s.replace(/[^a-zA-Z0-9._-]/g, 'x')), // Replace special chars with 'x'
-            diff: fc.string({ minLength: 5 }),
-            linesAdded: fc.nat({ max: 100 }),
-            linesRemoved: fc.nat({ max: 100 }),
-          }),
-          { minLength: 2, maxLength: 5 }
-        ),
-        // Generate which review to remove
-        fc.nat(),
-        async (reviewData, reviewIndexRaw) => {
-          cleanup();
-          keyboardHandler.clear();
+  it('should display tool categories', () => {
+    cleanup();
+    keyboardHandler.clear();
 
-          // Create reviews with guaranteed unique file names
-          const reviews: Review[] = reviewData.map((data, index) => ({
-            id: `review-${index}`,
-            file: `file-${index}-${data.file}`, // Unique file names
-            diff: data.diff,
-            linesAdded: data.linesAdded,
-            linesRemoved: data.linesRemoved,
-            status: 'pending' as const,
-            timestamp: new Date(),
-          }));
+    // Create a mock provider
+    const mockProvider = createMockProvider();
 
-          const reviewIndex = reviewIndexRaw % reviews.length;
-
-          // Render the component with reviews
-          const { lastFrame, rerender } = render(
-            <UIProvider>
-              <ReviewProvider initialReviews={reviews}>
-                <ToolsTab />
-              </ReviewProvider>
-            </UIProvider>
-          );
-
-          // Verify initial count
-          let output = lastFrame();
-          const initialCount = reviews.length;
-          
-          // Check that the count appears in the output (more flexible check)
-          const hasInitialCount = output.includes(`(${initialCount})`) || 
-                                   output.includes(`${initialCount}`);
-          expect(hasInitialCount).toBe(true);
-
-          // Simulate removal by creating a new provider without one review
-          const remainingReviews = reviews.filter((_, idx) => idx !== reviewIndex);
-          
-          // Use fresh render instead of rerender to ensure cleanup of previous shortcuts
-          cleanup();
-          keyboardHandler.clear();
-
-          const { lastFrame: lastFrame2 } = render(
-            <UIProvider>
-              <ReviewProvider initialReviews={remainingReviews}>
-                <ToolsTab />
-              </ReviewProvider>
-            </UIProvider>
-          );
-
-          // Verify review count decreased
-          output = lastFrame2();
-          
-          if (remainingReviews.length > 0) {
-            // The count should have decreased by 1
-            const expectedCount = remainingReviews.length;
-            const hasExpectedCount = output.includes(`(${expectedCount})`) || 
-                                      output.includes(`${expectedCount}`);
-            expect(hasExpectedCount).toBe(true);
-            
-            // Verify the count decreased
-            expect(expectedCount).toBe(initialCount - 1);
-          } else {
-            // If no reviews remain, should show "No pending reviews" message
-            expect(output).toContain('No pending reviews');
-          }
-        }
-      ),
-      { numRuns: 30 }
+    // Render the component
+    const { lastFrame } = render(
+      <UIProvider>
+        <FocusProvider>
+          <ModelProvider 
+            provider={mockProvider}
+            initialModel="llama3.2:latest"
+          >
+            <ToolsTab />
+          </ModelProvider>
+        </FocusProvider>
+      </UIProvider>
     );
+
+    const output = lastFrame();
+
+    // Verify at least some categories are displayed (windowed rendering)
+    // The first few categories should be visible
+    const visibleCategories = [
+      'File Operations',
+      'File Discovery',
+      'Shell',
+      'Web',
+    ];
+
+    for (const category of visibleCategories) {
+      expect(output).toContain(category);
+    }
+    
+    // Verify scroll indicator is present (indicating more content below)
+    expect(output).toContain('Scroll down for more');
   });
 });

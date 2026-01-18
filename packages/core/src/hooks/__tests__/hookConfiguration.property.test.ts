@@ -4,7 +4,7 @@
  * Validates: Requirements 18.1, 18.2, 18.3, 18.4, 18.5, 18.6, 18.7
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
 import { HookRunner } from '../hookRunner.js';
 import { HookRegistry } from '../hookRegistry.js';

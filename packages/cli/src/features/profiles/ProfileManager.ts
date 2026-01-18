@@ -3,7 +3,7 @@ import { join } from 'path';
 import { homedir } from 'os';
 import profilesData from '../../config/LLM_profiles.json' with { type: 'json' };
 import { defaultContextBehavior } from '../../config/defaults.js';
-import type { LLMProfile, ContextSettings, ContextBehaviorProfile, ContextProfile, UserModelEntry, ProfilesData, ToolSupportSource } from '../../config/types.js';
+import type { LLMProfile, ContextSettings, ContextBehaviorProfile, ContextProfile, UserModelEntry, ProfilesData } from '../../config/types.js';
 
 const profiles = profilesData as ProfilesData;
 
@@ -77,7 +77,7 @@ export class ProfileManager {
       
       // Extract model list with size information
       const models = Array.isArray(data.models) 
-        ? data.models.map((m: any) => ({
+        ? data.models.map((m: { name: string; size?: number }) => ({
             name: m.name,
             sizeBytes: m.size
           }))

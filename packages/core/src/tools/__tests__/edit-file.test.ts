@@ -24,12 +24,11 @@ class FileTestFixture {
 
   async cleanup(): Promise<void> {
     // Clean up all created files and the temp directory
-    try {
-      await fs.rm(this.tempDir, { recursive: true, force: true });
-    } catch (error) {
-      // Ignore cleanup errors
-    }
-    this.createdFiles = [];
+        try {
+          await fs.rm(testDir, { recursive: true, force: true });
+        } catch (_error) {
+          // Ignore cleanup errors
+        }    this.createdFiles = [];
   }
 
   async createFile(filename: string, content: string): Promise<string> {

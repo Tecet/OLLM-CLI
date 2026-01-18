@@ -6,7 +6,7 @@
  * Requirements: 14.2, 18.1, 18.2, 18.3, 18.4, 18.5, 18.6
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { TestExecutionResult } from '../testHelpers';
 
 /**

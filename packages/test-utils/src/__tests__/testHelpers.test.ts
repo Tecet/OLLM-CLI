@@ -3,7 +3,7 @@
  * Tests server detection, timing helpers, and resource tracking.
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   isServerAvailable,
   getServerUrl,

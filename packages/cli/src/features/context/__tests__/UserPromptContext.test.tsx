@@ -89,8 +89,7 @@ describe('UserPromptContext', () => {
       );
 
       // Trigger prompt
-      let promise: Promise<string>;
-      promise = promptUserFn!('Test question?', ['Yes', 'No', 'Maybe']);
+      const promise = promptUserFn!('Test question?', ['Yes', 'No', 'Maybe']);
 
       // Force re-render to capture updated state
       rerender(
