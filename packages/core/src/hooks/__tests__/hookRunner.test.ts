@@ -388,7 +388,9 @@ describe('HookRunner', () => {
               expect(result.systemMessage).toBe(systemMessage);
             }
             if (data !== null) {
-              expect(result.data).toEqual(data);
+              // Normalize expected data to handle JSON serialization quirks (e.g. -0 -> 0)
+              const normalizedData = JSON.parse(JSON.stringify(data));
+              expect(result.data).toEqual(normalizedData);
             }
           }
         ),

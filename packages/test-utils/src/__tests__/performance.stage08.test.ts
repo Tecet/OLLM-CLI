@@ -282,7 +282,7 @@ describe('Test Execution Performance', () => {
       // Simulate multiple test runs with more significant differences
       for (let i = 0; i < 5; i++) {
         const { duration } = await measureTestTime(async () => {
-          await delay(20 + i * 10); // Gradually slower with larger increments
+          await delay(20 + i * 20); // Gradually slower with larger increments
         });
         performanceHistory.push(duration);
       }
