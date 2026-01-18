@@ -14,6 +14,8 @@ import {
   SECURITY_MODE_TEMPLATE,
   REVIEWER_MODE_TEMPLATE,
   PERFORMANCE_MODE_TEMPLATE,
+  PROTOTYPE_MODE_TEMPLATE,
+  TEACHER_MODE_TEMPLATE,
   MODE_TEMPLATES,
   MODE_METADATA
 } from '../index.js';
@@ -29,6 +31,8 @@ describe('Mode Templates', () => {
       expect(SECURITY_MODE_TEMPLATE).toBeDefined();
       expect(REVIEWER_MODE_TEMPLATE).toBeDefined();
       expect(PERFORMANCE_MODE_TEMPLATE).toBeDefined();
+      expect(PROTOTYPE_MODE_TEMPLATE).toBeDefined();
+      expect(TEACHER_MODE_TEMPLATE).toBeDefined();
     });
 
     it('should export MODE_TEMPLATES map', () => {
@@ -41,11 +45,13 @@ describe('Mode Templates', () => {
       expect(MODE_TEMPLATES.security).toBe(SECURITY_MODE_TEMPLATE);
       expect(MODE_TEMPLATES.reviewer).toBe(REVIEWER_MODE_TEMPLATE);
       expect(MODE_TEMPLATES.performance).toBe(PERFORMANCE_MODE_TEMPLATE);
+      expect(MODE_TEMPLATES.prototype).toBe(PROTOTYPE_MODE_TEMPLATE);
+      expect(MODE_TEMPLATES.teacher).toBe(TEACHER_MODE_TEMPLATE);
     });
 
     it('should export MODE_METADATA', () => {
       expect(MODE_METADATA).toBeDefined();
-      expect(Object.keys(MODE_METADATA)).toHaveLength(8);
+      expect(Object.keys(MODE_METADATA)).toHaveLength(10);
     });
   });
 
@@ -59,6 +65,8 @@ describe('Mode Templates', () => {
       expect(SECURITY_MODE_TEMPLATE.length).toBeGreaterThan(0);
       expect(REVIEWER_MODE_TEMPLATE.length).toBeGreaterThan(0);
       expect(PERFORMANCE_MODE_TEMPLATE.length).toBeGreaterThan(0);
+      expect(PROTOTYPE_MODE_TEMPLATE.length).toBeGreaterThan(0);
+      expect(TEACHER_MODE_TEMPLATE.length).toBeGreaterThan(0);
     });
 
     it('should have string templates', () => {
@@ -70,6 +78,8 @@ describe('Mode Templates', () => {
       expect(typeof SECURITY_MODE_TEMPLATE).toBe('string');
       expect(typeof REVIEWER_MODE_TEMPLATE).toBe('string');
       expect(typeof PERFORMANCE_MODE_TEMPLATE).toBe('string');
+      expect(typeof PROTOTYPE_MODE_TEMPLATE).toBe('string');
+      expect(typeof TEACHER_MODE_TEMPLATE).toBe('string');
     });
   });
 
@@ -221,9 +231,79 @@ describe('Mode Templates', () => {
     });
   });
 
+  describe('Prototype Mode Template', () => {
+    it('should contain prototype persona', () => {
+      expect(PROTOTYPE_MODE_TEMPLATE).toContain('rapid prototyper');
+    });
+
+    it('should mention prototype principles', () => {
+      expect(PROTOTYPE_MODE_TEMPLATE).toContain('Prototype Mode Principles');
+      expect(PROTOTYPE_MODE_TEMPLATE).toContain('Speed over perfection');
+    });
+
+    it('should mention PROTOTYPE comment marking', () => {
+      expect(PROTOTYPE_MODE_TEMPLATE).toContain('// PROTOTYPE');
+      expect(PROTOTYPE_MODE_TEMPLATE).toContain('mark');
+    });
+
+    it('should mention when to use prototype mode', () => {
+      expect(PROTOTYPE_MODE_TEMPLATE).toContain('When to Use');
+      expect(PROTOTYPE_MODE_TEMPLATE).toContain('proof-of-concept');
+    });
+
+    it('should mention restrictions lifted', () => {
+      expect(PROTOTYPE_MODE_TEMPLATE).toContain('Restrictions Lifted');
+      expect(PROTOTYPE_MODE_TEMPLATE).toContain('No need for tests');
+    });
+
+    it('should suggest mode switching after success', () => {
+      expect(PROTOTYPE_MODE_TEMPLATE).toContain('Planning mode');
+      expect(PROTOTYPE_MODE_TEMPLATE).toContain('Developer mode');
+      expect(PROTOTYPE_MODE_TEMPLATE).toContain('prototype works');
+    });
+  });
+
+  describe('Teacher Mode Template', () => {
+    it('should contain teacher persona', () => {
+      expect(TEACHER_MODE_TEMPLATE).toContain('technical educator');
+    });
+
+    it('should mention teaching principles', () => {
+      expect(TEACHER_MODE_TEMPLATE).toContain('Teaching Principles');
+      expect(TEACHER_MODE_TEMPLATE).toContain('Break down complex topics');
+    });
+
+    it('should mention teaching approach', () => {
+      expect(TEACHER_MODE_TEMPLATE).toContain('Teaching Approach');
+      expect(TEACHER_MODE_TEMPLATE).toContain('Assess current understanding');
+    });
+
+    it('should mention teaching techniques', () => {
+      expect(TEACHER_MODE_TEMPLATE).toContain('Teaching Techniques');
+      expect(TEACHER_MODE_TEMPLATE).toContain('analogies');
+      expect(TEACHER_MODE_TEMPLATE).toContain('examples');
+    });
+
+    it('should mention restrictions', () => {
+      expect(TEACHER_MODE_TEMPLATE).toContain('Restrictions');
+      expect(TEACHER_MODE_TEMPLATE).toContain('CANNOT write code');
+      expect(TEACHER_MODE_TEMPLATE).toContain('CANNOT modify files');
+    });
+
+    it('should mention allowed capabilities', () => {
+      expect(TEACHER_MODE_TEMPLATE).toContain('CAN read files');
+      expect(TEACHER_MODE_TEMPLATE).toContain('CAN search');
+    });
+
+    it('should suggest switching to developer mode after learning', () => {
+      expect(TEACHER_MODE_TEMPLATE).toContain('Developer mode');
+      expect(TEACHER_MODE_TEMPLATE).toContain('understand the concept');
+    });
+  });
+
   describe('Mode Metadata', () => {
     it('should have metadata for all modes', () => {
-      const modes = ['assistant', 'planning', 'developer', 'tool', 'debugger', 'security', 'reviewer', 'performance'];
+      const modes = ['assistant', 'planning', 'developer', 'tool', 'debugger', 'security', 'reviewer', 'performance', 'prototype', 'teacher'];
       
       for (const mode of modes) {
         expect(MODE_METADATA[mode as keyof typeof MODE_METADATA]).toBeDefined();
@@ -273,6 +353,8 @@ describe('Mode Templates', () => {
       expect(MODE_METADATA.security.icon).toBe('🔒');
       expect(MODE_METADATA.reviewer.icon).toBe('👀');
       expect(MODE_METADATA.performance.icon).toBe('⚡');
+      expect(MODE_METADATA.prototype.icon).toBe('⚡🔬');
+      expect(MODE_METADATA.teacher.icon).toBe('👨‍🏫');
     });
 
     it('should have correct colors', () => {
@@ -284,6 +366,8 @@ describe('Mode Templates', () => {
       expect(MODE_METADATA.security.color).toBe('purple');
       expect(MODE_METADATA.reviewer.color).toBe('orange');
       expect(MODE_METADATA.performance.color).toBe('magenta');
+      expect(MODE_METADATA.prototype.color).toBe('brightCyan');
+      expect(MODE_METADATA.teacher.color).toBe('warmYellow');
     });
 
     it('should have correct personas', () => {
@@ -295,6 +379,8 @@ describe('Mode Templates', () => {
       expect(MODE_METADATA.security.persona).toBe('Security Auditor & Specialist');
       expect(MODE_METADATA.reviewer.persona).toBe('Senior Code Reviewer');
       expect(MODE_METADATA.performance.persona).toBe('Performance Engineer');
+      expect(MODE_METADATA.prototype.persona).toBe('Rapid Prototyper');
+      expect(MODE_METADATA.teacher.persona).toBe('Patient Technical Educator');
     });
   });
 
@@ -360,10 +446,12 @@ describe('Mode Templates', () => {
       expect(MODE_TEMPLATES['security']).toBe(SECURITY_MODE_TEMPLATE);
       expect(MODE_TEMPLATES['reviewer']).toBe(REVIEWER_MODE_TEMPLATE);
       expect(MODE_TEMPLATES['performance']).toBe(PERFORMANCE_MODE_TEMPLATE);
+      expect(MODE_TEMPLATES['prototype']).toBe(PROTOTYPE_MODE_TEMPLATE);
+      expect(MODE_TEMPLATES['teacher']).toBe(TEACHER_MODE_TEMPLATE);
     });
 
     it('should support dynamic mode lookup', () => {
-      const modes = ['assistant', 'planning', 'developer', 'tool', 'debugger', 'security', 'reviewer', 'performance'];
+      const modes = ['assistant', 'planning', 'developer', 'tool', 'debugger', 'security', 'reviewer', 'performance', 'prototype', 'teacher'];
       
       for (const mode of modes) {
         const template = MODE_TEMPLATES[mode as keyof typeof MODE_TEMPLATES];

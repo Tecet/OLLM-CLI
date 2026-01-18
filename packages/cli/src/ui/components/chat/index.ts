@@ -15,3 +15,6 @@ export type { ReasoningBoxProps } from './ReasoningBox.js';
 
 export { MetricsDisplay } from './MetricsDisplay.js';
 export type { MetricsDisplayProps } from './MetricsDisplay.js';
+
+export { ModeTransitionIndicator } from './ModeTransitionIndicator.js';
+export type { ModeTransitionIndicatorProps } from './ModeTransitionIndicator.js';

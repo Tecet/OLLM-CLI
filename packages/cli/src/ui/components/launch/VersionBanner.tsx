@@ -3,6 +3,7 @@ import { Box, Text } from 'ink';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { Theme } from '../../../config/types.js';
 
 // Get package.json path
 const __filename = fileURLToPath(import.meta.url);
@@ -19,12 +20,7 @@ try {
 }
 
 interface VersionBannerProps {
-  theme: {
-    text: {
-      primary: string;
-      accent: string;
-    };
-  };
+  theme: Theme;
   modelInfo?: {
     name: string;
     size?: string;
@@ -43,7 +39,7 @@ export const VersionBanner: React.FC<VersionBannerProps> = ({ theme, modelInfo, 
         flexDirection="column"
         alignItems="center"
         borderStyle="round"
-        borderColor={theme.text.accent}
+        borderColor={theme.border.active}
         paddingX={2}
         paddingY={1}
       >

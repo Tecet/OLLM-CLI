@@ -14,4 +14,6 @@ export { reasoningCommands } from './reasoningCommands.js';
 export { utilityCommands } from './utilityCommands.js';
 export { hookCommands } from './hookCommands.js';
 export { modeCommands } from './modeCommands.js';
+export { modeShortcuts } from './modeShortcuts.js';
+export { workflowCommand } from './workflowCommands.js';
 export type { Command, CommandHandler, CommandResult } from './types.js';

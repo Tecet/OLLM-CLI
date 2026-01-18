@@ -167,7 +167,7 @@ export interface ChatContextValue {
 
   /** Scroll State */
   selectedLineIndex: number;
-  setSelectedLineIndex: (index: number) => void;
+  setSelectedLineIndex: (index: number | ((prev: number) => number)) => void;
   scrollOffset: number;
   scrollUp: () => void;
   scrollDown: () => void;

@@ -23,6 +23,7 @@ import {
   PromptModeManager,
   ContextAnalyzer,
   ModeSnapshotManager,
+  WorkflowManager,
 } from '@ollm/core';
 
 import type {
@@ -146,8 +147,20 @@ export interface ContextManagerActions {
   /** Get the SnapshotManager instance */
   getSnapshotManager: () => ModeSnapshotManager | null;
   
+  /** Get the WorkflowManager instance */
+  getWorkflowManager: () => WorkflowManager | null;
+  
+  /** Get the HybridModeManager instance */
+  getHybridModeManager: () => import('@ollm/core').HybridModeManager | null;
+  
+  /** Switch to a hybrid mode */
+  switchToHybridMode: (hybridMode: import('@ollm/core').HybridMode) => void;
+  
   /** Switch to a specific mode */
   switchMode: (mode: ModeType) => void;
+  
+  /** Switch to a specific mode with explicit trigger (bypasses focus mode check) */
+  switchModeExplicit: (mode: ModeType) => void;
   
   /** Enable or disable auto-switching */
   setAutoSwitch: (enabled: boolean) => void;
@@ -247,6 +260,12 @@ export function ContextManagerProvider({
   // Snapshot manager reference
   const snapshotManagerRef = useRef<ModeSnapshotManager | null>(null);
   
+  // Workflow manager reference
+  const workflowManagerRef = useRef<WorkflowManager | null>(null);
+  
+  // Hybrid mode manager reference
+  const hybridModeManagerRef = useRef<import('@ollm/core').HybridModeManager | null>(null);
+  
   // Mode change callback reference for cleanup
   const modeChangeCallbackRef = useRef<((transition: ModeTransition) => void) | null>(null);
   
@@ -295,6 +314,15 @@ export function ContextManagerProvider({
         
         snapshotManagerRef.current = snapshotManager;
         
+        // Create WorkflowManager
+        const workflowManager = new WorkflowManager(modeManager);
+        workflowManagerRef.current = workflowManager;
+        
+        // Create HybridModeManager
+        const { HybridModeManager } = await import('@ollm/core');
+        const hybridModeManager = new HybridModeManager();
+        hybridModeManagerRef.current = hybridModeManager;
+        
         // Listen for mode changes
         const modeChangeCallback = (transition: ModeTransition) => {
           setCurrentMode(transition.to);
@@ -315,6 +343,17 @@ export function ContextManagerProvider({
           
           // Update system prompt in ContextManager
           manager.setSystemPrompt(newPrompt);
+          
+          // Save mode history to session metadata (Subtask 17.5)
+          // Note: This will be integrated when ChatRecordingService is available in the context
+          // For now, we emit an event that can be listened to by the session manager
+          manager.emit('mode-transition', {
+            from: transition.from,
+            to: transition.to,
+            timestamp: transition.timestamp.toISOString(),
+            trigger: transition.trigger,
+            confidence: transition.confidence
+          });
         };
         
         modeChangeCallbackRef.current = modeChangeCallback;
@@ -670,6 +709,49 @@ export function ContextManagerProvider({
     return snapshotManagerRef.current;
   }, []);
   
+  const getWorkflowManager = useCallback(() => {
+    return workflowManagerRef.current;
+  }, []);
+  
+  const getHybridModeManager = useCallback(() => {
+    return hybridModeManagerRef.current;
+  }, []);
+  
+  const switchToHybridMode = useCallback((hybridMode: import('@ollm/core').HybridMode) => {
+    if (!modeManagerRef.current || !hybridModeManagerRef.current) {
+      console.warn('Mode managers not initialized');
+      return;
+    }
+    
+    // Set active hybrid mode
+    hybridModeManagerRef.current.setActiveHybridMode(hybridMode);
+    
+    // Disable auto-switching
+    modeManagerRef.current.setAutoSwitch(false);
+    setAutoSwitchEnabled(false);
+    
+    // Build hybrid prompt
+    const hybridPrompt = hybridModeManagerRef.current.combinePrompts(
+      hybridMode.modes,
+      (mode) => modeManagerRef.current!.getModeTemplate?.(mode) || ''
+    );
+    
+    // Set the hybrid prompt
+    if (managerRef.current) {
+      managerRef.current.setSystemPrompt(hybridPrompt);
+    }
+    
+    // Update current mode to the first mode in the hybrid
+    // (for display purposes)
+    setCurrentMode(hybridMode.modes[0]);
+    
+    // Persist settings
+    SettingsService.getInstance().setMode(hybridMode.modes[0]);
+    SettingsService.getInstance().setAutoSwitch(false);
+    
+    console.log(`Switched to hybrid mode: ${hybridMode.name} (${hybridMode.modes.join(', ')})`);
+  }, []);
+  
   const switchMode = useCallback((mode: ModeType) => {
     if (!modeManagerRef.current) {
       console.warn('PromptModeManager not initialized');
@@ -677,6 +759,22 @@ export function ContextManagerProvider({
     }
     
     modeManagerRef.current.forceMode(mode);
+    setCurrentMode(mode);
+    setAutoSwitchEnabled(false);
+    
+    // Persist mode preference to settings
+    SettingsService.getInstance().setMode(mode);
+    SettingsService.getInstance().setAutoSwitch(false);
+  }, []);
+  
+  const switchModeExplicit = useCallback((mode: ModeType) => {
+    if (!modeManagerRef.current) {
+      console.warn('PromptModeManager not initialized');
+      return;
+    }
+    
+    // Use explicit trigger to bypass focus mode check
+    modeManagerRef.current.switchMode(mode, 'explicit', 1.0);
     setCurrentMode(mode);
     setAutoSwitchEnabled(false);
     
@@ -756,7 +854,11 @@ export function ContextManagerProvider({
     getManager: () => managerRef.current,
     getModeManager,
     getSnapshotManager,
+    getWorkflowManager,
+    getHybridModeManager,
+    switchToHybridMode,
     switchMode,
+    switchModeExplicit,
     setAutoSwitch: setAutoSwitchAction,
     getCurrentMode: getCurrentModeAction,
     restoreModeHistory: restoreModeHistoryAction,
@@ -779,7 +881,9 @@ export function ContextManagerProvider({
     off,
     getModeManager,
     getSnapshotManager,
+    getWorkflowManager,
     switchMode,
+    switchModeExplicit,
     setAutoSwitchAction,
     getCurrentModeAction,
     restoreModeHistoryAction,

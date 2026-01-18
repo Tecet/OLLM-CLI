@@ -43,8 +43,8 @@ export const themesData: Record<string, Theme> = {
     },
     "border": {
       "primary": "#4ec9b0",
-      "secondary": "#555555",
-      "active": "green"
+      "secondary": "#4ec9b0",
+      "active": "#22d239ff"
     },
     "diff": {
       "added": "#4ec9b0",
@@ -81,9 +81,9 @@ export const themesData: Record<string, Theme> = {
       "info": "#8be9fd"
     },
     "border": {
-      "primary": "#bd93f9",
-      "secondary": "#44475a",
-      "active": "green"
+      "primary": "#44475a",
+      "secondary": "#bd93f9",
+      "active": "#bd93f9"
     },
     "diff": {
       "added": "#50fa7b",
@@ -120,9 +120,9 @@ export const themesData: Record<string, Theme> = {
       "info": "#5e81ac"
     },
     "border": {
-      "primary": "#88c0d0",
-      "secondary": "#3b4252",
-      "active": "green"
+      "primary": "#3b4252",
+      "secondary": "#88c0d0",
+      "active": "#88c0d0"
     },
     "diff": {
       "added": "#a3be8c",
@@ -159,9 +159,9 @@ export const themesData: Record<string, Theme> = {
       "info": "#66d9ef"
     },
     "border": {
-      "primary": "#f92672",
-      "secondary": "#49483e",
-      "active": "green"
+      "primary": "#1e1437ff",
+      "secondary": "#3a3ac1ff",
+      "active": "#fd971f"
     },
     "diff": {
       "added": "#a6e22e",
@@ -198,9 +198,9 @@ export const themesData: Record<string, Theme> = {
       "info": "#268bd2"
     },
     "border": {
-      "primary": "#268bd2",
-      "secondary": "#073642",
-      "active": "green"
+      "primary": "#073642",
+      "secondary": "#268bd2",
+      "active": "#268bd2"
     },
     "diff": {
       "added": "#859900",

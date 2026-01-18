@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Box, Text } from 'ink';
+import { Box, Text, useInput } from 'ink';
 import { useUI } from '../../../features/context/UIContext.js';
+import { useFocusManager } from '../../../features/context/FocusContext.js';
 
 /**
  * Git status information
@@ -56,7 +57,21 @@ export function FilesTab({
 }: FilesTabProps) {
   const { state: uiState } = useUI();
   const theme = uiState.theme;
+  const { isFocused, exitToNavBar } = useFocusManager();
   const [selectedFile, _setSelectedFile] = useState<string | null>(null);
+
+  const hasFocus = isFocused('context-panel');
+
+  useInput((input, key) => {
+    if (!hasFocus) return;
+
+    if (key.escape) {
+      exitToNavBar();
+      return;
+    }
+    
+    // Additional logic for navigation (up/down/enter) could be added here
+  }, { isActive: hasFocus });
 
   const _handleAddFile = () => {
     // In a real implementation, this would open a file picker
@@ -82,7 +97,7 @@ export function FilesTab({
       <Box
         flexDirection="column"
         borderStyle="single"
-        borderColor={uiState.theme.text.accent}
+        borderColor={hasFocus ? uiState.theme.border.active : uiState.theme.border.primary}
         paddingX={1}
         marginBottom={1}
         flexShrink={0}
@@ -113,7 +128,7 @@ export function FilesTab({
                   key={file.path}
                   justifyContent="space-between"
                   borderStyle={isSelected ? 'single' : undefined}
-                  borderColor={isSelected ? uiState.theme.text.accent : undefined}
+                  borderColor={isSelected ? uiState.theme.border.active : undefined}
                   paddingX={1}
                   marginBottom={1}
                 >
@@ -142,14 +157,16 @@ export function FilesTab({
         <Box
           flexDirection="column"
           borderStyle="single"
-          borderColor={uiState.theme.text.accent}
+          borderColor={uiState.theme.border.active}
           paddingX={1}
           marginBottom={1}
           flexShrink={0}
         >
-          <Text bold color={uiState.theme.text.accent} marginBottom={1}>
-            Git Status
-          </Text>
+          <Box marginBottom={1}>
+            <Text bold color={uiState.theme.text.accent}>
+              Git Status
+            </Text>
+          </Box>
 
           <Box flexDirection="column" gap={1}>
             <Box>
@@ -190,13 +207,15 @@ export function FilesTab({
         <Box
           flexDirection="column"
           borderStyle="single"
-          borderColor={uiState.theme.text.secondary}
+          borderColor={uiState.theme.border.primary}
           paddingX={1}
           flexShrink={0}
         >
-          <Text bold color={uiState.theme.text.secondary} marginBottom={1}>
-            Quick Actions
-          </Text>
+          <Box marginBottom={1}>
+            <Text bold color={uiState.theme.text.secondary}>
+              Quick Actions
+            </Text>
+          </Box>
 
           <Box flexDirection="column" gap={1}>
             <Box>
@@ -223,7 +242,7 @@ export function FilesTab({
         <Box
           flexDirection="column"
           borderStyle="single"
-          borderColor={uiState.theme.text.secondary}
+          borderColor={uiState.theme.border.primary}
           paddingX={1}
           flexShrink={0}
         >

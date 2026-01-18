@@ -21,7 +21,7 @@ export interface ChatInputAreaProps {
 export const ChatInputArea = memo(function ChatInputArea({ height, showBorder = true }: ChatInputAreaProps) {
   const { state: chatState, setCurrentInput, sendMessage, executeMenuOption, navigateMenu, setInputMode, setMenuState } = useChat();
   const { state: uiState } = useUI();
-  const { isFocused } = useFocusManager();
+  const { isFocused, exitToNavBar } = useFocusManager();
   
   const hasFocus = isFocused('chat-input');
   
@@ -54,15 +54,18 @@ export const ChatInputArea = memo(function ChatInputArea({ height, showBorder = 
       } else if (key.return) {
           executeMenuOption();
       } else if (key.escape) {
-          setInputMode('text');
-          setMenuState({ active: false });
+          if (chatState.inputMode === 'menu') {
+              setInputMode('text');
+              setMenuState({ active: false });
+          } else {
+              exitToNavBar();
+          }
       }
   }, { isActive: chatState.inputMode === 'menu' || hasFocus }); // Allow hook to run to check hasFocus condition
 
   // Border Color Logic
   let borderColor = theme.border.primary;
   if (hasFocus) borderColor = theme.border.active;
-  else if (chatState.inputMode === 'menu') borderColor = theme.text.accent;
 
   const totalMenuOptions = chatState.menuState.options.length;
   const menuPaddingTop = 1;

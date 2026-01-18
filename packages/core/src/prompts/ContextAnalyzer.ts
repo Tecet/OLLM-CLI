@@ -18,7 +18,9 @@ export type ModeType =
   | 'debugger'
   | 'security'
   | 'reviewer'
-  | 'performance';
+  | 'performance'
+  | 'prototype'
+  | 'teacher';
 
 /**
  * Result of context analysis
@@ -38,6 +40,23 @@ export interface ContextAnalysis {
     codeBlocksPresent: boolean;
     errorMessagesPresent: boolean;
   };
+}
+
+/**
+ * Confidence scores for all modes
+ */
+export interface AllModeConfidences {
+  [mode: string]: number;
+}
+
+/**
+ * Suggested mode with reason
+ */
+export interface SuggestedMode {
+  mode: ModeType;
+  icon: string;
+  confidence: number;
+  reason: string;
 }
 
 /**
@@ -87,6 +106,16 @@ const MODE_KEYWORDS: Record<ModeType, string[]> = {
     'performance', 'optimize', 'slow', 'fast', 'benchmark', 'profile',
     'latency', 'throughput', 'memory', 'CPU', 'speed', 'bottleneck',
     'efficiency', 'faster'
+  ],
+  prototype: [
+    'prototype', 'experiment', 'quick test', 'proof of concept', 'spike',
+    'try out', 'throwaway', 'poc', 'quick demo', 'test idea', 'validate',
+    'explore solution', 'rapid', 'quick and dirty'
+  ],
+  teacher: [
+    'explain', 'teach me', 'how does', 'why', 'understand', 'learn',
+    'what is', 'tutorial', 'show me', 'walk me through', 'help me learn',
+    'educate', 'clarify', 'break down', 'simplify', 'demonstrate'
   ]
 };
 
@@ -115,7 +144,9 @@ export class ContextAnalyzer {
       debugger: this.calculateModeConfidence(recentMessages, 'debugger'),
       security: this.calculateModeConfidence(recentMessages, 'security'),
       reviewer: this.calculateModeConfidence(recentMessages, 'reviewer'),
-      performance: this.calculateModeConfidence(recentMessages, 'performance')
+      performance: this.calculateModeConfidence(recentMessages, 'performance'),
+      prototype: this.calculateModeConfidence(recentMessages, 'prototype'),
+      teacher: this.calculateModeConfidence(recentMessages, 'teacher')
     };
     
     // Find mode with highest confidence
@@ -173,6 +204,140 @@ export class ContextAnalyzer {
         errorMessagesPresent
       }
     };
+  }
+  
+  /**
+   * Calculate confidence scores for all modes
+   * 
+   * @param messages - Conversation messages to analyze
+   * @returns Object with confidence scores for each mode
+   */
+  calculateAllModeConfidences(messages: Message[]): AllModeConfidences {
+    const recentMessages = messages.slice(-5);
+    
+    return {
+      assistant: this.calculateModeConfidence(recentMessages, 'assistant'),
+      planning: this.calculateModeConfidence(recentMessages, 'planning'),
+      developer: this.calculateModeConfidence(recentMessages, 'developer'),
+      tool: this.calculateModeConfidence(recentMessages, 'tool'),
+      debugger: this.calculateModeConfidence(recentMessages, 'debugger'),
+      security: this.calculateModeConfidence(recentMessages, 'security'),
+      reviewer: this.calculateModeConfidence(recentMessages, 'reviewer'),
+      performance: this.calculateModeConfidence(recentMessages, 'performance'),
+      prototype: this.calculateModeConfidence(recentMessages, 'prototype'),
+      teacher: this.calculateModeConfidence(recentMessages, 'teacher')
+    };
+  }
+  
+  /**
+   * Get suggested modes with reasons
+   * 
+   * @param messages - Conversation messages to analyze
+   * @param currentMode - Current active mode
+   * @param topN - Number of suggestions to return (default: 3)
+   * @returns Array of suggested modes with reasons
+   */
+  getSuggestedModes(messages: Message[], currentMode: ModeType, topN: number = 3): SuggestedMode[] {
+    const confidences = this.calculateAllModeConfidences(messages);
+    const analysis = this.analyzeConversation(messages);
+    
+    // Get mode metadata
+    const getModeIcon = (mode: ModeType): string => {
+      const icons: Record<ModeType, string> = {
+        assistant: '💬',
+        planning: '📋',
+        developer: '👨‍💻',
+        tool: '🔧',
+        debugger: '🐛',
+        security: '🔒',
+        reviewer: '👀',
+        performance: '⚡',
+        prototype: '⚡🔬',
+        teacher: '👨‍🏫'
+      };
+      return icons[mode] || '💬';
+    };
+    
+    // Generate reasons for each mode
+    const generateReason = (mode: ModeType, confidence: number): string => {
+      const { metadata } = analysis;
+      
+      switch (mode) {
+        case 'debugger':
+          if (metadata.errorMessagesPresent) {
+            return 'Multiple errors detected';
+          }
+          return 'Error analysis recommended';
+          
+        case 'security':
+          if (metadata.keywords.some(k => k.includes('security') || k.includes('vulnerability'))) {
+            return 'Security concerns detected';
+          }
+          return 'Security review recommended';
+          
+        case 'reviewer':
+          if (metadata.keywords.some(k => k.includes('review') || k.includes('check'))) {
+            return 'Code review requested';
+          }
+          return 'Quality assessment suggested';
+          
+        case 'performance':
+          if (metadata.keywords.some(k => k.includes('slow') || k.includes('optimize'))) {
+            return 'Performance issues detected';
+          }
+          return 'Optimization opportunities';
+          
+        case 'planning':
+          if (metadata.keywords.some(k => k.includes('plan') || k.includes('design'))) {
+            return 'Planning phase detected';
+          }
+          return 'Consider planning first';
+          
+        case 'developer':
+          if (metadata.keywords.some(k => k.includes('implement') || k.includes('build'))) {
+            return 'Implementation ready';
+          }
+          return 'Ready to implement';
+          
+        case 'prototype':
+          if (metadata.keywords.some(k => k.includes('experiment') || k.includes('quick'))) {
+            return 'Quick experiment suggested';
+          }
+          return 'Rapid prototyping mode';
+          
+        case 'teacher':
+          if (metadata.keywords.some(k => k.includes('explain') || k.includes('learn'))) {
+            return 'Learning opportunity';
+          }
+          return 'Educational context';
+          
+        case 'assistant':
+          return 'General conversation';
+          
+        case 'tool':
+          if (metadata.toolsUsed.length > 0) {
+            return 'Tool usage detected';
+          }
+          return 'Enhanced tool guidance';
+          
+        default:
+          return 'Suggested mode';
+      }
+    };
+    
+    // Sort modes by confidence (excluding current mode)
+    const sortedModes = Object.entries(confidences)
+      .filter(([mode]) => mode !== currentMode)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, topN)
+      .map(([mode, confidence]) => ({
+        mode: mode as ModeType,
+        icon: getModeIcon(mode as ModeType),
+        confidence,
+        reason: generateReason(mode as ModeType, confidence)
+      }));
+    
+    return sortedModes;
   }
   
   /**

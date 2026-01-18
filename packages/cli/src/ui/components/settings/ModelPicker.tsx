@@ -35,7 +35,7 @@ export function ModelPicker({
   theme,
 }: ModelPickerProps) {
   return (
-    <Box flexDirection="column" borderStyle="single" borderColor={theme.text.accent} paddingX={1}>
+    <Box flexDirection="column" borderStyle="single" borderColor={theme.border.active} paddingX={1}>
       <Box marginBottom={1}>
         <Text bold color={theme.text.accent}>
           Model Selection

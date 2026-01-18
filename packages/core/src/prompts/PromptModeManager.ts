@@ -9,6 +9,9 @@ import { EventEmitter } from 'events';
 import type { ContextAnalyzer, ContextAnalysis, ModeType } from './ContextAnalyzer.js';
 import type { PromptRegistry } from './PromptRegistry.js';
 import type { SystemPromptBuilder } from '../context/SystemPromptBuilder.js';
+import { ModeMetricsTracker } from './ModeMetricsTracker.js';
+import { FocusModeManager } from './FocusModeManager.js';
+import { ModeTransitionAnimator, type TransitionAnimation } from './ModeTransitionAnimator.js';
 
 /**
  * Mode configuration
@@ -94,6 +97,9 @@ export class PromptModeManager extends EventEmitter {
   private state: ModeState;
   private modeHistory: ModeTransition[] = [];
   private readonly maxHistorySize = 100;
+  private metricsTracker: ModeMetricsTracker;
+  private focusModeManager: FocusModeManager;
+  private animator: ModeTransitionAnimator;
   
   // Timing configuration
   private readonly minDuration = 30000;  // 30 seconds
@@ -106,6 +112,18 @@ export class PromptModeManager extends EventEmitter {
   ) {
     super();
     
+    // Initialize metrics tracker
+    this.metricsTracker = new ModeMetricsTracker();
+    
+    // Initialize focus mode manager
+    this.focusModeManager = new FocusModeManager();
+    
+    // Initialize transition animator
+    this.animator = new ModeTransitionAnimator();
+    
+    // Load persisted metrics from disk
+    this.loadMetrics();
+    
     // Initialize state
     this.state = {
       currentMode: 'assistant',
@@ -115,6 +133,9 @@ export class PromptModeManager extends EventEmitter {
       modeEntryTime: new Date(),
       activeSkills: []
     };
+    
+    // Track initial mode entry
+    this.metricsTracker.trackModeEntry('assistant');
   }
   
   /**
@@ -171,11 +192,124 @@ export class PromptModeManager extends EventEmitter {
   }
   
   /**
+   * Get metrics tracker
+   */
+  getMetricsTracker(): ModeMetricsTracker {
+    return this.metricsTracker;
+  }
+  
+  /**
+   * Get transition animator
+   */
+  getAnimator(): ModeTransitionAnimator {
+    return this.animator;
+  }
+  
+  /**
+   * Get focus mode manager
+   */
+  getFocusModeManager(): FocusModeManager {
+    return this.focusModeManager;
+  }
+  
+  /**
+   * Track a mode-specific event
+   * Convenience method to track events through the metrics tracker
+   */
+  trackEvent(event: import('./ModeMetricsTracker.js').ModeEvent): void {
+    this.metricsTracker.trackEvent(event);
+    
+    // Persist metrics after tracking significant events
+    // (debounced to avoid excessive disk writes)
+    this.debouncedPersistMetrics();
+  }
+  
+  /**
+   * Persist metrics to disk
+   * Saves current metrics to ~/.ollm/metrics/mode-metrics.json
+   */
+  persistMetrics(): void {
+    try {
+      this.metricsTracker.saveMetricsToDisk();
+    } catch (error) {
+      // Log error but don't throw - metrics persistence should not break functionality
+      console.error('Failed to persist mode metrics:', error);
+    }
+  }
+  
+  /**
+   * Debounced version of persistMetrics to avoid excessive disk writes
+   */
+  private persistMetricsTimeout: NodeJS.Timeout | null = null;
+  private debouncedPersistMetrics(): void {
+    if (this.persistMetricsTimeout) {
+      clearTimeout(this.persistMetricsTimeout);
+    }
+    
+    this.persistMetricsTimeout = setTimeout(() => {
+      this.persistMetrics();
+      this.persistMetricsTimeout = null;
+    }, 5000); // Wait 5 seconds after last event before persisting
+  }
+  
+  /**
+   * Load metrics from disk
+   * Loads persisted metrics from ~/.ollm/metrics/mode-metrics.json
+   * 
+   * @returns true if metrics were loaded successfully, false otherwise
+   */
+  loadMetrics(): boolean {
+    try {
+      return this.metricsTracker.loadMetricsFromDisk();
+    } catch (error) {
+      console.error('Failed to load mode metrics:', error);
+      return false;
+    }
+  }
+  
+  /**
+   * Clear persisted metrics
+   * Deletes the metrics file and resets in-memory metrics
+   */
+  clearMetrics(): void {
+    try {
+      this.metricsTracker.clearPersistedMetrics();
+      this.metricsTracker.resetMetrics();
+    } catch (error) {
+      console.error('Failed to clear mode metrics:', error);
+    }
+  }
+  
+  /**
+   * Cleanup method to be called when shutting down
+   * Ensures metrics are persisted before exit
+   */
+  shutdown(): void {
+    // Cancel any pending debounced persist
+    if (this.persistMetricsTimeout) {
+      clearTimeout(this.persistMetricsTimeout);
+      this.persistMetricsTimeout = null;
+    }
+    
+    // Persist metrics one final time
+    this.persistMetrics();
+    
+    // Shutdown focus mode manager
+    this.focusModeManager.shutdown();
+  }
+  
+  /**
    * Check if mode should switch based on analysis
    * 
    * Implements hysteresis and cooldown logic.
    */
   shouldSwitchMode(currentMode: ModeType, analysis: ContextAnalysis): boolean {
+    // Check if focus mode blocks this switch
+    const focusCheck = this.focusModeManager.shouldBlockModeSwitch(analysis.mode);
+    if (focusCheck.blocked) {
+      return false;
+    }
+    
     // Don't switch if auto-switch is disabled
     if (!this.state.autoSwitchEnabled) {
       return false;
@@ -235,15 +369,22 @@ export class PromptModeManager extends EventEmitter {
     trigger: 'auto' | 'manual' | 'tool' | 'explicit',
     confidence: number = 0
   ): void {
+    // Check if focus mode blocks this switch (except for explicit focus mode commands)
+    if (trigger !== 'explicit') {
+      const focusCheck = this.focusModeManager.shouldBlockModeSwitch(newMode);
+      if (focusCheck.blocked) {
+        // Emit blocked event so UI can show message
+        this.emit('mode-switch-blocked', {
+          targetMode: newMode,
+          reason: focusCheck.reason
+        });
+        return;
+      }
+    }
+    
     const oldMode = this.state.currentMode;
     
-    // Update state
-    this.state.previousMode = oldMode;
-    this.state.currentMode = newMode;
-    this.state.lastSwitchTime = new Date();
-    this.state.modeEntryTime = new Date();
-    
-    // Record transition
+    // Create transition record
     const transition: ModeTransition = {
       from: oldMode,
       to: newMode,
@@ -252,10 +393,35 @@ export class PromptModeManager extends EventEmitter {
       confidence
     };
     
+    // Create and start animation
+    const animation = this.animator.createAnimation(transition);
+    this.animator.startAnimation(animation.id);
+    
+    // Emit animation-started event for UI
+    this.emit('mode-animation-started', animation);
+    
+    // Update state
+    this.state.previousMode = oldMode;
+    this.state.currentMode = newMode;
+    this.state.lastSwitchTime = new Date();
+    this.state.modeEntryTime = new Date();
+    
     this.addToHistory(transition);
+    
+    // Track metrics for this transition
+    this.metricsTracker.trackModeTransition(transition);
+    
+    // Persist metrics to disk after transition
+    this.persistMetrics();
     
     // Emit mode-changed event
     this.emit('mode-changed', transition);
+    
+    // Complete animation after a short delay
+    setTimeout(() => {
+      this.animator.completeAnimation(animation.id);
+      this.emit('mode-animation-completed', animation);
+    }, animation.duration);
   }
   
   /**
@@ -266,7 +432,9 @@ export class PromptModeManager extends EventEmitter {
     
     // Keep only last 100 transitions
     if (this.modeHistory.length > this.maxHistorySize) {
-      this.modeHistory.shift();
+      // Remove excess items from the beginning
+      const excess = this.modeHistory.length - this.maxHistorySize;
+      this.modeHistory.splice(0, excess);
     }
   }
   
@@ -372,7 +540,14 @@ constructive feedback.`,
       
       performance: `# Mode: Performance Engineer ⚡
 You are a performance engineer. Analyze bottlenecks, optimize code, and
-improve system performance.`
+improve system performance.`,
+      
+      prototype: `# Mode: Prototype 🔬
+You are a rapid prototyper. Build quick proof-of-concepts to validate ideas.`,
+      
+      teacher: `# Mode: Teacher 👨‍🏫
+You are a patient technical educator. Help users understand concepts deeply
+through clear explanations and examples.`
     };
     
     return templates[mode] || templates.assistant;
@@ -477,6 +652,14 @@ improve system performance.`
         'get_diagnostics', 'shell',
         'web_search',
         'write_file', 'str_replace'
+      ],
+      
+      prototype: ['*'],
+      
+      teacher: [
+        'web_search',
+        'read_file', 'read_multiple_files',
+        'grep_search', 'file_search', 'list_directory'
       ]
     };
     
@@ -506,10 +689,90 @@ improve system performance.`
       
       reviewer: ['write_file', 'str_replace', 'delete_file', 'git_*'],
       
-      performance: ['delete_file']
+      performance: ['delete_file'],
+      
+      prototype: [],
+      
+      teacher: [
+        'write_file', 'fs_append', 'str_replace', 'delete_file',
+        'execute_pwsh', 'control_pwsh_process',
+        'git_*'
+      ]
     };
     
     return deniedTools[mode] || [];
+  }
+  
+  /**
+   * Validate if a file path is allowed for writing in planning mode
+   * @param filePath - The file path to validate
+   * @param toolName - The tool attempting to write (for error messages)
+   * @returns Object with allowed status and error message if denied
+   */
+  validateFilePathForPlanningMode(filePath: string, toolName: string): {
+    allowed: boolean;
+    errorMessage?: string;
+  } {
+    // Only validate for planning mode
+    if (this.state.currentMode !== 'planning') {
+      return { allowed: true };
+    }
+    
+    // Import the validation functions
+    const { 
+      isFileAllowedInPlanningMode, 
+      getRestrictionErrorMessage 
+    } = require('./PlanningModeRestrictions.js');
+    
+    const allowed = isFileAllowedInPlanningMode(filePath);
+    
+    if (!allowed) {
+      const errorMessage = getRestrictionErrorMessage(filePath);
+      return { allowed: false, errorMessage };
+    }
+    
+    return { allowed: true };
+  }
+  
+  /**
+   * Check if a tool with file path arguments should be allowed in planning mode
+   * This is called before tool execution to validate file paths
+   * @param toolName - The tool name
+   * @param args - The tool arguments
+   * @returns Object with allowed status and error message if denied
+   */
+  validateToolArgsForPlanningMode(toolName: string, args: any): {
+    allowed: boolean;
+    errorMessage?: string;
+  } {
+    // Only validate for planning mode
+    if (this.state.currentMode !== 'planning') {
+      return { allowed: true };
+    }
+    
+    // Tools that write files and need validation
+    const writeTools = ['write_file', 'fs_append', 'fsWrite', 'fsAppend'];
+    
+    if (!writeTools.includes(toolName)) {
+      return { allowed: true };
+    }
+    
+    // Extract file path from arguments
+    let filePath: string | undefined;
+    
+    if (typeof args === 'object' && args !== null) {
+      // Try common argument names
+      filePath = args.path || args.filePath || args.file || args.targetFile;
+    } else if (typeof args === 'string') {
+      filePath = args;
+    }
+    
+    if (!filePath) {
+      // Can't validate without a file path, allow it
+      return { allowed: true };
+    }
+    
+    return this.validateFilePathForPlanningMode(filePath, toolName);
   }
   
   /**

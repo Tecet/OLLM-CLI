@@ -35,7 +35,7 @@ export function ChatTab(props: ChatTabProps) {
   const { state: chatState, scrollOffset, selectedLineIndex, setSelectedLineIndex, updateMessage } = useChat(); 
   const { state: uiState } = useUI();
   const { stdout } = useStdout();
-  const { isFocused } = useFocusManager();
+  const { isFocused, exitToNavBar } = useFocusManager();
   
   const hasFocus = isFocused('chat-history');
 
@@ -98,14 +98,15 @@ export function ChatTab(props: ChatTabProps) {
 
   // Note: Scroll logic is now handled in ChatContext + App.tsx global shortcuts
   // This ensures scrolling works even when InputBox is focused.
-  useInput((_input, key) => {
+  useInput((input, key) => {
     if (!hasFocus) return;
+
     if (key.upArrow) {
-      setSelectedLineIndex(prev => Math.max(0, prev - 1));
+      setSelectedLineIndex((prev: number) => Math.max(0, prev - 1));
       return;
     }
     if (key.downArrow) {
-      setSelectedLineIndex(prev => Math.min(Math.max(0, lines.length - 1), prev + 1));
+      setSelectedLineIndex((prev: number) => Math.min(Math.max(0, lines.length - 1), prev + 1));
       return;
     }
     if (key.rightArrow || key.leftArrow) {
@@ -123,6 +124,12 @@ export function ChatTab(props: ChatTabProps) {
       }));
       if (!hasExpandableDiff && !hasExpandableReasoning && !hasExpandableTools) return;
       updateMessage(message.id, { expanded: key.rightArrow ? true : false });
+      return;
+    }
+
+    if (key.escape || input === '0') {
+      exitToNavBar();
+      return;
     }
   }, { isActive: hasFocus });
 

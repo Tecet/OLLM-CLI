@@ -13,6 +13,8 @@ import { DEBUGGER_MODE_TEMPLATE } from './debugger.js';
 import { SECURITY_MODE_TEMPLATE } from './security.js';
 import { REVIEWER_MODE_TEMPLATE } from './reviewer.js';
 import { PERFORMANCE_MODE_TEMPLATE } from './performance.js';
+import { PROTOTYPE_MODE_TEMPLATE } from './prototype.js';
+import { TEACHER_MODE_TEMPLATE } from './teacher.js';
 
 export {
   ASSISTANT_MODE_TEMPLATE,
@@ -22,7 +24,9 @@ export {
   DEBUGGER_MODE_TEMPLATE,
   SECURITY_MODE_TEMPLATE,
   REVIEWER_MODE_TEMPLATE,
-  PERFORMANCE_MODE_TEMPLATE
+  PERFORMANCE_MODE_TEMPLATE,
+  PROTOTYPE_MODE_TEMPLATE,
+  TEACHER_MODE_TEMPLATE
 };
 
 /**
@@ -37,6 +41,8 @@ export const MODE_TEMPLATES = {
   security: SECURITY_MODE_TEMPLATE,
   reviewer: REVIEWER_MODE_TEMPLATE,
   performance: PERFORMANCE_MODE_TEMPLATE,
+  prototype: PROTOTYPE_MODE_TEMPLATE,
+  teacher: TEACHER_MODE_TEMPLATE,
 } as const;
 
 /**
@@ -98,5 +104,19 @@ export const MODE_METADATA = {
     icon: '⚡',
     color: 'magenta',
     description: 'Performance analysis, optimization, profiling',
+  },
+  prototype: {
+    name: 'Prototype',
+    persona: 'Rapid Prototyper',
+    icon: '⚡🔬',
+    color: 'brightCyan',
+    description: 'Quick experiments, proof-of-concepts, throwaway code',
+  },
+  teacher: {
+    name: 'Teacher',
+    persona: 'Patient Technical Educator',
+    icon: '👨‍🏫',
+    color: 'warmYellow',
+    description: 'Explain concepts, teach best practices, answer "why" questions',
   },
 } as const;

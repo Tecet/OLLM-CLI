@@ -362,6 +362,11 @@ describe('PromptModeManager', () => {
       expect(filtered.length).toBe(mockTools.length);
     });
 
+    it('should allow all tools in prototype mode', () => {
+      const filtered = manager.filterToolsForMode(mockTools, 'prototype');
+      expect(filtered.length).toBe(mockTools.length);
+    });
+
     it('should filter tools for debugger mode', () => {
       const filtered = manager.filterToolsForMode(mockTools, 'debugger');
       
@@ -670,6 +675,146 @@ describe('PromptModeManager', () => {
         manager.switchMode(mode, 'manual', 1.0);
         expect(manager.getCurrentMode()).toBe(mode);
       }
+    });
+  });
+
+  describe('Planning Mode File Restrictions', () => {
+    beforeEach(() => {
+      manager.switchMode('planning', 'manual', 1.0);
+    });
+
+    describe('validateFilePathForPlanningMode', () => {
+      it('should allow documentation files in docs directory', () => {
+        const result = manager.validateFilePathForPlanningMode('docs/README.md', 'write_file');
+        expect(result.allowed).toBe(true);
+        expect(result.errorMessage).toBeUndefined();
+      });
+
+      it('should allow design files in design directory', () => {
+        const result = manager.validateFilePathForPlanningMode('design/architecture.spec', 'write_file');
+        expect(result.allowed).toBe(true);
+      });
+
+      it('should allow files in .kiro/specs directory', () => {
+        const result = manager.validateFilePathForPlanningMode('.kiro/specs/feature/design.md', 'write_file');
+        expect(result.allowed).toBe(true);
+      });
+
+      it('should deny TypeScript files', () => {
+        const result = manager.validateFilePathForPlanningMode('src/index.ts', 'write_file');
+        expect(result.allowed).toBe(false);
+        expect(result.errorMessage).toContain('Planning mode cannot write to source code files');
+        expect(result.errorMessage).toContain('.ts');
+      });
+
+      it('should deny JavaScript files', () => {
+        const result = manager.validateFilePathForPlanningMode('lib/utils.js', 'write_file');
+        expect(result.allowed).toBe(false);
+        expect(result.errorMessage).toContain('source code files');
+      });
+
+      it('should deny files in src directory', () => {
+        const result = manager.validateFilePathForPlanningMode('src/README.md', 'write_file');
+        expect(result.allowed).toBe(false);
+        expect(result.errorMessage).toContain('src');
+      });
+
+      it('should deny configuration files', () => {
+        const result = manager.validateFilePathForPlanningMode('package.json', 'write_file');
+        expect(result.allowed).toBe(false);
+        expect(result.errorMessage).toContain('.json');
+      });
+
+      it('should provide helpful error messages', () => {
+        const result = manager.validateFilePathForPlanningMode('src/index.ts', 'write_file');
+        expect(result.errorMessage).toContain('Switch to Developer mode');
+      });
+
+      it('should not validate when not in planning mode', () => {
+        manager.switchMode('developer', 'manual', 1.0);
+        const result = manager.validateFilePathForPlanningMode('src/index.ts', 'write_file');
+        expect(result.allowed).toBe(true);
+      });
+    });
+
+    describe('validateToolArgsForPlanningMode', () => {
+      it('should validate write_file tool with path argument', () => {
+        const result = manager.validateToolArgsForPlanningMode('write_file', {
+          path: 'src/index.ts',
+          text: 'code'
+        });
+        expect(result.allowed).toBe(false);
+        expect(result.errorMessage).toContain('source code files');
+      });
+
+      it('should validate fs_append tool with path argument', () => {
+        const result = manager.validateToolArgsForPlanningMode('fs_append', {
+          path: 'lib/utils.js',
+          text: 'code'
+        });
+        expect(result.allowed).toBe(false);
+      });
+
+      it('should validate fsWrite tool with path argument', () => {
+        const result = manager.validateToolArgsForPlanningMode('fsWrite', {
+          path: 'docs/README.md',
+          text: 'documentation'
+        });
+        expect(result.allowed).toBe(true);
+      });
+
+      it('should allow write_file for documentation files', () => {
+        const result = manager.validateToolArgsForPlanningMode('write_file', {
+          path: 'docs/guide.md',
+          text: 'documentation'
+        });
+        expect(result.allowed).toBe(true);
+      });
+
+      it('should not validate read-only tools', () => {
+        const result = manager.validateToolArgsForPlanningMode('read_file', {
+          path: 'src/index.ts'
+        });
+        expect(result.allowed).toBe(true);
+      });
+
+      it('should handle string arguments', () => {
+        const result = manager.validateToolArgsForPlanningMode('write_file', 'src/index.ts');
+        expect(result.allowed).toBe(false);
+      });
+
+      it('should handle missing path gracefully', () => {
+        const result = manager.validateToolArgsForPlanningMode('write_file', {
+          text: 'code'
+        });
+        expect(result.allowed).toBe(true); // Can't validate without path
+      });
+
+      it('should handle alternative path argument names', () => {
+        const resultFilePath = manager.validateToolArgsForPlanningMode('write_file', {
+          filePath: 'src/index.ts'
+        });
+        expect(resultFilePath.allowed).toBe(false);
+
+        const resultFile = manager.validateToolArgsForPlanningMode('write_file', {
+          file: 'src/index.ts'
+        });
+        expect(resultFile.allowed).toBe(false);
+
+        const resultTargetFile = manager.validateToolArgsForPlanningMode('write_file', {
+          targetFile: 'src/index.ts'
+        });
+        expect(resultTargetFile.allowed).toBe(false);
+      });
+
+      it('should not validate when not in planning mode', () => {
+        manager.switchMode('developer', 'manual', 1.0);
+        const result = manager.validateToolArgsForPlanningMode('write_file', {
+          path: 'src/index.ts',
+          text: 'code'
+        });
+        expect(result.allowed).toBe(true);
+      });
     });
   });
 });

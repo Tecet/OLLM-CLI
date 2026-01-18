@@ -8,6 +8,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Box, Text } from 'ink';
 import type { ReasoningBlock } from '../../../../../core/src/services/reasoningParser.js';
+import { Theme } from '../../../config/types.js';
 
 export interface ReasoningBoxProps {
   reasoning: ReasoningBlock;
@@ -16,16 +17,7 @@ export interface ReasoningBoxProps {
   maxVisibleLines?: number;
   autoScroll?: boolean;
   autoCollapseOnComplete?: boolean;
-  theme?: {
-    text: {
-      primary: string;
-      secondary: string;
-      accent: string;
-    };
-    bg: {
-      secondary: string;
-    };
-  };
+  theme?: Theme;
 }
 
 /**
@@ -46,14 +38,13 @@ export const ReasoningBox: React.FC<ReasoningBoxProps> = ({
   autoScroll = true,
   autoCollapseOnComplete = true,
   theme = {
-    text: {
-      primary: '#d4d4d4',
-      secondary: '#858585',
-      accent: '#4ec9b0',
-    },
-    bg: {
-      secondary: '#1e1e1e',
-    },
+    name: 'default',
+    bg: { primary: '#1e1e1e', secondary: '#252526', tertiary: '#333333' },
+    text: { primary: '#d4d4d4', secondary: '#858585', accent: '#4ec9b0' },
+    role: { user: '#4ec9b0', assistant: '#ce9178', system: '#569cd6', tool: '#b5cea8' },
+    status: { success: '#4ec9b0', warning: '#ce9178', error: '#f48771', info: '#569cd6' },
+    border: { primary: '#555555', secondary: '#4ec9b0', active: '#4ec9b0' },
+    diff: { added: '#4ec9b0', removed: '#f48771' }
   },
 }) => {
   // Initialize internal expanded state based on completion status
@@ -111,7 +102,7 @@ export const ReasoningBox: React.FC<ReasoningBoxProps> = ({
       <Box
         flexDirection="column"
         borderStyle="round"
-        borderColor={theme.text.accent}
+        borderColor={theme?.border?.active || '#4ec9b0'}
         paddingX={1}
       >
         <Box justifyContent="space-between">
@@ -132,7 +123,7 @@ export const ReasoningBox: React.FC<ReasoningBoxProps> = ({
     <Box
       flexDirection="column"
       borderStyle="round"
-      borderColor={theme.text.accent}
+      borderColor={theme?.border?.active || '#4ec9b0'}
       paddingX={1}
     >
       {/* Header */}

@@ -228,7 +228,8 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 15 }: Tools
     }
   }, [selectedCategoryIndex, selectedToolIndex, categoryData, scrollOffset, WINDOW_SIZE]);
 
-  // Calculate enabled/disabled counts
+  // Calculate enabled/disabled counts (currently unused)
+  /*
   const { enabledCount, disabledCount } = useMemo(() => {
     let enabled = 0;
     let disabled = 0;
@@ -238,8 +239,20 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 15 }: Tools
     });
     return { enabledCount: enabled, disabledCount: disabled };
   }, [toolStates]);
+  */
 
-  // Model doesn't support tools
+  // Get currently selected tool
+  const selectedTool = useMemo(() => {
+    if (selectedCategoryIndex >= 0 && selectedCategoryIndex < categoryData.length) {
+      const category = categoryData[selectedCategoryIndex];
+      if (selectedToolIndex >= 0 && selectedToolIndex < category.tools.length) {
+        return category.tools[selectedToolIndex];
+      }
+    }
+    return null;
+  }, [categoryData, selectedCategoryIndex, selectedToolIndex]);
+
+  // Model doesn't support tools - MOVE AFTER HOOKS
   if (!modelSupportsTools) {
     return (
       <Box flexDirection="column" padding={2}>
@@ -258,30 +271,17 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 15 }: Tools
     );
   }
 
-  // Get currently selected tool
-  const selectedTool = useMemo(() => {
-    if (selectedCategoryIndex >= 0 && selectedCategoryIndex < categoryData.length) {
-      const category = categoryData[selectedCategoryIndex];
-      if (selectedToolIndex >= 0 && selectedToolIndex < category.tools.length) {
-        return category.tools[selectedToolIndex];
-      }
-    }
-    return null;
-  }, [categoryData, selectedCategoryIndex, selectedToolIndex]);
-
   return (
     <Box flexDirection="column" height="100%">
       {/* Header */}
       <Box
         flexDirection="column"
-        borderStyle="single"
-        borderColor={hasFocus ? uiState.theme.text.accent : uiState.theme.text.secondary}
         paddingX={1}
         flexShrink={0}
       >
         <Box justifyContent="space-between">
-          <Text bold color={hasFocus ? uiState.theme.text.accent : uiState.theme.text.primary}>
-            {hasFocus ? '▶ ' : ''}Tools Configuration
+          <Text bold color={hasFocus ? 'yellow' : uiState.theme.text.primary}>
+            Tools Configuration
           </Text>
           <Text color={hasFocus ? uiState.theme.text.primary : uiState.theme.text.secondary}>
             ↑↓:Nav Enter:Toggle 0/Esc:Exit{hasUnsavedChanges ? '*' : ''}
@@ -292,7 +292,7 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 15 }: Tools
       {/* Two-column layout */}
       <Box flexGrow={1} overflow="hidden">
         {/* Left column: Tool list (30%) */}
-        <Box flexDirection="column" width="30%" borderStyle="single" borderColor={uiState.theme.border.primary}>
+        <Box flexDirection="column" width="30%" borderStyle="single" borderColor={hasFocus ? uiState.theme.border.active : uiState.theme.border.primary}>
           {/* Scroll indicator at top - STICKY */}
           {scrollOffset > 0 && (
             <>

@@ -14,6 +14,15 @@ interface ActiveContextState {
   allowedTools: string[];
   modeIcon: string;
   modeColor: string;
+  // Confidence display fields
+  currentModeConfidence: number;
+  modeDuration: number; // milliseconds in current mode
+  suggestedModes: Array<{
+    mode: ModeType;
+    icon: string;
+    confidence: number;
+    reason: string;
+  }>;
 }
 
 interface ActiveContextContextType extends ActiveContextState {
@@ -102,8 +111,24 @@ export const ActiveContextProvider: React.FC<{ children: ReactNode }> = ({ child
     currentMode: 'assistant',
     allowedTools: [],
     modeIcon: '💬',
-    modeColor: 'blue'
+    modeColor: 'blue',
+    currentModeConfidence: 1.0,
+    modeDuration: 0,
+    suggestedModes: []
   });
+  
+  const [modeStartTime, setModeStartTime] = useState<Date>(new Date());
+
+  // Update mode duration every second
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = new Date();
+      const duration = now.getTime() - modeStartTime.getTime();
+      setState(prev => ({ ...prev, modeDuration: duration }));
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, [modeStartTime]);
 
   useEffect(() => {
     // Listen for events from ContextManager
@@ -115,7 +140,8 @@ export const ActiveContextProvider: React.FC<{ children: ReactNode }> = ({ child
            activeHooks: [],
            activeMcpServers: [],
            activePrompts: [],
-           contextStrategy: 'Standard' 
+           contextStrategy: 'Standard',
+           suggestedModes: []
        }));
     };
     
@@ -127,13 +153,26 @@ export const ActiveContextProvider: React.FC<{ children: ReactNode }> = ({ child
       const modeManager = actions.getModeManager();
       const allowedTools = modeManager ? modeManager.getAllowedTools(event.to) : [];
       
+      // Get suggested modes from ContextAnalyzer
+      const contextAnalyzer = modeManager?.getContextAnalyzer();
+      const messages = actions.getMessages ? actions.getMessages() : [];
+      const suggestedModes = contextAnalyzer && messages.length > 0
+        ? contextAnalyzer.getSuggestedModes(messages, event.to, 3)
+        : [];
+      
+      // Reset mode start time
+      setModeStartTime(new Date());
+      
       setState(prev => ({
         ...prev,
         currentMode: event.to,
         currentPersona: metadata.persona,
         modeIcon: metadata.icon,
         modeColor: metadata.color,
-        allowedTools
+        allowedTools,
+        currentModeConfidence: event.confidence,
+        modeDuration: 0, // Reset duration on mode change
+        suggestedModes
       }));
     };
 

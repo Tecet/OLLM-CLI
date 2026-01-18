@@ -33,11 +33,13 @@ import { SettingsService } from '../config/settingsService.js';
 import { FocusProvider, useFocusManager } from '../features/context/FocusContext.js';
 import { keybindsData as keybinds } from '../config/keybinds.js';
 import { defaultDarkTheme } from '../config/styles.js';
+import { SettingsProvider } from '../features/context/SettingsContext.js';
 
 import { TabBar } from './components/layout/TabBar.js';
 import { ChatInputArea } from './components/layout/ChatInputArea.js';
 import { SystemBar } from './components/layout/SystemBar.js';
 import { SidePanel } from './components/layout/SidePanel.js';
+import { Clock } from './components/layout/Clock.js';
 
 import { ChatTab } from './components/tabs/ChatTab.js';
 import { ToolsTab } from './components/tabs/ToolsTab.js';
@@ -160,8 +162,6 @@ function AppContent({ config }: AppContentProps) {
     if (gpuInfo) {
       if (typeof gpuInfo.vramTotal === 'number' && gpuInfo.vramTotal > 0) {
         effectiveTotalVRAM_GB = gpuInfo.vramTotal / (1024 * 1024 * 1024);
-      } else if (typeof gpuInfo.total === 'number' && gpuInfo.total > 0) {
-        effectiveTotalVRAM_GB = gpuInfo.total;
       }
     }
 
@@ -364,8 +364,6 @@ ${toolSupport}
               if (gpuInfo) {
                 if (typeof gpuInfo.vramTotal === 'number' && gpuInfo.vramTotal > 0) {
                   cardTotal = gpuInfo.vramTotal / (1024 * 1024 * 1024);
-                } else if (typeof gpuInfo.total === 'number' && gpuInfo.total > 0) {
-                  cardTotal = gpuInfo.total;
                 }
               }
               if (cardTotal === 0 && persistedHW) {
@@ -421,7 +419,7 @@ ${toolSupport}
                 ? [{ size: manualContext, size_label: `Manual (${manualContext})`, vram_estimate: '' }, ...contextProfiles]
                 : contextProfiles;
 
-              contextOptions.forEach(opt => {
+              contextOptions.forEach((opt: any) => {
                 const sizeStr = opt.size_label || (opt.size >= 1024 ? `${opt.size / 1024}k` : `${opt.size}`);
                 const vramEstimate = 'vram_estimate' in opt ? opt.vram_estimate : ('vramEstimate' in opt ? opt.vramEstimate : '');
                 const vramStr = vramEstimate ? ` - ${vramEstimate}` : '';
@@ -769,15 +767,26 @@ ${toolSupport}
             flexShrink={0} 
             minHeight={0}
         >
-          {/* Row 1: Top Bar (5%, Green) */}
-          <Box height={row1Height} borderStyle="single" borderColor={focusManager.isFocused('nav-bar') ? uiState.theme.border.active : uiState.theme.border.primary}>
-            <TabBar
-              activeTab={uiState.activeTab}
-              onTabChange={setActiveTab}
-              notifications={notificationCounts}
-              theme={uiState.theme}
-              noBorder
-            />
+          {/* Row 1: Top Bar (5%) */}
+          <Box 
+            height={row1Height} 
+            flexDirection="row" 
+            alignItems="center" 
+            justifyContent="space-between"
+          >
+            <Box flexGrow={1} borderStyle="single" borderColor={focusManager.isFocused('nav-bar') ? uiState.theme.border.active : uiState.theme.border.primary}>
+              <TabBar
+                activeTab={uiState.activeTab}
+                onTabChange={setActiveTab}
+                notifications={notificationCounts}
+                theme={uiState.theme}
+                noBorder
+              />
+            </Box>
+            
+            <Box marginLeft={1}>
+              <Clock borderColor={uiState.theme.border.primary} />
+            </Box>
           </Box>
 
           {/* Row 2: Chat Box (60%, Blue) */}
@@ -799,7 +808,7 @@ ${toolSupport}
               visible={uiState.sidePanelVisible}
               connection={{ status: 'connected', provider: config.provider.default }}
               model={currentModel || 'model'}
-              gpu={gpuInfo}
+              gpu={gpuInfo as any}
               theme={uiState.theme}
             />
           </Box>
@@ -829,7 +838,7 @@ ${toolSupport}
         <Box
           padding={1}
           borderStyle="single"
-          borderColor={uiState.theme.text.accent}
+          borderColor={uiState.theme.border.active}
         >
           <Text>Command Palette (Coming Soon)</Text>
           <Text>Press Ctrl+K to close</Text>
@@ -847,7 +856,11 @@ ${toolSupport}
                     name: currentModel || 'Unknown',
                     size: 'Unknown' // TODO: get size
                 }}
-                gpuInfo={gpuInfo || undefined}
+                gpuInfo={gpuInfo ? {
+                    name: gpuInfo.model || 'Generic GPU',
+                    vram: `${(gpuInfo.vramTotal / (1024 * 1024 * 1024)).toFixed(1)} GB`,
+                    utilization: `${gpuInfo.gpuUtilization}%`
+                } : undefined}
             />
         </Box>
       )}
@@ -932,17 +945,16 @@ export function App({ config }: AppProps) {
     });
   })();
   
-  // Load initial theme
-  const initialThemeName = settings.ui?.theme || config.ui?.theme || 'default-dark';
+  // Load initial theme from SettingsService
+  const initialThemeName = SettingsService.getInstance().getTheme() || config.ui?.theme || 'default-dark';
   let initialTheme = defaultDarkTheme;
   try {
-    const { getThemeManager } = require('./services/themeManager.js');
-    const themeManager = getThemeManager();
-    if (themeManager.hasTheme(initialThemeName)) {
-      initialTheme = themeManager.loadTheme(initialThemeName);
+    const { builtInThemes } = require('../config/styles.js') as any;
+    if (builtInThemes[initialThemeName]) {
+      initialTheme = builtInThemes[initialThemeName];
     }
   } catch (e) {
-    console.error('Failed to load theme:', e);
+    console.warn('Failed to load initial theme from built-ins, using default:', e);
   }
   
   // Get workspace path (if available)
@@ -954,46 +966,48 @@ export function App({ config }: AppProps) {
         initialSidePanelVisible={initialSidePanelVisible}
         initialTheme={initialTheme}
       >
-        <DialogProvider>
-          <UserPromptProvider>
-            <UserPromptBridge />
-            <GPUProvider 
-              pollingInterval={config.status?.pollInterval || 5000}
-              autoStart={config.ui?.showGpuStats !== false}
-            >
-            <ServiceProvider
-              provider={provider}
-              config={config}
-              workspacePath={workspacePath}
-            >
-              <ContextManagerProvider
-                sessionId={sessionId}
-                modelInfo={modelInfo}
-                modelId={initialModel}
-                config={contextConfig}
-                provider={provider}
+        <SettingsProvider>
+          <DialogProvider>
+            <UserPromptProvider>
+              <UserPromptBridge />
+              <GPUProvider 
+                pollingInterval={config.status?.pollInterval || 5000}
+                autoStart={config.ui?.showGpuStats !== false}
               >
-                <ModelProvider
+              <ServiceProvider
+                provider={provider}
+                config={config}
+                workspacePath={workspacePath}
+              >
+                <ContextManagerProvider
+                  sessionId={sessionId}
+                  modelInfo={modelInfo}
+                  modelId={initialModel}
+                  config={contextConfig}
                   provider={provider}
-                  initialModel={initialModel}
                 >
-                  <ChatProvider>
-                    <ReviewProvider>
-                      <FocusProvider>
-                        <ActiveContextProvider>
-                          <ErrorBoundary>
-                            <AppContent config={config} />
-                          </ErrorBoundary>
-                        </ActiveContextProvider>
-                      </FocusProvider>
-                    </ReviewProvider>
-                  </ChatProvider>
-                </ModelProvider>
-              </ContextManagerProvider>
-            </ServiceProvider>
-          </GPUProvider>
-          </UserPromptProvider>
-        </DialogProvider>
+                  <ModelProvider
+                    provider={provider}
+                    initialModel={initialModel}
+                  >
+                    <ChatProvider>
+                      <ReviewProvider>
+                        <FocusProvider>
+                          <ActiveContextProvider>
+                            <ErrorBoundary>
+                              <AppContent config={config} />
+                            </ErrorBoundary>
+                          </ActiveContextProvider>
+                        </FocusProvider>
+                      </ReviewProvider>
+                    </ChatProvider>
+                  </ModelProvider>
+                </ContextManagerProvider>
+              </ServiceProvider>
+            </GPUProvider>
+            </UserPromptProvider>
+          </DialogProvider>
+        </SettingsProvider>
       </UIProvider>
     </ErrorBoundary>
   );

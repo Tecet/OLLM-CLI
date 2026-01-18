@@ -126,6 +126,32 @@ describe('ContextAnalyzer', () => {
       expect(performanceDetection?.keywords).toContain('benchmark');
     });
 
+    it('should detect prototype mode keywords', () => {
+      const analyzer = new ContextAnalyzer();
+      const text = 'Let\'s create a quick prototype to experiment with this proof of concept';
+      
+      const detections = analyzer.detectKeywords(text);
+      
+      const prototypeDetection = detections.find(d => d.mode === 'prototype');
+      expect(prototypeDetection).toBeDefined();
+      expect(prototypeDetection?.keywords).toContain('prototype');
+      expect(prototypeDetection?.keywords).toContain('experiment');
+      expect(prototypeDetection?.keywords).toContain('proof of concept');
+    });
+
+    it('should detect teacher mode keywords', () => {
+      const analyzer = new ContextAnalyzer();
+      const text = 'Can you teach me how this works? Help me learn and understand the concept';
+      
+      const detections = analyzer.detectKeywords(text);
+      
+      const teacherDetection = detections.find(d => d.mode === 'teacher');
+      expect(teacherDetection).toBeDefined();
+      expect(teacherDetection?.keywords).toContain('teach me');
+      expect(teacherDetection?.keywords).toContain('learn');
+      expect(teacherDetection?.keywords).toContain('understand');
+    });
+
     it('should detect multiple modes in the same text', () => {
       const analyzer = new ContextAnalyzer();
       const text = 'Let\'s plan the implementation and then debug any errors';

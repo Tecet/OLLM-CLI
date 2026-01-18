@@ -116,6 +116,9 @@ export {
   ProjectProfileService,
   createGPUMonitor,
   DefaultGPUMonitor,
+  type GPUMonitor,
+  type GPUInfo,
+  type GPUVendor,
   ReasoningParser,
 } from './services/index.js';
 
@@ -265,10 +268,39 @@ export {
   type ModeConfig,
   type ModeTransition,
   type PromptBuildOptions,
+  // Workflow Manager
+  WorkflowManager,
+  type WorkflowStep,
+  type WorkflowDefinition,
+  type WorkflowState,
+  type WorkflowProgress,
   // Snapshot Manager (Mode Transitions)
   SnapshotManager as ModeSnapshotManager,
   type ModeTransitionSnapshot,
   type ModeFindings,
+  // Mode Transition Suggester
+  ModeTransitionSuggester,
+  type ModeTransitionSuggestion,
+  // Mode Metrics Tracker
+  ModeMetricsTracker,
+  type ModeEvent,
+  type ModeTimeMetrics,
+  type ModeTransitionMetrics,
+  type DebuggerModeMetrics,
+  type SecurityModeMetrics,
+  type ReviewerModeMetrics,
+  type PerformanceModeMetrics,
+  type PlanningModeMetrics,
+  type DeveloperModeMetrics,
+  type PrototypeModeMetrics,
+  type TeacherModeMetrics,
+  type ToolModeMetrics,
+  type AggregatedMetrics,
+  type SerializableMetrics,
+  // Hybrid Mode Manager
+  HybridModeManager,
+  type HybridMode,
+  PRESET_HYBRID_MODES,
   // Mode Templates
   ASSISTANT_MODE_TEMPLATE,
   PLANNING_MODE_TEMPLATE,
@@ -279,4 +311,7 @@ export {
   REVIEWER_MODE_TEMPLATE,
   PERFORMANCE_MODE_TEMPLATE,
   MODE_TEMPLATES,
+  // Mode Transition Animator
+  ModeTransitionAnimator,
+  type TransitionAnimation,
 } from './prompts/index.js';

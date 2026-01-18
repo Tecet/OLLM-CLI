@@ -47,7 +47,7 @@ export function SessionInfo({ stats, theme }: SessionInfoProps) {
   };
 
   return (
-    <Box flexDirection="column" borderStyle="single" borderColor={theme.text.accent} paddingX={1}>
+    <Box flexDirection="column" borderStyle="single" borderColor={theme.border.active} paddingX={1}>
       <Box marginBottom={1}>
         <Text bold color={theme.text.accent}>
           Session Information

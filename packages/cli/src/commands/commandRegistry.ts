@@ -21,6 +21,8 @@ import { metricsCommands } from './metricsCommands.js';
 import { reasoningCommands } from './reasoningCommands.js';
 import { utilityCommands } from './utilityCommands.js';
 import { modeCommands } from './modeCommands.js';
+import { modeShortcuts } from './modeShortcuts.js';
+import { workflowCommand } from './workflowCommands.js';
 import type { Theme } from '../config/types.js';
 
 /**
@@ -127,6 +129,14 @@ export class CommandRegistry {
     for (const command of modeCommands) {
       this.register(command);
     }
+    
+    // Register mode shortcuts
+    for (const command of modeShortcuts) {
+      this.register(command);
+    }
+    
+    // Register workflow command
+    this.register(workflowCommand);
   }
   
   /**

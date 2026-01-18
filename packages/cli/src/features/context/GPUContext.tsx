@@ -1,32 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { createGPUMonitor } from '@ollm/core';
-// Mock types when core types are missing
-export interface GPUInfo {
-  name: string;
-  vendor: string;
-  model?: string;
-  load: number;
-  memory: {
-    used: number;
-    total: number;
-  };
-  total: number;
-  vram: string;
-  temperature: number;
-  // Properties for StatusBar compatibility
-  available: boolean;
-  vramTotal: number;
-  vramUsed: number;
-  vramFree: number;
-  temperatureMax: number;
-  gpuUtilization: number;
-}
-interface GPUMonitor {
-  getInfo(): Promise<GPUInfo>;
-  onUpdate(callback: (info: GPUInfo) => void): void;
-  startPolling(interval: number): void;
-  stopPolling(): void;
-}
+import { createGPUMonitor, type GPUInfo, type GPUMonitor } from '@ollm/core';
+
 export interface GPUContextValue {
   /** Current GPU information, null if not yet loaded */
   info: GPUInfo | null;

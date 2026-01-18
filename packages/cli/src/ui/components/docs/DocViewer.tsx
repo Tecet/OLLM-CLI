@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Text } from 'ink';
-import { Theme } from '../../../features/context/UIContext.js';
+import { Theme } from '../../../config/types.js';
 
 export interface DocViewerProps {
   /** Document content (markdown) */
@@ -129,9 +129,9 @@ export function DocViewer({
   };
 
   return (
-    <Box flexDirection="column" borderStyle="single" borderColor={theme.text.accent} paddingX={1}>
+    <Box flexDirection="column" borderStyle="single" borderColor={theme.border.active} paddingX={1}>
       {/* Title */}
-      <Box borderStyle="single" borderColor={theme.text.accent} paddingX={1} marginBottom={1}>
+      <Box borderStyle="single" borderColor={theme.border.active} paddingX={1} marginBottom={1}>
         <Text bold color={theme.text.accent}>
           {title}
         </Text>
@@ -143,7 +143,7 @@ export function DocViewer({
       </Box>
 
       {/* Navigation hint */}
-      <Box marginTop={1} borderStyle="single" borderColor={theme.text.secondary} paddingX={1}>
+      <Box marginTop={1} borderStyle="single" borderColor={theme.border.primary} paddingX={1}>
         <Text color={theme.text.secondary} dimColor>
           j/k: scroll | Backspace: back to list
         </Text>

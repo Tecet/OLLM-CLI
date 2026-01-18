@@ -50,8 +50,7 @@ export function TabBar({ activeTab, onTabChange, notifications, theme, noBorder 
        activateContent(activeTab);
     }
     if (key.escape) {
-       // Return to chat tab
-       onTabChange('chat');
+       // Focus chat input (without changing tab)
        setFocus('chat-input');
     }
   }, { isActive: hasFocus });

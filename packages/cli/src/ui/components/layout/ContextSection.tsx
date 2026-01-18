@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Text } from 'ink';
 import { useActiveContext } from '../../../features/context/ActiveContextState.js';
+import { ModeConfidenceDisplay } from './ModeConfidenceDisplay.js';
 
 export function ContextSection() {
   const { 
@@ -14,6 +15,9 @@ export function ContextSection() {
     allowedTools,
     modeIcon,
     modeColor,
+    currentModeConfidence,
+    modeDuration,
+    suggestedModes,
   } = useActiveContext();
 
   // State for transition animation
@@ -48,7 +52,24 @@ export function ContextSection() {
   };
 
   return (
-    <Box flexDirection="row" width="100%">
+    <Box flexDirection="column" width="100%">
+      {/* Mode Confidence Display */}
+      <Box marginBottom={1}>
+        <ModeConfidenceDisplay
+          currentMode={currentMode}
+          currentModeIcon={modeIcon}
+          currentModeConfidence={currentModeConfidence}
+          modeDuration={modeDuration}
+          suggestedModes={suggestedModes}
+        />
+      </Box>
+      
+      {/* Divider */}
+      <Box marginBottom={1}>
+        <Text dimColor>{'─'.repeat(60)}</Text>
+      </Box>
+      
+      <Box flexDirection="row" width="100%">
       {/* Left Column */}
       <Box flexDirection="column" flexGrow={1} width="50%" paddingRight={1}>
         {/* Current Mode */}
@@ -157,6 +178,7 @@ export function ContextSection() {
             </Box>
           )}
         </Box>
+      </Box>
       </Box>
     </Box>
   );

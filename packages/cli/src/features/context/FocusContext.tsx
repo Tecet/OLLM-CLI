@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo, ReactNode } from 'react';
+import { useUI } from './UIContext.js';
 
 export type FocusableId = 
   | 'chat-input' 
@@ -8,21 +9,11 @@ export type FocusableId =
   | 'file-tree' 
   | 'functions'
   | 'tools-panel'
-  | 'docs-panel';
+  | 'docs-panel'
+  | 'settings-panel'
+  | 'search-panel';
 
 export type NavigationMode = 'browse' | 'active';
-
-// Order of cycling
-const CYCLE_ORDER: FocusableId[] = [
-  'chat-input',
-  'chat-history',
-  'nav-bar',
-  'context-panel',
-  'file-tree',
-  'functions',
-  'tools-panel',
-  'docs-panel'
-];
 
 export interface FocusContextValue {
   activeId: FocusableId;
@@ -39,8 +30,44 @@ export interface FocusContextValue {
 const FocusContext = createContext<FocusContextValue | undefined>(undefined);
 
 export function FocusProvider({ children }: { children: ReactNode }) {
+  const { state: uiState } = useUI();
+  const { activeTab, sidePanelVisible } = uiState;
+
   const [activeId, setActiveId] = useState<FocusableId>('chat-input');
   const [mode, setModeState] = useState<NavigationMode>('browse');
+
+  // Dynamically calculate the focus cycle based on what's visible
+  const currentCycle = useMemo(() => {
+    const list: FocusableId[] = ['chat-input'];
+
+    // Add main content panel based on active tab
+    const tabToFocusMap: Record<string, FocusableId> = {
+      'chat': 'chat-history',
+      'tools': 'tools-panel',
+      'docs': 'docs-panel',
+      'settings': 'settings-panel',
+      'search': 'search-panel',
+      'files': 'context-panel', // Maps to the Context Files list in FilesTab
+      // github uses default behavior or needs specific ID
+    };
+
+    const activeMainFocus = tabToFocusMap[activeTab];
+    if (activeMainFocus) {
+      list.push(activeMainFocus);
+    }
+
+    // Always have nav-bar
+    list.push('nav-bar');
+
+    // Add side panel items if visible
+    if (sidePanelVisible) {
+      list.push('context-panel');
+      list.push('file-tree');
+      list.push('functions');
+    }
+
+    return list;
+  }, [activeTab, sidePanelVisible]);
 
   const setFocus = useCallback((id: FocusableId) => {
     setActiveId(id);
@@ -58,11 +85,11 @@ export function FocusProvider({ children }: { children: ReactNode }) {
       // Map tab to focusable ID and set focus
       const tabToFocusMap: Record<string, FocusableId> = {
         'tools': 'tools-panel',
-        'files': 'file-tree',
-        'search': 'context-panel', // Temporary mapping
+        'files': 'context-panel',
+        'search': 'search-panel',
         'docs': 'docs-panel',
-        'github': 'context-panel',  // Temporary mapping
-        'settings': 'context-panel', // Temporary mapping
+        'github': 'context-panel',
+        'settings': 'settings-panel',
         'chat': 'chat-history',
       };
       
@@ -79,18 +106,20 @@ export function FocusProvider({ children }: { children: ReactNode }) {
 
   const cycleFocus = useCallback((direction: 'next' | 'previous') => {
     setActiveId((current) => {
-      const currentIndex = CYCLE_ORDER.indexOf(current);
+      const currentIndex = currentCycle.indexOf(current);
+      
+      // If current item is not in the new filtered cycle, go to input
       if (currentIndex === -1) return 'chat-input';
 
       let nextIndex;
       if (direction === 'next') {
-        nextIndex = (currentIndex + 1) % CYCLE_ORDER.length;
+        nextIndex = (currentIndex + 1) % currentCycle.length;
       } else {
-        nextIndex = (currentIndex - 1 + CYCLE_ORDER.length) % CYCLE_ORDER.length;
+        nextIndex = (currentIndex - 1 + currentCycle.length) % currentCycle.length;
       }
-      return CYCLE_ORDER[nextIndex];
+      return currentCycle[nextIndex];
     });
-  }, []);
+  }, [currentCycle]);
 
   const isFocused = useCallback((id: FocusableId) => activeId === id, [activeId]);
 

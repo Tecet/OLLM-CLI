@@ -124,11 +124,10 @@ export function DialogManager() {
         width="100%"
         height="100%"
         backgroundColor="black"
-        opacity={0.7}
       />
 
       {/* Dialog content */}
-      <Box position="relative" zIndex={1000}>
+      <Box position="relative">
         {/* User Prompt Dialog */}
         {showUserPrompt && promptState.activePrompt && (
           <UserPromptDialog
@@ -167,7 +166,7 @@ export function DialogManager() {
               <Box
                 flexDirection="column"
                 borderStyle="double"
-                borderColor={uiState.theme.border.accent}
+                borderColor={uiState.theme.border.active}
                 padding={1}
                 width="60%"
               >
@@ -182,7 +181,7 @@ export function DialogManager() {
                   </Text>
                 </Box>
                 <Box>
-                  <Text color={uiState.theme.text.muted} dimColor>
+                  <Text color={uiState.theme.text.secondary} dimColor>
                     Press Y to confirm, N to cancel, or Esc to close
                   </Text>
                 </Box>
@@ -208,7 +207,7 @@ export function DialogManager() {
                   </Text>
                 </Box>
                 <Box>
-                  <Text color={uiState.theme.text.muted} dimColor>
+                  <Text color={uiState.theme.text.secondary} dimColor>
                     Press Enter or Space to close
                   </Text>
                 </Box>
@@ -219,7 +218,7 @@ export function DialogManager() {
               <Box
                 flexDirection="column"
                 borderStyle="double"
-                borderColor={uiState.theme.border.accent}
+                borderColor={uiState.theme.border.active}
                 padding={1}
                 width="60%"
               >
@@ -234,7 +233,7 @@ export function DialogManager() {
                   </Text>
                 </Box>
                 <Box>
-                  <Text color={uiState.theme.text.muted} dimColor>
+                  <Text color={uiState.theme.text.secondary} dimColor>
                     Press Enter or Space to close
                   </Text>
                 </Box>

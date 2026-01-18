@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Text } from 'ink';
 import { DocEntry } from '../../services/docsService.js';
-import { Theme } from '../../../features/context/UIContext.js';
+import { Theme } from '../../../config/types.js';
 
 export interface DocNavProps {
   /** Documentation entries */
@@ -26,10 +26,12 @@ export interface DocNavProps {
  */
 export function DocNav({ entries, selectedPath, onSelect: _onSelect, theme }: DocNavProps) {
   return (
-    <Box flexDirection="column" borderStyle="single" borderColor={theme.text.accent} paddingX={1}>
-      <Text bold color={theme.text.accent} marginBottom={1}>
-        Documentation
-      </Text>
+    <Box flexDirection="column" borderStyle="single" borderColor={theme.border.active} paddingX={1}>
+      <Box marginBottom={1}>
+        <Text bold color={theme.text.accent}>
+          Documentation
+        </Text>
+      </Box>
 
       {entries.map((entry) => {
         const isSelected = entry.path === selectedPath;
