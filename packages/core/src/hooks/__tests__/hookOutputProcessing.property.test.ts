@@ -227,7 +227,7 @@ describe('Hook Output Processing - Property Tests', () => {
     it('should merge data from multiple hooks without losing previous data', async () => {
       await fc.assert(
         fc.asyncProperty(
-          fc.array(arbHook(), { minLength: 2, maxLength: 5 }),
+          fc.uniqueArray(arbHook(), { selector: h => h.id, minLength: 2, maxLength: 5 }),
           arbHookInput(),
           async (hooks, input) => {
             // Skip if hooks have invalid IDs (empty or whitespace)

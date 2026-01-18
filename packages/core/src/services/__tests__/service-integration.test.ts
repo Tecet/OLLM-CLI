@@ -467,7 +467,9 @@ describe('Service Integration Tests', () => {
 
       // Configure sanitization
       sanitizationService.configure({
-        allowList: ['PATH', 'HOME'],
+        allowList: process.platform === 'win32' 
+          ? ['PATH', 'Path', 'HOME', 'USERPROFILE', 'SystemRoot', 'COMSPEC', 'TEMP', 'TMP', 'windir']
+          : ['PATH', 'HOME'],
         denyPatterns: ['*_SECRET', '*_KEY'],
       });
 
@@ -489,7 +491,9 @@ describe('Service Integration Tests', () => {
 
       // Configure to deny API_KEY
       sanitizationService.configure({
-        allowList: ['PATH'],
+        allowList: process.platform === 'win32' 
+          ? ['PATH', 'Path', 'HOME', 'USERPROFILE', 'SystemRoot', 'COMSPEC', 'TEMP', 'TMP', 'windir']
+          : ['PATH'],
         denyPatterns: ['API_KEY'],
       });
 
@@ -675,7 +679,9 @@ describe('Service Integration Tests', () => {
 
       // Configure sanitization
       sanitizationService.configure({
-        allowList: ['PATH', 'HOME'],
+        allowList: process.platform === 'win32' 
+          ? ['PATH', 'Path', 'HOME', 'USERPROFILE', 'SystemRoot', 'COMSPEC', 'TEMP', 'TMP', 'windir']
+          : ['PATH', 'HOME'],
         denyPatterns: ['*_KEY', '*_SECRET'],
       });
 

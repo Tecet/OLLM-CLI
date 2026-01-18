@@ -5,7 +5,7 @@
  * API keys, secrets, and credentials from leaking to the LLM or logs.
  */
 
-// @ts-ignore - picomatch doesn't have type definitions
+// @ts-expect-error - picomatch doesn't have type definitions
 import picomatch from 'picomatch';
 import type { SanitizationConfig } from './types.js';
 import { sanitizeErrorMessage } from './errorSanitization.js';
@@ -123,8 +123,9 @@ export class EnvironmentSanitizationService {
    * Check if a variable name is allowed
    */
   isAllowed(varName: string): boolean {
-    // Allow list takes precedence
-    if (this.allowList.has(varName)) {
+    // Allow list takes precedence (case-insensitive check)
+    const allowListArray = Array.from(this.allowList);
+    if (allowListArray.some(allowed => allowed.toUpperCase() === varName.toUpperCase())) {
       return true;
     }
 
