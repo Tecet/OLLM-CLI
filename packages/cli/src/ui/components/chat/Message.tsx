@@ -25,7 +25,7 @@ export interface MessageProps {
 export function Message({ message, theme, metricsConfig, reasoningConfig }: MessageProps) {
   const roleColor = theme.role[message.role];
   const timestamp = message.timestamp.toLocaleTimeString();
-  const [reasoningExpanded, setReasoningExpanded] = useState(false);
+  const [reasoningExpanded, setReasoningExpanded] = useState(true); // Start open, auto-collapse when complete
 
   const showMetrics = metricsConfig?.enabled !== false && message.metrics;
   const showReasoning = reasoningConfig?.enabled !== false && message.reasoning;
@@ -52,6 +52,7 @@ export function Message({ message, theme, metricsConfig, reasoningConfig }: Mess
             onToggle={() => setReasoningExpanded(!reasoningExpanded)}
             maxVisibleLines={reasoningConfig?.maxVisibleLines || 8}
             autoScroll={false}
+            autoCollapseOnComplete={true}
             theme={theme}
           />
         </Box>

@@ -273,6 +273,7 @@ export interface LLMProfile {
   description: string;
   abilities: string[];
   tool_support?: boolean;
+  thinking_enabled?: boolean;
   reasoning_buffer?: string;
   warmup_timeout?: number;
   ollama_url?: string;

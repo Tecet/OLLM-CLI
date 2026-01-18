@@ -755,9 +755,9 @@ describe('Chat Client - Unit Tests', () => {
 
             try {
               events = await collectEvents(client.chat('Test'));
-            } catch (error) {
-              didThrow = true;
-            }
+      } catch (_error) {
+        // Expected
+      }
 
             // Should not have thrown
             if (didThrow) return false;

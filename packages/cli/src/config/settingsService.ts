@@ -10,6 +10,7 @@ export interface UserSettings {
   llm: {
     model: string;
     contextSize?: number;
+    temperature?: number;
     [key: string]: unknown;
   };
   hardware?: {

@@ -78,7 +78,7 @@ export const defaultConfig: Config = {
   },
   model: {
     default: 'llama3.2:3b',
-    temperature: 0.3,
+    temperature: 0.1,  // Changed from 0.3 - Better for coding (deterministic)
     maxTokens: 4096,
   },
   ui: {

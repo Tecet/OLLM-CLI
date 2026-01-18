@@ -27,12 +27,11 @@ describe('Template Service Integration', () => {
   
   afterEach(async () => {
     // Cleanup
-    try {
-      await fs.rm(tempDir, { recursive: true, force: true });
-    } catch (error) {
-      // Ignore cleanup errors
-    }
-  });
+          try {
+            await fs.rm(tempDir, { recursive: true, force: true });
+          } catch (_error) {
+            // Ignore cleanup errors
+          }  });
   
   describe('Template Loading from Multiple Directories', () => {
     it('should load templates from user directory', async () => {

@@ -71,10 +71,13 @@ export const ReasoningBox: React.FC<ReasoningBoxProps> = ({
     if (autoCollapseOnComplete && !wasCompleteRef.current && reasoning.complete) {
       if (controlledExpanded === undefined) {
         setInternalExpanded(false);
+      } else if (_onToggle && isExpanded) {
+        // If controlled, call onToggle to collapse
+        _onToggle();
       }
     }
     wasCompleteRef.current = reasoning.complete;
-  }, [reasoning.complete, autoCollapseOnComplete, controlledExpanded]);
+  }, [reasoning.complete, autoCollapseOnComplete, controlledExpanded, _onToggle, isExpanded]);
 
   // Auto-scroll when content changes during streaming
   useEffect(() => {

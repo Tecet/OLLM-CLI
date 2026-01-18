@@ -46,6 +46,7 @@ export interface ModelContextValue {
     onError: (error: string) => void,
     onComplete: (metrics?: ProviderMetrics) => void,
     onToolCall?: (toolCall: ToolCall) => void,
+    onThinking?: (thinking: string) => void,
     tools?: ToolSchema[],
     systemPrompt?: string
   ) => Promise<void>;
@@ -472,6 +473,13 @@ export function ModelProvider({
             console.warn(`Failed to unload model "${previousModel}": ${message}`);
           });
         }
+        
+        // Clear context on model switch (Fix for Issue #1)
+        const clearContext = globalThis.__ollmClearContext;
+        if (clearContext) {
+          clearContext();
+        }
+        
         return;
       }
       
@@ -505,6 +513,12 @@ export function ModelProvider({
           const message = error instanceof Error ? error.message : String(error);
           console.warn(`Failed to unload model "${previousModel}": ${message}`);
         });
+      }
+      
+      // Clear context on model switch (Fix for Issue #1)
+      const clearContext = globalThis.__ollmClearContext;
+      if (clearContext) {
+        clearContext();
       }
     }
   }, [currentModel, provider, checkOverridePrecedence, handleUnknownModel]);
@@ -665,8 +679,10 @@ export function ModelProvider({
     onError: (error: string) => void,
     onComplete: (metrics?: ProviderMetrics) => void,
     onToolCall?: (toolCall: ToolCall) => void,
+    onThinking?: (thinking: string) => void,
     tools?: ToolSchema[],
-    systemPrompt?: string
+    systemPrompt?: string,
+    timeout?: number
   ) => {
     // Cancel any existing request
     cancelRequest();
@@ -684,6 +700,19 @@ export function ModelProvider({
         toolCallId: msg.toolCallId,
       }));
 
+      // Get model-specific timeout from profile if not provided
+      const profile = profileManager.findProfile(currentModel);
+      const requestTimeout = timeout ?? profile?.warmup_timeout ?? 30000;
+      
+      // Check if model supports thinking
+      const thinkingEnabled = profile?.thinking_enabled ?? false;
+      
+      // Get user settings for context size and temperature
+      const settingsService = require('../../config/settingsService.js').SettingsService.getInstance();
+      const settings = settingsService.getSettings();
+      const contextSize = settings.llm?.contextSize ?? 4096;
+      const temperature = settings.llm?.temperature ?? 0.1;
+
       // Stream the response
       const stream = provider.chatStream({
         model: currentModel,
@@ -691,6 +720,12 @@ export function ModelProvider({
         tools: tools && tools.length > 0 && modelSupportsTools(currentModel) ? tools : undefined,
         systemPrompt: systemPrompt,
         abortSignal: abortController.signal,
+        timeout: requestTimeout,
+        think: thinkingEnabled, // Enable thinking for supported models
+        options: {
+          num_ctx: contextSize,
+          temperature: temperature,
+        },
       });
 
       for await (const event of stream) {
@@ -705,6 +740,13 @@ export function ModelProvider({
               clearWarmupStatus();
             }
             onText(event.value);
+            break;
+          case 'thinking':
+            if (modelLoading) {
+              setModelLoading(false);
+              clearWarmupStatus();
+            }
+            onThinking?.(event.value);
             break;
           case 'tool_call':
             if (modelLoading) {

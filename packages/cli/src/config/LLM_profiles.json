@@ -64,6 +64,7 @@
         "Logic"
       ],
       "tool_support": false,
+      "thinking_enabled": true,
       "reasoning_buffer": "Variable",
       "warmup_timeout": 120000,
       "ollama_url": "https://ollama.com/library/deepseek-r1",
@@ -213,6 +214,7 @@
         "Advanced Reasoning"
       ],
       "tool_support": true,
+      "thinking_enabled": true,
       "ollama_url": "https://ollama.com/library/qwen3",
       "context_window": 131072,
       "context_profiles": [
@@ -262,6 +264,7 @@
         "Efficiency"
       ],
       "tool_support": false,
+      "thinking_enabled": true,
       "reasoning_buffer": "Variable",
       "warmup_timeout": 120000,
       "ollama_url": "https://ollama.com/library/deepseek-r1",
@@ -459,6 +462,7 @@
         "Math"
       ],
       "tool_support": false,
+      "thinking_enabled": true,
       "reasoning_buffer": "Variable",
       "warmup_timeout": 120000,
       "ollama_url": "https://ollama.com/library/deepseek-r1",

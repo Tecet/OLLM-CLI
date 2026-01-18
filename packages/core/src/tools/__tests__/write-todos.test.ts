@@ -27,12 +27,11 @@ class TodoTestFixture {
 
   async cleanup(): Promise<void> {
     // Clean up the temp directory
-    try {
-      await fs.rm(this.tempDir, { recursive: true, force: true });
-    } catch (error) {
-      // Ignore cleanup errors
-    }
-  }
+        try {
+          await fs.rm(this.tempDir, { recursive: true, force: true });
+        } catch (_error) {
+          // Ignore
+        }  }
 
   getTodosPath(): string {
     return this.todosPath;

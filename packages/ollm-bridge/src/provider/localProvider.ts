@@ -59,8 +59,9 @@ export class LocalProvider implements ProviderAdapter {
       model: request.model,
       messages: this.mapMessages(request.messages, request.systemPrompt),
       tools: request.tools ? this.mapTools(request.tools) : undefined,
-      options: request.options,
+      options: request.options, // Pass options (temperature, num_ctx, etc.) to Ollama
       stream: true,
+      think: request.think, // Pass thinking parameter to Ollama
     };
 
     // Use request-specific timeout if provided, otherwise use config timeout, default to 30s
@@ -465,6 +466,15 @@ export class LocalProvider implements ProviderAdapter {
   private *mapChunkToEvents(chunk: unknown): Iterable<ProviderEvent> {
     const c = chunk as Record<string, unknown>;
     const message = c.message as Record<string, unknown> | undefined;
+    
+    // Handle thinking field (Ollama native thinking support)
+    if (message?.thinking !== undefined) {
+      const thinking = message.thinking as string;
+      if (thinking.length > 0) {
+        yield { type: 'thinking', value: thinking };
+      }
+    }
+    
     if (message?.content !== undefined) {
       const content = message.content as string;
       

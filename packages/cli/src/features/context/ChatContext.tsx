@@ -13,6 +13,7 @@ declare global {
   var __ollmOpenModelMenu: (() => void) | undefined;
   var __ollmAddSystemMessage: ((message: string) => void) | undefined;
   var __ollmPromptUser: ((message: string, options: string[]) => Promise<string>) | undefined;
+  var __ollmClearContext: (() => void) | undefined;
 }
 
 /**
@@ -234,6 +235,17 @@ export function ChatProvider({
     // and to ensure better control over tool call/result sequencing.
   }, []);
   
+  const clearChat = useCallback(() => {
+    setMessages([]);
+    setCurrentInput('');
+    setStreaming(false);
+    setWaitingForResponse(false);
+    if (contextActions) {
+      contextActions.clear().catch(console.error);
+      contextActions.setSystemPrompt(''); // Clear system prompt to prevent old context
+    }
+  }, [contextActions]);
+  
   useEffect(() => {
     if (serviceContainer) {
       commandRegistry.setServiceContainer(serviceContainer);
@@ -248,7 +260,12 @@ export function ChatProvider({
         excludeFromContext: true,
       });
     };
-  }, [serviceContainer, setCurrentModel, addMessage]);
+    
+    // Register clear context callback
+    globalThis.__ollmClearContext = () => {
+      clearChat();
+    };
+  }, [serviceContainer, setCurrentModel, addMessage, clearChat]);
 
   useEffect(() => {
     if (setTheme) {
@@ -261,16 +278,6 @@ export function ChatProvider({
       prev.map((msg) => (msg.id === id ? { ...msg, ...updates } : msg))
     );
   }, []);
-
-  const clearChat = useCallback(() => {
-    setMessages([]);
-    setCurrentInput('');
-    setStreaming(false);
-    setWaitingForResponse(false);
-    if (contextActions) {
-      contextActions.clear().catch(console.error);
-    }
-  }, [contextActions]);
 
   const sendMessage = useCallback(
     async (content: string) => {
@@ -443,7 +450,7 @@ export function ChatProvider({
 
         let toolCallReceived: CoreToolCall | null = null;
         let assistantContent = '';
-        let rawContent = ''; // Track raw content with <think> tags
+        let thinkingContent = ''; // Track thinking content from Ollama
 
         try {
           await sendToLLM(
@@ -452,32 +459,12 @@ export function ChatProvider({
             (text: string) => {
               const targetId = currentAssistantMsgId;
               assistantContent += text;
-              rawContent += text;
               
-              // Parse reasoning from accumulated content
-              const parser = reasoningParserRef.current;
-              const parseResult = parser.parse(rawContent);
-              
-              // Update message with parsed content and reasoning
+              // Update message with content
               setMessages((prev) =>
                 prev.map((msg) => {
                   if (msg.id !== targetId) return msg;
-                  
-                  const updates: Partial<Message> = {
-                    content: parseResult.response,
-                  };
-                  
-                  // Add reasoning block if present
-                  if (parseResult.reasoning) {
-                    updates.reasoning = {
-                      content: parseResult.reasoning,
-                      tokenCount: parseResult.reasoning.split(/\s+/).length,
-                      duration: 0, // Will be updated on complete
-                      complete: false,
-                    };
-                  }
-                  
-                  return { ...msg, ...updates };
+                  return { ...msg, content: assistantContent };
                 })
               );
             },
@@ -527,6 +514,28 @@ export function ChatProvider({
             },
             (toolCall: CoreToolCall) => {
                toolCallReceived = toolCall;
+            },
+            // onThinking - Handle Ollama native thinking
+            (thinking: string) => {
+              const targetId = currentAssistantMsgId;
+              thinkingContent += thinking;
+              
+              // Update message with thinking content
+              setMessages((prev) =>
+                prev.map((msg) => {
+                  if (msg.id !== targetId) return msg;
+                  
+                  return {
+                    ...msg,
+                    reasoning: {
+                      content: thinkingContent,
+                      tokenCount: thinkingContent.split(/\s+/).length,
+                      duration: 0, // Will be updated on complete
+                      complete: false,
+                    }
+                  };
+                })
+              );
             },
             toolSchemas,
             systemPrompt

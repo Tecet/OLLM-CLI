@@ -70,6 +70,7 @@ export interface ProviderRequest {
   options?: GenerationOptions;
   abortSignal?: AbortSignal;
   timeout?: number; // Request-specific timeout in milliseconds
+  think?: boolean | string; // Enable thinking/reasoning mode (true/false or 'low'/'medium'/'high' for GPT-OSS)
 }
 
 /**
@@ -103,6 +104,7 @@ export interface ProviderError {
  */
 export type ProviderEvent =
   | { type: 'text'; value: string }
+  | { type: 'thinking'; value: string }
   | { type: 'tool_call'; value: ToolCall }
   | { 
       type: 'finish'; 

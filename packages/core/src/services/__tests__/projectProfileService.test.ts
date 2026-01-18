@@ -23,9 +23,9 @@ describe('ProjectProfileService', () => {
   afterEach(async () => {
     // Clean up temp directory
     try {
-      await fs.rm(tempDir, { recursive: true, force: true });
-    } catch (error) {
-      // Ignore cleanup errors
+      await fs.rm(testDir, { recursive: true, force: true });
+    } catch (_error) {
+      // Ignore
     }
   });
 

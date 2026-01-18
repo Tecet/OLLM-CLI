@@ -23,7 +23,7 @@ describe('Project Profile Service Properties', () => {
     // Clean up temp directory
     try {
       await fs.rm(tempDir, { recursive: true, force: true });
-    } catch (error) {
+    } catch (_error) {
       // Ignore cleanup errors
     }
   });
@@ -119,7 +119,7 @@ describe('Project Profile Service Properties', () => {
             // Clean up iteration temp directory
             try {
               await fs.rm(iterationTempDir, { recursive: true, force: true });
-            } catch (error) {
+            } catch (_error) {
               // Ignore cleanup errors
             }
           }
