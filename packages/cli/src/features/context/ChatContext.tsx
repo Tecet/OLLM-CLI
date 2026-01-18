@@ -4,7 +4,7 @@ import { commandRegistry } from '../../commands/index.js';
 import { useServices } from './ServiceContext.js';
 import { useModel } from './ModelContext.js';
 import { useUI } from './UIContext.js';
-import { ToolRegistry, HotSwapTool, MemoryDumpTool, PromptRegistry, ReasoningParser } from '@ollm/core';
+import { ToolRegistry, HotSwapTool, MemoryDumpTool, PromptRegistry } from '@ollm/core';
 import type { ToolCall as CoreToolCall, ContextMessage, ProviderMetrics } from '@ollm/core';
 import { SettingsService } from '../../config/settingsService.js';
 
@@ -218,10 +218,6 @@ export function ChatProvider({
   const assistantMessageIdRef = useRef<string | null>(null);
   const manualContextRequestRef = useRef<{ modelId: string; onComplete: (value: number) => void | Promise<void> } | null>(null);
   
-  // Reasoning parser for extracting <think> blocks
-  const reasoningParserRef = useRef(new ReasoningParser());
-  const reasoningStateRef = useRef<Map<string, any>>(new Map());
-  
   // Define addMessage before it's used in useEffect
   const addMessage = useCallback((message: Omit<Message, 'id' | 'timestamp'>) => {
     const newMessage: Message = {
@@ -406,6 +402,7 @@ export function ChatProvider({
       const assistantMsg = addMessage({
         role: 'assistant',
         content: '',
+        expanded: true, // Start expanded to show reasoning as it streams
       });
       let currentAssistantMsgId = assistantMsg.id;
       assistantMessageIdRef.current = currentAssistantMsgId;
@@ -506,6 +503,8 @@ export function ChatProvider({
                        complete: true,
                        duration: metrics.evalDuration > 0 ? metrics.evalDuration / 1e9 : 0,
                      };
+                     // Auto-collapse reasoning when complete
+                     updates.expanded = false;
                    }
                    
                    return { ...msg, ...updates };
@@ -607,7 +606,7 @@ export function ChatProvider({
 
                   if (tc.name === 'trigger_hot_swap') {
                       // Post-swap: start a fresh assistant message for the next turn
-                      const swapMsg = addMessage({ role: 'assistant', content: '' });
+                      const swapMsg = addMessage({ role: 'assistant', content: '', expanded: true });
                       currentAssistantMsgId = swapMsg.id;
                       assistantMessageIdRef.current = currentAssistantMsgId;
                   }
@@ -633,7 +632,7 @@ export function ChatProvider({
       setWaitingForResponse(false);
       assistantMessageIdRef.current = null;
     },
-    [addMessage, sendToLLM, setLaunchScreenVisible, contextActions, provider, currentModel, clearChat]
+    [addMessage, sendToLLM, setLaunchScreenVisible, contextActions, provider, currentModel, clearChat, modelSupportsTools]
   );
 
   const cancelGeneration = useCallback(() => {

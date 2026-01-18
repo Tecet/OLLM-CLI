@@ -23,9 +23,9 @@ describe('Template Service Properties', () => {
     
     // Clean up if directory already exists (shouldn't happen but be safe)
     try {
-      await fs.rm(tempDir, { recursive: true, force: true });
-    } catch (error) {
-      // Ignore if doesn't exist
+      await fs.rm(testDir, { recursive: true, force: true });
+    } catch (_error) {
+      // Ignore
     }
     
     await fs.mkdir(userTemplatesDir, { recursive: true });
@@ -80,7 +80,7 @@ describe('Template Service Properties', () => {
             for (const file of userFiles) {
               await fs.unlink(join(userTemplatesDir, file));
             }
-          } catch (error) {
+          } catch (_error) {
             // Ignore if directory doesn't exist or is empty
           }
           
@@ -89,7 +89,7 @@ describe('Template Service Properties', () => {
             for (const file of workspaceFiles) {
               await fs.unlink(join(workspaceTemplatesDir, file));
             }
-          } catch (error) {
+          } catch (_error) {
             // Ignore if directory doesn't exist or is empty
           }
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Text } from 'ink';
 import { Message as MessageType } from '../../../features/context/ChatContext.js';
 import { MetricsDisplay } from './MetricsDisplay.js';
@@ -25,7 +25,18 @@ export interface MessageProps {
 export function Message({ message, theme, metricsConfig, reasoningConfig }: MessageProps) {
   const roleColor = theme.role[message.role];
   const timestamp = message.timestamp.toLocaleTimeString();
-  const [reasoningExpanded, setReasoningExpanded] = useState(true); // Start open, auto-collapse when complete
+  
+  // Initialize reasoning box as open if reasoning is incomplete, closed if complete
+  const [reasoningExpanded, setReasoningExpanded] = useState(() => {
+    return message.reasoning ? !message.reasoning.complete : true;
+  });
+
+  // Auto-collapse when reasoning completes
+  useEffect(() => {
+    if (message.reasoning?.complete) {
+      setReasoningExpanded(false);
+    }
+  }, [message.reasoning?.complete]);
 
   const showMetrics = metricsConfig?.enabled !== false && message.metrics;
   const showReasoning = reasoningConfig?.enabled !== false && message.reasoning;

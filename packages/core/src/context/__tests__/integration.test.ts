@@ -8,7 +8,7 @@
  * - Context Command → All Services end-to-end
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { createContextManager } from '../contextManager.js';
 import { createVRAMMonitor } from '../vramMonitor.js';
 import { createTokenCounter } from '../tokenCounter.js';
@@ -17,7 +17,7 @@ import { createSnapshotStorage } from '../snapshotStorage.js';
 import { createSnapshotManager } from '../snapshotManager.js';
 import { CompressionService } from '../compressionService.js';
 import { createMemoryGuard } from '../memoryGuard.js';
-import type { VRAMInfo, ModelInfo, Message } from '../types.js';
+import type { ModelInfo, Message } from '../types.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';
@@ -49,7 +49,7 @@ describe('Context Management Integration Tests', () => {
           kvCacheQuantization: 'q8_0',
           autoSize: true
         },
-        async (newSize: number) => {
+        async () => {
           // Resize callback
         }
       );
@@ -82,7 +82,7 @@ describe('Context Management Integration Tests', () => {
           kvCacheQuantization: 'q8_0',
           autoSize: true
         },
-        async (newSize: number) => {
+        async () => {
           // Resize callback
         }
       );
@@ -214,7 +214,6 @@ describe('Context Management Integration Tests', () => {
   describe('Memory Guard → All Services Coordination', () => {
     it('should trigger compression at warning threshold', async () => {
       const vramMonitor = createVRAMMonitor();
-      const tokenCounter = createTokenCounter();
       const contextPool = createContextPool(
         {
           minContextSize: 2048,
@@ -224,7 +223,7 @@ describe('Context Management Integration Tests', () => {
           kvCacheQuantization: 'q8_0',
           autoSize: false
         },
-        async (newSize: number) => {}
+        async () => {}
       );
       
       const storage = createSnapshotStorage(tempDir);
@@ -300,7 +299,7 @@ describe('Context Management Integration Tests', () => {
           kvCacheQuantization: 'q8_0',
           autoSize: false
         },
-        async (newSize: number) => {}
+        async () => {}
       );
       
       const storage = createSnapshotStorage(tempDir);
@@ -368,6 +367,8 @@ describe('Context Management Integration Tests', () => {
 
       // Execute emergency actions
       await memoryGuard.executeEmergencyActions();
+
+      expect(emergencyCalled).toBe(true);
 
       // Verify emergency snapshot was created
       const snapshots = await snapshotManager.listSnapshots(sessionId);

@@ -12,8 +12,8 @@
  * Requirements: 12.1, 12.2, 12.3, 12.5, 12.6
  */
 
-import { readFileSync, existsSync, statSync } from 'fs';
-import { join, dirname, resolve, relative } from 'path';
+import { readFileSync, existsSync } from 'fs';
+import { join, dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import { glob } from 'glob';
 import https from 'https';
@@ -90,7 +90,7 @@ function extractCodeBlocks(content, filePath) {
 /**
  * Validate JavaScript/TypeScript syntax
  */
-function validateJavaScriptSyntax(code, language) {
+function validateJavaScriptSyntax(code) {
   try {
     // Basic syntax check - try to parse as a function body
     new Function(code);

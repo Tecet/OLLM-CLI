@@ -10,6 +10,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from 'react';
 import type { ProviderAdapter, Message as ProviderMessage, ToolCall, ToolSchema, ProviderMetrics } from '@ollm/core';
 import { profileManager } from '../profiles/ProfileManager.js';
+import { SettingsService } from '../../config/settingsService.js';
 
 /**
  * Model context value
@@ -100,7 +101,7 @@ export function ModelProvider({
   const ERROR_PROMPT_DEBOUNCE_MS = 60000; // Don't prompt again within 60 seconds
 
   // Unknown model prompt state
-  const [unknownModelPrompt, setUnknownModelPrompt] = useState<{
+  const [_unknownModelPrompt, setUnknownModelPrompt] = useState<{
     modelId: string;
     timeoutHandle: NodeJS.Timeout | null;
   } | null>(null);
@@ -708,7 +709,7 @@ export function ModelProvider({
       const thinkingEnabled = profile?.thinking_enabled ?? false;
       
       // Get user settings for context size and temperature
-      const settingsService = require('../../config/settingsService.js').SettingsService.getInstance();
+      const settingsService = SettingsService.getInstance();
       const settings = settingsService.getSettings();
       const contextSize = settings.llm?.contextSize ?? 4096;
       const temperature = settings.llm?.temperature ?? 0.1;

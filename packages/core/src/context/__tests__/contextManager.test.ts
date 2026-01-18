@@ -4,20 +4,13 @@
  * Tests for the main orchestration layer that coordinates all context management services.
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import * as fc from 'fast-check';
 import { createContextManager, ContextManagerImpl } from '../contextManager.js';
 import type {
   ModelInfo,
   ContextConfig,
-  Message,
-  VRAMMonitor,
-  TokenCounter,
-  ContextPool,
-  SnapshotStorage,
-  SnapshotManager,
-  ICompressionService,
-  MemoryGuard
+  Message
 } from '../types.js';
 
 describe('ContextManager', () => {

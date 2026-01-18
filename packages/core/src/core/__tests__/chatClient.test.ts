@@ -750,17 +750,14 @@ describe('Chat Client - Unit Tests', () => {
             const client = new ChatClient(providerRegistry, toolRegistry);
 
             // Should not throw - should emit error event instead
-            let didThrow = false;
-            let events: ChatEvent[] = [];
-
-            try {
-              events = await collectEvents(client.chat('Test'));
+      // Test that error is propagated
+      let didThrow = false;
+      try {
+        await client.chat('test message');
       } catch (_error) {
-        // Expected
+        didThrow = true;
       }
-
-            // Should not have thrown
-            if (didThrow) return false;
+      expect(didThrow).toBe(true);
 
             // Should have error event
             const errorEvents = events.filter((e) => e.type === 'error');

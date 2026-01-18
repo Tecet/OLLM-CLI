@@ -798,7 +798,7 @@ describe('ExtensionManager', () => {
       const serverTools = new Map<string, any[]>();
       
       const mockMCPClient = {
-        startServer: async (name: string, config: any) => {
+        startServer: async (name: string, _config: any) => {
           startedServers.push(name);
         },
         stopServer: async (name: string) => {
@@ -915,7 +915,7 @@ describe('ExtensionManager', () => {
       const serverTools = new Map<string, any[]>();
       
       const mockMCPClient = {
-        startServer: async (name: string, config: any) => {
+        startServer: async (name: string, _config: any) => {
           startedServers.push(name);
         },
         stopServer: async (name: string) => {
@@ -1029,7 +1029,7 @@ describe('ExtensionManager', () => {
     it('should handle MCP server failures gracefully', async () => {
       // Create mock MCP client that fails
       const mockMCPClient = {
-        startServer: async (name: string, config: any) => {
+        startServer: async (_name: string, _config: any) => {
           throw new Error('Failed to start server');
         },
         stopServer: async () => {},

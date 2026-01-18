@@ -108,7 +108,7 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 15 }: Tools
     return items.filter(
       item => item.position >= scrollOffset && item.position < scrollOffset + WINDOW_SIZE
     );
-  }, [categoryData, scrollOffset]);
+  }, [categoryData, scrollOffset, WINDOW_SIZE]);
 
   // Handle tool toggle
   const handleToggle = (toolId: string) => {
@@ -190,7 +190,7 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 15 }: Tools
     } else if (currentPosition >= scrollOffset + WINDOW_SIZE) {
       setScrollOffset(currentPosition - WINDOW_SIZE + 1);
     }
-  }, [selectedCategoryIndex, selectedToolIndex, categoryData, scrollOffset]);
+  }, [selectedCategoryIndex, selectedToolIndex, categoryData, scrollOffset, WINDOW_SIZE]);
 
   // Calculate enabled/disabled counts
   const { enabledCount, disabledCount } = useMemo(() => {
@@ -259,7 +259,7 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 15 }: Tools
         )}
 
         {/* Render only visible items */}
-        {visibleItems.map((item, index) => {
+        {visibleItems.map((item) => {
           if (item.type === 'category') {
             const categoryInfo = categoryData[item.categoryIndex];
             const isSelectedCategory = item.categoryIndex === selectedCategoryIndex;
@@ -312,7 +312,6 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 15 }: Tools
                   tool={tool}
                   isEnabled={isEnabled}
                   isSelected={isToolSelected}
-                  onToggle={() => handleToggle(tool.id)}
                   theme={uiState.theme}
                 />
               </Box>

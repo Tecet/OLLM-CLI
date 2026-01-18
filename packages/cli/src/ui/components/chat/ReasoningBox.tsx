@@ -56,7 +56,8 @@ export const ReasoningBox: React.FC<ReasoningBoxProps> = ({
     },
   },
 }) => {
-  const [internalExpanded, setInternalExpanded] = useState(true);
+  // Initialize internal expanded state based on completion status
+  const [internalExpanded, setInternalExpanded] = useState(() => !reasoning.complete);
   const [scrollOffset, setScrollOffset] = useState(0);
   const contentRef = useRef<string>(reasoning.content);
   const wasCompleteRef = useRef(reasoning.complete);

@@ -6,7 +6,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import fc from 'fast-check';
 import { ManifestParser } from '../manifestParser.js';
 import type { ExtensionManifest } from '../types.js';
-import { writeFile, mkdir, rm } from 'fs/promises';
+import { mkdir, writeFile } from 'fs/promises';
 import { join } from 'path';
 import { tmpdir } from 'os';
 

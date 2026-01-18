@@ -8,7 +8,6 @@ export interface ToolItemProps {
   tool: ToolMetadata;
   isEnabled: boolean;
   isSelected: boolean;
-  onToggle: () => void;
   theme: Theme;
 }
 
@@ -24,7 +23,6 @@ export function ToolItem({
   tool,
   isEnabled,
   isSelected,
-  onToggle,
   theme,
 }: ToolItemProps) {
   // Risk level colors

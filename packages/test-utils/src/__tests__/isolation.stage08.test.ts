@@ -297,10 +297,9 @@ describe('Test Isolation and Cleanup', () => {
                   cleanup: async () => {
                     try {
                       await fs.unlink(filePath);
-                    } catch (err) {
-                      // File might already be deleted
-                    }
-                  },
+                                      } catch (_err) {
+                                        // File might already be deleted
+                                      }                  },
                 });
               }
 
