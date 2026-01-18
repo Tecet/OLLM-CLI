@@ -300,7 +300,7 @@ MCP servers implement the Model Context Protocol to provide tools to LLMs.
 **Overall:** 45% complete
 
 ### Roadmap
-See [MCP Roadmap](../../.dev/MCP/MCP_roadmap.md) for:
+See MCP Roadmap (../../.dev/MCP/MCP_roadmap.md) for:
 - Critical issues (3)
 - High priority work (4)
 - Testing gaps
@@ -317,9 +317,9 @@ See [MCP Roadmap](../../.dev/MCP/MCP_roadmap.md) for:
 - Add examples and tutorials
 
 ### Development
-- See [Development Documentation](../../.dev/MCP/)
-- Follow [Contributing Guide](../../CONTRIBUTING.md)
-- Check [Roadmap](../../.dev/MCP/MCP_roadmap.md)
+- See Development Documentation (../../.dev/MCP/)
+- Follow Contributing Guide (../../CONTRIBUTING.md)
+- Check Roadmap (../../.dev/MCP/MCP_roadmap.md)
 
 ---
 
@@ -328,7 +328,7 @@ See [MCP Roadmap](../../.dev/MCP/MCP_roadmap.md) for:
 ### Resources
 - [Main Documentation](../)
 - [Troubleshooting](../troubleshooting.md)
-- [GitHub Issues](https://github.com/ollm/ollm-cli/issues)
+- GitHub Issues (https://github.com/ollm/ollm-cli/issues)
 
 ### Community
 - Discord: [Join our server](#)

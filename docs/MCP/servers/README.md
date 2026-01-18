@@ -271,7 +271,7 @@ The health monitor emits events:
 - **Jira** - Jira issue tracking
 - **Confluence** - Confluence documentation
 
-**See:** [MCP Server Registry](https://github.com/modelcontextprotocol/servers) for more servers
+**See:** MCP Server Registry (https://github.com/modelcontextprotocol/servers) for more servers
 
 ---
 
@@ -476,9 +476,9 @@ await server.connect(transport);
 - [MCP Commands](../MCP_commands.md) - Command reference
 
 ### External Resources
-- [MCP Specification](https://modelcontextprotocol.io)
-- [MCP SDK](https://github.com/modelcontextprotocol/sdk)
-- [MCP Servers](https://github.com/modelcontextprotocol/servers)
+- MCP Specification (https://modelcontextprotocol.io)
+- MCP SDK (https://github.com/modelcontextprotocol/sdk)
+- MCP Servers (https://github.com/modelcontextprotocol/servers)
 
 ---
 
@@ -487,8 +487,8 @@ await server.connect(transport);
 Want to create or contribute MCP servers?
 
 1. Read [Development Guide](development-guide.md)
-2. Check [MCP Specification](https://modelcontextprotocol.io)
-3. See [Contributing Guide](../../../CONTRIBUTING.md)
+2. Check MCP Specification (https://modelcontextprotocol.io)
+3. See Contributing Guide (../../../CONTRIBUTING.md)
 4. Submit to server registry
 
 ---

@@ -5,8 +5,6 @@
  * hidden file filtering, result limits, and .gitignore respect.
  */
 
-import { promises as fs } from 'fs';
-import * as path from 'path';
 import { glob as globSearch } from 'glob';
 import { loadGitignore } from './gitignore-utils.js';
 import type {
@@ -77,7 +75,7 @@ export class GlobTool implements DeclarativeTool<GlobParams, ToolResult> {
 
   createInvocation(
     params: GlobParams,
-    context: ToolContext
+    _context: ToolContext
   ): ToolInvocation<GlobParams, ToolResult> {
     return new GlobInvocation(params);
   }
@@ -99,14 +97,14 @@ export class GlobInvocation implements ToolInvocation<GlobParams, ToolResult> {
     return [this.params.directory ?? '.'];
   }
 
-  async shouldConfirmExecute(abortSignal: AbortSignal): Promise<false> {
+  async shouldConfirmExecute(_abortSignal: AbortSignal): Promise<false> {
     // Read-only operations don't require confirmation
     return false;
   }
 
   async execute(
     signal: AbortSignal,
-    updateOutput?: (output: string) => void
+    _updateOutput?: (output: string) => void
   ): Promise<ToolResult> {
     try {
       // Check if aborted

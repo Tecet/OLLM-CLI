@@ -126,7 +126,7 @@ export class ShellInvocation implements ToolInvocation<ShellParams, ToolResult> 
     return this.params.cwd ? [this.params.cwd] : [];
   }
 
-  async shouldConfirmExecute(abortSignal: AbortSignal): Promise<ToolCallConfirmationDetails | false> {
+  async shouldConfirmExecute(_abortSignal: AbortSignal): Promise<ToolCallConfirmationDetails | false> {
     // If no policy engine, don't require confirmation
     if (!this.policyEngine) {
       return false;
@@ -161,11 +161,11 @@ export class ShellInvocation implements ToolInvocation<ShellParams, ToolResult> 
         throw new Error('Operation cancelled');
       }
 
-      // Prepare execution options
+      // Prepare execution options (increased default timeout to 60s)
       const options: ShellExecutionOptions = {
         command: this.params.command,
         cwd: this.params.cwd,
-        timeout: this.params.timeout ?? 30000,
+        timeout: this.params.timeout ?? 60000,
         idleTimeout: this.params.idleTimeout,
         background: this.params.background,
         abortSignal: signal,

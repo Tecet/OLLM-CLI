@@ -119,7 +119,7 @@ export type ChatLine = {
   isEphemeral?: boolean; // New flag for fading messages
   timestamp?: number;    // Creation time for ephemeral check
   messageId?: string;
-  kind?: 'header' | 'reasoning' | 'tool' | 'content' | 'metrics' | 'spacer';
+  kind?: 'header' | 'reasoning' | 'tool' | 'content' | 'metrics' | 'spacer' | 'diff-summary';
 };
 
 // New component to handle individual line rendering and state
@@ -183,6 +183,55 @@ const ChatLineItem = ({ line, theme, isSelected, showCursor }: { line: ChatLine;
 };
 
 const HEAVY_TOOLS = ['trigger_hot_swap', 'write_memory_dump', 'context_rollover', 'memory_guard_action'];
+const DIFF_LINE_THRESHOLD = 5;
+
+type DiffBlock = {
+  start: number;
+  end: number;
+  changedLines: number;
+};
+
+function isDiffHeaderLine(line: string): boolean {
+  return line.startsWith('diff --git ');
+}
+
+function isDiffChangeLine(line: string): boolean {
+  if (line.startsWith('+++') || line.startsWith('---')) return false;
+  return line.startsWith('+') || line.startsWith('-');
+}
+
+function getDiffBlocks(lines: string[]): DiffBlock[] {
+  const blocks: DiffBlock[] = [];
+  let blockStart = -1;
+  let changedLines = 0;
+
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i];
+    if (isDiffHeaderLine(line)) {
+      if (blockStart !== -1) {
+        blocks.push({ start: blockStart, end: i - 1, changedLines });
+      }
+      blockStart = i;
+      changedLines = 0;
+      continue;
+    }
+    if (blockStart !== -1 && isDiffChangeLine(line)) {
+      changedLines += 1;
+    }
+  }
+
+  if (blockStart !== -1) {
+    blocks.push({ start: blockStart, end: lines.length - 1, changedLines });
+  }
+
+  return blocks;
+}
+
+export function messageHasLargeDiff(content: string, threshold = DIFF_LINE_THRESHOLD): boolean {
+  const lines = content.split('\n');
+  const blocks = getDiffBlocks(lines);
+  return blocks.some((block) => block.changedLines > threshold);
+}
 
 export function buildChatLines(
   messages: MessageType[],
@@ -256,7 +305,7 @@ export function buildChatLines(
   }
 
   messages.forEach((message) => {
-    const isExpanded = message.expanded !== false;
+    const isExpanded = message.expanded === true;
     const roleColor = theme.role[message.role];
     const timestamp = message.timestamp.toLocaleTimeString();
     const showMetrics = metricsConfig?.enabled !== false && message.metrics;
@@ -289,9 +338,52 @@ export function buildChatLines(
     }
 
     const contentLines = message.content.split('\n');
-    contentLines.forEach((line) => {
-      addLine([{ text: line || ' ', color: theme.text.primary }], 2, false, message.id, 'content');
-    });
+    const diffBlocks = getDiffBlocks(contentLines);
+    const hasDiffBlocks = diffBlocks.length > 0;
+    const diffExpanded = message.expanded === true;
+
+    if (!hasDiffBlocks || diffExpanded) {
+      contentLines.forEach((line) => {
+        addLine([{ text: line || ' ', color: theme.text.primary }], 2, false, message.id, 'content');
+      });
+    } else {
+      let cursor = 0;
+      diffBlocks.forEach((block) => {
+        for (let i = cursor; i < block.start; i += 1) {
+          const line = contentLines[i];
+          addLine([{ text: line || ' ', color: theme.text.primary }], 2, false, message.id, 'content');
+        }
+
+        if (block.changedLines > DIFF_LINE_THRESHOLD) {
+          addLine(
+            [{ text: `Large diff: ${block.changedLines} lines changed`, color: theme.text.secondary }],
+            2,
+            false,
+            message.id,
+            'diff-summary'
+          );
+          addLine(
+            [{ text: 'See Tools tab for full diff', color: theme.text.secondary }],
+            2,
+            false,
+            message.id,
+            'diff-summary'
+          );
+        } else {
+          for (let i = block.start; i <= block.end; i += 1) {
+            const line = contentLines[i];
+            addLine([{ text: line || ' ', color: theme.text.primary }], 2, false, message.id, 'content');
+          }
+        }
+
+        cursor = block.end + 1;
+      });
+
+      for (let i = cursor; i < contentLines.length; i += 1) {
+        const line = contentLines[i];
+        addLine([{ text: line || ' ', color: theme.text.primary }], 2, false, message.id, 'content');
+      }
+    }
 
     if (message.toolCalls && message.toolCalls.length > 0) {
       message.toolCalls.forEach((toolCall) => {
@@ -318,7 +410,7 @@ export function buildChatLines(
           [
             { text: `🔧 ${toolCall.name}`, color: theme.text.accent, bold: true },
             { text: ` [${toolCall.status}]${durationText}${collapsedNote}`, color: statusColor },
-            { text: isHeavy ? ' (Action minimized)' : '', color: theme.text.secondary, italic: true, dim: true }
+            { text: isHeavy ? ' (Action minimized, navigate to line and use right/left arrows to expand)' : '', color: theme.text.secondary, italic: true, dim: true }
           ],
           2,
           false,

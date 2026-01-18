@@ -10,6 +10,8 @@ import type { ToolCall as CoreToolCall, ContextMessage, ProviderMetrics } from '
 declare global {
   var __ollmModelSwitchCallback: ((model: string) => void) | undefined;
   var __ollmOpenModelMenu: (() => void) | undefined;
+  var __ollmAddSystemMessage: ((message: string) => void) | undefined;
+  var __ollmPromptUser: ((message: string, options: string[]) => Promise<string>) | undefined;
 }
 
 /**
@@ -209,24 +211,12 @@ export function ChatProvider({
 
   const { setLaunchScreenVisible, setTheme } = useUI();
   const { container: serviceContainer } = useServices();
-  const { sendToLLM, cancelRequest, setCurrentModel, provider, currentModel } = useModel();
+  const { sendToLLM, cancelRequest, setCurrentModel, provider, currentModel, modelSupportsTools } = useModel();
   
   const assistantMessageIdRef = useRef<string | null>(null);
   const manualContextRequestRef = useRef<{ modelId: string; onComplete: (value: number) => void | Promise<void> } | null>(null);
   
-  useEffect(() => {
-    if (serviceContainer) {
-      commandRegistry.setServiceContainer(serviceContainer);
-      globalThis.__ollmModelSwitchCallback = setCurrentModel;
-    }
-  }, [serviceContainer, setCurrentModel]);
-
-  useEffect(() => {
-    if (setTheme) {
-      commandRegistry.setThemeCallback(setTheme);
-    }
-  }, [setTheme]);
-
+  // Define addMessage before it's used in useEffect
   const addMessage = useCallback((message: Omit<Message, 'id' | 'timestamp'>) => {
     const newMessage: Message = {
       ...message,
@@ -238,6 +228,28 @@ export function ChatProvider({
     // Note: We don't automatically add to contextManager here anymore to avoid duplication
     // and to ensure better control over tool call/result sequencing.
   }, []);
+  
+  useEffect(() => {
+    if (serviceContainer) {
+      commandRegistry.setServiceContainer(serviceContainer);
+      globalThis.__ollmModelSwitchCallback = setCurrentModel;
+    }
+    
+    // Register global callbacks for ModelContext
+    globalThis.__ollmAddSystemMessage = (message: string) => {
+      addMessage({
+        role: 'system',
+        content: message,
+        excludeFromContext: true,
+      });
+    };
+  }, [serviceContainer, setCurrentModel, addMessage]);
+
+  useEffect(() => {
+    if (setTheme) {
+      commandRegistry.setThemeCallback(setTheme);
+    }
+  }, [setTheme]);
 
   const updateMessage = useCallback((id: string, updates: Partial<Message>) => {
     setMessages((prev) =>
@@ -343,15 +355,31 @@ export function ChatProvider({
       setWaitingForResponse(true);
       setStreaming(true);
 
-      const toolRegistry = new ToolRegistry();
-      const promptRegistry = new PromptRegistry();
+      // Check tool support BEFORE creating registry
+      const supportsTools = modelSupportsTools(currentModel);
       
-      const manager = contextActions.getManager();
-      if (manager && provider) {
-          toolRegistry.register(new HotSwapTool(manager, promptRegistry, provider, currentModel));
-          toolRegistry.register(new MemoryDumpTool());
-          const toolNames = toolRegistry.list().map(t => t.name);
-          manager.emit('active-tools-updated', toolNames);
+      let toolRegistry: ToolRegistry | undefined;
+      let toolSchemas: ToolSchema[] | undefined;
+      
+      if (supportsTools) {
+        toolRegistry = new ToolRegistry();
+        const promptRegistry = new PromptRegistry();
+        
+        const manager = contextActions.getManager();
+        if (manager && provider) {
+            toolRegistry.register(new HotSwapTool(manager, promptRegistry, provider, currentModel));
+            toolRegistry.register(new MemoryDumpTool());
+            const toolNames = toolRegistry.list().map(t => t.name);
+            manager.emit('active-tools-updated', toolNames);
+        }
+        
+        toolSchemas = toolRegistry.list().map(t => t.schema);
+      }
+
+      // Get system prompt and add tool support note if needed
+      let systemPrompt = contextActions.getSystemPrompt();
+      if (!supportsTools) {
+        systemPrompt += '\n\nNote: This model does not support function calling. Do not attempt to use tools or make tool calls.';
       }
 
       // 1. Initial user message addition to context manager
@@ -371,9 +399,24 @@ export function ChatProvider({
       const maxTurns = 5;
       let turnCount = 0;
       let stopLoop = false;
+      
+      // Track initial model at start of agent loop (11.1)
+      const initialModel = currentModel;
 
       while (turnCount < maxTurns && !stopLoop) {
         turnCount++;
+        
+        // Detect model change mid-loop (11.2)
+        if (currentModel !== initialModel) {
+          // Add system message about transition (11.4)
+          addMessage({
+            role: 'system',
+            content: 'Model changed during conversation. Completing current turn...',
+            excludeFromContext: true
+          });
+          // Complete current turn if model changed (11.3)
+          stopLoop = true; // Complete this turn, stop after
+        }
         
         // Prepare history from authoritative context manager
         const currentContext = await contextActions.getContext();
@@ -439,8 +482,8 @@ export function ChatProvider({
             (toolCall: CoreToolCall) => {
                toolCallReceived = toolCall;
             },
-            toolRegistry.list().map(t => t.schema),
-            contextActions.getSystemPrompt()
+            toolSchemas,
+            systemPrompt
           );
 
           // ALWAYS add assistant turn to context manager if it produced content OR tool calls
@@ -465,7 +508,7 @@ export function ChatProvider({
 
           if (toolCallReceived) {
               const tc = toolCallReceived as CoreToolCall;
-              const tool = toolRegistry.get(tc.name);
+              const tool = toolRegistry?.get(tc.name);
               
               // Update UI with tool call
               const targetId = currentAssistantMsgId;

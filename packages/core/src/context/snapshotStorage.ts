@@ -425,7 +425,7 @@ export class SnapshotStorageImpl implements SnapshotStorage {
             summary: snapshot.summary,
             size: stats.size
           });
-        } catch (error) {
+        } catch (_error) {
           // Skip corrupted files
           console.warn(`Skipping corrupted snapshot file: ${file}`);
         }

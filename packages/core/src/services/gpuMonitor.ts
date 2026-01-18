@@ -220,12 +220,12 @@ export class DefaultGPUMonitor implements GPUMonitor {
 
         const parts = stdout.trim().split(',').map(v => v.trim());
         
-        let memTotal = parseFloat(parts[0]);
-        let memUsed = parseFloat(parts[1]);
-        let memFree = parseFloat(parts[2]);
-        let temp = parseFloat(parts[3]);
-        let tempMax = parseFloat(parts[4]);
-        let util = parseFloat(parts[5]);
+        const memTotal = parseFloat(parts[0]);
+        const memUsed = parseFloat(parts[1]);
+        const memFree = parseFloat(parts[2]);
+        const temp = parseFloat(parts[3]);
+        const tempMax = parseFloat(parts[4]);
+        const util = parseFloat(parts[5]);
         
         // If name was requested, it's the last item
         if (!this.cachedModelName && parts.length > 6) {
@@ -295,7 +295,7 @@ export class DefaultGPUMonitor implements GPUMonitor {
                 const { stdout: nameOutput } = await execAsync('rocm-smi --showproductname');
                 const nameMatch = nameOutput.match(/Card Series:\s*(.+)/);
                 if (nameMatch) this.cachedModelName = nameMatch[1].trim();
-            } catch (e) { /* ignore */ }
+            } catch (_e) { /* ignore */ }
         }
 
         // Reset retry count on success
@@ -483,7 +483,7 @@ export class DefaultGPUMonitor implements GPUMonitor {
                     { timeout: 5000, windowsHide: true } 
                 );
                 this.cachedModelName = stdout.trim();
-            } catch (e) {
+            } catch (_e) {
                 this.cachedModelName = 'Windows Generic GPU';
             }
         }

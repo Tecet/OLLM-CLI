@@ -34,7 +34,7 @@ export class ExtensionSettingsManager {
    */
   resolveSettings(
     settings: ExtensionSetting[],
-    extensionName: string
+    _extensionName: string
   ): ResolvedExtensionSetting[] {
     const resolved: ResolvedExtensionSetting[] = [];
 
@@ -192,7 +192,7 @@ export class ExtensionSettingsManager {
     for (const setting of resolvedSettings) {
       if (setting.sensitive && setting.value !== undefined) {
         // Find the env var key for this setting
-        for (const [key, value] of Object.entries(env)) {
+        for (const [key, _value] of Object.entries(env)) {
           if (key.includes(setting.name.toUpperCase().replace(/([A-Z])/g, '_$1').replace(/^_/, ''))) {
             sensitiveKeys.add(key);
           }

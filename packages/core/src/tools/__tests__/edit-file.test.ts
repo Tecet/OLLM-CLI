@@ -49,7 +49,7 @@ class FileTestFixture {
  */
 function isValidFilename(s: string): boolean {
   // Filter out invalid filename characters for Windows/Unix
-  const invalidChars = /[<>:"|?*\/\\]/;
+  const invalidChars = /[<>:"|?*/\\]/;
   // Also filter out "." and ".." which are special directory references
   return !invalidChars.test(s) && s.trim().length > 0 && s !== '.' && s !== '..';
 }

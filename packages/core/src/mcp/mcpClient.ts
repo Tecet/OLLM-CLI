@@ -147,8 +147,11 @@ export class DefaultMCPClient implements MCPClient {
       await state.transport.disconnect();
     } catch (error) {
       // Log error but don't throw
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error(`Error disconnecting MCP server '${name}': ${errorMessage}`);
+      // Only log error if not in a test environment
+      if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error(`Error disconnecting MCP server '${name}': ${errorMessage}`);
+      }
     } finally {
       // Update status and remove from registry
       state.status = 'disconnected';
@@ -334,7 +337,7 @@ export class DefaultMCPClient implements MCPClient {
       }
 
       // Extract tools from response
-      const tools = (response.result as any)?.tools || [];
+      const tools = (response.result as { tools?: MCPTool[] } | undefined)?.tools || [];
       
       // Store tools in state
       state.tools = tools;
@@ -371,7 +374,7 @@ export class DefaultMCPClient implements MCPClient {
       }
 
       // Extract resources from response
-      const resources = (response.result as any)?.resources || [];
+      const resources = (response.result as { resources?: MCPResource[] } | undefined)?.resources || [];
       
       // Store resources in state
       state.resources = resources;
@@ -440,7 +443,7 @@ export class DefaultMCPClient implements MCPClient {
       }
 
       // Extract prompts from response
-      const prompts = (response.result as any)?.prompts || [];
+      const prompts = (response.result as { prompts?: MCPPrompt[] } | undefined)?.prompts || [];
       
       // Store prompts in state
       state.prompts = prompts;

@@ -1020,14 +1020,14 @@ watcher.on('change', async (path) => {
 - [Extension Development Guide](./extensions/README.md)
 
 ### Specifications
-- [Requirements](.kiro/specs/stage-05-hooks-extensions-mcp/requirements.md)
-- [Design](.kiro/specs/stage-05-hooks-extensions-mcp/design.md)
-- [Tasks](.kiro/specs/stage-05-hooks-extensions-mcp/tasks.md)
+- Requirements (.kiro/specs/stage-05-hooks-extensions-mcp/requirements.md)
+- Design (.kiro/specs/stage-05-hooks-extensions-mcp/design.md)
+- Tasks (.kiro/specs/stage-05-hooks-extensions-mcp/tasks.md)
 
 ### External References
-- [MCP Specification](https://spec.modelcontextprotocol.io/)
-- [OAuth 2.0 RFC 6749](https://tools.ietf.org/html/rfc6749)
-- [PKCE RFC 7636](https://tools.ietf.org/html/rfc7636)
+- MCP Specification (https://spec.modelcontextprotocol.io/)
+- OAuth 2.0 RFC 6749 (https://tools.ietf.org/html/rfc6749)
+- PKCE RFC 7636 (https://tools.ietf.org/html/rfc7636)
 
 ---
 

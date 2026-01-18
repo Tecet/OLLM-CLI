@@ -10,7 +10,7 @@ import { HookEvent } from './types.js';
 /**
  * Listener function for message bus events
  */
-export type EventListener = (event: HookEvent, data: any) => void | Promise<void>;
+export type EventListener = (event: HookEvent, data: unknown) => void | Promise<void>;
 
 /**
  * Options for event listeners
@@ -36,7 +36,7 @@ interface ListenerRecord {
  */
 interface HistoryRecord {
   event: HookEvent;
-  data: any;
+  data: unknown;
   timestamp: number;
 }
 
@@ -116,7 +116,7 @@ export class MessageBus {
   /**
    * Emit an event and wait for all listeners to complete
    */
-  async emit(event: HookEvent, data: any): Promise<void> {
+  async emit(event: HookEvent, data: unknown): Promise<void> {
     // Record history
     this.history.push({
       event,
@@ -150,7 +150,7 @@ export class MessageBus {
   /**
    * Emit an event without waiting for listeners to complete
    */
-  emitSync(event: HookEvent, data: any): void {
+  emitSync(event: HookEvent, data: unknown): void {
     queueMicrotask(() => {
       this.emit(event, data).catch(() => {});
     });
@@ -200,7 +200,7 @@ export class MessageBus {
   /**
    * Wait for a specific event to occur
    */
-  waitFor(event: HookEvent, timeout = 5000): Promise<any> {
+  waitFor(event: HookEvent, timeout = 5000): Promise<unknown> {
     return new Promise((resolve, reject) => {
       const timeoutId = setTimeout(() => {
         this.off(listenerId);
@@ -217,7 +217,7 @@ export class MessageBus {
   /**
    * Create a filtered view of the message bus
    */
-  filter(predicate: (event: HookEvent, data: any) => boolean): MessageBus {
+  filter(predicate: (event: HookEvent, data: unknown) => boolean): MessageBus {
     const proxy = new MessageBus();
     
     // This is a simplified proxy implementation. 

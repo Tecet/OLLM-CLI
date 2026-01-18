@@ -2,7 +2,7 @@
  * Model Database - Registry of known model capabilities, context limits, and characteristics
  */
 
-// @ts-ignore - picomatch doesn't have type definitions
+// @ts-expect-error - picomatch doesn't have type definitions
 import picomatch from 'picomatch';
 
 export interface ModelCapabilities {

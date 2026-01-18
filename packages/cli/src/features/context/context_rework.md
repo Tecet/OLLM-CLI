@@ -1,6 +1,6 @@
 # Context Rework Tasks
 
-Derived from [.kiro/specs/stage-04b-context-management/tasks.md](file:///d:/Workspaces/OLLM%20CLI/.kiro/specs/stage-04b-context-management/tasks.md) (excluding test tasks).
+Derived from .kiro/specs/stage-04b-context-management/tasks.md (file:///d:/Workspaces/OLLM%20CLI/.kiro/specs/stage-04b-context-management/tasks.md) (excluding test tasks).
 
 - [ ] 1. Set up context management infrastructure
   - [ ] Create directory structure: `packages/core/src/context/`

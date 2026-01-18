@@ -35,12 +35,14 @@ export const hookDebugCommand: Command = {
         };
 
       case 'status':
-        const isEnabled = hookDebugger.isEnabled();
-        const traces = hookDebugger.getTraces();
-        return {
-          success: true,
-          message: `Hook debugging is ${isEnabled ? 'enabled' : 'disabled'}. ${traces.length} traces collected.`,
-        };
+        {
+          const isEnabled = hookDebugger.isEnabled();
+          const traces = hookDebugger.getTraces();
+          return {
+            success: true,
+            message: `Hook debugging is ${isEnabled ? 'enabled' : 'disabled'}. ${traces.length} traces collected.`,
+          };
+        }
 
       case 'clear':
         hookDebugger.clearTraces();

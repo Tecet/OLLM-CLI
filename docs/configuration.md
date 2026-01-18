@@ -668,7 +668,7 @@ Configuration Error: Expected number, got string
   5 | temperature: "high"
                    ^
 
-Tip: Check for missing or unmatched quotes
+Tip - Check for missing or unmatched quotes
 ```
 
 ## Tips
@@ -684,7 +684,7 @@ Tip: Check for missing or unmatched quotes
 
 ## Planned Future Configuration Options
 
-The following configuration options are **planned for future development** and are not yet available in the current version. These will be added as new features are implemented according to the [roadmap](ROADMAP.md).
+The following configuration options are **planned for future development** and are not yet available in the current version. These will be added as new features are implemented according to the roadmap (ROADMAP.md).
 
 ### 🔮 Kraken Integration (Planned)
 
@@ -692,41 +692,41 @@ External LLM provider configuration for accessing cloud models:
 
 ```yaml
 # PLANNED - Not yet available
-kraken:
-  enabled: true
-  confirmBeforeRelease: true
-  autoEscalation:
-    enabled: false
-    triggers:
-      - contextOverflow
-      - localModelError
-  providers:
-    geminiCli:
-      enabled: true
-      executable: gemini
-      timeout: 120000
-      defaultModel: gemini-pro
-    claudeCode:
-      enabled: true
-      executable: claude-code
-      timeout: 120000
-    openai:
-      enabled: true
-      apiKey: ${OPENAI_API_KEY}
-      model: gpt-4
-      maxTokens: 8192
-    anthropic:
-      enabled: true
-      apiKey: ${ANTHROPIC_API_KEY}
-      model: claude-3-opus
-  costTracking:
-    enabled: true
-    sessionBudget: 5.00  # USD
-    warnThreshold: 1.00
+# kraken:
+  # enabled: true
+  # confirmBeforeRelease: true
+  # autoEscalation:
+    # enabled: false
+    # triggers:
+      # - contextOverflow
+      # - localModelError
+  # providers:
+    # geminiCli:
+      # enabled: true
+      # executable: gemini
+      # timeout: 120000
+      # defaultModel: gemini-pro
+    # claudeCode:
+      # enabled: true
+      # executable: claude-code
+      # timeout: 120000
+    # openai:
+      # enabled: true
+      # apiKey: ${OPENAI_API_KEY}
+      # model: gpt-4
+      # maxTokens: 8192
+    # anthropic:
+      # enabled: true
+      # apiKey: ${ANTHROPIC_API_KEY}
+      # model: claude-3-opus
+  # costTracking:
+    # enabled: true
+    # sessionBudget: 5.00  # USD
+    # warnThreshold: 1.00
 ```
 
 **Status:** Planned for Stage 10  
-**Documentation:** [Kraken Integration Spec](.kiro/specs/stage-10-kraken-integration-future-dev/)
+**Documentation:** Kraken Integration Spec (.kiro/specs/stage-10-kraken-integration-future-dev/)
 
 ### 🔮 Developer Productivity Tools (Planned)
 
@@ -734,32 +734,32 @@ Git integration and diff review configuration:
 
 ```yaml
 # PLANNED - Not yet available
-git:
-  enabled: true
-  includeInSystemPrompt: true
-  autoCommit:
-    enabled: false
-    messageStyle: semantic  # semantic, descriptive, conventional
-    groupChanges: true
+# git:
+  # enabled: true
+  # includeInSystemPrompt: true
+  # autoCommit:
+    # enabled: false
+    # messageStyle: semantic  # semantic, descriptive, conventional
+    # groupChanges: true
 
-mentions:
-  enabled: true
-  maxFilesPerGlob: 50
-  maxTokensPerMention: 4096
-  warnOnLargeContext: true
+# mentions:
+  # enabled: true
+  # maxFilesPerGlob: 50
+  # maxTokensPerMention: 4096
+  # warnOnLargeContext: true
 
-diffReview:
-  enabled: true
-  autoApprove:
-    readOperations: true
-    smallChanges: true
-    smallChangeThreshold: 10  # lines
-  showFullContext: true
-  contextLines: 3
+# diffReview:
+  # enabled: true
+  # autoApprove:
+    # readOperations: true
+    # smallChanges: true
+    # smallChangeThreshold: 10  # lines
+  # showFullContext: true
+  # contextLines: 3
 ```
 
 **Status:** Planned for Stage 11  
-**Documentation:** [Developer Productivity Spec](.kiro/specs/stage-11-developer-productivity-future-dev/)
+**Documentation:** Developer Productivity Spec (.kiro/specs/stage-11-developer-productivity-future-dev/)
 
 ### 🔮 Cross-Platform Support (Planned)
 
@@ -767,22 +767,22 @@ Platform-specific configuration options:
 
 ```yaml
 # PLANNED - Not yet available
-platform:
-  shell:
-    windows: cmd.exe
-    unix: /bin/sh
-  python:
-    windows: python
-    unix: python3
-  paths:
-    normalizeDisplay: true  # Show forward slashes in UI
-  terminal:
-    forceUnicode: false
-    forceColor: false
+# platform:
+  # shell:
+    # windows: cmd.exe
+    # unix: /bin/sh
+  # python:
+    # windows: python
+    # unix: python3
+  # paths:
+    # normalizeDisplay: true  # Show forward slashes in UI
+  # terminal:
+    # forceUnicode: false
+    # forceColor: false
 ```
 
 **Status:** Planned for Stage 12  
-**Documentation:** [Cross-Platform Spec](.kiro/specs/stage-12-cross-platform-future-dev/)
+**Documentation:** Cross-Platform Spec (.kiro/specs/stage-12-cross-platform-future-dev/)
 
 ### 🔮 File Upload System (Planned)
 
@@ -790,29 +790,29 @@ File upload and storage configuration:
 
 ```yaml
 # PLANNED - Not yet available
-uploads:
-  enabled: true
-  methods:
-    slashCommand: true
-    clipboard: true
-    dragDrop: true
-    mentions: true
-  storage:
-    perFileLimit: 10485760  # 10MB in bytes
-    perSessionLimit: 104857600  # 100MB in bytes
-    retentionDays: 7
-  images:
-    maxWidth: 2048
-    maxHeight: 2048
-    quality: 85
-  allowedTypes:
-    - image/*
-    - text/*
-    - application/json
+# uploads:
+  # enabled: true
+  # methods:
+    # slashCommand: true
+    # clipboard: true
+    # dragDrop: true
+    # mentions: true
+  # storage:
+    # perFileLimit: 10485760  # 10MB in bytes
+    # perSessionLimit: 104857600  # 100MB in bytes
+    # retentionDays: 7
+  # images:
+    # maxWidth: 2048
+    # maxHeight: 2048
+    # quality: 85
+  # allowedTypes:
+    # - image/*
+    # - text/*
+    # - application/json
 ```
 
 **Status:** Planned for Stage 14  
-**Documentation:** [File Upload Spec](.kiro/specs/stage-14-file-upload-future-dev/)
+**Documentation:** File Upload Spec (.kiro/specs/stage-14-file-upload-future-dev/)
 
 ### 🔮 Intelligence Layer (Planned)
 
@@ -820,52 +820,52 @@ Advanced AI capabilities configuration:
 
 ```yaml
 # PLANNED - Not yet available
-intelligence:
-  codebaseIndex:
-    enabled: true
-    autoIndex: true
-    extensions:
-      - .ts
-      - .js
-      - .py
-      - .java
-      - .go
-    excludePatterns:
-      - node_modules/**
-      - dist/**
-      - .git/**
-    maxFileSize: 1048576  # 1MB
+# intelligence:
+  # codebaseIndex:
+    # enabled: true
+    # autoIndex: true
+    # extensions:
+      # - .ts
+      # - .js
+      # - .py
+      # - .java
+      # - .go
+    # excludePatterns:
+      # - node_modules/**
+      # - dist/**
+      # - .git/**
+    # maxFileSize: 1048576  # 1MB
   
-  structuredOutput:
-    enabled: true
-    maxRetries: 3
-    useGuidedDecoding: true
+  # structuredOutput:
+    # enabled: true
+    # maxRetries: 3
+    # useGuidedDecoding: true
   
-  sandbox:
-    enabled: true
-    timeout: 30000
-    allowedLanguages:
-      - javascript
-      - python
-      - bash
-    restrictions:
-      networkAccess: false
-      filesystemAccess: false
-    memoryLimit: 536870912  # 512MB
+  # sandbox:
+    # enabled: true
+    # timeout: 30000
+    # allowedLanguages:
+      # - javascript
+      # - python
+      # - bash
+    # restrictions:
+      # networkAccess: false
+      # filesystemAccess: false
+    # memoryLimit: 536870912  # 512MB
   
-  vision:
-    enabled: true
-    defaultModel: llava:13b
-    maxImageSize: 5242880  # 5MB
+  # vision:
+    # enabled: true
+    # defaultModel: llava:13b
+    # maxImageSize: 5242880  # 5MB
   
-  costTracking:
-    enabled: true
-    monthlyBudget: 50.00  # USD
-    warnThreshold: 40.00
+  # costTracking:
+    # enabled: true
+    # monthlyBudget: 50.00  # USD
+    # warnThreshold: 40.00
 ```
 
 **Status:** Planned for Stage 15  
-**Documentation:** [Intelligence Layer Spec](.kiro/specs/stage-15-intelligence-layer-future-dev/)
+**Documentation:** Intelligence Layer Spec (.kiro/specs/stage-15-intelligence-layer-future-dev/)
 
 ---
 
@@ -873,10 +873,9 @@ intelligence:
 
 - **Not Yet Available**: These configuration options are documented for planning purposes and will be implemented in future releases
 - **Subject to Change**: Exact configuration structure may change during implementation based on technical requirements and user feedback
-- **Roadmap**: See the [full roadmap](ROADMAP.md) for timeline and priority information
+- **Roadmap**: See the full roadmap (ROADMAP.md) for timeline and priority information
 - **Contributions Welcome**: If you're interested in implementing any of these features, please review the detailed specifications and open a discussion
 
 ---
 
 **Last Updated:** January 15, 2026
-

@@ -13,7 +13,6 @@ import { fdir } from 'fdir';
 import { promises as fs } from 'fs';
 import * as fsSync from 'fs';
 import * as path from 'path';
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 import ignoreFactory from 'ignore';
 import type { Ignore } from 'ignore';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -151,7 +150,7 @@ export class FileDiscoveryService {
           size: stats.size,
           modified: stats.mtime,
         });
-      } catch (error) {
+      } catch (_error) {
         // Skip files we can't stat (permission errors, etc.)
         continue;
       }
@@ -179,7 +178,10 @@ export class FileDiscoveryService {
         // Verify the root directory exists
         const stats = await fs.stat(root);
         if (!stats.isDirectory()) {
-          console.error(`Cannot watch ${sanitizeErrorMessage(root)}: not a directory`);
+          // Only log error if not in a test environment
+          if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
+            console.error(`Cannot watch ${sanitizeErrorMessage(root)}: not a directory`);
+          }
           return;
         }
 
@@ -225,8 +227,11 @@ export class FileDiscoveryService {
           console.error(`File watcher error for ${sanitizeErrorMessage(root)}:`, sanitizeErrorMessage(errorMessage));
         });
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        console.error(`Failed to start file watcher for ${sanitizeErrorMessage(root)}:`, sanitizeErrorMessage(errorMessage));
+        // Only log error if not in a test environment
+        if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          console.error(`Failed to start file watcher for ${sanitizeErrorMessage(root)}:`, sanitizeErrorMessage(errorMessage));
+        }
       }
     })();
 

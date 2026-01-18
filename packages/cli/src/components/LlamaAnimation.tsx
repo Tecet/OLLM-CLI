@@ -50,8 +50,6 @@ async function loadLlamaFrames(size: Size): Promise<Record<Direction, FrameData[
     // We render 2 pixels per line (Top/Bottom half-blocks)
     const pixelHeight = logicalHeight * 2;
     const pixelWidth = pixelHeight; // Square aspect ratio 1:1
-    const spriteWidth = pixelWidth; // Character width matches pixel width
-
     const frames: Record<Direction, FrameData[]> = { right: [], left: [] };
     
     // Sub-function to process a single image file
@@ -204,7 +202,7 @@ export const LlamaAnimation: React.FC<LlamaAnimationProps> = memo(({ size = 'sma
             maxSteps: 0,
         }
     );
-    const { frameIdx, step, direction, maxSteps } = animationState;
+    const { frameIdx, step, direction } = animationState;
     const { stdout } = useStdout();
     const isInteractive = stdout?.isTTY !== false;
 

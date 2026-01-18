@@ -2,9 +2,9 @@
 
 > A local-first command-line interface for open-source LLMs with intelligent context management, tools, hooks, and MCP integration.
 
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Node Version](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen.svg)](https://nodejs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue.svg)](https://www.typescriptlang.org/)
+![License (https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+![Node Version (https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen.svg)](https://nodejs.org/)
+![TypeScript (https://img.shields.io/badge/TypeScript-5.9-blue.svg)](https://www.typescriptlang.org/)
 
 OLLM CLI brings the power of open-source large language models to your terminal with a focus on local-first operation, intelligent resource management, and extensibility. Built with TypeScript and React, it provides a modern terminal UI while maintaining compatibility with automation workflows.
 
@@ -55,15 +55,15 @@ OLLM CLI brings the power of open-source large language models to your terminal 
 
 Before installing OLLM CLI, ensure you have:
 
-- **Node.js 20 or higher** ([Download](https://nodejs.org/))
-- **Ollama** running locally ([Install Ollama](https://ollama.com/))
+- **Node.js 20 or higher** (Download (https://nodejs.org/))
+- **Ollama** running locally (Install Ollama (https://ollama.com/))
 - **4GB+ VRAM recommended** (CPU-only mode available but slower)
 
 ### Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/ollm-cli.git
+git clone https://github.com/ollm/ollm-cli.git
 cd ollm-cli
 
 # Install dependencies
@@ -184,8 +184,8 @@ ollm -p "List the top 3 JavaScript frameworks" --output json
 
 ### Development Documentation
 - **[Development Setup](#development-setup)** - Contributing guide
-- **[Project Structure](docs/structure.md)** - Codebase organization
-- **[Tech Stack](docs/tech.md)** - Dependencies and tools
+- Project Structure (docs/structure.md) - Codebase organization
+- Tech Stack (docs/tech.md) - Dependencies and tools
 
 ### Roadmap & Future Features
 - **[Development Roadmap](docs/Development-Roadmap/)** - Complete roadmap documentation
@@ -384,7 +384,7 @@ ollm-cli/
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/yourusername/ollm-cli.git
+git clone https://github.com/ollm/ollm-cli.git
 cd ollm-cli
 
 # 2. Install dependencies
@@ -562,7 +562,7 @@ We welcome contributions! Here's how you can help:
 
 ```bash
 # 1. Fork and clone
-git clone https://github.com/yourusername/ollm-cli.git
+git clone https://github.com/ollm/ollm-cli.git
 cd ollm-cli
 
 # 2. Create a feature branch
@@ -593,19 +593,19 @@ git push origin feature/my-feature
 
 OLLM CLI is built on the shoulders of giants:
 
-- **[Ollama](https://ollama.com/)** - Local LLM runtime
-- **[React](https://react.dev/)** & **[Ink](https://github.com/vadimdemedes/ink)** - Terminal UI
-- **[Vitest](https://vitest.dev/)** - Testing framework
-- **[fast-check](https://fast-check.dev/)** - Property-based testing
-- All our [contributors](https://github.com/yourusername/ollm-cli/graphs/contributors)
+- **Ollama (https://ollama.com/)** - Local LLM runtime
+- **React (https://react.dev/)** & **Ink (https://github.com/vadimdemedes/ink)** - Terminal UI
+- **Vitest (https://vitest.dev/)** - Testing framework
+- **fast-check (https://fast-check.dev/)** - Property-based testing
+- All our contributors (https://github.com/ollm/ollm-cli/graphs/contributors)
 
 ---
 
 ## 📞 Support
 
 - **Documentation**: [docs/](docs/)
-- **Issues**: [GitHub Issues](https://github.com/yourusername/ollm-cli/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/ollm-cli/discussions)
+- **Issues**: GitHub Issues (https://github.com/ollm/ollm-cli/issues)
+- **Discussions**: GitHub Discussions (https://github.com/ollm/ollm-cli/discussions)
 
 ---
 

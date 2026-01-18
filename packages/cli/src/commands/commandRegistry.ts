@@ -1,5 +1,6 @@
 import type { Command, CommandResult } from './types.js';
 import type { ServiceContainer } from '@ollm/ollm-cli-core/services/serviceContainer.js';
+import type { MCPClient } from '@ollm/ollm-cli-core/mcp/types.js';
 import { homeCommand } from './homeCommand.js';
 import { sessionCommands } from './sessionCommands.js';
 import { modelCommands, createModelCommands } from './modelCommands.js';
@@ -31,7 +32,7 @@ export class CommandRegistry {
   private aliases: Map<string, string> = new Map();
   private serviceContainer?: ServiceContainer;
   private setTheme?: (theme: Theme) => void;
-  private mcpClient?: any;
+  private mcpClient?: MCPClient;
 
   constructor(serviceContainer?: ServiceContainer, setTheme?: (theme: Theme) => void) {
     this.serviceContainer = serviceContainer;
@@ -209,7 +210,7 @@ export class CommandRegistry {
    * Set the MCP client
    * This allows MCP-related commands to access the client
    */
-  setMCPClient(mcpClient: any): void {
+  setMCPClient(mcpClient: MCPClient): void {
     this.mcpClient = mcpClient;
     
     // Re-register MCP health commands if service container is available

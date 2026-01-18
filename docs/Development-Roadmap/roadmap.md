@@ -44,10 +44,10 @@ All future development stages are **planned but not yet scheduled**. Implementat
 | 15 | Intelligence Layer (Semantic search, structured output, code execution) | High | 📋 Planned |
 
 **For detailed information about planned features, see:**
-- [Future Development Roadmap](./Development-Roadmap/future-development.md) - Complete roadmap with detailed descriptions
-- [Visual Roadmap](./Development-Roadmap/road_map_visual.md) - Visual timeline and dependency graphs
-- [Future Features Quick Reference](./Development-Roadmap/future-features.md) - Quick reference guide
-- [Stage Specifications](../.kiro/specs/) - Detailed requirements and design documents
+- [Future Development Roadmap](./future-development.md) - Complete roadmap with detailed descriptions
+- [Visual Roadmap](./road_map_visual.md) - Visual timeline and dependency graphs
+- [Future Features Quick Reference](./future-features.md) - Quick reference guide
+- Stage Specifications (.kiro/specs/) - Detailed requirements and design documents
 
 ---
 
@@ -82,15 +82,15 @@ Your input helps us prioritize development and ensure OLLM CLI meets real-world 
 
 ## Related Documentation
 
-- [Roadmap Overview](./Development-Roadmap/roadmap.md) - Main entry point
-- [Future Development](./Development-Roadmap/future-development.md) - Detailed future plans
-- [Visual Roadmap](./Development-Roadmap/road_map_visual.md) - Visual timeline and diagrams
-- [Future Features](./Development-Roadmap/future-features.md) - Quick reference
-- [Development Plan](../.dev/Development-Roadmap/ROADMAP.md) - Development tracking
-- [README](../README.md) - Project overview and quick start
-- [Configuration Reference](./configuration.md) - Complete settings documentation
-- [Troubleshooting Guide](./troubleshooting.md) - Common issues and solutions
-- [Development Plan](../.dev/development-plan.md) - Completed stages 1-9
+- Roadmap Overview (this document) - Main entry point
+- [Future Development](./future-development.md) - Detailed future plans
+- [Visual Roadmap](./road_map_visual.md) - Visual timeline and diagrams
+- [Future Features](./future-features.md) - Quick reference
+- Development Plan (.dev/Development-Roadmap/ROADMAP.md) - Development tracking
+- [README](../../README.md) - Project overview and quick start
+- [Configuration Reference](../configuration.md) - Complete settings documentation
+- [Troubleshooting Guide](../troubleshooting.md) - Common issues and solutions
+- Development Plan (.dev/development-plan.md) - Completed stages 1-9
 
 ---
 

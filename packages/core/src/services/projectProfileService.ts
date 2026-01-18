@@ -22,7 +22,7 @@ export interface ProjectProfile {
   routing?: {
     defaultProfile?: string;
   };
-  options?: Record<string, any>;
+  options?: Record<string, unknown>;
 }
 
 /**
@@ -249,10 +249,11 @@ export class ProjectProfileService {
               }
             }
           }
-        } catch (error: any) {
+        } catch (error) {
           // File doesn't exist, continue to next
-          if (error.code !== 'ENOENT') {
-            console.warn(`Error checking ${filePath}: ${error.message}`);
+          const err = error as NodeJS.ErrnoException;
+          if (err.code !== 'ENOENT') {
+            console.warn(`Error checking ${filePath}: ${err.message}`);
           }
         }
       }
@@ -289,51 +290,61 @@ export class ProjectProfileService {
 
       this.currentProfile = profile;
       return profile;
-    } catch (error: any) {
-      if (error.code === 'ENOENT') {
+    } catch (error) {
+      const err = error as NodeJS.ErrnoException;
+      if (err.code === 'ENOENT') {
         // File doesn't exist, try auto-detection
         return this.detectProfile(workspacePath);
       }
-      throw new Error(`Failed to load project profile: ${error.message}`);
+      throw new Error(`Failed to load project profile: ${err.message}`);
     }
   }
 
   /**
    * Validate profile structure
    */
-  private validateProfile(data: any): void {
+  private validateProfile(data: unknown): void {
     if (!data || typeof data !== 'object') {
       throw new Error('Profile must be an object');
     }
 
-    if (data.model !== undefined && typeof data.model !== 'string') {
+    const profile = data as {
+      model?: unknown;
+      systemPrompt?: unknown;
+      tools?: { enabled?: unknown; disabled?: unknown } | unknown;
+      routing?: unknown;
+      options?: unknown;
+    };
+
+    if (profile.model !== undefined && typeof profile.model !== 'string') {
       throw new Error('Profile model must be a string');
     }
 
-    if (data.systemPrompt !== undefined && typeof data.systemPrompt !== 'string') {
+    if (profile.systemPrompt !== undefined && typeof profile.systemPrompt !== 'string') {
       throw new Error('Profile systemPrompt must be a string');
     }
 
-    if (data.tools !== undefined) {
-      if (typeof data.tools !== 'object') {
+    if (profile.tools !== undefined) {
+      if (typeof profile.tools !== 'object') {
         throw new Error('Profile tools must be an object');
       }
 
-      if (data.tools.enabled !== undefined && !Array.isArray(data.tools.enabled)) {
+      if ((profile.tools as { enabled?: unknown }).enabled !== undefined && !Array.isArray((profile.tools as { enabled?: unknown }).enabled)) {
         throw new Error('Profile tools.enabled must be an array');
       }
 
-      if (data.tools.disabled !== undefined && !Array.isArray(data.tools.disabled)) {
+      if ((profile.tools as { disabled?: unknown }).disabled !== undefined && !Array.isArray((profile.tools as { disabled?: unknown }).disabled)) {
         throw new Error('Profile tools.disabled must be an array');
       }
     }
 
-    if (data.routing !== undefined) {
-      if (typeof data.routing !== 'object') {
+    if (profile.routing !== undefined) {
+      if (typeof profile.routing !== 'object') {
         throw new Error('Profile routing must be an object');
       }
 
-      if (data.routing.defaultProfile !== undefined && typeof data.routing.defaultProfile !== 'string') {
+      if ((profile.routing as { defaultProfile?: unknown }).defaultProfile !== undefined &&
+          typeof (profile.routing as { defaultProfile?: unknown }).defaultProfile !== 'string') {
         throw new Error('Profile routing.defaultProfile must be a string');
       }
     }

@@ -4,10 +4,9 @@
  * Tests universal properties of session management commands
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
 import { sessionCommand } from '../sessionCommands.js';
-import { ChatContextValue } from '../../features/context/ChatContext.js';
 
 /**
  * Property 30: Session Resume
@@ -35,7 +34,7 @@ describe('Property 30: Session Resume', () => {
           }),
           { minLength: 1, maxLength: 20 }
         ),
-        async (sessionId, messages) => {
+        async (sessionId, _messages) => {
           // Execute the resume command
           const result = await sessionCommand.handler(['resume', sessionId]);
 

@@ -86,7 +86,7 @@ export class GrepTool implements DeclarativeTool<GrepParams, ToolResult> {
 
   createInvocation(
     params: GrepParams,
-    context: ToolContext
+    _context: ToolContext
   ): ToolInvocation<GrepParams, ToolResult> {
     return new GrepInvocation(params);
   }
@@ -108,14 +108,14 @@ export class GrepInvocation implements ToolInvocation<GrepParams, ToolResult> {
     return [this.params.directory ?? '.'];
   }
 
-  async shouldConfirmExecute(abortSignal: AbortSignal): Promise<false> {
+  async shouldConfirmExecute(_abortSignal: AbortSignal): Promise<false> {
     // Read-only operations don't require confirmation
     return false;
   }
 
   async execute(
     signal: AbortSignal,
-    updateOutput?: (output: string) => void
+    _updateOutput?: (output: string) => void
   ): Promise<ToolResult> {
     try {
       // Check if aborted
@@ -152,6 +152,21 @@ export class GrepInvocation implements ToolInvocation<GrepParams, ToolResult> {
         });
       }
 
+      // Validate regex pattern
+      let regex: RegExp;
+      try {
+        regex = new RegExp(this.params.pattern, flags);
+      } catch (_error) {
+        return {
+          llmContent: '',
+          returnDisplay: '',
+          error: {
+            message: `Invalid regex pattern: ${this.params.pattern}`,
+            type: 'InvalidRegexError',
+          },
+        };
+      }
+
       const results: string[] = [];
       let count = 0;
 
@@ -172,8 +187,8 @@ export class GrepInvocation implements ToolInvocation<GrepParams, ToolResult> {
           const lines = content.split('\n');
 
           for (let i = 0; i < lines.length; i++) {
-            // Create a new regex for each line to avoid state issues with global flag
-            const regex = new RegExp(this.params.pattern, flags);
+            // Reset lastIndex for global regex to avoid state issues
+            regex.lastIndex = 0;
             if (regex.test(lines[i])) {
               results.push(`${file}:${i + 1}: ${lines[i]}`);
               count++;
@@ -183,7 +198,7 @@ export class GrepInvocation implements ToolInvocation<GrepParams, ToolResult> {
               }
             }
           }
-        } catch (error) {
+        } catch (_error) {
           // Skip files that can't be read (binary files, permission errors, etc.)
           continue;
         }

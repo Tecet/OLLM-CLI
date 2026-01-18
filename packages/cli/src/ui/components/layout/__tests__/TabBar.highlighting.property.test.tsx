@@ -30,7 +30,7 @@ describe('Property 13: Active Tab Highlighting', () => {
   it('should highlight the active tab differently from inactive tabs', () => {
     fc.assert(
       fc.property(
-        fc.constantFrom<TabType>('chat', 'tools', 'files', 'search', 'docs', 'settings'),
+        fc.constantFrom<TabType>('chat', 'tools', 'files', 'search', 'docs', 'github', 'settings'),
         (activeTab) => {
           const { lastFrame } = render(
             <FocusProvider>
@@ -66,7 +66,7 @@ describe('Property 13: Active Tab Highlighting', () => {
   it('should only have one active tab at a time', () => {
     fc.assert(
       fc.property(
-        fc.constantFrom<TabType>('chat', 'tools', 'files', 'search', 'docs', 'settings'),
+        fc.constantFrom<TabType>('chat', 'tools', 'files', 'search', 'docs', 'github', 'settings'),
         (activeTab) => {
           const { lastFrame } = render(
             <FocusProvider>
@@ -87,7 +87,7 @@ describe('Property 13: Active Tab Highlighting', () => {
           expect(activeTabData).toBeDefined();
           
           // Property: All tabs should be rendered
-          expect(tabs.length).toBe(6);
+          expect(tabs.length).toBe(7);
           
           return true;
         }
@@ -100,8 +100,8 @@ describe('Property 13: Active Tab Highlighting', () => {
     fc.assert(
       fc.property(
         fc.array(
-          fc.constantFrom<TabType>('chat', 'tools', 'files', 'search', 'docs', 'settings'),
-          { minLength: 2, maxLength: 6 }
+          fc.constantFrom<TabType>('chat', 'tools', 'files', 'search', 'docs', 'github', 'settings'),
+          { minLength: 2, maxLength: 7 }
         ),
         (tabSequence) => {
           // Test each tab in the sequence

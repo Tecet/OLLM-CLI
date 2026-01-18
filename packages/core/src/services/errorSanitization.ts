@@ -5,36 +5,6 @@
  * API keys, secrets, tokens, and other credentials from appearing in logs.
  */
 
-// @ts-ignore - picomatch doesn't have type definitions
-import picomatch from 'picomatch';
-
-/**
- * Patterns that indicate sensitive data in error messages
- * These patterns match common formats for API keys, tokens, and secrets
- */
-const SENSITIVE_PATTERNS = [
-  // Environment variable patterns
-  '*_KEY=*',
-  '*_SECRET=*',
-  '*_TOKEN=*',
-  '*_PASSWORD=*',
-  '*_CREDENTIAL=*',
-  'AWS_*=*',
-  'GITHUB_*=*',
-  'OPENAI_*=*',
-  'ANTHROPIC_*=*',
-
-  // Common key formats
-  'Bearer *',
-  'Basic *',
-  'api_key=*',
-  'apiKey=*',
-  'access_token=*',
-  'accessToken=*',
-  'client_secret=*',
-  'clientSecret=*',
-];
-
 /**
  * Regular expressions for detecting sensitive data patterns
  */
@@ -85,7 +55,7 @@ export function sanitizeErrorMessage(message: string): string {
   // Apply pattern-based redaction for key=value pairs
   // Look for patterns like KEY_NAME=value and redact the value
   const keyValuePattern = /([A-Z_]+(?:KEY|SECRET|TOKEN|PASSWORD|CREDENTIAL)[A-Z_]*)=([^\s,;]+)/gi;
-  sanitized = sanitized.replace(keyValuePattern, (match, key, value) => {
+  sanitized = sanitized.replace(keyValuePattern, (match, key, _value) => {
     return `${key}=${REDACTED_TEXT}`;
   });
 

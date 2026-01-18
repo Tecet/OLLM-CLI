@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Text } from 'ink';
-import { useUI, Theme } from '../../../features/context/UIContext.js';
+import { Theme } from '../../../features/context/UIContext.js';
 
 export interface DocViewerProps {
   /** Document content (markdown) */

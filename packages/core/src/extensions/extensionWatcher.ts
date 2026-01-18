@@ -6,7 +6,6 @@
  */
 
 import { watch, type FSWatcher } from 'fs';
-import { join } from 'path';
 import type { ExtensionManager } from './extensionManager.js';
 
 /**

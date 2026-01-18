@@ -291,12 +291,12 @@ These dependencies are referenced in documentation but not yet installed:
 
 ## References
 
-- [npm Documentation](https://docs.npmjs.com/)
-- [TypeScript Release Notes](https://www.typescriptlang.org/docs/handbook/release-notes/overview.html)
-- [React 19 Release](https://react.dev/blog/2025/10/01/react-19-2)
-- [Vitest Documentation](https://vitest.dev/)
-- [ESLint 9 Migration Guide](https://eslint.org/docs/latest/use/migrate-to-9.0.0)
-- [Node.js Release Schedule](https://nodejs.org/en/about/previous-releases)
+- npm Documentation (https://docs.npmjs.com/)
+- TypeScript Release Notes (https://www.typescriptlang.org/docs/handbook/release-notes/overview.html)
+- React 19 Release (https://react.dev/blog/2025/10/01/react-19-2)
+- Vitest Documentation (https://vitest.dev/)
+- ESLint 9 Migration Guide (https://eslint.org/docs/latest/use/migrate-to-9.0.0)
+- Node.js Release Schedule (https://nodejs.org/en/about/previous-releases)
 
 ---
 

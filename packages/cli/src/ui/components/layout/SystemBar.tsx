@@ -15,7 +15,7 @@ export interface SystemBarProps {
  */
 export function SystemBar({ height, showBorder = true }: SystemBarProps) {
   const { state: chatState, contextUsage } = useChat();
-  const { modelLoading } = useModel();
+  const { modelLoading, warmupStatus } = useModel();
   const { state: uiState } = useUI();
   const { theme } = uiState;
 
@@ -36,6 +36,9 @@ export function SystemBar({ height, showBorder = true }: SystemBarProps) {
   let displayStatus = ' ';
   if (inputMode === 'menu') {
     displayStatus = 'Interactive Menu Active';
+  } else if (warmupStatus?.active) {
+    const elapsedSeconds = Math.max(0, Math.floor(warmupStatus.elapsedMs / 1000));
+    displayStatus = `Warming model (try ${warmupStatus.attempt}, ${elapsedSeconds}s) ${spinnerFrames[spinnerIndex]}`;
   } else if (modelLoading) {
     displayStatus = `Model Loading ${spinnerFrames[spinnerIndex]}`;
   } else if (streaming) {

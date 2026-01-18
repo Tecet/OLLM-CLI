@@ -9,7 +9,9 @@ import React from 'react';
 import { Box, Text, useInput } from 'ink';
 import { useDialog } from '../../contexts/DialogContext.js';
 import { useUI } from '../../../features/context/UIContext.js';
+import { useUserPrompt } from '../../../features/context/UserPromptContext.js';
 import { HookApprovalDialog } from './HookApprovalDialog.js';
+import { UserPromptDialog } from './UserPromptDialog.js';
 
 /**
  * Manager component that renders active dialogs
@@ -17,9 +19,35 @@ import { HookApprovalDialog } from './HookApprovalDialog.js';
 export function DialogManager() {
   const { state, closeDialog } = useDialog();
   const { state: uiState } = useUI();
+  const { state: promptState, navigateUp, navigateDown, selectOption, cancelPrompt } = useUserPrompt();
 
   // Handle keyboard input for dialogs
   useInput((input, key) => {
+    // Handle user prompts first (higher priority)
+    if (promptState.isVisible && promptState.activePrompt) {
+      if (key.escape) {
+        cancelPrompt();
+        return;
+      }
+
+      if (key.upArrow) {
+        navigateUp();
+        return;
+      }
+
+      if (key.downArrow) {
+        navigateDown();
+        return;
+      }
+
+      if (key.return) {
+        selectOption();
+        return;
+      }
+
+      return; // Don't process other dialogs if prompt is active
+    }
+
     if (!state.isVisible || !state.activeDialog) {
       return;
     }
@@ -68,7 +96,15 @@ export function DialogManager() {
   });
 
   // Don't render anything if no dialog is active
-  if (!state.isVisible || !state.activeDialog) {
+  if (!state.isVisible && !promptState.isVisible) {
+    return null;
+  }
+
+  // Determine which dialog to show (user prompt takes priority)
+  const showUserPrompt = promptState.isVisible && promptState.activePrompt;
+  const showDialog = state.isVisible && state.activeDialog && !showUserPrompt;
+
+  if (!showUserPrompt && !showDialog) {
     return null;
   }
 
@@ -93,93 +129,118 @@ export function DialogManager() {
 
       {/* Dialog content */}
       <Box position="relative" zIndex={1000}>
-        {state.activeDialog.type === 'hookApproval' && (
-          <HookApprovalDialog
-            hook={state.activeDialog.hook}
-            hash={state.activeDialog.hash}
+        {/* User Prompt Dialog */}
+        {showUserPrompt && promptState.activePrompt && (
+          <UserPromptDialog
+            message={promptState.activePrompt.message}
+            options={promptState.activePrompt.options}
+            selectedIndex={promptState.selectedIndex}
             theme={uiState.theme}
-            onApprove={state.activeDialog.onApprove}
-            onDeny={state.activeDialog.onDeny}
             visible={true}
+            timeout={
+              promptState.activePrompt.timeout
+                ? {
+                    duration: promptState.activePrompt.timeout,
+                    elapsed: promptState.elapsedTime,
+                    defaultOption: promptState.activePrompt.defaultOption,
+                  }
+                : undefined
+            }
           />
         )}
 
-        {state.activeDialog.type === 'confirmation' && (
-          <Box
-            flexDirection="column"
-            borderStyle="double"
-            borderColor={uiState.theme.border.accent}
-            padding={1}
-            width="60%"
-          >
-            <Box marginBottom={1}>
-              <Text color={uiState.theme.text.accent} bold>
-                {state.activeDialog.title}
-              </Text>
-            </Box>
-            <Box marginBottom={1}>
-              <Text color={uiState.theme.text.primary}>
-                {state.activeDialog.message}
-              </Text>
-            </Box>
-            <Box>
-              <Text color={uiState.theme.text.muted} dimColor>
-                Press Y to confirm, N to cancel, or Esc to close
-              </Text>
-            </Box>
-          </Box>
-        )}
+        {/* Standard Dialogs */}
+        {showDialog && state.activeDialog && (
+          <>
+            {state.activeDialog.type === 'hookApproval' && (
+              <HookApprovalDialog
+                hook={state.activeDialog.hook}
+                hash={state.activeDialog.hash}
+                theme={uiState.theme}
+                onApprove={state.activeDialog.onApprove}
+                onDeny={state.activeDialog.onDeny}
+                visible={true}
+              />
+            )}
 
-        {state.activeDialog.type === 'error' && (
-          <Box
-            flexDirection="column"
-            borderStyle="double"
-            borderColor={uiState.theme.status.error}
-            padding={1}
-            width="60%"
-          >
-            <Box marginBottom={1}>
-              <Text color={uiState.theme.status.error} bold>
-                ❌ {state.activeDialog.title}
-              </Text>
-            </Box>
-            <Box marginBottom={1}>
-              <Text color={uiState.theme.text.primary}>
-                {state.activeDialog.message}
-              </Text>
-            </Box>
-            <Box>
-              <Text color={uiState.theme.text.muted} dimColor>
-                Press Enter or Space to close
-              </Text>
-            </Box>
-          </Box>
-        )}
+            {state.activeDialog.type === 'confirmation' && (
+              <Box
+                flexDirection="column"
+                borderStyle="double"
+                borderColor={uiState.theme.border.accent}
+                padding={1}
+                width="60%"
+              >
+                <Box marginBottom={1}>
+                  <Text color={uiState.theme.text.accent} bold>
+                    {state.activeDialog.title}
+                  </Text>
+                </Box>
+                <Box marginBottom={1}>
+                  <Text color={uiState.theme.text.primary}>
+                    {state.activeDialog.message}
+                  </Text>
+                </Box>
+                <Box>
+                  <Text color={uiState.theme.text.muted} dimColor>
+                    Press Y to confirm, N to cancel, or Esc to close
+                  </Text>
+                </Box>
+              </Box>
+            )}
 
-        {state.activeDialog.type === 'info' && (
-          <Box
-            flexDirection="column"
-            borderStyle="double"
-            borderColor={uiState.theme.border.accent}
-            padding={1}
-            width="60%"
-          >
-            <Box marginBottom={1}>
-              <Text color={uiState.theme.text.accent} bold>
-                ℹ️  {state.activeDialog.title}
-              </Text>
-            </Box>
-            <Box marginBottom={1}>
-              <Text color={uiState.theme.text.primary}>
-                {state.activeDialog.message}
-              </Text>
-            </Box>
-            <Box>
-              <Text color={uiState.theme.text.muted} dimColor>
-                Press Enter or Space to close
-              </Text>
-            </Box>
-          </Box>
+            {state.activeDialog.type === 'error' && (
+              <Box
+                flexDirection="column"
+                borderStyle="double"
+                borderColor={uiState.theme.status.error}
+                padding={1}
+                width="60%"
+              >
+                <Box marginBottom={1}>
+                  <Text color={uiState.theme.status.error} bold>
+                    ❌ {state.activeDialog.title}
+                  </Text>
+                </Box>
+                <Box marginBottom={1}>
+                  <Text color={uiState.theme.text.primary}>
+                    {state.activeDialog.message}
+                  </Text>
+                </Box>
+                <Box>
+                  <Text color={uiState.theme.text.muted} dimColor>
+                    Press Enter or Space to close
+                  </Text>
+                </Box>
+              </Box>
+            )}
+
+            {state.activeDialog.type === 'info' && (
+              <Box
+                flexDirection="column"
+                borderStyle="double"
+                borderColor={uiState.theme.border.accent}
+                padding={1}
+                width="60%"
+              >
+                <Box marginBottom={1}>
+                  <Text color={uiState.theme.text.accent} bold>
+                    ℹ️  {state.activeDialog.title}
+                  </Text>
+                </Box>
+                <Box marginBottom={1}>
+                  <Text color={uiState.theme.text.primary}>
+                    {state.activeDialog.message}
+                  </Text>
+                </Box>
+                <Box>
+                  <Text color={uiState.theme.text.muted} dimColor>
+                    Press Enter or Space to close
+                  </Text>
+                </Box>
+              </Box>
+            )}
+          </>
         )}
       </Box>
     </Box>

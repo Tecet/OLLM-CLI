@@ -1,6 +1,5 @@
 import React from 'react';
 import { Box, Text } from 'ink';
-import { useUI } from '../../../features/context/UIContext.js';
 import { Theme } from '../../../config/types.js';
 
 export interface Options {
@@ -16,7 +15,7 @@ export interface OptionsPanelProps {
   options: Options;
   
   /** Callback when an option is changed */
-  onChange: (key: keyof Options, value: any) => void;
+  onChange: (key: keyof Options, value: unknown) => void;
   
   /** Theme for styling */
   theme: Theme;
@@ -28,7 +27,7 @@ export interface OptionsPanelProps {
  * Displays and allows editing of runtime options.
  * Shows temperature, max tokens, and feature toggles.
  */
-export function OptionsPanel({ options, onChange, theme }: OptionsPanelProps) {
+export function OptionsPanel({ options, onChange: _onChange, theme }: OptionsPanelProps) {
   return (
     <Box flexDirection="column" borderStyle="single" borderColor={theme.text.accent} paddingX={1}>
       <Box marginBottom={1}>

@@ -86,30 +86,22 @@ export class HotSwapInvocation implements ToolInvocation<HotSwapParams, ToolResu
     _updateOutput?: (output: string) => void
   ): Promise<ToolResult> {
     try {
-      const rawSkills = this.params.skills;
+      // Simplified parameter extraction
       let skills: string[] = [];
-
-      // Robust extraction helper
-      const extractArray = (input: unknown): string[] => {
-          if (Array.isArray(input)) return input.map(String);
-          if (typeof input === 'object' && input !== null) {
-              // Handle {"type": ["skill"]} or similar nested structures
-              const values = Object.values(input as Record<string, unknown>);
-              const firstArray = values.find(v => Array.isArray(v)) as string[] | undefined;
-              if (firstArray) return firstArray.map(String);
-          }
-          return input ? [String(input)] : [];
-      };
-
-      if (typeof rawSkills === 'string') {
-          try {
-              const parsed = JSON.parse(rawSkills);
-              skills = extractArray(parsed);
-          } catch {
-              skills = [rawSkills];
-          }
-      } else {
-          skills = extractArray(rawSkills);
+      
+      if (Array.isArray(this.params.skills)) {
+        skills = this.params.skills.map(String);
+      } else if (typeof this.params.skills === 'string') {
+        skills = [this.params.skills];
+      } else if (this.params.skills !== undefined && this.params.skills !== null) {
+        return {
+          llmContent: '',
+          returnDisplay: '',
+          error: {
+            message: 'skills parameter must be an array of strings or a single string',
+            type: 'ValidationError',
+          },
+        };
       }
 
       const hotSwapService = new HotSwapService(

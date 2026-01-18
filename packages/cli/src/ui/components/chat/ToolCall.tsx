@@ -25,20 +25,12 @@ export interface ToolCallProps {
  * ToolCall component displays tool execution information
  * with expand/collapse for long arguments
  */
-export function ToolCall({ toolCall, expanded: controlledExpanded, onToggle, theme }: ToolCallProps) {
-  const [internalExpanded, setInternalExpanded] = useState(false);
+export function ToolCall({ toolCall, expanded: controlledExpanded, onToggle: _onToggle, theme }: ToolCallProps) {
+  const [internalExpanded, _setInternalExpanded] = useState(false);
   
   // Use controlled expanded state if provided, otherwise use internal state
   const expanded = controlledExpanded !== undefined ? controlledExpanded : internalExpanded;
   
-  const handleToggle = () => {
-    if (onToggle) {
-      onToggle();
-    } else {
-      setInternalExpanded(!internalExpanded);
-    }
-  };
-
   // Format arguments as JSON string
   const argsString = JSON.stringify(toolCall.arguments, null, 2);
   const argsLength = argsString.length;

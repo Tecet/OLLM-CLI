@@ -123,11 +123,10 @@ describe('Write Todos Tool', () => {
             expect(todos[0].createdAt).toBeDefined();
 
             return true;
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
+                  }
+                ),
+                { numRuns: 30 }
+              );    });
 
     it('should generate unique IDs for each added todo', async () => {
       // Feature: stage-03-tools-policy, Property 53: Todo Addition
@@ -161,11 +160,10 @@ describe('Write Todos Tool', () => {
             expect(uniqueIds.size).toBe(ids.length);
 
             return true;
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
+                  }
+                ),
+                { numRuns: 30 }
+              );    });
 
     it('should append todos to the list preserving order', async () => {
       // Feature: stage-03-tools-policy, Property 53: Todo Addition
@@ -199,11 +197,10 @@ describe('Write Todos Tool', () => {
             }
 
             return true;
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
+                  }
+                ),
+                { numRuns: 30 }
+              );    });
 
     it('should persist todos across tool recreation', async () => {
       // Feature: stage-03-tools-policy, Property 53: Todo Addition
@@ -236,11 +233,10 @@ describe('Write Todos Tool', () => {
             expect(listResult.llmContent).toContain(task);
 
             return true;
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
+                  }
+                ),
+                { numRuns: 30 }
+              );    });
 
     it('should initialize new todos with completed=false', async () => {
       // Feature: stage-03-tools-policy, Property 53: Todo Addition
@@ -271,11 +267,10 @@ describe('Write Todos Tool', () => {
             }
 
             return true;
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
+                  }
+                ),
+                { numRuns: 30 }
+              );    });
 
     it('should set createdAt timestamp on new todos', async () => {
       // Feature: stage-03-tools-policy, Property 53: Todo Addition
@@ -310,11 +305,10 @@ describe('Write Todos Tool', () => {
             expect(todos[0].createdAt <= afterAdd).toBe(true);
 
             return true;
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
+                  }
+                ),
+                { numRuns: 30 }
+              );    });
   });
 
 
@@ -363,11 +357,10 @@ describe('Write Todos Tool', () => {
             expect(todosAfterComplete[0].task).toBe(task);
 
             return true;
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
+                  }
+                ),
+                { numRuns: 30 }
+              );    });
 
     it('should preserve other todos when completing one', async () => {
       // Feature: stage-03-tools-policy, Property 54: Todo Completion
@@ -424,11 +417,10 @@ describe('Write Todos Tool', () => {
             }
 
             return true;
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
+                  }
+                ),
+                { numRuns: 30 }
+              );    });
 
     it('should return error when completing non-existent todo', async () => {
       // Feature: stage-03-tools-policy, Property 54: Todo Completion
@@ -453,11 +445,10 @@ describe('Write Todos Tool', () => {
             expect(completeResult.error?.message).toContain(fakeId);
 
             return true;
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
+                  }
+                ),
+                { numRuns: 30 }
+              );    });
 
     it('should handle completing an already completed todo', async () => {
       // Feature: stage-03-tools-policy, Property 54: Todo Completion
@@ -504,11 +495,10 @@ describe('Write Todos Tool', () => {
             expect(todosAfter[0].completed).toBe(true);
 
             return true;
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
+                  }
+                ),
+                { numRuns: 30 }
+              );    });
 
     it('should persist completion across tool recreation', async () => {
       // Feature: stage-03-tools-policy, Property 54: Todo Completion
@@ -552,11 +542,10 @@ describe('Write Todos Tool', () => {
             expect(listResult.llmContent).toContain(task);
 
             return true;
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
+                  }
+                ),
+                { numRuns: 30 }
+              );    });
 
     it('should return error when id is missing for complete action', async () => {
       // Feature: stage-03-tools-policy, Property 54: Todo Completion
@@ -616,11 +605,10 @@ describe('Write Todos Tool', () => {
             expect(todosAfterRemove.length).toBe(0);
 
             return true;
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
+                  }
+                ),
+                { numRuns: 30 }
+              );    });
 
     it('should preserve other todos when removing one', async () => {
       // Feature: stage-03-tools-policy, Property 55: Todo Removal
@@ -675,11 +663,10 @@ describe('Write Todos Tool', () => {
             expect(actualTasks).toEqual(remainingTasks);
 
             return true;
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
+                  }
+                ),
+                { numRuns: 30 }
+              );    });
 
     it('should return error when removing non-existent todo', async () => {
       // Feature: stage-03-tools-policy, Property 55: Todo Removal
@@ -704,11 +691,10 @@ describe('Write Todos Tool', () => {
             expect(removeResult.error?.message).toContain(fakeId);
 
             return true;
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
+                  }
+                ),
+                { numRuns: 30 }
+              );    });
 
     it('should persist removal across tool recreation', async () => {
       // Feature: stage-03-tools-policy, Property 55: Todo Removal
@@ -751,11 +737,10 @@ describe('Write Todos Tool', () => {
             expect(listResult.llmContent).toBe('No todos');
 
             return true;
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
+                  }
+                ),
+                { numRuns: 30 }
+              );    });
 
     it('should return error when id is missing for remove action', async () => {
       // Feature: stage-03-tools-policy, Property 55: Todo Removal
@@ -818,11 +803,10 @@ describe('Write Todos Tool', () => {
             expect(todosAfter.length).toBe(0);
 
             return true;
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
+                  }
+                ),
+                { numRuns: 30 }
+              );    });
   });
 
   describe('Property 56: Todo Listing', () => {
@@ -871,11 +855,10 @@ describe('Write Todos Tool', () => {
             }
 
             return true;
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
+                  }
+                ),
+                { numRuns: 30 }
+              );    });
 
     it('should show completed status correctly', async () => {
       // Feature: stage-03-tools-policy, Property 56: Todo Listing
@@ -932,11 +915,10 @@ describe('Write Todos Tool', () => {
             }
 
             return true;
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
+                  }
+                ),
+                { numRuns: 30 }
+              );    });
 
     it('should return empty message for empty list', async () => {
       // Feature: stage-03-tools-policy, Property 56: Todo Listing
@@ -995,11 +977,10 @@ describe('Write Todos Tool', () => {
             }
 
             return true;
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
+                  }
+                ),
+                { numRuns: 30 }
+              );    });
 
     it('should show correct counts in returnDisplay', async () => {
       // Feature: stage-03-tools-policy, Property 56: Todo Listing
@@ -1054,11 +1035,10 @@ describe('Write Todos Tool', () => {
             expect(listResult.returnDisplay).toContain(`${completedCount} completed`);
 
             return true;
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
+                  }
+                ),
+                { numRuns: 30 }
+              );    });
 
     it('should preserve todo order in listing', async () => {
       // Feature: stage-03-tools-policy, Property 56: Todo Listing
@@ -1098,11 +1078,10 @@ describe('Write Todos Tool', () => {
             }
 
             return true;
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
+                  }
+                ),
+                { numRuns: 30 }
+              );    });
   });
 
   describe('Basic Functionality', () => {

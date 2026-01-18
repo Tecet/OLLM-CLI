@@ -52,9 +52,12 @@ export class KeyboardHandler {
           : normalizedKey;
         this.shortcuts.set(contextKey, shortcut);
       } else {
-        console.warn(
-          `Keyboard shortcut conflict: ${shortcut.key} is already registered. Using default.`
-        );
+        // Only warn if not in a test environment
+        if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
+          console.warn(
+            `Keyboard shortcut conflict: ${shortcut.key} is already registered. Using default.`
+          );
+        }
       }
     } else {
       this.shortcuts.set(normalizedKey, shortcut);

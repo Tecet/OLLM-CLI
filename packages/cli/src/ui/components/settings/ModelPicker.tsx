@@ -1,6 +1,5 @@
 import React from 'react';
 import { Box, Text } from 'ink';
-import { useUI } from '../../../features/context/UIContext.js';
 import { Theme } from '../../../config/types.js';
 
 export interface Model {
@@ -32,7 +31,7 @@ export interface ModelPickerProps {
 export function ModelPicker({
   models,
   selectedModel,
-  onSelect,
+  onSelect: _onSelect,
   theme,
 }: ModelPickerProps) {
   return (

@@ -3,7 +3,12 @@ import { join } from 'path';
 import { homedir } from 'os';
 import profilesData from '../../config/LLM_profiles.json' with { type: 'json' };
 import { defaultContextBehavior } from '../../config/defaults.js';
-import type { LLMProfile, ContextSettings, ContextBehaviorProfile, ContextProfile, UserModelEntry } from '../../config/types.js';
+import type { LLMProfile, ContextSettings, ContextBehaviorProfile, ContextProfile, UserModelEntry, ProfilesData, ToolSupportSource } from '../../config/types.js';
+
+const profiles = profilesData as ProfilesData;
+
+// Default Ollama base URL
+const OLLAMA_BASE_URL = process.env.OLLAMA_HOST || 'http://localhost:11434';
 
 export class ProfileManager {
   private profiles: LLMProfile[];
@@ -23,6 +28,14 @@ export class ProfileManager {
     this.ensureConfigExists(configDir);
     this.profiles = this.loadProfiles();
     this.loadUserModels();
+    
+    // Auto-refresh on startup (async, non-blocking)
+    this.refreshMetadataAsync().catch(err => {
+      // Silent fail - not critical for startup
+      if (process.env.OLLM_LOG_LEVEL === 'debug') {
+        console.warn('Failed to refresh model metadata:', err);
+      }
+    });
   }
 
   private ensureConfigExists(configDir: string): void {
@@ -39,8 +52,52 @@ export class ProfileManager {
       }
   }
 
+  /**
+   * Refresh model metadata from Ollama on startup (async, non-blocking).
+   * Queries Ollama for installed models and updates user_models.json while preserving user overrides.
+   * Fails silently if Ollama is unavailable or times out.
+   */
+  private async refreshMetadataAsync(): Promise<void> {
+    try {
+      // Check if Ollama is available with 2s timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2000);
+      
+      const response = await fetch(`${OLLAMA_BASE_URL}/api/tags`, {
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        return; // Silent fail - Ollama might not be running
+      }
+      
+      const data = await response.json();
+      
+      // Extract model list with size information
+      const models = Array.isArray(data.models) 
+        ? data.models.map((m: any) => ({
+            name: m.name,
+            sizeBytes: m.size
+          }))
+        : [];
+      
+      // Update user models (preserves user overrides including tool_support_source)
+      if (models.length > 0) {
+        this.updateUserModelsFromList(models);
+      }
+    } catch (error) {
+      // Silent fail - not critical for startup
+      // Only log in debug mode to avoid noise
+      if (process.env.OLLM_LOG_LEVEL === 'debug') {
+        console.warn('Model metadata refresh failed:', error instanceof Error ? error.message : 'Unknown error');
+      }
+    }
+  }
+
   private loadProfiles(): LLMProfile[] {
-      return (profilesData as any).models || [];
+      return profiles.models || [];
   }
 
   private loadUserModels(): void {
@@ -51,7 +108,12 @@ export class ProfileManager {
           const content = readFileSync(this.userModelsPath, 'utf-8');
           const data = JSON.parse(content);
           if (Array.isArray(data.user_models)) {
-              this.userModels = data.user_models;
+              // Migration: Add default values for new fields if missing
+              this.userModels = data.user_models.map((model: UserModelEntry) => ({
+                  ...model,
+                  // Preserve existing tool_support_source and tool_support_confirmed_at
+                  // No defaults needed - these are optional fields
+              }));
           }
       } catch (error) {
           console.warn('Failed to load user models list:', error);
@@ -84,7 +146,7 @@ export class ProfileManager {
   }
 
   private buildFallbackContextProfiles(sizeBytes?: number): { profiles: ContextProfile[]; defaultContext: number } {
-    const fallback = (profilesData as any).fallback_model;
+    const fallback = profiles.fallback_model;
     const defaultSizes: number[] = Array.isArray(fallback?.context_sizes)
       ? fallback.context_sizes
       : [2048, 4096, 8192, 16384, 32768];
@@ -110,7 +172,7 @@ export class ProfileManager {
         size_label: size >= 1024 ? `${size / 1024}k` : `${size}`,
         vram_estimate: '',
       })),
-      defaultContext: (fallback?.default_context as number) || sizes[0] || 4096,
+      defaultContext: fallback?.default_context ?? sizes[0] ?? 4096,
     };
   }
 
@@ -130,14 +192,28 @@ export class ProfileManager {
         ?? previous?.context_profiles
         ?? fallback.profiles;
 
+      // Determine tool_support value with proper precedence
+      // Rule: Never override user_confirmed tool support with profile data
+      let toolSupport: boolean;
+      if (previous?.tool_support_source === 'user_confirmed') {
+        // User has explicitly confirmed - preserve their choice
+        toolSupport = previous.tool_support ?? false;
+      } else {
+        // Use profile data, then previous value, then fallback
+        toolSupport = profile?.tool_support ?? previous?.tool_support ?? profiles.fallback_model?.tool_support ?? false;
+      }
+
       return {
         id,
         name: profile?.name || model.name,
         source: 'ollama',
         last_seen: nowIso,
-        description: profile?.description ?? previous?.description ?? (profilesData as any).fallback_model?.description ?? 'No metadata available.',
+        description: profile?.description ?? previous?.description ?? profiles.fallback_model?.description ?? 'No metadata available.',
         abilities: profile?.abilities ?? previous?.abilities ?? [],
-        tool_support: profile?.tool_support ?? previous?.tool_support ?? (profilesData as any).fallback_model?.tool_support ?? false,
+        tool_support: toolSupport,
+        // Preserve tool support metadata from previous entry
+        tool_support_source: previous?.tool_support_source,
+        tool_support_confirmed_at: previous?.tool_support_confirmed_at,
         context_profiles: contextProfiles,
         default_context: defaultContext,
         manual_context: previous?.manual_context,

@@ -68,7 +68,7 @@ export class WebSearchTool implements DeclarativeTool<WebSearchParams, ToolResul
 
   createInvocation(
     params: WebSearchParams,
-    context: ToolContext
+    _context: ToolContext
   ): ToolInvocation<WebSearchParams, ToolResult> {
     return new WebSearchInvocation(params, this.searchProvider);
   }

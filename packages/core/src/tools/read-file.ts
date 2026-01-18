@@ -71,7 +71,7 @@ export class ReadFileTool implements DeclarativeTool<ReadFileParams, ToolResult>
 
   createInvocation(
     params: ReadFileParams,
-    context: ToolContext
+    _context: ToolContext
   ): ToolInvocation<ReadFileParams, ToolResult> {
     return new ReadFileInvocation(params);
   }
@@ -97,14 +97,14 @@ export class ReadFileInvocation implements ToolInvocation<ReadFileParams, ToolRe
     return [this.params.path];
   }
 
-  async shouldConfirmExecute(abortSignal: AbortSignal): Promise<false> {
+  async shouldConfirmExecute(_abortSignal: AbortSignal): Promise<false> {
     // Read operations typically don't require confirmation
     return false;
   }
 
   async execute(
     signal: AbortSignal,
-    updateOutput?: (output: string) => void
+    _updateOutput?: (output: string) => void
   ): Promise<ToolResult> {
     try {
       // Check if aborted
@@ -167,12 +167,12 @@ export class ReadFileInvocation implements ToolInvocation<ReadFileParams, ToolRe
           };
         }
 
-        if (end < start + 1) {
+        if (end <= start) {
           return {
             llmContent: '',
             returnDisplay: '',
             error: {
-              message: `Invalid line range: endLine (${this.params.endLine}) must be >= startLine (${this.params.startLine})`,
+              message: `Invalid line range: endLine (${this.params.endLine}) must be > startLine (${this.params.startLine})`,
               type: 'InvalidLineRangeError',
             },
           };

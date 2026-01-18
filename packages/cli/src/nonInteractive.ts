@@ -7,7 +7,6 @@ import type { Config } from './config/types.js';
 import { ProviderRegistry, ChatClient } from '@ollm/core';
 import { ToolRegistry } from '@ollm/core';
 import { LocalProvider } from '@ollm/ollm-bridge';
-import { readFileSync } from 'fs';
 
 /**
  * Error codes for non-interactive mode.
@@ -144,7 +143,7 @@ export class NonInteractiveRunner {
     const toolRegistry = new ToolRegistry();
     
     // Initialize chat client
-    const chatClient = new (ChatClient as any)(providerRegistry, toolRegistry);
+    const chatClient = new ChatClient(providerRegistry, toolRegistry);
     
     // Determine model
     const model = options.model || options.config.model.default;

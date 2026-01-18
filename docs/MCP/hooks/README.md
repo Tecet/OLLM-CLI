@@ -323,7 +323,7 @@ echo '{"event":"test","context":{}}' | ./my-hook.sh
 Want to contribute hook examples or improvements?
 
 1. Check [Development Guide](development-guide.md)
-2. See [Contributing Guide](../../../CONTRIBUTING.md)
+2. See Contributing Guide (../../../CONTRIBUTING.md)
 3. Submit pull requests
 
 ---

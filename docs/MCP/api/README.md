@@ -524,9 +524,9 @@ describe('HookRegistry', () => {
 - [Development Guides](../) - User and developer guides
 
 ### External Resources
-- [MCP Specification](https://modelcontextprotocol.io)
-- [MCP SDK](https://github.com/modelcontextprotocol/sdk)
-- [TypeScript Documentation](https://www.typescriptlang.org/docs/)
+- MCP Specification (https://modelcontextprotocol.io)
+- MCP SDK (https://github.com/modelcontextprotocol/sdk)
+- TypeScript Documentation (https://www.typescriptlang.org/docs/)
 
 ---
 
@@ -534,8 +534,8 @@ describe('HookRegistry', () => {
 
 Want to contribute to the API?
 
-1. Read [Contributing Guide](../../../CONTRIBUTING.md)
-2. Check [Development Documentation](../../../.dev/MCP/)
+1. Read Contributing Guide (../../../CONTRIBUTING.md)
+2. Check Development Documentation (../../../.dev/MCP/)
 3. Submit pull requests
 4. Update API documentation
 

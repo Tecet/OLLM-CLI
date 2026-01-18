@@ -272,8 +272,8 @@ context:
 
 Want to improve Context Management documentation?
 
-1. Read [Contributing Guide](../../CONTRIBUTING.md)
-2. Check [Documentation Tracking](.dev/Context/CONTEXT_docs.md)
+1. Read Contributing Guide (../../CONTRIBUTING.md)
+2. Check Documentation Tracking (.dev/Context/CONTEXT_docs.md)
 3. Submit pull requests
 
 ---

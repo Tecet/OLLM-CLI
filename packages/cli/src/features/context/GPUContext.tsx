@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { createGPUMonitor } from '@ollm/core';
 // Mock types when core types are missing
-interface GPUInfo {
+export interface GPUInfo {
   name: string;
-  vendor: any;
+  vendor: string;
   model?: string;
   load: number;
   memory: {
@@ -26,9 +27,6 @@ interface GPUMonitor {
   startPolling(interval: number): void;
   stopPolling(): void;
 }
-// Use require to bypass type checking for the module
-const { createGPUMonitor } = require('@ollm/core') as any;
-
 export interface GPUContextValue {
   /** Current GPU information, null if not yet loaded */
   info: GPUInfo | null;

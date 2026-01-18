@@ -100,5 +100,5 @@ Single prompt execution with configurable output formats:
 ## Documentation References
 
 - [Architecture Overview](../docs/architecture.md)
-- [Development Plan](../.dev/development-plan.md)
+- Development Plan (../.dev/development-plan.md)
 - [Context Management](../docs/context-management-plan.md)

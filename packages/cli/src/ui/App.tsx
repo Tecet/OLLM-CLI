@@ -23,6 +23,7 @@ import { ContextManagerProvider, useContextManager } from '../features/context/C
 import { ModelProvider, useModel } from '../features/context/ModelContext.js';
 import { ActiveContextProvider } from '../features/context/ActiveContextState.js';
 import { DialogProvider } from './contexts/DialogContext.js';
+import { UserPromptProvider } from '../features/context/UserPromptContext.js';
 import { LaunchScreen } from './components/launch/LaunchScreen.js';
 import type { ProviderAdapter, ProviderRequest, ProviderEvent } from '@ollm/core';
 import { createWelcomeMessage, createCompactWelcomeMessage, CONTEXT_OPTIONS } from '../features/context/SystemMessages.js';
@@ -43,10 +44,12 @@ import { ToolsTab } from './components/tabs/ToolsTab.js';
 import { FilesTab } from './components/tabs/FilesTab.js';
 import { SearchTab } from './components/tabs/SearchTab.js';
 import { DocsTab } from './components/tabs/DocsTab.js';
+import { GitHubTab } from './components/tabs/GitHubTab.js';
 import { SettingsTab } from './components/tabs/SettingsTab.js';
 import { DialogManager } from './components/dialogs/DialogManager.js';
 import { useGlobalKeyboardShortcuts } from './hooks/useKeyboardShortcuts.js';
 import { ErrorBoundary } from './components/ErrorBoundary.js';
+import { UserPromptBridge } from '../features/context/UserPromptBridge.js';
 // Dynamic require for LocalProvider to avoid build-time module resolution errors when bridge isn't installed
 declare const require: (moduleName: string) => { LocalProvider: unknown } | unknown;
 import type { Config } from '../config/types.js';
@@ -81,14 +84,14 @@ function AppContent({ config }: AppContentProps) {
   const leftColumnWidth = Math.max(20, Math.floor(terminalWidth * 0.7));
   const rightColumnWidth = Math.max(20, terminalWidth - leftColumnWidth);
   
-  const { state: chatState, clearChat, cancelGeneration, contextUsage, addMessage, activateMenu, requestManualContextInput, scrollUp, scrollDown } = useChat();
+  const { state: chatState, clearChat, cancelGeneration, contextUsage: _contextUsage, addMessage, activateMenu, requestManualContextInput, scrollUp, scrollDown } = useChat();
   
   // Helper object for shortcuts (so we don't need to change all callbacks below)
   const chatActions = { scrollUp, scrollDown };
   useReview();
   const { info: gpuInfo } = useGPU();
   const { currentModel, setCurrentModel, modelLoading } = useModel();
-  const { actions: contextActions } = useContextManager();
+  const { state: contextState, actions: contextActions } = useContextManager();
   const focusManager = useFocusManager();
   const lastWelcomeModelRef = useRef<string | null>(null);
   const prevModelLoadingRef = useRef<boolean>(modelLoading);
@@ -100,7 +103,7 @@ function AppContent({ config }: AppContentProps) {
       const currentSettings = SettingsService.getInstance().getSettings();
       const savedHW = currentSettings.hardware || {};
 
-      const liveName = (gpuInfo as any).model || gpuInfo.vendor || 'Unknown';
+      const liveName = gpuInfo?.model || gpuInfo?.vendor || 'Unknown';
       // Convert to GB for storage
       const liveVRAM_GB = typeof gpuInfo.vramTotal === 'number' ? gpuInfo.vramTotal / (1024 * 1024 * 1024) : 0;
 
@@ -123,7 +126,6 @@ function AppContent({ config }: AppContentProps) {
   }, [gpuInfo]); // Only run when gpuInfo updates
 
   const buildWelcomeMessage = useCallback(() => {
-    const currentContextSize = contextUsage?.maxTokens || 4096;
     const modelName = currentModel || 'Unknown Model';
     const profile = profileManager.findProfile(modelName);
 
@@ -138,13 +140,12 @@ function AppContent({ config }: AppContentProps) {
       count: persistedHW?.gpuCount || 1,
     };
 
-    return createWelcomeMessage(modelName, currentContextSize, profile, effectiveGPUInfo as any);
-  }, [contextUsage, currentModel, gpuInfo]);
+    const currentContextSize = contextState.usage.maxTokens;
+    return createWelcomeMessage(modelName, currentContextSize, profile, effectiveGPUInfo);
+  }, [currentModel, gpuInfo, contextState.usage.maxTokens]);
 
   const openModelContextMenu = useCallback((messageId?: string) => {
     const menuMessageId = messageId;
-    // Calculate max safe context for "Auto" logic
-    const currentContextSize = contextUsage?.maxTokens || 4096;
     const modelName = currentModel || 'Unknown Model';
     const profile = profileManager.findProfile(modelName);
     const settings = SettingsService.getInstance().getSettings();
@@ -370,7 +371,6 @@ ${toolSupport}
               if (cardTotal === 0 && persistedHW) {
                 cardTotal = persistedHW.totalVRAM || (persistedHW.gpuCount ? 24 : 0);
               }
-              const safeLimit = cardTotal * 0.8;
               const safetyBuffer = cardTotal > 0 ? Math.max(1.5, cardTotal * 0.1) : 0;
               const availableForCtx = cardTotal > 0 ? (cardTotal - safetyBuffer) : 0;
 
@@ -510,7 +510,7 @@ ${toolSupport}
     ];
 
     activateMenu(mainMenuOptions, menuMessageId);
-  }, [currentModel, addMessage, activateMenu, contextActions, gpuInfo, setCurrentModel]);
+  }, [currentModel, addMessage, activateMenu, contextActions, gpuInfo, requestManualContextInput, setCurrentModel]);
 
   // Handle launch screen dismiss
   const handleDismissLaunch = useCallback(() => {
@@ -587,6 +587,11 @@ ${toolSupport}
       key: keybinds.tabNavigation.tabDocs,
       handler: () => setActiveTab('docs'),
       description: 'Switch to Docs tab',
+    },
+    {
+      key: keybinds.tabNavigation.tabGithub,
+      handler: () => setActiveTab('github'),
+      description: 'Switch to GitHub tab',
     },
     {
       key: keybinds.tabNavigation.tabSettings,
@@ -725,6 +730,8 @@ ${toolSupport}
         return <Box height={height}><SearchTab /></Box>;
       case 'docs':
         return <Box height={height}><DocsTab /></Box>;
+      case 'github':
+        return <Box height={height}><GitHubTab /></Box>;
       case 'settings':
         return <Box height={height}><SettingsTab /></Box>;
       default:
@@ -783,7 +790,7 @@ ${toolSupport}
               connection={{ status: 'connected', provider: config.provider.default }}
               model={currentModel || 'model'}
               gpu={gpuInfo}
-              theme={uiState.theme as any}
+              theme={uiState.theme}
             />
           </Box>
         )}
@@ -825,7 +832,7 @@ ${toolSupport}
             <LaunchScreen 
                 onDismiss={handleDismissLaunch}
                 recentSessions={[]} // TODO: wire up recent sessions
-                theme={uiState.theme as any}
+                theme={uiState.theme}
                 modelInfo={{
                     name: currentModel || 'Unknown',
                     size: 'Unknown' // TODO: get size
@@ -938,41 +945,44 @@ export function App({ config }: AppProps) {
         initialTheme={initialTheme}
       >
         <DialogProvider>
-          <GPUProvider 
-            pollingInterval={config.status?.pollInterval || 5000}
-            autoStart={config.ui?.showGpuStats !== false}
-          >
-          <ServiceProvider
-            provider={provider}
-            config={config}
-            workspacePath={workspacePath}
-          >
-            <ContextManagerProvider
-              sessionId={sessionId}
-              modelInfo={modelInfo}
-              modelId={initialModel}
-              config={contextConfig}
-              provider={provider}
+          <UserPromptProvider>
+            <UserPromptBridge />
+            <GPUProvider 
+              pollingInterval={config.status?.pollInterval || 5000}
+              autoStart={config.ui?.showGpuStats !== false}
             >
-              <ModelProvider
+            <ServiceProvider
+              provider={provider}
+              config={config}
+              workspacePath={workspacePath}
+            >
+              <ContextManagerProvider
+                sessionId={sessionId}
+                modelInfo={modelInfo}
+                modelId={initialModel}
+                config={contextConfig}
                 provider={provider}
-                initialModel={initialModel}
               >
-                <ChatProvider>
-                  <ReviewProvider>
-                    <FocusProvider>
-                      <ActiveContextProvider>
-                        <ErrorBoundary>
-                          <AppContent config={config} />
-                        </ErrorBoundary>
-                      </ActiveContextProvider>
-                    </FocusProvider>
-                  </ReviewProvider>
-                </ChatProvider>
-              </ModelProvider>
-            </ContextManagerProvider>
-          </ServiceProvider>
-        </GPUProvider>
+                <ModelProvider
+                  provider={provider}
+                  initialModel={initialModel}
+                >
+                  <ChatProvider>
+                    <ReviewProvider>
+                      <FocusProvider>
+                        <ActiveContextProvider>
+                          <ErrorBoundary>
+                            <AppContent config={config} />
+                          </ErrorBoundary>
+                        </ActiveContextProvider>
+                      </FocusProvider>
+                    </ReviewProvider>
+                  </ChatProvider>
+                </ModelProvider>
+              </ContextManagerProvider>
+            </ServiceProvider>
+          </GPUProvider>
+          </UserPromptProvider>
         </DialogProvider>
       </UIProvider>
     </ErrorBoundary>

@@ -400,8 +400,8 @@ templates:
 - Add examples and tutorials
 
 ### Development
-- See [Development Documentation](../../.dev/Models/)
-- Follow [Contributing Guide](../../CONTRIBUTING.md)
+- See Development Documentation (../../.dev/Models/)
+- Follow Contributing Guide (../../CONTRIBUTING.md)
 
 ---
 
@@ -410,7 +410,7 @@ templates:
 ### Resources
 - [Main Documentation](../)
 - [Troubleshooting](../troubleshooting.md)
-- [GitHub Issues](https://github.com/ollm/ollm-cli/issues)
+- GitHub Issues (https://github.com/ollm/ollm-cli/issues)
 
 ### Community
 - Discord: [Join our server](#)

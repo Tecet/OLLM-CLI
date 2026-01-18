@@ -808,15 +808,15 @@ pip install my-hooks
 - [API Reference](../api/hook-system.md) - Hook system API
 
 ### Language Resources
-- [Bash Guide](https://www.gnu.org/software/bash/manual/)
-- [Node.js Documentation](https://nodejs.org/docs/)
-- [Python Documentation](https://docs.python.org/)
-- [Go Documentation](https://golang.org/doc/)
+- Bash Guide (https://www.gnu.org/software/bash/manual/)
+- Node.js Documentation (https://nodejs.org/docs/)
+- Python Documentation (https://docs.python.org/)
+- Go Documentation (https://golang.org/doc/)
 
 ### Tools
-- [jq Manual](https://stedolan.github.io/jq/manual/)
-- [shellcheck](https://www.shellcheck.net/)
-- [JSON Schema](https://json-schema.org/)
+- jq Manual (https://stedolan.github.io/jq/manual/)
+- shellcheck (https://www.shellcheck.net/)
+- JSON Schema (https://json-schema.org/)
 
 ---
 

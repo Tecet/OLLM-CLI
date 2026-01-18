@@ -105,6 +105,21 @@ export class LocalProvider implements ProviderAdapter {
           && /tools?|tool_calls?|unknown field/i.test(errorText);
 
         if (looksLikeToolError) {
+          // Emit detailed error event for tool error before retry
+          const details = errorText.trim();
+          yield {
+            type: 'error',
+            error: {
+              message: details.length > 0
+                ? `Tool support error: ${details}`
+                : 'Model does not support function calling',
+              code: 'TOOL_UNSUPPORTED',
+              httpStatus: response.status,
+              originalError: details,
+            },
+          };
+
+          // Retry without tools
           const retryBody = { ...body, tools: undefined };
           response = await sendRequest(retryBody);
           if (!response.ok) {

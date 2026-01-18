@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Text } from 'ink';
 import { DocEntry } from '../../services/docsService.js';
-import { useUI, Theme } from '../../../features/context/UIContext.js';
+import { Theme } from '../../../features/context/UIContext.js';
 
 export interface DocNavProps {
   /** Documentation entries */
@@ -24,7 +24,7 @@ export interface DocNavProps {
  * Shows list of available documents.
  * Highlights the currently selected document.
  */
-export function DocNav({ entries, selectedPath, onSelect, theme }: DocNavProps) {
+export function DocNav({ entries, selectedPath, onSelect: _onSelect, theme }: DocNavProps) {
   return (
     <Box flexDirection="column" borderStyle="single" borderColor={theme.text.accent} paddingX={1}>
       <Text bold color={theme.text.accent} marginBottom={1}>

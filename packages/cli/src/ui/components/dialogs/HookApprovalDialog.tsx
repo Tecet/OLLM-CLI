@@ -6,7 +6,7 @@
  */
 
 import React, { useState } from 'react';
-import { Box, Text } from 'ink';
+import { Box, Text, type Key } from 'ink';
 import type { Hook } from '@ollm/ollm-cli-core/hooks/types.js';
 import { Theme } from '../../../config/types.js';
 
@@ -32,11 +32,11 @@ export function HookApprovalDialog({
   hook,
   hash,
   theme,
-  onApprove,
-  onDeny,
+  onApprove: _onApprove,
+  onDeny: _onDeny,
   visible,
 }: HookApprovalDialogProps) {
-  const [selectedOption, setSelectedOption] = useState<'approve' | 'deny'>('deny');
+  const [selectedOption, _setSelectedOption] = useState<'approve' | 'deny'>('deny');
 
   if (!visible) {
     return null;
@@ -211,7 +211,7 @@ export function HookApprovalDialogWithInput({
   const [selectedOption, setSelectedOption] = useState<'approve' | 'deny'>('deny');
 
   // Handle keyboard input
-  const handleInput = (input: string, key: any) => {
+  const _handleInput = (input: string, key: Key) => {
     if (!visible) return;
 
     if (key.escape) {

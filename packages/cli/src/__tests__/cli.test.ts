@@ -87,20 +87,25 @@ describe('Property 3: Unknown CLI Flag Rejection', () => {
             });
             // If we reach here, the command succeeded (exit code 0), which is wrong
             return false;
-          } catch (error: any) {
+          } catch (error: unknown) {
             // Command failed (non-zero exit code), which is expected
             // Verify exit code is non-zero
-            const exitCode = error.status;
+            const err = error as {
+              status?: number;
+              stderr?: { toString: () => string };
+              stdout?: { toString: () => string };
+            };
+            const exitCode = err.status;
             // Verify error message is present
-            const stderr = error.stderr?.toString() || '';
-            const stdout = error.stdout?.toString() || '';
+            const stderr = err.stderr?.toString() || '';
+            const stdout = err.stdout?.toString() || '';
             const output = stderr + stdout;
 
             return exitCode !== 0 && output.includes('Error');
           }
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 });

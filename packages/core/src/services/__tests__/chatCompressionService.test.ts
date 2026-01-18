@@ -1111,6 +1111,9 @@ describe('ChatCompressionService', () => {
       // Create a mock provider that throws an error
       const mockProvider = {
         chatStream: async function* () {
+          if (Math.random() < 0) {
+            yield { type: 'text', value: '' } as any;
+          }
           throw new Error('Model unavailable');
         },
       } as any;
@@ -1156,6 +1159,9 @@ describe('ChatCompressionService', () => {
       // Create a mock provider that throws an error
       const mockProvider = {
         chatStream: async function* () {
+          if (Math.random() < 0) {
+            yield { type: 'text', value: '' } as any;
+          }
           throw new Error('Connection timeout');
         },
       } as any;
@@ -1336,6 +1342,9 @@ describe('ChatCompressionService', () => {
       // Create a mock provider that throws an error
       const mockProvider = {
         chatStream: async function* () {
+          if (Math.random() < 0) {
+            yield { type: 'text', value: '' } as any;
+          }
           throw new Error('Network error');
         },
       } as any;

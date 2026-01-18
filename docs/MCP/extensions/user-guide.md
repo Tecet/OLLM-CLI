@@ -577,8 +577,8 @@ Create a PR for the feature branch
 - [MCP Commands](../MCP_commands.md) - Extension commands
 
 ### External Resources
-- [Extension Registry](https://github.com/ollm/extensions) - Official extensions
-- [Community Extensions](https://github.com/topics/ollm-extension) - Community extensions
+- Extension Registry (https://github.com/ollm/extensions) - Official extensions
+- Community Extensions (https://github.com/topics/ollm-extension) - Community extensions
 
 ---
 

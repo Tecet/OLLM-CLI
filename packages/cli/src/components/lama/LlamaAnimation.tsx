@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useReducer, useMemo, memo, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useReducer, useMemo, memo, useRef } from 'react';
 import { Box, Text, useStdout } from 'ink';
 import { Jimp, ResizeStrategy } from 'jimp';
 import path from 'path';
@@ -63,17 +63,12 @@ async function loadLlamaFrames(size: Size): Promise<Record<Direction, FrameData[
     // We render 2 pixels per line (Top/Bottom half-blocks)
     const pixelHeight = logicalHeight * 2;
     const pixelWidth = pixelHeight; // Square aspect ratio 1:1
-    const spriteWidth = pixelWidth; // Character width matches pixel width
-
     const frames: Record<Direction, FrameData[]> = { right: [], left: [] };
     
     // Sub-function to process a single image file
     const processContent = async (p: string): Promise<FrameData> => {
         try {
             const image = await Jimp.read(p);
-            
-            const origW = image.bitmap.width;  
-            const origH = image.bitmap.height;
             
             // Ensure all sprites render to the same size regardless of source dimensions
             // This handles any dimension mismatches between sprite files
@@ -217,8 +212,9 @@ export const LlamaAnimationDirect: React.FC<LlamaAnimationProps & { startRow?: n
         // Keep track of last valid frame to prevent flashing
         let lastValidOutput = '';
 
+        const animationState = animationRef.current;
         const animate = () => {
-            const state = animationRef.current;
+            const state = animationState;
             const frameSet = frames[state.direction];
             
             // Ensure frameIdx is valid for current direction
@@ -292,12 +288,12 @@ export const LlamaAnimationDirect: React.FC<LlamaAnimationProps & { startRow?: n
         animate();
         
         // Animation timer - 50ms for smooth animation
-        animationRef.current.timer = setInterval(animate, 50);
+        animationState.timer = setInterval(animate, 50);
 
         return () => {
-            if (animationRef.current.timer) {
-                clearInterval(animationRef.current.timer);
-                animationRef.current.timer = null;
+            if (animationState.timer) {
+                clearInterval(animationState.timer);
+                animationState.timer = null;
             }
         };
     }, [frames, isInteractive, stdout, computedMaxSteps, paddedInitial, dynamicWidth, spriteWidth, animStartRow]);
@@ -310,8 +306,6 @@ export const LlamaAnimationDirect: React.FC<LlamaAnimationProps & { startRow?: n
 LlamaAnimationDirect.displayName = 'LlamaAnimationDirect';
 
 export const LlamaAnimation: React.FC<LlamaAnimationProps> = memo(({ size = 'small', paddingLeft: initialPadding = 0, movementRatio = 1, movementWidth, enabled = false }) => {
-    // Only run animation when explicitly enabled (e.g., on the launch screen)
-    if (!enabled) return null;
     const [frames, setFrames] = useState<Record<Direction, FrameData[]> | null>(null);
     const [animationState, dispatch] = useReducer(
         (state: { frameIdx: number; step: number; direction: Direction; maxSteps: number }, action: { type: 'tick'; maxSteps: number; frameCount: number }) => {
@@ -352,9 +346,10 @@ export const LlamaAnimation: React.FC<LlamaAnimationProps> = memo(({ size = 'sma
             maxSteps: 0,
         }
     );
-    const { frameIdx, step, direction, maxSteps } = animationState;
+    const { frameIdx, step, direction } = animationState;
     const { stdout } = useStdout();
     const isInteractive = stdout?.isTTY !== false;
+    const shouldAnimate = enabled && isInteractive;
 
     let logicalHeight = 24;
     if (size === 'xsmall') logicalHeight = 7;
@@ -373,11 +368,15 @@ export const LlamaAnimation: React.FC<LlamaAnimationProps> = memo(({ size = 'sma
     const computedMaxSteps = Math.max(0, dynamicWidth - spriteWidth - paddedInitial);
 
     useEffect(() => {
+        if (!enabled) {
+            setFrames(null);
+            return;
+        }
         loadLlamaFrames(size).then(setFrames);
-    }, [size]);
+    }, [size, enabled]);
 
     useEffect(() => {
-        if (!frames || !isInteractive) return;
+        if (!frames || !shouldAnimate) return;
 
         // Use 30ms tick interval to match 30 FPS
         const timer = setInterval(() => {
@@ -385,7 +384,7 @@ export const LlamaAnimation: React.FC<LlamaAnimationProps> = memo(({ size = 'sma
         }, 30);
 
         return () => clearInterval(timer);
-    }, [frames, isInteractive, computedMaxSteps]);
+    }, [frames, shouldAnimate, computedMaxSteps]);
 
     // Get current frame data - use stable fallback to prevent flashing during direction changes
     const currentFrameData = useMemo(() => {
@@ -427,7 +426,7 @@ export const LlamaAnimation: React.FC<LlamaAnimationProps> = memo(({ size = 'sma
     }, [frameToRender, leftSpacing, dynamicWidth]);
 
     // Don't render if no valid frame data at all
-    if (!frames || !paddedFrame) return null;
+    if (!enabled || !frames || !paddedFrame) return null;
 
     // Render as a single Text block - entire frame updates atomically
     // Fixed height and width container prevents layout shift

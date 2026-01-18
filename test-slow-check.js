@@ -26,7 +26,7 @@ for (const testFile of failingTests) {
     });
     const duration = Date.now() - start;
     console.log(`✓ ${testFile.split('/').pop()} - ${(duration / 1000).toFixed(2)}s`);
-  } catch (error) {
+  } catch (_error) {
     const duration = Date.now() - start;
     const status = duration > 10000 ? '🐌 SLOW' : '⚡ FAST';
     console.log(`${status} ${testFile.split('/').pop()} - ${(duration / 1000).toFixed(2)}s (FAILED)`);

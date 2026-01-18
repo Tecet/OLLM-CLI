@@ -145,4 +145,4 @@ This module implements the following requirements:
 - **7.9**: Multi-server management
 - **7.10**: Graceful shutdown
 
-See [requirements.md](../../.kiro/specs/stage-05-hooks-extensions-mcp/requirements.md) for full details.
+See requirements.md (../../.kiro/specs/stage-05-hooks-extensions-mcp/requirements.md) for full details.

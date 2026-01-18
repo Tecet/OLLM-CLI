@@ -49,7 +49,7 @@ export class ContextConfigService {
     try {
       const data = await fs.readFile(this.configPath, 'utf-8');
       this.config = JSON.parse(data);
-    } catch (error) {
+    } catch (_error) {
       // If file doesn't exist, we'll use defaults and create it
       await this.save();
     }

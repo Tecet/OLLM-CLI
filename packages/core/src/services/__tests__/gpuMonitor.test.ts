@@ -7,6 +7,22 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { DefaultGPUMonitor, type GPUInfo } from '../gpuMonitor.js';
 import * as childProcess from 'child_process';
 
+type ExecResult = { stdout: string; stderr: string };
+type ExecCallback = (err: Error | null, result: ExecResult) => void;
+
+const mockExec = (handler: (cmd: string, cb: ExecCallback) => void) => {
+  vi.mocked(childProcess.exec).mockImplementation(
+    (cmd: string, options: childProcess.ExecOptions | ExecCallback, callback?: ExecCallback) => {
+      const cb = typeof options === 'function' ? options : callback;
+      if (!cb) {
+        throw new Error('Missing exec callback');
+      }
+      handler(cmd, cb);
+      return {} as childProcess.ChildProcess;
+    }
+  );
+};
+
 // Mock child_process
 vi.mock('child_process', () => ({
   exec: vi.fn()
@@ -21,8 +37,8 @@ vi.mock('util', async (importOriginal) => {
       // Return a function that wraps the mock exec
       return (...args: unknown[]) => {
         return new Promise((resolve, reject) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (fn as any)(args[0], args[1] || {}, (err: Error | null, result: unknown) => {
+          const execFn = fn as (cmd: string, options: childProcess.ExecOptions, callback: ExecCallback) => void;
+          execFn(args[0] as string, (args[1] as childProcess.ExecOptions) || {}, (err, result) => {
             if (err) reject(err);
             else resolve(result);
           });
@@ -50,14 +66,12 @@ describe('GPU Monitor - Unit Tests', () => {
   describe('Vendor Detection', () => {
     it('should detect NVIDIA GPU when nvidia-smi is available', async () => {
       // Mock nvidia-smi --version to succeed
-      vi.mocked(childProcess.exec).mockImplementation((cmd: any, options: any, callback?: any) => {
-        const cb = typeof options === 'function' ? options : callback;
+      mockExec((cmd, cb) => {
         if (cmd.includes('nvidia-smi --version')) {
           cb(null, { stdout: 'NVIDIA-SMI 525.60.11', stderr: '' });
         } else {
           cb(new Error('Command not found'), { stdout: '', stderr: '' });
         }
-        return {} as any;
       });
 
       const vendor = await monitor.detectVendor();
@@ -69,8 +83,7 @@ describe('GPU Monitor - Unit Tests', () => {
       Object.defineProperty(process, 'platform', { value: 'linux', configurable: true });
       
       // Mock nvidia-smi to fail, rocm-smi to succeed
-      vi.mocked(childProcess.exec).mockImplementation((cmd: any, options: any, callback?: any) => {
-        const cb = typeof options === 'function' ? options : callback;
+      mockExec((cmd, cb) => {
         if (cmd.includes('nvidia-smi --version')) {
           cb(new Error('Command not found'), { stdout: '', stderr: '' });
         } else if (cmd.includes('rocm-smi --version')) {
@@ -78,7 +91,6 @@ describe('GPU Monitor - Unit Tests', () => {
         } else {
           cb(new Error('Command not found'), { stdout: '', stderr: '' });
         }
-        return {} as any;
       });
 
       const vendor = await monitor.detectVendor();
@@ -89,8 +101,7 @@ describe('GPU Monitor - Unit Tests', () => {
       Object.defineProperty(process, 'platform', { value: 'darwin', configurable: true });
 
       // Mock nvidia-smi to fail, ioreg to succeed
-      vi.mocked(childProcess.exec).mockImplementation((cmd: any, options: any, callback?: any) => {
-        const cb = typeof options === 'function' ? options : callback;
+      mockExec((cmd, cb) => {
         if (cmd.includes('nvidia-smi --version')) {
           cb(new Error('Command not found'), { stdout: '', stderr: '' });
         } else if (cmd.includes('ioreg')) {
@@ -98,7 +109,6 @@ describe('GPU Monitor - Unit Tests', () => {
         } else {
           cb(new Error('Command not found'), { stdout: '', stderr: '' });
         }
-        return {} as any;
       });
 
       const vendor = await monitor.detectVendor();
@@ -109,8 +119,7 @@ describe('GPU Monitor - Unit Tests', () => {
       Object.defineProperty(process, 'platform', { value: 'win32', configurable: true });
 
       // Mock nvidia-smi to fail, PowerShell to succeed
-      vi.mocked(childProcess.exec).mockImplementation((cmd: any, options: any, callback?: any) => {
-        const cb = typeof options === 'function' ? options : callback;
+      mockExec((cmd, cb) => {
         if (cmd.includes('nvidia-smi --version')) {
           cb(new Error('Command not found'), { stdout: '', stderr: '' });
         } else if (cmd.includes('Get-Counter -ListSet')) {
@@ -118,7 +127,6 @@ describe('GPU Monitor - Unit Tests', () => {
         } else {
           cb(new Error('Command not found'), { stdout: '', stderr: '' });
         }
-        return {} as any;
       });
 
       const vendor = await monitor.detectVendor();
@@ -130,10 +138,8 @@ describe('GPU Monitor - Unit Tests', () => {
       Object.defineProperty(process, 'platform', { value: 'linux', configurable: true });
       
       // Mock all GPU detection commands to fail
-      vi.mocked(childProcess.exec).mockImplementation((cmd: any, options: any, callback?: any) => {
-        const cb = typeof options === 'function' ? options : callback;
+      mockExec((cmd, cb) => {
         cb(new Error('Command not found'), { stdout: '', stderr: '' });
-        return {} as any;
       });
 
       const vendor = await monitor.detectVendor();
@@ -141,14 +147,12 @@ describe('GPU Monitor - Unit Tests', () => {
     });
 
     it('should cache vendor detection result', async () => {
-      vi.mocked(childProcess.exec).mockImplementation((cmd: any, options: any, callback?: any) => {
-        const cb = typeof options === 'function' ? options : callback;
+      mockExec((cmd, cb) => {
         if (cmd.includes('nvidia-smi --version')) {
           cb(null, { stdout: 'NVIDIA-SMI 525.60.11', stderr: '' });
         } else {
           cb(new Error('Command not found'), { stdout: '', stderr: '' });
         }
-        return {} as any;
       });
 
       const vendor1 = await monitor.detectVendor();
@@ -164,15 +168,13 @@ describe('GPU Monitor - Unit Tests', () => {
   describe('NVIDIA Query Parsing', () => {
     it('should parse nvidia-smi output correctly', async () => {
       // Mock vendor detection
-      vi.mocked(childProcess.exec).mockImplementation((cmd: any, options: any, callback?: any) => {
-        const cb = typeof options === 'function' ? options : callback;
+      mockExec((cmd, cb) => {
         if (cmd.includes('nvidia-smi --version')) {
           cb(null, { stdout: 'NVIDIA-SMI 525.60.11', stderr: '' });
         } else if (cmd.includes('nvidia-smi --query-gpu')) {
           // Sample output: memory.total, memory.used, memory.free, temp, temp.max, utilization
           cb(null, { stdout: '8192, 4096, 4096, 65, 90, 75', stderr: '' });
         }
-        return {} as any;
       });
 
       const info = await monitor.getInfo();
@@ -188,15 +190,13 @@ describe('GPU Monitor - Unit Tests', () => {
     });
 
     it('should use default temperature max when not available', async () => {
-      vi.mocked(childProcess.exec).mockImplementation((cmd: any, options: any, callback?: any) => {
-        const cb = typeof options === 'function' ? options : callback;
+      mockExec((cmd, cb) => {
         if (cmd.includes('nvidia-smi --version')) {
           cb(null, { stdout: 'NVIDIA-SMI 525.60.11', stderr: '' });
         } else if (cmd.includes('nvidia-smi --query-gpu')) {
           // Output with missing temp.max (NaN or empty)
           cb(null, { stdout: '8192, 4096, 4096, 65, , 75', stderr: '' });
         }
-        return {} as any;
       });
 
       const info = await monitor.getInfo();
@@ -210,8 +210,7 @@ describe('GPU Monitor - Unit Tests', () => {
       // Set platform to Linux since AMD ROCm only works there
       Object.defineProperty(process, 'platform', { value: 'linux', configurable: true });
       
-      vi.mocked(childProcess.exec).mockImplementation((cmd: any, options: any, callback?: any) => {
-        const cb = typeof options === 'function' ? options : callback;
+      mockExec((cmd, cb) => {
         if (cmd.includes('nvidia-smi --version')) {
           cb(new Error('Command not found'), { stdout: '', stderr: '' });
         } else if (cmd.includes('rocm-smi --version')) {
@@ -228,7 +227,6 @@ describe('GPU Monitor - Unit Tests', () => {
         } else {
           cb(new Error('Command not found'), { stdout: '', stderr: '' });
         }
-        return {} as any;
       });
 
       const info = await monitor.getInfo();
@@ -248,8 +246,7 @@ describe('GPU Monitor - Unit Tests', () => {
       const originalPlatform = process.platform;
       Object.defineProperty(process, 'platform', { value: 'win32' });
 
-      vi.mocked(childProcess.exec).mockImplementation((cmd: any, options: any, callback?: any) => {
-        const cb = typeof options === 'function' ? options : callback;
+      mockExec((cmd, cb) => {
         if (cmd.includes('nvidia-smi') || cmd.includes('rocm-smi')) {
           cb(new Error('Command not found'), { stdout: '', stderr: '' });
         } else if (cmd.includes('wmic OS')) {
@@ -260,7 +257,6 @@ describe('GPU Monitor - Unit Tests', () => {
         } else {
           cb(new Error('Command not found'), { stdout: '', stderr: '' });
         }
-        return {} as any;
       });
 
       const info = await monitor.getInfo();
@@ -278,8 +274,7 @@ describe('GPU Monitor - Unit Tests', () => {
       const originalPlatform = process.platform;
       Object.defineProperty(process, 'platform', { value: 'linux' });
 
-      vi.mocked(childProcess.exec).mockImplementation((cmd: any, options: any, callback?: any) => {
-        const cb = typeof options === 'function' ? options : callback;
+      mockExec((cmd, cb) => {
         if (cmd.includes('nvidia-smi') || cmd.includes('rocm-smi')) {
           cb(new Error('Command not found'), { stdout: '', stderr: '' });
         } else if (cmd.includes('free -b')) {
@@ -290,7 +285,6 @@ describe('GPU Monitor - Unit Tests', () => {
         } else {
           cb(new Error('Command not found'), { stdout: '', stderr: '' });
         }
-        return {} as any;
       });
 
       const info = await monitor.getInfo();
@@ -305,10 +299,8 @@ describe('GPU Monitor - Unit Tests', () => {
     });
 
     it('should return empty info when CPU query fails', async () => {
-      vi.mocked(childProcess.exec).mockImplementation((cmd: any, options: any, callback?: any) => {
-        const cb = typeof options === 'function' ? options : callback;
+      mockExec((cmd, cb) => {
         cb(new Error('Command failed'), { stdout: '', stderr: '' });
-        return {} as any;
       });
 
       const info = await monitor.getInfo();
@@ -327,8 +319,7 @@ describe('GPU Monitor - Unit Tests', () => {
       const originalPlatform = process.platform;
       Object.defineProperty(process, 'platform', { value: 'linux', configurable: true });
 
-      vi.mocked(childProcess.exec).mockImplementation((cmd: any, options: any, callback?: any) => {
-        const cb = typeof options === 'function' ? options : callback;
+      mockExec((cmd, cb) => {
         if (cmd.includes('nvidia-smi --version')) {
           cb(null, { stdout: 'NVIDIA-SMI', stderr: '' });
         } else if (cmd.includes('nvidia-smi --query-gpu')) {
@@ -342,7 +333,6 @@ describe('GPU Monitor - Unit Tests', () => {
         } else {
           cb(new Error('Command not found'), { stdout: '', stderr: '' });
         }
-        return {} as any;
       });
 
       const info = await monitor.getInfo();
@@ -358,8 +348,7 @@ describe('GPU Monitor - Unit Tests', () => {
   describe('Polling', () => {
     it('should poll GPU info at specified interval', async () => {
       let callCount = 0;
-      vi.mocked(childProcess.exec).mockImplementation((cmd: any, options: any, callback?: any) => {
-        const cb = typeof options === 'function' ? options : callback;
+      mockExec((cmd, cb) => {
         if (cmd.includes('nvidia-smi --version')) {
           cb(null, { stdout: 'NVIDIA-SMI', stderr: '' });
         } else if (cmd.includes('nvidia-smi --query-gpu')) {
@@ -368,7 +357,6 @@ describe('GPU Monitor - Unit Tests', () => {
         } else {
           cb(new Error('Command not found'), { stdout: '', stderr: '' });
         }
-        return {} as any;
       });
 
       const updates: GPUInfo[] = [];
@@ -390,8 +378,7 @@ describe('GPU Monitor - Unit Tests', () => {
 
     it('should stop polling when stopPolling is called', async () => {
       let callCount = 0;
-      vi.mocked(childProcess.exec).mockImplementation((cmd: any, options: any, callback?: any) => {
-        const cb = typeof options === 'function' ? options : callback;
+      mockExec((cmd, cb) => {
         if (cmd.includes('nvidia-smi --version')) {
           cb(null, { stdout: 'NVIDIA-SMI', stderr: '' });
         } else if (cmd.includes('nvidia-smi --query-gpu')) {
@@ -400,7 +387,6 @@ describe('GPU Monitor - Unit Tests', () => {
         } else {
           cb(new Error('Command not found'), { stdout: '', stderr: '' });
         }
-        return {} as any;
       });
 
       // Start polling with 100ms interval
@@ -419,8 +405,7 @@ describe('GPU Monitor - Unit Tests', () => {
 
   describe('Callbacks', () => {
     it('should trigger update callbacks', async () => {
-      vi.mocked(childProcess.exec).mockImplementation((cmd: any, options: any, callback?: any) => {
-        const cb = typeof options === 'function' ? options : callback;
+      mockExec((cmd, cb) => {
         if (cmd.includes('nvidia-smi --version')) {
           cb(null, { stdout: 'NVIDIA-SMI', stderr: '' });
         } else if (cmd.includes('nvidia-smi --query-gpu')) {
@@ -428,7 +413,6 @@ describe('GPU Monitor - Unit Tests', () => {
         } else {
           cb(new Error('Command not found'), { stdout: '', stderr: '' });
         }
-        return {} as any;
       });
 
       let updateCalled = false;
@@ -453,8 +437,7 @@ describe('GPU Monitor - Unit Tests', () => {
     });
 
     it('should trigger high temperature callback when threshold exceeded', async () => {
-      vi.mocked(childProcess.exec).mockImplementation((cmd: any, options: any, callback?: any) => {
-        const cb = typeof options === 'function' ? options : callback;
+      mockExec((cmd, cb) => {
         if (cmd.includes('nvidia-smi --version')) {
           cb(null, { stdout: 'NVIDIA-SMI', stderr: '' });
         } else if (cmd.includes('nvidia-smi --query-gpu')) {
@@ -462,7 +445,6 @@ describe('GPU Monitor - Unit Tests', () => {
         } else {
           cb(new Error('Command not found'), { stdout: '', stderr: '' });
         }
-        return {} as any;
       });
 
       let highTempCalled = false;
@@ -478,8 +460,7 @@ describe('GPU Monitor - Unit Tests', () => {
     });
 
     it('should trigger low VRAM callback when threshold not met', async () => {
-      vi.mocked(childProcess.exec).mockImplementation((cmd: any, options: any, callback?: any) => {
-        const cb = typeof options === 'function' ? options : callback;
+      mockExec((cmd, cb) => {
         if (cmd.includes('nvidia-smi --version')) {
           cb(null, { stdout: 'NVIDIA-SMI', stderr: '' });
         } else if (cmd.includes('nvidia-smi --query-gpu')) {
@@ -488,7 +469,6 @@ describe('GPU Monitor - Unit Tests', () => {
         } else {
           cb(new Error('Command not found'), { stdout: '', stderr: '' });
         }
-        return {} as any;
       });
 
       let lowVramCalled = false;

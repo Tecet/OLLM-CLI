@@ -8,17 +8,17 @@ import { tabs } from '../TabBar.js';
  * Feature: stage-06-cli-ui, Property 10: Tab Keyboard Shortcuts
  * Validates: Requirements 4.2
  * 
- * For any keyboard shortcut Ctrl+1 through Ctrl+6, the tab bar should switch
- * to the corresponding tab (Chat, Tools, Files, Search, Docs, Settings).
+ * For any keyboard shortcut Ctrl+1 through Ctrl+7, the tab bar should switch
+ * to the corresponding tab (Chat, Tools, Files, Search, Docs, GitHub, Settings).
  */
 describe('Property 10: Tab Keyboard Shortcuts', () => {
   it('should map keyboard shortcuts to correct tabs', () => {
     fc.assert(
       fc.property(
-        fc.integer({ min: 1, max: 6 }),
+        fc.integer({ min: 1, max: 7 }),
         (shortcutNumber) => {
           // Map shortcut number to expected tab
-          const expectedTabs: TabType[] = ['chat', 'tools', 'files', 'search', 'docs', 'settings'];
+          const expectedTabs: TabType[] = ['chat', 'tools', 'files', 'search', 'docs', 'github', 'settings'];
           const expectedTab = expectedTabs[shortcutNumber - 1];
           
           // Verify the tab at this index has the correct shortcut
@@ -59,7 +59,7 @@ describe('Property 10: Tab Keyboard Shortcuts', () => {
   it('should maintain correct tab order for shortcuts', () => {
     fc.assert(
       fc.property(
-        fc.array(fc.integer({ min: 0, max: 5 }), { minLength: 2, maxLength: 6 }),
+        fc.array(fc.integer({ min: 0, max: 6 }), { minLength: 2, maxLength: 7 }),
         (indices) => {
           // Remove duplicates and sort
           const uniqueIndices = Array.from(new Set(indices)).sort((a, b) => a - b);

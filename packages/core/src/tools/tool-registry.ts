@@ -20,7 +20,7 @@ import { globalValidator, type ValidationError } from './validation.js';
  * - Validate parameters and create tool invocations
  */
 export class ToolRegistry {
-  private tools: Map<string, DeclarativeTool<any, any>>;
+  private tools: Map<string, DeclarativeTool<Record<string, unknown>, unknown>>;
 
   constructor() {
     this.tools = new Map();
@@ -34,7 +34,7 @@ export class ToolRegistry {
    * 
    * @param tool The tool to register
    */
-  register(tool: DeclarativeTool<any, any>): void {
+  register(tool: DeclarativeTool<Record<string, unknown>, unknown>): void {
     this.tools.set(tool.name, tool);
     // Register the schema for validation
     globalValidator.registerSchema(tool.name, tool.schema);
@@ -55,7 +55,7 @@ export class ToolRegistry {
    * @param name The name of the tool to retrieve
    * @returns The tool if found, undefined otherwise
    */
-  get(name: string): DeclarativeTool<any, any> | undefined {
+  get(name: string): DeclarativeTool<Record<string, unknown>, unknown> | undefined {
     return this.tools.get(name);
   }
 
@@ -66,7 +66,7 @@ export class ToolRegistry {
    * 
    * @returns Array of all registered tools, sorted alphabetically by name
    */
-  list(): DeclarativeTool<any, any>[] {
+  list(): DeclarativeTool<Record<string, unknown>, unknown>[] {
     return Array.from(this.tools.values()).sort((a, b) =>
       a.name.localeCompare(b.name)
     );
@@ -100,7 +100,7 @@ export class ToolRegistry {
     toolName: string,
     params: Record<string, unknown>,
     context: ToolContext
-  ): ToolInvocation<any, any> | ValidationError {
+  ): ToolInvocation<Record<string, unknown>, unknown> | ValidationError {
     // Get the tool
     const tool = this.tools.get(toolName);
     if (!tool) {

@@ -39,7 +39,7 @@ export interface SettingsTabProps {
   onThemeSelect?: (themeName: string) => void;
   
   /** Callback when option is changed */
-  onOptionChange?: (key: keyof Options, value: any) => void;
+  onOptionChange?: (key: keyof Options, value: unknown) => void;
   
   /** Callback for quick actions */
   onQuickAction?: (action: 'save' | 'export' | 'clear') => void;
@@ -72,7 +72,7 @@ export function SettingsTab({
   onProviderSelect,
   onThemeSelect,
   onOptionChange,
-  onQuickAction,
+  onQuickAction: _onQuickAction,
 }: SettingsTabProps) {
   const { state: uiState } = useUI();
 
@@ -113,7 +113,7 @@ export function SettingsTab({
               models={models}
               selectedModel={selectedModel}
               onSelect={onModelSelect || (() => {})}
-              theme={uiState.theme as any}
+              theme={uiState.theme}
             />
           </Box>
 

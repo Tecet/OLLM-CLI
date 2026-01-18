@@ -352,8 +352,8 @@ Have suggestions for the roadmap?
 - [Roadmap Overview](./roadmap.md) - Main entry point
 - [Future Features](./future-features.md) - Quick reference
 - [Visual Roadmap](./road_map_visual.md) - Visual timeline
-- [Development Plan](../../.dev/Development-Roadmap/ROADMAP.md) - Development tracking
-- [Stage Specifications](../../.kiro/specs/) - Detailed requirements
+- Development Plan (../../.dev/Development-Roadmap/ROADMAP.md) - Development tracking
+- Stage Specifications (../../.kiro/specs/) - Detailed requirements
 - [Main README](../../README.md) - Project overview
 - [Configuration](../configuration.md) - Settings reference
 - [Troubleshooting](../troubleshooting.md) - Common issues

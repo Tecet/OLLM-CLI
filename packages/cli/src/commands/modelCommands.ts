@@ -16,8 +16,53 @@ import { SettingsService } from '../config/settingsService.js';
 import { profileManager } from '../features/profiles/ProfileManager.js';
 // import type { ModelManagementService } from '@ollm/core/services/modelManagementService.js';
 // import type { ServiceContainer } from '@ollm/core/services/serviceContainer.js';
-type ModelManagementService = any;
-type ServiceContainer = any;
+type ModelSummary = {
+  name: string;
+  sizeBytes?: number;
+  modifiedAt?: string | Date;
+};
+
+type ModelCapabilities = {
+  toolCalling: boolean;
+  vision: boolean;
+  streaming: boolean;
+};
+
+type ModelDetails = {
+  name: string;
+  family: string;
+  size: number;
+  sizeBytes?: number;
+  modifiedAt: string | Date;
+  contextWindow: number;
+  capabilities: ModelCapabilities;
+  parameterCount?: number;
+};
+
+type PullProgress = {
+  percentage: number;
+  transferRate: number;
+};
+
+type ModelManagementService = {
+  listModels: () => Promise<ModelSummary[]>;
+  pullModel: (modelName: string, onProgress?: (progress: PullProgress) => void) => Promise<void>;
+  deleteModel: (modelName: string) => Promise<void>;
+  showModel: (modelName: string) => Promise<ModelDetails>;
+  keepModelLoaded: (modelName: string) => Promise<void>;
+  unloadModel: (modelName: string) => Promise<void>;
+};
+
+type ServiceContainer = {
+  getModelManagementService: () => ModelManagementService;
+};
+
+type ModelMenuGlobals = {
+  __ollmModelSwitchCallback?: (modelName: string) => void;
+  __ollmOpenModelMenu?: () => void;
+};
+
+const modelMenuGlobals = globalThis as ModelMenuGlobals;
 
 /**
  * /model use <name> - Switch to a different model
@@ -36,8 +81,8 @@ async function modelUseHandler(args: string[]): Promise<CommandResult> {
   const modelName = args[0];
 
   // Call the model switch callback if available
-  if (typeof (globalThis as any).__ollmModelSwitchCallback === 'function') {
-    (globalThis as any).__ollmModelSwitchCallback(modelName);
+  if (typeof modelMenuGlobals.__ollmModelSwitchCallback === 'function') {
+    modelMenuGlobals.__ollmModelSwitchCallback(modelName);
   }
 
   // Persist selection
@@ -78,7 +123,7 @@ export function createModelCommands(container: ServiceContainer): Command[] {
  */
 async function modelListHandler(service: ModelManagementService): Promise<CommandResult> {
   try {
-    const models = await service.listModels() as any[];
+    const models = await service.listModels();
     
     if (models.length === 0) {
       return {
@@ -136,11 +181,10 @@ async function modelPullHandler(args: string[], service: ModelManagementService)
   const modelName = args[0];
 
   try {
-    let lastProgress = '';
-    await service.pullModel(modelName, (progress: any) => {
+    await service.pullModel(modelName, (progress) => {
       const percent = progress.percentage.toFixed(1);
       const rate = (progress.transferRate / (1024 * 1024)).toFixed(2);
-      lastProgress = `Pulling ${modelName}: ${percent}% (${rate} MB/s)`;
+      const _lastProgress = `Pulling ${modelName}: ${percent}% (${rate} MB/s)`;
       // In a real implementation, this would update a progress bar
       // For now, we'll just track the last progress
     });
@@ -205,11 +249,12 @@ async function modelInfoHandler(args: string[], service: ModelManagementService)
   const modelName = args[0];
 
   try {
-    const model = await service.showModel(modelName) as any;
+    const model = await service.showModel(modelName);
     
     // Format model information
     const size = (model.size / (1024 * 1024 * 1024)).toFixed(2);
-    const date = model.modifiedAt.toLocaleDateString();
+    const modifiedAt = model.modifiedAt instanceof Date ? model.modifiedAt : new Date(model.modifiedAt);
+    const date = modifiedAt.toLocaleDateString();
     const capabilities = [];
     if (model.capabilities.toolCalling) capabilities.push('tool calling');
     if (model.capabilities.vision) capabilities.push('vision');
@@ -218,6 +263,7 @@ async function modelInfoHandler(args: string[], service: ModelManagementService)
     const info = [
       `Model: ${model.name}`,
       `Family: ${model.family}`,
+      `Size: ${size} GB`,
       `Context Window: ${model.contextWindow} tokens`,
       `Modified: ${date}`,
       `Capabilities: ${capabilities.join(', ') || 'none'}`,
@@ -313,8 +359,8 @@ async function modelUnloadHandler(args: string[], service: ModelManagementServic
     usage: '/model <list|use|pull|delete|info|keep|unload> [args]',
     handler: async (args: string[]): Promise<CommandResult> => {
       if (args.length === 0) {
-        if (typeof (globalThis as any).__ollmOpenModelMenu === 'function') {
-          (globalThis as any).__ollmOpenModelMenu();
+        if (typeof modelMenuGlobals.__ollmOpenModelMenu === 'function') {
+          modelMenuGlobals.__ollmOpenModelMenu();
           return {
             success: true,
             message: 'Opening model and context menu...',
@@ -404,8 +450,8 @@ export const modelCommands: Command[] = [
     usage: '/model <list|use|pull|delete|info|keep|unload> [args]',
     handler: async (args: string[]): Promise<CommandResult> => {
       if (args.length === 0) {
-        if (typeof (globalThis as any).__ollmOpenModelMenu === 'function') {
-          (globalThis as any).__ollmOpenModelMenu();
+        if (typeof modelMenuGlobals.__ollmOpenModelMenu === 'function') {
+          modelMenuGlobals.__ollmOpenModelMenu();
           return {
             success: true,
             message: 'Opening model and context menu...',

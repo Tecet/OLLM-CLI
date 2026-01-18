@@ -7,33 +7,7 @@
 import { describe, it, expect } from 'vitest';
 import React from 'react';
 import fc from 'fast-check';
-import { ContextStatus, type ContextStatusProps } from '../../features/context/ContextStatus.js';
-import { render as inkRender } from 'ink';
-import { Writable } from 'stream';
-
-/**
- * Helper to render Ink component to string
- */
-function renderToString(element: React.ReactElement): string {
-  let output = '';
-  
-  const stream = new Writable({
-    write(chunk, _encoding, callback) {
-      output += chunk.toString();
-      callback();
-    }
-  });
-  
-  const { unmount } = inkRender(element, {
-    stdout: stream as NodeJS.WriteStream,
-    debug: true
-  });
-  
-  // Give it a moment to render
-  setTimeout(() => unmount(), 10);
-  
-  return output;
-}
+import { ContextStatus } from '../../features/context/ContextStatus.js';
 
 describe('ContextStatus Component - Property Tests', () => {
   /**

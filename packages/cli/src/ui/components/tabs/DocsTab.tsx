@@ -21,9 +21,9 @@ export function DocsTab() {
   const [entries] = useState<DocEntry[]>(() => docsService.getIndex());
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
   const [content, setContent] = useState<string>('');
-  const [loading, setLoading] = useState(false);
+  const [_loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [scrollPosition, setScrollPosition] = useState(0);
+  const [_scrollPosition, setScrollPosition] = useState(0);
 
   const handleBack = () => {
     setSelectedPath(null);
@@ -107,6 +107,7 @@ export function DocsTab() {
         content={content}
         title={title}
         theme={uiState.theme}
+        loading={_loading}
         error={error || undefined}
       />
       {/* Footer */}

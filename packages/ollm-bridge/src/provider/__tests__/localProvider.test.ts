@@ -333,6 +333,7 @@ describe('LocalProvider', () => {
         ok: false,
         status: 500,
         statusText: 'Internal Server Error',
+        text: vi.fn().mockResolvedValue('Internal Server Error'),
       });
 
       const provider = new LocalProvider({ baseUrl: 'http://localhost:11434' });
@@ -457,6 +458,157 @@ describe('LocalProvider', () => {
       expect(errorEvent?.type).toBe('error');
       if (errorEvent?.type === 'error') {
         expect(errorEvent.error.message).toContain('Connection refused');
+      }
+
+      // Restore original fetch
+      global.fetch = originalFetch;
+    });
+
+    it('handles tool unsupported errors with retry', async () => {
+      // Mock fetch to return tool error on first call, success on retry
+      const originalFetch = global.fetch;
+      let callCount = 0;
+      
+      global.fetch = vi.fn().mockImplementation((url, options) => {
+        callCount++;
+        const body = JSON.parse(options?.body as string);
+        
+        // First call with tools should fail
+        if (callCount === 1 && body.tools) {
+          return Promise.resolve({
+            ok: false,
+            status: 400,
+            statusText: 'Bad Request',
+            text: vi.fn().mockResolvedValue('error: unknown field: tools'),
+          });
+        }
+        
+        // Second call without tools should succeed
+        return Promise.resolve({
+          ok: true,
+          body: {
+            getReader: () => ({
+              read: vi.fn()
+                .mockResolvedValueOnce({
+                  done: false,
+                  value: new TextEncoder().encode('{"message":{"content":"Success"},"done":false}\n'),
+                })
+                .mockResolvedValueOnce({
+                  done: false,
+                  value: new TextEncoder().encode('{"done":true,"done_reason":"stop"}\n'),
+                })
+                .mockResolvedValueOnce({
+                  done: true,
+                  value: undefined,
+                }),
+            }),
+          },
+        });
+      });
+
+      const provider = new LocalProvider({ baseUrl: 'http://localhost:11434' });
+      const request: ProviderRequest = {
+        model: 'test-model',
+        messages: [{ role: 'user', parts: [{ type: 'text', text: 'Hello' }] }],
+        tools: [{ name: 'test_tool', description: 'Test tool' }],
+      };
+
+      const events: ProviderEvent[] = [];
+      for await (const event of provider.chatStream(request)) {
+        events.push(event);
+      }
+
+      // Should have made 2 fetch calls (initial + retry)
+      expect(callCount).toBe(2);
+
+      // Should yield an error event for tool unsupported
+      const errorEvents = events.filter(e => e.type === 'error');
+      expect(errorEvents.length).toBeGreaterThan(0);
+      const toolError = errorEvents.find(e => 
+        e.type === 'error' && e.error.code === 'TOOL_UNSUPPORTED'
+      );
+      expect(toolError).toBeDefined();
+      if (toolError?.type === 'error') {
+        expect(toolError.error.message).toContain('Tool support error');
+        expect(toolError.error.code).toBe('TOOL_UNSUPPORTED');
+        expect(toolError.error.httpStatus).toBe(400);
+        expect(toolError.error.originalError).toContain('unknown field: tools');
+      }
+
+      // Should also yield text from successful retry
+      const textEvents = events.filter(e => e.type === 'text');
+      expect(textEvents.length).toBeGreaterThan(0);
+      expect(textEvents[0].type).toBe('text');
+      if (textEvents[0].type === 'text') {
+        expect(textEvents[0].value).toBe('Success');
+      }
+
+      // Should have a finish event
+      const finishEvent = events.find(e => e.type === 'finish');
+      expect(finishEvent).toBeDefined();
+
+      // Restore original fetch
+      global.fetch = originalFetch;
+    });
+
+    it('handles tool error retry failure', async () => {
+      // Mock fetch to return tool error on first call, different error on retry
+      const originalFetch = global.fetch;
+      let callCount = 0;
+      
+      global.fetch = vi.fn().mockImplementation((url, options) => {
+        callCount++;
+        const body = JSON.parse(options?.body as string);
+        
+        // First call with tools should fail
+        if (callCount === 1 && body.tools) {
+          return Promise.resolve({
+            ok: false,
+            status: 400,
+            statusText: 'Bad Request',
+            text: vi.fn().mockResolvedValue('error: unknown field: tools'),
+          });
+        }
+        
+        // Second call without tools should also fail
+        return Promise.resolve({
+          ok: false,
+          status: 500,
+          statusText: 'Internal Server Error',
+          text: vi.fn().mockResolvedValue('Server error'),
+        });
+      });
+
+      const provider = new LocalProvider({ baseUrl: 'http://localhost:11434' });
+      const request: ProviderRequest = {
+        model: 'test-model',
+        messages: [{ role: 'user', parts: [{ type: 'text', text: 'Hello' }] }],
+        tools: [{ name: 'test_tool', description: 'Test tool' }],
+      };
+
+      const events: ProviderEvent[] = [];
+      for await (const event of provider.chatStream(request)) {
+        events.push(event);
+      }
+
+      // Should have made 2 fetch calls (initial + retry)
+      expect(callCount).toBe(2);
+
+      // Should yield two error events (tool error + retry error)
+      const errorEvents = events.filter(e => e.type === 'error');
+      expect(errorEvents.length).toBe(2);
+      
+      // First error should be tool unsupported
+      expect(errorEvents[0].type).toBe('error');
+      if (errorEvents[0].type === 'error') {
+        expect(errorEvents[0].error.code).toBe('TOOL_UNSUPPORTED');
+      }
+      
+      // Second error should be the retry failure
+      expect(errorEvents[1].type).toBe('error');
+      if (errorEvents[1].type === 'error') {
+        expect(errorEvents[1].error.code).toBe('500');
+        expect(errorEvents[1].error.message).toContain('Server error');
       }
 
       // Restore original fetch

@@ -88,22 +88,29 @@ describe('Compression Demonstration', () => {
     const countMessagesTokens = (msgs: SessionMessage[]) =>
       msgs.reduce((sum, msg) => sum + countMessageTokens(msg), 0);
 
+    const isTestEnv = process.env.NODE_ENV === 'test' || process.env.VITEST;
+    const log = (...args: any[]) => {
+      if (!isTestEnv) {
+        console.log(...args);
+      }
+    };
+
     const originalTokenCount = countMessagesTokens(messages);
     
-    console.log('\n📊 ORIGINAL CONVERSATION');
-    console.log(`Total messages: ${messages.length}`);
-    console.log(`Total tokens: ${originalTokenCount}`);
+    log('\n📊 ORIGINAL CONVERSATION');
+    log(`Total messages: ${messages.length}`);
+    log(`Total tokens: ${originalTokenCount}`);
 
     // Apply compression with a target that forces summarization
     const targetTokens = 150;
     const result = await service.summarize(messages, targetTokens);
     const compressedTokenCount = countMessagesTokens(result);
     
-    console.log('\n📊 COMPRESSED CONVERSATION');
-    console.log(`Total messages: ${result.length} (reduced from ${messages.length})`);
-    console.log(`Total tokens: ${compressedTokenCount} (reduced from ${originalTokenCount})`);
-    console.log(`Compression ratio: ${((1 - compressedTokenCount / originalTokenCount) * 100).toFixed(1)}%`);
-    console.log(`Target met: ${compressedTokenCount <= targetTokens ? '✅ YES' : '❌ NO'} (target: ${targetTokens})\n`);
+    log('\n📊 COMPRESSED CONVERSATION');
+    log(`Total messages: ${result.length} (reduced from ${messages.length})`);
+    log(`Total tokens: ${compressedTokenCount} (reduced from ${originalTokenCount})`);
+    log(`Compression ratio: ${((1 - compressedTokenCount / originalTokenCount) * 100).toFixed(1)}%`);
+    log(`Target met: ${compressedTokenCount <= targetTokens ? '✅ YES' : '❌ NO'} (target: ${targetTokens})\n`);
 
     // Verify compression properties
     expect(result.length).toBeLessThan(messages.length);
@@ -121,11 +128,17 @@ describe('Compression Demonstration', () => {
     // Recent message preserved
     expect(result[result.length - 1].parts[0].text).toBe(messages[messages.length - 1].parts[0].text);
     
-    console.log('✅ All compression checks passed!');
+    log('✅ All compression checks passed!');
   });
 
   it('should demonstrate compression with the compress() method', async () => {
     const service = new ChatCompressionService();
+    const isTestEnv = process.env.NODE_ENV === 'test' || process.env.VITEST;
+    const log = (...args: any[]) => {
+      if (!isTestEnv) {
+        console.log(...args);
+      }
+    };
 
     const messages: SessionMessage[] = [
       {
@@ -160,7 +173,7 @@ describe('Compression Demonstration', () => {
       },
     ];
 
-    console.log('\n📊 Testing compress() method with summarize strategy');
+    log('\n📊 Testing compress() method with summarize strategy');
     
     const result = await service.compress(messages, {
       strategy: 'summarize',
@@ -168,16 +181,16 @@ describe('Compression Demonstration', () => {
       targetTokens: 100,
     });
 
-    console.log(`Original: ${result.originalTokenCount} tokens, ${messages.length} messages`);
-    console.log(`Compressed: ${result.compressedTokenCount} tokens, ${result.compressedMessages.length} messages`);
-    console.log(`Strategy: ${result.strategy}`);
-    console.log(`Reduction: ${((1 - result.compressedTokenCount / result.originalTokenCount) * 100).toFixed(1)}%\n`);
+    log(`Original: ${result.originalTokenCount} tokens, ${messages.length} messages`);
+    log(`Compressed: ${result.compressedTokenCount} tokens, ${result.compressedMessages.length} messages`);
+    log(`Strategy: ${result.strategy}`);
+    log(`Reduction: ${((1 - result.compressedTokenCount / result.originalTokenCount) * 100).toFixed(1)}%\n`);
 
     // Verify the result
     expect(result.compressedTokenCount).toBeLessThan(result.originalTokenCount);
     expect(result.compressedMessages.length).toBeLessThan(messages.length);
     expect(result.strategy).toBe('summarize');
     
-    console.log('✅ compress() method works correctly!');
+    log('✅ compress() method works correctly!');
   });
 });

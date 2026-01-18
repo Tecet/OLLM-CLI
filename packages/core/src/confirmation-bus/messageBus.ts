@@ -161,7 +161,9 @@ export class ConfirmationBus implements MessageBus {
     timeout: number = DEFAULT_CONFIRMATION_TIMEOUT
   ): Promise<boolean> {
     return new Promise<boolean>((resolve, reject) => {
-      let timeoutId: ReturnType<typeof setTimeout> | undefined;
+      const timeoutId: ReturnType<typeof setTimeout> = setTimeout(() => {
+        settle(new Error(`Confirmation request timed out after ${timeout}ms`));
+      }, timeout);
       let abortHandler: (() => void) | undefined;
       let settled = false;
 
@@ -184,11 +186,6 @@ export class ConfirmationBus implements MessageBus {
           resolve(result);
         }
       };
-
-      // Set up timeout (Requirement 8.4)
-      timeoutId = setTimeout(() => {
-        settle(new Error(`Confirmation request timed out after ${timeout}ms`));
-      }, timeout);
 
       // Set up abort handler (Requirement 8.6)
       if (abortSignal) {

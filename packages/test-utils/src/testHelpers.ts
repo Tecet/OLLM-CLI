@@ -48,8 +48,11 @@ export function skipIfNoServer(serverUrl: string = DEFAULT_SERVER_URL) {
   return async () => {
     const available = await isServerAvailable(serverUrl);
     if (!available) {
-      console.log('⚠️  Skipping: Local LLM server not available');
-      console.log(`   Set OLLM_TEST_SERVER or start server at ${serverUrl}`);
+      console.log('DEBUG: skipIfNoServer called, available=false, NODE_ENV=' + process.env.NODE_ENV + ', VITEST=' + process.env.VITEST);
+      if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
+        console.log('⚠️  Skipping: Local LLM server not available');
+        console.log(`   Set OLLM_TEST_SERVER or start server at ${serverUrl}`);
+      }
       return true;
     }
     return false;

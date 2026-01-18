@@ -14,7 +14,7 @@
  */
 
 import { execSync, spawn } from 'child_process';
-import { mkdtempSync, rmSync, readFileSync } from 'fs';
+import { mkdtempSync, rmSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 
@@ -131,11 +131,6 @@ function verifyCommandAvailable(npmPrefix) {
   console.log('\n=== Step 3: Verifying command availability ===');
   
   try {
-    // Construct the path to the installed binary
-    const binPath = process.platform === 'win32'
-      ? join(npmPrefix, COMMAND_NAME + '.cmd')
-      : join(npmPrefix, 'bin', COMMAND_NAME);
-    
     // Check if the command exists by trying to execute it with --help
     const env = {
       ...process.env,
@@ -201,12 +196,7 @@ function runSmokeTest(env) {
       stdio: ['pipe', 'pipe', 'pipe'],
     });
     
-    let stdout = '';
     let stderr = '';
-    
-    child.stdout.on('data', (data) => {
-      stdout += data.toString();
-    });
     
     child.stderr.on('data', (data) => {
       stderr += data.toString();

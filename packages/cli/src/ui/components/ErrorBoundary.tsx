@@ -95,10 +95,9 @@ export const DefaultErrorFallback: React.FC<{ error: Error; errorInfo: React.Err
   error,
   errorInfo,
 }) => {
-      let theme = undefined;
-      try { theme = useUI().state.theme; } catch {}
-      const borderColor = theme ? theme.border.primary : 'red';
-      const textColor = theme ? theme.status.error : 'red';
+      const theme = useUI().state.theme;
+      const borderColor = theme.border.primary;
+      const textColor = theme.status.error;
 
       return (
         <Box flexDirection="column" padding={1} borderStyle="round" borderColor={borderColor}>
@@ -125,9 +124,8 @@ export const DefaultErrorFallback: React.FC<{ error: Error; errorInfo: React.Err
  * Minimal error fallback for critical errors
  */
 export const MinimalErrorFallback: React.FC<{ error: Error }> = ({ error }) => {
-  let theme = undefined;
-  try { theme = useUI().state.theme; } catch {}
-  const textColor = theme ? theme.status.error : 'red';
+  const theme = useUI().state.theme;
+  const textColor = theme.status.error;
 
   return (
     <Box padding={1}>

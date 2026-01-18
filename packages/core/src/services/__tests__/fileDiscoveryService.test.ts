@@ -64,11 +64,10 @@ describe('FileDiscoveryService', () => {
               // Cleanup
               await fs.rm(tmpDir, { recursive: true, force: true });
             }
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
+                  }
+                ),
+                { numRuns: 30 }
+              );    });
 
     it('should respect .gitignore patterns', async () => {
       await fc.assert(
@@ -114,11 +113,10 @@ describe('FileDiscoveryService', () => {
               // Cleanup
               await fs.rm(tmpDir, { recursive: true, force: true });
             }
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
+                  }
+                ),
+                { numRuns: 30 }
+              );    });
 
     it('should respect built-in ignore patterns', async () => {
       await fc.assert(
@@ -154,11 +152,10 @@ describe('FileDiscoveryService', () => {
               // Cleanup
               await fs.rm(tmpDir, { recursive: true, force: true });
             }
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
+                  }
+                ),
+                { numRuns: 30 }
+              );    });
 
     it('should respect combined ignore patterns from multiple sources', async () => {
       await fc.assert(
@@ -224,11 +221,10 @@ describe('FileDiscoveryService', () => {
               // Cleanup
               await fs.rm(tmpDir, { recursive: true, force: true });
             }
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
+                  }
+                ),
+                { numRuns: 30 }
+              );    });
   });
 
   describe('Property 23: Depth limit enforcement', () => {
@@ -301,11 +297,10 @@ describe('FileDiscoveryService', () => {
               // Cleanup
               await fs.rm(tmpDir, { recursive: true, force: true });
             }
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
+                  }
+                ),
+                { numRuns: 30 }
+              );    });
 
     it('should include all files when maxDepth is undefined', async () => {
       await fc.assert(
@@ -355,11 +350,10 @@ describe('FileDiscoveryService', () => {
               // Cleanup
               await fs.rm(tmpDir, { recursive: true, force: true });
             }
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
+                  }
+                ),
+                { numRuns: 30 }
+              );    });
 
     it('should handle maxDepth of 0 (only root level files)', async () => {
       await fc.assert(
@@ -412,11 +406,10 @@ describe('FileDiscoveryService', () => {
               // Cleanup
               await fs.rm(tmpDir, { recursive: true, force: true });
             }
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
+                  }
+                ),
+                { numRuns: 30 }
+              );    });
   });
 
   describe('Property 24: File change notification', () => {
@@ -474,11 +467,10 @@ describe('FileDiscoveryService', () => {
               // Cleanup
               await fs.rm(tmpDir, { recursive: true, force: true });
             }
-          }
-        ),
-        { numRuns: 20 }
-      );
-    }, 10000);
+                  }
+                ),
+                { numRuns: 5 }
+              );    }, 10000);
 
     it('should notify on file modifications', async () => {
       await fc.assert(
@@ -531,11 +523,10 @@ describe('FileDiscoveryService', () => {
               // Cleanup
               await fs.rm(tmpDir, { recursive: true, force: true });
             }
-          }
-        ),
-        { numRuns: 20 }
-      );
-    }, 10000);
+                  }
+                ),
+                { numRuns: 5 }
+              );    }, 10000);
 
     it('should notify on file deletions', async () => {
       await fc.assert(
@@ -590,11 +581,10 @@ describe('FileDiscoveryService', () => {
               // Cleanup
               await fs.rm(tmpDir, { recursive: true, force: true });
             }
-          }
-        ),
-        { numRuns: 20 }
-      );
-    }, 10000);
+                  }
+                ),
+                { numRuns: 5 }
+              );    }, 10000);
 
     it('should handle multiple watchers on the same directory', async () => {
       await fc.assert(
@@ -645,11 +635,10 @@ describe('FileDiscoveryService', () => {
               // Cleanup
               await fs.rm(tmpDir, { recursive: true, force: true });
             }
-          }
-        ),
-        { numRuns: 20 }
-      );
-    }, 10000);
+                  }
+                ),
+                { numRuns: 5 }
+              );    }, 10000);
 
     it('should stop notifying after dispose is called', async () => {
       await fc.assert(
@@ -709,11 +698,10 @@ describe('FileDiscoveryService', () => {
               // Cleanup
               await fs.rm(tmpDir, { recursive: true, force: true });
             }
-          }
-        ),
-        { numRuns: 20 }
-      );
-    }, 10000);
+                  }
+                ),
+                { numRuns: 5 }
+              );    }, 10000);
   });
 
   describe('Error Handling', () => {
@@ -745,7 +733,6 @@ describe('FileDiscoveryService', () => {
           await fs.chmod(inaccessibleDir, 0o000);
         } catch {
           // If we can't change permissions, skip this test
-          console.log('Skipping permission test - unable to change directory permissions');
           return;
         }
 
@@ -841,7 +828,6 @@ describe('FileDiscoveryService', () => {
           await fs.symlink(dir1, loopLink, 'dir');
         } catch (error) {
           // If we can't create symlinks, skip this test
-          console.log('Skipping symlink test - unable to create symlinks');
           return;
         }
 

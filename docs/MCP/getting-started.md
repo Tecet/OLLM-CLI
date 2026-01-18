@@ -536,14 +536,14 @@ tar -czf my-workflow.tar.gz .
 - [MCP Commands](MCP_commands.md) - Command reference
 
 ### Community
-- GitHub: [ollm/ollm-cli](https://github.com/ollm/ollm-cli)
+- GitHub: ollm/ollm-cli (https://github.com/ollm/ollm-cli)
 - Discord: [Join our server](#)
 - Forum: [Community forum](#)
 
 ### External Resources
-- [MCP Specification](https://modelcontextprotocol.io)
-- [MCP Servers](https://github.com/modelcontextprotocol/servers)
-- [Extension Examples](https://github.com/ollm/extensions)
+- MCP Specification (https://modelcontextprotocol.io)
+- MCP Servers (https://github.com/modelcontextprotocol/servers)
+- Extension Examples (https://github.com/ollm/extensions)
 
 ---
 

@@ -14,6 +14,7 @@
 import React from 'react';
 import { Box, Text } from 'ink';
 import { useUI } from './UIContext.js';
+import type { Theme } from '../../config/types.js';
 
 /**
  * Props for ContextStatus component
@@ -64,7 +65,7 @@ function formatPercentage(value: number): string {
 /**
  * Get color for usage percentage using theme status colors
  */
-function getUsageColor(percentage: number, theme: any): string {
+function getUsageColor(percentage: number, theme: Theme): string {
   if (percentage >= 80) return theme.status.error;
   if (percentage >= 60) return theme.status.warning;
   return theme.status.success;

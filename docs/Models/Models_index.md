@@ -625,9 +625,9 @@ Complete API reference for the Project Profile Service.
 - [Troubleshooting](../troubleshooting.md)
 
 ### Development Documentation
-- [Development Documentation](../../.dev/Models/)
-- [Implementation Progress](../../.dev/Models/development/implementation-progress.md)
-- [Specifications](../../.kiro/specs/stage-07-model-management/)
+- Development Documentation (../../.dev/Models/)
+- Implementation Progress (../../.dev/Models/development/implementation-progress.md)
+- Specifications (../../.kiro/specs/stage-07-model-management/)
 
 ---
 

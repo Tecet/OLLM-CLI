@@ -32,7 +32,7 @@ function createMockServiceContainer(): ServiceContainer {
     getTemplateService: vi.fn().mockReturnValue({}),
     getComparisonService: vi.fn().mockReturnValue({}),
     getProjectProfileService: vi.fn().mockReturnValue({}),
-  } as any;
+  } as unknown as ServiceContainer;
 }
 
 /**

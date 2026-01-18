@@ -222,7 +222,7 @@ describe('ReviewActions - Property Tests', () => {
           );
           
           // Initial render should not show error
-          let frame = lastFrame();
+          const frame = lastFrame();
           expect(frame).not.toContain('Error');
           
           // Simulate approval that fails
@@ -267,7 +267,7 @@ describe('ReviewActions - Property Tests', () => {
           );
           
           // Initial render should not show error
-          let frame = lastFrame();
+          const frame = lastFrame();
           expect(frame).not.toContain('Error');
           
           // Simulate rejection that fails

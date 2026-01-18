@@ -6,7 +6,7 @@
  */
 
 import { spawn, ChildProcess } from 'child_process';
-import { MCPTransport, MCPRequest, MCPResponse, MCPStreamChunk } from './types.js';
+import { MCPTransport, MCPRequest, MCPResponse } from './types.js';
 import { EventEmitter } from 'events';
 
 /**
@@ -40,6 +40,8 @@ export class StdioTransport extends BaseMCPTransport {
     reject: (error: Error) => void;
   }> = new Map();
   private buffer: string = '';
+  private outputSize: number = 0;
+  private readonly MAX_OUTPUT_SIZE = 10 * 1024 * 1024; // 10MB
 
   constructor(
     private command: string,
@@ -78,6 +80,26 @@ export class StdioTransport extends BaseMCPTransport {
 
         // Handle stdout data (responses from server)
         this.process.stdout?.on('data', (data: Buffer) => {
+          const chunk = data.toString();
+          this.outputSize += chunk.length;
+          
+          if (this.outputSize > this.MAX_OUTPUT_SIZE) {
+            console.error(`MCP Server '${this.command}' exceeded output size limit of ${this.MAX_OUTPUT_SIZE} bytes`);
+            this.connected = false;
+            
+            // Kill the process
+            if (this.process) {
+              this.process.kill('SIGKILL');
+            }
+            
+            // Reject all pending requests
+            for (const [, { reject }] of this.pendingRequests) {
+              reject(new Error(`Server output exceeded ${this.MAX_OUTPUT_SIZE} bytes`));
+            }
+            this.pendingRequests.clear();
+            return;
+          }
+          
           this.handleData(data);
         });
 
@@ -122,6 +144,12 @@ export class StdioTransport extends BaseMCPTransport {
         resolve();
         return;
       }
+
+      // Reject all pending requests before disconnecting
+      for (const [, { reject }] of this.pendingRequests) {
+        reject(new Error('Transport disconnected'));
+      }
+      this.pendingRequests.clear();
 
       // Set up exit handler
       proc.once('exit', () => {
@@ -360,6 +388,12 @@ export class SSETransport extends BaseMCPTransport {
     if (!this.connected) {
       return;
     }
+
+    // Reject all pending requests before disconnecting
+    for (const [, { reject }] of this.pendingRequests) {
+      reject(new Error('Transport disconnected'));
+    }
+    this.pendingRequests.clear();
 
     // Abort the SSE connection
     if (this.abortController) {
@@ -604,34 +638,49 @@ export class HTTPTransport extends BaseMCPTransport {
         headers['Authorization'] = `Bearer ${this.accessToken}`;
       }
 
-      const response = await fetch(this.url, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(jsonRpcRequest),
-      });
+      // Create abort controller for timeout
+      const abortController = new AbortController();
+      const timeout = setTimeout(() => abortController.abort(), 30000); // 30 second timeout
 
-      if (!response.ok) {
-        throw new Error(`HTTP request failed: ${response.status} ${response.statusText}`);
+      try {
+        const response = await fetch(this.url, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(jsonRpcRequest),
+          signal: abortController.signal,
+        });
+
+        clearTimeout(timeout);
+
+        if (!response.ok) {
+          throw new Error(`HTTP request failed: ${response.status} ${response.statusText}`);
+        }
+
+        const jsonRpcResponse = await response.json();
+
+        // Validate response ID matches request ID
+        if (jsonRpcResponse.id !== id) {
+          throw new Error(`Response ID mismatch: expected ${id}, got ${jsonRpcResponse.id}`);
+        }
+
+        // Convert JSON-RPC response to MCPResponse
+        const mcpResponse: MCPResponse = {
+          result: jsonRpcResponse.result,
+          error: jsonRpcResponse.error ? {
+            code: jsonRpcResponse.error.code || -1,
+            message: jsonRpcResponse.error.message || 'Unknown error',
+            data: jsonRpcResponse.error.data,
+          } : undefined,
+        };
+
+        return mcpResponse;
+      } catch (error) {
+        clearTimeout(timeout);
+        if (error instanceof Error && error.name === 'AbortError') {
+          throw new Error('HTTP request timeout after 30000ms');
+        }
+        throw error;
       }
-
-      const jsonRpcResponse = await response.json();
-
-      // Validate response ID matches request ID
-      if (jsonRpcResponse.id !== id) {
-        throw new Error(`Response ID mismatch: expected ${id}, got ${jsonRpcResponse.id}`);
-      }
-
-      // Convert JSON-RPC response to MCPResponse
-      const mcpResponse: MCPResponse = {
-        result: jsonRpcResponse.result,
-        error: jsonRpcResponse.error ? {
-          code: jsonRpcResponse.error.code || -1,
-          message: jsonRpcResponse.error.message || 'Unknown error',
-          data: jsonRpcResponse.error.data,
-        } : undefined,
-      };
-
-      return mcpResponse;
     } catch (error) {
       throw new Error(`HTTP request failed: ${error instanceof Error ? error.message : String(error)}`);
     }

@@ -149,7 +149,7 @@ Have suggestions for the roadmap?
 - [Future Development](./future-development.md) - Detailed roadmap
 - [Future Features](./future-features.md) - Quick reference
 - [Visual Roadmap](./road_map_visual.md) - Visual timeline and diagrams
-- [Development Plan](../../.dev/Development-Roadmap/ROADMAP.md) - Development tracking
+- Development Plan (../../.dev/Development-Roadmap/ROADMAP.md) - Development tracking
 - [README](../../README.md) - Project overview
 - [Configuration](../configuration.md) - Settings reference
 

@@ -215,7 +215,7 @@ export const memoryCommands: Command[] = [
 /**
  * Create memory commands with service container dependency injection
  */
-export function createMemoryCommands(container: any): Command[] {
+export function createMemoryCommands(_container: unknown): Command[] {
   // TODO: Implement with service container
   return memoryCommands;
 }

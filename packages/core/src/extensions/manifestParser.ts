@@ -5,7 +5,7 @@
  */
 
 import { readFile } from 'fs/promises';
-import Ajv, { type ValidateFunction } from 'ajv';
+import Ajv, { type ValidateFunction, type ErrorObject } from 'ajv';
 import type { ExtensionManifest } from './types.js';
 
 /**
@@ -159,8 +159,9 @@ export class ManifestParser {
     const valid = this.validator(manifest);
 
     if (!valid && this.validator.errors) {
-      this.errors = this.validator.errors.map((error) => {
-        const path = (error as any).instancePath || error.dataPath || 'root';
+      this.errors = this.validator.errors.map((error: ErrorObject) => {
+        const fallbackPath = (error as { dataPath?: string }).dataPath;
+        const path = error.instancePath || fallbackPath || 'root';
         const message = error.message || 'validation failed';
         return `${path}: ${message}`;
       });

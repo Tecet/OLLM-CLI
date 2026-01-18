@@ -414,7 +414,7 @@ Want to create or contribute extensions?
 
 1. Read [Development Guide](development-guide.md)
 2. Check [Manifest Reference](manifest-reference.md)
-3. See [Contributing Guide](../../../CONTRIBUTING.md)
+3. See Contributing Guide (../../../CONTRIBUTING.md)
 4. Submit to marketplace
 
 ---

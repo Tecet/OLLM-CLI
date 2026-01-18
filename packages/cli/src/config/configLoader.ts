@@ -6,23 +6,23 @@ import { readFileSync, existsSync } from 'fs';
 import { homedir } from 'os';
 import { join } from 'path';
 import { parse as parseYaml } from 'yaml';
-import Ajv from 'ajv';
+import Ajv, { type ValidateFunction } from 'ajv';
 import addFormats from 'ajv-formats';
 import type { Config, ConfigSource, ValidationError, ValidationResult } from './types.js';
 import { ConfigError } from './types.js';
 import { defaultConfig } from './defaults.js';
 import { configSchema } from './schema.js';
 
-let validate: any = null;
+let validate: ValidateFunction<Config> | null = null;
 
 /**
  * Get or create the validator instance
  */
 function getValidator() {
   if (!validate) {
-    const ajv = new (Ajv as any)({ allErrors: true, strict: false });
-    (addFormats as any)(ajv);
-    validate = ajv.compile(configSchema);
+    const ajv = new Ajv({ allErrors: true, strict: false });
+    addFormats(ajv);
+    validate = ajv.compile(configSchema) as ValidateFunction<Config>;
   }
   return validate;
 }
@@ -32,10 +32,13 @@ function getValidator() {
  * Empty strings and whitespace-only strings in string fields are treated as missing values
  * Explicitly set values (including 0, false, empty arrays) are preserved
  */
-function deepMerge<T>(target: T, source: Partial<T>): T {
-  const result = { ...target };
-  
-  for (const key in source) {
+function deepMerge<T extends Record<string, unknown>>(target: T, source: Partial<T>): T {
+  const result = { ...target } as T;
+
+  const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+    Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+
+  for (const key of Object.keys(source) as Array<keyof T>) {
     const sourceValue = source[key];
     const targetValue = result[key];
     
@@ -51,18 +54,11 @@ function deepMerge<T>(target: T, source: Partial<T>): T {
     }
     
     // For nested objects, recurse
-    if (
-      typeof sourceValue === 'object' &&
-      sourceValue !== null &&
-      !Array.isArray(sourceValue) &&
-      typeof targetValue === 'object' &&
-      targetValue !== null &&
-      !Array.isArray(targetValue)
-    ) {
-      result[key] = deepMerge(targetValue, sourceValue as any);
+    if (isPlainObject(sourceValue) && isPlainObject(targetValue)) {
+      result[key] = deepMerge(targetValue, sourceValue as Partial<typeof targetValue>) as T[typeof key];
     } else {
       // For all other values (including 0, false, null, empty arrays), source takes precedence
-      result[key] = sourceValue as any;
+      result[key] = sourceValue as T[typeof key];
     }
   }
   
@@ -83,18 +79,19 @@ export function getConfigPath(type: 'user' | 'workspace'): string {
 /**
  * Extract line and column from YAML parse error
  */
-function extractYamlErrorLocation(error: any): { line?: number; column?: number } {
+function extractYamlErrorLocation(error: unknown): { line?: number; column?: number } {
+  const err = error as { mark?: { line?: number; column?: number }; message?: string };
   // YAML parser errors often have mark property with line/column
-  if (error.mark) {
+  if (err.mark) {
     return {
-      line: error.mark.line + 1, // Convert 0-based to 1-based
-      column: error.mark.column + 1,
+      line: (err.mark.line ?? 0) + 1, // Convert 0-based to 1-based
+      column: (err.mark.column ?? 0) + 1,
     };
   }
   
   // Try to extract from error message
-  const lineMatch = error.message?.match(/line (\d+)/i);
-  const colMatch = error.message?.match(/column (\d+)/i);
+  const lineMatch = err.message?.match(/line (\d+)/i);
+  const colMatch = err.message?.match(/column (\d+)/i);
   
   return {
     line: lineMatch ? parseInt(lineMatch[1], 10) : undefined,
@@ -162,12 +159,12 @@ function loadConfigFile(path: string): Partial<Config> | null {
   
   try {
     return parseYaml(content) as Partial<Config>;
-  } catch (error: any) {
+  } catch (error) {
     const location = extractYamlErrorLocation(error);
     const snippet = getErrorSnippet(content, location.line, location.column);
     
     let message = 'Failed to parse YAML';
-    if (error.message) {
+    if (error instanceof Error && error.message) {
       // Clean up error message
       message = error.message.replace(/^.*?:\s*/, '');
     }
@@ -208,40 +205,40 @@ function loadEnvConfig(): Partial<Config> {
   // Provider settings
   if (process.env.OLLAMA_HOST) {
     config.provider = {
-      ...config.provider,
+      ...(config.provider ?? {}),
       ollama: {
         host: process.env.OLLAMA_HOST,
         timeout: 30000,
       },
-    } as any;
+    };
   }
   
   if (process.env.VLLM_HOST) {
     config.provider = {
-      ...config.provider,
+      ...(config.provider ?? {}),
       vllm: {
         host: process.env.VLLM_HOST,
         apiKey: process.env.VLLM_API_KEY,
       },
-    } as any;
+    };
   }
   
   if (process.env.OPENAI_COMPATIBLE_HOST) {
     config.provider = {
-      ...config.provider,
+      ...(config.provider ?? {}),
       openaiCompatible: {
         host: process.env.OPENAI_COMPATIBLE_HOST,
         apiKey: process.env.OPENAI_COMPATIBLE_API_KEY,
       },
-    } as any;
+    };
   }
   
   // Model settings
   if (process.env.OLLM_DEFAULT_MODEL) {
     config.model = {
-      ...config.model,
+      ...(config.model ?? {}),
       default: process.env.OLLM_DEFAULT_MODEL,
-    } as any;
+    };
   }
   
   // Logging
@@ -255,14 +252,22 @@ function loadEnvConfig(): Partial<Config> {
 /**
  * Format validation error with helpful details
  */
-function formatValidationError(error: any): ValidationError {
-  const path = error.instancePath || '/';
-  let message = error.message || 'Validation error';
+function formatValidationError(error: unknown): ValidationError {
+  const err = error as {
+    instancePath?: string;
+    dataPath?: string;
+    message?: string;
+    keyword?: string;
+    params?: Record<string, unknown>;
+    data?: unknown;
+  };
+  const path = err.instancePath || '/';
+  let message = err.message || 'Validation error';
   
   // Add more context based on error type
-  if (error.keyword === 'type') {
-    const expected = error.params?.type;
-    const actual = typeof error.data;
+  if (err.keyword === 'type') {
+    const expected = err.params?.type as string | undefined;
+    const actual = typeof err.data;
     message = `Expected ${expected}, got ${actual}`;
     
     // Add example
@@ -277,25 +282,25 @@ function formatValidationError(error: any): ValidationError {
     } else if (expected === 'array') {
       message += '\n    Example: ["item1", "item2"]';
     }
-  } else if (error.keyword === 'required') {
-    const missing = error.params?.missingProperty;
+  } else if (err.keyword === 'required') {
+    const missing = err.params?.missingProperty;
     message = `Missing required field: ${missing}`;
-  } else if (error.keyword === 'enum') {
-    const allowed = error.params?.allowedValues;
+  } else if (err.keyword === 'enum') {
+    const allowed = err.params?.allowedValues as string[] | undefined;
     if (allowed) {
       message = `Must be one of: ${allowed.join(', ')}`;
     }
-  } else if (error.keyword === 'minimum' || error.keyword === 'maximum') {
-    const limit = error.params?.limit;
-    message = `${message} (${error.keyword}: ${limit})`;
-  } else if (error.keyword === 'pattern') {
+  } else if (err.keyword === 'minimum' || err.keyword === 'maximum') {
+    const limit = err.params?.limit;
+    message = `${message} (${err.keyword}: ${limit})`;
+  } else if (err.keyword === 'pattern') {
     message = `Does not match required pattern`;
   }
   
   return {
     path,
     message,
-    value: error.data,
+    value: err.data,
   };
 }
 

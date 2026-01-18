@@ -676,6 +676,7 @@ describe('MCPTransport', () => {
             'Content-Type': 'application/json',
           },
           body: expect.stringContaining('"method":"test/method"'),
+          signal: expect.any(AbortSignal),
         });
 
         expect(result).toEqual({

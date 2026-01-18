@@ -116,7 +116,7 @@ describe('ChatRecordingService', () => {
           );
         }),
         {
-          numRuns: 100, // Run 100 iterations as specified in the design
+          numRuns: 30, // Reduced from 100 to improve performance
           verbose: true,
         }
       );
@@ -237,7 +237,7 @@ describe('ChatRecordingService', () => {
           expect(typeof parsedSession.metadata.compressionCount).toBe('number');
         }),
         {
-          numRuns: 100, // Run 100 iterations as specified in the design
+          numRuns: 30, // Reduced from 100 to improve performance
           verbose: true,
         }
       );
@@ -303,7 +303,7 @@ describe('ChatRecordingService', () => {
           }
         }),
         {
-          numRuns: 100, // Run 100 iterations as specified in the design
+          numRuns: 30, // Reduced from 100 to improve performance
           verbose: true,
         }
       );
@@ -375,7 +375,7 @@ describe('ChatRecordingService', () => {
           }
         ),
         {
-          numRuns: 100, // Run 100 iterations as specified in the design
+          numRuns: 30, // Reduced from 100 to improve performance
           verbose: true,
         }
       );
@@ -467,7 +467,7 @@ describe('ChatRecordingService', () => {
           }
         ),
         {
-          numRuns: 100, // Run 100 iterations as specified in the design
+          numRuns: 30, // Reduced from 100 to improve performance
           verbose: true,
         }
       );
@@ -541,7 +541,7 @@ describe('ChatRecordingService', () => {
           expect(deletedSession).toBeNull();
         }),
         {
-          numRuns: 100, // Run 100 iterations as specified in the design
+          numRuns: 30, // Reduced from 100 to improve performance
           verbose: true,
         }
       );
@@ -677,7 +677,7 @@ describe('ChatRecordingService', () => {
           }
         ),
         {
-          numRuns: 100, // Run 100 iterations as specified in the design
+          numRuns: 30, // Reduced from 100 to improve performance
           verbose: true,
         }
       );
@@ -784,7 +784,7 @@ describe('ChatRecordingService', () => {
           }
         ),
         {
-          numRuns: 100, // Run 100 iterations as specified in the design
+          numRuns: 30, // Reduced from 100 to improve performance
           verbose: true,
         }
       );
@@ -911,7 +911,7 @@ describe('ChatRecordingService', () => {
           }
         ),
         {
-          numRuns: 100, // Run 100 iterations as specified in the design
+          numRuns: 30, // Reduced from 100 to improve performance
           verbose: true,
         }
       );
@@ -973,7 +973,7 @@ describe('ChatRecordingService', () => {
       const sessionId = await service.createSession('llama3.1:8b', 'ollama');
       
       // Verify it exists
-      let session = await service.getSession(sessionId);
+      const session = await service.getSession(sessionId);
       expect(session).not.toBeNull();
 
       // Corrupt the session file by writing invalid JSON

@@ -5,7 +5,7 @@
  */
 
 import { promises as fs } from 'fs';
-import { join, dirname } from 'path';
+import { join } from 'path';
 import { homedir } from 'os';
 import { parse as parseYaml } from 'yaml';
 
@@ -28,6 +28,13 @@ export interface Template {
   template: string;
   variables: VariableDefinition[];
 }
+
+type TemplateFileData = {
+  name: string;
+  description: string;
+  template: string;
+  variables?: VariableDefinition[];
+};
 
 /**
  * Template metadata for listing
@@ -103,22 +110,29 @@ export class TemplateService {
       const files = await fs.readdir(dir);
 
       for (const file of files) {
-        if (file.endsWith('.yaml') || file.endsWith('.yml')) {
-          const filePath = join(dir, file);
-          try {
-            await this.loadTemplateFile(filePath);
-          } catch (error: any) {
-            // Log error but continue loading other templates
-            console.warn(`Failed to load template ${filePath}: ${error.message}`);
-          }
+        // Skip files that don't have valid extensions
+        if (!file.endsWith('.yaml') && !file.endsWith('.yml')) {
+          continue;
+        }
+
+        const filePath = join(dir, file);
+        try {
+          await this.loadTemplateFile(filePath);
+        } catch (error: unknown) {
+          // Log error but continue loading other templates
+          const err = error as NodeJS.ErrnoException;
+          const message = err.message || String(error);
+          console.warn(`Failed to load template ${filePath}: ${message}`);
         }
       }
-    } catch (error: any) {
-      if (error.code === 'ENOENT') {
+    } catch (error: unknown) {
+      const err = error as NodeJS.ErrnoException;
+      if (err.code === 'ENOENT') {
         // Directory doesn't exist, that's okay
         return;
       }
-      throw new Error(`Failed to read templates directory ${dir}: ${error.message}`);
+      const message = err.message || String(error);
+      throw new Error(`Failed to read templates directory ${dir}: ${message}`);
     }
   }
 
@@ -146,43 +160,50 @@ export class TemplateService {
   /**
    * Validate template structure
    */
-  private validateTemplate(data: any): void {
+  private validateTemplate(data: unknown): asserts data is TemplateFileData {
     if (!data || typeof data !== 'object') {
       throw new Error('Template must be an object');
     }
 
-    if (!data.name || typeof data.name !== 'string') {
+    const record = data as Record<string, unknown>;
+
+    if (!record.name || typeof record.name !== 'string') {
       throw new Error('Template must have a name (string)');
     }
 
-    if (!data.description || typeof data.description !== 'string') {
+    if (!record.description || typeof record.description !== 'string') {
       throw new Error('Template must have a description (string)');
     }
 
-    if (!data.template || typeof data.template !== 'string') {
+    if (!record.template || typeof record.template !== 'string') {
       throw new Error('Template must have a template (string)');
     }
 
-    if (data.variables) {
-      if (!Array.isArray(data.variables)) {
+    if (record.variables) {
+      if (!Array.isArray(record.variables)) {
         throw new Error('Template variables must be an array');
       }
 
-      for (const variable of data.variables) {
-        if (!variable.name || typeof variable.name !== 'string') {
+      for (const variable of record.variables) {
+        if (!variable || typeof variable !== 'object') {
+          throw new Error('Variable must be an object');
+        }
+
+        const variableRecord = variable as Record<string, unknown>;
+        if (!variableRecord.name || typeof variableRecord.name !== 'string') {
           throw new Error('Variable must have a name (string)');
         }
 
-        if (typeof variable.required !== 'boolean') {
-          throw new Error(`Variable ${variable.name} must have required (boolean)`);
+        if (typeof variableRecord.required !== 'boolean') {
+          throw new Error(`Variable ${variableRecord.name} must have required (boolean)`);
         }
 
-        if (variable.default !== undefined && typeof variable.default !== 'string') {
-          throw new Error(`Variable ${variable.name} default must be a string`);
+        if (variableRecord.default !== undefined && typeof variableRecord.default !== 'string') {
+          throw new Error(`Variable ${variableRecord.name} default must be a string`);
         }
 
-        if (variable.description !== undefined && typeof variable.description !== 'string') {
-          throw new Error(`Variable ${variable.name} description must be a string`);
+        if (variableRecord.description !== undefined && typeof variableRecord.description !== 'string') {
+          throw new Error(`Variable ${variableRecord.name} description must be a string`);
         }
       }
     }
@@ -285,8 +306,8 @@ export class TemplateService {
    * Sanitize a template name to be a valid filename
    */
   private sanitizeFilename(name: string): string {
-    // Remove invalid filename characters
-    const invalidChars = /[<>:"|?*\\/]/g;
+    // Remove invalid filename characters including template syntax characters
+    const invalidChars = /[<>:"|?*\\/{}]/g;
     let sanitized = name.replace(invalidChars, '_');
     
     // Trim whitespace
@@ -335,8 +356,10 @@ export class TemplateService {
 
       // Add to cache
       this.templates.set(template.name, template);
-    } catch (error: any) {
-      throw new Error(`Failed to create template: ${error.message}`);
+    } catch (error: unknown) {
+      const err = error as NodeJS.ErrnoException;
+      const message = err.message || String(error);
+      throw new Error(`Failed to create template: ${message}`);
     }
   }
 
@@ -360,8 +383,9 @@ export class TemplateService {
     try {
       try {
         await fs.unlink(userFilePath);
-      } catch (error: any) {
-        if (error.code !== 'ENOENT') {
+      } catch (error: unknown) {
+        const err = error as NodeJS.ErrnoException;
+        if (err.code !== 'ENOENT') {
           throw error;
         }
         // Try .yml extension
@@ -370,14 +394,16 @@ export class TemplateService {
 
       // Remove from cache
       this.templates.delete(name);
-    } catch (error: any) {
-      if (error.code === 'ENOENT') {
+    } catch (error: unknown) {
+      const err = error as NodeJS.ErrnoException;
+      if (err.code === 'ENOENT') {
         throw new Error(
           `Template '${name}' exists in workspace directory and cannot be deleted. ` +
           `Delete the file manually from ${this.workspaceTemplatesDir}`
         );
       }
-      throw new Error(`Failed to delete template: ${error.message}`);
+      const message = err.message || String(error);
+      throw new Error(`Failed to delete template: ${message}`);
     }
   }
 

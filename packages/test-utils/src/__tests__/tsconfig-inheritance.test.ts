@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
-import { readFileSync, readdirSync } from 'fs';
-import { join } from 'path';
+import { readFileSync, readdirSync, existsSync } from 'fs';
+import { join, dirname } from 'path';
 
 /**
  * Feature: stage-01-foundation, Property 1: Package TypeScript Configuration Inheritance
@@ -12,9 +12,16 @@ import { join } from 'path';
  */
 describe('TypeScript Configuration Inheritance', () => {
   it('should verify all packages extend tsconfig.base.json', () => {
+    const packageDirs = getPackageDirectories();
+    expect(packageDirs.length).toBeGreaterThan(0);
+
     fc.assert(
-      fc.property(fc.constantFrom(...getPackageDirectories()), (packageDir) => {
-        const tsconfigPath = join(process.cwd(), 'packages', packageDir, 'tsconfig.json');
+      fc.property(fc.constantFrom(...packageDirs), (packageDir) => {
+        const repoRoot = getRepoRoot();
+        if (!repoRoot) {
+          return false;
+        }
+        const tsconfigPath = join(repoRoot, 'packages', packageDir, 'tsconfig.json');
 
         try {
           const tsconfigContent = readFileSync(tsconfigPath, 'utf-8');
@@ -38,7 +45,9 @@ describe('TypeScript Configuration Inheritance', () => {
  * Helper function to get all package directories
  */
 function getPackageDirectories(): string[] {
-  const packagesDir = join(process.cwd(), 'packages');
+  const repoRoot = getRepoRoot();
+  if (!repoRoot) return [];
+  const packagesDir = join(repoRoot, 'packages');
   try {
     return readdirSync(packagesDir, { withFileTypes: true })
       .filter((dirent) => dirent.isDirectory())
@@ -46,5 +55,19 @@ function getPackageDirectories(): string[] {
   } catch (_error) {
     // If packages directory doesn't exist, return empty array
     return [];
+  }
+}
+
+function getRepoRoot(): string | null {
+  let current = process.cwd();
+  while (true) {
+    if (existsSync(join(current, 'tsconfig.base.json'))) {
+      return current;
+    }
+    const parent = dirname(current);
+    if (parent === current) {
+      return null;
+    }
+    current = parent;
   }
 }

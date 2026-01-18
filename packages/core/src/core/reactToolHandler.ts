@@ -9,9 +9,6 @@ export interface ReActParseResult {
 }
 
 export class ReActToolHandler {
-  private static readonly REACT_PATTERN =
-    /Thought:\s*(.+?)\n(?:Action:\s*(.+?)\n)?(?:Action Input:\s*(.+?)\n)?(?:Final Answer:\s*(.+))?/s;
-
   static formatToolsAsInstructions(tools: ToolSchema[]): string {
     const toolDescriptions = tools
       .map((tool) => {
@@ -40,30 +37,60 @@ Final Answer: [Your response to the user]`;
   }
 
   static parseReActOutput(output: string): ReActParseResult {
-    const match = output.match(this.REACT_PATTERN);
-    if (!match) {
+    const normalizedOutput = output.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    const lines = normalizedOutput.split('\n');
+    const sections: Record<string, string[]> = {};
+    const sectionsPresent = new Set<string>();
+    let currentSection: string | null = null;
+    const singleLineSections = new Set(['Action']);
+
+    for (const line of lines) {
+      const match = line.match(/^(Thought|Action|Action Input|Final Answer):\s*(.*)$/);
+      if (match) {
+        currentSection = match[1];
+        sectionsPresent.add(currentSection);
+        sections[currentSection] = [match[2] ?? ''];
+        continue;
+      }
+      if (currentSection) {
+        if (singleLineSections.has(currentSection)) {
+          continue;
+        }
+        sections[currentSection].push(line);
+      }
+    }
+
+    if (!sectionsPresent.has('Thought')) {
       return {};
     }
 
-    const [, thought, action, actionInputStr, finalAnswer] = match;
+    const thought = sections.Thought?.join('\n');
+    const action = sections.Action?.join('\n');
+    const actionInputStr = sections['Action Input']?.join('\n');
+    const finalAnswer = sections['Final Answer']?.join('\n');
 
     let actionInput: Record<string, unknown> | undefined;
     let hasInvalidJson = false;
 
-    if (actionInputStr) {
-      try {
-        actionInput = JSON.parse(actionInputStr.trim());
-      } catch (error) {
-        // Requirement 10.3: Detect invalid JSON in Action Input
+    if (actionInputStr !== undefined) {
+      const trimmedInput = actionInputStr.trim();
+      if (trimmedInput.length === 0) {
         hasInvalidJson = true;
+      } else {
+        try {
+          actionInput = JSON.parse(trimmedInput);
+        } catch (_error) {
+          // Requirement 10.3: Detect invalid JSON in Action Input
+          hasInvalidJson = true;
+        }
       }
     }
 
     // Helper to trim but preserve undefined if result is empty
     const trimOrUndefined = (str: string | undefined): string | undefined => {
-      if (!str) return undefined;
+      if (str === undefined) return undefined;
       const trimmed = str.trim();
-      return trimmed.length > 0 ? trimmed : undefined;
+      return trimmed.length > 0 ? trimmed : '';
     };
 
     return {

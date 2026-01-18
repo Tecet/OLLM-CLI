@@ -231,30 +231,35 @@ describe('ConfigLoader Property Tests', () => {
 
 // Helper functions
 
-function setNestedValue(obj: any, path: string, value: any): any {
+function setNestedValue(obj: Record<string, unknown>, path: string, value: unknown): Record<string, unknown> {
   const keys = path.split('.');
   const result = { ...obj };
-  let current = result;
+  let current: Record<string, unknown> = result;
 
   for (let i = 0; i < keys.length - 1; i++) {
     const key = keys[i];
-    current[key] = current[key] ? { ...current[key] } : {};
-    current = current[key];
+    const existing = current[key];
+    const next =
+      typeof existing === 'object' && existing !== null
+        ? { ...(existing as Record<string, unknown>) }
+        : {};
+    current[key] = next;
+    current = next;
   }
 
   current[keys[keys.length - 1]] = value;
   return result;
 }
 
-function getNestedValue(obj: any, path: string): any {
+function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
   const keys = path.split('.');
-  let current = obj;
+  let current: unknown = obj;
 
   for (const key of keys) {
-    if (current === undefined || current === null) {
+    if (current === undefined || current === null || typeof current !== 'object') {
       return undefined;
     }
-    current = current[key];
+    current = (current as Record<string, unknown>)[key];
   }
 
   return current;

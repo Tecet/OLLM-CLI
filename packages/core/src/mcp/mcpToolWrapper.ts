@@ -8,21 +8,24 @@
 import type {
   MCPClient,
   MCPTool,
+  MCPStreamChunk,
 } from './types.js';
 import type {
   DeclarativeTool,
   ToolInvocation,
   ToolResult,
-  ToolSchema,
   ToolContext,
   ToolCallConfirmationDetails,
 } from '../tools/types.js';
-import { DefaultMCPSchemaConverter, type MCPSchemaConverter } from './mcpSchemaConverter.js';
+import { DefaultMCPSchemaConverter } from './mcpSchemaConverter.js';
 
 /**
  * Tool interface (simplified from internal tool system)
  */
-export interface Tool extends DeclarativeTool<any, ToolResult> {}
+export type Tool = DeclarativeTool<Record<string, unknown>, ToolResult>;
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
 
 /**
  * MCP tool wrapper interface
@@ -49,13 +52,14 @@ export interface MCPToolWrapper {
 /**
  * MCP tool invocation implementation
  */
-class MCPToolInvocation implements ToolInvocation<any, ToolResult> {
+class MCPToolInvocation implements ToolInvocation<Record<string, unknown>, ToolResult> {
   constructor(
-    public params: any,
+    public params: Record<string, unknown>,
     private serverName: string,
     private toolName: string,
     private mcpClient: MCPClient,
-    private context: ToolContext
+    private context: ToolContext,
+    private wrapper: DefaultMCPToolWrapper
   ) {}
 
   getDescription(): string {
@@ -68,7 +72,7 @@ class MCPToolInvocation implements ToolInvocation<any, ToolResult> {
   }
 
   async shouldConfirmExecute(
-    abortSignal: AbortSignal
+    _abortSignal: AbortSignal
   ): Promise<ToolCallConfirmationDetails | false> {
     // Check policy if available
     if (this.context.policyEngine) {
@@ -121,8 +125,8 @@ class MCPToolInvocation implements ToolInvocation<any, ToolResult> {
           }
         );
 
-        // Format the final result
-        const formattedResult = this.formatResult(result);
+        // Format the final result using wrapper's shared method
+        const formattedResult = this.wrapper['formatMCPResult'](result);
         
         return {
           llmContent: formattedResult,
@@ -136,8 +140,8 @@ class MCPToolInvocation implements ToolInvocation<any, ToolResult> {
           this.params
         );
 
-        // Format the result
-        const formattedResult = this.formatResult(result);
+        // Format the result using wrapper's shared method
+        const formattedResult = this.wrapper['formatMCPResult'](result);
         
         return {
           llmContent: formattedResult,
@@ -155,7 +159,7 @@ class MCPToolInvocation implements ToolInvocation<any, ToolResult> {
    * @param chunk - Streaming chunk
    * @returns Formatted text or empty string
    */
-  private formatStreamChunk(chunk: any): string {
+  private formatStreamChunk(chunk: MCPStreamChunk): string {
     if (!chunk || !chunk.data) {
       return '';
     }
@@ -168,23 +172,24 @@ class MCPToolInvocation implements ToolInvocation<any, ToolResult> {
     }
 
     // Handle structured data with text field
-    if (typeof data === 'object' && data.text) {
-      return String(data.text);
+    if (isRecord(data) && typeof data.text === 'string') {
+      return data.text;
     }
 
     // Handle structured data with content field
-    if (typeof data === 'object' && data.content) {
-      if (typeof data.content === 'string') {
-        return data.content;
+    if (isRecord(data) && data.content !== undefined) {
+      const content = data.content;
+      if (typeof content === 'string') {
+        return content;
       }
-      if (Array.isArray(data.content)) {
-        return data.content
-          .map((item: any) => {
+      if (Array.isArray(content)) {
+        return content
+          .map((item) => {
             if (typeof item === 'string') return item;
-            if (item.text) return item.text;
+            if (isRecord(item) && typeof item.text === 'string') return item.text;
             return '';
           })
-          .filter(Boolean)
+          .filter((item) => item.length > 0)
           .join('');
       }
     }
@@ -192,71 +197,6 @@ class MCPToolInvocation implements ToolInvocation<any, ToolResult> {
     // For other structured data, don't include in streaming output
     // (will be included in final result)
     return '';
-  }
-
-  /**
-   * Format MCP tool result for display
-   * @param result - Raw MCP result
-   * @returns Formatted string
-   */
-  private formatResult(result: unknown): string {
-    if (result === null || result === undefined) {
-      return 'Tool executed successfully (no result)';
-    }
-
-    if (typeof result === 'string') {
-      return result;
-    }
-
-    if (typeof result === 'number' || typeof result === 'boolean') {
-      return String(result);
-    }
-
-    if (typeof result === 'object') {
-      // Check for common MCP result formats
-      const resultObj = result as any;
-      
-      // If it has a 'content' field, use that
-      if (resultObj.content !== undefined) {
-        if (Array.isArray(resultObj.content)) {
-          // Join content array
-          return resultObj.content
-            .map((item: any) => {
-              if (typeof item === 'string') return item;
-              if (item.text) return item.text;
-              if (item.type === 'text' && item.text) return item.text;
-              if (item.type === 'image') return '[Image]';
-              if (item.type === 'resource') return `[Resource: ${item.uri || 'unknown'}]`;
-              return JSON.stringify(item);
-            })
-            .join('\n');
-        }
-        return String(resultObj.content);
-      }
-
-      // If it has a 'text' field, use that
-      if (resultObj.text !== undefined) {
-        return String(resultObj.text);
-      }
-
-      // Handle arrays
-      if (Array.isArray(result)) {
-        return result
-          .map((item) => {
-            if (typeof item === 'string') return item;
-            if (typeof item === 'object' && item.text) return item.text;
-            return JSON.stringify(item);
-          })
-          .join('\n');
-      }
-
-      // For structured data objects, format as JSON
-      // This handles complex structured data that MCP tools might return
-      return JSON.stringify(result, null, 2);
-    }
-
-    // For other types, convert to string
-    return String(result);
   }
 
   /**
@@ -271,8 +211,13 @@ class MCPToolInvocation implements ToolInvocation<any, ToolResult> {
     if (error instanceof Error) {
       message = error.message;
       type = error.name;
-    } else if (typeof error === 'object' && error !== null) {
-      const errorObj = error as any;
+    } else if (isRecord(error)) {
+      const errorObj = error as {
+        message?: string;
+        error?: string;
+        code?: string;
+        type?: string;
+      };
       message = errorObj.message || errorObj.error || String(error);
       type = errorObj.code || errorObj.type || 'MCPError';
     } else {
@@ -315,7 +260,7 @@ export class DefaultMCPToolWrapper implements MCPToolWrapper {
       name: prefixedName,
       displayName: mcpTool.name,
       schema: internalSchema,
-      createInvocation: (params: any, context: ToolContext) => {
+      createInvocation: (params: Record<string, unknown>, context: ToolContext) => {
         // Convert params to MCP format
         const mcpArgs = this.schemaConverter.convertArgsToMCP(params);
         
@@ -325,7 +270,8 @@ export class DefaultMCPToolWrapper implements MCPToolWrapper {
           serverName,
           mcpTool.name,
           this.mcpClient,
-          context
+          context,
+          this
         );
       },
     };
@@ -338,7 +284,7 @@ export class DefaultMCPToolWrapper implements MCPToolWrapper {
       // Call the MCP tool
       const result = await this.mcpClient.callTool(serverName, toolName, args);
 
-      // Format for display (use the same logic as MCPToolInvocation)
+      // Format for display using shared method
       const formatted = this.formatMCPResult(result);
 
       return {
@@ -352,7 +298,7 @@ export class DefaultMCPToolWrapper implements MCPToolWrapper {
   }
 
   /**
-   * Format MCP result for display (matches MCPToolInvocation logic)
+   * Format MCP result for display (shared method used by both invocation and wrapper)
    * @param result - MCP result
    * @returns Formatted string
    */
@@ -369,31 +315,34 @@ export class DefaultMCPToolWrapper implements MCPToolWrapper {
       return String(result);
     }
 
-    if (typeof result === 'object') {
+    if (isRecord(result) || Array.isArray(result)) {
       // Check for common MCP result formats
-      const resultObj = result as any;
+      const resultObj = isRecord(result) ? result : {};
       
       // If it has a 'content' field, use that
       if (resultObj.content !== undefined) {
-        if (Array.isArray(resultObj.content)) {
+        const content = resultObj.content;
+        if (Array.isArray(content)) {
           // Join content array
-          return resultObj.content
-            .map((item: any) => {
+          return content
+            .map((item) => {
               if (typeof item === 'string') return item;
-              if (item.text) return item.text;
-              if (item.type === 'text' && item.text) return item.text;
-              if (item.type === 'image') return '[Image]';
-              if (item.type === 'resource') return `[Resource: ${item.uri || 'unknown'}]`;
+              if (isRecord(item) && typeof item.text === 'string') return item.text;
+              if (isRecord(item) && item.type === 'text' && typeof item.text === 'string') return item.text;
+              if (isRecord(item) && item.type === 'image') return '[Image]';
+              if (isRecord(item) && item.type === 'resource') {
+                return `[Resource: ${typeof item.uri === 'string' ? item.uri : 'unknown'}]`;
+              }
               return JSON.stringify(item);
             })
             .join('\n');
         }
-        return String(resultObj.content);
+        return String(content);
       }
 
       // If it has a 'text' field, use that
-      if (resultObj.text !== undefined) {
-        return String(resultObj.text);
+      if (typeof resultObj.text === 'string') {
+        return resultObj.text;
       }
 
       // Handle arrays
@@ -401,7 +350,7 @@ export class DefaultMCPToolWrapper implements MCPToolWrapper {
         return result
           .map((item) => {
             if (typeof item === 'string') return item;
-            if (typeof item === 'object' && item.text) return item.text;
+            if (isRecord(item) && typeof item.text === 'string') return item.text;
             return JSON.stringify(item);
           })
           .join('\n');
@@ -430,8 +379,13 @@ export class DefaultMCPToolWrapper implements MCPToolWrapper {
     if (error instanceof Error) {
       message = error.message;
       type = error.name;
-    } else if (typeof error === 'object' && error !== null) {
-      const errorObj = error as any;
+    } else if (isRecord(error)) {
+      const errorObj = error as {
+        message?: string;
+        error?: string;
+        code?: string;
+        type?: string;
+      };
       message = errorObj.message || errorObj.error || String(error);
       type = errorObj.code || errorObj.type || 'MCPError';
     } else {

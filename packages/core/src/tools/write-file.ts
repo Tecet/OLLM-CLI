@@ -94,7 +94,7 @@ export class WriteFileInvocation implements ToolInvocation<WriteFileParams, Tool
   }
 
   async shouldConfirmExecute(
-    abortSignal: AbortSignal
+    _abortSignal: AbortSignal
   ): Promise<ToolCallConfirmationDetails | false> {
     // If no policy engine, don't require confirmation
     if (!this.policyEngine) {
@@ -125,7 +125,7 @@ export class WriteFileInvocation implements ToolInvocation<WriteFileParams, Tool
 
   async execute(
     signal: AbortSignal,
-    updateOutput?: (output: string) => void
+    _updateOutput?: (output: string) => void
   ): Promise<ToolResult> {
     try {
       // Check if aborted
@@ -136,40 +136,37 @@ export class WriteFileInvocation implements ToolInvocation<WriteFileParams, Tool
       // Resolve the path
       const resolvedPath = path.resolve(this.params.path);
 
-      // Check if file exists and if it's a directory
-      let exists = false;
-      let isDirectory = false;
+      // Validate content size (10MB limit)
+      const MAX_WRITE_SIZE = 10 * 1024 * 1024;
+      if (this.params.content.length > MAX_WRITE_SIZE) {
+        return {
+          llmContent: '',
+          returnDisplay: '',
+          error: {
+            message: `Content too large: ${this.params.content.length} bytes (max ${MAX_WRITE_SIZE} bytes)`,
+            type: 'ContentTooLargeError',
+          },
+        };
+      }
+
+      // Check if path is a directory
       try {
         const stats = await fs.stat(resolvedPath);
-        exists = true;
-        isDirectory = stats.isDirectory();
-      } catch {
-        // File doesn't exist, which is fine
-        exists = false;
-      }
-
-      // If path is a directory, return error
-      if (isDirectory) {
-        return {
-          llmContent: '',
-          returnDisplay: '',
-          error: {
-            message: `Path is a directory: ${this.params.path}`,
-            type: 'IsDirectoryError',
-          },
-        };
-      }
-
-      // If file exists and overwrite is not set, return error
-      if (exists && !this.params.overwrite) {
-        return {
-          llmContent: '',
-          returnDisplay: '',
-          error: {
-            message: `File ${this.params.path} already exists. Set overwrite=true to replace it.`,
-            type: 'FileExistsError',
-          },
-        };
+        if (stats.isDirectory()) {
+          return {
+            llmContent: '',
+            returnDisplay: '',
+            error: {
+              message: `Path is a directory: ${this.params.path}`,
+              type: 'IsDirectoryError',
+            },
+          };
+        }
+      } catch (error) {
+        // File doesn't exist, which is fine for new files
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+          throw error;
+        }
       }
 
       // Create parent directories if they don't exist
@@ -181,8 +178,39 @@ export class WriteFileInvocation implements ToolInvocation<WriteFileParams, Tool
         throw new Error('Operation cancelled');
       }
 
-      // Write the file
-      await fs.writeFile(resolvedPath, this.params.content, 'utf-8');
+      // Use atomic write operation
+      let exists = false;
+      try {
+        if (!this.params.overwrite) {
+          // Use 'wx' flag for atomic create-only operation
+          await fs.writeFile(resolvedPath, this.params.content, { 
+            encoding: 'utf-8',
+            flag: 'wx' // Fail if file exists
+          });
+        } else {
+          // Check if file exists for message
+          try {
+            await fs.access(resolvedPath);
+            exists = true;
+          } catch {
+            exists = false;
+          }
+          // Overwrite mode - write normally
+          await fs.writeFile(resolvedPath, this.params.content, 'utf-8');
+        }
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === 'EEXIST') {
+          return {
+            llmContent: '',
+            returnDisplay: '',
+            error: {
+              message: `File ${this.params.path} already exists. Set overwrite=true to replace it.`,
+              type: 'FileExistsError',
+            },
+          };
+        }
+        throw error;
+      }
 
       const action = exists ? 'Updated' : 'Created';
       const message = `${action} ${this.params.path} (${this.params.content.length} characters)`;

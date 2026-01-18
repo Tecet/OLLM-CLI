@@ -426,8 +426,8 @@ Complete API reference for the Compression Service.
 - [Troubleshooting](../troubleshooting.md)
 
 ### Development Documentation
-- [Development Docs](../../.dev/Context/)
-- [Implementation Progress](../../.dev/Context/development/implementation-progress.md)
+- Development Docs (../../.dev/Context/)
+- Implementation Progress (../../.dev/Context/development/implementation-progress.md)
 
 ---
 

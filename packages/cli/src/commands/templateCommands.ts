@@ -28,7 +28,7 @@ async function templateListHandler(service: TemplateService): Promise<CommandRes
     }
     
     // Format template list
-    const templateList = (templates as any[]).map(template => {
+    const templateList = templates.map(template => {
       const varCount = template.variableCount;
       const varText = varCount === 0 ? 'no variables' : 
                       varCount === 1 ? '1 variable' : 
@@ -200,7 +200,7 @@ export const templateCommands: Command[] = [
 /**
  * Create template commands with service container dependency injection
  */
-export function createTemplateCommands(container: any): Command[] {
+export function createTemplateCommands(_container: unknown): Command[] {
   // TODO: Implement with service container
   return templateCommands;
 }

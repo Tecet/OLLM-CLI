@@ -18,6 +18,10 @@ import {
 } from '../testHelpers.js';
 
 describe('Server Detection', () => {
+  it('debug env', () => {
+    console.log('NODE_ENV:', process.env.NODE_ENV);
+    console.log('VITEST:', process.env.VITEST);
+  });
   describe('getServerUrl', () => {
     it('returns the default server URL', () => {
       const url = getServerUrl();
@@ -63,16 +67,33 @@ describe('Server Detection', () => {
     });
 
     it('logs skip message when server unavailable', async () => {
+      // Save original env
+      const originalNodeEnv = process.env.NODE_ENV;
+      const originalVitest = process.env.VITEST;
+      
+      // Set env to non-test to enable logging
+      process.env.NODE_ENV = 'development';
+      process.env.VITEST = '';
+      
       const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
       
       const skipFn = skipIfNoServer('http://invalid-server:99999');
       await skipFn();
       
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Skipping')
-      );
+      expect(consoleSpy).toHaveBeenCalled();
+      expect(consoleSpy.mock.calls.some(call => 
+        call.some(arg => typeof arg === 'string' && arg.includes('Skipping'))
+      )).toBe(true);
       
       consoleSpy.mockRestore();
+      
+      // Restore original env
+      process.env.NODE_ENV = originalNodeEnv;
+      if (originalVitest !== undefined) {
+        process.env.VITEST = originalVitest;
+      } else {
+        delete process.env.VITEST;
+      }
     });
   });
 });
@@ -181,7 +202,7 @@ describe('Timing Helpers', () => {
     });
 
     it('checks condition immediately', async () => {
-      let value = true;
+      const value = true;
       
       const start = Date.now();
       await waitFor(() => value, { timeout: 1000, interval: 100 });

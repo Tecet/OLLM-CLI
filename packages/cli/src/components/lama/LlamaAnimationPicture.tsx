@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useReducer, memo, useRef } from 'react';
+import React, { useState, useEffect, useReducer, memo } from 'react';
 import { Box, Text, useStdout } from 'ink';
 import terminalImage from 'terminal-image';
 import path from 'path';

@@ -70,7 +70,7 @@ export class MemoryTool implements DeclarativeTool<MemoryParams, ToolResult> {
 
   createInvocation(
     params: MemoryParams,
-    context: ToolContext
+    _context: ToolContext
   ): ToolInvocation<MemoryParams, ToolResult> {
     return new MemoryInvocation(params, this.storePath);
   }
@@ -96,7 +96,7 @@ export class MemoryInvocation implements ToolInvocation<MemoryParams, ToolResult
   }
 
   async shouldConfirmExecute(
-    abortSignal: AbortSignal
+    _abortSignal: AbortSignal
   ): Promise<false> {
     // Memory operations don't require confirmation
     return false;
@@ -104,7 +104,7 @@ export class MemoryInvocation implements ToolInvocation<MemoryParams, ToolResult
 
   async execute(
     signal: AbortSignal,
-    updateOutput?: (output: string) => void
+    _updateOutput?: (output: string) => void
   ): Promise<ToolResult> {
     try {
       // Check if aborted

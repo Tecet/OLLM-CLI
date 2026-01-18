@@ -268,14 +268,14 @@ function main() {
     if (existsSync(pkgPath)) {
       const result = updatePackageJson(pkgPath, newVersion);
       updates.push(result);
-      const relativePath = pkgPath.replace(rootDir, '').replace(/^[\/\\]/, '');
+      const relativePath = pkgPath.replace(rootDir, '').replace(/^[\\/]/, '');
       console.log(`  ✓ ${relativePath}`);
     }
   }
   
   // Update CHANGELOG.md
   console.log('\nUpdating CHANGELOG.md:');
-  const changelogPath = updateChangelog(newVersion);
+  const _changelogPath = updateChangelog(newVersion);
   console.log(`  ✓ CHANGELOG.md`);
   
   // Create git commit and tag

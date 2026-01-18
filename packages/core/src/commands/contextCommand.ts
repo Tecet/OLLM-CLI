@@ -16,7 +16,7 @@
  * - /context stats - Detailed statistics
  */
 
-import type { ContextManager, ContextSnapshot, ContextUsage, VRAMInfo } from '../context/types.js';
+import type { ContextManager, ContextSnapshot, VRAMInfo } from '../context/types.js';
 
 export interface ContextCommandResult {
   success: boolean;

@@ -30,7 +30,7 @@ export class SnapshotParser {
 
     // Helper to extract list items from a section
     const extractList = (tagName: string): string[] => {
-      const regex = new RegExp(`<${tagName}>([\\s\\S]*?)<\/${tagName}>`, 'i');
+      const regex = new RegExp(`<${tagName}>([\\s\\S]*?)</${tagName}>`, 'i');
       const match = cleanContent.match(regex);
       if (!match) return [];
       

@@ -6,7 +6,8 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fc from 'fast-check';
 import { ThemeManager, resetThemeManager } from '../ui/services/themeManager.js';
-import { Theme, defaultDarkTheme, builtInThemes } from '../ui/uiSettings.js';
+import { Theme } from '../config/types.js';
+import { defaultDarkTheme, builtInThemes } from '../config/styles.js';
 
 describe('Theme Manager - Property Tests', () => {
   let themeManager: ThemeManager;

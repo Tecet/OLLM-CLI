@@ -10,6 +10,7 @@ export type {
   GenerationOptions,
   ProviderRequest,
   ProviderEvent,
+  ProviderError,
   ModelInfo,
   PullProgress,
   ProviderAdapter,

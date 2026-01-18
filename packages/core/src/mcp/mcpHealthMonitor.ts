@@ -4,7 +4,7 @@
  * Monitors the health of MCP servers and automatically restarts failed servers.
  */
 
-import type { MCPClient, MCPServerConfig, MCPServerStatus, MCPServerStatusType } from './types.js';
+import type { MCPClient, MCPServerConfig, MCPServerStatusType } from './types.js';
 
 /**
  * Health check result
@@ -114,6 +114,7 @@ export class MCPHealthMonitor {
   private checkIntervalId?: NodeJS.Timeout;
   private listeners: HealthMonitorEventListener[] = [];
   private isRunning = false;
+  private restartLocks: Map<string, Promise<void>> = new Map();
 
   constructor(client: MCPClient, config?: HealthMonitorConfig) {
     this.client = client;
@@ -395,53 +396,70 @@ export class MCPHealthMonitor {
    * @param serverName - Server name
    * @param config - Server configuration
    */
-  private async attemptRestart(serverName: string, config: any): Promise<void> {
+  private async attemptRestart(serverName: string, config: MCPServerConfig): Promise<void> {
+    // Check if restart is already in progress
+    const existingRestart = this.restartLocks.get(serverName);
+    if (existingRestart) {
+      return existingRestart;
+    }
+
     const state = this.serverStates.get(serverName);
     if (!state) {
       return;
     }
 
-    try {
-      // Stop the server
-      await this.client.stopServer(serverName);
+    // Create restart promise
+    const restartPromise = (async () => {
+      try {
+        // Stop the server
+        await this.client.stopServer(serverName);
 
-      // Allow async listeners to flush before restarting.
-      await new Promise(resolve => queueMicrotask(resolve));
+        // Allow async listeners to flush before restarting.
+        await new Promise(resolve => queueMicrotask(resolve));
 
-      // Start the server
-      await this.client.startServer(serverName, config);
+        // Start the server
+        await this.client.startServer(serverName, config);
 
-      // Restart successful
-      state.consecutiveFailures = 0;
-      state.currentBackoffDelay = this.config.initialBackoffDelay;
+        // Restart successful
+        state.consecutiveFailures = 0;
+        state.currentBackoffDelay = this.config.initialBackoffDelay;
 
-      this.emitEvent({
-        type: 'restart-success',
-        serverName,
-        timestamp: Date.now(),
-        data: { attempt: state.restartAttempts },
-      });
-    } catch (error) {
-      // Restart failed
-      const errorMessage = error instanceof Error ? error.message : String(error);
+        this.emitEvent({
+          type: 'restart-success',
+          serverName,
+          timestamp: Date.now(),
+          data: { attempt: state.restartAttempts },
+        });
+      } catch (error) {
+        // Restart failed
+        const errorMessage = error instanceof Error ? error.message : String(error);
 
-      // Increase backoff delay (exponential backoff)
-      state.currentBackoffDelay = Math.min(
-        state.currentBackoffDelay * 2,
-        this.config.maxBackoffDelay
-      );
+        // Increase backoff delay (exponential backoff)
+        state.currentBackoffDelay = Math.min(
+          state.currentBackoffDelay * 2,
+          this.config.maxBackoffDelay
+        );
 
-      this.emitEvent({
-        type: 'restart-failed',
-        serverName,
-        timestamp: Date.now(),
-        data: { 
-          attempt: state.restartAttempts,
-          error: errorMessage,
-          nextBackoffDelay: state.currentBackoffDelay,
-        },
-      });
-    }
+        this.emitEvent({
+          type: 'restart-failed',
+          serverName,
+          timestamp: Date.now(),
+          data: { 
+            attempt: state.restartAttempts,
+            error: errorMessage,
+            nextBackoffDelay: state.currentBackoffDelay,
+          },
+        });
+      } finally {
+        // Remove restart lock
+        this.restartLocks.delete(serverName);
+      }
+    })();
+
+    // Store restart lock
+    this.restartLocks.set(serverName, restartPromise);
+
+    return restartPromise;
   }
 
   /**

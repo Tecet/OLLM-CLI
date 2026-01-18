@@ -30,7 +30,7 @@ export class HookPlanner {
    * @param context - Context information for the event
    * @returns Execution plan with ordered hooks
    */
-  planExecution(event: HookEvent, context: HookContext): HookExecutionPlan {
+  planExecution(event: HookEvent, _context: HookContext): HookExecutionPlan {
     // Get all hooks for this event
     const hooks = this.registry.getHooksForEvent(event);
 

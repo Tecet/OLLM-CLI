@@ -845,9 +845,9 @@ describe('Model Lifecycle', () => {
 ## References
 
 ### Specifications
-- [Requirements](../../.kiro/specs/stage-07-model-management/requirements.md)
-- [Design](../../.kiro/specs/stage-07-model-management/design.md)
-- [Tasks](../../.kiro/specs/stage-07-model-management/tasks.md)
+- Requirements (../../.kiro/specs/stage-07-model-management/requirements.md)
+- Design (../../.kiro/specs/stage-07-model-management/design.md)
+- Tasks (../../.kiro/specs/stage-07-model-management/tasks.md)
 
 ### Implementation
 - [Model Management Service](../../packages/core/src/services/modelManagementService.ts)

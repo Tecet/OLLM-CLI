@@ -619,11 +619,11 @@ type KVQuantization = 'f16' | 'q8_0' | 'q4_0';
  * Calculate optimal context size
  * 
  * Formula:
- * bytesPerToken = 2 (K+V) × layers × hiddenDim × bytesPerValue
+ * bytesPerToken = 2 (K+V)  layers  hiddenDim  bytesPerValue
  * optimalSize = floor((availableVRAM - safetyBuffer) / bytesPerToken)
  * 
  * Simplified using model parameters:
- * bytesPerToken  (modelParams × 10^9 × 0.0001) × quantizationMultiplier
+ * bytesPerToken  (modelParams  10^9  0.0001)  quantizationMultiplier
  */
 function calculateOptimalSize(
   vramInfo: VRAMInfo,
@@ -676,7 +676,7 @@ VRAM: 8GB total, 6GB available (2GB for model)
 Buffer: 512MB
 Quantization: q8_0
 
-bytesPerToken = (8 × 10^9 × 0.0001) × 1 = 800,000 bytes = 0.76 MB
+bytesPerToken = (8  10^9  0.0001)  1 = 800,000 bytes = 0.76 MB
 usableVRAM = 6GB - 512MB = 5.5GB = 5,767 MB
 optimalSize = floor(5,767 / 0.76) = 7,588 tokens
 
@@ -2156,7 +2156,7 @@ context:
 
 **Per Snapshot:**
 - Metadata: ~500 bytes
-- Full snapshot: Variable (messages × 208 bytes)
+- Full snapshot: Variable (messages  208 bytes)
 
 **Services:**
 - Context Manager: ~1 KB

@@ -12,7 +12,7 @@ import { LoopDetectionService } from '../services/loopDetectionService.js';
 import type { ContextManager as ServicesContextManager } from '../services/contextManager.js';
 import type { ContextManager as ContextMgmtManager } from '../context/types.js';
 import type { SessionMessage, SessionToolCall, ServicesConfig } from '../services/types.js';
-import { mergeServicesConfig, getLoopDetectionConfig } from '../services/config.js';
+import { mergeServicesConfig } from '../services/config.js';
 import { ModelDatabase, modelDatabase } from '../routing/modelDatabase.js';
 
 /**

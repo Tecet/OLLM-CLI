@@ -6,6 +6,7 @@
  */
 
 import { spawn } from 'child_process';
+import * as path from 'path';
 import type { Hook, HookInput, HookOutput } from './types.js';
 import { HookTranslator } from './hookTranslator.js';
 import type { TrustedHooks } from './trustedHooks.js';
@@ -89,6 +90,35 @@ export class HookRunner {
   }
 
   /**
+   * Validate hook command for security
+   * 
+   * @param command - Command to validate
+   * @throws Error if command is invalid
+   */
+  private validateCommand(command: string): void {
+    // Ensure command doesn't contain shell metacharacters
+    if (/[;&|`$(){}[\]<>]/.test(command)) {
+      throw new Error(`Invalid characters in hook command: ${command}`);
+    }
+    
+    // Ensure command is an absolute path or whitelisted command
+    if (!path.isAbsolute(command) && !this.isWhitelistedCommand(command)) {
+      throw new Error(`Hook command must be absolute path or whitelisted: ${command}`);
+    }
+  }
+
+  /**
+   * Check if command is whitelisted
+   * 
+   * @param command - Command to check
+   * @returns true if command is whitelisted
+   */
+  private isWhitelistedCommand(command: string): boolean {
+    const whitelist = ['node', 'python', 'python3', 'bash', 'sh', 'npx', 'uvx'];
+    return whitelist.includes(command);
+  }
+
+  /**
    * Execute a single hook (internal method, trust checking should be done by caller)
    * 
    * @param hook - The hook to execute
@@ -96,38 +126,61 @@ export class HookRunner {
    * @returns Promise resolving to hook output
    */
   private async executeHookInternal(hook: Hook, input: HookInput): Promise<HookOutput> {
-    const startTime = Date.now();
     const hookDebugger = getHookDebugger();
     const traceId = hookDebugger.startTrace(hook, input.event, input);
     
+    let child: ReturnType<typeof spawn> | null = null;
+    let timeoutId: NodeJS.Timeout | null = null;
+    
     try {
+      // Validate command for security
+      this.validateCommand(hook.command);
+      
       // Spawn the hook process
-      const child = spawn(hook.command, hook.args || [], {
+      child = spawn(hook.command, hook.args || [], {
         stdio: ['pipe', 'pipe', 'pipe'],
         shell: false,
       });
 
       // Set up timeout
-      const timeoutId = setTimeout(() => {
-        child.kill('SIGTERM');
+      timeoutId = setTimeout(() => {
+        child?.kill('SIGTERM');
         // Force kill after grace period
         setTimeout(() => {
-          if (!child.killed) {
+          if (child && !child.killed) {
             child.kill('SIGKILL');
           }
         }, 1000);
       }, this.timeout);
 
-      // Collect stdout and stderr
+      // Collect stdout and stderr with size limits
+      const MAX_OUTPUT_SIZE = 1024 * 1024; // 1MB
       let stdout = '';
       let stderr = '';
+      let outputSize = 0;
 
       child.stdout?.on('data', (data) => {
-        stdout += data.toString();
+        const chunk = data.toString();
+        outputSize += chunk.length;
+        
+        if (outputSize > MAX_OUTPUT_SIZE) {
+          child?.kill('SIGTERM');
+          throw new Error(`Hook output exceeded ${MAX_OUTPUT_SIZE} bytes`);
+        }
+        
+        stdout += chunk;
       });
 
       child.stderr?.on('data', (data) => {
-        stderr += data.toString();
+        const chunk = data.toString();
+        outputSize += chunk.length;
+        
+        if (outputSize > MAX_OUTPUT_SIZE) {
+          child?.kill('SIGTERM');
+          throw new Error(`Hook stderr exceeded ${MAX_OUTPUT_SIZE} bytes`);
+        }
+        
+        stderr += chunk;
       });
 
       // Send input to hook via stdin
@@ -147,8 +200,6 @@ export class HookRunner {
           reject(error);
         });
       });
-
-      const executionTime = Date.now() - startTime;
 
       // Check if process was killed (timeout)
       if (child.killed) {
@@ -172,9 +223,12 @@ export class HookRunner {
       return output;
     } catch (error) {
       // Log error but don't propagate - return error output instead
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      const extensionInfo = hook.extensionName ? ` (from extension '${hook.extensionName}')` : '';
-      console.error(`Hook execution failed for '${hook.name}'${extensionInfo}: ${errorMessage}`);
+      // Only log error if not in a test environment
+      if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const extensionInfo = hook.extensionName ? ` (from extension '${hook.extensionName}')` : '';
+        console.error(`Hook execution failed for '${hook.name}'${extensionInfo}: ${errorMessage}`);
+      }
       
       hookDebugger.endTrace(traceId, undefined, error instanceof Error ? error : new Error(String(error)));
       
@@ -183,7 +237,47 @@ export class HookRunner {
         continue: true,
         error: error instanceof Error ? error.message : String(error),
       };
+    } finally {
+      // Ensure cleanup
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      if (child && !child.killed) {
+        child.kill('SIGTERM');
+      }
     }
+  }
+
+  /**
+   * Check trust and request approval if needed
+   * 
+   * @param hook - The hook to check
+   * @returns true if hook is trusted or approved, false if denied
+   */
+  private async checkTrustAndApprove(hook: Hook): Promise<boolean> {
+    if (!this.trustedHooks) {
+      return true;
+    }
+
+    const isTrusted = await this.trustedHooks.isTrusted(hook);
+    
+    if (!isTrusted) {
+      // Request approval for untrusted hooks
+      const approved = await this.trustedHooks.requestApproval(hook);
+      
+      if (approved) {
+        // Store approval with hash
+        const hash = await this.trustedHooks.computeHash(hook);
+        await this.trustedHooks.storeApproval(hook, hash);
+        return true;
+      } else {
+        // Skip hook if not approved
+        console.warn(`Hook ${hook.name} was not approved and will be skipped`);
+        return false;
+      }
+    }
+
+    return true;
   }
 
   /**
@@ -203,26 +297,12 @@ export class HookRunner {
     }
 
     // Check trust before execution
-    if (this.trustedHooks) {
-      const isTrusted = await this.trustedHooks.isTrusted(hook);
-      
-      if (!isTrusted) {
-        // Request approval for untrusted hooks
-        const approved = await this.trustedHooks.requestApproval(hook);
-        
-        if (approved) {
-          // Store approval with hash
-          const hash = await this.trustedHooks.computeHash(hook);
-          await this.trustedHooks.storeApproval(hook, hash);
-        } else {
-          // Skip hook if not approved
-          console.warn(`Hook ${hook.name} was not approved and will be skipped`);
-          return {
-            continue: true,
-            error: 'Hook not approved by user',
-          };
-        }
-      }
+    const approved = await this.checkTrustAndApprove(hook);
+    if (!approved) {
+      return {
+        continue: true,
+        error: 'Hook not approved by user',
+      };
     }
 
     return this.executeHookInternal(hook, input);
@@ -249,27 +329,13 @@ export class HookRunner {
 
     for (const hook of hooks) {
       // Check trust before execution
-      if (this.trustedHooks) {
-        const isTrusted = await this.trustedHooks.isTrusted(hook);
-        
-        if (!isTrusted) {
-          // Request approval for untrusted hooks
-          const approved = await this.trustedHooks.requestApproval(hook);
-          
-          if (approved) {
-            // Store approval with hash
-            const hash = await this.trustedHooks.computeHash(hook);
-            await this.trustedHooks.storeApproval(hook, hash);
-          } else {
-            // Skip hook if not approved
-            console.warn(`Hook ${hook.name} was not approved and will be skipped`);
-            results.push({
-              continue: true,
-              error: 'Hook not approved by user',
-            });
-            continue;
-          }
-        }
+      const approved = await this.checkTrustAndApprove(hook);
+      if (!approved) {
+        results.push({
+          continue: true,
+          error: 'Hook not approved by user',
+        });
+        continue;
       }
 
       try {
@@ -293,9 +359,12 @@ export class HookRunner {
         }
       } catch (error) {
         // Log error and continue with remaining hooks
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        const extensionInfo = hook.extensionName ? ` (from extension '${hook.extensionName}')` : '';
-        console.error(`Hook '${hook.name}'${extensionInfo} failed: ${errorMessage}`);
+        // Only log error if not in a test environment
+        if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          const extensionInfo = hook.extensionName ? ` (from extension '${hook.extensionName}')` : '';
+          console.error(`Hook '${hook.name}'${extensionInfo} failed: ${errorMessage}`);
+        }
         
         // Add error result
         results.push({
@@ -339,28 +408,14 @@ export class HookRunner {
 
     for (const hook of hooks) {
       // Check trust before execution
-      if (this.trustedHooks) {
-        const isTrusted = await this.trustedHooks.isTrusted(hook);
-        
-        if (!isTrusted) {
-          // Request approval for untrusted hooks
-          const approved = await this.trustedHooks.requestApproval(hook);
-          
-          if (approved) {
-            // Store approval with hash
-            const hash = await this.trustedHooks.computeHash(hook);
-            await this.trustedHooks.storeApproval(hook, hash);
-          } else {
-            // Skip hook if not approved
-            console.warn(`Hook ${hook.name} was not approved and will be skipped`);
-            const skipOutput: HookOutput = {
-              continue: true,
-              error: 'Hook not approved by user',
-            };
-            outputs.push(skipOutput);
-            continue;
-          }
-        }
+      const approved = await this.checkTrustAndApprove(hook);
+      if (!approved) {
+        const skipOutput: HookOutput = {
+          continue: true,
+          error: 'Hook not approved by user',
+        };
+        outputs.push(skipOutput);
+        continue;
       }
 
       try {
@@ -398,9 +453,12 @@ export class HookRunner {
         }
       } catch (error) {
         // Log error and continue with remaining hooks
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        const extensionInfo = hook.extensionName ? ` (from extension '${hook.extensionName}')` : '';
-        console.error(`Hook '${hook.name}'${extensionInfo} failed: ${errorMessage}`);
+        // Only log error if not in a test environment
+        if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          const extensionInfo = hook.extensionName ? ` (from extension '${hook.extensionName}')` : '';
+          console.error(`Hook '${hook.name}'${extensionInfo} failed: ${errorMessage}`);
+        }
         
         // Add error result
         const errorOutput: HookOutput = {
@@ -443,31 +501,18 @@ export class HookRunner {
     }
 
     // Check trust before execution
-    if (this.trustedHooks) {
-      const isTrusted = await this.trustedHooks.isTrusted(hook);
-      
-      if (!isTrusted) {
-        // Request approval for untrusted hooks
-        const approved = await this.trustedHooks.requestApproval(hook);
-        
-        if (approved) {
-          // Store approval with hash
-          const hash = await this.trustedHooks.computeHash(hook);
-          await this.trustedHooks.storeApproval(hook, hash);
-        } else {
-          // Skip hook if not approved
-          return {
-            hook,
-            output: {
-              continue: true,
-              error: 'Hook not approved by user',
-            },
-            timedOut: false,
-            executionTime: 0,
-            skipped: true,
-          };
-        }
-      }
+    const approved = await this.checkTrustAndApprove(hook);
+    if (!approved) {
+      return {
+        hook,
+        output: {
+          continue: true,
+          error: 'Hook not approved by user',
+        },
+        timedOut: false,
+        executionTime: 0,
+        skipped: true,
+      };
     }
 
     const startTime = Date.now();

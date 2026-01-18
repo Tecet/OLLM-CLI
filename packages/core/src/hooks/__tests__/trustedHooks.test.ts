@@ -248,8 +248,9 @@ describe('TrustedHooks', () => {
         await trustedHooks.storeApproval(hook, hash);
         expect(await trustedHooks.isTrusted(hook)).toBe(true);
 
-        // Remove approval
-        await trustedHooks.removeApproval('test-command');
+        // Remove approval using the correct source path identifier
+        const sourcePath = `${hook.source}:${hook.extensionName || 'none'}:${hook.id}`;
+        await trustedHooks.removeApproval(sourcePath);
         expect(await trustedHooks.isTrusted(hook)).toBe(false);
       });
 

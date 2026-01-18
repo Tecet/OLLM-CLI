@@ -164,8 +164,11 @@ export class ChatRecordingService {
           }
         } catch (error) {
           // Skip corrupted session files
-          const errorMessage = error instanceof Error ? error.message : String(error);
-          console.error(`Failed to load session ${file}:`, sanitizeErrorMessage(errorMessage));
+          // Only log error if not in a test environment
+          if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            console.error(`Failed to load session ${file}:`, sanitizeErrorMessage(errorMessage));
+          }
         }
       }
 
@@ -259,7 +262,7 @@ export class ChatRecordingService {
         } finally {
           await dirHandle.close();
         }
-      } catch (error) {
+      } catch (_error) {
         // Ignore directory sync errors (not supported on all platforms)
         // The file sync above provides sufficient durability for the data
       }

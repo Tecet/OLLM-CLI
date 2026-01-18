@@ -54,47 +54,54 @@ describe('Visual Compression Demonstration', () => {
       return total + 10;
     };
 
-    console.log('\n' + '='.repeat(80));
-    console.log('BEFORE COMPRESSION');
-    console.log('='.repeat(80));
+    const isTestEnv = process.env.NODE_ENV === 'test' || process.env.VITEST;
+    const log = (...args: any[]) => {
+      if (!isTestEnv) {
+        console.log(...args);
+      }
+    };
+
+    log('\n' + '='.repeat(80));
+    log('BEFORE COMPRESSION');
+    log('='.repeat(80));
     
     messages.forEach((msg, i) => {
       const tokens = countMessageTokens(msg);
       const text = msg.parts[0].text;
-      console.log(`\n${i + 1}. [${msg.role.toUpperCase()}] (${tokens} tokens)`);
-      console.log(`   "${text}"`);
+      log(`\n${i + 1}. [${msg.role.toUpperCase()}] (${tokens} tokens)`);
+      log(`   "${text}"`);
     });
 
     const originalTotal = messages.reduce((sum, msg) => sum + countMessageTokens(msg), 0);
-    console.log(`\n📊 Total: ${messages.length} messages, ${originalTotal} tokens`);
+    log(`\n📊 Total: ${messages.length} messages, ${originalTotal} tokens`);
 
     // Compress
     const result = await service.summarize(messages, 80);
 
-    console.log('\n' + '='.repeat(80));
-    console.log('AFTER COMPRESSION (target: 80 tokens)');
-    console.log('='.repeat(80));
+    log('\n' + '='.repeat(80));
+    log('AFTER COMPRESSION (target: 80 tokens)');
+    log('='.repeat(80));
     
     result.forEach((msg, i) => {
       const tokens = countMessageTokens(msg);
       const text = msg.parts[0].text;
       const isSummary = text.includes('summary');
       const label = isSummary ? '📝 SUMMARY' : msg.role.toUpperCase();
-      console.log(`\n${i + 1}. [${label}] (${tokens} tokens)`);
-      console.log(`   "${text}"`);
+      log(`\n${i + 1}. [${label}] (${tokens} tokens)`);
+      log(`   "${text}"`);
     });
 
     const compressedTotal = result.reduce((sum, msg) => sum + countMessageTokens(msg), 0);
-    console.log(`\n📊 Total: ${result.length} messages, ${compressedTotal} tokens`);
+    log(`\n📊 Total: ${result.length} messages, ${compressedTotal} tokens`);
     
-    console.log('\n' + '='.repeat(80));
-    console.log('COMPRESSION RESULTS');
-    console.log('='.repeat(80));
-    console.log(`Messages: ${messages.length} → ${result.length} (${messages.length - result.length} removed)`);
-    console.log(`Tokens: ${originalTotal} → ${compressedTotal} (${originalTotal - compressedTotal} saved)`);
-    console.log(`Compression: ${((1 - compressedTotal / originalTotal) * 100).toFixed(1)}%`);
-    console.log(`Target met: ${compressedTotal <= 80 ? '✅' : '❌'} (${compressedTotal}/${80} tokens)`);
-    console.log('='.repeat(80) + '\n');
+    log('\n' + '='.repeat(80));
+    log('COMPRESSION RESULTS');
+    log('='.repeat(80));
+    log(`Messages: ${messages.length} → ${result.length} (${messages.length - result.length} removed)`);
+    log(`Tokens: ${originalTotal} → ${compressedTotal} (${originalTotal - compressedTotal} saved)`);
+    log(`Compression: ${((1 - compressedTotal / originalTotal) * 100).toFixed(1)}%`);
+    log(`Target met: ${compressedTotal <= 80 ? '✅' : '❌'} (${compressedTotal}/${80} tokens)`);
+    log('='.repeat(80) + '\n');
 
     // Assertions
     expect(result.length).toBeLessThan(messages.length);

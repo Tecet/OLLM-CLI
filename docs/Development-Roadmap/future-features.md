@@ -8,7 +8,7 @@ This document provides a quick reference for planned future features in OLLM CLI
 - [Development Roadmap](./future-development.md) - Complete roadmap with detailed descriptions
 - [Visual Roadmap](./road_map_visual.md) - Visual timeline and dependency graphs
 - [Roadmap Overview](./roadmap.md) - Overview and quick reference
-- [Stage Specifications](../../.kiro/specs/) - Detailed requirements and design documents
+- Stage Specifications (../../.kiro/specs/) - Detailed requirements and design documents
 
 ---
 
@@ -245,7 +245,7 @@ costTracking:
 
 ## Contributing
 
-Interested in implementing a planned feature? See the [Development Roadmap](./Development-Roadmap/future-development.md#contributing) for contribution guidelines.
+Interested in implementing a planned feature? See the [Development Roadmap](./future-development.md#contributing) for contribution guidelines.
 
 ---
 

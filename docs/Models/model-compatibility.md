@@ -455,9 +455,9 @@ If you discover issues or have recommendations:
 - [OLLM CLI Documentation](../../README.md)
 - [Models Documentation](./README.md)
 - [Model Management](./Models_architecture.md)
-- [Testing Strategy](../../.kiro/specs/stage-08-testing-qa/design.md)
+- Testing Strategy (../../.kiro/specs/stage-08-testing-qa/design.md)
 - [Integration Tests](../../packages/test-utils/src/__tests__/modelCompatibility.integration.test.ts)
-- [Ollama Model Library](https://ollama.ai/library)
+- Ollama Model Library (https://ollama.ai/library)
 
 ---
 

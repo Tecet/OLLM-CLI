@@ -218,6 +218,7 @@ export interface Keybinds {
   tabFiles: string;
   tabSearch: string;
   tabDocs: string;
+  tabGithub: string;
   tabSettings: string;
   
   // Layout
@@ -279,6 +280,15 @@ export interface LLMProfile {
   context_profiles: ContextProfile[];
 }
 
+/**
+ * Source of tool support information
+ * - profile: From LLM_profiles.json
+ * - user_confirmed: User manually confirmed via prompt
+ * - auto_detected: Automatically detected via test request
+ * - runtime_error: Detected from runtime error during usage
+ */
+export type ToolSupportSource = 'profile' | 'user_confirmed' | 'auto_detected' | 'runtime_error';
+
 export interface UserModelEntry {
   id: string;
   name?: string;
@@ -287,6 +297,8 @@ export interface UserModelEntry {
   description?: string;
   abilities?: string[];
   tool_support?: boolean;
+  tool_support_source?: ToolSupportSource;
+  tool_support_confirmed_at?: string;
   context_profiles?: ContextProfile[];
   default_context?: number;
   manual_context?: number;

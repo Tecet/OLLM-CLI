@@ -324,7 +324,7 @@ describe('Property 31: System Resilience After Extension Errors', () => {
             const extDir = join(testDir, extName);
             await mkdir(extDir, { recursive: true });
 
-            let manifest: any = {
+            const manifest: any = {
               name: extName,
               version: '1.0.0',
               description: 'Test extension with multiple error types',

@@ -77,7 +77,7 @@ export class LsTool implements DeclarativeTool<LsParams, ToolResult> {
 
   createInvocation(
     params: LsParams,
-    context: ToolContext
+    _context: ToolContext
   ): ToolInvocation<LsParams, ToolResult> {
     return new LsInvocation(params);
   }
@@ -99,14 +99,14 @@ export class LsInvocation implements ToolInvocation<LsParams, ToolResult> {
     return [this.params.path];
   }
 
-  async shouldConfirmExecute(abortSignal: AbortSignal): Promise<false> {
+  async shouldConfirmExecute(_abortSignal: AbortSignal): Promise<false> {
     // Read-only operations don't require confirmation
     return false;
   }
 
   async execute(
     signal: AbortSignal,
-    updateOutput?: (output: string) => void
+    _updateOutput?: (output: string) => void
   ): Promise<ToolResult> {
     try {
       // Check if aborted
@@ -201,7 +201,7 @@ export class LsInvocation implements ToolInvocation<LsParams, ToolResult> {
             baseDir
           );
           entries.push(...subEntries);
-        } catch (error) {
+        } catch (_error) {
           // Skip directories that can't be read (permission errors, etc.)
           continue;
         }

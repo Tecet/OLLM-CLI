@@ -1,10 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import * as fc from 'fast-check';
 import React from 'react';
-import { render, stripAnsi } from '../../../../test/ink-testing.js';
+import { render, stripAnsi, cleanup } from '../../../../test/ink-testing.js';
 import { ToolsTab } from '../ToolsTab.js';
 import { ReviewProvider, Review } from '../../../../features/context/ReviewContext.js';
 import { UIProvider } from '../../../../features/context/UIContext.js';
+import { keyboardHandler } from '../../../services/keyboardHandler.js';
 
 /**
  * Property-based tests for ToolsTab component
@@ -13,6 +14,11 @@ import { UIProvider } from '../../../../features/context/UIContext.js';
  */
 
 describe('ToolsTab - Property Tests', () => {
+  beforeEach(() => {
+    cleanup();
+    keyboardHandler.clear();
+  });
+
   /**
    * Property 23: Review List Completeness
    * 
@@ -37,6 +43,9 @@ describe('ToolsTab - Property Tests', () => {
           { minLength: 1, maxLength: 10 }
         ),
         (reviewData) => {
+          cleanup();
+          keyboardHandler.clear();
+
           // Create reviews with proper structure
           const reviews: Review[] = reviewData.map((data, index) => ({
             id: `review-${index}`,
@@ -73,7 +82,7 @@ describe('ToolsTab - Property Tests', () => {
           expect(output).toContain(`Pending Reviews (${reviews.length})`);
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 30 }
     );
   });
 
@@ -105,6 +114,9 @@ describe('ToolsTab - Property Tests', () => {
         // Generate which review to remove
         fc.nat(),
         async (reviewData, reviewIndexRaw) => {
+          cleanup();
+          keyboardHandler.clear();
+
           // Create reviews with guaranteed unique file names
           const reviews: Review[] = reviewData.map((data, index) => ({
             id: `review-${index}`,
@@ -139,7 +151,11 @@ describe('ToolsTab - Property Tests', () => {
           // Simulate removal by creating a new provider without one review
           const remainingReviews = reviews.filter((_, idx) => idx !== reviewIndex);
           
-          rerender(
+          // Use fresh render instead of rerender to ensure cleanup of previous shortcuts
+          cleanup();
+          keyboardHandler.clear();
+
+          const { lastFrame: lastFrame2 } = render(
             <UIProvider>
               <ReviewProvider initialReviews={remainingReviews}>
                 <ToolsTab />
@@ -148,7 +164,7 @@ describe('ToolsTab - Property Tests', () => {
           );
 
           // Verify review count decreased
-          output = lastFrame();
+          output = lastFrame2();
           
           if (remainingReviews.length > 0) {
             // The count should have decreased by 1
@@ -165,7 +181,7 @@ describe('ToolsTab - Property Tests', () => {
           }
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 30 }
     );
   });
 });

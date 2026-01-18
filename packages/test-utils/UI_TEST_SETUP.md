@@ -558,9 +558,9 @@ UI tests should maintain:
 
 ## Additional Resources
 
-- [Ink Documentation](https://github.com/vadimdemedes/ink)
-- [Vitest Documentation](https://vitest.dev/)
-- [React Testing Best Practices](https://react.dev/learn/testing)
+- Ink Documentation (https://github.com/vadimdemedes/ink)
+- Vitest Documentation (https://vitest.dev/)
+- React Testing Best Practices (https://react.dev/learn/testing)
 - [Custom Ink Testing Utilities](../cli/src/test/ink-testing.tsx)
 
 ## Examples

@@ -277,24 +277,24 @@ Overview of programmatic APIs for MCP system:
 For developers working on MCP implementation:
 
 **Planning & Roadmap:**
-- [MCP Roadmap](../../.dev/MCP/MCP_roadmap.md) - Unfinished work and priorities
-- [Implementation Progress](../../.dev/MCP/development/implementation-progress.md) - Week-by-week progress
-- [Upgrade Plan](../../.dev/MCP/development/upgrade-plan.md) - 5-week upgrade plan
+- MCP Roadmap (../../.dev/MCP/MCP_roadmap.md) - Unfinished work and priorities
+- Implementation Progress (../../.dev/MCP/development/implementation-progress.md) - Week-by-week progress
+- Upgrade Plan (../../.dev/MCP/development/upgrade-plan.md) - 5-week upgrade plan
 
 **Integration Details:**
-- [MessageBus Integration](../../.dev/MCP/development/messageBus-integration.md) - Event system
-- [Hook Planning](../../.dev/MCP/development/hook-planning-integration.md) - Hook enhancements
-- [OAuth Integration](../../.dev/MCP/development/oauth-integration.md) - OAuth implementation
-- [Extension Ecosystem](../../.dev/MCP/development/extension-ecosystem.md) - Extension system
+- MessageBus Integration (../../.dev/MCP/development/messageBus-integration.md) - Event system
+- Hook Planning (../../.dev/MCP/development/hook-planning-integration.md) - Hook enhancements
+- OAuth Integration (../../.dev/MCP/development/oauth-integration.md) - OAuth implementation
+- Extension Ecosystem (../../.dev/MCP/development/extension-ecosystem.md) - Extension system
 
 **Debugging:**
-- [Critical Bugs Fixed](../../.dev/MCP/debugging/critical-bugs-fixed.md) - Bug fixes
-- [MCP Health Integration](../../.dev/MCP/debugging/mcp-health-integration.md) - Health monitoring
+- Critical Bugs Fixed (../../.dev/MCP/debugging/critical-bugs-fixed.md) - Bug fixes
+- MCP Health Integration (../../.dev/MCP/debugging/mcp-health-integration.md) - Health monitoring
 
 **Reference:**
-- [CLI Commands](../../.dev/MCP/reference/cli-commands.md) - Command implementation
-- [Gemini Patterns](../../.dev/MCP/reference/gemini-patterns.md) - Reference patterns
-- [MCP Packages](../../.dev/MCP/reference/mcp-packages.md) - Package guide
+- CLI Commands (../../.dev/MCP/reference/cli-commands.md) - Command implementation
+- Gemini Patterns (../../.dev/MCP/reference/gemini-patterns.md) - Reference patterns
+- MCP Packages (../../.dev/MCP/reference/mcp-packages.md) - Package guide
 
 ---
 
@@ -327,8 +327,8 @@ For developers working on MCP implementation:
 - [Server Development](servers/README.md#development) - Creating servers
 
 **Development Docs:**
-- [MCP Roadmap](../../.dev/MCP/MCP_roadmap.md) - Implementation status
-- [Development Guides](../../.dev/MCP/development/) - Implementation details
+- MCP Roadmap (../../.dev/MCP/MCP_roadmap.md) - Implementation status
+- Development Guides (../../.dev/MCP/development/) - Implementation details
 
 ---
 
@@ -418,14 +418,14 @@ For developers working on MCP implementation:
 ## External Resources
 
 ### Official MCP Resources
-- [MCP Specification](https://modelcontextprotocol.io) - Official protocol spec
-- [MCP SDK](https://github.com/modelcontextprotocol/sdk) - Official SDK
-- [MCP Servers](https://github.com/modelcontextprotocol/servers) - Server registry
+- MCP Specification (https://modelcontextprotocol.io) - Official protocol spec
+- MCP SDK (https://github.com/modelcontextprotocol/sdk) - Official SDK
+- MCP Servers (https://github.com/modelcontextprotocol/servers) - Server registry
 
 ### OLLM CLI Resources
 - [Main Documentation](../) - OLLM CLI docs
-- [GitHub Repository](https://github.com/ollm/ollm-cli) - Source code
-- [Issue Tracker](https://github.com/ollm/ollm-cli/issues) - Bug reports
+- GitHub Repository (https://github.com/ollm/ollm-cli) - Source code
+- Issue Tracker (https://github.com/ollm/ollm-cli/issues) - Bug reports
 
 ### Community Resources
 - Discord: [Join our server](#) - Community chat
@@ -438,9 +438,9 @@ For developers working on MCP implementation:
 
 Want to contribute to MCP documentation?
 
-1. Read [Contributing Guide](../../CONTRIBUTING.md)
-2. Check [Documentation Tracking](../../.dev/MCP/MCP_docs.md)
-3. See [MCP Roadmap](../../.dev/MCP/MCP_roadmap.md)
+1. Read Contributing Guide (../../CONTRIBUTING.md)
+2. Check Documentation Tracking (../../.dev/MCP/MCP_docs.md)
+3. See MCP Roadmap (../../.dev/MCP/MCP_roadmap.md)
 4. Submit pull requests
 
 ---

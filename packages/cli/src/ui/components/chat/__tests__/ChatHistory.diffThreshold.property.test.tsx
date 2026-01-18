@@ -20,7 +20,7 @@ import { mockTheme } from '../../__tests__/testUtils.js';
  * These tests are skipped until the feature is implemented.
  */
 describe('Property 22: Diff Size Threshold', () => {
-  it.skip('should display small diffs inline and large diffs as summary', () => {
+  it('should display small diffs inline and large diffs as summary', () => {
     fc.assert(
       fc.property(
         // Generate diffs with varying numbers of changed lines
@@ -116,7 +116,7 @@ describe('Property 22: Diff Size Threshold', () => {
     );
   });
 
-  it.skip('should handle edge case of exactly 5 lines', () => {
+  it('should handle edge case of exactly 5 lines', () => {
     // Create a diff with exactly 5 changed lines
     const diffContent = `diff --git a/file.txt b/file.txt
 +Line 1
@@ -149,7 +149,7 @@ describe('Property 22: Diff Size Threshold', () => {
     expect(output).not.toContain('See Tools tab');
   });
 
-  it.skip('should show summary for 6 lines', () => {
+  it('should show summary for 6 lines', () => {
     // Create a diff with 6 changed lines
     const diffContent = `diff --git a/file.txt b/file.txt
 +Line 1

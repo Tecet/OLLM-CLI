@@ -125,13 +125,15 @@ export class MemoryService {
       }
 
       this.loaded = true;
-    } catch (error: any) {
-      if (error.code === 'ENOENT') {
+    } catch (error: unknown) {
+      const err = error as NodeJS.ErrnoException;
+      if (err.code === 'ENOENT') {
         // File doesn't exist yet, that's okay
         this.loaded = true;
         return;
       }
-      throw new Error(`Failed to load memories: ${error.message}`);
+      const message = err.message || String(error);
+      throw new Error(`Failed to load memories: ${message}`);
     }
   }
 
@@ -183,8 +185,10 @@ export class MemoryService {
       const tempPath = `${this.memoryPath}.tmp.${Date.now()}.${Math.random().toString(36).slice(2, 9)}`;
       await fs.writeFile(tempPath, JSON.stringify(storage, null, 2), 'utf-8');
       await fs.rename(tempPath, this.memoryPath);
-    } catch (error: any) {
-      throw new Error(`Failed to save memories: ${error.message}`);
+    } catch (error: unknown) {
+      const err = error as NodeJS.ErrnoException;
+      const message = err.message || String(error);
+      throw new Error(`Failed to save memories: ${message}`);
     }
   }
 

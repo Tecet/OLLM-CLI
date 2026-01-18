@@ -84,6 +84,20 @@ export interface ProviderMetrics {
 }
 
 /**
+ * Error information from a provider.
+ */
+export interface ProviderError {
+  /** Human-readable error message */
+  message: string;
+  /** Error code (e.g., 'TOOL_UNSUPPORTED', '400', '500') */
+  code?: string;
+  /** HTTP status code if applicable */
+  httpStatus?: number;
+  /** Original error text from provider */
+  originalError?: string;
+}
+
+/**
  * Events emitted by a provider during streaming.
  */
 export type ProviderEvent =
@@ -94,7 +108,7 @@ export type ProviderEvent =
       reason: 'stop' | 'length' | 'tool';
       metrics?: ProviderMetrics;
     }
-  | { type: 'error'; error: { message: string; code?: string } };
+  | { type: 'error'; error: ProviderError };
 
 /**
  * Information about a model.

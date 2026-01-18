@@ -7,6 +7,24 @@
 
 import type { ToolSchema } from './types.js';
 
+type PropertySchema = {
+  type?: string;
+  enum?: unknown[];
+  minLength?: number;
+  maxLength?: number;
+  pattern?: string;
+  minimum?: number;
+  maximum?: number;
+  minItems?: number;
+  maxItems?: number;
+  items?: PropertySchema;
+};
+
+type SchemaParams = {
+  required?: string[];
+  properties?: Record<string, PropertySchema>;
+};
+
 /**
  * Validation error with detailed information
  */
@@ -76,7 +94,7 @@ export class ParameterValidator {
     }
 
     const errors: Array<{ path: string; message: string }> = [];
-    const schemaParams = schema.parameters as any;
+    const schemaParams = schema.parameters as SchemaParams;
 
     // Validate required fields
     if (schemaParams.required && Array.isArray(schemaParams.required)) {
@@ -92,7 +110,7 @@ export class ParameterValidator {
 
     // Validate types and constraints for each property
     if (schemaParams.properties) {
-      for (const [key, propSchema] of Object.entries(schemaParams.properties as Record<string, any>)) {
+      for (const [key, propSchema] of Object.entries(schemaParams.properties)) {
         if (key in params && params[key] !== undefined) {
           const value = params[key];
           const error = this.validateProperty(key, value, propSchema);
@@ -127,7 +145,7 @@ export class ParameterValidator {
   private validateProperty(
     path: string,
     value: unknown,
-    schema: any
+    schema: PropertySchema
   ): { path: string; message: string } | null {
     // Validate type
     if (schema.type) {

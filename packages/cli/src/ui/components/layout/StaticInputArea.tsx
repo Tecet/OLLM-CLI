@@ -2,6 +2,7 @@ import React from 'react';
 import { Box, Text } from 'ink';
 import { InputBox } from './InputBox.js';
 import { StreamingIndicator } from '../chat/StreamingIndicator.js';
+import type { Theme } from '../../../config/types.js';
 
 export interface StaticInputAreaProps {
   inputValue: string;
@@ -11,7 +12,7 @@ export interface StaticInputAreaProps {
   statusText?: string;
   streaming?: boolean;
   waitingForResponse?: boolean;
-  theme: any;
+  theme: Theme;
 }
 
 export function StaticInputArea({

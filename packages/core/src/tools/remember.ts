@@ -71,7 +71,7 @@ export class RememberTool implements DeclarativeTool<RememberParams, ToolResult>
 
   createInvocation(
     params: RememberParams,
-    context: ToolContext
+    _context: ToolContext
   ): ToolInvocation<RememberParams, ToolResult> {
     return new RememberInvocation(params, this.memoryService);
   }
@@ -94,14 +94,14 @@ export class RememberInvocation implements ToolInvocation<RememberParams, ToolRe
     return [];
   }
 
-  async shouldConfirmExecute(abortSignal: AbortSignal): Promise<false> {
+  async shouldConfirmExecute(_abortSignal: AbortSignal): Promise<false> {
     // Remember operations don't require confirmation
     return false;
   }
 
   async execute(
     signal: AbortSignal,
-    updateOutput?: (output: string) => void
+    _updateOutput?: (output: string) => void
   ): Promise<ToolResult> {
     try {
       // Check if aborted

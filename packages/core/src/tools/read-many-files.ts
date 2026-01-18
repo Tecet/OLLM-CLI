@@ -71,7 +71,7 @@ export class ReadManyFilesTool implements DeclarativeTool<ReadManyFilesParams, T
 
   createInvocation(
     params: ReadManyFilesParams,
-    context: ToolContext
+    _context: ToolContext
   ): ToolInvocation<ReadManyFilesParams, ToolResult> {
     return new ReadManyFilesInvocation(params);
   }
@@ -93,7 +93,7 @@ export class ReadManyFilesInvocation implements ToolInvocation<ReadManyFilesPara
     return this.params.paths;
   }
 
-  async shouldConfirmExecute(abortSignal: AbortSignal): Promise<false> {
+  async shouldConfirmExecute(_abortSignal: AbortSignal): Promise<false> {
     // Read operations typically don't require confirmation
     return false;
   }

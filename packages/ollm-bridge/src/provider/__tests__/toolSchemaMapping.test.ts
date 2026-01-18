@@ -7,10 +7,36 @@ import { describe, it, expect } from 'vitest';
 import type { ToolSchema } from '@ollm/core';
 import { LocalProvider } from '../localProvider';
 
+const provider = new LocalProvider({ baseUrl: 'http://localhost:11434' });
+type MappedTool = {
+  type: 'function';
+  function: {
+    name: string;
+    description?: string;
+    parameters?: ToolSchema['parameters'];
+  };
+};
+type ToolMessagePart = {
+  type: 'text';
+  text: string;
+};
+type ToolMessageInput = {
+  role: 'tool';
+  parts: ToolMessagePart[];
+  name: string;
+};
+type MappedToolMessage = {
+  role: 'tool';
+  content: string;
+  name: string;
+};
+const mapTools = (tools: ToolSchema[]): MappedTool[] =>
+  (provider as unknown as { mapTools: (schema: ToolSchema[]) => MappedTool[] }).mapTools(tools);
+const mapMessages = (messages: ToolMessageInput[]): MappedToolMessage[] =>
+  (provider as unknown as { mapMessages: (schema: ToolMessageInput[]) => MappedToolMessage[] }).mapMessages(messages);
+
 describe('Tool Schema Mapping', () => {
   describe('LocalProvider - Ollama Format', () => {
-    const provider = new LocalProvider({ baseUrl: 'http://localhost:11434' });
-
     it('should map a simple tool schema', () => {
       const tools: ToolSchema[] = [
         {
@@ -26,8 +52,7 @@ describe('Tool Schema Mapping', () => {
         },
       ];
 
-      // Access private method via type assertion for testing
-      const mapped = (provider as any).mapTools(tools);
+      const mapped = mapTools(tools);
 
       expect(mapped).toEqual([
         {
@@ -72,7 +97,7 @@ describe('Tool Schema Mapping', () => {
         },
       ];
 
-      const mapped = (provider as any).mapTools(tools);
+      const mapped = mapTools(tools);
 
       expect(mapped).toHaveLength(2);
       expect(mapped[0].function.name).toBe('read_file');
@@ -90,7 +115,7 @@ describe('Tool Schema Mapping', () => {
         },
       ];
 
-      const mapped = (provider as any).mapTools(tools);
+      const mapped = mapTools(tools);
 
       expect(mapped[0].function).toEqual({
         name: 'simple_tool',
@@ -110,7 +135,7 @@ describe('Tool Schema Mapping', () => {
         },
       ];
 
-      const mapped = (provider as any).mapTools(tools);
+      const mapped = mapTools(tools);
 
       expect(mapped[0].function).toEqual({
         name: 'no_params_tool',
@@ -150,14 +175,14 @@ describe('Tool Schema Mapping', () => {
         },
       ];
 
-      const mapped = (provider as any).mapTools(tools);
+      const mapped = mapTools(tools);
 
       expect(mapped[0].function.parameters).toEqual(tools[0].parameters);
     });
 
     it('should handle empty tools array', () => {
       const tools: ToolSchema[] = [];
-      const mapped = (provider as any).mapTools(tools);
+      const mapped = mapTools(tools);
       expect(mapped).toEqual([]);
     });
 
@@ -199,7 +224,7 @@ describe('Tool Schema Mapping', () => {
         },
       ];
 
-      const mapped = (provider as any).mapTools(tools);
+      const mapped = mapTools(tools);
 
       expect(mapped[0].function.parameters).toEqual(tools[0].parameters);
     });
@@ -220,7 +245,7 @@ describe('Tool Schema Mapping', () => {
         },
       ];
 
-      const mapped = (provider as any).mapTools(tools);
+      const mapped = mapTools(tools);
 
       expect(mapped[0].function.parameters.properties.value).toEqual({
         oneOf: [{ type: 'string' }, { type: 'number' }],
@@ -253,7 +278,7 @@ describe('Tool Schema Mapping', () => {
         },
       ];
 
-      const mapped = (provider as any).mapTools(tools);
+      const mapped = mapTools(tools);
 
       expect(mapped[0].function.parameters).toEqual(tools[0].parameters);
     });
@@ -286,7 +311,7 @@ describe('Tool Schema Mapping', () => {
         },
       ];
 
-      const mapped = (provider as any).mapTools(tools);
+      const mapped = mapTools(tools);
 
       expect(mapped[0].function.parameters).toEqual(tools[0].parameters);
     });
@@ -299,9 +324,9 @@ describe('Tool Schema Mapping', () => {
         { name: 'tool_d', description: 'Fourth tool' },
       ];
 
-      const mapped = (provider as any).mapTools(tools);
+      const mapped = mapTools(tools);
 
-      expect(mapped.map((t: any) => t.function.name)).toEqual([
+      expect(mapped.map((t) => t.function.name)).toEqual([
         'tool_a',
         'tool_b',
         'tool_c',
@@ -325,7 +350,7 @@ describe('Tool Schema Mapping', () => {
         },
       ];
 
-      const mapped = (provider as any).mapTools(tools);
+      const mapped = mapTools(tools);
 
       expect(mapped[0].function.name).toBe('tool_with_underscores');
       expect(mapped[1].function.name).toBe('tool-with-dashes');
@@ -356,7 +381,7 @@ describe('Tool Schema Mapping', () => {
         },
       ];
 
-      const mapped = (provider as any).mapTools(tools);
+      const mapped = mapTools(tools);
 
       expect(mapped[0].function.parameters).toEqual(tools[0].parameters);
     });
@@ -386,7 +411,7 @@ describe('Tool Schema Mapping', () => {
         },
       ];
 
-      const mapped = (provider as any).mapTools(tools);
+      const mapped = mapTools(tools);
 
       expect(mapped[0].function.parameters.properties.timeout.default).toBe(30);
       expect(mapped[0].function.parameters.properties.retries.default).toBe(3);
@@ -414,7 +439,7 @@ describe('Tool Schema Mapping', () => {
         },
       ];
 
-      const mapped = (provider as any).mapTools(tools);
+      const mapped = mapTools(tools);
 
       expect(mapped[0].function.parameters.properties.version.const).toBe('1.0.0');
       expect(mapped[0].function.parameters.properties.name.examples).toEqual([
@@ -431,14 +456,14 @@ describe('Tool Schema Mapping', () => {
       // Test with various edge cases that should throw errors
       const edgeCases: ToolSchema[] = [
         { name: '', description: 'Empty name' },
-        { name: 'valid_name', description: '', parameters: null as any },
+        { name: 'valid_name', description: '', parameters: null as unknown as ToolSchema['parameters'] },
       ];
 
       // Empty name should throw
-      expect(() => (provider as any).mapTools([edgeCases[0]])).toThrow(/Tool name/);
+      expect(() => mapTools([edgeCases[0]])).toThrow(/Tool name/);
       
       // Null parameters should be accepted (it's valid to have null)
-      expect(() => (provider as any).mapTools([edgeCases[1]])).not.toThrow();
+      expect(() => mapTools([edgeCases[1]])).not.toThrow();
     });
 
     it('should preserve undefined vs null in parameters', () => {
@@ -453,11 +478,11 @@ describe('Tool Schema Mapping', () => {
         {
           name: 'null_params',
           description: 'Tool with null parameters',
-          parameters: null as any,
+          parameters: null as unknown as ToolSchema['parameters'],
         },
       ];
 
-      const mapped = (provider as any).mapTools(tools);
+      const mapped = mapTools(tools);
 
       expect(mapped[0].function.parameters).toBeUndefined();
       expect(mapped[1].function.parameters).toBeNull();
@@ -513,7 +538,7 @@ describe('Tool Schema Mapping', () => {
         },
       ];
 
-      const mapped = (provider as any).mapTools(tools);
+      const mapped = mapTools(tools);
 
       expect(mapped).toHaveLength(2);
       expect(mapped[0].type).toBe('function');
@@ -552,7 +577,7 @@ describe('Tool Schema Mapping', () => {
         },
       ];
 
-      const mapped = (provider as any).mapTools(tools);
+      const mapped = mapTools(tools);
 
       expect(mapped[0].function.name).toBe('web_search');
       expect(mapped[0].function.parameters.required).toEqual(['query']);
@@ -591,7 +616,7 @@ describe('Tool Schema Mapping', () => {
         },
       ];
 
-      const mapped = (provider as any).mapTools(tools);
+      const mapped = mapTools(tools);
 
       expect(mapped[0].function.parameters.properties.env.additionalProperties).toEqual({
         type: 'string',
@@ -628,7 +653,7 @@ describe('Tool Schema Mapping', () => {
         },
       ];
 
-      const mapped = (provider as any).mapTools(tools);
+      const mapped = mapTools(tools);
 
       expect(mapped[0].function.parameters.properties.files.items).toEqual({
         type: 'string',
@@ -709,7 +734,7 @@ describe('Property-Based Tests', () => {
             let error;
             
             try {
-              mapped = (provider as any).mapTools(tools);
+              mapped = mapTools(tools);
             } catch (e) {
               error = e;
             }
@@ -789,7 +814,7 @@ describe('Property-Based Tests', () => {
         fc.asyncProperty(
           arbToolWithRichSchema,
           async (tool) => {
-            const mapped = (provider as any).mapTools([tool]);
+            const mapped = mapTools([tool]);
             
             // The mapped parameters should exactly match the input parameters
             expect(mapped[0].function.parameters).toEqual(tool.parameters);
@@ -851,7 +876,7 @@ describe('Property-Based Tests', () => {
             let mapped;
             
             try {
-              mapped = (provider as any).mapTools([tool]);
+              mapped = mapTools([tool]);
             } catch (e) {
               error = e;
             }
@@ -895,7 +920,7 @@ describe('Property-Based Tests', () => {
         fc.asyncProperty(
           arbNestedSchema,
           async (tool) => {
-            const mapped = (provider as any).mapTools([tool]);
+            const mapped = mapTools([tool]);
             
             // Nested structure should be preserved exactly
             expect(mapped[0].function.parameters).toEqual(tool.parameters);
@@ -953,7 +978,7 @@ describe('Property-Based Tests', () => {
         fc.asyncProperty(
           arbArraySchema,
           async (tool) => {
-            const mapped = (provider as any).mapTools([tool]);
+            const mapped = mapTools([tool]);
             
             // Array schema should be preserved
             expect(mapped[0].function.parameters).toEqual(tool.parameters);
@@ -983,14 +1008,14 @@ describe('Property-Based Tests', () => {
       const provider = new LocalProvider({ baseUrl: 'http://localhost:11434' });
 
       // Generator for invalid tool names
-      const arbInvalidName = fc.oneof(
+      const arbInvalidName = fc.oneof<unknown>(
         fc.constant(''),                    // Empty string
         fc.constant('   '),                 // Whitespace only
         fc.string().filter(s => s.trim() === ''), // Whitespace variations
         fc.string({ minLength: 1 }).filter(name => /^[0-9]/.test(name)), // Starts with number
         fc.string({ minLength: 1 }).filter(name => /[^a-zA-Z0-9_-]/.test(name) && name.trim() !== ''), // Invalid characters
-        fc.constant(null as any),           // Null
-        fc.constant(undefined as any),      // Undefined
+        fc.constant(null),           // Null
+        fc.constant(undefined),      // Undefined
       );
 
       const arbInvalidToolSchema = fc.record({
@@ -1013,7 +1038,7 @@ describe('Property-Based Tests', () => {
             let error: Error | undefined;
             
             try {
-              (provider as any).mapTools([tool]);
+              mapTools([tool]);
             } catch (e) {
               error = e as Error;
             }
@@ -1055,23 +1080,23 @@ describe('Property-Based Tests', () => {
         // Invalid properties structure (not an object)
         fc.record({
           type: fc.constant('object'),
-          properties: fc.oneof(
+          properties: fc.oneof<unknown>(
             fc.constant('invalid'),
             fc.constant(123),
             fc.constant(true),
             fc.array(fc.string())
-          ) as any,
+          ),
         }),
         // Invalid required field (not an array)
         fc.record({
           type: fc.constant('object'),
           properties: fc.constant({}),
-          required: fc.oneof(
+          required: fc.oneof<unknown>(
             fc.constant('not-an-array'),
             fc.constant(123),
             fc.constant(true),
             fc.constant({})
-          ) as any,
+          ),
         }),
       );
 
@@ -1089,7 +1114,7 @@ describe('Property-Based Tests', () => {
             let error: Error | undefined;
             
             try {
-              (provider as any).mapTools([tool]);
+              mapTools([tool]);
             } catch (e) {
               error = e as Error;
             }
@@ -1124,13 +1149,22 @@ describe('Property-Based Tests', () => {
 
       // Create a schema with circular reference
       const createCircularSchema = () => {
-        const schema: any = {
+        const schema: {
+          name: string;
+          description: string;
+          parameters: {
+            type: 'object';
+            properties: {
+              self: unknown;
+            };
+          };
+        } = {
           name: 'circular_tool',
           description: 'Tool with circular reference',
           parameters: {
             type: 'object',
             properties: {
-              self: null as any,
+              self: null as unknown,
             },
           },
         };
@@ -1147,7 +1181,7 @@ describe('Property-Based Tests', () => {
             let error: Error | undefined;
             
             try {
-              (provider as any).mapTools([tool]);
+              mapTools([tool]);
             } catch (e) {
               error = e as Error;
             }
@@ -1194,11 +1228,11 @@ describe('Property-Based Tests', () => {
               // Enum is not an array
               fc.record({
                 type: fc.constant('string'),
-                enum: fc.oneof(
+                enum: fc.oneof<unknown>(
                   fc.constant('not-an-array'),
                   fc.constant(123),
                   fc.constant({})
-                ) as any,
+                ),
               }),
             ),
           }),
@@ -1213,7 +1247,7 @@ describe('Property-Based Tests', () => {
             let error: Error | undefined;
             
             try {
-              (provider as any).mapTools([tool]);
+              mapTools([tool]);
             } catch (e) {
               error = e as Error;
             }
@@ -1284,7 +1318,7 @@ describe('Property-Based Tests', () => {
             let error: Error | undefined;
             
             try {
-              (provider as any).mapTools([tool]);
+              mapTools([tool]);
             } catch (e) {
               error = e as Error;
             }
@@ -1338,7 +1372,7 @@ describe('Property-Based Tests', () => {
           name: fc.constant('valid_name'),
           parameters: fc.record({
             type: fc.constant('object'),
-            properties: fc.constant('not-an-object') as any,
+            properties: fc.constant('not-an-object') as unknown,
           }),
         }),
       );
@@ -1350,7 +1384,7 @@ describe('Property-Based Tests', () => {
             let error: Error | undefined;
             
             try {
-              (provider as any).mapTools([tool]);
+              mapTools([tool]);
             } catch (e) {
               error = e as Error;
             }
@@ -1435,7 +1469,7 @@ describe('Property-Based Tests', () => {
         fc.asyncProperty(
           arbToolWithStringParam,
           async (tool) => {
-            const mapped = (provider as any).mapTools([tool]);
+            const mapped = mapTools([tool]);
             
             // The property: string parameters should be preserved exactly
             expect(mapped[0].function.parameters).toEqual(tool.parameters);
@@ -1517,7 +1551,7 @@ describe('Property-Based Tests', () => {
         fc.asyncProperty(
           arbToolWithNumberParam,
           async (tool) => {
-            const mapped = (provider as any).mapTools([tool]);
+            const mapped = mapTools([tool]);
             
             // The property: number parameters should be preserved exactly
             expect(mapped[0].function.parameters).toEqual(tool.parameters);
@@ -1608,7 +1642,7 @@ describe('Property-Based Tests', () => {
         fc.asyncProperty(
           arbToolWithObjectParam,
           async (tool) => {
-            const mapped = (provider as any).mapTools([tool]);
+            const mapped = mapTools([tool]);
             
             // The property: object parameters should be preserved exactly
             expect(mapped[0].function.parameters).toEqual(tool.parameters);
@@ -1697,7 +1731,7 @@ describe('Property-Based Tests', () => {
         fc.asyncProperty(
           arbToolWithArrayParam,
           async (tool) => {
-            const mapped = (provider as any).mapTools([tool]);
+            const mapped = mapTools([tool]);
             
             // The property: array parameters should be preserved exactly
             expect(mapped[0].function.parameters).toEqual(tool.parameters);
@@ -1757,7 +1791,7 @@ describe('Property-Based Tests', () => {
         },
       ];
 
-      const mappedTrue = (provider as any).mapTools(toolWithTrueDefault);
+      const mappedTrue = mapTools(toolWithTrueDefault);
       
       // Verify true default is preserved
       expect(mappedTrue[0].function.parameters.properties.enabled.type).toBe('boolean');
@@ -1782,7 +1816,7 @@ describe('Property-Based Tests', () => {
         },
       ];
 
-      const mappedFalse = (provider as any).mapTools(toolWithFalseDefault);
+      const mappedFalse = mapTools(toolWithFalseDefault);
       
       // Verify false default is preserved
       expect(mappedFalse[0].function.parameters.properties.disabled.type).toBe('boolean');
@@ -1807,7 +1841,7 @@ describe('Property-Based Tests', () => {
         },
       ];
 
-      const mappedNoDefault = (provider as any).mapTools(toolWithNoDefault);
+      const mappedNoDefault = mapTools(toolWithNoDefault);
       
       // Verify boolean type is preserved without default
       expect(mappedNoDefault[0].function.parameters.properties.flag.type).toBe('boolean');
@@ -1839,7 +1873,7 @@ describe('Property-Based Tests', () => {
         },
       ];
 
-      const mappedMultiple = (provider as any).mapTools(toolWithMultipleBooleans);
+      const mappedMultiple = mapTools(toolWithMultipleBooleans);
       
       // Verify all boolean parameters are preserved correctly
       expect(mappedMultiple[0].function.parameters.properties.verbose.type).toBe('boolean');
@@ -1899,7 +1933,7 @@ describe('Property-Based Tests', () => {
         fc.asyncProperty(
           arbToolWithMixedParams,
           async (tool) => {
-            const mapped = (provider as any).mapTools([tool]);
+            const mapped = mapTools([tool]);
             
             // The property: all parameter types should be preserved exactly
             expect(mapped[0].function.parameters).toEqual(tool.parameters);
@@ -1961,7 +1995,7 @@ describe('Property-Based Tests', () => {
         fc.asyncProperty(
           arbToolWithNestedParams,
           async (tool) => {
-            const mapped = (provider as any).mapTools([tool]);
+            const mapped = mapTools([tool]);
             
             // The property: deeply nested structures should be preserved exactly
             expect(mapped[0].function.parameters).toEqual(tool.parameters);
@@ -2022,7 +2056,7 @@ describe('Property-Based Tests', () => {
         fc.asyncProperty(
           arbToolWithMetadata,
           async (tool) => {
-            const mapped = (provider as any).mapTools([tool]);
+            const mapped = mapTools([tool]);
             
             // The property: all metadata should be preserved
             expect(mapped[0].function.parameters).toEqual(tool.parameters);
@@ -2122,7 +2156,7 @@ describe('Property-Based Tests', () => {
           fc.array(arbToolMessage, { minLength: 1, maxLength: 10 }),
           async (toolMessages) => {
             // The property: formatting tool messages should produce consistent structure
-            const formatted = (provider as any).mapMessages(toolMessages);
+            const formatted = mapMessages(toolMessages);
             
             // Assertion: Formatted result should be an array
             expect(Array.isArray(formatted)).toBe(true);
@@ -2204,7 +2238,7 @@ describe('Property-Based Tests', () => {
         fc.asyncProperty(
           arbToolMessageWithContent,
           async (toolMessage) => {
-            const formatted = (provider as any).mapMessages([toolMessage]);
+            const formatted = mapMessages([toolMessage]);
             
             // The property: content should be preserved exactly
             expect(formatted[0].content).toBe(toolMessage.parts[0].text);
@@ -2260,7 +2294,7 @@ describe('Property-Based Tests', () => {
         fc.asyncProperty(
           arbToolErrorMessage,
           async (errorMessage) => {
-            const formatted = (provider as any).mapMessages([errorMessage]);
+            const formatted = mapMessages([errorMessage]);
             
             // The property: error messages should have consistent structure
             expect(formatted[0]).toEqual({
@@ -2301,7 +2335,7 @@ describe('Property-Based Tests', () => {
         fc.asyncProperty(
           arbMultiPartToolMessage,
           async (toolMessage) => {
-            const formatted = (provider as any).mapMessages([toolMessage]);
+            const formatted = mapMessages([toolMessage]);
             
             // The property: multiple parts should be concatenated
             const expectedContent = toolMessage.parts
@@ -2342,7 +2376,7 @@ describe('Property-Based Tests', () => {
         fc.asyncProperty(
           arbVariableLengthToolMessage,
           async (toolMessage) => {
-            const formatted = (provider as any).mapMessages([toolMessage]);
+            const formatted = mapMessages([toolMessage]);
             
             // The property: formatting should work for any content length
             expect(formatted[0]).toEqual({
@@ -2386,7 +2420,7 @@ describe('Property-Based Tests', () => {
         fc.asyncProperty(
           arbToolMessageWithSpecialChars,
           async (toolMessage) => {
-            const formatted = (provider as any).mapMessages([toolMessage]);
+            const formatted = mapMessages([toolMessage]);
             
             // The property: special characters should be preserved exactly
             expect(formatted[0].content).toBe(toolMessage.parts[0].text);

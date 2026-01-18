@@ -123,7 +123,7 @@ export class EditFileInvocation implements ToolInvocation<EditFileParams, ToolRe
   }
 
   async shouldConfirmExecute(
-    abortSignal: AbortSignal
+    _abortSignal: AbortSignal
   ): Promise<ToolCallConfirmationDetails | false> {
     // If no policy engine, don't require confirmation
     if (!this.policyEngine) {
@@ -152,7 +152,7 @@ export class EditFileInvocation implements ToolInvocation<EditFileParams, ToolRe
 
   async execute(
     signal: AbortSignal,
-    updateOutput?: (output: string) => void
+    _updateOutput?: (output: string) => void
   ): Promise<ToolResult> {
     try {
       // Check if aborted
@@ -186,17 +186,12 @@ export class EditFileInvocation implements ToolInvocation<EditFileParams, ToolRe
         throw new Error('Operation cancelled');
       }
 
-      // Apply each edit
+      // Validate all edits before applying any
       for (let i = 0; i < this.params.edits.length; i++) {
         const edit = this.params.edits[i];
 
-        // Escape special regex characters in the target
-        const escapedTarget = this.escapeRegex(edit.target);
-        const regex = new RegExp(escapedTarget, 'g');
-
-        // Count occurrences
-        const matches = content.match(regex);
-        const occurrences = matches ? matches.length : 0;
+        // Count occurrences using simple string search (not regex)
+        const occurrences = this.countOccurrences(content, edit.target);
 
         if (occurrences === 0) {
           return {
@@ -219,8 +214,11 @@ export class EditFileInvocation implements ToolInvocation<EditFileParams, ToolRe
             },
           };
         }
+      }
 
-        // Apply the edit (we know there's exactly one match)
+      // Apply all edits (we've validated they all exist and are unique)
+      for (let i = 0; i < this.params.edits.length; i++) {
+        const edit = this.params.edits[i];
         content = content.replace(edit.target, edit.replacement);
 
         // Check if aborted between edits
@@ -229,8 +227,20 @@ export class EditFileInvocation implements ToolInvocation<EditFileParams, ToolRe
         }
       }
 
-      // Write the modified content back
-      await fs.writeFile(resolvedPath, content, 'utf-8');
+      // Write to temp file first for atomic operation
+      const tempPath = `${resolvedPath}.tmp.${Date.now()}`;
+      try {
+        await fs.writeFile(tempPath, content, 'utf-8');
+        await fs.rename(tempPath, resolvedPath);
+      } catch (error) {
+        // Clean up temp file if rename failed
+        try {
+          await fs.unlink(tempPath);
+        } catch {
+          // Ignore cleanup errors
+        }
+        throw error;
+      }
 
       const message = `Successfully applied ${this.params.edits.length} edit${this.params.edits.length === 1 ? '' : 's'} to ${this.params.path}`;
 
@@ -264,9 +274,15 @@ export class EditFileInvocation implements ToolInvocation<EditFileParams, ToolRe
   }
 
   /**
-   * Escape special regex characters in a string
+   * Count occurrences of a substring in a string
    */
-  private escapeRegex(str: string): string {
-    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  private countOccurrences(content: string, target: string): number {
+    let count = 0;
+    let pos = 0;
+    while ((pos = content.indexOf(target, pos)) !== -1) {
+      count++;
+      pos += target.length;
+    }
+    return count;
   }
 }

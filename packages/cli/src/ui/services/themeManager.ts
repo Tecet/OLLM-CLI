@@ -18,31 +18,28 @@ export interface ThemeManagerOptions {
  * Deep merge utility for themes
  * Recursively merges source into target, preserving nested objects
  */
-function deepMerge<T extends Record<string, any>>(target: T, source: Partial<T>): T {
-  const result = { ...target };
-  
-  for (const key in source) {
-    if (source.hasOwnProperty(key)) {
-      const sourceValue = source[key];
-      const targetValue = result[key];
-      
-      if (
-        sourceValue &&
-        typeof sourceValue === 'object' &&
-        !Array.isArray(sourceValue) &&
-        targetValue &&
-        typeof targetValue === 'object' &&
-        !Array.isArray(targetValue)
-      ) {
-        // Recursively merge nested objects
-        result[key] = deepMerge(targetValue, sourceValue);
-      } else if (sourceValue !== undefined) {
-        // Override with source value
-        result[key] = sourceValue as any;
-      }
+function deepMerge<T extends Record<string, unknown>>(target: T, source: Partial<T>): T {
+  const result = { ...target } as T;
+
+  const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+    Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+
+  for (const key of Object.keys(source) as Array<keyof T>) {
+    const sourceValue = source[key];
+    if (sourceValue === undefined) {
+      continue;
+    }
+
+    const targetValue = result[key];
+    if (isPlainObject(sourceValue) && isPlainObject(targetValue)) {
+      // Recursively merge nested objects
+      result[key] = deepMerge(targetValue, sourceValue as Partial<typeof targetValue>) as T[typeof key];
+    } else {
+      // Override with source value
+      result[key] = sourceValue as T[typeof key];
     }
   }
-  
+
   return result;
 }
 

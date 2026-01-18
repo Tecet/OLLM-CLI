@@ -50,29 +50,29 @@ export interface FilesTabProps {
 export function FilesTab({
   contextFiles = [],
   gitStatus,
-  onAddFile,
-  onRemoveFile,
-  onGitAction,
+  onAddFile: _onAddFile,
+  onRemoveFile: _onRemoveFile,
+  onGitAction: _onGitAction,
 }: FilesTabProps) {
   const { state: uiState } = useUI();
-  const theme = uiState.theme as any;
-  const [selectedFile, setSelectedFile] = useState<string | null>(null);
+  const theme = uiState.theme;
+  const [selectedFile, _setSelectedFile] = useState<string | null>(null);
 
-  const handleAddFile = () => {
+  const _handleAddFile = () => {
     // In a real implementation, this would open a file picker
     // For now, just a placeholder
     console.log('Add file to context');
   };
 
-  const handleRemoveFile = (path: string) => {
-    if (onRemoveFile) {
-      onRemoveFile(path);
+  const _handleRemoveFile = (path: string) => {
+    if (_onRemoveFile) {
+      _onRemoveFile(path);
     }
   };
 
-  const handleGitAction = (action: 'commit' | 'stash' | 'diff') => {
-    if (onGitAction) {
-      onGitAction(action);
+  const _handleGitAction = (action: 'commit' | 'stash' | 'diff') => {
+    if (_onGitAction) {
+      _onGitAction(action);
     }
   };
 

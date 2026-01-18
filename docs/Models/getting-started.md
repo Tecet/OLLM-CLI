@@ -525,7 +525,7 @@ options:
 ### Get Help
 
 - [Troubleshooting Guide](../troubleshooting.md)
-- [GitHub Issues](https://github.com/ollm/ollm-cli/issues)
+- GitHub Issues (https://github.com/ollm/ollm-cli/issues)
 - [Community Forum](#)
 
 ---

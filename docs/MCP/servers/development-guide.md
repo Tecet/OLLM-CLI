@@ -212,8 +212,8 @@ describe('My Server', () => {
 
 ## Further Reading
 
-- [MCP Specification](https://modelcontextprotocol.io)
-- [MCP SDK](https://github.com/modelcontextprotocol/sdk)
+- MCP Specification (https://modelcontextprotocol.io)
+- MCP SDK (https://github.com/modelcontextprotocol/sdk)
 - [MCP Servers Overview](README.md)
 - [OAuth Setup](oauth-setup.md)
 - [Health Monitoring](health-monitoring.md)

@@ -434,8 +434,8 @@ When reporting platform-specific issues, please include:
 
 ## Resources
 
-- [Node.js Platform Documentation](https://nodejs.org/api/os.html)
-- [Path Module Documentation](https://nodejs.org/api/path.html)
-- [Cross-Platform Node.js Guide](https://nodejs.org/en/docs/guides/)
-- [Windows Terminal Documentation](https://docs.microsoft.com/en-us/windows/terminal/)
-- [XDG Base Directory Specification](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html)
+- Node.js Platform Documentation (https://nodejs.org/api/os.html)
+- Path Module Documentation (https://nodejs.org/api/path.html)
+- Cross-Platform Node.js Guide (https://nodejs.org/en/docs/guides/)
+- Windows Terminal Documentation (https://docs.microsoft.com/en-us/windows/terminal/)
+- XDG Base Directory Specification (https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html)

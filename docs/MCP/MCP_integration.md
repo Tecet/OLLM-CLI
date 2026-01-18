@@ -803,7 +803,7 @@ for line in sys.stdin:
 ### Getting Help
 
 - Check [Troubleshooting](#troubleshooting) section
-- Review [MCP Specification](https://spec.modelcontextprotocol.io/)
+- Review MCP Specification (https://spec.modelcontextprotocol.io/)
 - Search existing issues on GitHub
 - Ask in community forums
 

@@ -3,7 +3,7 @@ import { Box, useInput, useStdout } from 'ink';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { useChat } from '../../../features/context/ChatContext.js';
 import { useUI } from '../../../features/context/UIContext.js';
-import { buildChatLines, ChatHistory } from '../chat/ChatHistory.js';
+import { buildChatLines, ChatHistory, messageHasLargeDiff } from '../chat/ChatHistory.js';
 
 export interface ChatTabProps {
   /** Assigned height from layout */
@@ -40,8 +40,14 @@ export function ChatTab(props: ChatTabProps) {
   const hasFocus = isFocused('chat-history');
 
   // Use provided config or defaults
-  const finalMetricsConfig = metricsConfig || { enabled: true, compactMode: false };
-  const finalReasoningConfig = reasoningConfig || { enabled: true, maxVisibleLines: 8 };
+  const finalMetricsConfig = useMemo(
+    () => metricsConfig || { enabled: true, compactMode: false },
+    [metricsConfig]
+  );
+  const finalReasoningConfig = useMemo(
+    () => reasoningConfig || { enabled: true, maxVisibleLines: 8 },
+    [reasoningConfig]
+  );
 
   const leftWidth = columnWidth ?? stdout?.columns ?? 80;
   const contentWidth = Math.min(100, Math.max(20, Math.floor(leftWidth * 0.8)));
@@ -61,12 +67,15 @@ export function ChatTab(props: ChatTabProps) {
     ? chatState.messages.find(item => item.id === selectedLine.messageId)
     : undefined;
   const selectedHasToggle = Boolean(
-    selectedLine?.kind === 'header' &&
-    selectedMessage &&
-    (selectedMessage.reasoning || selectedMessage.toolCalls?.some(tc => {
-      const hasArgs = tc.arguments && Object.keys(tc.arguments).length > 0;
-      return hasArgs || Boolean(tc.result);
-    }))
+    (selectedLine?.kind === 'header' &&
+      selectedMessage &&
+      (selectedMessage.reasoning || selectedMessage.toolCalls?.some(tc => {
+        const hasArgs = tc.arguments && Object.keys(tc.arguments).length > 0;
+        return hasArgs || Boolean(tc.result);
+      }))) ||
+    (selectedLine?.kind === 'diff-summary' &&
+      selectedMessage &&
+      messageHasLargeDiff(selectedMessage.content))
   );
   const toggleHint = selectedHasToggle ? 'Left/Right to toggle details' : undefined;
 
@@ -105,12 +114,14 @@ export function ChatTab(props: ChatTabProps) {
       if (!line?.messageId) return;
       const message = chatState.messages.find(item => item.id === line.messageId);
       if (!message) return;
-      const hasExpandableReasoning = Boolean(message.reasoning);
-      const hasExpandableTools = Boolean(message.toolCalls?.some(tc => {
+      const isDiffSummaryLine = line.kind === 'diff-summary';
+      const hasExpandableDiff = isDiffSummaryLine && messageHasLargeDiff(message.content);
+      const hasExpandableReasoning = !isDiffSummaryLine && Boolean(message.reasoning);
+      const hasExpandableTools = !isDiffSummaryLine && Boolean(message.toolCalls?.some(tc => {
         const hasArgs = tc.arguments && Object.keys(tc.arguments).length > 0;
         return hasArgs || Boolean(tc.result);
       }));
-      if (!hasExpandableReasoning && !hasExpandableTools) return;
+      if (!hasExpandableDiff && !hasExpandableReasoning && !hasExpandableTools) return;
       updateMessage(message.id, { expanded: key.rightArrow ? true : false });
     }
   }, { isActive: hasFocus });

@@ -47,7 +47,7 @@ function runTestFile(filePath) {
     }
     
     return { file: filePath, duration, status: 'pass' };
-  } catch (error) {
+  } catch (_error) {
     const duration = Date.now() - start;
     console.log(`  ✗ FAILED/TIMEOUT: ${duration}ms`);
     return { file: filePath, duration, status: 'fail' };

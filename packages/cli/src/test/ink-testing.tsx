@@ -127,12 +127,9 @@ export const render = (tree: ReactElement): RenderInstance => {
   const stdin = new MockStdin();
 
   const instance = inkRender(tree, {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    stdout: stdout as any,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    stderr: stderr as any,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    stdin: stdin as any,
+    stdout: stdout as unknown as NodeJS.WriteStream,
+    stderr: stderr as unknown as NodeJS.WriteStream,
+    stdin: stdin as unknown as NodeJS.ReadStream,
     debug: true,
     exitOnCtrlC: false,
     patchConsole: false,

@@ -6,7 +6,7 @@
  */
 
 import type { CommandHandler, CommandContext } from './types.js';
-import type { MCPClient, MCPOAuthProvider } from '@ollm/ollm-cli-core/mcp';
+import type { MCPClient } from '@ollm/ollm-cli-core/mcp';
 
 /**
  * MCP list command
@@ -100,7 +100,7 @@ export const mcpListCommand: CommandHandler = async (
  */
 export const mcpAuthStatusCommand: CommandHandler = async (
   args: string[],
-  context: CommandContext
+  _context: CommandContext
 ) => {
   const serverName = args[0];
 
@@ -127,7 +127,7 @@ export const mcpAuthStatusCommand: CommandHandler = async (
  */
 export const mcpAuthRevokeCommand: CommandHandler = async (
   args: string[],
-  context: CommandContext
+  _context: CommandContext
 ) => {
   const serverName = args[0];
 
@@ -154,7 +154,7 @@ export const mcpAuthRevokeCommand: CommandHandler = async (
  */
 export const mcpAuthRefreshCommand: CommandHandler = async (
   args: string[],
-  context: CommandContext
+  _context: CommandContext
 ) => {
   const serverName = args[0];
 

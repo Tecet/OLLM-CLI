@@ -750,9 +750,9 @@ fi
 - [API Reference](../api/hook-system.md) - Hook system API
 
 ### External Resources
-- [Bash Scripting Guide](https://www.gnu.org/software/bash/manual/)
-- [jq Manual](https://stedolan.github.io/jq/manual/)
-- [JSON Specification](https://www.json.org/)
+- Bash Scripting Guide (https://www.gnu.org/software/bash/manual/)
+- jq Manual (https://stedolan.github.io/jq/manual/)
+- JSON Specification (https://www.json.org/)
 
 ---
 

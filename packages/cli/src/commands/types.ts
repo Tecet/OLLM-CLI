@@ -5,7 +5,7 @@ export interface CommandResult {
   success: boolean;
   message?: string;
   action?: 'show-launch-screen' | 'clear-chat' | 'save-session' | 'exit';
-  data?: any;
+  data?: unknown;
 }
 
 /**
@@ -15,19 +15,19 @@ export interface CommandContext {
   /** Command flags (e.g., --flag value) */
   flags?: Record<string, string | boolean>;
   /** Extension manager instance */
-  extensionManager?: any;
+  extensionManager?: unknown;
   /** Extension registry instance */
-  extensionRegistry?: any;
+  extensionRegistry?: unknown;
   /** Extension watcher instance */
-  extensionWatcher?: any;
+  extensionWatcher?: unknown;
   /** Extension sandbox instance */
-  extensionSandbox?: any;
+  extensionSandbox?: unknown;
   /** MCP client instance */
-  mcpClient?: any;
+  mcpClient?: unknown;
   /** Hook registry instance */
-  hookRegistry?: any;
+  hookRegistry?: unknown;
   /** Hook debugger instance */
-  hookDebugger?: any;
+  hookDebugger?: unknown;
 }
 
 /**

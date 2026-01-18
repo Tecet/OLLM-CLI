@@ -206,11 +206,11 @@ try {
   
   // Apply CLI overrides
   if (argv.model) {
-    cliOverrides.model = { ...cliOverrides.model, default: argv.model } as any;
+    cliOverrides.model = { ...(cliOverrides.model ?? {}), default: argv.model };
   }
   
   if (argv.provider) {
-    cliOverrides.provider = { ...cliOverrides.provider, default: argv.provider } as any;
+    cliOverrides.provider = { ...(cliOverrides.provider ?? {}), default: argv.provider };
   }
   
   if (argv.host) {
@@ -218,28 +218,28 @@ try {
     const provider = argv.provider || 'ollama';
     if (provider === 'ollama') {
       cliOverrides.provider = {
-        ...cliOverrides.provider,
+        ...(cliOverrides.provider ?? {}),
         ollama: { host: argv.host, timeout: 30000 },
-      } as any;
+      };
     } else if (provider === 'vllm') {
       cliOverrides.provider = {
-        ...cliOverrides.provider,
+        ...(cliOverrides.provider ?? {}),
         vllm: { host: argv.host },
-      } as any;
+      };
     } else if (provider === 'openai-compatible') {
       cliOverrides.provider = {
-        ...cliOverrides.provider,
+        ...(cliOverrides.provider ?? {}),
         openaiCompatible: { host: argv.host },
-      } as any;
+      };
     }
   }
   
   if (argv.reviewDiffs !== undefined) {
-    cliOverrides.review = { ...cliOverrides.review, enabled: argv.reviewDiffs } as any;
+    cliOverrides.review = { ...(cliOverrides.review ?? {}), enabled: argv.reviewDiffs };
   }
   
   if (argv.noReview !== undefined) {
-    cliOverrides.review = { ...cliOverrides.review, enabled: !argv.noReview } as any;
+    cliOverrides.review = { ...(cliOverrides.review ?? {}), enabled: !argv.noReview };
   }
   
   config = loadConfig({
@@ -328,8 +328,8 @@ patchStdio();
 const inkStdio = createWorkingStdio();
 
 render(<App config={config} />, {
-  stdout: inkStdio.stdout as any,
-  stderr: inkStdio.stderr as any,
+  stdout: inkStdio.stdout as typeof process.stdout,
+  stderr: inkStdio.stderr as typeof process.stderr,
   // Ink 6.x options
   incrementalRendering: true,
   maxFps: 30,

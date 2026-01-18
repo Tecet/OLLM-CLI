@@ -2,6 +2,14 @@
 import type { Message } from './ChatContext.js';
 import type { LLMProfile } from '../profiles/ProfileManager.js';
 
+type GPUInfoLike = {
+  vramTotal?: number;
+  total?: number;
+  count?: number;
+  model?: string;
+  vendor?: string;
+};
+
 export interface ContextSizeOption {
   value: number;
   label: string;
@@ -35,13 +43,9 @@ export const CONTEXT_OPTIONS: ContextSizeOption[] = DEFAULT_CONTEXT_OPTIONS.map(
     vramEstimate: '' 
 }));
 
-import type { VRAMInfo } from '@ollm/core';
-
-export function createWelcomeMessage(model: string, currentContextSize: number, profile?: LLMProfile, gpuInfo?: any): Message {
+export function createWelcomeMessage(model: string, currentContextSize: number, profile?: LLMProfile, gpuInfo?: GPUInfoLike): Message {
   let vramUsage = 'Unknown';
   let contextTableRows: string[] = [];
-  let maxContextSize = 0;
-  let recommendedSize = 0;
   
   // Calculate max safe context if VRAM info is available
   // Handle various shapes of gpuInfo (Live object uses vramTotal in bytes, Persisted uses total in GB)
@@ -56,26 +60,15 @@ export function createWelcomeMessage(model: string, currentContextSize: number, 
       }
   }
 
-  const SAFETY_BUFFER_GB = gpuTotalGB > 0 ? Math.max(1.5, gpuTotalGB * 0.1) : 1.5;
-  const availableForContextGB = gpuTotalGB > 0 ? (gpuTotalGB - SAFETY_BUFFER_GB) : 0;
 
   if (profile) {
     // Exact match from profile
     const currentProfileCtx = profile.context_profiles.find(p => p.size === currentContextSize);
     vramUsage = currentProfileCtx ? currentProfileCtx.vram_estimate : 'Estimating...';
     
-    // Determine max and recommended
-    for (const opt of profile.context_profiles) {
-        const vramNum = parseFloat(opt.vram_estimate.replace(' GB', ''));
-        if (!isNaN(vramNum) && vramNum <= availableForContextGB) {
-            maxContextSize = opt.size;
-            recommendedSize = opt.size;
-        }
-    }
-
     contextTableRows = profile.context_profiles.map(opt => {
         const sizeLabel = opt.size_label || (opt.size >= 1024 ? `${opt.size/1024}k` : `${opt.size}`);
-        let row = `| ${sizeLabel.padEnd(5)} | ${opt.vram_estimate.padEnd(10)} |`;
+        const row = `| ${sizeLabel.padEnd(5)} | ${opt.vram_estimate.padEnd(10)} |`;
         // Removed explicit recommendation marker from table to keep it clean as per user design
         return row;
     });

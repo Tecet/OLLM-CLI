@@ -167,7 +167,7 @@ export class Turn {
         // Check for parsing errors propagated from provider (Output Healing)
         // This allows the LLM to self-correct malformed JSON
         if (toolCall.args && typeof toolCall.args === 'object' && '__parsing_error__' in toolCall.args) {
-           const errDetails = toolCall.args as any;
+           const errDetails = toolCall.args as { message?: string; raw?: string };
            return {
              toolCall,
              result: { 

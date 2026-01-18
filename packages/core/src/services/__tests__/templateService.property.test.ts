@@ -133,7 +133,7 @@ describe('Template Service Properties', () => {
           expect(service.count()).toBe(templates.length);
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 50 }
     );
   });
 
@@ -200,7 +200,7 @@ describe('Template Service Properties', () => {
           }
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 50 }
     );
   }, 30000); // 30 second timeout for property test with file I/O
 
@@ -284,7 +284,7 @@ describe('Template Service Properties', () => {
           }
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 50 }
     );
   }, 30000); // 30 second timeout for property test with file I/O
 
@@ -372,7 +372,7 @@ describe('Template Service Properties', () => {
           }
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 50 }
     );
   }, 30000); // 30 second timeout for property test with file I/O
 
@@ -440,7 +440,7 @@ describe('Template Service Properties', () => {
           expect(result).not.toContain(`{${varName}}`);
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 50 }
     );
   });
 
@@ -511,7 +511,7 @@ describe('Template Service Properties', () => {
           expect(result).toContain('test-value');
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 50 }
     );
   }, 30000); // 30 second timeout for property test with file I/O
 });

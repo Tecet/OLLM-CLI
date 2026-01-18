@@ -22,7 +22,8 @@ export const keybindsData = {
     "tabFiles": "ctrl+3",
     "tabSearch": "ctrl+4",
     "tabDocs": "ctrl+5",
-    "tabSettings": "ctrl+6"
+    "tabGithub": "ctrl+6",
+    "tabSettings": "ctrl+7"
   },
 
   /**

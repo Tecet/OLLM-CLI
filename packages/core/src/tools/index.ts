@@ -18,7 +18,6 @@ import { WebFetchTool } from './web-fetch.js';
 import { WebSearchTool } from './web-search.js';
 import { MemoryTool } from './memory.js';
 import { WriteTodosTool } from './write-todos.js';
-import { RememberTool } from './remember.js';
 import { MemoryDumpTool } from './MemoryDumpTool.js';
 import { ToolRegistry } from './tool-registry.js';
 

@@ -748,14 +748,14 @@ function processEvent(input) {
 - [MCP Architecture](../MCP_architecture.md) - System architecture
 
 ### Standards
-- [JSON Specification](https://www.json.org/)
-- [ISO 8601 (Timestamps)](https://en.wikipedia.org/wiki/ISO_8601)
-- [UTF-8 Encoding](https://en.wikipedia.org/wiki/UTF-8)
+- JSON Specification (https://www.json.org/)
+- ISO 8601 (Timestamps) (https://en.wikipedia.org/wiki/ISO_8601)
+- UTF-8 Encoding (https://en.wikipedia.org/wiki/UTF-8)
 
 ### Tools
-- [jq Manual](https://stedolan.github.io/jq/manual/)
-- [JSON Schema](https://json-schema.org/)
-- [JSON Validator](https://jsonlint.com/)
+- jq Manual (https://stedolan.github.io/jq/manual/)
+- JSON Schema (https://json-schema.org/)
+- JSON Validator (https://jsonlint.com/)
 
 ---
 

@@ -1061,14 +1061,14 @@ describe('Shell Tool', () => {
       
       const outputChunks: string[] = [];
       const command = process.platform === 'win32'
-        ? 'powershell -Command "Write-Output initial; Start-Sleep -Seconds 5"'
+        ? 'cmd /c "echo initial && ping 127.0.0.1 -n 6 > nul"'
         : 'echo "initial" && sleep 5';
 
       const invocation = shellTool.createInvocation(
         { 
           command, 
           timeout: 30000,
-          idleTimeout: 500
+          idleTimeout: 2000
         },
         createToolContext(messageBus)
       );
@@ -1081,7 +1081,8 @@ describe('Shell Tool', () => {
 
       // Should have captured the initial output before timeout
       const combinedOutput = outputChunks.join('');
-      expect(combinedOutput).toContain('initial');
+      const allOutput = `${combinedOutput}${result.llmContent ?? ''}${result.returnDisplay ?? ''}`;
+      expect(allOutput).toContain('initial');
       
       // Should have idle timeout error
       expect(result.error?.type).toBe('IdleTimeoutError');

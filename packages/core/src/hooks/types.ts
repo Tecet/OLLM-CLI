@@ -40,6 +40,8 @@ export interface Hook {
   source: HookSource;
   /** Extension name if hook comes from an extension */
   extensionName?: string;
+  /** Optional path to the hook script file (for hash computation) */
+  sourcePath?: string;
 }
 
 /**

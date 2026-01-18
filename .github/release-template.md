@@ -208,9 +208,9 @@ Thanks to all contributors who made this release possible!
 ## 🐛 Found a Bug?
 
 If you encounter any issues with this release, please:
-1. Check the [troubleshooting guide](https://github.com/{user}/ollm-cli/blob/main/docs/troubleshooting.md)
-2. Search [existing issues](https://github.com/{user}/ollm-cli/issues)
-3. [Open a new issue](https://github.com/{user}/ollm-cli/issues/new) with:
+1. Check the troubleshooting guide (https://github.com/{user}/ollm-cli/blob/main/docs/troubleshooting.md)
+2. Search existing issues (https://github.com/{user}/ollm-cli/issues)
+3. Open a new issue (https://github.com/{user}/ollm-cli/issues/new) with:
    - Your OLLM CLI version (`ollm --version`)
    - Your operating system
    - Steps to reproduce the issue
@@ -221,9 +221,9 @@ If you encounter any issues with this release, please:
 ## 💬 Feedback
 
 We'd love to hear your feedback on this release! Share your thoughts:
-- [GitHub Discussions](https://github.com/{user}/ollm-cli/discussions)
-- [GitHub Issues](https://github.com/{user}/ollm-cli/issues)
+- GitHub Discussions (https://github.com/{user}/ollm-cli/discussions)
+- GitHub Issues (https://github.com/{user}/ollm-cli/issues)
 
 ---
 
-**Previous Release**: [v{PREVIOUS_VERSION}](https://github.com/{user}/ollm-cli/releases/tag/v{PREVIOUS_VERSION})
+**Previous Release**: v{PREVIOUS_VERSION} (https://github.com/{user}/ollm-cli/releases/tag/v{PREVIOUS_VERSION})

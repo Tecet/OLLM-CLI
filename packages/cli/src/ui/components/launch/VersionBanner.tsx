@@ -14,7 +14,7 @@ let version = '0.1.0';
 try {
   const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
   version = packageJson.version;
-} catch (error) {
+} catch (_error) {
   // Fallback to default version if package.json can't be read
 }
 

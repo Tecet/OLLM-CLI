@@ -344,11 +344,24 @@ describe('HookRunner', () => {
         return value;
       };
 
+      // Function to check if a value contains dangerous properties
+      const isSafe = (val: any): boolean => {
+        if (val === null || typeof val !== 'object') return true;
+        if (Array.isArray(val)) return val.every(isSafe);
+        const keys = Object.keys(val);
+        const forbidden = ['__proto__', 'constructor', 'prototype'];
+        if (keys.some(k => forbidden.includes(k))) return false;
+        return Object.values(val).every(isSafe);
+      };
+
       await fc.assert(
         fc.asyncProperty(
           fc.boolean(),
           fc.option(fc.string()),
-          fc.option(fc.dictionary(fc.string(), fc.jsonValue())), // Use jsonValue() which only generates valid JSON
+          fc.option(fc.dictionary(
+            fc.string().filter(s => !['__proto__', 'constructor', 'prototype'].includes(s)),
+            fc.jsonValue().filter(isSafe)
+          )),
           async (continueValue, systemMessage, data) => {
             const output = {
               continue: continueValue,

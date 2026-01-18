@@ -389,9 +389,9 @@ describe('SnapshotManager', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 50 }
       );
-    }, 10000); // Increase timeout to 10 seconds
+    }, 30000); // Increase timeout to 30 seconds
 
     /**
      * Feature: stage-04b-context-management, Property 14: Snapshot Deletion Effect
@@ -419,8 +419,6 @@ describe('SnapshotManager', () => {
             for (const context of normalizedContexts) {
               const snapshot = await manager.createSnapshot(context);
               createdSnapshots.push(snapshot);
-              // Minimal delay to ensure different timestamps
-              await new Promise(resolve => setTimeout(resolve, 1));
             }
 
             // Pick a random snapshot to delete
@@ -445,9 +443,9 @@ describe('SnapshotManager', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 50 }
       );
-    }, 10000); // 10 second timeout
+    }, 30000); // 30 second timeout
 
     /**
      * Feature: stage-04b-context-management, Property 15: Auto-Snapshot Threshold

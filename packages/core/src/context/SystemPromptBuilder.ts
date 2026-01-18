@@ -1,5 +1,4 @@
 import { PromptRegistry } from '../prompts/PromptRegistry.js';
-import { PromptDefinition } from '../prompts/types.js';
 import { IDENTITY_PROMPT } from '../prompts/templates/identity.js';
 import { MANDATES_PROMPT } from '../prompts/templates/mandates.js';
 import { REALITY_CHECK_PROMPT } from '../prompts/templates/sanity.js';

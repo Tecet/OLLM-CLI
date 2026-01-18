@@ -96,7 +96,7 @@ export class WriteTodosTool implements DeclarativeTool<WriteTodosParams, ToolRes
 
   createInvocation(
     params: WriteTodosParams,
-    context: ToolContext
+    _context: ToolContext
   ): ToolInvocation<WriteTodosParams, ToolResult> {
     return new WriteTodosInvocation(params, this.todosPath);
   }
@@ -132,7 +132,7 @@ export class WriteTodosInvocation implements ToolInvocation<WriteTodosParams, To
   }
 
   async shouldConfirmExecute(
-    abortSignal: AbortSignal
+    _abortSignal: AbortSignal
   ): Promise<false> {
     // Todo operations don't require confirmation
     return false;
@@ -140,7 +140,7 @@ export class WriteTodosInvocation implements ToolInvocation<WriteTodosParams, To
 
   async execute(
     signal: AbortSignal,
-    updateOutput?: (output: string) => void
+    _updateOutput?: (output: string) => void
   ): Promise<ToolResult> {
     try {
       // Check if aborted

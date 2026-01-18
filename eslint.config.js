@@ -7,7 +7,7 @@ import globals from 'globals';
 export default [
   // Ignore patterns
   {
-    ignores: ['dist/', 'node_modules/', 'coverage/'],
+    ignores: ['dist/', '**/dist/**', 'node_modules/', 'coverage/'],
   },
 
   // Base JavaScript recommended rules
@@ -18,7 +18,7 @@ export default [
 
   // React and TypeScript files - override with our custom rules
   {
-    files: ['**/*.{ts,tsx,js,jsx}'],
+    files: ['**/*.{ts,tsx,js,jsx,mjs,cjs}'],
     languageOptions: {
       parser: tseslint.parser,
       parserOptions: {
@@ -61,6 +61,22 @@ export default [
       react: {
         version: 'detect',
       },
+    },
+  },
+  {
+    files: [
+      '**/*.test.{ts,tsx,js,jsx}',
+      '**/*.property.test.{ts,tsx,js,jsx}',
+      '**/*.stage08.test.{ts,tsx,js,jsx}',
+    ],
+    rules: {
+      '@typescript-eslint/no-unused-vars': 'warn',
+    },
+  },
+  {
+    files: ['scripts/**/*.{js,mjs,cjs}', '*.{js,mjs,cjs}'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': 'warn',
     },
   },
 ];

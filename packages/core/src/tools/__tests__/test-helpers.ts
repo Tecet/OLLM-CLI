@@ -36,7 +36,7 @@ export class MockMessageBus implements MessageBus {
   async requestConfirmation(
     details: ToolCallConfirmationDetails,
     abortSignal?: AbortSignal,
-    timeout: number = 60000
+    _timeout: number = 60000
   ): Promise<boolean> {
     // Record the request
     this.requestHistory.push(details);

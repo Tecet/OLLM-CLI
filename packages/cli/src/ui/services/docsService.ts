@@ -53,7 +53,7 @@ export class DocsService {
       const content = await readFile(path, 'utf-8');
       this.cache.set(path, content);
       return content;
-    } catch (error) {
+    } catch (_error) {
       throw new Error(`Failed to load documentation: ${path}`);
     }
   }

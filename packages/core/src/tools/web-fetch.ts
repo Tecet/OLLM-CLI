@@ -41,7 +41,7 @@ export class WebFetchTool implements DeclarativeTool<WebFetchParams, ToolResult>
 
   createInvocation(
     params: WebFetchParams,
-    context: ToolContext
+    _context: ToolContext
   ): ToolInvocation<WebFetchParams, ToolResult> {
     return new WebFetchInvocation(params);
   }

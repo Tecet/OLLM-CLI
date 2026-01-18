@@ -197,7 +197,7 @@ describe('Non-Interactive Runner - Property Tests', () => {
               output: 'stream-json',
               config: mockConfig,
             });
-          } catch (error) {
+          } catch (_error) {
             // Ignore errors for this test
           }
 
@@ -237,8 +237,8 @@ describe('Non-Interactive Runner - Property Tests', () => {
     const originalError = console.error;
     const stderrOutput: string[] = [];
     
-    console.error = vi.fn((...args: any[]) => {
-      stderrOutput.push(args.join(' '));
+    console.error = vi.fn((...args: unknown[]) => {
+      stderrOutput.push(args.map(String).join(' '));
     });
 
     // Mock process.exit to capture exit codes
@@ -248,7 +248,7 @@ describe('Non-Interactive Runner - Property Tests', () => {
     process.exit = vi.fn((code?: number) => {
       exitCode = code;
       throw new Error('Process exit called'); // Prevent actual exit
-    }) as any;
+    }) as unknown as typeof process.exit;
 
     await fc.assert(
       fc.asyncProperty(
@@ -268,7 +268,7 @@ describe('Non-Interactive Runner - Property Tests', () => {
           
           try {
             runner.handleError(error);
-          } catch (e) {
+          } catch (_e) {
             // Expected - process.exit throws
           }
 
@@ -303,8 +303,8 @@ describe('Non-Interactive Runner - Property Tests', () => {
     const originalError = console.error;
     const stderrOutput: string[] = [];
     
-    console.error = vi.fn((...args: any[]) => {
-      stderrOutput.push(args.join(' '));
+    console.error = vi.fn((...args: unknown[]) => {
+      stderrOutput.push(args.map(String).join(' '));
     });
 
     // Mock process.exit to prevent actual exit
@@ -314,7 +314,7 @@ describe('Non-Interactive Runner - Property Tests', () => {
     process.exit = vi.fn((code?: number) => {
       exitCode = code;
       throw new Error('Process exit called');
-    }) as any;
+    }) as unknown as typeof process.exit;
 
     await fc.assert(
       fc.asyncProperty(
@@ -337,7 +337,7 @@ describe('Non-Interactive Runner - Property Tests', () => {
           
           try {
             runner.handleError(error);
-          } catch (e) {
+          } catch (_e) {
             // Expected - process.exit throws
           }
 

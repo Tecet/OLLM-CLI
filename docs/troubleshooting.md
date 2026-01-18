@@ -673,9 +673,9 @@ If you're still experiencing issues after trying the solutions above, here are a
 ### GitHub Issues
 
 Report bugs or request features:
-- **Repository:** https://github.com/user/ollm-cli
-- **Issues:** https://github.com/user/ollm-cli/issues
-- **Discussions:** https://github.com/user/ollm-cli/discussions
+- **Repository:** https://github.com/ollm/ollm-cli
+- **Issues:** https://github.com/ollm/ollm-cli/issues
+- **Discussions:** https://github.com/ollm/ollm-cli/discussions
 
 **Before creating an issue:**
 1. Search existing issues to avoid duplicates
@@ -688,8 +688,8 @@ Report bugs or request features:
 
 - **README:** [Main documentation](../README.md)
 - **Configuration Reference:** [Configuration guide](./configuration.md)
-- **Architecture:** [System design](./architecture.md)
-- **Roadmap:** [Future features](./ROADMAP.md)
+- **Architecture:** System design (./architecture.md)
+- **Roadmap:** Future features (./ROADMAP.md)
 
 ### Community Resources
 
@@ -819,4 +819,4 @@ cp ~/.ollm/config.yaml.backup ~/.ollm/config.yaml
 **Last Updated:** January 2026  
 **Version:** 0.1.0
 
-For the latest troubleshooting information, visit the [GitHub repository](https://github.com/user/ollm-cli).
+For the latest troubleshooting information, visit the GitHub repository (https://github.com/ollm/ollm-cli).

@@ -147,6 +147,6 @@ services:
 
 ## References
 
-- [Requirements Document](../../../../.kiro/specs/stage-04-services-sessions/requirements.md)
-- [Design Document](../../../../.kiro/specs/stage-04-services-sessions/design.md)
-- [Implementation Tasks](../../../../.kiro/specs/stage-04-services-sessions/tasks.md)
+- Requirements Document (../../../../.kiro/specs/stage-04-services-sessions/requirements.md)
+- Design Document (../../../../.kiro/specs/stage-04-services-sessions/design.md)
+- Implementation Tasks (../../../../.kiro/specs/stage-04-services-sessions/tasks.md)

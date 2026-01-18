@@ -15,7 +15,7 @@ describe('ShellExecutionService', () => {
     it('should execute a simple command and return output', async () => {
       const result = await service.execute({
         command: 'echo "hello world"',
-        timeout: 5000,
+        timeout: 10000,
       });
 
       expect(result.exitCode).toBe(0);
@@ -26,7 +26,7 @@ describe('ShellExecutionService', () => {
       const result = await service.execute({
         command: process.platform === 'win32' ? 'cd' : 'pwd',
         cwd: process.cwd(),
-        timeout: 5000,
+        timeout: 10000,
       });
 
       expect(result.exitCode).toBe(0);
@@ -37,7 +37,7 @@ describe('ShellExecutionService', () => {
       // Use a command that writes to stderr
       const result = await service.execute({
         command: 'node -e "console.error(\'error message\')"',
-        timeout: 5000,
+        timeout: 10000,
       });
 
       expect(result.exitCode).toBe(0);
@@ -48,7 +48,7 @@ describe('ShellExecutionService', () => {
     it('should return non-zero exit code for failed commands', async () => {
       const result = await service.execute({
         command: 'exit 1',
-        timeout: 5000,
+        timeout: 10000,
       });
 
       expect(result.exitCode).toBe(1);
@@ -59,7 +59,7 @@ describe('ShellExecutionService', () => {
       
       await service.execute({
         command: 'echo "line1" && echo "line2"',
-        timeout: 5000,
+        timeout: 10000,
         onOutput: (chunk: string) => chunks.push(chunk),
       });
 
@@ -70,7 +70,7 @@ describe('ShellExecutionService', () => {
 
     it('should timeout long-running commands', async () => {
       const command = process.platform === 'win32' 
-        ? 'powershell -Command "Start-Sleep -Seconds 10"'
+        ? 'cmd /c "ping 127.0.0.1 -n 11 > nul"'
         : 'sleep 10';
       
       await expect(
@@ -84,7 +84,7 @@ describe('ShellExecutionService', () => {
     it('should handle abort signal', async () => {
       const abortController = new AbortController();
       const command = process.platform === 'win32' 
-        ? 'powershell -Command "Start-Sleep -Seconds 10"'
+        ? 'cmd /c "ping 127.0.0.1 -n 11 > nul"'
         : 'sleep 10';
       
       // Start a long-running command
@@ -107,7 +107,7 @@ describe('ShellExecutionService', () => {
       await expect(
         service.execute({
           command: 'echo "test"',
-          timeout: 5000,
+          timeout: 10000,
           abortSignal: abortController.signal,
         })
       ).rejects.toThrow('Command cancelled');
@@ -116,7 +116,7 @@ describe('ShellExecutionService', () => {
     it('should handle command not found errors', async () => {
       const result = await service.execute({
         command: 'nonexistentcommand12345',
-        timeout: 5000,
+        timeout: 10000,
       });
 
       // On Windows, shell commands that don't exist return exit code 1
@@ -127,28 +127,28 @@ describe('ShellExecutionService', () => {
     it('should handle idle timeout', async () => {
       // Command that outputs once then waits
       const command = process.platform === 'win32'
-        ? 'powershell -Command "Write-Output start; Start-Sleep -Seconds 5"'
+        ? 'cmd /c "echo start && ping 127.0.0.1 -n 6 > nul"'
         : 'echo "start" && sleep 5';
       
       await expect(
         service.execute({
           command,
           timeout: 30000,
-          idleTimeout: 500,
+          idleTimeout: 2000,
         })
-      ).rejects.toThrow('Command idle timeout after 500ms of no output');
+      ).rejects.toThrow('Command idle timeout after 2000ms of no output');
     });
   });
 
   describe('background execution', () => {
     it('should start background process and return immediately', async () => {
       const command = process.platform === 'win32'
-        ? 'powershell -Command "Start-Sleep -Seconds 5"'
+        ? 'cmd /c "ping 127.0.0.1 -n 6 > nul"'
         : 'sleep 5';
       
       const result = await service.execute({
         command,
-        timeout: 1000,
+        timeout: 10000,
         background: true,
       });
 
@@ -169,7 +169,7 @@ describe('ShellExecutionService', () => {
         const envVarSyntax = process.platform === 'win32' ? '%TEST_SECRET%' : '$TEST_SECRET';
         const result = await service.execute({
           command: `echo ${envVarSyntax}`,
-          timeout: 5000,
+          timeout: 10000,
         });
 
         // The sensitive variable should be removed, so the shell will output the variable name itself
@@ -193,7 +193,7 @@ describe('ShellExecutionService', () => {
       const envVarSyntax = process.platform === 'win32' ? '%PATH%' : '$PATH';
       const result = await service.execute({
         command: `echo ${envVarSyntax}`,
-        timeout: 5000,
+        timeout: 10000,
       });
 
       // PATH should be preserved and expanded

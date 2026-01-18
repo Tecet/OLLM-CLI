@@ -8,7 +8,7 @@
 
 import { createHash } from 'crypto';
 import { readFile, writeFile, mkdir } from 'fs/promises';
-import { dirname, resolve } from 'path';
+import { dirname } from 'path';
 import type { Hook, HookApproval } from './types.js';
 
 /**
@@ -123,9 +123,15 @@ export class TrustedHooks {
    * @returns Source path string
    */
   private getHookSourcePath(hook: Hook): string {
-    // For now, use command as the source path
-    // In a real implementation, this would be the actual file path
-    return hook.command;
+    // Use sourcePath if available, otherwise fall back to a unique identifier
+    if (hook.sourcePath) {
+      return hook.sourcePath;
+    }
+    
+    // Create a unique identifier from hook properties
+    // This ensures different hooks are tracked separately
+    const identifier = `${hook.source}:${hook.extensionName || 'none'}:${hook.id}`;
+    return identifier;
   }
 
   /**
@@ -139,9 +145,11 @@ export class TrustedHooks {
   async requestApproval(hook: Hook): Promise<boolean> {
     // If no approval callback is configured, deny by default
     if (!this.config.approvalCallback) {
-      console.warn(
-        `Hook '${hook.name}' requires approval but no approval callback is configured. Denying by default.`
-      );
+      if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
+        console.warn(
+          `Hook '${hook.name}' requires approval but no approval callback is configured. Denying by default.`
+        );
+      }
       return false;
     }
 
@@ -154,8 +162,10 @@ export class TrustedHooks {
       return approved;
     } catch (error) {
       // If approval callback throws, deny by default
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error(`Error requesting approval for hook '${hook.name}': ${errorMessage}`);
+      if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error(`Error requesting approval for hook '${hook.name}': ${errorMessage}`);
+      }
       return false;
     }
   }
@@ -193,11 +203,31 @@ export class TrustedHooks {
    * @returns Promise that resolves to the hash string
    */
   async computeHash(hook: Hook): Promise<string> {
-    // For now, hash the command and args
-    // In a real implementation, this would read and hash the actual script file
+    try {
+      // If sourcePath is available and is a file, read and hash the actual file
+      if (hook.sourcePath && hook.sourcePath.includes('/') || hook.sourcePath?.includes('\\')) {
+        try {
+          const scriptContent = await readFile(hook.sourcePath, 'utf-8');
+          const hash = createHash('sha256');
+          hash.update(scriptContent);
+          return `sha256:${hash.digest('hex')}`;
+        } catch (_error) {
+          // If file read fails, fall back to hashing command and args
+          if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
+            console.warn(`Failed to read hook script at ${hook.sourcePath}, using command hash instead`);
+          }
+        }
+      }
+    } catch (_error) {
+      // Fall through to command-based hash
+    }
+
+    // Fall back to hashing command and args
     const content = JSON.stringify({
       command: hook.command,
       args: hook.args || [],
+      source: hook.source,
+      extensionName: hook.extensionName,
     });
 
     const hash = createHash('sha256');

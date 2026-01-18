@@ -6,6 +6,7 @@
  */
 
 import type { Command, CommandResult } from './types.js';
+import type { ProviderAdapter } from '@ollm/core';
 import { ComparisonService } from '@ollm/core';
 
 /**
@@ -39,10 +40,7 @@ export const compareCommand: Command = {
     try {
       // Create service instance
       // TODO: This should be injected via dependency injection
-      const service = new ComparisonService({
-        provider: undefined as any, // Will be set by the runtime
-        maxConcurrent: 3,
-      });
+      const service = new ComparisonService({} as ProviderAdapter);
 
       // Run comparison
       const result = await service.compare(prompt, models);
@@ -94,7 +92,7 @@ export const comparisonCommands: Command[] = [
 /**
  * Create comparison commands with service container dependency injection
  */
-export function createComparisonCommands(container: any): Command[] {
+export function createComparisonCommands(_container: unknown): Command[] {
   // TODO: Implement with service container
   return comparisonCommands;
 }

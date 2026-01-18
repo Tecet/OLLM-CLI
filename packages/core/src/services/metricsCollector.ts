@@ -70,7 +70,6 @@ export class MetricsCollector {
       throw new Error('No generation in progress');
     }
 
-    const endTime = Date.now();
     const totalSeconds = metadata.totalDuration / 1_000_000_000; // Convert nanoseconds to seconds
 
     // Calculate time to first token

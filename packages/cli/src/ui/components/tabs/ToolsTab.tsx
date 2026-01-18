@@ -16,7 +16,7 @@ import { useContextKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts.js
  * Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6
  */
 export function ToolsTab() {
-  const { reviews, pendingCount, approve, reject, approveAll, rejectAll, getPendingReviews } = useReview();
+  const { pendingCount, approve, reject, approveAll, rejectAll, getPendingReviews } = useReview();
   const { state: uiState } = useUI();
   const [selectedReviewId, setSelectedReviewId] = useState<string | null>(null);
   const [batchLoading, setBatchLoading] = useState(false);
@@ -45,6 +45,24 @@ export function ToolsTab() {
         }
       },
       description: 'Reject current review',
+    },
+    {
+      key: 'a',
+      handler: async () => {
+        if (pendingCount > 1) {
+          await handleApproveAll();
+        }
+      },
+      description: 'Approve all reviews',
+    },
+    {
+      key: 'r',
+      handler: async () => {
+        if (pendingCount > 1) {
+          await handleRejectAll();
+        }
+      },
+      description: 'Reject all reviews',
     },
   ]);
 

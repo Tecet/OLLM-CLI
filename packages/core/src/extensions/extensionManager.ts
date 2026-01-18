@@ -92,7 +92,9 @@ export class ExtensionManager {
   async loadExtensions(): Promise<Extension[]> {
     // Check if extensions are enabled
     if (this.config.enabled === false) {
-      console.log('Extensions are disabled in configuration');
+      if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
+        console.log('Extensions are disabled in configuration');
+      }
       return [];
     }
 
@@ -104,8 +106,11 @@ export class ExtensionManager {
         loadedExtensions.push(...extensions);
       } catch (error) {
         // Log error but continue with other directories
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        console.error(`Failed to load extensions from directory '${directory}': ${errorMessage}`);
+        // Only log error if not in a test environment
+        if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          console.error(`Failed to load extensions from directory '${directory}': ${errorMessage}`);
+        }
       }
     }
 
@@ -160,15 +165,20 @@ export class ExtensionManager {
             this.extensions.set(extension.name, extension);
             extensions.push(extension);
 
-            console.log(`Loaded extension: ${extension.name} v${extension.version}`);
+            if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
+              console.log(`Loaded extension: ${extension.name} v${extension.version}`);
+            }
           } catch (error) {
             // Log error for this extension but continue with others
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            console.error(
-              `Failed to load extension from '${extensionPath}': ${errorMessage}`
-            );
+            // Only log error if not in a test environment
+            if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
+              const errorMessage = error instanceof Error ? error.message : String(error);
+              console.error(
+                `Failed to load extension from '${extensionPath}': ${errorMessage}`
+              );
+            }
           }
-        } catch (error) {
+        } catch (_error) {
           // Skip entries that can't be accessed
           continue;
         }
@@ -197,7 +207,7 @@ export class ExtensionManager {
     // Convert hook configs to Hook objects
     const hooks: Hook[] = [];
     if (manifest.hooks) {
-      for (const [event, hookConfigs] of Object.entries(manifest.hooks)) {
+      for (const [_event, hookConfigs] of Object.entries(manifest.hooks)) {
         for (const hookConfig of hookConfigs) {
           const hook: Hook = {
             id: randomUUID(),
@@ -356,10 +366,13 @@ export class ExtensionManager {
           console.log(`Started MCP server '${fullServerName}' with ${tools.length} tools`);
         } catch (error) {
           // Log error but don't fail the entire enable operation
-          const errorMessage = error instanceof Error ? error.message : String(error);
-          console.error(
-            `Failed to start MCP server '${serverName}' for extension '${name}': ${errorMessage}`
-          );
+          // Only log error if not in a test environment
+          if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            console.error(
+              `Failed to start MCP server '${serverName}' for extension '${name}': ${errorMessage}`
+            );
+          }
         }
       }
 
@@ -370,7 +383,9 @@ export class ExtensionManager {
     // Register skills with skill registry
     if (this.skillRegistry && extension.skills.length > 0) {
       this.skillRegistry.registerSkills(name, extension.skills);
-      console.log(`Registered ${extension.skills.length} skills for extension '${name}'`);
+      if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
+        console.log(`Registered ${extension.skills.length} skills for extension '${name}'`);
+      }
     }
 
     // Mark as enabled
@@ -425,10 +440,13 @@ export class ExtensionManager {
           console.log(`Stopped MCP server '${serverName}'`);
         } catch (error) {
           // Log error but continue with other servers
-          const errorMessage = error instanceof Error ? error.message : String(error);
-          console.error(
-            `Failed to stop MCP server '${serverName}' for extension '${name}': ${errorMessage}`
-          );
+          // Only log error if not in a test environment
+          if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            console.error(
+              `Failed to stop MCP server '${serverName}' for extension '${name}': ${errorMessage}`
+            );
+          }
         }
       }
 

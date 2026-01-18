@@ -23,8 +23,8 @@
 ### Community Extensions
 
 Browse community extensions:
-- [GitHub Topics](https://github.com/topics/ollm-extension)
-- [Extension Registry](https://github.com/ollm/extensions)
+- GitHub Topics (https://github.com/topics/ollm-extension)
+- Extension Registry (https://github.com/ollm/extensions)
 
 ### Search Extensions
 
@@ -99,7 +99,7 @@ gh release create v1.0.0 my-extension-1.0.0.tar.gz
 
 ### 4. Submit to Registry
 
-1. Fork [ollm/extensions](https://github.com/ollm/extensions)
+1. Fork ollm/extensions (https://github.com/ollm/extensions)
 2. Add your extension to registry.json
 3. Submit pull request
 4. Wait for review

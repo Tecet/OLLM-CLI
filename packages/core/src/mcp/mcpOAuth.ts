@@ -5,6 +5,7 @@
  * including token storage, refresh, and automatic discovery.
  */
 
+import { exec } from 'child_process';
 import { createServer, type Server } from 'http';
 import { parse as parseUrl } from 'url';
 
@@ -61,6 +62,7 @@ interface OAuthDiscovery {
 export class MCPOAuthProvider {
   private tokens: Map<string, OAuthTokens> = new Map();
   private tokenStorage?: TokenStorage;
+  private refreshPromises: Map<string, Promise<OAuthTokens>> = new Map();
 
   constructor(tokenStorage?: TokenStorage) {
     this.tokenStorage = tokenStorage;
@@ -118,13 +120,37 @@ export class MCPOAuthProvider {
     if (now >= expiresWithBuffer) {
       // Token expired, try to refresh
       if (tokens.refreshToken) {
+        // Check if refresh is already in progress
+        const existingRefresh = this.refreshPromises.get(serverName);
+        if (existingRefresh) {
+          try {
+            return await existingRefresh;
+          } catch (_error) {
+            return undefined;
+          }
+        }
+
+        // Start new refresh
+        const refreshPromise = (async () => {
+          try {
+            const refreshed = await this.refreshTokens(serverName, tokens.refreshToken!);
+            await this.storeTokens(serverName, refreshed);
+            return refreshed;
+          } catch (error) {
+            // Refresh failed, remove invalid tokens
+            await this.revokeTokens(serverName);
+            throw error;
+          } finally {
+            // Remove from refresh promises
+            this.refreshPromises.delete(serverName);
+          }
+        })();
+
+        this.refreshPromises.set(serverName, refreshPromise);
+
         try {
-          const refreshed = await this.refreshTokens(serverName, tokens.refreshToken);
-          await this.storeTokens(serverName, refreshed);
-          return refreshed;
-        } catch (error) {
-          // Refresh failed, remove invalid tokens
-          await this.revokeTokens(serverName);
+          return await refreshPromise;
+        } catch (_error) {
           return undefined;
         }
       }
@@ -144,7 +170,7 @@ export class MCPOAuthProvider {
    * @param refreshToken - Refresh token
    * @returns New tokens
    */
-  async refreshTokens(serverName: string, refreshToken: string): Promise<OAuthTokens> {
+  async refreshTokens(_serverName: string, _refreshToken: string): Promise<OAuthTokens> {
     // Get stored config (would need to be passed or stored)
     // For now, throw error - this needs server config
     throw new Error('Token refresh not yet implemented - needs server config');
@@ -219,11 +245,23 @@ export class MCPOAuthProvider {
    */
   private async startCallbackServer(port: number, authUrl: string): Promise<string> {
     return new Promise((resolve, reject) => {
-      let server: Server | undefined;
-      const timeout = setTimeout(() => {
-        server?.close();
-        reject(new Error('OAuth callback timeout'));
-      }, 5 * 60 * 1000); // 5 minute timeout
+      let server: Server | null = null;
+      let timeout: NodeJS.Timeout | null = null;
+      let resolved = false;
+
+      const cleanup = () => {
+        if (timeout) {
+          clearTimeout(timeout);
+          timeout = null;
+        }
+        if (server) {
+          server.close(() => {
+            server = null;
+          });
+          // Remove all listeners to prevent memory leaks
+          server.removeAllListeners();
+        }
+      };
 
       server = createServer((req, res) => {
         const url = parseUrl(req.url || '', true);
@@ -235,18 +273,22 @@ export class MCPOAuthProvider {
           if (error) {
             res.writeHead(400, { 'Content-Type': 'text/html' });
             res.end(`<html><body><h1>Authentication Failed</h1><p>${error}</p></body></html>`);
-            clearTimeout(timeout);
-            server?.close();
-            reject(new Error(`OAuth error: ${error}`));
+            if (!resolved) {
+              resolved = true;
+              cleanup();
+              reject(new Error(`OAuth error: ${error}`));
+            }
             return;
           }
 
           if (code) {
             res.writeHead(200, { 'Content-Type': 'text/html' });
             res.end('<html><body><h1>Authentication Successful</h1><p>You can close this window.</p></body></html>');
-            clearTimeout(timeout);
-            server?.close();
-            resolve(code);
+            if (!resolved) {
+              resolved = true;
+              cleanup();
+              resolve(code);
+            }
             return;
           }
 
@@ -258,6 +300,14 @@ export class MCPOAuthProvider {
         }
       });
 
+      timeout = setTimeout(() => {
+        if (!resolved) {
+          resolved = true;
+          cleanup();
+          reject(new Error('OAuth callback timeout'));
+        }
+      }, 5 * 60 * 1000); // 5 minute timeout
+
       server.listen(port, () => {
         console.log(`OAuth callback server listening on http://localhost:${port}`);
         console.log(`Opening browser for authentication...`);
@@ -268,8 +318,11 @@ export class MCPOAuthProvider {
       });
 
       server.on('error', (error) => {
-        clearTimeout(timeout);
-        reject(error);
+        if (!resolved) {
+          resolved = true;
+          cleanup();
+          reject(error);
+        }
       });
     });
   }
@@ -317,7 +370,13 @@ export class MCPOAuthProvider {
       throw new Error(`Token exchange failed: ${error}`);
     }
 
-    const data = await response.json() as any;
+    const data = await response.json() as {
+      access_token: string;
+      refresh_token?: string;
+      expires_in: number;
+      token_type?: string;
+      scope?: string;
+    };
 
     return {
       accessToken: data.access_token,
@@ -386,7 +445,6 @@ export class MCPOAuthProvider {
    * @param url - URL to open
    */
   private openBrowser(url: string): void {
-    const { exec } = require('child_process');
     const platform = process.platform;
 
     let command: string;
@@ -422,7 +480,11 @@ export class MCPOAuthProvider {
         return undefined;
       }
 
-      const data = await response.json() as any;
+      const data = await response.json() as {
+        authorization_endpoint: string;
+        token_endpoint: string;
+        scopes_supported?: string[];
+      };
 
       return {
         authorizationUrl: data.authorization_endpoint,

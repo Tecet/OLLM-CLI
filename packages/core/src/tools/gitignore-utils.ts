@@ -7,7 +7,6 @@
 
 import { promises as fs } from 'fs';
 import * as path from 'path';
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 import ignoreFactory from 'ignore';
 import type { Ignore } from 'ignore';
 
@@ -31,7 +30,7 @@ export async function loadGitignore(directory: string): Promise<Ignore | null> {
     const ig = createIgnore();
     ig.add(content);
     return ig;
-  } catch (error) {
+  } catch (_error) {
     // .gitignore doesn't exist or can't be read
     return null;
   }

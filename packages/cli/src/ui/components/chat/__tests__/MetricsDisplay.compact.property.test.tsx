@@ -234,6 +234,7 @@ describe('Property 27: Compact Metrics Format', () => {
 
         // Property: Total time should be displayed with one decimal place
         // Strip ANSI codes for matching
+        // eslint-disable-next-line no-control-regex
         const strippedOutput = output.replace(/\x1b\[[0-9;]*m/g, '');
         const timeMatch = strippedOutput.match(/([\d.]+)s$/);
         expect(timeMatch).toBeTruthy();
