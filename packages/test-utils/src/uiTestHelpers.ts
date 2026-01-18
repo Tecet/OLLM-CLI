@@ -6,7 +6,7 @@
  * and asserting on UI output.
  */
 
-import type { ReactElement, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 /**
  * Strip ANSI escape codes from a string for easier assertions.
@@ -336,7 +336,7 @@ export const mockKeybinds = {
  * ```
  */
 export function createTestWrapper(
-  providers: Array<{ Provider: unknown; props?: Record<string, unknown> }>
+  _providers: Array<{ Provider: unknown; props?: Record<string, unknown> }>
 ): unknown {
   // Return a function that can be used as a React component
   // The actual JSX will be in the test files (.tsx)

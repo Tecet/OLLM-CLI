@@ -96,12 +96,12 @@ export class CompatibilityTestRunner {
   /**
    * Test basic chat functionality for a model
    */
-  async testBasicChat(modelName: string): Promise<TestResult> {
+  async testBasicChat(_modelName: string): Promise<TestResult> {
     try {
       // This is a placeholder - actual implementation would make a real API call
       // For now, we return NOT_TESTED to indicate the test needs implementation
       return TestResult.NOT_TESTED;
-    } catch (error) {
+    } catch (_error) {
       return TestResult.FAIL;
     }
   }
@@ -109,10 +109,10 @@ export class CompatibilityTestRunner {
   /**
    * Test streaming functionality for a model
    */
-  async testStreaming(modelName: string): Promise<TestResult> {
+  async testStreaming(_modelName: string): Promise<TestResult> {
     try {
       return TestResult.NOT_TESTED;
-    } catch (error) {
+    } catch (_error) {
       return TestResult.FAIL;
     }
   }
@@ -120,10 +120,10 @@ export class CompatibilityTestRunner {
   /**
    * Test native tool calling support for a model
    */
-  async testNativeToolCalling(modelName: string): Promise<TestResult> {
+  async testNativeToolCalling(_modelName: string): Promise<TestResult> {
     try {
       return TestResult.NOT_TESTED;
-    } catch (error) {
+    } catch (_error) {
       return TestResult.FAIL;
     }
   }
@@ -131,10 +131,10 @@ export class CompatibilityTestRunner {
   /**
    * Test ReAct fallback for models without native tool calling
    */
-  async testReActFallback(modelName: string): Promise<TestResult> {
+  async testReActFallback(_modelName: string): Promise<TestResult> {
     try {
       return TestResult.NOT_TESTED;
-    } catch (error) {
+    } catch (_error) {
       return TestResult.FAIL;
     }
   }
@@ -142,10 +142,10 @@ export class CompatibilityTestRunner {
   /**
    * Test context handling at a specific size
    */
-  async testContextSize(modelName: string, contextSize: number): Promise<TestResult> {
+  async testContextSize(_modelName: string, _contextSize: number): Promise<TestResult> {
     try {
       return TestResult.NOT_TESTED;
-    } catch (error) {
+    } catch (_error) {
       return TestResult.FAIL;
     }
   }

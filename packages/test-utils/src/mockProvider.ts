@@ -134,7 +134,7 @@ export class MockProvider implements ProviderAdapter {
    * Simulate model pulling with progress callbacks.
    */
   async pullModel(
-    name: string,
+    _name: string,
     onProgress?: (progress: PullProgress) => void
   ): Promise<void> {
     const steps = [
@@ -155,7 +155,7 @@ export class MockProvider implements ProviderAdapter {
   /**
    * Mock delete model operation.
    */
-  async deleteModel(name: string): Promise<void> {
+  async deleteModel(_name: string): Promise<void> {
     // No-op for mock
   }
 
