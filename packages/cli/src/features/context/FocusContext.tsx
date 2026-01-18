@@ -7,7 +7,8 @@ export type FocusableId =
   | 'context-panel' 
   | 'file-tree' 
   | 'functions'
-  | 'tools-panel';
+  | 'tools-panel'
+  | 'docs-panel';
 
 export type NavigationMode = 'browse' | 'active';
 
@@ -19,7 +20,8 @@ const CYCLE_ORDER: FocusableId[] = [
   'context-panel',
   'file-tree',
   'functions',
-  'tools-panel'
+  'tools-panel',
+  'docs-panel'
 ];
 
 export interface FocusContextValue {
@@ -58,7 +60,7 @@ export function FocusProvider({ children }: { children: ReactNode }) {
         'tools': 'tools-panel',
         'files': 'file-tree',
         'search': 'context-panel', // Temporary mapping
-        'docs': 'context-panel',   // Temporary mapping
+        'docs': 'docs-panel',
         'github': 'context-panel',  // Temporary mapping
         'settings': 'context-panel', // Temporary mapping
         'chat': 'chat-history',

@@ -130,14 +130,17 @@ describe('PromptModeManager - Mode Persistence', () => {
   
   describe('auto-switch persistence', () => {
     it('should emit auto-switch-changed event when setAutoSwitch is called', async () => {
+      // Create a promise that resolves when the event is emitted
       const eventPromise = new Promise<boolean>((resolve) => {
-        modeManager.on('auto-switch-changed', (enabled) => {
-          resolve(enabled as boolean);
+        modeManager.once('auto-switch-changed', (enabled) => {
+          resolve(enabled);
         });
       });
       
+      // Trigger the event
       modeManager.setAutoSwitch(false);
       
+      // Wait for the event and verify
       const enabled = await eventPromise;
       expect(enabled).toBe(false);
     });
@@ -155,14 +158,17 @@ describe('PromptModeManager - Mode Persistence', () => {
   
   describe('mode change persistence', () => {
     it('should emit mode-changed event with correct transition data', async () => {
+      // Create a promise that resolves when the event is emitted
       const eventPromise = new Promise<any>((resolve) => {
         modeManager.onModeChange((transition) => {
           resolve(transition);
         });
       });
       
+      // Trigger the event
       modeManager.switchMode('planning', 'manual', 0.8);
       
+      // Wait for the event and verify
       const transition = await eventPromise;
       expect(transition).toMatchObject({
         from: 'assistant',

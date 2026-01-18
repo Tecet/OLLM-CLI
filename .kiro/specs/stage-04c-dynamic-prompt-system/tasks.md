@@ -195,29 +195,29 @@
 
 ### Phase 7: Testing (3-4 hours)
 
-- [-] 18. Unit Tests
-  - [ ] 18.1 Test ContextAnalyzer keyword detection
-  - [ ] 18.2 Test ContextAnalyzer confidence scoring
-  - [ ] 18.3 Test PromptModeManager mode transitions
-  - [ ] 18.4 Test PromptModeManager tool filtering
-  - [ ] 18.5 Test PromptModeManager hysteresis
-  - [ ] 18.6 Test PromptModeManager cooldown
-  - [ ] 18.7 Test SnapshotManager snapshot creation
-  - [ ] 18.8 Test SnapshotManager snapshot retrieval
-  - [ ] 18.9 Test SnapshotManager snapshot pruning
-  - [ ] 18.10 Test mode template rendering
+- [x] 18. Unit Tests
+  - [x] 18.1 Test ContextAnalyzer keyword detection
+  - [x] 18.2 Test ContextAnalyzer confidence scoring
+  - [x] 18.3 Test PromptModeManager mode transitions
+  - [x] 18.4 Test PromptModeManager tool filtering
+  - [x] 18.5 Test PromptModeManager hysteresis
+  - [x] 18.6 Test PromptModeManager cooldown
+  - [x] 18.7 Test SnapshotManager snapshot creation
+  - [x] 18.8 Test SnapshotManager snapshot retrieval
+  - [x] 18.9 Test SnapshotManager snapshot pruning
+  - [x] 18.10 Test mode template rendering
 
-- [ ] 19. Integration Tests
-  - [ ] 19.1 Test mode switching flow (assistant → planning → developer)
-  - [ ] 19.2 Test specialized mode flow (developer → debugger → developer)
-  - [ ] 19.3 Test tool filtering in planning mode
-  - [ ] 19.4 Test HotSwap integration with mode system
-  - [ ] 19.5 Test compression integration with mode system
-  - [ ] 19.6 Test UI updates on mode change
-  - [ ] 19.7 Test snapshot restoration with findings
-  - [ ] 19.8 Test mode persistence across sessions
+- [x] 19. Integration Tests
+  - [x] 19.1 Test mode switching flow (assistant → planning → developer)
+  - [x] 19.2 Test specialized mode flow (developer → debugger → developer)
+  - [x] 19.3 Test tool filtering in planning mode
+  - [x] 19.4 Test HotSwap integration with mode system
+  - [x] 19.5 Test compression integration with mode system
+  - [x] 19.6 Test UI updates on mode change
+  - [x] 19.7 Test snapshot restoration with findings
+  - [x] 19.8 Test mode persistence across sessions
 
-- [ ] 20. Manual Testing
+- [-] 20. Manual Testing
   - [ ] 20.1 Test assistant mode (general conversation)
   - [ ] 20.2 Test planning mode (research, read-only)
   - [ ] 20.3 Test developer mode (full implementation)
@@ -237,7 +237,7 @@
 
 ### Phase 8: Enhancements - Additional Modes (3-4 hours)
 
-- [ ] 21. Create Prototype Mode
+- [~] 21. Create Prototype Mode
   - [ ] 21.1 Create `prototype.ts` mode template
   - [ ] 21.2 Add prototype mode to ModeType enum
   - [ ] 21.3 Configure tool access (all tools, no quality rules)
@@ -246,7 +246,7 @@
   - [ ] 21.6 Add suggestion to switch to planning/developer after success
   - [ ] 21.7 Write unit tests for prototype mode
 
-- [ ] 22. Create Teacher Mode
+- [~] 22. Create Teacher Mode
   - [ ] 22.1 Create `teacher.ts` mode template
   - [ ] 22.2 Add teacher mode to ModeType enum
   - [ ] 22.3 Configure tool access (read-only + web_search)

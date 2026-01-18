@@ -49,7 +49,7 @@ describe('ToolsPanel', () => {
     expect(output).toContain('The current model does not support function calling');
   });
 
-  it('should display enabled and disabled counts', () => {
+  it('should display compact navigation help in header', () => {
     const { lastFrame } = render(
       <FocusProvider>
         <UIProvider initialTheme={defaultDarkTheme}>
@@ -59,22 +59,9 @@ describe('ToolsPanel', () => {
     );
 
     const output = lastFrame();
-    expect(output).toContain('Enabled:');
-    expect(output).toContain('Disabled:');
-  });
-
-  it('should display help footer with keyboard shortcuts', () => {
-    const { lastFrame } = render(
-      <FocusProvider>
-        <UIProvider initialTheme={defaultDarkTheme}>
-          <ToolsPanel modelSupportsTools={true} />
-        </UIProvider>
-      </FocusProvider>
-    );
-
-    const output = lastFrame();
-    expect(output).toContain('Navigate');
-    expect(output).toContain('Toggle');
+    expect(output).toContain('↑↓:Nav');
+    expect(output).toContain('Enter:Toggle');
+    expect(output).toContain('0/Esc:Exit');
   });
 
   it('should display all tool categories', () => {

@@ -69,10 +69,10 @@ describe('ToolsTab - Property Tests', () => {
           const output = lastFrame();
 
           if (supportsTools) {
-            // Should display tools configuration
+            // Should display tools configuration with compact header
             expect(output).toContain('Tools Configuration');
-            expect(output).toContain('Enabled:');
-            expect(output).toContain('Disabled:');
+            expect(output).toContain('↑↓:Nav');
+            expect(output).toContain('Enter:Toggle');
           } else {
             // Should display "Model doesn't support tools" message
             expect(output).toContain("Model doesn't support tools");
