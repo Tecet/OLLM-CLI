@@ -113,4 +113,23 @@ export const defaultConfig: Config = {
     autoSave: true,
     saveInterval: 60000,
   },
+  prompt: {
+    mode: 'auto',
+    switching: {
+      enabled: true,
+      confidenceThreshold: 0.7,
+      minDuration: 30000, // 30 seconds
+      cooldown: 10000, // 10 seconds
+    },
+    modes: {
+      assistant: { enabled: true },
+      planning: { enabled: true },
+      developer: { enabled: true },
+      tool: { enabled: true },
+      debugger: { enabled: true },
+      security: { enabled: true },
+      reviewer: { enabled: true },
+      performance: { enabled: true },
+    },
+  },
 };

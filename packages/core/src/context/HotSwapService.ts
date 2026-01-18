@@ -4,13 +4,18 @@ import { PromptRegistry } from '../prompts/PromptRegistry.js';
 import { SnapshotParser } from './SnapshotParser.js';
 import { SystemPromptBuilder } from './SystemPromptBuilder.js';
 import { STATE_SNAPSHOT_PROMPT } from '../prompts/templates/stateSnapshot.js';
+import { PromptModeManager } from '../prompts/PromptModeManager.js';
+import { SnapshotManager } from '../prompts/SnapshotManager.js';
+import type { ModeType } from '../prompts/ContextAnalyzer.js';
 
 export class HotSwapService {
   constructor(
     private contextManager: ContextManager,
     private promptRegistry: PromptRegistry,
     private provider: ProviderAdapter,
-    private model: string
+    private model: string,
+    private modeManager?: PromptModeManager,
+    private snapshotManager?: SnapshotManager
   ) {
     // Ensure snapshot prompt is registered
     this.promptRegistry.register(STATE_SNAPSHOT_PROMPT);
@@ -21,32 +26,86 @@ export class HotSwapService {
    * @param newSkills Optional list of skill IDs to activate in the new session.
    */
   async swap(newSkills?: string[]): Promise<void> {
-    // 1. Snapshot with Hallucination Guard
     const messages = await this.contextManager.getMessages();
     const userMessages = messages.filter(m => m.role === 'user' || m.role === 'assistant');
     
+    // Get current mode before clearing
+    const currentMode = this.modeManager?.getCurrentMode() || 'assistant';
+    
+    // 1. Create mode transition snapshot if managers are available
+    if (this.modeManager && this.snapshotManager && userMessages.length >= 3) {
+      try {
+        const snapshot = this.snapshotManager.createTransitionSnapshot(
+          currentMode,
+          'developer', // HotSwap defaults to developer mode
+          {
+            messages: messages.map(m => ({
+              role: m.role,
+              parts: [{ type: 'text', text: m.content }]
+            })),
+            activeSkills: this.modeManager.getActiveSkills(),
+            activeTools: [], // Will be populated by tool registry
+            currentTask: undefined
+          }
+        );
+        
+        // Store snapshot before clearing
+        await this.snapshotManager.storeSnapshot(snapshot, true);
+        console.log('[HotSwap] Mode transition snapshot created and stored');
+      } catch (error) {
+        console.error('[HotSwap] Failed to create transition snapshot:', error);
+        // Continue with swap even if snapshot fails
+      }
+    }
+    
+    // 2. Generate XML snapshot with Hallucination Guard
     let snapshotXml = '';
     // Only snapshot if we have a meaningful conversation (3+ turns)
     if (userMessages.length >= 3) {
       snapshotXml = await this.generateSnapshot(messages);
     } else {
-      console.log(`[HotSwap] Skipping snapshot due to short conversation (${userMessages.length} messages).`);
+      console.log(`[HotSwap] Skipping XML snapshot due to short conversation (${userMessages.length} messages).`);
     }
     
-    // 2. Clear Context
+    // 3. Clear Context
     await this.contextManager.clear();
 
-    // 3. Update System Prompt with new skills
-    const systemPromptBuilder = new SystemPromptBuilder(this.promptRegistry);
+    // 4. Update skills in ModeManager if available
+    if (this.modeManager && newSkills) {
+      this.modeManager.updateSkills(newSkills);
+    }
+
+    // 5. Switch to developer mode (skills imply implementation)
+    if (this.modeManager) {
+      this.modeManager.switchMode('developer', 'manual', 1.0);
+      console.log('[HotSwap] Switched to developer mode');
+    }
+
+    // 6. Build System Prompt with ModeManager or fallback to SystemPromptBuilder
+    let newSystemPrompt: string;
     
-    const newSystemPrompt = systemPromptBuilder.build({
-      interactive: true,
-      skills: newSkills
-    });
+    if (this.modeManager) {
+      // Use ModeManager to build prompt
+      newSystemPrompt = this.modeManager.buildPrompt({
+        mode: 'developer',
+        skills: newSkills,
+        tools: [], // Will be populated by tool registry
+        workspace: {
+          path: process.cwd()
+        }
+      });
+    } else {
+      // Fallback to SystemPromptBuilder
+      const systemPromptBuilder = new SystemPromptBuilder(this.promptRegistry);
+      newSystemPrompt = systemPromptBuilder.build({
+        interactive: true,
+        skills: newSkills
+      });
+    }
     
     this.contextManager.setSystemPrompt(newSystemPrompt);
 
-    // 4. Reseed with Snapshot (if available)
+    // 7. Reseed with XML Snapshot (if available)
     if (snapshotXml) {
       const parsed = SnapshotParser.parse(snapshotXml);
       const seedContent = SnapshotParser.toSystemContext(parsed);
@@ -59,12 +118,14 @@ export class HotSwapService {
       });
     }
     
-    // 5. Emit event for UI
+    // 8. Emit events for UI
     if (newSkills) {
       console.log('[HotSwap] Switching to new skills:', newSkills);
       // Emit custom event for UI updates
       this.contextManager.emit('active-skills-updated', newSkills);
     }
+    
+    // Note: mode-changed event is already emitted by ModeManager.switchMode()
   }
 
   private async generateSnapshot(messages: ContextMessage[]): Promise<string> {

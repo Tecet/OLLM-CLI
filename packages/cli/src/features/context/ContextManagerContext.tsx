@@ -22,7 +22,7 @@ import {
   PromptRegistry,
   PromptModeManager,
   ContextAnalyzer,
-  SnapshotManager,
+  ModeSnapshotManager,
 } from '@ollm/core';
 
 import type {
@@ -143,6 +143,9 @@ export interface ContextManagerActions {
   /** Get the PromptModeManager instance */
   getModeManager: () => PromptModeManager | null;
   
+  /** Get the SnapshotManager instance */
+  getSnapshotManager: () => ModeSnapshotManager | null;
+  
   /** Switch to a specific mode */
   switchMode: (mode: ModeType) => void;
   
@@ -151,6 +154,24 @@ export interface ContextManagerActions {
   
   /** Get current mode */
   getCurrentMode: () => ModeType;
+  
+  /** Restore mode history from session (when resuming) */
+  restoreModeHistory: (history: Array<{
+    from: string;
+    to: string;
+    timestamp: string;
+    trigger: 'auto' | 'manual' | 'tool' | 'explicit';
+    confidence: number;
+  }>) => void;
+  
+  /** Get mode history for session persistence */
+  getModeHistory: () => Array<{
+    from: string;
+    to: string;
+    timestamp: string;
+    trigger: 'auto' | 'manual' | 'tool' | 'explicit';
+    confidence: number;
+  }>;
 }
 
 export interface ContextManagerContextValue {
@@ -224,7 +245,7 @@ export function ContextManagerProvider({
   const modeManagerRef = useRef<PromptModeManager | null>(null);
   
   // Snapshot manager reference
-  const snapshotManagerRef = useRef<SnapshotManager | null>(null);
+  const snapshotManagerRef = useRef<ModeSnapshotManager | null>(null);
   
   // Mode change callback reference for cleanup
   const modeChangeCallbackRef = useRef<((transition: ModeTransition) => void) | null>(null);
@@ -262,7 +283,7 @@ export function ContextManagerProvider({
         modeManagerRef.current = modeManager;
         
         // Create SnapshotManager
-        const snapshotManager = new SnapshotManager({
+        const snapshotManager = new ModeSnapshotManager({
           sessionId,
           storagePath: undefined, // Use default path
           maxCacheSize: 10,
@@ -299,6 +320,17 @@ export function ContextManagerProvider({
         modeChangeCallbackRef.current = modeChangeCallback;
         modeManager.onModeChange(modeChangeCallback);
         
+        // Listen for auto-switch changes
+        const autoSwitchChangeCallback = (enabled: boolean) => {
+          setAutoSwitchEnabled(enabled);
+          console.log(`Auto-switch ${enabled ? 'enabled' : 'disabled'}`);
+          
+          // Persist auto-switch preference to settings
+          SettingsService.getInstance().setAutoSwitch(enabled);
+        };
+        
+        modeManager.on('auto-switch-changed', autoSwitchChangeCallback);
+        
         // Start the context manager
         await manager.start();
         setActive(true);
@@ -331,6 +363,32 @@ export function ContextManagerProvider({
         // Update state
         setCurrentMode(savedMode as ModeType);
         setAutoSwitchEnabled(savedAutoSwitch);
+        
+        // Listen for compression event (Subtask 15.1)
+        const compressionCallback = () => {
+          console.log('Compression complete, rebuilding prompt with current mode');
+          
+          // Rebuild prompt with ModeManager after compression (Subtask 15.2)
+          if (modeManagerRef.current) {
+            // Preserve current mode after compression (Subtask 15.3)
+            const currentMode = modeManagerRef.current.getCurrentMode();
+            
+            const newPrompt = modeManagerRef.current.buildPrompt({
+              mode: currentMode,
+              tools: [], // Will be populated by ChatContext when available
+              skills: modeManagerRef.current.getActiveSkills(),
+              workspace: undefined, // Will be populated by ChatContext when available
+            });
+            
+            // Update system prompt in ContextManager (Subtask 15.4)
+            manager.setSystemPrompt(newPrompt);
+            
+            console.log(`System prompt rebuilt after compression (mode: ${currentMode})`);
+          }
+        };
+        
+        // Register compression listener on the manager
+        manager.on('compressed', compressionCallback);
         
         setError(null);
       } catch (err) {
@@ -608,6 +666,10 @@ export function ContextManagerProvider({
     return modeManagerRef.current;
   }, []);
   
+  const getSnapshotManager = useCallback(() => {
+    return snapshotManagerRef.current;
+  }, []);
+  
   const switchMode = useCallback((mode: ModeType) => {
     if (!modeManagerRef.current) {
       console.warn('PromptModeManager not initialized');
@@ -639,6 +701,36 @@ export function ContextManagerProvider({
   const getCurrentModeAction = useCallback(() => {
     return modeManagerRef.current?.getCurrentMode() || 'assistant';
   }, []);
+  
+  const restoreModeHistoryAction = useCallback((history: Array<{
+    from: string;
+    to: string;
+    timestamp: string;
+    trigger: 'auto' | 'manual' | 'tool' | 'explicit';
+    confidence: number;
+  }>) => {
+    if (!modeManagerRef.current) {
+      console.warn('PromptModeManager not initialized');
+      return;
+    }
+    
+    modeManagerRef.current.restoreModeHistory(history);
+    
+    // Update current mode state from restored history
+    const currentMode = modeManagerRef.current.getCurrentMode();
+    setCurrentMode(currentMode);
+    
+    console.log(`Restored mode history with ${history.length} transitions, current mode: ${currentMode}`);
+  }, []);
+  
+  const getModeHistoryAction = useCallback(() => {
+    if (!modeManagerRef.current) {
+      console.warn('PromptModeManager not initialized');
+      return [];
+    }
+    
+    return modeManagerRef.current.getSerializableModeHistory();
+  }, []);
 
   const actions: ContextManagerActions = useMemo(() => ({
     addMessage,
@@ -663,9 +755,12 @@ export function ContextManagerProvider({
     },
     getManager: () => managerRef.current,
     getModeManager,
+    getSnapshotManager,
     switchMode,
     setAutoSwitch: setAutoSwitchAction,
     getCurrentMode: getCurrentModeAction,
+    restoreModeHistory: restoreModeHistoryAction,
+    getModeHistory: getModeHistoryAction,
   }), [
     addMessage,
     compress,
@@ -683,9 +778,12 @@ export function ContextManagerProvider({
     on,
     off,
     getModeManager,
+    getSnapshotManager,
     switchMode,
     setAutoSwitchAction,
     getCurrentModeAction,
+    restoreModeHistoryAction,
+    getModeHistoryAction,
   ]);
   
   // Update global reference

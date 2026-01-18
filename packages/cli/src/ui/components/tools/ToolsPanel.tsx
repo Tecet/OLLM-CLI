@@ -4,7 +4,7 @@ import { useUI } from '../../../features/context/UIContext.js';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { SettingsService } from '../../../config/settingsService.js';
 import { getAllCategories, getToolsByCategory, getCategoryDisplayName, ToolCategory } from '../../../config/toolsConfig.js';
-import { ToolItem } from './ToolItem.js';
+import { ToolToggle } from './ToolToggle.js';
 
 // Category icon mapping
 const getCategoryIcon = (category: ToolCategory): string => {
@@ -45,6 +45,7 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 15 }: Tools
   const [selectedToolIndex, setSelectedToolIndex] = useState(0);
   const [scrollOffset, setScrollOffset] = useState(0);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isOnExitItem, setIsOnExitItem] = useState(false); // Track if Exit item is selected
   
   // Get all categories and their tools
   const categories = useMemo(() => getAllCategories(), []);
@@ -69,7 +70,7 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 15 }: Tools
 
   // Calculate total items for windowed rendering
   const totalItems = useMemo(() => {
-    return categoryData.reduce((sum, { tools }) => sum + tools.length + 1, 0); // +1 for category header
+    return categoryData.reduce((sum, { tools }) => sum + tools.length + 1, 0) + 1; // +1 for category header, +1 for Exit item
   }, [categoryData]);
 
   // Visible window size (adjust based on terminal height)
@@ -78,13 +79,21 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 15 }: Tools
   // Calculate which categories and tools should be visible in the current window
   const visibleItems = useMemo(() => {
     const items: Array<{
-      type: 'category' | 'tool';
+      type: 'exit' | 'category' | 'tool';
       categoryIndex: number;
       toolIndex?: number;
       position: number;
     }> = [];
 
     let position = 0;
+    
+    // Add Exit item at position 0
+    items.push({
+      type: 'exit',
+      categoryIndex: -1,
+      position: position++,
+    });
+
     categoryData.forEach((categoryInfo, catIndex) => {
       // Add category header
       items.push({
@@ -137,6 +146,11 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 15 }: Tools
 
   // Navigation handlers
   const handleNavigateUp = () => {
+    if (isOnExitItem) {
+      // Already at Exit, can't go up
+      return;
+    }
+    
     if (selectedToolIndex > 0) {
       setSelectedToolIndex(prev => prev - 1);
     } else if (selectedCategoryIndex > 0) {
@@ -144,10 +158,22 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 15 }: Tools
       const prevCategory = categoryData[selectedCategoryIndex - 1];
       setSelectedCategoryIndex(prev => prev - 1);
       setSelectedToolIndex(prevCategory.tools.length - 1);
+    } else {
+      // At first tool of first category, move to Exit
+      setIsOnExitItem(true);
+      setScrollOffset(0);
     }
   };
 
   const handleNavigateDown = () => {
+    if (isOnExitItem) {
+      // Move from Exit to first tool
+      setIsOnExitItem(false);
+      setSelectedCategoryIndex(0);
+      setSelectedToolIndex(0);
+      return;
+    }
+    
     const currentCategory = categoryData[selectedCategoryIndex];
     if (selectedToolIndex < currentCategory.tools.length - 1) {
       setSelectedToolIndex(prev => prev + 1);
@@ -159,6 +185,12 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 15 }: Tools
   };
 
   const handleToggleCurrent = () => {
+    // Check if we're on the Exit item
+    if (isOnExitItem) {
+      handleExit();
+      return;
+    }
+    
     const currentCategory = categoryData[selectedCategoryIndex];
     const currentTool = currentCategory.tools[selectedToolIndex];
     if (currentTool) {
@@ -176,14 +208,14 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 15 }: Tools
       handleNavigateDown();
     } else if (key.leftArrow || key.rightArrow || key.return) {
       handleToggleCurrent();
-    } else if (key.escape) {
+    } else if (key.escape || input === '0') {
       handleExit();
     }
   }, { isActive: hasFocus });
 
   // Auto-scroll to keep selected item visible
   useEffect(() => {
-    let currentPosition = 0;
+    let currentPosition = 1; // Start at 1 because Exit is at position 0
     for (let i = 0; i < selectedCategoryIndex; i++) {
       currentPosition += categoryData[i].tools.length + 1;
     }
@@ -226,9 +258,20 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 15 }: Tools
     );
   }
 
+  // Get currently selected tool
+  const selectedTool = useMemo(() => {
+    if (selectedCategoryIndex >= 0 && selectedCategoryIndex < categoryData.length) {
+      const category = categoryData[selectedCategoryIndex];
+      if (selectedToolIndex >= 0 && selectedToolIndex < category.tools.length) {
+        return category.tools[selectedToolIndex];
+      }
+    }
+    return null;
+  }, [categoryData, selectedCategoryIndex, selectedToolIndex]);
+
   return (
     <Box flexDirection="column" height="100%">
-      {/* Header with tool count */}
+      {/* Header */}
       <Box
         flexDirection="column"
         borderStyle="single"
@@ -236,94 +279,147 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 15 }: Tools
         paddingX={1}
         flexShrink={0}
       >
-        <Box>
+        <Box justifyContent="space-between">
           <Text bold color={hasFocus ? uiState.theme.text.accent : uiState.theme.text.primary}>
             {hasFocus ? '▶ ' : ''}Tools Configuration
           </Text>
-        </Box>
-        <Box justifyContent="space-between" marginTop={1}>
-          <Text color={uiState.theme.status.success}>
-            ✓ Enabled: {enabledCount}
-          </Text>
-          <Text color={uiState.theme.status.error}>
-            ✗ Disabled: {disabledCount}
+          <Text color={hasFocus ? uiState.theme.text.primary : uiState.theme.text.secondary}>
+            ↑↓:Nav Enter:Toggle 0/Esc:Exit{hasUnsavedChanges ? '*' : ''}
           </Text>
         </Box>
       </Box>
 
-      {/* Categories and tools (windowed rendering) */}
-      <Box flexDirection="column" flexGrow={1} paddingX={1} paddingY={1} overflow="hidden">
-        {/* Scroll indicator at top */}
-        {scrollOffset > 0 && (
-          <Box justifyContent="center" marginBottom={1}>
-            <Text color={uiState.theme.text.secondary}>
-              ▲ Scroll up for more
-            </Text>
-          </Box>
-        )}
-
-        {/* Render only visible items */}
-        {visibleItems.map((item) => {
-          if (item.type === 'category') {
-            const categoryInfo = categoryData[item.categoryIndex];
-            
-            // Only show category header if at least one tool from this category is visible
-            const hasVisibleTools = visibleItems.some(
-              vi => vi.type === 'tool' && vi.categoryIndex === item.categoryIndex
-            );
-
-            if (!hasVisibleTools) return null;
-
-            return (
-              <Box key={`cat-${item.categoryIndex}`} flexDirection="column" marginTop={item.categoryIndex > 0 ? 1 : 0}>
-                {/* Simple plain header */}
-                <Text bold color={uiState.theme.text.primary}>
-                  {getCategoryIcon(categoryInfo.category)} {categoryInfo.displayName}
+      {/* Two-column layout */}
+      <Box flexGrow={1} overflow="hidden">
+        {/* Left column: Tool list (30%) */}
+        <Box flexDirection="column" width="30%" borderStyle="single" borderColor={uiState.theme.border.primary}>
+          {/* Scroll indicator at top - STICKY */}
+          {scrollOffset > 0 && (
+            <>
+              <Box justifyContent="center" paddingX={1}>
+                <Text color={uiState.theme.text.secondary}>
+                  ▲ Scroll up for more
                 </Text>
               </Box>
-            );
-          } else {
-            // Render tool item
-            const categoryInfo = categoryData[item.categoryIndex];
-            const tool = categoryInfo.tools[item.toolIndex!];
-            const isSelectedCategory = item.categoryIndex === selectedCategoryIndex;
-            const isToolSelected = hasFocus && isSelectedCategory && item.toolIndex === selectedToolIndex;
-            const isEnabled = toolStates[tool.id] ?? true;
+              <Text> </Text>
+            </>
+          )}
 
-            return (
-              <Box key={`tool-${tool.id}`} paddingLeft={2}>
-                <ToolItem
-                  tool={tool}
-                  isEnabled={isEnabled}
-                  isSelected={isToolSelected}
-                  theme={uiState.theme}
-                />
-              </Box>
-            );
-          }
-        })}
+          {/* Scrollable content area */}
+          <Box flexDirection="column" flexGrow={1} paddingX={1}>
+            {/* Render only visible items */}
+            {visibleItems.map((item) => {
+              if (item.type === 'exit') {
+                // Render Exit item
+                return (
+                  <>
+                    <Box key="exit-item">
+                      <Text
+                        bold={isOnExitItem && hasFocus}
+                        color={isOnExitItem && hasFocus ? 'yellow' : uiState.theme.text.primary}
+                      >
+                        ← Exit
+                      </Text>
+                    </Box>
+                    <Text> </Text>
+                    <Text> </Text>
+                  </>
+                );
+              } else if (item.type === 'category') {
+                const categoryInfo = categoryData[item.categoryIndex];
+                
+                const hasVisibleTools = visibleItems.some(
+                  vi => vi.type === 'tool' && vi.categoryIndex === item.categoryIndex
+                );
 
-        {/* Scroll indicator at bottom */}
-        {scrollOffset + WINDOW_SIZE < totalItems && (
-          <Box justifyContent="center" marginTop={1}>
-            <Text color={uiState.theme.text.secondary}>
-              ▼ Scroll down for more
-            </Text>
+                if (!hasVisibleTools) return null;
+
+                return (
+                  <Box key={`cat-${item.categoryIndex}`} marginTop={item.categoryIndex > 0 ? 1 : 0}>
+                    <Text bold color={uiState.theme.text.primary}>
+                      {getCategoryIcon(categoryInfo.category)} {categoryInfo.displayName}
+                    </Text>
+                  </Box>
+                );
+              } else {
+                // Render tool item (compact)
+                const categoryInfo = categoryData[item.categoryIndex];
+                const tool = categoryInfo.tools[item.toolIndex!];
+                const isSelectedCategory = item.categoryIndex === selectedCategoryIndex;
+                const isToolSelected = hasFocus && isSelectedCategory && item.toolIndex === selectedToolIndex;
+                const isEnabled = toolStates[tool.id] ?? true;
+
+                return (
+                  <Box key={`tool-${tool.id}`} paddingLeft={2}>
+                    <Box gap={1}>
+                      <ToolToggle
+                        isEnabled={isEnabled}
+                        isSelected={isToolSelected}
+                        theme={uiState.theme}
+                      />
+                      <Text
+                        bold={isToolSelected}
+                        color={isToolSelected ? 'yellow' : uiState.theme.text.primary}
+                        dimColor={!isEnabled}
+                      >
+                        {tool.displayName}
+                      </Text>
+                    </Box>
+                  </Box>
+                );
+              }
+            })}
           </Box>
-        )}
-      </Box>
 
-      {/* Help footer */}
-      <Box
-        flexDirection="column"
-        borderStyle="single"
-        borderColor={hasFocus ? uiState.theme.text.accent : uiState.theme.text.secondary}
-        paddingX={1}
-        flexShrink={0}
-      >
-        <Text color={hasFocus ? uiState.theme.text.primary : uiState.theme.text.secondary}>
-          {hasFocus ? '⌨ ' : ''}↑/↓: Navigate  •  ←/→/Enter: Toggle  •  Esc: Exit{hasUnsavedChanges ? ' (unsaved)' : ''}
-        </Text>
+          {/* Scroll indicator at bottom - STICKY */}
+          {scrollOffset + WINDOW_SIZE < totalItems && (
+            <>
+              <Text> </Text>
+              <Box justifyContent="center" paddingX={1}>
+                <Text color={uiState.theme.text.secondary}>
+                  ▼ Scroll down for more
+                </Text>
+              </Box>
+            </>
+          )}
+        </Box>
+
+        {/* Right column: Tool details (70%) */}
+        <Box flexDirection="column" width="70%" borderStyle="single" borderColor={uiState.theme.border.primary} paddingX={2} paddingY={2}>
+          {selectedTool ? (
+            <>
+              {/* Tool name */}
+              <Text bold color="yellow">
+                {selectedTool.displayName}
+              </Text>
+
+              {/* Tool version */}
+              <Box marginTop={1}>
+                <Text color={uiState.theme.text.secondary}>
+                  Version: v0.1.0
+                </Text>
+              </Box>
+
+              {/* Tool description */}
+              <Box marginTop={2}>
+                <Text color={uiState.theme.text.primary}>
+                  {selectedTool.description}
+                </Text>
+              </Box>
+
+              {/* Tool status */}
+              <Box marginTop={2}>
+                <Text color={toolStates[selectedTool.id] ? uiState.theme.status.success : uiState.theme.status.error}>
+                  Status: {toolStates[selectedTool.id] ? '✓ Enabled' : '✗ Disabled'}
+                </Text>
+              </Box>
+            </>
+          ) : (
+            <Text color={uiState.theme.text.secondary}>
+              Select a tool to view details
+            </Text>
+          )}
+        </Box>
       </Box>
     </Box>
   );

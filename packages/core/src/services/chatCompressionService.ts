@@ -12,6 +12,8 @@ import type {
 } from './types.js';
 import type { ProviderAdapter } from '../provider/types.js';
 import { sanitizeErrorMessage } from './errorSanitization.js';
+import { STATE_SNAPSHOT_PROMPT } from '../prompts/templates/stateSnapshot.js';
+import { EventEmitter } from 'events';
 
 /**
  * Simple token counting utility
@@ -46,7 +48,7 @@ function countMessagesTokens(messages: SessionMessage[]): number {
 /**
  * Chat Compression Service
  */
-export class ChatCompressionService {
+export class ChatCompressionService extends EventEmitter {
   private provider?: ProviderAdapter;
   private model?: string;
 
@@ -57,6 +59,7 @@ export class ChatCompressionService {
    * @param model - Optional model name to use for summarization
    */
   constructor(provider?: ProviderAdapter, model?: string) {
+    super();
     this.provider = provider;
     this.model = model;
   }
@@ -136,6 +139,14 @@ export class ChatCompressionService {
         compressionCount: metadata.compressionCount + 1,
       };
     }
+
+    // Emit compression-complete event
+    this.emit('compression-complete', {
+      originalTokenCount,
+      compressedTokenCount,
+      strategy: options.strategy,
+      compressionCount: updatedMetadata?.compressionCount ?? 1,
+    });
 
     return {
       compressedMessages,
@@ -423,6 +434,155 @@ Summary:`;
     }
 
     return `[Previous conversation summary]\n${summaryText.trim()}`;
+  }
+
+  /**
+   * Generate an XML snapshot using STATE_SNAPSHOT_PROMPT
+   * 
+   * @param messages - Messages to create snapshot from
+   * @returns XML snapshot string
+   */
+  async generateXMLSnapshot(messages: SessionMessage[]): Promise<string> {
+    if (!this.provider || !this.model) {
+      throw new Error('Provider and model must be set for XML snapshot generation');
+    }
+
+    // Convert SessionMessages to conversation text
+    const conversationText = messages
+      .map((msg) => {
+        const text = msg.parts
+          .filter((p) => p.type === 'text')
+          .map((p) => p.text)
+          .join('\n');
+        return `${msg.role}: ${text}`;
+      })
+      .join('\n\n');
+
+    // Use STATE_SNAPSHOT_PROMPT template
+    const systemPrompt = STATE_SNAPSHOT_PROMPT.content;
+    
+    const providerMessages = [
+      {
+        role: 'user' as const,
+        parts: [{ type: 'text' as const, text: conversationText }],
+      },
+    ];
+
+    let snapshotXml = '';
+    
+    try {
+      for await (const event of this.provider.chatStream({
+        model: this.model,
+        messages: providerMessages,
+        systemPrompt,
+        options: {
+          temperature: 0.3, // Lower temperature for structured output
+        },
+      })) {
+        if (event.type === 'text') {
+          snapshotXml += event.value;
+        } else if (event.type === 'error') {
+          throw new Error(event.error.message);
+        }
+      }
+    } catch (error) {
+      throw new Error(`Failed to generate XML snapshot: ${error instanceof Error ? error.message : String(error)}`);
+    }
+
+    if (!snapshotXml.trim()) {
+      throw new Error('LLM returned empty XML snapshot');
+    }
+
+    return snapshotXml.trim();
+  }
+
+  /**
+   * Validate XML structure
+   * 
+   * @param xml - XML string to validate
+   * @returns true if valid, false otherwise
+   */
+  validateXMLStructure(xml: string): boolean {
+    try {
+      // Check for required tags
+      const requiredTags = [
+        'state_snapshot',
+        'overall_goal',
+        'key_knowledge',
+        'file_system_state',
+        'current_plan'
+      ];
+
+      for (const tag of requiredTags) {
+        const openTag = `<${tag}>`;
+        const closeTag = `</${tag}>`;
+        
+        if (!xml.includes(openTag) || !xml.includes(closeTag)) {
+          console.warn(`XML validation failed: Missing tag ${tag}`);
+          return false;
+        }
+
+        // Check that close tag comes after open tag
+        const openIndex = xml.indexOf(openTag);
+        const closeIndex = xml.indexOf(closeTag);
+        
+        if (closeIndex <= openIndex) {
+          console.warn(`XML validation failed: Invalid tag order for ${tag}`);
+          return false;
+        }
+      }
+
+      return true;
+    } catch (error) {
+      console.warn('XML validation error:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Parse and format XML snapshot
+   * 
+   * @param xml - XML string to parse
+   * @returns Formatted XML string
+   */
+  parseAndFormatXML(xml: string): string {
+    try {
+      // Extract content between tags and clean up
+      let formatted = xml.trim();
+
+      // Remove any markdown code blocks if present
+      formatted = formatted.replace(/```xml\n?/g, '');
+      formatted = formatted.replace(/```\n?/g, '');
+
+      // Ensure proper indentation (basic formatting)
+      const lines = formatted.split('\n');
+      let indentLevel = 0;
+      const indentedLines: string[] = [];
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        
+        if (!trimmed) continue;
+
+        // Decrease indent for closing tags
+        if (trimmed.startsWith('</')) {
+          indentLevel = Math.max(0, indentLevel - 1);
+        }
+
+        // Add indented line
+        indentedLines.push('  '.repeat(indentLevel) + trimmed);
+
+        // Increase indent for opening tags (but not self-closing or if closing tag on same line)
+        if (trimmed.startsWith('<') && !trimmed.startsWith('</') && !trimmed.endsWith('/>') && !trimmed.includes('</')) {
+          indentLevel++;
+        }
+      }
+
+      return indentedLines.join('\n');
+    } catch (error) {
+      console.warn('XML formatting error:', error);
+      return xml; // Return original if formatting fails
+    }
   }
 
   /**

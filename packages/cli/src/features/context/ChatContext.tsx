@@ -452,7 +452,9 @@ export function ChatProvider({
         
         const manager = contextActions.getManager();
         if (manager && provider) {
-            toolRegistry.register(new HotSwapTool(manager, promptRegistry, provider, currentModel));
+            const modeManager = contextActions.getModeManager();
+            const snapshotManager = contextActions.getSnapshotManager();
+            toolRegistry.register(new HotSwapTool(manager, promptRegistry, provider, currentModel, modeManager || undefined, snapshotManager || undefined));
             toolRegistry.register(new MemoryDumpTool());
             const toolNames = toolRegistry.list().map(t => t.name);
             manager.emit('active-tools-updated', toolNames);

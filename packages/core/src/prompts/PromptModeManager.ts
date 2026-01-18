@@ -143,6 +143,9 @@ export class PromptModeManager extends EventEmitter {
    */
   setAutoSwitch(enabled: boolean): void {
     this.state.autoSwitchEnabled = enabled;
+    
+    // Emit event so UI can persist the preference
+    this.emit('auto-switch-changed', enabled);
   }
   
   /**
@@ -507,6 +510,51 @@ improve system performance.`
     };
     
     return deniedTools[mode] || [];
+  }
+  
+  /**
+   * Get mode history in a serializable format for session persistence
+   */
+  getSerializableModeHistory(): Array<{
+    from: string;
+    to: string;
+    timestamp: string;
+    trigger: 'auto' | 'manual' | 'tool' | 'explicit';
+    confidence: number;
+  }> {
+    return this.modeHistory.map(transition => ({
+      from: transition.from,
+      to: transition.to,
+      timestamp: transition.timestamp.toISOString(),
+      trigger: transition.trigger,
+      confidence: transition.confidence
+    }));
+  }
+  
+  /**
+   * Restore mode history from serialized format (when resuming a session)
+   */
+  restoreModeHistory(history: Array<{
+    from: string;
+    to: string;
+    timestamp: string;
+    trigger: 'auto' | 'manual' | 'tool' | 'explicit';
+    confidence: number;
+  }>): void {
+    this.modeHistory = history.map(transition => ({
+      from: transition.from as ModeType,
+      to: transition.to as ModeType,
+      timestamp: new Date(transition.timestamp),
+      trigger: transition.trigger,
+      confidence: transition.confidence
+    }));
+    
+    // Restore current mode from last transition if available
+    if (this.modeHistory.length > 0) {
+      const lastTransition = this.modeHistory[this.modeHistory.length - 1];
+      this.state.currentMode = lastTransition.to;
+      this.state.previousMode = lastTransition.from;
+    }
   }
   
   /**

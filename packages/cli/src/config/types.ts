@@ -65,6 +65,41 @@ export interface SessionConfig {
 }
 
 /**
+ * Mode switching configuration
+ */
+export interface ModeSwitchingConfig {
+  enabled: boolean;
+  confidenceThreshold: number;
+  minDuration: number;
+  cooldown: number;
+}
+
+/**
+ * Per-mode enable/disable configuration
+ */
+export interface ModeEnableConfig {
+  enabled: boolean;
+}
+
+/**
+ * Prompt mode configuration
+ */
+export interface PromptConfig {
+  mode: 'auto' | 'assistant' | 'planning' | 'developer' | 'tool' | 'debugger' | 'security' | 'reviewer' | 'performance';
+  switching: ModeSwitchingConfig;
+  modes: {
+    assistant: ModeEnableConfig;
+    planning: ModeEnableConfig;
+    developer: ModeEnableConfig;
+    tool: ModeEnableConfig;
+    debugger: ModeEnableConfig;
+    security: ModeEnableConfig;
+    reviewer: ModeEnableConfig;
+    performance: ModeEnableConfig;
+  };
+}
+
+/**
  * Context management configuration
  * Controls VRAM-aware context sizing and compression
  */
@@ -96,6 +131,7 @@ export interface Config {
   status: StatusConfig;
   review: ReviewConfig;
   session: SessionConfig;
+  prompt?: PromptConfig;
   context?: ContextConfig;
 }
 

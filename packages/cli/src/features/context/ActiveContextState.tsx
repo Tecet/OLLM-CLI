@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useContextManager } from './ContextManagerContext.js';
+import type { ModeType } from '@ollm/ollm-cli-core';
 
 interface ActiveContextState {
   activeSkills: string[];
@@ -9,6 +10,10 @@ interface ActiveContextState {
   activePrompts: string[];
   currentPersona: string;
   contextStrategy: 'Standard' | 'Hot Swap';
+  currentMode: ModeType;
+  allowedTools: string[];
+  modeIcon: string;
+  modeColor: string;
 }
 
 interface ActiveContextContextType extends ActiveContextState {
@@ -20,6 +25,64 @@ interface DataEvent {
   tools?: string[];
   hooks?: string[];
   servers?: string[];
+}
+
+interface ModeChangedEvent {
+  from: ModeType;
+  to: ModeType;
+  timestamp: Date;
+  trigger: 'auto' | 'manual' | 'tool' | 'explicit';
+  confidence: number;
+}
+
+/**
+ * Get mode metadata (icon, color, persona)
+ */
+function getModeMetadata(mode: ModeType): { icon: string; color: string; persona: string } {
+  const metadata: Record<ModeType, { icon: string; color: string; persona: string }> = {
+    assistant: {
+      icon: '💬',
+      color: 'blue',
+      persona: 'Helpful AI Assistant'
+    },
+    planning: {
+      icon: '📋',
+      color: 'yellow',
+      persona: 'Technical Architect & Planner'
+    },
+    developer: {
+      icon: '👨‍💻',
+      color: 'green',
+      persona: 'Senior Software Engineer'
+    },
+    tool: {
+      icon: '🔧',
+      color: 'cyan',
+      persona: 'Senior Software Engineer + Tool Expert'
+    },
+    debugger: {
+      icon: '🐛',
+      color: 'red',
+      persona: 'Senior Debugging Specialist'
+    },
+    security: {
+      icon: '🔒',
+      color: 'purple',
+      persona: 'Security Auditor & Specialist'
+    },
+    reviewer: {
+      icon: '👀',
+      color: 'orange',
+      persona: 'Senior Code Reviewer'
+    },
+    performance: {
+      icon: '⚡',
+      color: 'magenta',
+      persona: 'Performance Engineer'
+    }
+  };
+  
+  return metadata[mode] || metadata.assistant;
 }
 
 const ActiveContextContext = createContext<ActiveContextContextType | undefined>(undefined);
@@ -34,8 +97,12 @@ export const ActiveContextProvider: React.FC<{ children: ReactNode }> = ({ child
     activeHooks: [],
     activeMcpServers: [],
     activePrompts: [],
-    currentPersona: 'Standard CLI Agent',
-    contextStrategy: 'Standard'
+    currentPersona: 'Helpful AI Assistant',
+    contextStrategy: 'Standard',
+    currentMode: 'assistant',
+    allowedTools: [],
+    modeIcon: '💬',
+    modeColor: 'blue'
   });
 
   useEffect(() => {
@@ -50,6 +117,24 @@ export const ActiveContextProvider: React.FC<{ children: ReactNode }> = ({ child
            activePrompts: [],
            contextStrategy: 'Standard' 
        }));
+    };
+    
+    const handleModeChanged = (data: unknown) => {
+      const event = data as ModeChangedEvent;
+      const metadata = getModeMetadata(event.to);
+      
+      // Get allowed tools from ModeManager
+      const modeManager = actions.getModeManager();
+      const allowedTools = modeManager ? modeManager.getAllowedTools(event.to) : [];
+      
+      setState(prev => ({
+        ...prev,
+        currentMode: event.to,
+        currentPersona: metadata.persona,
+        modeIcon: metadata.icon,
+        modeColor: metadata.color,
+        allowedTools
+      }));
     };
 
     // Assuming ContextManagerContext exposes 'on' which wires to the internal emitter
@@ -70,6 +155,7 @@ export const ActiveContextProvider: React.FC<{ children: ReactNode }> = ({ child
             const d = data as DataEvent;
             setState(prev => ({ ...prev, activeMcpServers: d.servers || [] }));
         });
+        actions.on('mode-changed', handleModeChanged);
         actions.on('cleared', handleClear);
     }
 
@@ -79,6 +165,7 @@ export const ActiveContextProvider: React.FC<{ children: ReactNode }> = ({ child
           actions.off('active-tools-updated', () => {});
           actions.off('active-hooks-updated', () => {});
           actions.off('active-mcp-updated', () => {});
+          actions.off('mode-changed', handleModeChanged);
           actions.off('cleared', handleClear);
       }
     };

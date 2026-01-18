@@ -10,6 +10,8 @@ import { ContextManager } from '../context/types.js';
 import { HotSwapService } from '../context/HotSwapService.js';
 import { PromptRegistry } from '../prompts/PromptRegistry.js';
 import { ProviderAdapter } from '../provider/types.js';
+import { PromptModeManager } from '../prompts/PromptModeManager.js';
+import { SnapshotManager } from '../prompts/SnapshotManager.js';
 
 export interface HotSwapParams {
   skills?: string[];
@@ -18,13 +20,14 @@ export interface HotSwapParams {
 /**
  * Tool that allows the LLM to trigger a context hot swap.
  * This is useful for pivoting to a new specialty or clearing context while preserving state.
+ * Automatically switches to developer mode when skills are provided.
  */
 export class HotSwapTool implements DeclarativeTool<HotSwapParams, ToolResult> {
   name = 'trigger_hot_swap';
   displayName = 'Trigger Hot Swap';
   schema: ToolSchema = {
     name: 'trigger_hot_swap',
-    description: 'Triggers a context hot swap to switch specialties or clear memory while preserving state. This will summarize the current conversation and clear history to free context window.',
+    description: 'Triggers a context hot swap to switch specialties or clear memory while preserving state. This will create a mode transition snapshot, summarize the current conversation, clear history to free context window, and switch to developer mode for implementation. The snapshot preserves recent context and findings for seamless mode restoration.',
     parameters: {
       type: 'object',
       properties: {
@@ -43,14 +46,24 @@ export class HotSwapTool implements DeclarativeTool<HotSwapParams, ToolResult> {
     private manager: ContextManager,
     private promptRegistry: PromptRegistry,
     private provider: ProviderAdapter,
-    private currentModel: string
+    private currentModel: string,
+    private modeManager?: PromptModeManager,
+    private snapshotManager?: SnapshotManager
   ) {}
 
   createInvocation(
     params: HotSwapParams,
     _context: ToolContext
   ): ToolInvocation<HotSwapParams, ToolResult> {
-    return new HotSwapInvocation(params, this.manager, this.promptRegistry, this.provider, this.currentModel);
+    return new HotSwapInvocation(
+      params,
+      this.manager,
+      this.promptRegistry,
+      this.provider,
+      this.currentModel,
+      this.modeManager,
+      this.snapshotManager
+    );
   }
 }
 
@@ -60,11 +73,13 @@ export class HotSwapInvocation implements ToolInvocation<HotSwapParams, ToolResu
     private manager: ContextManager,
     private promptRegistry: PromptRegistry,
     private provider: ProviderAdapter,
-    private currentModel: string
+    private currentModel: string,
+    private modeManager?: PromptModeManager,
+    private snapshotManager?: SnapshotManager
   ) {}
 
   getDescription(): string {
-    return `Triggering hot swap to skills: ${this.params.skills?.join(', ') || 'None'}`;
+    return `Triggering hot swap to skills: ${this.params.skills?.join(', ') || 'None'} (will switch to developer mode)`;
   }
 
   toolLocations(): string[] {
@@ -76,7 +91,7 @@ export class HotSwapInvocation implements ToolInvocation<HotSwapParams, ToolResu
   ): Promise<ToolCallConfirmationDetails | false> {
     return {
       toolName: 'trigger_hot_swap',
-      description: `Trigger a context hot swap to skills: ${this.params.skills?.join(', ') || 'Standard'}. This will clear your current conversation history.`,
+      description: `Trigger a context hot swap to skills: ${this.params.skills?.join(', ') || 'Standard'}. This will create a mode transition snapshot, clear your current conversation history, and switch to developer mode.`,
       risk: 'medium'
     };
   }
@@ -108,12 +123,28 @@ export class HotSwapInvocation implements ToolInvocation<HotSwapParams, ToolResu
         this.manager,
         this.promptRegistry,
         this.provider,
-        this.currentModel
+        this.currentModel,
+        this.modeManager,
+        this.snapshotManager
       );
 
       await hotSwapService.swap(skills);
 
-      const msg = `Hot swap completed successfully. Current active skills: ${skills.join(', ') || 'Standard'}. Context has been cleared and reseeded.`;
+      // Build success message with mode and snapshot info
+      let msg = `Hot swap completed successfully. `;
+      
+      if (this.modeManager && this.snapshotManager) {
+        msg += `Mode transition snapshot created and stored. `;
+      }
+      
+      msg += `Current active skills: ${skills.join(', ') || 'Standard'}. `;
+      msg += `Context has been cleared and reseeded. `;
+      msg += `Mode switched to developer for implementation.`;
+      
+      if (this.snapshotManager) {
+        msg += ` Previous context can be restored when switching back from specialized modes.`;
+      }
+      
       return {
         llmContent: msg,
         returnDisplay: msg,

@@ -10,6 +10,9 @@ import type {
   ToolCall,
   GenerationOptions,
 } from '../provider/types.js';
+import type { PromptModeManager } from '../prompts/PromptModeManager.js';
+import type { SnapshotManager, ModeFindings } from '../prompts/SnapshotManager.js';
+import type { ModeType } from '../prompts/ContextAnalyzer.js';
 
 /**
  * Minimal ToolRegistry interface for tool execution.
@@ -38,6 +41,8 @@ export interface ChatOptions {
   maxTokens?: number;
   maxTurns?: number;
   abortSignal?: AbortSignal;
+  modeManager?: PromptModeManager;
+  snapshotManager?: SnapshotManager;
 }
 
 /**
@@ -56,13 +61,19 @@ export type TurnEvent =
 export class Turn {
   private toolCallQueue: ToolCall[] = [];
   private accumulatedText: string = '';
+  private modeManager?: PromptModeManager;
+  private snapshotManager?: SnapshotManager;
+  private modeBeforeToolExecution?: ModeType;
 
   constructor(
     private provider: ProviderAdapter,
     private toolRegistry: ToolRegistry,
     private messages: Message[],
     private options?: ChatOptions
-  ) {}
+  ) {
+    this.modeManager = options?.modeManager;
+    this.snapshotManager = options?.snapshotManager;
+  }
 
   /**
    * Execute the turn by streaming from provider and executing tool calls.
@@ -153,9 +164,67 @@ export class Turn {
    * @yields TurnEvent objects for tool results
    */
   private async *executeToolCalls(): AsyncIterable<TurnEvent> {
+    // Task 8.2: Get current mode from ModeManager
+    const currentMode = this.modeManager?.getCurrentMode() ?? 'developer';
+    
+    // Task 8.5: Switch to tool mode during execution (if not already)
+    let shouldRestoreMode = false;
+    if (this.modeManager && currentMode !== 'tool') {
+      this.modeBeforeToolExecution = currentMode;
+      
+      // Create transition snapshot before switching to tool mode
+      if (this.snapshotManager) {
+        const snapshot = this.snapshotManager.createTransitionSnapshot(
+          currentMode,
+          'tool',
+          {
+            messages: this.messages,
+            activeSkills: this.modeManager.getActiveSkills(),
+            activeTools: this.options?.tools?.map(t => t.name) ?? [],
+            currentTask: undefined
+          }
+        );
+        await this.snapshotManager.storeSnapshot(snapshot);
+      }
+      
+      // Switch to tool mode
+      this.modeManager.switchMode('tool', 'tool', 0.9);
+      shouldRestoreMode = true;
+    }
+    
     // Execute tool calls in parallel (Requirement 10.2: Handle errors without terminating)
     const results = await Promise.allSettled(
       this.toolCallQueue.map(async (toolCall) => {
+        // Task 8.3: Check if tool is allowed in current mode
+        if (this.modeManager && this.modeBeforeToolExecution) {
+          const isAllowed = this.modeManager.isToolAllowed(toolCall.name, this.modeBeforeToolExecution);
+          
+          // Task 8.4: Return error if tool not allowed with helpful message
+          if (!isAllowed) {
+            const deniedTools = this.modeManager.getDeniedTools(this.modeBeforeToolExecution);
+            const isDenied = deniedTools.some(pattern => {
+              if (pattern === '*') return true;
+              if (pattern.endsWith('*')) {
+                const prefix = pattern.slice(0, -1);
+                return toolCall.name.startsWith(prefix);
+              }
+              return pattern === toolCall.name;
+            });
+            
+            if (isDenied) {
+              return {
+                toolCall,
+                result: { 
+                  error: `Tool "${toolCall.name}" is not allowed in ${this.modeBeforeToolExecution} mode.\n` +
+                         `Current mode: ${this.modeBeforeToolExecution}\n` +
+                         `This tool requires developer mode or a specialized mode.\n` +
+                         `Suggestion: Switch to developer mode to use this tool.`
+                },
+              };
+            }
+          }
+        }
+        
         const tool = this.toolRegistry.get(toolCall.name);
         if (!tool) {
           return {
@@ -179,6 +248,7 @@ export class Turn {
         }
 
         try {
+          // Task 8.6: Execute tool
           const result = await tool.execute(toolCall.args);
           return { toolCall, result };
         } catch (error) {
@@ -219,6 +289,20 @@ export class Turn {
           error: new Error(`Unexpected tool execution error: ${err.message}`)
         };
       }
+    }
+    
+    // Task 8.7: Switch back to previous mode after execution
+    // Task 8.8: Restore snapshot if returning from specialized mode
+    if (shouldRestoreMode && this.modeManager && this.modeBeforeToolExecution) {
+      // Get snapshot to check for findings
+      const snapshot = this.snapshotManager?.getSnapshot('tool', this.modeBeforeToolExecution);
+      
+      // Switch back to previous mode
+      this.modeManager.switchMode(this.modeBeforeToolExecution, 'auto', 0.7);
+      
+      // If snapshot has findings, they will be available for the next turn
+      // The findings are already stored in the snapshot and can be retrieved
+      // by the context manager or prompt builder
     }
   }
 

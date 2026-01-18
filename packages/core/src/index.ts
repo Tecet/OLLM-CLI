@@ -150,7 +150,7 @@ export type {
   ContextSnapshot,
   SnapshotMetadata,
   SnapshotConfig,
-  SnapshotManager,
+  SnapshotManager as ContextSnapshotManager,
   SnapshotStorage,
   CompressionStrategy as ContextCompressionStrategy,
   CompressionStrategyType,
@@ -265,8 +265,8 @@ export {
   type ModeConfig,
   type ModeTransition,
   type PromptBuildOptions,
-  // Snapshot Manager
-  SnapshotManager,
+  // Snapshot Manager (Mode Transitions)
+  SnapshotManager as ModeSnapshotManager,
   type ModeTransitionSnapshot,
   type ModeFindings,
   // Mode Templates

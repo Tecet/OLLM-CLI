@@ -20,6 +20,7 @@ import { contextCommands } from './contextCommands.js';
 import { metricsCommands } from './metricsCommands.js';
 import { reasoningCommands } from './reasoningCommands.js';
 import { utilityCommands } from './utilityCommands.js';
+import { modeCommands } from './modeCommands.js';
 import type { Theme } from '../config/types.js';
 
 /**
@@ -119,6 +120,11 @@ export class CommandRegistry {
     
     // Register hook commands
     for (const command of hookCommands) {
+      this.register(command);
+    }
+    
+    // Register mode commands
+    for (const command of modeCommands) {
       this.register(command);
     }
   }

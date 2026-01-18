@@ -46,6 +46,13 @@ export interface SessionToolCall {
 export interface SessionMetadata {
   tokenCount: number;
   compressionCount: number;
+  modeHistory?: Array<{
+    from: string;
+    to: string;
+    timestamp: string;
+    trigger: 'auto' | 'manual' | 'tool' | 'explicit';
+    confidence: number;
+  }>;
 }
 
 /**

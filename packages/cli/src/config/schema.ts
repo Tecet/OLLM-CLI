@@ -101,6 +101,88 @@ export const configSchema = {
       },
       required: ['autoSave', 'saveInterval'],
     },
+    prompt: {
+      type: 'object',
+      properties: {
+        mode: {
+          type: 'string',
+          enum: ['auto', 'assistant', 'planning', 'developer', 'tool', 'debugger', 'security', 'reviewer', 'performance'],
+        },
+        switching: {
+          type: 'object',
+          properties: {
+            enabled: { type: 'boolean' },
+            confidenceThreshold: { type: 'number', minimum: 0, maximum: 1 },
+            minDuration: { type: 'number', minimum: 0 },
+            cooldown: { type: 'number', minimum: 0 },
+          },
+          required: ['enabled', 'confidenceThreshold', 'minDuration', 'cooldown'],
+        },
+        modes: {
+          type: 'object',
+          properties: {
+            assistant: {
+              type: 'object',
+              properties: {
+                enabled: { type: 'boolean' },
+              },
+              required: ['enabled'],
+            },
+            planning: {
+              type: 'object',
+              properties: {
+                enabled: { type: 'boolean' },
+              },
+              required: ['enabled'],
+            },
+            developer: {
+              type: 'object',
+              properties: {
+                enabled: { type: 'boolean' },
+              },
+              required: ['enabled'],
+            },
+            tool: {
+              type: 'object',
+              properties: {
+                enabled: { type: 'boolean' },
+              },
+              required: ['enabled'],
+            },
+            debugger: {
+              type: 'object',
+              properties: {
+                enabled: { type: 'boolean' },
+              },
+              required: ['enabled'],
+            },
+            security: {
+              type: 'object',
+              properties: {
+                enabled: { type: 'boolean' },
+              },
+              required: ['enabled'],
+            },
+            reviewer: {
+              type: 'object',
+              properties: {
+                enabled: { type: 'boolean' },
+              },
+              required: ['enabled'],
+            },
+            performance: {
+              type: 'object',
+              properties: {
+                enabled: { type: 'boolean' },
+              },
+              required: ['enabled'],
+            },
+          },
+          required: ['assistant', 'planning', 'developer', 'tool', 'debugger', 'security', 'reviewer', 'performance'],
+        },
+      },
+      required: ['mode', 'switching', 'modes'],
+    },
   },
   required: ['provider', 'model'],
 };

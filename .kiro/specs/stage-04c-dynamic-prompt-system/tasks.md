@@ -86,116 +86,116 @@
   - [x] 7.7 Update system prompt in ContextManager
   - [x] 7.8 Continue with normal message flow
 
-- [-] 8. Update Tool Execution Flow
-  - [ ] 8.1 Update `chatClient.ts` executeTool function
-  - [ ] 8.2 Get current mode from ModeManager
-  - [ ] 8.3 Check if tool is allowed in current mode
-  - [ ] 8.4 Return error if tool not allowed with helpful message
-  - [ ] 8.5 Switch to tool mode during execution (if not already)
-  - [ ] 8.6 Execute tool
-  - [ ] 8.7 Switch back to previous mode after execution
-  - [ ] 8.8 Restore snapshot if returning from specialized mode
+- [x] 8. Update Tool Execution Flow
+  - [x] 8.1 Update `chatClient.ts` executeTool function
+  - [x] 8.2 Get current mode from ModeManager
+  - [x] 8.3 Check if tool is allowed in current mode
+  - [x] 8.4 Return error if tool not allowed with helpful message
+  - [x] 8.5 Switch to tool mode during execution (if not already)
+  - [x] 8.6 Execute tool
+  - [x] 8.7 Switch back to previous mode after execution
+  - [x] 8.8 Restore snapshot if returning from specialized mode
 
 ---
 
 ### Phase 3: UI Integration (2-3 hours)
 
-- [~] 9. Update Active Context State
-  - [ ] 9.1 Update `ActiveContextState.tsx` interface
-  - [ ] 9.2 Add `currentMode` field
-  - [ ] 9.3 Add `allowedTools` field
-  - [ ] 9.4 Add `modeIcon` field
-  - [ ] 9.5 Add `modeColor` field
-  - [ ] 9.6 Listen for 'mode-changed' events from ModeManager
-  - [ ] 9.7 Update state when mode changes
-  - [ ] 9.8 Update allowed tools list when mode changes
+- [x] 9. Update Active Context State
+  - [x] 9.1 Update `ActiveContextState.tsx` interface
+  - [x] 9.2 Add `currentMode` field
+  - [x] 9.3 Add `allowedTools` field
+  - [x] 9.4 Add `modeIcon` field
+  - [x] 9.5 Add `modeColor` field
+  - [x] 9.6 Listen for 'mode-changed' events from ModeManager
+  - [x] 9.7 Update state when mode changes
+  - [x] 9.8 Update allowed tools list when mode changes
 
-- [~] 10. Update Context Section Display
-  - [ ] 10.1 Update `ContextSection.tsx` component
-  - [ ] 10.2 Display current mode with icon and color
-  - [ ] 10.3 Display current persona
-  - [ ] 10.4 Display allowed tools for current mode
-  - [ ] 10.5 Add visual indicator for auto-switch status
-  - [ ] 10.6 Add mode transition animation
-  - [ ] 10.7 Style mode display with appropriate colors
+- [x] 10. Update Context Section Display
+  - [x] 10.1 Update `ContextSection.tsx` component
+  - [x] 10.2 Display current mode with icon and color
+  - [x] 10.3 Display current persona
+  - [x] 10.4 Display allowed tools for current mode
+  - [x] 10.5 Add visual indicator for auto-switch status
+  - [x] 10.6 Add mode transition animation
+  - [x] 10.7 Style mode display with appropriate colors
 
-- [ ] 11. Add Mode Commands
-  - [ ] 11.1 Create `modeCommands.ts` in commands directory
-  - [ ] 11.2 Implement `/mode assistant` command
-  - [ ] 11.3 Implement `/mode planning` command
-  - [ ] 11.4 Implement `/mode developer` command
-  - [ ] 11.5 Implement `/mode debugger` command
-  - [ ] 11.6 Implement `/mode security` command
-  - [ ] 11.7 Implement `/mode reviewer` command
-  - [ ] 11.8 Implement `/mode performance` command
-  - [ ] 11.9 Implement `/mode auto` command (enable auto-switching)
-  - [ ] 11.10 Implement `/mode status` command (show current mode)
-  - [ ] 11.11 Implement `/mode history` command (show mode transitions)
-  - [ ] 11.12 Register commands in command registry
+- [x] 11. Add Mode Commands
+  - [x] 11.1 Create `modeCommands.ts` in commands directory
+  - [x] 11.2 Implement `/mode assistant` command
+  - [x] 11.3 Implement `/mode planning` command
+  - [x] 11.4 Implement `/mode developer` command
+  - [x] 11.5 Implement `/mode debugger` command
+  - [x] 11.6 Implement `/mode security` command
+  - [x] 11.7 Implement `/mode reviewer` command
+  - [x] 11.8 Implement `/mode performance` command
+  - [x] 11.9 Implement `/mode auto` command (enable auto-switching)
+  - [x] 11.10 Implement `/mode status` command (show current mode)
+  - [x] 11.11 Implement `/mode history` command (show mode transitions)
+  - [x] 11.12 Register commands in command registry
 
 ---
 
 ### Phase 4: HotSwap Integration (1-2 hours)
 
-- [ ] 12. Update HotSwap Service
-  - [ ] 12.1 Update `HotSwapService.ts` constructor to accept ModeManager
-  - [ ] 12.2 Update `HotSwapService.ts` constructor to accept SnapshotManager
-  - [ ] 12.3 Update swap() to create transition snapshot before clearing
-  - [ ] 12.4 Update swap() to use ModeManager.updateSkills()
-  - [ ] 12.5 Update swap() to use ModeManager.buildPrompt()
-  - [ ] 12.6 Update swap() to emit 'mode-changed' event
-  - [ ] 12.7 Update swap() to default to developer mode for skills
-  - [ ] 12.8 Update swap() to store snapshot before context clear
+- [x] 12. Update HotSwap Service
+  - [x] 12.1 Update `HotSwapService.ts` constructor to accept ModeManager
+  - [x] 12.2 Update `HotSwapService.ts` constructor to accept SnapshotManager
+  - [x] 12.3 Update swap() to create transition snapshot before clearing
+  - [x] 12.4 Update swap() to use ModeManager.updateSkills()
+  - [x] 12.5 Update swap() to use ModeManager.buildPrompt()
+  - [x] 12.6 Update swap() to emit 'mode-changed' event
+  - [x] 12.7 Update swap() to default to developer mode for skills
+  - [x] 12.8 Update swap() to store snapshot before context clear
 
-- [ ] 13. Update HotSwap Tool
-  - [ ] 13.1 Update `HotSwapTool.ts` to pass ModeManager to HotSwapService
-  - [ ] 13.2 Update `HotSwapTool.ts` to pass SnapshotManager to HotSwapService
-  - [ ] 13.3 Update tool description to mention mode switching
-  - [ ] 13.4 Update tool to handle mode restoration after swap
+- [x] 13. Update HotSwap Tool
+  - [x] 13.1 Update `HotSwapTool.ts` to pass ModeManager to HotSwapService
+  - [x] 13.2 Update `HotSwapTool.ts` to pass SnapshotManager to HotSwapService
+  - [x] 13.3 Update tool description to mention mode switching
+  - [x] 13.4 Update tool to handle mode restoration after swap
 
 ---
 
 ### Phase 5: Compression Integration (1-2 hours)
 
-- [ ] 14. Update Compression Service
-  - [ ] 14.1 Update `chatCompressionService.ts` to use STATE_SNAPSHOT_PROMPT
-  - [ ] 14.2 Implement XML snapshot generation for compression
-  - [ ] 14.3 Validate XML structure before compression
-  - [ ] 14.4 Parse and format XML snapshot
-  - [ ] 14.5 Emit 'compression-complete' event after compression
+- [x] 14. Update Compression Service
+  - [x] 14.1 Update `chatCompressionService.ts` to use STATE_SNAPSHOT_PROMPT
+  - [x] 14.2 Implement XML snapshot generation for compression
+  - [x] 14.3 Validate XML structure before compression
+  - [x] 14.4 Parse and format XML snapshot
+  - [x] 14.5 Emit 'compression-complete' event after compression
 
-- [ ] 15. Rebuild Prompt After Compression
-  - [ ] 15.1 Update `ContextManagerContext.tsx` to listen for 'compression-complete'
-  - [ ] 15.2 Rebuild prompt with ModeManager after compression
-  - [ ] 15.3 Preserve current mode after compression
-  - [ ] 15.4 Update system prompt in ContextManager
+- [x] 15. Rebuild Prompt After Compression
+  - [x] 15.1 Update `ContextManagerContext.tsx` to listen for 'compression-complete'
+  - [x] 15.2 Rebuild prompt with ModeManager after compression
+  - [x] 15.3 Preserve current mode after compression
+  - [x] 15.4 Update system prompt in ContextManager
 
 ---
 
 ### Phase 6: Settings & Persistence (1-2 hours)
 
-- [ ] 16. Add Mode Settings
-  - [ ] 16.1 Update settings schema to include mode configuration
-  - [ ] 16.2 Add `prompt.mode` setting (auto | assistant | planning | developer | etc.)
-  - [ ] 16.3 Add `prompt.switching.enabled` setting
-  - [ ] 16.4 Add `prompt.switching.confidence_threshold` setting
-  - [ ] 16.5 Add `prompt.switching.min_duration` setting
-  - [ ] 16.6 Add `prompt.switching.cooldown` setting
-  - [ ] 16.7 Add per-mode enable/disable settings
+- [x] 16. Add Mode Settings
+  - [x] 16.1 Update settings schema to include mode configuration
+  - [x] 16.2 Add `prompt.mode` setting (auto | assistant | planning | developer | etc.)
+  - [x] 16.3 Add `prompt.switching.enabled` setting
+  - [x] 16.4 Add `prompt.switching.confidence_threshold` setting
+  - [x] 16.5 Add `prompt.switching.min_duration` setting
+  - [x] 16.6 Add `prompt.switching.cooldown` setting
+  - [x] 16.7 Add per-mode enable/disable settings
 
 - [ ] 17. Implement Mode Persistence
-  - [ ] 17.1 Save current mode to settings on mode change
-  - [ ] 17.2 Load mode preference on app start
-  - [ ] 17.3 Save auto-switch preference to settings
-  - [ ] 17.4 Load auto-switch preference on app start
-  - [ ] 17.5 Save mode history to session metadata
-  - [ ] 17.6 Restore mode history when resuming session
+  - [x] 17.1 Save current mode to settings on mode change
+  - [x] 17.2 Load mode preference on app start
+  - [x] 17.3 Save auto-switch preference to settings
+  - [x] 17.4 Load auto-switch preference on app start
+  - [x] 17.5 Save mode history to session metadata
+  - [x] 17.6 Restore mode history when resuming session
 
 ---
 
 ### Phase 7: Testing (3-4 hours)
 
-- [ ] 18. Unit Tests
+- [-] 18. Unit Tests
   - [ ] 18.1 Test ContextAnalyzer keyword detection
   - [ ] 18.2 Test ContextAnalyzer confidence scoring
   - [ ] 18.3 Test PromptModeManager mode transitions

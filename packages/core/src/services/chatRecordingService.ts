@@ -223,6 +223,49 @@ export class ChatRecordingService {
   }
 
   /**
+   * Update mode history in session metadata
+   */
+  async updateModeHistory(
+    sessionId: string,
+    modeTransition: {
+      from: string;
+      to: string;
+      timestamp: string;
+      trigger: 'auto' | 'manual' | 'tool' | 'explicit';
+      confidence: number;
+    }
+  ): Promise<void> {
+    const session = await this.getOrLoadSession(sessionId);
+    if (!session) {
+      throw new Error(`Session not found: ${sessionId}`);
+    }
+
+    // Initialize mode history if it doesn't exist
+    if (!session.metadata.modeHistory) {
+      session.metadata.modeHistory = [];
+    }
+
+    // Add the new transition
+    session.metadata.modeHistory.push(modeTransition);
+
+    // Keep only last 100 transitions to avoid unbounded growth
+    if (session.metadata.modeHistory.length > 100) {
+      session.metadata.modeHistory = session.metadata.modeHistory.slice(-100);
+    }
+
+    // Update last activity
+    session.lastActivity = new Date().toISOString();
+
+    // Update cache
+    this.sessionCache.set(sessionId, session);
+
+    // Auto-save if enabled
+    if (this.config.autoSave) {
+      await this.saveSession(sessionId);
+    }
+  }
+
+  /**
    * Save a session to disk (atomic write with durability guarantees)
    */
   async saveSession(sessionId: string): Promise<void> {
