@@ -25,6 +25,7 @@ import { ActiveContextProvider } from '../features/context/ActiveContextState.js
 import { DialogProvider } from './contexts/DialogContext.js';
 import { UserPromptProvider } from '../features/context/UserPromptContext.js';
 import { HooksProvider } from './contexts/HooksContext.js';
+import { MCPProvider } from './contexts/MCPContext.js';
 import { LaunchScreen } from './components/launch/LaunchScreen.js';
 import type { ProviderAdapter, ProviderRequest, ProviderEvent } from '@ollm/core';
 import { createWelcomeMessage, createCompactWelcomeMessage, CONTEXT_OPTIONS } from '../features/context/SystemMessages.js';
@@ -50,6 +51,7 @@ import { SearchTab } from './components/tabs/SearchTab.js';
 import { DocsTab } from './components/tabs/DocsTab.js';
 import { GitHubTab } from './components/tabs/GitHubTab.js';
 import { SettingsTab } from './components/tabs/SettingsTab.js';
+import { MCPTab } from './components/tabs/MCPTab.js';
 import { DialogManager } from './components/dialogs/DialogManager.js';
 import { useGlobalKeyboardShortcuts } from './hooks/useKeyboardShortcuts.js';
 import { ErrorBoundary } from './components/ErrorBoundary.js';
@@ -574,6 +576,11 @@ ${toolSupport}
       description: 'Switch to Tools tab',
     },
     {
+      key: keybinds.tabNavigation.tabHooks,
+      handler: () => setActiveTab('hooks'),
+      description: 'Switch to Hooks tab',
+    },
+    {
       key: keybinds.tabNavigation.tabFiles,
       handler: () => setActiveTab('files'),
       description: 'Switch to Files tab',
@@ -592,6 +599,11 @@ ${toolSupport}
       key: keybinds.tabNavigation.tabGithub,
       handler: () => setActiveTab('github'),
       description: 'Switch to GitHub tab',
+    },
+    {
+      key: keybinds.tabNavigation.tabMcp,
+      handler: () => setActiveTab('mcp'),
+      description: 'Switch to MCP tab',
     },
     {
       key: keybinds.tabNavigation.tabSettings,
@@ -736,12 +748,14 @@ ${toolSupport}
         return <Box height={height}><ToolsTab /></Box>;
       case 'hooks':
         return <Box height={height}><HooksTab /></Box>;
+      case 'mcp':
+        return <Box height={height}><MCPTab /></Box>;
       case 'files':
         return <Box height={height}><FilesTab /></Box>;
       case 'search':
         return <Box height={height}><SearchTab /></Box>;
       case 'docs':
-        return <Box height={height}><DocsTab /></Box>;
+        return <DocsTab height={height} />;
       case 'github':
         return <Box height={height}><GitHubTab /></Box>;
       case 'settings':
@@ -973,12 +987,13 @@ export function App({ config }: AppProps) {
         <SettingsProvider>
           <DialogProvider>
             <HooksProvider>
-              <UserPromptProvider>
-                <UserPromptBridge />
-                <GPUProvider 
-                  pollingInterval={config.status?.pollInterval || 5000}
-                  autoStart={config.ui?.showGpuStats !== false}
-                >
+              <MCPProvider>
+                <UserPromptProvider>
+                  <UserPromptBridge />
+                  <GPUProvider 
+                    pollingInterval={config.status?.pollInterval || 5000}
+                    autoStart={config.ui?.showGpuStats !== false}
+                  >
                 <ServiceProvider
                   provider={provider}
                   config={config}
@@ -1011,6 +1026,7 @@ export function App({ config }: AppProps) {
                 </ServiceProvider>
               </GPUProvider>
               </UserPromptProvider>
+            </MCPProvider>
             </HooksProvider>
           </DialogProvider>
         </SettingsProvider>

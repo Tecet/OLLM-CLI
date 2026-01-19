@@ -4,7 +4,7 @@ import { useUI } from '../../../features/context/UIContext.js';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { documentService } from '../../../services/documentService.js';
 
-const WINDOW_SIZE = 15; // Configurable window size
+// Keep WINDOW_SIZE as a fallback, but we'll calculate it dynamically
 
 /**
  * DocsPanel Component
@@ -20,7 +20,11 @@ const WINDOW_SIZE = 15; // Configurable window size
  * - Enter: Select document
  * - Esc/0: Exit to nav-bar
  */
-export function DocsPanel() {
+interface DocsPanelProps {
+  height: number;
+}
+
+export function DocsPanel({ height }: DocsPanelProps) {
   const { state: uiState } = useUI();
   const focusManager = useFocusManager();
   const hasFocus = focusManager.isFocused('docs-panel');
@@ -114,11 +118,15 @@ export function DocsPanel() {
       });
     });
 
-    // Filter to visible window
+    // Dynamic WINDOW_SIZE based on height
+    // Height - Header(3) - ScrollIndicators(2?) - Borders(2)
+    // We can approximate content area:
+    const effectiveWindowSize = Math.max(5, height - 6);
+
     return items.filter(
-      item => item.position >= scrollOffset && item.position < scrollOffset + WINDOW_SIZE
+      item => item.position >= scrollOffset && item.position < scrollOffset + effectiveWindowSize
     );
-  }, [folders, scrollOffset]);
+  }, [folders, scrollOffset, height]);
 
   // Navigation handlers
   const handleNavigateUp = () => {
@@ -218,12 +226,14 @@ export function DocsPanel() {
     }
     currentPosition += selectedDocIndex + 1; // +1 for folder header
 
+    const effectiveWindowSize = Math.max(5, height - 6);
+
     if (currentPosition < scrollOffset) {
       setScrollOffset(currentPosition);
-    } else if (currentPosition >= scrollOffset + WINDOW_SIZE) {
-      setScrollOffset(currentPosition - WINDOW_SIZE + 1);
+    } else if (currentPosition >= scrollOffset + effectiveWindowSize) {
+      setScrollOffset(currentPosition - effectiveWindowSize + 1);
     }
-  }, [selectedFolderIndex, selectedDocIndex, isOnExitItem, folders, scrollOffset]);
+  }, [selectedFolderIndex, selectedDocIndex, isOnExitItem, folders, scrollOffset, height]);
 
   // Render content lines for right column
   const contentLines = useMemo(() => {
@@ -231,12 +241,13 @@ export function DocsPanel() {
   }, [documentContent]);
 
   const visibleContentLines = useMemo(() => {
-    const maxLines = 20; // Adjust based on terminal height
+    // Height - Borders(2) - PaddingY(2) - Title(1) - Spacer(1) - ScrollIndicator(1) - Safety(5ish)
+    const maxLines = Math.max(5, height - 12); 
     return contentLines.slice(contentScrollOffset, contentScrollOffset + maxLines);
-  }, [contentLines, contentScrollOffset]);
+  }, [contentLines, contentScrollOffset, height]);
 
   return (
-    <Box flexDirection="column" height="100%">
+    <Box flexDirection="column" height={height}>
       {/* Header */}
       <Box
         borderStyle="single"
@@ -264,6 +275,7 @@ export function DocsPanel() {
         <Box 
           flexDirection="column" 
           width="30%" 
+          height="100%"
           borderStyle="single" 
           borderColor={focusedColumn === 'left' && hasFocus ? uiState.theme.text.accent : uiState.theme.border.primary}
         >
@@ -334,7 +346,7 @@ export function DocsPanel() {
           </Box>
 
           {/* Scroll indicator at bottom */}
-          {scrollOffset + WINDOW_SIZE < totalItems && (
+          {scrollOffset + Math.max(5, height - 6) < totalItems && (
             <>
               <Text> </Text>
               <Box justifyContent="center" paddingX={1}>
@@ -350,6 +362,7 @@ export function DocsPanel() {
         <Box 
           flexDirection="column" 
           width="70%" 
+          height="100%"
           borderStyle="single" 
           borderColor={focusedColumn === 'right' && hasFocus ? uiState.theme.text.accent : uiState.theme.border.primary} 
           paddingX={2}

@@ -63,12 +63,13 @@ const DEFAULT_CONFIG: ContextConfig = {
 };
 
 /**
- * Context Manager Implementation
+ * Conversation Context Manager Implementation
  * 
  * Orchestrates all context management services and provides a unified API
- * for context operations.
+ * for conversation context operations including messages, VRAM monitoring,
+ * token counting, compression, and snapshot management.
  */
-export class ContextManagerImpl extends EventEmitter implements ContextManager {
+export class ConversationContextManager extends EventEmitter implements ContextManager {
   public config: ContextConfig;
   public activeSkills: string[] = [];
   public activeTools: string[] = [];
@@ -683,5 +684,5 @@ export function createContextManager(
   modelInfo: ModelInfo,
   config?: Partial<ContextConfig>
 ): ContextManager {
-  return new ContextManagerImpl(sessionId, modelInfo, config);
+  return new ConversationContextManager(sessionId, modelInfo, config);
 }

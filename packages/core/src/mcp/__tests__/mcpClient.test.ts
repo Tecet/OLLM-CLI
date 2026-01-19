@@ -173,12 +173,13 @@ describe('DefaultMCPClient', () => {
       await client.startServer('test-server', config);
 
       const status = client.getServerStatus('test-server');
-      expect(status).toEqual({
-        name: 'test-server',
-        status: 'connected',
-        error: undefined,
-        tools: 0,
-      });
+      expect(status.name).toBe('test-server');
+      expect(status.status).toBe('connected');
+      expect(status.error).toBeUndefined();
+      expect(status.tools).toBe(0);
+      expect(status.uptime).toBeGreaterThanOrEqual(0);
+      expect(status.resources).toBe(0);
+      expect(status.description).toBe('node');
     });
 
     it('should return disconnected status for unknown server', () => {
@@ -190,6 +191,8 @@ describe('DefaultMCPClient', () => {
         status: 'disconnected',
         error: undefined,
         tools: 0,
+        uptime: 0,
+        resources: 0,
       });
     });
   });
@@ -506,6 +509,94 @@ describe('DefaultMCPClient', () => {
 
       const result2 = await call2Promise;
       expect(result2).toEqual({ from: 'server2' });
+    });
+  });
+
+  describe('getAllServerStatuses', () => {
+    it('should return empty map when no servers', () => {
+      const client = new DefaultMCPClient();
+
+      const statuses = client.getAllServerStatuses();
+      expect(statuses.size).toBe(0);
+    });
+
+    it('should return status map for all servers', async () => {
+      const client = new DefaultMCPClient();
+
+      await client.startServer('server1', {
+        command: 'node',
+        args: ['s1.js'],
+        timeout: 1000,
+      });
+
+      await client.startServer('server2', {
+        command: 'node',
+        args: ['s2.js'],
+        timeout: 1000,
+      });
+
+      const statuses = client.getAllServerStatuses();
+      expect(statuses.size).toBe(2);
+      expect(statuses.has('server1')).toBe(true);
+      expect(statuses.has('server2')).toBe(true);
+      expect(statuses.get('server1')?.status).toBe('connected');
+      expect(statuses.get('server2')?.status).toBe('connected');
+    });
+  });
+
+  describe('restartServer', () => {
+    it('should restart a running server', async () => {
+      const client = new DefaultMCPClient();
+      const config: MCPServerConfig = {
+        command: 'node',
+        args: ['server.js'],
+        timeout: 1000,
+      };
+
+      await client.startServer('test-server', config);
+
+      // Verify server is connected
+      const initialStatus = client.getServerStatus('test-server');
+      expect(initialStatus.status).toBe('connected');
+      const initialUptime = initialStatus.uptime || 0;
+
+      // Restart the server (this will stop and start it)
+      const restartPromise = client.restartServer('test-server');
+      
+      // Simulate server exit for stop
+      mockProcess.emit('exit', 0, null);
+      
+      await restartPromise;
+
+      // Verify server is connected again
+      const newStatus = client.getServerStatus('test-server');
+      expect(newStatus.status).toBe('connected');
+      // Uptime should be reset (less than initial uptime + 1 second)
+      expect(newStatus.uptime).toBeLessThan(initialUptime + 1000);
+    });
+
+    it('should throw if server not found', async () => {
+      const client = new DefaultMCPClient();
+
+      await expect(client.restartServer('nonexistent')).rejects.toThrow(
+        "Server 'nonexistent' not found"
+      );
+    });
+  });
+
+  describe('getServerLogs', () => {
+    it('should return empty array (not yet implemented)', async () => {
+      const client = new DefaultMCPClient();
+
+      const logs = await client.getServerLogs('test-server');
+      expect(logs).toEqual([]);
+    });
+
+    it('should accept lines parameter', async () => {
+      const client = new DefaultMCPClient();
+
+      const logs = await client.getServerLogs('test-server', 50);
+      expect(logs).toEqual([]);
     });
   });
 });

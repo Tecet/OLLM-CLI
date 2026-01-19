@@ -38,7 +38,7 @@ Users currently need to manually edit JSON files to configure MCP servers, manag
 **So that** I can quickly toggle servers without editing configuration files
 
 **Acceptance Criteria:**
-- 2.1: Left/Right arrow keys toggle server enabled/disabled state
+- 2.1: Enter key toggles server enabled/disabled state
 - 2.2: Visual toggle indicator shows current state (● enabled, ○ disabled)
 - 2.3: Changes persist to mcp.json configuration file immediately
 - 2.4: System message confirms state change
@@ -183,8 +183,8 @@ Users currently need to manually edit JSON files to configure MCP servers, manag
 
 **Acceptance Criteria:**
 - 12.1: Up/Down arrows navigate between servers
-- 12.2: Left/Right arrows toggle enabled/disabled
-- 12.3: Enter expands/collapses server details
+- 12.2: Enter toggles enabled/disabled
+- 12.3: Space expands/collapses server details
 - 12.4: Tab returns to main navigation bar
 - 12.5: M opens marketplace
 - 12.6: H opens health monitor

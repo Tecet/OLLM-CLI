@@ -91,32 +91,34 @@ export class PromptModeManager extends EventEmitter {
   private state: ModeState;
   private modeHistory: ModeTransition[] = [];
   private readonly maxHistorySize = 100;
-  private metricsTracker: ModeMetricsTracker;
+  private metricsTracker?: ModeMetricsTracker;  // Optional: only created if enabled
   private focusModeManager: FocusModeManager;
   private animator: ModeTransitionAnimator;
   
   // Timing configuration
-  private readonly minDuration = 30000;  // 30 seconds
+  private readonly minDuration = 15000;  // 15 seconds (reduced from 30s for better responsiveness)
   private readonly cooldownPeriod = 10000;  // 10 seconds
   
   constructor(
     private promptBuilder: SystemPromptBuilder,
     private promptRegistry: PromptRegistry,
-    private contextAnalyzer: ContextAnalyzer
+    private contextAnalyzer: ContextAnalyzer,
+    config: { enableMetrics?: boolean } = {}
   ) {
     super();
     
-    // Initialize metrics tracker
-    this.metricsTracker = new ModeMetricsTracker();
+    // Initialize metrics tracker (optional, default disabled)
+    if (config.enableMetrics) {
+      this.metricsTracker = new ModeMetricsTracker();
+      // Load persisted metrics from disk
+      this.loadMetrics();
+    }
     
     // Initialize focus mode manager
     this.focusModeManager = new FocusModeManager();
     
     // Initialize transition animator
     this.animator = new ModeTransitionAnimator();
-    
-    // Load persisted metrics from disk
-    this.loadMetrics();
     
     // Initialize state
     this.state = {
@@ -128,8 +130,8 @@ export class PromptModeManager extends EventEmitter {
       activeSkills: []
     };
     
-    // Track initial mode entry
-    this.metricsTracker.trackModeEntry('assistant');
+    // Track initial mode entry (if metrics enabled)
+    this.metricsTracker?.trackModeEntry('assistant');
   }
   
   /**
@@ -187,9 +189,9 @@ export class PromptModeManager extends EventEmitter {
   }
   
   /**
-   * Get metrics tracker
+   * Get metrics tracker (may be undefined if metrics disabled)
    */
-  getMetricsTracker(): ModeMetricsTracker {
+  getMetricsTracker(): ModeMetricsTracker | undefined {
     return this.metricsTracker;
   }
   
@@ -219,11 +221,13 @@ export class PromptModeManager extends EventEmitter {
    * Convenience method to track events through the metrics tracker
    */
   trackEvent(event: import('./ModeMetricsTracker.js').ModeEvent): void {
-    this.metricsTracker.trackEvent(event);
+    this.metricsTracker?.trackEvent(event);
     
-    // Persist metrics after tracking significant events
+    // Persist metrics after tracking significant events (if metrics enabled)
     // (debounced to avoid excessive disk writes)
-    this.debouncedPersistMetrics();
+    if (this.metricsTracker) {
+      this.debouncedPersistMetrics();
+    }
   }
   
   /**
@@ -231,6 +235,8 @@ export class PromptModeManager extends EventEmitter {
    * Saves current metrics to ~/.ollm/metrics/mode-metrics.json
    */
   persistMetrics(): void {
+    if (!this.metricsTracker) return;  // Skip if metrics disabled
+    
     try {
       this.metricsTracker.saveMetricsToDisk();
     } catch (error) {
@@ -261,6 +267,8 @@ export class PromptModeManager extends EventEmitter {
    * @returns true if metrics were loaded successfully, false otherwise
    */
   loadMetrics(): boolean {
+    if (!this.metricsTracker) return false;  // Skip if metrics disabled
+    
     try {
       return this.metricsTracker.loadMetricsFromDisk();
     } catch (error) {
@@ -274,6 +282,8 @@ export class PromptModeManager extends EventEmitter {
    * Deletes the metrics file and resets in-memory metrics
    */
   clearMetrics(): void {
+    if (!this.metricsTracker) return;  // Skip if metrics disabled
+    
     try {
       this.metricsTracker.clearPersistedMetrics();
       this.metricsTracker.resetMetrics();
@@ -328,7 +338,7 @@ export class PromptModeManager extends EventEmitter {
       return false;
     }
     
-    // Check hysteresis (30s minimum duration in current mode)
+    // Check hysteresis (15s minimum duration in current mode)
     const timeInCurrentMode = Date.now() - this.state.modeEntryTime.getTime();
     if (timeInCurrentMode < this.minDuration) {
       return false;
@@ -410,11 +420,13 @@ export class PromptModeManager extends EventEmitter {
     
     this.addToHistory(transition);
     
-    // Track metrics for this transition
-    this.metricsTracker.trackModeTransition(transition);
+    // Track metrics for this transition (if metrics enabled)
+    this.metricsTracker?.trackModeTransition(transition);
     
-    // Persist metrics to disk after transition
-    this.persistMetrics();
+    // Persist metrics to disk after transition (if metrics enabled)
+    if (this.metricsTracker) {
+      this.debouncedPersistMetrics();
+    }
     
     // Emit mode-changed event
     this.emit('mode-changed', transition);
@@ -460,28 +472,21 @@ export class PromptModeManager extends EventEmitter {
   buildPrompt(options: PromptBuildOptions): string {
     const { mode, skills = [], tools, workspace, additionalInstructions } = options;
     
-    // Get mode template
-    const modeTemplate = this.getModeTemplate(mode);
-    
     // Build sections
     const sections: string[] = [];
     
-    // 1. Mode persona and template
-    sections.push(modeTemplate);
+    // 1. Core system prompt (identity + mandates) using SystemPromptBuilder
+    const corePrompt = this.promptBuilder.build({
+      interactive: true,
+      useSanityChecks: false,
+      skills: skills,
+      additionalInstructions: undefined // We'll add this separately after mode template
+    });
+    sections.push(corePrompt);
     
-    // 2. Active skills
-    if (skills.length > 0) {
-      const skillsContent: string[] = [];
-      for (const skillId of skills) {
-        const skill = this.promptRegistry.get(skillId);
-        if (skill) {
-          skillsContent.push(skill.content);
-        }
-      }
-      if (skillsContent.length > 0) {
-        sections.push('# Active Skills\n' + skillsContent.join('\n\n'));
-      }
-    }
+    // 2. Mode-specific template
+    const modeTemplate = this.getModeTemplate(mode);
+    sections.push(modeTemplate);
     
     // 3. Workspace context
     if (workspace) {

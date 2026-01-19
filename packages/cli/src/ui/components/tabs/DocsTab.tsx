@@ -10,6 +10,10 @@ import { DocsPanel } from '../docs/DocsPanel.js';
  * 
  * Requirements: 12.1, 12.2, 12.3, 12.4, 12.5
  */
-export function DocsTab() {
-  return <DocsPanel />;
+interface DocsTabProps {
+  height: number;
+}
+
+export function DocsTab({ height }: DocsTabProps) {
+  return <DocsPanel height={height} />;
 }

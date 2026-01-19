@@ -5,3 +5,4 @@ export { FilesTab } from './FilesTab.js';
 export { SearchTab } from './SearchTab.js';
 export { DocsTab } from './DocsTab.js';
 export { SettingsTab } from './SettingsTab.js';
+export { MCPTab } from './MCPTab.js';

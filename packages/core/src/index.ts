@@ -107,7 +107,7 @@ export {
   ChatRecordingService,
   ChatCompressionService,
   LoopDetectionService,
-  ContextManager,
+  DynamicContextInjector,
   EnvironmentSanitizationService,
   FileDiscoveryService,
   MemoryService,
@@ -121,6 +121,9 @@ export {
   type GPUVendor,
   ReasoningParser,
 } from './services/index.js';
+
+// Utilities
+export { createLogger, getLogLevel, setLogLevel, type Logger, type LogLevel } from './utils/logger.js';
 
 // Context Management System
 export {
@@ -137,7 +140,7 @@ export {
   // Classes (for DI/testing)
   DefaultVRAMMonitor,
   DefaultGPUDetector,
-  ContextManagerImpl,
+  ConversationContextManager,
   HotSwapService,
 } from './context/index.js';
 

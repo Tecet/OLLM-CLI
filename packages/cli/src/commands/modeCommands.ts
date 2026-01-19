@@ -77,6 +77,67 @@ function formatTransition(transition: ModeTransition): string {
 }
 
 /**
+ * Build a system message to notify LLM of mode change
+ * This informs the LLM of its new role, available tools, and capabilities
+ */
+function buildModeChangeNotification(
+  mode: ModeType,
+  modeManager: ReturnType<typeof ensureModeManager>
+): string {
+  const metadata = MODE_METADATA[mode];
+  const allowedTools = modeManager.getAllowedTools(mode);
+  const deniedTools = modeManager.getDeniedTools(mode);
+  
+  let notification = `[System: Mode changed to ${metadata.icon} ${mode}]\n\n`;
+  notification += `${metadata.description}\n\n`;
+  
+  // Tool availability
+  if (allowedTools.includes('*')) {
+    notification += `Tools: All tools available\n`;
+  } else if (allowedTools.length > 0) {
+    notification += `Available tools: ${allowedTools.slice(0, 10).join(', ')}`;
+    if (allowedTools.length > 10) {
+      notification += ` (+${allowedTools.length - 10} more)`;
+    }
+    notification += `\n`;
+  } else {
+    notification += `Tools: No tools available (read-only mode)\n`;
+  }
+  
+  // Restrictions (only show if not all tools denied)
+  if (deniedTools.length > 0 && !deniedTools.includes('*')) {
+    notification += `Restricted: ${deniedTools.slice(0, 5).join(', ')}`;
+    if (deniedTools.length > 5) {
+      notification += ` (+${deniedTools.length - 5} more)`;
+    }
+    notification += `\n`;
+  }
+  
+  // Mode-specific guidance
+  const guidance = getModeGuidance(mode);
+  if (guidance) {
+    notification += `\n${guidance}`;
+  }
+  
+  return notification;
+}
+
+/**
+ * Get mode-specific guidance for LLM
+ */
+function getModeGuidance(mode: ModeType): string {
+  const guidance: Record<ModeType, string> = {
+    assistant: 'Focus on answering questions and providing explanations.',
+    planning: 'Focus on research, design, and planning. You have read-only access to the codebase.',
+    developer: 'Focus on implementation, refactoring, and code changes. You have full access to all tools.',
+    debugger: 'Focus on finding root causes and implementing fixes. Analyze errors systematically.',
+    reviewer: 'Focus on code quality assessment and providing constructive feedback.',
+  };
+  
+  return guidance[mode] || '';
+}
+
+/**
  * /mode command - Main mode command with subcommands
  */
 export const modeCommand: Command = {
@@ -120,6 +181,15 @@ export const modeCommand: Command = {
         
         const metadata = (MODE_METADATA as any)[mode];
         const icon = metadata?.icon || '';
+        
+        // Inject system message to LLM about mode change
+        if (globalThis.__ollmAddSystemMessage) {
+          const modeManager = manager.getModeManager();
+          if (modeManager) {
+            const notification = buildModeChangeNotification(mode, modeManager);
+            globalThis.__ollmAddSystemMessage(notification);
+          }
+        }
         
         return {
           success: true,

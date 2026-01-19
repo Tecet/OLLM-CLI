@@ -176,31 +176,37 @@ export const MCPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
 **File:** `packages/cli/src/ui/components/tabs/MCPTab.tsx`
 
-Main container for the MCP panel UI.
+Main container for the MCP panel UI following Browse Mode/Active Mode pattern.
 
 ```typescript
 export const MCPTab: React.FC = () => {
   const { servers, marketplace, loading, error } = useMCP();
+  const { focusedPanel } = useFocusContext();
   const { 
-    focusedIndex,
-    focusedSection,
+    selectedIndex,
+    isOnExitItem,
     expandedServers,
+    scrollOffset,
+    isActive,
+    visibleServers,
+    showScrollUp,
+    showScrollDown,
     handleKeyPress,
-    toggleServer: toggleExpanded
   } = useMCPNavigation();
   
   const [dialogState, setDialogState] = useState<DialogState | null>(null);
   
+  // Only handle input when in Active Mode and no dialog is open
   useInput((input, key) => {
-    if (dialogState) return; // Dialog handles its own input
+    if (!isActive || dialogState) return;
     
     handleKeyPress(input, key, {
       onToggle: handleToggleServer,
-      onConfigure: () => setDialogState({ type: 'configure', serverName: getFocusedServer() }),
-      onOAuth: () => setDialogState({ type: 'oauth', serverName: getFocusedServer() }),
-      onViewTools: () => setDialogState({ type: 'tools', serverName: getFocusedServer() }),
+      onConfigure: () => setDialogState({ type: 'configure', serverName: getSelectedServer() }),
+      onOAuth: () => setDialogState({ type: 'oauth', serverName: getSelectedServer() }),
+      onViewTools: () => setDialogState({ type: 'tools', serverName: getSelectedServer() }),
       onRestart: handleRestartServer,
-      onLogs: () => setDialogState({ type: 'logs', serverName: getFocusedServer() }),
+      onLogs: () => setDialogState({ type: 'logs', serverName: getSelectedServer() }),
       onMarketplace: () => setDialogState({ type: 'marketplace' }),
       onHealth: () => setDialogState({ type: 'health' }),
       onInstall: handleInstallServer,
@@ -211,23 +217,183 @@ export const MCPTab: React.FC = () => {
   if (loading) return <LoadingSpinner message="Loading MCP servers..." />;
   if (error) return <ErrorMessage message={error} />;
   
+  const getSelectedServer = () => {
+    if (isOnExitItem || selectedIndex < 0) return null;
+    return Array.from(servers.values())[selectedIndex]?.name;
+  };
+  
   return (
     <Box flexDirection="column" height="100%">
-      <InstalledServersSection 
-        servers={Array.from(servers.values())}
-        focusedIndex={focusedSection === 'installed' ? focusedIndex : -1}
-        expandedServers={expandedServers}
-        onToggleExpand={toggleExpanded}
+      {/* Header with focus indicator */}
+      <Box borderStyle="single" borderColor={isActive ? 'cyan' : 'gray'}>
+        <Text bold>
+          {isActive ? '▶ ' : ''}MCP Servers
+        </Text>
+        <Box marginLeft="auto">
+          <Text dimColor>
+            {isActive 
+              ? '↑↓:Nav Enter:Expand ←→:Toggle 0/Esc:Exit'
+              : 'Press Enter to activate'
+            }
+          </Text>
+        </Box>
+      </Box>
+      
+      <Box flexDirection="row" flexGrow={1}>
+        {/* Left Column: Server List (30%) */}
+        <Box flexDirection="column" width="30%" borderStyle="single" borderColor="gray">
+          {/* Scroll up indicator */}
+          {showScrollUp && (
+            <>
+              <Text dimColor>▲ Scroll up for more</Text>
+              <Text> </Text>
+            </>
+          )}
+          
+          {/* Exit item */}
+          <Box>
+            <Text color={isOnExitItem ? 'yellow' : undefined} bold={isOnExitItem}>
+              ← Exit
+            </Text>
+          </Box>
+          <Text> </Text>
+          <Text> </Text>
+          
+          {/* Server list (windowed) */}
+          {visibleServers.map((server, index) => {
+            const actualIndex = scrollOffset > 0 ? scrollOffset - 1 + index : index;
+            const isFocused = !isOnExitItem && selectedIndex === actualIndex;
+            
+            return (
+              <ServerListItem
+                key={server.name}
+                server={server}
+                focused={isFocused}
+                expanded={expandedServers.has(server.name)}
+              />
+            );
+          })}
+          
+          {/* Scroll down indicator */}
+          {showScrollDown && (
+            <>
+              <Text> </Text>
+              <Text dimColor>▼ Scroll down for more</Text>
+            </>
+          )}
+        </Box>
+        
+        {/* Right Column: Server Details (70%) */}
+        <Box flexDirection="column" width="70%" borderStyle="single" borderColor="gray" padding={1}>
+          {isOnExitItem ? (
+            <Text dimColor>Select a server to view details</Text>
+          ) : (
+            <ServerDetails 
+              server={Array.from(servers.values())[selectedIndex]}
+              expanded={expandedServers.has(Array.from(servers.values())[selectedIndex]?.name)}
+            />
+          )}
+        </Box>
+      </Box>
+      
+      {/* Marketplace Preview (if not in active mode) */}
+      {!isActive && (
+        <MarketplacePreview 
+          servers={marketplace.slice(0, 3)}
+        />
+      )}
+      
+      {/* Actions Footer */}
+      <MCPActions 
+        isActive={isActive}
+        hasSelection={!isOnExitItem && selectedIndex >= 0}
       />
       
-      <MarketplacePreview 
-        servers={marketplace.slice(0, 3)}
-        focused={focusedSection === 'marketplace'}
-      />
-      
-      <MCPActions />
-      
+      {/* Dialogs */}
       {dialogState && renderDialog(dialogState, setDialogState)}
+    </Box>
+  );
+};
+
+/**
+ * Server list item component (left column)
+ */
+const ServerListItem: React.FC<{
+  server: MCPServerStatus;
+  focused: boolean;
+  expanded: boolean;
+}> = ({ server, focused, expanded }) => {
+  const healthColor = getHealthColor(server.health);
+  const statusIcon = getStatusIcon(server.status);
+  const expandIcon = expanded ? '▼' : '>';
+  
+  return (
+    <Box marginY={1}>
+      <Text color={focused ? 'yellow' : undefined} bold={focused}>
+        {expandIcon} {server.name}
+      </Text>
+      <Box marginLeft={1}>
+        <Text color={healthColor}>{statusIcon}</Text>
+      </Box>
+    </Box>
+  );
+};
+
+/**
+ * Server details component (right column)
+ */
+const ServerDetails: React.FC<{
+  server: MCPServerStatus;
+  expanded: boolean;
+}> = ({ server, expanded }) => {
+  if (!server) return null;
+  
+  const healthColor = getHealthColor(server.health);
+  const statusIcon = getStatusIcon(server.status);
+  const toggleIndicator = server.config.disabled ? '○ Disabled' : '● Enabled';
+  
+  return (
+    <Box flexDirection="column">
+      <Text bold color="yellow">{server.name}</Text>
+      <Text dimColor>{server.description || 'No description available'}</Text>
+      
+      <Box marginTop={1}>
+        <Text>Status: </Text>
+        <Text color={healthColor}>{statusIcon} {server.health}</Text>
+        <Text> | </Text>
+        <Text>{toggleIndicator}</Text>
+      </Box>
+      
+      {expanded && (
+        <>
+          <Box marginTop={1}>
+            <Text>Tools: {server.tools?.length || 0}</Text>
+            <Text> | Resources: {server.resources || 0}</Text>
+            {server.uptime > 0 && <Text> | Uptime: {formatUptime(server.uptime)}</Text>}
+          </Box>
+          
+          {server.config.oauth && (
+            <Box marginTop={1}>
+              <Text>OAuth: {getOAuthStatus(server)}</Text>
+            </Box>
+          )}
+          
+          {server.error && (
+            <Box marginTop={1}>
+              <Text color={server.health === 'unhealthy' ? 'red' : 'yellow'}>
+                {server.health === 'unhealthy' ? 'Error: ' : 'Warning: '}
+                {server.error}
+              </Text>
+            </Box>
+          )}
+          
+          <Box marginTop={1}>
+            <Text dimColor>
+              [V] View Tools  [C] Configure  [R] Restart  [L] Logs  [U] Uninstall
+            </Text>
+          </Box>
+        </>
+      )}
     </Box>
   );
 };
@@ -304,47 +470,141 @@ const ServerActions: React.FC<{ server: MCPServerStatus; focused: boolean }> = (
 
 **File:** `packages/cli/src/ui/hooks/useMCPNavigation.ts`
 
-Manages keyboard navigation and focus state.
+Manages keyboard navigation and focus state following the Browse Mode/Active Mode pattern.
 
 ```typescript
 export const useMCPNavigation = () => {
   const { servers } = useMCP();
-  const [focusedIndex, setFocusedIndex] = useState(0);
-  const [focusedSection, setFocusedSection] = useState<'installed' | 'marketplace'>('installed');
+  const { focusedPanel, setActivePanel, exitActiveMode } = useFocusContext();
+  
+  // Navigation state
+  const [selectedIndex, setSelectedIndex] = useState(0); // Current selected item
+  const [isOnExitItem, setIsOnExitItem] = useState(false); // Exit item at position 0
   const [expandedServers, setExpandedServers] = useState<Set<string>>(new Set());
+  const [scrollOffset, setScrollOffset] = useState(0);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   
   const serverList = Array.from(servers.values());
+  const isActive = focusedPanel === 'mcp-panel';
   
+  // Windowed rendering configuration
+  const terminalHeight = process.stdout.rows || 24;
+  const headerRows = 3; // Header + spacing
+  const footerRows = 2; // Actions footer
+  const availableRows = terminalHeight - headerRows - footerRows;
+  const windowSize = Math.max(5, availableRows - 4); // Reserve space for scroll indicators
+  
+  // Calculate visible window
+  const totalItems = 1 + serverList.length; // Exit item + servers
+  const visibleStart = scrollOffset;
+  const visibleEnd = Math.min(scrollOffset + windowSize, totalItems);
+  const visibleServers = serverList.slice(
+    Math.max(0, scrollOffset - 1), // Adjust for Exit item
+    Math.max(0, visibleEnd - 1)
+  );
+  
+  // Scroll indicators
+  const showScrollUp = scrollOffset > 0;
+  const showScrollDown = visibleEnd < totalItems;
+  
+  /**
+   * Handle keyboard input in Active Mode
+   */
   const handleKeyPress = (input: string, key: Key, actions: NavigationActions) => {
+    // Exit to Browse Mode
+    if (key.escape || input === '0') {
+      if (hasUnsavedChanges) {
+        // Auto-save on exit
+        saveChanges();
+      }
+      exitActiveMode();
+      return;
+    }
+    
     // Up/Down navigation
     if (key.upArrow) {
-      setFocusedIndex(Math.max(0, focusedIndex - 1));
+      if (isOnExitItem) {
+        // Already at top, no action
+        return;
+      }
+      
+      if (selectedIndex === 0) {
+        // Move to Exit item
+        setIsOnExitItem(true);
+        setSelectedIndex(-1);
+        adjustScroll(-1);
+      } else {
+        // Move to previous server
+        setSelectedIndex(selectedIndex - 1);
+        adjustScroll(selectedIndex - 1);
+      }
     } else if (key.downArrow) {
-      setFocusedIndex(Math.min(serverList.length - 1, focusedIndex + 1));
+      if (isOnExitItem) {
+        // Move from Exit to first server
+        setIsOnExitItem(false);
+        setSelectedIndex(0);
+        adjustScroll(0);
+      } else if (selectedIndex < serverList.length - 1) {
+        // Move to next server
+        setSelectedIndex(selectedIndex + 1);
+        adjustScroll(selectedIndex + 1);
+      }
+      // Already at bottom, no action
     }
     
-    // Left/Right toggle
-    else if (key.leftArrow || key.rightArrow) {
-      actions.onToggle(serverList[focusedIndex].name);
-    }
-    
-    // Enter to expand/collapse
+    // Enter key actions
     else if (key.return) {
-      toggleServer(serverList[focusedIndex].name);
+      if (isOnExitItem) {
+        // Exit on Enter from Exit item
+        exitActiveMode();
+      } else {
+        // Toggle expand/collapse for selected server
+        const serverName = serverList[selectedIndex].name;
+        toggleServer(serverName);
+      }
     }
     
-    // Action keys
-    else if (input === 'v') actions.onViewTools();
-    else if (input === 'c') actions.onConfigure();
-    else if (input === 'o') actions.onOAuth();
-    else if (input === 'r') actions.onRestart();
-    else if (input === 'l') actions.onLogs();
-    else if (input === 'm') actions.onMarketplace();
-    else if (input === 'h') actions.onHealth();
-    else if (input === 'i') actions.onInstall();
-    else if (input === 'u') actions.onUninstall();
+    // Left/Right toggle enabled/disabled
+    else if (key.leftArrow || key.rightArrow) {
+      if (!isOnExitItem) {
+        const serverName = serverList[selectedIndex].name;
+        actions.onToggle(serverName);
+        setHasUnsavedChanges(true);
+      }
+    }
+    
+    // Action keys (only when not on Exit item)
+    else if (!isOnExitItem) {
+      if (input === 'v') actions.onViewTools();
+      else if (input === 'c') actions.onConfigure();
+      else if (input === 'o') actions.onOAuth();
+      else if (input === 'r') actions.onRestart();
+      else if (input === 'l') actions.onLogs();
+      else if (input === 'm') actions.onMarketplace();
+      else if (input === 'h') actions.onHealth();
+      else if (input === 'i') actions.onInstall();
+      else if (input === 'u') actions.onUninstall();
+    }
   };
   
+  /**
+   * Adjust scroll offset to keep selected item visible
+   */
+  const adjustScroll = (index: number) => {
+    const position = index + 1; // Account for Exit item at position 0
+    
+    if (position < scrollOffset) {
+      // Scroll up to show item
+      setScrollOffset(position);
+    } else if (position >= scrollOffset + windowSize) {
+      // Scroll down to show item
+      setScrollOffset(position - windowSize + 1);
+    }
+  };
+  
+  /**
+   * Toggle server expand/collapse
+   */
   const toggleServer = (serverName: string) => {
     setExpandedServers(prev => {
       const next = new Set(prev);
@@ -357,15 +617,222 @@ export const useMCPNavigation = () => {
     });
   };
   
+  /**
+   * Save pending changes
+   */
+  const saveChanges = async () => {
+    // Save any pending configuration changes
+    setHasUnsavedChanges(false);
+  };
+  
   return {
-    focusedIndex,
-    focusedSection,
+    // State
+    selectedIndex,
+    isOnExitItem,
     expandedServers,
+    scrollOffset,
+    isActive,
+    hasUnsavedChanges,
+    
+    // Windowed rendering
+    visibleServers,
+    showScrollUp,
+    showScrollDown,
+    
+    // Actions
     handleKeyPress,
-    toggleServer
+    toggleServer,
+    saveChanges,
   };
 };
 ```
+
+## Navigation Modes
+
+### Browse Mode
+- **Purpose**: Navigate between major UI areas (tabs, panels)
+- **Key**: `Tab` / `Shift+Tab` cycles through focusable areas
+- **Behavior**: High-level navigation, moving between different sections
+- **Visual**: Focused area shows accent color border
+- **MCP Tab**: Shows as "MCP" in navigation bar, accessible via `Ctrl+8`
+
+### Active Mode
+- **Purpose**: Navigate within MCP panel content
+- **Key**: `Enter` to activate from Browse Mode, `Esc` or `0` to exit
+- **Behavior**: Internal navigation within server list
+- **Visual**: 
+  - Selected item highlighted in yellow
+  - Panel header shows "▶" indicator
+  - Exit item always at position 0
+
+## Navigation Flow
+
+```
+Browse Mode (Tab cycling)
+    ↓ Enter on MCP tab
+Active Mode (Server list navigation)
+    ↓ Esc/0
+Browse Mode (Returns to nav-bar)
+```
+
+## Key Bindings
+
+### Global (Browse Mode)
+- `Tab` - Cycle focus forward through UI areas
+- `Shift+Tab` - Cycle focus backward through UI areas
+- `Ctrl+8` - Jump directly to MCP tab
+- `Enter` - Activate MCP tab (switch to Active Mode)
+
+### Active Mode (Within MCP Panel)
+- `Up/Down` - Navigate servers (Exit item → servers)
+- `Enter` - On Exit: exit to Browse Mode; On server: toggle enabled/disabled
+- `Space` - Expand/collapse server details
+- `Esc` or `0` - Exit to Browse Mode (returns to nav-bar, auto-saves changes)
+- `V` - View server tools
+- `C` - Configure server
+- `O` - OAuth configuration
+- `R` - Restart server
+- `L` - View logs
+- `M` - Open marketplace
+- `H` - Health monitor
+- `I` - Install server (in marketplace)
+- `U` - Uninstall server
+
+## MCP Panel Layout
+
+### Two-Column Design (30/70 Split)
+
+#### Left Column (30% width)
+- **Purpose**: Server list with status indicators
+- **Content**:
+  - Exit item (position 0, always at top): "← Exit"
+  - 2 empty lines below Exit item
+  - Server items with health indicators
+- **Features**:
+  - Sticky scroll indicators (top/bottom)
+  - Windowed rendering for performance (>20 servers)
+  - Yellow highlighting for selected item
+  - Expand/collapse indicators (▼ expanded, > collapsed)
+
+#### Right Column (70% width)
+- **Purpose**: Detailed information about selected server
+- **Content**:
+  - Server name (bold, yellow when focused)
+  - Description
+  - Status (Enabled/Disabled with toggle indicator)
+  - Health status with icon and color
+  - Statistics (tools, resources, uptime, OAuth status)
+  - Available actions when expanded
+- **Updates**: Dynamically updates as user navigates left column
+
+### Exit Item
+- **Position**: Always at position 0 (top of menu)
+- **Label**: "← Exit"
+- **Behavior**: 
+  - Selectable with Up/Down navigation
+  - Pressing Enter triggers exit (same as Esc/0)
+  - Highlighted in yellow when selected
+  - Auto-saves changes on exit
+- **Spacing**: 2 empty lines below Exit item
+
+### Scroll Indicators
+- **Position**: Sticky at top and bottom of left column
+- **Top**: "▲ Scroll up for more" (shown when scrollOffset > 0)
+- **Bottom**: "▼ Scroll down for more" (shown when more items below)
+- **Spacing**: 1 empty line between indicator and content
+- **Color**: Secondary text color (dimmed)
+
+## Navigation Rules
+
+### Server List Navigation
+1. **Up Arrow**:
+   - From Exit item: No action (already at top)
+   - From first server: Move to Exit item
+   - From any server: Move to previous server
+
+2. **Down Arrow**:
+   - From Exit item: Move to first server
+   - From any server: Move to next server
+   - From last server: No action (already at bottom)
+
+3. **Enter**:
+   - On Exit item: Exit to Browse Mode (nav-bar)
+   - On server item: Toggle enabled/disabled state
+   - Sets `hasUnsavedChanges` flag
+   - Visual toggle indicator updates immediately
+
+4. **Space**:
+   - On server item: Expand/collapse server details
+   - Shows/hides detailed information in right column
+
+5. **Esc or 0**:
+   - Exit Active Mode
+   - Return to Browse Mode (focus on nav-bar)
+   - Auto-save if `hasUnsavedChanges` is true
+
+### Action Keys
+- Only active when a server is selected (not on Exit item)
+- Open dialogs or perform actions on selected server
+- Dialog interactions handled separately (own input handling)
+
+## Visual Design Principles
+
+### Highlighting
+- **Selected item**: Yellow text (bold)
+- **No borders**: Removed to prevent layout breaking
+- **Focus indicator**: "▶" prefix on panel header when active
+- **Health indicators**: Color-coded icons (● ⚠ ✗ ○ ⟳)
+
+### Spacing
+- **Exit item**: 2 empty lines below
+- **Server items**: 1 empty line between items
+- **Scroll indicators**: 1 empty line between indicator and content
+- **No padding**: Between scroll indicators and container borders
+
+### Colors
+- **Selected**: Yellow (`'yellow'`)
+- **Healthy**: Green (`'green'`)
+- **Degraded**: Yellow (`'yellow'`)
+- **Unhealthy**: Red (`'red'`)
+- **Stopped**: Gray (`'gray'`)
+- **Connecting**: Blue (`'blue'`)
+- **Primary text**: Theme primary color
+- **Secondary text**: Theme secondary color (descriptions, scroll indicators)
+
+## Header Design
+
+### Compact Layout
+```
+┌──────────────────────────────────────────────────────────────┐
+│ ▶ MCP Servers    ↑↓:Nav Enter:Expand ←→:Toggle 0/Esc:Exit   │
+└──────────────────────────────────────────────────────────────┘
+```
+
+- **Left**: Title with focus indicator (▶ when active)
+- **Right**: Compact navigation help
+- **Dynamic**: Shows relevant shortcuts based on context
+
+## Implementation Notes
+
+### State Management
+- `isOnExitItem`: Boolean flag tracking if Exit is selected
+- `selectedIndex`: Current server index (0-based, -1 when on Exit)
+- `expandedServers`: Set of expanded server names
+- `scrollOffset`: Window position for rendering
+- `hasUnsavedChanges`: Flag for unsaved server state changes
+
+### Windowed Rendering
+- **Window size**: Calculated from terminal height
+- **Total items**: Exit + all servers
+- **Position calculation**: Accounts for Exit item at position 0
+- **Auto-scroll**: Keeps selected item visible within window
+- **Performance**: Only renders visible slice of server list
+
+### Focus Management
+- **FocusContext**: Manages global focus state
+- **Mode tracking**: `'browse'` or `'active'`
+- **Panel ID**: `'mcp-panel'` for MCP tab
+- **Tab mapping**: `'mcp'` → `'mcp-panel'`
 
 ## Dialog Components
 

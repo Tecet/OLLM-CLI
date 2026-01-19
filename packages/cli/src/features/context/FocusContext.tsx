@@ -10,6 +10,7 @@ export type FocusableId =
   | 'functions'
   | 'tools-panel'
   | 'hooks-panel'
+  | 'mcp-panel'
   | 'docs-panel'
   | 'settings-panel'
   | 'search-panel';
@@ -46,6 +47,7 @@ export function FocusProvider({ children }: { children: ReactNode }) {
       'chat': 'chat-history',
       'tools': 'tools-panel',
       'hooks': 'hooks-panel',
+      'mcp': 'mcp-panel',
       'docs': 'docs-panel',
       'settings': 'settings-panel',
       'search': 'search-panel',
@@ -88,6 +90,7 @@ export function FocusProvider({ children }: { children: ReactNode }) {
       const tabToFocusMap: Record<string, FocusableId> = {
         'tools': 'tools-panel',
         'hooks': 'hooks-panel',
+        'mcp': 'mcp-panel',
         'files': 'context-panel',
         'search': 'search-panel',
         'docs': 'docs-panel',

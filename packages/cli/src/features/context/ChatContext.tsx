@@ -436,7 +436,7 @@ export function ChatProvider({
             const modeManager = contextActions.getModeManager();
             const snapshotManager = contextActions.getSnapshotManager();
             
-            // Register tools - filtering is handled by PromptModeManager.isToolAllowed
+            // Register tools
             toolRegistry.register(new HotSwapTool(manager, promptRegistry, provider, currentModel, modeManager || undefined, snapshotManager || undefined));
             toolRegistry.register(new MemoryDumpTool(modeManager || undefined));
             
@@ -444,30 +444,14 @@ export function ChatProvider({
             manager.emit('active-tools-updated', toolNames);
         }
         
-        // Use getFunctionSchemas() which applies user preference filtering
-        toolSchemas = toolRegistry.getFunctionSchemas();
-        
-        // DEBUG: Log tool schemas before filtering
-        console.log('[DEBUG] Tool schemas BEFORE filtering:', toolSchemas?.map(s => s.name));
-        
-        // Filter tools based on active mode permissions
-        // Get modeManager from contextActions (it's safe to call here as context is available)
-
+        // Get modeManager for combined filtering
         const modeManager = contextActions.getModeManager();
-        
-        // DEBUG: Write to file to bypass Ink's console capture
-        // We use dynamic import for fs to be safer with some bundlers, but standard require is fine in Node context usually.
-        // Since we had ESM issues before, let's try a different approach: just use the logic we have but assume logging works if we use process.stderr.write
-        // But process.stderr might be captured too.
-        // Let's use a very safe file write check if possible, or just trust our logic change below.
         
         if (modeManager) {
           const currentMode = modeManager.getCurrentMode();
           
-          toolSchemas = toolSchemas.filter(schema => {
-            const allowed = modeManager.isToolAllowed(schema.name, currentMode);
-            return allowed;
-          });
+          // Use combined filtering method (user prefs + mode permissions in single pass)
+          toolSchemas = toolRegistry.getFunctionSchemasForMode(currentMode, modeManager);
         } else {
           // CRITICAL FIX: If modeManager is not initialized yet (race condition),
           // default to NO tools rather than exposing all tools unfiltered.
@@ -479,11 +463,8 @@ export function ChatProvider({
         const currentMode = modeManager.getCurrentMode();
         
         // Rebuild system prompt to ensure it matches current mode and filtered tools
-        // This prevents the LLM from seeing tools it shouldn't call (Requirement 8.4)
-        const allToolSchemas = toolRegistry?.getFunctionSchemas() || [];
-        const filteredToolsForPrompt = allToolSchemas
-          .filter(s => modeManager.isToolAllowed(s.name, currentMode))
-          .map(t => ({ name: t.name }));
+        // toolSchemas is already filtered by mode permissions via getFunctionSchemasForMode
+        const filteredToolsForPrompt = (toolSchemas || []).map(t => ({ name: t.name }));
 
         const updatedPrompt = modeManager.buildPrompt({
           mode: currentMode,
@@ -697,12 +678,10 @@ export function ChatProvider({
               ));
 
               // Verify tool permission before execution (prevents hallucinated calls)
+              // Check if tool was in the schema we sent to LLM
               let toolAllowed = true;
-              if (modeManager) {
-                  const currentMode = modeManager.getCurrentMode();
-                  if (!modeManager.isToolAllowed(tc.name, currentMode)) {
-                      toolAllowed = false;
-                  }
+              if (toolSchemas) {
+                  toolAllowed = toolSchemas.some(s => s.name === tc.name);
               }
 
               if (tool && toolAllowed) {

@@ -162,8 +162,8 @@ describe('Focus Mode Integration', () => {
         }
       };
       
-      // Wait for hysteresis (30s) and cooldown (10s)
-      vi.advanceTimersByTime(40 * 1000);
+      // Wait for hysteresis (15s) and cooldown (10s)
+      vi.advanceTimersByTime(25 * 1000);
       
       const shouldSwitch = modeManager.shouldSwitchMode('developer', analysis);
       
@@ -192,8 +192,8 @@ describe('Focus Mode Integration', () => {
         }
       };
       
-      // Wait for hysteresis (30s) and cooldown (10s)
-      vi.advanceTimersByTime(40 * 1000);
+      // Wait for hysteresis (15s) and cooldown (10s)
+      vi.advanceTimersByTime(25 * 1000);
       
       const shouldSwitch = modeManager.shouldSwitchMode('developer', analysis);
       

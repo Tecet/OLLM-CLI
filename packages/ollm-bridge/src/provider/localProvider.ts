@@ -13,6 +13,7 @@ import type {
   ModelInfo,
   PullProgress,
 } from '@ollm/core';
+import { createLogger } from '@ollm/core';
 
 /**
  * Configuration for the local provider.
@@ -22,10 +23,56 @@ export interface LocalProviderConfig {
   baseUrl: string;
   /** Request timeout in milliseconds */
   timeout?: number;
+  /** Token counting method: 'tiktoken' (accurate) or 'multiplier' (fast) */
+  tokenCountingMethod?: 'tiktoken' | 'multiplier';
 }
+
+/**
+ * Token counting multipliers for different model families
+ * Based on empirical testing with various models
+ */
+const TOKEN_MULTIPLIERS: Record<string, number> = {
+  'llama': 0.25,      // ~4 chars per token
+  'mistral': 0.27,    // ~3.7 chars per token
+  'gemma': 0.26,      // ~3.8 chars per token
+  'qwen': 0.28,       // ~3.6 chars per token
+  'phi': 0.26,        // ~3.8 chars per token
+  'codellama': 0.25,  // ~4 chars per token
+  'default': 0.25,    // Conservative default
+};
+
+const logger = createLogger('LocalProvider');
 
 function payloadHasTools(payload: { tools?: unknown }): boolean {
   return Array.isArray(payload.tools) && payload.tools.length > 0;
+}
+
+/**
+ * Check if error message indicates tool unsupported error
+ * Uses multiple patterns to detect various Ollama error formats
+ */
+function isToolUnsupportedError(errorText: string): boolean {
+  const patterns = [
+    /tools?.*not supported/i,
+    /tool_calls?.*not supported/i,
+    /unknown field.*tools?/i,
+    /unknown field.*tool_calls?/i,
+    /function calling.*not supported/i,
+    /invalid.*tools?/i,
+    /model does not support.*tools?/i,
+    /tools?.*not available/i,
+    /tools?.*disabled/i,
+  ];
+  
+  const matched = patterns.some(pattern => pattern.test(errorText));
+  
+  if (matched) {
+    logger.debug('Tool unsupported error detected', { 
+      errorText: errorText.substring(0, 100) 
+    });
+  }
+  
+  return matched;
 }
 
 /**
@@ -104,11 +151,16 @@ export class LocalProvider implements ProviderAdapter {
         let errorText = await response.text();
         const looksLikeToolError = response.status === 400
           && payloadHasTools(body)
-          && /tools?|tool_calls?|unknown field/i.test(errorText);
+          && isToolUnsupportedError(errorText);
 
         if (looksLikeToolError) {
           // Emit detailed error event for tool error before retry
           const details = errorText.trim();
+          logger.info('Tool unsupported error, retrying without tools', { 
+            model: request.model,
+            error: details.substring(0, 200) 
+          });
+          
           yield {
             type: 'error',
             error: {
@@ -132,6 +184,12 @@ export class LocalProvider implements ProviderAdapter {
         if (!response.ok) {
           clearTimeout(timeoutId);
           const details = errorText.trim();
+          logger.error('HTTP error from Ollama', { 
+            status: response.status, 
+            statusText: response.statusText,
+            error: details.substring(0, 200) 
+          });
+          
           yield {
             type: 'error',
             error: {
@@ -176,8 +234,13 @@ export class LocalProvider implements ProviderAdapter {
               sawFinish = true;
             }
             yield* this.mapChunkToEvents(chunk);
-          } catch (_error) {
-            // Skip malformed JSON
+          } catch (error) {
+            // Log malformed JSON in debug mode
+            logger.debug('Malformed JSON in stream', {
+              line: line.substring(0, 100), // First 100 chars
+              error: error instanceof Error ? error.message : String(error),
+            });
+            // Continue processing (don't break stream)
           }
         }
       }
@@ -190,8 +253,12 @@ export class LocalProvider implements ProviderAdapter {
             sawFinish = true;
           }
           yield* this.mapChunkToEvents(chunk);
-        } catch (_error) {
-          // Skip malformed JSON in trailing buffer
+        } catch (error) {
+          // Log malformed JSON in trailing buffer
+          logger.debug('Malformed JSON in trailing buffer', {
+            buffer: trailing.substring(0, 100),
+            error: error instanceof Error ? error.message : String(error),
+          });
         }
       }
 
@@ -572,16 +639,83 @@ export class LocalProvider implements ProviderAdapter {
   }
 
   /**
-   * Count tokens in a request using fallback estimation.
-   * Ollama doesn't provide token counting, so we use character count / 4.
+   * Get token multiplier for a specific model family
+   * @param model - Model name
+   * @returns Token multiplier (chars per token)
    */
-  async countTokens(request: ProviderRequest): Promise<number> {
-    let totalChars = 0;
+  private getTokenMultiplier(model: string): number {
+    const modelLower = model.toLowerCase();
+    
+    for (const [family, multiplier] of Object.entries(TOKEN_MULTIPLIERS)) {
+      if (modelLower.includes(family)) {
+        logger.debug('Using token multiplier for model family', { 
+          model, 
+          family, 
+          multiplier 
+        });
+        return multiplier;
+      }
+    }
+    
+    logger.debug('Using default token multiplier', { model });
+    return TOKEN_MULTIPLIERS.default;
+  }
 
+  /**
+   * Count tokens using tiktoken library (accurate method)
+   * @param request - Provider request
+   * @returns Token count
+   */
+  private async countTokensWithTiktoken(request: ProviderRequest): Promise<number> {
+    try {
+      // Dynamic import to avoid loading tiktoken if not needed
+      const { encoding_for_model } = await import('tiktoken');
+      
+      // Use cl100k_base encoding (used by GPT-3.5/4, good approximation for most models)
+      const encoding = encoding_for_model('gpt-3.5-turbo');
+      
+      let totalTokens = 0;
+      
+      if (request.systemPrompt) {
+        totalTokens += encoding.encode(request.systemPrompt).length;
+      }
+      
+      for (const msg of request.messages) {
+        for (const part of msg.parts) {
+          if (part.type === 'text') {
+            totalTokens += encoding.encode(part.text).length;
+          }
+        }
+      }
+      
+      encoding.free(); // Clean up
+      
+      logger.debug('Token count (tiktoken)', { 
+        model: request.model, 
+        tokens: totalTokens 
+      });
+      
+      return totalTokens;
+    } catch (error) {
+      logger.warn('Tiktoken failed, falling back to multiplier method', { 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+      return this.countTokensWithMultiplier(request);
+    }
+  }
+
+  /**
+   * Count tokens using character multiplier (fast fallback method)
+   * @param request - Provider request
+   * @returns Token count
+   */
+  private countTokensWithMultiplier(request: ProviderRequest): Promise<number> {
+    let totalChars = 0;
+    
     if (request.systemPrompt) {
       totalChars += request.systemPrompt.length;
     }
-
+    
     for (const msg of request.messages) {
       for (const part of msg.parts) {
         if (part.type === 'text') {
@@ -589,8 +723,32 @@ export class LocalProvider implements ProviderAdapter {
         }
       }
     }
+    
+    const multiplier = this.getTokenMultiplier(request.model);
+    const tokens = Math.ceil(totalChars * multiplier);
+    
+    logger.debug('Token count (multiplier)', { 
+      model: request.model, 
+      chars: totalChars, 
+      multiplier, 
+      tokens 
+    });
+    
+    return Promise.resolve(tokens);
+  }
 
-    return Math.ceil(totalChars / 4);
+  /**
+   * Count tokens in a request using fallback estimation.
+   * Uses tiktoken for accurate counting, falls back to character-based estimation.
+   */
+  async countTokens(request: ProviderRequest): Promise<number> {
+    const method = this.config.tokenCountingMethod || 'tiktoken';
+    
+    if (method === 'tiktoken') {
+      return this.countTokensWithTiktoken(request);
+    } else {
+      return this.countTokensWithMultiplier(request);
+    }
   }
 
   /**

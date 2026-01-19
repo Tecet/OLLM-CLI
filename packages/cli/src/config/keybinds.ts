@@ -19,11 +19,13 @@ export const keybindsData = {
   "tabNavigation": {
     "tabChat": "ctrl+1",
     "tabTools": "ctrl+2",
-    "tabFiles": "ctrl+3",
-    "tabSearch": "ctrl+4",
-    "tabDocs": "ctrl+5",
-    "tabGithub": "ctrl+6",
-    "tabSettings": "ctrl+7"
+    "tabHooks": "ctrl+3",
+    "tabFiles": "ctrl+4",
+    "tabSearch": "ctrl+5",
+    "tabDocs": "ctrl+6",
+    "tabGithub": "ctrl+7",
+    "tabMcp": "ctrl+8",
+    "tabSettings": "ctrl+9"
   },
 
   /**

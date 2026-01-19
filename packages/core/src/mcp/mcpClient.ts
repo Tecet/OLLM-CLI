@@ -34,6 +34,7 @@ interface ServerState {
   resources: MCPResource[];
   prompts: MCPPrompt[];
   oauthProvider?: MCPOAuthProvider;
+  startTime?: number; // Timestamp when server was started
 }
 
 /**
@@ -115,8 +116,9 @@ export class DefaultMCPClient implements MCPClient {
 
       await Promise.race([connectPromise, timeoutPromise]);
 
-      // Update status to connected
+      // Update status to connected and record start time
       state.status = 'connected';
+      state.startTime = Date.now();
     } catch (error) {
       // Update status to error
       state.status = 'error';
@@ -170,15 +172,69 @@ export class DefaultMCPClient implements MCPClient {
         status: 'disconnected',
         error: undefined,
         tools: 0,
+        uptime: 0,
+        resources: 0,
       };
     }
+
+    // Calculate uptime if server is connected
+    const uptime = state.status === 'connected' && state.startTime 
+      ? Date.now() - state.startTime 
+      : 0;
 
     return {
       name,
       status: state.status,
       error: state.error,
       tools: state.tools.length,
+      uptime,
+      resources: state.resources.length,
+      description: state.config.command, // Use command as description for now
     };
+  }
+
+  getAllServerStatuses(): Map<string, MCPServerStatus> {
+    const statuses = new Map<string, MCPServerStatus>();
+    
+    for (const [name] of this.servers.entries()) {
+      statuses.set(name, this.getServerStatus(name));
+    }
+
+    return statuses;
+  }
+
+  async restartServer(name: string): Promise<void> {
+    const state = this.servers.get(name);
+    
+    if (!state) {
+      throw new Error(`Server '${name}' not found`);
+    }
+
+    // Store the config before stopping
+    const config = state.config;
+
+    // Stop the server
+    await this.stopServer(name);
+
+    // Wait for 1 second to ensure clean shutdown
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Start the server again with the same config
+    await this.startServer(name, config);
+  }
+
+  async getServerLogs(name: string, lines: number = 100): Promise<string[]> {
+    // For now, return an empty array as we need to implement log file handling
+    // This will be implemented when we add proper logging infrastructure
+    // The logs should be stored in ~/.ollm/mcp/logs/{server-name}.log
+    
+    // TODO: Implement actual log file reading
+    // const logPath = path.join(getMCPLogsDir(), `${name}.log`);
+    // const content = await fs.readFile(logPath, 'utf-8');
+    // const allLines = content.split('\n');
+    // return allLines.slice(-lines);
+    
+    return [];
   }
 
   listServers(): MCPServerInfo[] {

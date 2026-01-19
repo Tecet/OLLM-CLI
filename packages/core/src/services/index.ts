@@ -20,7 +20,7 @@ export { ShellExecutionService } from './shellExecutionService.js';
 export { ChatRecordingService } from './chatRecordingService.js';
 export { EnvironmentSanitizationService } from './environmentSanitization.js';
 export { FileDiscoveryService } from './fileDiscoveryService.js';
-export { ContextManager } from './contextManager.js';
+export { DynamicContextInjector } from './contextManager.js';
 export { ChatCompressionService } from './chatCompressionService.js';
 export { LoopDetectionService } from './loopDetectionService.js';
 export {

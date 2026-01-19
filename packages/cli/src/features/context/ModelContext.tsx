@@ -90,12 +90,18 @@ export function ModelProvider({
   const warmupAttemptsRef = useRef<Map<string, number>>(new Map());
   const warmupStartRef = useRef<number | null>(null);
   
-  // Enhanced tool support override tracking with source and timestamp
-  const toolSupportOverridesRef = useRef<Map<string, {
+  // Simplified tool support override tracking (2 levels: user_confirmed vs session)
+  interface ToolSupportOverride {
     supported: boolean;
-    source: 'profile' | 'runtime_error' | 'user_confirmed' | 'auto_detected';
+    source: 'user_confirmed' | 'session';
     timestamp: number;
-  }>>(new Map());
+    expiresAt?: number; // For session overrides only
+  }
+  
+  const toolSupportOverridesRef = useRef<Map<string, ToolSupportOverride>>(new Map());
+  
+  // Session overrides expire after 1 hour
+  const SESSION_OVERRIDE_TTL = 60 * 60 * 1000;
 
   // Track recent error prompts to debounce repeated errors
   const recentErrorPromptsRef = useRef<Map<string, number>>(new Map());
@@ -112,46 +118,83 @@ export function ModelProvider({
    * Updates both the runtime override and persists to the user models file
    * @param model - The model ID
    * @param supported - Whether the model supports tools
-   * @param source - The source of this information (user_confirmed or auto_detected)
+   * @param permanent - Whether to save permanently (user_confirmed) or session-only
    */
   const saveToolSupport = useCallback(async (
     model: string,
     supported: boolean,
-    source: 'user_confirmed' | 'auto_detected' = 'user_confirmed'
+    permanent: boolean = false
   ) => {
     // Update runtime override
-    toolSupportOverridesRef.current.set(model, {
+    const override: ToolSupportOverride = {
       supported,
-      source,
+      source: permanent ? 'user_confirmed' : 'session',
       timestamp: Date.now(),
-    });
+      expiresAt: permanent ? undefined : Date.now() + SESSION_OVERRIDE_TTL,
+    };
+    
+    toolSupportOverridesRef.current.set(model, override);
 
-    // Update user_models.json
-    const userModels = profileManager.getUserModels();
-    const existing = userModels.find(m => m.id === model);
+    // Only persist to user_models.json if permanent
+    if (permanent) {
+      const userModels = profileManager.getUserModels();
+      const existing = userModels.find(m => m.id === model);
 
-    if (existing) {
-      existing.tool_support = supported;
-      existing.tool_support_source = source;
-      existing.tool_support_confirmed_at = new Date().toISOString();
-    } else {
-      // Create new entry for unknown model
-      userModels.push({
-        id: model,
-        name: model,
-        source: 'ollama',
-        last_seen: new Date().toISOString(),
-        tool_support: supported,
-        tool_support_source: source,
-        tool_support_confirmed_at: new Date().toISOString(),
-        description: 'Custom model',
-        abilities: [],
-        context_profiles: [],
-        default_context: 4096,
-      });
+      if (existing) {
+        existing.tool_support = supported;
+        existing.tool_support_source = 'user_confirmed';
+        existing.tool_support_confirmed_at = new Date().toISOString();
+      } else {
+        // Create new entry for unknown model
+        userModels.push({
+          id: model,
+          name: model,
+          source: 'ollama',
+          last_seen: new Date().toISOString(),
+          tool_support: supported,
+          tool_support_source: 'user_confirmed',
+          tool_support_confirmed_at: new Date().toISOString(),
+          description: 'Custom model',
+          abilities: [],
+          context_profiles: [],
+          default_context: 4096,
+        });
+      }
+
+      profileManager.setUserModels(userModels);
     }
+  }, []);
 
-    profileManager.setUserModels(userModels);
+  /**
+   * Get tool support override for a model, checking for expiration
+   * @param model - The model ID
+   * @returns Tool support status, or undefined if no override exists
+   */
+  const getToolSupportOverride = useCallback((model: string): boolean | undefined => {
+    const override = toolSupportOverridesRef.current.get(model);
+    
+    if (!override) {
+      return undefined;
+    }
+    
+    // Check expiration for session overrides
+    if (override.source === 'session' && override.expiresAt) {
+      if (Date.now() > override.expiresAt) {
+        // Expired, remove it
+        toolSupportOverridesRef.current.delete(model);
+        return undefined;
+      }
+    }
+    
+    return override.supported;
+  }, []);
+  
+  /**
+   * Clear tool support override for a model
+   * @param model - The model ID
+   */
+  const clearToolSupportOverride = useCallback((model: string) => {
+    toolSupportOverridesRef.current.delete(model);
   }, []);
 
   /**
@@ -165,11 +208,29 @@ export function ModelProvider({
 
   /**
    * Check if an error message indicates tool unsupported error
+   * Checks structured error code first, then falls back to pattern matching
    * @param message - The error message to check
+   * @param code - Optional structured error code
    * @returns True if the message indicates tools are not supported
    */
-  const isToolUnsupportedError = useCallback((message: string): boolean => {
-    return /tools?|tool_calls?|unknown field/i.test(message);
+  const isToolUnsupportedError = useCallback((message: string, code?: string): boolean => {
+    // Check structured code first (most reliable)
+    if (code === 'TOOL_UNSUPPORTED') {
+      return true;
+    }
+    
+    // Fall back to pattern matching for compatibility
+    const patterns = [
+      /tools?.*not supported/i,
+      /tool_calls?.*not supported/i,
+      /unknown field.*tools?/i,
+      /function calling.*not supported/i,
+      /model does not support.*tools?/i,
+      /tools?.*not available/i,
+      /tools?.*disabled/i,
+    ];
+    
+    return patterns.some(pattern => pattern.test(message));
   }, []);
 
   /**
@@ -177,9 +238,9 @@ export function ModelProvider({
    * Prompts user for confirmation before persisting metadata
    * Debounces repeated errors to avoid multiple prompts
    */
-  const handleToolError = useCallback(async (model: string, errorMessage: string) => {
+  const handleToolError = useCallback(async (model: string, errorMessage: string, errorCode?: string) => {
     // Check if this is actually a tool unsupported error
-    if (!isToolUnsupportedError(errorMessage)) {
+    if (!isToolUnsupportedError(errorMessage, errorCode)) {
       return;
     }
 
@@ -203,11 +264,7 @@ export function ModelProvider({
 
     if (!promptUser) {
       // No prompt available, set session-only override
-      toolSupportOverridesRef.current.set(model, {
-        supported: false,
-        source: 'runtime_error',
-        timestamp: Date.now(),
-      });
+      await saveToolSupport(model, false, false);
       
       if (addSystemMessage) {
         addSystemMessage(`Tool error detected for model "${model}". Tools disabled for this session.`);
@@ -224,27 +281,28 @@ export function ModelProvider({
     }
 
     const response = await promptUser(
-      `Model "${model}" appears to not support tools. Update metadata?`,
-      ['Yes', 'No']
+      `Model "${model}" appears to not support tools. Save this permanently?`,
+      ['Yes (Permanent)', 'No (Session Only)', 'Cancel']
     );
 
-    if (response === 'Yes') {
-      // Save to user_models.json with user_confirmed source
-      await saveToolSupport(model, false, 'user_confirmed');
+    if (response === 'Yes (Permanent)') {
+      // Save permanently to user_models.json
+      await saveToolSupport(model, false, true);
       
       if (addSystemMessage) {
-        addSystemMessage(`Tool support disabled for "${model}" and saved to user_models.json.`);
+        addSystemMessage(`Tool support disabled for "${model}" and saved permanently.`);
+      }
+    } else if (response === 'No (Session Only)') {
+      // Set session-only override (expires in 1 hour)
+      await saveToolSupport(model, false, false);
+      
+      if (addSystemMessage) {
+        addSystemMessage(`Tool support disabled for "${model}" for this session only (expires in 1 hour).`);
       }
     } else {
-      // Set session-only override
-      toolSupportOverridesRef.current.set(model, {
-        supported: false,
-        source: 'runtime_error',
-        timestamp: Date.now(),
-      });
-      
+      // Cancel - don't set any override
       if (addSystemMessage) {
-        addSystemMessage(`Tool support disabled for "${model}" for this session only.`);
+        addSystemMessage(`Tool support setting not changed for "${model}".`);
       }
     }
   }, [isToolUnsupportedError, saveToolSupport]);
@@ -332,12 +390,12 @@ export function ModelProvider({
       // Determine tool support based on response
       const supported = hasSuccess && !hasToolError;
       
-      // Save result to user_models.json
-      await saveToolSupport(model, supported, 'auto_detected');
+      // Save result permanently
+      await saveToolSupport(model, supported, true);
       
       if (addSystemMessage) {
         const status = supported ? 'Enabled' : 'Disabled';
-        addSystemMessage(`Tool support detected: ${status}`);
+        addSystemMessage(`Tool support detected: ${status} (saved permanently)`);
       }
       
       return supported;
@@ -353,8 +411,8 @@ export function ModelProvider({
         }
       }
       
-      // Default to safe setting on error
-      await saveToolSupport(model, false, 'auto_detected');
+      // Default to safe setting on error (session only)
+      await saveToolSupport(model, false, false);
       return false;
     }
   }, [provider, saveToolSupport, isToolUnsupportedError]);
@@ -413,26 +471,26 @@ export function ModelProvider({
     });
 
     if (response === 'Yes') {
-      await saveToolSupport(model, true, 'user_confirmed');
+      await saveToolSupport(model, true, true);
       if (addSystemMessage) {
-        addSystemMessage('Tool support enabled and saved.');
+        addSystemMessage('Tool support enabled and saved permanently.');
       }
       return true;
     } else if (response === 'No') {
-      await saveToolSupport(model, false, 'user_confirmed');
+      await saveToolSupport(model, false, true);
       if (addSystemMessage) {
-        addSystemMessage('Tool support disabled and saved.');
+        addSystemMessage('Tool support disabled and saved permanently.');
       }
       return false;
     } else if (response === 'Auto-detect') {
       // Run auto-detection
       return await autoDetectToolSupport(model);
     } else {
-      // Fallback for any other response
+      // Fallback for any other response (including timeout)
       if (addSystemMessage) {
-        addSystemMessage('Invalid response. Defaulting to tools disabled.');
+        addSystemMessage('Invalid response. Defaulting to tools disabled (session only).');
       }
-      await saveToolSupport(model, false, 'auto_detected');
+      await saveToolSupport(model, false, false);
       return false;
     }
   }, [saveToolSupport, autoDetectToolSupport]);
@@ -452,18 +510,15 @@ export function ModelProvider({
       if (!userModel && !profile) {
         const toolSupport = await handleUnknownModel(model);
         
-        // Set override based on user response
-        toolSupportOverridesRef.current.set(model, {
-          supported: toolSupport,
-          source: 'user_confirmed',
-          timestamp: Date.now(),
-        });
+        // Set override based on user response (already saved by handleUnknownModel)
         
         // Add system message showing tool support status
         const addSystemMessage = globalThis.__ollmAddSystemMessage;
         if (addSystemMessage) {
           const toolStatus = toolSupport ? 'Enabled' : 'Disabled';
-          addSystemMessage(`Switched to ${model}. Tools: ${toolStatus}`);
+          const override = toolSupportOverridesRef.current.get(model);
+          const persistence = override?.source === 'user_confirmed' ? 'Permanent' : 'Session';
+          addSystemMessage(`Switched to ${model}. Tools: ${toolStatus} (${persistence})`);
         }
         
         setCurrentModel(model);
@@ -488,16 +543,9 @@ export function ModelProvider({
       // Determine tool support from metadata
       const toolSupport = userModel?.tool_support ?? profile?.tool_support ?? true;
       
-      // Set proactive override for known non-tool models
+      // Set session override for known non-tool models (expires in 1 hour)
       if (!toolSupport) {
-        const existing = toolSupportOverridesRef.current.get(model);
-        if (checkOverridePrecedence(existing, 'profile')) {
-          toolSupportOverridesRef.current.set(model, {
-            supported: false,
-            source: 'profile',
-            timestamp: Date.now(),
-          });
-        }
+        await saveToolSupport(model, false, false);
       }
       
       // Add system message showing tool support status
@@ -523,25 +571,28 @@ export function ModelProvider({
         clearContext();
       }
     }
-  }, [currentModel, provider, checkOverridePrecedence, handleUnknownModel]);
+  }, [currentModel, provider, handleUnknownModel, saveToolSupport]);
 
   /**
    * Check if a model supports tools based on overrides and profile metadata
-   * Checks runtime overrides first, then falls back to profile data
+   * Checks runtime overrides first (with expiration), then falls back to profile data
    * @param model - The model ID to check
    * @returns True if the model supports tools, false otherwise
    */
   const modelSupportsTools = useCallback((model: string): boolean => {
-    const override = toolSupportOverridesRef.current.get(model);
+    // Check for override (handles expiration automatically)
+    const override = getToolSupportOverride(model);
     if (override !== undefined) {
-      return override.supported;
+      return override;
     }
 
+    // Fall back to profile data
     const profile = profileManager.findProfile(model);
     if (profile && profile.tool_support === false) return false;
 
+    // Default to true (assume tools supported)
     return true;
-  }, []);
+  }, [getToolSupportOverride]);
 
   useEffect(() => {
     if (!modelLoading || !currentModel) return;
@@ -765,23 +816,16 @@ export function ModelProvider({
             const message = event.error.message || '';
             const errorCode = event.error.code;
             const isTimeout = isTimeoutError(message);
-            const isToolError = errorCode === 'TOOL_UNSUPPORTED' || isToolUnsupportedError(message);
+            const isToolError = errorCode === 'TOOL_UNSUPPORTED' || isToolUnsupportedError(message, errorCode);
             
             if (isToolError) {
-              // Set runtime error override with enhanced tracking
-              const existing = toolSupportOverridesRef.current.get(currentModel);
-              if (checkOverridePrecedence(existing, 'runtime_error')) {
-                toolSupportOverridesRef.current.set(currentModel, {
-                  supported: false,
-                  source: 'runtime_error',
-                  timestamp: Date.now(),
-                });
-              }
+              // Set session override (expires in 1 hour)
+              await saveToolSupport(currentModel, false, false);
               
               // Trigger runtime learning with user confirmation
-              // Pass model name and error message to handleToolError
+              // Pass model name, error message, and error code to handleToolError
               // Don't await - let it run in background to avoid blocking
-              void handleToolError(currentModel, message);
+              void handleToolError(currentModel, message, errorCode);
             }
             
             if (modelLoading && !isTimeout) {
@@ -810,7 +854,7 @@ export function ModelProvider({
     } finally {
       abortControllerRef.current = null;
     }
-  }, [provider, currentModel, cancelRequest, modelLoading, modelSupportsTools, isTimeoutError, isToolUnsupportedError, clearWarmupStatus, checkOverridePrecedence, handleToolError]);
+  }, [provider, currentModel, cancelRequest, modelLoading, modelSupportsTools, isTimeoutError, isToolUnsupportedError, clearWarmupStatus, handleToolError, saveToolSupport]);
 
   const value: ModelContextValue = {
     currentModel,

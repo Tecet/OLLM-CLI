@@ -45,7 +45,8 @@
   },
   "dependencies": {
     "jimp": "^1.6.0",
-    "terminal-image": "^4.2.0"
+    "terminal-image": "^4.2.0",
+    "tiktoken": "^1.0.22"
   },
   "overrides": {
     "react": "^19.0.0",

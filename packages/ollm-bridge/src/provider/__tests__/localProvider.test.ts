@@ -790,6 +790,53 @@ describe('LocalProvider', () => {
       });
     });
 
+    it('detects tool call embedded as JSON content', () => {
+      const chunk = {
+        message: {
+          content: '{"name":"get_weather","parameters":{"location":"Seattle"}}'
+        },
+        done: false,
+      };
+
+      const events = Array.from((provider as any).mapChunkToEvents(chunk));
+
+      expect(events).toHaveLength(1);
+      expect(events[0].type).toBe('tool_call');
+      expect(events[0].value.name).toBe('get_weather');
+      expect(events[0].value.args).toEqual({ location: 'Seattle' });
+    });
+
+    it('does not treat arbitrary JSON content as tool call', () => {
+      const chunk = {
+        message: {
+          content: '{"foo":"bar"}'
+        },
+        done: false,
+      };
+
+      const events = Array.from((provider as any).mapChunkToEvents(chunk));
+
+      expect(events).toHaveLength(1);
+      expect(events[0]).toEqual({ type: 'text', value: '{"foo":"bar"}' });
+    });
+
+    it('handles JSON content where parameters is not an object (keeps raw value)', () => {
+      const chunk = {
+        message: {
+          content: '{"name":"echo","parameters":"not-an-object"}'
+        },
+        done: false,
+      };
+
+      const events = Array.from((provider as any).mapChunkToEvents(chunk));
+
+      expect(events).toHaveLength(1);
+      expect(events[0].type).toBe('tool_call');
+      expect(events[0].value.name).toBe('echo');
+      // Current behavior: args may be a raw string if parameters was a string
+      expect(events[0].value.args).toBe('not-an-object');
+    });
+
     it('generates ID for tool calls without ID', () => {
       const chunk = {
         message: {

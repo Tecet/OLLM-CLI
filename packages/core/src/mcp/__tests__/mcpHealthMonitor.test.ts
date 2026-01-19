@@ -615,4 +615,139 @@ describe('MCPHealthMonitor', () => {
       expect(health.map(h => h.serverName)).toContain('server-2');
     });
   });
+
+  describe('Health Update Subscriptions', () => {
+    it('should subscribe to health updates', async () => {
+      await client.startServer('test-server', {
+        command: 'test',
+        args: [],
+      });
+
+      monitor = new MCPHealthMonitor(client, {
+        checkInterval: 1000,
+      });
+
+      const healthUpdates: any[] = [];
+      const unsubscribe = monitor.subscribeToHealthUpdates((health) => {
+        healthUpdates.push(health);
+      });
+
+      monitor.start();
+
+      // Advance time to trigger health check
+      await vi.advanceTimersByTimeAsync(1000);
+
+      // Should have received health updates
+      expect(healthUpdates.length).toBeGreaterThan(0);
+      expect(healthUpdates[0].serverName).toBe('test-server');
+
+      // Unsubscribe
+      unsubscribe();
+      healthUpdates.length = 0;
+
+      // Advance time again
+      await vi.advanceTimersByTimeAsync(1000);
+
+      // Should not receive more updates
+      expect(healthUpdates).toHaveLength(0);
+    });
+
+    it('should emit health updates on server unhealthy', async () => {
+      await client.startServer('test-server', {
+        command: 'test',
+        args: [],
+      });
+
+      monitor = new MCPHealthMonitor(client, {
+        checkInterval: 1000,
+        autoRestart: false,
+      });
+
+      const healthUpdates: any[] = [];
+      monitor.subscribeToHealthUpdates((health) => {
+        healthUpdates.push(health);
+      });
+
+      monitor.start();
+
+      // Simulate server failure
+      client.simulateServerFailure('test-server', 'Connection lost');
+
+      // Advance time to trigger health check
+      await vi.advanceTimersByTimeAsync(1000);
+
+      // Should have received unhealthy update
+      const unhealthyUpdates = healthUpdates.filter(h => !h.healthy);
+      expect(unhealthyUpdates.length).toBeGreaterThan(0);
+      expect(unhealthyUpdates[0].status).toBe('error');
+    });
+
+    it('should emit health updates on server recovery', async () => {
+      await client.startServer('test-server', {
+        command: 'test',
+        args: [],
+      });
+
+      monitor = new MCPHealthMonitor(client, {
+        checkInterval: 1000,
+        autoRestart: false,
+      });
+
+      const healthUpdates: any[] = [];
+      monitor.subscribeToHealthUpdates((health) => {
+        healthUpdates.push(health);
+      });
+
+      monitor.start();
+
+      // Simulate server failure
+      client.simulateServerFailure('test-server', 'Connection lost');
+      await vi.advanceTimersByTimeAsync(1000);
+
+      // Clear updates
+      healthUpdates.length = 0;
+
+      // Simulate server recovery
+      client.simulateServerRecovery('test-server');
+      await vi.advanceTimersByTimeAsync(1000);
+
+      // Should have received recovery update
+      const healthyUpdates = healthUpdates.filter(h => h.healthy);
+      expect(healthyUpdates.length).toBeGreaterThan(0);
+      expect(healthyUpdates[0].status).toBe('connected');
+    });
+
+    it('should support multiple subscribers', async () => {
+      await client.startServer('test-server', {
+        command: 'test',
+        args: [],
+      });
+
+      monitor = new MCPHealthMonitor(client, {
+        checkInterval: 1000,
+      });
+
+      const updates1: any[] = [];
+      const updates2: any[] = [];
+
+      monitor.subscribeToHealthUpdates((health) => {
+        updates1.push(health);
+      });
+
+      monitor.subscribeToHealthUpdates((health) => {
+        updates2.push(health);
+      });
+
+      monitor.start();
+
+      // Advance time to trigger health check
+      await vi.advanceTimersByTimeAsync(1000);
+
+      // Both subscribers should receive updates
+      expect(updates1.length).toBeGreaterThan(0);
+      expect(updates2.length).toBeGreaterThan(0);
+      expect(updates1[0].serverName).toBe('test-server');
+      expect(updates2[0].serverName).toBe('test-server');
+    });
+  });
 });

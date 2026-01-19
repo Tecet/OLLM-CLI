@@ -165,33 +165,9 @@ export class Turn {
    * @yields TurnEvent objects for tool results
    */
   private async *executeToolCalls(): AsyncIterable<TurnEvent> {
-    // Task 8.2: Get current mode from ModeManager
+    // Task 8.2: Get current mode from ModeManager (for tool permission checking)
     const currentMode = this.modeManager?.getCurrentMode() ?? 'developer';
-    
-    // Task 8.5: Switch to tool mode during execution (if not already)
-    let shouldRestoreMode = false;
-    if (this.modeManager && currentMode !== 'tool') {
-      this.modeBeforeToolExecution = currentMode;
-      
-      // Create transition snapshot before switching to tool mode
-      if (this.snapshotManager) {
-        const snapshot = this.snapshotManager.createTransitionSnapshot(
-          currentMode,
-          'tool',
-          {
-            messages: this.messages,
-            activeSkills: this.modeManager.getActiveSkills(),
-            activeTools: this.options?.tools?.map(t => t.name) ?? [],
-            currentTask: undefined
-          }
-        );
-        await this.snapshotManager.storeSnapshot(snapshot);
-      }
-      
-      // Switch to tool mode
-      this.modeManager.switchMode('tool', 'tool', 0.9);
-      shouldRestoreMode = true;
-    }
+    this.modeBeforeToolExecution = currentMode;
     
     // Execute tool calls in parallel (Requirement 10.2: Handle errors without terminating)
     const results = await Promise.allSettled(
@@ -275,9 +251,14 @@ export class Turn {
         yield { type: 'tool_result', toolCall, result: toolResult };
 
         // Add tool result to conversation history
+        // Only stringify if result is not already a string
+        const resultText = typeof toolResult === 'string' 
+          ? toolResult 
+          : JSON.stringify(toolResult);
+        
         this.messages.push({
           role: 'tool',
-          parts: [{ type: 'text', text: JSON.stringify(toolResult) }],
+          parts: [{ type: 'text', text: resultText }],
           name: toolCall.name,
         });
       } else {
@@ -292,12 +273,7 @@ export class Turn {
       }
     }
     
-    // Task 8.7: Switch back to previous mode after execution
-    // Task 8.8: Restore snapshot if returning from specialized mode
-    if (shouldRestoreMode && this.modeManager && this.modeBeforeToolExecution) {
-      // Switch back to previous mode
-      this.modeManager.switchMode(this.modeBeforeToolExecution, 'auto', 0.7);
-    }
+    // Tool execution complete - mode remains unchanged
   }
 
 

@@ -108,6 +108,33 @@ export class ToolRegistry {
   }
 
   /**
+   * Get function schemas filtered by mode permissions and user preferences
+   * 
+   * This combines both user preference filtering and mode-based filtering
+   * into a single pass for better performance. This is the recommended method
+   * for getting tool schemas when a mode manager is available.
+   * 
+   * @param mode - The current mode type
+   * @param modeManager - Object with isToolAllowed method for mode-based filtering
+   * @returns Array of tool schemas filtered by both user prefs and mode permissions
+   */
+  getFunctionSchemasForMode<M = string, T extends { isToolAllowed: (name: string, mode: M) => boolean } = { isToolAllowed: (name: string, mode: M) => boolean }>(
+    mode: M,
+    modeManager: T
+  ): ToolSchema[] {
+    return this.list()
+      .filter((tool) => {
+        // Layer 1a: User preference filter
+        if (this.toolStateProvider && !this.toolStateProvider.getToolState(tool.name)) {
+          return false;
+        }
+        // Layer 1b: Mode permission filter
+        return modeManager.isToolAllowed(tool.name, mode);
+      })
+      .map((tool) => tool.schema);
+  }
+
+  /**
    * Get all enabled tools
    * 
    * Returns only the tools that are enabled according to user preferences.

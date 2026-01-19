@@ -19,7 +19,8 @@ export const tabs: Tab[] = [
   { id: 'search', label: 'Search', icon: '\u{1F50D}', shortcut: 'Ctrl+5' },
   { id: 'docs', label: 'Docs', icon: '\u{1F4DA}', shortcut: 'Ctrl+6' },
   { id: 'github', label: 'GitHub', icon: '\u{1F680}', shortcut: 'Ctrl+7' },
-  { id: 'settings', label: 'Settings', icon: '\u{2699}', shortcut: 'Ctrl+8' },
+  { id: 'mcp', label: 'MCP', icon: '\u{1F50C}', shortcut: 'Ctrl+8' },
+  { id: 'settings', label: 'Settings', icon: '\u{2699}', shortcut: 'Ctrl+9' },
 ];
 
 export interface TabBarProps {

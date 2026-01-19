@@ -9,13 +9,8 @@ import {
   ASSISTANT_MODE_TEMPLATE,
   PLANNING_MODE_TEMPLATE,
   DEVELOPER_MODE_TEMPLATE,
-  TOOL_MODE_TEMPLATE,
   DEBUGGER_MODE_TEMPLATE,
-  SECURITY_MODE_TEMPLATE,
   REVIEWER_MODE_TEMPLATE,
-  PERFORMANCE_MODE_TEMPLATE,
-  PROTOTYPE_MODE_TEMPLATE,
-  TEACHER_MODE_TEMPLATE,
   MODE_TEMPLATES,
   MODE_METADATA
 } from '../index.js';
@@ -26,13 +21,8 @@ describe('Mode Templates', () => {
       expect(ASSISTANT_MODE_TEMPLATE).toBeDefined();
       expect(PLANNING_MODE_TEMPLATE).toBeDefined();
       expect(DEVELOPER_MODE_TEMPLATE).toBeDefined();
-      expect(TOOL_MODE_TEMPLATE).toBeDefined();
       expect(DEBUGGER_MODE_TEMPLATE).toBeDefined();
-      expect(SECURITY_MODE_TEMPLATE).toBeDefined();
       expect(REVIEWER_MODE_TEMPLATE).toBeDefined();
-      expect(PERFORMANCE_MODE_TEMPLATE).toBeDefined();
-      expect(PROTOTYPE_MODE_TEMPLATE).toBeDefined();
-      expect(TEACHER_MODE_TEMPLATE).toBeDefined();
     });
 
     it('should export MODE_TEMPLATES map', () => {
@@ -40,18 +30,13 @@ describe('Mode Templates', () => {
       expect(MODE_TEMPLATES.assistant).toBe(ASSISTANT_MODE_TEMPLATE);
       expect(MODE_TEMPLATES.planning).toBe(PLANNING_MODE_TEMPLATE);
       expect(MODE_TEMPLATES.developer).toBe(DEVELOPER_MODE_TEMPLATE);
-      expect(MODE_TEMPLATES.tool).toBe(TOOL_MODE_TEMPLATE);
       expect(MODE_TEMPLATES.debugger).toBe(DEBUGGER_MODE_TEMPLATE);
-      expect(MODE_TEMPLATES.security).toBe(SECURITY_MODE_TEMPLATE);
       expect(MODE_TEMPLATES.reviewer).toBe(REVIEWER_MODE_TEMPLATE);
-      expect(MODE_TEMPLATES.performance).toBe(PERFORMANCE_MODE_TEMPLATE);
-      expect(MODE_TEMPLATES.prototype).toBe(PROTOTYPE_MODE_TEMPLATE);
-      expect(MODE_TEMPLATES.teacher).toBe(TEACHER_MODE_TEMPLATE);
     });
 
     it('should export MODE_METADATA', () => {
       expect(MODE_METADATA).toBeDefined();
-      expect(Object.keys(MODE_METADATA)).toHaveLength(10);
+      expect(Object.keys(MODE_METADATA)).toHaveLength(5);
     });
   });
 
@@ -60,26 +45,16 @@ describe('Mode Templates', () => {
       expect(ASSISTANT_MODE_TEMPLATE.length).toBeGreaterThan(0);
       expect(PLANNING_MODE_TEMPLATE.length).toBeGreaterThan(0);
       expect(DEVELOPER_MODE_TEMPLATE.length).toBeGreaterThan(0);
-      expect(TOOL_MODE_TEMPLATE.length).toBeGreaterThan(0);
       expect(DEBUGGER_MODE_TEMPLATE.length).toBeGreaterThan(0);
-      expect(SECURITY_MODE_TEMPLATE.length).toBeGreaterThan(0);
       expect(REVIEWER_MODE_TEMPLATE.length).toBeGreaterThan(0);
-      expect(PERFORMANCE_MODE_TEMPLATE.length).toBeGreaterThan(0);
-      expect(PROTOTYPE_MODE_TEMPLATE.length).toBeGreaterThan(0);
-      expect(TEACHER_MODE_TEMPLATE.length).toBeGreaterThan(0);
     });
 
     it('should have string templates', () => {
       expect(typeof ASSISTANT_MODE_TEMPLATE).toBe('string');
       expect(typeof PLANNING_MODE_TEMPLATE).toBe('string');
       expect(typeof DEVELOPER_MODE_TEMPLATE).toBe('string');
-      expect(typeof TOOL_MODE_TEMPLATE).toBe('string');
       expect(typeof DEBUGGER_MODE_TEMPLATE).toBe('string');
-      expect(typeof SECURITY_MODE_TEMPLATE).toBe('string');
       expect(typeof REVIEWER_MODE_TEMPLATE).toBe('string');
-      expect(typeof PERFORMANCE_MODE_TEMPLATE).toBe('string');
-      expect(typeof PROTOTYPE_MODE_TEMPLATE).toBe('string');
-      expect(typeof TEACHER_MODE_TEMPLATE).toBe('string');
     });
   });
 
@@ -138,21 +113,6 @@ describe('Mode Templates', () => {
     });
   });
 
-  describe('Tool Mode Template', () => {
-    it('should contain software engineer persona', () => {
-      expect(TOOL_MODE_TEMPLATE).toContain('senior software engineer');
-    });
-
-    it('should mention tool usage guidelines', () => {
-      expect(TOOL_MODE_TEMPLATE).toContain('Tool Usage');
-    });
-
-    it('should include developer mode base', () => {
-      expect(TOOL_MODE_TEMPLATE).toContain('Core Mandates');
-      expect(TOOL_MODE_TEMPLATE).toContain('Development Workflow');
-    });
-  });
-
   describe('Debugger Mode Template', () => {
     it('should contain debugger persona', () => {
       expect(DEBUGGER_MODE_TEMPLATE).toContain('debugging specialist');
@@ -170,25 +130,6 @@ describe('Mode Templates', () => {
 
     it('should mention common bug categories', () => {
       expect(DEBUGGER_MODE_TEMPLATE).toContain('Bug Categories');
-    });
-  });
-
-  describe('Security Mode Template', () => {
-    it('should contain security persona', () => {
-      expect(SECURITY_MODE_TEMPLATE).toContain('Security');
-    });
-
-    it('should mention security audit checklist', () => {
-      expect(SECURITY_MODE_TEMPLATE).toContain('Security Audit');
-      expect(SECURITY_MODE_TEMPLATE).toContain('Input Validation');
-    });
-
-    it('should mention OWASP Top 10', () => {
-      expect(SECURITY_MODE_TEMPLATE).toContain('OWASP');
-    });
-
-    it('should mention secure coding practices', () => {
-      expect(SECURITY_MODE_TEMPLATE).toContain('Secure Coding');
     });
   });
 
@@ -211,99 +152,9 @@ describe('Mode Templates', () => {
     });
   });
 
-  describe('Performance Mode Template', () => {
-    it('should contain performance persona', () => {
-      expect(PERFORMANCE_MODE_TEMPLATE).toContain('performance engineer');
-    });
-
-    it('should mention performance analysis methodology', () => {
-      expect(PERFORMANCE_MODE_TEMPLATE).toContain('Performance Analysis');
-      expect(PERFORMANCE_MODE_TEMPLATE).toContain('Measure');
-    });
-
-    it('should mention performance categories', () => {
-      expect(PERFORMANCE_MODE_TEMPLATE).toContain('Performance Categories');
-      expect(PERFORMANCE_MODE_TEMPLATE).toContain('Time Complexity');
-    });
-
-    it('should mention optimization techniques', () => {
-      expect(PERFORMANCE_MODE_TEMPLATE).toContain('Optimization Techniques');
-    });
-  });
-
-  describe('Prototype Mode Template', () => {
-    it('should contain prototype persona', () => {
-      expect(PROTOTYPE_MODE_TEMPLATE).toContain('rapid prototyper');
-    });
-
-    it('should mention prototype principles', () => {
-      expect(PROTOTYPE_MODE_TEMPLATE).toContain('Prototype Mode Principles');
-      expect(PROTOTYPE_MODE_TEMPLATE).toContain('Speed over perfection');
-    });
-
-    it('should mention PROTOTYPE comment marking', () => {
-      expect(PROTOTYPE_MODE_TEMPLATE).toContain('// PROTOTYPE');
-      expect(PROTOTYPE_MODE_TEMPLATE).toContain('mark');
-    });
-
-    it('should mention when to use prototype mode', () => {
-      expect(PROTOTYPE_MODE_TEMPLATE).toContain('When to Use');
-      expect(PROTOTYPE_MODE_TEMPLATE).toContain('proof-of-concept');
-    });
-
-    it('should mention restrictions lifted', () => {
-      expect(PROTOTYPE_MODE_TEMPLATE).toContain('Restrictions Lifted');
-      expect(PROTOTYPE_MODE_TEMPLATE).toContain('No need for tests');
-    });
-
-    it('should suggest mode switching after success', () => {
-      expect(PROTOTYPE_MODE_TEMPLATE).toContain('Planning mode');
-      expect(PROTOTYPE_MODE_TEMPLATE).toContain('Developer mode');
-      expect(PROTOTYPE_MODE_TEMPLATE).toContain('prototype works');
-    });
-  });
-
-  describe('Teacher Mode Template', () => {
-    it('should contain teacher persona', () => {
-      expect(TEACHER_MODE_TEMPLATE).toContain('technical educator');
-    });
-
-    it('should mention teaching principles', () => {
-      expect(TEACHER_MODE_TEMPLATE).toContain('Teaching Principles');
-      expect(TEACHER_MODE_TEMPLATE).toContain('Break down complex topics');
-    });
-
-    it('should mention teaching approach', () => {
-      expect(TEACHER_MODE_TEMPLATE).toContain('Teaching Approach');
-      expect(TEACHER_MODE_TEMPLATE).toContain('Assess current understanding');
-    });
-
-    it('should mention teaching techniques', () => {
-      expect(TEACHER_MODE_TEMPLATE).toContain('Teaching Techniques');
-      expect(TEACHER_MODE_TEMPLATE).toContain('analogies');
-      expect(TEACHER_MODE_TEMPLATE).toContain('examples');
-    });
-
-    it('should mention restrictions', () => {
-      expect(TEACHER_MODE_TEMPLATE).toContain('Restrictions');
-      expect(TEACHER_MODE_TEMPLATE).toContain('CANNOT write code');
-      expect(TEACHER_MODE_TEMPLATE).toContain('CANNOT modify files');
-    });
-
-    it('should mention allowed capabilities', () => {
-      expect(TEACHER_MODE_TEMPLATE).toContain('CAN read files');
-      expect(TEACHER_MODE_TEMPLATE).toContain('CAN search');
-    });
-
-    it('should suggest switching to developer mode after learning', () => {
-      expect(TEACHER_MODE_TEMPLATE).toContain('Developer mode');
-      expect(TEACHER_MODE_TEMPLATE).toContain('understand the concept');
-    });
-  });
-
   describe('Mode Metadata', () => {
     it('should have metadata for all modes', () => {
-      const modes = ['assistant', 'planning', 'developer', 'tool', 'debugger', 'security', 'reviewer', 'performance', 'prototype', 'teacher'];
+      const modes = ['assistant', 'planning', 'developer', 'debugger', 'reviewer'];
       
       for (const mode of modes) {
         expect(MODE_METADATA[mode as keyof typeof MODE_METADATA]).toBeDefined();
@@ -348,39 +199,24 @@ describe('Mode Templates', () => {
       expect(MODE_METADATA.assistant.icon).toBe('💬');
       expect(MODE_METADATA.planning.icon).toBe('📋');
       expect(MODE_METADATA.developer.icon).toBe('👨‍💻');
-      expect(MODE_METADATA.tool.icon).toBe('🔧');
       expect(MODE_METADATA.debugger.icon).toBe('🐛');
-      expect(MODE_METADATA.security.icon).toBe('🔒');
       expect(MODE_METADATA.reviewer.icon).toBe('👀');
-      expect(MODE_METADATA.performance.icon).toBe('⚡');
-      expect(MODE_METADATA.prototype.icon).toBe('⚡🔬');
-      expect(MODE_METADATA.teacher.icon).toBe('👨‍🏫');
     });
 
     it('should have correct colors', () => {
       expect(MODE_METADATA.assistant.color).toBe('blue');
       expect(MODE_METADATA.planning.color).toBe('yellow');
       expect(MODE_METADATA.developer.color).toBe('green');
-      expect(MODE_METADATA.tool.color).toBe('cyan');
       expect(MODE_METADATA.debugger.color).toBe('red');
-      expect(MODE_METADATA.security.color).toBe('purple');
       expect(MODE_METADATA.reviewer.color).toBe('orange');
-      expect(MODE_METADATA.performance.color).toBe('magenta');
-      expect(MODE_METADATA.prototype.color).toBe('brightCyan');
-      expect(MODE_METADATA.teacher.color).toBe('warmYellow');
     });
 
     it('should have correct personas', () => {
       expect(MODE_METADATA.assistant.persona).toBe('Helpful AI Assistant');
       expect(MODE_METADATA.planning.persona).toBe('Technical Architect & Planner');
       expect(MODE_METADATA.developer.persona).toBe('Senior Software Engineer');
-      expect(MODE_METADATA.tool.persona).toBe('Senior Software Engineer + Tool Expert');
       expect(MODE_METADATA.debugger.persona).toBe('Senior Debugging Specialist');
-      expect(MODE_METADATA.security.persona).toBe('Security Auditor & Specialist');
       expect(MODE_METADATA.reviewer.persona).toBe('Senior Code Reviewer');
-      expect(MODE_METADATA.performance.persona).toBe('Performance Engineer');
-      expect(MODE_METADATA.prototype.persona).toBe('Rapid Prototyper');
-      expect(MODE_METADATA.teacher.persona).toBe('Patient Technical Educator');
     });
   });
 
@@ -423,7 +259,7 @@ describe('Mode Templates', () => {
       // Most templates should have multiple lines
       expect(DEVELOPER_MODE_TEMPLATE.split('\n').length).toBeGreaterThan(5);
       expect(DEBUGGER_MODE_TEMPLATE.split('\n').length).toBeGreaterThan(5);
-      expect(SECURITY_MODE_TEMPLATE.split('\n').length).toBeGreaterThan(5);
+      expect(REVIEWER_MODE_TEMPLATE.split('\n').length).toBeGreaterThan(5);
     });
 
     it('should not have leading/trailing excessive whitespace', () => {
@@ -441,17 +277,12 @@ describe('Mode Templates', () => {
       expect(MODE_TEMPLATES['assistant']).toBe(ASSISTANT_MODE_TEMPLATE);
       expect(MODE_TEMPLATES['planning']).toBe(PLANNING_MODE_TEMPLATE);
       expect(MODE_TEMPLATES['developer']).toBe(DEVELOPER_MODE_TEMPLATE);
-      expect(MODE_TEMPLATES['tool']).toBe(TOOL_MODE_TEMPLATE);
       expect(MODE_TEMPLATES['debugger']).toBe(DEBUGGER_MODE_TEMPLATE);
-      expect(MODE_TEMPLATES['security']).toBe(SECURITY_MODE_TEMPLATE);
       expect(MODE_TEMPLATES['reviewer']).toBe(REVIEWER_MODE_TEMPLATE);
-      expect(MODE_TEMPLATES['performance']).toBe(PERFORMANCE_MODE_TEMPLATE);
-      expect(MODE_TEMPLATES['prototype']).toBe(PROTOTYPE_MODE_TEMPLATE);
-      expect(MODE_TEMPLATES['teacher']).toBe(TEACHER_MODE_TEMPLATE);
     });
 
     it('should support dynamic mode lookup', () => {
-      const modes = ['assistant', 'planning', 'developer', 'tool', 'debugger', 'security', 'reviewer', 'performance', 'prototype', 'teacher'];
+      const modes = ['assistant', 'planning', 'developer', 'debugger', 'reviewer'];
       
       for (const mode of modes) {
         const template = MODE_TEMPLATES[mode as keyof typeof MODE_TEMPLATES];

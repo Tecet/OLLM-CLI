@@ -1,5 +1,5 @@
 /**
- * ContextManager - Manages dynamic context injection into system prompts
+ * DynamicContextInjector - Manages dynamic context injection into system prompts
  * 
  * Responsibilities:
  * - Add and remove context entries with unique keys
@@ -29,9 +29,9 @@ const DEFAULT_PRIORITY = 50;
 const DEFAULT_SOURCE = 'user';
 
 /**
- * ContextManager implementation
+ * DynamicContextInjector implementation
  */
-export class ContextManager {
+export class DynamicContextInjector {
   private contexts: Map<string, ContextEntry>;
 
   constructor() {

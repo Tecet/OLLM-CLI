@@ -183,6 +183,32 @@ export class MCPHealthMonitor {
   }
 
   /**
+   * Subscribe to health updates
+   * @param callback - Callback function to receive health updates
+   * @returns Unsubscribe function
+   */
+  subscribeToHealthUpdates(callback: (health: HealthCheckResult) => void): () => void {
+    const listener: HealthMonitorEventListener = (event) => {
+      // Only emit health updates for relevant events
+      if (event.type === 'health-check' || 
+          event.type === 'server-unhealthy' || 
+          event.type === 'server-recovered') {
+        const health = this.getServerHealth(event.serverName);
+        if (health) {
+          callback(health);
+        }
+      }
+    };
+
+    this.addEventListener(listener);
+
+    // Return unsubscribe function
+    return () => {
+      this.removeEventListener(listener);
+    };
+  }
+
+  /**
    * Get health status for a server
    * @param serverName - Server name
    * @returns Health check result or undefined if not monitored

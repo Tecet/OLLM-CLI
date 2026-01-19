@@ -28,6 +28,32 @@ export interface MCPOAuthConfig {
 }
 
 /**
+ * MCP server metadata (stored during installation for offline access)
+ */
+export interface MCPServerMetadata {
+  /** Server description */
+  description?: string;
+  /** Server author */
+  author?: string;
+  /** Server category */
+  category?: string;
+  /** Server version */
+  version?: string;
+  /** Server homepage URL */
+  homepage?: string;
+  /** Server repository URL */
+  repository?: string;
+  /** User rating (0-5) */
+  rating?: number;
+  /** Number of installations */
+  installCount?: number;
+  /** List of requirements */
+  requirements?: string[];
+  /** Whether OAuth is required */
+  requiresOAuth?: boolean;
+}
+
+/**
  * MCP server configuration
  */
 export interface MCPServerConfig {
@@ -47,6 +73,8 @@ export interface MCPServerConfig {
   url?: string;
   /** Working directory for stdio transport */
   cwd?: string;
+  /** Server metadata (stored during installation for offline access) */
+  metadata?: MCPServerMetadata;
 }
 
 /**
@@ -66,6 +94,12 @@ export interface MCPServerStatus {
   error?: string;
   /** Number of tools provided by this server */
   tools: number;
+  /** Server uptime in milliseconds (0 if not running) */
+  uptime?: number;
+  /** Number of resources provided by this server */
+  resources?: number;
+  /** Server description */
+  description?: string;
 }
 
 /**
@@ -232,6 +266,26 @@ export interface MCPClient {
    * @returns Server status information
    */
   getServerStatus(name: string): MCPServerStatus;
+
+  /**
+   * Get status of all MCP servers
+   * @returns Map of server names to their status information
+   */
+  getAllServerStatuses(): Map<string, MCPServerStatus>;
+
+  /**
+   * Restart an MCP server (stop + wait + start)
+   * @param name - Server name
+   */
+  restartServer(name: string): Promise<void>;
+
+  /**
+   * Get server logs
+   * @param name - Server name
+   * @param lines - Number of lines to retrieve (default: 100)
+   * @returns Array of log lines
+   */
+  getServerLogs(name: string, lines?: number): Promise<string[]>;
 
   /**
    * List all MCP servers

@@ -6,7 +6,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as fc from 'fast-check';
-import { createContextManager, ContextManagerImpl } from '../contextManager.js';
+import { createContextManager, ConversationContextManager } from '../contextManager.js';
 import type {
   ModelInfo,
   ContextConfig,
@@ -303,7 +303,7 @@ describe('ContextManager', () => {
 
       manager.setSystemPrompt('You are a helpful assistant.');
 
-      const context = (manager as ContextManagerImpl).getContext();
+      const context = (manager as ConversationContextManager).getContext();
       expect(context.systemPrompt.content).toBe('You are a helpful assistant.');
       expect(context.messages[0].role).toBe('system');
     });
@@ -320,7 +320,7 @@ describe('ContextManager', () => {
 
       await manager.addMessage(message);
 
-      const context = (manager as ContextManagerImpl).getContext();
+const context = (manager as ConversationContextManager).getContext();
       expect(context.messages).toContainEqual(expect.objectContaining({
         id: 'msg-1',
         role: 'user',
@@ -344,7 +344,7 @@ describe('ContextManager', () => {
 
       await manager.clear();
 
-      const context = (manager as ContextManagerImpl).getContext();
+      const context = (manager as ConversationContextManager).getContext();
       expect(context.messages.length).toBe(1);
       expect(context.messages[0].role).toBe('system');
       expect(context.messages[0].content).toBe('System prompt');

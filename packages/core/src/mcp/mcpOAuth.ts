@@ -190,6 +190,167 @@ export class MCPOAuthProvider {
   }
 
   /**
+   * Get OAuth status for a server (UI method)
+   * 
+   * @param serverName - Name of the server
+   * @returns OAuth status including connection state and expiry
+   */
+  async getOAuthStatus(serverName: string): Promise<{
+    connected: boolean;
+    expiresAt?: number;
+    scopes?: string[];
+  }> {
+    const tokens = await this.getValidTokens(serverName);
+    
+    if (!tokens) {
+      return { connected: false };
+    }
+
+    return {
+      connected: true,
+      expiresAt: tokens.expiresAt,
+      scopes: tokens.scope ? tokens.scope.split(' ') : undefined,
+    };
+  }
+
+  /**
+   * Authorize with OAuth and return auth URL (UI method)
+   * 
+   * @param serverName - Name of the server
+   * @param config - OAuth configuration
+   * @returns Authorization URL for browser opening
+   */
+  async authorize(serverName: string, config: OAuthConfig): Promise<string> {
+    const redirectPort = config.redirectPort ?? 3000;
+    const redirectUri = `http://localhost:${redirectPort}/callback`;
+    const usePKCE = config.usePKCE ?? true;
+
+    // Generate PKCE challenge if enabled
+    let codeChallenge: string | undefined;
+
+    if (usePKCE) {
+      const codeVerifier = this.generateCodeVerifier();
+      codeChallenge = await this.generateCodeChallenge(codeVerifier);
+      // Store code verifier for later use in token exchange
+      (this as any).pendingCodeVerifiers = (this as any).pendingCodeVerifiers || new Map();
+      (this as any).pendingCodeVerifiers.set(serverName, codeVerifier);
+    }
+
+    // Build authorization URL
+    const authUrl = new URL(config.authorizationUrl!);
+    authUrl.searchParams.set('client_id', config.clientId);
+    authUrl.searchParams.set('redirect_uri', redirectUri);
+    authUrl.searchParams.set('response_type', 'code');
+    authUrl.searchParams.set('scope', (config.scopes || []).join(' '));
+
+    if (usePKCE && codeChallenge) {
+      authUrl.searchParams.set('code_challenge', codeChallenge);
+      authUrl.searchParams.set('code_challenge_method', 'S256');
+    }
+
+    return authUrl.toString();
+  }
+
+  /**
+   * Refresh OAuth token (UI method)
+   * 
+   * @param serverName - Name of the server
+   * @param config - OAuth configuration (needed for token endpoint)
+   * @returns New tokens
+   */
+  async refreshToken(serverName: string, config: OAuthConfig): Promise<OAuthTokens> {
+    const tokens = this.tokens.get(serverName);
+    
+    if (!tokens || !tokens.refreshToken) {
+      throw new Error(`No refresh token available for server '${serverName}'`);
+    }
+
+    const body = new URLSearchParams({
+      grant_type: 'refresh_token',
+      refresh_token: tokens.refreshToken,
+      client_id: config.clientId,
+    });
+
+    if (config.clientSecret) {
+      body.set('client_secret', config.clientSecret);
+    }
+
+    const response = await fetch(config.tokenUrl!, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: body.toString(),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Token refresh failed: ${error}`);
+    }
+
+    const data = await response.json() as {
+      access_token: string;
+      refresh_token?: string;
+      expires_in: number;
+      token_type?: string;
+      scope?: string;
+    };
+
+    const newTokens: OAuthTokens = {
+      accessToken: data.access_token,
+      refreshToken: data.refresh_token || tokens.refreshToken, // Keep old refresh token if not provided
+      expiresAt: Date.now() + (data.expires_in * 1000),
+      tokenType: data.token_type || 'Bearer',
+      scope: data.scope,
+    };
+
+    await this.storeTokens(serverName, newTokens);
+
+    return newTokens;
+  }
+
+  /**
+   * Revoke OAuth access (UI method)
+   * 
+   * @param serverName - Name of the server
+   * @param config - OAuth configuration (optional, for revocation endpoint)
+   */
+  async revokeAccess(serverName: string, config?: OAuthConfig): Promise<void> {
+    const tokens = this.tokens.get(serverName);
+
+    // Try to revoke with provider if config provided
+    if (tokens && config && config.tokenUrl) {
+      try {
+        // Try to find revocation endpoint (usually token_url with /revoke)
+        const revocationUrl = config.tokenUrl.replace(/\/token$/, '/revoke');
+        
+        const body = new URLSearchParams({
+          token: tokens.accessToken,
+          client_id: config.clientId,
+        });
+
+        if (config.clientSecret) {
+          body.set('client_secret', config.clientSecret);
+        }
+
+        await fetch(revocationUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: body.toString(),
+        });
+      } catch (error) {
+        // Ignore revocation errors, still clean up locally
+        console.warn(`Failed to revoke token with provider: ${error}`);
+      }
+    }
+
+    // Clean up local tokens
+    await this.revokeTokens(serverName);
+  }
+
+  /**
    * Start OAuth authorization flow
    * 
    * @param serverName - Name of the server
