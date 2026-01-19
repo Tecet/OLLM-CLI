@@ -7,7 +7,6 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import * as pty from 'node-pty';
 import os from 'os';
-import stripAnsi from 'strip-ansi';
 
 export interface TerminalLine {
   text: string;
@@ -98,7 +97,7 @@ export function TerminalProvider({ children }: { children: React.ReactNode }) {
     if (ptyProcessRef.current && isRunning) {
       try {
         ptyProcessRef.current.resize(Math.max(1, cols), Math.max(1, rows));
-      } catch (err) {
+      } catch (_err) {
         // Silently fail if resize is called on a dead process
       }
     }

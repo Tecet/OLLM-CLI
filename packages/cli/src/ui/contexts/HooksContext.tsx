@@ -147,7 +147,7 @@ export function HooksProvider({
     // Group hooks by category
     const categories: HookCategory[] = [];
     
-    for (const [categoryKey, categoryDef] of Object.entries(categoryMap)) {
+    for (const [_categoryKey, categoryDef] of Object.entries(categoryMap)) {
       const categoryHooks: Hook[] = [];
       
       // Collect hooks from all event types in this category
@@ -188,7 +188,7 @@ export function HooksProvider({
       const corruptedHooks: Array<{ id: string; error: string }> = [];
 
       // Flatten hooks from all events
-      for (const [event, hooks] of allHooksMap.entries()) {
+      for (const [_event, hooks] of allHooksMap.entries()) {
         for (const hook of hooks) {
           try {
             // Validate hook structure
@@ -200,10 +200,10 @@ export function HooksProvider({
               continue;
             }
             allHooks.push(hook);
-          } catch (error) {
+          } catch (_err) {
             corruptedHooks.push({
               id: hook.id || 'unknown',
-              error: error instanceof Error ? error.message : 'Unknown error',
+              error: _err instanceof Error ? _err.message : 'Unknown error',
             });
           }
         }
