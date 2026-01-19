@@ -204,6 +204,11 @@ export class HookRunner {
         });
       });
 
+      // Check if output size was exceeded
+      if (outputExceeded) {
+        throw new Error(`Hook output exceeded ${MAX_OUTPUT_SIZE} bytes`);
+      }
+
       // Check if process was killed (timeout)
       if (child.killed) {
         throw new Error(`Hook timed out after ${this.timeout}ms`);

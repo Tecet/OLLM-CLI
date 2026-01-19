@@ -23,7 +23,6 @@ import { ExtensionRegistry } from '../extensions/extensionRegistry.js';
 import { MCPOAuthProvider, KeytarTokenStorage, FileTokenStorage } from '../mcp/mcpOAuth.js';
 import { MCPHealthMonitor } from '../mcp/mcpHealthMonitor.js';
 import { ToolRegistry, registerBuiltInTools } from '../tools/index.js';
-import { SettingsService } from './settingsService.js';
 
 /**
  * Configuration for model management
@@ -285,11 +284,16 @@ export class ServiceContainer {
    * 
    * Returns the central tool registry with all built-in tools registered.
    * This is the single source of truth for tool availability.
+   * 
+   * Note: ToolRegistry requires a SettingsService instance for user preferences.
+   * Since SettingsService is in the CLI package, it must be provided during
+   * initialization or the registry will be created without settings integration.
    */
   getToolRegistry(): ToolRegistry {
     if (!this._toolRegistry) {
-      const settingsService = SettingsService.getInstance();
-      this._toolRegistry = new ToolRegistry(settingsService);
+      // Create registry without settings service (core package doesn't have access to it)
+      // The CLI layer should provide settings integration when needed
+      this._toolRegistry = new ToolRegistry();
       
       // Register all built-in tools
       const memoryPath = `${this.userHome}/.ollm/memory.json`;
@@ -297,6 +301,16 @@ export class ServiceContainer {
       registerBuiltInTools(this._toolRegistry, { memoryPath, todosPath });
     }
     return this._toolRegistry;
+  }
+  
+  /**
+   * Set the Tool Registry
+   * 
+   * Allows the CLI layer to provide a pre-configured ToolRegistry with
+   * SettingsService integration.
+   */
+  setToolRegistry(registry: ToolRegistry): void {
+    this._toolRegistry = registry;
   }
   
   /**

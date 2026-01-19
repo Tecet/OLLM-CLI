@@ -205,7 +205,7 @@ export class TrustedHooks {
   async computeHash(hook: Hook): Promise<string> {
     try {
       // If sourcePath is available and is a file, read and hash the actual file
-      if (hook.sourcePath && hook.sourcePath.includes('/') || hook.sourcePath?.includes('\\')) {
+      if (hook.sourcePath && (hook.sourcePath.includes('/') || hook.sourcePath.includes('\\'))) {
         try {
           const scriptContent = await readFile(hook.sourcePath, 'utf-8');
           const hash = createHash('sha256');

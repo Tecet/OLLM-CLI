@@ -6,11 +6,13 @@
 
 import React, { createContext, useContext, ReactNode, useMemo, useEffect } from 'react';
 import { ServiceContainer, createServiceContainer } from '@ollm/ollm-cli-core/services/serviceContainer.js';
+import { ToolRegistry, registerBuiltInTools } from '@ollm/ollm-cli-core/tools/index.js';
 import type { ProviderAdapter } from '@ollm/ollm-cli-core/provider/types.js';
 import type { Config } from '../../config/types.js';
 import { homedir } from 'os';
 import { useDialog } from '../../ui/contexts/DialogContext.js';
 import type { Hook } from '@ollm/ollm-cli-core/hooks/types.js';
+import { SettingsService } from '../../config/settingsService.js';
 
 /**
  * Service context value
@@ -85,6 +87,21 @@ export function ServiceProvider({
       userHome: homedir(),
     });
   }, [provider, config, workspacePath, showHookApproval]);
+  
+  // Initialize ToolRegistry with SettingsService integration
+  useEffect(() => {
+    const settingsService = SettingsService.getInstance();
+    const toolRegistry = new ToolRegistry(settingsService);
+    
+    // Register built-in tools
+    const userHome = homedir();
+    const memoryPath = `${userHome}/.ollm/memory.json`;
+    const todosPath = `${userHome}/.ollm/todos.json`;
+    registerBuiltInTools(toolRegistry, { memoryPath, todosPath });
+    
+    // Set the configured registry in the container
+    container.setToolRegistry(toolRegistry);
+  }, [container]);
   
   // Initialize services on mount
   useEffect(() => {
