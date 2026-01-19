@@ -110,6 +110,14 @@ export class HookRunner {
   /**
    * Check if command is whitelisted
    * 
+   * Whitelisted commands are considered safe to execute without absolute paths.
+   * These are standard system commands and package managers:
+   * - node: Node.js runtime
+   * - python/python3: Python interpreters
+   * - bash/sh: Shell interpreters
+   * - npx: Node package executor
+   * - uvx: UV package executor (used for MCP servers)
+   * 
    * @param command - Command to check
    * @returns true if command is whitelisted
    */
