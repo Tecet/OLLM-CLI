@@ -25,6 +25,7 @@ import { ActiveContextProvider } from '../features/context/ActiveContextState.js
 import { DialogProvider } from './contexts/DialogContext.js';
 import { UserPromptProvider } from '../features/context/UserPromptContext.js';
 import { HooksProvider } from './contexts/HooksContext.js';
+import { ToolsProvider } from './contexts/ToolsContext.js';
 import { MCPProvider } from './contexts/MCPContext.js';
 import { LaunchScreen } from './components/launch/LaunchScreen.js';
 import type { ProviderAdapter, ProviderRequest, ProviderEvent } from '@ollm/core';
@@ -992,17 +993,18 @@ export function App({ config }: AppProps) {
         <SettingsProvider>
           <DialogProvider>
             <HooksProvider>
-              <MCPProvider>
-                <UserPromptProvider>
-                  <GPUProvider 
-                    pollingInterval={config.status?.pollInterval || 5000}
-                    autoStart={config.ui?.showGpuStats !== false}
+              <ToolsProvider>
+                <MCPProvider>
+                  <UserPromptProvider>
+                    <GPUProvider 
+                      pollingInterval={config.status?.pollInterval || 5000}
+                      autoStart={config.ui?.showGpuStats !== false}
+                    >
+                  <ServiceProvider
+                    provider={provider}
+                    config={config}
+                    workspacePath={workspacePath}
                   >
-                <ServiceProvider
-                  provider={provider}
-                  config={config}
-                  workspacePath={workspacePath}
-                >
                   <ContextManagerProvider
                     sessionId={sessionId}
                     modelInfo={modelInfo}
@@ -1037,6 +1039,7 @@ export function App({ config }: AppProps) {
               </GPUProvider>
               </UserPromptProvider>
             </MCPProvider>
+            </ToolsProvider>
             </HooksProvider>
           </DialogProvider>
         </SettingsProvider>

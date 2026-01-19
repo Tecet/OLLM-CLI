@@ -30,6 +30,7 @@ export default {
   // Keep node_modules external
   external: [
     'ink',
+    'ink-spinner',
     'react',
     'react-devtools-core',
     'yargs',
@@ -43,5 +44,6 @@ export default {
     'picomatch',
     'jimp',
     'terminal-image',
+    'keytar',
   ],
 };

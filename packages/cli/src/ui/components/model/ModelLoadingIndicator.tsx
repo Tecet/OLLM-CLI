@@ -6,10 +6,10 @@
 import React from 'react';
 import { Box, Text } from 'ink';
 import Spinner from 'ink-spinner';
-import { useModel } from '../../features/context/ModelContext.js';
+import { useModel } from '../../../features/context/ModelContext.js';
 
 export function ModelLoadingIndicator() {
-  const { modelLoading, warmupStatus, skipWarmup } = useModel();
+  const { modelLoading, warmupStatus } = useModel();
   
   if (!modelLoading || !warmupStatus?.active) {
     return null;

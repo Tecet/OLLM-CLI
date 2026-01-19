@@ -2,19 +2,21 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { useUI } from '../../../features/context/UIContext.js';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
-import { SettingsService } from '../../../config/settingsService.js';
-import { getAllCategories, getToolsByCategory, getCategoryDisplayName, ToolCategory } from '../../../config/toolsConfig.js';
+import { useTools, type ToolCategoryGroup } from '../../contexts/ToolsContext.js';
 import { ToolToggle } from './ToolToggle.js';
 
-// Category icon mapping
-const getCategoryIcon = (category: ToolCategory): string => {
-  const categoryIcons: Record<ToolCategory, string> = {
+// Category icon mapping (kept for backward compatibility, but now also in ToolsContext)
+const getCategoryIcon = (category: string): string => {
+  const categoryIcons: Record<string, string> = {
     'file-operations': '📝',
     'file-discovery': '🔍',
     'shell': '⚡',
     'web': '🌐',
     'memory': '💾',
     'context': '🔄',
+    'mcp': '🔌',
+    'extension': '🧩',
+    'other': '📦',
   };
   return categoryIcons[category] || '📦';
 };
@@ -35,7 +37,7 @@ export interface ToolsPanelProps {
 export function ToolsPanel({ modelSupportsTools = true, windowSize = 15 }: ToolsPanelProps) {
   const { state: uiState } = useUI();
   const { isFocused, exitToNavBar } = useFocusManager();
-  const settingsService = SettingsService.getInstance();
+  const { state: toolsState, toggleTool, refreshTools } = useTools();
   
   // Check if this panel has focus
   const hasFocus = isFocused('tools-panel');
@@ -47,26 +49,17 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 15 }: Tools
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isOnExitItem, setIsOnExitItem] = useState(false); // Track if Exit item is selected
   
-  // Get all categories and their tools
-  const categories = useMemo(() => getAllCategories(), []);
-  const categoryData = useMemo(() => {
-    return categories.map(category => ({
-      category,
-      displayName: getCategoryDisplayName(category),
-      tools: getToolsByCategory(category),
-    }));
-  }, [categories]);
+  // Get categories from context (dynamic from ToolRegistry)
+  const categoryData = toolsState.categories;
 
-  // Get tool states
-  const [toolStates, setToolStates] = useState<Record<string, boolean>>(() => {
+  // Get tool states from context
+  const toolStates = useMemo(() => {
     const states: Record<string, boolean> = {};
-    categoryData.forEach(({ tools }) => {
-      tools.forEach(tool => {
-        states[tool.id] = settingsService.getToolState(tool.id);
-      });
+    toolsState.allTools.forEach(tool => {
+      states[tool.id] = tool.enabled;
     });
     return states;
-  });
+  }, [toolsState.allTools]);
 
   // Calculate total items for windowed rendering
   const totalItems = useMemo(() => {
@@ -120,18 +113,17 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 15 }: Tools
   }, [categoryData, scrollOffset, WINDOW_SIZE]);
 
   // Handle tool toggle
-  const handleToggle = (toolId: string) => {
-    const newState = !toolStates[toolId];
-    settingsService.setToolState(toolId, newState);
-    setToolStates(prev => ({ ...prev, [toolId]: newState }));
+  const handleToggle = async (toolId: string) => {
+    await toggleTool(toolId);
     setHasUnsavedChanges(true); // Mark as changed
   };
 
   // Handle save
   const handleSave = () => {
-    // Settings are already persisted via settingsService.setToolState
-    // Just clear the unsaved changes flag
+    // Settings are already persisted via toggleTool
+    // Just clear the unsaved changes flag and refresh
     setHasUnsavedChanges(false);
+    refreshTools();
   };
 
   // Handle exit
