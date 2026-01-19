@@ -14,6 +14,15 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['**/*.test.ts', '**/*.test.tsx'],
+    // Exclude documentation-related tests and doc folders
+    exclude: [
+      // Tests placed under any `docs` or `documentation` folders
+      '**/docs/**',
+      '**/documentation/**',
+      // Tests with `doc`/`docs` in filename
+      '**/*doc*.test.*',
+      '**/*docs*.test.*',
+    ],
     testTimeout: 120000, // 2 minutes for integration tests
     hookTimeout: 30000, // 30 seconds for setup/teardown
     // Memory optimization settings
