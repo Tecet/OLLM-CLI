@@ -422,9 +422,14 @@ export function ChatProvider({
               const modeManager = contextActions.getModeManager();
               const snapshotManager = contextActions.getSnapshotManager();
               
-              // Register dynamic tools (HotSwap, MemoryDump)
-              toolRegistry.register(new HotSwapTool(manager, promptRegistry, provider, currentModel, modeManager || undefined, snapshotManager || undefined));
-              toolRegistry.register(new MemoryDumpTool(modeManager || undefined));
+              // Register dynamic tools only if not already registered
+              // These tools require runtime dependencies that aren't available at startup
+              if (!toolRegistry.get('trigger_hot_swap')) {
+                toolRegistry.register(new HotSwapTool(manager, promptRegistry, provider, currentModel, modeManager || undefined, snapshotManager || undefined));
+              }
+              if (!toolRegistry.get('memory_dump')) {
+                toolRegistry.register(new MemoryDumpTool(modeManager || undefined));
+              }
               
               const toolNames = toolRegistry.list().map(t => t.name);
               manager.emit('active-tools-updated', toolNames);

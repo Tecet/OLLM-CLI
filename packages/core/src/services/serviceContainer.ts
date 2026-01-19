@@ -327,10 +327,22 @@ export class ServiceContainer {
         ? (extensionConfig.workspaceExtensionsDir || `${this.workspacePath}/.ollm/extensions`)
         : undefined;
       
-      this._extensionManager = new ExtensionManager([
-        userExtensionsDir,
-        ...(workspaceExtensionsDir ? [workspaceExtensionsDir] : []),
-      ]);
+      // Get registries to wire into extension manager
+      const hookRegistry = this.getHookService().getRegistry();
+      const toolRegistry = this.getToolRegistry();
+      
+      this._extensionManager = new ExtensionManager({
+        directories: [
+          userExtensionsDir,
+          ...(workspaceExtensionsDir ? [workspaceExtensionsDir] : []),
+        ],
+        autoEnable: extensionConfig.enabled ?? true,
+        enabled: extensionConfig.enabled ?? true,
+        hookRegistry,
+        toolRegistry,
+        // Note: mcpClient and mcpToolWrapper are not available in core package
+        // They should be set by the CLI layer if needed
+      });
     }
     return this._extensionManager;
   }

@@ -151,43 +151,6 @@
 
 **Note:** Transition animations are an optional visual enhancement. The mode system works fully without them.
 
----
-
-### Phase 19: RAG and Structured Output Integration 🚀 MOVED TO SEPARATE STAGE
-
-**Status:** Moved to separate development roadmap  
-**Location:** `.dev/docs/Development-Roadmap/rework/RAG.md`
-
-**Note:** RAG (Retrieval-Augmented Generation) and Structured Output have been moved to a separate stage for future development. See the dedicated RAG roadmap document for complete specifications and implementation tasks.
-
----
-
-### Phase 20: Documentation & Polish (1-2 hours)
-
-- [ ] 43. Documentation
-  - [ ] 43.1 Create `docs/modes/README.md` documenting all 10 modes
-  - [ ] 43.2 Document mode workflows in `docs/modes/workflows.md`
-  - [ ] 43.3 Document mode shortcuts in `docs/modes/shortcuts.md`
-  - [ ] 43.4 Document hybrid modes in `docs/modes/hybrid-modes.md`
-  - [ ] 43.5 Document focus mode (if implemented) in `docs/modes/focus-mode.md`
-
-  - [ ] 43.7 Document structured output (if implemented) in `docs/modes/structured-output.md`
-  - [ ] 43.8 Create user guide in `docs/modes/user-guide.md`
-  - [ ] 43.9 Create developer guide in `docs/modes/developer-guide.md`
-  - [ ] 43.10 Update CHANGELOG.md with mode system features
-
-olish & Refinement
-  - [ ] 44.1 Optimize keyword detection performance (benchmark and profile)
-  - [ ] 44.2 Optimize snapshot storage performance (async writes, compression)
-
-  - [ ] 44.4 Optimize structured output validation (if implemented)
-  - [ ] 44.5 Add comprehensive error handling for all edge cases
-  - [ ] 44.6 Add logging for all mode operations (debug level)
-  - [ ] 44.7 Add telemetry for mode usage (optional, privacy-respecting)
-  - [ ] 44.8 Review and refactor code for maintainability
-  - [ ] 44.9 Final testing pass (all modes, all transitions, all commands)
-
----
 
 ## Implementation Status Summary
 

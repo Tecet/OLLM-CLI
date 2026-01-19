@@ -122,6 +122,6 @@ export function registerBuiltInTools(registry: ToolRegistry, config?: BuiltInToo
   registry.register(new MemoryTool(memoryPath));
   registry.register(new WriteTodosTool(todosPath));
   
-  // Debug/Self-Reflection
-  registry.register(new MemoryDumpTool());
+  // Note: MemoryDumpTool and HotSwapTool are registered dynamically in ChatContext
+  // because they require runtime dependencies (modeManager, contextManager, etc.)
 }
