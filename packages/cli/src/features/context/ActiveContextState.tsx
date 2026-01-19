@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useContextManager } from './ContextManagerContext.js';
-import type { ModeType, Role, MessagePart } from '@ollm/ollm-cli-core';
+import { ModeType, Role, MessagePart, MODE_METADATA } from '@ollm/ollm-cli-core';
 
 interface ActiveContextState {
   activeSkills: string[];
@@ -47,35 +47,12 @@ import { useHooks } from '../../ui/contexts/HooksContext.js';
  * Get mode metadata (icon, color, persona)
  */
 function getModeMetadata(mode: ModeType): { icon: string; color: string; persona: string } {
-  const metadata: Record<ModeType, { icon: string; color: string; persona: string }> = {
-    assistant: {
-      icon: '💬',
-      color: 'blue',
-      persona: 'Helpful AI Assistant'
-    },
-    planning: {
-      icon: '📋',
-      color: 'yellow',
-      persona: 'Technical Architect & Planner'
-    },
-    developer: {
-      icon: '👨‍💻',
-      color: 'green',
-      persona: 'Senior Software Engineer'
-    },
-    debugger: {
-      icon: '🐛',
-      color: 'red',
-      persona: 'Senior Debugging Specialist'
-    },
-    reviewer: {
-      icon: '👀',
-      color: 'orange',
-      persona: 'Senior Code Reviewer'
-    }
+  const meta = (MODE_METADATA as Record<string, { icon: string; color: string; persona: string }>)[mode] || MODE_METADATA.assistant;
+  return {
+    icon: meta.icon,
+    color: meta.color,
+    persona: meta.persona
   };
-  
-  return metadata[mode] || metadata.assistant;
 }
 
 const ActiveContextContext = createContext<ActiveContextContextType | undefined>(undefined);

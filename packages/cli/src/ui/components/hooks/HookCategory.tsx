@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Box, Text } from 'ink';
 import type { Theme } from '../../../config/types.js';
 
@@ -38,7 +38,7 @@ export function HookCategory({
   isSelected,
   hasFocus,
   theme,
-  onToggleExpand,
+  _onToggleExpand,
 }: HookCategoryProps) {
   // Category icon mapping (from design document)
   const categoryIcons: Record<string, string> = {

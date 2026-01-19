@@ -68,7 +68,13 @@ export class StdioTransport extends BaseMCPTransport {
         });
 
         let errorOccurred = false;
-        let readinessTimeout: NodeJS.Timeout;
+        
+        // Set timeout for readiness check
+        const readinessTimeout = setTimeout(() => {
+          if (!this.connected) {
+            reject(new Error(`MCP Server '${this.command}' failed to become ready within timeout`));
+          }
+        }, 10000); // 10 second timeout for readiness
 
         // Set up readiness check - wait for first successful response
         const checkReadiness = () => {
@@ -172,13 +178,6 @@ export class StdioTransport extends BaseMCPTransport {
             checkReadiness();
           }
         }, 100);
-
-        // Set timeout for readiness check
-        readinessTimeout = setTimeout(() => {
-          if (!this.connected) {
-            reject(new Error(`MCP Server '${this.command}' failed to become ready within timeout`));
-          }
-        }, 10000); // 10 second timeout for readiness
 
       } catch (error) {
         reject(error);

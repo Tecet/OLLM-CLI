@@ -37,7 +37,7 @@ export const MODE_METADATA = {
   assistant: {
     name: 'Assistant',
     persona: 'Helpful AI Assistant',
-    icon: '💬',
+    icon: '🤖',
     color: 'blue',
     description: 'General conversation, explanations, discussions',
     temperatureTier: 3,
@@ -45,7 +45,7 @@ export const MODE_METADATA = {
   planning: {
     name: 'Planning',
     persona: 'Technical Architect & Planner',
-    icon: '📋',
+    icon: '📐',
     color: 'yellow',
     description: 'Research, design, architecture, planning before implementation',
     temperatureTier: 2,
@@ -53,7 +53,7 @@ export const MODE_METADATA = {
   developer: {
     name: 'Developer',
     persona: 'Senior Software Engineer',
-    icon: '👨‍💻',
+    icon: '💻',
     color: 'green',
     description: 'Full implementation, coding, refactoring, tool usage',
     temperatureTier: 1,
@@ -61,7 +61,7 @@ export const MODE_METADATA = {
   debugger: {
     name: 'Debugger',
     persona: 'Senior Debugging Specialist',
-    icon: '🐛',
+    icon: '🐞',
     color: 'red',
     description: 'Systematic debugging, error analysis, performance optimization',
     temperatureTier: 1,
@@ -69,7 +69,7 @@ export const MODE_METADATA = {
   reviewer: {
     name: 'Reviewer',
     persona: 'Senior Code Reviewer',
-    icon: '👀',
+    icon: '📝',
     color: 'orange',
     description: 'Code review, quality assessment, security audits',
     temperatureTier: 2,

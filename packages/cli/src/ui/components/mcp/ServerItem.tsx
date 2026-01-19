@@ -105,8 +105,8 @@ export const ServerItem: React.FC<ServerItemProps> = ({
   server,
   focused,
   expanded,
-  onToggle,
-  onExpand,
+  _onToggle,
+  _onExpand,
 }) => {
   const isEnabled = !server.config.disabled;
   const expandIcon = expanded ? '▼' : '>';

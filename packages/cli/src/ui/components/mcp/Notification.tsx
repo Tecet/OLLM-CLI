@@ -76,7 +76,7 @@ function getNotificationColor(type: NotificationType, theme: any): string {
 /**
  * Get notification border color based on type
  */
-function getNotificationBorderColor(type: NotificationType, theme: any): string {
+function getNotificationBorderColor(type: NotificationType, _theme: any): string {
   switch (type) {
     case 'success':
       return 'green';
@@ -107,16 +107,17 @@ export function Notification({
 }: NotificationProps) {
   const { state: { theme } } = useUI();
   const [isVisible, setIsVisible] = useState(true);
-  const [opacity, setOpacity] = useState(0);
 
-  // Fade in animation
-  useEffect(() => {
-    const fadeInTimer = setTimeout(() => {
-      setOpacity(1);
-    }, 50);
-
-    return () => clearTimeout(fadeInTimer);
-  }, []);
+  /**
+   * Handle notification dismiss with fade out
+   */
+  const handleDismiss = useCallback(() => {
+    // Wait for fade out animation then hide
+    setTimeout(() => {
+      setIsVisible(false);
+      onDismiss?.();
+    }, 200);
+  }, [onDismiss]);
 
   // Auto-dismiss timer
   useEffect(() => {
@@ -127,21 +128,7 @@ export function Notification({
 
       return () => clearTimeout(dismissTimer);
     }
-  }, [timeout]);
-
-  /**
-   * Handle notification dismiss with fade out
-   */
-  const handleDismiss = () => {
-    // Fade out
-    setOpacity(0);
-    
-    // Wait for fade out animation then hide
-    setTimeout(() => {
-      setIsVisible(false);
-      onDismiss?.();
-    }, 200);
-  };
+  }, [timeout, handleDismiss]);
 
   if (!isVisible) {
     return null;

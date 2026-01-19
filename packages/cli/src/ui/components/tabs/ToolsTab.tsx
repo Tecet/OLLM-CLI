@@ -11,11 +11,15 @@ import { ToolsPanel } from '../tools/ToolsPanel.js';
  * 
  * Requirements: 25.1, 25.2, 25.3, 25.4
  */
-export function ToolsTab() {
+export interface ToolsTabProps {
+  width?: number;
+}
+
+export function ToolsTab({ width }: ToolsTabProps) {
   const { currentModel, modelSupportsTools } = useModel();
   
   // Check if current model supports tools
   const supportsTools = modelSupportsTools(currentModel);
 
-  return <ToolsPanel modelSupportsTools={supportsTools} />;
+  return <ToolsPanel modelSupportsTools={supportsTools} windowWidth={width} />;
 }

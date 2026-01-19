@@ -6,32 +6,8 @@
  * This adapter bridges the two representations.
  */
 
-import type { Hook as CoreHook, HookEvent } from '@ollm/ollm-cli-core/hooks/types.js';
+import type { Hook as CoreHook } from '@ollm/ollm-cli-core/hooks/types.js';
 import type { UIHook, UIHookEventType, UIHookActionType } from './types.js';
-
-/**
- * Mapping from core HookEvent to UI HookEventType
- */
-const CORE_TO_UI_EVENT_MAP: Record<string, UIHookEventType> = {
-  'file_edited': 'fileEdited',
-  'file_created': 'fileCreated',
-  'file_deleted': 'fileDeleted',
-  'user_triggered': 'userTriggered',
-  'prompt_submit': 'promptSubmit',
-  'agent_stop': 'agentStop',
-};
-
-/**
- * Mapping from UI HookEventType to core HookEvent
- */
-const UI_TO_CORE_EVENT_MAP: Record<UIHookEventType, HookEvent> = {
-  'fileEdited': 'before_tool',  // File edits happen before tool execution
-  'fileCreated': 'before_tool',
-  'fileDeleted': 'before_tool',
-  'userTriggered': 'notification',
-  'promptSubmit': 'before_agent',
-  'agentStop': 'after_agent',
-};
 
 /**
  * Convert a core Hook to a UI Hook
@@ -105,7 +81,7 @@ export function uiHookToCoreHook(uiHook: UIHook): CoreHook {
  */
 function parseHookCommand(
   command: string,
-  args?: string[]
+  _args?: string[]
 ): {
   eventType: UIHookEventType;
   patterns?: string[];

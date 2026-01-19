@@ -12,7 +12,6 @@
 import React, { useState } from 'react';
 import { Box, Text } from 'ink';
 import { useUI } from '../../../features/context/UIContext.js';
-import type { HookEvent } from '@ollm/ollm-cli-core/hooks/types.js';
 
 export interface HookFormData {
   name: string;
@@ -53,10 +52,10 @@ function validateHookForm(formData: HookFormData): ValidationErrors {
 /**
  * AddHookDialog component
  */
-export function AddHookDialog({ onSave, onCancel }: AddHookDialogProps) {
+export function AddHookDialog({ onSave, _onCancel }: AddHookDialogProps) {
   const { state: uiState } = useUI();
 
-  const [formData, setFormData] = useState<HookFormData>({
+  const [formData, _setFormData] = useState<HookFormData>({
     name: '',
     command: '',
     args: [],
@@ -65,7 +64,7 @@ export function AddHookDialog({ onSave, onCancel }: AddHookDialogProps) {
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [isSaving, setIsSaving] = useState(false);
 
-  const handleSave = async () => {
+  const _handleSave = async () => {
     // Validate form
     const validationErrors = validateHookForm(formData);
     if (Object.keys(validationErrors).length > 0) {

@@ -11,6 +11,7 @@ import { ContextAnalyzer } from '../ContextAnalyzer.js';
 import { PromptRegistry } from '../PromptRegistry.js';
 import { SystemPromptBuilder } from '../../context/SystemPromptBuilder.js';
 import type { TransitionAnimation } from '../ModeTransitionAnimator.js';
+import { MODE_METADATA } from '../templates/modes/index.js';
 
 describe('ModeTransitionAnimator Integration', () => {
   let modeManager: PromptModeManager;
@@ -188,8 +189,8 @@ describe('ModeTransitionAnimator Integration', () => {
     it('should include mode icon in messages', () => {
       return new Promise<void>((resolve) => {
         modeManager.once('mode-animation-started', (animation: TransitionAnimation) => {
-          expect(animation.icon).toBe('🐛');
-          expect(animation.loadingMessage).toContain('🐛');
+          expect(animation.icon).toBe(MODE_METADATA.debugger.icon);
+          expect(animation.loadingMessage).toContain(MODE_METADATA.debugger.icon);
           resolve();
         });
 
@@ -262,7 +263,7 @@ describe('ModeTransitionAnimator Integration', () => {
       };
 
       const message = animator.generateContextualMessage(transition);
-      expect(message).toContain('🐛 Error detected');
+      expect(message).toContain(`${MODE_METADATA.debugger.icon} Error detected`);
     });
 
     it('should generate contextual message for debugger->developer transition', () => {

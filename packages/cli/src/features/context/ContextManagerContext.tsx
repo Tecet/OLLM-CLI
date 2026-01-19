@@ -286,7 +286,7 @@ export function ContextManagerProvider({
         // For now, we'll create a simple SystemPromptBuilder wrapper
         // In a full implementation, this would be passed from ContextManager
         const systemPromptBuilder = {
-          build: (config: any) => {
+          build: (_config: any) => {
             // This is a simplified version - the real implementation
             // would use the actual SystemPromptBuilder from ContextManager
             return manager.getSystemPrompt();
@@ -885,6 +885,8 @@ export function ContextManagerProvider({
     getModeManager,
     getSnapshotManager,
     getWorkflowManager,
+    getHybridModeManager,
+    switchToHybridMode,
     switchMode,
     switchModeExplicit,
     setAutoSwitchAction,

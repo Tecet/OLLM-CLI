@@ -1,9 +1,9 @@
 import React from 'react';
-import { Box, Text } from 'ink';
+import { Box, Text, BoxProps } from 'ink';
 import { HeaderBar } from './HeaderBar.js';
 import { ConnectionStatus, GPUInfo } from './StatusBar.js';
 import { Theme } from '../../../config/types.js';
-import { ContextSection } from './ContextSection.js'; // Import directly
+import { ContextSection } from './ContextSection.js';
 
 export interface SidePanelProps {
   visible: boolean;
@@ -11,11 +11,12 @@ export interface SidePanelProps {
   model: string;
   gpu: GPUInfo | null;
   theme: Theme;
+  row1Height?: number;
 }
 
 import { useFocusManager } from '../../../features/context/FocusContext.js';
 
-export function SidePanel({ visible, connection, model, gpu, theme }: SidePanelProps) {
+export function SidePanel({ visible, connection, model, gpu, theme, row1Height }: SidePanelProps) {
   const { isFocused } = useFocusManager();
   
   if (!visible) {
@@ -27,18 +28,9 @@ export function SidePanel({ visible, connection, model, gpu, theme }: SidePanelP
   const functionsFocused = isFocused('functions');
 
   return (
-    <Box
-      flexDirection="column"
-      flexGrow={1}
-    >
-      {/* Row 1: Status Info (Not focusable, mostly static) */}
-      <Box 
-        borderStyle="single" 
-        borderColor={theme.border.primary} 
-        marginY={0} // Tight fit
-        paddingX={0}
-        flexShrink={0}
-      >
+    <Box flexDirection="column" flexGrow={1} width="100%">
+      {/* Row 1: HeaderBar - matching left side Row 1 height */}
+      <Box flexShrink={0} height={row1Height} alignItems="center" width="100%">
         <HeaderBar
           connection={connection}
           model={model}
@@ -47,38 +39,44 @@ export function SidePanel({ visible, connection, model, gpu, theme }: SidePanelP
         />
       </Box>
 
-      {/* Row 2: Active Context */}
+      {/* Row 2: Context */}
       <Box 
-        flexGrow={1} 
-        borderStyle="single" 
+        flexGrow={1}
+        borderStyle={theme.border.style as BoxProps['borderStyle']} 
         borderColor={contextFocused ? theme.border.active : theme.border.primary}
-        marginBottom={0}
-        flexShrink={0}
         flexDirection="column"
+        overflow="hidden"
+        width="100%"
       >
         <ContextSection />
       </Box>
 
-      {/* Row 3: File Tree (Reduced height) */}
+      {/* Row 3: File Tree */}
       <Box 
-        height={10}
-        borderStyle="single" 
+        height={8}
+        borderStyle={theme.border.style as BoxProps['borderStyle']} 
         borderColor={fileTreeFocused ? theme.border.active : theme.border.primary}
-        marginBottom={0}
-        padding={1}
+        overflow="hidden"
+        flexShrink={0}
+        width="100%"
       >
-        <Text color="yellow">File Tree (Coming Soon)</Text>
+        <Box paddingX={1}>
+          <Text color={theme.status.warning}>File Tree (Coming Soon)</Text>
+        </Box>
       </Box>
 
-      {/* Row 4: Functions / Info */}
+      {/* Row 4: Functions */}
       <Box 
-        height={5} 
-        borderStyle="single" 
+        height={4} 
+        borderStyle={theme.border.style as BoxProps['borderStyle']} 
         borderColor={functionsFocused ? theme.border.active : theme.border.primary}
         flexShrink={0}
-        paddingX={1}
+        overflow="hidden"
+        width="100%"
       >
-         <Text>Functions / Info</Text>
+        <Box paddingX={1}>
+          <Text>Functions / Info</Text>
+        </Box>
       </Box>
     </Box>
   );

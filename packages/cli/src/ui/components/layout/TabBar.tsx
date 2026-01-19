@@ -1,5 +1,5 @@
 ﻿import React from 'react';
-import { Box, Text, useInput } from 'ink';
+import { Box, Text, useInput, BoxProps } from 'ink';
 import { TabType } from '../../../features/context/UIContext.js';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { Theme } from '../../../config/types.js';
@@ -12,15 +12,15 @@ export interface Tab {
 }
 
 export const tabs: Tab[] = [
-  { id: 'chat', label: 'Chat', icon: '\u{1F4AC}', shortcut: 'Ctrl+1' },
-  { id: 'tools', label: 'Tools', icon: '\u{1F6E0}', shortcut: 'Ctrl+2' },
-  { id: 'hooks', label: 'Hooks', icon: '\u{1F4CC}', shortcut: 'Ctrl+3' },
-  { id: 'files', label: 'Files', icon: '\u{1F4C1}', shortcut: 'Ctrl+4' },
-  { id: 'search', label: 'Search', icon: '\u{1F50D}', shortcut: 'Ctrl+5' },
-  { id: 'docs', label: 'Docs', icon: '\u{1F4DA}', shortcut: 'Ctrl+6' },
-  { id: 'github', label: 'GitHub', icon: '\u{1F680}', shortcut: 'Ctrl+7' },
-  { id: 'mcp', label: 'MCP', icon: '\u{1F50C}', shortcut: 'Ctrl+8' },
-  { id: 'settings', label: 'Settings', icon: '\u{2699}', shortcut: 'Ctrl+9' },
+  { id: 'chat', label: 'Chat', icon: '💬', shortcut: 'Ctrl+1' },
+  { id: 'tools', label: 'Tools', icon: '🛠', shortcut: 'Ctrl+2' },
+  { id: 'hooks', label: 'Hooks', icon: '🔗', shortcut: 'Ctrl+3' },
+  { id: 'files', label: 'Files', icon: '📁', shortcut: 'Ctrl+4' },
+  { id: 'search', label: 'Search', icon: '🔍', shortcut: 'Ctrl+5' },
+  { id: 'docs', label: 'Docs', icon: '📚', shortcut: 'Ctrl+6' },
+  { id: 'github', label: 'GitHub', icon: '🐙', shortcut: 'Ctrl+7' },
+  { id: 'mcp', label: 'MCP', icon: '🔌', shortcut: 'Ctrl+8' },
+  { id: 'settings', label: 'Settings', icon: '⚙', shortcut: 'Ctrl+9' },
 ];
 
 export interface TabBarProps {
@@ -58,26 +58,23 @@ export function TabBar({ activeTab, onTabChange, notifications, theme, noBorder 
   }, { isActive: hasFocus });
 
   return (
-    <Box flexDirection="row" {...(!noBorder && { borderStyle: "single", borderColor: hasFocus ? theme.border.active : theme.border.primary })}>
-      {tabs.map((tab) => {
+    <Box flexDirection="row" justifyContent="center" {...(!noBorder && { borderStyle: theme.border.style as BoxProps['borderStyle'], borderColor: hasFocus ? theme.border.active : theme.border.primary })}>
+      {tabs.map((tab, index) => {
         const isActive = tab.id === activeTab;
         const notificationCount = notifications.get(tab.id) || 0;
         const hasNotifications = notificationCount > 0;
 
-        // Active Text Color: Yellow if Focused, Accent if Active but not focused, Secondary otherwise
-        let textColor = theme.text.secondary;
-        if (isActive) {
-            textColor = hasFocus ? 'yellow' : theme.text.accent;
-        }
+        // Active Text Color: Accent if active (focused or not), Secondary otherwise
+        const textColor = isActive ? theme.text.accent : theme.text.secondary;
 
+        // Efficient spacing: Left padding only ensures separation and alignment without double gaps
         return (
-          <Box key={tab.id} paddingX={1}>
+          <Box key={tab.id} paddingLeft={index === 0 ? 0 : 1}>
             <Text
               color={textColor}
               bold={isActive}
-              backgroundColor={isActive && hasFocus ? undefined : undefined}
             >
-              {tab.icon}  {tab.label}
+              {tab.icon} {tab.label}
               {hasNotifications && (
                 <Text color={theme.text.accent}> ({notificationCount})</Text>
               )}

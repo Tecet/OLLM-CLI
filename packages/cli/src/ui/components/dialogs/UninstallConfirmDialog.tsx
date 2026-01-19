@@ -14,7 +14,7 @@
 import React, { useState, useCallback } from 'react';
 import { Box, Text } from 'ink';
 import { Dialog } from './Dialog.js';
-import { Button, ButtonGroup } from '../forms/Button.js';
+import { ButtonGroup } from '../forms/Button.js';
 
 export interface UninstallConfirmDialogProps {
   /** Name of the server to uninstall */

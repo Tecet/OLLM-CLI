@@ -12,8 +12,9 @@ import { DocsPanel } from '../docs/DocsPanel.js';
  */
 interface DocsTabProps {
   height: number;
+  width?: number;
 }
 
-export function DocsTab({ height }: DocsTabProps) {
-  return <DocsPanel height={height} />;
+export function DocsTab({ height, width }: DocsTabProps) {
+  return <DocsPanel height={height} windowWidth={width} />;
 }

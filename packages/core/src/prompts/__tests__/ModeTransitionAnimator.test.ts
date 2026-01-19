@@ -6,8 +6,9 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { ModeTransitionAnimator, type TransitionAnimation } from '../ModeTransitionAnimator.js';
+import { ModeTransitionAnimator } from '../ModeTransitionAnimator.js';
 import type { ModeTransition } from '../PromptModeManager.js';
+import { MODE_METADATA } from '../templates/modes/index.js';
 
 describe('ModeTransitionAnimator', () => {
   let animator: ModeTransitionAnimator;
@@ -34,7 +35,7 @@ describe('ModeTransitionAnimator', () => {
       expect(animation.state).toBe('pending');
       expect(animation.loadingMessage).toBeTruthy();
       expect(animation.completionMessage).toBeTruthy();
-      expect(animation.icon).toBe('👨‍💻');
+      expect(animation.icon).toBe(MODE_METADATA.developer.icon);
       expect(animation.duration).toBeGreaterThan(0);
     });
 
@@ -55,16 +56,11 @@ describe('ModeTransitionAnimator', () => {
 
     it('should use correct icon for each mode', () => {
       const modes = [
-        { mode: 'assistant', icon: '💬' },
-        { mode: 'planning', icon: '📋' },
-        { mode: 'developer', icon: '👨‍💻' },
-        { mode: 'tool', icon: '🔧' },
-        { mode: 'debugger', icon: '🐛' },
-        { mode: 'security', icon: '🔒' },
-        { mode: 'reviewer', icon: '👀' },
-        { mode: 'performance', icon: '⚡' },
-        { mode: 'prototype', icon: '🔬' },
-        { mode: 'teacher', icon: '👨‍🏫' }
+        { mode: 'assistant', icon: MODE_METADATA.assistant.icon },
+        { mode: 'planning', icon: MODE_METADATA.planning.icon },
+        { mode: 'developer', icon: MODE_METADATA.developer.icon },
+        { mode: 'debugger', icon: MODE_METADATA.debugger.icon },
+        { mode: 'reviewer', icon: MODE_METADATA.reviewer.icon },
       ] as const;
 
       modes.forEach(({ mode, icon }) => {
@@ -160,7 +156,7 @@ describe('ModeTransitionAnimator', () => {
       };
 
       const animation = animator.createAnimation(transition);
-      expect(animation.loadingMessage).toContain('👨‍💻');
+      expect(animation.loadingMessage).toContain(MODE_METADATA.developer.icon);
       expect(animation.loadingMessage).toContain('Activating development tools');
     });
 
@@ -209,7 +205,7 @@ describe('ModeTransitionAnimator', () => {
         {
           from: 'developer',
           to: 'debugger',
-          expected: '🐛 Error detected'
+          expected: `${MODE_METADATA.debugger.icon} Error detected`
         },
         {
           from: 'debugger',
@@ -217,18 +213,13 @@ describe('ModeTransitionAnimator', () => {
           expected: '✓ Bug analysis complete'
         },
         {
-          from: 'developer',
-          to: 'security',
-          expected: '🔒 Security concern detected'
-        },
-        {
           from: 'assistant',
           to: 'planning',
-          expected: '📋 Switching to planning mode'
+          expected: `${MODE_METADATA.planning.icon} Switching to planning mode`
         }
-      ] as const;
+      ] as any[];
 
-      transitions.forEach(({ from, to, expected }) => {
+      transitions.forEach(({ from, to, expected }: { from: any, to: any, expected: string }) => {
         const transition: ModeTransition = {
           from,
           to,
@@ -294,9 +285,8 @@ describe('ModeTransitionAnimator', () => {
         { mode: 'assistant', duration: 500 },
         { mode: 'planning', duration: 600 },
         { mode: 'developer', duration: 500 },
-        { mode: 'tool', duration: 400 },
         { mode: 'debugger', duration: 700 },
-        { mode: 'security', duration: 700 }
+        { mode: 'reviewer', duration: 600 }
       ] as const;
 
       modes.forEach(({ mode, duration }) => {

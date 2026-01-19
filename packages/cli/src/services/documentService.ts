@@ -76,7 +76,7 @@ export class DocumentService {
   /**
    * Scan a folder for markdown files
    */
-  private scanFolder(folderPath: string, rootOnly: boolean = false): DocFile[] {
+  private scanFolder(folderPath: string, _rootOnly: boolean = false): DocFile[] {
     const documents: DocFile[] = [];
 
     try {

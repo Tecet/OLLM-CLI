@@ -74,11 +74,11 @@ export function ChatHistory({
   const bottomHint = canScrollDown ? scrollHintBottom : undefined;
 
   return (
-    <Box flexDirection="column" paddingX={1} paddingY={paddingY} width="100%">
+    <Box flexDirection="column" paddingX={1} paddingY={paddingY} width={width}>
       {/* Always reserve space for scroll indicator to prevent layout shift */}
       <Box height={1} width="100%" justifyContent="flex-end">
         <Text color={canScrollUp ? theme.text.secondary : undefined}>
-          {topHint ? topHint : ' '}
+          {topHint ? topHint : ''}
         </Text>
       </Box>
 
@@ -97,7 +97,7 @@ export function ChatHistory({
       {/* Always reserve space for scroll-down indicator */}
       <Box height={1} width="100%" justifyContent="flex-end">
         <Text color={canScrollDown ? theme.text.secondary : undefined}>
-          {bottomHint ? bottomHint : ' '}
+          {bottomHint ? bottomHint : ''}
         </Text>
       </Box>
     </Box>
@@ -163,7 +163,7 @@ const ChatLineItem = ({ line, theme, isSelected, showCursor }: { line: ChatLine;
   const isDimmed = opacity === 'dim' || parts.some(p => p.dim);
 
   return (
-    <Box>
+    <Box alignSelf="flex-start">
       {showCursor && (
         <Text color={isSelected ? theme.text.accent : theme.text.secondary}>{isSelected ? '> ' : '  '}</Text>
       )}
@@ -266,42 +266,80 @@ export function buildChatLines(
     let currentLineParts: ChatLinePart[] = [];
     let currentLineWidth = 0;
 
-    for (const part of parts) {
-        let remainingText = part.text;
+    // Regex for common double-width emojis
+    const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
+    const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
 
-        while (remainingText.length > 0) {
+    for (const part of parts) {
+        // Use Intl.Segmenter to correctly iterate over grapheme clusters (surrogate pairs + ZWJ)
+        const segments = Array.from(segmenter.segment(part.text));
+        let i = 0;
+
+        while (i < segments.length) {
             const spaceInLine = availableWidth - currentLineWidth;
             
-            if (remainingText.length <= spaceInLine) {
-                currentLineParts.push({ ...part, text: remainingText });
-                currentLineWidth += remainingText.length;
-                break;
+            // Collect as many graphemes as fit in the current line
+            let chunk = '';
+            let chunkWidth = 0;
+            let lastSpaceIndex = -1;
+            let j = i;
+
+            while (j < segments.length) {
+                const char = segments[j].segment;
+                // Emojis typically take 2 cells, others 1. 
+                // Note: This is an approximation but covers most common cases in TUIs.
+                const charWidth = emojiRegex.test(char) ? 2 : 1;
+
+                if (chunkWidth + charWidth > spaceInLine) {
+                    break;
+                }
+
+                if (char === ' ') {
+                    lastSpaceIndex = j;
+                }
+
+                chunk += char;
+                chunkWidth += charWidth;
+                j++;
             }
 
-            // Word wrap logic
-            let breakIndex = remainingText.lastIndexOf(' ', spaceInLine);
-            if (breakIndex <= 0) { // No space found or at start
-                breakIndex = spaceInLine;
+            // Word wrap logic: if we didn't reach the end, try to break at the last space
+            if (j < segments.length && lastSpaceIndex !== -1 && lastSpaceIndex >= i) {
+                // Rewind to last space
+                const dropCount = j - 1 - lastSpaceIndex;
+                if (dropCount > 0) {
+                    // Re-calculate chunk and width up to space
+                    const newChunkSegments = segments.slice(i, lastSpaceIndex);
+                    chunk = newChunkSegments.map(s => s.segment).join('');
+                    // Recalculate width for safety
+                    chunkWidth = newChunkSegments.reduce((acc, s) => acc + (emojiRegex.test(s.segment) ? 2 : 1), 0);
+                    j = lastSpaceIndex + 1; // skip the space
+                }
             }
 
-            const chunk = remainingText.substring(0, breakIndex);
-            currentLineParts.push({ ...part, text: chunk.trimEnd() });
+            if (chunk.length > 0) {
+                currentLineParts.push({ ...part, text: chunk.trimEnd() });
+                currentLineWidth += chunkWidth;
+            }
+
+            // If we didn't finish the part, push line and continue
+            if (j < segments.length || currentLineWidth >= availableWidth) {
+                pushLine(currentLineParts);
+                currentLineParts = [];
+                currentLineWidth = 0;
+            }
             
-            // Push current line and reset
-            pushLine(currentLineParts);
-            currentLineParts = [];
-            currentLineWidth = 0;
-            remainingText = remainingText.substring(breakIndex).trimStart();
+            i = j;
         }
     }
 
-    if (currentLineParts.length > 0 || parts.length === 0) {
-        pushLine(currentLineParts.length > 0 ? currentLineParts : [{ text: ' ' }]);
+    if (currentLineParts.length > 0 || (parts.length === 0 && lines.length === paddingY)) {
+        pushLine(currentLineParts.length > 0 ? currentLineParts : [{ text: '' }]);
     }
   };
 
   for (let i = 0; i < paddingY; i += 1) {
-    addLine([{ text: ' ' }]);
+    addLine([{ text: '' }]);
   }
 
   messages.forEach((message) => {
@@ -344,14 +382,14 @@ export function buildChatLines(
 
     if (!hasDiffBlocks || diffExpanded) {
       contentLines.forEach((line) => {
-        addLine([{ text: line || ' ', color: theme.text.primary }], 2, false, message.id, 'content');
+        addLine([{ text: line || '', color: theme.text.primary }], 2, false, message.id, 'content');
       });
     } else {
       let cursor = 0;
       diffBlocks.forEach((block) => {
         for (let i = cursor; i < block.start; i += 1) {
           const line = contentLines[i];
-          addLine([{ text: line || ' ', color: theme.text.primary }], 2, false, message.id, 'content');
+          addLine([{ text: line || '', color: theme.text.primary }], 2, false, message.id, 'content');
         }
 
         if (block.changedLines > DIFF_LINE_THRESHOLD) {
@@ -372,7 +410,7 @@ export function buildChatLines(
         } else {
           for (let i = block.start; i <= block.end; i += 1) {
             const line = contentLines[i];
-            addLine([{ text: line || ' ', color: theme.text.primary }], 2, false, message.id, 'content');
+            addLine([{ text: line || '', color: theme.text.primary }], 2, false, message.id, 'content');
           }
         }
 
@@ -381,7 +419,7 @@ export function buildChatLines(
 
       for (let i = cursor; i < contentLines.length; i += 1) {
         const line = contentLines[i];
-        addLine([{ text: line || ' ', color: theme.text.primary }], 2, false, message.id, 'content');
+        addLine([{ text: line || '', color: theme.text.primary }], 2, false, message.id, 'content');
       }
     }
 
@@ -423,14 +461,14 @@ export function buildChatLines(
                 addLine([{ text: 'Arguments:', color: theme.text.secondary, dim: true }], 4, false, message.id, 'tool');
                 const argsString = JSON.stringify(toolCall.arguments, null, 2) || '{}';
                 argsString.split('\n').forEach((line) => {
-                  addLine([{ text: line || ' ', color: theme.text.primary }], 6, false, message.id, 'tool');
+                  addLine([{ text: line || '', color: theme.text.primary }], 6, false, message.id, 'tool');
                 });
             }
 
-            if (hasResult) {
+            if (toolCall.result) {
               addLine([{ text: 'Result:', color: theme.text.secondary, dim: true }], 4, false, message.id, 'tool');
               toolCall.result.split('\n').forEach((line) => {
-                  addLine([{ text: line || ' ', color: theme.text.primary }], 6, false, message.id, 'tool');
+                  addLine([{ text: line || '', color: theme.text.primary }], 6, false, message.id, 'tool');
               });
             }
         }
@@ -443,11 +481,11 @@ export function buildChatLines(
       ], 2, false, message.id, 'metrics');
     }
 
-    addLine([{ text: ' ' }], 0, false, message.id, 'spacer');
+    addLine([{ text: '' }], 0, false, message.id, 'spacer');
   });
 
   for (let i = 0; i < paddingY; i += 1) {
-    addLine([{ text: ' ' }]);
+    addLine([{ text: '' }]);
   }
 
   return lines;

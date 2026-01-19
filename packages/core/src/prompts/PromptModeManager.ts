@@ -553,37 +553,41 @@ export class PromptModeManager extends EventEmitter {
   }
 
   /**
-   * Filter tools for a specific mode based on allowed tools
+   * Check if a tool is allowed in a specific mode
    */
-  filterToolsForMode(tools: Array<{ name: string }>, mode: ModeType): Array<{ name: string }> {
+  isToolAllowed(toolName: string, mode: ModeType): boolean {
     const allowedTools = this.getAllowedTools(mode);
     
     // If mode allows all tools (*)
     if (allowedTools.includes('*')) {
-      return tools;
+      return true;
     }
     
-    // Filter tools based on allowed list
-    return tools.filter(tool => {
-      // Check exact match
-      if (allowedTools.includes(tool.name)) {
-        return true;
+    // Check exact match
+    if (allowedTools.includes(toolName)) {
+      return true;
+    }
+    
+    // Check for MCP tool permission
+    if (allowedTools.includes('mcp:*') && toolName.includes(':')) {
+      return true;
+    }
+    
+    // Check wildcard patterns (e.g., 'git_*')
+    return allowedTools.some(pattern => {
+      if (pattern.endsWith('*')) {
+        const prefix = pattern.slice(0, -1);
+        return toolName.startsWith(prefix);
       }
-      
-      // Check for MCP tool permission
-      if (allowedTools.includes('mcp:*') && tool.name.includes(':')) {
-        return true;
-      }
-      
-      // Check wildcard patterns (e.g., 'git_*')
-      return allowedTools.some(pattern => {
-        if (pattern.endsWith('*')) {
-          const prefix = pattern.slice(0, -1);
-          return tool.name.startsWith(prefix);
-        }
-        return false;
-      });
+      return false;
     });
+  }
+
+  /**
+   * Filter tools for a specific mode based on allowed tools
+   */
+  filterToolsForMode(tools: Array<{ name: string }>, mode: ModeType): Array<{ name: string }> {
+    return tools.filter(tool => this.isToolAllowed(tool.name, mode));
   }
 
   /**

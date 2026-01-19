@@ -23,6 +23,9 @@ export interface ContextFile {
 }
 
 export interface FilesTabProps {
+  /** Width of the tab container */
+  width?: number;
+
   /** Context files currently loaded */
   contextFiles?: ContextFile[];
   
@@ -49,6 +52,7 @@ export interface FilesTabProps {
  * Requirements: 10.1, 10.2, 10.3, 10.4, 10.5
  */
 export function FilesTab({
+  width,
   contextFiles = [],
   gitStatus,
   onAddFile: _onAddFile,
@@ -92,7 +96,7 @@ export function FilesTab({
   };
 
   return (
-    <Box flexDirection="column" height="100%" padding={1}>
+    <Box flexDirection="column" height="100%" width={width} padding={1}>
       {/* Context Files Section */}
       <Box
         flexDirection="column"

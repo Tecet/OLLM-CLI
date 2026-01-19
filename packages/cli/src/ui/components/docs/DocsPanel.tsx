@@ -22,12 +22,17 @@ import { documentService } from '../../../services/documentService.js';
  */
 interface DocsPanelProps {
   height: number;
+  windowWidth?: number;
 }
 
-export function DocsPanel({ height }: DocsPanelProps) {
+export function DocsPanel({ height, windowWidth }: DocsPanelProps) {
   const { state: uiState } = useUI();
   const focusManager = useFocusManager();
   const hasFocus = focusManager.isFocused('docs-panel');
+
+  // Calculate absolute widths if windowWidth is provided
+  const absoluteLeftWidth = windowWidth ? Math.floor(windowWidth * 0.3) : undefined;
+  const absoluteRightWidth = windowWidth && absoluteLeftWidth ? (windowWidth - absoluteLeftWidth) : undefined;
 
   // State
   const [selectedFolderIndex, setSelectedFolderIndex] = useState(0);
@@ -247,7 +252,7 @@ export function DocsPanel({ height }: DocsPanelProps) {
   }, [contentLines, contentScrollOffset, height]);
 
   return (
-    <Box flexDirection="column" height={height}>
+    <Box flexDirection="column" height={height} width={windowWidth}>
       {/* Header */}
       <Box
         borderStyle="single"
@@ -255,14 +260,14 @@ export function DocsPanel({ height }: DocsPanelProps) {
         paddingX={1}
         flexShrink={0}
       >
-        <Box justifyContent="space-between" width="100%">
-          <Box marginRight={2}>
+        <Box justifyContent="space-between" width="100%" overflow="hidden">
+          <Box flexShrink={0}>
             <Text bold color={hasFocus ? uiState.theme.text.accent : uiState.theme.text.primary}>
               Documentation
             </Text>
           </Box>
-          <Box>
-            <Text color={hasFocus ? uiState.theme.text.primary : uiState.theme.text.secondary}>
+          <Box flexShrink={1} marginLeft={1}>
+            <Text wrap="truncate-end" color={hasFocus ? uiState.theme.text.primary : uiState.theme.text.secondary}>
               ↑↓:Nav ←→:Column Enter:Select 0/Esc:Exit
             </Text>
           </Box>
@@ -270,14 +275,15 @@ export function DocsPanel({ height }: DocsPanelProps) {
       </Box>
 
       {/* Two-column layout */}
-      <Box flexGrow={1} overflow="hidden">
+      <Box flexGrow={1} overflow="hidden" flexDirection="row" width="100%">
         {/* Left column: Document list (30%) */}
         <Box 
           flexDirection="column" 
-          width="30%" 
+          width={absoluteLeftWidth ?? "30%"} 
           height="100%"
           borderStyle="single" 
           borderColor={focusedColumn === 'left' && hasFocus ? uiState.theme.text.accent : uiState.theme.border.primary}
+          paddingY={1}
         >
           {/* Scroll indicator at top */}
           {scrollOffset > 0 && (
@@ -293,15 +299,12 @@ export function DocsPanel({ height }: DocsPanelProps) {
 
           {/* Scrollable content area */}
           <Box flexDirection="column" flexGrow={1} paddingX={1}>
-            {/* Empty line at top to push menu down */}
-            <Text> </Text>
-            
             {/* Render only visible items */}
             {visibleItems.map((item) => {
               if (item.type === 'exit') {
                 return (
-                  <>
-                    <Box key="exit-item">
+                  <React.Fragment key="exit-item">
+                    <Box>
                       <Text
                         bold={isOnExitItem && hasFocus}
                         color={isOnExitItem && hasFocus ? 'yellow' : uiState.theme.text.primary}
@@ -311,7 +314,7 @@ export function DocsPanel({ height }: DocsPanelProps) {
                     </Box>
                     <Text> </Text>
                     <Text> </Text>
-                  </>
+                  </React.Fragment>
                 );
               } else if (item.type === 'folder') {
                 const folder = folders[item.folderIndex];
@@ -361,7 +364,7 @@ export function DocsPanel({ height }: DocsPanelProps) {
         {/* Right column: Document content (70%) */}
         <Box 
           flexDirection="column" 
-          width="70%" 
+          width={absoluteRightWidth ?? "70%"} 
           height="100%"
           borderStyle="single" 
           borderColor={focusedColumn === 'right' && hasFocus ? uiState.theme.text.accent : uiState.theme.border.primary} 
@@ -371,7 +374,7 @@ export function DocsPanel({ height }: DocsPanelProps) {
           {selectedDocument ? (
             <>
               {/* Document title */}
-              <Box paddingLeft={1}>
+              <Box paddingLeft={1} flexShrink={0}>
                 <Text bold color="yellow">
                   {selectedDocument.title}
                 </Text>
@@ -383,9 +386,9 @@ export function DocsPanel({ height }: DocsPanelProps) {
               {loadingContent ? (
                 <Text color={uiState.theme.text.secondary}>Loading...</Text>
               ) : (
-                <Box flexDirection="column">
+                <Box flexDirection="column" flexGrow={1} overflow="hidden">
                   {visibleContentLines.map((line, idx) => (
-                    <Text key={idx} color={uiState.theme.text.primary}>
+                    <Text key={idx} color={uiState.theme.text.primary} wrap="truncate-end">
                       {line || ' '}
                     </Text>
                   ))}
@@ -394,7 +397,7 @@ export function DocsPanel({ height }: DocsPanelProps) {
 
               {/* Scroll indicator for content */}
               {contentScrollOffset + visibleContentLines.length < contentLines.length && (
-                <Box marginTop={1}>
+                <Box marginTop={1} flexShrink={0}>
                   <Text color={uiState.theme.text.secondary}>
                     ▼ Scroll down for more
                   </Text>

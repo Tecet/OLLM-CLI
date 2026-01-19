@@ -10,7 +10,7 @@
  * Requirements: 3.4, 3.5, 6.1
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Box, Text } from 'ink';
 import { useUI } from '../../../features/context/UIContext.js';
 import type { Hook } from '@ollm/ollm-cli-core/hooks/types.js';
@@ -28,12 +28,12 @@ export interface EditHookDialogProps {
 export function EditHookDialog({
   hook,
   onSave,
-  onCancel,
+  _onCancel,
   isEditable,
 }: EditHookDialogProps) {
   const { state: uiState } = useUI();
 
-  const [formData, setFormData] = useState({
+  const [formData, _setFormData] = useState({
     name: hook.name,
     command: hook.command,
     args: hook.args || [],
@@ -71,7 +71,7 @@ export function EditHookDialog({
     );
   }
 
-  const handleSave = async () => {
+  const _handleSave = async () => {
     // Validate form
     const validationErrors: Record<string, string> = {};
     

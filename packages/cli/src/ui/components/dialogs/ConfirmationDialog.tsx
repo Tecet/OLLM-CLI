@@ -18,7 +18,7 @@
 import React, { useState, useCallback } from 'react';
 import { Box, Text } from 'ink';
 import { Dialog } from './Dialog.js';
-import { Button, ButtonGroup } from '../forms/Button.js';
+import { ButtonGroup } from '../forms/Button.js';
 import { useUI } from '../../../features/context/UIContext.js';
 
 export type ConfirmationLevel = 'info' | 'warning' | 'danger';
@@ -230,7 +230,7 @@ export interface QuickConfirmProps {
   onCancel: () => void;
 }
 
-export function QuickConfirm({ message, onConfirm, onCancel }: QuickConfirmProps) {
+export function QuickConfirm({ message, _onConfirm, _onCancel }: QuickConfirmProps) {
   const { state: { theme } } = useUI();
 
   return (

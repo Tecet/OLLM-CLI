@@ -13,7 +13,8 @@ export type FocusableId =
   | 'mcp-panel'
   | 'docs-panel'
   | 'settings-panel'
-  | 'search-panel';
+  | 'search-panel'
+  | 'github-tab';
 
 export type NavigationMode = 'browse' | 'active';
 
@@ -32,7 +33,7 @@ export interface FocusContextValue {
 const FocusContext = createContext<FocusContextValue | undefined>(undefined);
 
 export function FocusProvider({ children }: { children: ReactNode }) {
-  const { state: uiState } = useUI();
+  const { setActiveTab, state: uiState } = useUI();
   const { activeTab, sidePanelVisible } = uiState;
 
   const [activeId, setActiveId] = useState<FocusableId>('chat-input');
@@ -52,7 +53,7 @@ export function FocusProvider({ children }: { children: ReactNode }) {
       'settings': 'settings-panel',
       'search': 'search-panel',
       'files': 'context-panel', // Maps to the Context Files list in FilesTab
-      // github uses default behavior or needs specific ID
+      'github': 'github-tab',
     };
 
     const activeMainFocus = tabToFocusMap[activeTab];
@@ -94,7 +95,7 @@ export function FocusProvider({ children }: { children: ReactNode }) {
         'files': 'context-panel',
         'search': 'search-panel',
         'docs': 'docs-panel',
-        'github': 'context-panel',
+        'github': 'github-tab',
         'settings': 'settings-panel',
         'chat': 'chat-history',
       };
@@ -105,10 +106,11 @@ export function FocusProvider({ children }: { children: ReactNode }) {
   }, [activeId]);
 
   const exitToNavBar = useCallback(() => {
-    // When Esc is pressed from tab content, return to nav-bar in browse mode
+    // When Esc is pressed from tab content, return to nav-bar in browse mode AND reset to chat
     setModeState('browse');
+    setActiveTab('chat');
     setActiveId('nav-bar');
-  }, []);
+  }, [setActiveTab]);
 
   const cycleFocus = useCallback((direction: 'next' | 'previous') => {
     setActiveId((current) => {

@@ -1,8 +1,9 @@
 ﻿import React, { useEffect, useState } from 'react';
-import { Box, Text } from 'ink';
+import { Box, Text, BoxProps } from 'ink';
 import { useChat } from '../../../features/context/ChatContext.js';
 import { useUI } from '../../../features/context/UIContext.js';
 import { useModel } from '../../../features/context/ModelContext.js';
+import { useWindow } from '../../contexts/WindowContext.js';
 
 export interface SystemBarProps {
   height: number;
@@ -18,6 +19,7 @@ export function SystemBar({ height, showBorder = true }: SystemBarProps) {
   const { modelLoading, warmupStatus } = useModel();
   const { state: uiState } = useUI();
   const { theme } = uiState;
+  const { isTerminalActive } = useWindow();
 
   const { streaming, waitingForResponse, inputMode } = chatState;
 
@@ -34,7 +36,9 @@ export function SystemBar({ height, showBorder = true }: SystemBarProps) {
 
   // Determine status text
   let displayStatus = ' ';
-  if (inputMode === 'menu') {
+  if (isTerminalActive) {
+    displayStatus = 'Terminal Mode';
+  } else if (inputMode === 'menu') {
     displayStatus = 'Interactive Menu Active';
   } else if (warmupStatus?.active) {
     const elapsedSeconds = Math.max(0, Math.floor(warmupStatus.elapsedMs / 1000));
@@ -56,8 +60,7 @@ export function SystemBar({ height, showBorder = true }: SystemBarProps) {
   return (
     <Box
       height={height}
-      width="100%"
-      borderStyle={showBorder ? 'single' : undefined}
+      borderStyle={showBorder ? (theme.border.style as BoxProps['borderStyle']) : undefined}
       borderColor={theme.border.primary}
       paddingX={1}
       flexDirection="row"
@@ -65,12 +68,16 @@ export function SystemBar({ height, showBorder = true }: SystemBarProps) {
       justifyContent="space-between"
     >
       <Box>
-        <Text color={theme.text.accent} bold>Thinking: </Text>
-        <Text color={theme.text.primary}>{displayStatus}</Text>
+        <Text color={theme.text.accent} bold>Thinking:</Text>
+        <Text> </Text>
+        <Text color={isTerminalActive ? 'cyan' : theme.text.primary}>
+          {displayStatus}
+        </Text>
       </Box>
 
       <Box>
-        <Text color={theme.text.secondary}>Context: </Text>
+        <Text color={theme.text.secondary}>Context:</Text>
+        <Text> </Text>
         <Text color={theme.text.accent} bold>{contextText}</Text>
       </Box>
     </Box>

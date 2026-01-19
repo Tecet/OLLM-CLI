@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { useUI } from '../../../features/context/UIContext.js';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
-import { useTools, type ToolCategoryGroup } from '../../contexts/ToolsContext.js';
+import { useTools } from '../../contexts/ToolsContext.js';
 import { ToolToggle } from './ToolToggle.js';
 
 // Category icon mapping (kept for backward compatibility, but now also in ToolsContext)
@@ -24,6 +24,7 @@ const getCategoryIcon = (category: string): string => {
 export interface ToolsPanelProps {
   modelSupportsTools?: boolean;
   windowSize?: number;
+  windowWidth?: number;
 }
 
 /**
@@ -34,13 +35,17 @@ export interface ToolsPanelProps {
  * 
  * Requirements: 21.1, 21.2, 21.3, 21.4, 21.5, 23.1, 23.5, 24.1, 24.2, 24.3, 24.4, 25.1, 25.2, 25.3, 25.4
  */
-export function ToolsPanel({ modelSupportsTools = true, windowSize = 15 }: ToolsPanelProps) {
+export function ToolsPanel({ modelSupportsTools = true, windowSize = 30, windowWidth }: ToolsPanelProps) {
   const { state: uiState } = useUI();
   const { isFocused, exitToNavBar } = useFocusManager();
   const { state: toolsState, toggleTool, refreshTools } = useTools();
   
   // Check if this panel has focus
   const hasFocus = isFocused('tools-panel');
+
+  // Calculate absolute widths if windowWidth is provided
+  const absoluteLeftWidth = windowWidth ? Math.floor(windowWidth * 0.3) : undefined;
+  const absoluteRightWidth = windowWidth && absoluteLeftWidth ? (windowWidth - absoluteLeftWidth) : undefined;
   
   // State for navigation
   const [selectedCategoryIndex, setSelectedCategoryIndex] = useState(0);
@@ -264,27 +269,37 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 15 }: Tools
   }
 
   return (
-    <Box flexDirection="column" height="100%">
+    <Box flexDirection="column" height="100%" width={windowWidth}>
       {/* Header */}
       <Box
         flexDirection="column"
         paddingX={1}
         flexShrink={0}
       >
-        <Box justifyContent="space-between">
-          <Text bold color={hasFocus ? 'yellow' : uiState.theme.text.primary}>
-            Tools Configuration
-          </Text>
-          <Text color={hasFocus ? uiState.theme.text.primary : uiState.theme.text.secondary}>
-            ↑↓:Nav Enter:Toggle 0/Esc:Exit{hasUnsavedChanges ? '*' : ''}
-          </Text>
+        <Box justifyContent="space-between" width="100%" overflow="hidden">
+          <Box flexShrink={0}>
+            <Text bold color={hasFocus ? uiState.theme.text.accent : uiState.theme.text.primary}>
+              Tools Configuration
+            </Text>
+          </Box>
+          <Box flexShrink={1} marginLeft={1}>
+            <Text wrap="truncate-end" color={hasFocus ? uiState.theme.text.primary : uiState.theme.text.secondary}>
+              ↑↓:Nav Enter:Toggle 0/Esc:Exit{hasUnsavedChanges ? '*' : ''}
+            </Text>
+          </Box>
         </Box>
       </Box>
 
       {/* Two-column layout */}
-      <Box flexGrow={1} overflow="hidden">
+      <Box flexGrow={1} overflow="hidden" width="100%" flexDirection="row">
         {/* Left column: Tool list (30%) */}
-        <Box flexDirection="column" width="30%" borderStyle="single" borderColor={hasFocus ? uiState.theme.border.active : uiState.theme.border.primary}>
+        <Box 
+          flexDirection="column" 
+          width={absoluteLeftWidth ?? "30%"} 
+          borderStyle="single" 
+          borderColor={hasFocus ? uiState.theme.border.active : uiState.theme.border.primary}
+          paddingY={1}
+        >
           {/* Scroll indicator at top - STICKY */}
           {scrollOffset > 0 && (
             <>
@@ -308,7 +323,7 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 15 }: Tools
                     <Box key="exit-item">
                       <Text
                         bold={isOnExitItem && hasFocus}
-                        color={isOnExitItem && hasFocus ? 'yellow' : uiState.theme.text.primary}
+                        color={isOnExitItem && hasFocus ? uiState.theme.text.accent : uiState.theme.text.primary}
                       >
                         ← Exit
                       </Text>
@@ -351,7 +366,7 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 15 }: Tools
                       />
                       <Text
                         bold={isToolSelected}
-                        color={isToolSelected ? 'yellow' : uiState.theme.text.primary}
+                        color={isToolSelected ? uiState.theme.text.accent : uiState.theme.text.primary}
                         dimColor={!isEnabled}
                       >
                         {tool.displayName}
@@ -377,11 +392,18 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 15 }: Tools
         </Box>
 
         {/* Right column: Tool details (70%) */}
-        <Box flexDirection="column" width="70%" borderStyle="single" borderColor={uiState.theme.border.primary} paddingX={2} paddingY={2}>
+        <Box 
+          flexDirection="column" 
+          width={absoluteRightWidth ?? "70%"} 
+          borderStyle="single" 
+          borderColor={uiState.theme.border.primary} 
+          paddingX={2} 
+          paddingY={2}
+        >
           {selectedTool ? (
             <>
               {/* Tool name */}
-              <Text bold color="yellow">
+              <Text bold color={uiState.theme.text.accent}>
                 {selectedTool.displayName}
               </Text>
 

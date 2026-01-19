@@ -20,7 +20,7 @@ import { defaultTypography, defaultKeybinds } from './defaults.js';
 export const builtInThemes: Record<string, Theme> = themesData;
 
 // Common Themes
-export const defaultDarkTheme = builtInThemes['default-dark'];
+export const defaultDarkTheme = builtInThemes['solarized-dark'];
 export const draculaTheme = builtInThemes['dracula'];
 export const nordTheme = builtInThemes['nord'];
 export const monokaiTheme = builtInThemes['monokai'];

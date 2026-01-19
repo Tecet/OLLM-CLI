@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Text } from 'ink';
+import { Box, Text, BoxProps } from 'ink';
+import { useUI } from '../../../features/context/UIContext.js';
 
 interface ClockProps {
   borderColor?: string;
 }
 
-export function Clock({ borderColor = 'yellow' }: ClockProps) {
+export function Clock({ borderColor }: ClockProps) {
   const [time, setTime] = useState(new Date());
+  const { state: uiState } = useUI();
+  const { theme } = uiState;
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -23,7 +26,11 @@ export function Clock({ borderColor = 'yellow' }: ClockProps) {
   });
 
   return (
-    <Box borderStyle="single" borderColor={borderColor} paddingX={1}>
+    <Box 
+      borderStyle={theme.border.style as BoxProps['borderStyle']} 
+      borderColor={borderColor || theme.border.primary} 
+      paddingX={1}
+    >
       <Text color="greenBright" bold>
         {timeString}
       </Text>

@@ -1,6 +1,5 @@
-
 import type { Message } from './ChatContext.js';
-import type { LLMProfile } from '../profiles/ProfileManager.js';
+import type { LLMProfile, ContextProfile } from '../../config/types.js';
 
 type GPUInfoLike = {
   vramTotal?: number;
@@ -63,10 +62,10 @@ export function createWelcomeMessage(model: string, currentContextSize: number, 
 
   if (profile) {
     // Exact match from profile
-    const currentProfileCtx = profile.context_profiles.find(p => p.size === currentContextSize);
+    const currentProfileCtx = profile.context_profiles.find((p: ContextProfile) => p.size === currentContextSize);
     vramUsage = currentProfileCtx ? currentProfileCtx.vram_estimate : 'Estimating...';
     
-    contextTableRows = profile.context_profiles.map(opt => {
+    contextTableRows = profile.context_profiles.map((opt: ContextProfile) => {
         const sizeLabel = opt.size_label || (opt.size >= 1024 ? `${opt.size/1024}k` : `${opt.size}`);
         const row = `| ${sizeLabel.padEnd(5)} | ${opt.vram_estimate.padEnd(10)} |`;
         // Removed explicit recommendation marker from table to keep it clean as per user design
@@ -104,28 +103,34 @@ export function createWelcomeMessage(model: string, currentContextSize: number, 
       gpuListString = `GPU Type - ${gpuName}`;
   }
 
-  const content = `
-**Current Configuration:** 
+  const descriptionLines = [
+    desc,
+    abilities,
+    toolsInfo
+  ].map(s => s.trim()).filter(Boolean);
+  
+  const descriptionPart = descriptionLines.length > 0 
+    ? `Description:\n${descriptionLines.join('\n')}\n\n`
+    : '';
 
-Hardware: 
-GPU Number - ${gpuCount}
+  const content = `**Current Configuration:**
+
+Hardware:
+GPU Found - ${gpuCount}
 ${gpuListString}
-VRAM avalible - ${vramDisplay}
+VRAM available - ${vramDisplay}
 
 LLM Model: **${profile ? profile.name : model}**
 Context: **${currentContextSize}** tokens (~${vramUsage})
 
-Description : 
-${desc}${abilities}${toolsInfo}
-**Context Size Options & VRAM Requirements:**
+${descriptionPart}**Context Size Options & VRAM Requirements:**
 
 | Size  | VRAM       |
 |-------|------------|
 ${optionsTable}
 
 *Use the interactive menu below to select options.*
-type /help for more options
-`.trim();
+type /help for more options`.trim();
 
   return {
     id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,

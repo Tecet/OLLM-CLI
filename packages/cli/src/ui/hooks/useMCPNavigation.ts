@@ -114,7 +114,7 @@ export function useMCPNavigation(): MCPNavigationState {
   
   // Calculate visible window
   const totalItems = 1 + serverList.length; // Exit item + servers
-  const visibleStart = scrollOffset;
+  const _visibleStart = scrollOffset;
   const visibleEnd = Math.min(scrollOffset + windowSize, totalItems);
   const visibleServers = useMemo(() => {
     return serverList.slice(

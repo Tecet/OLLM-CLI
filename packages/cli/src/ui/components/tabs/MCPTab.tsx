@@ -18,7 +18,6 @@ import { useMCP, type ExtendedMCPServerStatus } from '../../contexts/MCPContext.
 import { useUI } from '../../../features/context/UIContext.js';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { useNotifications } from '../../hooks/useNotifications.js';
-import { ServerDetails } from '../mcp/ServerDetails.js';
 import { LoadingSpinner } from '../mcp/LoadingSpinner.js';
 import { OperationProgress } from '../mcp/OperationProgress.js';
 import { ErrorBanner } from '../mcp/ErrorDisplay.js';
@@ -26,7 +25,6 @@ import { NotificationContainer } from '../mcp/Notification.js';
 import { ErrorBoundary } from '../ErrorBoundary.js';
 import { APIKeyInputDialog } from '../dialogs/APIKeyInputDialog.js';
 import type { MCPMarketplaceServer } from '../../../services/mcpMarketplace.js';
-import type { MCPServerConfig } from '@ollm/ollm-cli-core/mcp/types.js';
 import { 
   ServerConfigDialog,
   OAuthConfigDialog,
@@ -37,6 +35,10 @@ import {
   DialogErrorBoundary,
   HelpOverlay,
 } from '../dialogs/index.js';
+
+export interface MCPTabProps {
+  windowWidth?: number;
+}
 
 /**
  * Detail view navigation items for server details
@@ -55,6 +57,7 @@ interface ServerDetailsContentProps {
 }
 
 function ServerDetailsContent({ server, activeColumn, onToggle, onDelete, onRefreshServers }: ServerDetailsContentProps) {
+  const { state: uiState } = useUI();
   const [navItem, setNavItem] = useState<ServerDetailNavItem>('exit');
   const [toggleState, setToggleState] = useState<{
     status: 'idle' | 'toggling';
@@ -208,7 +211,7 @@ function ServerDetailsContent({ server, activeColumn, onToggle, onDelete, onRefr
       
       {/* Exit Item */}
       <Box flexShrink={0}>
-        <Text bold color={navItem === 'exit' ? 'yellow' : 'white'}>
+        <Text bold color={navItem === 'exit' ? uiState.theme.text.accent : 'white'}>
           {navItem === 'exit' ? '▶ ' : '  '}← Exit
         </Text>
       </Box>
@@ -220,9 +223,9 @@ function ServerDetailsContent({ server, activeColumn, onToggle, onDelete, onRefr
         <Text>
           <Text bold>Health:</Text>{' '}
           <Text color={
-            isRefreshing ? 'cyan' :
-            server.health === 'healthy' ? 'green' :
-            server.health === 'degraded' ? 'yellow' : 'red'
+            isRefreshing ? uiState.theme.status.info :
+            server.health === 'healthy' ? uiState.theme.status.success :
+            server.health === 'degraded' ? uiState.theme.status.warning : uiState.theme.status.error
           }>
             {isRefreshing ? '⟳ Reconnecting...' :
              server.health === 'healthy' ? '✓ Healthy' :
@@ -237,8 +240,8 @@ function ServerDetailsContent({ server, activeColumn, onToggle, onDelete, onRefr
       
       {/* Status Toggle (navigable) */}
       <Box flexShrink={0}>
-        <Text bold color={navItem === 'toggle' ? 'yellow' : 'white'}>
-          {navItem === 'toggle' ? '▶ ' : '  '}Status: <Text color={server.config.disabled ? 'red' : 'green'}>
+        <Text bold color={navItem === 'toggle' ? uiState.theme.text.accent : 'white'}>
+          {navItem === 'toggle' ? '▶ ' : '  '}Status: <Text color={server.config.disabled ? uiState.theme.status.error : uiState.theme.status.success}>
             {server.config.disabled ? '○ Disabled' : '● Enabled'}
           </Text>
         </Text>
@@ -256,7 +259,7 @@ function ServerDetailsContent({ server, activeColumn, onToggle, onDelete, onRefr
       {/* Server Details - Scrollable */}
       <Box flexDirection="column" flexGrow={1} overflow="hidden">
         {/* Header: Name, Version */}
-        <Text bold color="cyan">
+        <Text bold color={uiState.theme.text.accent}>
           MCP Server: {server.name}
         </Text>
         {server.config.metadata?.version && (
@@ -276,13 +279,13 @@ function ServerDetailsContent({ server, activeColumn, onToggle, onDelete, onRefr
         
         {server.config.metadata?.homepage && (
           <Text>
-            <Text bold>Homepage:</Text> <Text color="cyan">{server.config.metadata.homepage}</Text>
+            <Text bold>Homepage:</Text> <Text color={uiState.theme.text.accent}>{server.config.metadata.homepage}</Text>
           </Text>
         )}
         
         {server.config.metadata?.repository && (
           <Text>
-            <Text bold>GitHub Repository:</Text> <Text color="cyan">{server.config.metadata.repository}</Text>
+            <Text bold>GitHub Repository:</Text> <Text color={uiState.theme.text.accent}>{server.config.metadata.repository}</Text>
           </Text>
         )}
         
@@ -323,9 +326,9 @@ function ServerDetailsContent({ server, activeColumn, onToggle, onDelete, onRefr
         {/* Required API Keys - Prominent */}
         {server.config.env && Object.keys(server.config.env).length > 0 && (
           <>
-            <Text bold color="yellow">⚠️  This server requires:</Text>
+            <Text bold color={uiState.theme.status.warning}>⚠️  This server requires:</Text>
             {Object.keys(server.config.env).map((key) => (
-              <Text key={key} color="yellow">  • {key}</Text>
+              <Text key={key} color={uiState.theme.status.warning}>  • {key}</Text>
             ))}
             <Text> </Text>
           </>
@@ -350,7 +353,7 @@ function ServerDetailsContent({ server, activeColumn, onToggle, onDelete, onRefr
             <Text bold>API Keys:</Text>
             {Object.entries(server.config.env).map(([key, value]) => (
               <Text key={key}>
-                <Text dimColor>  {key}:</Text> {value ? <Text color="green">●●●●●●●● (configured)</Text> : <Text color="red">(not set)</Text>}
+                <Text dimColor>  {key}:</Text> {value ? <Text color={uiState.theme.status.success}>●●●●●●●● (configured)</Text> : <Text color={uiState.theme.status.error}>(not set)</Text>}
               </Text>
             ))}
             <Text dimColor>  (Press [E] to edit)</Text>
@@ -398,9 +401,11 @@ function ServerDetailsContent({ server, activeColumn, onToggle, onDelete, onRefr
                 {deleteState.selection === 'no' ? '▶ ' : '  '}No
               </Text>
             </Box>
-            <Text dimColor marginTop={1}>
-              ←→: Select | Enter: Confirm | Esc: Cancel
-            </Text>
+            <Box marginTop={1}>
+              <Text dimColor>
+                ←→: Select | Enter: Confirm | Esc: Cancel
+              </Text>
+            </Box>
           </>
         )}
         
@@ -409,9 +414,11 @@ function ServerDetailsContent({ server, activeColumn, onToggle, onDelete, onRefr
             <Text bold color="red">
               Deleting {server.name}...
             </Text>
-            <Text dimColor marginTop={1}>
-              Please wait...
-            </Text>
+            <Box marginTop={1}>
+              <Text dimColor>
+                Please wait...
+              </Text>
+            </Box>
           </>
         )}
         
@@ -420,9 +427,11 @@ function ServerDetailsContent({ server, activeColumn, onToggle, onDelete, onRefr
             <Text bold color="green">
               ✓ Server Deleted Successfully!
             </Text>
-            <Text dimColor marginTop={1}>
-              Press Enter to continue
-            </Text>
+            <Box marginTop={1}>
+              <Text dimColor>
+                Press Enter to continue
+              </Text>
+            </Box>
           </>
         )}
         
@@ -431,12 +440,16 @@ function ServerDetailsContent({ server, activeColumn, onToggle, onDelete, onRefr
             <Text bold color="red">
               ✗ Deletion Failed
             </Text>
-            <Text color="red" marginTop={1}>
-              {deleteState.error}
-            </Text>
-            <Text dimColor marginTop={1}>
-              Press Enter to dismiss
-            </Text>
+            <Box marginTop={1}>
+              <Text color={uiState.theme.status.error}>
+                {deleteState.error}
+              </Text>
+            </Box>
+            <Box marginTop={1}>
+              <Text dimColor>
+                Press Enter to dismiss
+              </Text>
+            </Box>
           </>
         )}
       </Box>
@@ -463,35 +476,7 @@ type MarketplaceView = 'list' | 'detail' | 'apikey';
  */
 type DetailNavItem = 'exit' | 'install';
 
-/**
- * Wrap text at word boundaries
- */
-function wrapText(text: string, maxWidth: number): string[] {
-  const words = text.split(' ');
-  const lines: string[] = [];
-  let currentLine = '';
-  
-  for (const word of words) {
-    const testLine = currentLine ? `${currentLine} ${word}` : word;
-    
-    if (testLine.length <= maxWidth) {
-      currentLine = testLine;
-    } else {
-      if (currentLine) {
-        lines.push(currentLine);
-      }
-      currentLine = word;
-    }
-  }
-  
-  if (currentLine) {
-    lines.push(currentLine);
-  }
-  
-  return lines;
-}
-
-function MarketplaceContent({ activeColumn, onRefreshServers, height = 20 }: MarketplaceContentProps) {
+function MarketplaceContent({ activeColumn, onRefreshServers, height: _height = 20 }: MarketplaceContentProps) {
   const { state: uiState } = useUI();
   const { searchMarketplace } = useMCP();
   const [searchQuery, setSearchQuery] = useState('');
@@ -511,9 +496,6 @@ function MarketplaceContent({ activeColumn, onRefreshServers, height = 20 }: Mar
     status: 'idle',
     selection: 'no',
   });
-  
-  // Each server takes 3 lines: name, description, empty line
-  const LINES_PER_SERVER = 3;
   
   // Fixed window size - display exactly 10 servers at a time
   const windowSize = 10;
@@ -708,7 +690,7 @@ function MarketplaceContent({ activeColumn, onRefreshServers, height = 20 }: Mar
   if (isLoading) {
     return (
       <Box flexDirection="column" alignItems="center" justifyContent="center" height="100%">
-        <LoadingSpinner message="Loading marketplace..." spinnerType="dots" color="cyan" centered padded />
+        <LoadingSpinner message="Loading marketplace..." spinnerType="dots" color={uiState.theme.text.accent} centered padded />
       </Box>
     );
   }
@@ -759,7 +741,7 @@ function MarketplaceContent({ activeColumn, onRefreshServers, height = 20 }: Mar
         
         {/* Exit Item - Top */}
         <Box flexShrink={0}>
-          <Text bold color={detailNavItem === 'exit' ? 'yellow' : 'white'}>
+          <Text bold color={detailNavItem === 'exit' ? uiState.theme.text.accent : 'white'}>
             {detailNavItem === 'exit' ? '▶ ' : '  '}← Exit
           </Text>
         </Box>
@@ -770,7 +752,7 @@ function MarketplaceContent({ activeColumn, onRefreshServers, height = 20 }: Mar
         {/* Server Details - Scrollable */}
         <Box flexDirection="column" flexGrow={1} overflow="hidden">
           {/* Header: Name, Version, Updated */}
-          <Text bold color="cyan">
+          <Text bold color={uiState.theme.text.accent}>
             MCP Server: {selectedServer.name}
           </Text>
           <Text>
@@ -869,13 +851,15 @@ function MarketplaceContent({ activeColumn, onRefreshServers, height = 20 }: Mar
                 <Text bold color={installState.selection === 'yes' ? 'yellow' : 'white'}>
                   {installState.selection === 'yes' ? '▶ ' : '  '}Yes
                 </Text>
-                <Text bold color={installState.selection === 'no' ? 'yellow' : 'white'}>
+                <Text bold color={installState.selection === 'no' ? uiState.theme.text.accent : 'white'}>
                   {installState.selection === 'no' ? '▶ ' : '  '}No
                 </Text>
               </Box>
-              <Text dimColor marginTop={1}>
-                ←→: Select | Enter: Confirm | Esc: Cancel
-              </Text>
+              <Box marginTop={1}>
+                <Text dimColor>
+                  ←→: Select | Enter: Confirm | Esc: Cancel
+                </Text>
+              </Box>
             </>
           )}
           
@@ -884,9 +868,11 @@ function MarketplaceContent({ activeColumn, onRefreshServers, height = 20 }: Mar
               <Text bold color="cyan">
                 Installing {selectedServer.name}...
               </Text>
-              <Text dimColor marginTop={1}>
-                Please wait...
-              </Text>
+              <Box marginTop={1}>
+                <Text dimColor>
+                  Please wait...
+                </Text>
+              </Box>
             </>
           )}
           
@@ -895,9 +881,11 @@ function MarketplaceContent({ activeColumn, onRefreshServers, height = 20 }: Mar
               <Text bold color="green">
                 ✓ Installation Successful!
               </Text>
-              <Text dimColor marginTop={1}>
-                Press Enter to continue
-              </Text>
+              <Box marginTop={1}>
+                <Text dimColor>
+                  Press Enter to continue
+                </Text>
+              </Box>
             </>
           )}
           
@@ -906,12 +894,16 @@ function MarketplaceContent({ activeColumn, onRefreshServers, height = 20 }: Mar
               <Text bold color="red">
                 ✗ Installation Failed
               </Text>
-              <Text color="red" marginTop={1}>
-                {installState.error}
-              </Text>
-              <Text dimColor marginTop={1}>
-                Press Enter to dismiss
-              </Text>
+              <Box marginTop={1}>
+                <Text color={uiState.theme.status.error}>
+                  {installState.error}
+                </Text>
+              </Box>
+              <Box marginTop={1}>
+                <Text dimColor>
+                  Press Enter to dismiss
+                </Text>
+              </Box>
             </>
           )}
         </Box>
@@ -1025,7 +1017,7 @@ interface MenuItem {
  * Main tab component that orchestrates the MCP panel UI with two-column layout.
  * Handles keyboard navigation, dialog management, and server operations.
  */
-export function MCPTab() {
+export function MCPTab({ windowWidth }: MCPTabProps) {
   return (
     <ErrorBoundary
       fallback={(error) => (
@@ -1048,7 +1040,7 @@ export function MCPTab() {
         </Box>
       )}
     >
-      <MCPTabContent />
+      <MCPTabContent windowWidth={windowWidth} />
     </ErrorBoundary>
   );
 }
@@ -1056,10 +1048,15 @@ export function MCPTab() {
 /**
  * MCPTab Content Component (wrapped by error boundary)
  */
-function MCPTabContent() {
+function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
   const { state: uiState } = useUI();
   const { isFocused, exitToNavBar } = useFocusManager();
   const { stdout } = useStdout();
+  
+  // Calculate absolute widths if windowWidth is provided
+  const absoluteLeftWidth = windowWidth ? Math.floor(windowWidth * 0.3) : undefined;
+  const absoluteRightWidth = windowWidth && absoluteLeftWidth ? (windowWidth - absoluteLeftWidth) : undefined;
+
   const { 
     state, 
     toggleServer, 
@@ -1190,7 +1187,7 @@ function MCPTabContent() {
         setActiveColumn('right');
         break;
     }
-  }, [selectedItem, exitToNavBar, toggleServer, showSuccess, showError]);
+  }, [selectedItem, exitToNavBar]);
   
   // Auto-scroll to keep selected item visible
   useEffect(() => {
@@ -1347,10 +1344,11 @@ function MCPTabContent() {
     } else if (input === 'r' || input === 'R') {
       // Restart server
       if (selectedItem?.type === 'server' && selectedItem.server) {
-        showInfo('Restarting server', `${selectedItem.server.name} is restarting...`);
-        restartServer(selectedItem.server.name)
+        const server = selectedItem.server;
+        showInfo('Restarting server', `${server.name} is restarting...`);
+        restartServer(server.name)
           .then(() => {
-            showSuccess('Server restarted', `${selectedItem.server.name} has been restarted`);
+            showSuccess('Server restarted', `${server.name} has been restarted`);
           })
           .catch(err => {
             showError('Failed to restart', err instanceof Error ? err.message : 'Unknown error');
@@ -1431,13 +1429,17 @@ function MCPTabContent() {
       
       {/* Header with focus indicator */}
       <Box flexDirection="column" paddingX={1} paddingY={1} flexShrink={0}>
-        <Box justifyContent="space-between">
-          <Text bold color={hasFocus ? 'yellow' : uiState.theme.text.primary}>
-            🔌 MCP Servers
-          </Text>
-          <Text color={hasFocus ? uiState.theme.text.primary : uiState.theme.text.secondary} dimColor={!hasFocus}>
-            ↑↓:Nav ←→:Column Enter:Select R:Restart C:Config U:Uninstall T:Tools L:Logs ?:Help 0/Esc:Exit
-          </Text>
+        <Box justifyContent="space-between" width="100%" overflow="hidden">
+          <Box flexShrink={0}>
+            <Text bold color={hasFocus ? uiState.theme.text.accent : uiState.theme.text.primary}>
+              🔌 MCP Servers
+            </Text>
+          </Box>
+          <Box flexShrink={1} marginLeft={1}>
+            <Text wrap="truncate-end" color={hasFocus ? uiState.theme.text.primary : uiState.theme.text.secondary} dimColor={!hasFocus}>
+              ↑↓:Nav ←→:Column Enter:Select R:Restart C:Config U:Uninstall T:Tools L:Logs ?:Help 0/Esc:Exit
+            </Text>
+          </Box>
         </Box>
       </Box>
       
@@ -1446,17 +1448,17 @@ function MCPTabContent() {
         {/* Left Column: Menu (30%) */}
         <Box 
           flexDirection="column" 
-          width="30%" 
+          width={absoluteLeftWidth ?? "30%"} 
           flexShrink={0}
           borderStyle="single" 
-          borderColor={hasFocus && activeColumn === 'left' ? 'cyan' : uiState.theme.border.primary}
+          borderColor={hasFocus && activeColumn === 'left' ? uiState.theme.text.accent : uiState.theme.border.primary}
           paddingY={1}
         >
           {/* Scroll indicator at top */}
           {scrollOffset > 0 && (
             <>
               <Box justifyContent="center" paddingX={1}>
-                <Text color="cyan" bold>
+                <Text color={uiState.theme.text.accent} bold>
                   ▲ More above
                 </Text>
               </Box>
@@ -1476,7 +1478,7 @@ function MCPTabContent() {
                   <Box key="exit" flexDirection="column">
                     <Text
                       bold={isSelected}
-                      color={isSelected ? 'yellow' : uiState.theme.text.primary}
+                      color={isSelected ? uiState.theme.text.accent : uiState.theme.text.primary}
                     >
                       {item.icon} {item.label}
                     </Text>
@@ -1506,7 +1508,7 @@ function MCPTabContent() {
             {/* Installed Servers Header - Always visible */}
             <Text> </Text>
             <Text> </Text>
-            <Text bold color="cyan">
+            <Text bold color={uiState.theme.text.accent}>
               📦 Installed Servers
             </Text>
             <Text> </Text>
@@ -1538,7 +1540,7 @@ function MCPTabContent() {
                     <Box key={item.server.name} flexDirection="column">
                       <Text
                         bold={isSelected}
-                        color={isSelected ? 'yellow' : (isDisabled ? 'gray' : uiState.theme.text.primary)}
+                        color={isSelected ? uiState.theme.text.accent : (isDisabled ? 'gray' : uiState.theme.text.primary)}
                         dimColor={isDisabled}
                       >
                         <Text color={isDisabled ? 'gray' : healthColor}>{item.icon}</Text> {item.label}
@@ -1568,7 +1570,7 @@ function MCPTabContent() {
             <>
               <Text> </Text>
               <Box justifyContent="center" paddingX={1}>
-                <Text color="cyan" bold>
+                <Text color={uiState.theme.text.accent} bold>
                   ▼ More below
                 </Text>
               </Box>
@@ -1579,18 +1581,18 @@ function MCPTabContent() {
         {/* Right Column: Dynamic Content (70%) */}
         <Box 
           flexDirection="column" 
-          width="70%" 
+          width={absoluteRightWidth ?? "70%"} 
           flexShrink={0}
           borderStyle="single" 
-          borderColor={hasFocus && activeColumn === 'right' ? 'cyan' : uiState.theme.border.primary}
+          borderColor={hasFocus && activeColumn === 'right' ? uiState.theme.text.accent : uiState.theme.border.primary}
           paddingX={2} 
           paddingY={2}
         >
           {(!selectedItem || (selectedItem?.type === 'exit' && activeColumn === 'left')) && (
             <Box flexDirection="column" paddingX={2} paddingY={1}>
-              <Text bold color="cyan">═══════════════════════════════════════════════════════════════════</Text>
+              <Text bold color={uiState.theme.text.accent}>═══════════════════════════════════════════════════════════════════</Text>
               <Text></Text>
-              <Text bold color="cyan">                    MCP Registry - Marketplace</Text>
+              <Text bold color={uiState.theme.text.accent}>                    MCP Registry - Marketplace</Text>
               <Text></Text>
               <Text>The MCP registry provides MCP clients with a list of MCP servers.</Text>
               <Text></Text>
@@ -1598,21 +1600,21 @@ function MCPTabContent() {
               <Text></Text>
               <Text bold>Documentation:</Text>
               <Text></Text>
-              <Text>📄 <Text color="cyan">Public-facing docs</Text> - Published on modelcontextprotocol.io</Text>
+              <Text>📄 <Text color={uiState.theme.text.accent}>Public-facing docs</Text> - Published on modelcontextprotocol.io</Text>
               <Text></Text>
-              <Text>🏗️ <Text color="cyan">Design documentation</Text> - Architecture, vision, and roadmap</Text>
+              <Text>🏗️ <Text color={uiState.theme.text.accent}>Design documentation</Text> - Architecture, vision, and roadmap</Text>
               <Text></Text>
-              <Text>📖 <Text color="cyan">Reference</Text> - Technical specifications</Text>
+              <Text>📖 <Text color={uiState.theme.text.accent}>Reference</Text> - Technical specifications</Text>
               <Text></Text>
-              <Text>🔧 <Text color="cyan">Contributing guides</Text> - How to contribute</Text>
+              <Text>🔧 <Text color={uiState.theme.text.accent}>Contributing guides</Text> - How to contribute</Text>
               <Text></Text>
-              <Text>🔒 <Text color="cyan">Administration</Text> - Admin operations</Text>
+              <Text>🔒 <Text color={uiState.theme.text.accent}>Administration</Text> - Admin operations</Text>
               <Text></Text>
               <Text color={uiState.theme.text.secondary}>───────────────────────────────────────────────────────────────────</Text>
               <Text></Text>
               <Text color={uiState.theme.text.secondary} dimColor>Press Enter to browse marketplace or ↑↓ to navigate</Text>
               <Text></Text>
-              <Text bold color="cyan">═══════════════════════════════════════════════════════════════════</Text>
+              <Text bold color={uiState.theme.text.accent}>═══════════════════════════════════════════════════════════════════</Text>
             </Box>
           )}
           
@@ -1660,7 +1662,7 @@ function MCPTabContent() {
 
       {/* Operation Progress */}
       {state.operationsInProgress.size > 0 && (
-        <Box borderStyle="single" borderColor="cyan" paddingX={1}>
+        <Box borderStyle="single" borderColor={uiState.theme.text.accent} paddingX={1}>
           <OperationProgress operations={state.operationsInProgress} />
         </Box>
       )}

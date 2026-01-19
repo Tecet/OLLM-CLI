@@ -309,6 +309,11 @@ export class MCPMarketplace {
       ? await this.getServerDetails(serverOrId)
       : serverOrId;
 
+    // Detect if this is a remote server (has URL in repository)
+    const isRemoteServer = server.repository?.startsWith('https://') && 
+                          server.command === 'node' && 
+                          server.args?.length === 0;
+
     // Build complete server configuration with metadata
     const serverConfig: MCPServerConfig = {
       command: config.command || server.command,
@@ -317,10 +322,12 @@ export class MCPMarketplace {
         ...server.env,
         ...config.env,
       },
-      transport: config.transport || 'stdio',
+      // Use SSE transport for remote servers, stdio for local
+      transport: config.transport || (isRemoteServer ? 'sse' : 'stdio'),
       timeout: config.timeout,
       oauth: config.oauth,
-      url: config.url,
+      // Set URL for remote servers
+      url: config.url || (isRemoteServer ? server.repository : undefined),
       cwd: config.cwd,
       // Store metadata for offline access
       metadata: {
@@ -341,7 +348,8 @@ export class MCPMarketplace {
     // Users can add them later by editing the server configuration
     
     // Add server to MCP configuration
-    await mcpConfigService.updateServerConfig(server.name, serverConfig);
+    // Use server.id as the config key to ensure uniqueness and consistency
+    await mcpConfigService.updateServerConfig(server.id, serverConfig);
   }
 
   /**
@@ -435,7 +443,7 @@ export class MCPMarketplace {
     // Extract installation command
     let command = 'npx';
     let args: string[] = [];
-    let env: Record<string, string> = {};
+    const env: Record<string, string> = {};
     
     if (firstPackage) {
       if (firstPackage.registryType === 'npm') {
@@ -469,9 +477,10 @@ export class MCPMarketplace {
         // Transport type will be used in config
       }
     } else if (firstRemote) {
-      // Remote server - use URL
-      command = 'mcp-remote';
-      args = [firstRemote.url || ''];
+      // Remote server - use SSE transport with URL
+      // Remote servers don't use stdio, they connect via HTTP/SSE
+      command = 'node'; // Placeholder, won't be used for SSE transport
+      args = [];
       
       // Extract headers as environment variables
       if (firstRemote.headers) {

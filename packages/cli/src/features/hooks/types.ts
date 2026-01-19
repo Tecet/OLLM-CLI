@@ -6,7 +6,7 @@
  * expects a `when/then` structure for better user understanding and editing.
  */
 
-import type { Hook as CoreHook, HookSource } from '@ollm/ollm-cli-core/hooks/types.js';
+import type { HookSource } from '@ollm/ollm-cli-core/hooks/types.js';
 
 /**
  * Hook event types that can trigger hook execution (UI-friendly names)

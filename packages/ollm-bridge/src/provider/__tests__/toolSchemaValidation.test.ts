@@ -19,7 +19,7 @@ function validateToolSchema(tool: ToolSchema): void {
   }
 
   // Relaxed validation: Allow dots and slashes for namespaced tools
-  if (!/^[a-zA-Z_][a-zA-Z0-9_.\/-]*$/.test(tool.name)) {
+  if (!/^[a-zA-Z_][a-zA-Z0-9_./-]*$/.test(tool.name)) {
     throw new Error(
       `Tool schema validation failed: Tool name "${tool.name}" is invalid. ` +
       'Tool names must start with a letter or underscore and contain only letters, numbers, underscores, dashes, dots, or slashes'

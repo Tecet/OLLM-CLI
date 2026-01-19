@@ -42,36 +42,38 @@ interface ModeAnimationConfig {
   duration: number;
 }
 
+import { MODE_METADATA } from './templates/modes/index.js';
+
 /**
  * Animation configurations for each mode
  */
 const MODE_ANIMATIONS: Record<ModeType, ModeAnimationConfig> = {
   assistant: {
-    icon: '💬',
+    icon: MODE_METADATA.assistant.icon,
     loadingVerb: 'Switching to conversation mode',
     completionVerb: 'Ready for conversation',
     duration: 500
   },
   planning: {
-    icon: '📋',
+    icon: MODE_METADATA.planning.icon,
     loadingVerb: 'Entering planning mode',
     completionVerb: 'Planning mode active',
     duration: 600
   },
   developer: {
-    icon: '👨‍💻',
+    icon: MODE_METADATA.developer.icon,
     loadingVerb: 'Activating development tools',
     completionVerb: 'Development mode ready',
     duration: 500
   },
   debugger: {
-    icon: '🐛',
+    icon: MODE_METADATA.debugger.icon,
     loadingVerb: 'Analyzing error patterns',
     completionVerb: 'Debugger mode active',
     duration: 700
   },
   reviewer: {
-    icon: '👀',
+    icon: MODE_METADATA.reviewer.icon,
     loadingVerb: 'Loading review checklist',
     completionVerb: 'Review mode active',
     duration: 600
@@ -249,21 +251,13 @@ export class ModeTransitionAnimator {
     // Special messages for specific transitions
     const transitionKey = `${from}->${to}`;
     const contextualMessages: Record<string, string> = {
-      'developer->debugger': '🐛 Error detected. Switching to systematic debugging...',
+      'developer->debugger': `${MODE_METADATA.debugger.icon} Error detected. Switching to systematic debugging...`,
       'debugger->developer': '✓ Bug analysis complete. Returning to development...',
-      'developer->security': '🔒 Security concern detected. Initiating security audit...',
-      'security->developer': '✓ Security audit complete. Returning to development...',
-      'developer->performance': '⚡ Performance issue detected. Starting optimization analysis...',
-      'performance->developer': '✓ Performance analysis complete. Returning to development...',
-      'developer->reviewer': '👀 Code ready for review. Switching to review mode...',
+      'developer->reviewer': `${MODE_METADATA.reviewer.icon} Code ready for review. Switching to review mode...`,
       'reviewer->developer': '✓ Review complete. Returning to development...',
-      'assistant->planning': '📋 Switching to planning mode for design work...',
-      'planning->developer': '👨‍💻 Plan complete. Ready to implement...',
-      'developer->planning': '📋 Stepping back to planning mode...',
-      'assistant->teacher': '👨‍🏫 Switching to teaching mode for explanations...',
-      'teacher->developer': '👨‍💻 Ready to implement what we learned...',
-      'developer->prototype': '🔬 Switching to rapid prototyping mode...',
-      'prototype->developer': '👨‍💻 Prototype complete. Refining implementation...'
+      'assistant->planning': `${MODE_METADATA.planning.icon} Switching to planning mode for design work...`,
+      'planning->developer': `${MODE_METADATA.developer.icon} Plan complete. Ready to implement...`,
+      'developer->planning': `${MODE_METADATA.planning.icon} Stepping back to planning mode...`
     };
     
     if (transitionKey in contextualMessages) {

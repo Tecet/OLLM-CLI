@@ -55,37 +55,41 @@ export function ModeConfidenceDisplay({
   currentModeConfidence,
   modeDuration,
   suggestedModes,
-  allowedTools
-}: ModeConfidenceDisplayProps) {
+  allowedTools,
+  theme // Add theme prop
+}: ModeConfidenceDisplayProps & { theme: any }) { // Use 'any' or import Theme type if available
   return (
-    <Box flexDirection="column" paddingX={1}>
+    <Box flexDirection="column" paddingX={1} alignItems="flex-start">
       {/* 1. Indicators at the very top */}
       <Box flexDirection="column" marginBottom={1}>
-        <Box marginTop={0}>
-          <Text dimColor>Conf: </Text>
-          <Text>{renderConfidenceBar(currentModeConfidence, 8)} </Text>
-          <Text color="yellow">{(currentModeConfidence * 100).toFixed(0)}%</Text>
+        <Box marginTop={0} alignSelf="flex-start">
+          <Text dimColor>Conf:</Text>
+          <Text> </Text>
+          <Text>{renderConfidenceBar(currentModeConfidence, 8)}</Text>
+          <Text> </Text>
+          <Text color={theme.text.accent}>{(currentModeConfidence * 100).toFixed(0)}%</Text>
         </Box>
-        <Box marginTop={0}>
-          <Text dimColor>Time: </Text>
-          <Text color="green">{formatDuration(modeDuration)}</Text>
+        <Box marginTop={0} alignSelf="flex-start">
+          <Text dimColor>Time:</Text>
+          <Text> </Text>
+          <Text color={theme.status.success}>{formatDuration(modeDuration)}</Text>
         </Box>
       </Box>
 
       {/* 2. Current Mode Identity with padding */}
       <Box flexDirection="column" marginBottom={1}>
-        <Box>
-          <Text bold color="cyan">Mode: </Text>
-          <Text bold color={currentModeColor}>
-            {currentModeIcon} {currentMode ? currentMode.charAt(0).toUpperCase() + currentMode.slice(1) : 'Unknown'}
-          </Text>
+        <Box alignSelf="flex-start">
+          <Text bold color={theme.text.info}>Mode:</Text>
+          <Text> </Text>
+          <Text bold color={currentModeColor}>{currentModeIcon} {currentMode ? currentMode.charAt(0).toUpperCase() + currentMode.slice(1) : 'Unknown'}</Text>
         </Box>
-        <Box marginTop={0}>
-          <Text dimColor>Tools: </Text>
+        <Box marginTop={0} alignSelf="flex-start">
+          <Text dimColor>Tools:</Text>
+          <Text> </Text>
           {allowedTools.length === 0 ? (
             <Text dimColor>None</Text>
           ) : allowedTools.includes('*') ? (
-            <Text color="green">All</Text>
+            <Text color={theme.status.success}>All</Text>
           ) : (
             <Text dimColor>({allowedTools.length})</Text>
           )}
@@ -95,20 +99,20 @@ export function ModeConfidenceDisplay({
       {/* 3. Suggested Modes with padding */}
       {suggestedModes.length > 0 && (
         <Box flexDirection="column" marginTop={0}>
-          <Text bold color="cyan">Suggested Modes</Text>
-          <Box flexDirection="column" marginTop={1}>
+          <Text bold color={theme.text.info}>Suggested Modes</Text>
+          <Box flexDirection="column" marginTop={1} alignItems="flex-start">
             {suggestedModes.map((suggested, index) => (
               <Box key={suggested.mode} flexDirection="column" marginBottom={index < suggestedModes.length - 1 ? 1 : 0}>
-                <Box>
-                  <Text dimColor>├─ </Text>
-                  <Text>
-                    {suggested.icon} {suggested.mode.charAt(0).toUpperCase() + suggested.mode.slice(1)}
-                  </Text>
-                  <Text dimColor> (</Text>
-                  <Text color="yellow">{(suggested.confidence * 100).toFixed(0)}%</Text>
+                <Box alignSelf="flex-start">
+                  <Text dimColor>├─</Text>
+                  <Text> </Text>
+                  <Text>{suggested.icon} {suggested.mode.charAt(0).toUpperCase() + suggested.mode.slice(1)}</Text>
+                  <Text dimColor>(</Text>
+                  <Text> </Text>
+                  <Text color={theme.text.accent}>{(suggested.confidence * 100).toFixed(0)}%</Text>
                   <Text dimColor>)</Text>
                 </Box>
-                <Box marginLeft={3}>
+                <Box marginLeft={3} alignSelf="flex-start">
                   <Text dimColor>"{suggested.reason}"</Text>
                 </Box>
               </Box>

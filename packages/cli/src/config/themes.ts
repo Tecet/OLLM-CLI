@@ -14,6 +14,46 @@ import type { Theme } from './types.js';
 
 export const themesData: Record<string, Theme> = {
   /**
+   * Solarized Dark
+   * A precision theme designed to decrease eye strain.
+   */
+  "solarized-dark": {
+    "name": "solarized-dark",
+    "bg": {
+      "primary": "#002b36",
+      "secondary": "#073642",
+      "tertiary": "#586e75"
+    },
+    "text": {
+      "primary": "#839496",
+      "secondary": "#657b83",
+      "accent": "#b58900"
+    },
+    "role": {
+      "user": "#268bd2",
+      "assistant": "#2aa198",
+      "system": "#586e75",
+      "tool": "#b58900"
+    },
+    "status": {
+      "success": "#859900",
+      "warning": "#cb4b16",
+      "error": "#dc322f",
+      "info": "#268bd2"
+    },
+    "border": {
+      "primary": "#073642",
+      "secondary": "#268bd2",
+      "active": "#268bd2",
+      "style": "round"
+    },
+    "diff": {
+      "added": "#859900",
+      "removed": "#dc322f"
+    }
+  },
+  
+  /**
    * Default Dark Theme
    * A balanced dark theme suitable for most terminals.
    */
@@ -44,7 +84,8 @@ export const themesData: Record<string, Theme> = {
     "border": {
       "primary": "#4ec9b0",
       "secondary": "#4ec9b0",
-      "active": "#22d239ff"
+      "active": "#22d239ff",
+      "style": "round"
     },
     "diff": {
       "added": "#4ec9b0",
@@ -83,7 +124,8 @@ export const themesData: Record<string, Theme> = {
     "border": {
       "primary": "#44475a",
       "secondary": "#bd93f9",
-      "active": "#bd93f9"
+      "active": "#bd93f9",
+      "style": "round"
     },
     "diff": {
       "added": "#50fa7b",
@@ -122,7 +164,8 @@ export const themesData: Record<string, Theme> = {
     "border": {
       "primary": "#3b4252",
       "secondary": "#88c0d0",
-      "active": "#88c0d0"
+      "active": "#88c0d0",
+      "style": "round"
     },
     "diff": {
       "added": "#a3be8c",
@@ -161,7 +204,8 @@ export const themesData: Record<string, Theme> = {
     "border": {
       "primary": "#1e1437ff",
       "secondary": "#3a3ac1ff",
-      "active": "#fd971f"
+      "active": "#fd971f",
+      "style": "round"
     },
     "diff": {
       "added": "#a6e22e",
@@ -170,11 +214,11 @@ export const themesData: Record<string, Theme> = {
   },
 
   /**
-   * Solarized Dark
+   * Solarized Dark 2
    * A precision theme designed to decrease eye strain.
    */
-  "solarized-dark": {
-    "name": "solarized-dark",
+  "solarized-dark-2": {
+    "name": "solarized-dark-2",
     "bg": {
       "primary": "#002b36",
       "secondary": "#073642",
@@ -200,7 +244,8 @@ export const themesData: Record<string, Theme> = {
     "border": {
       "primary": "#073642",
       "secondary": "#268bd2",
-      "active": "#268bd2"
+      "active": "#268bd2",
+      "style": "round"
     },
     "diff": {
       "added": "#859900",

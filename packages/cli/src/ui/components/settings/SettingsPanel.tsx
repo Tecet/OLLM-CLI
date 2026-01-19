@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { Box, Text, useInput } from 'ink';
+import { Box, Text, useInput, BoxProps } from 'ink';
 import { useUI } from '../../../features/context/UIContext.js';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { useSettings } from '../../../features/context/SettingsContext.js';
@@ -40,6 +40,10 @@ const sections: Section[] = [
   { id: 'theme', name: 'Theme Selection' },
 ];
 
+interface SettingsPanelProps {
+  windowWidth?: number;
+}
+
 /**
  * SettingsPanel Component
  * 
@@ -53,13 +57,17 @@ const sections: Section[] = [
  * - Enter: Select section or edit setting
  * - Esc/0: Exit to nav-bar
  */
-export function SettingsPanel() {
+export function SettingsPanel({ windowWidth }: SettingsPanelProps) {
   const { state: uiState } = useUI();
   const focusManager = useFocusManager();
   const { settings, updateLLMSetting, updateUISetting, updateToolRouting } = useSettings();
   const { currentModel, setCurrentModel } = useModel();
   const { state: mcpState, getServerTools } = useMCP();
   const hasFocus = focusManager.isFocused('settings-panel');
+
+  // Calculate absolute widths if windowWidth is provided
+  const absoluteLeftWidth = windowWidth ? Math.floor(windowWidth * 0.3) : undefined;
+  const absoluteRightWidth = windowWidth && absoluteLeftWidth ? (windowWidth - absoluteLeftWidth) : undefined;
 
   // State
   const [selectedSectionIndex, setSelectedSectionIndex] = useState(0);
@@ -245,8 +253,8 @@ export function SettingsPanel() {
           { id: 'tier_3', label: 'Tier 3 - Creative', value: '0.5 (Assistant, Proto)', type: 'info', category: 'llm' },
           { id: 'spacer_opt_2', label: '', value: '', type: 'info', category: 'llm' },
           { id: 'contextSize', label: 'Max Tokens', value: settings.llm.contextSize || 4096, type: 'numeric', category: 'llm' },
-          { id: 'metricsEnabled', label: 'Metrics', value: settings.ui.metricsEnabled ?? true, type: 'toggle', category: 'ui' },
-          { id: 'reasoningEnabled', label: 'Reasoning', value: settings.ui.reasoningEnabled ?? true, type: 'toggle', category: 'ui' },
+          { id: 'metricsEnabled', label: 'Metrics', value: (settings.ui.metricsEnabled as boolean) ?? true, type: 'toggle', category: 'ui' },
+          { id: 'reasoningEnabled', label: 'Reasoning', value: (settings.ui.reasoningEnabled as boolean) ?? true, type: 'toggle', category: 'ui' },
         ];
         return options;
       }
@@ -256,9 +264,9 @@ export function SettingsPanel() {
           label: themeId,
           value: themeId,
           active: (settings.ui.theme || uiState.theme.name) === themeId,
-          type: 'choice',
-          category: 'ui'
-        }));
+          type: 'choice' as SettingType,
+          category: 'ui' as const
+        } as SettingItem));
       case 'tool_routing': {
          const config = settings.llm.toolRouting || {};
          const isEnabled = config.enabled ?? false;
@@ -516,22 +524,22 @@ export function SettingsPanel() {
   }, { isActive: hasFocus });
 
   return (
-    <Box flexDirection="column" height="100%">
+    <Box flexDirection="column" height="100%" width={windowWidth}>
       {/* Header */}
       <Box
-        borderStyle="single"
+        borderStyle={uiState.theme.border.style as BoxProps['borderStyle']}
         borderColor={hasFocus ? uiState.theme.text.accent : uiState.theme.text.secondary}
         paddingX={1}
         flexShrink={0}
       >
-        <Box justifyContent="space-between" width="100%">
-          <Box marginRight={2}>
+        <Box justifyContent="space-between" width="100%" overflow="hidden">
+          <Box flexShrink={0}>
             <Text bold color={hasFocus ? uiState.theme.text.accent : uiState.theme.text.primary}>
               Settings
             </Text>
           </Box>
-          <Box>
-            <Text color={hasFocus ? uiState.theme.text.primary : uiState.theme.text.secondary}>
+          <Box flexShrink={1} marginLeft={1}>
+            <Text wrap="truncate-end" color={hasFocus ? uiState.theme.text.primary : uiState.theme.text.secondary}>
               ↑↓:Nav ←→:Column Enter:Edit 0/Esc:Exit
             </Text>
           </Box>
@@ -539,13 +547,14 @@ export function SettingsPanel() {
       </Box>
 
       {/* Two-column layout */}
-      <Box flexGrow={1} overflow="hidden">
+      <Box flexGrow={1} overflow="hidden" flexDirection="row" width="100%">
         {/* Left column: Section list (30%) */}
         <Box 
           flexDirection="column" 
-          width="30%" 
-          borderStyle="single" 
+          width={absoluteLeftWidth ?? "30%"} 
+          borderStyle={uiState.theme.border.style as BoxProps['borderStyle']} 
           borderColor={focusedColumn === 'left' && hasFocus ? uiState.theme.border.active : uiState.theme.border.primary}
+          paddingY={1}
         >
           {/* Scroll indicator at top */}
           {scrollOffset > 0 && (
@@ -568,7 +577,7 @@ export function SettingsPanel() {
             <Box>
               <Text
                 bold={isOnExitItem && hasFocus}
-                color={isOnExitItem && hasFocus ? 'yellow' : uiState.theme.text.primary}
+                color={isOnExitItem && hasFocus ? uiState.theme.text.accent : uiState.theme.text.primary}
               >
                 ← Exit
               </Text>
@@ -584,7 +593,7 @@ export function SettingsPanel() {
                 <Box key={section.id} marginTop={idx > 0 ? 1 : 0}>
                   <Text
                     bold={isSelected && hasFocus}
-                    color={isSelected && hasFocus ? 'yellow' : uiState.theme.text.primary}
+                    color={isSelected && hasFocus ? uiState.theme.text.accent : uiState.theme.text.primary}
                   >
                     {section.name}
                   </Text>
@@ -609,8 +618,8 @@ export function SettingsPanel() {
         {/* Right column: Settings editor (70%) */}
         <Box 
           flexDirection="column" 
-          width="70%" 
-          borderStyle="single" 
+          width={absoluteRightWidth ?? "70%"} 
+          borderStyle={uiState.theme.border.style as BoxProps['borderStyle']} 
           borderColor={focusedColumn === 'right' && hasFocus ? uiState.theme.border.active : uiState.theme.border.primary} 
           paddingX={2}
           paddingY={1}
@@ -619,7 +628,7 @@ export function SettingsPanel() {
             <>
               {/* Section title and scroll up indicator */}
               <Box paddingLeft={1} justifyContent="space-between" width="100%">
-                <Text bold color="yellow">
+                <Text bold color={uiState.theme.text.accent}>
                   {currentSection.id === 'model' ? 'Selected LLM Model' : currentSection.name}
                 </Text>
                 {rightScrollOffset > 0 && (
@@ -642,7 +651,7 @@ export function SettingsPanel() {
                   if (setting.type === 'header') {
                     return (
                       <Box key={`header-${idx}`} marginTop={1} paddingLeft={1}>
-                        <Text bold color={setting.muted ? uiState.theme.text.secondary : "yellow"} dimColor={setting.muted}>
+                        <Text bold color={setting.muted ? uiState.theme.text.secondary : uiState.theme.text.accent} dimColor={setting.muted}>
                           {setting.label}
                         </Text>
                       </Box>
@@ -683,7 +692,7 @@ export function SettingsPanel() {
                         <Box>
                           <Text
                             bold={isSelected && hasFocus}
-                            color={setting.muted ? uiState.theme.text.secondary : (isSelected && hasFocus ? 'yellow' : uiState.theme.text.primary)}
+                            color={setting.muted ? uiState.theme.text.secondary : (isSelected && hasFocus ? uiState.theme.text.accent : uiState.theme.text.primary)}
                             dimColor={setting.muted}
                           >
                             {setting.active ? '●' : '○'} {setting.label}
@@ -694,7 +703,7 @@ export function SettingsPanel() {
                           <Box width="40%">
                             <Text
                               bold={isSelected && hasFocus}
-                              color={setting.muted ? uiState.theme.text.secondary : (isSelected && hasFocus ? 'yellow' : uiState.theme.text.primary)}
+                              color={setting.muted ? uiState.theme.text.secondary : (isSelected && hasFocus ? uiState.theme.text.accent : uiState.theme.text.primary)}
                               dimColor={setting.muted}
                             >
                               {setting.label}:
@@ -702,7 +711,7 @@ export function SettingsPanel() {
                           </Box>
                           <Box>
                             {isEditing ? (
-                              <Text color="yellow">
+                              <Text color={uiState.theme.text.accent}>
                                 [{editValue}_] <Text dimColor>↵ Save Esc Cancel</Text>
                               </Text>
                             ) : (

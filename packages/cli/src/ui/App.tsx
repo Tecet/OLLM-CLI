@@ -13,7 +13,7 @@
  */
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { Box, Text, useStdout } from 'ink';
+import { Box, Text, useStdout, BoxProps } from 'ink';
 import { UIProvider, useUI, TabType } from '../features/context/UIContext.js';
 import { ChatProvider, useChat } from '../features/context/ChatContext.js';
 import { GPUProvider, useGPU } from '../features/context/GPUContext.js';
@@ -27,9 +27,12 @@ import { UserPromptProvider } from '../features/context/UserPromptContext.js';
 import { HooksProvider } from './contexts/HooksContext.js';
 import { ToolsProvider } from './contexts/ToolsContext.js';
 import { MCPProvider } from './contexts/MCPContext.js';
+import { WindowProvider, useWindow } from './contexts/WindowContext.js';
+import { TerminalProvider } from './contexts/TerminalContext.js';
 import { LaunchScreen } from './components/launch/LaunchScreen.js';
 import type { ProviderAdapter, ProviderRequest, ProviderEvent } from '@ollm/core';
-import { createWelcomeMessage, createCompactWelcomeMessage, CONTEXT_OPTIONS } from '../features/context/SystemMessages.js';
+import { createWelcomeMessage, createCompactWelcomeMessage, CONTEXT_OPTIONS, ContextSizeOption } from '../features/context/SystemMessages.js';
+import { ContextProfile } from '../config/types.js';
 import type { MenuOption } from '../features/context/ChatContext.js';
 import { profileManager } from '../features/context/../profiles/ProfileManager.js';
 import { SettingsService } from '../config/settingsService.js';
@@ -43,6 +46,9 @@ import { ChatInputArea } from './components/layout/ChatInputArea.js';
 import { SystemBar } from './components/layout/SystemBar.js';
 import { SidePanel } from './components/layout/SidePanel.js';
 import { Clock } from './components/layout/Clock.js';
+import { Terminal } from './components/Terminal.js';
+import { GPUInfo } from './components/layout/StatusBar.js';
+import { WindowSwitcher } from './components/WindowSwitcher.js';
 import { ModelLoadingIndicator } from './components/model/ModelLoadingIndicator.js';
 
 import { ChatTab } from './components/tabs/ChatTab.js';
@@ -58,10 +64,9 @@ import { DialogManager } from './components/dialogs/DialogManager.js';
 import { useGlobalKeyboardShortcuts } from './hooks/useKeyboardShortcuts.js';
 import { ErrorBoundary } from './components/ErrorBoundary.js';
 import { AllCallbacksBridge } from './components/AllCallbacksBridge.js';
-import { UICallbacksProvider, type UICallbacks } from './contexts/UICallbacksContext.js';
 // Dynamic require for LocalProvider to avoid build-time module resolution errors when bridge isn't installed
 declare const require: (moduleName: string) => { LocalProvider: unknown } | unknown;
-import type { Config } from '../config/types.js';
+import type { Config, Theme } from '../config/types.js';
 
 interface AppContentProps {
   config: Config;
@@ -99,11 +104,12 @@ function AppContent({ config }: AppContentProps) {
   const chatActions = { scrollUp, scrollDown };
   useReview();
   const { info: gpuInfo } = useGPU();
-  const { currentModel, setCurrentModel, modelLoading } = useModel();
+  const { currentModel, setCurrentModel, modelLoading, provider } = useModel();
   const { state: contextState, actions: contextActions } = useContextManager();
   const focusManager = useFocusManager();
   const lastWelcomeModelRef = useRef<string | null>(null);
   const prevModelLoadingRef = useRef<boolean>(modelLoading);
+  const { activeWindow } = useWindow();
 
     // Persist hardware info if newfound or better than what we have
   useEffect(() => {
@@ -114,7 +120,7 @@ function AppContent({ config }: AppContentProps) {
 
       const liveName = gpuInfo?.model || gpuInfo?.vendor || 'Unknown';
       // Convert to GB for storage
-      const liveVRAM_GB = typeof gpuInfo.vramTotal === 'number' ? gpuInfo.vramTotal / (1024 * 1024 * 1024) : 0;
+      const liveVRAM_GB = typeof gpuInfo?.vramTotal === 'number' ? gpuInfo.vramTotal / (1024 * 1024 * 1024) : 0;
 
       // Conditions to update:
       // 1. We have no saved info at all
@@ -188,7 +194,8 @@ function AppContent({ config }: AppContentProps) {
     const targetVRAM = effectiveTotalVRAM_GB * 0.8;
 
     let maxSafeSize = 4096;
-    if (profile) {
+    const manager = contextActions.getManager();
+    if (manager && provider && profile) { 
       for (const opt of profile.context_profiles) {
         const vramNum = parseFloat(opt.vram_estimate.replace(' GB', ''));
         if (!isNaN(vramNum) && vramNum <= targetVRAM) {
@@ -246,7 +253,7 @@ function AppContent({ config }: AppContentProps) {
           });
 
           optionsToUse.forEach(opt => {
-            const val = 'size' in opt ? opt.size : opt.value;
+            const val = 'size' in opt ? (opt as {size: number}).size : (opt as {value: number}).value;
             let sizeStr = `${val}`;
             if ('size_label' in opt && opt.size_label) {
               sizeStr = opt.size_label;
@@ -255,14 +262,14 @@ function AppContent({ config }: AppContentProps) {
             }
 
             let vramStr = '';
-            if ('vram_estimate' in opt) {
+            if ('vram_estimate' in opt && opt.vram_estimate) {
               vramStr = ` - ${opt.vram_estimate}`;
             }
 
             let label = `${sizeStr}${vramStr}`;
             let disabled = false;
             let vramNum = 0;
-            const vramEst = 'vram_estimate' in opt ? opt.vram_estimate : ('vramEstimate' in opt ? opt.vramEstimate : '');
+            const vramEst = ('vram_estimate' in opt ? (opt as {vram_estimate: string}).vram_estimate : (opt as {vramEstimate: string}).vramEstimate) || '';
 
             if (vramEst) {
               vramNum = parseFloat(vramEst.replace(' GB', ''));
@@ -426,9 +433,14 @@ ${toolSupport}
                 ? [{ size: manualContext, size_label: `Manual (${manualContext})`, vram_estimate: '' }, ...contextProfiles]
                 : contextProfiles;
 
-              contextOptions.forEach((opt: any) => {
-                const sizeStr = opt.size_label || (opt.size >= 1024 ? `${opt.size / 1024}k` : `${opt.size}`);
-                const vramEstimate = 'vram_estimate' in opt ? opt.vram_estimate : ('vramEstimate' in opt ? opt.vramEstimate : '');
+              contextOptions.forEach((opt: ContextProfile | ContextSizeOption) => {
+                const optIsProfile = 'size' in opt;
+                const optSize = optIsProfile ? opt.size : (opt as ContextSizeOption).value;
+                const optLabel = optIsProfile ? opt.size_label : (opt as ContextSizeOption).label;
+                const optVram = optIsProfile ? opt.vram_estimate : (opt as ContextSizeOption).vramEstimate;
+
+                const sizeStr = optLabel || (optSize >= 1024 ? `${optSize / 1024}k` : `${optSize}`);
+                const vramEstimate = optVram || '';
                 const vramStr = vramEstimate ? ` - ${vramEstimate}` : '';
 
                 let disabled = false;
@@ -442,12 +454,12 @@ ${toolSupport}
                 let label = `${sizeStr}${vramStr}`;
                 if (disabled) {
                   label += ' (Unsafe - Low VRAM)';
-                } else if (opt.size === safeSizeForModel) {
+                } else if (optSize === safeSizeForModel) {
                   label += ' (Recommended)';
                 }
 
                 modelContextOptions.push({
-                  id: `model-size-${opt.size}`,
+                  id: `model-size-${optSize}`,
                   label: label,
                   disabled: disabled,
                   action: async () => {
@@ -460,8 +472,8 @@ ${toolSupport}
                       return;
                     }
 
-                    await contextActions.resize(opt.size);
-                    SettingsService.getInstance().setContextSize(opt.size); // Persist
+                    await contextActions.resize(optSize);
+                    SettingsService.getInstance().setContextSize(optSize); // Persist
                     addMessage({
                       role: 'system',
                       content: `Selected **${modelLabel}** with **${sizeStr}** context.`,
@@ -515,7 +527,7 @@ ${toolSupport}
     ];
 
     activateMenu(mainMenuOptions, menuMessageId);
-  }, [currentModel, addMessage, activateMenu, contextActions, gpuInfo, requestManualContextInput, setCurrentModel]);
+  }, [currentModel, addMessage, activateMenu, contextActions, gpuInfo, requestManualContextInput, setCurrentModel, provider]);
 
   // Handle launch screen dismiss
   const handleDismissLaunch = useCallback(() => {
@@ -549,7 +561,7 @@ ${toolSupport}
         lastWelcomeModelRef.current = currentModel;
       }
     }
-  }, [modelLoading, currentModel, buildWelcomeMessage, addMessage]);
+  }, [modelLoading, currentModel, addMessage]);
 
   // Handle save session
   const handleSaveSession = useCallback(async () => {
@@ -725,7 +737,25 @@ ${toolSupport}
   }
 
   // Render active tab
-  const renderActiveTab = (height: number) => {
+  const renderActiveTab = (height: number, width: number) => {
+    // If we're in terminal mode, override the active tab display
+    if (activeWindow === 'terminal') {
+      const isTerminalFocused = focusManager.isFocused('chat-input') || focusManager.isFocused('nav-bar');
+      return (
+        <Box 
+          height={height} 
+          width={width}
+          borderStyle={uiState.theme.border.style as BoxProps['borderStyle']} 
+          borderColor={isTerminalFocused ? uiState.theme.border.active : uiState.theme.border.primary} 
+          flexShrink={1} 
+          flexGrow={1} 
+          overflow="hidden"
+        >
+          <Terminal height={height} />
+        </Box>
+      );
+    }
+
     switch (uiState.activeTab) {
       case 'chat':
         return (
@@ -744,27 +774,27 @@ ${toolSupport}
                 maxVisibleLines: config.ui?.reasoning?.maxVisibleLines || 8,
                 autoCollapseOnComplete: config.ui?.reasoning?.autoCollapseOnComplete !== false,
             }}
-            columnWidth={leftColumnWidth}
+            columnWidth={width}
           />
         );
       case 'tools':
-        return <Box height={height}><ToolsTab /></Box>;
+        return <ToolsTab width={width} />;
       case 'hooks':
-        return <Box height={height}><HooksTab /></Box>;
+        return <HooksTab windowWidth={width} />;
       case 'mcp':
-        return <Box height={height}><MCPTab /></Box>;
+        return <MCPTab windowWidth={width} />;
       case 'files':
-        return <Box height={height}><FilesTab /></Box>;
+        return <FilesTab width={width} />;
       case 'search':
-        return <Box height={height}><SearchTab /></Box>;
+        return <SearchTab width={width} />;
       case 'docs':
-        return <DocsTab height={height} />;
+        return <DocsTab height={height} width={width} />;
       case 'github':
-        return <Box height={height}><GitHubTab /></Box>;
+        return <GitHubTab width={width} />;
       case 'settings':
-        return <Box height={height}><SettingsTab /></Box>;
+        return <SettingsTab width={width} />;
       default:
-        return <Box height={height}><SearchTab /></Box>;
+        return <SearchTab width={width} />;
     }
   };
 
@@ -777,46 +807,69 @@ ${toolSupport}
 
 
   return (
-    <Box flexDirection="column" height={terminalHeight} width="100%">
-      {/* Main content row: left = 4-row system, right = full-height side panel */}
-      {/* Added 3-char margin to left and right via paddingX={3} */}
-      <Box flexDirection="row" flexGrow={1} minHeight={0} width="100%" paddingX={3}>
-        {/* Left Column (70%): Restructured into 4 distinct rows */}
-        <Box 
-            width={leftColumnWidth} 
-            flexDirection="column" 
-            flexShrink={0} 
-            minHeight={0}
-        >
+    <Box flexDirection="row" height={terminalHeight} width={terminalWidth} overflow="hidden">
+      {/* Left Column (70%): Restructured into 4 distinct rows */}
+      <Box 
+          width={uiState.sidePanelVisible ? leftColumnWidth - 1 : terminalWidth - 1} 
+          flexDirection="column" 
+          flexShrink={0}
+          overflow="hidden"
+          minHeight={0}
+      >
           {/* Row 1: Top Bar (5%) */}
           <Box 
             height={row1Height} 
             flexDirection="row" 
             alignItems="center" 
             justifyContent="space-between"
+            overflow="hidden"
+            flexWrap="nowrap"
           >
-            <Box flexGrow={1} borderStyle="single" borderColor={focusManager.isFocused('nav-bar') ? uiState.theme.border.active : uiState.theme.border.primary}>
-              <TabBar
-                activeTab={uiState.activeTab}
-                onTabChange={setActiveTab}
-                notifications={notificationCounts}
-                theme={uiState.theme}
-                noBorder
-              />
+            <Box flexShrink={0}>
+              <Clock borderColor={uiState.theme.border.primary} />
+            </Box>
+
+            <Box flexGrow={1} flexDirection="row" justifyContent="center">
+              <Box borderStyle={uiState.theme.border.style as BoxProps['borderStyle']} borderColor={focusManager.isFocused('nav-bar') ? uiState.theme.border.active : uiState.theme.border.primary}>
+                <TabBar
+                  activeTab={uiState.activeTab}
+                  onTabChange={setActiveTab}
+                  notifications={notificationCounts}
+                  theme={uiState.theme}
+                  noBorder
+                />
+              </Box>
             </Box>
             
-            <Box marginLeft={1}>
-              <Clock borderColor={uiState.theme.border.primary} />
+            <Box flexShrink={0}>
+              <WindowSwitcher />
             </Box>
           </Box>
 
           {/* Model Loading Indicator - shows during warmup */}
           <ModelLoadingIndicator />
 
-          {/* Row 2: Chat Box (60%, Blue) */}
-          <Box flexGrow={1} minHeight={row2Height}>
-            {renderActiveTab(row2Height)}
-          </Box>
+          {/* Row 2: Main Content Area with 10/80/10 split */}
+          {(() => {
+            const leftColBaseWidth = uiState.sidePanelVisible ? leftColumnWidth - 1 : terminalWidth - 1;
+            const spacerWidth = Math.floor(leftColBaseWidth * 0.1);
+            const mainContentWidth = leftColBaseWidth - (2 * spacerWidth);
+            
+            return (
+              <Box flexGrow={1} minHeight={row2Height} flexDirection="row" width={leftColBaseWidth}>
+                {/* Left Spacer */}
+                <Box width={spacerWidth} />
+                
+                {/* Middle Content */}
+                <Box width={mainContentWidth} flexDirection="column">
+                  {renderActiveTab(row2Height, mainContentWidth)}
+                </Box>
+                
+                {/* Right Spacer */}
+                <Box width={spacerWidth} />
+              </Box>
+            );
+          })()}
           
           {/* Row 3: System Bar (10%, Yellow) */}
           <SystemBar height={row3Height} showBorder={true} />
@@ -827,17 +880,17 @@ ${toolSupport}
 
         {/* Right: Full-Height Side Panel (30%) */}
         {uiState.sidePanelVisible && (
-          <Box width={rightColumnWidth} flexShrink={0} minHeight={0}>
+          <Box width={Math.max(0, rightColumnWidth - 2)} flexShrink={0} minHeight={0} overflow="hidden">
             <SidePanel
               visible={uiState.sidePanelVisible}
               connection={{ status: 'connected', provider: config.provider.default }}
               model={currentModel || 'model'}
-              gpu={gpuInfo as any}
+              gpu={gpuInfo as unknown as GPUInfo | null}
               theme={uiState.theme}
+              row1Height={row1Height}
             />
           </Box>
         )}
-      </Box>
 
       {/* Dialog Manager - renders active dialogs */}
       <DialogManager />
@@ -973,7 +1026,7 @@ export function App({ config }: AppProps) {
   const initialThemeName = SettingsService.getInstance().getTheme() || config.ui?.theme || 'default-dark';
   let initialTheme = defaultDarkTheme;
   try {
-    const { builtInThemes } = require('../config/styles.js') as any;
+    const { builtInThemes } = require('../config/styles.js') as { builtInThemes: Record<string, Theme> };
     if (builtInThemes[initialThemeName]) {
       initialTheme = builtInThemes[initialThemeName];
     }
@@ -990,7 +1043,9 @@ export function App({ config }: AppProps) {
         initialSidePanelVisible={initialSidePanelVisible}
         initialTheme={initialTheme}
       >
-        <SettingsProvider>
+        <WindowProvider>
+          <TerminalProvider>
+            <SettingsProvider>
           <DialogProvider>
             <ServiceProvider
               provider={provider}
@@ -1043,6 +1098,8 @@ export function App({ config }: AppProps) {
           </ServiceProvider>
           </DialogProvider>
         </SettingsProvider>
+          </TerminalProvider>
+        </WindowProvider>
       </UIProvider>
     </ErrorBoundary>
   );

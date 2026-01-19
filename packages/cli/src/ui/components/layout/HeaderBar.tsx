@@ -1,4 +1,4 @@
-﻿import { Box, Text } from 'ink';
+﻿import { Box, Text, BoxProps } from 'ink';
 import { ConnectionStatus, GPUInfo } from './StatusBar.js';
 import { Theme } from '../../../config/types.js';
 
@@ -7,6 +7,7 @@ export interface HeaderBarProps {
   model: string;
   gpu: GPUInfo | null;
   theme: Theme;
+  borderColor?: string;
 }
 
 function formatMB(bytes: number): string {
@@ -15,35 +16,29 @@ function formatMB(bytes: number): string {
   return `${gb.toFixed(1)} GB`;
 }
 
-export function HeaderBar({ connection, model, gpu, theme }: HeaderBarProps) {
+export function HeaderBar({ connection, model, gpu, theme, borderColor }: HeaderBarProps) {
   const providerName = connection.provider || 'Ollama';
 
   return (
-    <Box
-      flexDirection="row"
-      width="100%"
-      alignItems="center"
-      justifyContent="center"
+    <Box 
+      borderStyle={theme.border.style as BoxProps['borderStyle']} 
+      borderColor={borderColor || theme.border.primary} 
       paddingX={1}
-      flexWrap="wrap"
+      overflow="hidden"
     >
-      <Text>
+      <Text wrap="truncate-end">
         <Text color={theme.text.accent}>* </Text>
         <Text color={theme.text.secondary}>{providerName}</Text>
         <Text color={theme.text.secondary}> | </Text>
-
         <Text color={theme.text.primary} bold>L:</Text>
         <Text color={theme.text.secondary} bold>{model}</Text>
         <Text color={theme.text.secondary}> | </Text>
-
         <Text color={theme.text.secondary}>V:</Text>
-        <Text color={theme.text.primary}>
-          {gpu?.available ? `${formatMB(gpu.vramUsed)}/${formatMB(gpu.vramTotal)}` : 'N/A'}
-        </Text>
+        <Text color={theme.text.primary}>{gpu?.available ? `${formatMB(gpu.vramUsed)}/${formatMB(gpu.vramTotal)}` : 'N/A'}</Text>
         <Text color={theme.text.secondary}> | </Text>
-
-        <Text color={theme.text.secondary}>{'\u{1F321}'}</Text>
-        <Text color={theme.text.primary}>{gpu?.temperature || 0}C</Text>
+        <Text color={theme.text.secondary}>T:</Text>
+        <Text color={theme.text.primary}>{gpu?.temperature || 0}</Text>
+        <Text color={theme.text.primary}>°C</Text>
       </Text>
     </Box>
   );

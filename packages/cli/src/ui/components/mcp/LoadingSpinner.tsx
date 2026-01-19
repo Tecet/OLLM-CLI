@@ -8,7 +8,7 @@
  */
 
 import React from 'react';
-import { Box, Text } from 'ink';
+import { Box } from 'ink';
 import { StreamingIndicator, type SpinnerType } from '../chat/StreamingIndicator.js';
 
 export interface LoadingSpinnerProps {

@@ -231,7 +231,7 @@ describe('MCPTab Integration Tests', () => {
       await new Promise(resolve => setTimeout(resolve, 200));
 
       // Verify server is displayed as enabled
-      let frame = lastFrame();
+      const frame = lastFrame();
       expect(frame).toContain(serverName);
 
       // Navigate down from Exit item to first server
@@ -293,7 +293,7 @@ describe('MCPTab Integration Tests', () => {
       await new Promise(resolve => setTimeout(resolve, 200));
 
       // Verify server is displayed
-      let frame = lastFrame();
+      const frame = lastFrame();
       expect(frame).toContain(serverName);
 
       // Navigate to first server
@@ -820,7 +820,7 @@ describe('MCPTab Integration Tests', () => {
       await new Promise(resolve => setTimeout(resolve, 100));
 
       // Verify dialog is open
-      let frame = lastFrame();
+      const frame = lastFrame();
       expect(frame).toContain('Configure Server');
       
       // The dialog component handles its own save logic
@@ -1187,7 +1187,7 @@ describe('MCPTab Integration Tests', () => {
       await new Promise(resolve => setTimeout(resolve, 100));
 
       // Verify dialog is open
-      let frame = lastFrame();
+      const frame = lastFrame();
       expect(frame).toContain('Configure Server');
 
       // Close dialog with Esc
@@ -1701,7 +1701,7 @@ describe('MCPTab Integration Tests', () => {
       await new Promise(resolve => setTimeout(resolve, 100));
 
       // Verify dialog shows not connected initially
-      let frame = lastFrame();
+      const frame = lastFrame();
       expect(frame).toContain('OAuth Configuration');
 
       // The dialog handles the authorization flow and UI updates
@@ -2230,7 +2230,7 @@ describe('MCPTab Integration Tests', () => {
       await new Promise(resolve => setTimeout(resolve, 200));
 
       // Verify no servers initially
-      let frame = lastFrame();
+      const frame = lastFrame();
       expect(frame).not.toContain('test-server');
 
       // Press M to open marketplace
@@ -2330,7 +2330,7 @@ describe('MCPTab Integration Tests', () => {
 
     it('should verify server appears in list after installation', async () => {
       // Setup: Start with no servers
-      let currentServers = new Map();
+      const currentServers = new Map();
 
       mockConfigService.loadMCPConfig.mockResolvedValue({
         mcpServers: {},
@@ -2456,7 +2456,7 @@ describe('MCPTab Integration Tests', () => {
     it('should validate full installation flow end-to-end', async () => {
       // Setup: Complete flow from marketplace to installed server
       let currentConfig = { mcpServers: {} };
-      let currentServers = new Map();
+      const currentServers = new Map();
 
       mockConfigService.loadMCPConfig.mockImplementation(async () => currentConfig);
       mockConfigService.updateServerConfig.mockImplementation(async (name, config) => {
@@ -2607,7 +2607,7 @@ describe('MCPTab Integration Tests', () => {
       await new Promise(resolve => setTimeout(resolve, 200));
 
       // Verify initial healthy status
-      let frame = lastFrame();
+      const frame = lastFrame();
       expect(frame).toContain(serverName);
 
       // Simulate health status change to degraded
@@ -2922,7 +2922,7 @@ describe('MCPTab Integration Tests', () => {
       await new Promise(resolve => setTimeout(resolve, 200));
 
       // Verify all servers are displayed
-      let frame = lastFrame();
+      const frame = lastFrame();
       expect(frame).toContain('healthy-server');
       expect(frame).toContain('degraded-server');
       expect(frame).toContain('unhealthy-server');

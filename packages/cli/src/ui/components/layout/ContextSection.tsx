@@ -2,8 +2,10 @@ import React from 'react';
 import { Box, Text } from 'ink';
 import { useActiveContext } from '../../../features/context/ActiveContextState.js';
 import { ModeConfidenceDisplay } from './ModeConfidenceDisplay.js';
+import { useUI } from '../../../features/context/UIContext.js';
 
 export function ContextSection() {
+  const { state: uiState } = useUI();
   const { 
     activeSkills, 
     activeHooks,
@@ -19,7 +21,7 @@ export function ContextSection() {
 
 
   return (
-    <Box flexDirection="column" width="100%">
+    <Box flexDirection="column" alignItems="flex-start">
       {/* Mode Confidence Display */}
       <Box marginBottom={1}>
         <ModeConfidenceDisplay
@@ -30,38 +32,42 @@ export function ContextSection() {
           modeDuration={modeDuration}
           suggestedModes={suggestedModes}
           allowedTools={allowedTools}
+          theme={uiState.theme}
         />
       </Box>
       
-      <Box flexDirection="column" width="100%" paddingX={1}>
-        {/* Active Skills */}
-        <Box>
-          <Text color="green" bold>Active Skills: </Text>
-          {activeSkills.length === 0 ? (
-            <Text dimColor>None</Text>
-          ) : (
-            <Text>{activeSkills.join(', ')}</Text>
-          )}
+      <Box flexDirection="column" paddingX={1} alignItems="flex-start">
+        <Box flexDirection="column" marginBottom={1} alignSelf="flex-start">
+          <Text color="green" bold>Active Skills:</Text>
+          <Box marginLeft={1} alignSelf="flex-start">
+            {activeSkills.length === 0 ? (
+              <Text dimColor>None</Text>
+            ) : (
+              <Text color={uiState.theme.text.primary}>{activeSkills.join(', ')}</Text>
+            )}
+          </Box>
         </Box>
 
-        {/* MCP Servers */}
-        <Box>
-          <Text color="magenta" bold>MCP Servers:  </Text>
-          {activeMcpServers.length === 0 ? (
-            <Text dimColor>None</Text>
-          ) : (
-            <Text>{activeMcpServers.join(', ')}</Text>
-          )}
+        <Box flexDirection="column" marginBottom={1} alignSelf="flex-start">
+          <Text color="magenta" bold>MCP Servers:</Text>
+          <Box marginLeft={1} alignSelf="flex-start">
+            {activeMcpServers.length === 0 ? (
+              <Text dimColor>None</Text>
+            ) : (
+              <Text color={uiState.theme.text.primary}>{activeMcpServers.join(', ')}</Text>
+            )}
+          </Box>
         </Box>
 
-        {/* Active Hooks */}
-        <Box>
-          <Text color="cyan" bold>Active Hooks:  </Text>
-          {activeHooks.length === 0 ? (
-            <Text dimColor>None</Text>
-          ) : (
-            <Text>{activeHooks.join(', ')}</Text>
-          )}
+        <Box flexDirection="column" alignSelf="flex-start">
+          <Text color="cyan" bold>Active Hooks:</Text>
+          <Box marginLeft={1} alignSelf="flex-start">
+            {activeHooks.length === 0 ? (
+              <Text dimColor>None</Text>
+            ) : (
+              <Text color={uiState.theme.text.primary}>{activeHooks.join(', ')}</Text>
+            )}
+          </Box>
         </Box>
       </Box>
     </Box>

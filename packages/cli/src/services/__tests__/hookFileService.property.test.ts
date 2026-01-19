@@ -4,10 +4,13 @@
  * Task: 5.4.2 Property: Hook validation
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fc from 'fast-check';
 import { HookFileService } from '../hookFileService.js';
 import type { UIHookEventType, UIHookActionType } from '../../features/hooks/types.js';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as os from 'os';
 
 describe('HookFileService Property Tests', () => {
   const service = new HookFileService();
@@ -476,10 +479,6 @@ describe('HookFileService Property Tests', () => {
  * **Validates: Requirements 3.1, 4.2**
  */
 describe('HookFileService File Persistence Property Tests', () => {
-  const fs = require('fs');
-  const path = require('path');
-  const os = require('os');
-  
   let service: HookFileService;
   let testDir: string;
   

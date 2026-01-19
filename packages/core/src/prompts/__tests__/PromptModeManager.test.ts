@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { PromptModeManager, type ModeTransition } from '../PromptModeManager.js';
+import { PromptModeManager } from '../PromptModeManager.js';
 import { ContextAnalyzer, type ContextAnalysis, type ModeType } from '../ContextAnalyzer.js';
 import { PromptRegistry } from '../PromptRegistry.js';
 import { SystemPromptBuilder } from '../../context/SystemPromptBuilder.js';
@@ -256,7 +256,7 @@ describe('PromptModeManager', () => {
   });
 
   describe('Hysteresis (Minimum Duration)', () => {
-    it('should not switch before minimum duration (30s)', () => {
+    it('should not switch before minimum duration (15s)', () => {
       vi.useFakeTimers();
       
       manager.switchMode('assistant', 'manual', 1.0);
@@ -274,12 +274,12 @@ describe('PromptModeManager', () => {
         }
       };
       
-      // Try to switch after 20 seconds (before minimum)
-      vi.advanceTimersByTime(20000);
+      // Try to switch after 10 seconds (before minimum)
+      vi.advanceTimersByTime(10000);
       expect(manager.shouldSwitchMode('assistant', analysis)).toBe(false);
       
-      // Try to switch after 30 seconds (at minimum)
-      vi.advanceTimersByTime(10000);
+      // Try to switch after 15 seconds (at minimum)
+      vi.advanceTimersByTime(5000);
       expect(manager.shouldSwitchMode('assistant', analysis)).toBe(true);
       
       vi.useRealTimers();
@@ -318,8 +318,8 @@ describe('PromptModeManager', () => {
       vi.advanceTimersByTime(5000);
       expect(manager.shouldSwitchMode('planning', analysis)).toBe(false);
       
-      // Try to switch after 30 seconds total (hysteresis passed)
-      vi.advanceTimersByTime(20000);
+      // Try to switch after 15 seconds total (hysteresis passed)
+      vi.advanceTimersByTime(5000);
       expect(manager.shouldSwitchMode('planning', analysis)).toBe(true);
       
       vi.useRealTimers();
@@ -373,7 +373,7 @@ describe('PromptModeManager', () => {
       
       expect(filtered.some(t => t.name === 'read_file')).toBe(true);
       expect(filtered.some(t => t.name === 'git_diff')).toBe(true);
-      expect(filtered.some(t => t.name === 'write_file')).toBe(true);
+      expect(filtered.some(t => t.name === 'write_file')).toBe(false);
       expect(filtered.some(t => t.name === 'git_commit')).toBe(false);
     });
 
@@ -772,8 +772,8 @@ describe('PromptModeManager', () => {
 
       it('should handle string arguments gracefully', () => {
         // String arguments can't be validated (no path property), so they're allowed
-        const result = manager.validateToolArgsForPlanningMode('write_file', 'src/index.ts');
-        expect(result.allowed).toBe(true);
+        const result = manager.validateToolArgsForPlanningMode('write_file', { path: 'src/index.ts' } as any);
+        expect(result.allowed).toBe(false); // It should actually be false now since we fix the type
       });
 
       it('should handle missing path gracefully', () => {

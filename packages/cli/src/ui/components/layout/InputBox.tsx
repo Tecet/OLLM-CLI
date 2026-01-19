@@ -157,7 +157,7 @@ export const InputBox = React.memo(function InputBox({
         <Text color={theme.text.secondary} dimColor>
           {historyIndex >= 0 
             ? `[Editing message ${userMessages.length - historyIndex} of ${userMessages.length}]`
-            : ' '}
+            : ''}
         </Text>
       </Box>
 
@@ -181,24 +181,24 @@ export const InputBox = React.memo(function InputBox({
             <Text bold color={theme.text.accent}>{'> '}</Text>
             <Text color={theme.text.primary} italic>
               {`[Pasted Content: ${localInput.length} chars] `}
-              <Text inverse>{' '}</Text>
+              <Text inverse>{''}</Text>
             </Text>
           </Box>
         ) : (
           lines.map((line, index) => {
             const isCurrentLine = index === currentLineIndex;
-            const displayLine = line || ' '; // Show space for empty lines
+            const displayLine = line || '';
 
             return (
               <Box key={index} flexDirection="row">
                 <Box width={2}>
-                  {index === 0 ? <Text bold color={theme.text.accent}>{'> '}</Text> : <Text> </Text>}
+                  {index === 0 ? <Text bold color={theme.text.accent}>{'> '}</Text> : null}
                 </Box>
                 <Text color={theme.text.primary}>
                   {isCurrentLine && cursorInLine <= line.length ? (
                     <Text>
                       <Text>{displayLine.slice(0, cursorInLine)}</Text>
-                      <Text inverse>{displayLine[cursorInLine] || ' '}</Text>
+                      <Text inverse>{displayLine[cursorInLine] || ''}</Text>
                       <Text>{displayLine.slice(cursorInLine + 1)}</Text>
                     </Text>
                   ) : (

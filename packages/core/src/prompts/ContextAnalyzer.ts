@@ -6,6 +6,7 @@
  */
 
 import type { Message } from '../provider/types.js';
+import { MODE_METADATA } from './templates/modes/index.js';
 
 /**
  * Available mode types in the system
@@ -182,14 +183,8 @@ export class ContextAnalyzer {
     const analysis = this.analyzeConversation(messages);
     
     const getIcon = (mode: ModeType): string => {
-      const icons: Record<ModeType, string> = {
-        assistant: '💬',
-        planning: '📋',
-        developer: '👨‍💻',
-        debugger: '🐛',
-        reviewer: '👀'
-      };
-      return icons[mode] || '💬';
+      const metadata = (MODE_METADATA as Record<string, { icon: string }>)[mode] || MODE_METADATA.assistant;
+      return metadata.icon;
     };
 
     const generateReason = (mode: ModeType, _confidence: number): string => {
@@ -234,33 +229,40 @@ export class ContextAnalyzer {
     let confidence = 0.0;
     const keywords = MODE_KEYWORDS[mode] || [];
     
-    // Analyze each message with exponential decay (recent messages weighted higher)
-    messages.forEach((message, index) => {
-      const weight = Math.pow(1.5, index);
-      const text = message.parts
-        .filter(p => p.type === 'text')
-        .map(p => (p as { type: 'text'; text: string }).text)
-        .join(' ')
-        .toLowerCase();
-      
-      // Count keyword matches
-      let matchCount = 0;
-      for (const keyword of keywords) {
-        if (text.includes(keyword.toLowerCase())) {
-          matchCount++;
+    // Use simple loops to avoid any potential scope/closure weirdness
+    for (let i = 0; i < messages.length; i++) {
+        const message = messages[i];
+        const weight = Math.pow(1.5, i);
+        
+        let text = "";
+        if (message.parts) {
+            for (const part of message.parts) {
+                 if (part.type === 'text') {
+                     text += (part as any).text + " ";
+                 }
+            }
         }
-      }
-      
-      if (matchCount > 0) {
-        const keywordScore = Math.min(matchCount, 3) / 3;
-        confidence += keywordScore * weight * 0.4;
-      }
-      
-      // Boost for explicit mode requests
-      if (this.detectExplicitModeRequest(text, mode)) {
-        confidence += 0.8 * weight;
-      }
-    });
+        text = text.toLowerCase();
+        
+        // Count matches
+        let matchCount = 0;
+        if (keywords && keywords.length > 0) {
+            for (const keyword of keywords) {
+                if (text.indexOf(keyword.toLowerCase()) !== -1) {
+                    matchCount++;
+                }
+            }
+        }
+        
+        if (matchCount > 0) {
+            const keywordScore = Math.min(matchCount, 3) / 3;
+            confidence += keywordScore * weight * 0.4;
+        }
+
+        if (this.detectExplicitModeRequest(text, mode)) {
+             confidence += 0.8 * weight;
+        }
+    }
     
     return Math.min(confidence / 4.0, 1.0);
   }

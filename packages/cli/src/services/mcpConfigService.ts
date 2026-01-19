@@ -50,10 +50,17 @@ export class MCPConfigService {
   private listeners: ConfigChangeListener[] = [];
   private isWatching = false;
 
-  constructor() {
-    // User-level config: ~/.ollm/settings/mcp.json
+  /**
+   * Create a new MCP Configuration Service
+   * @param basePath - Optional base path for config files (for testing)
+   */
+  constructor(basePath?: string) {
+    // Use basePath if provided (for tests), otherwise use os.homedir()
+    const homeDir = basePath || os.homedir();
+    
+    // User-level config: ~/.ollm/settings/mcp.json (or basePath/.ollm/settings/mcp.json in tests)
     this.userConfigPath = path.join(
-      os.homedir(),
+      homeDir,
       '.ollm',
       'settings',
       'mcp.json'

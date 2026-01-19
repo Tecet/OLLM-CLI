@@ -5,11 +5,13 @@
  * preventing re-renders from other chat state changes (like messages during streaming).
  */
 import React, { memo, useCallback, useMemo } from 'react';
-import { Box, Text, useInput } from 'ink';
+import { Box, Text, useInput, BoxProps } from 'ink';
 import { InputBox } from './InputBox.js';
-import { useChat } from '../../../features/context/ChatContext.js';
+import { useChat, Message } from '../../../features/context/ChatContext.js';
 import { useUI } from '../../../features/context/UIContext.js';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
+import { useWindow } from '../../contexts/WindowContext.js';
+import { useTerminal } from '../../hooks/useTerminal.js';
 
 export interface ChatInputAreaProps {
   /** Optional assigned height from layout */
@@ -22,28 +24,42 @@ export const ChatInputArea = memo(function ChatInputArea({ height, showBorder = 
   const { state: chatState, setCurrentInput, sendMessage, executeMenuOption, navigateMenu, setInputMode, setMenuState } = useChat();
   const { state: uiState } = useUI();
   const { isFocused, exitToNavBar } = useFocusManager();
+  const { activeWindow, switchWindow } = useWindow();
+  const { sendCommand } = useTerminal();
   
   const hasFocus = isFocused('chat-input');
+  const isTerminalActive = activeWindow === 'terminal';
   
   const { currentInput, streaming, waitingForResponse, messages } = chatState;
   const theme = uiState.theme;
 
   // Memoize user messages to prevent re-renders
   const userMessages = useMemo(() => 
-    messages.filter(m => m.role === 'user').map(m => m.content),
+    messages.filter(m => m.role === 'user').map((m: Message) => m.content),
     [messages]
   );
 
   // Memoize submit handler
   const handleSubmit = useCallback(async (value: string) => {
     if (value.trim()) {
-      await sendMessage(value);
+      if (isTerminalActive) {
+        sendCommand(value);
+        setCurrentInput(''); // Clear input after sending to terminal
+      } else {
+        await sendMessage(value);
+      }
     }
-  }, [sendMessage]);
+  }, [sendMessage, isTerminalActive, sendCommand, setCurrentInput]);
 
   useInput(async (input, key) => {
       // Input Logic only works if we have focus!
       if (!hasFocus) return;
+
+      // Window switching logic - cycle through windows with arrows
+      if (key.leftArrow || key.rightArrow) {
+          switchWindow();
+          return;
+      }
 
       if (chatState.inputMode !== 'menu') return;
 
@@ -66,6 +82,7 @@ export const ChatInputArea = memo(function ChatInputArea({ height, showBorder = 
   // Border Color Logic
   let borderColor = theme.border.primary;
   if (hasFocus) borderColor = theme.border.active;
+  if (isTerminalActive && hasFocus) borderColor = 'cyan';
 
   const totalMenuOptions = chatState.menuState.options.length;
   const menuPaddingTop = 1;
@@ -86,11 +103,17 @@ export const ChatInputArea = memo(function ChatInputArea({ height, showBorder = 
     menuStartIndex + menuWindowSize
   );
 
+  // Determine placeholder based on mode
+  let placeholder = hasFocus ? 'Type a message... (Enter to send)' : 'Focus elsewhere... (Ctrl+Space to focus)';
+  if (isTerminalActive) {
+    placeholder = hasFocus ? 'Enter terminal command... (Enter to execute)' : 'Terminal inactive...';
+  }
+
   return (
     <Box 
       height={height} 
-      width="100%" 
-      borderStyle={showBorder ? 'single' : undefined} 
+      width="100%"
+      borderStyle={showBorder ? (theme.border.style as BoxProps['borderStyle']) : undefined} 
       borderColor={borderColor}
     >
       {chatState.inputMode === 'text' ? (
@@ -99,8 +122,8 @@ export const ChatInputArea = memo(function ChatInputArea({ height, showBorder = 
           onChange={setCurrentInput}
           onSubmit={handleSubmit}
           userMessages={userMessages}
-          placeholder={hasFocus ? 'Type a message... (Enter to send)' : 'Focus elsewhere... (Ctrl+Space to focus)'}
-          disabled={streaming || waitingForResponse || !hasFocus} 
+          placeholder={placeholder}
+          disabled={(!isTerminalActive && (streaming || waitingForResponse)) || !hasFocus} 
           theme={theme}
         />
       ) : (

@@ -66,6 +66,9 @@ export interface ModelContextValue {
 
 const ModelContext = createContext<ModelContextValue | undefined>(undefined);
 
+// Session overrides expire after 1 hour
+const SESSION_OVERRIDE_TTL = 60 * 60 * 1000;
+
 export interface ModelProviderProps {
   children: ReactNode;
   provider: ProviderAdapter;
@@ -107,9 +110,6 @@ export function ModelProvider({
   
   const toolSupportOverridesRef = useRef<Map<string, ToolSupportOverride>>(new Map());
   
-  // Session overrides expire after 1 hour
-  const SESSION_OVERRIDE_TTL = 60 * 60 * 1000;
-
   // Track recent error prompts to debounce repeated errors
   const recentErrorPromptsRef = useRef<Map<string, number>>(new Map());
   const ERROR_PROMPT_DEBOUNCE_MS = 60000; // Don't prompt again within 60 seconds
@@ -197,14 +197,6 @@ export function ModelProvider({
   }, []);
   
   /**
-   * Clear tool support override for a model
-   * @param model - The model ID
-   */
-  const clearToolSupportOverride = useCallback((model: string) => {
-    toolSupportOverridesRef.current.delete(model);
-  }, []);
-
-  /**
    * Check if an error message indicates a timeout
    * @param message - The error message to check
    * @returns True if the message indicates a timeout
@@ -289,29 +281,6 @@ export function ModelProvider({
       addSystemMessage(`Tool support setting not changed for "${model}".`);
     }
   }, [isToolUnsupportedError, saveToolSupport, promptUser, addSystemMessage]);
-
-  /**
-   * Check if a new override source should take precedence over an existing one
-   * Priority: user_confirmed > auto_detected > runtime_error > profile
-   * @param existing - The existing override entry
-   * @param newSource - The new source to check
-   * @returns True if the new source should override the existing one
-   */
-  const checkOverridePrecedence = useCallback((
-    existing: { source: string; timestamp: number } | undefined,
-    newSource: 'profile' | 'runtime_error' | 'user_confirmed' | 'auto_detected'
-  ): boolean => {
-    if (!existing) return true;
-    
-    const precedence = {
-      'user_confirmed': 4,
-      'auto_detected': 3,
-      'runtime_error': 2,
-      'profile': 1,
-    };
-    
-    return precedence[newSource] >= precedence[existing.source as keyof typeof precedence];
-  }, []);
 
   /**
    * Auto-detect tool support by sending a test request with minimal tool schema

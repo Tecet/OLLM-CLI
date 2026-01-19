@@ -95,7 +95,7 @@ export type HealthMonitorEventListener = (event: HealthMonitorEvent) => void;
  * Default configuration values
  */
 const DEFAULT_CONFIG: Required<HealthMonitorConfig> = {
-  checkInterval: 30000, // 30 seconds
+  checkInterval: 5000, // 5 seconds (reduced from 30s for faster status updates)
   maxRestartAttempts: 3,
   initialBackoffDelay: 1000, // 1 second
   maxBackoffDelay: 60000, // 1 minute

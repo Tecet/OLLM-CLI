@@ -31,7 +31,7 @@ export interface ButtonProps {
  */
 export function Button({
   label,
-  onPress,
+  _onPress,
   disabled = false,
   loading = false,
   variant = 'primary',
@@ -112,7 +112,7 @@ export interface IconButtonProps {
 
 export function IconButton({
   icon,
-  onPress,
+  _onPress,
   disabled = false,
   loading = false,
   tooltip,

@@ -17,7 +17,7 @@ import React, { useState, useCallback } from 'react';
 import { Box, Text } from 'ink';
 import { Dialog } from './Dialog.js';
 import { FormField } from '../forms/FormField.js';
-import { TextInput, validators, combineValidators } from '../forms/TextInput.js';
+import { TextInput, validators } from '../forms/TextInput.js';
 import { Button, ButtonGroup } from '../forms/Button.js';
 import { CheckboxGroup } from '../forms/Checkbox.js';
 import { Tooltip } from '../forms/Tooltip.js';
@@ -150,7 +150,7 @@ export function ServerConfigDialog({
 
     try {
       // Build config for testing
-      const testConfig: MCPServerConfig = {
+      const _testConfig: MCPServerConfig = {
         command,
         args: args.split(' ').filter(arg => arg.trim()),
         env: envVars.reduce((acc, { key, value }) => {

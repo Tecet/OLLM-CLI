@@ -39,7 +39,8 @@ describe('MCPTab Property-Based Tests', () => {
     process.chdir(testDir);
 
     // Create a new config service instance for testing
-    configService = new MCPConfigService();
+    // Pass testDir as basePath to prevent writing to production config
+    configService = new MCPConfigService(testDir);
   });
 
   afterEach(async () => {

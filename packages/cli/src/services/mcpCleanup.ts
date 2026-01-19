@@ -72,7 +72,7 @@ export class MCPCleanupService {
       
       // Find entries matching the package name
       const matchingEntries = entries.filter(entry => 
-        entry.includes(packageName.replace(/[@\/]/g, '+'))
+        entry.includes(packageName.replace(/[@/]/g, '+'))
       );
 
       // Remove matching cache entries
@@ -91,7 +91,7 @@ export class MCPCleanupService {
         await execAsync(`npm cache clean ${packageName} --force`, {
           timeout: 5000,
         });
-      } catch (error) {
+      } catch {
         // Ignore errors - cache clean is best-effort
       }
     } catch (error) {
@@ -184,7 +184,7 @@ export class MCPCleanupService {
           size += stats.size;
         }
       }
-    } catch (error) {
+    } catch {
       // Ignore errors for individual files
     }
 

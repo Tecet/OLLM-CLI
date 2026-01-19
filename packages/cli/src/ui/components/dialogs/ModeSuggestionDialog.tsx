@@ -38,22 +38,6 @@ const MODE_ICONS: Record<string, string> = {
 };
 
 /**
- * Mode colors for visual display
- */
-const MODE_COLORS: Record<string, string> = {
-  assistant: 'blue',
-  planning: 'yellow',
-  developer: 'green',
-  tool: 'cyan',
-  debugger: 'red',
-  security: 'magenta',
-  reviewer: '#FFA500',  // orange
-  performance: 'magenta',
-  prototype: 'cyan',
-  teacher: 'yellow'
-};
-
-/**
  * Dialog for suggesting mode transitions
  */
 export function ModeSuggestionDialog({

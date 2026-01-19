@@ -233,7 +233,7 @@ export class MCPConfigBackupService {
       }
 
       return true;
-    } catch (error) {
+    } catch {
       return false;
     }
   }
@@ -254,8 +254,26 @@ export class MCPConfigBackupService {
       return true;
     }
 
-    // If no backup available, create a new empty configuration
-    console.log('No backup available, creating new empty configuration');
+    // If no backup available, check if the current file is actually corrupted
+    // Don't overwrite a valid config just because backups don't exist!
+    try {
+      if (fs.existsSync(configPath)) {
+        const content = await fs.promises.readFile(configPath, 'utf-8');
+        const data = JSON.parse(content);
+        
+        // If we can parse it and it has the right structure, it's not corrupted
+        if (data && typeof data === 'object' && data.mcpServers && typeof data.mcpServers === 'object') {
+          console.log('Current configuration is valid, not overwriting');
+          return true; // File is fine, no need to create empty config
+        }
+      }
+    } catch (_checkError) {
+      // File is truly corrupted or missing, proceed to create empty config
+      console.log('Configuration is truly corrupted or missing');
+    }
+
+    // Only create empty config if file is missing or truly corrupted
+    console.log('No backup available and file is corrupted/missing, creating new empty configuration');
 
     try {
       const emptyConfig: MCPConfigFile = {

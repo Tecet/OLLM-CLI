@@ -5,7 +5,6 @@
  */
 
 import * as lancedb from 'vectordb';
-import { join } from 'path';
 import { mkdir } from 'fs/promises';
 import type { RAGConfig } from './RAGSystem.js';
 

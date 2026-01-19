@@ -84,7 +84,7 @@ export const defaultConfig: Config = {
   ui: {
     layout: 'hybrid',
     sidePanel: true,
-    theme: 'default-dark',
+    theme: 'solarized-dark',
     showGpuStats: true,
     showCost: true,
     metrics: {

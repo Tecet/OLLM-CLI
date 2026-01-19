@@ -222,6 +222,7 @@ export interface Theme {
     primary: string;
     secondary: string;
     active: string;
+    style?: 'round' | 'single' | 'double' | 'bold' | 'ascii';
   };
   diff: {
     added: string;

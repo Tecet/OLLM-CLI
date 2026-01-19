@@ -16,11 +16,19 @@ import { useFocusManager } from '../../../features/context/FocusContext.js';
  * - Results List: Arrow Up -> Header. Enter -> Select.
  * - Esc: Exit to Nav.
  */
-export function SearchTab() {
+export interface SearchTabProps {
+  width?: number;
+}
+
+export function SearchTab({ width }: SearchTabProps) {
   const { state: uiState } = useUI();
   const { isFocused, exitToNavBar } = useFocusManager();
   const [searchQuery, setSearchQuery] = useState('');
   
+  // Calculate absolute widths if width is provided
+  const absoluteLeftWidth = width ? Math.floor(width * 0.3) : undefined;
+  const absoluteRightWidth = width && absoluteLeftWidth ? (width - absoluteLeftWidth) : undefined;
+
   // Internal focus state: 'input' (header) or 'results' (left column)
   const [activeRegion, setActiveRegion] = useState<'input' | 'results'>('input');
   
@@ -68,7 +76,7 @@ export function SearchTab() {
   }, { isActive: hasFocus });
 
   return (
-    <Box flexDirection="column" height="100%">
+    <Box flexDirection="column" height="100%" width={width}>
       {/* Header with Search Input */}
       <Box
         borderStyle="single"
@@ -76,12 +84,14 @@ export function SearchTab() {
         paddingX={1}
         flexShrink={0}
         flexDirection="row"
+        width="100%"
+        overflow="hidden"
       >
-        <Box width="30%" borderStyle="single" borderTop={false} borderBottom={false} borderLeft={false} borderRight={true} borderColor={uiState.theme.border.primary} marginRight={1}>
+        <Box width={absoluteLeftWidth ?? "30%"} borderStyle="single" borderTop={false} borderBottom={false} borderLeft={false} borderRight={true} borderColor={uiState.theme.border.primary} marginRight={1} flexShrink={0}>
            <Text bold color={uiState.theme.text.accent}>Semantic Search</Text>
         </Box>
-        <Box flexGrow={1}>
-           <Text color={uiState.theme.text.secondary}>
+        <Box flexGrow={1} flexShrink={1}>
+           <Text color={uiState.theme.text.secondary} wrap="truncate-end">
             🔍 Search: <Text color={uiState.theme.text.primary}>
               {searchQuery}
               {hasFocus && activeRegion === 'input' && <Text inverse> </Text>}
@@ -91,14 +101,15 @@ export function SearchTab() {
       </Box>
 
       {/* Two-column layout */}
-      <Box flexGrow={1} overflow="hidden">
+      <Box flexGrow={1} overflow="hidden" flexDirection="row" width="100%">
         {/* Left column: Search Results (30%) */}
         <Box 
           flexDirection="column" 
-          width="30%" 
+          width={absoluteLeftWidth ?? "30%"} 
           borderStyle="single" 
           borderColor={hasFocus && activeRegion === 'results' ? uiState.theme.border.active : uiState.theme.border.primary}
           padding={1}
+          flexShrink={0}
         >
           <Box marginBottom={1}>
             <Text bold color={uiState.theme.text.secondary}>Search Results</Text>
@@ -115,12 +126,13 @@ export function SearchTab() {
         {/* Right column: Details / Preview (70%) */}
         <Box 
           flexDirection="column" 
-          width="70%" 
+          width={absoluteRightWidth ?? "70%"} 
           borderStyle="single" 
           borderColor={uiState.theme.border.primary} 
           padding={1}
           justifyContent="center"
           alignItems="center"
+          flexShrink={0}
         >
           <Box borderStyle="single" borderColor={uiState.theme.status.info} flexDirection="column" padding={1} width="90%">
              <Box marginBottom={1} justifyContent="center">

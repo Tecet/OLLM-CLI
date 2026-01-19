@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef } from 'react';
-import { Box, useInput, useStdout } from 'ink';
+import { Box, useInput, useStdout, BoxProps } from 'ink';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { useChat } from '../../../features/context/ChatContext.js';
 import { useUI } from '../../../features/context/UIContext.js';
@@ -139,12 +139,10 @@ export function ChatTab(props: ChatTabProps) {
       height={height} 
       overflow="hidden" 
       width="100%" 
-      alignItems="center"
-      borderStyle={showBorder ? 'round' : undefined}
+      borderStyle={showBorder ? (uiState.theme.border.style as BoxProps['borderStyle']) : undefined}
       borderColor={hasFocus ? uiState.theme.border.active : uiState.theme.border.primary}
     >
         <Box 
-          width={contentWidth} 
           flexDirection="column"
           paddingX={1}
           flexGrow={1}
@@ -161,11 +159,11 @@ export function ChatTab(props: ChatTabProps) {
             paddingY={0}
             metricsConfig={finalMetricsConfig}
             reasoningConfig={finalReasoningConfig}
-            width={contentWidth - 2} // Account for padding
+            width={columnWidth ? columnWidth - 2 : 78} 
             selectedLineIndex={selectedLineIndex}
             lines={lines}
-            scrollHintTop="Keyboard Up to scroll"
-            scrollHintBottom="Keyboard Down to scroll"
+            scrollHintTop={hasFocus ? "Keyboard Up to scroll" : undefined}
+            scrollHintBottom={hasFocus ? "Keyboard Down to scroll" : undefined}
             toggleHint={toggleHint}
           />
         </Box>
