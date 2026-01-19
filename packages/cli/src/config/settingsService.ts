@@ -12,6 +12,12 @@ export interface UserSettings {
     contextSize?: number;
     temperature?: number;
     modeLinkedTemperature?: boolean;
+    warmup?: {
+      enabled?: boolean;
+      maxAttempts?: number;
+      timeout?: number;
+    };
+    clearContextOnModelSwitch?: boolean; // NEW: Make context clearing optional
     [key: string]: unknown;
   };
   hardware?: {

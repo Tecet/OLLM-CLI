@@ -42,6 +42,7 @@ import { ChatInputArea } from './components/layout/ChatInputArea.js';
 import { SystemBar } from './components/layout/SystemBar.js';
 import { SidePanel } from './components/layout/SidePanel.js';
 import { Clock } from './components/layout/Clock.js';
+import { ModelLoadingIndicator } from './components/model/ModelLoadingIndicator.js';
 
 import { ChatTab } from './components/tabs/ChatTab.js';
 import { ToolsTab } from './components/tabs/ToolsTab.js';
@@ -55,7 +56,8 @@ import { MCPTab } from './components/tabs/MCPTab.js';
 import { DialogManager } from './components/dialogs/DialogManager.js';
 import { useGlobalKeyboardShortcuts } from './hooks/useKeyboardShortcuts.js';
 import { ErrorBoundary } from './components/ErrorBoundary.js';
-import { UserPromptBridge } from '../features/context/UserPromptBridge.js';
+import { AllCallbacksBridge } from './components/AllCallbacksBridge.js';
+import { UICallbacksProvider, type UICallbacks } from './contexts/UICallbacksContext.js';
 // Dynamic require for LocalProvider to avoid build-time module resolution errors when bridge isn't installed
 declare const require: (moduleName: string) => { LocalProvider: unknown } | unknown;
 import type { Config } from '../config/types.js';
@@ -807,6 +809,9 @@ ${toolSupport}
             </Box>
           </Box>
 
+          {/* Model Loading Indicator - shows during warmup */}
+          <ModelLoadingIndicator />
+
           {/* Row 2: Chat Box (60%, Blue) */}
           <Box flexGrow={1} minHeight={row2Height}>
             {renderActiveTab(row2Height)}
@@ -989,7 +994,6 @@ export function App({ config }: AppProps) {
             <HooksProvider>
               <MCPProvider>
                 <UserPromptProvider>
-                  <UserPromptBridge />
                   <GPUProvider 
                     pollingInterval={config.status?.pollInterval || 5000}
                     autoStart={config.ui?.showGpuStats !== false}
@@ -1011,15 +1015,21 @@ export function App({ config }: AppProps) {
                       initialModel={initialModel}
                     >
                       <ChatProvider>
-                        <ReviewProvider>
-                          <FocusProvider>
-                            <ActiveContextProvider>
-                              <ErrorBoundary>
-                                <AppContent config={config} />
-                              </ErrorBoundary>
-                            </ActiveContextProvider>
-                          </FocusProvider>
-                        </ReviewProvider>
+                        <AllCallbacksBridge onOpenModelMenu={() => {
+                          // This will be wired up properly when we refactor AppContent
+                          // For now, the global callback will be registered
+                          console.warn('openModelMenu called from bridge - needs wiring');
+                        }}>
+                          <ReviewProvider>
+                            <FocusProvider>
+                              <ActiveContextProvider>
+                                <ErrorBoundary>
+                                  <AppContent config={config} />
+                                </ErrorBoundary>
+                              </ActiveContextProvider>
+                            </FocusProvider>
+                          </ReviewProvider>
+                        </AllCallbacksBridge>
                       </ChatProvider>
                     </ModelProvider>
                   </ContextManagerProvider>

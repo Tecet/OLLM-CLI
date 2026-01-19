@@ -293,10 +293,13 @@ export class LocalProvider implements ProviderAdapter {
       mapped.push({ role: 'system', content: systemPrompt });
     }
 
+    // Configuration for message part concatenation
+    const IMAGE_PLACEHOLDER = '[image]';
+
     for (const msg of messages) {
       const content = msg.parts
-        .map((part: MessagePart) => (part.type === 'text' ? part.text : '[image]'))
-        .join('');
+        .map((part: MessagePart) => (part.type === 'text' ? part.text : IMAGE_PLACEHOLDER))
+        .join(''); // Direct concatenation - parts should handle their own spacing
 
       mapped.push({
         role: msg.role === 'tool' ? 'tool' : msg.role,
@@ -334,11 +337,12 @@ export class LocalProvider implements ProviderAdapter {
       throw new Error('Tool schema validation failed: Tool name cannot be empty or whitespace only');
     }
 
-    // Validate tool name format (must start with letter or underscore, contain only alphanumeric, underscore, or dash)
-    if (!/^[a-zA-Z_][a-zA-Z0-9_-]*$/.test(tool.name)) {
+    // Relaxed validation: Allow dots and slashes for namespaced tools (e.g., "mcp.search", "github/issues")
+    // Must start with letter or underscore, can contain alphanumeric, underscore, dash, dot, or slash
+    if (!/^[a-zA-Z_][a-zA-Z0-9_.\/-]*$/.test(tool.name)) {
       throw new Error(
         `Tool schema validation failed: Tool name "${tool.name}" is invalid. ` +
-        'Tool names must start with a letter or underscore and contain only letters, numbers, underscores, or dashes'
+        'Tool names must start with a letter or underscore and contain only letters, numbers, underscores, dashes, dots, or slashes'
       );
     }
 
@@ -546,16 +550,43 @@ export class LocalProvider implements ProviderAdapter {
       const content = message.content as string;
       
       // Healer: Detect if small model outputted tool call as a JSON string in content
+      // This is a workaround for models that don't properly format tool calls
+      // Made more conservative to reduce false positives
       if (content.trim().startsWith('{') && content.trim().endsWith('}')) {
           try {
               const possibleToolCall = JSON.parse(content.trim());
-              if (possibleToolCall.name && (possibleToolCall.parameters || possibleToolCall.args)) {
+              
+              // More conservative check: Must look like a function call structure
+              // Requires: name (string), and either parameters or args (present, any type)
+              // Also check that it's not just any JSON object (e.g., data response)
+              const hasName = typeof possibleToolCall.name === 'string' && possibleToolCall.name.length > 0;
+              const hasParams = possibleToolCall.parameters !== undefined || possibleToolCall.args !== undefined;
+              
+              // Additional heuristic: Check if name looks like a function name (not a sentence)
+              // Function names typically don't have spaces and are relatively short
+              const looksLikeFunction = hasName && 
+                                       !possibleToolCall.name.includes(' ') && 
+                                       possibleToolCall.name.length < 50;
+              
+              // Only treat as tool call if it has the right structure AND looks like a function
+              if (hasName && hasParams && looksLikeFunction) {
+                  // Handle parameters/args that might not be objects
+                  let args: Record<string, unknown> | string;
+                  const rawParams = possibleToolCall.parameters || possibleToolCall.args;
+                  
+                  if (typeof rawParams === 'object' && rawParams !== null) {
+                      args = rawParams as Record<string, unknown>;
+                  } else {
+                      // Keep raw value if it's not an object (e.g., string, number)
+                      args = rawParams as string;
+                  }
+                  
                   yield {
                       type: 'tool_call',
                       value: {
                           id: crypto.randomUUID(),
                           name: possibleToolCall.name,
-                          args: possibleToolCall.parameters || possibleToolCall.args || {}
+                          args
                       }
                   };
                   return; // Skip yielding as text

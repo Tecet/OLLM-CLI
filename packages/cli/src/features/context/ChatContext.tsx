@@ -4,16 +4,13 @@ import { commandRegistry } from '../../commands/index.js';
 import { useServices } from './ServiceContext.js';
 import { useModel } from './ModelContext.js';
 import { useUI } from './UIContext.js';
-import { ToolRegistry, HotSwapTool, MemoryDumpTool, PromptRegistry, MODE_METADATA } from '@ollm/core';
+import { HotSwapTool, MemoryDumpTool, PromptRegistry, MODE_METADATA } from '@ollm/core';
 import type { ToolCall as CoreToolCall, ContextMessage, ProviderMetrics, ToolSchema } from '@ollm/core';
-import { SettingsService } from '../../config/settingsService.js';
 
+// Note: Global callbacks are now registered by AllCallbacksBridge component
+// These declarations are kept for backward compatibility during migration
 declare global {
   var __ollmModelSwitchCallback: ((model: string) => void) | undefined;
-  var __ollmOpenModelMenu: (() => void) | undefined;
-  var __ollmAddSystemMessage: ((message: string) => void) | undefined;
-  var __ollmPromptUser: ((message: string, options: string[]) => Promise<string>) | undefined;
-  var __ollmClearContext: (() => void) | undefined;
 }
 
 /**
@@ -248,20 +245,9 @@ export function ChatProvider({
       globalThis.__ollmModelSwitchCallback = setCurrentModel;
     }
     
-    // Register global callbacks for ModelContext
-    globalThis.__ollmAddSystemMessage = (message: string) => {
-      addMessage({
-        role: 'system',
-        content: message,
-        excludeFromContext: true,
-      });
-    };
-    
-    // Register clear context callback
-    globalThis.__ollmClearContext = () => {
-      clearChat();
-    };
-  }, [serviceContainer, setCurrentModel, addMessage, clearChat]);
+    // Note: __ollmAddSystemMessage and __ollmClearContext are now registered
+    // by AllCallbacksBridge component for better separation of concerns
+  }, [serviceContainer, setCurrentModel]);
 
   useEffect(() => {
     if (setTheme) {
@@ -422,39 +408,43 @@ export function ChatProvider({
       // Stage 1: Check tool support (model capability check)
       const supportsTools = modelSupportsTools(currentModel);
       
-      let toolRegistry: ToolRegistry | undefined;
       let toolSchemas: ToolSchema[] | undefined;
       
       if (supportsTools) {
-        // Stage 2: Create registry with user preference filtering
-        const settingsService = SettingsService.getInstance();
-        toolRegistry = new ToolRegistry(settingsService);
-        const promptRegistry = new PromptRegistry();
+        // Stage 2: Get central tool registry from service container
+        const toolRegistry = serviceContainer?.getToolRegistry();
         
-        const manager = contextActions.getManager();
-        if (manager && provider) {
-            const modeManager = contextActions.getModeManager();
-            const snapshotManager = contextActions.getSnapshotManager();
-            
-            // Register tools
-            toolRegistry.register(new HotSwapTool(manager, promptRegistry, provider, currentModel, modeManager || undefined, snapshotManager || undefined));
-            toolRegistry.register(new MemoryDumpTool(modeManager || undefined));
-            
-            const toolNames = toolRegistry.list().map(t => t.name);
-            manager.emit('active-tools-updated', toolNames);
-        }
-        
-        // Get modeManager for combined filtering
-        const modeManager = contextActions.getModeManager();
-        
-        if (modeManager) {
-          const currentMode = modeManager.getCurrentMode();
+        if (toolRegistry) {
+          const promptRegistry = new PromptRegistry();
           
-          // Use combined filtering method (user prefs + mode permissions in single pass)
-          toolSchemas = toolRegistry.getFunctionSchemasForMode(currentMode, modeManager);
+          const manager = contextActions.getManager();
+          if (manager && provider) {
+              const modeManager = contextActions.getModeManager();
+              const snapshotManager = contextActions.getSnapshotManager();
+              
+              // Register dynamic tools (HotSwap, MemoryDump)
+              toolRegistry.register(new HotSwapTool(manager, promptRegistry, provider, currentModel, modeManager || undefined, snapshotManager || undefined));
+              toolRegistry.register(new MemoryDumpTool(modeManager || undefined));
+              
+              const toolNames = toolRegistry.list().map(t => t.name);
+              manager.emit('active-tools-updated', toolNames);
+          }
+          
+          // Get modeManager for combined filtering
+          const modeManager = contextActions.getModeManager();
+          
+          if (modeManager) {
+            const currentMode = modeManager.getCurrentMode();
+            
+            // Use combined filtering method (user prefs + mode permissions in single pass)
+            toolSchemas = toolRegistry.getFunctionSchemasForMode(currentMode, modeManager);
+          } else {
+            // CRITICAL FIX: If modeManager is not initialized yet (race condition),
+            // default to NO tools rather than exposing all tools unfiltered.
+            toolSchemas = [];
+          }
         } else {
-          // CRITICAL FIX: If modeManager is not initialized yet (race condition),
-          // default to NO tools rather than exposing all tools unfiltered.
+          // Service container not ready, no tools available
           toolSchemas = [];
         }
       }
@@ -661,6 +651,9 @@ export function ChatProvider({
 
           if (toolCallReceived) {
               const tc = toolCallReceived as CoreToolCall;
+              
+              // Get tool registry from service container
+              const toolRegistry = serviceContainer?.getToolRegistry();
               const tool = toolRegistry?.get(tc.name);
               
               // Update UI with tool call

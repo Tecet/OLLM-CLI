@@ -22,6 +22,8 @@ import { ExtensionManager } from '../extensions/extensionManager.js';
 import { ExtensionRegistry } from '../extensions/extensionRegistry.js';
 import { MCPOAuthProvider, KeytarTokenStorage, FileTokenStorage } from '../mcp/mcpOAuth.js';
 import { MCPHealthMonitor } from '../mcp/mcpHealthMonitor.js';
+import { ToolRegistry, registerBuiltInTools } from '../tools/index.js';
+import { SettingsService } from './settingsService.js';
 
 /**
  * Configuration for model management
@@ -137,6 +139,7 @@ export class ServiceContainer {
   private _extensionRegistry?: ExtensionRegistry;
   private _mcpOAuthProvider?: MCPOAuthProvider;
   private _mcpHealthMonitor?: MCPHealthMonitor;
+  private _toolRegistry?: ToolRegistry;
   
   constructor(config: ServiceContainerConfig) {
     this.provider = config.provider;
@@ -278,6 +281,25 @@ export class ServiceContainer {
   }
   
   /**
+   * Get the Tool Registry
+   * 
+   * Returns the central tool registry with all built-in tools registered.
+   * This is the single source of truth for tool availability.
+   */
+  getToolRegistry(): ToolRegistry {
+    if (!this._toolRegistry) {
+      const settingsService = SettingsService.getInstance();
+      this._toolRegistry = new ToolRegistry(settingsService);
+      
+      // Register all built-in tools
+      const memoryPath = `${this.userHome}/.ollm/memory.json`;
+      const todosPath = `${this.userHome}/.ollm/todos.json`;
+      registerBuiltInTools(this._toolRegistry, { memoryPath, todosPath });
+    }
+    return this._toolRegistry;
+  }
+  
+  /**
    * Get the Extension Manager
    */
   getExtensionManager(): ExtensionManager {
@@ -375,6 +397,7 @@ export class ServiceContainer {
     this.getComparisonService();
     this.getProjectProfileService();
     this.getExtensionRegistry();
+    this.getToolRegistry(); // Initialize tool registry eagerly
   }
   
   /**
@@ -413,6 +436,7 @@ export class ServiceContainer {
     this._extensionRegistry = undefined;
     this._mcpOAuthProvider = undefined;
     this._mcpHealthMonitor = undefined;
+    this._toolRegistry = undefined;
   }
   
   /**

@@ -2,21 +2,12 @@
  * Tests for ModelContext - Tool Support Detection
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { profileManager } from '../../profiles/ProfileManager.js';
 
 describe('ModelContext - Tool Support Detection', () => {
-  beforeEach(() => {
-    // Clear global callbacks before each test
-    globalThis.__ollmAddSystemMessage = undefined;
-    globalThis.__ollmPromptUser = undefined;
-  });
-
-  afterEach(() => {
-    // Clean up after tests
-    globalThis.__ollmAddSystemMessage = undefined;
-    globalThis.__ollmPromptUser = undefined;
-  });
+  // Note: Tests no longer need to manage global callbacks
+  // UICallbacksProvider handles callback registration in tests
 
   describe('ProfileManager integration', () => {
     it('should find profile for known models', () => {
@@ -68,23 +59,37 @@ describe('ModelContext - Tool Support Detection', () => {
     });
   });
 
-  describe('Global callbacks', () => {
-    it('should allow registering system message callback', () => {
+  describe('UICallbacks integration', () => {
+    it('should use UICallbacks for system messages', () => {
+      // UICallbacks are now provided via React Context
+      // Components use useUICallbacks() hook instead of global callbacks
+      // This test verifies the expected behavior
+      
       const mockCallback = vi.fn();
-      globalThis.__ollmAddSystemMessage = mockCallback;
+      const callbacks = {
+        promptUser: vi.fn(),
+        addSystemMessage: mockCallback,
+        clearContext: vi.fn(),
+        openModelMenu: vi.fn(),
+      };
 
-      // Simulate calling the callback
-      globalThis.__ollmAddSystemMessage?.('Test message');
+      // Simulate calling the callback through context
+      callbacks.addSystemMessage('Test message');
 
       expect(mockCallback).toHaveBeenCalledWith('Test message');
     });
 
-    it('should allow registering prompt user callback', async () => {
+    it('should use UICallbacks for prompting user', async () => {
       const mockCallback = vi.fn().mockResolvedValue('Yes');
-      globalThis.__ollmPromptUser = mockCallback;
+      const callbacks = {
+        promptUser: mockCallback,
+        addSystemMessage: vi.fn(),
+        clearContext: vi.fn(),
+        openModelMenu: vi.fn(),
+      };
 
-      // Simulate calling the callback
-      const result = await globalThis.__ollmPromptUser?.('Test prompt', ['Yes', 'No']);
+      // Simulate calling the callback through context
+      const result = await callbacks.promptUser('Test prompt', ['Yes', 'No']);
 
       expect(mockCallback).toHaveBeenCalledWith('Test prompt', ['Yes', 'No']);
       expect(result).toBe('Yes');
@@ -116,29 +121,37 @@ describe('ModelContext - Tool Support Detection', () => {
 
   describe('Unknown model handling', () => {
     it('should default to tools disabled when no prompt callback is available', async () => {
-      // Ensure no prompt callback is registered
-      globalThis.__ollmPromptUser = undefined;
+      // With UICallbacks, default implementations are always available
+      // They log warnings and return safe defaults
       
       const mockAddSystemMessage = vi.fn();
-      globalThis.__ollmAddSystemMessage = mockAddSystemMessage;
+      const callbacks = {
+        promptUser: vi.fn().mockResolvedValue('No'), // Safe default
+        addSystemMessage: mockAddSystemMessage,
+        clearContext: vi.fn(),
+        openModelMenu: vi.fn(),
+      };
 
       // Simulate unknown model detection
       // Note: We can't directly test handleUnknownModel since it's internal to ModelContext
-      // This test verifies the expected behavior when the callback is missing
+      // This test verifies the expected behavior when using default callbacks
       
-      expect(globalThis.__ollmPromptUser).toBeUndefined();
+      expect(callbacks.promptUser).toBeDefined();
       expect(mockAddSystemMessage).toBeDefined();
     });
 
     it('should prompt user with correct options for unknown model', async () => {
       const mockPromptUser = vi.fn().mockResolvedValue('Yes');
-      globalThis.__ollmPromptUser = mockPromptUser;
-
       const mockAddSystemMessage = vi.fn();
-      globalThis.__ollmAddSystemMessage = mockAddSystemMessage;
+      const callbacks = {
+        promptUser: mockPromptUser,
+        addSystemMessage: mockAddSystemMessage,
+        clearContext: vi.fn(),
+        openModelMenu: vi.fn(),
+      };
 
       // Simulate calling the prompt
-      const result = await globalThis.__ollmPromptUser(
+      const result = await callbacks.promptUser(
         'Does "custom-model:latest" support function calling/tools?',
         ['Yes', 'No', 'Auto-detect']
       );
@@ -157,9 +170,14 @@ describe('ModelContext - Tool Support Detection', () => {
           setTimeout(() => resolve('No'), 100);
         });
       });
-      globalThis.__ollmPromptUser = mockPromptUser;
+      const callbacks = {
+        promptUser: mockPromptUser,
+        addSystemMessage: vi.fn(),
+        clearContext: vi.fn(),
+        openModelMenu: vi.fn(),
+      };
 
-      const result = await globalThis.__ollmPromptUser(
+      const result = await callbacks.promptUser(
         'Does "custom-model:latest" support function calling/tools?',
         ['Yes', 'No', 'Auto-detect']
       );
@@ -202,20 +220,35 @@ describe('ModelContext - Tool Support Detection', () => {
     it('should handle all three response options correctly', async () => {
       // Test 'Yes' response
       let mockPromptUser = vi.fn().mockResolvedValue('Yes');
-      globalThis.__ollmPromptUser = mockPromptUser;
-      let result = await globalThis.__ollmPromptUser('Test', ['Yes', 'No', 'Auto-detect']);
+      let callbacks = {
+        promptUser: mockPromptUser,
+        addSystemMessage: vi.fn(),
+        clearContext: vi.fn(),
+        openModelMenu: vi.fn(),
+      };
+      let result = await callbacks.promptUser('Test', ['Yes', 'No', 'Auto-detect']);
       expect(result).toBe('Yes');
 
       // Test 'No' response
       mockPromptUser = vi.fn().mockResolvedValue('No');
-      globalThis.__ollmPromptUser = mockPromptUser;
-      result = await globalThis.__ollmPromptUser('Test', ['Yes', 'No', 'Auto-detect']);
+      callbacks = {
+        promptUser: mockPromptUser,
+        addSystemMessage: vi.fn(),
+        clearContext: vi.fn(),
+        openModelMenu: vi.fn(),
+      };
+      result = await callbacks.promptUser('Test', ['Yes', 'No', 'Auto-detect']);
       expect(result).toBe('No');
 
       // Test 'Auto-detect' response
       mockPromptUser = vi.fn().mockResolvedValue('Auto-detect');
-      globalThis.__ollmPromptUser = mockPromptUser;
-      result = await globalThis.__ollmPromptUser('Test', ['Yes', 'No', 'Auto-detect']);
+      callbacks = {
+        promptUser: mockPromptUser,
+        addSystemMessage: vi.fn(),
+        clearContext: vi.fn(),
+        openModelMenu: vi.fn(),
+      };
+      result = await callbacks.promptUser('Test', ['Yes', 'No', 'Auto-detect']);
       expect(result).toBe('Auto-detect');
     });
   });
@@ -226,7 +259,12 @@ describe('ModelContext - Tool Support Detection', () => {
       // The actual implementation will send a test request and check for errors
       
       const mockAddSystemMessage = vi.fn();
-      globalThis.__ollmAddSystemMessage = mockAddSystemMessage;
+      const callbacks = {
+        promptUser: vi.fn(),
+        addSystemMessage: mockAddSystemMessage,
+        clearContext: vi.fn(),
+        openModelMenu: vi.fn(),
+      };
 
       // Simulate successful auto-detection
       // In real implementation, this would:
@@ -277,7 +315,12 @@ describe('ModelContext - Tool Support Detection', () => {
     it('should default to tools disabled on auto-detect failure', async () => {
       // When auto-detection fails or times out, should default to safe setting
       const mockAddSystemMessage = vi.fn();
-      globalThis.__ollmAddSystemMessage = mockAddSystemMessage;
+      const callbacks = {
+        promptUser: vi.fn(),
+        addSystemMessage: mockAddSystemMessage,
+        clearContext: vi.fn(),
+        openModelMenu: vi.fn(),
+      };
 
       // Simulate auto-detect failure
       // Expected behavior: save with tool_support=false and source='auto_detected'
@@ -392,16 +435,19 @@ describe('ModelContext - Tool Support Detection', () => {
 
     it('should pass model name to handleToolError callback', async () => {
       const mockPromptUser = vi.fn().mockResolvedValue('Yes');
-      globalThis.__ollmPromptUser = mockPromptUser;
-
       const mockAddSystemMessage = vi.fn();
-      globalThis.__ollmAddSystemMessage = mockAddSystemMessage;
+      const callbacks = {
+        promptUser: mockPromptUser,
+        addSystemMessage: mockAddSystemMessage,
+        clearContext: vi.fn(),
+        openModelMenu: vi.fn(),
+      };
 
       const modelName = 'test-model:latest';
       
       // Simulate calling handleToolError with model name
       // The prompt should include the model name
-      await globalThis.__ollmPromptUser(
+      await callbacks.promptUser(
         `Model "${modelName}" appears to not support tools. Update metadata?`,
         ['Yes', 'No']
       );
@@ -414,13 +460,18 @@ describe('ModelContext - Tool Support Detection', () => {
 
     it('should include model name in system messages', async () => {
       const mockAddSystemMessage = vi.fn();
-      globalThis.__ollmAddSystemMessage = mockAddSystemMessage;
+      const callbacks = {
+        promptUser: vi.fn(),
+        addSystemMessage: mockAddSystemMessage,
+        clearContext: vi.fn(),
+        openModelMenu: vi.fn(),
+      };
 
       const modelName = 'test-model:latest';
       const errorMessage = 'unknown field: tools';
 
       // System message should include model name
-      globalThis.__ollmAddSystemMessage?.(
+      callbacks.addSystemMessage(
         `Tool error detected for model "${modelName}": ${errorMessage}`
       );
 
@@ -429,7 +480,7 @@ describe('ModelContext - Tool Support Detection', () => {
       );
 
       // Success message should also include model name
-      globalThis.__ollmAddSystemMessage?.(
+      callbacks.addSystemMessage(
         `Tool support disabled for "${modelName}" and saved to user_models.json.`
       );
 
@@ -504,16 +555,19 @@ describe('ModelContext - Tool Support Detection', () => {
 
     it('should prompt user when tool error is detected', async () => {
       const mockPromptUser = vi.fn().mockResolvedValue('Yes');
-      globalThis.__ollmPromptUser = mockPromptUser;
-
       const mockAddSystemMessage = vi.fn();
-      globalThis.__ollmAddSystemMessage = mockAddSystemMessage;
+      const callbacks = {
+        promptUser: mockPromptUser,
+        addSystemMessage: mockAddSystemMessage,
+        clearContext: vi.fn(),
+        openModelMenu: vi.fn(),
+      };
 
       // Simulate runtime tool error detection
       
       // The handleToolError function would be called here
       // It should prompt the user with the correct message
-      const result = await globalThis.__ollmPromptUser(
+      const result = await callbacks.promptUser(
         'This model appears to not support tools. Update metadata?',
         ['Yes', 'No']
       );
@@ -559,13 +613,16 @@ describe('ModelContext - Tool Support Detection', () => {
 
     it('should set session-only override when user declines', async () => {
       const mockPromptUser = vi.fn().mockResolvedValue('No');
-      globalThis.__ollmPromptUser = mockPromptUser;
-
       const mockAddSystemMessage = vi.fn();
-      globalThis.__ollmAddSystemMessage = mockAddSystemMessage;
+      const callbacks = {
+        promptUser: mockPromptUser,
+        addSystemMessage: mockAddSystemMessage,
+        clearContext: vi.fn(),
+        openModelMenu: vi.fn(),
+      };
 
       // Simulate user declining to save
-      const result = await globalThis.__ollmPromptUser(
+      const result = await callbacks.promptUser(
         'This model appears to not support tools. Update metadata?',
         ['Yes', 'No']
       );
@@ -593,35 +650,45 @@ describe('ModelContext - Tool Support Detection', () => {
     });
 
     it('should handle missing prompt callback gracefully', async () => {
-      // When no prompt callback is available, should set session-only override
-      globalThis.__ollmPromptUser = undefined;
+      // With UICallbacks, default implementations are always available
+      // They log warnings and return safe defaults
       
       const mockAddSystemMessage = vi.fn();
-      globalThis.__ollmAddSystemMessage = mockAddSystemMessage;
+      const callbacks = {
+        promptUser: vi.fn().mockResolvedValue('No'), // Safe default
+        addSystemMessage: mockAddSystemMessage,
+        clearContext: vi.fn(),
+        openModelMenu: vi.fn(),
+      };
 
-      // Simulate tool error without prompt callback
+      // Simulate tool error with default callback behavior
       // Expected behavior: set session-only override without prompting
       
-      expect(globalThis.__ollmPromptUser).toBeUndefined();
+      expect(callbacks.promptUser).toBeDefined();
       expect(mockAddSystemMessage).toBeDefined();
     });
 
     it('should show appropriate system messages', async () => {
       const mockAddSystemMessage = vi.fn();
-      globalThis.__ollmAddSystemMessage = mockAddSystemMessage;
+      const callbacks = {
+        promptUser: vi.fn(),
+        addSystemMessage: mockAddSystemMessage,
+        clearContext: vi.fn(),
+        openModelMenu: vi.fn(),
+      };
 
       // Simulate various scenarios and verify system messages
       
       // When tool error is detected
-      globalThis.__ollmAddSystemMessage?.('Tool error detected: unknown field: tools');
+      callbacks.addSystemMessage('Tool error detected: unknown field: tools');
       expect(mockAddSystemMessage).toHaveBeenCalledWith('Tool error detected: unknown field: tools');
 
       // When user confirms save
-      globalThis.__ollmAddSystemMessage?.('Tool support disabled and saved to user_models.json.');
+      callbacks.addSystemMessage('Tool support disabled and saved to user_models.json.');
       expect(mockAddSystemMessage).toHaveBeenCalledWith('Tool support disabled and saved to user_models.json.');
 
       // When user declines save
-      globalThis.__ollmAddSystemMessage?.('Tool support disabled for this session only.');
+      callbacks.addSystemMessage('Tool support disabled for this session only.');
       expect(mockAddSystemMessage).toHaveBeenCalledWith('Tool support disabled for this session only.');
     });
 

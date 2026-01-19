@@ -8,22 +8,13 @@
  * - Property 19.4: Override precedence is correct
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import fc from 'fast-check';
 import type { UserModel } from '../../profiles/types.js';
 
 describe('Tool Support Detection - Property Tests', () => {
-  beforeEach(() => {
-    // Clear global callbacks before each test
-    globalThis.__ollmAddSystemMessage = undefined;
-    globalThis.__ollmPromptUser = undefined;
-  });
-
-  afterEach(() => {
-    // Clean up after tests
-    globalThis.__ollmAddSystemMessage = undefined;
-    globalThis.__ollmPromptUser = undefined;
-  });
+  // Note: Tests no longer need to manage global callbacks
+  // UICallbacksProvider handles callback registration in tests
 
   describe('Property 19.1: Tools never sent to non-supporting models', () => {
     it('should never expose tools to models with tool_support=false', () => {
@@ -121,14 +112,17 @@ describe('Tool Support Detection - Property Tests', () => {
             userResponse: fc.constantFrom('Yes', 'No', 'Auto-detect', 'timeout'),
           }),
           async (config) => {
-            // Setup prompt callback based on test config
-            if (config.hasPromptCallback) {
-              globalThis.__ollmPromptUser = vi.fn().mockResolvedValue(
-                config.userResponse === 'timeout' ? 'No' : config.userResponse
-              );
-            } else {
-              globalThis.__ollmPromptUser = undefined;
-            }
+            // Create mock callbacks based on test config
+            const mockPromptUser = config.hasPromptCallback
+              ? vi.fn().mockResolvedValue(config.userResponse === 'timeout' ? 'No' : config.userResponse)
+              : vi.fn().mockResolvedValue('No'); // Safe default
+
+            const callbacks = {
+              promptUser: mockPromptUser,
+              addSystemMessage: vi.fn(),
+              clearContext: vi.fn(),
+              openModelMenu: vi.fn(),
+            };
 
             // Property: Unknown models must either:
             // 1. Prompt user (if callback available)

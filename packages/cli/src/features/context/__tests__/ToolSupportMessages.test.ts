@@ -2,7 +2,7 @@
  * Tests for ToolSupportMessages
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import {
   formatToolSupportStatus,
   formatAutoDetectProgress,
@@ -13,16 +13,11 @@ import {
   formatModelSwitchNotification,
   formatTimeoutWarning,
   formatUserConfirmationRequest,
-  addSystemMessage,
-  addToolSupportStatusMessage,
-  addAutoDetectProgressMessage,
-  addToolErrorMessage,
-  addMetadataSavedMessage,
-  addSessionOnlyMessage,
-  addModelSwitchMessage,
 } from '../ToolSupportMessages.js';
 
 describe('ToolSupportMessages', () => {
+  // Note: Tests for add* functions removed as those functions were deleted
+  // in Step 4. Only pure formatting functions remain.
   describe('formatToolSupportStatus', () => {
     it('should format enabled status from profile', () => {
       const result = formatToolSupportStatus('llama3:latest', true, 'profile');
@@ -143,91 +138,6 @@ describe('ToolSupportMessages', () => {
     it('should format detect confirmation request', () => {
       const result = formatUserConfirmationRequest('test-model', 'detect');
       expect(result).toBe('🔍 Auto-detect tool support for "test-model"?');
-    });
-  });
-
-  describe('addSystemMessage', () => {
-    beforeEach(() => {
-      // Clear global callback
-      globalThis.__ollmAddSystemMessage = undefined;
-    });
-
-    afterEach(() => {
-      // Clean up
-      globalThis.__ollmAddSystemMessage = undefined;
-    });
-
-    it('should call global callback when registered', () => {
-      const mockCallback = vi.fn();
-      globalThis.__ollmAddSystemMessage = mockCallback;
-
-      addSystemMessage('Test message');
-
-      expect(mockCallback).toHaveBeenCalledWith('Test message');
-      expect(mockCallback).toHaveBeenCalledTimes(1);
-    });
-
-    it('should not throw when callback not registered', () => {
-      // Should not throw
-      expect(() => addSystemMessage('Test message')).not.toThrow();
-    });
-  });
-
-  describe('helper functions', () => {
-    beforeEach(() => {
-      globalThis.__ollmAddSystemMessage = vi.fn();
-    });
-
-    afterEach(() => {
-      globalThis.__ollmAddSystemMessage = undefined;
-    });
-
-    it('should add tool support status message', () => {
-      addToolSupportStatusMessage('test-model', true, 'profile');
-      
-      expect(globalThis.__ollmAddSystemMessage).toHaveBeenCalledWith(
-        '🛠️ Tool Support for "test-model": ✅ Enabled (from model profile)'
-      );
-    });
-
-    it('should add auto-detect progress message', () => {
-      addAutoDetectProgressMessage('test-model', 'starting');
-      
-      expect(globalThis.__ollmAddSystemMessage).toHaveBeenCalledWith(
-        '🔍 Auto-detecting tool support for "test-model"...'
-      );
-    });
-
-    it('should add tool error message', () => {
-      addToolErrorMessage('test-model', 'unknown field: tools');
-      
-      expect(globalThis.__ollmAddSystemMessage).toHaveBeenCalledWith(
-        '⚠️ Tool error detected for "test-model": unknown field: tools'
-      );
-    });
-
-    it('should add metadata saved message', () => {
-      addMetadataSavedMessage('test-model', false);
-      
-      expect(globalThis.__ollmAddSystemMessage).toHaveBeenCalledWith(
-        '💾 Tool support disabled for "test-model" and saved to user_models.json'
-      );
-    });
-
-    it('should add session-only message', () => {
-      addSessionOnlyMessage('test-model', true);
-      
-      expect(globalThis.__ollmAddSystemMessage).toHaveBeenCalledWith(
-        '⏱️ Tool support enabled for "test-model" (session only, not saved)'
-      );
-    });
-
-    it('should add model switch message', () => {
-      addModelSwitchMessage('model-a', 'model-b', true, false);
-      
-      expect(globalThis.__ollmAddSystemMessage).toHaveBeenCalledWith(
-        '🔄 Model switched: "model-a" → "model-b"\n🛠️ Tool support is now disabled'
-      );
     });
   });
 });

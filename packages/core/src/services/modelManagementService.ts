@@ -52,7 +52,7 @@ export type ProgressCallback = (progress: ProgressEvent) => void;
  * Configuration for the Model Management Service.
  */
 export interface ModelManagementServiceConfig {
-  /** Cache TTL in milliseconds (default: 5 minutes) */
+  /** Cache TTL in milliseconds (default: 30 seconds) */
   cacheTTL?: number;
   /** Keep-alive enabled */
   keepAliveEnabled?: boolean;
@@ -81,14 +81,14 @@ export class ModelManagementService {
   private readonly keepAliveTimeout: number;
   private readonly keepAliveModels: Set<string>;
   private loadedModels: Map<string, Date> = new Map();
-  private keepAliveIntervals: Map<string, NodeJS.Timeout> = new Map();
+  // Note: keepAliveIntervals removed - Ollama handles keep-alive automatically
   private abortControllers: Map<string, AbortController> = new Map();
 
   constructor(
     private provider: ProviderAdapter,
     config: ModelManagementServiceConfig = {}
   ) {
-    this.cacheTTL = config.cacheTTL ?? 5 * 60 * 1000; // 5 minutes
+    this.cacheTTL = config.cacheTTL ?? 30 * 1000; // 30 seconds (reduced from 5 minutes)
     this.keepAliveEnabled = config.keepAliveEnabled ?? true;
     this.keepAliveTimeout = config.keepAliveTimeout ?? 300; // 5 minutes
     this.keepAliveModels = new Set(config.keepAliveModels ?? []);
@@ -97,11 +97,12 @@ export class ModelManagementService {
   /**
    * List all available models.
    * Uses cache if available and not expired.
+   * @param forceRefresh Force a fresh fetch, bypassing cache
    * @returns Array of model information
    */
-  async listModels(): Promise<ModelInfo[]> {
-    // Check cache
-    if (this.cache && Date.now() - this.cache.timestamp < this.cacheTTL) {
+  async listModels(forceRefresh: boolean = false): Promise<ModelInfo[]> {
+    // Check cache (skip if forceRefresh is true)
+    if (!forceRefresh && this.cache && Date.now() - this.cache.timestamp < this.cacheTTL) {
       return this.cache.data;
     }
 
@@ -297,7 +298,11 @@ export class ModelManagementService {
 
   /**
    * Keep a model loaded in memory.
-   * Sends periodic keep-alive requests to prevent unloading.
+   * 
+   * NOTE: This is primarily a tracking mechanism. Ollama handles keep-alive automatically,
+   * so no actual keep-alive requests are sent. This method simply marks the model as "loaded"
+   * for tracking purposes.
+   * 
    * @param name Model name
    */
   async keepModelLoaded(name: string): Promise<void> {
@@ -305,38 +310,27 @@ export class ModelManagementService {
       return;
     }
 
-    // Mark model as loaded
+    // Mark model as loaded (for tracking only)
     this.loadedModels.set(name, new Date());
-
-    // Clear existing interval if any
-    const existingInterval = this.keepAliveIntervals.get(name);
-    if (existingInterval) {
-      clearInterval(existingInterval);
-    }
-
-    // Set up periodic keep-alive
-    const interval = setInterval(() => {
-      this.sendKeepAlive(name);
-    }, 30000); // Send keep-alive every 30 seconds
-
-    this.keepAliveIntervals.set(name, interval);
+    
+    // Note: No actual keep-alive requests are sent to Ollama
+    // Ollama manages model lifecycle automatically based on usage
   }
 
   /**
    * Unload a model from memory.
-   * Stops keep-alive requests and allows the model to be unloaded.
+   * 
+   * NOTE: This is primarily a tracking mechanism. Ollama handles model unloading automatically,
+   * so this method simply removes the model from our tracking.
+   * 
    * @param name Model name
    */
   async unloadModel(name: string): Promise<void> {
-    // Clear keep-alive interval
-    const interval = this.keepAliveIntervals.get(name);
-    if (interval) {
-      clearInterval(interval);
-      this.keepAliveIntervals.delete(name);
-    }
-
-    // Remove from loaded models
+    // Remove from loaded models tracking
     this.loadedModels.delete(name);
+    
+    // Note: No actual unload request is sent to Ollama
+    // Ollama manages model lifecycle automatically
   }
 
   /**
@@ -369,27 +363,10 @@ export class ModelManagementService {
   }
 
   /**
-   * Send a keep-alive request for a model.
-   * This is a no-op for now as Ollama handles keep-alive automatically.
-   * @param name Model name
-   */
-  private async sendKeepAlive(name: string): Promise<void> {
-    // Update last-used timestamp
-    this.loadedModels.set(name, new Date());
-
-    // In a real implementation, this would send a keep-alive request
-    // to the provider. For Ollama, this is handled automatically.
-  }
-
-  /**
    * Clean up resources.
-   * Clears all keep-alive intervals.
+   * Clears model tracking and abort controllers.
    */
   dispose(): void {
-    for (const interval of this.keepAliveIntervals.values()) {
-      clearInterval(interval);
-    }
-    this.keepAliveIntervals.clear();
     this.loadedModels.clear();
     this.abortControllers.clear();
   }

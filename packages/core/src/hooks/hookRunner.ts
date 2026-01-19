@@ -158,6 +158,7 @@ export class HookRunner {
       let stdout = '';
       let stderr = '';
       let outputSize = 0;
+      let outputExceeded = false;
 
       child.stdout?.on('data', (data) => {
         const chunk = data.toString();
@@ -165,7 +166,8 @@ export class HookRunner {
         
         if (outputSize > MAX_OUTPUT_SIZE) {
           child?.kill('SIGTERM');
-          throw new Error(`Hook output exceeded ${MAX_OUTPUT_SIZE} bytes`);
+          outputExceeded = true;
+          return;
         }
         
         stdout += chunk;
@@ -177,7 +179,8 @@ export class HookRunner {
         
         if (outputSize > MAX_OUTPUT_SIZE) {
           child?.kill('SIGTERM');
-          throw new Error(`Hook stderr exceeded ${MAX_OUTPUT_SIZE} bytes`);
+          outputExceeded = true;
+          return;
         }
         
         stderr += chunk;

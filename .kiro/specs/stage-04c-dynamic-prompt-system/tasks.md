@@ -153,107 +153,12 @@
 
 ---
 
-###hase 19: RAG and Structured Output Integration (12-15 hours) 🚀 FUTURE
+### Phase 19: RAG and Structured Output Integration 🚀 MOVED TO SEPARATE STAGE
 
-**Status:** Not started - This is a major future enhancement for the intelligence layer.
+**Status:** Moved to separate development roadmap  
+**Location:** `.dev/docs/Development-Roadmap/rework/RAG.md`
 
-- [x] 33. Setup LanceDB Infrastructure
-  - [x] 33.1 Add `vectordb` or `lancedb` dependency to package.json
-  - [x] 33.2 Add `@xenova/transformers` dependency for local embeddings
-  - [x] 33.3 Create `packages/core/src/rag/` directory
-  - [x] 33.4 Create `RAGSystem.ts` interface defining the RAG architecture
-  - [x] 33.5 Create `LanceDBSetup.ts` class for database initialization
-  - [x] 33.6 Implement database initialization with proper error handling
-  - [x] 33.7 Create table schema for codebase index (file paths, chunks, embeddings)
-  - [x] 33.8 Create tables for mode-specific knowledge (debugger, security, performance, planning)
-  - [x] 33.9 Write unit tests for LanceDB setup and initialization
-
-- [ ] 34. Implement Embedding Service
-  - [ ] 34.1 Create `EmbeddingService.ts` interface
-  -ansformers
-  - [ ] 34.3 Initialize embedding model (Xenova/all-MiniLM-L6-v2, 384-dim)
-  - [ ] 34.4 Implement single text embedding with proper error handling
-  - [ ] 34.5 Implement batch embedding for efficient processing
-  - [ ] 34.6 Implement cosine similarity calculation for search
-  - [ ] 34.7 Add embedding caching for performance (LRU cache)
-  - [ ] 34.8 Write unit tests for embedding service
-
-- [ ] 35. Implement Codebase Index
-  - [ ] 35.1 Create `CodebaseIndex.ts` class
-  - [ ] 35.2 Implement workspace indexing with file watching (chokidar)
-  - [ ] 35.3 Implement file chunking (512 tokens, 50 token overlap)
-  - [ ] 35.4 Implement incremental updates on file changes
-  - [ ] 35.5 Implement semantic search with topK and threshold parameters
-  - [ ] 35.6 Respect .gitignore and exclude patterns (node_modules, dist, etc.)
-  - [ ] 35.7 Skip large files (configurable threshold, default 1MB)
-  - [ ] 35.8 Implement index statistics and monitoring (file count, chunk count, etc.)
-  - [ ] 35.9 Write unit tests for codebase index
-
-- [ ] 36. Implement LanceDB Vector Store
-  - [ ] 36.1 Create `LanceDBVectorStore.ts` class
-  - [ ] 36.2 Implement upsert operations (single and batch)
-  - [ ] 36.3 Implement vector search with similarity scoring
-  - [ ] 36.4 Implement delete operations for cleanup
-  - [ ] 36.5 Implement clear and count operations
-  - [ ] 36.6 Add vector metadata storage (file path, line numbers, language)
-  - [ ] 36.7 Write unit tests for vector store operations
-
-- [ ] 37. Implement Mode-Specific RAG Integration
-  - [ ] 37.1 Create `ModeRAGIntegration.ts` class
-  - [ ] 37.2 Implement context retrieval for debugger mode (error patterns, solutions)
-  - [ ] 37.3 Implement context retrieval for security mode (vulnerabilities, fixes)
-  - [ ] 37.4 Implement context retrieval for performance mode (optimization patterns)
-  - [ ] 37.5 Implement context retrieval for planning mode (design patterns, architectures)
-  - [ ] 37.6 Implement knowledge indexing on mode exit (store findings)
-  - [ ] 37.7 Implement RAG context formattor prompts
-  - [ ] 37.8 Add RAG context injection to PromptModeManager.buildPrompt()
-  - [ ] 37.9 Write unit tests for mode RAG integration
-
-- [ ] 38. RAG Storage and Configuration
-  - [ ] 38.1 Create storage directory structure (~/.ollm/rag/)
-  - [ ] 38.2 Implement index persistence to disk
-  - [ ] 38.3 Implement index cleanup/pruning (remove old entries)
-  - [ ] 38.4 Add RAG configuration to settings schema (enabled, topK, threshold)
-  - [ ] 38.5 Implement RAG enable/disable toggle in settings
-  - [ ] 38.6 Add RAG statistics to `/mode status` command output
-  - [ ] 38.7 Write unit tests for storage and configuration
-
-- [ ] 39. Implement Structured Output Service
-  - [ ] 39.1 Create `packages/core/src/output/` directory
-  - [ ] 39.2 Create `StructuredOutputService.ts` class
-  - [ ] 39.3 Implement JSON schema validation with Ajv library
-  - [ ] 39.4 Implement generateWithSchema() with retry logic
-  - [ ] 39.5 Implement extractJson() for mixed content parsing
-  - [ ] 39.6 Implement validation error forma
-  - [ ] 39.7 Add retry with exponential backoff (3 retries, 1s delay)
-  - [ ] 39.8 Write unit tests for structured output service
-
-- [ ] 40. Define Mode-Specific Schemas
-  - [ ] 40.1 Create `MODE_OUTPUT_SCHEMAS` constant in output/schemas.ts
-  - [ ] 40.2 Define debugger mode schema (errors, rootCause, fixes)
-  - [ ] 40.3 Define security mode schema (vulnerabilities, severity, recommendations)
-  - [ ] 40.4 Define reviewer mode schema (issues, suggestions, positives)
-  -ottlenecks, optimizations, estimatedImprovement)
-  - [ ] 40.6 Add schema validation tests for each mode
-
-- [ ] 41. Integrate Structured Output with Modes
-  - [ ] 41.1 Update PromptModeManager to use structured output for specialized modes
-  - [ ] 41.2 Enable structured output on mode entry (if schema exists)
-  - [ ] 41.3 Validate output on mode exit
-  - [ ] 41.4 Store structured findings in mode transition snapshots
-  - [ ] 41.5 Format structured output for UI display
-  - [ ] 41.6 Add structured output configuration to settings
-  - [ ] 41.7 Write integration tests for structured output with modes
-
-- [ ] 42. Provider Integration for Structured Output
-  - [ ] 42.1 Update ProviderRequest interface to include responseFormat field
-  - [ ] 42.2 Implement ResponseFormat type (text | json | json_schema)
-  - [ ] 42.3 Update provider adapters to support structured output
-  - [ ] 42.4 Add fallback for providers without native support (parse JSON from text)
-  - [ ] 42.5 Test structured output with Ollama provider
-  - [ ] 42.6 Write integration tests for provider structured output
-
-**Note:** Phase 19 is a major future enhancement that adds semantic search and structured output capabilities. The mode system is fully functional without it.
+**Note:** RAG (Retrieval-Augmented Generation) and Structured Output have been moved to a separate stage for future development. See the dedicated RAG roadmap document for complete specifications and implementation tasks.
 
 ---
 
@@ -265,7 +170,7 @@
   - [ ] 43.3 Document mode shortcuts in `docs/modes/shortcuts.md`
   - [ ] 43.4 Document hybrid modes in `docs/modes/hybrid-modes.md`
   - [ ] 43.5 Document focus mode (if implemented) in `docs/modes/focus-mode.md`
-  - [ ] 43.6 Document RAG integration (if implemented) in `docs/modes/rag-integration.md`
+
   - [ ] 43.7 Document structured output (if implemented) in `docs/modes/structured-output.md`
   - [ ] 43.8 Create user guide in `docs/modes/user-guide.md`
   - [ ] 43.9 Create developer guide in `docs/modes/developer-guide.md`
@@ -274,7 +179,7 @@
 olish & Refinement
   - [ ] 44.1 Optimize keyword detection performance (benchmark and profile)
   - [ ] 44.2 Optimize snapshot storage performance (async writes, compression)
-  - [ ] 44.3 Optimize RAG search performance (if implemented)
+
   - [ ] 44.4 Optimize structured output validation (if implemented)
   - [ ] 44.5 Add comprehensive error handling for all edge cases
   - [ ] 44.6 Add logging for all mode operations (debug level)
@@ -298,7 +203,7 @@ olish & Refinement
 - **Transition Animations**: Visual feedback for mode changes (nice-to-have)
 
 ### 🚀 Future (Phase 19)
-- **RAG Integration**: Semantic search with LanceDB and local embeddings (major enhancement)
+
 - **Structured Output**: JSON schema enforcement for specialize
 
 ### 📝 Remaining (Phase 20)
@@ -314,13 +219,13 @@ olish & Refinement
 | Phases 1-17 | ✅ Complete | ~50-60 hours |
 | Phase 15 (Focus Mode) | ⚠️ Optional | 2-3 hours |
 | Phase 18 (Animations) | ⚠️ Optional | 2-3 hours |
-| Phase 19 (RAG & Structured Output) | 🚀 Future | 12-15 hours |
+| Phase 19 (RAG & Structured Output) | 🚀 Moved to separate stage | See RAG.md |
 | Phase 20 (Documentation & Polish) | 📝 Remaining | 1-2 hours |
 
 **Current Progress:** ~85% complete (core system fully functional)  
 **Remaining for MVP:** 1-2 hours (documentation and polish)  
 **Optional Enhancements:** 4-6 hours (focus mode + animations)  
-**Future Intelligence Layer:** 12-15 hours (RAG + structured output)
+**Future Intelligence Layer:** Moved to separate stage (see `.dev/docs/Development-Roadmap/rework/RAG.md`)
 
 ---
 
@@ -357,16 +262,8 @@ olish & Refinement
 - [ ] Smooth transition animations
 
 ### Intelligence Layer - Future 🚀
-- [ ] LanceDB setup and configuration
-- [ ] Embedding service with local model
-- [ ] Codebase indexing with semantic search
-- [ ] Mode-specific knowledge bases
-- [ ] RAG context injection on mode entry
-- [ ] Findings indexing on mode exit
-- [ ] Structured output service with JSON schema validation
-- [ ] Mode-specific output schemas
-- [ ] Retry logic with exponential backoff
-- [ ] Provider integration for structured output
+- [ ] RAG integration (moved to separate stage - see `.dev/docs/Development-Roadmap/rework/RAG.md`)
+- [ ] Structured output integration (moved to separate stage - see RAG.md)
 
 ---
 
@@ -384,8 +281,8 @@ olish & Refinement
 2. **Phase 15**: Implement Focus Mode (if desired)
 3. **Phase 18**: Complete Transition Animations (if desired)
 
-### Future (12-15 hours)
-4. **Phase 19**: Implement RAG and Structured Output (major enhancement)
+### Future (Separate Stage)
+4. **RAG Integration**: See `.dev/docs/Development-Roadmap/rework/RAG.md` for complete roadmap
 
 ---
 

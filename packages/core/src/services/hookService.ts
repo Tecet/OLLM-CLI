@@ -55,8 +55,8 @@ export class HookService {
     // Initialize hook registry
     this.registry = new HookRegistry();
 
-    // Initialize hook planner
-    this.planner = new HookPlanner();
+    // Initialize hook planner with registry
+    this.planner = new HookPlanner(this.registry);
 
     // Initialize trusted hooks
     const trustedHooksPath = config.trustedHooksPath || join(homedir(), '.ollm', 'trusted-hooks.json');

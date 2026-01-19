@@ -11,6 +11,7 @@ import React, { createContext, useContext, useState, useCallback, useEffect, use
 import type { ProviderAdapter, Message as ProviderMessage, ToolCall, ToolSchema, ProviderMetrics } from '@ollm/core';
 import { profileManager } from '../profiles/ProfileManager.js';
 import { SettingsService } from '../../config/settingsService.js';
+import { useUICallbacks } from '../../ui/contexts/UICallbacksContext.js';
 
 /**
  * Model context value
@@ -31,6 +32,9 @@ export interface ModelContextValue {
     attempt: number;
     elapsedMs: number;
   } | null;
+  
+  /** Skip the current warmup process */
+  skipWarmup: () => void;
   
   /** Check if a model supports tools */
   modelSupportsTools: (model: string) => boolean;
@@ -76,6 +80,9 @@ export function ModelProvider({
   provider,
   initialModel,
 }: ModelProviderProps) {
+  // Get UI callbacks from context
+  const { promptUser, addSystemMessage, clearContext } = useUICallbacks();
+  
   const [currentModel, setCurrentModel] = useState(initialModel);
   const [modelLoading, setModelLoading] = useState(false);
   const [warmupStatus, setWarmupStatus] = useState<{
@@ -258,27 +265,11 @@ export function ModelProvider({
       return;
     }
 
-    // Get prompt and system message callbacks
-    const promptUser = globalThis.__ollmPromptUser;
-    const addSystemMessage = globalThis.__ollmAddSystemMessage;
-
-    if (!promptUser) {
-      // No prompt available, set session-only override
-      await saveToolSupport(model, false, false);
-      
-      if (addSystemMessage) {
-        addSystemMessage(`Tool error detected for model "${model}". Tools disabled for this session.`);
-      }
-      return;
-    }
-
     // Record that we're prompting now
     recentErrorPromptsRef.current.set(model, now);
 
     // Prompt user for confirmation with model name in context
-    if (addSystemMessage) {
-      addSystemMessage(`Tool error detected for model "${model}": ${errorMessage}`);
-    }
+    addSystemMessage(`Tool error detected for model "${model}": ${errorMessage}`);
 
     const response = await promptUser(
       `Model "${model}" appears to not support tools. Save this permanently?`,
@@ -288,24 +279,16 @@ export function ModelProvider({
     if (response === 'Yes (Permanent)') {
       // Save permanently to user_models.json
       await saveToolSupport(model, false, true);
-      
-      if (addSystemMessage) {
-        addSystemMessage(`Tool support disabled for "${model}" and saved permanently.`);
-      }
+      addSystemMessage(`Tool support disabled for "${model}" and saved permanently.`);
     } else if (response === 'No (Session Only)') {
       // Set session-only override (expires in 1 hour)
       await saveToolSupport(model, false, false);
-      
-      if (addSystemMessage) {
-        addSystemMessage(`Tool support disabled for "${model}" for this session only (expires in 1 hour).`);
-      }
+      addSystemMessage(`Tool support disabled for "${model}" for this session only (expires in 1 hour).`);
     } else {
       // Cancel - don't set any override
-      if (addSystemMessage) {
-        addSystemMessage(`Tool support setting not changed for "${model}".`);
-      }
+      addSystemMessage(`Tool support setting not changed for "${model}".`);
     }
-  }, [isToolUnsupportedError, saveToolSupport]);
+  }, [isToolUnsupportedError, saveToolSupport, promptUser, addSystemMessage]);
 
   /**
    * Check if a new override source should take precedence over an existing one
@@ -337,11 +320,7 @@ export function ModelProvider({
    * @returns Promise resolving to true if tools are supported, false otherwise
    */
   const autoDetectToolSupport = useCallback(async (model: string): Promise<boolean> => {
-    const addSystemMessage = globalThis.__ollmAddSystemMessage;
-    
-    if (addSystemMessage) {
-      addSystemMessage(`Auto-detecting tool support for ${model}...`);
-    }
+    addSystemMessage(`Auto-detecting tool support for ${model}...`);
 
     // Create minimal test tool schema
     const testTools: ToolSchema[] = [{
@@ -393,29 +372,23 @@ export function ModelProvider({
       // Save result permanently
       await saveToolSupport(model, supported, true);
       
-      if (addSystemMessage) {
-        const status = supported ? 'Enabled' : 'Disabled';
-        addSystemMessage(`Tool support detected: ${status} (saved permanently)`);
-      }
+      const status = supported ? 'Enabled' : 'Disabled';
+      addSystemMessage(`Tool support detected: ${status} (saved permanently)`);
       
       return supported;
     } catch (error) {
       // Handle timeout or other errors
       if (error instanceof Error && error.name === 'AbortError') {
-        if (addSystemMessage) {
-          addSystemMessage('Auto-detect timed out. Defaulting to tools disabled.');
-        }
+        addSystemMessage('Auto-detect timed out. Defaulting to tools disabled.');
       } else {
-        if (addSystemMessage) {
-          addSystemMessage('Auto-detect failed. Defaulting to tools disabled.');
-        }
+        addSystemMessage('Auto-detect failed. Defaulting to tools disabled.');
       }
       
       // Default to safe setting on error (session only)
       await saveToolSupport(model, false, false);
       return false;
     }
-  }, [provider, saveToolSupport, isToolUnsupportedError]);
+  }, [provider, saveToolSupport, isToolUnsupportedError, addSystemMessage]);
 
   /**
    * Handle unknown model by prompting user for tool support information
@@ -425,28 +398,12 @@ export function ModelProvider({
    * @returns Promise resolving to true if tools are supported, false otherwise
    */
   const handleUnknownModel = useCallback(async (model: string): Promise<boolean> => {
-    const promptUser = globalThis.__ollmPromptUser;
-    const addSystemMessage = globalThis.__ollmAddSystemMessage;
-    
-    if (!promptUser) {
-      // No prompt callback available, default to safe setting
-      if (addSystemMessage) {
-        addSystemMessage(`Unknown model "${model}". Defaulting to tools disabled for safety.`);
-      }
-      await saveToolSupport(model, false, 'auto_detected');
-      return false;
-    }
-
-    if (addSystemMessage) {
-      addSystemMessage(`Unknown model detected: ${model}`);
-    }
+    addSystemMessage(`Unknown model detected: ${model}`);
 
     // Set up 30-second timeout with safe default
     const timeoutPromise = new Promise<string>((resolve) => {
       const handle = setTimeout(() => {
-        if (addSystemMessage) {
-          addSystemMessage('No response received. Defaulting to tools disabled for safety.');
-        }
+        addSystemMessage('No response received. Defaulting to tools disabled for safety.');
         resolve('No'); // Safe default
       }, 30000);
       
@@ -472,28 +429,22 @@ export function ModelProvider({
 
     if (response === 'Yes') {
       await saveToolSupport(model, true, true);
-      if (addSystemMessage) {
-        addSystemMessage('Tool support enabled and saved permanently.');
-      }
+      addSystemMessage('Tool support enabled and saved permanently.');
       return true;
     } else if (response === 'No') {
       await saveToolSupport(model, false, true);
-      if (addSystemMessage) {
-        addSystemMessage('Tool support disabled and saved permanently.');
-      }
+      addSystemMessage('Tool support disabled and saved permanently.');
       return false;
     } else if (response === 'Auto-detect') {
       // Run auto-detection
       return await autoDetectToolSupport(model);
     } else {
       // Fallback for any other response (including timeout)
-      if (addSystemMessage) {
-        addSystemMessage('Invalid response. Defaulting to tools disabled (session only).');
-      }
+      addSystemMessage('Invalid response. Defaulting to tools disabled (session only).');
       await saveToolSupport(model, false, false);
       return false;
     }
-  }, [saveToolSupport, autoDetectToolSupport]);
+  }, [saveToolSupport, autoDetectToolSupport, promptUser, addSystemMessage]);
 
   const setModelAndLoading = useCallback(async (model: string) => {
     const changed = currentModel !== model;
@@ -514,12 +465,10 @@ export function ModelProvider({
         
         // Add system message showing tool support status
         const addSystemMessage = globalThis.__ollmAddSystemMessage;
-        if (addSystemMessage) {
-          const toolStatus = toolSupport ? 'Enabled' : 'Disabled';
-          const override = toolSupportOverridesRef.current.get(model);
-          const persistence = override?.source === 'user_confirmed' ? 'Permanent' : 'Session';
-          addSystemMessage(`Switched to ${model}. Tools: ${toolStatus} (${persistence})`);
-        }
+        const toolStatus = toolSupport ? 'Enabled' : 'Disabled';
+        const override = toolSupportOverridesRef.current.get(model);
+        const persistence = override?.source === 'user_confirmed' ? 'Permanent' : 'Session';
+        addSystemMessage(`Switched to ${model}. Tools: ${toolStatus} (${persistence})`);
         
         setCurrentModel(model);
         setModelLoading(true);
@@ -531,9 +480,12 @@ export function ModelProvider({
           });
         }
         
-        // Clear context on model switch (Fix for Issue #1)
-        const clearContext = globalThis.__ollmClearContext;
-        if (clearContext) {
+        // Clear context on model switch (optional, configurable)
+        const settingsService = SettingsService.getInstance();
+        const settings = settingsService.getSettings();
+        const shouldClearContext = settings.llm?.clearContextOnModelSwitch ?? true; // Default: true (backward compatible)
+        
+        if (shouldClearContext) {
           clearContext();
         }
         
@@ -549,11 +501,8 @@ export function ModelProvider({
       }
       
       // Add system message showing tool support status
-      const addSystemMessage = globalThis.__ollmAddSystemMessage;
-      if (addSystemMessage) {
-        const toolStatus = toolSupport ? 'Enabled' : 'Disabled';
-        addSystemMessage(`Switched to ${model}. Tools: ${toolStatus}`);
-      }
+      const toolStatus = toolSupport ? 'Enabled' : 'Disabled';
+      addSystemMessage(`Switched to ${model}. Tools: ${toolStatus}`);
       
       setCurrentModel(model);
       setModelLoading(true);
@@ -565,13 +514,14 @@ export function ModelProvider({
         });
       }
       
-      // Clear context on model switch (Fix for Issue #1)
-      const clearContext = globalThis.__ollmClearContext;
-      if (clearContext) {
+      // Clear context on model switch (optional, configurable)
+      const shouldClearContext2 = settings.llm?.clearContextOnModelSwitch ?? true; // Default: true (backward compatible)
+      
+      if (shouldClearContext2) {
         clearContext();
       }
     }
-  }, [currentModel, provider, handleUnknownModel, saveToolSupport]);
+  }, [currentModel, provider, handleUnknownModel, saveToolSupport, addSystemMessage, clearContext]);
 
   /**
    * Check if a model supports tools based on overrides and profile metadata
@@ -598,6 +548,17 @@ export function ModelProvider({
     if (!modelLoading || !currentModel) return;
     if (warmupModelRef.current === currentModel) return;
 
+    // Check if warmup is enabled in settings
+    const settingsService = SettingsService.getInstance();
+    const settings = settingsService.getSettings();
+    const warmupEnabled = settings.llm?.warmup?.enabled ?? true;
+    
+    if (!warmupEnabled) {
+      // Warmup disabled, skip it
+      setModelLoading(false);
+      return;
+    }
+
     if (warmupAbortRef.current) {
       warmupAbortRef.current.abort();
     }
@@ -616,7 +577,10 @@ export function ModelProvider({
     const controller = new AbortController();
     warmupAbortRef.current = controller;
     const modelName = currentModel;
-    const retryDelaysMs = [1000, 2000, 4000];
+    
+    // Get configuration
+    const maxAttempts = settings.llm?.warmup?.maxAttempts ?? 3;
+    const retryDelaysMs = [1000, 2000, 4000].slice(0, maxAttempts - 1);
 
     const scheduleRetry = () => {
       const previousAttempts = warmupAttemptsRef.current.get(modelName) ?? 0;
@@ -643,9 +607,10 @@ export function ModelProvider({
 
     const runWarmup = async (): Promise<void> => {
       try {
-        // Get model-specific timeout from profile (default: 30s, reasoning models: 120s)
+        // Get model-specific timeout from profile or settings
         const profile = profileManager.findProfile(currentModel);
-        const warmupTimeout = profile?.warmup_timeout ?? 30000;
+        const configTimeout = settings.llm?.warmup?.timeout ?? 30000;
+        const warmupTimeout = profile?.warmup_timeout ?? configTimeout;
 
         const stream = provider.chatStream({
           model: currentModel,
@@ -720,6 +685,22 @@ export function ModelProvider({
     setWarmupStatus(null);
     warmupStartRef.current = null;
   }, []);
+  
+  const skipWarmup = useCallback(() => {
+    if (warmupAbortRef.current) {
+      warmupAbortRef.current.abort();
+    }
+    if (warmupTimerRef.current) {
+      clearTimeout(warmupTimerRef.current);
+      warmupTimerRef.current = null;
+    }
+    setModelLoading(false);
+    setWarmupStatus(null);
+    warmupStartRef.current = null;
+    
+    // Add system message
+    addSystemMessage('Warmup skipped by user.');
+  }, [addSystemMessage]);
 
   const sendToLLM = useCallback(async (
     messages: Array<{ 
@@ -861,6 +842,7 @@ export function ModelProvider({
     setCurrentModel: setModelAndLoading,
     modelLoading,
     warmupStatus,
+    skipWarmup,
     modelSupportsTools,
     sendToLLM,
     cancelRequest,

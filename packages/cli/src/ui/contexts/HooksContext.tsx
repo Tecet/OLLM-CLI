@@ -9,10 +9,10 @@
  */
 
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode, useMemo } from 'react';
-import { HookRegistry } from '@ollm/ollm-cli-core/hooks/hookRegistry.js';
 import type { Hook, HookEvent } from '@ollm/ollm-cli-core/hooks/types.js';
 import { SettingsService } from '../../config/settingsService.js';
 import { loadHooksFromFiles } from '../../services/hookLoader.js';
+import { useServices } from '../../features/context/ServiceContext.js';
 
 /**
  * Hook category for organizing hooks in the UI
@@ -77,8 +77,6 @@ export function useHooks(): HooksContextValue {
 
 export interface HooksProviderProps {
   children: ReactNode;
-  /** Optional HookRegistry instance (for testing) */
-  hookRegistry?: HookRegistry;
   /** Optional SettingsService instance (for testing) */
   settingsService?: SettingsService;
 }
@@ -88,7 +86,6 @@ export interface HooksProviderProps {
  */
 export function HooksProvider({ 
   children, 
-  hookRegistry: customRegistry,
   settingsService: customSettings
 }: HooksProviderProps) {
   const [state, setState] = useState<HooksState>({
@@ -100,8 +97,13 @@ export function HooksProvider({
     corruptedHooks: [],
   });
 
-  // Use provided instances or create defaults
-  const hookRegistry = useMemo(() => customRegistry || new HookRegistry(), [customRegistry]);
+  // Get central hook registry from service container
+  const { container } = useServices();
+  const hookRegistry = useMemo(() => {
+    if (!container) return null;
+    return container.getHookService().getRegistry();
+  }, [container]);
+  
   const settingsService = useMemo(() => customSettings || SettingsService.getInstance(), [customSettings]);
 
   /**
@@ -171,6 +173,12 @@ export function HooksProvider({
    * Load hooks from registry and settings
    */
   const refreshHooks = useCallback(async () => {
+    // Don't proceed if hook registry is not available yet
+    if (!hookRegistry) {
+      setState(prev => ({ ...prev, isLoading: false, error: 'Hook registry not initialized' }));
+      return;
+    }
+    
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
@@ -284,6 +292,9 @@ export function HooksProvider({
   // Load hooks from files and then refresh
   useEffect(() => {
     const initializeHooks = async () => {
+      // Wait for hook registry to be available
+      if (!hookRegistry) return;
+      
       // Load hooks from JSON files
       await loadHooksFromFiles(hookRegistry);
       // Refresh the UI state
