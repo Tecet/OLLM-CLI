@@ -996,50 +996,50 @@ export function App({ config }: AppProps) {
               <ToolsProvider>
                 <MCPProvider>
                   <UserPromptProvider>
-                    <GPUProvider 
-                      pollingInterval={config.status?.pollInterval || 5000}
-                      autoStart={config.ui?.showGpuStats !== false}
-                    >
-                  <ServiceProvider
-                    provider={provider}
-                    config={config}
-                    workspacePath={workspacePath}
-                  >
-                  <ContextManagerProvider
-                    sessionId={sessionId}
-                    modelInfo={modelInfo}
-                    modelId={initialModel}
-                    config={contextConfig}
-                    provider={provider}
-                  >
-                    <ModelProvider
+                    <ServiceProvider
                       provider={provider}
-                      initialModel={initialModel}
+                      config={config}
+                      workspacePath={workspacePath}
                     >
-                      <ChatProvider>
-                        <AllCallbacksBridge onOpenModelMenu={() => {
-                          // This will be wired up properly when we refactor AppContent
-                          // For now, the global callback will be registered
-                          console.warn('openModelMenu called from bridge - needs wiring');
-                        }}>
-                          <ReviewProvider>
-                            <FocusProvider>
-                              <ActiveContextProvider>
-                                <ErrorBoundary>
-                                  <AppContent config={config} />
-                                </ErrorBoundary>
-                              </ActiveContextProvider>
-                            </FocusProvider>
-                          </ReviewProvider>
-                        </AllCallbacksBridge>
-                      </ChatProvider>
-                    </ModelProvider>
-                  </ContextManagerProvider>
-                </ServiceProvider>
-              </GPUProvider>
-              </UserPromptProvider>
-            </MCPProvider>
-            </ToolsProvider>
+                      <GPUProvider 
+                        pollingInterval={config.status?.pollInterval || 5000}
+                        autoStart={config.ui?.showGpuStats !== false}
+                      >
+                        <ContextManagerProvider
+                          sessionId={sessionId}
+                          modelInfo={modelInfo}
+                          modelId={initialModel}
+                          config={contextConfig}
+                          provider={provider}
+                        >
+                          <ModelProvider
+                            provider={provider}
+                            initialModel={initialModel}
+                          >
+                            <ChatProvider>
+                              <AllCallbacksBridge onOpenModelMenu={() => {
+                                // This will be wired up properly when we refactor AppContent
+                                // For now, the global callback will be registered
+                                console.warn('openModelMenu called from bridge - needs wiring');
+                              }}>
+                                <ReviewProvider>
+                                  <FocusProvider>
+                                    <ActiveContextProvider>
+                                      <ErrorBoundary>
+                                        <AppContent config={config} />
+                                      </ErrorBoundary>
+                                    </ActiveContextProvider>
+                                  </FocusProvider>
+                                </ReviewProvider>
+                              </AllCallbacksBridge>
+                            </ChatProvider>
+                          </ModelProvider>
+                        </ContextManagerProvider>
+                      </GPUProvider>
+                    </ServiceProvider>
+                  </UserPromptProvider>
+                </MCPProvider>
+              </ToolsProvider>
             </HooksProvider>
           </DialogProvider>
         </SettingsProvider>

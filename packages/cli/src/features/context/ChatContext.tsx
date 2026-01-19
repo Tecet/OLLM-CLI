@@ -405,6 +405,16 @@ export function ChatProvider({
       setWaitingForResponse(true);
       setStreaming(true);
 
+      // Emit before_agent hook event
+      if (serviceContainer) {
+        const hookService = serviceContainer.getHookService();
+        hookService.emitEvent('before_agent', {
+          message: content,
+          model: currentModel,
+          timestamp: new Date().toISOString(),
+        });
+      }
+
       // Stage 1: Check tool support (model capability check)
       const supportsTools = modelSupportsTools(currentModel);
       
@@ -543,6 +553,18 @@ export function ChatProvider({
         console.log('[DEBUG] Tools being sent:', toolSchemas?.map(t => t.name) || 'NONE');
         console.log('=========================');
 
+        // Emit before_model hook event
+        if (serviceContainer) {
+          const hookService = serviceContainer.getHookService();
+          hookService.emitEvent('before_model', {
+            model: currentModel,
+            turn: turnCount,
+            historyLength: history.length,
+            toolsAvailable: toolSchemas?.length || 0,
+            timestamp: new Date().toISOString(),
+          });
+        }
+
         try {
           await sendToLLM(
             history,
@@ -603,6 +625,21 @@ export function ChatProvider({
                    
                    return { ...msg, ...updates };
                  }));
+              }
+              
+              // Emit after_model hook event
+              if (serviceContainer) {
+                const hookService = serviceContainer.getHookService();
+                hookService.emitEvent('after_model', {
+                  model: currentModel,
+                  turn: turnCount,
+                  metrics: metrics ? {
+                    promptTokens: metrics.promptEvalCount,
+                    completionTokens: metrics.evalCount,
+                    totalSeconds: metrics.totalDuration / 1e9,
+                  } : undefined,
+                  timestamp: new Date().toISOString(),
+                });
               }
             },
             (toolCall: CoreToolCall) => {
@@ -675,6 +712,17 @@ export function ChatProvider({
                   } : msg
               ));
 
+              // Emit before_tool hook event
+              if (serviceContainer) {
+                const hookService = serviceContainer.getHookService();
+                hookService.emitEvent('before_tool', {
+                  toolName: tc.name,
+                  toolArgs: tc.args,
+                  turn: turnCount,
+                  timestamp: new Date().toISOString(),
+                });
+              }
+
               // Verify tool permission before execution (prevents hallucinated calls)
               // Check if tool was in the schema we sent to LLM
               let toolAllowed = true;
@@ -709,6 +757,19 @@ export function ChatProvider({
                           } : msg
                       ));
 
+                      // Emit after_tool hook event
+                      if (serviceContainer) {
+                        const hookService = serviceContainer.getHookService();
+                        hookService.emitEvent('after_tool', {
+                          toolName: tc.name,
+                          toolArgs: tc.args,
+                          result: result.returnDisplay,
+                          success: true,
+                          turn: turnCount,
+                          timestamp: new Date().toISOString(),
+                        });
+                      }
+
                       if (tc.name === 'trigger_hot_swap') {
                           // Post-swap: start a fresh assistant message for the next turn
                           const swapMsg = addMessage({ role: 'assistant', content: '', expanded: true });
@@ -724,6 +785,20 @@ export function ChatProvider({
                       content: `Error: Tool ${tc.name} not found or denied`,
                       toolCallId: tc.id
                   });
+                  
+                  // Emit after_tool hook event for failed tool
+                  if (serviceContainer) {
+                    const hookService = serviceContainer.getHookService();
+                    hookService.emitEvent('after_tool', {
+                      toolName: tc.name,
+                      toolArgs: tc.args,
+                      error: 'Tool not found or denied',
+                      success: false,
+                      turn: turnCount,
+                      timestamp: new Date().toISOString(),
+                    });
+                  }
+                  
                   stopLoop = true;
               }
           } else {
@@ -739,8 +814,19 @@ export function ChatProvider({
       setStreaming(false);
       setWaitingForResponse(false);
       assistantMessageIdRef.current = null;
+      
+      // Emit after_agent hook event
+      if (serviceContainer) {
+        const hookService = serviceContainer.getHookService();
+        hookService.emitEvent('after_agent', {
+          message: content,
+          model: currentModel,
+          turns: turnCount,
+          timestamp: new Date().toISOString(),
+        });
+      }
     },
-    [addMessage, sendToLLM, setLaunchScreenVisible, contextActions, provider, currentModel, clearChat, modelSupportsTools]
+    [addMessage, sendToLLM, setLaunchScreenVisible, contextActions, provider, currentModel, clearChat, modelSupportsTools, serviceContainer]
   );
 
   const cancelGeneration = useCallback(() => {
