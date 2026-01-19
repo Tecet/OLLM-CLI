@@ -36,6 +36,10 @@ interface DataEvent {
   servers?: string[];
 }
 
+import { useMCP } from '../../ui/contexts/MCPContext.js';
+import { useTools } from '../../ui/contexts/ToolsContext.js';
+import { useHooks } from '../../ui/contexts/HooksContext.js';
+
     // ModeChangedEvent interface removed as it was unused and replaced by ModeTransitionPayload locally
 
 
@@ -80,6 +84,13 @@ export const ActiveContextProvider: React.FC<{ children: ReactNode }> = ({ child
   // Use the correct hook which returns { state, actions }
   const { state: contextState, actions } = useContextManager();
   
+  // Real-time state from other providers
+  // We use optional chaining access via hooks because we are inside properly nested providers in App.tsx
+  // but we want to be safe if used in isolation.
+  const { state: mcpState } = useMCP();
+  const { state: hooksState } = useHooks();
+  const { state: toolsState } = useTools();
+
   const [state, setState] = useState<ActiveContextState>({
     activeSkills: [],
     activeTools: [],
@@ -98,6 +109,40 @@ export const ActiveContextProvider: React.FC<{ children: ReactNode }> = ({ child
   });
   
   const [modeStartTime, setModeStartTime] = useState<Date>(new Date());
+
+  // Sync with Providers
+  useEffect(() => {
+    // Update MCP Servers
+    // mcpState.servers is a Map, so we need to convert to array first
+    const connectedServers = Array.from(mcpState.servers.values())
+        .filter(s => s.status === 'connected')
+        .map(s => s.name);
+        
+    // Update Hooks
+    // hooksState uses enabledHooks which is a Set of IDs
+    const activeHooks = Array.from(hooksState.enabledHooks || []);
+
+    // Update Tools (enabled tools)
+    const activeTools = Array.from(toolsState.enabledTools || []);
+
+    setState(prev => {
+        // Only update if changed to avoid render loops
+        if (
+            JSON.stringify(prev.activeMcpServers) === JSON.stringify(connectedServers) &&
+            JSON.stringify(prev.activeHooks) === JSON.stringify(activeHooks) &&
+            JSON.stringify(prev.activeTools) === JSON.stringify(activeTools)
+        ) {
+            return prev;
+        }
+
+        return {
+            ...prev,
+            activeMcpServers: connectedServers,
+            activeHooks: activeHooks,
+            activeTools: activeTools
+        };
+    });
+  }, [mcpState.servers, hooksState.enabledHooks, toolsState.enabledTools]);
 
   // Update mode duration every second
   useEffect(() => {

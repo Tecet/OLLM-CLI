@@ -6,29 +6,27 @@
  * **Validates: Requirements 2.4, 4.1**
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import * as fc from 'fast-check';
 import { SettingsService } from '../settingsService.js';
-import { readFileSync, writeFileSync, existsSync, mkdirSync, rmSync } from 'fs';
+import { readFileSync, existsSync, mkdirSync, rmSync } from 'fs';
 import { join } from 'path';
-import { tmpdir } from 'os';
+import * as os from 'os';
 
 describe('SettingsService Hook Settings Persistence Property Tests', () => {
   let testDir: string;
   let testOllmDir: string;
   let testSettingsPath: string;
-  let originalHomedir: any;
 
   beforeEach(() => {
     // Create a temporary test directory
-    testDir = join(tmpdir(), `ollm-test-settings-${Date.now()}-${Math.random().toString(36).substring(7)}`);
+    testDir = join(os.tmpdir(), `ollm-test-settings-${Date.now()}-${Math.random().toString(36).substring(7)}`);
     testOllmDir = join(testDir, '.ollm');
     mkdirSync(testOllmDir, { recursive: true });
     testSettingsPath = join(testOllmDir, 'settings.json');
 
     // Mock homedir to use test directory
-    originalHomedir = require('os').homedir;
-    require('os').homedir = () => testDir;
+    vi.spyOn(os, 'homedir').mockReturnValue(testDir);
     
     // Reset singleton instance
     (SettingsService as any).instance = undefined;
@@ -36,9 +34,7 @@ describe('SettingsService Hook Settings Persistence Property Tests', () => {
 
   afterEach(() => {
     // Restore original homedir
-    if (originalHomedir) {
-      require('os').homedir = originalHomedir;
-    }
+    vi.restoreAllMocks();
 
     // Clean up test directory
     try {
@@ -48,9 +44,6 @@ describe('SettingsService Hook Settings Persistence Property Tests', () => {
     } catch (error) {
       console.error('Failed to clean up test directory:', error);
     }
-
-    // Reset singleton
-    (SettingsService as any).instance = undefined;
   });
 
   /**

@@ -15,8 +15,9 @@ import {
   MCPPrompt,
   MCPServerStatusType,
   MCPStreamChunk,
+  MCPTransport,
 } from './types.js';
-import { MCPTransport, StdioTransport, SSETransport, HTTPTransport } from './mcpTransport.js';
+import { StdioTransport, SSETransport, HTTPTransport } from './mcpTransport.js';
 import { substituteEnvObject } from './envSubstitution.js';
 import type { MCPConfig } from './config.js';
 import { DEFAULT_MCP_CONFIG } from './config.js';
@@ -35,6 +36,8 @@ interface ServerState {
   prompts: MCPPrompt[];
   oauthProvider?: MCPOAuthProvider;
   startTime?: number; // Timestamp when server was started
+  logs: string[]; // Circular buffer of log lines (max 1000 lines)
+  maxLogLines: number; // Maximum number of log lines to keep in memory
 }
 
 /**
@@ -45,13 +48,15 @@ interface ServerState {
 export class DefaultMCPClient implements MCPClient {
   private servers: Map<string, ServerState> = new Map();
   private config: Required<Omit<MCPConfig, 'servers'>> & { servers: Record<string, MCPServerConfig> };
+  private globalOAuthProvider?: MCPOAuthProvider;
 
-  constructor(config?: Partial<MCPConfig>) {
+  constructor(config?: Partial<MCPConfig>, oauthProvider?: MCPOAuthProvider) {
     this.config = {
       enabled: config?.enabled ?? DEFAULT_MCP_CONFIG.enabled,
       connectionTimeout: config?.connectionTimeout ?? DEFAULT_MCP_CONFIG.connectionTimeout,
       servers: config?.servers ?? DEFAULT_MCP_CONFIG.servers,
     };
+    this.globalOAuthProvider = oauthProvider;
   }
 
   async startServer(name: string, config: MCPServerConfig): Promise<void> {
@@ -70,20 +75,36 @@ export class DefaultMCPClient implements MCPClient {
     let accessToken: string | undefined;
 
     if (config.oauth?.enabled) {
-      oauthProvider = new MCPOAuthProvider({
-        serverName: name,
-        authorizationUrl: config.oauth.authorizationUrl,
-        tokenUrl: config.oauth.tokenUrl,
-        clientId: config.oauth.clientId,
-        clientSecret: config.oauth.clientSecret,
-        scopes: config.oauth.scopes,
-        redirectPort: config.oauth.redirectPort,
-        usePKCE: config.oauth.usePKCE,
-      });
+      // Use global provider if available, otherwise we can't share tokens easily
+      // In a real CLI/Headless scenario, we'd need to init storage here.
+      // For now, rely on injection for shared state.
+      oauthProvider = this.globalOAuthProvider;
+
+      if (!oauthProvider) {
+         // Fallback: This isolates the server, which might be intentional in some cases,
+         // but for the main app, we expect injection. 
+         // We instantiate a memory-only provider here if none provided, 
+         // effectively disabling persistence unless startServer caller provided one.
+         // Note: Interactive Auth requires a browser/UI handler usually.
+         oauthProvider = new MCPOAuthProvider();
+      }
 
       try {
-        // Try to get existing token or initiate OAuth flow
-        accessToken = await oauthProvider.getAccessToken();
+        // Register config validation
+        oauthProvider.registerServerConfig(name, config.oauth);
+        
+        // Try to get existing token
+        // We do NOT call authenticate() here because it starts interactive flow (opens browser)
+        // which is bad for automated startups. We only want silent token retrieval.
+        accessToken = await oauthProvider.getAccessToken(name);
+        
+        if (!accessToken) {
+            // No token available.
+            // We should NOT block startup? Or should we?
+            // If we proceed without token, server might reject us.
+            // If strict, throw.
+            throw new Error(`No OAuth token available for ${name}. Please authenticate via settings.`);
+        }
       } catch (error) {
         throw new Error(`OAuth authentication failed for server '${name}': ${error instanceof Error ? error.message : String(error)}`);
       }
@@ -102,11 +123,34 @@ export class DefaultMCPClient implements MCPClient {
       resources: [],
       prompts: [],
       oauthProvider,
+      logs: [],
+      maxLogLines: 1000,
     };
 
     this.servers.set(name, state);
 
+    // Add log capture method
+    const addLog = (message: string) => {
+      const timestamp = new Date().toISOString();
+      const logLine = `[${timestamp}] ${message}`;
+      state.logs.push(logLine);
+      
+      // Keep only the last maxLogLines
+      if (state.logs.length > state.maxLogLines) {
+        state.logs = state.logs.slice(-state.maxLogLines);
+      }
+    };
+
+    // Capture transport logs if it's a StdioTransport
+    if (transport instanceof StdioTransport) {
+      // Hook into stderr/stdout to capture logs
+      // This is done by the transport itself, but we can add a listener
+      addLog(`Starting MCP server: ${config.command} ${config.args.join(' ')}`);
+    }
+
     try {
+      addLog('Connecting to server...');
+      
       // Connect with timeout (use config timeout or server-specific timeout)
       const timeout = config.timeout || this.config.connectionTimeout;
       const connectPromise = transport.connect();
@@ -119,11 +163,13 @@ export class DefaultMCPClient implements MCPClient {
       // Update status to connected and record start time
       state.status = 'connected';
       state.startTime = Date.now();
+      addLog('Successfully connected to server');
     } catch (error) {
       // Update status to error
       state.status = 'error';
       const errorMessage = error instanceof Error ? error.message : String(error);
       state.error = errorMessage;
+      addLog(`Connection failed: ${errorMessage}`);
       
       // Clean up
       try {
@@ -224,17 +270,16 @@ export class DefaultMCPClient implements MCPClient {
   }
 
   async getServerLogs(name: string, lines: number = 100): Promise<string[]> {
-    // For now, return an empty array as we need to implement log file handling
-    // This will be implemented when we add proper logging infrastructure
-    // The logs should be stored in ~/.ollm/mcp/logs/{server-name}.log
+    const state = this.servers.get(name);
     
-    // TODO: Implement actual log file reading
-    // const logPath = path.join(getMCPLogsDir(), `${name}.log`);
-    // const content = await fs.readFile(logPath, 'utf-8');
-    // const allLines = content.split('\n');
-    // return allLines.slice(-lines);
+    if (!state) {
+      return [];
+    }
     
-    return [];
+    // Return the last N lines from the log buffer
+    const logCount = state.logs.length;
+    const startIndex = Math.max(0, logCount - lines);
+    return state.logs.slice(startIndex);
   }
 
   listServers(): MCPServerInfo[] {

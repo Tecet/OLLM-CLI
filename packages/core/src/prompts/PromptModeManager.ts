@@ -511,38 +511,49 @@ export class PromptModeManager extends EventEmitter {
   }
   
   /**
-   * Get mode template content
+   * Get allowed tools for a specific mode
    */
-  public getModeTemplate(mode: ModeType): string {
-    // Mode templates will be implemented in Phase 1, Task 3
-    // For now, return basic templates
-    const templates: Record<ModeType, string> = {
-      assistant: `# Mode: Assistant 💬
-You are a helpful AI assistant. You can answer questions, explain concepts,
-and have natural conversations about any topic.`,
+  getAllowedTools(mode: ModeType): string[] {
+    const toolAccess: Record<ModeType, string[]> = {
+      assistant: [], // No tools allowed by default in Assistant mode for maximum safety
       
-      planning: `# Mode: Planning 📋
-You are a technical architect and planner. Focus on research, design, and
-planning before implementation. You have read-only access to the codebase.`,
+      planning: [
+        'web_search', 'web_fetch',
+        'read_file', 'read_multiple_files',
+        'grep_search', 'file_search', 'list_directory',
+        'get_diagnostics', 'write_memory_dump',
+        'trigger_hot_swap',
+        'mcp:*' // Allow all MCP tools (namespaced)
+      ],
       
-      developer: `# Mode: Developer 👨‍💻
-You are a senior software engineer. You have full access to all tools and
-can implement, refactor, and modify code.`,
+      developer: ['*'],
       
-      debugger: `# Mode: Debugger 🐛
-You are a debugging specialist. Systematically analyze errors, find root
-causes, and implement fixes.`,
+      debugger: [
+        'read_file', 'grep_search', 'list_directory',
+        'get_diagnostics', 'shell',
+        'git_diff', 'git_log',
+        'web_search',
+        'write_file', 'str_replace',
+        'write_memory_dump',
+        'trigger_hot_swap',
+        'mcp:*' // Allow all MCP tools
+      ],
       
-      reviewer: `# Mode: Code Reviewer 👀
-You are a code reviewer. Assess code quality, identify issues, and provide
-constructive feedback.`
+      reviewer: [
+        'read_file', 'grep_search', 'list_directory',
+        'get_diagnostics', 'shell',
+        'git_diff', 'git_log',
+        'trigger_hot_swap',
+        'web_search',
+        'mcp:*' // Allow all MCP tools
+      ]
     };
     
-    return templates[mode] || templates.assistant;
+    return toolAccess[mode] || [];
   }
-  
+
   /**
-   * Filter tools for current mode
+   * Filter tools for a specific mode based on allowed tools
    */
   filterToolsForMode(tools: Array<{ name: string }>, mode: ModeType): Array<{ name: string }> {
     const allowedTools = this.getAllowedTools(mode);
@@ -559,6 +570,11 @@ constructive feedback.`
         return true;
       }
       
+      // Check for MCP tool permission
+      if (allowedTools.includes('mcp:*') && tool.name.includes(':')) {
+        return true;
+      }
+      
       // Check wildcard patterns (e.g., 'git_*')
       return allowedTools.some(pattern => {
         if (pattern.endsWith('*')) {
@@ -569,71 +585,59 @@ constructive feedback.`
       });
     });
   }
-  
+
   /**
-   * Check if a tool is allowed in current mode
+   * Get mode template content
    */
-  isToolAllowed(toolName: string, mode: ModeType): boolean {
-    const allowedTools = this.getAllowedTools(mode);
-    
-    // If mode allows all tools
-    if (allowedTools.includes('*')) {
-      return true;
-    }
-    
-    // Check exact match
-    if (allowedTools.includes(toolName)) {
-      return true;
-    }
-    
-    // Check wildcard patterns
-    return allowedTools.some(pattern => {
-      if (pattern.endsWith('*')) {
-        const prefix = pattern.slice(0, -1);
-        return toolName.startsWith(prefix);
-      }
-      return false;
-    });
-  }
-  
-  /**
-   * Get allowed tools for a mode
-   */
-  getAllowedTools(mode: ModeType): string[] {
-    const toolAccess: Record<ModeType, string[]> = {
-      assistant: [], // No tools allowed by default in Assistant mode for maximum safety
+  public getModeTemplate(mode: ModeType): string {
+    const templates: Record<ModeType, string> = {
+      assistant: `# Mode: Assistant 💬
+You are OLLM, an intelligent and versatile AI assistant.
+- Your primary goal is to be helpful, harmless, and honest.
+- You can answer questions, explain concepts, and assist with general tasks.
+- If provided with tools, use them to verify information or perform tasks.
+- Adapt your tone to be professional yet conversational.`,
       
-      planning: [
-        'web_search', 'web_fetch',
-        'read_file', 'read_multiple_files',
-        'grep_search', 'file_search', 'list_directory',
-        'get_diagnostics', 'write_memory_dump',
-        'trigger_hot_swap'
-      ],
+      planning: `# Mode: Planning 📋
+You are a Senior Technical Architect and Planner.
+- Your focus is strictly on **Analysis**, **Design**, and **Planning**.
+- **DO NOT** write implementation code or modify files.
+- **DO** use available tools to explore the codebase, read documentation, and understand requirements.
+- Produce detailed, step-by-step implementation plans in Markdown.
+- Anticipate edge cases, dependency issues, and architectural implications.`,
       
-      developer: ['*'],
+      developer: `# Mode: Developer 👨‍💻
+You are a Senior Software Engineer.
+- Your focus is on **Implementation**, **Refactoring**, and **Code Modification**.
+- Write clean, maintainable, and efficient code following project patterns.
+- Always read the relevant file before editing it to understand context.
+- When creating new files, ensure directory structures exist.
+- Verify your changes when possible.`,
       
-      debugger: [
-        'read_file', 'grep_search', 'list_directory',
-        'get_diagnostics', 'shell',
-        'git_diff', 'git_log',
-        'web_search',
-        'write_file', 'str_replace',
-        'write_memory_dump',
-        'trigger_hot_swap'
-      ],
+      debugger: `# Mode: Debugger 🐛
+You are a Lead Debugging Specialist.
+- Your focus is on **Root Cause Analysis** and **Bug Fixing**.
+- Systematically diagnose issues:
+  1. Analyze error messages and logs.
+  2. Inspect the immediate code and related dependencies.
+  3. Formulate a hypothesis.
+  4. Verify the hypothesis (using reproduction steps if available).
+  5. Implement a fix.
+- Avoid guessing; use tools to gather evidence.`,
       
-      reviewer: [
-        'read_file', 'grep_search', 'list_directory',
-        'get_diagnostics', 'shell',
-        'git_diff', 'git_log',
-        'trigger_hot_swap',
-        'write_file', 'str_replace',
-        'web_search'
-      ]
+      reviewer: `# Mode: Code Reviewer 👀
+You are a Senior Code Reviewer and QA Specialist.
+- Your focus is on **Code Quality**, **Safety**, and **Best Practices**.
+- Read and analyze code for:
+  - Logic errors and bugs.
+  - Security vulnerabilities.
+  - Performance bottlenecks.
+  - Code style and maintainability.
+- Provide constructive, specific feedback.
+- Do not modify code directly; provide suggestions or specific diffs in your response.`
     };
     
-    return toolAccess[mode] || [];
+    return templates[mode] || templates.assistant;
   }
 
   /**

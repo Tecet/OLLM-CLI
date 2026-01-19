@@ -6,6 +6,8 @@
  * Handles <think>...</think> blocks from reasoning models.
  */
 
+import type { TokenCounter } from '../context/types.js';
+
 export interface ReasoningBlock {
   content: string;
   tokenCount: number;
@@ -27,6 +29,18 @@ export interface ParseResult {
 }
 
 export class ReasoningParser {
+  private tokenCounter?: TokenCounter;
+
+  constructor(tokenCounter?: TokenCounter) {
+    this.tokenCounter = tokenCounter;
+  }
+
+  /**
+   * Set the token counter service
+   */
+  setTokenCounter(tokenCounter: TokenCounter): void {
+    this.tokenCounter = tokenCounter;
+  }
   /**
    * Parse complete text for reasoning blocks
    * Extracts <think>...</think> blocks and separates them from response
@@ -60,7 +74,7 @@ export class ReasoningParser {
       return {
         reasoning: {
           content: trimmedThinkContent,
-          tokenCount: this.estimateTokenCount(trimmedThinkContent),
+          tokenCount: this.estimateTokenCountSync(trimmedThinkContent, `reasoning-${Date.now()}`),
           duration: 0, // Will be set by caller
           complete: true
         },
@@ -188,7 +202,7 @@ export class ReasoningParser {
       return {
         reasoning: {
           content: trimmedThinkContent,
-          tokenCount: this.estimateTokenCount(trimmedThinkContent),
+          tokenCount: this.estimateTokenCountSync(trimmedThinkContent, `reasoning-stream-${Date.now()}`),
           duration,
           complete: !state.inThinkBlock
         },
@@ -248,7 +262,7 @@ export class ReasoningParser {
       return {
         reasoning: {
           content: trimmedThinkContent,
-          tokenCount: this.estimateTokenCount(trimmedThinkContent),
+          tokenCount: this.estimateTokenCountSync(trimmedThinkContent, `reasoning-nested-${Date.now()}`),
           duration: 0,
           complete: depth === 0
         },
@@ -284,7 +298,7 @@ export class ReasoningParser {
         return {
           reasoning: {
             content: thinkContent.trim(),
-            tokenCount: this.estimateTokenCount(thinkContent),
+            tokenCount: this.estimateTokenCountSync(thinkContent, `reasoning-malformed-${Date.now()}`),
             duration: 0,
             complete: false
           },
@@ -297,10 +311,11 @@ export class ReasoningParser {
     const closeTagIndex = text.indexOf('</think>');
     if (closeTagIndex !== -1) {
       // Treat everything before closing tag as thinking
+      const content = text.slice(0, closeTagIndex);
       return {
         reasoning: {
-          content: text.slice(0, closeTagIndex).trim(),
-          tokenCount: this.estimateTokenCount(text.slice(0, closeTagIndex)),
+          content: content.trim(),
+          tokenCount: this.estimateTokenCountSync(content, `reasoning-orphan-${Date.now()}`),
           duration: 0,
           complete: true
         },
@@ -316,10 +331,26 @@ export class ReasoningParser {
   }
   
   /**
-   * Estimate token count (rough approximation)
-   * Uses ~4 characters per token as a heuristic
+   * Estimate token count using TokenCounterService if available
+   * Falls back to rough approximation (~4 characters per token)
    */
-  private estimateTokenCount(text: string): number {
+  private async estimateTokenCount(text: string): Promise<number> {
+    if (this.tokenCounter) {
+      return await this.tokenCounter.countTokens(text);
+    }
+    // Fallback estimation
+    return Math.ceil(text.length / 4);
+  }
+
+  /**
+   * Synchronous token count estimation for streaming contexts
+   * Uses cached value if available, otherwise falls back to heuristic
+   */
+  private estimateTokenCountSync(text: string, id: string = 'reasoning'): number {
+    if (this.tokenCounter) {
+      return this.tokenCounter.countTokensCached(id, text);
+    }
+    // Fallback estimation
     return Math.ceil(text.length / 4);
   }
 }

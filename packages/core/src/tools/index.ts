@@ -58,6 +58,7 @@ export { WriteTodosTool, WriteTodosInvocation, type WriteTodosParams } from './w
 export { RememberTool, RememberInvocation, type RememberParams } from './remember.js';
 export { MemoryDumpTool } from './MemoryDumpTool.js';
 export { HotSwapTool, HotSwapInvocation, type HotSwapParams } from './HotSwapTool.js';
+export { ToolRouter, type ToolRoutingConfig, DEFAULT_TOOL_ROUTING_CONFIG } from './toolRouter.js';
 
 /**
  * Configuration for built-in tools that require paths

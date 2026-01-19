@@ -84,7 +84,14 @@ export const servicesConfigSchema = z.object({
         .object({
           enabled: z.boolean().optional(),
           defaultProfile: z.string().optional(),
-          overrides: z.record(z.string()).optional(),
+          overrides: z.record(z.string(), z.string()).optional(),
+        })
+        .optional(),
+      toolRouting: z
+        .object({
+          enabled: z.boolean().optional(),
+          bindings: z.record(z.string(), z.string()).optional(),
+          enableFallback: z.boolean().optional(),
         })
         .optional(),
       keepAlive: z
@@ -183,20 +190,25 @@ export const DEFAULT_SERVICES_CONFIG: Required<ServicesConfig> = {
       autoThreshold: 0.8,
     },
   },
-  model: {
-    default: 'llama3.1:8b',
-    routing: {
-      enabled: true,
-      defaultProfile: 'general',
-      overrides: {},
+    model: {
+      default: 'llama3.1:8b',
+      routing: {
+        enabled: true,
+        defaultProfile: 'general',
+        overrides: {},
+      },
+      toolRouting: {
+        enabled: true,
+        bindings: {},
+        enableFallback: true,
+      },
+      keepAlive: {
+        enabled: true,
+        models: [],
+        timeout: 300, // 5 minutes
+      },
+      cacheTTL: 300000, // 5 minutes
     },
-    keepAlive: {
-      enabled: true,
-      models: [],
-      timeout: 300, // 5 minutes
-    },
-    cacheTTL: 300000, // 5 minutes
-  },
   options: {
     temperature: 0.7,
     maxTokens: 4096,
@@ -270,17 +282,21 @@ export function mergeServicesConfig(
       ...DEFAULT_SERVICES_CONFIG.model,
       ...userConfig.model,
       routing: {
-        ...DEFAULT_SERVICES_CONFIG.model.routing,
+        ...DEFAULT_SERVICES_CONFIG.model.routing!,
         ...userConfig.model?.routing,
         overrides: {
-          ...DEFAULT_SERVICES_CONFIG.model.routing.overrides,
+          ...DEFAULT_SERVICES_CONFIG.model.routing!.overrides,
           ...userConfig.model?.routing?.overrides,
         },
       },
+      toolRouting: {
+        ...DEFAULT_SERVICES_CONFIG.model.toolRouting!,
+        ...userConfig.model?.toolRouting,
+      },
       keepAlive: {
-        ...DEFAULT_SERVICES_CONFIG.model.keepAlive,
+        ...DEFAULT_SERVICES_CONFIG.model.keepAlive!,
         ...userConfig.model?.keepAlive,
-        models: userConfig.model?.keepAlive?.models ?? DEFAULT_SERVICES_CONFIG.model.keepAlive.models,
+        models: userConfig.model?.keepAlive?.models ?? DEFAULT_SERVICES_CONFIG.model.keepAlive!.models,
       },
     },
     options: {
@@ -343,10 +359,10 @@ export function getModelManagementConfig(
   servicesConfig: Required<ServicesConfig>
 ) {
   return {
-    cacheTTL: servicesConfig.model.cacheTTL,
-    keepAliveEnabled: servicesConfig.model.keepAlive.enabled,
-    keepAliveTimeout: servicesConfig.model.keepAlive.timeout,
-    keepAliveModels: servicesConfig.model.keepAlive.models,
+    cacheTTL: servicesConfig.model.cacheTTL!,
+    keepAliveEnabled: servicesConfig.model.keepAlive!.enabled,
+    keepAliveTimeout: servicesConfig.model.keepAlive!.timeout,
+    keepAliveModels: servicesConfig.model.keepAlive!.models,
   };
 }
 
@@ -357,7 +373,7 @@ export function getModelRouterConfig(
   servicesConfig: Required<ServicesConfig>
 ) {
   return {
-    overrides: servicesConfig.model.routing.overrides,
+    overrides: servicesConfig.model.routing!.overrides,
   };
 }
 
@@ -368,7 +384,7 @@ export function getMemoryServiceConfig(
   servicesConfig: Required<ServicesConfig>
 ) {
   return {
-    storagePath: servicesConfig.memory.storagePath,
+    storagePath: servicesConfig.memory.storagePath!,
     tokenBudget: servicesConfig.memory.tokenBudget,
   };
 }
@@ -380,8 +396,8 @@ export function getTemplateServiceConfig(
   servicesConfig: Required<ServicesConfig>
 ) {
   return {
-    userTemplatesDir: servicesConfig.templates.directories[0],
-    workspaceTemplatesDir: servicesConfig.templates.directories[1],
+    userTemplatesDir: servicesConfig.templates.directories![0],
+    workspaceTemplatesDir: servicesConfig.templates.directories![1],
   };
 }
 

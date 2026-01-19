@@ -76,9 +76,8 @@ export function ModeConfidenceDisplay({
       <Box flexDirection="column" marginBottom={1}>
         <Box>
           <Text bold color="cyan">Mode: </Text>
-          <Text bold color={currentModeColor}>{currentModeIcon} </Text>
           <Text bold color={currentModeColor}>
-            {currentMode ? currentMode.charAt(0).toUpperCase() + currentMode.slice(1) : 'Unknown'}
+            {currentModeIcon} {currentMode ? currentMode.charAt(0).toUpperCase() + currentMode.slice(1) : 'Unknown'}
           </Text>
         </Box>
         <Box marginTop={0}>

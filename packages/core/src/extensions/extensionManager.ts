@@ -351,19 +351,59 @@ export class ExtensionManager {
             env: mergedEnv,
           };
 
-          // Start the MCP server
-          await this.mcpClient.startServer(fullServerName, configWithEnv);
-
-          // Get tools from the server
-          const tools = await this.mcpClient.getTools(fullServerName);
-
-          // Wrap and register each tool
-          for (const mcpTool of tools) {
-            const wrappedTool = this.mcpToolWrapper.wrapTool(fullServerName, mcpTool);
-            this.toolRegistry.register(wrappedTool);
+          // Check if server is already running
+          const serverStatus = this.mcpClient.getServerStatus(fullServerName);
+          
+          if (serverStatus.status === 'connected' || serverStatus.status === 'starting') {
+            console.log(`MCP server '${fullServerName}' is already running, skipping start`);
+            
+            // Get tools from the already-running server
+            const tools = await this.mcpClient.getTools(fullServerName);
+            
+            // Wrap and register tools
+            for (const mcpTool of tools) {
+              const wrappedTool = this.mcpToolWrapper.wrapTool(fullServerName, mcpTool);
+              this.toolRegistry.register(wrappedTool);
+            }
+            
+             console.log(`MCP server '${fullServerName}' reused with ${tools.length} tools`);
+          } else if (serverStatus.status === 'error') {
+            console.log(`MCP server '${fullServerName}' is in error state, restarting...`);
+            
+            // Stop the errored server
+            await this.mcpClient.stopServer(fullServerName);
+            
+            // Wait a moment for clean shutdown
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Start fresh
+            await this.mcpClient.startServer(fullServerName, configWithEnv);
+            
+            // Get tools from the server
+            const tools = await this.mcpClient.getTools(fullServerName);
+            
+            // Wrap and register tools
+            for (const mcpTool of tools) {
+              const wrappedTool = this.mcpToolWrapper.wrapTool(fullServerName, mcpTool);
+              this.toolRegistry.register(wrappedTool);
+            }
+             console.log(`MCP server '${fullServerName}' restarted with ${tools.length} tools`);
+          } else {
+            // Server not running, start it
+            await this.mcpClient.startServer(fullServerName, configWithEnv);
+            
+            // Get tools from the server
+            const tools = await this.mcpClient.getTools(fullServerName);
+            
+            // Wrap and register each tool
+            for (const mcpTool of tools) {
+              const wrappedTool = this.mcpToolWrapper.wrapTool(fullServerName, mcpTool);
+              this.toolRegistry.register(wrappedTool);
+            }
+            
+            console.log(`Started MCP server '${fullServerName}' with ${tools.length} tools`);
           }
 
-          console.log(`Started MCP server '${fullServerName}' with ${tools.length} tools`);
         } catch (error) {
           // Log error but don't fail the entire enable operation
           // Only log error if not in a test environment
@@ -425,10 +465,16 @@ export class ExtensionManager {
       
       for (const serverName of serverNames) {
         try {
-          // Stop the MCP server
-          await this.mcpClient.stopServer(serverName);
+          // Check server status before stopping
+          const status = this.mcpClient.getServerStatus(serverName);
 
-          // Remove tools from registry
+          if (status.status !== 'disconnected') {
+            // Stop the MCP server
+            await this.mcpClient.stopServer(serverName);
+            console.log(`Stopped MCP server '${serverName}'`);
+          }
+
+          // Remove tools from registry (always clean up, even if server was stopped)
           // Tools are named with server prefix, so we need to find and remove them
           const allTools = this.toolRegistry.list();
           for (const tool of allTools) {
@@ -436,8 +482,6 @@ export class ExtensionManager {
               this.toolRegistry.unregister(tool.name);
             }
           }
-
-          console.log(`Stopped MCP server '${serverName}'`);
         } catch (error) {
           // Log error but continue with other servers
           // Only log error if not in a test environment
@@ -601,6 +645,24 @@ export class ExtensionManager {
    */
   getSkillRegistry(): SkillRegistry | undefined {
     return this.skillRegistry;
+  }
+
+  /**
+   * Set MCP client (for CLI layer injection)
+   * 
+   * @param mcpClient - MCP client instance
+   */
+  setMCPClient(mcpClient: MCPClient): void {
+    this.mcpClient = mcpClient;
+  }
+
+  /**
+   * Set MCP tool wrapper (for CLI layer injection)
+   * 
+   * @param mcpToolWrapper - MCP tool wrapper instance
+   */
+  setMCPToolWrapper(mcpToolWrapper: MCPToolWrapper): void {
+    this.mcpToolWrapper = mcpToolWrapper;
   }
 
   /**

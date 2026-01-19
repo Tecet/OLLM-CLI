@@ -35,6 +35,8 @@ export class ContextPoolImpl implements ContextPool {
   private currentTokens: number = 0;
   private vramInfo: VRAMInfo | null = null;
   private resizeCallback?: (newSize: number) => Promise<void>;
+  private activeRequests: number = 0;
+  private resizePending: boolean = false;
 
   constructor(
     config: Partial<ContextPoolConfig> = {},
@@ -43,6 +45,27 @@ export class ContextPoolImpl implements ContextPool {
     this.config = { ...DEFAULT_CONFIG, ...config };
     this.currentSize = this.config.targetContextSize;
     this.resizeCallback = resizeCallback;
+  }
+
+  /**
+   * Track active request start
+   */
+  beginRequest(): void {
+    this.activeRequests++;
+  }
+
+  /**
+   * Track active request end
+   */
+  endRequest(): void {
+    this.activeRequests = Math.max(0, this.activeRequests - 1);
+  }
+
+  /**
+   * Check if there are active requests
+   */
+  hasActiveRequests(): boolean {
+    return this.activeRequests > 0;
   }
 
   /**
@@ -114,6 +137,7 @@ export class ContextPoolImpl implements ContextPool {
   /**
    * Resize context to new size
    * Coordinates with provider and preserves existing data
+   * Waits for active requests to complete before resizing
    */
   async resize(newSize: number): Promise<void> {
     // Clamp to valid range
@@ -124,6 +148,23 @@ export class ContextPoolImpl implements ContextPool {
       return;
     }
 
+    // Mark resize as pending
+    this.resizePending = true;
+
+    // Wait for active requests to complete (with timeout)
+    const maxWaitTime = 30000; // 30 seconds
+    const startTime = Date.now();
+    
+    while (this.hasActiveRequests() && (Date.now() - startTime) < maxWaitTime) {
+      // Wait 100ms before checking again
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
+    // If still have active requests after timeout, log warning but proceed
+    if (this.hasActiveRequests()) {
+      console.warn(`Context resize proceeding with ${this.activeRequests} active requests still in flight`);
+    }
+
     // Call resize callback if provided (coordinates with provider)
     if (this.resizeCallback) {
       await this.resizeCallback(clampedSize);
@@ -131,6 +172,7 @@ export class ContextPoolImpl implements ContextPool {
 
     // Update current size
     this.currentSize = clampedSize;
+    this.resizePending = false;
   }
 
   /**

@@ -7,6 +7,7 @@
 import React, { createContext, useContext, ReactNode, useMemo, useEffect } from 'react';
 import { ServiceContainer, createServiceContainer } from '@ollm/ollm-cli-core/services/serviceContainer.js';
 import { ToolRegistry, registerBuiltInTools } from '@ollm/ollm-cli-core/tools/index.js';
+import { DefaultMCPClient, DefaultMCPToolWrapper } from '@ollm/ollm-cli-core/mcp/index.js';
 import type { ProviderAdapter } from '@ollm/ollm-cli-core/provider/types.js';
 import type { Config } from '../../config/types.js';
 import { homedir } from 'os';
@@ -101,6 +102,24 @@ export function ServiceProvider({
     
     // Set the configured registry in the container
     container.setToolRegistry(toolRegistry);
+    
+    // Initialize MCP integration (CLI layer responsibility)
+    // Create MCP client with configuration
+    const mcpClient = new DefaultMCPClient({
+      enabled: true,
+      connectionTimeout: 30000,
+      servers: {}, // Servers will be loaded from extensions
+    });
+    
+    // Create MCP tool wrapper
+    const mcpToolWrapper = new DefaultMCPToolWrapper(mcpClient);
+    
+    // Wire MCP dependencies into ExtensionManager
+    const extensionManager = container.getExtensionManager();
+    extensionManager.setMCPClient(mcpClient);
+    extensionManager.setMCPToolWrapper(mcpToolWrapper);
+    
+    console.log('✅ MCP integration initialized: MCPClient and MCPToolWrapper wired into ExtensionManager');
   }, [container]);
   
   // Initialize services on mount

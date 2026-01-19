@@ -4,6 +4,7 @@
  */
 
 import type { ProviderAdapter, ProviderRequest } from '../provider/types.js';
+import type { TokenCounter } from '../context/types.js';
 
 /**
  * Result from a single model execution.
@@ -32,8 +33,18 @@ export interface ComparisonResult {
  */
 export class ComparisonService {
   private abortController: AbortController | null = null;
+  private tokenCounter?: TokenCounter;
 
-  constructor(private provider: ProviderAdapter) {}
+  constructor(private provider: ProviderAdapter, tokenCounter?: TokenCounter) {
+    this.tokenCounter = tokenCounter;
+  }
+
+  /**
+   * Set the token counter service
+   */
+  setTokenCounter(tokenCounter: TokenCounter): void {
+    this.tokenCounter = tokenCounter;
+  }
 
   /**
    * Compare multiple models by running the same prompt through each.
@@ -109,11 +120,17 @@ export class ComparisonService {
       for await (const event of this.provider.chatStream(request)) {
         if (event.type === 'text') {
           response += event.value;
-          // Rough token estimation: ~4 characters per token
-          tokenCount = Math.ceil(response.length / 4);
         } else if (event.type === 'error') {
           throw new Error(event.error.message);
         }
+      }
+
+      // Count tokens using TokenCounterService if available
+      if (this.tokenCounter) {
+        tokenCount = await this.tokenCounter.countTokens(response);
+      } else {
+        // Fallback: rough token estimation (~4 characters per token)
+        tokenCount = Math.ceil(response.length / 4);
       }
 
       const latencyMs = Date.now() - startTime;

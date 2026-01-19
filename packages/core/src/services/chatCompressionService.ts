@@ -11,39 +11,10 @@ import type {
   CompressionResult,
 } from './types.js';
 import type { ProviderAdapter } from '../provider/types.js';
+import type { TokenCounter } from '../context/types.js';
 import { sanitizeErrorMessage } from './errorSanitization.js';
 import { STATE_SNAPSHOT_PROMPT } from '../prompts/templates/stateSnapshot.js';
 import { EventEmitter } from 'events';
-
-/**
- * Simple token counting utility
- * Approximates tokens as ~4 characters per token (rough estimate)
- */
-function countTokens(text: string): number {
-  return Math.ceil(text.length / 4);
-}
-
-/**
- * Count tokens in a message
- */
-function countMessageTokens(message: SessionMessage): number {
-  let total = 0;
-  for (const part of message.parts) {
-    if (part.type === 'text') {
-      total += countTokens(part.text);
-    }
-  }
-  // Add overhead for role and structure
-  total += 10;
-  return total;
-}
-
-/**
- * Count tokens in an array of messages
- */
-function countMessagesTokens(messages: SessionMessage[]): number {
-  return messages.reduce((sum, msg) => sum + countMessageTokens(msg), 0);
-}
 
 /**
  * Chat Compression Service
@@ -51,17 +22,20 @@ function countMessagesTokens(messages: SessionMessage[]): number {
 export class ChatCompressionService extends EventEmitter {
   private provider?: ProviderAdapter;
   private model?: string;
+  private tokenCounter?: TokenCounter;
 
   /**
    * Create a new ChatCompressionService
    * 
    * @param provider - Optional provider adapter for LLM-based summarization
    * @param model - Optional model name to use for summarization
+   * @param tokenCounter - Optional token counter service for accurate token counting
    */
-  constructor(provider?: ProviderAdapter, model?: string) {
+  constructor(provider?: ProviderAdapter, model?: string, tokenCounter?: TokenCounter) {
     super();
     this.provider = provider;
     this.model = model;
+    this.tokenCounter = tokenCounter;
   }
 
   /**
@@ -74,6 +48,64 @@ export class ChatCompressionService extends EventEmitter {
     this.provider = provider;
     this.model = model;
   }
+
+  /**
+   * Set the token counter service
+   * 
+   * @param tokenCounter - Token counter service
+   */
+  setTokenCounter(tokenCounter: TokenCounter): void {
+    this.tokenCounter = tokenCounter;
+  }
+
+  /**
+   * Count tokens in text using TokenCounterService if available
+   * Falls back to estimation if not available
+   */
+  private async countTokens(text: string): Promise<number> {
+    if (this.tokenCounter) {
+      return await this.tokenCounter.countTokens(text);
+    }
+    // Fallback estimation
+    return Math.ceil(text.length / 4);
+  }
+
+  /**
+   * Count tokens in a message using TokenCounterService if available
+   */
+  private async countMessageTokens(message: SessionMessage): Promise<number> {
+    if (this.tokenCounter) {
+      // Convert SessionMessage to text for counting
+      const text = message.parts
+        .filter((p) => p.type === 'text')
+        .map((p) => p.text)
+        .join('\n');
+      
+      // Use a unique ID for caching (use timestamp as fallback)
+      const messageId = `session-${message.timestamp}`;
+      return this.tokenCounter.countTokensCached(messageId, text) + 10; // +10 for structure overhead
+    }
+    
+    // Fallback estimation
+    let total = 0;
+    for (const part of message.parts) {
+      if (part.type === 'text') {
+        total += Math.ceil(part.text.length / 4);
+      }
+    }
+    return total + 10; // Add overhead for role and structure
+  }
+
+  /**
+   * Count tokens in an array of messages
+   */
+  private async countMessagesTokens(messages: SessionMessage[]): Promise<number> {
+    let total = 0;
+    for (const msg of messages) {
+      total += await this.countMessageTokens(msg);
+    }
+    return total;
+  }
   /**
    * Check if compression is needed based on current token count and limit
    *
@@ -82,12 +114,12 @@ export class ChatCompressionService extends EventEmitter {
    * @param threshold - Percentage threshold (0-1) at which to trigger compression
    * @returns true if compression should be performed
    */
-  shouldCompress(
+  async shouldCompress(
     messages: SessionMessage[],
     tokenLimit: number,
     threshold: number
-  ): boolean {
-    const currentTokens = countMessagesTokens(messages);
+  ): Promise<boolean> {
+    const currentTokens = await this.countMessagesTokens(messages);
     const thresholdTokens = tokenLimit * threshold;
     return currentTokens >= thresholdTokens;
   }
@@ -105,13 +137,13 @@ export class ChatCompressionService extends EventEmitter {
     options: CompressionOptions,
     metadata?: { tokenCount: number; compressionCount: number }
   ): Promise<CompressionResult & { metadata?: { tokenCount: number; compressionCount: number } }> {
-    const originalTokenCount = countMessagesTokens(messages);
+    const originalTokenCount = await this.countMessagesTokens(messages);
 
     let compressedMessages: SessionMessage[];
 
     switch (options.strategy) {
       case 'truncate':
-        compressedMessages = this.truncate(
+        compressedMessages = await this.truncate(
           messages,
           options.targetTokens ?? options.preserveRecentTokens
         );
@@ -129,7 +161,7 @@ export class ChatCompressionService extends EventEmitter {
         throw new Error(`Unknown compression strategy: ${options.strategy}`);
     }
 
-    const compressedTokenCount = countMessagesTokens(compressedMessages);
+    const compressedTokenCount = await this.countMessagesTokens(compressedMessages);
 
     // Update metadata if provided (Requirement 3.8)
     let updatedMetadata: { tokenCount: number; compressionCount: number } | undefined;
@@ -165,7 +197,7 @@ export class ChatCompressionService extends EventEmitter {
    * @param targetTokens - Target token count after compression
    * @returns Compressed messages
    */
-  truncate(messages: SessionMessage[], targetTokens: number): SessionMessage[] {
+  async truncate(messages: SessionMessage[], targetTokens: number): Promise<SessionMessage[]> {
     if (messages.length === 0) {
       return [];
     }
@@ -177,11 +209,11 @@ export class ChatCompressionService extends EventEmitter {
 
     // Start from the end and work backwards, keeping messages until we hit the target
     const result: SessionMessage[] = [];
-    let currentTokens = countMessagesTokens(systemPrompt);
+    let currentTokens = await this.countMessagesTokens(systemPrompt);
 
     for (let i = nonSystemMessages.length - 1; i >= 0; i--) {
       const message = nonSystemMessages[i];
-      const messageTokens = countMessageTokens(message);
+      const messageTokens = await this.countMessageTokens(message);
 
       if (currentTokens + messageTokens <= targetTokens) {
         result.unshift(message);
@@ -221,7 +253,7 @@ export class ChatCompressionService extends EventEmitter {
     }
 
     // Calculate how many recent tokens to preserve
-    const systemTokens = countMessagesTokens(systemPrompt);
+    const systemTokens = await this.countMessagesTokens(systemPrompt);
     const availableTokens = targetTokens - systemTokens;
     const summaryTokenBudget = Math.floor(availableTokens * 0.3); // 30% for summary
     const recentTokenBudget = availableTokens - summaryTokenBudget;
@@ -232,7 +264,7 @@ export class ChatCompressionService extends EventEmitter {
 
     for (let i = nonSystemMessages.length - 1; i >= 0; i--) {
       const message = nonSystemMessages[i];
-      const messageTokens = countMessageTokens(message);
+      const messageTokens = await this.countMessageTokens(message);
 
       if (recentTokens + messageTokens <= recentTokenBudget) {
         recentMessages.unshift(message);
@@ -305,7 +337,7 @@ export class ChatCompressionService extends EventEmitter {
     }
 
     // Calculate token budgets
-    const systemTokens = countMessagesTokens(systemPrompt);
+    const systemTokens = await this.countMessagesTokens(systemPrompt);
     const availableTokens = targetTokens - systemTokens;
     const recentTokenBudget = Math.floor(availableTokens * 0.5); // 50% for recent
     const summaryTokenBudget = availableTokens - recentTokenBudget;
@@ -316,7 +348,7 @@ export class ChatCompressionService extends EventEmitter {
 
     for (let i = nonSystemMessages.length - 1; i >= 0; i--) {
       const message = nonSystemMessages[i];
-      const messageTokens = countMessageTokens(message);
+      const messageTokens = await this.countMessageTokens(message);
 
       if (recentTokens + messageTokens <= recentTokenBudget) {
         recentMessages.unshift(message);

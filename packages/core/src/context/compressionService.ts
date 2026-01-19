@@ -11,6 +11,7 @@ import type {
   CompressionStrategy,
   CompressedContext,
   CompressionEstimate,
+  TokenCounter,
 } from './types.js';
 
 /**
@@ -46,16 +47,19 @@ const TOOL_CALL_OVERHEAD = 50;
 export class CompressionService implements ICompressionService {
   private provider?: ProviderAdapter;
   private model?: string;
+  private tokenCounter?: TokenCounter;
 
   /**
    * Create a new CompressionService
    * 
    * @param provider - Optional provider adapter for LLM-based summarization
    * @param model - Optional model name to use for summarization
+   * @param tokenCounter - Optional token counter service for accurate token counting
    */
-  constructor(provider?: ProviderAdapter, model?: string) {
+  constructor(provider?: ProviderAdapter, model?: string, tokenCounter?: TokenCounter) {
     this.provider = provider;
     this.model = model;
+    this.tokenCounter = tokenCounter;
   }
 
   /**
@@ -67,6 +71,15 @@ export class CompressionService implements ICompressionService {
   setProvider(provider: ProviderAdapter, model: string): void {
     this.provider = provider;
     this.model = model;
+  }
+
+  /**
+   * Set the token counter service
+   * 
+   * @param tokenCounter - Token counter service
+   */
+  setTokenCounter(tokenCounter: TokenCounter): void {
+    this.tokenCounter = tokenCounter;
   }
 
   /**
@@ -586,12 +599,26 @@ Summary:`;
 
   /**
    * Count tokens in a single message
-   * Uses rough estimation: 4 characters per token
+   * Uses TokenCounterService if available, otherwise falls back to estimation
    * 
    * @param message - Message to count
    * @returns Token count
    */
   private countMessageTokens(message: Message): number {
+    // Use TokenCounterService if available
+    if (this.tokenCounter) {
+      // Use cached count if available
+      const count = this.tokenCounter.countTokensCached(message.id, message.content);
+      
+      // Add tool call overhead if present
+      if (message.metadata?.toolCalls) {
+        return count + (message.metadata.toolCalls.length * TOOL_CALL_OVERHEAD);
+      }
+      
+      return count;
+    }
+    
+    // Fallback to estimation
     const contentTokens = Math.ceil(message.content.length / 4);
     // Add overhead for role and structure
     let total = contentTokens + 10;
@@ -606,11 +633,18 @@ Summary:`;
 
   /**
    * Count tokens in an array of messages
+   * Uses TokenCounterService if available for accurate counting
    * 
    * @param messages - Messages to count
    * @returns Total token count
    */
   private countMessagesTokens(messages: Message[]): number {
+    // Use TokenCounterService if available
+    if (this.tokenCounter) {
+      return this.tokenCounter.countConversationTokens(messages);
+    }
+    
+    // Fallback to local counting
     return messages.reduce(
       (sum, msg) => sum + this.countMessageTokens(msg),
       0

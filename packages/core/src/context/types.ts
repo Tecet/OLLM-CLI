@@ -164,6 +164,12 @@ export interface ContextPool {
   setCurrentTokens(tokens: number): void;
   /** Update VRAM information */
   updateVRAMInfo(vramInfo: VRAMInfo): void;
+  /** Track active request start */
+  beginRequest(): void;
+  /** Track active request end */
+  endRequest(): void;
+  /** Check if there are active requests */
+  hasActiveRequests(): boolean;
 }
 
 // ============================================================================

@@ -44,8 +44,8 @@ describe('ChatCompressionService', () => {
             // Calculate the threshold token count
             const thresholdTokens = tokenLimit * threshold;
 
-            // Call shouldCompress
-            const shouldCompress = service.shouldCompress(messages, tokenLimit, threshold);
+            // Call shouldCompress (now async)
+            const shouldCompress = await service.shouldCompress(messages, tokenLimit, threshold);
 
             // Verify the result matches our expectation
             if (actualTokens >= thresholdTokens) {
@@ -70,7 +70,7 @@ describe('ChatCompressionService', () => {
      * Unit tests for truncate compression strategy
      * Validates: Requirements 3.4, 3.5
      */
-    it('should preserve system prompt when truncating', () => {
+    it('should preserve system prompt when truncating', async () => {
       const service = new ChatCompressionService();
       
       const messages: SessionMessage[] = [
@@ -96,14 +96,14 @@ describe('ChatCompressionService', () => {
         },
       ];
 
-      const result = service.truncate(messages, 100);
+      const result = await service.truncate(messages, 100);
 
       // System prompt should always be preserved
       expect(result[0]).toEqual(messages[0]);
       expect(result[0].role).toBe('system');
     });
 
-    it('should preserve recent messages when truncating', () => {
+    it('should preserve recent messages when truncating', async () => {
       const service = new ChatCompressionService();
       
       const messages: SessionMessage[] = [
@@ -135,7 +135,7 @@ describe('ChatCompressionService', () => {
       ];
 
       // Set target to only fit system prompt + recent messages
-      const result = service.truncate(messages, 50);
+      const result = await service.truncate(messages, 50);
 
       // Should have system prompt
       expect(result[0].role).toBe('system');
@@ -145,7 +145,7 @@ describe('ChatCompressionService', () => {
       expect(lastMessage.parts[0].text).toBe('Recent response');
     });
 
-    it('should remove oldest messages until under target token count', () => {
+    it('should remove oldest messages until under target token count', async () => {
       const service = new ChatCompressionService();
       
       const messages: SessionMessage[] = [
@@ -176,7 +176,7 @@ describe('ChatCompressionService', () => {
         },
       ];
 
-      const result = service.truncate(messages, 50);
+      const result = await service.truncate(messages, 50);
 
       // Result should be shorter than original
       expect(result.length).toBeLessThan(messages.length);
@@ -188,7 +188,7 @@ describe('ChatCompressionService', () => {
       expect(result[result.length - 1].parts[0].text).toBe('Response 2');
     });
 
-    it('should handle messages without system prompt', () => {
+    it('should handle messages without system prompt', async () => {
       const service = new ChatCompressionService();
       
       const messages: SessionMessage[] = [
@@ -204,22 +204,22 @@ describe('ChatCompressionService', () => {
         },
       ];
 
-      const result = service.truncate(messages, 100);
+      const result = await service.truncate(messages, 100);
 
       // Should return messages without error
       expect(result.length).toBeGreaterThan(0);
       expect(result[0].role).not.toBe('system');
     });
 
-    it('should return empty array for empty input', () => {
+    it('should return empty array for empty input', async () => {
       const service = new ChatCompressionService();
       
-      const result = service.truncate([], 100);
+      const result = await service.truncate([], 100);
 
       expect(result).toEqual([]);
     });
 
-    it('should respect target token count', () => {
+    it('should respect target token count', async () => {
       const service = new ChatCompressionService();
       
       // Create messages with known token counts
@@ -242,7 +242,7 @@ describe('ChatCompressionService', () => {
       ];
 
       // Target of 30 tokens should fit system + one message
-      const result = service.truncate(messages, 30);
+      const result = await service.truncate(messages, 30);
 
       // Calculate actual tokens in result
       const resultTokens = result.reduce((total, msg) => {
@@ -664,7 +664,7 @@ describe('ChatCompressionService', () => {
             let compressedMessages: SessionMessage[];
             
             if (strategy === 'truncate') {
-              compressedMessages = service.truncate(messages, preserveRecentTokens);
+              compressedMessages = await service.truncate(messages, preserveRecentTokens);
             } else if (strategy === 'summarize') {
               compressedMessages = await service.summarize(messages, preserveRecentTokens);
             } else {
@@ -787,7 +787,7 @@ describe('ChatCompressionService', () => {
             let compressedMessages: SessionMessage[];
             
             if (strategy === 'truncate') {
-              compressedMessages = service.truncate(messages, targetTokens);
+              compressedMessages = await service.truncate(messages, targetTokens);
             } else if (strategy === 'summarize') {
               compressedMessages = await service.summarize(messages, targetTokens);
             } else {

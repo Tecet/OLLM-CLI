@@ -61,11 +61,22 @@ interface OAuthDiscovery {
  */
 export class MCPOAuthProvider {
   private tokens: Map<string, OAuthTokens> = new Map();
+  private configs: Map<string, OAuthConfig> = new Map();
   private tokenStorage?: TokenStorage;
   private refreshPromises: Map<string, Promise<OAuthTokens>> = new Map();
 
   constructor(tokenStorage?: TokenStorage) {
     this.tokenStorage = tokenStorage;
+  }
+
+  /**
+   * Register OAuth configuration for a server
+   * 
+   * @param serverName - Name of the server
+   * @param config - OAuth configuration
+   */
+  registerServerConfig(serverName: string, config: OAuthConfig): void {
+    this.configs.set(serverName, config);
   }
 
   /**
@@ -76,6 +87,9 @@ export class MCPOAuthProvider {
    * @returns OAuth tokens
    */
   async authenticate(serverName: string, config: OAuthConfig): Promise<OAuthTokens> {
+    // Register config for future refreshes
+    this.registerServerConfig(serverName, config);
+
     // Check if we have valid cached tokens
     const cached = await this.getValidTokens(serverName);
     if (cached) {
@@ -130,11 +144,17 @@ export class MCPOAuthProvider {
           }
         }
 
+        // Check if we have config
+        const config = this.configs.get(serverName);
+        if (!config) {
+          console.warn(`Cannot auto-refresh token for ${serverName}: No config registered`);
+          return undefined;
+        }
+
         // Start new refresh
         const refreshPromise = (async () => {
           try {
-            const refreshed = await this.refreshTokens(serverName, tokens.refreshToken!);
-            await this.storeTokens(serverName, refreshed);
+            const refreshed = await this.refreshToken(serverName, config);
             return refreshed;
           } catch (error) {
             // Refresh failed, remove invalid tokens
@@ -164,17 +184,13 @@ export class MCPOAuthProvider {
   }
 
   /**
-   * Refresh OAuth tokens
-   * 
-   * @param serverName - Name of the server
-   * @param refreshToken - Refresh token
-   * @returns New tokens
+   * Get access token string directly (helper for clients)
    */
-  async refreshTokens(_serverName: string, _refreshToken: string): Promise<OAuthTokens> {
-    // Get stored config (would need to be passed or stored)
-    // For now, throw error - this needs server config
-    throw new Error('Token refresh not yet implemented - needs server config');
+  async getAccessToken(serverName: string): Promise<string | undefined> {
+    const tokens = await this.getValidTokens(serverName);
+    return tokens?.accessToken;
   }
+
 
   /**
    * Revoke tokens for a server

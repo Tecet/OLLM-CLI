@@ -244,6 +244,11 @@ export interface ServicesConfig {
       timeout?: number;
     };
     cacheTTL?: number;
+    toolRouting?: {
+      enabled?: boolean;
+      bindings?: Record<string, string>;
+      enableFallback?: boolean;
+    };
   };
   options?: {
     temperature?: number;

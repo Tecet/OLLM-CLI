@@ -11,6 +11,7 @@
 
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode, useMemo } from 'react';
 import { DefaultMCPClient } from '@ollm/ollm-cli-core/mcp/mcpClient.js';
+import { DefaultMCPToolWrapper } from '@ollm/ollm-cli-core/mcp/index.js';
 import { MCPHealthMonitor } from '@ollm/ollm-cli-core/mcp/mcpHealthMonitor.js';
 import { MCPOAuthProvider, FileTokenStorage } from '@ollm/ollm-cli-core/mcp/mcpOAuth.js';
 import type { 
@@ -25,6 +26,9 @@ import { mcpMarketplace, type MCPMarketplaceServer } from '../../services/mcpMar
 import { parseError, retryWithBackoff, formatErrorMessage } from '../utils/errorHandling.js';
 import path from 'path';
 import os from 'os';
+import { ToolRouter, type ToolRoutingConfig, DEFAULT_TOOL_ROUTING_CONFIG } from '@ollm/ollm-cli-core/tools/index.js';
+import { useServices } from '../../features/context/ServiceContext.js';
+import { SettingsService } from '../../config/settingsService.js';
 
 /**
  * Extended MCP server configuration with UI-specific fields
@@ -120,6 +124,9 @@ export interface MCPContextValue {
   // General
   /** Refresh all server data */
   refreshServers: () => Promise<void>;
+  
+  /** Tool Router instance */
+  toolRouter: ToolRouter;
 }
 
 const MCPContext = createContext<MCPContextValue | undefined>(undefined);
@@ -163,14 +170,82 @@ export function MCPProvider({
     operationsInProgress: new Map(),
   });
 
+  // Track registered tools to avoid state dependency in loadServers
+  const lastRegisteredTools = React.useRef<Map<string, MCPTool[]>>(new Map());
+
+  const { container } = useServices();
+  const toolRegistry = container.getToolRegistry();
+
   // Initialize services
-  const mcpClient = useMemo(() => customClient || new DefaultMCPClient(), [customClient]);
-  const healthMonitor = useMemo(() => customHealthMonitor || new MCPHealthMonitor(mcpClient), [customHealthMonitor, mcpClient]);
   const oauthProvider = useMemo(() => {
     if (customOAuthProvider) return customOAuthProvider;
     const tokenFile = path.join(os.homedir(), '.ollm', 'mcp', 'oauth-tokens.json');
     return new MCPOAuthProvider(new FileTokenStorage(tokenFile));
   }, [customOAuthProvider]);
+
+  // Initialize services
+  // Pass the shared oauthProvider to the client so it shares token storage
+  const mcpClient = useMemo(() => customClient || new DefaultMCPClient(undefined, oauthProvider), [customClient, oauthProvider]);
+  const healthMonitor = useMemo(() => customHealthMonitor || new MCPHealthMonitor(mcpClient), [customHealthMonitor, mcpClient]);
+
+  // Initialize tool router
+  const toolRouter = useMemo(() => {
+    const settings = SettingsService.getInstance().getSettings();
+    const config = settings.llm.toolRouting || DEFAULT_TOOL_ROUTING_CONFIG;
+    // Cast config to ToolRoutingConfig to ensure type safety 
+    // (SettingsService returns optional properties while ToolRouter expects slightly different structure)
+    return new ToolRouter(mcpClient, toolRegistry, config as ToolRoutingConfig);
+  }, [mcpClient, toolRegistry]);
+
+  // Listen for settings changes to update router config
+  useEffect(() => {
+    const handleSettingsChange = () => {
+      const settings = SettingsService.getInstance().getSettings();
+      if (settings.llm.toolRouting) {
+        toolRouter.updateConfig(settings.llm.toolRouting as ToolRoutingConfig);
+      }
+    };
+    
+    const unsubscribe = SettingsService.getInstance().addChangeListener(handleSettingsChange);
+    return unsubscribe;
+  }, [toolRouter]);
+
+  /*
+   * Register tools for a server
+   */
+  const registerServerTools = useCallback((serverName: string, tools: MCPTool[]) => {
+      tools.forEach(tool => {
+        // Create wrapper instance
+        const wrapperFactory = new DefaultMCPToolWrapper(mcpClient);
+        
+        // Wrap the tool to get a DeclarativeTool compatible object
+        const wrappedTool = wrapperFactory.wrapTool(serverName, tool);
+        
+        // Override the name to include server prefix (if not already handled by wrapTool)
+        // DefaultMCPToolWrapper.wrapTool already prefixes with "${serverName}:", 
+        // but we want "${serverName}_" or just ensure it's unique.
+        // Let's rely on wrapTool's prefixing or ensure consistency.
+        // The previous code tried to use defineProperty on the *wrapper factory* which was wrong.
+        
+        // internalSchema name is already set in wrapTool to "server:tool"
+        // Let's enforce our naming convention if different
+        // core/src/mcp/mcpToolWrapper.ts uses `${serverName}:${mcpTool.name}`
+        
+        // We can just register the wrapped tool directly
+        toolRegistry.register(wrappedTool);
+      });
+  }, [mcpClient, toolRegistry]);
+
+  /**
+   * Unregister tools for a server
+   */
+  const unregisterServerTools = useCallback((serverName: string, tools: MCPTool[]) => {
+      tools.forEach(tool => {
+        // Unregister using the same naming conversion as wrapTool
+        // DefaultMCPToolWrapper uses colon separator
+        toolRegistry.unregister(`${serverName}:${tool.name}`);
+      });
+  }, [toolRegistry]);
 
   /**
    * Load servers from configuration and client
@@ -183,7 +258,7 @@ export function MCPProvider({
       // Start servers that are configured but not yet started
       for (const [serverName, serverConfig] of Object.entries(config.mcpServers)) {
         // Skip disabled servers
-        if (serverConfig.disabled) {
+        if ((serverConfig as ExtendedMCPServerConfig).disabled) {
           continue;
         }
         
@@ -225,6 +300,21 @@ export function MCPProvider({
         } catch (error) {
           console.warn(`Failed to get tools for ${serverName}:`, error);
         }
+
+        // Manage tool registration
+        // 1. Unregister previous tools (if any) to handle updates
+        const prevTools = lastRegisteredTools.current.get(serverName);
+        if (prevTools) {
+            unregisterServerTools(serverName, prevTools);
+        }
+        
+        // 2. Register current tools (if connected)
+        if (status.status === 'connected' && toolsList.length > 0) {
+            registerServerTools(serverName, toolsList);
+            lastRegisteredTools.current.set(serverName, toolsList);
+        } else {
+            lastRegisteredTools.current.delete(serverName);
+        }
         
         // Get OAuth status
         let oauthStatus;
@@ -264,7 +354,7 @@ export function MCPProvider({
         error: error instanceof Error ? error.message : 'Failed to load servers',
       }));
     }
-  }, [mcpClient, oauthProvider]);
+  }, [mcpClient, oauthProvider, registerServerTools, unregisterServerTools]);
 
   /**
    * Load marketplace data
@@ -299,7 +389,7 @@ export function MCPProvider({
       };
 
       // Update configuration first
-      await mcpConfigService.updateServerConfig(serverName, newConfig);
+      await mcpConfigService.updateServerConfig(serverName, newConfig as unknown as MCPServerConfig);
 
       // Start or stop the server with retry logic
       try {
@@ -315,8 +405,13 @@ export function MCPProvider({
         await mcpConfigService.updateServerConfig(serverName, {
           ...newConfig,
           disabled: true,
-        });
+        } as unknown as MCPServerConfig);
         
+        // Ensure tools are unregistered if start failed
+        if (server.toolsList) {
+            unregisterServerTools(serverName, server.toolsList);
+        }
+
         // Re-throw with more context
         if (server.config.oauth?.enabled) {
           throw new Error(`OAuth authentication failed for ${serverName}. Please check OAuth configuration.`);
@@ -334,7 +429,7 @@ export function MCPProvider({
       }));
       throw error;
     }
-  }, [state.servers, mcpClient, loadServers]);
+  }, [state.servers, mcpClient, loadServers, unregisterServerTools]);
 
   /**
    * Restart a server
@@ -424,6 +519,11 @@ export function MCPProvider({
       // Stop the server first
       await mcpClient.stopServer(serverName);
       
+      // Unregister tools
+      if (server?.toolsList) {
+          unregisterServerTools(serverName, server.toolsList);
+      }
+
       // Clean up downloaded packages/cache
       if (server?.config) {
         const { mcpCleanupService } = await import('../../services/mcpCleanup.js');
@@ -455,7 +555,7 @@ export function MCPProvider({
       }));
       throw error;
     }
-  }, [state.servers, mcpClient, oauthProvider, loadServers]);
+  }, [state.servers, mcpClient, oauthProvider, loadServers, unregisterServerTools]);
 
   /**
    * Configure a server
@@ -737,6 +837,7 @@ export function MCPProvider({
     searchMarketplace,
     refreshMarketplace,
     refreshServers,
+    toolRouter,
   };
 
   return <MCPContext.Provider value={value}>{children}</MCPContext.Provider>;

@@ -18,6 +18,11 @@ export interface UserSettings {
       timeout?: number;
     };
     clearContextOnModelSwitch?: boolean; // NEW: Make context clearing optional
+    toolRouting?: {
+      enabled?: boolean;
+      bindings?: Record<string, string>;
+      enableFallback?: boolean;
+    };
     [key: string]: unknown;
   };
   hardware?: {
@@ -43,6 +48,7 @@ export class SettingsService {
   private static instance: SettingsService;
   private settingsPath: string;
   private settings: UserSettings;
+  private listeners: (() => void)[] = [];
 
   private constructor() {
     // Strategy: Use ~/.ollm/settings.json
@@ -121,9 +127,40 @@ export class SettingsService {
     try {
       console.log(`[SettingsService] Saving settings to: ${this.settingsPath}`);
       writeFileSync(this.settingsPath, JSON.stringify(this.settings, null, 2), 'utf-8');
+      this.notifyListeners();
     } catch (error) {
       console.error('Failed to save system settings:', error);
     }
+  }
+
+  private notifyListeners(): void {
+    this.listeners.forEach(listener => {
+        try {
+            listener();
+        } catch (error) {
+            console.error('[SettingsService] Error in listener:', error);
+        }
+    });
+  }
+
+  /**
+   * Subscribe to settings changes
+   * @param listener Callback function
+   * @returns Unsubscribe function
+   */
+  public addChangeListener(listener: () => void): () => void {
+    this.listeners.push(listener);
+    return () => {
+        this.listeners = this.listeners.filter(l => l !== listener);
+    };
+  }
+
+  /**
+   * Remove a change listener
+   * @param listener Callback function to remove
+   */
+  public removeChangeListener(listener: () => void): void {
+      this.listeners = this.listeners.filter(l => l !== listener);
   }
 
   /**
@@ -311,6 +348,24 @@ export class SettingsService {
       delete this.settings.hooks.enabled[hookId];
       this.saveSettings();
     }
+  }
+
+  /**
+   * Set tool routing configuration
+   */
+  public setToolRoutingConfig(config: UserSettings['llm']['toolRouting']): void {
+      if (!this.settings.llm) {
+          this.settings.llm = { model: 'llama3.2:3b' };
+      }
+      this.settings.llm.toolRouting = config;
+      this.saveSettings();
+  }
+
+  /**
+   * Get tool routing configuration
+   */
+  public getToolRoutingConfig(): UserSettings['llm']['toolRouting'] {
+      return this.settings.llm.toolRouting;
   }
 
   /**

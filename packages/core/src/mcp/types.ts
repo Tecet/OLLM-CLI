@@ -219,9 +219,10 @@ export interface MCPTransport {
   /**
    * Send a request to the server
    * @param request - The request to send
+   * @param timeout - Request timeout in milliseconds (default: 30000)
    * @returns The server's response
    */
-  sendRequest(request: MCPRequest): Promise<MCPResponse>;
+  sendRequest(request: MCPRequest, timeout?: number): Promise<MCPResponse>;
 
   /**
    * Send a streaming request to the server

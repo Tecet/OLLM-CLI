@@ -10,6 +10,7 @@ interface SettingsContextValue {
   settings: UserSettings;
   updateLLMSetting: (key: string, value: SettingValue) => void;
   updateUISetting: (key: string, value: SettingValue) => void;
+  updateToolRouting: (key: string, value: any) => void;
 }
 
 const SettingsContext = createContext<SettingsContextValue | undefined>(undefined);
@@ -59,11 +60,47 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setSettingsState(service.getSettings());
   }, [setTheme, service]);
 
+  const updateToolRouting = useCallback((key: string, value: any) => {
+    const current = service.getSettings();
+    // Ensure llm object exists
+    if (!current.llm) (current as any).llm = {};
+    
+    // Ensure toolRouting object exists
+    if (!current.llm.toolRouting) {
+        current.llm.toolRouting = {};
+        if (!(service as any).settings.llm.toolRouting) {
+            (service as any).settings.llm.toolRouting = {};
+        }
+    }
+
+    if (key.startsWith('bindings.')) {
+        const bindingKey = key.split('.')[1];
+        
+        // Update local copy
+        if (!current.llm.toolRouting.bindings) current.llm.toolRouting.bindings = {};
+        current.llm.toolRouting.bindings[bindingKey] = value;
+        
+        // Update service
+        if (!(service as any).settings.llm.toolRouting.bindings) {
+            (service as any).settings.llm.toolRouting.bindings = {};
+        }
+        (service as any).settings.llm.toolRouting.bindings[bindingKey] = value;
+    } else {
+        // Direct property update
+        (current.llm.toolRouting as any)[key] = value;
+        (service as any).settings.llm.toolRouting[key] = value;
+    }
+    
+    (service as any).saveSettings();
+    setSettingsState(service.getSettings());
+  }, [service]);
+
   return (
     <SettingsContext.Provider value={{ 
       settings, 
       updateLLMSetting, 
-      updateUISetting 
+      updateUISetting,
+      updateToolRouting
     }}>
       {children}
     </SettingsContext.Provider>

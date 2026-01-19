@@ -156,9 +156,46 @@ export class MemoryGuardImpl extends EventEmitter implements MemoryGuard {
         // 80-90%: Trigger compression if available, then notify.
         if (this.compressionService && this.currentContext) {
           try {
-            await this.compressionService.compress(this.currentContext);
+            // Fix: Pass correct arguments to compress
+            // CompressionService expects (messages: Message[], strategy: CompressionStrategy)
+            const result = await this.compressionService.compress(
+              this.currentContext.messages,
+              {
+                type: 'hybrid',
+                preserveRecent: 4096,
+                summaryMaxTokens: 1024,
+              }
+            );
+            
+            // Update context with compressed messages
+            if (result.status === 'success') {
+              this.currentContext.messages = [result.summary, ...result.preserved];
+              this.currentContext.tokenCount = result.compressedTokens;
+              
+              // Synchronize with context pool
+              this.contextPool.setCurrentTokens(result.compressedTokens);
+              
+              // Emit success event
+              this.emit('compression-success', {
+                level: MemoryLevel.WARNING,
+                originalTokens: result.originalTokens,
+                compressedTokens: result.compressedTokens,
+                ratio: result.compressionRatio,
+              });
+            } else {
+              // Compression inflated or failed
+              this.emit('compression-failed', {
+                level: MemoryLevel.WARNING,
+                reason: result.status === 'inflated' ? 'Compression would increase size' : 'Unknown failure',
+              });
+            }
           } catch (error) {
             console.error('Failed to compress context:', error);
+            // Emit error event for telemetry
+            this.emit('compression-failed', {
+              level: MemoryLevel.WARNING,
+              error: error instanceof Error ? error.message : String(error),
+            });
           }
         }
         this.emit('threshold-reached', { level, percentage: this.contextPool.getUsage().percentage });
@@ -202,6 +239,13 @@ export class MemoryGuardImpl extends EventEmitter implements MemoryGuard {
     try {
       const usage = this.contextPool.getUsage();
       
+      // Emit warning that resize is pending
+      this.emit('context-resize-pending', {
+        level: MemoryLevel.CRITICAL,
+        currentSize: usage.maxTokens,
+        hasActiveRequests: this.contextPool.hasActiveRequests()
+      });
+      
       // Reduce context size by 20%
       const newSize = Math.floor(usage.maxTokens * 0.8);
       
@@ -214,6 +258,10 @@ export class MemoryGuardImpl extends EventEmitter implements MemoryGuard {
       });
     } catch (error) {
       console.error('Failed to reduce context size:', error);
+      this.emit('context-resize-failed', {
+        level: MemoryLevel.CRITICAL,
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   }
 

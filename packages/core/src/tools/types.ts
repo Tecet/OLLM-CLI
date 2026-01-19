@@ -169,6 +169,11 @@ export interface DeclarativeTool<TParams extends object, TResult> {
 }
 
 /**
+ * Generic Tool type alias
+ */
+export type Tool = DeclarativeTool<any, any>;
+
+/**
  * Message bus interface for requesting user confirmations
  * 
  * This is a minimal interface that tools depend on. The actual

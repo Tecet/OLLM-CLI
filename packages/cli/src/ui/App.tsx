@@ -992,15 +992,15 @@ export function App({ config }: AppProps) {
       >
         <SettingsProvider>
           <DialogProvider>
-            <HooksProvider>
-              <ToolsProvider>
-                <MCPProvider>
-                  <UserPromptProvider>
-                    <ServiceProvider
-                      provider={provider}
-                      config={config}
-                      workspacePath={workspacePath}
-                    >
+            <ServiceProvider
+              provider={provider}
+              config={config}
+              workspacePath={workspacePath}
+            >
+              <HooksProvider>
+                <ToolsProvider>
+                  <MCPProvider>
+                    <UserPromptProvider>
                       <GPUProvider 
                         pollingInterval={config.status?.pollInterval || 5000}
                         autoStart={config.ui?.showGpuStats !== false}
@@ -1036,11 +1036,11 @@ export function App({ config }: AppProps) {
                           </ModelProvider>
                         </ContextManagerProvider>
                       </GPUProvider>
-                    </ServiceProvider>
                   </UserPromptProvider>
                 </MCPProvider>
               </ToolsProvider>
             </HooksProvider>
+          </ServiceProvider>
           </DialogProvider>
         </SettingsProvider>
       </UIProvider>

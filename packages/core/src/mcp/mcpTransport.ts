@@ -19,7 +19,7 @@ export abstract class BaseMCPTransport implements MCPTransport {
 
   abstract connect(): Promise<void>;
   abstract disconnect(): Promise<void>;
-  abstract sendRequest(request: MCPRequest): Promise<MCPResponse>;
+  abstract sendRequest(request: MCPRequest, timeout?: number): Promise<MCPResponse>;
 
   isConnected(): boolean {
     return this.connected;
@@ -68,6 +68,39 @@ export class StdioTransport extends BaseMCPTransport {
         });
 
         let errorOccurred = false;
+        let readinessTimeout: NodeJS.Timeout;
+
+        // Set up readiness check - wait for first successful response
+        const checkReadiness = () => {
+          // Send a simple initialize request to verify server is ready
+          const initRequest: MCPRequest = {
+            method: 'initialize',
+            params: {
+              protocolVersion: '2024-11-05',
+              capabilities: {},
+              clientInfo: {
+                name: 'ollm-cli',
+                version: '0.1.0',
+              },
+            },
+          };
+
+          // Try to send initialize request
+          this.sendRequest(initRequest, 5000)
+            .then(() => {
+              clearTimeout(readinessTimeout);
+              this.connected = true;
+              resolve();
+            })
+            .catch((error) => {
+              // If initialize fails, still mark as connected but log warning
+              // Some MCP servers may not support initialize
+              console.warn(`MCP Server '${this.command}' initialize failed, assuming ready:`, error.message);
+              clearTimeout(readinessTimeout);
+              this.connected = true;
+              resolve();
+            });
+        };
 
         // Handle process errors
         this.process.on('error', (error: Error) => {
@@ -75,6 +108,7 @@ export class StdioTransport extends BaseMCPTransport {
           console.error(`MCP Server '${this.command}' process error: ${errorMessage}`);
           this.connected = false;
           errorOccurred = true;
+          clearTimeout(readinessTimeout);
           reject(error);
         });
 
@@ -84,17 +118,26 @@ export class StdioTransport extends BaseMCPTransport {
           this.outputSize += chunk.length;
           
           if (this.outputSize > this.MAX_OUTPUT_SIZE) {
-            console.error(`MCP Server '${this.command}' exceeded output size limit of ${this.MAX_OUTPUT_SIZE} bytes`);
+            const sizeMB = (this.MAX_OUTPUT_SIZE / (1024 * 1024)).toFixed(1);
+            const currentSizeMB = (this.outputSize / (1024 * 1024)).toFixed(1);
+            const errorMsg = `MCP Server '${this.command}' exceeded output size limit: ${currentSizeMB}MB > ${sizeMB}MB. Consider implementing streaming or reducing output size.`;
+            
+            console.error(errorMsg);
             this.connected = false;
             
-            // Kill the process
+            // Kill the process gracefully first, then force if needed
             if (this.process) {
-              this.process.kill('SIGKILL');
+              this.process.kill('SIGTERM');
+              setTimeout(() => {
+                if (this.process && !this.process.killed) {
+                  this.process.kill('SIGKILL');
+                }
+              }, 1000);
             }
             
-            // Reject all pending requests
+            // Reject all pending requests with detailed error
             for (const [, { reject }] of this.pendingRequests) {
-              reject(new Error(`Server output exceeded ${this.MAX_OUTPUT_SIZE} bytes`));
+              reject(new Error(errorMsg));
             }
             this.pendingRequests.clear();
             return;
@@ -121,12 +164,22 @@ export class StdioTransport extends BaseMCPTransport {
           this.pendingRequests.clear();
         });
 
-        // Mark as connected immediately after spawn
-        // (MCP servers don't have a handshake protocol)
-        if (!errorOccurred) {
-          this.connected = true;
-          resolve();
-        }
+        // Wait a bit for process to start, then check readiness
+        setTimeout(() => {
+          if (!errorOccurred) {
+            // Mark as temporarily connected for readiness check
+            this.connected = true;
+            checkReadiness();
+          }
+        }, 100);
+
+        // Set timeout for readiness check
+        readinessTimeout = setTimeout(() => {
+          if (!this.connected) {
+            reject(new Error(`MCP Server '${this.command}' failed to become ready within timeout`));
+          }
+        }, 10000); // 10 second timeout for readiness
+
       } catch (error) {
         reject(error);
       }
@@ -170,7 +223,7 @@ export class StdioTransport extends BaseMCPTransport {
     });
   }
 
-  async sendRequest(request: MCPRequest): Promise<MCPResponse> {
+  async sendRequest(request: MCPRequest, timeout: number = 30000): Promise<MCPResponse> {
     if (!this.connected || !this.process || !this.process.stdin) {
       throw new Error('Transport not connected');
     }
@@ -178,8 +231,28 @@ export class StdioTransport extends BaseMCPTransport {
     return new Promise((resolve, reject) => {
       const id = ++this.requestId;
 
-      // Store the promise handlers
-      this.pendingRequests.set(id, { resolve, reject });
+      // Set up timeout
+      const timeoutId = setTimeout(() => {
+        const pending = this.pendingRequests.get(id);
+        if (pending) {
+          this.pendingRequests.delete(id);
+          reject(new Error(`Request timeout after ${timeout}ms for method '${request.method}'`));
+        }
+      }, timeout);
+
+      // Store the promise handlers with cleanup
+      this.pendingRequests.set(id, {
+        resolve: (response: MCPResponse) => {
+          clearTimeout(timeoutId);
+          this.pendingRequests.delete(id);
+          resolve(response);
+        },
+        reject: (error: Error) => {
+          clearTimeout(timeoutId);
+          this.pendingRequests.delete(id);
+          reject(error);
+        },
+      });
 
       // Create JSON-RPC request
       const jsonRpcRequest = {
@@ -194,6 +267,7 @@ export class StdioTransport extends BaseMCPTransport {
       
       try {
         if (!this.process.stdin) {
+          clearTimeout(timeoutId);
           this.pendingRequests.delete(id);
           reject(new Error('Process stdin is not available'));
           return;
@@ -201,11 +275,13 @@ export class StdioTransport extends BaseMCPTransport {
         
         this.process.stdin.write(requestStr, (error) => {
           if (error) {
+            clearTimeout(timeoutId);
             this.pendingRequests.delete(id);
             reject(error);
           }
         });
       } catch (error) {
+        clearTimeout(timeoutId);
         this.pendingRequests.delete(id);
         reject(error);
       }

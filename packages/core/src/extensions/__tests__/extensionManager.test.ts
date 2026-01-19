@@ -1113,11 +1113,12 @@ describe('ExtensionManager', () => {
           capturedEnv = config.env;
         },
         stopServer: async () => {},
-        getServerStatus: () => ({
-          name: '',
-          status: 'connected' as const,
+        getServerStatus: (name: string) => ({
+          name,
+          status: 'disconnected' as const,
           tools: 0,
         }),
+
         getTools: async () => [],
         callTool: async () => ({}),
         listServers: () => [],

@@ -9,6 +9,8 @@ import type { ToolCall as CoreToolCall, ContextMessage, ProviderMetrics, ToolSch
 
 // Note: Global callbacks are now registered by AllCallbacksBridge component
 // These declarations are kept for backward compatibility during migration
+import { SettingsService } from '../../config/settingsService.js';
+
 declare global {
   var __ollmModelSwitchCallback: ((model: string) => void) | undefined;
 }
@@ -668,7 +670,17 @@ export function ChatProvider({
               );
             },
             toolSchemas,
-            systemPrompt
+            systemPrompt,
+            undefined, // timeout (use default)
+            // Inject mode-specific temperature if enabled in settings
+            (() => {
+              const settingsService = SettingsService.getInstance();
+              const settings = settingsService.getSettings();
+              if (settings.llm?.modeLinkedTemperature !== false && modeManager) { // Default to true if undefined
+                 return modeManager.getPreferredTemperature(modeManager.getCurrentMode());
+              }
+              return undefined; // Fallback to global setting in ModelContext
+            })()
           );
 
           // ALWAYS add assistant turn to context manager if it produced content OR tool calls

@@ -4,6 +4,8 @@ import { useUI } from '../../../features/context/UIContext.js';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { useSettings } from '../../../features/context/SettingsContext.js';
 import { useModel } from '../../../features/context/ModelContext.js';
+import { useMCP } from '../../contexts/MCPContext.js';
+import { ToolCapability, detectServerCapabilities } from '@ollm/ollm-cli-core/tools/tool-capabilities.js';
 import { builtInThemes } from '../../../config/styles.js';
 import { profileManager } from '../../../features/profiles/ProfileManager.js';
 
@@ -34,6 +36,7 @@ const sections: Section[] = [
   { id: 'provider', name: 'Provider Selection' },
   { id: 'model', name: 'LLM Models' },
   { id: 'options', name: 'LLM Options' },
+  { id: 'tool_routing', name: 'Tool Routing' },
   { id: 'theme', name: 'Theme Selection' },
 ];
 
@@ -53,8 +56,9 @@ const sections: Section[] = [
 export function SettingsPanel() {
   const { state: uiState } = useUI();
   const focusManager = useFocusManager();
-  const { settings, updateLLMSetting, updateUISetting } = useSettings();
+  const { settings, updateLLMSetting, updateUISetting, updateToolRouting } = useSettings();
   const { currentModel, setCurrentModel } = useModel();
+  const { state: mcpState, getServerTools } = useMCP();
   const hasFocus = focusManager.isFocused('settings-panel');
 
   // State
@@ -75,6 +79,47 @@ export function SettingsPanel() {
     return sections[selectedSectionIndex];
   }, [selectedSectionIndex, isOnExitItem]);
 
+  // Derive available servers for each capability
+  const capabilityProviders = useMemo(() => {
+    const map = new Map<ToolCapability, string[]>();
+    
+    // Initialize empty lists for all capabilities
+    Object.values(ToolCapability).forEach(cap => map.set(cap, []));
+
+    // Scan all connected servers
+    mcpState.servers.forEach((server, serverName) => {
+        if (server.status !== 'connected') return;
+        
+        const tools = getServerTools(serverName);
+        
+        // Adapt MCPTool to Tool interface for detection
+        const adaptedTools = tools.map(t => ({
+            name: t.name,
+            displayName: t.name,
+            schema: {
+                name: t.name,
+                description: t.description,
+                parameters: t.inputSchema as Record<string, unknown>
+            },
+            createInvocation: () => { throw new Error('Not implemented for detection'); }
+        }));
+
+        // We cast to any because we're constructing a minimal compatible object
+        // and the full Tool interface is complex
+        const capabilities = detectServerCapabilities(serverName, adaptedTools as any);
+        
+        capabilities.forEach(cap => {
+            const list = map.get(cap) || [];
+            if (!list.includes(serverName)) {
+                list.push(serverName);
+                map.set(cap, list);
+            }
+        });
+    });
+    
+    return map;
+  }, [mcpState.servers, getServerTools]);
+
   // Options for select types
   const getOptionsForSetting = useCallback((settingId: string) => {
     switch (settingId) {
@@ -86,9 +131,14 @@ export function SettingsPanel() {
       case 'theme':
         return Object.keys(builtInThemes);
       default:
+        // Handle tool routing capabilities
+        if (Object.values(ToolCapability).includes(settingId as ToolCapability)) {
+            const servers = capabilityProviders.get(settingId as ToolCapability) || [];
+            return ['(auto)', ...servers];
+        }
         return [];
     }
-  }, []);
+  }, [capabilityProviders]);
 
   // Get settings for current section
   const currentSettings = useMemo((): SettingItem[] => {
@@ -209,10 +259,43 @@ export function SettingsPanel() {
           type: 'choice',
           category: 'ui'
         }));
+      case 'tool_routing': {
+         const config = settings.llm.toolRouting || {};
+         const isEnabled = config.enabled ?? false;
+
+         const settingsList: SettingItem[] = [
+             { id: 'routing_enabled', label: 'Enable Tool Routing', value: isEnabled, type: 'toggle', category: 'llm' },
+             { id: 'routing_fallback', label: 'Auto-Fallback', value: config.enableFallback ?? true, type: 'toggle', category: 'llm', muted: !isEnabled },
+             { id: 'spacer_tr_1', label: '', value: '', type: 'info', category: 'llm' },
+             { id: 'caps_header', label: 'Capability Bindings:', value: '', type: 'header', category: 'llm', muted: !isEnabled },
+         ];
+
+         // Add selector for each capability
+         Object.values(ToolCapability).forEach(cap => {
+             const providers = capabilityProviders.get(cap) || [];
+             const binding = config.bindings?.[cap];
+             const providerCount = providers.length;
+             
+             // Format label for capability (e.g., 'web_search' -> 'Web Search')
+             const label = cap.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+             
+             settingsList.push({
+                 id: cap,
+                 label: `${label} (${providerCount})`,
+                 value: binding || '(auto)',
+                 type: 'select',
+                 category: 'llm',
+                 muted: !isEnabled,
+                 active: !!binding // Highlight if manually bound
+             });
+         });
+
+         return settingsList;
+      }
       default:
         return [];
     }
-  }, [currentSection, settings, uiState.theme.name, currentModel]);
+  }, [currentSection, settings, uiState.theme.name, currentModel, capabilityProviders]);
 
   // Is focusable helper
   const isFocusable = (setting: SettingItem) => {
@@ -352,6 +435,11 @@ export function SettingsPanel() {
       }
 
       if (setting.category === 'llm') {
+          // Check for capability binding
+          if (Object.values(ToolCapability).includes(setting.id as ToolCapability)) {
+              updateToolRouting(`bindings.${setting.id}`, nextValue === '(auto)' ? undefined : nextValue);
+              return;
+          }
           updateLLMSetting(setting.id, nextValue);
       } else {
           updateUISetting(setting.id, nextValue);
