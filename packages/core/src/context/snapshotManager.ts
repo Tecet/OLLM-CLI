@@ -184,22 +184,18 @@ export class SnapshotManagerImpl implements SnapshotManager {
    */
   checkThresholds(currentTokens: number, maxTokens: number): void {
     const usage = currentTokens / maxTokens;
-
-    // Check auto-snapshot threshold (default 80%)
-    if (this.config.autoCreate && usage >= this.config.autoThreshold) {
-      const callbacks = this.thresholdCallbacks.get(this.config.autoThreshold);
-      if (callbacks) {
-        callbacks.forEach(cb => cb());
-      }
-    }
-
     // Check pre-overflow threshold (95%)
     if (usage >= 0.95) {
       this.overflowCallbacks.forEach(cb => cb());
     }
 
-    // Check all registered thresholds
+    // Check all registered thresholds (this includes autoThreshold if configured)
     for (const [threshold, callbacks] of this.thresholdCallbacks.entries()) {
+      if (this.config.autoCreate === false && threshold === this.config.autoThreshold) {
+        // Skip autoThreshold if autoCreate is disabled
+        continue;
+      }
+
       if (usage >= threshold) {
         callbacks.forEach(cb => cb());
       }

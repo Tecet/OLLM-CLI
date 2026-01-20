@@ -12,19 +12,15 @@ import type { MCPServerConfig } from '@ollm/ollm-cli-core/mcp/types.js';
 describe('MCPConfigService', () => {
   let service: MCPConfigService;
   let tempDir: string;
-  let originalCwd: string;
-  let originalHomedir: string;
 
   beforeEach(() => {
     // Create temporary directory for testing
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'mcp-config-test-'));
 
     // Mock process.cwd() to return temp directory
-    originalCwd = process.cwd();
     vi.spyOn(process, 'cwd').mockReturnValue(tempDir);
 
     // Mock os.homedir() to return temp directory
-    originalHomedir = os.homedir();
     vi.spyOn(os, 'homedir').mockReturnValue(tempDir);
 
     // Create service instance

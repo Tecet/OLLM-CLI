@@ -3,7 +3,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render } from 'ink-testing-library';
 import { ToolsPanel } from '../ToolsPanel.js';
 import TestProviders from '../../../test-utils/TestProviders.js';
-import { defaultDarkTheme } from '../../../../config/styles.js';
 
 // Mock SettingsService
 vi.mock('../../../../config/settingsService.js', () => ({

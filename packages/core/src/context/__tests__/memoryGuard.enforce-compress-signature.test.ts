@@ -21,7 +21,7 @@ describe('MemoryGuard compression signature enforcement (failing test)', () => {
 
     // Mock compression service expecting (messages[], strategy)
     const mockCompression: any = {
-      compress: vi.fn(async (messages: unknown[], strategy: Record<string, unknown>) => {
+      compress: vi.fn(async (_messages: unknown[], _strategy: Record<string, unknown>) => {
         return { summary: null };
       })
     };

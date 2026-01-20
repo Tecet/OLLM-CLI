@@ -140,6 +140,10 @@ export interface ContextManagerActions {
 
   /** Get raw manager instance (use with caution) */
   getManager: () => ContextManagerInterface | null;
+  /** Report in-flight (streaming) token delta to the manager (can be positive or negative) */
+  reportInflightTokens: (delta: number) => void;
+  /** Clear in-flight token accounting */
+  clearInflightTokens: () => void;
   
   /** Get the PromptModeManager instance */
   getModeManager: () => PromptModeManager | null;
@@ -286,7 +290,7 @@ export function ContextManagerProvider({
         // For now, we'll create a simple SystemPromptBuilder wrapper
         // In a full implementation, this would be passed from ContextManager
         const systemPromptBuilder = {
-          build: (_config: any) => {
+          build: (_config: unknown) => {
             // This is a simplified version - the real implementation
             // would use the actual SystemPromptBuilder from ContextManager
             return manager.getSystemPrompt();
@@ -294,6 +298,7 @@ export function ContextManagerProvider({
         };
         
         const modeManager = new PromptModeManager(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           systemPromptBuilder as any,
           promptRegistry,
           contextAnalyzer
@@ -373,6 +378,23 @@ export function ContextManagerProvider({
         // Start the context manager
         await manager.start();
         setActive(true);
+        // Listen for summarization/compression lifecycle events to update UI state
+        manager.on('summarizing', () => {
+          setCompressing(true);
+        });
+        manager.on('auto-summary-created', () => {
+          setCompressing(false);
+          setUsage(manager.getUsage());
+        });
+        manager.on('auto-summary-failed', (data) => {
+          setCompressing(false);
+          const reason = (data && (data as any).reason) || ((data && (data as any).error) ? String((data as any).error) : null);
+          if (reason) setError(`Auto-summary failed: ${reason}`);
+        });
+        manager.on('compressed', () => {
+          setCompressing(false);
+          setUsage(manager.getUsage());
+        });
         
         // Get initial usage
         setUsage(manager.getUsage());
@@ -866,6 +888,8 @@ export function ContextManagerProvider({
     getCurrentMode: getCurrentModeAction,
     restoreModeHistory: restoreModeHistoryAction,
     getModeHistory: getModeHistoryAction,
+    reportInflightTokens: (delta: number) => managerRef.current?.reportInflightTokens(delta),
+    clearInflightTokens: () => managerRef.current?.clearInflightTokens(),
   }), [
     addMessage,
     compress,

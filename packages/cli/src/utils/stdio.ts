@@ -32,6 +32,112 @@ export function patchStdio(): () => void {
   const previousStdoutWrite = process.stdout.write;
   const previousStderrWrite = process.stderr.write;
 
+  // Buffers to coalesce rapid writes and prevent event storms
+  let stdoutBuffer = '';
+  let stderrBuffer = '';
+  let flushScheduled = false;
+  let lastEmitted = '';
+  let lastEmittedAt = 0;
+
+  const scheduleFlush = () => {
+    if (flushScheduled) return;
+    flushScheduled = true;
+    setTimeout(() => {
+      const now = Date.now();
+      try {
+        if (stdoutBuffer) {
+          const s = stdoutBuffer;
+          if (!(s === lastEmitted && now - lastEmittedAt < 1000)) {
+            coreEvents.emitOutput(false, s);
+            lastEmitted = s;
+            lastEmittedAt = now;
+          }
+        }
+        if (stderrBuffer) {
+          const s = stderrBuffer;
+          if (!(s === lastEmitted && now - lastEmittedAt < 1000)) {
+            coreEvents.emitOutput(true, s);
+            lastEmitted = s;
+            lastEmittedAt = now;
+          }
+        }
+      } finally {
+        stdoutBuffer = '';
+        stderrBuffer = '';
+        flushScheduled = false;
+      }
+    }, 20);
+  };
+
+  // Intercept stdin data to handle bracketed paste sequences (\x1b[200~ ... \x1b[201~)
+  // Coalesce pasted content into a single 'data' emit to avoid per-character events.
+  const previousStdinEmit = process.stdin.emit.bind(process.stdin as any);
+  let stdinAcc = '';
+  let inPaste = false;
+  let pasteBuffer = '';
+
+  (process.stdin as any).emit = function (event: string, chunk?: any) {
+    if (event !== 'data' || !chunk) {
+      return previousStdinEmit(event, chunk);
+    }
+
+    try {
+      const text = Buffer.isBuffer(chunk) ? chunk.toString('utf8') : String(chunk);
+      stdinAcc += text;
+
+      const START = '\x1b[200~';
+      const END = '\x1b[201~';
+
+      while (stdinAcc.length > 0) {
+        if (!inPaste) {
+          const si = stdinAcc.indexOf(START);
+          if (si === -1) {
+            // No paste start; emit everything
+            const out = stdinAcc;
+            stdinAcc = '';
+            previousStdinEmit('data', Buffer.from(out, 'utf8'));
+            break;
+          }
+
+          if (si > 0) {
+            const leading = stdinAcc.slice(0, si);
+            stdinAcc = stdinAcc.slice(si);
+            previousStdinEmit('data', Buffer.from(leading, 'utf8'));
+            continue;
+          }
+
+          // si === 0 -> start marker at beginning
+          inPaste = true;
+          stdinAcc = stdinAcc.slice(START.length);
+          pasteBuffer = '';
+          continue;
+        }
+
+        // inPaste === true
+        const ei = stdinAcc.indexOf(END);
+        if (ei === -1) {
+          // accumulate and wait for more
+          pasteBuffer += stdinAcc;
+          stdinAcc = '';
+          break;
+        }
+
+        // end found
+        pasteBuffer += stdinAcc.slice(0, ei);
+        stdinAcc = stdinAcc.slice(ei + END.length);
+        // emit single data event for the whole paste
+        previousStdinEmit('data', Buffer.from(pasteBuffer, 'utf8'));
+        pasteBuffer = '';
+        inPaste = false;
+        // loop continues to handle remaining data
+      }
+    } catch (err) {
+      return previousStdinEmit(event, chunk);
+    }
+
+    return true;
+  } as any;
+
   process.stdout.write = (
     chunk: Uint8Array | string,
     encodingOrCb?:
@@ -39,9 +145,16 @@ export function patchStdio(): () => void {
       | ((err?: NodeJS.ErrnoException | null) => void),
     cb?: (err?: NodeJS.ErrnoException | null) => void,
   ) => {
-    const encoding =
-      typeof encodingOrCb === 'string' ? encodingOrCb : undefined;
-    coreEvents.emitOutput(false, chunk, encoding);
+    const encoding = typeof encodingOrCb === 'string' ? encodingOrCb : undefined;
+    try {
+      const text =
+        typeof chunk === 'string' ? chunk : Buffer.from(chunk).toString(encoding || 'utf8');
+      stdoutBuffer += text;
+      scheduleFlush();
+    } catch (_err) {
+      // fallback to immediate emit on error
+      coreEvents.emitOutput(false, chunk, encoding);
+    }
     const callback = typeof encodingOrCb === 'function' ? encodingOrCb : cb;
     if (callback) {
       callback();
@@ -56,9 +169,15 @@ export function patchStdio(): () => void {
       | ((err?: NodeJS.ErrnoException | null) => void),
     cb?: (err?: NodeJS.ErrnoException | null) => void,
   ) => {
-    const encoding =
-      typeof encodingOrCb === 'string' ? encodingOrCb : undefined;
-    coreEvents.emitOutput(true, chunk, encoding);
+    const encoding = typeof encodingOrCb === 'string' ? encodingOrCb : undefined;
+    try {
+      const text =
+        typeof chunk === 'string' ? chunk : Buffer.from(chunk).toString(encoding || 'utf8');
+      stderrBuffer += text;
+      scheduleFlush();
+    } catch (_err) {
+      coreEvents.emitOutput(true, chunk, encoding);
+    }
     const callback = typeof encodingOrCb === 'function' ? encodingOrCb : cb;
     if (callback) {
       callback();
@@ -69,6 +188,12 @@ export function patchStdio(): () => void {
   return () => {
     process.stdout.write = previousStdoutWrite;
     process.stderr.write = previousStderrWrite;
+    // restore stdin emit
+    try {
+      (process.stdin as any).emit = previousStdinEmit;
+    } catch (_e) {
+      // ignore
+    }
   };
 }
 

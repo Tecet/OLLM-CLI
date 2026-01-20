@@ -12,7 +12,7 @@
  */
 
 import React from 'react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render } from 'ink-testing-library';
 import { InstallServerDialog } from '../InstallServerDialog.js';
 import { MCPProvider } from '../../../contexts/MCPContext.js';
@@ -285,7 +285,7 @@ describe('InstallServerDialog', () => {
   describe('Form Validation', () => {
     it('should validate required environment variables', async () => {
       const onInstall = vi.fn();
-      const { lastFrame, stdin } = renderDialog(mockServer, vi.fn(), onInstall);
+      const { lastFrame } = renderDialog(mockServer, vi.fn(), onInstall);
       
       // Component should render with required fields
       const frame = lastFrame();
@@ -302,7 +302,7 @@ describe('InstallServerDialog', () => {
   describe('Installation Flow', () => {
     it('should call onInstall with correct config', async () => {
       const onInstall = vi.fn().mockResolvedValue(undefined);
-      const { stdin } = renderDialog(mockServer, vi.fn(), onInstall);
+      renderDialog(mockServer, vi.fn(), onInstall);
       
       // Fill in required field (simulated - in real test would need to interact with input)
       // For now, just verify the structure

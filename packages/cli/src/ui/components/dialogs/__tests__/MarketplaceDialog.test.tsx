@@ -97,8 +97,8 @@ const mockUIContext = {
  */
 function renderMarketplaceDialog(props: { onClose: () => void }) {
   return render(
-    <UIProvider value={mockUIContext as any}>
-      <MCPProvider value={mockMCPContext as any}>
+    <UIProvider value={mockUIContext as unknown as import('../../../../features/context/UIContext.js').UIContextValue}>
+      <MCPProvider value={mockMCPContext as unknown as import('../../../contexts/MCPContext.js').MCPContextValue}>
         <MarketplaceDialog {...props} />
       </MCPProvider>
     </UIProvider>
@@ -205,7 +205,7 @@ describe('MarketplaceDialog', () => {
       const onClose = vi.fn();
       mockMCPContext.searchMarketplace.mockResolvedValue([mockServers[1]]); // github only
 
-      const { lastFrame, stdin } = renderMarketplaceDialog({ onClose });
+      const { stdin } = renderMarketplaceDialog({ onClose });
 
       // Focus search with /
       stdin.write('/');
@@ -472,8 +472,8 @@ describe('MarketplaceDialog', () => {
       };
 
       const { lastFrame } = render(
-        <UIProvider value={mockUIContext as any}>
-          <MCPProvider value={emptyContext as any}>
+        <UIProvider value={mockUIContext as unknown as import('../../../../features/context/UIContext.js').UIContextValue}>
+          <MCPProvider value={emptyContext as unknown as import('../../../contexts/MCPContext.js').MCPContextValue}>
             <MarketplaceDialog onClose={onClose} />
           </MCPProvider>
         </UIProvider>
@@ -494,8 +494,8 @@ describe('MarketplaceDialog', () => {
       };
 
       const { lastFrame } = render(
-        <UIProvider value={mockUIContext as any}>
-          <MCPProvider value={contextWithoutCategory as any}>
+        <UIProvider value={mockUIContext as unknown as import('../../../../features/context/UIContext.js').UIContextValue}>
+          <MCPProvider value={contextWithoutCategory as unknown as import('../../../contexts/MCPContext.js').MCPContextValue}>
             <MarketplaceDialog onClose={onClose} />
           </MCPProvider>
         </UIProvider>
@@ -517,8 +517,8 @@ describe('MarketplaceDialog', () => {
       };
 
       const { lastFrame } = render(
-        <UIProvider value={mockUIContext as any}>
-          <MCPProvider value={contextWithLargeCount as any}>
+        <UIProvider value={mockUIContext as unknown as import('../../../../features/context/UIContext.js').UIContextValue}>
+          <MCPProvider value={contextWithLargeCount as unknown as import('../../../contexts/MCPContext.js').MCPContextValue}>
             <MarketplaceDialog onClose={onClose} />
           </MCPProvider>
         </UIProvider>
@@ -539,8 +539,8 @@ describe('MarketplaceDialog', () => {
       };
 
       const { lastFrame } = render(
-        <UIProvider value={mockUIContext as any}>
-          <MCPProvider value={contextWithHalfStar as any}>
+        <UIProvider value={mockUIContext as unknown as import('../../../../features/context/UIContext.js').UIContextValue}>
+          <MCPProvider value={contextWithHalfStar as unknown as import('../../../contexts/MCPContext.js').MCPContextValue}>
             <MarketplaceDialog onClose={onClose} />
           </MCPProvider>
         </UIProvider>

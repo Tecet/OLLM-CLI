@@ -49,7 +49,6 @@ describe('JIT Context Discovery', () => {
   });
 
   it('should honor trusted roots and not go above them', async () => {
-    const outsideRoot = path.resolve('/outside');
     const outsideFile = path.resolve('/outside/secret.md');
 
     (fs.stat as any).mockImplementation(() => ({ isFile: () => true }));

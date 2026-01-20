@@ -20,7 +20,7 @@ vi.mock('vectordb', () => ({
 
 // Import after mocking
 const { LanceDBSetup, createDefaultRAGConfig } = await import('../LanceDBSetup.js');
-const { RAGConfig } = await import('../RAGSystem.js');
+import type { RAGConfig } from '../RAGSystem.js';
 
 describe('LanceDBSetup', () => {
   let tempDir: string;

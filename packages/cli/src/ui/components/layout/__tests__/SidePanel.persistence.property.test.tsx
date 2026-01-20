@@ -3,7 +3,7 @@ import * as fc from 'fast-check';
 import { render } from '../../../../test/ink-testing.js';
 import { SidePanel } from '../SidePanel.js';
 import { FocusProvider } from '../../../../features/context/FocusContext.js';
-import { Box, Text } from 'ink';
+import { Text } from 'ink';
 
 // Mock ContextSection
 vi.mock('../ContextSection.js', () => ({
@@ -27,14 +27,13 @@ describe('Property 15: Side Panel Visibility Persistence', () => {
     },
     bg: {
       primary: '#1e1e1e',
-      secondary: '#252526',
     },
     border: {
         primary: '#3e3e42',
         secondary: '#007acc',
         active: '#007acc',
     }
-  } as any;
+  } as unknown as import('../../../../config/types.js').Theme;
 
 
   it('should maintain visibility state across re-renders', () => {
@@ -47,9 +46,9 @@ describe('Property 15: Side Panel Visibility Persistence', () => {
             <FocusProvider>
               <SidePanel
                 visible={initialVisibility}
-                connection={{ status: 'connected', provider: 'ollama' } as any}
+                connection={{ status: 'connected', provider: 'ollama' } as unknown as import('../StatusBar.js').ConnectionStatus}
                 model="test-model"
-                gpu={{ available: false } as any}
+                gpu={{ available: false } as unknown as import('../StatusBar.js').GPUInfo}
                 theme={defaultTheme}
               />
             </FocusProvider>
@@ -69,9 +68,9 @@ describe('Property 15: Side Panel Visibility Persistence', () => {
             <FocusProvider>
               <SidePanel
                 visible={initialVisibility}
-                connection={{ status: 'connected', provider: 'ollama' } as any}
+                connection={{ status: 'connected', provider: 'ollama' } as unknown as import('../StatusBar.js').ConnectionStatus}
                 model="test-model"
-                gpu={{ available: false } as any}
+                gpu={{ available: false } as unknown as import('../StatusBar.js').GPUInfo}
                 theme={defaultTheme}
               />
             </FocusProvider>
@@ -104,9 +103,9 @@ describe('Property 15: Side Panel Visibility Persistence', () => {
               <FocusProvider>
                 <SidePanel
                   visible={visible}
-                  connection={{ status: 'connected', provider: 'ollama' } as any}
+                  connection={{ status: 'connected', provider: 'ollama' } as unknown as import('../StatusBar.js').ConnectionStatus}
                   model="test-model"
-                  gpu={{ available: false } as any}
+                  gpu={{ available: false } as unknown as import('../StatusBar.js').GPUInfo}
                   theme={defaultTheme}
                 />
               </FocusProvider>
@@ -144,9 +143,9 @@ describe('Property 15: Side Panel Visibility Persistence', () => {
             <FocusProvider>
               <SidePanel
                 visible={currentVisibility}
-                connection={{ status: 'connected', provider: 'ollama' } as any}
+                connection={{ status: 'connected', provider: 'ollama' } as unknown as import('../StatusBar.js').ConnectionStatus}
                 model="test-model"
-                gpu={{ available: false } as any}
+                gpu={{ available: false } as unknown as import('../StatusBar.js').GPUInfo}
                 theme={defaultTheme}
               />
             </FocusProvider>
@@ -167,9 +166,9 @@ describe('Property 15: Side Panel Visibility Persistence', () => {
               <FocusProvider>
                 <SidePanel
                   visible={currentVisibility}
-                  connection={{ status: 'connected', provider: 'ollama' } as any}
+                  connection={{ status: 'connected', provider: 'ollama' } as unknown as import('../StatusBar.js').ConnectionStatus}
                   model="test-model"
-                  gpu={{ available: false } as any}
+                  gpu={{ available: false } as unknown as import('../StatusBar.js').GPUInfo}
                   theme={defaultTheme}
                 />
               </FocusProvider>

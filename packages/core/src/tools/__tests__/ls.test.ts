@@ -7,7 +7,7 @@ import fc from 'fast-check';
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { LsTool, LsInvocation } from '../ls.js';
+import { LsTool } from '../ls.js';
 import { MockMessageBus, createMockAbortSignal, createToolContext } from './test-helpers.js';
 
 /**

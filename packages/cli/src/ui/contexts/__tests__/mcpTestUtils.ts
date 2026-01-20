@@ -168,7 +168,7 @@ export function setupMCPServiceMocks() {
 /**
  * Create a test MCPContext value with mock data
  */
-export function createMockMCPContextValue(overrides?: any) {
+export function createMockMCPContextValue(overrides?: Partial<ReturnType<typeof import('../MCPContext.js').useMCP>>) {
   const servers = new Map<string, ExtendedMCPServerStatus>();
   
   return {

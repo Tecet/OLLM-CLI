@@ -425,7 +425,7 @@ describe('Service Integration Tests', () => {
   describe('Environment Sanitization + Shell Tool Integration', () => {
     it('should sanitize environment before shell execution', async () => {
       const sanitizationService = new EnvironmentSanitizationService();
-      const shellService = new ShellExecutionService(sanitizationService);
+      new ShellExecutionService(sanitizationService);
 
       // Configure sanitization with default rules
       sanitizationService.configure({
@@ -664,7 +664,7 @@ describe('Service Integration Tests', () => {
     it('should handle all services together in a realistic scenario', async () => {
       // Initialize all services
       const recordingService = new ChatRecordingService({ dataDir: fixture.getTempDir() });
-      const compressionService = new ChatCompressionService();
+      new ChatCompressionService();
       const loopDetectionService = new LoopDetectionService({
         maxTurns: 20,
         repeatThreshold: 3,

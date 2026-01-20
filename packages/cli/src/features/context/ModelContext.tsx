@@ -484,6 +484,8 @@ export function ModelProvider({
       }
       
       // Clear context on model switch (optional, configurable)
+      const settingsService = SettingsService.getInstance();
+      const settings = settingsService.getSettings();
       const shouldClearContext2 = settings.llm?.clearContextOnModelSwitch ?? true; // Default: true (backward compatible)
       
       if (shouldClearContext2) {

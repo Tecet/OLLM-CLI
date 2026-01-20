@@ -4,7 +4,7 @@
  * Tests tool wrapping, execution, error handling, and result formatting.
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { DefaultMCPToolWrapper } from '../mcpToolWrapper.js';
 import type { MCPClient, MCPTool } from '../types.js';
 import type { ToolContext } from '../../tools/types.js';
@@ -31,7 +31,7 @@ class MockMCPClient implements MCPClient {
     return [];
   }
 
-  async callTool(serverName: string, toolName: string, args: unknown): Promise<unknown> {
+  async callTool(serverName: string, toolName: string, _args: unknown): Promise<unknown> {
     const key = `${serverName}:${toolName}`;
     
     const error = this.mockErrors.get(key);

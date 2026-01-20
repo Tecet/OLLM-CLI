@@ -28,6 +28,8 @@ export interface ProviderAdapter {
       temperature?: number;
     };
     systemPrompt?: string;
+    timeout?: number;
+    abortSignal?: AbortSignal;
   }): AsyncIterable<
     | { type: 'text'; value: string }
     | { type: 'error'; error: { message: string } }
@@ -687,6 +689,7 @@ export class UnifiedCompressionService extends EventEmitter implements ICompress
   private async generateLLMSummaryFromMessages(
     messages: Message[],
     maxTokens: number
+    , timeoutMs?: number
   ): Promise<string> {
     if (!this.provider || !this.model) {
       throw new Error('Provider and model must be set for LLM summarization');
@@ -706,10 +709,12 @@ Summary:`;
     const providerMessages = [{ role: 'user', content: summaryPrompt }];
     let summaryText = '';
 
+    const timeout = timeoutMs ?? 120000;
     for await (const event of this.provider.chatStream({
       model: this.model,
       messages: providerMessages,
       options: { maxTokens, temperature: 0.3 },
+      timeout,
     })) {
       if (event.type === 'text') {
         summaryText += event.value;
@@ -728,6 +733,7 @@ Summary:`;
   private async generateLLMSummaryFromSessionMessages(
     messages: SessionMessage[],
     maxTokens: number
+    , timeoutMs?: number
   ): Promise<string> {
     if (!this.provider || !this.model) {
       throw new Error('Provider and model must be set for LLM summarization');
@@ -759,10 +765,12 @@ Summary:`;
 
     let summaryText = '';
 
+    const timeout = timeoutMs ?? 120000;
     for await (const event of this.provider.chatStream({
       model: this.model,
       messages: providerMessages,
       options: { maxTokens, temperature: 0.3 },
+      timeout,
     })) {
       if (event.type === 'text') {
         summaryText += event.value;

@@ -23,7 +23,7 @@ describe('MemoryGuard automatic compression invocation', () => {
 
     // Mock compression service that records the argument it received
     const mockCompression: any = {
-      compress: vi.fn(async (arg: unknown) => {
+      compress: vi.fn(async (_arg: unknown) => {
         // Return a resolved promise to allow MemoryGuard to continue
         return { summary: null };
       })

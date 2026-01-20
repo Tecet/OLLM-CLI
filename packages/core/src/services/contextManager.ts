@@ -142,3 +142,6 @@ export class DynamicContextInjector {
     return entries.filter(entry => entry.source === source);
   }
 }
+
+// Backwards-compatible alias: some modules/tests expect `ContextManager`.
+export class ContextManager extends DynamicContextInjector {}

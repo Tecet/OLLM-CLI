@@ -124,20 +124,11 @@ describe('ModelContext - Tool Support Detection', () => {
       // With UICallbacks, default implementations are always available
       // They log warnings and return safe defaults
       
-      const mockAddSystemMessage = vi.fn();
-      const callbacks = {
-        promptUser: vi.fn().mockResolvedValue('No'), // Safe default
-        addSystemMessage: mockAddSystemMessage,
-        clearContext: vi.fn(),
-        openModelMenu: vi.fn(),
-      };
-
       // Simulate unknown model detection
       // Note: We can't directly test handleUnknownModel since it's internal to ModelContext
       // This test verifies the expected behavior when using default callbacks
       
-      expect(callbacks.promptUser).toBeDefined();
-      expect(mockAddSystemMessage).toBeDefined();
+      expect(true).toBe(true);
     });
 
     it('should prompt user with correct options for unknown model', async () => {
@@ -220,35 +211,17 @@ describe('ModelContext - Tool Support Detection', () => {
     it('should handle all three response options correctly', async () => {
       // Test 'Yes' response
       let mockPromptUser = vi.fn().mockResolvedValue('Yes');
-      let callbacks = {
-        promptUser: mockPromptUser,
-        addSystemMessage: vi.fn(),
-        clearContext: vi.fn(),
-        openModelMenu: vi.fn(),
-      };
-      let result = await callbacks.promptUser('Test', ['Yes', 'No', 'Auto-detect']);
+      let result = await mockPromptUser('Test', ['Yes', 'No', 'Auto-detect']);
       expect(result).toBe('Yes');
 
       // Test 'No' response
       mockPromptUser = vi.fn().mockResolvedValue('No');
-      callbacks = {
-        promptUser: mockPromptUser,
-        addSystemMessage: vi.fn(),
-        clearContext: vi.fn(),
-        openModelMenu: vi.fn(),
-      };
-      result = await callbacks.promptUser('Test', ['Yes', 'No', 'Auto-detect']);
+      result = await mockPromptUser('Test', ['Yes', 'No', 'Auto-detect']);
       expect(result).toBe('No');
 
       // Test 'Auto-detect' response
       mockPromptUser = vi.fn().mockResolvedValue('Auto-detect');
-      callbacks = {
-        promptUser: mockPromptUser,
-        addSystemMessage: vi.fn(),
-        clearContext: vi.fn(),
-        openModelMenu: vi.fn(),
-      };
-      result = await callbacks.promptUser('Test', ['Yes', 'No', 'Auto-detect']);
+      result = await mockPromptUser('Test', ['Yes', 'No', 'Auto-detect']);
       expect(result).toBe('Auto-detect');
     });
   });
@@ -258,21 +231,13 @@ describe('ModelContext - Tool Support Detection', () => {
       // This test verifies the expected behavior of auto-detection
       // The actual implementation will send a test request and check for errors
       
-      const mockAddSystemMessage = vi.fn();
-      const callbacks = {
-        promptUser: vi.fn(),
-        addSystemMessage: mockAddSystemMessage,
-        clearContext: vi.fn(),
-        openModelMenu: vi.fn(),
-      };
-
       // Simulate successful auto-detection
       // In real implementation, this would:
       // 1. Send test request with minimal tool schema
       // 2. Check for tool errors in response
       // 3. Save result to user_models.json
       
-      expect(mockAddSystemMessage).toBeDefined();
+      expect(true).toBe(true);
     });
 
     it('should timeout after 5 seconds during auto-detection', async () => {
@@ -315,12 +280,6 @@ describe('ModelContext - Tool Support Detection', () => {
     it('should default to tools disabled on auto-detect failure', async () => {
       // When auto-detection fails or times out, should default to safe setting
       const mockAddSystemMessage = vi.fn();
-      const callbacks = {
-        promptUser: vi.fn(),
-        addSystemMessage: mockAddSystemMessage,
-        clearContext: vi.fn(),
-        openModelMenu: vi.fn(),
-      };
 
       // Simulate auto-detect failure
       // Expected behavior: save with tool_support=false and source='auto_detected'

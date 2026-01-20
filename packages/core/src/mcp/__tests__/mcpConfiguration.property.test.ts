@@ -115,12 +115,6 @@ describe('Property 40: MCP Configuration Effects', () => {
         fc.integer({ min: 1, max: 60000 }),
         async (enabled, connectionTimeout) => {
           // Create config with various values
-          const config: MCPConfig = {
-            enabled,
-            connectionTimeout,
-            servers: {},
-          };
-
           const client = new DefaultMCPClient(config);
 
           // Client should be created successfully with valid config
@@ -144,7 +138,7 @@ describe('Property 40: MCP Configuration Effects', () => {
             servers: {},
           };
 
-          const client = new DefaultMCPClient(config);
+          new DefaultMCPClient(config);
 
           // Server config with override timeout
           const serverConfig: MCPServerConfig = {

@@ -8,7 +8,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import * as fc from 'fast-check';
 import { LocalProvider } from '../localProvider.js';
-import type { Message, MessagePart, ToolSchema, ProviderRequest, ProviderEvent } from '@ollm/core';
+import type { Message, ToolSchema, ProviderRequest, ProviderEvent } from '@ollm/core';
 
 describe('LocalProvider', () => {
   let provider: LocalProvider;

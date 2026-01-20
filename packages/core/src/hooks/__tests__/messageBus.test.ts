@@ -4,7 +4,6 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { MessageBus, getMessageBus, setMessageBus, resetMessageBus } from '../messageBus.js';
-import type { HookEvent } from '../types.js';
 
 describe('MessageBus', () => {
   let bus: MessageBus;
@@ -98,7 +97,7 @@ describe('MessageBus', () => {
 
     it('should remove listener after first call', async () => {
       const listener = vi.fn();
-      const listenerId = bus.once('session_start', listener);
+      bus.once('session_start', listener);
 
       await bus.emit('session_start', {});
 

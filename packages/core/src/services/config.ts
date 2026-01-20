@@ -143,7 +143,7 @@ export const DEFAULT_SERVICES_CONFIG: Required<ServicesConfig> = {
   },
   compression: {
     enabled: true,
-    threshold: 0.8,
+    threshold: 0.6,
     strategy: 'hybrid' as CompressionStrategy,
     preserveRecent: 4096,
   },
@@ -178,7 +178,7 @@ export const DEFAULT_SERVICES_CONFIG: Required<ServicesConfig> = {
     kvQuantization: 'q8_0',
     compression: {
       enabled: true,
-      threshold: 0.8,
+      threshold: 0.6,
       strategy: 'hybrid',
       preserveRecent: 4096,
       summaryMaxTokens: 1024,

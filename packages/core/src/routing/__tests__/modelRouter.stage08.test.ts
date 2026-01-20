@@ -9,7 +9,7 @@
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
 import { ModelRouter, ModelInfo, ModelRouterConfig } from '../modelRouter.js';
-import { ModelDatabase, ModelEntry, ModelCapabilities } from '../modelDatabase.js';
+import { ModelDatabase, ModelCapabilities } from '../modelDatabase.js';
 import { RoutingProfile, getRoutingProfile } from '../routingProfiles.js';
 
 // Mock the routingProfiles module for custom profile tests

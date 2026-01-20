@@ -216,6 +216,12 @@ export function ChatProvider({
   
   const assistantMessageIdRef = useRef<string | null>(null);
   const manualContextRequestRef = useRef<{ modelId: string; onComplete: (value: number) => void | Promise<void> } | null>(null);
+  const compressionOccurredRef = useRef(false);
+  const compressionRetryCountRef = useRef(0);
+  const lastUserMessageRef = useRef<string | null>(null);
+  const waitingForResumeRef = useRef(false);
+  const inflightTokenAccumulatorRef = useRef(0);
+  const inflightFlushTimerRef = useRef<NodeJS.Timeout | null>(null);
   
   // Define addMessage before it's used in useEffect
   const addMessage = useCallback((message: Omit<Message, 'id' | 'timestamp'>) => {
@@ -242,6 +248,112 @@ export function ChatProvider({
   }, [contextActions]);
   
   useEffect(() => {
+    if (!contextActions) return;
+
+    const handleMemoryWarning = async (_data: unknown) => {
+      try {
+        const usage = contextActions.getUsage();
+        const cfg = contextActions.getConfig?.();
+        const threshold = cfg?.compression?.threshold ? Math.round(cfg.compression.threshold * 100) : Math.round((contextManagerState.usage.percentage || 0));
+        addMessage({
+          role: 'system',
+          content: `Warning: context usage at ${Math.round(usage.percentage)}%. Compression enabled at ${threshold}%`,
+          excludeFromContext: true,
+        });
+      } catch (err) {
+        // ignore
+      }
+    };
+
+    const handleCompressed = async (_data: unknown) => {
+      try {
+        const msgs = await contextActions.getContext();
+        const summaryMsg = msgs.find((m: any) => typeof m.id === 'string' && m.id.startsWith('summary-')) as any | undefined;
+        const summaryText = summaryMsg ? summaryMsg.content : '[Conversation summary generated]';
+        // Mark that compression occurred so ongoing generation can retry/resume
+        compressionOccurredRef.current = true;
+        compressionRetryCountRef.current = 0;
+
+        addMessage({
+          role: 'assistant',
+          content: `Context compressed: ${summaryText}`,
+          excludeFromContext: true,
+        });
+      } catch (err) {
+        // ignore
+      }
+    };
+
+    const handleSummarizing = (_data: unknown) => {
+      // show immediate UI feedback
+      addMessage({
+        role: 'system',
+        content: 'Summarizing conversation history...',
+        excludeFromContext: true,
+      });
+    };
+
+    const handleAutoSummary = async (data: any) => {
+      try {
+        const summary = data?.summary;
+        const text = summary?.content || '[Conversation summary]';
+
+        // Add assistant-visible summary message (do not add it to core context again)
+        addMessage({
+          role: 'assistant',
+          content: text,
+          excludeFromContext: true,
+        });
+        // Mark that compression happened so ongoing generation can retry/resume
+        compressionOccurredRef.current = true;
+        compressionRetryCountRef.current = 0;
+        // Decide whether to auto-resume or ask based on settings
+        try {
+          const settings = SettingsService.getInstance().getSettings();
+          const resumePref = settings.llm?.resumeAfterSummary || 'ask';
+          if (resumePref === 'ask') {
+            waitingForResumeRef.current = true;
+            addMessage({ role: 'system', content: 'Summary complete. Type "continue" to resume generation or "stop" to abort.', excludeFromContext: true });
+          }
+        } catch (e) {
+          // ignore
+        }
+      } catch (err) {
+        // ignore
+      }
+    };
+
+    const handleAutoSummaryFailed = async (data: any) => {
+      try {
+        const err = data?.error || data?.reason || 'Summarization failed';
+        const message = typeof err === 'string' ? err : (err?.message || JSON.stringify(err));
+        addMessage({
+          role: 'system',
+          content: `Summarization failed: ${message}`,
+          excludeFromContext: true,
+        });
+      } catch (e) {
+        // ignore
+      }
+    };
+
+    contextActions.on?.('memory-warning', handleMemoryWarning);
+    contextActions.on?.('compressed', handleCompressed);
+    contextActions.on?.('summarizing', handleSummarizing);
+    contextActions.on?.('auto-summary-created', handleAutoSummary);
+    contextActions.on?.('auto-summary-failed', handleAutoSummaryFailed);
+
+    return () => {
+      contextActions.off?.('memory-warning', handleMemoryWarning);
+      contextActions.off?.('compressed', handleCompressed);
+      contextActions.off?.('summarizing', handleSummarizing);
+      contextActions.off?.('auto-summary-created', handleAutoSummary);
+      contextActions.off?.('auto-summary-failed', handleAutoSummaryFailed);
+    };
+  }, [contextActions, contextManagerState.usage]);
+
+  useEffect(() => {
+
     if (serviceContainer) {
       commandRegistry.setServiceContainer(serviceContainer);
       globalThis.__ollmModelSwitchCallback = setCurrentModel;
@@ -291,6 +403,17 @@ export function ChatProvider({
         await request.onComplete(value);
         return;
       }
+      // Handle resume command when waiting for user approval after summarization
+      if (content.trim().toLowerCase() === 'continue' && waitingForResumeRef.current) {
+        waitingForResumeRef.current = false;
+        addMessage({ role: 'system', content: 'Resuming generation...', excludeFromContext: true });
+        const last = lastUserMessageRef.current;
+        if (last) {
+          // Re-dispatch the last user message asynchronously to avoid recursion
+          setTimeout(() => { void sendMessage(last); }, 0);
+        }
+        return;
+      }
       
       // TASK 7.2: Analyze message with ContextAnalyzer before sending
       // Get the mode manager and context analyzer
@@ -301,6 +424,8 @@ export function ChatProvider({
         role: 'user',
         content,
       });
+      // Store last user message so we can retry generation after compression
+      lastUserMessageRef.current = content;
 
       // Clear input
       setCurrentInput('');
@@ -567,6 +692,16 @@ export function ChatProvider({
           });
         }
 
+        // Calculate mode-specific temperature
+        const temperature = (() => {
+          const settingsService = SettingsService.getInstance();
+          const settings = settingsService.getSettings();
+          if (settings.llm?.modeLinkedTemperature !== false && modeManager) {
+             return modeManager.getPreferredTemperature(modeManager.getCurrentMode());
+          }
+          return undefined;
+        })();
+
         try {
           await sendToLLM(
             history,
@@ -574,6 +709,31 @@ export function ChatProvider({
             (text: string) => {
               const targetId = currentAssistantMsgId;
               assistantContent += text;
+              // Estimate tokens for this chunk and batch-report as in-flight
+              try {
+                if (contextActions && contextActions.reportInflightTokens) {
+                  const estimatedTokens = Math.max(1, Math.ceil(text.length / 4));
+                  inflightTokenAccumulatorRef.current += estimatedTokens;
+                  // schedule a flush if not already scheduled
+                  if (!inflightFlushTimerRef.current) {
+                    inflightFlushTimerRef.current = setTimeout(() => {
+                      try {
+                        const toReport = inflightTokenAccumulatorRef.current;
+                        inflightTokenAccumulatorRef.current = 0;
+                        inflightFlushTimerRef.current = null;
+                        if (toReport > 0) {
+                          contextActions.reportInflightTokens(toReport);
+                        }
+                      } catch (e) {
+                        inflightTokenAccumulatorRef.current = 0;
+                        inflightFlushTimerRef.current = null;
+                      }
+                    }, 500);
+                  }
+                }
+              } catch (e) {
+                // ignore estimation/report errors
+              }
               
               // Update message with content
               setMessages((prev) =>
@@ -588,9 +748,14 @@ export function ChatProvider({
               const targetId = currentAssistantMsgId;
               setMessages((prev) =>
                 prev.map((msg) =>
-                  msg.id === targetId ? { ...msg, content: msg.content ? `${msg.content}\n\n**Error:** ${error}` : `Error: ${error}` } : msg
+                  msg.id === targetId ? { ...msg, content: msg.content ? `${msg.content}\n\n**Error:** ${error}` : `Error: ${error}`, excludeFromContext: true } : msg
                 )
               );
+              // Clear any inflight token accounting and cancel flush timer
+              try { 
+                if (inflightFlushTimerRef.current) { clearTimeout(inflightFlushTimerRef.current); inflightFlushTimerRef.current = null; inflightTokenAccumulatorRef.current = 0; }
+                contextActions?.clearInflightTokens(); 
+              } catch (e) {}
               stopLoop = true;
             },
             // onComplete
@@ -643,6 +808,14 @@ export function ChatProvider({
                   timestamp: new Date().toISOString(),
                 });
               }
+              // Flush any pending inflight tokens and clear accounting now that generation completed
+              try {
+                if (inflightFlushTimerRef.current) { clearTimeout(inflightFlushTimerRef.current); inflightFlushTimerRef.current = null; }
+                const pending = inflightTokenAccumulatorRef.current;
+                inflightTokenAccumulatorRef.current = 0;
+                if (pending > 0) { contextActions?.reportInflightTokens(pending); }
+                contextActions?.clearInflightTokens();
+              } catch (e) {}
             },
             (toolCall: CoreToolCall) => {
                toolCallReceived = toolCall;
@@ -671,17 +844,40 @@ export function ChatProvider({
             },
             toolSchemas,
             systemPrompt,
-            undefined, // timeout (use default)
-            // Inject mode-specific temperature if enabled in settings
-            (() => {
-              const settingsService = SettingsService.getInstance();
-              const settings = settingsService.getSettings();
-              if (settings.llm?.modeLinkedTemperature !== false && modeManager) { // Default to true if undefined
-                 return modeManager.getPreferredTemperature(modeManager.getCurrentMode());
-              }
-              return undefined; // Fallback to global setting in ModelContext
-            })()
+            120000, // timeout (ms)
+            temperature
           );
+
+          // If compression occurred during generation, retry once using updated context
+          if (compressionOccurredRef.current && compressionRetryCountRef.current < 1) {
+            compressionRetryCountRef.current += 1;
+            compressionOccurredRef.current = false;
+            // Cancel any existing provider request and prepare to retry
+            try { cancelRequest(); } catch (e) {}
+
+            // Ensure the last user message is present in the context after compression
+            try {
+              const lastUser = lastUserMessageRef.current;
+              if (lastUser && contextActions) {
+                const ctx = await contextActions.getContext();
+                const lastUserInCtx = [...ctx].reverse().find((m: any) => m.role === 'user')?.content;
+                if (lastUserInCtx !== lastUser) {
+                  await contextActions.addMessage({ role: 'user', content: lastUser });
+                }
+              }
+            } catch (e) {
+              // ignore errors re-adding the user message
+            }
+
+            // Create a fresh assistant message for the retry
+            const retryAssistant = addMessage({ role: 'assistant', content: '', expanded: true });
+            currentAssistantMsgId = retryAssistant.id;
+            assistantMessageIdRef.current = currentAssistantMsgId;
+            assistantContent = '';
+            thinkingContent = '';
+            stopLoop = false; // continue loop to retry
+            continue; // go to next iteration and re-run sendToLLM with updated history
+          }
 
           // ALWAYS add assistant turn to context manager if it produced content OR tool calls
           if (assistantContent || toolCallReceived) {

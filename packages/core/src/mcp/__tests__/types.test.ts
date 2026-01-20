@@ -6,7 +6,6 @@ import { describe, it, expect } from 'vitest';
 import type {
   MCPServerConfig,
   MCPServerStatus,
-  MCPServerInfo,
   MCPTool,
   MCPRequest,
   MCPResponse,

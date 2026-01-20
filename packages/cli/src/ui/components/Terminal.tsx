@@ -79,7 +79,27 @@ export function Terminal({ height }: TerminalProps) {
   const visibleLines = useMemo(() => {
       const start = Math.max(0, allLines.length - visibleHeight - scrollOffset);
       const end = allLines.length - scrollOffset;
-      return allLines.slice(start, end);
+      const slice = allLines.slice(start, end);
+
+      // Collapse adjacent identical lines to reduce UI spam (e.g., repeated status messages)
+      const collapsed: string[] = [];
+      let lastLine: string | null = null;
+      let count = 0;
+      for (const l of slice) {
+        if (l === lastLine) {
+          count += 1;
+        } else {
+          if (lastLine !== null) {
+            collapsed.push(count > 1 ? `${lastLine}  (x${count})` : lastLine);
+          }
+          lastLine = l;
+          count = 1;
+        }
+      }
+      if (lastLine !== null) {
+        collapsed.push(count > 1 ? `${lastLine}  (x${count})` : lastLine);
+      }
+      return collapsed;
   }, [allLines, visibleHeight, scrollOffset]);
 
   return (

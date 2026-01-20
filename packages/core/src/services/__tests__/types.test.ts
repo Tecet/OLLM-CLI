@@ -9,16 +9,10 @@ import type {
   SessionMessage,
   SessionToolCall,
   Session,
-  SessionSummary,
   CompressionOptions,
-  CompressionResult,
-  LoopPattern,
   LoopDetectionConfig,
   ContextEntry,
-  FileEntry,
-  DiscoveryOptions,
   SanitizationConfig,
-  ServicesConfig,
 } from '../types.js';
 import {
   sessionMessage,

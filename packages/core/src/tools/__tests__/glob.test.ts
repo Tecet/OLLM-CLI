@@ -7,7 +7,7 @@ import fc from 'fast-check';
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { GlobTool, GlobInvocation } from '../glob.js';
+import { GlobTool } from '../glob.js';
 import { MockMessageBus, createMockAbortSignal, createToolContext } from './test-helpers.js';
 
 /**
@@ -82,27 +82,6 @@ function normalizePath(p: string): string {
   const normalized = p.replace(/\\/g, '/');
   // On Windows, normalize to lowercase for comparison since FS is case-insensitive
   return process.platform === 'win32' ? normalized.toLowerCase() : normalized;
-}
-
-/**
- * Check if a file matches a glob pattern
- * This is a simple implementation for testing purposes
- */
-function matchesPattern(filePath: string, pattern: string): boolean {
-  // Convert glob pattern to regex
-  // This is a simplified implementation for testing
-  let regexPattern = pattern
-    .replace(/\./g, '\\.')
-    .replace(/\*\*/g, '§§') // Temporary placeholder for **
-    .replace(/\*/g, '[^/]*')
-    .replace(/§§/g, '.*')
-    .replace(/\?/g, '.');
-  
-  // Handle patterns that start with **/ or contain /**/
-  regexPattern = '^' + regexPattern + '$';
-  
-  const regex = new RegExp(regexPattern);
-  return regex.test(filePath);
 }
 
 describe('Glob Tool', () => {

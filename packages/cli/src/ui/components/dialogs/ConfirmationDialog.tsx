@@ -51,7 +51,7 @@ export interface ConfirmationDialogProps {
 /**
  * Get colors based on confirmation level
  */
-function getLevelColors(level: ConfirmationLevel, theme: any) {
+function getLevelColors(level: ConfirmationLevel, theme: import('../../../config/types.js').Theme) {
   switch (level) {
     case 'danger':
       return {
@@ -230,7 +230,7 @@ export interface QuickConfirmProps {
   onCancel: () => void;
 }
 
-export function QuickConfirm({ message, _onConfirm, _onCancel }: QuickConfirmProps) {
+export function QuickConfirm({ message, onConfirm: _onConfirm, onCancel: _onCancel }: QuickConfirmProps) {
   const { state: { theme } } = useUI();
 
   return (

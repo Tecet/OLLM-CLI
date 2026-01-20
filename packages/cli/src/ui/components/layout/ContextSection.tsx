@@ -38,7 +38,7 @@ export function ContextSection() {
       
       <Box flexDirection="column" paddingX={1} alignItems="flex-start">
         <Box flexDirection="column" marginBottom={1} alignSelf="flex-start">
-          <Text color="green" bold>Active Skills:</Text>
+          <Text color={uiState.theme.status.success} bold>Active Skills:</Text>
           <Box marginLeft={1} alignSelf="flex-start">
             {activeSkills.length === 0 ? (
               <Text dimColor>None</Text>
@@ -49,7 +49,7 @@ export function ContextSection() {
         </Box>
 
         <Box flexDirection="column" marginBottom={1} alignSelf="flex-start">
-          <Text color="magenta" bold>MCP Servers:</Text>
+          <Text color={uiState.theme.text.accent} bold>MCP Servers:</Text>
           <Box marginLeft={1} alignSelf="flex-start">
             {activeMcpServers.length === 0 ? (
               <Text dimColor>None</Text>
@@ -60,7 +60,7 @@ export function ContextSection() {
         </Box>
 
         <Box flexDirection="column" alignSelf="flex-start">
-          <Text color="cyan" bold>Active Hooks:</Text>
+          <Text color={uiState.theme.status.info} bold>Active Hooks:</Text>
           <Box marginLeft={1} alignSelf="flex-start">
             {activeHooks.length === 0 ? (
               <Text dimColor>None</Text>

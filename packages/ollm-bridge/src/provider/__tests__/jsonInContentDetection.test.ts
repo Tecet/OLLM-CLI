@@ -160,7 +160,7 @@ describe('JSON-in-Content Tool Call Detection', () => {
 
     it('should NOT detect JSON with parameters as array', () => {
       const content = '{"name": "search", "parameters": ["item1", "item2"]}';
-      const result = detectToolCallInContent(content);
+      detectToolCallInContent(content);
       
       // Parameters is an array (not an object in the expected sense)
       // Note: Arrays are objects in JavaScript, so this might pass

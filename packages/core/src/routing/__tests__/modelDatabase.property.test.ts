@@ -5,7 +5,7 @@
 
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { ModelDatabase, ModelEntry, ModelCapabilities } from '../modelDatabase.js';
+import { ModelDatabase } from '../modelDatabase.js';
 
 describe('Model Database Properties', () => {
   /**

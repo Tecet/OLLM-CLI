@@ -299,6 +299,8 @@ export interface CompressionStrategy {
   preserveRecent: number;
   /** Max tokens for summary */
   summaryMaxTokens: number;
+  /** Optional timeout for LLM summarization in milliseconds */
+  summaryTimeout?: number;
 }
 
 /**
@@ -583,4 +585,8 @@ export interface ContextManager {
   emit(event: string, data?: unknown): boolean;
   /** Get current messages in context */
   getMessages(): Promise<Message[]>;
+  /** Report in-flight (streaming) token delta to the manager (can be positive or negative) */
+  reportInflightTokens(delta: number): void;
+  /** Clear any in-flight token accounting (call on generation finish) */
+  clearInflightTokens(): void;
 }

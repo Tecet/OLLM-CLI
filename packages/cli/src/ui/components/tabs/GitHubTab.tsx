@@ -40,7 +40,7 @@ export const GitHubTab: React.FC<{ width?: number }> = ({ width }) => {
       flexDirection="column" 
       padding={1}
       width={width}
-      borderStyle={uiState.theme.border.style as any}
+      borderStyle={uiState.theme.border.style as import('ink').BoxProps['borderStyle']}
       borderColor={hasFocus ? uiState.theme.border.active : uiState.theme.border.primary}
     >
       {/* Heading - centered with space above and below */}

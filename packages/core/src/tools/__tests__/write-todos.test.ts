@@ -9,7 +9,7 @@ import fc from 'fast-check';
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { WriteTodosTool, WriteTodosInvocation, Todo } from '../write-todos.js';
+import { WriteTodosTool, Todo } from '../write-todos.js';
 import { MockMessageBus, createMockAbortSignal , createToolContext} from './test-helpers.js';
 
 /**

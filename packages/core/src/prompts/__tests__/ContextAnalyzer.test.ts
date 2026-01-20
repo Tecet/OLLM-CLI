@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { ContextAnalyzer, type ModeType } from '../ContextAnalyzer.js';
+import { ContextAnalyzer } from '../ContextAnalyzer.js';
 import type { Message } from '../../provider/types.js';
 
 /**

@@ -112,18 +112,6 @@ describe('Tool Support Detection - Property Tests', () => {
             userResponse: fc.constantFrom('Yes', 'No', 'Auto-detect', 'timeout'),
           }),
           async (config) => {
-            // Create mock callbacks based on test config
-            const mockPromptUser = config.hasPromptCallback
-              ? vi.fn().mockResolvedValue(config.userResponse === 'timeout' ? 'No' : config.userResponse)
-              : vi.fn().mockResolvedValue('No'); // Safe default
-
-            const callbacks = {
-              promptUser: mockPromptUser,
-              addSystemMessage: vi.fn(),
-              clearContext: vi.fn(),
-              openModelMenu: vi.fn(),
-            };
-
             // Property: Unknown models must either:
             // 1. Prompt user (if callback available)
             // 2. Use safe default (tools disabled)

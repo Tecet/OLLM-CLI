@@ -11,7 +11,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createContextManager } from '../contextManager.js';
 import { createVRAMMonitor } from '../vramMonitor.js';
-import { createTokenCounter } from '../tokenCounter.js';
 import { createContextPool } from '../contextPool.js';
 import { createSnapshotStorage } from '../snapshotStorage.js';
 import { createSnapshotManager } from '../snapshotManager.js';

@@ -9,7 +9,7 @@ import fc from 'fast-check';
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { MemoryTool, MemoryInvocation } from '../memory.js';
+import { MemoryTool } from '../memory.js';
 import { MockMessageBus, createMockAbortSignal , createToolContext} from './test-helpers.js';
 
 /**

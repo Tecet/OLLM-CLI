@@ -10,7 +10,7 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { SnapshotStorage } from '../snapshotStorage.js';
-import type { ConversationContext, SnapshotMetadata } from '../types.js';
+import type { ConversationContext } from '../types.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';
@@ -215,8 +215,8 @@ describeWindows('Snapshot Storage - Windows Specific', () => {
         metadata: {},
       };
 
-      const snapshot = await storage.save('session-1', context);
-      
+      await storage.save('session-1', context);
+
       // Verify file is readable
       const snapshotPath = path.join(testDir, 'session-1', `${snapshot.id}.json`);
       const stats = await fs.stat(snapshotPath);

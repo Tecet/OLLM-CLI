@@ -8,8 +8,8 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import fc from 'fast-check';
-import { WebFetchTool, WebFetchInvocation } from '../web-fetch.js';
-import type { MessageBus, ToolResult, ToolContext } from '../types.js';
+import { WebFetchTool } from '../web-fetch.js';
+import type { MessageBus, ToolContext } from '../types.js';
 
 /**
  * Create a mock message bus for testing

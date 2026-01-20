@@ -49,7 +49,7 @@ const DEFAULT_CONFIG: ContextConfig = {
   kvQuantization: 'q8_0',
   compression: {
     enabled: true,
-    threshold: 0.8,
+    threshold: 0.6,
     strategy: 'hybrid',
     preserveRecent: 4096,
     summaryMaxTokens: 1024
@@ -86,9 +86,13 @@ export class ConversationContextManager extends EventEmitter implements ContextM
   private snapshotStorage: SnapshotStorage;
   
   private currentContext: ConversationContext;
+  private inflightTokens: number = 0;
   private modelInfo: ModelInfo;
   private isStarted: boolean = false;
   private sessionId: string;
+  private autoSummaryRunning: boolean = false;
+  private lastAutoSummaryAt: number | null = null;
+  private AUTO_SUMMARY_COOLDOWN_MS: number = 5000;
 
   constructor(
     sessionId: string,
@@ -218,13 +222,100 @@ export class ConversationContextManager extends EventEmitter implements ContextM
       this.snapshotManager.onContextThreshold(
         this.config.snapshots.autoThreshold,
         async () => {
+          // Prevent re-entrant or rapid repeated auto-summary triggers
+          const now = Date.now();
+          if (this.autoSummaryRunning) {
+            console.debug('[ContextManager] autoThreshold reached but auto-summary already running; skipping');
+            return;
+          }
+          if (this.lastAutoSummaryAt && (now - this.lastAutoSummaryAt) < this.AUTO_SUMMARY_COOLDOWN_MS) {
+            console.debug('[ContextManager] autoThreshold reached but within cooldown; skipping');
+            return;
+          }
+          this.autoSummaryRunning = true;
+          this.lastAutoSummaryAt = now;
+
+          console.log('[ContextManager] autoThreshold reached, starting summarization flow', { usage: this.getUsage() });
+          // Emit a high-level summarizing event so UI can show progress
+          this.emit('summarizing', { usage: this.getUsage() });
+
+          // 1) Create a snapshot for recovery (store full context pre-summary)
+          let snapshot: ContextSnapshot | null = null;
           try {
-            const snapshot = await this.snapshotManager.createSnapshot(
+            snapshot = await this.snapshotManager.createSnapshot(
               this.currentContext
             );
             this.emit('auto-snapshot-created', snapshot);
+            console.log('[ContextManager] auto-snapshot-created', { id: snapshot.id, tokenCount: snapshot.tokenCount });
           } catch (error) {
+            console.error('[ContextManager] snapshot creation failed', error);
             this.emit('snapshot-error', error);
+            // continue - summarization can still proceed even if snapshot failed
+          }
+
+          // 2) Perform an LLM-based summary of the current conversation and replace
+          // the context with only the system prompt + summary (cleared otherwise)
+          try {
+            const strategy = {
+              type: 'summarize',
+              preserveRecent: this.config.compression.preserveRecent,
+              summaryMaxTokens: this.config.compression.summaryMaxTokens
+            } as any;
+
+            console.log('[ContextManager] invoking compressionService.compress', { strategy });
+            const compressed = await this.compressionService.compress(
+              this.currentContext.messages,
+              strategy
+            );
+            console.log('[ContextManager] compressionService.compress completed', { originalTokens: compressed.originalTokens, compressedTokens: compressed.compressedTokens, status: compressed.status });
+
+            // If summarization produced a summary message, replace context
+            if (compressed && compressed.summary) {
+              // Keep system messages, replace rest with summary only
+              const systemMessages = this.currentContext.messages.filter(
+                m => m.role === 'system'
+              );
+
+              this.currentContext.messages = [
+                ...systemMessages,
+                compressed.summary
+              ];
+
+              // Update token count and context pool
+              const newTokenCount = this.tokenCounter.countConversationTokens(
+                this.currentContext.messages
+              );
+              this.currentContext.tokenCount = newTokenCount;
+              this.contextPool.setCurrentTokens(newTokenCount);
+
+              // Record compression history (as a summarization event)
+              this.currentContext.metadata.compressionHistory.push({
+                timestamp: new Date(),
+                strategy: 'summarize',
+                originalTokens: compressed.originalTokens,
+                compressedTokens: compressed.compressedTokens,
+                ratio: compressed.compressionRatio
+              });
+
+              // Emit an event with the summary so UI layers can surface it
+              this.emit('auto-summary-created', {
+                summary: compressed.summary,
+                snapshot: snapshot || null,
+                originalTokens: compressed.originalTokens,
+                compressedTokens: compressed.compressedTokens,
+                ratio: compressed.compressionRatio
+              });
+              } else {
+                // No summary produced; emit a warning
+                console.warn('[ContextManager] compression returned no summary');
+                this.emit('auto-summary-failed', { reason: 'no-summary' });
+              }
+          } catch (error) {
+            console.error('[ContextManager] auto-summary failed', error);
+            this.emit('auto-summary-failed', { error });
+          } finally {
+            // allow future auto-summaries after cooldown
+            this.autoSummaryRunning = false;
           }
         }
       );
@@ -363,6 +454,12 @@ export class ConversationContextManager extends EventEmitter implements ContextM
       message.content
     );
     message.tokenCount = tokenCount;
+    // Debug logging for token/accounting issues
+    try {
+      console.debug('[ContextManager] addMessage: tokenCount=', tokenCount, 'currentContext.tokenCount=', this.currentContext?.tokenCount, 'currentContext.maxTokens=', this.currentContext?.maxTokens);
+    } catch (e) {
+      // ignore logging errors
+    }
     
     // Check if allocation is safe
     if (!this.memoryGuard.canAllocate(tokenCount)) {
@@ -409,9 +506,12 @@ export class ConversationContextManager extends EventEmitter implements ContextM
     // Update context pool token count
     this.contextPool.setCurrentTokens(this.currentContext.tokenCount);
     
-    // Check thresholds
+    // Check thresholds (log args for debugging)
+    try {
+      console.debug('[ContextManager] calling snapshotManager.checkThresholds', { currentTokens: this.currentContext.tokenCount, maxTokens: this.currentContext.maxTokens });
+    } catch (e) {}
     this.snapshotManager.checkThresholds(
-      this.currentContext.tokenCount,
+      this.currentContext.tokenCount + this.inflightTokens,
       this.currentContext.maxTokens
     );
     
@@ -509,11 +609,12 @@ export class ConversationContextManager extends EventEmitter implements ContextM
       preserveRecent: this.config.compression.preserveRecent,
       summaryMaxTokens: this.config.compression.summaryMaxTokens
     };
-    
+    console.log('[ContextManager] manual compress invoked', { strategy, messageCount: this.currentContext.messages.length });
     const compressed = await this.compressionService.compress(
       this.currentContext.messages,
       strategy
     );
+    console.log('[ContextManager] manual compress completed', { originalTokens: compressed.originalTokens, compressedTokens: compressed.compressedTokens, status: compressed.status });
 
     // Inflation Guard: Skip update if compression actually increased token count
     if (compressed.status === 'inflated') {
@@ -559,6 +660,29 @@ export class ConversationContextManager extends EventEmitter implements ContextM
       compressedTokens: compressed.compressedTokens,
       ratio: compressed.compressionRatio
     });
+  }
+
+  /** Report in-flight (streaming) token delta to the manager (can be positive or negative) */
+  reportInflightTokens(delta: number): void {
+    try {
+      this.inflightTokens = Math.max(0, this.inflightTokens + delta);
+      // Update context pool with temporary token count including inflight
+      this.contextPool.setCurrentTokens(this.currentContext.tokenCount + this.inflightTokens);
+      // Re-check thresholds with inflight included
+      this.snapshotManager.checkThresholds(this.currentContext.tokenCount + this.inflightTokens, this.currentContext.maxTokens);
+    } catch (e) {
+      console.error('[ContextManager] reportInflightTokens failed', e);
+    }
+  }
+
+  /** Clear inflight token accounting (call when generation completes or is aborted) */
+  clearInflightTokens(): void {
+    try {
+      this.inflightTokens = 0;
+      this.contextPool.setCurrentTokens(this.currentContext.tokenCount);
+    } catch (e) {
+      console.error('[ContextManager] clearInflightTokens failed', e);
+    }
   }
 
   /**

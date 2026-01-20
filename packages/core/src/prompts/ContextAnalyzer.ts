@@ -238,7 +238,7 @@ export class ContextAnalyzer {
         if (message.parts) {
             for (const part of message.parts) {
                  if (part.type === 'text') {
-                     text += (part as any).text + " ";
+                     text += part.text + " ";
                  }
             }
         }

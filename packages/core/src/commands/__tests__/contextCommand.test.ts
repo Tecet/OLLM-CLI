@@ -8,8 +8,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import * as fc from 'fast-check';
 import {
   ContextCommandHandler,
-  createContextCommandHandler,
-  type ContextCommandResult
+  createContextCommandHandler
 } from '../contextCommand.js';
 import type {
   ContextManager,

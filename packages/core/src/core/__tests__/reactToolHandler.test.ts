@@ -34,14 +34,6 @@ const jsonObjectArbitrary = fc.dictionary(
   )
 );
 
-// Generate a ReAct-formatted output
-const reactOutputArbitrary = fc.record({
-  thought: fc.string({ minLength: 1 }),
-  action: fc.option(fc.string({ minLength: 1 }), { nil: undefined }),
-  actionInput: fc.option(jsonObjectArbitrary, { nil: undefined }),
-  finalAnswer: fc.option(fc.string({ minLength: 1 }), { nil: undefined }),
-});
-
 describe('ReAct Tool Handler - Property-Based Tests', () => {
   describe('Property 17: ReAct Instruction Formatting', () => {
     it('should format tool schemas as text instructions with all tool information', () => {

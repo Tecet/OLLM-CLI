@@ -7,7 +7,7 @@ import fc from 'fast-check';
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { WriteFileTool, WriteFileInvocation } from '../write-file.js';
+import { WriteFileTool } from '../write-file.js';
 import { MockMessageBus, createMockAbortSignal, createToolContext } from './test-helpers.js';
 
 /**

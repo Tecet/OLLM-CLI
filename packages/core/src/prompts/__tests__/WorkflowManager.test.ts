@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { WorkflowManager, PREDEFINED_WORKFLOWS, type WorkflowProgress } from '../WorkflowManager.js';
+import { WorkflowManager, PREDEFINED_WORKFLOWS } from '../WorkflowManager.js';
 import { PromptModeManager } from '../PromptModeManager.js';
 import { ContextAnalyzer } from '../ContextAnalyzer.js';
 import { PromptRegistry } from '../PromptRegistry.js';

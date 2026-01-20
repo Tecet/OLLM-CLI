@@ -490,8 +490,6 @@ describe('Tool Schema Mapping', () => {
   });
 
   describe('Real-world Tool Examples', () => {
-    const provider = new LocalProvider({ baseUrl: 'http://localhost:11434' });
-
     it('should map file system tool schemas', () => {
       const tools: ToolSchema[] = [
         {
@@ -674,17 +672,6 @@ describe('Property-Based Tests', () => {
     it('should accept any valid tool schema without errors', async () => {
       const fc = await import('fast-check');
 
-
-      // Generator for valid JSON Schema types
-      const arbJsonSchemaType = fc.constantFrom(
-        'string',
-        'number',
-        'integer',
-        'boolean',
-        'object',
-        'array',
-        'null'
-      );
 
       // Generator for simple property schemas
       const arbSimpleProperty: fc.Arbitrary<Record<string, unknown>> = fc.oneof(

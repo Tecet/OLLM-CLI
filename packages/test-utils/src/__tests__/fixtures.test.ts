@@ -11,17 +11,12 @@ import {
   createToolResultMessage,
   createCoreToolCall,
   // Legacy fixtures
-  createFixtureMessage,
-  createTestToolCall,
   createTestModel,
   // Fixture collections
   fixtureMessages,
   fixtureTools,
   fixtureModels,
-  fixtureStreamEvents,
-  extendedFixtureMessages,
   extendedFixtureTools,
-  extendedFixtureModels,
   // Sequence generators
   createTextChunkSequence,
   createToolCallSequence,

@@ -29,7 +29,7 @@ describe('SnapshotManager', () => {
     // Clean up test directory
     try {
       await fs.rm(testStoragePath, { recursive: true, force: true });
-    } catch (error) {
+    } catch (_error) {
       // Ignore cleanup errors
     }
   });

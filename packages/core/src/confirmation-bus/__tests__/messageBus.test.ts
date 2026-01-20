@@ -10,7 +10,6 @@ import fc from 'fast-check';
 import {
   ConfirmationBus,
   createConfirmationBus,
-  DEFAULT_CONFIRMATION_TIMEOUT,
 } from '../messageBus.js';
 import type { ToolCallConfirmationDetails } from '../../tools/types.js';
 

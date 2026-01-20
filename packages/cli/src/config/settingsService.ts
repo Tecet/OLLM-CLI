@@ -378,8 +378,40 @@ export class SettingsService {
   /**
    * Set whether temperature should be linked to mode
    */
+  /**
+   * Set whether temperature should be linked to mode
+   */
   public setModeLinkedTemperature(enabled: boolean): void {
     this.settings.llm.modeLinkedTemperature = enabled;
+    this.saveSettings();
+  }
+
+  /**
+   * Update a specific LLM setting
+   */
+  public updateLLMSetting(key: string, value: unknown): void {
+    if (!this.settings.llm) {
+      this.settings.llm = { model: 'llama3.2:3b' };
+    }
+    (this.settings.llm as Record<string, unknown>)[key] = value;
+    this.saveSettings();
+  }
+
+  /**
+   * Update a specific UI setting
+   */
+  public updateUISetting(key: string, value: unknown): void {
+    if (!this.settings.ui) {
+      this.settings.ui = { theme: 'default' };
+    }
+    (this.settings.ui as Record<string, unknown>)[key] = value;
+    this.saveSettings();
+  }
+
+  /**
+   * Manually trigger a save of the current settings
+   */
+  public triggerSave(): void {
     this.saveSettings();
   }
 }

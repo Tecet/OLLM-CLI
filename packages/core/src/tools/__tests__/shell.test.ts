@@ -4,10 +4,10 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import fc from 'fast-check';
-import { ShellTool, ShellInvocation } from '../shell.js';
+import { ShellTool } from '../shell.js';
 import { ShellExecutionService } from '../../services/shellExecutionService.js';
 import { EnvironmentSanitizationService } from '../../services/environmentSanitization.js';
-import type { MessageBus, ToolResult, ToolContext } from '../types.js';
+import type { MessageBus, ToolContext } from '../types.js';
 
 /**
  * Create a mock message bus for testing
@@ -765,7 +765,7 @@ describe('Shell Tool', () => {
             { dir: process.cwd() + '/packages/core', name: 'core' },
             { dir: process.cwd() + '/packages/cli', name: 'cli' }
           ),
-          async ({ dir, name }) => {
+          async ({ dir }) => {
             // List files in the directory to verify we're in the right place
             const command = process.platform === 'win32' ? 'dir /b' : 'ls';
 

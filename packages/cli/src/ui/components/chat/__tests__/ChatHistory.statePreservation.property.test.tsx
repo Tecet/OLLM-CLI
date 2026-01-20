@@ -143,30 +143,6 @@ describe('Property 12: Tab State Preservation', () => {
       },
     ];
 
-    const theme = {
-      role: {
-        user: '#00ff00',
-        assistant: '#0000ff',
-        system: '#ffff00',
-        tool: '#ff00ff',
-      },
-      text: {
-        primary: '#ffffff',
-        secondary: '#888888',
-        accent: '#00ff00',
-      },
-      status: {
-        success: '#00ff00',
-        warning: '#ffff00',
-        error: '#ff0000',
-        info: '#0000ff',
-      },
-      diff: {
-        added: '#00ff00',
-        removed: '#ff0000',
-      },
-    };
-
     // Render with streaming=true
     const { lastFrame: streamingFrame, rerender } = render(
       <ChatHistory
@@ -208,40 +184,6 @@ describe('Property 12: Tab State Preservation', () => {
         timestamp: new Date(),
       },
     ];
-
-    const theme = {
-      name: 'test',
-      bg: {
-        primary: '#000000',
-        secondary: '#111111',
-        tertiary: '#222222',
-      },
-      role: {
-        user: '#00ff00',
-        assistant: '#0000ff',
-        system: '#ffff00',
-        tool: '#ff00ff',
-      },
-      text: {
-        primary: '#ffffff',
-        secondary: '#888888',
-        accent: '#00ff00',
-      },
-      status: {
-        success: '#00ff00',
-        warning: '#ffff00',
-        error: '#ff0000',
-        info: '#0000ff',
-      },
-      border: {
-        primary: '#888888',
-        secondary: '#444444',
-      },
-      diff: {
-        added: '#00ff00',
-        removed: '#ff0000',
-      },
-    };
 
     // Render with waitingForResponse=true
     const { lastFrame: waitingFrame, rerender } = render(

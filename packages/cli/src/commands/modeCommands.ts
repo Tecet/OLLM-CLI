@@ -179,7 +179,7 @@ export const modeCommand: Command = {
         const mode = subcommand as ModeType;
         manager.switchMode(mode);
         
-        const metadata = (MODE_METADATA as any)[mode];
+        const metadata = MODE_METADATA[mode];
         const icon = metadata?.icon || '';
         
         // Inject system message to LLM about mode change

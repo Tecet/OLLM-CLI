@@ -45,6 +45,8 @@
   },
   "dependencies": {
     "jimp": "^1.6.0",
+    "node-pty": "^1.1.0",
+    "strip-ansi": "^7.1.2",
     "terminal-image": "^4.2.0",
     "tiktoken": "^1.0.22"
   },

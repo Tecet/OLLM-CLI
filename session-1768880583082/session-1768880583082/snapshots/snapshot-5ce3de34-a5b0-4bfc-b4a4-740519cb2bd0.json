@@ -1,0 +1,142 @@
+{
+  "version": "1.0",
+  "id": "5ce3de34-a5b0-4bfc-b4a4-740519cb2bd0",
+  "sessionId": "session-1768880583082",
+  "timestamp": "2026-01-20T03:45:44.774Z",
+  "tokenCount": 513,
+  "summary": "Empty conversation",
+  "metadata": {
+    "model": "7",
+    "contextSize": 4096,
+    "compressionRatio": 0
+  },
+  "messages": [
+    {
+      "id": "system-1768880702415",
+      "role": "system",
+      "content": "\n\n# Mode: Assistant 💬\nYou are OLLM, an intelligent and versatile AI assistant.\n- Your primary goal is to be helpful, harmless, and honest.\n- You can answer questions, explain concepts, and assist with general tasks.\n- If provided with tools, use them to verify information or perform tasks.\n- Adapt your tone to be professional yet conversational.\n\n# Mode: Assistant 💬\nYou are OLLM, an intelligent and versatile AI assistant.\n- Your primary goal is to be helpful, harmless, and honest.\n- You can answer questions, explain concepts, and assist with general tasks.\n- If provided with tools, use them to verify information or perform tasks.\n- Adapt your tone to be professional yet conversational.\n\n# Mode: Assistant 💬\nYou are OLLM, an intelligent and versatile AI assistant.\n- Your primary goal is to be helpful, harmless, and honest.\n- You can answer questions, explain concepts, and assist with general tasks.\n- If provided with tools, use them to verify information or perform tasks.\n- Adapt your tone to be professional yet conversational.\n\n# Workspace Context\nPath: D:\\Workspaces\\OLLM CLI\n\n# Mode: Assistant 💬\nYou are OLLM, an intelligent and versatile AI assistant.\n- Your primary goal is to be helpful, harmless, and honest.\n- You can answer questions, explain concepts, and assist with general tasks.\n- If provided with tools, use them to verify information or perform tasks.\n- Adapt your tone to be professional yet conversational.\n\n# Workspace Context\nPath: D:\\Workspaces\\OLLM CLI",
+      "timestamp": "2026-01-20T03:45:02.415Z",
+      "tokenCount": 373
+    },
+    {
+      "id": "summary-1768880730867",
+      "role": "system",
+      "content": "[No messages to compress]",
+      "timestamp": "2026-01-20T03:45:30.867Z"
+    },
+    {
+      "id": "summary-1768880734731",
+      "role": "system",
+      "content": "[No messages to compress]",
+      "timestamp": "2026-01-20T03:45:34.731Z"
+    },
+    {
+      "id": "summary-1768880735049",
+      "role": "system",
+      "content": "[No messages to compress]",
+      "timestamp": "2026-01-20T03:45:35.049Z"
+    },
+    {
+      "id": "summary-1768880735619",
+      "role": "system",
+      "content": "[No messages to compress]",
+      "timestamp": "2026-01-20T03:45:35.619Z"
+    },
+    {
+      "id": "summary-1768880736068",
+      "role": "system",
+      "content": "[No messages to compress]",
+      "timestamp": "2026-01-20T03:45:36.068Z"
+    },
+    {
+      "id": "summary-1768880736602",
+      "role": "system",
+      "content": "[No messages to compress]",
+      "timestamp": "2026-01-20T03:45:36.602Z"
+    },
+    {
+      "id": "summary-1768880737111",
+      "role": "system",
+      "content": "[No messages to compress]",
+      "timestamp": "2026-01-20T03:45:37.111Z"
+    },
+    {
+      "id": "summary-1768880737668",
+      "role": "system",
+      "content": "[No messages to compress]",
+      "timestamp": "2026-01-20T03:45:37.668Z"
+    },
+    {
+      "id": "summary-1768880738647",
+      "role": "system",
+      "content": "[No messages to compress]",
+      "timestamp": "2026-01-20T03:45:38.647Z"
+    },
+    {
+      "id": "summary-1768880738699",
+      "role": "system",
+      "content": "[No messages to compress]",
+      "timestamp": "2026-01-20T03:45:38.699Z"
+    },
+    {
+      "id": "summary-1768880739677",
+      "role": "system",
+      "content": "[No messages to compress]",
+      "timestamp": "2026-01-20T03:45:39.677Z"
+    },
+    {
+      "id": "summary-1768880739740",
+      "role": "system",
+      "content": "[No messages to compress]",
+      "timestamp": "2026-01-20T03:45:39.740Z"
+    },
+    {
+      "id": "summary-1768880740759",
+      "role": "system",
+      "content": "[No messages to compress]",
+      "timestamp": "2026-01-20T03:45:40.759Z"
+    },
+    {
+      "id": "summary-1768880740963",
+      "role": "system",
+      "content": "[No messages to compress]",
+      "timestamp": "2026-01-20T03:45:40.963Z"
+    },
+    {
+      "id": "summary-1768880741743",
+      "role": "system",
+      "content": "[No messages to compress]",
+      "timestamp": "2026-01-20T03:45:41.743Z"
+    },
+    {
+      "id": "summary-1768880742042",
+      "role": "system",
+      "content": "[No messages to compress]",
+      "timestamp": "2026-01-20T03:45:42.042Z"
+    },
+    {
+      "id": "summary-1768880742829",
+      "role": "system",
+      "content": "[No messages to compress]",
+      "timestamp": "2026-01-20T03:45:42.829Z"
+    },
+    {
+      "id": "summary-1768880742918",
+      "role": "system",
+      "content": "[No messages to compress]",
+      "timestamp": "2026-01-20T03:45:42.918Z"
+    },
+    {
+      "id": "summary-1768880743815",
+      "role": "system",
+      "content": "[No messages to compress]",
+      "timestamp": "2026-01-20T03:45:43.815Z"
+    },
+    {
+      "id": "summary-1768880743892",
+      "role": "system",
+      "content": "[No messages to compress]",
+      "timestamp": "2026-01-20T03:45:43.892Z"
+    }
+  ]
+}

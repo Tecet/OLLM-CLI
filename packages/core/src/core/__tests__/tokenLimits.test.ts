@@ -10,8 +10,6 @@ import type {
   ProviderAdapter,
   ProviderRequest,
   ProviderEvent,
-  Message,
-  MessagePart,
 } from '../../provider/types.js';
 
 /**

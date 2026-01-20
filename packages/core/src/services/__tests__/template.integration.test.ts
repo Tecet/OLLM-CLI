@@ -36,15 +36,6 @@ describe('Template Service Integration', () => {
   describe('Template Loading from Multiple Directories', () => {
     it('should load templates from user directory', async () => {
       // Create a template in user directory
-      const template = {
-        name: 'user_template',
-        description: 'A user template',
-        template: 'Hello {name}!',
-        variables: [
-          { name: 'name', required: true },
-        ],
-      };
-      
       await fs.writeFile(
         join(userTemplatesDir, 'user_template.yaml'),
         `name: user_template

@@ -12,9 +12,7 @@ import {
   isServerAvailable,
   skipIfNoServer,
   getServerUrl,
-  createTestModel,
   fixtureModels,
-  generateRandomModel,
 } from '@ollm/test-utils';
 import { MockProvider } from '@ollm/test-utils';
 import type { ModelInfo, PullProgress } from '@ollm/core';

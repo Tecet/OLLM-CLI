@@ -7,8 +7,8 @@ import fc from 'fast-check';
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { ReadFileTool, ReadFileInvocation } from '../read-file.js';
-import { ReadManyFilesTool, ReadManyFilesInvocation } from '../read-many-files.js';
+import { ReadFileTool } from '../read-file.js';
+import { ReadManyFilesTool } from '../read-many-files.js';
 import { MockMessageBus, createMockAbortSignal, createToolContext } from './test-helpers.js';
 
 /**

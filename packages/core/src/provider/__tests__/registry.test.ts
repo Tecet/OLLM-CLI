@@ -6,7 +6,7 @@
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
 import { ProviderRegistry } from '../registry.js';
-import type { ProviderAdapter, ProviderRequest, ProviderEvent } from '../types.js';
+import type { ProviderAdapter, ProviderEvent } from '../types.js';
 
 /**
  * Arbitraries (generators) for property-based testing

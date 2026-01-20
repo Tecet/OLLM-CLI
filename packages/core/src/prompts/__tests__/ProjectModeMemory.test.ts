@@ -5,7 +5,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { ProjectModeMemory, type ProjectModePreferences } from '../ProjectModeMemory.js';
+import { ProjectModeMemory } from '../ProjectModeMemory.js';
 import type { ModeType } from '../ContextAnalyzer.js';
 
 describe('ProjectModeMemory', () => {

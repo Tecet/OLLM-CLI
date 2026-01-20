@@ -1,18 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import * as fc from 'fast-check';
 import { render } from '../../../../test/ink-testing.js';
 import { SidePanel } from '../SidePanel.js';
 import { FocusProvider } from '../../../../features/context/FocusContext.js';
-import { Box, Text } from 'ink';
-
-// Mock ContextSection component for testing
-function MockContextSection() {
-  return (
-    <Box flexDirection="column">
-      <Text>Mock Context</Text>
-    </Box>
-  );
-}
+import { Text } from 'ink';
 
 /**
  * Property 14: Side Panel Toggle
@@ -38,13 +29,12 @@ describe('Property 14: Side Panel Toggle', () => {
         secondary: '#007acc',
         active: '#007acc',
     }
-  } as any;
+  } as unknown as import('../../../../config/types.js').Theme;
 
   // Mock ContextSection
   vi.mock('../ContextSection.js', () => ({
     ContextSection: () => <Text>Mock Context</Text>,
   }));
-
 
   it('should render when visible is true', () => {
     fc.assert(
@@ -55,9 +45,9 @@ describe('Property 14: Side Panel Toggle', () => {
             <FocusProvider>
               <SidePanel
                 visible={visible}
-                connection={{ status: 'connected', provider: 'ollama' } as any}
+                connection={{ status: 'connected', provider: 'ollama' } as unknown as import('../StatusBar.js').ConnectionStatus}
                 model="test-model"
-                gpu={{ available: false } as any}
+                gpu={{ available: false } as unknown as import('../StatusBar.js').GPUInfo}
                 theme={defaultTheme}
               />
             </FocusProvider>
@@ -86,9 +76,9 @@ describe('Property 14: Side Panel Toggle', () => {
             <FocusProvider>
               <SidePanel
                 visible={visible}
-                connection={{ status: 'connected', provider: 'ollama' } as any}
+                connection={{ status: 'connected', provider: 'ollama' } as unknown as import('../StatusBar.js').ConnectionStatus}
                 model="test-model"
-                gpu={{ available: false } as any}
+                gpu={{ available: false } as unknown as import('../StatusBar.js').GPUInfo}
                 theme={defaultTheme}
               />
             </FocusProvider>
@@ -117,9 +107,9 @@ describe('Property 14: Side Panel Toggle', () => {
               <FocusProvider>
                 <SidePanel
                   visible={visible}
-                  connection={{ status: 'connected', provider: 'ollama' } as any}
+                  connection={{ status: 'connected', provider: 'ollama' } as unknown as import('../StatusBar.js').ConnectionStatus}
                   model="test-model"
-                  gpu={{ available: false } as any}
+                  gpu={{ available: false } as unknown as import('../StatusBar.js').GPUInfo}
                   theme={defaultTheme}
                 />
               </FocusProvider>
@@ -157,9 +147,9 @@ describe('Property 14: Side Panel Toggle', () => {
               <FocusProvider>
                 <SidePanel
                   visible={currentVisibility}
-                  connection={{ status: 'connected', provider: 'ollama' } as any}
+                  connection={{ status: 'connected', provider: 'ollama' } as unknown as import('../StatusBar.js').ConnectionStatus}
                   model="test-model"
-                  gpu={{ available: false } as any}
+                  gpu={{ available: false } as unknown as import('../StatusBar.js').GPUInfo}
                   theme={defaultTheme}
                 />
               </FocusProvider>

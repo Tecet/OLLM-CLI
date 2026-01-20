@@ -8,6 +8,7 @@ import { dirname, join } from 'path';
 import { loadConfig } from './config/configLoader.js';
 import type { Config } from './config/types.js';
 import { patchStdio, createWorkingStdio } from './utils/stdio.js';
+import { appendFileSync, mkdirSync, existsSync } from 'fs';
 
 // Get package.json path
 const __filename = fileURLToPath(import.meta.url);
@@ -326,6 +327,38 @@ const { App } = await import('./ui/App.js');
 // preventing flickering and "jitter" caused by background logs.
 patchStdio();
 const inkStdio = createWorkingStdio();
+
+// Ensure logs directory exists and register global error handlers so crashes
+// are captured to disk for debugging when running the interactive TUI.
+try {
+  const logDir = join(__dirname, '..', '..', 'logs');
+  if (!existsSync(logDir)) mkdirSync(logDir, { recursive: true });
+  const logPath = join(logDir, `cli-errors.log`);
+
+  process.on('uncaughtException', (err) => {
+    try {
+      const msg = `[uncaughtException] ${new Date().toISOString()} ${err instanceof Error ? err.stack || err.message : String(err)}\n`;
+      appendFileSync(logPath, msg);
+      console.error(msg);
+    } catch {
+      // ignore
+    }
+    // Keep process running briefly to flush logs
+    setTimeout(() => process.exit(1), 50);
+  });
+
+  process.on('unhandledRejection', (reason) => {
+    try {
+      const msg = `[unhandledRejection] ${new Date().toISOString()} ${reason instanceof Error ? reason.stack || reason.message : JSON.stringify(reason)}\n`;
+      appendFileSync(logPath, msg);
+      console.error(msg);
+    } catch {
+      // ignore
+    }
+  });
+} catch {
+  // ignore logging setup errors
+}
 
 render(<App config={config} />, {
   stdout: inkStdio.stdout as typeof process.stdout,

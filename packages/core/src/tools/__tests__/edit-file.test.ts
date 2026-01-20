@@ -7,7 +7,7 @@ import fc from 'fast-check';
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { EditFileTool, EditFileInvocation } from '../edit-file.js';
+import { EditFileTool } from '../edit-file.js';
 import { MockMessageBus, createMockAbortSignal, createToolContext } from './test-helpers.js';
 
 /**
@@ -24,11 +24,14 @@ class FileTestFixture {
 
   async cleanup(): Promise<void> {
     // Clean up all created files and the temp directory
-        try {
-          await fs.rm(testDir, { recursive: true, force: true });
-        } catch (_error) {
-          // Ignore cleanup errors
-        }    this.createdFiles = [];
+    try {
+      if (this.tempDir) {
+        await fs.rm(this.tempDir, { recursive: true, force: true });
+      }
+    } catch (_error) {
+      // Ignore cleanup errors
+    }
+    this.createdFiles = [];
   }
 
   async createFile(filename: string, content: string): Promise<string> {

@@ -128,7 +128,7 @@ describe('Property 11: Notification Badge Display', () => {
           const output = lastFrame();
           
           // Property: Each notification count should appear in the output
-          notifications.forEach((count, tab) => {
+          notifications.forEach((count, _) => {
             expect(output).toContain(`(${count})`);
           });
           

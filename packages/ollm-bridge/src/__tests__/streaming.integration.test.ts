@@ -10,7 +10,6 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import * as fc from 'fast-check';
 import {
   isServerAvailable,
-  skipIfNoServer,
   getServerUrl,
   createTextChunkSequence,
   createToolCallSequence,

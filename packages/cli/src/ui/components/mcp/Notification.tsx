@@ -16,9 +16,10 @@
  * Validates: NFR-7
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Box, Text } from 'ink';
 import { useUI } from '../../../features/context/UIContext.js';
+import type { Theme } from '../../../config/types.js';
 
 export type NotificationType = 'success' | 'error' | 'warning' | 'info';
 
@@ -58,7 +59,7 @@ function getNotificationIcon(type: NotificationType): string {
 /**
  * Get notification color based on type
  */
-function getNotificationColor(type: NotificationType, theme: any): string {
+function getNotificationColor(type: NotificationType, theme: Theme): string {
   switch (type) {
     case 'success':
       return theme.status.success;
@@ -76,7 +77,7 @@ function getNotificationColor(type: NotificationType, theme: any): string {
 /**
  * Get notification border color based on type
  */
-function getNotificationBorderColor(type: NotificationType, _theme: any): string {
+function getNotificationBorderColor(type: NotificationType, _theme: Theme): string {
   switch (type) {
     case 'success':
       return 'green';
@@ -147,12 +148,12 @@ export function Notification({
       paddingY={1}
     >
       {/* Header with icon and message */}
-      <Box>
+      <Box justifyContent="space-between">
         <Text color={color} bold>
           {icon} {message}
         </Text>
         {showDismiss && onDismiss && (
-          <Box marginLeft="auto">
+          <Box>
             <Text dimColor>[Esc] Dismiss</Text>
           </Box>
         )}
@@ -193,10 +194,11 @@ export function NotificationContainer({
     <Box
       flexDirection="column"
       gap={1}
-      position="absolute"
-      top={1}
-      right={1}
-      width={50}
+      width="100%"
+      alignItems="center"
+      position="relative"
+      marginTop={1}
+      marginBottom={1}
     >
       {notifications.map((notification) => (
         <Notification

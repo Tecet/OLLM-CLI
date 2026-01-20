@@ -85,6 +85,7 @@ describe('Property 13: Active Tab Highlighting', () => {
           // Property: The active tab should be present
           const activeTabData = tabs.find(t => t.id === activeTab);
           expect(activeTabData).toBeDefined();
+          expect(output).toContain(activeTabData!.label);
           
           // Property: All tabs should be rendered
           expect(tabs.length).toBe(8);

@@ -325,25 +325,6 @@ describe('HookRunner', () => {
   describe('Property 5: Hook Output Capture', () => {
     // Feature: stage-05-hooks-extensions-mcp, Property 5: Hook Output Capture
     it('should capture and parse hook stdout as JSON', async () => {
-      // Helper to recursively filter out undefined values from any structure
-      const filterUndefined = (value: any): any => {
-        if (value === undefined) return null;
-        if (Array.isArray(value)) {
-          return value.map(filterUndefined).filter(v => v !== undefined);
-        }
-        if (value !== null && typeof value === 'object') {
-          const result: any = {};
-          for (const [k, v] of Object.entries(value)) {
-            const filtered = filterUndefined(v);
-            if (filtered !== undefined) {
-              result[k] = filtered;
-            }
-          }
-          return result;
-        }
-        return value;
-      };
-
       // Function to check if a value contains dangerous properties
       const isSafe = (val: any): boolean => {
         if (val === null || typeof val !== 'object') return true;

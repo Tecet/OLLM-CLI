@@ -20,7 +20,6 @@ import { DefaultMCPClient } from '../mcp/mcpClient.js';
 import { mkdir, writeFile, rm } from 'fs/promises';
 import { join } from 'path';
 import { tmpdir } from 'os';
-import type { HookEvent } from '../hooks/types.js';
 
 describe('Hooks, Extensions, and MCP Integration Tests', () => {
   let testDir: string;

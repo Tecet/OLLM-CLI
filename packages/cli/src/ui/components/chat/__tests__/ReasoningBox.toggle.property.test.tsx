@@ -10,9 +10,9 @@
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
 import { render } from '../../../../test/ink-testing.js';
-import { ReasoningBox, useReasoningBox } from '../ReasoningBox.js';
+import { ReasoningBox } from '../ReasoningBox.js';
 import type { ReasoningBlock } from '../../../../../../core/src/services/reasoningParser.js';
-import React, { useState } from 'react';
+import React from 'react';
 
 describe('Property 29: Reasoning Box Toggle', () => {
   const defaultTheme = {

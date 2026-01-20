@@ -91,35 +91,61 @@ export const ActiveContextProvider: React.FC<{ children: ReactNode }> = ({ child
   useEffect(() => {
     // Update MCP Servers
     // mcpState.servers is a Map, so we need to convert to array first
-    const connectedServers = Array.from(mcpState.servers.values())
+    let connectedServers = Array.from(mcpState.servers.values())
         .filter(s => s.status === 'connected')
         .map(s => s.name);
+
+    // Filter MCP servers by mode permission (mcp:*). Hide MCP UI if not allowed in current mode
+    try {
+      const modeManagerForMcp = actions.getModeManager?.();
+      const modeForMcp = modeManagerForMcp ? modeManagerForMcp.getCurrentMode() : undefined;
+      if (modeManagerForMcp && modeForMcp) {
+        const mcpAllowed = modeManagerForMcp.isToolAllowed('mcp:probe', modeForMcp);
+        if (!mcpAllowed) {
+          connectedServers = [];
+        }
+      }
+    } catch (_e) {
+      // ignore and keep servers as-is
+    }
         
     // Update Hooks
     // hooksState uses enabledHooks which is a Set of IDs
     const activeHooks = Array.from(hooksState.enabledHooks || []);
 
-    // Update Tools (enabled tools)
-    const activeTools = Array.from(toolsState.enabledTools || []);
+    // Update Tools (enabled tools) but filter by current mode permissions
+    const reportedActiveTools = Array.from(toolsState.enabledTools || []);
+
+    const modeManager = actions.getModeManager?.();
+    const currentMode = modeManager ? modeManager.getCurrentMode() : undefined;
+
+    const filteredActiveTools = reportedActiveTools.filter(toolName => {
+      if (!modeManager || !currentMode) return true;
+      try {
+        return modeManager.isToolAllowed(toolName, currentMode);
+      } catch (_e) {
+        return true;
+      }
+    });
 
     setState(prev => {
-        // Only update if changed to avoid render loops
-        if (
-            JSON.stringify(prev.activeMcpServers) === JSON.stringify(connectedServers) &&
-            JSON.stringify(prev.activeHooks) === JSON.stringify(activeHooks) &&
-            JSON.stringify(prev.activeTools) === JSON.stringify(activeTools)
-        ) {
-            return prev;
-        }
+      // Only update if changed to avoid render loops
+      if (
+        JSON.stringify(prev.activeMcpServers) === JSON.stringify(connectedServers) &&
+        JSON.stringify(prev.activeHooks) === JSON.stringify(activeHooks) &&
+        JSON.stringify(prev.activeTools) === JSON.stringify(filteredActiveTools)
+      ) {
+        return prev;
+      }
 
-        return {
-            ...prev,
-            activeMcpServers: connectedServers,
-            activeHooks: activeHooks,
-            activeTools: activeTools
-        };
+      return {
+        ...prev,
+        activeMcpServers: connectedServers,
+        activeHooks: activeHooks,
+        activeTools: filteredActiveTools
+      };
     });
-  }, [mcpState.servers, hooksState.enabledHooks, toolsState.enabledTools]);
+  }, [mcpState.servers, hooksState.enabledHooks, toolsState.enabledTools, actions]);
 
   // Update mode duration every second
   useEffect(() => {
@@ -237,16 +263,35 @@ export const ActiveContextProvider: React.FC<{ children: ReactNode }> = ({ child
             setState(prev => ({ ...prev, activeSkills: d.skills || [], contextStrategy: 'Hot Swap' }));
         });
         actions.on('active-tools-updated', (data: unknown) => {
-            const d = data as DataEvent;
-            setState(prev => ({ ...prev, activeTools: d.tools || [] }));
+          const d = data as DataEvent;
+          const reported = d.tools || [];
+          const modeManagerLocal = actions.getModeManager?.();
+          const modeLocal = modeManagerLocal ? modeManagerLocal.getCurrentMode() : undefined;
+          const filtered = reported.filter(name => {
+            if (!modeManagerLocal || !modeLocal) return true;
+            try { return modeManagerLocal.isToolAllowed(name, modeLocal); } catch (_e) { return true; }
+          });
+          setState(prev => ({ ...prev, activeTools: filtered }));
         });
         actions.on('active-hooks-updated', (data: unknown) => {
             const d = data as DataEvent;
             setState(prev => ({ ...prev, activeHooks: d.hooks || [] }));
         });
         actions.on('active-mcp-updated', (data: unknown) => {
-            const d = data as DataEvent;
-            setState(prev => ({ ...prev, activeMcpServers: d.servers || [] }));
+          const d = data as DataEvent;
+          const reported = d.servers || [];
+          try {
+            const mm = actions.getModeManager?.();
+            const modeNow = mm ? mm.getCurrentMode() : undefined;
+            if (mm && modeNow) {
+              const allowed = mm.isToolAllowed('mcp:probe', modeNow);
+              setState(prev => ({ ...prev, activeMcpServers: allowed ? reported : [] }));
+            } else {
+              setState(prev => ({ ...prev, activeMcpServers: reported }));
+            }
+          } catch (_e) {
+            setState(prev => ({ ...prev, activeMcpServers: reported }));
+          }
         });
         
         // Listen for mode-transition from manager (legacy/proxy)

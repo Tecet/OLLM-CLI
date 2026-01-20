@@ -5,7 +5,7 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import fc from 'fast-check';
-import { TemplateService, type Template, type VariableDefinition } from '../templateService.js';
+import { TemplateService, type Template } from '../templateService.js';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
@@ -23,7 +23,7 @@ describe('Template Service Properties', () => {
     
     // Clean up if directory already exists (shouldn't happen but be safe)
     try {
-      await fs.rm(testDir, { recursive: true, force: true });
+      await fs.rm(tempDir, { recursive: true, force: true });
     } catch (_error) {
       // Ignore
     }
@@ -80,7 +80,7 @@ describe('Template Service Properties', () => {
             for (const file of userFiles) {
               await fs.unlink(join(userTemplatesDir, file));
             }
-          } catch (_error) {
+          } catch (__error) {
             // Ignore if directory doesn't exist or is empty
           }
           
@@ -89,7 +89,7 @@ describe('Template Service Properties', () => {
             for (const file of workspaceFiles) {
               await fs.unlink(join(workspaceTemplatesDir, file));
             }
-          } catch (_error) {
+          } catch (__error) {
             // Ignore if directory doesn't exist or is empty
           }
 

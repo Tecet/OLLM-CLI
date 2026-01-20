@@ -61,9 +61,9 @@ describe('HealthMonitorDialog', () => {
     return render(
       <UIProvider initialTheme={defaultDarkTheme}>
         <MCPProvider
-          mcpClient={mockClient as any}
-          healthMonitor={mockHealthMonitor as any}
-          oauthProvider={mockOAuthProvider as any}
+          mcpClient={mockClient as unknown as import('@ollm/ollm-cli-core/mcp/types.js').MCPClient}
+          healthMonitor={mockHealthMonitor as unknown as import('@ollm/ollm-cli-core/mcp/mcpHealthMonitor.js').MCPHealthMonitor}
+          oauthProvider={mockOAuthProvider as unknown as import('@ollm/ollm-cli-core/mcp/mcpOAuth.js').MCPOAuthProvider}
         >
           {ui}
         </MCPProvider>

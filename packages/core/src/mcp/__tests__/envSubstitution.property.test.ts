@@ -31,8 +31,7 @@ describe('Environment Variable Substitution - Property Tests', () => {
           (env, varName) => {
             // Ensure varName is a valid identifier
             const cleanVarName = varName.replace(/[^a-zA-Z0-9_]/g, '_');
-            const value = env[cleanVarName] || 'test-value';
-            const testEnv = { ...env, [cleanVarName]: value };
+            const testEnv = { ...env, [cleanVarName]: env[cleanVarName] || 'test-value' };
             
             const input = `prefix-\${${cleanVarName}}-suffix`;
             const result = substituteEnvVars(input, testEnv);

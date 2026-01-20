@@ -245,19 +245,21 @@ export class HookFileService {
    * @param data - Hook data to validate
    * @returns Validation result with errors
    */
-  validateHook(data: any): { valid: boolean; errors: string[] } {
+  validateHook(data: unknown): { valid: boolean; errors: string[] } {
     const errors: string[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const d = data as any;
 
     // Required fields
-    if (!data.name || typeof data.name !== 'string' || data.name.trim() === '') {
+    if (!d.name || typeof d.name !== 'string' || d.name.trim() === '') {
       errors.push('Missing or invalid required field: name');
     }
 
-    if (!data.when || typeof data.when !== 'object') {
+    if (!d.when || typeof d.when !== 'object') {
       errors.push('Missing required field: when');
     } else {
       // Validate when.type
-      if (!data.when.type) {
+      if (!d.when.type) {
         errors.push('Missing required field: when.type');
       } else {
         const validEventTypes = [
@@ -268,42 +270,42 @@ export class HookFileService {
           'promptSubmit',
           'agentStop',
         ];
-        if (!validEventTypes.includes(data.when.type)) {
-          errors.push(`Invalid event type: ${data.when.type}`);
+        if (!validEventTypes.includes(d.when.type)) {
+          errors.push(`Invalid event type: ${d.when.type}`);
         }
 
         // File events require patterns
         const fileEventTypes = ['fileEdited', 'fileCreated', 'fileDeleted'];
-        if (fileEventTypes.includes(data.when.type)) {
-          if (!data.when.patterns || !Array.isArray(data.when.patterns) || data.when.patterns.length === 0) {
+        if (fileEventTypes.includes(d.when.type)) {
+          if (!d.when.patterns || !Array.isArray(d.when.patterns) || d.when.patterns.length === 0) {
             errors.push('File event types require at least one pattern');
           }
         }
       }
     }
 
-    if (!data.then || typeof data.then !== 'object') {
+    if (!d.then || typeof d.then !== 'object') {
       errors.push('Missing required field: then');
     } else {
       // Validate then.type
-      if (!data.then.type) {
+      if (!d.then.type) {
         errors.push('Missing required field: then.type');
       } else {
         const validActionTypes = ['askAgent', 'runCommand'];
-        if (!validActionTypes.includes(data.then.type)) {
-          errors.push(`Invalid action type: ${data.then.type}`);
+        if (!validActionTypes.includes(d.then.type)) {
+          errors.push(`Invalid action type: ${d.then.type}`);
         }
 
         // askAgent requires prompt
-        if (data.then.type === 'askAgent') {
-          if (!data.then.prompt || typeof data.then.prompt !== 'string' || data.then.prompt.trim() === '') {
+        if (d.then.type === 'askAgent') {
+          if (!d.then.prompt || typeof d.then.prompt !== 'string' || d.then.prompt.trim() === '') {
             errors.push('askAgent action requires a prompt');
           }
         }
 
         // runCommand requires command
-        if (data.then.type === 'runCommand') {
-          if (!data.then.command || typeof data.then.command !== 'string' || data.then.command.trim() === '') {
+        if (d.then.type === 'runCommand') {
+          if (!d.then.command || typeof d.then.command !== 'string' || d.then.command.trim() === '') {
             errors.push('runCommand action requires a command');
           }
         }

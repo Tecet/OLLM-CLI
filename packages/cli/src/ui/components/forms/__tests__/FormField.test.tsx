@@ -12,7 +12,7 @@
 
 import React from 'react';
 import { render } from 'ink-testing-library';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { FormField } from '../FormField.js';
 import { Text } from 'ink';
 

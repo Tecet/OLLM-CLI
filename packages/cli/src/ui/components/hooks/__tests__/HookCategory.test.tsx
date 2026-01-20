@@ -1,6 +1,6 @@
 import React from 'react';
 import { render } from 'ink-testing-library';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { HookCategory, type HookCategoryProps } from '../HookCategory.js';
 import type { Theme } from '../../../../config/types.js';
 

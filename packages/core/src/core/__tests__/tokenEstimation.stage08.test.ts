@@ -9,15 +9,13 @@
  * Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
 import { TokenCounter } from '../tokenLimits.js';
 import type {
   ProviderAdapter,
   ProviderRequest,
   ProviderEvent,
-  Message,
-  MessagePart,
 } from '../../provider/types.js';
 
 /**
@@ -65,17 +63,6 @@ const mockProviderWithoutCountTokens: ProviderAdapter = {
     yield { type: 'text', value: 'mock' };
   },
 };
-
-// Create a mock provider with countTokens that returns a specific value
-const createMockProviderWithCountTokens = (tokenCount: number): ProviderAdapter => ({
-  name: 'mock-provider-with-count',
-  chatStream: async function* (): AsyncIterable<ProviderEvent> {
-    yield { type: 'text', value: 'mock' };
-  },
-  countTokens: async (_request: ProviderRequest): Promise<number> => {
-    return tokenCount;
-  },
-});
 
 // Create a mock provider with countTokens that accurately counts tokens
 // This simulates a real provider's token counting (using the same fallback formula for testing)

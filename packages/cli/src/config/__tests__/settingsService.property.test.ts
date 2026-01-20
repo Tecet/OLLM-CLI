@@ -545,7 +545,7 @@ describe('SettingsService Hook Settings Persistence Property Tests', () => {
         expect(typeof parsed.hooks.enabled).toBe('object');
 
         // All values should be booleans
-        for (const [hookId, enabled] of Object.entries(parsed.hooks.enabled)) {
+        for (const [_, enabled] of Object.entries(parsed.hooks.enabled)) {
           expect(typeof enabled).toBe('boolean');
         }
       }),

@@ -5,7 +5,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import fc from 'fast-check';
 import { TrustedHooks } from '../trustedHooks.js';
-import type { Hook, HookApproval } from '../types.js';
+import type { Hook } from '../types.js';
 import { arbHook, arbHookSource, createTestHook } from './test-helpers.js';
 import { mkdtemp, rm } from 'fs/promises';
 import { tmpdir } from 'os';

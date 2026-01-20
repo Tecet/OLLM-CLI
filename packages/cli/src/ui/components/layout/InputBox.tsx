@@ -78,6 +78,28 @@ export const InputBox = React.memo(function InputBox({
       setHistoryIndex(historyIndex - 1);
     }
   }, [disabled, userMessages, historyIndex, onChange]);
+  
+    // Sanitize pasted/typed input to avoid control characters and extremely long unbroken lines
+    const sanitizeAndWrap = useCallback((s: string) => {
+      if (!s) return s;
+      // Remove zero-width spaces and carriage returns
+      let out = s.replace(/\u200B/g, '').replace(/\r/g, '');
+      // Strip simple ANSI escape CSI sequences like \x1B[...m and other common sequences
+      out = out.replace(/\x1B\[[0-9;]*[A-Za-z]/g, '');
+      // Remove other non-printable control characters except tab (\t) and newline (\n)
+      out = out.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+  
+      // Wrap very long unbroken lines to avoid layout break in the terminal
+      const wrapLen = 120;
+      out = out.split('\n').map(line => {
+        if (line.length <= wrapLen) return line;
+        const parts: string[] = [];
+        for (let i = 0; i < line.length; i += wrapLen) parts.push(line.slice(i, i + wrapLen));
+        return parts.join('\n');
+      }).join('\n');
+  
+      return out;
+    }, []);
 
   useInput((input, key) => {
     if (disabled) return;
@@ -130,10 +152,11 @@ export const InputBox = React.memo(function InputBox({
 
     // Handle regular character input
     if (input && !key.ctrl && !key.meta) {
-      const newInput = localInput.slice(0, cursorPosition) + input + localInput.slice(cursorPosition);
+      const safeInput = sanitizeAndWrap(input);
+      const newInput = localInput.slice(0, cursorPosition) + safeInput + localInput.slice(cursorPosition);
       setLocalInput(newInput);
       onChange(newInput);
-      setCursorPosition(cursorPosition + input.length);
+      setCursorPosition(cursorPosition + safeInput.length);
       setHistoryIndex(-1); // Exit history mode
     }
   });

@@ -4,7 +4,6 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { FocusModeManager } from '../FocusModeManager.js';
-import type { ModeType } from '../ContextAnalyzer.js';
 
 describe('FocusModeManager', () => {
   let focusManager: FocusModeManager;

@@ -267,7 +267,7 @@ describe('ChatHistory Property Tests', () => {
     });
 
     it('handles empty message arrays', () => {
-      const { lastFrame } = render(
+      render(
         <ChatHistory
           messages={[]}
           streaming={false}
@@ -277,7 +277,6 @@ describe('ChatHistory Property Tests', () => {
         />
       );
 
-      const frame = lastFrame();
       // Empty message array may render nothing or empty content
       // Just verify the render doesn't throw
       expect(true).toBe(true);

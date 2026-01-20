@@ -783,7 +783,7 @@ describe('MCPTab Property-Based Tests', () => {
             }
 
             // Get initial status
-            const initialStatus = client.getServerStatus(serverName);
+            client.getServerStatus(serverName);
 
             // Restart server
             try {
@@ -895,7 +895,6 @@ describe('MCPTab Property-Based Tests', () => {
       const { MCPProvider } = await import('../../../contexts/MCPContext.js');
       const { UIProvider } = await import('../../../../features/context/UIContext.js');
       const path = await import('path');
-      const os = await import('os');
 
       await fc.assert(
         fc.asyncProperty(
@@ -917,7 +916,7 @@ describe('MCPTab Property-Based Tests', () => {
             await tokenStorage.storeTokens(serverName, tokens);
 
             // Create OAuth provider with token storage
-            const oauthProvider = new MCPOAuthProvider(tokenStorage);
+            new MCPOAuthProvider(tokenStorage);
 
             // Mock MCP context with OAuth status
             const mockContext = {
@@ -963,7 +962,7 @@ describe('MCPTab Property-Based Tests', () => {
             // Render the OAuth dialog
             const { lastFrame } = render(
               <UIProvider>
-                <MCPProvider value={mockContext as any}>
+                <MCPProvider value={mockContext as unknown as import('../../MCPContext.js').MCPContextValue}>
                   <OAuthConfigDialog
                     serverName={serverName}
                     onClose={() => {}}
@@ -1280,7 +1279,7 @@ describe('MCPTab Property-Based Tests', () => {
                 } else if (operation === 'delete') {
                   await tokenStorage.deleteTokens(serverName);
                 }
-              } catch (error) {
+              } catch {
                 // Ignore errors from concurrent operations
                 // The important thing is that the file doesn't get corrupted
               }
@@ -1294,7 +1293,7 @@ describe('MCPTab Property-Based Tests', () => {
               const fileContent = await fs.readFile(tokensFile, 'utf-8');
               const parsed = JSON.parse(fileContent);
               expect(typeof parsed).toBe('object');
-            } catch (error) {
+            } catch {
               // File might not exist if all operations were deletes
               // This is acceptable
             }

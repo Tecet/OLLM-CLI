@@ -7,7 +7,6 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import fc from 'fast-check';
 import { ModelManagementService } from '../modelManagementService.js';
 import { MockProvider } from '@ollm/test-utils';
-import type { ModelInfo, ProviderAdapter, PullProgress } from '../../provider/types.js';
 
 describe('Model Management Service Properties', () => {
   let service: ModelManagementService;

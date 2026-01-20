@@ -114,7 +114,7 @@ export function SettingsPanel({ windowWidth }: SettingsPanelProps) {
 
         // We cast to any because we're constructing a minimal compatible object
         // and the full Tool interface is complex
-        const capabilities = detectServerCapabilities(serverName, adaptedTools as any);
+        const capabilities = detectServerCapabilities(serverName, adaptedTools as unknown as import('@ollm/ollm-cli-core/tools/types.js').Tool[]);
         
         capabilities.forEach(cap => {
             const list = map.get(cap) || [];

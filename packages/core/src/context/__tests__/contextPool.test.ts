@@ -5,10 +5,10 @@
  * for context size calculations, quantization, and usage tracking.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
 import { createContextPool } from '../contextPool.js';
-import type { VRAMInfo, ModelInfo, KVQuantization } from '../types.js';
+import type { KVQuantization } from '../types.js';
 
 describe('ContextPool', () => {
   describe('Property 7: Context Size Formula', () => {

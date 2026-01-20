@@ -42,7 +42,7 @@ class MockMCPClient implements MCPClient {
     return [];
   }
 
-  async callTool(serverName: string, toolName: string, args: unknown): Promise<unknown> {
+  async callTool(serverName: string, toolName: string, _args: unknown): Promise<unknown> {
     const key = `${serverName}:${toolName}`;
     
     // Check if we should throw an error

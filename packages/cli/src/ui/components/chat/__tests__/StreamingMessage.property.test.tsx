@@ -226,11 +226,9 @@ describe('Property 28: Incremental Text Rendering', () => {
               timestamp: new Date(),
             };
 
-            const { lastFrame } = render(
+            render(
               <Message message={message} theme={mockTheme} />
             );
-
-            const frame = lastFrame() || '';
 
             // Content length should grow or stay the same (never shrink)
             expect(accumulatedContent.length).toBeGreaterThanOrEqual(previousLength);

@@ -45,5 +45,7 @@ export default {
     'jimp',
     'terminal-image',
     'keytar',
+    'node-pty',
+    'strip-ansi',
   ],
 };

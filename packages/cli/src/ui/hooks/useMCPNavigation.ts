@@ -69,7 +69,7 @@ export interface MCPNavigationState {
   
   // Windowed rendering
   /** Visible servers in current window */
-  visibleServers: Array<any>;
+  visibleServers: Array<import('../contexts/MCPContext.js').ExtendedMCPServerStatus>;
   /** Show scroll up indicator */
   showScrollUp: boolean;
   /** Show scroll down indicator */

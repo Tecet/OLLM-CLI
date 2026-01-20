@@ -7,7 +7,6 @@
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
 import { HookRunner } from '../hookRunner.js';
-import { HookRegistry } from '../hookRegistry.js';
 import type { Hook, HookInput, HooksConfig } from '../index.js';
 
 describe('Property 39: Hook Configuration Effects', () => {

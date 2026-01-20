@@ -12,7 +12,6 @@ import React from 'react';
 import { render } from 'ink-testing-library';
 import { InputBox } from '../InputBox.js';
 import { KeyboardInput, mockTheme, stripAnsi } from '../../__tests__/testUtils.js';
-import type { Message as MessageType } from '../../../../features/context/ChatContext.js';
 
 describe('InputBox - Keyboard Navigation', () => {
   const mockOnSubmit = vi.fn();
@@ -126,7 +125,7 @@ describe('InputBox - Keyboard Navigation', () => {
    */
   describe('Disabled State', () => {
     it('should not accept input when disabled', () => {
-      const { stdin, lastFrame } = render(
+      const { stdin } = render(
         <InputBox {...defaultProps} disabled={true} />
       );
 

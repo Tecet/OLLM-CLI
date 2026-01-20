@@ -14,7 +14,6 @@ import {
   createResourceTracker,
   createCleanupTracker,
   delay,
-  type ResourceTracker,
 } from '../testHelpers.js';
 
 describe('Property 14: Integration Test Cleanup', () => {
@@ -164,7 +163,7 @@ describe('Property 14: Integration Test Cleanup', () => {
           // Generate two different resource counts
           fc.integer({ min: 1, max: 5 }),
           fc.integer({ min: 1, max: 5 }),
-          async (firstCount, secondCount) => {
+          async (_firstCount, _secondCount) => {
             // First test run
             const tracker1 = createCleanupTracker();
             tracker1.cleanup();
@@ -208,9 +207,6 @@ describe('Property 14: Integration Test Cleanup', () => {
                 },
               });
             }
-            
-            // Cleanup all resources
-            await tracker.cleanupAll();
             
             // All resources should be cleaned
             expect(cleanupOrder).toHaveLength(resourceCount);

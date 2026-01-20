@@ -1050,7 +1050,7 @@ export function MCPTab({ windowWidth }: MCPTabProps) {
  */
 function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
   const { state: uiState } = useUI();
-  const { isFocused, exitToNavBar } = useFocusManager();
+  const { isFocused, isActive, exitToNavBar } = useFocusManager();
   const { stdout } = useStdout();
   
   // Calculate absolute widths if windowWidth is provided
@@ -1066,8 +1066,10 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
     refreshServers,
   } = useMCP();
   
-  // Check if this panel has focus
+  // Check if this panel has focus (for navigation and dialogs)
   const hasFocus = isFocused('mcp-panel');
+  // Check if we're in active mode (for state-modifying actions like toggle)
+  const canModifyState = hasFocus && isActive();
   
   // Get terminal height for calculating content area
   const terminalHeight = (stdout?.rows || 24) - 1;
@@ -1182,12 +1184,20 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
         break;
         
       case 'server':
-        // Just switch to right column to view server details
-        // All actions (toggle, delete) happen in the right panel
-        setActiveColumn('right');
+        // Toggle server enabled/disabled state (only in active mode)
+        if (selectedItem.server && canModifyState) {
+          try {
+            await toggleServer(selectedItem.server.name);
+          } catch (error) {
+            showError(
+              'Toggle failed',
+              error instanceof Error ? error.message : 'Failed to toggle server'
+            );
+          }
+        }
         break;
     }
-  }, [selectedItem, exitToNavBar]);
+  }, [selectedItem, exitToNavBar, toggleServer, showError, canModifyState]);
   
   // Auto-scroll to keep selected item visible
   useEffect(() => {
@@ -1374,6 +1384,13 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
       if (selectedItem?.type === 'server' && selectedItem.server) {
         setDialogState({ type: 'logs', serverName: selectedItem.server.name });
       }
+    } else if (input === 'o' || input === 'O') {
+      // OAuth configuration
+      if (selectedItem?.type === 'server' && selectedItem.server) {
+        setDialogState({ type: 'oauth', serverName: selectedItem.server.name });
+      }
+    } else if (input === 'h' || input === 'H') {
+      setDialogState({ type: 'health' });
     }
   }, { isActive: hasFocus });
   
@@ -1443,8 +1460,9 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
         </Box>
       </Box>
       
-      {/* Two-column layout */}
-      <Box flexGrow={1} overflow="hidden" flexDirection="row">
+      {/* Two-column layout - Hide when dialog is open to focus on dialog */}
+      {dialogState.type === null && (
+        <Box flexGrow={1} overflow="hidden" flexDirection="row">
         {/* Left Column: Menu (30%) */}
         <Box 
           flexDirection="column" 
@@ -1659,6 +1677,9 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
           )}
         </Box>
       </Box>
+      )}
+
+      {dialogState.type !== null && renderDialog()}
 
       {/* Operation Progress */}
       {state.operationsInProgress.size > 0 && (
@@ -1667,8 +1688,7 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
         </Box>
       )}
       
-      {/* Render active dialog */}
-      {renderDialog()}
+      {/* Render active dialog (moved inside conditional above) */}
     </Box>
   );
 }

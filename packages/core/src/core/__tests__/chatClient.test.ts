@@ -90,8 +90,7 @@ describe('Chat Client - Property-Based Tests', () => {
             providerRegistry.register(provider);
             providerRegistry.setDefault('mock');
 
-            const client = new ChatClient(providerRegistry, toolRegistry);
-            const events = await collectEvents(client.chat('test prompt'));
+            await collectEvents(client.chat('test prompt'));
 
             // Extract text events from chat events
             const textEvents = events.filter((e) => e.type === 'text');
@@ -128,10 +127,6 @@ describe('Chat Client - Property-Based Tests', () => {
       // Validates: Requirements 2.1, 2.2, 2.3, 2.4
       await fc.assert(
         fc.asyncProperty(fc.string(), async (errorMessage: string) => {
-          const providerEvents: ProviderEvent[] = [
-            { type: 'error', error: { message: errorMessage } },
-          ];
-
           const provider = new MockProvider(providerEvents);
           providerRegistry.register(provider);
           providerRegistry.setDefault('mock');
@@ -799,7 +794,7 @@ describe('Chat Client - Session Recording Integration', () => {
       const savedSessions: string[] = [];
 
       const mockRecordingService = {
-        createSession: async (model: string, provider: string) => {
+        createSession: async (_model: string, _provider: string) => {
           const sessionId = `session-${Date.now()}`;
           recordedSessions.push(sessionId);
           return sessionId;

@@ -39,11 +39,9 @@ vi.mock('../../../config/settingsService.js', () => {
 });
 
 describe('HooksContext - Property-Based Tests', () => {
-  let hookRegistry: HookRegistry;
   let settingsService: ReturnType<typeof SettingsService.getInstance>;
 
   beforeEach(() => {
-    hookRegistry = new HookRegistry();
     settingsService = SettingsService.getInstance();
     
     // Reset mocks

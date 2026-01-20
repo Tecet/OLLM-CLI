@@ -7,7 +7,6 @@
 import { describe, test, expect, beforeEach, afterEach } from 'vitest';
 import fc from 'fast-check';
 import { ExtensionSettingsManager } from '../settingsIntegration.js';
-import type { ExtensionSetting } from '../types.js';
 
 describe('Extension Settings Integration - Property Tests', () => {
   let originalEnv: NodeJS.ProcessEnv;

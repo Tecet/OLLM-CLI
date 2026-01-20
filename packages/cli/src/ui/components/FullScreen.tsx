@@ -15,6 +15,8 @@ import {
   exitAlternateScreen,
   hideCursor as hideCursorFn,
   showCursor as showCursorFn,
+  enableBracketedPasteMode,
+  disableBracketedPasteMode,
 } from '../../utils/terminal.js';
 
 export interface FullScreenProps {
@@ -31,6 +33,12 @@ export function FullScreen({ children, hideCursor = false }: FullScreenProps) {
   useEffect(() => {
     // Enter alternate screen buffer
     enterAlternateScreen();
+    // Enable bracketed paste mode so pasted blocks are delimited
+    try {
+      enableBracketedPasteMode();
+    } catch (_e) {
+      // best-effort
+    }
     
     if (hideCursor) {
       hideCursorFn();
@@ -41,23 +49,35 @@ export function FullScreen({ children, hideCursor = false }: FullScreenProps) {
       if (hideCursor) {
         showCursorFn();
       }
+      // Disable bracketed paste on cleanup
+      try {
+        disableBracketedPasteMode();
+      } catch (_e) {
+        // best-effort
+      }
       exitAlternateScreen();
     };
 
-    // Handle process exit to ensure cleanup
-    process.on('exit', cleanup);
-    process.on('SIGINT', () => {
+    // Handle process exit to ensure cleanup. Use named handlers so we can remove them later.
+    const handleExit = () => cleanup();
+    const handleSigint = () => {
       cleanup();
       process.exit(0);
-    });
-    process.on('SIGTERM', () => {
+    };
+    const handleSigterm = () => {
       cleanup();
       process.exit(0);
-    });
+    };
+
+    process.on('exit', handleExit);
+    process.on('SIGINT', handleSigint);
+    process.on('SIGTERM', handleSigterm);
 
     return () => {
       cleanup();
-      process.removeListener('exit', cleanup);
+      process.removeListener('exit', handleExit);
+      process.removeListener('SIGINT', handleSigint);
+      process.removeListener('SIGTERM', handleSigterm);
     };
   }, [hideCursor]);
 

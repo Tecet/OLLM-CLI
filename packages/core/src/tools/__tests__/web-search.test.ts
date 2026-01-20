@@ -10,7 +10,6 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import fc from 'fast-check';
 import {
   WebSearchTool,
-  WebSearchInvocation,
   SearchProvider,
   SearchResult,
 } from '../web-search.js';

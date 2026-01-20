@@ -10,10 +10,8 @@ import { MockProvider } from '@ollm/test-utils';
 
 describe('Model Management Service Keep-Alive Properties', () => {
   let service: ModelManagementService | undefined;
-  let mockProvider: MockProvider;
 
   beforeEach(() => {
-    mockProvider = new MockProvider();
     vi.useFakeTimers();
   });
 

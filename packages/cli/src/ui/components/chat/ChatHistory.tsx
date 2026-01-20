@@ -342,7 +342,14 @@ export function buildChatLines(
     addLine([{ text: '' }]);
   }
 
-  messages.forEach((message) => {
+  for (let msgIndex = 0; msgIndex < messages.length; msgIndex += 1) {
+    const message = messages[msgIndex];
+    const prevMessage = msgIndex > 0 ? messages[msgIndex - 1] : undefined;
+    // If a user message is immediately followed by an assistant reply, insert
+    // an extra spacer line (single space) for visual separation.
+    if (prevMessage && prevMessage.role === 'user' && message.role === 'assistant') {
+      addLine([{ text: ' ' }], 0, false, undefined, 'spacer');
+    }
     const isExpanded = message.expanded === true;
     const roleColor = theme.role[message.role];
     const timestamp = message.timestamp.toLocaleTimeString();
@@ -481,11 +488,11 @@ export function buildChatLines(
       ], 2, false, message.id, 'metrics');
     }
 
-    addLine([{ text: '' }], 0, false, message.id, 'spacer');
-  });
+    addLine([{ text: ' ' }], 0, false, message.id, 'spacer');
+  }
 
   for (let i = 0; i < paddingY; i += 1) {
-    addLine([{ text: '' }]);
+    addLine([{ text: ' ' }]);
   }
 
   return lines;

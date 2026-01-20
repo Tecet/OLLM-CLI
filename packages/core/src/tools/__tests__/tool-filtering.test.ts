@@ -6,7 +6,7 @@
  * 2. User preference check (handled by ToolRegistry)
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
 import { ToolRegistry, type ToolStateProvider } from '../tool-registry.js';
 import type { DeclarativeTool, ToolInvocation, ToolContext } from '../types.js';
@@ -26,7 +26,7 @@ function createMockTool(name: string): DeclarativeTool<any, any> {
         properties: {},
       },
     },
-    createInvocation: (params: any, context: ToolContext) => {
+    createInvocation: (params: any, _context: ToolContext) => {
       return {
         params,
         getDescription: () => `Mock invocation of ${name}`,

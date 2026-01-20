@@ -25,6 +25,8 @@ export interface ProviderAdapter {
       maxTokens?: number;
       temperature?: number;
     };
+    timeout?: number;
+    abortSignal?: AbortSignal;
   }): AsyncIterable<
     | { type: 'text'; value: string }
     | { type: 'error'; error: { message: string } }
@@ -336,7 +338,8 @@ export class CompressionService implements ICompressionService {
       try {
         summaryText = await this.generateLLMSummary(
           messagesToSummarize,
-          strategy.summaryMaxTokens
+          strategy.summaryMaxTokens,
+          strategy.summaryTimeout
         );
       } catch (error) {
         // Fall back to placeholder if LLM summarization fails
@@ -496,7 +499,8 @@ export class CompressionService implements ICompressionService {
    */
   private async generateLLMSummary(
     messages: Message[],
-    maxTokens: number
+    maxTokens: number,
+    timeoutMs?: number
   ): Promise<string> {
     if (!this.provider || !this.model) {
       throw new Error('Provider and model must be set for LLM summarization');
@@ -526,6 +530,8 @@ Summary:`;
     let summaryText = '';
 
     try {
+      // Pass timeout to provider if available (defaults to 2 minutes)
+      const timeout = timeoutMs ?? 120000;
       for await (const event of this.provider.chatStream({
         model: this.model,
         messages: providerMessages,
@@ -533,6 +539,7 @@ Summary:`;
           maxTokens,
           temperature: 0.3, // Lower temperature for more focused summaries
         },
+        timeout,
       })) {
         if (event.type === 'text') {
           summaryText += event.value;

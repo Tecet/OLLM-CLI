@@ -7,7 +7,7 @@ import { HookEventHandler } from '../hookEventHandler.js';
 import { MessageBus } from '../messageBus.js';
 import { HookRegistry } from '../hookRegistry.js';
 import { HookRunner } from '../hookRunner.js';
-import type { Hook, HookInput, HookOutput } from '../types.js';
+import type { Hook } from '../types.js';
 
 describe('HookEventHandler', () => {
   let messageBus: MessageBus;

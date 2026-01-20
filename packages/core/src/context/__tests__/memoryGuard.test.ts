@@ -39,11 +39,11 @@ class MockVRAMMonitor implements VRAMMonitor {
     return this.info.available;
   }
 
-  onLowMemory(callback: (info: VRAMInfo) => void): void {
+  onLowMemory(_callback: (info: VRAMInfo) => void): void {
     // Mock implementation
   }
 
-  startMonitoring(intervalMs: number): void {
+  startMonitoring(_intervalMs: number): void {
     // Mock implementation
   }
 

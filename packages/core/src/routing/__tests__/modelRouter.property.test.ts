@@ -6,7 +6,7 @@
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
 import { ModelRouter, ModelInfo } from '../modelRouter.js';
-import { ModelDatabase, ModelEntry, ModelCapabilities } from '../modelDatabase.js';
+import { ModelDatabase, ModelCapabilities } from '../modelDatabase.js';
 import { RoutingProfile } from '../routingProfiles.js';
 
 // Arbitraries for generating test data

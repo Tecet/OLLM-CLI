@@ -4,7 +4,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import fc from 'fast-check';
-import { ParameterValidator, type ValidationError } from '../validation.js';
+import { ParameterValidator } from '../validation.js';
 import type { ToolSchema } from '../types.js';
 
 describe('Parameter Validation', () => {

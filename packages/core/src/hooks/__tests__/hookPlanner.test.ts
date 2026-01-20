@@ -5,7 +5,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { HookPlanner } from '../hookPlanner.js';
 import { HookRegistry } from '../hookRegistry.js';
-import type { Hook, HookEvent, HookContext } from '../types.js';
+import type { Hook, HookContext } from '../types.js';
 
 describe('HookPlanner', () => {
   let registry: HookRegistry;

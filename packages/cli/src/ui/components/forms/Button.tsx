@@ -21,7 +21,7 @@ export interface ButtonProps {
   onPress: () => void | Promise<void>;
   disabled?: boolean;
   loading?: boolean;
-  variant?: 'primary' | 'secondary' | 'danger' | 'success';
+  variant?: 'primary' | 'secondary' | 'danger' | 'success' | 'warning';
   shortcut?: string;
   icon?: string;
 }
@@ -31,7 +31,7 @@ export interface ButtonProps {
  */
 export function Button({
   label,
-  _onPress,
+  onPress: _onPress,
   disabled = false,
   loading = false,
   variant = 'primary',
@@ -51,6 +51,8 @@ export function Button({
         return uiState.theme.text.secondary;
       case 'danger':
         return uiState.theme.status.error;
+      case 'warning':
+        return uiState.theme.status.warning;
       case 'success':
         return uiState.theme.status.success;
       default:
@@ -81,7 +83,7 @@ export interface ButtonGroupProps {
     onPress: () => void | Promise<void>;
     disabled?: boolean;
     loading?: boolean;
-    variant?: 'primary' | 'secondary' | 'danger' | 'success';
+    variant?: 'primary' | 'secondary' | 'danger' | 'success' | 'warning';
     shortcut?: string;
     icon?: string;
   }>;
@@ -107,12 +109,12 @@ export interface IconButtonProps {
   disabled?: boolean;
   loading?: boolean;
   tooltip?: string;
-  variant?: 'primary' | 'secondary' | 'danger' | 'success';
+  variant?: 'primary' | 'secondary' | 'danger' | 'success' | 'warning';
 }
 
 export function IconButton({
   icon,
-  _onPress,
+  onPress: _onPress,
   disabled = false,
   loading = false,
   tooltip,
@@ -130,6 +132,8 @@ export function IconButton({
         return uiState.theme.text.secondary;
       case 'danger':
         return uiState.theme.status.error;
+      case 'warning':
+        return uiState.theme.status.warning;
       case 'success':
         return uiState.theme.status.success;
       default:

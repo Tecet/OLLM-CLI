@@ -5,10 +5,8 @@
 
 import { describe, it, expect } from 'vitest';
 import {
-  ROUTING_PROFILES,
   getRoutingProfile,
   listRoutingProfiles,
-  RoutingProfile,
 } from '../routingProfiles.js';
 
 describe('Routing Profiles', () => {
