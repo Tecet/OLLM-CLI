@@ -14,3 +14,7 @@ export type {
   FocusedFile,
   ImageMetadata,
 } from './types.js';
+
+// Export services
+export { WorkspaceManager } from './WorkspaceManager.js';
+export { PathSanitizer, PathTraversalError, WorkspaceBoundaryError } from './PathSanitizer.js';

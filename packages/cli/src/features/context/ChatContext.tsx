@@ -672,7 +672,7 @@ export function ChatProvider({
         // Checkpoint summaries have role='system' but contain compressed conversation history
         // The main system prompt is passed separately via systemPrompt parameter
         const history = currentContext
-          .filter((m: ContextMessage) => m.role !== 'system') // Filter out system messages
+          .filter((m: ContextMessage) => m.role !== 'system' || !m.id.startsWith('system-')) // Only filter out the main system prompt
           .map((m: ContextMessage) => ({
             role: m.role as 'user' | 'assistant' | 'system' | 'tool',
             content: m.content || '',

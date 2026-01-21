@@ -10,46 +10,46 @@ Each task builds on previous work and includes property-based tests to validate 
 
 ### Phase 1: Foundation & Workspace (5-7 days)
 
-- [-] 1. Set up File Explorer component structure and core types
+- [x] 1. Set up File Explorer component structure and core types
   - Create `packages/cli/src/ui/components/file-explorer/` directory
   - Define TypeScript interfaces: `WorkspaceConfig`, `ProjectConfig`, `FileNode`, `GitStatus`, `FocusedFile`, `ImageMetadata`
   - Create barrel exports in `index.ts`
   - Set up test directory structure with `__tests__/unit/`, `__tests__/property/`, `__tests__/integration/`
   - _Requirements: 1.1, 1.3_
 
-- [ ] 2. Implement WorkspaceManager service
-  - [ ] 2.1 Create `WorkspaceManager.ts` with workspace file parsing
+- [x] 2. Implement WorkspaceManager service
+  - [x] 2.1 Create `WorkspaceManager.ts` with workspace file parsing
     - Implement `loadWorkspace()` to parse `.ollm-workspace` JSON files
     - Implement `getActiveProject()` and `setActiveProject()` methods
     - Implement `isPathInWorkspace()` for path validation
     - Implement `getProjectExcludePatterns()` for exclude pattern retrieval
     - _Requirements: 1.1, 1.3, 1.4_
   
-  - [ ] 2.2 Write property test for workspace configuration parsing
+  - [x] 2.2 Write property test for workspace configuration parsing
     - **Property 1: Workspace Configuration Parsing Preserves All Valid Projects**
     - **Validates: Requirements 1.1, 1.3**
   
-  - [ ] 2.3 Write property test for invalid project path handling
+  - [x] 2.3 Write property test for invalid project path handling
     - **Property 2: Invalid Project Paths Are Gracefully Skipped**
     - **Validates: Requirements 1.2**
   
-  - [ ] 2.4 Write property test for active project selection
+  - [x] 2.4 Write property test for active project selection
     - **Property 3: Active Project Selection Updates Context**
     - **Validates: Requirements 1.4**
 
-- [ ] 3. Implement PathSanitizer service
-  - [ ] 3.1 Create `PathSanitizer.ts` with path validation
+- [x] 3. Implement PathSanitizer service
+  - [x] 3.1 Create `PathSanitizer.ts` with path validation
     - Implement `sanitize()` to normalize paths
     - Implement `isPathSafe()` to check for traversal sequences
     - Implement `isWithinWorkspace()` for workspace boundary checks
     - Implement `rejectTraversal()` to throw on `../` sequences
     - _Requirements: 4.5, 10.1, 10.2_
   
-  - [ ] 3.2 Write property test for path traversal rejection
+  - [x] 3.2 Write property test for path traversal rejection
     - **Property 16: Path Traversal Is Rejected**
     - **Validates: Requirements 4.5, 10.1**
   
-  - [ ] 3.3 Write property test for workspace boundary enforcement
+  - [x] 3.3 Write property test for workspace boundary enforcement
     - **Property 35: Workspace Mode Rejects External Paths**
     - **Validates: Requirements 10.2**
 

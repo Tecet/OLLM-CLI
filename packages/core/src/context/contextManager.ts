@@ -972,9 +972,9 @@ export class ConversationContextManager extends EventEmitter implements ContextM
       )
     };
     
-    // Remove old system prompt if exists
+    // Remove old system prompt if exists (only the main one, preserve summaries/checkpoints)
     this.currentContext.messages = this.currentContext.messages.filter(
-      m => m.role !== 'system'
+      m => !m.id.startsWith('system-')
     );
     
     // Add new system prompt at the beginning
