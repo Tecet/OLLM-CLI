@@ -118,7 +118,7 @@ export const ChatInputArea = memo(function ChatInputArea({ height, showBorder = 
 
   // Border Color Logic
   let borderColor = theme.border.primary;
-  if (hasFocus) borderColor = theme.border.active;
+  if (hasFocus) borderColor = theme.text.secondary;
   if (isTerminalActive && hasFocus) borderColor = 'cyan';
 
   const totalMenuOptions = chatState.menuState.options.length;

@@ -211,7 +211,7 @@ I've updated ${insidePath} and also checked ${outsidePath}.
           { minLength: 2, maxLength: 5 }
         ),
         (rootPath, files) => {
-          // Create multiple file paths
+          // Create multiple file paths with unique names to avoid deduplication
           const filePaths = files.map((file, i) => 
             path.join(rootPath, 'src', `file${i}_${file.name}.${file.ext}`)
           );
@@ -224,13 +224,14 @@ I've updated ${insidePath} and also checked ${outsidePath}.
             filterByRoot: true,
           });
 
-          // Should detect all file paths
-          expect(detectedPaths.length).toBe(filePaths.length);
+          // Should detect all unique file paths
+          // Note: If files array has duplicates, the Set will deduplicate them
+          const uniqueFilePaths = Array.from(new Set(filePaths.map(p => path.normalize(p))));
+          expect(detectedPaths.length).toBe(uniqueFilePaths.length);
 
-          // All paths should be detected
-          filePaths.forEach(filePath => {
-            const normalized = path.normalize(filePath);
-            expect(detectedPaths).toContain(normalized);
+          // All unique paths should be detected
+          uniqueFilePaths.forEach(filePath => {
+            expect(detectedPaths).toContain(filePath);
           });
         }
       ),

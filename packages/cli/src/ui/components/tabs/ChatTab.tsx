@@ -140,7 +140,7 @@ export function ChatTab(props: ChatTabProps) {
       overflow="hidden" 
       width="100%" 
       borderStyle={showBorder ? (uiState.theme.border.style as BoxProps['borderStyle']) : undefined}
-      borderColor={hasFocus ? uiState.theme.border.active : uiState.theme.border.primary}
+      borderColor={hasFocus ? uiState.theme.text.secondary : uiState.theme.border.primary}
     >
         <Box 
           flexDirection="column"

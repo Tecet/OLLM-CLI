@@ -4,6 +4,8 @@ import { HeaderBar } from './HeaderBar.js';
 import { ConnectionStatus, GPUInfo } from './StatusBar.js';
 import { Theme } from '../../../config/types.js';
 import { ContextSection } from './ContextSection.js';
+import { ActivePromptInfo } from './ActivePromptInfo.js';
+import { useFocusManager } from '../../../features/context/FocusContext.js';
 
 export interface SidePanelProps {
   visible: boolean;
@@ -14,8 +16,6 @@ export interface SidePanelProps {
   row1Height?: number;
 }
 
-import { useFocusManager } from '../../../features/context/FocusContext.js';
-
 export function SidePanel({ visible, connection, model, gpu, theme, row1Height }: SidePanelProps) {
   const { isFocused } = useFocusManager();
   
@@ -24,7 +24,7 @@ export function SidePanel({ visible, connection, model, gpu, theme, row1Height }
   }
 
   const contextFocused = isFocused('context-panel');
-  const fileTreeFocused = isFocused('file-tree');
+  const fileTreeFocused = isFocused('side-file-tree');
   const functionsFocused = isFocused('functions');
 
   return (
@@ -39,11 +39,27 @@ export function SidePanel({ visible, connection, model, gpu, theme, row1Height }
         />
       </Box>
 
-      {/* Row 2: Context */}
+      {/* Row 2: File Tree (Moved to top) + Active Prompt Info */}
+      <Box 
+        height={10}
+        borderStyle={theme.border.style as BoxProps['borderStyle']} 
+        borderColor={fileTreeFocused ? theme.text.secondary : theme.border.primary}
+        overflow="hidden"
+        flexShrink={0}
+        width="100%"
+        flexDirection="column"
+      >
+        <Box paddingX={1}>
+          <Text color={theme.status.warning}>File Tree (Coming Soon)</Text>
+        </Box>
+        <ActivePromptInfo />
+      </Box>
+
+      {/* Row 3: Context */}
       <Box 
         flexGrow={1}
         borderStyle={theme.border.style as BoxProps['borderStyle']} 
-        borderColor={contextFocused ? theme.border.active : theme.border.primary}
+        borderColor={contextFocused ? theme.text.secondary : theme.border.primary}
         flexDirection="column"
         overflow="hidden"
         width="100%"
@@ -51,25 +67,11 @@ export function SidePanel({ visible, connection, model, gpu, theme, row1Height }
         <ContextSection />
       </Box>
 
-      {/* Row 3: File Tree */}
-      <Box 
-        height={8}
-        borderStyle={theme.border.style as BoxProps['borderStyle']} 
-        borderColor={fileTreeFocused ? theme.border.active : theme.border.primary}
-        overflow="hidden"
-        flexShrink={0}
-        width="100%"
-      >
-        <Box paddingX={1}>
-          <Text color={theme.status.warning}>File Tree (Coming Soon)</Text>
-        </Box>
-      </Box>
-
       {/* Row 4: Functions */}
       <Box 
         height={4} 
         borderStyle={theme.border.style as BoxProps['borderStyle']} 
-        borderColor={functionsFocused ? theme.border.active : theme.border.primary}
+        borderColor={functionsFocused ? theme.text.secondary : theme.border.primary}
         flexShrink={0}
         overflow="hidden"
         width="100%"

@@ -14,6 +14,7 @@ import { spawn } from 'child_process';
 import { readFile } from 'fs/promises';
 import { platform } from 'os';
 import { PathSanitizer } from './PathSanitizer.js';
+import { handleError } from './ErrorHandler.js';
 
 /**
  * Result of opening a file in an editor
@@ -112,11 +113,21 @@ export class EditorIntegration {
         // Handle process errors (e.g., editor not found)
         this.currentEditorProcess.on('error', (err: Error) => {
           this.currentEditorProcess = null;
-          reject(new Error(`Failed to spawn editor '${editorCommand}': ${err.message}`));
+          const errorInfo = handleError(err, {
+            operation: 'spawnEditor',
+            editorCommand,
+            filePath,
+          });
+          reject(new Error(`Failed to spawn editor '${editorCommand}': ${errorInfo.message}`));
         });
       } catch (err) {
         this.currentEditorProcess = null;
-        reject(err);
+        const errorInfo = handleError(err, {
+          operation: 'openInEditor',
+          editorCommand,
+          filePath,
+        });
+        reject(new Error(errorInfo.message));
       }
     });
   }

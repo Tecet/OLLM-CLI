@@ -1,0 +1,64 @@
+import React from 'react';
+import { Box, Text } from 'ink';
+import { useActiveContext } from '../../../features/context/ActiveContextState.js';
+import { useUI } from '../../../features/context/UIContext.js';
+import { useContextManager } from '../../../features/context/ContextManagerContext.js';
+
+// Helper to format tier display
+function formatTierDisplay(tier: string): string {
+  // Extract tier number from "Tier X" format
+  const match = tier.match(/Tier (\d+)/);
+  if (!match) return tier;
+  
+  const tierNum = match[1];
+  const tierRanges: Record<string, string> = {
+    '1': '2-4K',
+    '2': '4-8K',
+    '3': '8-32K',
+    '4': '32-64K',
+    '5': '64K+'
+  };
+  
+  return tierRanges[tierNum] || tier;
+}
+
+// Helper to capitalize mode name
+function formatModeName(mode: string): string {
+  return mode.charAt(0).toUpperCase() + mode.slice(1);
+}
+
+export function ActivePromptInfo() {
+  const { state: uiState } = useUI();
+  const { state: contextState } = useContextManager();
+  const { currentMode } = useActiveContext();
+
+  return (
+    <Box flexDirection="column" marginBottom={1} paddingX={1} alignSelf="flex-start">
+      <Text color={uiState.theme.status.info} bold>Active Prompt:</Text>
+      <Box marginLeft={1} alignSelf="flex-start">
+        <Text color={uiState.theme.text.primary}>
+          {formatModeName(currentMode)} {formatTierDisplay(contextState.effectivePromptTier)}
+        </Text>
+      </Box>
+      {contextState.effectivePromptTier !== contextState.actualContextTier && (
+        <Box marginLeft={1} alignSelf="flex-start">
+          <Text dimColor>
+            (Context: {formatTierDisplay(contextState.actualContextTier)})
+          </Text>
+        </Box>
+      )}
+      <Box marginLeft={1} alignSelf="flex-start">
+        <Text dimColor>
+          {contextState.autoSizeEnabled
+            ? '(Auto: Hardware-optimized)' 
+            : '(Manual: User-selected)'}
+        </Text>
+      </Box>
+      <Box marginLeft={1} alignSelf="flex-start">
+        <Text dimColor>
+             Author: github.upstash
+        </Text>
+      </Box>
+    </Box>
+  );
+}

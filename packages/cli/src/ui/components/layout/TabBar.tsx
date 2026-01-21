@@ -51,14 +51,10 @@ export function TabBar({ activeTab, onTabChange, notifications, theme, noBorder 
        // Activate current tab content (switch to active mode)
        activateContent(activeTab);
     }
-    if (key.escape) {
-       // Focus chat input (without changing tab)
-       setFocus('chat-input');
-    }
   }, { isActive: hasFocus });
 
   return (
-    <Box flexDirection="row" justifyContent="center" {...(!noBorder && { borderStyle: theme.border.style as BoxProps['borderStyle'], borderColor: hasFocus ? theme.border.active : theme.border.primary })}>
+    <Box flexDirection="row" justifyContent="flex-start" paddingX={1} {...(!noBorder && { borderStyle: theme.border.style as BoxProps['borderStyle'], borderColor: hasFocus ? theme.border.active : theme.border.primary })}>
       {tabs.map((tab, index) => {
         const isActive = tab.id === activeTab;
         const notificationCount = notifications.get(tab.id) || 0;

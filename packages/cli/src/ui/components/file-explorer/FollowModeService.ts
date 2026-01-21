@@ -19,12 +19,13 @@ import * as path from 'path';
  * - Common file extensions
  * 
  * The pattern looks for:
- * 1. Optional leading ./ or ../ or drive letter
- * 2. Path segments separated by / or \
- * 3. File name with extension
- * 4. Word boundary or whitespace after
+ * 1. Positive lookbehind for start of string or whitespace (including after punctuation)
+ * 2. Optional leading ./ or ../ or drive letter or absolute path
+ * 3. Path segments separated by / or \
+ * 4. File name with extension
+ * 5. Positive lookahead for whitespace, punctuation, or end of string
  */
-const FILE_PATH_PATTERN = /(?:^|\s)((?:\.\.?\/|[a-zA-Z]:[\\/])?[^\s:*?"<>|`]+\.[a-zA-Z0-9]+)(?=\s|$|[,;:)])/g;
+const FILE_PATH_PATTERN = /(?<=^|\s)((\.\.?\/|[a-zA-Z]:[\\/]|\/)?[^\s:*?"<>|`]+\.[a-zA-Z0-9]+)(?=\s|,|;|:|\.(?=\s|$)|$)/g;
 
 /**
  * Common file extensions to validate detected paths
@@ -86,6 +87,7 @@ export class FollowModeService {
 
     let match;
     while ((match = FILE_PATH_PATTERN.exec(text)) !== null) {
+      // Group 1 contains the full path (without leading/trailing whitespace)
       const rawPath = match[1].trim();
 
       // Validate the extension
@@ -101,7 +103,7 @@ export class FollowModeService {
         normalizedPath = path.normalize(rawPath);
       } else if (rootPath) {
         // Resolve relative paths against root
-        normalizedPath = path.resolve(rootPath, rawPath);
+        normalizedPath = path.normalize(path.resolve(rootPath, rawPath));
       } else {
         // Skip relative paths if no root is provided
         continue;
@@ -109,8 +111,15 @@ export class FollowModeService {
 
       // Filter by root if requested
       if (filterByRoot && rootPath) {
-        const normalizedRoot = path.normalize(rootPath);
-        if (!normalizedPath.startsWith(normalizedRoot)) {
+        // Normalize root path for comparison
+        const normalizedRoot = path.normalize(path.resolve(rootPath));
+        
+        // Check if the normalized path starts with the normalized root
+        // Use case-insensitive comparison on Windows
+        const pathLower = normalizedPath.toLowerCase();
+        const rootLower = normalizedRoot.toLowerCase();
+        
+        if (!pathLower.startsWith(rootLower)) {
           continue;
         }
       }
@@ -152,11 +161,14 @@ export class FollowModeService {
    * @returns True if the path should trigger expansion
    */
   shouldExpandToPath(filePath: string, rootPath: string): boolean {
-    const normalizedPath = path.normalize(filePath);
-    const normalizedRoot = path.normalize(rootPath);
+    const normalizedPath = path.normalize(path.resolve(filePath));
+    const normalizedRoot = path.normalize(path.resolve(rootPath));
 
-    // Path must be within the root
-    if (!normalizedPath.startsWith(normalizedRoot)) {
+    // Path must be within the root (case-insensitive on Windows)
+    const pathLower = normalizedPath.toLowerCase();
+    const rootLower = normalizedRoot.toLowerCase();
+    
+    if (!pathLower.startsWith(rootLower)) {
       return false;
     }
 

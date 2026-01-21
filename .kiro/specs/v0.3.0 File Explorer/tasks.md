@@ -327,8 +327,8 @@ Each task builds on previous work and includes property-based tests to validate 
     - **Property 29: Follow Mode Expands to Referenced Files**
     - **Validates: Requirements 7.5**
 
-- [~] 25. Implement state persistence
-  - [ ] 25.1 Create `ExplorerPersistence.ts` for state saving/loading
+- [x] 25. Implement state persistence
+  - [x] 25.1 Create `ExplorerPersistence.ts` for state saving/loading
     - Implement `saveState()` to write `.ollm/explorer-state.json`
     - Implement `loadState()` to read state file
     - Save expanded directories, focused files, Quick Open history
@@ -343,43 +343,44 @@ Each task builds on previous work and includes property-based tests to validate 
     - **Property 42: Corrupted Configuration Resets to Default**
     - **Validates: Requirements 12.5**
 
-- [~] 26. Add UI polish and accessibility
-  - [ ] 26.1 Implement header, help panel, and loading indicators
+- [x] 26. Add UI polish and accessibility
+  - [x] 26.1 Implement header, help panel, and loading indicators
     - Display current mode (Browse/Workspace) in header
     - Create help panel with keyboard shortcuts (accessible via '?')
     - Add loading indicators for operations >500ms
     - Add visual feedback for user actions
     - _Requirements: 11.1, 11.2, 11.4_
   
-  - [ ] 26.2 Write property test for mode display
+  - [x] 26.2 Write property test for mode display
     - **Property 38: Current Mode Is Displayed in Header**
     - **Validates: Requirements 11.1**
   
-  - [ ] 26.3 Write unit test for help panel
+  - [x] 26.3 Write unit test for help panel
     - Test that '?' key shows help panel
     - _Requirements: 11.2_
   
-  - [ ] 26.4 Write property test for loading indicators
+  - [x] 26.4 Write property test for loading indicators
     - **Property 39: Long Operations Display Loading Indicators**
     - **Validates: Requirements 11.4**
 
-- [ ] 27. Implement performance optimizations
-  - [ ] 27.1 Add performance monitoring and warnings
+- [~] 27. Implement performance optimizations
+  - [~] 27.1 Add performance monitoring and warnings
     - Warn when directory contains >1000 items
     - Implement memory monitoring for tree state
     - Add pagination for large directories
     - _Requirements: 9.2_
   
-  - [ ] 27.2 Write property test for large directory warnings
+  - [X] 27.2 Write property test for large directory warnings
     - **Property 32: Large Directories Trigger Warnings**
     - **Validates: Requirements 9.2**
 
-- [ ] 28. Checkpoint - Ensure all tests pass
+- [X] 28. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ### Phase 7: Vision and Image Support (2-3 days)
 
-- [ ] 29. Implement VisionService
+- [~] 29. Implement VisionService
+
   - [ ] 29.1 Create `VisionService.ts` with image processing
     - Implement `processImage()` to detect dimensions and format
     - Implement `resizeImage()` using sharp to resize images >2048px
@@ -388,23 +389,23 @@ Each task builds on previous work and includes property-based tests to validate 
     - Handle unsupported formats with error messages
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
   
-  - [ ] 29.2 Write property test for image dimension detection
+  - [X] 29.2 Write property test for image dimension detection
     - **Property 21: Image Dimensions Are Detected**
     - **Validates: Requirements 6.1**
   
-  - [ ] 29.3 Write property test for image resizing
+  - [X] 29.3 Write property test for image resizing
     - **Property 22: Large Images Are Resized Proportionally**
     - **Validates: Requirements 6.2**
   
-  - [ ] 29.4 Write property test for base64 encoding
+  - [-] 29.4 Write property test for base64 encoding
     - **Property 23: Image Encoding Produces Valid Base64**
     - **Validates: Requirements 6.3**
   
-  - [ ] 29.5 Write property test for supported formats
+  - [X] 29.5 Write property test for supported formats
     - **Property 24: Supported Image Formats Are Processed**
     - **Validates: Requirements 6.4**
   
-  - [ ] 29.6 Write property test for unsupported format errors
+  - [X] 29.6 Write property test for unsupported format errors
     - **Property 25: Unsupported Image Formats Return Errors**
     - **Validates: Requirements 6.5**
 
@@ -420,20 +421,20 @@ Each task builds on previous work and includes property-based tests to validate 
     - **Property 26: Screenshot Service Captures Web Pages** (if enabled)
     - **Validates: Requirements 6.6**
 
-- [ ] 31. Integrate VisionService with FileTreeView
+- [~] 31. Integrate VisionService with FileTreeView
   - Add image preview for image files
   - Show image dimensions in file info
   - Add action to analyze image with vision model
   - Display base64-encoded images in focus panel
   - _Requirements: 6.1, 6.3_
 
-- [ ] 32. Checkpoint - Ensure all tests pass
+- [X] 32. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ### Phase 8: Integration and Final Polish
 
-- [ ] 33. Create main FileExplorerComponent
-  - [ ] 33.1 Create `FileExplorerComponent.tsx` as main container
+- [x] 33. Create main FileExplorerComponent
+  - [x] 33.1 Create `FileExplorerComponent.tsx` as main container
     - Compose all sub-components (FileTreeView, FocusedFilesPanel, QuickOpen, etc.)
     - Wire up all contexts (WorkspaceContext, FileFocusContext, FileTreeContext)
     - Handle component lifecycle and initialization
@@ -454,7 +455,7 @@ Each task builds on previous work and includes property-based tests to validate 
     - Test: create file → rename → delete with confirmation
     - _Requirements: 4.1, 4.2, 4.3_
 
-- [ ] 35. Add comprehensive error handling
+- [x] 35. Add comprehensive error handling
   - Review all error paths
   - Ensure all errors display user-friendly messages
   - Add error recovery where possible

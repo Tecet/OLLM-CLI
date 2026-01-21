@@ -1454,7 +1454,7 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
           </Box>
           <Box flexShrink={1} marginLeft={1}>
             <Text wrap="truncate-end" color={hasFocus ? uiState.theme.text.primary : uiState.theme.text.secondary} dimColor={!hasFocus}>
-              ↑↓:Nav ←→:Column Enter:Select R:Restart C:Config U:Uninstall T:Tools L:Logs ?:Help 0/Esc:Exit
+              
             </Text>
           </Box>
         </Box>
@@ -1606,6 +1606,12 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
           paddingX={2} 
           paddingY={2}
         >
+          {/* Top Right Navigation Hints */}
+          <Box flexShrink={0} justifyContent="flex-end" marginBottom={1}>
+            <Text dimColor>↑↓:Nav ←→:Column Enter:Select</Text>
+          </Box>
+
+          <Box flexDirection="column" flexGrow={1} overflow="hidden">
           {(!selectedItem || (selectedItem?.type === 'exit' && activeColumn === 'left')) && (
             <Box flexDirection="column" paddingX={2} paddingY={1}>
               <Text bold color={uiState.theme.text.accent}>═══════════════════════════════════════════════════════════════════</Text>
@@ -1675,6 +1681,12 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
               </Text>
             </Box>
           )}
+          </Box>
+
+          {/* Bottom Action Hints */}
+          <Box flexShrink={0} marginTop={1}>
+            <Text dimColor>R:Restart C:Config U:Uninstall T:Tools L:Logs ?:Help 0:Exit</Text>
+          </Box>
         </Box>
       </Box>
       )}

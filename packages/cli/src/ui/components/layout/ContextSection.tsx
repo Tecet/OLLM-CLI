@@ -65,30 +65,6 @@ export function ContextSection() {
         />
       </Box>
       
-      {/* Prompt Tier Display */}
-      <Box flexDirection="column" marginBottom={1} paddingX={1} alignSelf="flex-start">
-        <Text color={uiState.theme.status.info} bold>Active Prompt:</Text>
-        <Box marginLeft={1} alignSelf="flex-start">
-          <Text color={uiState.theme.text.primary}>
-            {formatModeName(currentMode)} {formatTierDisplay(contextState.effectivePromptTier)}
-          </Text>
-        </Box>
-        {contextState.effectivePromptTier !== contextState.actualContextTier && (
-          <Box marginLeft={1} alignSelf="flex-start">
-            <Text dimColor>
-              (Context: {formatTierDisplay(contextState.actualContextTier)})
-            </Text>
-          </Box>
-        )}
-        <Box marginLeft={1} alignSelf="flex-start">
-          <Text dimColor>
-            {contextState.autoSizeEnabled
-              ? '(Auto: Hardware-optimized)' 
-              : '(Manual: User-selected)'}
-          </Text>
-        </Box>
-      </Box>
-      
       <Box flexDirection="column" paddingX={1} alignItems="flex-start">
         <Box flexDirection="column" marginBottom={1} alignSelf="flex-start">
           <Text color={uiState.theme.status.success} bold>Active Skills:</Text>

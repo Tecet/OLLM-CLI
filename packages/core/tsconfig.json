@@ -1,13 +1,23 @@
 {
-  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
     "outDir": "./dist",
     "rootDir": "./src",
     "composite": true,
     "noEmitOnError": false
   },
-  "include": ["src"]
-  ,
+  "include": ["src"],
   "exclude": [
     "src/**/__tests__",
     "src/**/*.test.ts",

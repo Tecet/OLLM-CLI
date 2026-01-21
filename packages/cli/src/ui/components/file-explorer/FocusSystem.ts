@@ -18,6 +18,7 @@
 import * as fs from 'fs/promises';
 import { FocusedFile } from './types.js';
 import { PathSanitizer } from './PathSanitizer.js';
+import { handleError } from './ErrorHandler.js';
 
 /**
  * Maximum file size for focus (8KB)
@@ -87,10 +88,12 @@ export class FocusSystem {
 
       return focusedFile;
     } catch (error) {
-      if (error instanceof Error) {
-        throw new Error(`Failed to focus file ${sanitizedPath}: ${error.message}`);
-      }
-      throw error;
+      const errorInfo = handleError(error, {
+        operation: 'focusFile',
+        filePath: sanitizedPath,
+      });
+      
+      throw new Error(`Failed to focus file ${sanitizedPath}: ${errorInfo.message}`);
     }
   }
 

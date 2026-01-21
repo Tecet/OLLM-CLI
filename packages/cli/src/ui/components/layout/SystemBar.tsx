@@ -4,6 +4,7 @@ import { useChat } from '../../../features/context/ChatContext.js';
 import { useUI } from '../../../features/context/UIContext.js';
 import { useModel } from '../../../features/context/ModelContext.js';
 import { useWindow } from '../../contexts/WindowContext.js';
+import { useFocusManager } from '../../../features/context/FocusContext.js';
 
 export interface SystemBarProps {
   height: number;
@@ -20,6 +21,9 @@ export function SystemBar({ height, showBorder = true }: SystemBarProps) {
   const { state: uiState } = useUI();
   const { theme } = uiState;
   const { isTerminalActive } = useWindow();
+  const { isFocused } = useFocusManager();
+
+  const hasFocus = isFocused('system-bar'); 
 
   const { streaming, waitingForResponse } = chatState;
 
@@ -60,7 +64,7 @@ export function SystemBar({ height, showBorder = true }: SystemBarProps) {
     <Box
       height={height}
       borderStyle={showBorder ? (theme.border.style as BoxProps['borderStyle']) : undefined}
-      borderColor={theme.border.primary}
+      borderColor={hasFocus ? theme.text.secondary : theme.border.primary}
       paddingX={1}
       flexDirection="row"
       alignItems="center"

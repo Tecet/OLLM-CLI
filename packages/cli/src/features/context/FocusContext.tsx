@@ -6,7 +6,9 @@ export type FocusableId =
   | 'chat-history' 
   | 'nav-bar' 
   | 'context-panel' 
+  | 'system-bar'
   | 'file-tree' 
+  | 'side-file-tree'
   | 'functions'
   | 'tools-panel'
   | 'hooks-panel'
@@ -61,13 +63,14 @@ export function FocusProvider({ children }: { children: ReactNode }) {
       list.push(activeMainFocus);
     }
 
-    // Always have nav-bar
+    // Always have nav-bar and system-bar
     list.push('nav-bar');
+    list.push('system-bar');
 
     // Add side panel items if visible
     if (sidePanelVisible) {
       list.push('context-panel');
-      list.push('file-tree');
+      list.push('side-file-tree');
       list.push('functions');
     }
 
@@ -92,7 +95,7 @@ export function FocusProvider({ children }: { children: ReactNode }) {
         'tools': 'tools-panel',
         'hooks': 'hooks-panel',
         'mcp': 'mcp-panel',
-        'files': 'context-panel',
+        'files': 'file-tree',
         'search': 'search-panel',
         'docs': 'docs-panel',
         'github': 'github-tab',

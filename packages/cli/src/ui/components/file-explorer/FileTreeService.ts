@@ -13,6 +13,7 @@ import * as path from 'path';
 // @ts-expect-error - picomatch doesn't have type definitions
 import picomatch from 'picomatch';
 import type { FileNode } from './types.js';
+import { handleError } from './ErrorHandler.js';
 
 /**
  * Options for building the file tree
@@ -164,7 +165,13 @@ export class FileTreeService {
       node.expanded = true;
     } catch (error) {
       // Handle permission errors or other filesystem errors
-      console.error(`Failed to expand directory ${node.path}:`, error);
+      const errorInfo = handleError(error, {
+        operation: 'expandDirectory',
+        nodePath: node.path,
+      });
+      
+      console.error(`Failed to expand directory ${node.path}:`, errorInfo.message);
+      
       node.children = [];
       node.expanded = false;
     }
@@ -210,6 +217,28 @@ export class FileTreeService {
   }
 
   /**
+   * Get visible directories for virtual scrolling (Folders Column)
+   * 
+   * Flattens the tree into a list of visible directories only.
+   * 
+   * @param tree - Root node of the tree
+   * @param options - Options for visible window
+   * @returns Array of visible directory FileNode objects
+   */
+  getVisibleDirectories(tree: FileNode, options: GetVisibleNodesOptions): FileNode[] {
+    const { scrollOffset, windowSize = this.DEFAULT_WINDOW_SIZE } = options;
+
+    // Flatten the tree to get all visible directories
+    const flatNodes = this.flattenDirectories(tree);
+
+    // Return the window of visible nodes
+    const start = Math.max(0, scrollOffset);
+    const end = Math.min(flatNodes.length, start + windowSize);
+
+    return flatNodes.slice(start, end);
+  }
+
+  /**
    * Flatten the tree into a list of visible nodes
    * 
    * Recursively traverses the tree and collects all nodes that should
@@ -226,6 +255,31 @@ export class FileTreeService {
     if (node.type === 'directory' && node.expanded && node.children) {
       for (const child of node.children) {
         this.flattenTree(child, result);
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Flatten the tree into a list of visible directories only
+   * 
+   * @param node - Current node
+   * @param result - Accumulator for visible directory nodes
+   * @returns Array of visible directory nodes
+   */
+  flattenDirectories(node: FileNode, result: FileNode[] = []): FileNode[] {
+    // Only add directories
+    if (node.type === 'directory') {
+      result.push(node);
+
+      // If the node is an expanded directory, add its directory children
+      if (node.expanded && node.children) {
+        for (const child of node.children) {
+          if (child.type === 'directory') {
+            this.flattenDirectories(child, result);
+          }
+        }
       }
     }
 

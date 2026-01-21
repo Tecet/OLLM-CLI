@@ -12,6 +12,7 @@ import simpleGit, { SimpleGit, StatusResult } from 'simple-git';
 import { GitStatus } from './types.js';
 import * as path from 'path';
 import * as fs from 'fs';
+import { handleError } from './ErrorHandler.js';
 
 /**
  * Cache entry for git status results
@@ -35,6 +36,13 @@ export class GitStatusService {
   
   /** Simple-git instance cache by repository path */
   private gitInstances: Map<string, SimpleGit> = new Map();
+  
+  /** Silent mode for suppressing error logs */
+  private silent: boolean = false;
+
+  constructor(options?: { silent?: boolean }) {
+    this.silent = options?.silent ?? false;
+  }
 
   /**
    * Get git status for all files in a repository
@@ -105,7 +113,15 @@ export class GitStatusService {
       return statusMap;
     } catch (error) {
       // Handle git errors gracefully
-      console.error(`Failed to get git status for ${repoPath}:`, error);
+      const errorInfo = handleError(error, {
+        operation: 'getGitStatus',
+        repoPath,
+      });
+      
+      if (!this.silent) {
+        console.error(`Failed to get git status for ${repoPath}:`, errorInfo.message);
+      }
+      
       return new Map();
     }
   }

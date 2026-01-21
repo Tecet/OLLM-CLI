@@ -30,6 +30,21 @@ export {
   type ConfirmationCallback,
 } from './FileOperations.js';
 export { FollowModeService, type DetectFilePathsOptions } from './FollowModeService.js';
+export { 
+  ExplorerPersistence, 
+  type ExplorerState,
+  type ExplorerPersistenceOptions,
+} from './ExplorerPersistence.js';
+export {
+  ErrorHandler,
+  globalErrorHandler,
+  handleError,
+  formatErrorForDisplay,
+  ErrorSeverity,
+  ErrorCategory,
+  type ErrorInfo,
+  type ErrorDisplay,
+} from './ErrorHandler.js';
 
 // Export contexts and hooks
 export {
@@ -58,6 +73,7 @@ export {
 } from './FileTreeContext.js';
 
 // Export components
+export { FileExplorerComponent, type FileExplorerComponentProps } from './FileExplorerComponent.js';
 export { FileTreeView, type FileTreeViewProps } from './FileTreeView.js';
 export { FocusedFilesPanel, type FocusedFilesPanelProps } from './FocusedFilesPanel.js';
 export { 
@@ -80,3 +96,16 @@ export {
   QuickOpenDialog,
   type QuickOpenDialogProps,
 } from './QuickOpenDialog.js';
+export {
+  Header,
+  type HeaderProps,
+} from './Header.js';
+export {
+  HelpPanel,
+  type HelpPanelProps,
+} from './HelpPanel.js';
+export {
+  LoadingIndicator,
+  type LoadingIndicatorProps,
+  useLoadingState,
+} from './LoadingIndicator.js';

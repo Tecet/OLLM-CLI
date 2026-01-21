@@ -41,7 +41,7 @@ import { keybindsData as keybinds } from '../config/keybinds.js';
 import { defaultDarkTheme } from '../config/styles.js';
 import { SettingsProvider } from '../features/context/SettingsContext.js';
 
-import { TabBar } from './components/layout/TabBar.js';
+import { TabBar, tabs } from './components/layout/TabBar.js';
 import { ChatInputArea } from './components/layout/ChatInputArea.js';
 import { SystemBar } from './components/layout/SystemBar.js';
 import { SidePanel } from './components/layout/SidePanel.js';
@@ -55,6 +55,7 @@ import { ChatTab } from './components/tabs/ChatTab.js';
 import { ToolsTab } from './components/tabs/ToolsTab.js';
 import { HooksTab } from './components/tabs/HooksTab.js';
 import { FilesTab } from './components/tabs/FilesTab.js';
+import { FileExplorerComponent } from './components/file-explorer/FileExplorerComponent.js';
 import { SearchTab } from './components/tabs/SearchTab.js';
 import { DocsTab } from './components/tabs/DocsTab.js';
 import { GitHubTab } from './components/tabs/GitHubTab.js';
@@ -62,8 +63,19 @@ import { SettingsTab } from './components/tabs/SettingsTab.js';
 import { MCPTab } from './components/tabs/MCPTab.js';
 import { DialogManager } from './components/dialogs/DialogManager.js';
 import { useGlobalKeyboardShortcuts } from './hooks/useKeyboardShortcuts.js';
+import { useMouse } from './hooks/useMouse.js';
 import { ErrorBoundary } from './components/ErrorBoundary.js';
 import { AllCallbacksBridge } from './components/AllCallbacksBridge.js';
+import { 
+  WorkspaceProvider, 
+  FileTreeProvider, 
+  FileFocusProvider,
+  FileTreeService,
+  FocusSystem,
+  EditorIntegration,
+  FileOperations
+} from './components/file-explorer/index.js';
+
 // Dynamic require for LocalProvider to avoid build-time module resolution errors when bridge isn't installed
 declare const require: (moduleName: string) => { LocalProvider: unknown } | unknown;
 import type { Config, Theme } from '../config/types.js';
@@ -100,8 +112,114 @@ function AppContent({ config }: AppContentProps) {
   
   const { state: chatState, clearChat, cancelGeneration, contextUsage: _contextUsage, addMessage, activateMenu, requestManualContextInput, scrollUp, scrollDown } = useChat();
   
+  // File Explorer Services
+  const fileTreeService = useState(() => new FileTreeService())[0];
+  const focusSystem = useState(() => new FocusSystem())[0];
+  const editorIntegration = useState(() => new EditorIntegration())[0];
+  const fileOperations = useState(() => new FileOperations(process.cwd()))[0];
+
   // Helper object for shortcuts (so we don't need to change all callbacks below)
   const chatActions = { scrollUp, scrollDown };
+
+  // Mouse Handling
+  useMouse((event) => {
+    // 1-based coordinates from terminal
+    const { x, y, action, button } = event;
+
+    // Layout Definitions (must match render logic)
+    const leftWidth = uiState.sidePanelVisible ? leftColumnWidth - 1 : terminalWidth - 1;
+    const rightStart = leftWidth + 1;
+    
+    // Rows (Y-axis)
+    const row1End = row1Height; // Nav Bar
+    // Row 2 starts after Row 1
+    const row2Start = row1End + 1;
+    const row2End = row1End + row2Height; // Main Content
+    // Row 3 (System) starts after Row 2
+    const row3Start = row2End + 1;
+    const row3End = row2End + row3Height;
+    // Row 4 (Input) starts after Row 3
+    const row4Start = row3End + 1;
+    // const row4End = row3End + row4Height;
+
+    // Hit Testing
+    const isLeftColumn = x <= leftWidth;
+    const isRightColumn = x >= rightStart;
+
+    if (action === 'down' && button === 'left') {
+      // Handle Clicking / Selecting Windows
+      if (isLeftColumn) {
+        if (y <= row1End) {
+          // Nav Bar Click
+          focusManager.setFocus('nav-bar');
+          
+          // Hit Test for Tabs
+          // TabBar has paddingX={1} (1 cell left) + 1 cell border (if any, but border is on parent)
+          // `x` is 1-based absolute. `leftColumnWidth` is width.
+          // Container starts at x=1 (or 2 if border?). `Box` defaults.
+          // TabBar is inside a Box with border. Border takes 1 cell? 
+          // `Box borderStyle` usually adds 1 cell padding.
+          // Let's assume start X = 2 (border) + 1 (paddingX) = 3.
+          
+          let currentX = 3; 
+          for (const tab of tabs) {
+            // Width = Icon(2) + Space(1) + Label(N)
+            // Plus PaddingLeft(1) if not first?
+            // TabBar map uses `paddingLeft={index === 0 ? 0 : 1}`
+            // So: First tab = content. Next tabs = 1 + content.
+            
+            const labelWidth = tab.label.length;
+            const contentWidth = 2 + 1 + labelWidth; // Icon + Space + Label
+            const padding = (tab.id === tabs[0].id) ? 0 : 1;
+            const totalTabWidth = contentWidth + padding;
+            
+            if (x >= currentX && x < currentX + totalTabWidth) {
+              setActiveTab(tab.id);
+              // Also activate content if we click the tab
+              focusManager.activateContent(tab.id); 
+              break;
+            }
+            
+            currentX += totalTabWidth;
+          }
+
+          if (focusManager.isFocused('nav-bar') && x > currentX) {
+             // If clicked empty space in nav bar, maybe just focus?
+             // focusManager.activateContent(uiState.activeTab);
+          }
+        } else if (y >= row2Start && y <= row2End) {
+          // Main Content Click
+          // Focus the main content based on active tab
+          focusManager.activateContent(uiState.activeTab);
+        } else if (y >= row4Start) {
+          // Input Click
+          focusManager.setFocus('chat-input');
+        }
+      } else if (isRightColumn && uiState.sidePanelVisible) {
+        // Side Panel Click
+        // Simple heuristic: Top half = File Tree/Active Context, Bottom half = Context/Functions
+        // Actually SidePanel has: Header (Row1), File Tree (10 lines), Context (Flex), Functions (4 lines)
+        // This is dynamic. Let's just focus 'context-panel' generically for now or 'side-file-tree'
+        // Let's try to be slightly smarter based on relative Y?
+        // Header: row1Height.
+        const sideHeaderEnd = row1Height;
+        const sideFileTreeEnd = sideHeaderEnd + 10;
+        
+        if (y <= sideHeaderEnd) {
+           // Header
+        } else if (y <= sideFileTreeEnd) {
+           focusManager.setFocus('side-file-tree');
+        } else {
+           focusManager.setFocus('context-panel');
+        }
+      }
+    } else if (action === 'scroll-up') {
+      chatActions.scrollUp();
+    } else if (action === 'scroll-down') {
+      chatActions.scrollDown();
+    }
+  });
+
   useReview();
   const { info: gpuInfo } = useGPU();
   const { currentModel, setCurrentModel, modelLoading, provider } = useModel();
@@ -666,8 +784,14 @@ ${toolSupport}
     },
     {
       key: 'escape',
-      handler: cancelGeneration,
-      description: 'Cancel current action',
+      handler: () => {
+        if (chatState.streaming || chatState.waitingForResponse) {
+          cancelGeneration();
+        } else {
+          focusManager.exitToNavBar();
+        }
+      },
+      description: 'Cancel current action or return to navigation',
     },
     // Global support for Chat Scrolling (Capture keys anywhere)
     {
@@ -695,20 +819,14 @@ ${toolSupport}
     {
         key: keybinds.global.cycleNext,
         handler: () => {
-          // Disable Tab cycling in active mode
-          if (!focusManager.isActive()) {
             focusManager.cycleFocus('next');
-          }
         },
         description: 'Next Pane'
     },
     {
         key: keybinds.global.cyclePrev,
         handler: () => {
-          // Disable Shift+Tab cycling in active mode
-          if (!focusManager.isActive()) {
             focusManager.cycleFocus('previous');
-          }
         },
         description: 'Previous Pane'
     },
@@ -798,7 +916,15 @@ ${toolSupport}
       case 'mcp':
         return <MCPTab windowWidth={width} />;
       case 'files':
-        return <FilesTab width={width} />;
+        return (
+          <FileExplorerComponent
+            rootPath={process.cwd()}
+            autoLoadWorkspace={false}
+            restoreState={true}
+            excludePatterns={['node_modules', '.git', 'dist', 'coverage']}
+            hasFocus={true}
+          />
+        );
       case 'search':
         return <SearchTab width={width} />;
       case 'docs':
@@ -1107,7 +1233,13 @@ export function App({ config }: AppProps) {
                                   <FocusProvider>
                                     <ActiveContextProvider>
                                       <ErrorBoundary>
-                                        <AppContent config={config} />
+                                        <WorkspaceProvider>
+                                          <FileTreeProvider>
+                                            <FileFocusProvider>
+                                              <AppContent config={config} />
+                                            </FileFocusProvider>
+                                          </FileTreeProvider>
+                                        </WorkspaceProvider>
                                       </ErrorBoundary>
                                     </ActiveContextProvider>
                                   </FocusProvider>

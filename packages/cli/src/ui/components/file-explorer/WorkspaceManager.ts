@@ -13,6 +13,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { WorkspaceConfig, ProjectConfig } from './types.js';
+import { handleError, ErrorCategory } from './ErrorHandler.js';
 
 /**
  * WorkspaceManager handles loading and managing workspace configurations

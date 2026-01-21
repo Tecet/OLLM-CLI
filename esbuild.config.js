@@ -47,5 +47,6 @@ export default {
     'keytar',
     'node-pty',
     'strip-ansi',
+    'simple-git',
   ],
 };
