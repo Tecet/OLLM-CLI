@@ -110,7 +110,7 @@ describe('Dynamic Prompt System Integration Tests', () => {
       ]);
       
       // Analyze conversation
-      const analysis = fixture.contextAnalyzer.analyzeConversation(messages);
+      const _analysis = fixture.contextAnalyzer.analyzeConversation(messages);
       
       // Should recommend planning mode (or at least have high confidence for it)
       // Note: The analyzer might pick a different mode based on keyword weights
@@ -142,7 +142,7 @@ describe('Dynamic Prompt System Integration Tests', () => {
       ]);
       
       // Analyze conversation
-      const analysis = fixture.contextAnalyzer.analyzeConversation(messages);
+      const _analysis = fixture.contextAnalyzer.analyzeConversation(messages);
       
       // Calculate developer mode confidence
       const developerConfidence = fixture.contextAnalyzer.calculateModeConfidence(messages, 'developer');
@@ -277,7 +277,7 @@ describe('Dynamic Prompt System Integration Tests', () => {
       ]);
       
       // Analyze conversation
-      const analysis = fixture.contextAnalyzer.analyzeConversation(messages);
+      const _analysis = fixture.contextAnalyzer.analyzeConversation(messages);
       
       // Should recommend debugger mode
       expect(analysis.mode).toBe('debugger');
@@ -307,7 +307,7 @@ describe('Dynamic Prompt System Integration Tests', () => {
       ]);
       
       // Analyze conversation
-      const analysis = fixture.contextAnalyzer.analyzeConversation(messages);
+      const _analysis = fixture.contextAnalyzer.analyzeConversation(messages);
       
       // Calculate developer mode confidence
       const developerConfidence = fixture.contextAnalyzer.calculateModeConfidence(messages, 'developer');

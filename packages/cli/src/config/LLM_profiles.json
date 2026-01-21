@@ -21,32 +21,38 @@
         {
           "size": 4096,
           "size_label": "4k",
-          "vram_estimate": "5.5 GB"
+          "vram_estimate": "5.5 GB",
+          "ollama_context_size": 3482
         },
         {
           "size": 8192,
           "size_label": "8k",
-          "vram_estimate": "6.0 GB"
+          "vram_estimate": "6.0 GB",
+          "ollama_context_size": 6963
         },
         {
           "size": 16384,
           "size_label": "16k",
-          "vram_estimate": "7.0 GB"
+          "vram_estimate": "7.0 GB",
+          "ollama_context_size": 13926
         },
         {
           "size": 32768,
           "size_label": "32k",
-          "vram_estimate": "9.0 GB"
+          "vram_estimate": "9.0 GB",
+          "ollama_context_size": 27853
         },
         {
           "size": 65536,
           "size_label": "64k",
-          "vram_estimate": "13.5 GB"
+          "vram_estimate": "13.5 GB",
+          "ollama_context_size": 55706
         },
         {
           "size": 131072,
           "size_label": "128k",
-          "vram_estimate": "22.5 GB"
+          "vram_estimate": "22.5 GB",
+          "ollama_context_size": 111411
         }
       ],
       "default_context": 4096
@@ -184,37 +190,37 @@
           "size": 4096,
           "size_label": "4k",
           "vram_estimate": "2.5 GB",
-          "ollama_context_size": 3482
+          "ollama_context_size": 2867
         },
         {
           "size": 8192,
           "size_label": "8k",
           "vram_estimate": "2.9 GB",
-          "ollama_context_size": 6963
+          "ollama_context_size": 5734
         },
         {
           "size": 16384,
           "size_label": "16k",
           "vram_estimate": "3.7 GB",
-          "ollama_context_size": 13926
+          "ollama_context_size": 11468
         },
         {
           "size": 32768,
           "size_label": "32k",
           "vram_estimate": "5.2 GB",
-          "ollama_context_size": 27853
+          "ollama_context_size": 22937
         },
         {
           "size": 65536,
           "size_label": "64k",
           "vram_estimate": "8.2 GB",
-          "ollama_context_size": 55706
+          "ollama_context_size": 45875
         },
         {
           "size": 131072,
           "size_label": "128k",
           "vram_estimate": "14.2 GB",
-          "ollama_context_size": 111411
+          "ollama_context_size": 91750
         }
       ],
       "default_context": 4096
@@ -406,32 +412,38 @@
         {
           "size": 4096,
           "size_label": "4k",
-          "vram_estimate": "1.2 GB"
+          "vram_estimate": "1.2 GB",
+          "ollama_context_size": 2867
         },
         {
           "size": 8192,
           "size_label": "8k",
-          "vram_estimate": "1.5 GB"
+          "vram_estimate": "1.5 GB",
+          "ollama_context_size": 5734
         },
         {
           "size": 16384,
           "size_label": "16k",
-          "vram_estimate": "2.0 GB"
+          "vram_estimate": "2.0 GB",
+          "ollama_context_size": 11468
         },
         {
           "size": 32768,
           "size_label": "32k",
-          "vram_estimate": "3.0 GB"
+          "vram_estimate": "3.0 GB",
+          "ollama_context_size": 22937
         },
         {
           "size": 65536,
           "size_label": "64k",
-          "vram_estimate": "5.0 GB"
+          "vram_estimate": "5.0 GB",
+          "ollama_context_size": 45875
         },
         {
           "size": 131072,
           "size_label": "128k",
-          "vram_estimate": "9.0 GB"
+          "vram_estimate": "9.0 GB",
+          "ollama_context_size": 91750
         }
       ],
       "default_context": 4096
@@ -455,32 +467,38 @@
         {
           "size": 4096,
           "size_label": "4k",
-          "vram_estimate": "6.5 GB"
+          "vram_estimate": "6.5 GB",
+          "ollama_context_size": 3482
         },
         {
           "size": 8192,
           "size_label": "8k",
-          "vram_estimate": "7.0 GB"
+          "vram_estimate": "7.0 GB",
+          "ollama_context_size": 6963
         },
         {
           "size": 16384,
           "size_label": "16k",
-          "vram_estimate": "8.0 GB"
+          "vram_estimate": "8.0 GB",
+          "ollama_context_size": 13926
         },
         {
           "size": 32768,
           "size_label": "32k",
-          "vram_estimate": "10.0 GB"
+          "vram_estimate": "10.0 GB",
+          "ollama_context_size": 27853
         },
         {
           "size": 65536,
           "size_label": "64k",
-          "vram_estimate": "15.0 GB"
+          "vram_estimate": "15.0 GB",
+          "ollama_context_size": 55706
         },
         {
           "size": 131072,
           "size_label": "128k",
-          "vram_estimate": "26.0 GB"
+          "vram_estimate": "26.0 GB",
+          "ollama_context_size": 111411
         }
       ],
       "default_context": 4096
@@ -507,32 +525,38 @@
         {
           "size": 4096,
           "size_label": "4k",
-          "vram_estimate": "6.0 GB"
+          "vram_estimate": "6.0 GB",
+          "ollama_context_size": 3482
         },
         {
           "size": 8192,
           "size_label": "8k",
-          "vram_estimate": "6.5 GB"
+          "vram_estimate": "6.5 GB",
+          "ollama_context_size": 6963
         },
         {
           "size": 16384,
           "size_label": "16k",
-          "vram_estimate": "7.5 GB"
+          "vram_estimate": "7.5 GB",
+          "ollama_context_size": 13926
         },
         {
           "size": 32768,
           "size_label": "32k",
-          "vram_estimate": "9.5 GB"
+          "vram_estimate": "9.5 GB",
+          "ollama_context_size": 27853
         },
         {
           "size": 65536,
           "size_label": "64k",
-          "vram_estimate": "14.5 GB"
+          "vram_estimate": "14.5 GB",
+          "ollama_context_size": 55706
         },
         {
           "size": 131072,
           "size_label": "128k",
-          "vram_estimate": "25.0 GB"
+          "vram_estimate": "25.0 GB",
+          "ollama_context_size": 111411
         }
       ],
       "default_context": 4096

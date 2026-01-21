@@ -21,6 +21,17 @@ export class WorkspaceManager {
   private workspaceConfig: WorkspaceConfig | null = null;
   private activeProjectName: string | null = null;
   private workspaceRoot: string | null = null;
+  private silent: boolean = false;
+
+  /**
+   * Create a new WorkspaceManager
+   * 
+   * @param options - Configuration options
+   * @param options.silent - If true, suppress warning logs (useful for testing)
+   */
+  constructor(options?: { silent?: boolean }) {
+    this.silent = options?.silent ?? false;
+  }
 
   /**
    * Load workspace configuration from .ollm-workspace file
@@ -63,7 +74,9 @@ export class WorkspaceManager {
     for (const project of rawConfig.projects) {
       // Validate required project fields
       if (!project.name || !project.path) {
-        console.warn(`Skipping project with missing name or path: ${JSON.stringify(project)}`);
+        if (!this.silent) {
+          console.warn(`Skipping project with missing name or path: ${JSON.stringify(project)}`);
+        }
         continue;
       }
 
@@ -74,13 +87,17 @@ export class WorkspaceManager {
 
       // Check if project path exists
       if (!fs.existsSync(projectPath)) {
-        console.warn(`Skipping project "${project.name}" with invalid path: ${projectPath}`);
+        if (!this.silent) {
+          console.warn(`Skipping project "${project.name}" with invalid path: ${projectPath}`);
+        }
         continue;
       }
 
       // Check if project path is a directory
       if (!fs.statSync(projectPath).isDirectory()) {
-        console.warn(`Skipping project "${project.name}" - path is not a directory: ${projectPath}`);
+        if (!this.silent) {
+          console.warn(`Skipping project "${project.name}" - path is not a directory: ${projectPath}`);
+        }
         continue;
       }
 

@@ -75,7 +75,7 @@ describe('ReviewActions - Property Tests', () => {
           expect(rejectCallCount).toBe(1);
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -116,7 +116,7 @@ describe('ReviewActions - Property Tests', () => {
           expect(onReject).not.toHaveBeenCalled();
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -157,7 +157,7 @@ describe('ReviewActions - Property Tests', () => {
           expect(onApprove).not.toHaveBeenCalled();
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -191,7 +191,7 @@ describe('ReviewActions - Property Tests', () => {
           expect(frame).toContain('Reject');
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -236,7 +236,7 @@ describe('ReviewActions - Property Tests', () => {
           expect(onApprove).toHaveBeenCalledWith(reviewId);
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 

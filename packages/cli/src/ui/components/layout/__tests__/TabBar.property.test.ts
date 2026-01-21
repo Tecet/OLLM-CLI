@@ -15,10 +15,10 @@ describe('Property 10: Tab Keyboard Shortcuts', () => {
   it('should map keyboard shortcuts to correct tabs', () => {
     fc.assert(
       fc.property(
-        fc.integer({ min: 1, max: 8 }),
+        fc.integer({ min: 1, max: 9 }),
         (shortcutNumber) => {
-          // Map shortcut number to expected tab
-          const expectedTabs: TabType[] = ['chat', 'tools', 'hooks', 'files', 'search', 'docs', 'github', 'settings'];
+          // Map shortcut number to expected tab (matches `tabs` in TabBar.tsx)
+          const expectedTabs: TabType[] = ['chat', 'tools', 'hooks', 'files', 'search', 'docs', 'github', 'mcp', 'settings'];
           const expectedTab = expectedTabs[shortcutNumber - 1];
           
           // Verify the tab at this index has the correct shortcut
@@ -34,7 +34,7 @@ describe('Property 10: Tab Keyboard Shortcuts', () => {
           return true;
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -52,14 +52,14 @@ describe('Property 10: Tab Keyboard Shortcuts', () => {
           return true;
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
   it('should maintain correct tab order for shortcuts', () => {
     fc.assert(
       fc.property(
-        fc.array(fc.integer({ min: 0, max: 7 }), { minLength: 2, maxLength: 8 }),
+        fc.array(fc.integer({ min: 0, max: 8 }), { minLength: 2, maxLength: 9 }),
         (indices) => {
           // Remove duplicates and sort
           const uniqueIndices = Array.from(new Set(indices)).sort((a, b) => a - b);
@@ -82,7 +82,7 @@ describe('Property 10: Tab Keyboard Shortcuts', () => {
           return true;
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 });

@@ -724,20 +724,19 @@ export function ModelProvider({
 
       // Get ollama_context_size from profile (85% cap strategy)
       // This is the actual size we send to Ollama to trigger natural stops
-      let ollamaContextSize = userContextSize; // Default to user's selection
+      // Default to 85% of user's selected size (New in v2.1)
+      let ollamaContextSize = Math.floor(userContextSize * 0.85); 
       
       if (profile?.context_profiles) {
         // Find the matching context profile for user's selected size
         const matchingProfile = profile.context_profiles.find(p => p.size === userContextSize);
         if (matchingProfile && matchingProfile.ollama_context_size) {
           ollamaContextSize = matchingProfile.ollama_context_size;
-          console.log(`[Context Cap] User selected: ${userContextSize}, Sending to Ollama: ${ollamaContextSize} (${Math.round((ollamaContextSize / userContextSize) * 100)}%)`);
-        } else {
-          // Fallback: calculate 85% if profile doesn't have ollama_context_size
-          ollamaContextSize = Math.floor(userContextSize * 0.85);
-          console.log(`[Context Cap] No profile found, calculated 85%: ${ollamaContextSize}`);
+          console.log(`[Context Cap] Used profile override: ${ollamaContextSize}`);
         }
       }
+
+      console.log(`[Context Cap] User selected: ${userContextSize}, Sending to Ollama: ${ollamaContextSize} (${Math.round((ollamaContextSize / userContextSize) * 100)}%)`);
 
       // DEBUG removed - was causing ESM require error
 

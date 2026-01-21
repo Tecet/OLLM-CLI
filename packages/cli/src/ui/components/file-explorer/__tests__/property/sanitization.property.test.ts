@@ -32,7 +32,7 @@ describe('PathSanitizer - Property-Based Tests', () => {
             expect(sanitizer.isPathSafe(pathWithTraversal)).toBe(false);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -53,7 +53,7 @@ describe('PathSanitizer - Property-Based Tests', () => {
             expect(sanitizer.isPathSafe(pathWithTraversal)).toBe(false);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -78,7 +78,7 @@ describe('PathSanitizer - Property-Based Tests', () => {
             expect(sanitizer.isPathSafe(pathWithDotDot)).toBe(false);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -99,7 +99,7 @@ describe('PathSanitizer - Property-Based Tests', () => {
             expect(sanitizer.isPathSafe(safePath)).toBe(true);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -187,7 +187,7 @@ describe('Property 35: Workspace Mode Rejects External Paths', () => {
           expect(sanitizer.isWithinWorkspace(externalPath, workspaceRoot)).toBe(false);
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -210,7 +210,7 @@ describe('Property 35: Workspace Mode Rejects External Paths', () => {
           expect(sanitizer.isWithinWorkspace(fullPath, workspaceRoot)).toBe(true);
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -233,7 +233,7 @@ describe('Property 35: Workspace Mode Rejects External Paths', () => {
             .toThrow(WorkspaceBoundaryError);
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 

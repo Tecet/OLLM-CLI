@@ -87,7 +87,7 @@ describe('Environment Variable Substitution - Property Tests', () => {
             expect(Object.keys(result).sort()).toEqual(Object.keys(envConfig).sort());
             
             // Values should be substituted
-            for (const [key, value] of Object.entries(envConfig)) {
+            for (const [key, _value] of Object.entries(envConfig)) {
               expect(result[key]).toBeDefined();
               expect(typeof result[key]).toBe('string');
             }

@@ -279,7 +279,6 @@ describe('ModelContext - Tool Support Detection', () => {
 
     it('should default to tools disabled on auto-detect failure', async () => {
       // When auto-detection fails or times out, should default to safe setting
-      const mockAddSystemMessage = vi.fn();
 
       // Simulate auto-detect failure
       // Expected behavior: save with tool_support=false and source='auto_detected'

@@ -156,12 +156,6 @@ export interface ContextManagerActions {
   /** Get raw manager instance (use with caution) */
   getManager: () => ContextManagerInterface | null;
   
-  /** Get the goal manager instance */
-  getGoalManager: () => import('@ollm/core').GoalManager | null;
-  
-  /** Get the reasoning manager instance */
-  getReasoningManager: () => import('@ollm/core').ReasoningManagerImpl | null;
-  
   /** Report in-flight (streaming) token delta to the manager (can be positive or negative) */
   reportInflightTokens: (delta: number) => void;
   /** Clear in-flight token accounting */
@@ -343,9 +337,15 @@ export function ContextManagerProvider({
         modeManagerRef.current = modeManager;
         
         // Create SnapshotManager
+        // Fix: Use user home directory for snapshots instead of CWD to avoid polluting workspace
+        const path = await import('path');
+        const os = await import('os');
+        
+        const modeSnapshotPath = path.join(os.homedir(), '.ollm', 'mode-snapshots');
+        
         const snapshotManager = new ModeSnapshotManager({
           sessionId,
-          storagePath: undefined, // Use default path
+          storagePath: modeSnapshotPath,
           maxCacheSize: 10,
           pruneAfterMs: 3600000, // 1 hour
         });
@@ -1009,8 +1009,6 @@ export function ContextManagerProvider({
         return managerRef.current.config;
     },
     getManager: () => managerRef.current,
-    getGoalManager: () => managerRef.current?.getGoalManager() || null,
-    getReasoningManager: () => managerRef.current?.getReasoningManager() || null,
     getModeManager,
     getSnapshotManager,
     getWorkflowManager,

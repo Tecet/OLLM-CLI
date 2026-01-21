@@ -49,9 +49,11 @@ function getPackageDirectories(): string[] {
   if (!repoRoot) return [];
   const packagesDir = join(repoRoot, 'packages');
   try {
+    // Only include directories that contain a tsconfig.json (actual packages)
     return readdirSync(packagesDir, { withFileTypes: true })
       .filter((dirent) => dirent.isDirectory())
-      .map((dirent) => dirent.name);
+      .map((dirent) => dirent.name)
+      .filter((name) => existsSync(join(packagesDir, name, 'tsconfig.json')));
   } catch (_error) {
     // If packages directory doesn't exist, return empty array
     return [];

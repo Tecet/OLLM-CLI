@@ -823,7 +823,7 @@ describe('Chat Client - Session Recording Integration', () => {
         recordingService: mockRecordingService as any,
       });
 
-      const events = await collectEvents(client.chat('Say hello'));
+      const _events = await collectEvents(client.chat('Say hello'));
 
       // Should have created a session
       expect(recordedSessions.length).toBe(1);
@@ -1341,7 +1341,7 @@ describe('Chat Client - Loop Detection Integration', () => {
 
     it('should detect repeated outputs and stop execution', async () => {
       // Create a provider that repeatedly outputs the same text WITHOUT tool calls
-      const providerEvents: ProviderEvent[] = [
+      const _providerEvents: ProviderEvent[] = [
         { type: 'text', value: 'Same output every time' },
         { type: 'finish', reason: 'stop' }, // No tool calls, so conversation would normally end
       ];

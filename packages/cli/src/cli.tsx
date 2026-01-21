@@ -93,17 +93,25 @@ const HelpDisplay: React.FC = () => (
   </>
 );
 
-// Parse arguments
-const argv = Yargs(hideBin(process.argv))
-  .parserConfiguration({ 'case-sensitive': true })
-  .version(false)
-  .help(false)
-  .strict()
-  .fail((msg, err) => {
-    if (err) throw err;
-    console.error(`Error: ${msg}`);
-    process.exit(1);
-  })
+export interface RunOptions {
+  exitOnComplete?: boolean;
+}
+
+export async function mainCLI(argvOverride?: string[], runOptions?: RunOptions) {
+  const rawArgv = argvOverride ? [process.execPath, 'cli', ...argvOverride] : process.argv;
+
+  // Parse arguments
+  const argv = Yargs(hideBin(rawArgv))
+    .parserConfiguration({ 'case-sensitive': true })
+    .version(false)
+    .help(false)
+    .strict()
+    .fail((msg, err) => {
+      if (err) throw err;
+      console.error(`Error: ${msg}`);
+      if (runOptions?.exitOnComplete ?? true) process.exit(1);
+      throw new Error(msg);
+    })
   // Execution mode
   .option('prompt', {
     alias: 'p',
@@ -186,19 +194,21 @@ const argv = Yargs(hideBin(process.argv))
     type: 'boolean',
     description: 'Show help information',
   })
-  .parseSync();
+    .parseSync();
 
-// Handle version flag
-if (argv.version) {
-  render(<VersionDisplay />);
-  process.exit(0);
-}
+  // Handle version flag
+  if (argv.version) {
+    render(<VersionDisplay />);
+    if (runOptions?.exitOnComplete ?? true) process.exit(0);
+    return 0;
+  }
 
-// Handle help flag
-if (argv.help) {
-  render(<HelpDisplay />);
-  process.exit(0);
-}
+  // Handle help flag
+  if (argv.help) {
+    render(<HelpDisplay />);
+    if (runOptions?.exitOnComplete ?? true) process.exit(0);
+    return 0;
+  }
 
 // Load configuration
 let config: Config;
@@ -247,31 +257,36 @@ try {
     configPath: argv.config,
     cliOverrides: Object.keys(cliOverrides).length > 0 ? cliOverrides : undefined,
   });
-} catch (error) {
-  console.error(`Configuration error: ${error instanceof Error ? error.message : String(error)}`);
-  process.exit(1);
-}
+  } catch (error) {
+    console.error(`Configuration error: ${error instanceof Error ? error.message : String(error)}`);
+    if (runOptions?.exitOnComplete ?? true) process.exit(1);
+    throw error;
+  }
 
 // TODO: Implement model management commands
-if (argv.listModels) {
-  console.log('Model management not yet implemented');
-  process.exit(0);
-}
+  if (argv.listModels) {
+    console.log('Model management not yet implemented');
+    if (runOptions?.exitOnComplete ?? true) process.exit(0);
+    return 0;
+  }
 
-if (argv.pullModel) {
-  console.log(`Pull model not yet implemented: ${argv.pullModel}`);
-  process.exit(0);
-}
+  if (argv.pullModel) {
+    console.log(`Pull model not yet implemented: ${argv.pullModel}`);
+    if (runOptions?.exitOnComplete ?? true) process.exit(0);
+    return 0;
+  }
 
-if (argv.removeModel) {
-  console.log(`Remove model not yet implemented: ${argv.removeModel}`);
-  process.exit(0);
-}
+  if (argv.removeModel) {
+    console.log(`Remove model not yet implemented: ${argv.removeModel}`);
+    if (runOptions?.exitOnComplete ?? true) process.exit(0);
+    return 0;
+  }
 
-if (argv.modelInfo) {
-  console.log(`Model info not yet implemented: ${argv.modelInfo}`);
-  process.exit(0);
-}
+  if (argv.modelInfo) {
+    console.log(`Model info not yet implemented: ${argv.modelInfo}`);
+    if (runOptions?.exitOnComplete ?? true) process.exit(0);
+    return 0;
+  }
 
 // Handle non-interactive mode
 if (argv.prompt) {
@@ -291,32 +306,36 @@ if (argv.prompt) {
     }
   }
   
-  try {
-    const result = await runner.run({
-      prompt,
-      model: argv.model,
-      provider: argv.provider,
-      output: (argv.output as 'text' | 'json' | 'stream-json') || 'text',
-      config,
-    });
-    
-    // Output result
-    const output = runner.formatOutput(result, (argv.output as 'text' | 'json' | 'stream-json') || 'text');
-    if (output) {
-      console.log(output);
+    try {
+      const result = await runner.run({
+        prompt,
+        model: argv.model,
+        provider: argv.provider,
+        output: (argv.output as 'text' | 'json' | 'stream-json') || 'text',
+        config,
+      });
+
+      // Output result
+      const output = runner.formatOutput(result, (argv.output as 'text' | 'json' | 'stream-json') || 'text');
+      if (output) {
+        console.log(output);
+      }
+
+      if (runOptions?.exitOnComplete ?? true) process.exit(0);
+      return 0;
+    } catch (error) {
+      runner.handleError(error instanceof Error ? error : new Error(String(error)));
+      if (runOptions?.exitOnComplete ?? true) return 1;
+      return 1;
     }
-    
-    process.exit(0);
-  } catch (error) {
-    runner.handleError(error instanceof Error ? error : new Error(String(error)));
-  }
 }
 
 // Ink requires a TTY-capable stdin for raw mode input handling.
 if (!process.stdin.isTTY) {
   console.error('Error: interactive mode requires a TTY-capable stdin.');
   console.error('Tip: use --prompt for non-interactive mode.');
-  process.exit(1);
+  if (runOptions?.exitOnComplete ?? true) process.exit(1);
+  throw new Error('TTY required');
 }
 
 // Interactive mode - render the TUI
@@ -360,7 +379,7 @@ try {
   // ignore logging setup errors
 }
 
-render(<App config={config} />, {
+  render(<App config={config} />, {
   stdout: inkStdio.stdout as typeof process.stdout,
   stderr: inkStdio.stderr as typeof process.stderr,
   // Ink 6.x options
@@ -370,3 +389,22 @@ render(<App config={config} />, {
   exitOnCtrlC: true,
   alternateBuffer: true,
 });
+
+  return 0;
+}
+
+export default mainCLI;
+
+// Call mainCLI when run as a script (not when imported as a module)
+// Check if this file is being run directly
+// Convert process.argv[1] to a file:// URL for comparison
+const scriptPath = process.argv[1];
+const scriptUrl = new URL(`file:///${scriptPath.replace(/\\/g, '/')}`).href;
+const isMainModule = import.meta.url === scriptUrl;
+
+if (isMainModule) {
+  mainCLI().catch((error) => {
+    console.error('Fatal error:', error);
+    process.exit(1);
+  });
+}

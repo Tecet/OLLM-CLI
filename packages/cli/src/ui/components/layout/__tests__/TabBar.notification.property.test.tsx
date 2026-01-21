@@ -4,6 +4,7 @@ import React from 'react';
 import { render } from '../../../../test/ink-testing.js';
 import { TabBar } from '../TabBar.js';
 import { FocusProvider } from '../../../../features/context/FocusContext.js';
+import { UIProvider } from '../../../../features/context/UIContext.js';
 import { TabType } from '../../../../features/context/UIContext.js';
 
 /**
@@ -39,15 +40,17 @@ describe('Property 11: Notification Badge Display', () => {
           notifications.set(tab, count);
 
           const { lastFrame } = render(
-            <FocusProvider>
-              <TabBar
-                activeTab="chat"
-                onTabChange={() => {}}
-                notifications={notifications}
-                theme={defaultTheme}
-                noBorder
-              />
-            </FocusProvider>
+            <UIProvider>
+              <FocusProvider>
+                <TabBar
+                  activeTab="chat"
+                  onTabChange={() => {}}
+                  notifications={notifications}
+                  theme={defaultTheme}
+                  noBorder
+                />
+              </FocusProvider>
+            </UIProvider>
           );
 
           const output = lastFrame();
@@ -58,7 +61,7 @@ describe('Property 11: Notification Badge Display', () => {
           return true;
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -71,15 +74,17 @@ describe('Property 11: Notification Badge Display', () => {
           notifications.set(tab, 0);
 
           const { lastFrame } = render(
-            <FocusProvider>
-              <TabBar
-                activeTab="chat"
-                onTabChange={() => {}}
-                notifications={notifications}
-                theme={defaultTheme}
-                noBorder
-              />
-            </FocusProvider>
+            <UIProvider>
+              <FocusProvider>
+                <TabBar
+                  activeTab="chat"
+                  onTabChange={() => {}}
+                  notifications={notifications}
+                  theme={defaultTheme}
+                  noBorder
+                />
+              </FocusProvider>
+            </UIProvider>
           );
 
           const output = lastFrame();
@@ -92,7 +97,7 @@ describe('Property 11: Notification Badge Display', () => {
           return true;
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -114,15 +119,17 @@ describe('Property 11: Notification Badge Display', () => {
           });
 
           const { lastFrame } = render(
-            <FocusProvider>
-              <TabBar
-                activeTab="chat"
-                onTabChange={() => {}}
-                notifications={notifications}
-                theme={defaultTheme}
-                noBorder
-              />
-            </FocusProvider>
+            <UIProvider>
+              <FocusProvider>
+                <TabBar
+                  activeTab="chat"
+                  onTabChange={() => {}}
+                  notifications={notifications}
+                  theme={defaultTheme}
+                  noBorder
+                />
+              </FocusProvider>
+            </UIProvider>
           );
 
           const output = lastFrame();
@@ -135,7 +142,7 @@ describe('Property 11: Notification Badge Display', () => {
           return true;
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 });

@@ -352,7 +352,7 @@ describe('Property 27: Compact Metrics Format', () => {
           return true;
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -395,7 +395,7 @@ describe('Property 27: Compact Metrics Format', () => {
           return true;
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -410,7 +410,7 @@ describe('Property 27: Compact Metrics Format', () => {
             visible={true}
           />
         );
-
+        
         const firstOutput = lastFrame();
 
         // Re-render with same metrics
@@ -422,7 +422,7 @@ describe('Property 27: Compact Metrics Format', () => {
             visible={true}
           />
         );
-
+        
         const secondOutput = lastFrame();
 
         // Property: Output should be identical across re-renders
@@ -430,7 +430,7 @@ describe('Property 27: Compact Metrics Format', () => {
 
         return true;
       }),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 });

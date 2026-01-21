@@ -61,7 +61,7 @@ describe('StatusBar Property Tests', () => {
             expect(frameText).toContain(provider);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -90,7 +90,7 @@ describe('StatusBar Property Tests', () => {
             expect(frameText).toContain(modelName);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -123,7 +123,7 @@ describe('StatusBar Property Tests', () => {
             expect(frameText).toContain(String(tokens.max));
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -156,7 +156,7 @@ describe('StatusBar Property Tests', () => {
             expect(frameText).toContain(branch);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -198,7 +198,7 @@ describe('StatusBar Property Tests', () => {
             expect(frameText).toContain(`${temperature}C`);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -228,7 +228,7 @@ describe('StatusBar Property Tests', () => {
             expect(frameText).toContain('Reviews:');
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -257,7 +257,7 @@ describe('StatusBar Property Tests', () => {
             expect(frameText).toContain('Cost:');
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 

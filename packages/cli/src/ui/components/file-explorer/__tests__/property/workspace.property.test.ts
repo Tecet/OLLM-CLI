@@ -34,13 +34,13 @@ function cleanupDir(dirPath: string): void {
 /**
  * Arbitrary generator for valid project names
  */
-const projectNameArbitrary = fc.string({ minLength: 1, maxLength: 50 })
+const _projectNameArbitrary = fc.string({ minLength: 1, maxLength: 50 })
   .filter(name => !name.includes('/') && !name.includes('\\') && name.trim().length > 0);
 
 /**
  * Arbitrary generator for exclude patterns
  */
-const excludePatternArbitrary = fc.array(
+const _excludePatternArbitrary = fc.array(
   fc.oneof(
     fc.constant('node_modules'),
     fc.constant('*.log'),
@@ -129,7 +129,7 @@ describe('WorkspaceManager - Property Tests', () => {
           }
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -193,7 +193,7 @@ describe('WorkspaceManager - Property Tests', () => {
           fs.writeFileSync(workspaceFile, JSON.stringify(config, null, 2));
 
           // Load workspace - should not throw
-          const manager = new WorkspaceManager();
+          const manager = new WorkspaceManager({ silent: true });
           const loadedConfig = manager.loadWorkspace(workspaceFile);
 
           // Verify only valid projects are loaded

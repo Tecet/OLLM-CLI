@@ -12,7 +12,6 @@ import {
   TestResult,
   CompatibilityTestRunner,
   CompatibilityMatrixGenerator,
-  type CompatibilityTest,
 } from '../compatibilityMatrix.js';
 import { isServerAvailable, getServerUrl } from '../testHelpers.js';
 

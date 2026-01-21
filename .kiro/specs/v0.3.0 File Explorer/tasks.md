@@ -53,20 +53,20 @@ Each task builds on previous work and includes property-based tests to validate 
     - **Property 35: Workspace Mode Rejects External Paths**
     - **Validates: Requirements 10.2**
 
-- [ ] 4. Create React contexts for state management
+- [x] 4. Create React contexts for state management
   - Create `WorkspaceContext.tsx` with workspace state and active project
   - Create `FileFocusContext.tsx` with focused files list
   - Create `FileTreeContext.tsx` with tree state, cursor position, and scroll offset
   - Implement context providers with initial state
   - _Requirements: 1.4, 3.1, 2.1_
 
-- [ ] 5. Checkpoint - Ensure all tests pass
+- [x] 5. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ### Phase 2: Core Interactions (3-4 days)
 
-- [ ] 6. Implement FileTreeService
-  - [ ] 6.1 Create `FileTreeService.ts` with tree building logic
+- [x] 6. Implement FileTreeService
+  - [x] 6.1 Create `FileTreeService.ts` with tree building logic
     - Implement `buildTree()` to recursively build file tree from filesystem
     - Implement `expandDirectory()` to load directory contents
     - Implement `collapseDirectory()` to collapse tree nodes
@@ -75,16 +75,16 @@ Each task builds on previous work and includes property-based tests to validate 
     - Apply exclude patterns during tree building
     - _Requirements: 2.1, 9.1, 9.4_
   
-  - [ ] 6.2 Write property test for virtual scrolling
+  - [x] 6.2 Write property test for virtual scrolling
     - **Property 4: Virtual Scrolling Renders Only Visible Window**
     - **Validates: Requirements 2.1, 9.1**
   
-  - [ ] 6.3 Write property test for lazy loading
+  - [x] 6.3 Write property test for lazy loading
     - **Property 34: Collapsed Directories Are Not Loaded**
     - **Validates: Requirements 9.4**
 
-- [ ] 7. Implement FileTreeView component
-  - [ ] 7.1 Create `FileTreeView.tsx` with tree rendering
+- [x] 7. Implement FileTreeView component
+  - [x] 7.1 Create `FileTreeView.tsx` with tree rendering
     - Render tree nodes with Nerd Font icons
     - Implement virtual scrolling with 15-item window
     - Display cursor position and selection
@@ -92,12 +92,12 @@ Each task builds on previous work and includes property-based tests to validate 
     - Show focus indicators (📌) for focused files
     - _Requirements: 2.1, 2.6, 2.7, 3.1_
   
-  - [ ] 7.2 Write property test for file icon display
+  - [x] 7.2 Write property test for file icon display
     - **Property 7: File Icons Are Displayed for All Nodes**
     - **Validates: Requirements 2.6**
 
-- [ ] 8. Implement keyboard navigation
-  - [ ] 8.1 Add keyboard event handlers to FileTreeView
+- [x] 8. Implement keyboard navigation
+  - [x] 8.1 Add keyboard event handlers to FileTreeView
     - Handle 'j' and Down arrow for next item
     - Handle 'k' and Up arrow for previous item
     - Handle 'h' and Left arrow for collapse directory
@@ -106,16 +106,16 @@ Each task builds on previous work and includes property-based tests to validate 
     - Debounce keyboard input (50ms)
     - _Requirements: 2.2, 2.3, 2.4, 2.5, 9.3_
   
-  - [ ] 8.2 Write property test for keyboard navigation
+  - [x] 8.2 Write property test for keyboard navigation
     - **Property 5: Keyboard Navigation Moves Cursor Correctly**
     - **Validates: Requirements 2.2, 2.3, 2.4, 2.5**
   
-  - [ ] 8.3 Write property test for input debouncing
+  - [x] 8.3 Write property test for input debouncing
     - **Property 33: Keyboard Input Is Debounced**
     - **Validates: Requirements 9.3**
 
-- [ ] 9. Implement GitStatusService
-  - [ ] 9.1 Create `GitStatusService.ts` with git integration
+- [x] 9. Implement GitStatusService
+  - [x] 9.1 Create `GitStatusService.ts` with git integration
     - Implement `getStatus()` using simple-git to query status
     - Implement `getFileStatus()` to get status for individual files
     - Implement caching with 5-second TTL
@@ -123,25 +123,25 @@ Each task builds on previous work and includes property-based tests to validate 
     - Handle non-git directories gracefully
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5_
   
-  - [ ] 9.2 Write property test for git status color mapping
+  - [x] 9.2 Write property test for git status color mapping
     - **Property 6: Git Status Maps to Correct Colors**
     - **Validates: Requirements 2.7, 8.2, 8.3, 8.4**
   
-  - [ ] 9.3 Write property test for git status caching
+  - [x] 9.3 Write property test for git status caching
     - **Property 31: Git Status Results Are Cached**
     - **Validates: Requirements 8.5**
   
-  - [ ] 9.4 Write property test for git repository detection
+  - [x] 9.4 Write property test for git repository detection
     - **Property 30: Git Status Is Queried for Repositories**
     - **Validates: Requirements 8.1**
 
-- [ ] 10. Checkpoint - Ensure all tests pass
+- [x] 10. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ### Phase 3: Focus System (2-3 days)
 
-- [ ] 11. Implement FocusSystem service
-  - [ ] 11.1 Create `FocusSystem.ts` with focus management
+- [x] 11. Implement FocusSystem service
+  - [x] 11.1 Create `FocusSystem.ts` with focus management
     - Implement `focusFile()` to read and add file to focus list
     - Implement `unfocusFile()` to remove file from focus list
     - Implement `getFocusedFiles()` to retrieve all focused files
@@ -155,47 +155,47 @@ Each task builds on previous work and includes property-based tests to validate 
     - **Property 8: Focusing a File Adds It to Focus List**
     - **Validates: Requirements 3.1**
   
-  - [ ] 11.3 Write property test for file truncation
+  - [x] 11.3 Write property test for file truncation
     - **Property 9: Large Files Are Truncated at 8KB**
     - **Validates: Requirements 3.2**
   
-  - [ ] 11.4 Write property test for content injection
+  - [x] 11.4 Write property test for content injection
     - **Property 10: Focused File Content Is Injected Into Prompts**
     - **Validates: Requirements 3.3**
   
-  - [ ] 11.5 Write property test for focus/unfocus round-trip
+  - [x] 11.5 Write property test for focus/unfocus round-trip
     - **Property 11: Focus Then Unfocus Removes File**
     - **Validates: Requirements 3.4**
   
-  - [ ] 11.6 Write property test for content sanitization
+  - [x] 11.6 Write property test for content sanitization
     - **Property 37: File Content Is Sanitized Before LLM Injection**
     - **Validates: Requirements 10.5**
 
-- [ ] 12. Create FocusedFilesPanel component
-  - [ ] 12.1 Create `FocusedFilesPanel.tsx` to display focused files
+- [x] 12. Create FocusedFilesPanel component
+  - [x] 12.1 Create `FocusedFilesPanel.tsx` to display focused files
     - Render list of focused files with paths
     - Show focus indicators (📌)
     - Display file sizes and truncation warnings
     - Show total focused content size
     - _Requirements: 3.5_
   
-  - [ ] 12.2 Write property test for focused files display
+  - [x] 12.2 Write property test for focused files display
     - **Property 12: All Focused Files Appear in Context Panel**
     - **Validates: Requirements 3.5**
 
-- [ ] 13. Integrate focus system with FileTreeView
-  - Add focus/unfocus actions to keyboard shortcuts (e.g., 'f' to toggle focus)
-  - Update FileTreeView to show focus indicators
-  - Wire up FileFocusContext to FocusSystem
-  - _Requirements: 3.1, 3.4_
+ - [x] 13. Integrate focus system with FileTreeView
+   Add focus/unfocus actions to keyboard shortcuts (e.g., 'f' to toggle focus)
+   Update FileTreeView to show focus indicators
+   Wire up FileFocusContext to FocusSystem
+   _Requirements: 3.1, 3.4_
 
-- [ ] 14. Checkpoint - Ensure all tests pass
+- [x] 14. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ### Phase 4: Viewer & Editor (3-4 days)
 
-- [ ] 15. Implement SyntaxViewer component
-  - [ ] 15.1 Create `SyntaxViewer.tsx` with syntax highlighting
+- [x] 15. Implement SyntaxViewer component
+  - [x] 15.1 Create `SyntaxViewer.tsx` with syntax highlighting
     - Integrate shiki for syntax highlighting
     - Support common programming languages (TypeScript, JavaScript, Python, Java, Go, Rust, etc.)
     - Support configuration formats (JSON, YAML, TOML, etc.)
@@ -203,12 +203,12 @@ Each task builds on previous work and includes property-based tests to validate 
     - Handle files without recognized language
     - _Requirements: 5.4, 5.5_
   
-  - [ ] 15.2 Write property test for syntax highlighting
+  - [x] 15.2 Write property test for syntax highlighting
     - **Property 20: Syntax Highlighting Is Applied to Files**
     - **Validates: Requirements 5.4, 5.5**
 
-- [ ] 16. Implement EditorIntegration service
-  - [ ] 16.1 Create `EditorIntegration.ts` for external editor spawning
+- [x] 16. Implement EditorIntegration service
+  - [x] 16.1 Create `EditorIntegration.ts` for external editor spawning
     - Implement `openInEditor()` to spawn editor process
     - Implement `getEditorCommand()` to read $EDITOR environment variable
     - Implement fallback to nano (Unix) or notepad (Windows)
@@ -216,19 +216,19 @@ Each task builds on previous work and includes property-based tests to validate 
     - Implement `reloadFile()` to reload file content after editing
     - _Requirements: 5.1, 5.2, 5.3_
   
-  - [ ] 16.2 Write property test for editor spawning
+  - [x] 16.2 Write property test for editor spawning
     - **Property 18: Editor Integration Spawns Correct Editor**
     - **Validates: Requirements 5.1**
   
-  - [ ] 16.3 Write unit test for editor fallback
+  - [x] 16.3 Write unit test for editor fallback
     - Test that nano/notepad is used when $EDITOR is not set
     - _Requirements: 5.2_
   
-  - [ ] 16.4 Write property test for file reload
+  - [x] 16.4 Write property test for file reload
     - **Property 19: File Content Is Reloaded After Editing**
     - **Validates: Requirements 5.3**
 
-- [ ] 17. Add viewer and editor actions to FileTreeView
+- [x] 17. Add viewer and editor actions to FileTreeView
   - Add 'v' keyboard shortcut to open SyntaxViewer
   - Add 'e' keyboard shortcut to open in external editor
   - Display viewer in modal or split pane
@@ -240,8 +240,8 @@ Each task builds on previous work and includes property-based tests to validate 
 
 ### Phase 5: File Operations (2-3 days)
 
-- [ ] 19. Implement file operation handlers
-  - [ ] 19.1 Create `FileOperations.ts` with CRUD operations
+- [~] 19. Implement file operation handlers
+  - [x] 19.1 Create `FileOperations.ts` with CRUD operations
     - Implement `createFile()` with path validation
     - Implement `createFolder()` with path validation
     - Implement `renameFile()` with validation
@@ -252,7 +252,7 @@ Each task builds on previous work and includes property-based tests to validate 
     - Display error messages on failure
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.6, 10.4_
   
-  - [ ] 19.2 Write property test for valid file operations
+  - [x] 19.2 Write property test for valid file operations
     - **Property 13: Valid File Operations Succeed**
     - **Validates: Requirements 4.1, 4.2**
   
@@ -272,19 +272,19 @@ Each task builds on previous work and includes property-based tests to validate 
     - **Property 36: File Permissions Are Validated Before Operations**
     - **Validates: Requirements 10.4**
 
-- [ ] 20. Create QuickActionsMenu component
-  - [ ] 20.1 Create `QuickActionsMenu.tsx` with action menu
+- [x] 20. Create QuickActionsMenu component
+  - [x] 20.1 Create `QuickActionsMenu.tsx` with action menu
     - Display menu with options: Open, Focus, Edit, Rename, Delete, Copy Path
     - Handle action selection
     - Wire up to file operation handlers
     - Show menu on keyboard shortcut (e.g., 'a' for actions)
     - _Requirements: 7.4_
   
-  - [ ] 20.2 Write property test for menu options
+  - [x] 20.2 Write property test for menu options
     - **Property 28: Quick Actions Menu Contains Required Options**
     - **Validates: Requirements 7.4**
 
-- [ ] 21. Add confirmation dialogs
+- [x] 21. Add confirmation dialogs
   - Create `ConfirmationDialog.tsx` component
   - Use for delete operations
   - Use for destructive operations
@@ -295,8 +295,8 @@ Each task builds on previous work and includes property-based tests to validate 
 
 ### Phase 6: Polish & Intelligence (3-4 days)
 
-- [ ] 23. Implement QuickOpen dialog
-  - [ ] 23.1 Create `QuickOpenDialog.tsx` with fuzzy search
+- [x] 23. Implement QuickOpen dialog
+  - [x] 23.1 Create `QuickOpenDialog.tsx` with fuzzy search
     - Implement fuzzy matching algorithm or use library (e.g., fuse.js)
     - Display search input and filtered results
     - Handle Ctrl+O keyboard shortcut
@@ -304,30 +304,30 @@ Each task builds on previous work and includes property-based tests to validate 
     - Track Quick Open history
     - _Requirements: 7.1, 7.2, 7.3, 12.4_
   
-  - [ ] 23.2 Write property test for fuzzy filtering
+  - [x] 23.2 Write property test for fuzzy filtering
     - **Property 26: Quick Open Filters Files by Fuzzy Match**
     - **Validates: Requirements 7.2**
   
-  - [ ] 23.3 Write property test for file navigation
+  - [x] 23.3 Write property test for file navigation
     - **Property 27: Quick Open Selection Navigates to File**
     - **Validates: Requirements 7.3**
   
-  - [ ] 23.4 Write property test for history tracking
+  - [x] 23.4 Write property test for history tracking
     - **Property 41: Quick Open History Tracks Opened Files**
     - **Validates: Requirements 12.4**
 
-- [ ] 24. Implement Follow Mode
-  - [ ] 24.1 Add Follow Mode toggle and auto-expansion
+- [x] 24. Implement Follow Mode
+  - [x] 24.1 Add Follow Mode toggle and auto-expansion
     - Detect LLM-referenced file paths in chat
     - Automatically expand tree to show referenced files
     - Add toggle for Follow Mode (e.g., 'F' key)
     - _Requirements: 7.5_
   
-  - [ ] 24.2 Write property test for Follow Mode expansion
+  - [x] 24.2 Write property test for Follow Mode expansion
     - **Property 29: Follow Mode Expands to Referenced Files**
     - **Validates: Requirements 7.5**
 
-- [ ] 25. Implement state persistence
+- [~] 25. Implement state persistence
   - [ ] 25.1 Create `ExplorerPersistence.ts` for state saving/loading
     - Implement `saveState()` to write `.ollm/explorer-state.json`
     - Implement `loadState()` to read state file
@@ -335,15 +335,15 @@ Each task builds on previous work and includes property-based tests to validate 
     - Handle corrupted state files gracefully
     - _Requirements: 12.1, 12.2, 12.3, 12.5_
   
-  - [ ] 25.2 Write property test for state persistence round-trip
+  - [x] 25.2 Write property test for state persistence round-trip
     - **Property 40: Explorer State Persistence Round-Trip**
     - **Validates: Requirements 12.1, 12.2, 12.3**
   
-  - [ ] 25.3 Write property test for corrupted config handling
+  - [x] 25.3 Write property test for corrupted config handling
     - **Property 42: Corrupted Configuration Resets to Default**
     - **Validates: Requirements 12.5**
 
-- [ ] 26. Add UI polish and accessibility
+- [~] 26. Add UI polish and accessibility
   - [ ] 26.1 Implement header, help panel, and loading indicators
     - Display current mode (Browse/Workspace) in header
     - Create help panel with keyboard shortcuts (accessible via '?')

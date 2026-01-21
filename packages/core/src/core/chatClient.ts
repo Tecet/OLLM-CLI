@@ -16,6 +16,8 @@ import { mergeServicesConfig } from '../services/config.js';
 import { ModelDatabase, modelDatabase } from '../routing/modelDatabase.js';
 import { getMessageBus } from '../hooks/messageBus.js';
 
+const isTestEnv = process.env.NODE_ENV === 'test' || !!process.env.VITEST;
+
 /**
  * Configuration for the chat client.
  */
@@ -117,7 +119,7 @@ export class ChatClient {
           contextSize: usage.maxTokens,
           ollamaContextSize: Math.floor(usage.maxTokens * 0.85),
         };
-        console.log(`[ChatClient] Context size from manager: ${usage.maxTokens}, Ollama: ${Math.floor(usage.maxTokens * 0.85)}`);
+        if (!isTestEnv) console.log(`[ChatClient] Context size from manager: ${usage.maxTokens}, Ollama: ${Math.floor(usage.maxTokens * 0.85)}`);
       } else {
         // Fallback to default
         const defaultContextSize = 8192;
@@ -127,10 +129,27 @@ export class ChatClient {
           contextSize: defaultContextSize,
           ollamaContextSize: defaultOllamaSize,
         };
-        console.warn(`[ChatClient] No context size specified, using default ${defaultContextSize} (Ollama: ${defaultOllamaSize})`);
+        if (!isTestEnv) console.warn(`[ChatClient] No context size specified, using default ${defaultContextSize} (Ollama: ${defaultOllamaSize})`);
       }
     } else {
-      console.log(`[ChatClient] Context size: ${options.contextSize}, Ollama: ${options.ollamaContextSize}`);
+      if (!isTestEnv) console.log(`[ChatClient] Context size: ${options.contextSize}, Ollama: ${options.ollamaContextSize}`);
+    }
+
+    // Sync context manager threshold with Ollama context size
+    // This ensures we snapshot/summarize exactly when Ollama hits its limit
+    if (this.contextMgmtManager && options?.contextSize && options?.ollamaContextSize) {
+      const ratio = options.ollamaContextSize / options.contextSize;
+      if (!isTestEnv) console.log(`[ChatClient] Syncing autoThreshold to ${ratio.toFixed(4)}`);
+      
+      const currentConfig = this.contextMgmtManager.config;
+      if (currentConfig) {
+        this.contextMgmtManager.updateConfig({
+          snapshots: {
+            ...currentConfig.snapshots,
+            autoThreshold: ratio
+          }
+        });
+      }
     }
 
     // Initialize session recording (Requirements 1.1, 9.1)

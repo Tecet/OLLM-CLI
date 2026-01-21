@@ -56,7 +56,7 @@ const DEFAULT_CONFIG: ContextConfig = {
   kvQuantization: 'q8_0',
   compression: {
     enabled: true,
-    threshold: 0.6,
+    threshold: 0.95,
     strategy: 'hybrid',
     preserveRecent: 4096,
     summaryMaxTokens: 1024
@@ -65,9 +65,54 @@ const DEFAULT_CONFIG: ContextConfig = {
     enabled: true,
     maxCount: 5,
     autoCreate: true,
-    autoThreshold: 0.8
+    autoThreshold: 0.85 // Aligned with Ollama's 85% context limit
   }
 };
+
+// During test runs silence verbose context-manager logs unless overridden.
+if (process.env.NODE_ENV === 'test' || !!process.env.VITEST) {
+  if (!process.env.CONTEXT_DEBUG) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (console as any).debug = () => {};
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (console as any).log = () => {};
+    } catch (_e) {
+      // ignore
+    }
+  }
+}
+
+// During test runs silence verbose context-manager logs unless overridden.
+if (process.env.NODE_ENV === 'test' || !!process.env.VITEST) {
+  if (!process.env.CONTEXT_DEBUG) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (console as any).debug = () => {};
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (console as any).log = () => {};
+    } catch (_e) {
+      // ignore
+    }
+  }
+}
+
+// During test runs we silence verbose context-manager logs to keep test output clean.
+// Keep warnings/errors so real failures are still visible. Use CONTEXT_DEBUG=1 to override.
+if (process.env.NODE_ENV === 'test' || !!process.env.VITEST) {
+  if (!process.env.CONTEXT_DEBUG) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (console as any).debug = () => {};
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (console as any).log = () => {};
+    } catch (_e) {
+      // ignore
+    }
+  }
+}
+
+const isTestEnv = process.env.NODE_ENV === 'test' || !!process.env.VITEST;
 
 /**
  * Conversation Context Manager Implementation
@@ -100,6 +145,8 @@ export class ConversationContextManager extends EventEmitter implements ContextM
   private autoSummaryRunning: boolean = false;
   private lastAutoSummaryAt: number | null = null;
   private AUTO_SUMMARY_COOLDOWN_MS: number = 60000; // EMERGENCY FIX #3: Increased from 5000 to 60000 (60 seconds)
+  private lastSnapshotTokens: number = 0;
+  private messagesSinceLastSnapshot: number = 0;
 
   constructor(
     sessionId: string,
@@ -267,8 +314,29 @@ export class ConversationContextManager extends EventEmitter implements ContextM
             return;
           }
           
-          // EMERGENCY FIX #1: Check if there are enough compressible messages
+          this.autoSummaryRunning = true;
+          this.lastAutoSummaryAt = now;
 
+          console.log('[ContextManager] autoThreshold reached, starting snapshot and summarization checks', { usage: this.getUsage() });
+          // Emit a high-level summarizing event so UI can show progress
+          this.emit('summarizing', { usage: this.getUsage() });
+
+          // 1) Create a snapshot for recovery (store full context pre-summary)
+          // MOVED UP: Create snapshot BEFORE checking if we can compress
+          let snapshot: ContextSnapshot | null = null;
+          try {
+            snapshot = await this.snapshotManager.createSnapshot(
+              this.currentContext
+            );
+            this.emit('auto-snapshot-created', snapshot);
+            console.log('[ContextManager] auto-snapshot-created', { id: snapshot.id, tokenCount: snapshot.tokenCount });
+          } catch (error) {
+            console.error('[ContextManager] snapshot creation failed', error);
+            this.emit('snapshot-error', error);
+            // continue - summarization can still proceed even if snapshot failed
+          }
+
+          // EMERGENCY FIX #1: Check if there are enough compressible messages
           const checkpointIds = new Set((this.currentContext.checkpoints || []).map(cp => cp.summary.id));
           const compressibleMessages = this.currentContext.messages.filter(m => 
             m.role !== 'system' && 
@@ -283,28 +351,8 @@ export class ConversationContextManager extends EventEmitter implements ContextM
               total: this.currentContext.messages.length,
               checkpoints: this.currentContext.checkpoints?.length || 0
             });
+            this.autoSummaryRunning = false; // RELEASE LOCK since we are aborting compression
             return;
-          }
-          
-          this.autoSummaryRunning = true;
-          this.lastAutoSummaryAt = now;
-
-          console.log('[ContextManager] autoThreshold reached, starting summarization flow', { usage: this.getUsage() });
-          // Emit a high-level summarizing event so UI can show progress
-          this.emit('summarizing', { usage: this.getUsage() });
-
-          // 1) Create a snapshot for recovery (store full context pre-summary)
-          let snapshot: ContextSnapshot | null = null;
-          try {
-            snapshot = await this.snapshotManager.createSnapshot(
-              this.currentContext
-            );
-            this.emit('auto-snapshot-created', snapshot);
-            console.log('[ContextManager] auto-snapshot-created', { id: snapshot.id, tokenCount: snapshot.tokenCount });
-          } catch (error) {
-            console.error('[ContextManager] snapshot creation failed', error);
-            this.emit('snapshot-error', error);
-            // continue - summarization can still proceed even if snapshot failed
           }
 
           // 2) Perform an LLM-based summary of the current conversation and replace
@@ -657,9 +705,12 @@ export class ConversationContextManager extends EventEmitter implements ContextM
       message.content
     );
     message.tokenCount = tokenCount;
-    // Debug logging for token/accounting issues
+    // Debug logging for token/accounting issues — suppress during tests
     try {
-      console.debug('[ContextManager] addMessage: tokenCount=', tokenCount, 'currentContext.tokenCount=', this.currentContext?.tokenCount, 'currentContext.maxTokens=', this.currentContext?.maxTokens);
+      const isTestEnv = process.env.NODE_ENV === 'test' || !!process.env.VITEST;
+      if (!isTestEnv) {
+        console.debug('[ContextManager] addMessage: tokenCount=', tokenCount, 'currentContext.tokenCount=', this.currentContext?.tokenCount, 'currentContext.maxTokens=', this.currentContext?.maxTokens);
+      }
     } catch (_e) {
       // ignore logging errors
     }
@@ -709,24 +760,70 @@ export class ConversationContextManager extends EventEmitter implements ContextM
     // Update context pool token count
     this.contextPool.setCurrentTokens(this.currentContext.tokenCount);
     
-    // Check thresholds (log args for debugging)
-    try {
-      console.debug('[ContextManager] calling snapshotManager.checkThresholds', { currentTokens: this.currentContext.tokenCount, maxTokens: this.currentContext.maxTokens });
-    } catch (_e) {
-      // ignore logging errors
+    // Check for "Safety Snapshot" on USER messages (Proactive Data Protection)
+    // We snapshot if we cross the 85% threshold (aligning with Ollama context cap)
+    // This ensures we save the user's input before risking an LLM call that might fail/timeout.
+    if (message.role === 'user') {
+        const usage = this.getUsage();
+        const usageFraction = usage.percentage / 100;
+        
+        // If we are over 85% and haven't snapshotted recently (debounce by 2% change or if no snapshot yet)
+        const lastSnapTokens = this.lastSnapshotTokens || 0;
+        const tokenDiff = Math.abs(this.currentContext.tokenCount - lastSnapTokens);
+        const significantChange = tokenDiff > (this.currentContext.maxTokens * 0.02); // 2% change
+        
+        // Periodic Snapshot Logic (Turn-based backup)
+        // Ensure we save progress every 5 user messages regardless of token usage
+        this.messagesSinceLastSnapshot++;
+        const turnBasedSnapshotNeeded = this.config.snapshots.enabled && 
+                                        this.config.snapshots.autoCreate && 
+                                        this.messagesSinceLastSnapshot >= 5;
+
+        // Safety Snapshot (High Usage)
+        const safetySnapshotNeeded = usageFraction >= 0.85 && significantChange;
+
+        if (safetySnapshotNeeded || turnBasedSnapshotNeeded) {
+            const reason = safetySnapshotNeeded ? 'User Input > 85%' : 'Periodic Backup (5 turns)';
+            console.log(`[ContextManager] Safety Snapshot Triggered (${reason}) - Pre-generation backup`);
+            
+            this.createSnapshot().catch(err => 
+                console.error('[ContextManager] Snapshot failed:', err)
+            );
+            
+            // Updates state to reflect recent snapshot
+            this.lastSnapshotTokens = this.currentContext.tokenCount;
+            this.messagesSinceLastSnapshot = 0;
+        }
     }
-    this.snapshotManager.checkThresholds(
-      this.currentContext.tokenCount + this.inflightTokens,
-      this.currentContext.maxTokens
-    );
-    
-    // Check if compression is needed (proactive check)
-    if (this.config.compression.enabled) {
-      const usage = this.getUsage();
-      // Normalize to fraction (0.0-1.0) for consistent comparison
-      const usageFraction = usage.percentage / 100;
-      if (usageFraction >= this.config.compression.threshold) {
-        await this.compress();
+
+    // Check thresholds and compression - ONLY ON OLLAMA RESPONSE (assistant messages)
+    // This defers the "Context is full" or "Summarizing..." events until after the LLM has responded.
+    // We rely on the 85% safety buffer (targetSize vs hardware max) to handle user input overflow safely.
+    if (message.role === 'assistant') {
+      try {
+        console.debug('[ContextManager] calling snapshotManager.checkThresholds', { currentTokens: this.currentContext.tokenCount, maxTokens: this.currentContext.maxTokens });
+      } catch (_e) {
+        // ignore logging errors
+      }
+      this.snapshotManager.checkThresholds(
+        this.currentContext.tokenCount + this.inflightTokens,
+        this.currentContext.maxTokens
+      );
+      
+      // Update last snapshot tracking if snapshot manager triggered one (heuristic)
+      // Ideally snapshotManager would emit an event, but we can also track it here loosely
+      if (this.currentContext.tokenCount > (this.lastSnapshotTokens || 0)) {
+           // We don't update here to force specific debouncing, we let the Safety Logic handle the user side
+      }
+
+      // Check if compression is needed (proactive check)
+      if (this.config.compression.enabled) {
+        const usage = this.getUsage();
+        // Normalize to fraction (0.0-1.0) for consistent comparison
+        const usageFraction = usage.percentage / 100;
+        if (usageFraction >= this.config.compression.threshold) {
+          await this.compress();
+        }
       }
     }
     
@@ -752,6 +849,7 @@ export class ConversationContextManager extends EventEmitter implements ContextM
     
     // Replace current context
     this.currentContext = context;
+    this.messagesSinceLastSnapshot = 0;
     
     // Update context pool
     this.contextPool.setCurrentTokens(context.tokenCount);
@@ -1157,7 +1255,7 @@ export class ConversationContextManager extends EventEmitter implements ContextM
       this.emit('rollover-snapshot-created', { snapshot });
       console.log('[ContextManager] Rollover snapshot created', { id: snapshot.id });
     } catch (error) {
-      console.error('[ContextManager] Rollover snapshot creation failed', error);
+      if (!isTestEnv) console.error('[ContextManager] Rollover snapshot creation failed', error);
       this.emit('snapshot-error', error);
     }
     

@@ -194,7 +194,7 @@ describe('Property 14: Integration Test Cleanup', () => {
           async (resourceCount) => {
             const tracker = createResourceTracker();
             const cleanupOrder: number[] = [];
-            const cleanupPromises: Promise<void>[] = [];
+            const _cleanupPromises: Promise<void>[] = [];
             
             // Track resources with async cleanup
             for (let i = 0; i < resourceCount; i++) {
@@ -207,7 +207,10 @@ describe('Property 14: Integration Test Cleanup', () => {
                 },
               });
             }
-            
+
+            // Perform cleanup of all tracked resources
+            await tracker.cleanupAll();
+
             // All resources should be cleaned
             expect(cleanupOrder).toHaveLength(resourceCount);
             expect(tracker.hasUncleaned()).toBe(false);

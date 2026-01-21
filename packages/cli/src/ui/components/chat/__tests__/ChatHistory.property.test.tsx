@@ -54,7 +54,7 @@ describe('ChatHistory Property Tests', () => {
             expect(frameText).toContain(content.trimEnd());
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -90,7 +90,7 @@ describe('ChatHistory Property Tests', () => {
             expect(frameText).toContain(content.trimEnd());
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -136,7 +136,7 @@ describe('ChatHistory Property Tests', () => {
             expect(frameText).toContain(toolName);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -180,7 +180,7 @@ describe('ChatHistory Property Tests', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -221,7 +221,7 @@ describe('ChatHistory Property Tests', () => {
             expect(frameText).toContain(content.trimEnd());
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 

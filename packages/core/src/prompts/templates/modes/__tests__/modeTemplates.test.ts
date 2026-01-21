@@ -229,14 +229,14 @@ describe('Mode Templates', () => {
     });
 
     it('should have all templates as non-empty strings', () => {
-      for (const [mode, template] of Object.entries(MODE_TEMPLATES)) {
+      for (const [_mode, template] of Object.entries(MODE_TEMPLATES)) {
         expect(typeof template).toBe('string');
         expect(template.length).toBeGreaterThan(0);
       }
     });
 
     it('should have reasonable template lengths', () => {
-      for (const [mode, template] of Object.entries(MODE_TEMPLATES)) {
+      for (const [_mode, template] of Object.entries(MODE_TEMPLATES)) {
         // Templates should be at least 50 characters
         expect(template.length).toBeGreaterThan(50);
         // Templates should be less than 10000 characters
@@ -247,7 +247,7 @@ describe('Mode Templates', () => {
 
   describe('Template Rendering', () => {
     it('should render templates without errors', () => {
-      for (const [mode, template] of Object.entries(MODE_TEMPLATES)) {
+      for (const [_mode, template] of Object.entries(MODE_TEMPLATES)) {
         expect(() => {
           const rendered = template.toString();
           expect(rendered).toBeDefined();
@@ -263,7 +263,7 @@ describe('Mode Templates', () => {
     });
 
     it('should not have leading/trailing excessive whitespace', () => {
-      for (const [mode, template] of Object.entries(MODE_TEMPLATES)) {
+      for (const [_mode, template] of Object.entries(MODE_TEMPLATES)) {
         // Should not start with more than 2 newlines
         expect(template).not.toMatch(/^\n{3,}/);
         // Should not end with more than 2 newlines

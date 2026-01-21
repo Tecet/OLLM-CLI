@@ -292,7 +292,9 @@ export class HookRunner {
         return true;
       } else {
         // Skip hook if not approved
-        console.warn(`Hook ${hook.name} was not approved and will be skipped`);
+        if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
+          console.warn(`Hook ${hook.name} was not approved and will be skipped`);
+        }
         return false;
       }
     }

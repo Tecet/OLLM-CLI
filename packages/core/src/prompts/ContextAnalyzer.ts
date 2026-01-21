@@ -378,8 +378,8 @@ export class ContextAnalyzer {
     // Tools used: combine explicit toolCalls and heuristic underscore-named tokens
     const toolsFromCalls: string[] = [];
     for (const m of messages) {
-      if ((m as any).toolCalls && Array.isArray((m as any).toolCalls)) {
-        for (const t of (m as any).toolCalls) {
+      if (m.toolCalls && Array.isArray(m.toolCalls)) {
+        for (const t of m.toolCalls) {
           if (t && t.name) toolsFromCalls.push(t.name);
         }
       }

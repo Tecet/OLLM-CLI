@@ -97,20 +97,25 @@ export class PathSanitizer {
    * @returns true if the path is within workspace, false otherwise
    */
   isWithinWorkspace(inputPath: string, workspaceRoot: string): boolean {
-    // Sanitize both paths to get absolute normalized paths
-    const sanitizedPath = this.sanitize(inputPath);
-    const sanitizedRoot = path.resolve(workspaceRoot);
-    
-    // Check if the path starts with the workspace root
-    // Use path.relative to check if the path is within the workspace
-    const relativePath = path.relative(sanitizedRoot, sanitizedPath);
-    
-    // If relative path starts with '..' or is absolute, it's outside workspace
-    if (relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
+    try {
+      // Sanitize both paths to get absolute normalized paths
+      const sanitizedPath = this.sanitize(inputPath);
+      const sanitizedRoot = path.resolve(workspaceRoot);
+      
+      // Check if the path starts with the workspace root
+      // Use path.relative to check if the path is within the workspace
+      const relativePath = path.relative(sanitizedRoot, sanitizedPath);
+      
+      // If relative path starts with '..' or is absolute, it's outside workspace
+      if (relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
+        return false;
+      }
+      
+      return true;
+    } catch {
+      // If sanitize throws (e.g., due to traversal), it's not within workspace
       return false;
     }
-    
-    return true;
   }
 
   /**
@@ -141,7 +146,15 @@ export class PathSanitizer {
     const sanitized = this.sanitize(inputPath);
     
     // Then check workspace boundaries
-    if (!this.isWithinWorkspace(inputPath, workspaceRoot)) {
+    try {
+      if (!this.isWithinWorkspace(inputPath, workspaceRoot)) {
+        throw new WorkspaceBoundaryError(sanitized, workspaceRoot);
+      }
+    } catch (error) {
+      if (error instanceof WorkspaceBoundaryError) {
+        throw error;
+      }
+      // If isWithinWorkspace threw for another reason, treat as boundary error
       throw new WorkspaceBoundaryError(sanitized, workspaceRoot);
     }
     

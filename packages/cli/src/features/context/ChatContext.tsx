@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from 'react';
+import fs from 'fs';
 import { useContextManager } from './ContextManagerContext.js';
 import { commandRegistry } from '../../commands/index.js';
 import { useServices } from './ServiceContext.js';
@@ -90,6 +91,7 @@ export interface ChatState {
   currentInput: string;
   inputMode: 'text' | 'menu';
   menuState: MenuState;
+  statusMessage?: string;
 }
 
 export interface MenuOption {
@@ -139,6 +141,9 @@ export interface ChatContextValue {
   
   /** Set waiting for response state */
   setWaitingForResponse: (waiting: boolean) => void;
+
+  /** Set a sticky status message */
+  setStatusMessage: (message: string | undefined) => void;
 
   /** Current context usage stats */
   contextUsage: {
@@ -198,6 +203,7 @@ export function ChatProvider({
   const [waitingForResponse, setWaitingForResponse] = useState(false);
   const [currentInput, setCurrentInput] = useState('');
   const [selectedLineIndex, setSelectedLineIndex] = useState(0);
+  const [statusMessage, setStatusMessage] = useState<string | undefined>(undefined);
   
   // Menu State
   const [inputMode, setInputMode] = useState<'text' | 'menu'>('text');
@@ -285,12 +291,15 @@ export function ChatProvider({
     };
 
     const handleSummarizing = (_data: unknown) => {
-      // show immediate UI feedback
-      addMessage({
-        role: 'system',
-        content: 'Summarizing conversation history...',
-        excludeFromContext: true,
-      });
+      // show immediate sticky status
+      setStatusMessage('Summarizing conversation history...');
+      
+      // Auto-clear after 5 seconds so it doesn't stay forever if summarization is slow
+      setTimeout(() => {
+        setStatusMessage(current => 
+          current === 'Summarizing conversation history...' ? undefined : current
+        );
+      }, 5000);
     };
 
     const handleAutoSummary = async (data: unknown) => {
@@ -298,6 +307,9 @@ export function ChatProvider({
         const typedData = data as { summary?: { content?: string } };
         const summary = typedData?.summary;
         const text = summary?.content || '[Conversation summary]';
+
+        // Clear sticky status
+        setStatusMessage(undefined);
 
         // Add assistant-visible summary message (do not add it to core context again)
         addMessage({
@@ -325,6 +337,8 @@ export function ChatProvider({
     };
 
     const handleAutoSummaryFailed = async (data: unknown) => {
+      // Clear sticky status
+      setStatusMessage(undefined);
       try {
         const typedData = data as { error?: unknown; reason?: unknown };
         const err = typedData?.error || typedData?.reason || 'Summarization failed';
@@ -352,7 +366,7 @@ export function ChatProvider({
       contextActions.off?.('auto-summary-created', handleAutoSummary);
       contextActions.off?.('auto-summary-failed', handleAutoSummaryFailed);
     };
-  }, [contextActions, contextManagerState.usage, addMessage, sendMessage]);
+  }, [contextActions, contextManagerState.usage, addMessage]);
 
   useEffect(() => {
 
@@ -660,7 +674,6 @@ export function ChatProvider({
         
         // DEBUG: Write context to file before filtering
         try {
-          const fs = require('fs');
           fs.appendFileSync('context-before-filter.log', `\n[${new Date().toISOString()}] Turn ${turnCount}\n`);
           fs.appendFileSync('context-before-filter.log', `Total messages: ${currentContext.length}\n`);
           currentContext.forEach((m: ContextMessage, i: number) => {
@@ -1079,6 +1092,7 @@ export function ChatProvider({
       currentInput,
       inputMode,
       menuState,
+      statusMessage,
     },
     sendMessage,
     cancelGeneration,
@@ -1089,6 +1103,7 @@ export function ChatProvider({
     updateMessage,
     setStreaming,
     setWaitingForResponse,
+    setStatusMessage,
     contextUsage,
     setInputMode,
     setMenuState: (updates) => setMenuState(prev => ({ ...prev, ...updates })),

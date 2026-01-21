@@ -39,11 +39,11 @@ describe('Build Output Shebang', () => {
             return false;
           }
 
-          // Read the first line of the build output
+          // Read the first line of the build output and normalize line endings
           const content = readFileSync(outputPath, 'utf-8');
-          const firstLine = content.split('\n')[0];
+          const firstLine = content.split(/\r?\n/)[0].replace(/\uFEFF/, '').trim();
 
-          // Property: The first line must be the shebang
+          // Property: The first line must be the shebang (normalize CRLF/BOM differences)
           expect(firstLine).toBe(expectedShebang);
 
           return true;
@@ -57,7 +57,7 @@ describe('Build Output Shebang', () => {
     // Additional unit test to ensure the shebang is byte-for-byte correct
     if (existsSync(distPath)) {
       const content = readFileSync(distPath, 'utf-8');
-      const firstLine = content.split('\n')[0];
+      const firstLine = content.split(/\r?\n/)[0].replace(/\uFEFF/, '').trim();
 
       expect(firstLine).toBe(expectedShebang);
       expect(firstLine.startsWith('#!')).toBe(true);

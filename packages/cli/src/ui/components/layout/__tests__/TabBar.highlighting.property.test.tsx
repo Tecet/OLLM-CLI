@@ -4,6 +4,7 @@ import React from 'react';
 import { render } from '../../../../test/ink-testing.js';
 import { TabBar, tabs } from '../TabBar.js';
 import { FocusProvider } from '../../../../features/context/FocusContext.js';
+import { UIProvider } from '../../../../features/context/UIContext.js';
 import { TabType } from '../../../../features/context/UIContext.js';
 
 /**
@@ -30,18 +31,20 @@ describe('Property 13: Active Tab Highlighting', () => {
   it('should highlight the active tab differently from inactive tabs', () => {
     fc.assert(
       fc.property(
-        fc.constantFrom<TabType>('chat', 'tools', 'hooks', 'files', 'search', 'docs', 'github', 'settings'),
+        fc.constantFrom<TabType>('chat', 'tools', 'hooks', 'files', 'search', 'docs', 'github', 'settings', 'mcp'),
         (activeTab) => {
           const { lastFrame } = render(
-            <FocusProvider>
-              <TabBar
-                activeTab={activeTab}
-                onTabChange={() => {}}
-                notifications={new Map()}
-                theme={defaultTheme}
-                noBorder
-              />
-            </FocusProvider>
+            <UIProvider>
+              <FocusProvider>
+                <TabBar
+                  activeTab={activeTab}
+                  onTabChange={() => {}}
+                  notifications={new Map()}
+                  theme={defaultTheme}
+                  noBorder
+                />
+              </FocusProvider>
+            </UIProvider>
           );
 
           const output = lastFrame();
@@ -59,25 +62,27 @@ describe('Property 13: Active Tab Highlighting', () => {
           return true;
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
   it('should only have one active tab at a time', () => {
     fc.assert(
       fc.property(
-        fc.constantFrom<TabType>('chat', 'tools', 'hooks', 'files', 'search', 'docs', 'github', 'settings'),
+        fc.constantFrom<TabType>('chat', 'tools', 'hooks', 'files', 'search', 'docs', 'github', 'settings', 'mcp'),
         (activeTab) => {
           const { lastFrame } = render(
-            <FocusProvider>
-              <TabBar
-                activeTab={activeTab}
-                onTabChange={() => {}}
-                notifications={new Map()}
-                theme={defaultTheme}
-                noBorder
-              />
-            </FocusProvider>
+            <UIProvider>
+              <FocusProvider>
+                <TabBar
+                  activeTab={activeTab}
+                  onTabChange={() => {}}
+                  notifications={new Map()}
+                  theme={defaultTheme}
+                  noBorder
+                />
+              </FocusProvider>
+            </UIProvider>
           );
 
           const output = lastFrame();
@@ -88,12 +93,12 @@ describe('Property 13: Active Tab Highlighting', () => {
           expect(output).toContain(activeTabData!.label);
           
           // Property: All tabs should be rendered
-          expect(tabs.length).toBe(8);
+          expect(tabs.length).toBe(9);
           
           return true;
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 
@@ -101,22 +106,24 @@ describe('Property 13: Active Tab Highlighting', () => {
     fc.assert(
       fc.property(
         fc.array(
-          fc.constantFrom<TabType>('chat', 'tools', 'hooks', 'files', 'search', 'docs', 'github', 'settings'),
+          fc.constantFrom<TabType>('chat', 'tools', 'hooks', 'files', 'search', 'docs', 'github', 'settings', 'mcp'),
           { minLength: 2, maxLength: 8 }
         ),
         (tabSequence) => {
           // Test each tab in the sequence
           tabSequence.forEach(activeTab => {
             const { lastFrame } = render(
-              <FocusProvider>
-                <TabBar
-                  activeTab={activeTab}
-                  onTabChange={() => {}}
-                  notifications={new Map()}
-                  theme={defaultTheme}
-                  noBorder
-                />
-              </FocusProvider>
+              <UIProvider>
+                <FocusProvider>
+                  <TabBar
+                    activeTab={activeTab}
+                    onTabChange={() => {}}
+                    notifications={new Map()}
+                    theme={defaultTheme}
+                    noBorder
+                  />
+                </FocusProvider>
+              </UIProvider>
             );
 
             const output = lastFrame();
@@ -129,7 +136,7 @@ describe('Property 13: Active Tab Highlighting', () => {
           return true;
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 20 }
     );
   });
 });

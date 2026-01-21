@@ -583,7 +583,7 @@ describe('Service Integration Tests', () => {
   describe('Multi-Service Integration Scenarios', () => {
     it('should handle session recording + compression + loop detection together', async () => {
       const recordingService = new ChatRecordingService({ dataDir: fixture.getTempDir() });
-      const compressionService = new ChatCompressionService();
+      const _compressionService = new ChatCompressionService();
       const loopDetectionService = new LoopDetectionService({
         maxTurns: 10,
         repeatThreshold: 3,

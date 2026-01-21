@@ -268,7 +268,7 @@ describeWindows('Snapshot Storage - Windows Specific', () => {
         metadata: {},
       };
 
-      const snapshot = await storage.save('session-1', context);
+      const _snapshot = await storage.save('session-1', context);
       
       // Verify no .tmp files left behind
       const sessionDir = path.join(testDir, 'session-1');

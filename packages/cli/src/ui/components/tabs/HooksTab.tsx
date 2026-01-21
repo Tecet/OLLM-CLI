@@ -399,9 +399,12 @@ export function HooksTab({ windowSize = 30, windowWidth }: HooksTabProps) {
               🎣 Hooks Configuration
             </Text>
           </Box>
-          <Box flexShrink={1} marginLeft={1}>
-            <Text wrap="truncate-end" color={hasFocus ? uiState.theme.text.primary : uiState.theme.text.secondary} dimColor={!hasFocus}>
-              ↑↓:Nav {ACTION_ICONS.toggle}Enter:Toggle {ACTION_ICONS.add}A:Add {ACTION_ICONS.edit}E:Edit {ACTION_ICONS.delete}D:Del {ACTION_ICONS.test}T:Test {ACTION_ICONS.exit}0/Esc:Exit
+          <Box flexShrink={1} marginLeft={1} flexDirection="column">
+            <Text wrap="wrap" color={hasFocus ? uiState.theme.text.primary : uiState.theme.text.secondary} dimColor={!hasFocus}>
+              ↑↓:Nav {ACTION_ICONS.toggle}Enter:Toggle {ACTION_ICONS.add}A:Add {ACTION_ICONS.edit}E:Edit {ACTION_ICONS.delete}D:Del
+            </Text>
+            <Text wrap="wrap" color={hasFocus ? uiState.theme.text.primary : uiState.theme.text.secondary} dimColor={!hasFocus}>
+              {ACTION_ICONS.test}T:Test {ACTION_ICONS.exit}0/Esc:Exit
             </Text>
           </Box>
         </Box>

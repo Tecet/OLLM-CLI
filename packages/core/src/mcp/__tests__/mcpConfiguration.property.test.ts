@@ -97,7 +97,7 @@ describe('Property 40: MCP Configuration Effects', () => {
             },
           };
 
-          const client = new DefaultMCPClient(config);
+          const _client = new DefaultMCPClient(config);
 
           // Config should be stored
           expect(config.servers).toHaveProperty(serverName);
@@ -113,7 +113,7 @@ describe('Property 40: MCP Configuration Effects', () => {
       fc.asyncProperty(
         fc.boolean(),
         fc.integer({ min: 1, max: 60000 }),
-        async (enabled, connectionTimeout) => {
+        async (_enabled, _connectionTimeout) => {
           // Create config with various values
           const client = new DefaultMCPClient(config);
 

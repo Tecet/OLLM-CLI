@@ -11,8 +11,16 @@ export default defineConfig({
     },
   },
   test: {
+  // Global setup: configure fast-check runs and reduce noisy logs
+  setupFiles: ['.vitest.setup.ts'],
     globals: true,
     environment: 'node',
+    environmentMatchGlobs: [
+      // Use jsdom for React component tests
+      ['**/*.test.tsx', 'jsdom'],
+      ['**/ui/**/*.test.ts', 'jsdom'],
+      ['**/components/**/*.test.ts', 'jsdom'],
+    ],
     include: ['**/*.test.ts', '**/*.test.tsx'],
     // Exclude documentation-related tests and doc folders
     exclude: [
@@ -27,13 +35,12 @@ export default defineConfig({
     hookTimeout: 30000, // 30 seconds for setup/teardown
     // Memory optimization settings
     pool: 'forks', // Use forks instead of threads for better memory isolation
-    poolOptions: {
-      forks: {
-        singleFork: false, // Allow multiple forks
-        maxForks: 4, // Limit concurrent forks to reduce memory usage (was unlimited)
-        minForks: 1,
-        execArgv: ['--max-old-space-size=4096'], // 4GB per worker
-      },
+    // Vitest 4: move previous `poolOptions.forks` to top-level `forks`
+    forks: {
+      singleFork: false, // Allow multiple forks
+      maxForks: 4, // Limit concurrent forks to reduce memory usage (was unlimited)
+      minForks: 1,
+      execArgv: ['--max-old-space-size=4096'], // 4GB per worker
     },
     maxConcurrency: 4, // Limit concurrent tests within a file
     isolate: true, // Isolate test environments

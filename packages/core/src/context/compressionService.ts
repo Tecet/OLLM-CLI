@@ -193,7 +193,7 @@ export class CompressionService implements ICompressionService {
   }
 
   /**
-   * Truncate strategy: Remove oldest messages until under target
+   * Truncate strategy: Remove oldest messages (excluding USER) until under target
    * Always preserves system prompt (first message with role='system')
    * NEVER compresses user messages - they are preserved separately
    * 
@@ -215,30 +215,35 @@ export class CompressionService implements ICompressionService {
       };
     }
 
-    // NEVER compress user messages - filter them out
+    // NEVER compress user messages - isolate them to strict preservation
     const userMessages = messages.filter((m) => m.role === 'user');
+    
+    // Candidates for truncation: everything else
     const nonUserMessages = messages.filter((m) => m.role !== 'user');
 
     // Always preserve system prompt if it exists (Requirement 5.2)
-    const _systemPrompt = nonUserMessages.find((m) => m.role === 'system');
-    const nonSystemMessages = nonUserMessages.filter((m) => m.role !== 'system');
+    const systemPromptMessage = nonUserMessages.find((m) => m.role === 'system');
+    
+    // Messages actually eligible for removal (Assistant, Tool, etc., minus system prompt)
+    const removableMessages = nonUserMessages.filter((m) => m.role !== 'system');
 
     // Calculate target tokens for preserved messages (Fractional Preservation)
+    // IMPORTANT: The budget applies to the *removable* messages we keep
     const targetTokens = this.calculatePreserveTokens(
-      nonUserMessages,
+      removableMessages,
       strategy.preserveRecent
     );
 
     // Start from the end and work backwards, keeping messages until we hit the target
-    const preserved: Message[] = [];
+    const preservedRemovable: Message[] = [];
     let currentTokens = 0;
 
-    for (let i = nonSystemMessages.length - 1; i >= 0; i--) {
-      const message = nonSystemMessages[i];
+    for (let i = removableMessages.length - 1; i >= 0; i--) {
+      const message = removableMessages[i];
       const messageTokens = this.countMessageTokens(message);
 
       if (currentTokens + messageTokens <= targetTokens) {
-        preserved.unshift(message);
+        preservedRemovable.unshift(message);
         currentTokens += messageTokens;
       } else {
         // Stop adding messages once we exceed target
@@ -246,29 +251,45 @@ export class CompressionService implements ICompressionService {
       }
     }
 
-    // Add user messages back to preserved (they're never compressed)
-    const allPreserved = [...userMessages, ...preserved]
-      .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+    // Reassemble: System Prompt + All User Messages + Preserved Assistant/Tool
+    const allPreserved = [
+        ...userMessages,
+        ...(systemPromptMessage ? [systemPromptMessage] : []),
+        ...preservedRemovable
+    ].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
 
     // Create summary message indicating truncation
-    const truncatedCount = nonSystemMessages.length - preserved.length;
-    const summary = this.createTruncationSummary(truncatedCount);
+    const truncatedCount = removableMessages.length - preservedRemovable.length;
+    // Only create summary if we actually removed something
+    const summary = truncatedCount > 0 
+        ? this.createTruncationSummary(truncatedCount)
+        : null;
 
+    // Calculate tokens
     const userTokens = this.countMessagesTokens(userMessages);
-    const compressedTokens = this.countMessageTokens(summary) + currentTokens + userTokens;
+    const systemTokens = systemPromptMessage ? this.countMessageTokens(systemPromptMessage) : 0;
+    const preservedRemovableTokens = this.countMessagesTokens(preservedRemovable);
+    
+    const compressedTokens = (summary ? this.countMessageTokens(summary) : 0) + 
+                             preservedRemovableTokens + 
+                             userTokens + 
+                             systemTokens;
+                             
     const originalTokens = this.countMessagesTokens(messages);
 
     return {
-      summary,
+      summary: summary || this.createEmptySummary(), // fallback for type safety
       preserved: allPreserved,
       originalTokens,
       compressedTokens,
-      compressionRatio: compressedTokens / originalTokens,
+      compressionRatio: originalTokens > 0 ? compressedTokens / originalTokens : 1,
+      // If we didn't actually compress anything (summary is null), we might want to signal that,
+      // but for now we follow the interface.
     };
   }
 
   /**
-   * Summarize strategy: Use LLM to generate summary of older messages
+   * Summarize strategy: Use LLM to generate summary of older messages (excluding USER)
    * Preserves system prompt and recent messages, replaces old messages with summary
    * NEVER compresses user messages - they are preserved separately
    * 
@@ -290,64 +311,67 @@ export class CompressionService implements ICompressionService {
       };
     }
 
-    // NEVER compress user messages - filter them out
+    // NEVER compress user messages - isolate them
     const userMessages = messages.filter((m) => m.role === 'user');
+    
+    // Candidates for summarization
     const nonUserMessages = messages.filter((m) => m.role !== 'user');
 
-    // Always preserve system prompt if it exists
-    const _systemPrompt = nonUserMessages.find((m) => m.role === 'system');
-    const nonSystemMessages = nonUserMessages.filter((m) => m.role !== 'system');
+    // Always preserve system prompt
+    const systemPromptMessage = nonUserMessages.find((m) => m.role === 'system');
+    
+    // Messages eligible for summarization (Assistant, Tool, excluding system prompt)
+    const summarizableMessages = nonUserMessages.filter((m) => m.role !== 'system');
 
-    if (nonSystemMessages.length === 0) {
-      return {
+    if (summarizableMessages.length === 0) {
+       // Nothing to summarize (only system/user messages present)
+       const allPreserved = messages.sort((a,b) => a.timestamp.getTime() - b.timestamp.getTime());
+       return {
         summary: this.createEmptySummary(),
-        preserved: userMessages,
+        preserved: allPreserved,
         originalTokens: this.countMessagesTokens(messages),
-        compressedTokens: this.countMessagesTokens(userMessages),
-        compressionRatio: this.countMessagesTokens(userMessages) / this.countMessagesTokens(messages),
+        compressedTokens: this.countMessagesTokens(messages),
+        compressionRatio: 1,
       };
     }
 
     // Calculate how many recent tokens to preserve (Fractional Preservation)
     const recentTokenBudget = this.calculatePreserveTokens(
-      nonUserMessages,
+      summarizableMessages,
       strategy.preserveRecent
     );
 
-    // Find recent messages to preserve
-    const preserved: Message[] = [];
+    // Find recent messages to preserve (don't summarize these)
+    const preservedRecent: Message[] = [];
     let recentTokens = 0;
 
-    for (let i = nonSystemMessages.length - 1; i >= 0; i--) {
-      const message = nonSystemMessages[i];
+    for (let i = summarizableMessages.length - 1; i >= 0; i--) {
+      const message = summarizableMessages[i];
       const messageTokens = this.countMessageTokens(message);
 
       if (recentTokens + messageTokens <= recentTokenBudget) {
-        preserved.unshift(message);
+        preservedRecent.unshift(message);
         recentTokens += messageTokens;
       } else {
         break;
       }
     }
 
-    // Messages to summarize are everything not in recent
-    const messagesToSummarize = nonSystemMessages.slice(
+    // Messages to summarize are the older ones
+    const messagesToSummarize = summarizableMessages.slice(
       0,
-      nonSystemMessages.length - preserved.length
+      summarizableMessages.length - preservedRecent.length
     );
 
     if (messagesToSummarize.length === 0) {
-      // Nothing to summarize, add user messages back and return
-      const allPreserved = [...userMessages, ...preserved]
-        .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
-      
-      const userTokens = this.countMessagesTokens(userMessages);
-      return {
+      // Nothing old enough to summarize
+      const allPreserved = messages.sort((a,b) => a.timestamp.getTime() - b.timestamp.getTime());
+       return {
         summary: this.createEmptySummary(),
         preserved: allPreserved,
         originalTokens: this.countMessagesTokens(messages),
-        compressedTokens: recentTokens + userTokens,
-        compressionRatio: (recentTokens + userTokens) / this.countMessagesTokens(messages),
+        compressedTokens: this.countMessagesTokens(messages),
+        compressionRatio: 1,
       };
     }
 
@@ -376,12 +400,23 @@ export class CompressionService implements ICompressionService {
       timestamp: new Date(),
     };
 
-    // Add user messages back to preserved (they're never compressed)
-    const allPreserved = [...userMessages, ...preserved]
-      .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+    // Reassemble: System Prompt + All User Messages + Preserved Recent Assistant/Tool
+    const allPreserved = [
+        ...userMessages,
+        ...(systemPromptMessage ? [systemPromptMessage] : []),
+        ...preservedRecent
+    ].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
 
+    // Calculate tokens
     const userTokens = this.countMessagesTokens(userMessages);
-    const compressedTokens = this.countMessageTokens(summary) + recentTokens + userTokens;
+    const systemTokens = systemPromptMessage ? this.countMessageTokens(systemPromptMessage) : 0;
+    const recentPreservedTokens = this.countMessagesTokens(preservedRecent);
+    
+    // Note: The summary is technically "added" to the context, replacing the summarized messages
+    const compressedTokens = this.countMessageTokens(summary) + 
+                             recentPreservedTokens + 
+                             userTokens + 
+                             systemTokens;
     const originalTokens = this.countMessagesTokens(messages);
 
     return {
@@ -389,7 +424,7 @@ export class CompressionService implements ICompressionService {
       preserved: allPreserved,
       originalTokens,
       compressedTokens,
-      compressionRatio: compressedTokens / originalTokens,
+      compressionRatio: originalTokens > 0 ? compressedTokens / originalTokens : 1,
     };
   }
 
@@ -416,12 +451,29 @@ export class CompressionService implements ICompressionService {
       };
     }
 
-    // NEVER compress user messages - filter them out
+    // NEVER compress user messages - isolate them
     const userMessages = messages.filter((m) => m.role === 'user');
     const nonUserMessages = messages.filter((m) => m.role !== 'user');
 
     // Always preserve system prompt if it exists
     const _systemPrompt = nonUserMessages.find((m) => m.role === 'system');
+
+    // RECURSIVE LOGIC: Look for existing summary to merge
+    let previousSummary: string | undefined;
+    const existingSummaryIndex = nonUserMessages.findIndex(m => 
+        m.role === 'system' && m.content.startsWith('[Recursive Context Summary]')
+    );
+
+    if (existingSummaryIndex !== -1) {
+        // Extract content
+        const summaryMsg = nonUserMessages[existingSummaryIndex];
+        previousSummary = summaryMsg.content.replace('[Recursive Context Summary]\n', '');
+        
+        // Remove old summary from valid messages
+        nonUserMessages.splice(existingSummaryIndex, 1);
+    }
+    
+    // Valid non-system messages
     const nonSystemMessages = nonUserMessages.filter((m) => m.role !== 'system');
 
     if (nonSystemMessages.length === 0) {
@@ -434,9 +486,9 @@ export class CompressionService implements ICompressionService {
       };
     }
 
-    // Calculate token budgets (Fractional Preservation)
+    // Calculate token budget (Fractional Preservation)
     const recentTokenBudget = this.calculatePreserveTokens(
-      nonUserMessages,
+      nonSystemMessages,
       strategy.preserveRecent
     );
 
@@ -462,7 +514,7 @@ export class CompressionService implements ICompressionService {
       nonSystemMessages.length - preserved.length
     );
 
-    if (olderMessages.length === 0) {
+    if (olderMessages.length === 0 && !previousSummary) {
       // Nothing to compress, add user messages back and return
       const allPreserved = [...userMessages, ...preserved]
         .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
@@ -480,6 +532,7 @@ export class CompressionService implements ICompressionService {
     // Split older messages into "very old" (truncate) and "middle" (summarize)
     const splitPoint = Math.floor(olderMessages.length * 0.5);
     const middleMessages = olderMessages.slice(splitPoint);
+    // veryOldMessages are implicitly truncated by not including them in summary
 
     // Generate summary of middle messages using LLM if available
     let summaryText: string;
@@ -487,7 +540,9 @@ export class CompressionService implements ICompressionService {
       try {
         summaryText = await this.generateLLMSummary(
           middleMessages,
-          strategy.summaryMaxTokens
+          strategy.summaryMaxTokens,
+          strategy.summaryTimeout,
+          previousSummary // Pass previous summary for merging
         );
       } catch (error) {
         // Fall back to placeholder if LLM summarization fails
@@ -511,12 +566,22 @@ export class CompressionService implements ICompressionService {
       timestamp: new Date(),
     };
 
-    // Add user messages back to preserved (they're never compressed)
-    const allPreserved = [...userMessages, ...preserved]
-      .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+    // Reassemble: System Prompt + All User Messages + Preserved Recent
+    const allPreserved = [
+        ...userMessages,
+        ...(_systemPrompt ? [_systemPrompt] : []),
+        ...preserved
+    ].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
 
+    // Calculate tokens
     const userTokens = this.countMessagesTokens(userMessages);
-    const compressedTokens = this.countMessageTokens(summary) + recentTokens + userTokens;
+    const systemTokens = _systemPrompt ? this.countMessageTokens(_systemPrompt) : 0;
+    const recentPreservedTokens = this.countMessagesTokens(preserved);
+    
+    const compressedTokens = this.countMessageTokens(summary) + 
+                             recentPreservedTokens + 
+                             userTokens + 
+                             systemTokens;
     const originalTokens = this.countMessagesTokens(messages);
 
     return {
@@ -524,21 +589,23 @@ export class CompressionService implements ICompressionService {
       preserved: allPreserved,
       originalTokens,
       compressedTokens,
-      compressionRatio: compressedTokens / originalTokens,
+      compressionRatio: originalTokens > 0 ? compressedTokens / originalTokens : 1,
     };
   }
 
   /**
-   * Generate a summary using the LLM
+   * Generate a summary using the LLM with Recursive/Rolling logic
    * 
    * @param messages - Messages to summarize
    * @param maxTokens - Maximum tokens for the summary
+   * @param previousSummary - (Optional) Content of the previous summary to merge
    * @returns Summary text
    */
   private async generateLLMSummary(
     messages: Message[],
     maxTokens: number,
-    timeoutMs?: number
+    timeoutMs?: number,
+    previousSummary?: string
   ): Promise<string> {
     if (!this.provider || !this.model) {
       throw new Error('Provider and model must be set for LLM summarization');
@@ -549,13 +616,47 @@ export class CompressionService implements ICompressionService {
       .map((msg) => `${msg.role}: ${msg.content}`)
       .join('\n\n');
 
-    // Create a summarization prompt
-    const summaryPrompt = `Please provide a concise summary of the following conversation. Focus on the key topics discussed, important decisions made, and any action items or conclusions. Keep the summary under ${maxTokens} tokens.
+    let summaryPrompt = '';
+
+    if (previousSummary) {
+        // RECURSIVE MODE: We have a previous summary, so we must merge and update
+        summaryPrompt = `You are a specialized Context Compressor. Your goal is to maintain a coherent "Long-Term Memory" for an AI session.
+
+INPUTS:
+1. PREVIOUS SUMMARY: A summary of the conversation up to this point.
+2. NEW CONVERSATION: Recent messages that need to be compressed.
+
+INSTRUCTIONS:
+- Combine the PREVIOUS SUMMARY and NEW CONVERSATION into a single, updated summary.
+- You MUST structure the output into two distinct sections:
+  1. "🎯 Active Goals": The current high-level objectives and immediate next steps. Keep this precise.
+  2. "📜 History Archive": A highly compressed chronological history of key decisions, actions taken, and established facts.
+- Drop irrelevant details from the archives but preserve technical specifics (file paths, variable names) if they are still relevant to the Active Goals.
+- Keep the total output under ${maxTokens} tokens.
+
+PREVIOUS SUMMARY:
+${previousSummary}
+
+NEW CONVERSATION:
+${conversationText}
+
+Updated Summary:`;
+    } else {
+        // FRESH MODE: First time encoding
+        summaryPrompt = `You are a specialized Context Compressor. Your goal is to create a long-term memory for this conversation.
+
+INSTRUCTIONS:
+- Summarize the provided conversation.
+- You MUST structure the output into two distinct sections:
+  1. "🎯 Active Goals": The current high-level objectives and immediate next steps.
+  2. "📜 History Archive": A chronological history of key decisions and actions.
+- Keep the total output under ${maxTokens} tokens.
 
 Conversation:
 ${conversationText}
 
 Summary:`;
+    }
 
     // Call the LLM to generate the summary
     const providerMessages = [
@@ -574,8 +675,8 @@ Summary:`;
         model: this.model,
         messages: providerMessages,
         options: {
-          maxTokens,
-          temperature: 0.3, // Lower temperature for more focused summaries
+            maxTokens: maxTokens + 100, // Allowance for structure
+            temperature: 0.2, // Low temp for factual consistency
         },
         timeout,
       })) {
@@ -595,7 +696,7 @@ Summary:`;
       throw new Error('LLM returned empty summary');
     }
 
-    return `[Previous conversation summary]\n${summaryText.trim()}`;
+    return `[Recursive Context Summary]\n${summaryText.trim()}`;
   }
 
   /**
@@ -606,11 +707,7 @@ Summary:`;
    */
   private createSummaryPlaceholder(messages: Message[]): string {
     const messageCount = messages.length;
-    const userMessages = messages.filter((m) => m.role === 'user').length;
-    const assistantMessages = messages.filter((m) => m.role === 'assistant')
-      .length;
-
-    return `[Conversation summary: ${messageCount} messages compressed (${userMessages} user, ${assistantMessages} assistant)]`;
+    return `[Conversation summary: ${messageCount} messages compressed (LLM unavailable)]`;
   }
 
   /**

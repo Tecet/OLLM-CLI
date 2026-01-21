@@ -4,7 +4,7 @@
 
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { Turn, type ToolRegistry, type Tool, type ChatOptions } from '../turn.js';
+import { Turn, type ToolRegistry, type Tool } from '../turn.js';
 import type {
   ProviderAdapter,
   ProviderRequest,
@@ -240,7 +240,7 @@ describe('Turn Management - Property Tests', () => {
           const messages = [...initialMessages] as Message[];
           const messagesCopy = [...messages];
 
-          const turn = new Turn(provider, toolRegistry, messages);
+          const _turn = new Turn(provider, toolRegistry, messages);
 
           // Verify: Turn maintains reference to messages array
           return messages === messages && messages.length === messagesCopy.length;
