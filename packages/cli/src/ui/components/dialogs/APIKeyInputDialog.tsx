@@ -7,7 +7,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { Box, Text, useInput } from 'ink';
-import type { MCPMarketplaceServer } from '../../services/mcpMarketplace.js';
+import type { MCPMarketplaceServer } from '../../../services/mcpMarketplace.js';
 
 export interface APIKeyInputDialogProps {
   /** Server being installed */
@@ -48,7 +48,7 @@ export function APIKeyInputDialog({ server, onInstall, onCancel }: APIKeyInputDi
     ) || false;
     
     // Try to extract API key URL from description
-    const apiKeyUrl = extractAPIKeyURL(server.description);
+    const apiKeyUrl = server.description ? extractAPIKeyURL(server.description) : null;
     
     return {
       name,

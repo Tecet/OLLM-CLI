@@ -30,7 +30,7 @@ export const PRESET_HYBRID_MODES: Record<string, HybridMode> = {
     description: 'Development with security-first mindset',
     icon: '🔒👨‍💻',
     color: 'purple',
-    modes: ['developer', 'security'],
+    modes: ['developer', 'reviewer'],
     persona: 'Senior Software Engineer with Security Expertise'
   },
   
@@ -40,7 +40,7 @@ export const PRESET_HYBRID_MODES: Record<string, HybridMode> = {
     description: 'Development focused on performance optimization',
     icon: '⚡👨‍💻',
     color: 'magenta',
-    modes: ['developer', 'performance'],
+    modes: ['developer', 'debugger'],
     persona: 'Senior Software Engineer with Performance Expertise'
   },
   
@@ -50,7 +50,7 @@ export const PRESET_HYBRID_MODES: Record<string, HybridMode> = {
     description: 'Debugging with security vulnerability detection',
     icon: '🔒🐛',
     color: 'red-purple',
-    modes: ['debugger', 'security'],
+    modes: ['debugger', 'reviewer'],
     persona: 'Debugging Specialist with Security Awareness'
   },
   
@@ -70,7 +70,7 @@ export const PRESET_HYBRID_MODES: Record<string, HybridMode> = {
     description: 'Development with security, performance, and quality checks',
     icon: '🚀',
     color: 'rainbow',
-    modes: ['developer', 'security', 'performance', 'reviewer'],
+    modes: ['developer', 'debugger', 'reviewer'],
     persona: 'Full Stack Engineer with Comprehensive Expertise'
   }
 };
@@ -140,13 +140,8 @@ export class HybridModeManager {
       assistant: 'Assistant',
       planning: 'Planner',
       developer: 'Developer',
-      tool: 'Tool Expert',
       debugger: 'Debugger',
-      security: 'Security',
-      reviewer: 'Reviewer',
-      performance: 'Performance',
-      prototype: 'Prototyper',
-      teacher: 'Teacher'
+      reviewer: 'Reviewer'
     };
     
     return modes.map(m => modeNames[m]).join(' + ');
@@ -160,13 +155,8 @@ export class HybridModeManager {
       assistant: '💬',
       planning: '📋',
       developer: '👨‍💻',
-      tool: '🔧',
       debugger: '🐛',
-      security: '🔒',
-      reviewer: '👀',
-      performance: '⚡',
-      prototype: '🔬',
-      teacher: '👨‍🏫'
+      reviewer: '👀'
     };
     
     return modes.map(m => modeIcons[m]).join('');
@@ -180,13 +170,8 @@ export class HybridModeManager {
       assistant: 'blue',
       planning: 'yellow',
       developer: 'green',
-      tool: 'cyan',
       debugger: 'red',
-      security: 'purple',
-      reviewer: 'orange',
-      performance: 'magenta',
-      prototype: 'bright-cyan',
-      teacher: 'warm-yellow'
+      reviewer: 'orange'
     };
     
     // For multiple modes, combine colors
@@ -207,13 +192,8 @@ export class HybridModeManager {
       assistant: 'Helpful AI Assistant',
       planning: 'Technical Architect & Planner',
       developer: 'Senior Software Engineer',
-      tool: 'Tool Expert',
       debugger: 'Debugging Specialist',
-      security: 'Security Auditor',
-      reviewer: 'Code Reviewer',
-      performance: 'Performance Engineer',
-      prototype: 'Rapid Prototyper',
-      teacher: 'Technical Educator'
+      reviewer: 'Code Reviewer'
     };
     
     if (modes.length === 1) {
@@ -295,13 +275,8 @@ export class HybridModeManager {
       assistant: 'For general questions and explanations',
       planning: 'For research and design work',
       developer: 'For implementation and coding',
-      tool: 'For enhanced tool usage',
       debugger: 'When analyzing errors and bugs',
-      security: 'When considering security implications',
-      reviewer: 'When assessing code quality',
-      performance: 'When optimizing for speed and efficiency',
-      prototype: 'For quick experiments and proofs-of-concept',
-      teacher: 'When explaining concepts'
+      reviewer: 'When assessing code quality'
     };
     
     return guidance[mode];

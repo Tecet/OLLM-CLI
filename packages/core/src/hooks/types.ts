@@ -22,7 +22,7 @@ export type HookEvent =
 /**
  * Source of a hook determines its trust level
  */
-export type HookSource = 'builtin' | 'user' | 'workspace' | 'downloaded';
+export type HookSource = 'builtin' | 'user' | 'workspace' | 'downloaded' | 'extension';
 
 /**
  * A hook is an executable script or command that runs in response to events

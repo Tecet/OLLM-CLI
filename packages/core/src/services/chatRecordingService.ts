@@ -20,6 +20,7 @@ import type {
   SessionSummary,
 } from './types.js';
 import { sanitizeErrorMessage } from './errorSanitization.js';
+import { validateStoragePath, logPathDiagnostics } from '../utils/pathValidation.js';
 
 /**
  * Configuration options for ChatRecordingService
@@ -34,7 +35,7 @@ export interface ChatRecordingServiceConfig {
  * Default configuration values
  */
 const DEFAULT_CONFIG: Required<ChatRecordingServiceConfig> = {
-  dataDir: join(homedir(), '.ollm', 'session-data'),
+  dataDir: join(homedir(), '.ollm', 'sessions'),
   maxSessions: 100,
   autoSave: true,
 };
@@ -49,6 +50,9 @@ export class ChatRecordingService {
   constructor(config: ChatRecordingServiceConfig = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
     this.sessionCache = new Map();
+    
+    // Log path diagnostics on initialization
+    logPathDiagnostics('Sessions', this.config.dataDir);
   }
 
   /**
@@ -368,6 +372,13 @@ export class ChatRecordingService {
    * Ensure the data directory exists
    */
   private async ensureDataDir(): Promise<void> {
+    // Validate path before creating
+    const validation = validateStoragePath(this.config.dataDir, true);
+    
+    if (!validation.valid) {
+      throw new Error(`Invalid session storage path: ${validation.error}`);
+    }
+    
     try {
       await mkdir(this.config.dataDir, { recursive: true });
     } catch (error) {
@@ -376,5 +387,12 @@ export class ChatRecordingService {
         throw error;
       }
     }
+  }
+  
+  /**
+   * Get the data directory path
+   */
+  getDataDir(): string {
+    return this.config.dataDir;
   }
 }

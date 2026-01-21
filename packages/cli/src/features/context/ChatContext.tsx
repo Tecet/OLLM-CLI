@@ -260,7 +260,7 @@ export function ChatProvider({
           content: `Warning: context usage at ${Math.round(usage.percentage)}%. Compression enabled at ${threshold}%`,
           excludeFromContext: true,
         });
-      } catch (err) {
+      } catch (_err) {
         // ignore
       }
     };
@@ -268,7 +268,7 @@ export function ChatProvider({
     const handleCompressed = async (_data: unknown) => {
       try {
         const msgs = await contextActions.getContext();
-        const summaryMsg = msgs.find((m: any) => typeof m.id === 'string' && m.id.startsWith('summary-')) as any | undefined;
+        const summaryMsg = msgs.find((m: ContextMessage) => typeof m.id === 'string' && m.id.startsWith('summary-')) as ContextMessage | undefined;
         const summaryText = summaryMsg ? summaryMsg.content : '[Conversation summary generated]';
         // Mark that compression occurred so ongoing generation can retry/resume
         compressionOccurredRef.current = true;
@@ -279,7 +279,7 @@ export function ChatProvider({
           content: `Context compressed: ${summaryText}`,
           excludeFromContext: true,
         });
-      } catch (err) {
+      } catch (_err) {
         // ignore
       }
     };
@@ -293,9 +293,10 @@ export function ChatProvider({
       });
     };
 
-    const handleAutoSummary = async (data: any) => {
+    const handleAutoSummary = async (data: unknown) => {
       try {
-        const summary = data?.summary;
+        const typedData = data as { summary?: { content?: string } };
+        const summary = typedData?.summary;
         const text = summary?.content || '[Conversation summary]';
 
         // Add assistant-visible summary message (do not add it to core context again)
@@ -315,24 +316,25 @@ export function ChatProvider({
             waitingForResumeRef.current = true;
             addMessage({ role: 'system', content: 'Summary complete. Type "continue" to resume generation or "stop" to abort.', excludeFromContext: true });
           }
-        } catch (e) {
+        } catch (_e) {
           // ignore
         }
-      } catch (err) {
+      } catch (_err) {
         // ignore
       }
     };
 
-    const handleAutoSummaryFailed = async (data: any) => {
+    const handleAutoSummaryFailed = async (data: unknown) => {
       try {
-        const err = data?.error || data?.reason || 'Summarization failed';
-        const message = typeof err === 'string' ? err : (err?.message || JSON.stringify(err));
+        const typedData = data as { error?: unknown; reason?: unknown };
+        const err = typedData?.error || typedData?.reason || 'Summarization failed';
+        const message = typeof err === 'string' ? err : ((err && typeof err === 'object' && 'message' in err) ? String((err as { message?: unknown }).message) : JSON.stringify(err));
         addMessage({
           role: 'system',
           content: `Summarization failed: ${message}`,
           excludeFromContext: true,
         });
-      } catch (e) {
+      } catch (_e) {
         // ignore
       }
     };
@@ -350,7 +352,7 @@ export function ChatProvider({
       contextActions.off?.('auto-summary-created', handleAutoSummary);
       contextActions.off?.('auto-summary-failed', handleAutoSummaryFailed);
     };
-  }, [contextActions, contextManagerState.usage]);
+  }, [contextActions, contextManagerState.usage, addMessage, sendMessage]);
 
   useEffect(() => {
 
@@ -655,6 +657,20 @@ export function ChatProvider({
         
         // Prepare history from authoritative context manager
         const currentContext = await contextActions.getContext();
+        
+        // DEBUG: Write context to file before filtering
+        try {
+          const fs = require('fs');
+          fs.appendFileSync('context-before-filter.log', `\n[${new Date().toISOString()}] Turn ${turnCount}\n`);
+          fs.appendFileSync('context-before-filter.log', `Total messages: ${currentContext.length}\n`);
+          currentContext.forEach((m: ContextMessage, i: number) => {
+            fs.appendFileSync('context-before-filter.log', `  [${i}] ${m.role} (id: ${m.id}): ${m.content?.substring(0, 100)}...\n`);
+          });
+        } catch (_e) { /* ignore */ }
+        
+        // CRITICAL FIX: Don't filter out checkpoint summaries!
+        // Checkpoint summaries have role='system' but contain compressed conversation history
+        // The main system prompt is passed separately via systemPrompt parameter
         const history = currentContext
           .filter((m: ContextMessage) => m.role !== 'system') // Filter out system messages
           .map((m: ContextMessage) => ({
@@ -724,14 +740,14 @@ export function ChatProvider({
                         if (toReport > 0) {
                           contextActions.reportInflightTokens(toReport);
                         }
-                      } catch (e) {
-                        inflightTokenAccumulatorRef.current = 0;
-                        inflightFlushTimerRef.current = null;
-                      }
+                      } catch (_e) {
+                          inflightTokenAccumulatorRef.current = 0;
+                          inflightFlushTimerRef.current = null;
+                        }
                     }, 500);
                   }
                 }
-              } catch (e) {
+              } catch (_e) {
                 // ignore estimation/report errors
               }
               
@@ -755,11 +771,11 @@ export function ChatProvider({
               try { 
                 if (inflightFlushTimerRef.current) { clearTimeout(inflightFlushTimerRef.current); inflightFlushTimerRef.current = null; inflightTokenAccumulatorRef.current = 0; }
                 contextActions?.clearInflightTokens(); 
-              } catch (e) {}
+              } catch (_e) { /* ignore cleanup errors */ }
               stopLoop = true;
             },
             // onComplete
-            (metrics?: ProviderMetrics) => {
+            (metrics?: ProviderMetrics, _finishReason?: 'stop' | 'length' | 'tool') => {
               const targetId = currentAssistantMsgId;
               if (metrics && assistantMessageIdRef.current === targetId) {
                  setMessages(prev => prev.map(msg => {
@@ -809,13 +825,13 @@ export function ChatProvider({
                 });
               }
               // Flush any pending inflight tokens and clear accounting now that generation completed
-              try {
+              try { 
                 if (inflightFlushTimerRef.current) { clearTimeout(inflightFlushTimerRef.current); inflightFlushTimerRef.current = null; }
                 const pending = inflightTokenAccumulatorRef.current;
                 inflightTokenAccumulatorRef.current = 0;
                 if (pending > 0) { contextActions?.reportInflightTokens(pending); }
                 contextActions?.clearInflightTokens();
-              } catch (e) {}
+              } catch (_e) { /* ignore */ }
             },
             (toolCall: CoreToolCall) => {
                toolCallReceived = toolCall;
@@ -853,19 +869,19 @@ export function ChatProvider({
             compressionRetryCountRef.current += 1;
             compressionOccurredRef.current = false;
             // Cancel any existing provider request and prepare to retry
-            try { cancelRequest(); } catch (e) {}
+            try { cancelRequest(); } catch (_e) { /* ignore */ }
 
             // Ensure the last user message is present in the context after compression
             try {
-              const lastUser = lastUserMessageRef.current;
+                const lastUser = lastUserMessageRef.current;
               if (lastUser && contextActions) {
                 const ctx = await contextActions.getContext();
-                const lastUserInCtx = [...ctx].reverse().find((m: any) => m.role === 'user')?.content;
+                const lastUserInCtx = [...ctx].reverse().find((m: ContextMessage) => m.role === 'user')?.content;
                 if (lastUserInCtx !== lastUser) {
                   await contextActions.addMessage({ role: 'user', content: lastUser });
                 }
               }
-            } catch (e) {
+            } catch (_e) {
               // ignore errors re-adding the user message
             }
 
@@ -1034,7 +1050,7 @@ export function ChatProvider({
         });
       }
     },
-    [addMessage, sendToLLM, setLaunchScreenVisible, contextActions, provider, currentModel, clearChat, modelSupportsTools, serviceContainer]
+    [addMessage, sendToLLM, setLaunchScreenVisible, contextActions, provider, currentModel, clearChat, modelSupportsTools, serviceContainer, cancelRequest]
   );
 
   const cancelGeneration = useCallback(() => {

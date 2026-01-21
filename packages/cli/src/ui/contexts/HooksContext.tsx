@@ -75,10 +75,14 @@ export function useHooks(): HooksContextValue {
   return context;
 }
 
+import type { HookRegistry } from '@ollm/ollm-cli-core/hooks/index.js';
+
 export interface HooksProviderProps {
   children: ReactNode;
   /** Optional SettingsService instance (for testing) */
   settingsService?: SettingsService;
+  /** Optional HookRegistry instance (for testing) */
+  hookRegistry?: HookRegistry;
 }
 
 /**
@@ -86,7 +90,8 @@ export interface HooksProviderProps {
  */
 export function HooksProvider({ 
   children, 
-  settingsService: customSettings
+  settingsService: customSettings,
+  hookRegistry: customRegistry
 }: HooksProviderProps) {
   const [state, setState] = useState<HooksState>({
     categories: [],
@@ -98,13 +103,27 @@ export function HooksProvider({
   });
 
   // Get central hook registry from service container
-  const { container } = useServices();
+  // Try to get the central service container; tests may not provide a ServiceProvider
+  let container: unknown;
+  try {
+    // If a ServiceProvider is present, this will return the container.
+    // If not, `useServices()` throws; we catch and treat container as undefined.
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    container = useServices().container;
+  } catch {
+    container = undefined;
+  }
+
   const hookRegistry = useMemo(() => {
+    if (customRegistry) return customRegistry;
     if (!container) return null;
     return container.getHookService().getRegistry();
-  }, [container]);
+  }, [container, customRegistry]);
   
   const settingsService = useMemo(() => customSettings || SettingsService.getInstance(), [customSettings]);
+  // Debug: log whether we are using a custom settings instance (tests) or the singleton
+  console.debug('[HooksProvider] using customSettings?', !!customSettings);
+  console.debug('[HooksProvider] settingsService identity', settingsService);
 
   /**
    * Categorize hooks by event type
@@ -211,6 +230,12 @@ export function HooksProvider({
 
       // Get enabled state from settings
       const hookSettings = settingsService.getHookSettings();
+      // Debug: snapshot of settings read
+      try {
+        console.debug('[HooksProvider] read hookSettings', JSON.stringify(hookSettings));
+      } catch {
+        console.debug('[HooksProvider] read hookSettings (unserializable)');
+      }
       const enabledHooks = new Set<string>();
       
       for (const hook of allHooks) {
@@ -250,6 +275,7 @@ export function HooksProvider({
       const newEnabledState = !currentlyEnabled;
 
       // Update settings
+      console.debug('[HooksProvider] setHookEnabled', hookId, newEnabledState);
       settingsService.setHookEnabled(hookId, newEnabledState);
 
       // Update local state
@@ -260,6 +286,8 @@ export function HooksProvider({
         } else {
           newEnabledHooks.delete(hookId);
         }
+
+        console.debug('[HooksProvider] updating local enabledHooks for', hookId, '->', newEnabledState);
 
         return {
           ...prev,
@@ -295,14 +323,17 @@ export function HooksProvider({
       // Wait for hook registry to be available
       if (!hookRegistry) return;
       
-      // Load hooks from JSON files
-      await loadHooksFromFiles(hookRegistry);
+      // Load hooks from JSON files only when not using a custom registry (tests provide customRegistry)
+      if (!customRegistry) {
+        await loadHooksFromFiles(hookRegistry);
+      }
+
       // Refresh the UI state
       await refreshHooks();
     };
     
     initializeHooks();
-  }, [hookRegistry, refreshHooks]);
+  }, [hookRegistry, customRegistry, refreshHooks]);
 
   const value: HooksContextValue = {
     state,

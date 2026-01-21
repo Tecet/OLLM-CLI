@@ -49,7 +49,7 @@ import { Clock } from './components/layout/Clock.js';
 import { Terminal } from './components/Terminal.js';
 import { GPUInfo } from './components/layout/StatusBar.js';
 import { WindowSwitcher } from './components/WindowSwitcher.js';
-import { ModelLoadingIndicator } from './components/model/ModelLoadingIndicator.js';
+// Model loading indicator not currently used here
 
 import { ChatTab } from './components/tabs/ChatTab.js';
 import { ToolsTab } from './components/tabs/ToolsTab.js';
@@ -229,6 +229,63 @@ function AppContent({ config }: AppContentProps) {
             }
           });
           
+          optionsToUse.forEach(opt => {
+            const val = 'size' in opt ? (opt as {size: number}).size : (opt as {value: number}).value;
+            let sizeStr = `${val}`;
+            if ('size_label' in opt && opt.size_label) {
+              sizeStr = opt.size_label;
+            } else {
+              sizeStr = val >= 1024 ? `${val / 1024}k` : `${val}`;
+            }
+
+            let vramStr = '';
+            if ('vram_estimate' in opt && opt.vram_estimate) {
+              vramStr = ` - ${opt.vram_estimate}`;
+            }
+
+            const vramEst = ('vram_estimate' in opt ? (opt as {vram_estimate: string}).vram_estimate : (opt as {vramEstimate: string}).vramEstimate) || '';
+
+            // Check if this option exceeds VRAM limits
+            let isUnsafe = false;
+            if (vramEst) {
+              const vramNum = parseFloat(vramEst.replace(' GB', ''));
+              // Allow 50% overhead for CPU offloading (Ollama can handle this with system RAM)
+              // The VRAM estimates in profiles are already conservative, so we can be more generous
+              const vramLimitWithOffload = availableForContextGB * 1.5;
+              if (!isNaN(vramNum) && vramNum > vramLimitWithOffload) {
+                isUnsafe = true;
+              }
+            }
+
+            // Skip unsafe options - don't add them to the menu
+            if (isUnsafe) {
+              return;
+            }
+
+            let label = `${sizeStr}${vramStr}`;
+            if (val === maxSafeSize) {
+              label += ' (Recommended)';
+            }
+
+            sizeOptions.push({
+              id: `size-${val}`,
+              label: label,
+              value: val,
+              action: async () => {
+                await contextActions.resize(val);
+                SettingsService.getInstance().setContextSize(val); // Persist
+                
+                addMessage({
+                  role: 'system',
+                  content: `Context size updated to **${sizeStr}** (${val} tokens).`,
+                  excludeFromContext: true
+                });
+                
+                activateMenu(mainMenuOptions, menuMessageId); // Return to main menu
+              }
+            });
+          });
+
           sizeOptions.push({
             id: 'size-manual',
             label: 'Manual...',
@@ -252,64 +309,6 @@ function AppContent({ config }: AppContentProps) {
             }
           });
 
-          optionsToUse.forEach(opt => {
-            const val = 'size' in opt ? (opt as {size: number}).size : (opt as {value: number}).value;
-            let sizeStr = `${val}`;
-            if ('size_label' in opt && opt.size_label) {
-              sizeStr = opt.size_label;
-            } else {
-              sizeStr = val >= 1024 ? `${val / 1024}k` : `${val}`;
-            }
-
-            let vramStr = '';
-            if ('vram_estimate' in opt && opt.vram_estimate) {
-              vramStr = ` - ${opt.vram_estimate}`;
-            }
-
-            let label = `${sizeStr}${vramStr}`;
-            let disabled = false;
-            let vramNum = 0;
-            const vramEst = ('vram_estimate' in opt ? (opt as {vram_estimate: string}).vram_estimate : (opt as {vramEstimate: string}).vramEstimate) || '';
-
-            if (vramEst) {
-              vramNum = parseFloat(vramEst.replace(' GB', ''));
-              if (!isNaN(vramNum) && vramNum > availableForContextGB) {
-                disabled = true;
-              }
-            }
-
-            if (disabled) {
-              label += ' (Unsafe - Low VRAM)';
-            } else if (val === maxSafeSize) {
-              label += ' (Recommended)';
-            }
-
-            sizeOptions.push({
-              id: `size-${val}`,
-              label: label,
-              value: val,
-              disabled: disabled,
-              action: async () => {
-                if (disabled) {
-                  addMessage({
-                    role: 'system',
-                    content: `**ƒsÿ‹÷? Cannot Select Context Size**\nRequired VRAM (~${vramEst}) exceeds available system resources (~${availableForContextGB.toFixed(1)} GB).`,
-                    excludeFromContext: true
-                  });
-                  return;
-                }
-                await contextActions.resize(val);
-                SettingsService.getInstance().setContextSize(val); // Persist
-                addMessage({
-                  role: 'system',
-                  content: `Context size updated to **${sizeStr}** (${val} tokens).`,
-                  excludeFromContext: true
-                });
-                activateMenu(mainMenuOptions, menuMessageId); // Return to main menu
-              }
-            });
-          });
-
           sizeOptions.push({
             id: 'opt-back',
             label: 'Back',
@@ -320,7 +319,7 @@ function AppContent({ config }: AppContentProps) {
 
           sizeOptions.push({
             id: 'opt-exit',
-            label: 'Move to Chat',
+            label: 'Exit to Chat',
             action: async () => { }
           });
 
@@ -403,7 +402,79 @@ ${toolSupport}
                   activateMenu(mainMenuOptions, menuMessageId);
                 }
               });
+
+              const contextProfiles = entry.context_profiles || CONTEXT_OPTIONS;
+              const manualContext = entry.manual_context;
               
+              // Add user's saved manual context first if it exists
+              if (manualContext) {
+                const manualSizeStr = manualContext >= 1024 ? `${manualContext / 1024}k` : `${manualContext}`;
+                modelContextOptions.push({
+                  id: `model-size-user-${manualContext}`,
+                  label: `User Context (${manualSizeStr})`,
+                  action: async () => {
+                    await contextActions.resize(manualContext);
+                    SettingsService.getInstance().setContextSize(manualContext);
+                    addMessage({
+                      role: 'system',
+                      content: `Selected **${modelLabel}** with **${manualSizeStr}** context.`,
+                      excludeFromContext: true
+                    });
+                    activateMenu(mainMenuOptions, menuMessageId);
+                  }
+                });
+              }
+
+              // Add standard context profiles
+              contextProfiles.forEach((opt: ContextProfile | ContextSizeOption) => {
+                const optIsProfile = 'size' in opt;
+                const optSize = optIsProfile ? opt.size : (opt as ContextSizeOption).value;
+                const optLabel = optIsProfile ? opt.size_label : (opt as ContextSizeOption).label;
+                const optVram = optIsProfile ? opt.vram_estimate : (opt as ContextSizeOption).vramEstimate;
+
+                const sizeStr = optLabel || (optSize >= 1024 ? `${optSize / 1024}k` : `${optSize}`);
+                const vramEstimate = optVram || '';
+                const vramStr = vramEstimate ? ` - ${vramEstimate}` : '';
+
+                // Check if this option exceeds VRAM limits
+                let isUnsafe = false;
+                if (vramEstimate) {
+                  const vramNum = parseFloat(vramEstimate.replace(' GB', ''));
+                  // Allow 50% overhead for CPU offloading (Ollama can handle this with system RAM)
+                  // The VRAM estimates in profiles are already conservative, so we can be more generous
+                  const vramLimitWithOffload = availableForCtx * 1.5;
+                  if (!isNaN(vramNum) && vramNum > vramLimitWithOffload) {
+                    isUnsafe = true;
+                  }
+                }
+
+                // Skip unsafe options - don't add them to the menu
+                if (isUnsafe) {
+                  return;
+                }
+
+                let label = `${sizeStr}${vramStr}`;
+                if (optSize === safeSizeForModel) {
+                  label += ' (Recommended)';
+                }
+
+                modelContextOptions.push({
+                  id: `model-size-${optSize}`,
+                  label: label,
+                  action: async () => {
+                    await contextActions.resize(optSize);
+                    SettingsService.getInstance().setContextSize(optSize); // Persist
+                    addMessage({
+                      role: 'system',
+                      content: `Selected **${modelLabel}** with **${sizeStr}** context.`,
+                      excludeFromContext: true
+                    });
+                    activateMenu(mainMenuOptions, menuMessageId);
+                  }
+                });
+              });
+
+              // Add Manual input option at the end
               modelContextOptions.push({
                 id: 'model-size-manual',
                 label: 'Manual...',
@@ -427,63 +498,6 @@ ${toolSupport}
                 }
               });
 
-              const contextProfiles = entry.context_profiles || CONTEXT_OPTIONS;
-              const manualContext = entry.manual_context;
-              const contextOptions = manualContext
-                ? [{ size: manualContext, size_label: `Manual (${manualContext})`, vram_estimate: '' }, ...contextProfiles]
-                : contextProfiles;
-
-              contextOptions.forEach((opt: ContextProfile | ContextSizeOption) => {
-                const optIsProfile = 'size' in opt;
-                const optSize = optIsProfile ? opt.size : (opt as ContextSizeOption).value;
-                const optLabel = optIsProfile ? opt.size_label : (opt as ContextSizeOption).label;
-                const optVram = optIsProfile ? opt.vram_estimate : (opt as ContextSizeOption).vramEstimate;
-
-                const sizeStr = optLabel || (optSize >= 1024 ? `${optSize / 1024}k` : `${optSize}`);
-                const vramEstimate = optVram || '';
-                const vramStr = vramEstimate ? ` - ${vramEstimate}` : '';
-
-                let disabled = false;
-                if (vramEstimate) {
-                  const vramNum = parseFloat(vramEstimate.replace(' GB', ''));
-                  if (!isNaN(vramNum) && vramNum > availableForCtx) {
-                    disabled = true;
-                  }
-                }
-
-                let label = `${sizeStr}${vramStr}`;
-                if (disabled) {
-                  label += ' (Unsafe - Low VRAM)';
-                } else if (optSize === safeSizeForModel) {
-                  label += ' (Recommended)';
-                }
-
-                modelContextOptions.push({
-                  id: `model-size-${optSize}`,
-                  label: label,
-                  disabled: disabled,
-                  action: async () => {
-                    if (disabled) {
-                      addMessage({
-                        role: 'system',
-                        content: `**?'s???????? Cannot Select Context Size**\nRequired VRAM (~${vramEstimate}) exceeds available system resources (~${availableForContextGB.toFixed(1)} GB).`,
-                        excludeFromContext: true
-                      });
-                      return;
-                    }
-
-                    await contextActions.resize(optSize);
-                    SettingsService.getInstance().setContextSize(optSize); // Persist
-                    addMessage({
-                      role: 'system',
-                      content: `Selected **${modelLabel}** with **${sizeStr}** context.`,
-                      excludeFromContext: true
-                    });
-                    activateMenu(mainMenuOptions, menuMessageId);
-                  }
-                });
-              });
-
               modelContextOptions.push({
                 id: 'opt-back',
                 label: 'Back to Models',
@@ -494,7 +508,7 @@ ${toolSupport}
 
               modelContextOptions.push({
                 id: 'opt-exit',
-                label: 'Move to Chat',
+                label: 'Exit to Chat',
                 action: async () => { }
               });
 
@@ -512,7 +526,7 @@ ${toolSupport}
 
           modelOptions.push({
             id: 'opt-exit',
-            label: 'Move to Chat',
+            label: 'Exit to Chat',
             action: async () => { }
           });
 
@@ -521,7 +535,7 @@ ${toolSupport}
       },
       {
         id: 'opt-exit',
-        label: 'Move to Chat',
+        label: 'Exit to Chat',
         action: async () => { }
       }
     ];
@@ -846,8 +860,8 @@ ${toolSupport}
             </Box>
           </Box>
 
-          {/* Model Loading Indicator - shows during warmup */}
-          <ModelLoadingIndicator />
+          {/* Model Loading Indicator - now shown in SystemBar instead */}
+          {/* <ModelLoadingIndicator /> */}
 
           {/* Row 2: Main Content Area with 10/80/10 split */}
           {(() => {
@@ -962,9 +976,21 @@ export function App({ config }: AppProps) {
   // Generate a session ID for context management
   const sessionId = `session-${Date.now()}`;
   
+  // Extract model size from model name for VRAM calculations
+  const extractModelSize = (modelName: string): number => {
+    // Match patterns like "3b", "7b", "1.5b", "13b", "70b"
+    const match = modelName.match(/(\d+\.?\d*)b/i);
+    if (match) {
+      return parseFloat(match[1]);
+    }
+    // Default to 7B if can't determine
+    console.warn(`[App] Could not extract model size from "${modelName}", defaulting to 7B`);
+    return 7;
+  };
+
   // Model info for context sizing (from config or defaults)
   const modelInfo = {
-    parameters: 7, // 7B default - could be derived from model name
+    parameters: extractModelSize(initialModel),
     contextLimit: persistedContextSize || config.context?.maxSize || 8192,
   };
   
@@ -973,7 +999,7 @@ export function App({ config }: AppProps) {
     targetSize: persistedContextSize || config.context.targetSize,
     minSize: config.context.minSize,
     maxSize: config.context.maxSize,
-    autoSize: config.context.autoSize,
+    autoSize: false, // Disable auto-size - let user control context size
     vramBuffer: config.context.vramBuffer,
     compression: {
       enabled: config.context.compressionEnabled,

@@ -70,20 +70,20 @@ export class MemoryDumpInvocation implements ToolInvocation<MemoryDumpParams, To
     try {
       // Safety check: Prevent memory dump in assistant context
        const currentMode = this.modeManager?.getCurrentMode();
-       const previousMode = this.modeManager?.getPreviousMode();
+       // const previousMode = this.modeManager?.getPreviousMode();
        
        // Handle "Tool" mode transition: if we are in 'tool' mode, check what we came from
-       const effectiveMode = (currentMode === 'tool' && previousMode) ? previousMode : currentMode;
+       // const effectiveMode = (currentMode === 'tool' && previousMode) ? previousMode : currentMode;
        
-       console.log(`[DEBUG] MemoryDumpInvocation. mode: ${currentMode}, prev: ${previousMode}, effective: ${effectiveMode}`);
+       console.log(`[DEBUG] MemoryDumpInvocation. mode: ${currentMode}`);
 
        // 1. Basic Mode Guard
-       if (!effectiveMode || effectiveMode === 'assistant') {
+       if (!currentMode || currentMode === 'assistant') {
            return {
-              llmContent: `Memory dump is disabled in ${effectiveMode || 'undefined'} mode.`,
-              returnDisplay: `Error: Memory dump is disabled in ${effectiveMode || 'undefined'} mode.`,
+              llmContent: `Memory dump is disabled in ${currentMode || 'undefined'} mode.`,
+              returnDisplay: `Error: Memory dump is disabled in ${currentMode || 'undefined'} mode.`,
               error: {
-                  message: `Memory dump is disabled in ${effectiveMode || 'undefined'} mode.`,
+                  message: `Memory dump is disabled in ${currentMode || 'undefined'} mode.`,
                   type: "ToolAccessDenied"
               }
            };

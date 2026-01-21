@@ -239,7 +239,7 @@ function validateCodeBlock(block) {
 /**
  * Validate all code examples in documentation
  */
-async function validateCodeExamples() {
+async function _validateCodeExamples() {
   console.log(`\n${colors.blue}Validating code examples...${colors.reset}`);
 
   // Find all markdown files
@@ -343,7 +343,7 @@ function getActualCLIFlags() {
 /**
  * Validate CLI flags documentation
  */
-async function validateCLIFlags() {
+async function _validateCLIFlags() {
   console.log(`\n${colors.blue}Validating CLI flags...${colors.reset}`);
 
   const actualFlags = getActualCLIFlags();
@@ -422,7 +422,7 @@ function getActualConfigOptions() {
 /**
  * Validate configuration options documentation
  */
-async function validateConfigOptions() {
+async function _validateConfigOptions() {
   console.log(`\n${colors.blue}Validating configuration options...${colors.reset}`);
 
   const actualOptions = getActualConfigOptions();
@@ -560,7 +560,7 @@ function checkExternalLink(url) {
 /**
  * Validate links in documentation
  */
-async function validateLinks() {
+async function _validateLinks() {
   console.log(`\n${colors.blue}Validating links...${colors.reset}`);
 
   // Find all markdown files
@@ -616,7 +616,7 @@ async function validateLinks() {
 /**
  * Print validation results
  */
-function printResults() {
+function _printResults() {
   console.log(`\n${'='.repeat(60)}`);
   console.log(`${colors.blue}Documentation Validation Results${colors.reset}`);
   console.log('='.repeat(60));

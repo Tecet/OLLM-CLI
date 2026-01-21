@@ -92,7 +92,7 @@ export function UserPromptDialog({
             </Text>
           </Box>
           <Box marginTop={0}>
-            <Text color={theme.text.muted}>
+            <Text color={theme.text.secondary} dimColor>
               {'█'.repeat(Math.floor(timeoutProgress / 5))}
               {'░'.repeat(20 - Math.floor(timeoutProgress / 5))}
             </Text>
@@ -124,7 +124,7 @@ export function UserPromptDialog({
 
       {/* Instructions */}
       <Box paddingX={1}>
-        <Text color={theme.text.muted} dimColor>
+        <Text color={theme.text.secondary} dimColor>
           Use ↑/↓ to navigate, Enter to select, Esc to cancel
         </Text>
       </Box>

@@ -10,7 +10,7 @@ Each task builds on previous work and includes property-based tests to validate 
 
 ### Phase 1: Foundation & Workspace (5-7 days)
 
-- [ ] 1. Set up File Explorer component structure and core types
+- [-] 1. Set up File Explorer component structure and core types
   - Create `packages/cli/src/ui/components/file-explorer/` directory
   - Define TypeScript interfaces: `WorkspaceConfig`, `ProjectConfig`, `FileNode`, `GitStatus`, `FocusedFile`, `ImageMetadata`
   - Create barrel exports in `index.ts`

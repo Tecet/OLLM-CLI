@@ -336,7 +336,7 @@ export function getTableSchema(tableName: string): TableSchema | undefined {
 /**
  * Validate a record against a schema
  */
-export function validateRecord(record: any, schema: TableSchema): { valid: boolean; errors: string[] } {
+export function validateRecord(record: unknown, schema: TableSchema): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
   
   // Check required fields

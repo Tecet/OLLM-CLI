@@ -88,7 +88,6 @@ export {
   ComparisonService,
   type ComparisonResult,
   type ModelResult,
-  type ComparisonServiceConfig,
 } from './comparisonService.js';
 
 // Export project profile service

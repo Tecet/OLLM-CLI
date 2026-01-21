@@ -98,7 +98,7 @@ export class HookEventHandler {
     for (const event of events) {
       const listener: EventListener = async (evt, data) => {
         if (!this.enabled) return;
-        await this.handleEvent(evt, data);
+        await this.handleEvent(evt, data as Record<string, unknown>);
       };
 
       const listenerId = this.messageBus.on(event, listener);

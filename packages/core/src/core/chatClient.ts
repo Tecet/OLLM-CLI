@@ -107,6 +107,32 @@ export class ChatClient {
       return;
     }
 
+    // Ensure context size is set (CRITICAL: prevents context overflow)
+    if (!options?.contextSize && !options?.ollamaContextSize) {
+      // Try to get from context manager
+      if (this.contextMgmtManager) {
+        const usage = this.contextMgmtManager.getUsage();
+        options = {
+          ...options,
+          contextSize: usage.maxTokens,
+          ollamaContextSize: Math.floor(usage.maxTokens * 0.85),
+        };
+        console.log(`[ChatClient] Context size from manager: ${usage.maxTokens}, Ollama: ${Math.floor(usage.maxTokens * 0.85)}`);
+      } else {
+        // Fallback to default
+        const defaultContextSize = 8192;
+        const defaultOllamaSize = 6963; // 85% of 8192
+        options = {
+          ...options,
+          contextSize: defaultContextSize,
+          ollamaContextSize: defaultOllamaSize,
+        };
+        console.warn(`[ChatClient] No context size specified, using default ${defaultContextSize} (Ollama: ${defaultOllamaSize})`);
+      }
+    } else {
+      console.log(`[ChatClient] Context size: ${options.contextSize}, Ollama: ${options.ollamaContextSize}`);
+    }
+
     // Initialize session recording (Requirements 1.1, 9.1)
     let sessionId: string | undefined;
     if (this.recordingService) {
@@ -213,7 +239,7 @@ export class ChatClient {
           // Convert messages to SessionMessage format for compression check
           const sessionMessages = messages.map(msg => this.messageToSessionMessage(msg));
           
-          if (this.compressionService.shouldCompress(sessionMessages, tokenLimit, threshold)) {
+          if (await this.compressionService.shouldCompress(sessionMessages, tokenLimit, threshold)) {
             // Emit pre_compress event
             this.messageBus.emit('pre_compress', {
               contextSize: sessionMessages.length,
@@ -234,6 +260,10 @@ export class ChatClient {
               }
             );
 
+            const compressionRatio = compressionResult.originalTokenCount > 0 
+              ? compressionResult.compressedTokenCount / compressionResult.originalTokenCount 
+              : 1.0;
+
             // Emit post_compress event
             this.messageBus.emit('post_compress', {
               originalSize: sessionMessages.length,
@@ -242,7 +272,7 @@ export class ChatClient {
                 sum + msg.parts.reduce((s, p) => s + p.text.length, 0), 0
               ),
               compressedTokenCount: compressionResult.compressedTokenCount,
-              compressionRatio: compressionResult.compressionRatio,
+              compressionRatio,
               sessionId,
             });
 
@@ -447,6 +477,109 @@ export class ChatClient {
             content,
             timestamp: new Date()
           });
+          
+          // Parse goal management markers for non-tool models (Phase 3C)
+          try {
+            const { GoalManagementParser } = await import('../prompts/goalManagementPrompt.js');
+            const markers = GoalManagementParser.parse(content);
+            
+            // Get goal manager from context manager
+            const goalManager = this.contextMgmtManager.getGoalManager();
+            
+            if (goalManager) {
+              // Process new goals
+              for (const newGoal of markers.newGoals) {
+                try {
+                  goalManager.createGoal(newGoal.description, newGoal.priority);
+                  console.log(`[Marker] Created goal: ${newGoal.description}`);
+                } catch (err) {
+                  console.error('[Marker] Failed to create goal:', err);
+                }
+              }
+              
+              // Process checkpoints
+              const activeGoal = goalManager.getActiveGoal();
+              if (activeGoal) {
+                for (const checkpoint of markers.checkpoints) {
+                  try {
+                    goalManager.createCheckpoint(
+                      activeGoal.id,
+                      checkpoint.description,
+                      {},
+                      checkpoint.description
+                    );
+                    console.log(`[Marker] Created checkpoint: ${checkpoint.description}`);
+                  } catch (err) {
+                    console.error('[Marker] Failed to create checkpoint:', err);
+                  }
+                }
+                
+                // Process decisions
+                for (const decision of markers.decisions) {
+                  try {
+                    const decisionObj = goalManager.recordDecision(
+                      activeGoal.id,
+                      decision.description,
+                      decision.rationale
+                    );
+                    if (decision.locked) {
+                      goalManager.lockDecision(activeGoal.id, decisionObj.id);
+                    }
+                    console.log(`[Marker] Recorded decision: ${decision.description}`);
+                  } catch (err) {
+                    console.error('[Marker] Failed to record decision:', err);
+                  }
+                }
+                
+                // Process artifacts
+                for (const artifact of markers.artifacts) {
+                  try {
+                    const artifactType = artifact.path.endsWith('.test.ts') || artifact.path.endsWith('.test.js')
+                      ? 'test'
+                      : artifact.path.endsWith('.md')
+                      ? 'documentation'
+                      : 'file';
+                    
+                    goalManager.recordArtifact(
+                      activeGoal.id,
+                      artifactType,
+                      artifact.path,
+                      artifact.action
+                    );
+                    console.log(`[Marker] Recorded artifact: ${artifact.path} (${artifact.action})`);
+                  } catch (err) {
+                    console.error('[Marker] Failed to record artifact:', err);
+                  }
+                }
+                
+                // Process goal completion
+                if (markers.goalComplete) {
+                  try {
+                    goalManager.completeGoal(activeGoal.id, markers.goalComplete);
+                    console.log(`[Marker] Completed goal: ${markers.goalComplete}`);
+                  } catch (err) {
+                    console.error('[Marker] Failed to complete goal:', err);
+                  }
+                }
+                
+                // Process goal pause
+                if (markers.goalPause) {
+                  try {
+                    goalManager.pauseGoal(activeGoal.id);
+                    console.log(`[Marker] Paused goal: ${activeGoal.description}`);
+                  } catch (err) {
+                    console.error('[Marker] Failed to pause goal:', err);
+                  }
+                }
+              } else if (markers.checkpoints.length > 0 || markers.decisions.length > 0 || 
+                         markers.artifacts.length > 0 || markers.goalComplete || markers.goalPause) {
+                console.warn('[Marker] No active goal - checkpoint/decision/artifact/complete/pause markers ignored');
+              }
+            }
+          } catch (err) {
+            // Log error but continue - marker parsing is optional
+            console.error('[Marker] Failed to parse goal management markers:', err);
+          }
         } catch (error) {
           // Log error but continue
           console.error('Failed to add assistant message to context manager:', error);

@@ -9,6 +9,7 @@ export interface ToolItemProps {
   isEnabled: boolean;
   isSelected: boolean;
   theme: Theme;
+  onToggle?: () => void;
 }
 
 /**
@@ -24,6 +25,7 @@ export function ToolItem({
   isEnabled,
   isSelected,
   theme,
+  onToggle: _onToggle,
 }: ToolItemProps) {
 
   return (

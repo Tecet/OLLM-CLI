@@ -85,8 +85,10 @@ export const InputBox = React.memo(function InputBox({
       // Remove zero-width spaces and carriage returns
       let out = s.replace(/\u200B/g, '').replace(/\r/g, '');
       // Strip simple ANSI escape CSI sequences like \x1B[...m and other common sequences
+      // eslint-disable-next-line no-control-regex
       out = out.replace(/\x1B\[[0-9;]*[A-Za-z]/g, '');
       // Remove other non-printable control characters except tab (\t) and newline (\n)
+      // eslint-disable-next-line no-control-regex
       out = out.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
   
       // Wrap very long unbroken lines to avoid layout break in the terminal

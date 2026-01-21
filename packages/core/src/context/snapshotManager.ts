@@ -11,7 +11,8 @@ import type {
   ContextSnapshot,
   ConversationContext,
   SnapshotStorage,
-  SnapshotConfig
+  SnapshotConfig,
+  Message
 } from './types.js';
 
 /**
@@ -28,6 +29,9 @@ export class SnapshotManagerImpl implements SnapshotManager {
   private thresholdCallbacks: Map<number, ThresholdCallback[]> = new Map();
   private overflowCallbacks: ThresholdCallback[] = [];
   private currentSessionId: string | null = null;
+  
+  // Epsilon for floating-point threshold comparisons
+  private static readonly THRESHOLD_EPSILON = 0.0001;
 
   constructor(storage: SnapshotStorage, config: SnapshotConfig) {
     this.storage = storage;
@@ -62,6 +66,48 @@ export class SnapshotManagerImpl implements SnapshotManager {
     // Generate unique ID
     const id = randomUUID();
 
+    // DEBUG: Write debug info to file
+    try {
+      const fs = await import('fs/promises');
+      const debugInfo = {
+        timestamp: new Date().toISOString(),
+        snapshotId: id,
+        contextMessages: {
+          total: context.messages.length,
+          byRole: {
+            user: context.messages.filter(m => m.role === 'user').length,
+            assistant: context.messages.filter(m => m.role === 'assistant').length,
+            system: context.messages.filter(m => m.role === 'system').length,
+            tool: context.messages.filter(m => m.role === 'tool').length
+          },
+          details: context.messages.map(m => ({
+            role: m.role,
+            id: m.id,
+            contentLength: m.content.length,
+            preview: m.content.substring(0, 100)
+          }))
+        }
+      };
+      await fs.writeFile('snapshot-debug.json', JSON.stringify(debugInfo, null, 2));
+    } catch {
+      // Ignore debug errors
+    }
+
+    // CRITICAL FIX: Keep ALL user messages in full (never compress!)
+    const allUserMessages = context.messages
+      .filter(m => m.role === 'user')
+      .map(m => ({
+        id: m.id,
+        role: 'user' as const,
+        content: m.content, // FULL content - never truncate!
+        timestamp: m.timestamp,
+        tokenCount: m.tokenCount,
+        taskId: undefined
+      }));
+
+    // Other messages (system, assistant, tool) - exclude user messages
+    const otherMessages = context.messages.filter(m => m.role !== 'user');
+
     // Create summary from first and last messages
     const summary = this.generateSummary(context);
 
@@ -72,11 +118,23 @@ export class SnapshotManagerImpl implements SnapshotManager {
       timestamp: new Date(),
       tokenCount: context.tokenCount,
       summary,
-      messages: [...context.messages], // Clone messages
+      userMessages: allUserMessages, // ALL user messages, not just recent 10
+      archivedUserMessages: [], // No archiving - keep everything
+      messages: [...otherMessages], // Clone messages (no user messages)
+      goalStack: context.goalStack, // Include goal stack
+      reasoningStorage: context.reasoningStorage, // Include reasoning traces
       metadata: {
         model: context.metadata.model,
         contextSize: context.metadata.contextSize,
-        compressionRatio: this.calculateCompressionRatio(context)
+        compressionRatio: this.calculateCompressionRatio(context),
+        totalUserMessages: allUserMessages.length,
+        // Add goal-related metadata
+        activeGoalId: context.goalStack?.activeGoal?.id,
+        totalGoalsCompleted: context.goalStack?.stats.goalsCompleted || 0,
+        totalCheckpoints: context.goalStack?.stats.checkpointsCreated || 0,
+        // Add reasoning-related metadata
+        isReasoningModel: !!context.reasoningStorage,
+        totalThinkingTokens: context.reasoningStorage?.stats.totalThinkingTokens || 0,
       }
     };
 
@@ -98,11 +156,35 @@ export class SnapshotManagerImpl implements SnapshotManager {
     // Load snapshot from storage
     const snapshot = await this.storage.load(snapshotId);
 
+    // Handle old snapshots without userMessages field (migration)
+    let userMessages: Message[] = [];
+    let otherMessages: Message[] = [];
+
+    if ('userMessages' in snapshot && snapshot.userMessages) {
+      // New format: user messages separated
+      userMessages = snapshot.userMessages.map(um => ({
+        id: um.id,
+        role: 'user' as const,
+        content: um.content,
+        timestamp: um.timestamp,
+        tokenCount: um.tokenCount
+      }));
+      otherMessages = snapshot.messages;
+    } else {
+      // Old format: extract user messages from mixed messages
+      userMessages = snapshot.messages.filter(m => m.role === 'user');
+      otherMessages = snapshot.messages.filter(m => m.role !== 'user');
+    }
+
+    // Merge user messages + other messages in chronological order
+    const allMessages = [...userMessages, ...otherMessages]
+      .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+
     // Reconstruct conversation context
     const context: ConversationContext = {
       sessionId: snapshot.sessionId,
-      messages: [...snapshot.messages], // Clone messages
-      systemPrompt: snapshot.messages.find(m => m.role === 'system') || {
+      messages: allMessages,
+      systemPrompt: allMessages.find(m => m.role === 'system') || {
         id: randomUUID(),
         role: 'system',
         content: '',
@@ -110,6 +192,8 @@ export class SnapshotManagerImpl implements SnapshotManager {
       },
       tokenCount: snapshot.tokenCount,
       maxTokens: snapshot.metadata.contextSize,
+      goalStack: snapshot.goalStack, // Restore goal stack
+      reasoningStorage: snapshot.reasoningStorage, // Restore reasoning traces
       metadata: {
         model: snapshot.metadata.model,
         contextSize: snapshot.metadata.contextSize,
@@ -155,7 +239,11 @@ export class SnapshotManagerImpl implements SnapshotManager {
     if (!this.thresholdCallbacks.has(threshold)) {
       this.thresholdCallbacks.set(threshold, []);
     }
-    this.thresholdCallbacks.get(threshold)!.push(callback);
+    const callbacks = this.thresholdCallbacks.get(threshold)!;
+    // Deduplicate: only add if not already registered
+    if (!callbacks.includes(callback)) {
+      callbacks.push(callback);
+    }
   }
 
   /**
@@ -190,8 +278,10 @@ export class SnapshotManagerImpl implements SnapshotManager {
     }
 
     // Check all registered thresholds (this includes autoThreshold if configured)
-    for (const [threshold, callbacks] of this.thresholdCallbacks.entries()) {
-      if (this.config.autoCreate === false && threshold === this.config.autoThreshold) {
+    for (const [threshold, callbacks] of Array.from(this.thresholdCallbacks.entries())) {
+      // Use epsilon comparison for floating-point thresholds to avoid precision issues
+      if (this.config.autoCreate === false && 
+          Math.abs(threshold - this.config.autoThreshold) < SnapshotManagerImpl.THRESHOLD_EPSILON) {
         // Skip autoThreshold if autoCreate is disabled
         continue;
       }

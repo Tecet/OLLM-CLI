@@ -4,6 +4,7 @@ import { LlamaAnimation } from '../../../components/lama/LlamaAnimation.js';
 import { VersionBanner } from './VersionBanner.js';
 import { QuickActions } from './QuickActions.js';
 import { RecentSessions } from './RecentSessions.js';
+import type { Theme } from '../../../../config/types.js';
 
 interface Session {
   id: string;
@@ -14,14 +15,7 @@ interface Session {
 interface LaunchScreenProps {
   onDismiss: () => void;
   recentSessions?: Session[];
-  theme: {
-    text: {
-      primary: string;
-      secondary: string;
-      accent: string;
-      error?: string; // Opt-in
-    };
-  };
+  theme: Theme;
   modelInfo?: {
     name: string;
     size?: string;

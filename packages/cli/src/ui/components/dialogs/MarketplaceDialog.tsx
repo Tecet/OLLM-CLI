@@ -16,7 +16,7 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { Box, Text, useInput } from 'ink';
-import { Dialog } from './Dialog.js';
+import { Dialog, markEscHandled } from './Dialog.js';
 import { InstallServerDialog } from './InstallServerDialog.js';
 import { Button } from '../forms/Button.js';
 import { LoadingSpinner } from '../mcp/LoadingSpinner.js';
@@ -131,7 +131,7 @@ function ServerListItem({ server, focused, onInstall }: ServerListItemProps) {
  * - Esc to close
  */
 export function MarketplaceDialog({ onClose }: MarketplaceDialogProps) {
-  const { marketplace, searchMarketplace, installServer } = useMCP();
+  const { state: { marketplace }, searchMarketplace, installServer } = useMCP();
 
   // State
   const [searchQuery, setSearchQuery] = useState('');
@@ -186,6 +186,7 @@ export function MarketplaceDialog({ onClose }: MarketplaceDialogProps) {
     // Esc to unfocus search or close dialog
     if (key.escape) {
       if (isSearchFocused) {
+        markEscHandled();
         setIsSearchFocused(false);
       } else {
         onClose();

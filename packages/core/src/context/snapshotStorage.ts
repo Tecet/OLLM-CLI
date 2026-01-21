@@ -9,6 +9,7 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';
 import type { ContextSnapshot, SnapshotMetadata, SnapshotStorage } from './types.js';
+import { logPathDiagnostics } from '../utils/pathValidation.js';
 
 /**
  * Snapshot file format version
@@ -29,7 +30,27 @@ interface SnapshotFile {
     model: string;
     contextSize: number;
     compressionRatio: number;
+    totalUserMessages?: number;
+    activeGoalId?: string;
+    totalGoalsCompleted?: number;
+    totalCheckpoints?: number;
+    isReasoningModel?: boolean;
+    totalThinkingTokens?: number;
   };
+  userMessages: Array<{
+    id: string;
+    role: 'user';
+    content: string;
+    timestamp: string;
+    tokenCount?: number;
+    taskId?: string;
+  }>;
+  archivedUserMessages: Array<{
+    id: string;
+    summary: string;
+    timestamp: string;
+    fullMessageAvailable: boolean;
+  }>;
   messages: Array<{
     id: string;
     role: string;
@@ -68,8 +89,11 @@ export class SnapshotStorageImpl implements SnapshotStorage {
   private indexCache: Map<string, SnapshotIndexEntry[]> = new Map();
 
   constructor(baseDir?: string) {
-    // Default to ~/.ollm/session-data
-    this.baseDir = baseDir || path.join(os.homedir(), '.ollm', 'session-data');
+    // Default to ~/.ollm/context-snapshots
+    this.baseDir = baseDir || path.join(os.homedir(), '.ollm', 'context-snapshots');
+    
+    // Log path diagnostics on initialization
+    logPathDiagnostics('Context Snapshots', this.baseDir);
   }
 
   /**
@@ -130,6 +154,20 @@ export class SnapshotStorageImpl implements SnapshotStorage {
       tokenCount: snapshot.tokenCount,
       summary: snapshot.summary,
       metadata: snapshot.metadata,
+      userMessages: snapshot.userMessages.map(msg => ({
+        id: msg.id,
+        role: msg.role,
+        content: msg.content,
+        timestamp: msg.timestamp.toISOString(),
+        tokenCount: msg.tokenCount,
+        taskId: msg.taskId
+      })),
+      archivedUserMessages: snapshot.archivedUserMessages.map(msg => ({
+        id: msg.id,
+        summary: msg.summary,
+        timestamp: msg.timestamp.toISOString(),
+        fullMessageAvailable: msg.fullMessageAvailable
+      })),
       messages: snapshot.messages.map(msg => ({
         id: msg.id,
         role: msg.role,
@@ -201,6 +239,20 @@ export class SnapshotStorageImpl implements SnapshotStorage {
         timestamp: new Date(snapshotFile.timestamp),
         tokenCount: snapshotFile.tokenCount,
         summary: snapshotFile.summary,
+        userMessages: (snapshotFile.userMessages || []).map(msg => ({
+          id: msg.id,
+          role: 'user' as const,
+          content: msg.content,
+          timestamp: new Date(msg.timestamp),
+          tokenCount: msg.tokenCount,
+          taskId: msg.taskId
+        })),
+        archivedUserMessages: (snapshotFile.archivedUserMessages || []).map(msg => ({
+          id: msg.id,
+          summary: msg.summary,
+          timestamp: new Date(msg.timestamp),
+          fullMessageAvailable: msg.fullMessageAvailable
+        })),
         messages: snapshotFile.messages.map(msg => ({
           id: msg.id,
           role: msg.role as 'system' | 'user' | 'assistant' | 'tool',

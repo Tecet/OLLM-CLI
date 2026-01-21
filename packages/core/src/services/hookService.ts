@@ -78,7 +78,6 @@ export class HookService {
       this.runner,
       {
         parallel: false, // Sequential by default
-        enabled: true,
       }
     );
   }

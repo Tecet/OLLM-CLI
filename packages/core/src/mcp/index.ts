@@ -65,9 +65,8 @@ export { MCPHealthMonitor } from './mcpHealthMonitor.js';
 
 // OAuth provider
 export type {
-  OAuthToken,
-  OAuthTokenStorage,
-  OAuthProviderConfig,
-  OAuthAuthorizationResult,
+  OAuthTokens,
+  TokenStorage,
+  OAuthConfig,
 } from './mcpOAuth.js';
 export { MCPOAuthProvider } from './mcpOAuth.js';

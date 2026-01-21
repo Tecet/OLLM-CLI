@@ -114,7 +114,7 @@ export class ManifestParser {
   private errors: string[] = [];
 
   constructor() {
-    this.ajv = new Ajv({ allErrors: true, strictSchema: false });
+    this.ajv = new Ajv({ allErrors: true });
     this.validator = this.ajv.compile(MANIFEST_SCHEMA);
   }
 
@@ -156,12 +156,12 @@ export class ManifestParser {
   validateManifest(manifest: unknown): boolean {
     this.errors = [];
 
-    const valid = this.validator(manifest);
+    const valid = this.validator(manifest) as boolean;
 
     if (!valid && this.validator.errors) {
       this.errors = this.validator.errors.map((error: ErrorObject) => {
-        const fallbackPath = (error as { dataPath?: string }).dataPath;
-        const path = error.instancePath || fallbackPath || 'root';
+        const fallbackPath = (error as ErrorObject & { dataPath?: string }).dataPath;
+        const path = (error as ErrorObject & { instancePath?: string }).instancePath || fallbackPath || 'root';
         const message = error.message || 'validation failed';
         return `${path}: ${message}`;
       });

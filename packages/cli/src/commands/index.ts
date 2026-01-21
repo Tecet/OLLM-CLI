@@ -1,6 +1,8 @@
 export { commandRegistry, CommandRegistry } from './commandRegistry.js';
 export { homeCommand } from './homeCommand.js';
 export { sessionCommands } from './sessionCommands.js';
+export { snapshotCommands } from './snapshotCommands.js';
+export { configCommands } from './configCommands.js';
 export { modelCommands } from './modelCommands.js';
 export { providerCommands } from './providerCommands.js';
 export { gitCommands } from './gitCommands.js';

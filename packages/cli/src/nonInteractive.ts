@@ -143,7 +143,8 @@ export class NonInteractiveRunner {
     const toolRegistry = new ToolRegistry();
     
     // Initialize chat client
-    const chatClient = new ChatClient(providerRegistry, toolRegistry);
+    // Cast toolRegistry to unknown to bypass type mismatch with Turn's ToolRegistry interface
+    const chatClient = new ChatClient(providerRegistry, toolRegistry as unknown as { get(name: string): DeclarativeTool<unknown, unknown> | undefined });
     
     // Determine model
     const model = options.model || options.config.model.default;

@@ -46,7 +46,7 @@ async function testHook(hook: Hook): Promise<HookTestResult> {
 /**
  * TestHookDialog component
  */
-export function TestHookDialog({ hook, _onClose }: TestHookDialogProps) {
+export function TestHookDialog({ hook, onClose: _onClose }: TestHookDialogProps) {
   const { state: uiState } = useUI();
   const [result, setResult] = useState<HookTestResult | null>(null);
   const [testing, setTesting] = useState(true);

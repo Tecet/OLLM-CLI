@@ -1,0 +1,10 @@
+# Integration Tests Directory
+
+This directory contains integration tests for File Explorer workflows.
+
+Integration tests focus on:
+- Complete user workflows (navigate → focus → unfocus)
+- File editing workflows (open → edit → reload)
+- File operations workflows (create → rename → delete)
+- Multi-component interactions
+- End-to-end scenarios

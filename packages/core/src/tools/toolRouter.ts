@@ -68,7 +68,7 @@ export class ToolRouter extends EventEmitter {
           // Convert MCP tools to internal Tool format if needed, or pass compatible object
           // detectServerCapabilities expects Tool[] which usually match MCP tool structure roughly
           // We might need to cast or map if types mismatch strictly
-          const capabilities = detectServerCapabilities(server.name, tools as any[]);
+          const capabilities = detectServerCapabilities(server.name, tools as unknown as Tool[]);
           this.capabilityMap.set(server.name, capabilities);
         } catch (error) {
           console.error(`Failed to discover capabilities for ${server.name}:`, error);

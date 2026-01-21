@@ -38,7 +38,7 @@ export const mcpOAuthConfigSchema = z.object({
 export const mcpServerConfigSchema = z.object({
   command: z.string(),
   args: z.array(z.string()),
-  env: z.record(z.string()).optional(),
+  env: z.record(z.string(), z.string()).optional(),
   transport: z.enum(['stdio', 'sse', 'http']).optional(),
   timeout: z.number().int().positive().optional(),
   oauth: mcpOAuthConfigSchema.optional(),
@@ -52,7 +52,7 @@ export const mcpServerConfigSchema = z.object({
 export const mcpConfigSchema = z.object({
   enabled: z.boolean().optional(),
   connectionTimeout: z.number().int().positive().optional(),
-  servers: z.record(mcpServerConfigSchema).optional(),
+  servers: z.record(z.string(), mcpServerConfigSchema).optional(),
 });
 
 /**

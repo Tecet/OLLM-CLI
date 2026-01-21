@@ -12,6 +12,7 @@
 import type { ProviderAdapter } from '../provider/types.js';
 import { ModelManagementService } from './modelManagementService.js';
 import { ModelRouter } from '../routing/modelRouter.js';
+import { modelDatabase } from '../routing/modelDatabase.js';
 import { MemoryService } from './memoryService.js';
 import { TemplateService } from './templateService.js';
 import { ComparisonService } from './comparisonService.js';
@@ -161,8 +162,12 @@ export class ServiceContainer {
       
       this._modelManagementService = new ModelManagementService(
         this.provider,
-        cacheTTL,
-        keepAliveConfig
+        {
+          cacheTTL,
+          keepAliveEnabled: keepAliveConfig.enabled,
+          keepAliveTimeout: keepAliveConfig.timeout,
+          keepAliveModels: keepAliveConfig.models,
+        }
       );
     }
     return this._modelManagementService;
@@ -179,7 +184,7 @@ export class ServiceContainer {
         overrides: {},
       };
       
-      this._modelRouter = new ModelRouter(routingConfig);
+      this._modelRouter = new ModelRouter(routingConfig as unknown as Parameters<typeof ModelRouter>[0]);
     }
     return this._modelRouter;
   }
@@ -196,10 +201,11 @@ export class ServiceContainer {
       
       const memoryPath = `${this.userHome}/.ollm/memory.json`;
       
-      this._memoryService = new MemoryService(
+      this._memoryService = new MemoryService({
         memoryPath,
-        memoryConfig.tokenBudget
-      );
+        tokenBudget: memoryConfig.tokenBudget,
+        enabled: memoryConfig.enabled,
+      });
       
       // Load memories on initialization
       this._memoryService.load().catch(err => {
@@ -219,10 +225,10 @@ export class ServiceContainer {
         ? `${this.workspacePath}/.ollm/templates`
         : undefined;
       
-      this._templateService = new TemplateService(
+      this._templateService = new TemplateService({
         userTemplatesDir,
-        workspaceTemplatesDir
-      );
+        workspaceTemplatesDir,
+      });
       
       // Load templates on initialization
       this._templateService.loadTemplates().catch(err => {
@@ -251,10 +257,9 @@ export class ServiceContainer {
         autoDetect: true,
       };
       
-      this._projectProfileService = new ProjectProfileService(
-        this.workspacePath,
-        projectConfig.autoDetect
-      );
+      this._projectProfileService = new ProjectProfileService({
+        autoDetect: projectConfig.autoDetect,
+      });
     }
     return this._projectProfileService;
   }
@@ -395,11 +400,17 @@ export class ServiceContainer {
         autoRestart: true,
       };
       
-      this._mcpHealthMonitor = new MCPHealthMonitor({
-        checkInterval: healthConfig.checkInterval,
-        maxRestartAttempts: healthConfig.maxRestartAttempts,
-        autoRestart: healthConfig.autoRestart,
-      });
+      // MCPClient should be set by the CLI layer
+      // For now we use a dummy check or cast if we don't have it yet
+      // In practice, this should be provided
+      this._mcpHealthMonitor = new MCPHealthMonitor(
+        (this as unknown as { _mcpClient: unknown })._mcpClient,
+        {
+          checkInterval: healthConfig.checkInterval,
+          maxRestartAttempts: healthConfig.maxRestartAttempts,
+          autoRestart: healthConfig.autoRestart,
+        }
+      );
     }
     return this._mcpHealthMonitor;
   }
@@ -483,8 +494,12 @@ export class ServiceContainer {
       
       this._modelManagementService = new ModelManagementService(
         provider,
-        cacheTTL,
-        keepAliveConfig
+        {
+          cacheTTL,
+          keepAliveEnabled: keepAliveConfig.enabled,
+          keepAliveTimeout: keepAliveConfig.timeout,
+          keepAliveModels: keepAliveConfig.models,
+        }
       );
     }
     
@@ -524,8 +539,18 @@ export class ServiceContainer {
     // Get available models
     const models = await modelManagement.listModels();
     
+    const enrichedModels = models.map(m => ({
+      name: m.name,
+      size: m.sizeBytes || 0,
+      modifiedAt: m.modifiedAt ? new Date(m.modifiedAt) : new Date(),
+      family: modelDatabase.getFamily(m.name) || 'unknown',
+      contextWindow: modelDatabase.getContextWindow(m.name),
+      capabilities: modelDatabase.getCapabilities(m.name),
+      parameterCount: undefined
+    }));
+    
     // Select using router
-    return router.selectModel(profile, models);
+    return router.selectModel(profile, enrichedModels);
   }
   
   /**
@@ -535,29 +560,31 @@ export class ServiceContainer {
   async applyProjectProfile(): Promise<void> {
     const profileService = this.getProjectProfileService();
     
-    // Detect or load profile
-    const profile = await profileService.detectProfile();
-    
-    if (profile) {
-      // Apply profile settings to configuration
-      profileService.applyProfile(profile);
+    if (this.workspacePath) {
+      // Detect or load profile
+      const profile = await profileService.detectProfile(this.workspacePath);
       
-      // Update config with profile settings
-      if (profile.model) {
-        this.config.model = {
-          ...this.config.model,
-          default: profile.model,
-        };
-      }
-      
-      if (profile.routing?.defaultProfile) {
-        this.config.model = {
-          ...this.config.model,
-          routing: {
-            ...this.config.model?.routing,
-            defaultProfile: profile.routing.defaultProfile,
-          },
-        };
+      if (profile) {
+        // Apply profile settings to configuration
+        profileService.applyProfile(profile);
+        
+        // Update config with profile settings
+        if (profile.model) {
+          this.config.model = {
+            ...this.config.model,
+            default: profile.model,
+          };
+        }
+        
+        if (profile.routing?.defaultProfile) {
+          this.config.model = {
+            ...this.config.model,
+            routing: {
+              ...this.config.model?.routing,
+              defaultProfile: profile.routing.defaultProfile,
+            },
+          };
+        }
       }
     }
   }

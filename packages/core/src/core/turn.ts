@@ -13,13 +13,13 @@ import type {
 import type { PromptModeManager } from '../prompts/PromptModeManager.js';
 import type { SnapshotManager } from '../prompts/SnapshotManager.js';
 import type { ModeType } from '../prompts/ContextAnalyzer.js';
+import type { DeclarativeTool } from '../tools/types.js';
 
 /**
  * Minimal ToolRegistry interface for tool execution.
- * Full implementation will be in stage-03-tools-policy.
  */
 export interface ToolRegistry {
-  get(name: string): Tool | undefined;
+  get(name: string): DeclarativeTool<unknown, unknown> | undefined;
 }
 
 /**
@@ -40,6 +40,8 @@ export interface ChatOptions {
   temperature?: number;
   maxTokens?: number;
   maxTurns?: number;
+  contextSize?: number; // User's selected context size (for UI display)
+  ollamaContextSize?: number; // Actual size to send to Ollama (85% of contextSize)
   abortSignal?: AbortSignal;
   modeManager?: PromptModeManager;
   snapshotManager?: SnapshotManager;
@@ -299,6 +301,19 @@ export class Turn {
 
     if (this.options.maxTokens !== undefined) {
       opts.maxTokens = this.options.maxTokens;
+    }
+
+    // Add num_ctx for Ollama (85% cap strategy)
+    // Use ollamaContextSize if provided, otherwise fall back to contextSize
+    if (this.options.ollamaContextSize !== undefined) {
+      opts.num_ctx = this.options.ollamaContextSize;
+      console.log(`[Turn] Setting num_ctx from ollamaContextSize: ${opts.num_ctx}`);
+    } else if (this.options.contextSize !== undefined) {
+      // Fallback: calculate 85% if only contextSize is provided
+      opts.num_ctx = Math.floor(this.options.contextSize * 0.85);
+      console.log(`[Turn] Setting num_ctx from contextSize (85%): ${opts.num_ctx}`);
+    } else {
+      console.warn('[Turn] No context size provided, num_ctx will not be set!');
     }
 
     return Object.keys(opts).length > 0 ? opts : undefined;

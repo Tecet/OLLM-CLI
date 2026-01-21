@@ -31,7 +31,8 @@ const DEFAULT_CONFIG: ContextPoolConfig = {
  */
 export class ContextPoolImpl implements ContextPool {
   public config: ContextPoolConfig;
-  public currentSize: number;
+  public currentSize: number; // Ollama context size (85% of user's selection)
+  public userContextSize: number; // User's selected size (for UI display)
   private currentTokens: number = 0;
   private vramInfo: VRAMInfo | null = null;
   private resizeCallback?: (newSize: number) => Promise<void>;
@@ -44,6 +45,7 @@ export class ContextPoolImpl implements ContextPool {
   ) {
     this.config = { ...DEFAULT_CONFIG, ...config };
     this.currentSize = this.config.targetContextSize;
+    this.userContextSize = this.config.targetContextSize; // Initialize to same value
     this.resizeCallback = resizeCallback;
   }
 
@@ -78,6 +80,7 @@ export class ContextPoolImpl implements ContextPool {
 
     // If auto-sizing is disabled, use target size
     if (!this.config.autoSize) {
+      console.log('[ContextPool] Auto-size disabled, using target:', this.config.targetContextSize);
       return this.clampSize(this.config.targetContextSize);
     }
 
@@ -90,8 +93,20 @@ export class ContextPoolImpl implements ContextPool {
     // Calculate usable VRAM
     const usableVRAM = vramInfo.available - this.config.reserveBuffer;
 
+    console.log('[ContextPool] VRAM Calculation:', {
+      totalVRAM: vramInfo.total,
+      usedVRAM: vramInfo.used,
+      availableVRAM: vramInfo.available,
+      reserveBuffer: this.config.reserveBuffer,
+      usableVRAM: usableVRAM,
+      modelParams: modelInfo.parameters,
+      bytesPerToken: bytesPerToken,
+      calculatedTokens: Math.floor(usableVRAM / bytesPerToken)
+    });
+
     // Ensure we have positive usable VRAM
     if (usableVRAM <= 0) {
+      console.warn('[ContextPool] No usable VRAM, using minimum:', this.config.minContextSize);
       return this.config.minContextSize;
     }
 
@@ -99,13 +114,31 @@ export class ContextPoolImpl implements ContextPool {
     const optimalSize = Math.floor(usableVRAM / bytesPerToken);
 
     // Clamp to min/max and model limit
-    return this.clampSize(Math.min(optimalSize, modelInfo.contextLimit));
+    const finalSize = this.clampSize(Math.min(optimalSize, modelInfo.contextLimit));
+    console.log('[ContextPool] Final context size:', finalSize);
+    
+    return finalSize;
   }
 
   /**
    * Calculate bytes per token for KV cache
    * Formula: 2 (K+V) × layers × hidden_dim × bytes_per_value
-   * Simplified: params × multiplier × bytes
+   * 
+   * For a 7B model:
+   * - ~32 layers
+   * - ~4096 hidden_dim
+   * - 2 components (K and V)
+   * - bytes_per_value depends on quantization
+   * 
+   * Approximate: layers * hidden_dim * 2 * bytes_per_value
+   * For 7B: 32 * 4096 * 2 * bytes = 262,144 * bytes
+   * 
+   * Simplified formula based on model size:
+   * - 7B model: ~32 layers, 4096 hidden
+   * - 13B model: ~40 layers, 5120 hidden
+   * - 70B model: ~80 layers, 8192 hidden
+   * 
+   * Rough approximation: (params_in_billions * 37,500) * bytes_per_value
    */
   private getBytesPerToken(
     modelParams: number,
@@ -119,9 +152,10 @@ export class ContextPoolImpl implements ContextPool {
     };
 
     // KV cache has 2 components (K and V)
-    // Approximate formula based on model parameters
+    // Approximate formula: (params_in_billions * 37,500) * bytes_per_value
+    // This gives roughly the right order of magnitude for typical transformer models
     const bytes = bytesPerValue[quantization];
-    return (modelParams * 2 * bytes) / 1e9;
+    return modelParams * 37500 * bytes;
   }
 
   /**
@@ -179,13 +213,13 @@ export class ContextPoolImpl implements ContextPool {
    * Get current usage statistics
    */
   getUsage(): ContextUsage {
-    const percentage = this.currentSize > 0
-      ? (this.currentTokens / this.currentSize) * 100
+    const percentage = this.userContextSize > 0
+      ? (this.currentTokens / this.userContextSize) * 100
       : 0;
 
     return {
       currentTokens: this.currentTokens,
-      maxTokens: this.currentSize,
+      maxTokens: this.userContextSize, // Show user's selected size in UI
       percentage: Math.min(100, Math.max(0, percentage)),
       vramUsed: this.vramInfo?.used ?? 0,
       vramTotal: this.vramInfo?.total ?? 0
@@ -197,6 +231,11 @@ export class ContextPoolImpl implements ContextPool {
    */
   updateConfig(config: Partial<ContextPoolConfig>): void {
     this.config = { ...this.config, ...config };
+
+    // If target size changed, update user context size for UI display
+    if (config.targetContextSize !== undefined) {
+      this.userContextSize = config.targetContextSize;
+    }
 
     // If target size changed and auto-size is off, resize to target
     if (config.targetContextSize !== undefined && !this.config.autoSize) {

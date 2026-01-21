@@ -10,7 +10,7 @@ export interface HookCategory {
     name: string;
     command: string;
     args?: string[];
-    source: 'builtin' | 'user' | 'extension';
+    source: 'builtin' | 'user' | 'workspace' | 'downloaded' | 'extension';
     extensionName?: string;
   }>;
   expanded: boolean;
@@ -38,7 +38,7 @@ export function HookCategory({
   isSelected,
   hasFocus,
   theme,
-  _onToggleExpand,
+  onToggleExpand: _onToggleExpand,
 }: HookCategoryProps) {
   // Category icon mapping (from design document)
   const categoryIcons: Record<string, string> = {

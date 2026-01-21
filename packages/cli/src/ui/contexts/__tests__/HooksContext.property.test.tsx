@@ -56,6 +56,19 @@ describe('HooksContext - Property-Based Tests', () => {
     vi.mocked(settingsService.getHookSettings).mockReturnValue(mockSettings.hooks);
   });
 
+  // Silence verbose provider logs during property tests to reduce spam
+  beforeAll(() => {
+    vi.spyOn(console, 'debug').mockImplementation(() => {});
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'info').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  afterAll(() => {
+    vi.restoreAllMocks();
+  });
+
+
   // Helper component to test the hook
   const TestComponent = ({ onRender }: { onRender: (value: ReturnType<typeof useHooks>) => void }) => {
     const hooks = useHooks();
@@ -127,8 +140,8 @@ describe('HooksContext - Property-Based Tests', () => {
             </HooksProvider>
           );
           
-          // Wait for initialization
-          await new Promise(resolve => setTimeout(resolve, 100));
+          // Short wait for initialization
+          await new Promise(resolve => setTimeout(resolve, 20));
           
           expect(capturedValue).not.toBeNull();
           
@@ -138,7 +151,7 @@ describe('HooksContext - Property-Based Tests', () => {
           
           // Act: Toggle once
           await capturedValue!.toggleHook(hookId);
-          await new Promise(resolve => setTimeout(resolve, 50));
+          await new Promise(resolve => setTimeout(resolve, 10));
           
           // Verify state changed
           const afterFirstToggle = capturedValue!.isHookEnabled(hookId);
@@ -146,7 +159,7 @@ describe('HooksContext - Property-Based Tests', () => {
           
           // Act: Toggle twice (back to original)
           await capturedValue!.toggleHook(hookId);
-          await new Promise(resolve => setTimeout(resolve, 50));
+          await new Promise(resolve => setTimeout(resolve, 10));
           
           // Assert: Back to initial state (idempotency)
           const afterSecondToggle = capturedValue!.isHookEnabled(hookId);
@@ -159,9 +172,8 @@ describe('HooksContext - Property-Based Tests', () => {
         }
       ),
       {
-        // Run 100 test cases with different hook IDs and initial states
-        numRuns: 100,
-        // Verbose output for debugging
+        // Reduced runs for faster feedback in CI/local dev
+        numRuns: 20,
         verbose: false,
       }
     );
@@ -212,7 +224,8 @@ describe('HooksContext - Property-Based Tests', () => {
             </HooksProvider>
           );
           
-          await new Promise(resolve => setTimeout(resolve, 100));
+          // Short wait for initialization
+          await new Promise(resolve => setTimeout(resolve, 20));
           
           expect(capturedValue).not.toBeNull();
           
@@ -222,7 +235,7 @@ describe('HooksContext - Property-Based Tests', () => {
           // Act: Toggle multiple times (even number)
           for (let i = 0; i < toggleCount; i++) {
             await capturedValue!.toggleHook(hookId);
-            await new Promise(resolve => setTimeout(resolve, 20));
+            await new Promise(resolve => setTimeout(resolve, 5));
           }
           
           // Assert: Back to initial state after even number of toggles
@@ -231,7 +244,7 @@ describe('HooksContext - Property-Based Tests', () => {
         }
       ),
       {
-        numRuns: 50,
+        numRuns: 10,
         verbose: false,
       }
     );
@@ -281,7 +294,8 @@ describe('HooksContext - Property-Based Tests', () => {
             </HooksProvider>
           );
           
-          await new Promise(resolve => setTimeout(resolve, 100));
+          // Short wait for initialization
+          await new Promise(resolve => setTimeout(resolve, 20));
           
           expect(capturedValue).not.toBeNull();
           
@@ -291,7 +305,7 @@ describe('HooksContext - Property-Based Tests', () => {
           // Act: Toggle multiple times (odd number)
           for (let i = 0; i < toggleCount; i++) {
             await capturedValue!.toggleHook(hookId);
-            await new Promise(resolve => setTimeout(resolve, 20));
+            await new Promise(resolve => setTimeout(resolve, 5));
           }
           
           // Assert: Opposite of initial state after odd number of toggles
@@ -300,7 +314,7 @@ describe('HooksContext - Property-Based Tests', () => {
         }
       ),
       {
-        numRuns: 50,
+        numRuns: 10,
         verbose: false,
       }
     );

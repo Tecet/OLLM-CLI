@@ -259,7 +259,7 @@ export interface VectorMetadata {
   lastModified: number;
   
   /** Additional custom metadata */
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -309,7 +309,7 @@ export interface KnowledgeItem {
     tags?: string[];
     source?: string;
     timestamp?: number;
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 

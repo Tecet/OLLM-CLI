@@ -28,7 +28,7 @@ export interface ToolStateProvider {
  * - Validate parameters and create tool invocations
  */
 export class ToolRegistry {
-  private tools: Map<string, DeclarativeTool<Record<string, unknown>, unknown>>;
+  private tools: Map<string, DeclarativeTool<unknown, unknown>>;
   private toolStateProvider?: ToolStateProvider;
 
   constructor(toolStateProvider?: ToolStateProvider) {
@@ -44,7 +44,7 @@ export class ToolRegistry {
    * 
    * @param tool The tool to register
    */
-  register(tool: DeclarativeTool<Record<string, unknown>, unknown>): void {
+  register(tool: DeclarativeTool<unknown, unknown>): void {
     this.tools.set(tool.name, tool);
     // Register the schema for validation
     globalValidator.registerSchema(tool.name, tool.schema);
@@ -65,7 +65,7 @@ export class ToolRegistry {
    * @param name The name of the tool to retrieve
    * @returns The tool if found, undefined otherwise
    */
-  get(name: string): DeclarativeTool<Record<string, unknown>, unknown> | undefined {
+  get(name: string): DeclarativeTool<unknown, unknown> | undefined {
     return this.tools.get(name);
   }
 
@@ -76,7 +76,7 @@ export class ToolRegistry {
    * 
    * @returns Array of all registered tools, sorted alphabetically by name
    */
-  list(): DeclarativeTool<Record<string, unknown>, unknown>[] {
+  list(): DeclarativeTool<unknown, unknown>[] {
     return Array.from(this.tools.values()).sort((a, b) =>
       a.name.localeCompare(b.name)
     );
@@ -142,7 +142,7 @@ export class ToolRegistry {
    * 
    * @returns Array of enabled tools, sorted alphabetically by name
    */
-  getEnabledTools(): DeclarativeTool<Record<string, unknown>, unknown>[] {
+  getEnabledTools(): DeclarativeTool<unknown, unknown>[] {
     return this.list().filter((tool) => {
       // If no tool state provider, include all tools (backward compatibility)
       if (!this.toolStateProvider) {
@@ -168,7 +168,7 @@ export class ToolRegistry {
     toolName: string,
     params: Record<string, unknown>,
     context: ToolContext
-  ): ToolInvocation<Record<string, unknown>, unknown> | ValidationError {
+  ): ToolInvocation<unknown, unknown> | ValidationError {
     // Get the tool
     const tool = this.tools.get(toolName);
     if (!tool) {

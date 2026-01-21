@@ -27,15 +27,15 @@ export class MCPSearchProvider implements SearchProvider {
     
     // We need to access mcpClient. 
     // Let's assume ToolRouter exposes mcpClient or a method to get it.
-    // For now, I will cast to any or fix ToolRouter to expose it.
+    // For now, I will cast to unknown or fix ToolRouter to expose it.
     // Better: update ToolRouter to have a public getter or execution method.
     
     // Let's fix ToolRouter in next step if needed. 
     // Assuming we can get client from router property (making it public or using getter).
-    const client = (this.router as any).mcpClient; 
+    const client = (this.router as unknown as { mcpClient: unknown }).mcpClient; 
     
-    const tools = await client.getTools(serverName);
-    const searchTool = tools.find((t: any) => 
+    const tools = await (client as { getTools: (serverName: string) => Promise<Array<{ name: string }>> }).getTools(serverName);
+    const searchTool = tools.find((t: { name: string }) => 
       t.name.toLowerCase().includes('search') || 
       t.name.toLowerCase().includes('query')
     );
@@ -45,7 +45,7 @@ export class MCPSearchProvider implements SearchProvider {
     }
 
     try {
-      const result = await client.callTool(
+      const result = await (client as { callTool: (serverName: string, toolName: string, params: Record<string, unknown>) => Promise<unknown> }).callTool(
         serverName,
         searchTool.name,
         { query, numResults, max_results: numResults, limit: numResults } // Try common parameter names
@@ -61,36 +61,36 @@ export class MCPSearchProvider implements SearchProvider {
     }
   }
 
-  private parseResults(result: any): SearchResult[] {
+  private parseResults(result: unknown): SearchResult[] {
     // If result is string (e.g. from Brave), try to parse if JSON, or wrap as single result
     // If result is object with content array (MCP standard result)
     
-    let content = result;
-    if (result && typeof result === 'object' && Array.isArray(result.content)) {
+    let content: unknown = result;
+    if (result && typeof result === 'object' && 'content' in result && Array.isArray(result.content)) {
        // Extract text content
-       content = result.content.map((c: any) => c.text).join('\n\n');
-    } else if (result && typeof result === 'object' && result.result) {
+       content = result.content.map((c: { text?: string }) => c.text).join('\n\n');
+    } else if (result && typeof result === 'object' && 'result' in result) {
         // Some tools wrapper result in { result: ... }
-        content = result.result;
+        content = (result as { result: unknown }).result;
     }
 
     if (Array.isArray(content)) {
         // Already array? map to SearchResult
-        return content.map((item: any) => ({
-            title: item.title || 'Result',
-            url: item.url || '',
-            snippet: item.snippet || item.description || JSON.stringify(item)
+        return content.map((item: unknown) => ({
+            title: (item as { title?: string }).title || 'Result',
+            url: (item as { url?: string }).url || '',
+            snippet: (item as { snippet?: string; description?: string }).snippet || (item as { snippet?: string; description?: string }).description || JSON.stringify(item)
         }));
     }
 
     if (typeof content === 'string') {
         try {
-            const parsed = JSON.parse(content);
+            const parsed: unknown = JSON.parse(content);
             if (Array.isArray(parsed)) {
-                return parsed.map((item: any) => ({
-                    title: item.title || 'Result',
-                    url: item.url || '',
-                    snippet: item.snippet || item.description || JSON.stringify(item)
+                return parsed.map((item: unknown) => ({
+                    title: (item as { title?: string }).title || 'Result',
+                    url: (item as { url?: string }).url || '',
+                    snippet: (item as { snippet?: string; description?: string }).snippet || (item as { snippet?: string; description?: string }).description || JSON.stringify(item)
                 }));
             }
         } catch {
@@ -200,5 +200,5 @@ export function createSemanticTools(router: ToolRouter): Tool[] {
     // extensionManager.ts registers wrapped tools. 
     
     // Let's assume we return DeclarativeTool instances and the consumer (Mode/Context) handles them.
-    return [webSearchTool as any, docSearchTool as any];
+    return [webSearchTool as Tool, docSearchTool as Tool];
 }

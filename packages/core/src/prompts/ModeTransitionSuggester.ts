@@ -168,13 +168,9 @@ export class ModeTransitionSuggester {
     // Try each suggestion pattern in order of priority
     const suggestion = 
       this.suggestDebuggerMode(context) ||
-      this.suggestSecurityMode(context) ||
-      this.suggestPerformanceMode(context) ||
       this.suggestReviewerMode(context) ||
       this.suggestPlanningMode(context) ||
-      this.suggestDeveloperMode(context) ||
-      this.suggestPrototypeMode(context) ||
-      this.suggestTeacherMode(context);
+      this.suggestDeveloperMode(context);
     
     // Check if suggestion meets minimum confidence
     if (suggestion && suggestion.confidence < this.preferences.minConfidence) {

@@ -114,7 +114,7 @@ export class ThemeManager {
    * Uses deep merge to preserve unspecified default values
    */
   mergeThemes(base: Theme, custom: Partial<Theme>): Theme {
-    return deepMerge(base, custom);
+    return deepMerge(base as unknown as Record<string, unknown>, custom as unknown as Record<string, unknown>) as unknown as Theme;
   }
 
   /**

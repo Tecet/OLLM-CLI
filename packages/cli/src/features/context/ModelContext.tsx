@@ -7,7 +7,7 @@
  * - Sends messages to the LLM and handles streaming responses
  */
 
-import React, { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from 'react';
 import type { ProviderAdapter, Message as ProviderMessage, ToolCall, ToolSchema, ProviderMetrics } from '@ollm/core';
 import { profileManager } from '../profiles/ProfileManager.js';
 import { SettingsService } from '../../config/settingsService.js';
@@ -49,11 +49,12 @@ export interface ModelContextValue {
     }>,
     onText: (text: string) => void,
     onError: (error: string) => void,
-    onComplete: (metrics?: ProviderMetrics) => void,
+    onComplete: (metrics?: ProviderMetrics, finishReason?: 'stop' | 'length' | 'tool') => void,
     onToolCall?: (toolCall: ToolCall) => void,
     onThinking?: (thinking: string) => void,
     tools?: ToolSchema[],
     systemPrompt?: string,
+    timeout?: number,
     temperature?: number
   ) => Promise<void>;
   
@@ -434,10 +435,12 @@ export function ModelProvider({
         
         // Add system message showing tool support status
         const addSystemMessage = globalThis.__ollmAddSystemMessage;
-        const toolStatus = toolSupport ? 'Enabled' : 'Disabled';
-        const override = toolSupportOverridesRef.current.get(model);
-        const persistence = override?.source === 'user_confirmed' ? 'Permanent' : 'Session';
-        addSystemMessage(`Switched to ${model}. Tools: ${toolStatus} (${persistence})`);
+        if (addSystemMessage) {
+          const toolStatus = toolSupport ? 'Enabled' : 'Disabled';
+          const override = toolSupportOverridesRef.current.get(model);
+          const persistence = override?.source === 'user_confirmed' ? 'Permanent' : 'Session';
+          addSystemMessage(`Switched to ${model}. Tools: ${toolStatus} (${persistence})`);
+        }
         
         setCurrentModel(model);
         setModelLoading(true);
@@ -682,7 +685,7 @@ export function ModelProvider({
     }>,
     onText: (text: string) => void,
     onError: (error: string) => void,
-    onComplete: (metrics?: ProviderMetrics) => void,
+    onComplete: (metrics?: ProviderMetrics, finishReason?: 'stop' | 'length' | 'tool') => void,
     onToolCall?: (toolCall: ToolCall) => void,
     onThinking?: (thinking: string) => void,
     tools?: ToolSchema[],
@@ -716,11 +719,27 @@ export function ModelProvider({
       // Get user settings for context size and temperature
       const settingsService = SettingsService.getInstance();
       const settings = settingsService.getSettings();
-      const contextSize = settings.llm?.contextSize ?? 4096;
+      const userContextSize = settings.llm?.contextSize ?? 4096;
       const temperature = settings.llm?.temperature ?? 0.1;
 
-      // DEBUG removed - was causing ESM require error
+      // Get ollama_context_size from profile (85% cap strategy)
+      // This is the actual size we send to Ollama to trigger natural stops
+      let ollamaContextSize = userContextSize; // Default to user's selection
+      
+      if (profile?.context_profiles) {
+        // Find the matching context profile for user's selected size
+        const matchingProfile = profile.context_profiles.find(p => p.size === userContextSize);
+        if (matchingProfile && matchingProfile.ollama_context_size) {
+          ollamaContextSize = matchingProfile.ollama_context_size;
+          console.log(`[Context Cap] User selected: ${userContextSize}, Sending to Ollama: ${ollamaContextSize} (${Math.round((ollamaContextSize / userContextSize) * 100)}%)`);
+        } else {
+          // Fallback: calculate 85% if profile doesn't have ollama_context_size
+          ollamaContextSize = Math.floor(userContextSize * 0.85);
+          console.log(`[Context Cap] No profile found, calculated 85%: ${ollamaContextSize}`);
+        }
+      }
 
+      // DEBUG removed - was causing ESM require error
 
       // Stream the response
       const stream = provider.chatStream({
@@ -732,10 +751,12 @@ export function ModelProvider({
         timeout: requestTimeout,
         think: thinkingEnabled, // Enable thinking for supported models
         options: {
-          num_ctx: contextSize,
+          num_ctx: ollamaContextSize, // Use 85% capped size for natural stops
           temperature: temperatureOverride ?? temperature,
         },
       });
+
+      console.log(`[ModelContext] Sending to Ollama - num_ctx: ${ollamaContextSize}, temperature: ${temperatureOverride ?? temperature}`);
 
       for await (const event of stream) {
         if (abortController.signal.aborted) {
@@ -792,14 +813,14 @@ export function ModelProvider({
               setModelLoading(false);
               clearWarmupStatus();
             }
-            onComplete(event.metrics);
+            onComplete(event.metrics, event.reason);
             return;
         }
       }
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
         // Request was cancelled, not an error
-        onComplete();
+        onComplete(undefined, 'stop');
       } else {
         onError(error instanceof Error ? error.message : String(error));
       }

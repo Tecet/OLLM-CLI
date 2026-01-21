@@ -20,7 +20,7 @@ export interface DialogErrorBoundaryProps {
  */
 export function DialogErrorBoundary({ 
   children, 
-  _onClose, 
+  onClose: _onClose, 
   dialogName = 'Dialog' 
 }: DialogErrorBoundaryProps) {
   return (

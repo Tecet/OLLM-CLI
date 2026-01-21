@@ -265,7 +265,7 @@ export class StdioTransport extends BaseMCPTransport {
       const requestStr = JSON.stringify(jsonRpcRequest) + '\n';
       
       try {
-        if (!this.process.stdin) {
+        if (!this.process || !this.process.stdin) {
           clearTimeout(timeoutId);
           this.pendingRequests.delete(id);
           reject(new Error('Process stdin is not available'));
@@ -282,7 +282,7 @@ export class StdioTransport extends BaseMCPTransport {
       } catch (error) {
         clearTimeout(timeoutId);
         this.pendingRequests.delete(id);
-        reject(error);
+        reject(error instanceof Error ? error : new Error(String(error)));
       }
     });
   }

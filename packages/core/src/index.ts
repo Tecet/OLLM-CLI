@@ -124,6 +124,25 @@ export {
 
 // Utilities
 export { createLogger, getLogLevel, setLogLevel, type Logger, type LogLevel } from './utils/logger.js';
+export { 
+  validateStoragePath, 
+  logPathDiagnostics, 
+  getDefaultStorageLocations, 
+  logAllStorageLocations,
+  ensureStorageDirectories,
+  type PathValidationResult,
+  type StorageLocations
+} from './utils/pathValidation.js';
+export {
+  needsMigration,
+  migrateStorage,
+  runMigrationIfNeeded,
+  type MigrationResult
+} from './utils/storageMigration.js';
+export {
+  initializeStorage,
+  initializeStorageSafe
+} from './utils/storageInitialization.js';
 
 // Context Management System
 export {

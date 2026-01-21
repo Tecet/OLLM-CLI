@@ -71,12 +71,12 @@ export function patchStdio(): () => void {
 
   // Intercept stdin data to handle bracketed paste sequences (\x1b[200~ ... \x1b[201~)
   // Coalesce pasted content into a single 'data' emit to avoid per-character events.
-  const previousStdinEmit = process.stdin.emit.bind(process.stdin as any);
+  const previousStdinEmit = process.stdin.emit.bind(process.stdin as NodeJS.ReadStream & NodeJS.EventEmitter);
   let stdinAcc = '';
   let inPaste = false;
   let pasteBuffer = '';
 
-  (process.stdin as any).emit = function (event: string, chunk?: any) {
+  (process.stdin as NodeJS.ReadStream & NodeJS.EventEmitter).emit = function (event: string, chunk?: Buffer | string) {
     if (event !== 'data' || !chunk) {
       return previousStdinEmit(event, chunk);
     }
@@ -131,12 +131,12 @@ export function patchStdio(): () => void {
         inPaste = false;
         // loop continues to handle remaining data
       }
-    } catch (err) {
+    } catch (_err) {
       return previousStdinEmit(event, chunk);
     }
 
     return true;
-  } as any;
+  } as typeof process.stdin.emit;
 
   process.stdout.write = (
     chunk: Uint8Array | string,
@@ -190,7 +190,7 @@ export function patchStdio(): () => void {
     process.stderr.write = previousStderrWrite;
     // restore stdin emit
     try {
-      (process.stdin as any).emit = previousStdinEmit;
+      (process.stdin as NodeJS.ReadStream & NodeJS.EventEmitter).emit = previousStdinEmit;
     } catch (_e) {
       // ignore
     }

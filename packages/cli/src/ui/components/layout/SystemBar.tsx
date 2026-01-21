@@ -21,34 +21,33 @@ export function SystemBar({ height, showBorder = true }: SystemBarProps) {
   const { theme } = uiState;
   const { isTerminalActive } = useWindow();
 
-  const { streaming, waitingForResponse, inputMode } = chatState;
+  const { streaming, waitingForResponse } = chatState;
 
   const [spinnerIndex, setSpinnerIndex] = useState(0);
-  const spinnerFrames = ['|', '/', '-', '\\'];
+  const spinnerFrames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
 
   useEffect(() => {
-    if (!modelLoading) return;
+    // Show spinner when model is loading OR when streaming (LLM is typing) OR waiting for response
+    if (!modelLoading && !streaming && !waitingForResponse) return;
     const interval = setInterval(() => {
       setSpinnerIndex((prev) => (prev + 1) % spinnerFrames.length);
-    }, 200);
+    }, 80);
     return () => clearInterval(interval);
-  }, [modelLoading, spinnerFrames.length]);
+  }, [modelLoading, streaming, waitingForResponse, spinnerFrames.length]);
 
   // Determine status text
   let displayStatus = ' ';
   if (isTerminalActive) {
     displayStatus = 'Terminal Mode';
-  } else if (inputMode === 'menu') {
-    displayStatus = 'Interactive Menu Active';
   } else if (warmupStatus?.active) {
     const elapsedSeconds = Math.max(0, Math.floor(warmupStatus.elapsedMs / 1000));
     displayStatus = `Warming model (try ${warmupStatus.attempt}, ${elapsedSeconds}s) ${spinnerFrames[spinnerIndex]}`;
   } else if (modelLoading) {
-    displayStatus = `Model Loading ${spinnerFrames[spinnerIndex]}`;
+    displayStatus = `Loading Model ${spinnerFrames[spinnerIndex]}`;
   } else if (streaming) {
-    displayStatus = 'Assistant is typing...';
+    displayStatus = `Typing ${spinnerFrames[spinnerIndex]}`;
   } else if (waitingForResponse) {
-    displayStatus = 'Waiting for response...';
+    displayStatus = `Thinking ${spinnerFrames[spinnerIndex]}`;
   } else {
     displayStatus = 'IDLE';
   }
@@ -68,7 +67,7 @@ export function SystemBar({ height, showBorder = true }: SystemBarProps) {
       justifyContent="space-between"
     >
       <Box>
-        <Text color={theme.text.accent} bold>Thinking:</Text>
+        <Text color={theme.text.accent} bold>OLLM:</Text>
         <Text> </Text>
         <Text color={isTerminalActive ? 'cyan' : theme.text.primary}>
           {displayStatus}

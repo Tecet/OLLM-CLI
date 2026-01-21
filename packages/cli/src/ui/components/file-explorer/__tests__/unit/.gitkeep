@@ -1,0 +1,10 @@
+# Unit Tests Directory
+
+This directory contains unit tests for individual File Explorer components and services.
+
+Unit tests focus on:
+- Specific examples of file operations
+- Edge cases (empty directories, single-file trees)
+- Error conditions (invalid paths, permission errors)
+- Integration points between components
+- UI rendering with specific inputs

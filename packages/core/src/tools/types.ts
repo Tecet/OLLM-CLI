@@ -171,7 +171,7 @@ export interface DeclarativeTool<TParams extends object, TResult> {
 /**
  * Generic Tool type alias
  */
-export type Tool = DeclarativeTool<any, any>;
+export type Tool = DeclarativeTool<unknown, unknown>;
 
 /**
  * Message bus interface for requesting user confirmations
@@ -233,4 +233,14 @@ export interface ToolContext {
    * Policy engine for evaluating tool execution policies
    */
   policyEngine?: PolicyEngineInterface;
+
+  /**
+   * Goal manager for tracking goals, checkpoints, and decisions
+   */
+  goalManager?: import('../context/goalTypes.js').GoalManager;
+
+  /**
+   * Workspace boundary for file access validation
+   */
+  workspaceBoundary?: import('../workspace/workspaceBoundary.js').WorkspaceBoundary;
 }

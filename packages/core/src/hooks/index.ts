@@ -12,7 +12,6 @@ export { HookTranslator } from './hookTranslator.js';
 export { HookRunner } from './hookRunner.js';
 export type { HookExecutionResult, HookExecutionSummary } from './hookRunner.js';
 export { HookPlanner } from './hookPlanner.js';
-export type { ExecutionStrategy, HookPlanningOptions } from './hookPlanner.js';
 export { TrustedHooks } from './trustedHooks.js';
 export type { TrustedHooksConfig } from './trustedHooks.js';
 export * from './config.js';

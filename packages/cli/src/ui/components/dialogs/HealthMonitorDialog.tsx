@@ -163,9 +163,9 @@ function ServerHealthItem({
 
       {/* Server details */}
       <Box marginTop={1} marginLeft={2}>
-        {server.uptime > 0 ? (
+        {(server.uptime || 0) > 0 ? (
           <Box marginRight={4}>
-            <Text dimColor>Uptime: {formatUptime(server.uptime)}</Text>
+            <Text dimColor>Uptime: {formatUptime(server.uptime || 0)}</Text>
           </Box>
         ) : null}
         {server.lastCheckTime ? (
@@ -194,7 +194,7 @@ function ServerHealthItem({
 
       {/* Action buttons */}
       <Box marginTop={1} marginLeft={2}>
-        {server.status !== 'stopped' ? (
+        {server.status !== 'disconnected' ? (
           <Box marginRight={1}>
             <Button
               label="Restart"
@@ -214,7 +214,7 @@ function ServerHealthItem({
             icon="📄"
           />
         </Box>
-        {server.status === 'stopped' && server.config.disabled ? (
+        {server.status === 'disconnected' && server.config.disabled ? (
           <Box>
             <Button
               label="Enable"

@@ -299,6 +299,7 @@ export interface ContextProfile {
   size: number;
   size_label?: string;
   vram_estimate: string;
+  ollama_context_size?: number; // 85% cap for natural stops (optional, calculated if not provided)
 }
 
 export interface LLMProfile {

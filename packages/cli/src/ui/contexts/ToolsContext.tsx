@@ -296,7 +296,7 @@ export function ToolsProvider({
       const newEnabledState = !currentlyEnabled;
 
       // Update settings
-      settingsService.setToolEnabled(toolId, newEnabledState);
+      settingsService.setToolState(toolId, newEnabledState);
 
       // Update local state
       setState(prev => {

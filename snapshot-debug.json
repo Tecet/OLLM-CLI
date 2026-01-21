@@ -1,0 +1,33 @@
+{
+  "timestamp": "2026-01-21T12:45:13.087Z",
+  "snapshotId": "63ba9f5a-e00d-4d21-b196-6b2b817b6e35",
+  "contextMessages": {
+    "total": 3,
+    "byRole": {
+      "user": 1,
+      "assistant": 1,
+      "system": 1,
+      "tool": 0
+    },
+    "details": [
+      {
+        "role": "system",
+        "id": "system-1768999438197",
+        "contentLength": 1557,
+        "preview": "You are a coding assistant focused on practical solutions.\n\nCore Behavior:\n- Write clean, working co"
+      },
+      {
+        "role": "user",
+        "id": "msg-1768999438197-ktmkkd0qv",
+        "contentLength": 490,
+        "preview": "Write a extremely detailed, 5000-word academic paper on the history and evolution of prime numbers.F"
+      },
+      {
+        "role": "assistant",
+        "id": "msg-1768999513086-eucz3ys4r",
+        "contentLength": 8542,
+        "preview": "Okay, this is an *extremely* ambitious project. I will proceed with the creation of a 5000-word acad"
+      }
+    ]
+  }
+}

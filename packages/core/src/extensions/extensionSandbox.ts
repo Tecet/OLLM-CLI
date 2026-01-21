@@ -74,7 +74,7 @@ export interface SandboxConfig {
  * Extension sandbox for permission management
  */
 export class ExtensionSandbox {
-  private permissions: Map<string, ExtensionPermissions>;
+  private permissions: Map<string, Required<ExtensionPermissions>>;
   private config: Required<SandboxConfig>;
   private promptCallback?: (
     extensionName: string,
@@ -120,7 +120,7 @@ export class ExtensionSandbox {
     extensionName: string,
     permissions: Partial<ExtensionPermissions>
   ): void {
-    const fullPermissions: ExtensionPermissions = {
+    const fullPermissions: Required<ExtensionPermissions> = {
       extensionName,
       filesystem: permissions.filesystem ?? this.config.defaultPermissions.filesystem ?? [],
       network: permissions.network ?? this.config.defaultPermissions.network ?? [],

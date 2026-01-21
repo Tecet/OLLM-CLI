@@ -81,6 +81,21 @@ export interface ContextManagerState {
   
   /** Whether auto-switching is enabled */
   autoSwitchEnabled: boolean;
+  
+  /** Current prompt tier (for display) */
+  currentTier: string;
+  
+  /** Effective prompt tier (hardware capability tier) */
+  effectivePromptTier: string;
+  
+  /** Actual context tier (based on context size) */
+  actualContextTier: string;
+  
+  /** Whether auto-sizing is enabled */
+  autoSizeEnabled: boolean;
+  
+  /** Hidden field to force re-renders */
+  _forceUpdate?: number;
 }
 
 /**
@@ -140,6 +155,13 @@ export interface ContextManagerActions {
 
   /** Get raw manager instance (use with caution) */
   getManager: () => ContextManagerInterface | null;
+  
+  /** Get the goal manager instance */
+  getGoalManager: () => import('@ollm/core').GoalManager | null;
+  
+  /** Get the reasoning manager instance */
+  getReasoningManager: () => import('@ollm/core').ReasoningManagerImpl | null;
+  
   /** Report in-flight (streaming) token delta to the manager (can be positive or negative) */
   reportInflightTokens: (delta: number) => void;
   /** Clear in-flight token accounting */
@@ -254,6 +276,20 @@ export function ContextManagerProvider({
   const [error, setError] = useState<string | null>(null);
   const [currentMode, setCurrentMode] = useState<ModeType>('assistant');
   const [autoSwitchEnabled, setAutoSwitchEnabled] = useState(true);
+  const [currentTier, setCurrentTier] = useState<string>('Tier 3');
+  const [effectivePromptTier, setEffectivePromptTier] = useState<string>('Tier 3');
+  const [actualContextTier, setActualContextTier] = useState<string>('Tier 3');
+  const [autoSizeEnabled, setAutoSizeEnabled] = useState(true);
+  const [forceUpdateCounter, setForceUpdateCounter] = useState(0);
+
+  // Refs to hold latest tier values for callbacks (avoids stale-closure issues)
+  const currentTierRef = useRef(currentTier);
+  const effectivePromptTierRef = useRef(effectivePromptTier);
+  const actualContextTierRef = useRef(actualContextTier);
+
+  useEffect(() => { currentTierRef.current = currentTier; }, [currentTier]);
+  useEffect(() => { effectivePromptTierRef.current = effectivePromptTier; }, [effectivePromptTier]);
+  useEffect(() => { actualContextTierRef.current = actualContextTier; }, [actualContextTier]);
   
   // Context manager reference
   const managerRef = useRef<ContextManagerInterface | null>(null);
@@ -375,7 +411,80 @@ export function ContextManagerProvider({
         
         modeManager.on('auto-switch-changed', autoSwitchChangeCallback);
         
-        // Start the context manager
+        // Listen for tier changes to update UI (Subtask: Display prompt tier in side panel)
+        // IMPORTANT: Register this BEFORE calling manager.start() so we catch the initial 'started' event
+        const tierChangeCallback = async (data: unknown) => {
+          const fs = await import('fs');
+          fs.appendFileSync('context-debug.log', `[${new Date().toISOString()}] TIER CHANGE EVENT: ${JSON.stringify(data)}\n`);
+          
+          console.log('[UI] ===== TIER CHANGE EVENT RECEIVED =====');
+          console.log('[UI] Event data:', data);
+          
+          const tierData = data as {
+            tier?: string | number;
+            effectivePromptTier?: string | number;
+            actualContextTier?: string | number;
+          };
+          
+          // Convert tier to display string (handles both number and string formats)
+          const tierToString = (tier: string | number | undefined): string => {
+            if (tier === undefined) return 'Unknown';
+            
+            // If it's already a string like "2-4K", convert to "Tier 1"
+            if (typeof tier === 'string') {
+              const tierMap: Record<string, string> = {
+                '2-4K': 'Tier 1',
+                '4-8K': 'Tier 2',
+                '8-32K': 'Tier 3',
+                '32-64K': 'Tier 4',
+                '64K+': 'Tier 5'
+              };
+              return tierMap[tier] || `Tier ${tier}`;
+            }
+            
+            // If it's a number, convert to "Tier X"
+            return `Tier ${tier}`;
+          };
+          
+          console.log('[UI] Before state updates:');
+          console.log('[UI]   currentTier:', currentTierRef.current);
+          console.log('[UI]   effectivePromptTier:', effectivePromptTierRef.current);
+          console.log('[UI]   actualContextTier:', actualContextTierRef.current);
+          
+          // Update currentTier (use tier if available, otherwise use effectivePromptTier)
+          const newCurrentTier = tierData.tier !== undefined 
+            ? tierToString(tierData.tier)
+            : tierData.effectivePromptTier !== undefined
+            ? tierToString(tierData.effectivePromptTier)
+            : currentTierRef.current;
+
+          if (newCurrentTier !== currentTierRef.current) {
+            console.log('[UI] Setting currentTier to:', newCurrentTier);
+            setCurrentTier(newCurrentTier);
+          }
+          
+          if (tierData.effectivePromptTier !== undefined) {
+            const newEffective = tierToString(tierData.effectivePromptTier);
+            console.log('[UI] Setting effectivePromptTier to:', newEffective);
+            setEffectivePromptTier(newEffective);
+          }
+          if (tierData.actualContextTier !== undefined) {
+            const newActual = tierToString(tierData.actualContextTier);
+            console.log('[UI] Setting actualContextTier to:', newActual);
+            setActualContextTier(newActual);
+          }
+          
+          // Force a re-render to ensure UI updates
+          setForceUpdateCounter(prev => prev + 1);
+          
+          console.log(`[UI] Tier changed: Current=${newCurrentTier}, Effective=${tierToString(tierData.effectivePromptTier)}, Actual=${tierToString(tierData.actualContextTier)}`);
+          console.log('[UI] ===== TIER CHANGE EVENT END =====');
+        };
+        
+        manager.on('tier-changed', tierChangeCallback);
+        manager.on('started', tierChangeCallback); // Also listen to started event for initial tier
+        
+        // Start the context manager (this will emit 'started' event which we now catch)
         await manager.start();
         setActive(true);
         // Listen for summarization/compression lifecycle events to update UI state
@@ -388,7 +497,7 @@ export function ContextManagerProvider({
         });
         manager.on('auto-summary-failed', (data) => {
           setCompressing(false);
-          const reason = (data && (data as any).reason) || ((data && (data as any).error) ? String((data as any).error) : null);
+          const reason = (data && (data as { reason?: unknown }).reason) || ((data && (data as { error?: unknown }).error) ? String((data as { error?: unknown }).error) : null);
           if (reason) setError(`Auto-summary failed: ${reason}`);
         });
         manager.on('compressed', () => {
@@ -667,19 +776,42 @@ export function ContextManagerProvider({
     error,
     currentMode,
     autoSwitchEnabled,
+    currentTier,
+    effectivePromptTier,
+    actualContextTier,
+    autoSizeEnabled,
+    _forceUpdate: forceUpdateCounter, // Hidden field to force re-renders
   };
   
   // Resize action
   const resize = useCallback(async (size: number) => {
     if (!managerRef.current) return;
     
+    const fs = await import('fs');
+    const logMsg = `[${new Date().toISOString()}] ===== RESIZE CALLED =====\nTarget size: ${size} tokens\n`;
+    fs.appendFileSync('context-debug.log', logMsg);
+    
+    console.log(`[ContextManagerContext] ===== RESIZE CALLED =====`);
+    console.log(`[ContextManagerContext] Target size: ${size} tokens`);
+    console.log(`[ContextManagerContext] Disabling auto-size`);
+    
     // Update config which will trigger internal resize
     managerRef.current.updateConfig({ targetSize: size, autoSize: false });
+    
+    // Update local state to reflect manual mode
+    setAutoSizeEnabled(false);
     
     // Persist settings
     SettingsService.getInstance().setContextSize(size);
 
-    setUsage(managerRef.current.getUsage());
+    const newUsage = managerRef.current.getUsage();
+    setUsage(newUsage);
+    
+    fs.appendFileSync('context-debug.log', `Resize complete. New usage: ${JSON.stringify(newUsage)}\n`);
+    
+    console.log(`[ContextManagerContext] Resize complete`);
+    console.log(`[ContextManagerContext] New usage:`, newUsage);
+    console.log(`[ContextManagerContext] ===== RESIZE END =====`);
   }, []);
 
   // Hot Swap Action
@@ -877,6 +1009,8 @@ export function ContextManagerProvider({
         return managerRef.current.config;
     },
     getManager: () => managerRef.current,
+    getGoalManager: () => managerRef.current?.getGoalManager() || null,
+    getReasoningManager: () => managerRef.current?.getReasoningManager() || null,
     getModeManager,
     getSnapshotManager,
     getWorkflowManager,

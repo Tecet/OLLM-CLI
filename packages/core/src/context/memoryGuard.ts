@@ -153,59 +153,14 @@ export class MemoryGuardImpl extends EventEmitter implements MemoryGuard {
     // Trigger automatic actions based on level
     switch (level) {
       case MemoryLevel.WARNING:
-        // 80-90%: Trigger compression if available, then notify.
-        if (this.compressionService && this.currentContext) {
-          try {
-            // Fix: Pass correct arguments to compress
-            // CompressionService expects (messages: Message[], strategy: CompressionStrategy)
-            const result = await this.compressionService.compress(
-              this.currentContext.messages,
-              {
-                type: 'hybrid',
-                preserveRecent: 4096,
-                summaryMaxTokens: 1024,
-              }
-            );
-            
-            // Update context with compressed messages
-            if (result.status === 'success') {
-              this.currentContext.messages = [result.summary, ...result.preserved];
-              this.currentContext.tokenCount = result.compressedTokens;
-              
-              // Synchronize with context pool
-              this.contextPool.setCurrentTokens(result.compressedTokens);
-              
-              // Emit success event
-              this.emit('compression-success', {
-                level: MemoryLevel.WARNING,
-                originalTokens: result.originalTokens,
-                compressedTokens: result.compressedTokens,
-                ratio: result.compressionRatio,
-              });
-            } else {
-              // Compression inflated or failed
-              this.emit('compression-failed', {
-                level: MemoryLevel.WARNING,
-                reason: result.status === 'inflated' ? 'Compression would increase size' : 'Unknown failure',
-              });
-            }
-          } catch (error) {
-            console.error('Failed to compress context:', error);
-            // Emit error event for telemetry
-            this.emit('compression-failed', {
-              level: MemoryLevel.WARNING,
-              error: error instanceof Error ? error.message : String(error),
-            });
-          }
-        }
+      case MemoryLevel.CRITICAL:
+        // Just emit event, don't auto-compress or reduce
+        // The 85% cap strategy will handle stopping naturally
+        // Compression and snapshots happen when Ollama stops streaming
         this.emit('threshold-reached', { level, percentage: this.contextPool.getUsage().percentage });
         break;
-      case MemoryLevel.CRITICAL:
-        // 90-95%: Force context reduction
-        await this.forceContextReduction();
-        break;
       case MemoryLevel.EMERGENCY:
-        // >95%: Emergency actions
+        // >95%: Emergency actions only
         await this.executeEmergencyActions();
         break;
       case MemoryLevel.NORMAL:

@@ -441,7 +441,9 @@ export class MCPHealthMonitor {
         await this.client.stopServer(serverName);
 
         // Allow async listeners to flush before restarting.
-        await new Promise(resolve => queueMicrotask(resolve));
+        await new Promise<void>(resolve => {
+          queueMicrotask(() => resolve());
+        });
 
         // Start the server
         await this.client.startServer(serverName, config);

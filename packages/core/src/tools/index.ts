@@ -19,6 +19,14 @@ import { WebSearchTool } from './web-search.js';
 import { MemoryTool } from './memory.js';
 import { WriteTodosTool } from './write-todos.js';
 import { ToolRegistry } from './tool-registry.js';
+import { 
+  CreateGoalTool, 
+  CreateCheckpointTool, 
+  CompleteGoalTool, 
+  RecordDecisionTool, 
+  SwitchGoalTool 
+} from './goal-management.js';
+import { ReadReasoningTool } from './read-reasoning.js';
 
 // Export tool registry
 export { ToolRegistry } from './tool-registry.js';
@@ -58,6 +66,19 @@ export { RememberTool, RememberInvocation, type RememberParams } from './remembe
 export { MemoryDumpTool } from './MemoryDumpTool.js';
 export { HotSwapTool, HotSwapInvocation, type HotSwapParams } from './HotSwapTool.js';
 export { ToolRouter, type ToolRoutingConfig, DEFAULT_TOOL_ROUTING_CONFIG } from './toolRouter.js';
+export { 
+  CreateGoalTool, 
+  CreateCheckpointTool, 
+  CompleteGoalTool, 
+  RecordDecisionTool, 
+  SwitchGoalTool,
+  type CreateGoalParams,
+  type CreateCheckpointParams,
+  type CompleteGoalParams,
+  type RecordDecisionParams,
+  type SwitchGoalParams
+} from './goal-management.js';
+export { ReadReasoningTool, type ReadReasoningParams } from './read-reasoning.js';
 
 /**
  * Configuration for built-in tools that require paths
@@ -121,6 +142,16 @@ export function registerBuiltInTools(registry: ToolRegistry, config?: BuiltInToo
   // Persistent storage tools
   registry.register(new MemoryTool(memoryPath));
   registry.register(new WriteTodosTool(todosPath));
+  
+  // Goal management tools (for tool-capable models)
+  registry.register(new CreateGoalTool());
+  registry.register(new CreateCheckpointTool());
+  registry.register(new CompleteGoalTool());
+  registry.register(new RecordDecisionTool());
+  registry.register(new SwitchGoalTool());
+  
+  // Reasoning traces tool
+  registry.register(new ReadReasoningTool());
   
   // Note: MemoryDumpTool and HotSwapTool are registered dynamically in ChatContext
   // because they require runtime dependencies (modeManager, contextManager, etc.)

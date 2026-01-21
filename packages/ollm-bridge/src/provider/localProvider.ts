@@ -111,6 +111,19 @@ export class LocalProvider implements ProviderAdapter {
       think: request.think, // Pass thinking parameter to Ollama
     };
 
+    // DEBUG: Log the num_ctx being sent to Ollama
+    if (request.options?.num_ctx) {
+      logger.info('Sending num_ctx to Ollama', { 
+        model: request.model,
+        num_ctx: request.options.num_ctx 
+      });
+      console.log(`[LocalProvider] ⚠️ Sending num_ctx=${request.options.num_ctx} to Ollama for model ${request.model}`);
+      console.log(`[LocalProvider] Full request body:`, JSON.stringify(body, null, 2));
+    } else {
+      console.warn(`[LocalProvider] ⚠️ No num_ctx in request options!`);
+      console.log(`[LocalProvider] Request options:`, request.options);
+    }
+
     // Use request-specific timeout if provided, otherwise use config timeout, default to 30s
     const timeout = request.timeout ?? this.config.timeout ?? 30000;
     const controller = new AbortController();
@@ -130,10 +143,17 @@ export class LocalProvider implements ProviderAdapter {
       }, { once: true });
     }
 
-    // Set internal timeout
-    const timeoutId = setTimeout(() => {
-      controller.abort(new Error(`Ollama request timed out after ${timeout}ms`));
-    }, timeout);
+    // Set inactivity timeout - resets on each chunk received
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    const resetTimeout = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        controller.abort(new Error(`Ollama request timed out after ${timeout}ms of inactivity`));
+      }, timeout);
+    };
+    
+    // Start initial timeout
+    resetTimeout();
 
     try {
       const sendRequest = async (payload: typeof body): Promise<Response> => {
@@ -182,7 +202,7 @@ export class LocalProvider implements ProviderAdapter {
         }
 
         if (!response.ok) {
-          clearTimeout(timeoutId);
+          if (timeoutId) clearTimeout(timeoutId);
           const details = errorText.trim();
           logger.error('HTTP error from Ollama', { 
             status: response.status, 
@@ -204,7 +224,7 @@ export class LocalProvider implements ProviderAdapter {
       }
 
       if (!response.body) {
-        clearTimeout(timeoutId);
+        if (timeoutId) clearTimeout(timeoutId);
         yield {
           type: 'error',
           error: { message: 'No response body' },
@@ -220,6 +240,9 @@ export class LocalProvider implements ProviderAdapter {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
+
+        // Reset inactivity timeout - we received data
+        resetTimeout();
 
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split('\n');
@@ -279,7 +302,7 @@ export class LocalProvider implements ProviderAdapter {
         };
       }
     } finally {
-      clearTimeout(timeoutId);
+      if (timeoutId) clearTimeout(timeoutId);
     }
   }
 
@@ -571,14 +594,14 @@ export class LocalProvider implements ProviderAdapter {
               // Only treat as tool call if it has the right structure AND looks like a function
               if (hasName && hasParams && looksLikeFunction) {
                   // Handle parameters/args that might not be objects
-                  let args: Record<string, unknown> | string;
+                  let args: Record<string, unknown>;
                   const rawParams = possibleToolCall.parameters || possibleToolCall.args;
                   
                   if (typeof rawParams === 'object' && rawParams !== null) {
                       args = rawParams as Record<string, unknown>;
                   } else {
-                      // Keep raw value if it's not an object (e.g., string, number)
-                      args = rawParams as string;
+                      // Wrap non-object values in an object to match ToolCall interface
+                      args = { value: rawParams };
                   }
                   
                   yield {

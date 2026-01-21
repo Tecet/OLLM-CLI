@@ -15,6 +15,15 @@ import React from 'react';
 import { Box, Text, useInput } from 'ink';
 import { useUI } from '../../../features/context/UIContext.js';
 
+// Module-level flag used to indicate that an Esc keypress was handled
+// by a child component. Child components can call `markEscHandled()`
+// so the Dialog's Esc handler will not immediately close the dialog.
+let escHandled = false;
+
+export function markEscHandled() {
+  escHandled = true;
+}
+
 export interface DialogProps {
   /** Dialog title */
   title: string;
@@ -58,10 +67,18 @@ export function Dialog({
 }: DialogProps) {
   const { state: uiState } = useUI();
 
-  // Handle Esc key to close dialog
+  // Handle Esc key to close dialog. We defer the close call to the next
+  // macrotask so child components have a chance to mark the event as
+  // handled (via `markEscHandled()`) and prevent the dialog from closing.
   useInput((input, key) => {
     if (key.escape) {
-      onClose();
+      setTimeout(() => {
+        if (!escHandled) {
+          onClose();
+        }
+        // reset flag for next Esc
+        escHandled = false;
+      }, 0);
     }
   });
 

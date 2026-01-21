@@ -11,6 +11,46 @@ import { DEVELOPER_MODE_TEMPLATE } from './developer.js';
 import { DEBUGGER_MODE_TEMPLATE } from './debugger.js';
 import { REVIEWER_MODE_TEMPLATE } from './reviewer.js';
 
+export const TOOL_MODE_TEMPLATE = `You are a Tool Expert, specialized in using CLI tools and executing commands.
+Focus on:
+- Correct syntax and usage of tools
+- Automating tasks via scripts
+- Understanding tool outputs
+- Chaining commands effectively
+`;
+
+export const SECURITY_MODE_TEMPLATE = `You are a Security Specialist, focused on identifying and mitigating vulnerabilities.
+Focus on:
+- Identifying security risks (OWASP Top 10, etc.)
+- Secure coding practices
+- Vulnerability assessment
+- Risk mitigation strategies
+`;
+
+export const PERFORMANCE_MODE_TEMPLATE = `You are a Performance Engineer, dedicated to optimizing system efficiency.
+Focus on:
+- Latency reduction
+- Resource usage optimization (CPU, Memory)
+- Profiling and benchmarking
+- Scalability and throughput
+`;
+
+export const PROTOTYPE_MODE_TEMPLATE = `You are a Rapid Prototyper, focused on quick iteration and proof-of-concepts.
+Focus on:
+- Speed of implementation
+- Core functionality over polish
+- Experimentation and learning
+- "Fail fast" approach
+`;
+
+export const TEACHER_MODE_TEMPLATE = `You are a Technical Educator, skilled in explaining complex concepts.
+Focus on:
+- Clear, accessible explanations
+- Step-by-step guidance
+- Analogies and examples
+- Verifying understanding
+`;
+
 export {
   ASSISTANT_MODE_TEMPLATE,
   PLANNING_MODE_TEMPLATE,
@@ -28,6 +68,11 @@ export const MODE_TEMPLATES = {
   developer: DEVELOPER_MODE_TEMPLATE,
   debugger: DEBUGGER_MODE_TEMPLATE,
   reviewer: REVIEWER_MODE_TEMPLATE,
+  tool: TOOL_MODE_TEMPLATE,
+  security: SECURITY_MODE_TEMPLATE,
+  performance: PERFORMANCE_MODE_TEMPLATE,
+  prototype: PROTOTYPE_MODE_TEMPLATE,
+  teacher: TEACHER_MODE_TEMPLATE,
 } as const;
 
 /**
@@ -73,5 +118,45 @@ export const MODE_METADATA = {
     color: 'orange',
     description: 'Code review, quality assessment, security audits',
     temperatureTier: 2,
+  },
+  tool: {
+    name: 'Tool Expert',
+    persona: 'CLI & Tool Specialist',
+    icon: '🔧',
+    color: 'cyan',
+    description: 'Command execution, automation, tool usage',
+    temperatureTier: 1,
+  },
+  security: {
+    name: 'Security',
+    persona: 'Security Specialist',
+    icon: '🔒',
+    color: 'purple',
+    description: 'Security auditing, vulnerability assessment, hardening',
+    temperatureTier: 1,
+  },
+  performance: {
+    name: 'Performance',
+    persona: 'Performance Engineer',
+    icon: '⚡',
+    color: 'magenta',
+    description: 'Optimization, profiling, efficiency improvements',
+    temperatureTier: 1,
+  },
+  prototype: {
+    name: 'Prototyper',
+    persona: 'Rapid Prototyper',
+    icon: '🔬',
+    color: 'bright-cyan',
+    description: 'Quick experiments, POCs, fast iteration',
+    temperatureTier: 3,
+  },
+  teacher: {
+    name: 'Teacher',
+    persona: 'Technical Educator',
+    icon: '👨‍🏫',
+    color: 'warm-yellow',
+    description: 'Explaining concepts, tutorials, educational guidance',
+    temperatureTier: 3,
   },
 } as const;

@@ -7,7 +7,7 @@
 
 import { spawn } from 'child_process';
 import * as path from 'path';
-import type { Hook, HookInput, HookOutput } from './types.js';
+import type { Hook, HookEvent, HookInput, HookOutput } from './types.js';
 import { HookTranslator } from './hookTranslator.js';
 import type { TrustedHooks } from './trustedHooks.js';
 import type { HooksConfig } from './config.js';
@@ -135,7 +135,7 @@ export class HookRunner {
    */
   private async executeHookInternal(hook: Hook, input: HookInput): Promise<HookOutput> {
     const hookDebugger = getHookDebugger();
-    const traceId = hookDebugger.startTrace(hook, input.event, input);
+    const traceId = hookDebugger.startTrace(hook, input.event as HookEvent, input);
     
     let child: ReturnType<typeof spawn> | null = null;
     let timeoutId: NodeJS.Timeout | null = null;
@@ -201,13 +201,17 @@ export class HookRunner {
 
       // Wait for process to complete
       const exitCode = await new Promise<number | null>((resolve, reject) => {
+        if (!child) {
+          return reject(new Error('Failed to spawn child process'));
+        }
+
         child.on('exit', (code) => {
-          clearTimeout(timeoutId);
+          if (timeoutId) clearTimeout(timeoutId);
           resolve(code);
         });
 
         child.on('error', (error) => {
-          clearTimeout(timeoutId);
+          if (timeoutId) clearTimeout(timeoutId);
           reject(error);
         });
       });
@@ -573,12 +577,12 @@ export class HookRunner {
       // Wait for process to complete
       const exitCode = await new Promise<number | null>((resolve, reject) => {
         child.on('exit', (code) => {
-          clearTimeout(timeoutId);
+          if (timeoutId) clearTimeout(timeoutId);
           resolve(code);
         });
 
         child.on('error', (error) => {
-          clearTimeout(timeoutId);
+          if (timeoutId) clearTimeout(timeoutId);
           reject(error);
         });
       });

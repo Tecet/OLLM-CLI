@@ -54,7 +54,7 @@ export function HookItem({
   hasFocus,
   isEnabled,
   theme,
-  onSelect,
+  onSelect: _onSelect,
 }: HookItemProps) {
   // Enhanced color scheme for better visual distinction
   const getTextColor = () => {
@@ -70,7 +70,7 @@ export function HookItem({
   const shouldDim = !isEnabled;
 
   return (
-    <Box paddingLeft={2} paddingY={0} onClick={onSelect}>
+    <Box paddingLeft={2} paddingY={0}>
       <Box gap={1}>
         {/* Enable/disable indicator with enhanced colors */}
         <Text color={indicatorColor} bold={isEnabled}>

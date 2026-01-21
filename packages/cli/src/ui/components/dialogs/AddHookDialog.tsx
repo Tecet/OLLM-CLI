@@ -30,29 +30,12 @@ export interface AddHookDialogProps {
   onCancel: () => void;
 }
 
-/**
- * Validate hook form data
- */
-function validateHookForm(formData: HookFormData): ValidationErrors {
-  const errors: ValidationErrors = {};
-
-  // Name is required
-  if (!formData.name || formData.name.trim() === '') {
-    errors.name = 'Name is required';
-  }
-
-  // Command is required
-  if (!formData.command || formData.command.trim() === '') {
-    errors.command = 'Command is required';
-  }
-
-  return errors;
-}
+// Note: form validation will be implemented when the interactive editor is added.
 
 /**
  * AddHookDialog component
  */
-export function AddHookDialog({ onSave, _onCancel }: AddHookDialogProps) {
+export function AddHookDialog({ onSave: _onSave, onCancel: _onCancel }: AddHookDialogProps) {
   const { state: uiState } = useUI();
 
   const [formData, _setFormData] = useState<HookFormData>({
@@ -61,29 +44,8 @@ export function AddHookDialog({ onSave, _onCancel }: AddHookDialogProps) {
     args: [],
   });
 
-  const [errors, setErrors] = useState<ValidationErrors>({});
-  const [isSaving, setIsSaving] = useState(false);
-
-  const _handleSave = async () => {
-    // Validate form
-    const validationErrors = validateHookForm(formData);
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
-
-    // Save hook
-    setIsSaving(true);
-    try {
-      await onSave(formData);
-      // Dialog will be closed by parent
-    } catch (error) {
-      setErrors({
-        name: error instanceof Error ? error.message : 'Failed to save hook',
-      });
-      setIsSaving(false);
-    }
-  };
+  const [errors, _setErrors] = useState<ValidationErrors>({});
+  const [isSaving, _setIsSaving] = useState(false);
 
   return (
     <Box

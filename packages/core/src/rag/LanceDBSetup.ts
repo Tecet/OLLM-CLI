@@ -36,7 +36,7 @@ export interface SchemaField {
   required?: boolean;
   
   /** Default value */
-  default?: any;
+  default?: unknown;
 }
 
 /**
@@ -243,7 +243,7 @@ export class LanceDBSetup {
       }
       
       // Build initial record for schema inference
-      const initRecord: any = {
+      const initRecord: Record<string, unknown> = {
         id: 'init',
         vector: new Array(schema.dimensions).fill(0)
       };
@@ -330,7 +330,7 @@ export class LanceDBSetup {
   /**
    * Get default value for a schema field
    */
-  private getDefaultValue(field: SchemaField): any {
+  private getDefaultValue(field: SchemaField): unknown {
     if (field.default !== undefined) {
       return field.default;
     }

@@ -272,10 +272,6 @@ export const mockTheme = {
     primary: '#d4d4d4',
     secondary: '#858585',
     accent: '#4ec9b0',
-    error: '#f48771',
-    warning: '#dcdcaa',
-    success: '#4ec9b0',
-    muted: '#6a6a6a',
   },
   bg: {
     primary: '#1e1e1e',
@@ -286,6 +282,7 @@ export const mockTheme = {
   border: {
     primary: '#3e3e42',
     secondary: '#007acc',
+    active: '#007acc',
   },
   status: {
     success: '#4ec9b0',

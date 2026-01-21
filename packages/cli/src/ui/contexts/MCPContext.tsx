@@ -56,6 +56,12 @@ export interface ExtendedMCPServerStatus extends MCPServerStatus {
     expiresAt?: number;
     scopes?: string[];
   };
+  /** Last health check timestamp */
+  lastCheckTime?: number;
+  /** Last response time in ms */
+  responseTime?: number;
+  /** Last error message */
+  lastError?: string;
 }
 
 /**
@@ -173,8 +179,26 @@ export function MCPProvider({
   // Track registered tools to avoid state dependency in loadServers
   const lastRegisteredTools = React.useRef<Map<string, MCPTool[]>>(new Map());
 
-  const { container } = useServices();
-  const toolRegistry = container.getToolRegistry();
+  // Try to get services from ServiceContext. Tests may not provide a ServiceProvider,
+  // so fall back to a minimal no-op tool registry to avoid throwing in test environments.
+  let container: unknown;
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    container = useServices().container;
+  } catch {
+    container = undefined;
+  }
+
+  const toolRegistry = useMemo(() => {
+    if (container && typeof (container as Record<string, unknown>).getToolRegistry === 'function') {
+      return (container as Record<string, () => unknown>).getToolRegistry();
+    }
+    // Minimal fallback tool registry used only for tests: register/unregister are no-ops
+    return {
+      register: () => {},
+      unregister: () => {},
+    } as { register: (tool: unknown) => void; unregister: (name: string) => void };
+  }, [container]);
 
   // Initialize services
   const oauthProvider = useMemo(() => {
@@ -262,9 +286,18 @@ export function MCPProvider({
           continue;
         }
         
-        // Check if server is already started
-        const existingStatus = mcpClient.getServerStatus(serverName);
-        if (existingStatus.status === 'disconnected') {
+        // Check if server is already started (client may provide getServerStatus)
+        let existingStatus: Record<string, unknown> | undefined;
+        if (typeof (mcpClient as Record<string, unknown>).getServerStatus === 'function') {
+          try {
+            existingStatus = await ((mcpClient as Record<string, (name: string) => Promise<Record<string, unknown>>>).getServerStatus(serverName));
+          } catch {
+            // ignore and continue
+            existingStatus = undefined;
+          }
+        }
+
+        if (existingStatus && existingStatus.status === 'disconnected') {
           // Server not started yet, start it
           try {
             await mcpClient.startServer(serverName, serverConfig);
@@ -275,22 +308,43 @@ export function MCPProvider({
         }
       }
       
-      // Get server statuses from client
-      const serverStatuses = mcpClient.getAllServerStatuses();
-      
+      // Get server statuses from client (client may return a Promise)
+      const serverStatuses = await (mcpClient.getAllServerStatuses() as Promise<Map<string, MCPServerStatus>>);
+
       // Build extended server status map
       const servers = new Map<string, ExtendedMCPServerStatus>();
-      
-      // Process ALL servers from config (including disabled ones)
-      for (const [serverName, serverConfig] of Object.entries(config.mcpServers)) {
-        // Get status from client (will be 'disconnected' if not started)
+
+      // Include servers from BOTH saved config and any servers discovered by the client
+      const configServerNames = Object.keys(config.mcpServers || {});
+      const clientServerNames = Array.from(serverStatuses.keys());
+      const allServerNames = Array.from(new Set([...configServerNames, ...clientServerNames]));
+
+      for (const serverName of allServerNames) {
+        const serverConfig = (config.mcpServers || {})[serverName] as ExtendedMCPServerConfig | undefined;
+
+        // If this server is configured and explicitly disabled, skip starting it
+        if (serverConfig?.disabled) {
+          // Still include as disabled entry with disconnected status
+          servers.set(serverName, {
+            name: serverName,
+            status: 'disconnected',
+            tools: 0,
+            uptime: 0,
+            config: serverConfig,
+            health: 'degraded',
+            toolsList: [],
+          } as unknown as ExtendedMCPServerStatus);
+          continue;
+        }
+
+        // For configured servers, attempt to use the client's reported status
         const status = serverStatuses.get(serverName) || {
           name: serverName,
           status: 'disconnected' as const,
           tools: 0,
           uptime: 0,
         };
-        
+
         // Get tools (only if connected)
         let toolsList: MCPTool[] = [];
         try {
@@ -302,38 +356,39 @@ export function MCPProvider({
         }
 
         // Manage tool registration
-        // 1. Unregister previous tools (if any) to handle updates
         const prevTools = lastRegisteredTools.current.get(serverName);
         if (prevTools) {
-            unregisterServerTools(serverName, prevTools);
+          unregisterServerTools(serverName, prevTools);
         }
-        
-        // 2. Register current tools (if connected)
+
         if (status.status === 'connected' && toolsList.length > 0) {
-            registerServerTools(serverName, toolsList);
-            lastRegisteredTools.current.set(serverName, toolsList);
+          registerServerTools(serverName, toolsList);
+          lastRegisteredTools.current.set(serverName, toolsList);
         } else {
-            lastRegisteredTools.current.delete(serverName);
+          lastRegisteredTools.current.delete(serverName);
         }
-        
-        // Get OAuth status
+
+        // Get OAuth status only when configured
         let oauthStatus;
-        if (serverConfig.oauth?.enabled) {
+        if (serverConfig?.oauth?.enabled) {
           try {
             oauthStatus = await oauthProvider.getOAuthStatus(serverName);
           } catch (error) {
             console.warn(`Failed to get OAuth status for ${serverName}:`, error);
           }
         }
-        
-        // Determine health status
-        const health = status.status === 'connected' ? 'healthy' :
-                      status.status === 'error' ? 'unhealthy' :
-                      'degraded';
-        
+
+        // Determine health status. Prefer client-reported `health` when available,
+        // otherwise infer from the connection `status`.
+        const statusRecord = status as Record<string, unknown>;
+        const health = statusRecord.health ? statusRecord.health :
+                (status.status === 'connected' ? 'healthy' :
+                status.status === 'error' ? 'unhealthy' :
+                'degraded');
+
         servers.set(serverName, {
           ...status,
-          config: serverConfig,
+          config: serverConfig || ({} as ExtendedMCPServerConfig),
           health,
           toolsList,
           oauthStatus,

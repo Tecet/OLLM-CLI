@@ -143,7 +143,7 @@ export const DEFAULT_SERVICES_CONFIG: Required<ServicesConfig> = {
   },
   compression: {
     enabled: true,
-    threshold: 0.6,
+    threshold: 0.8,
     strategy: 'hybrid' as CompressionStrategy,
     preserveRecent: 4096,
   },
@@ -178,7 +178,7 @@ export const DEFAULT_SERVICES_CONFIG: Required<ServicesConfig> = {
     kvQuantization: 'q8_0',
     compression: {
       enabled: true,
-      threshold: 0.6,
+      threshold: 0.8,
       strategy: 'hybrid',
       preserveRecent: 4096,
       summaryMaxTokens: 1024,
@@ -252,7 +252,7 @@ export function mergeServicesConfig(
       ...DEFAULT_SERVICES_CONFIG.fileDiscovery,
       ...userConfig.fileDiscovery,
       builtinIgnores: [
-        ...DEFAULT_SERVICES_CONFIG.fileDiscovery.builtinIgnores,
+        ...(DEFAULT_SERVICES_CONFIG.fileDiscovery.builtinIgnores ?? []),
         ...(userConfig.fileDiscovery?.builtinIgnores ?? [])
       ],
     },
@@ -260,10 +260,10 @@ export function mergeServicesConfig(
       ...DEFAULT_SERVICES_CONFIG.environment,
       ...userConfig.environment,
       allowList: userConfig.environment?.allowList
-        ? [...DEFAULT_SERVICES_CONFIG.environment.allowList, ...(userConfig.environment.allowList ?? [])]
+        ? [...(DEFAULT_SERVICES_CONFIG.environment.allowList ?? []), ...(userConfig.environment.allowList ?? [])]
         : DEFAULT_SERVICES_CONFIG.environment.allowList,
       denyPatterns: userConfig.environment?.denyPatterns
-        ? [...DEFAULT_SERVICES_CONFIG.environment.denyPatterns, ...(userConfig.environment.denyPatterns ?? [])]
+        ? [...(DEFAULT_SERVICES_CONFIG.environment.denyPatterns ?? []), ...(userConfig.environment.denyPatterns ?? [])]
         : DEFAULT_SERVICES_CONFIG.environment.denyPatterns,
     },
     contextManagement: {

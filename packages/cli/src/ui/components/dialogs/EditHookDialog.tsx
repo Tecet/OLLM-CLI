@@ -27,8 +27,8 @@ export interface EditHookDialogProps {
  */
 export function EditHookDialog({
   hook,
-  onSave,
-  _onCancel,
+  onSave: _onSave,
+  onCancel: _onCancel,
   isEditable,
 }: EditHookDialogProps) {
   const { state: uiState } = useUI();
@@ -39,8 +39,8 @@ export function EditHookDialog({
     args: hook.args || [],
   });
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isSaving, setIsSaving] = useState(false);
+  const [errors, _setErrors] = useState<Record<string, string>>({});
+  const [isSaving, _setIsSaving] = useState(false);
 
   // Check if hook is editable
   if (!isEditable) {

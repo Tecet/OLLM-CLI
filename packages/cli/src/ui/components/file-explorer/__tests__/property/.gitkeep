@@ -1,0 +1,11 @@
+# Property-Based Tests Directory
+
+This directory contains property-based tests for File Explorer correctness properties.
+
+Property-based tests focus on:
+- Universal properties that hold for all inputs
+- Comprehensive input coverage through randomization
+- Invariants that must be maintained
+- Round-trip properties (save/load, focus/unfocus)
+
+All property tests use fast-check with minimum 100 iterations per test.

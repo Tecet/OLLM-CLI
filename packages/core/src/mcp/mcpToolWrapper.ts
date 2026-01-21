@@ -19,6 +19,8 @@ import type {
 } from '../tools/types.js';
 import { DefaultMCPSchemaConverter } from './mcpSchemaConverter.js';
 
+export type { ToolResult };
+
 /**
  * Tool interface (simplified from internal tool system)
  */
@@ -262,7 +264,7 @@ export class DefaultMCPToolWrapper implements MCPToolWrapper {
       schema: internalSchema,
       createInvocation: (params: Record<string, unknown>, context: ToolContext) => {
         // Convert params to MCP format
-        const mcpArgs = this.schemaConverter.convertArgsToMCP(params);
+        const mcpArgs = this.schemaConverter.convertArgsToMCP(params) as Record<string, unknown>;
         
         // Create invocation
         return new MCPToolInvocation(

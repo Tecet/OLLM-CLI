@@ -6,7 +6,7 @@
 
 import React from 'react';
 import { Box, Text } from 'ink';
-import type { HealthCheckResult } from '@ollm/ollm-cli-core/mcp';
+import type { HealthCheckResult } from '@ollm/ollm-cli-core/mcp/index.js';
 
 export interface MCPStatusProps {
   /** Health check results for all servers */

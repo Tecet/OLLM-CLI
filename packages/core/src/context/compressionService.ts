@@ -195,6 +195,7 @@ export class CompressionService implements ICompressionService {
   /**
    * Truncate strategy: Remove oldest messages until under target
    * Always preserves system prompt (first message with role='system')
+   * NEVER compresses user messages - they are preserved separately
    * 
    * @param messages - Messages to compress
    * @param strategy - Compression strategy configuration
@@ -214,13 +215,17 @@ export class CompressionService implements ICompressionService {
       };
     }
 
+    // NEVER compress user messages - filter them out
+    const userMessages = messages.filter((m) => m.role === 'user');
+    const nonUserMessages = messages.filter((m) => m.role !== 'user');
+
     // Always preserve system prompt if it exists (Requirement 5.2)
-    const _systemPrompt = messages.find((m) => m.role === 'system');
-    const nonSystemMessages = messages.filter((m) => m.role !== 'system');
+    const _systemPrompt = nonUserMessages.find((m) => m.role === 'system');
+    const nonSystemMessages = nonUserMessages.filter((m) => m.role !== 'system');
 
     // Calculate target tokens for preserved messages (Fractional Preservation)
     const targetTokens = this.calculatePreserveTokens(
-      messages,
+      nonUserMessages,
       strategy.preserveRecent
     );
 
@@ -241,16 +246,21 @@ export class CompressionService implements ICompressionService {
       }
     }
 
+    // Add user messages back to preserved (they're never compressed)
+    const allPreserved = [...userMessages, ...preserved]
+      .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+
     // Create summary message indicating truncation
     const truncatedCount = nonSystemMessages.length - preserved.length;
     const summary = this.createTruncationSummary(truncatedCount);
 
-    const compressedTokens = this.countMessageTokens(summary) + currentTokens;
+    const userTokens = this.countMessagesTokens(userMessages);
+    const compressedTokens = this.countMessageTokens(summary) + currentTokens + userTokens;
     const originalTokens = this.countMessagesTokens(messages);
 
     return {
       summary,
-      preserved,
+      preserved: allPreserved,
       originalTokens,
       compressedTokens,
       compressionRatio: compressedTokens / originalTokens,
@@ -260,6 +270,7 @@ export class CompressionService implements ICompressionService {
   /**
    * Summarize strategy: Use LLM to generate summary of older messages
    * Preserves system prompt and recent messages, replaces old messages with summary
+   * NEVER compresses user messages - they are preserved separately
    * 
    * @param messages - Messages to compress
    * @param strategy - Compression strategy configuration
@@ -279,23 +290,27 @@ export class CompressionService implements ICompressionService {
       };
     }
 
+    // NEVER compress user messages - filter them out
+    const userMessages = messages.filter((m) => m.role === 'user');
+    const nonUserMessages = messages.filter((m) => m.role !== 'user');
+
     // Always preserve system prompt if it exists
-    const _systemPrompt = messages.find((m) => m.role === 'system');
-    const nonSystemMessages = messages.filter((m) => m.role !== 'system');
+    const _systemPrompt = nonUserMessages.find((m) => m.role === 'system');
+    const nonSystemMessages = nonUserMessages.filter((m) => m.role !== 'system');
 
     if (nonSystemMessages.length === 0) {
       return {
         summary: this.createEmptySummary(),
-        preserved: [],
+        preserved: userMessages,
         originalTokens: this.countMessagesTokens(messages),
-        compressedTokens: 0,
-        compressionRatio: 0,
+        compressedTokens: this.countMessagesTokens(userMessages),
+        compressionRatio: this.countMessagesTokens(userMessages) / this.countMessagesTokens(messages),
       };
     }
 
     // Calculate how many recent tokens to preserve (Fractional Preservation)
     const recentTokenBudget = this.calculatePreserveTokens(
-      messages,
+      nonUserMessages,
       strategy.preserveRecent
     );
 
@@ -322,13 +337,17 @@ export class CompressionService implements ICompressionService {
     );
 
     if (messagesToSummarize.length === 0) {
-      // Nothing to summarize, just return what we have
+      // Nothing to summarize, add user messages back and return
+      const allPreserved = [...userMessages, ...preserved]
+        .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+      
+      const userTokens = this.countMessagesTokens(userMessages);
       return {
         summary: this.createEmptySummary(),
-        preserved,
+        preserved: allPreserved,
         originalTokens: this.countMessagesTokens(messages),
-        compressedTokens: recentTokens,
-        compressionRatio: recentTokens / this.countMessagesTokens(messages),
+        compressedTokens: recentTokens + userTokens,
+        compressionRatio: (recentTokens + userTokens) / this.countMessagesTokens(messages),
       };
     }
 
@@ -357,12 +376,17 @@ export class CompressionService implements ICompressionService {
       timestamp: new Date(),
     };
 
-    const compressedTokens = this.countMessageTokens(summary) + recentTokens;
+    // Add user messages back to preserved (they're never compressed)
+    const allPreserved = [...userMessages, ...preserved]
+      .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+
+    const userTokens = this.countMessagesTokens(userMessages);
+    const compressedTokens = this.countMessageTokens(summary) + recentTokens + userTokens;
     const originalTokens = this.countMessagesTokens(messages);
 
     return {
       summary,
-      preserved,
+      preserved: allPreserved,
       originalTokens,
       compressedTokens,
       compressionRatio: compressedTokens / originalTokens,
@@ -372,6 +396,7 @@ export class CompressionService implements ICompressionService {
   /**
    * Hybrid strategy: Combine summarize and truncate (Requirement 5.3)
    * Summarizes middle messages, truncates oldest, preserves recent
+   * NEVER compresses user messages - they are preserved separately
    * 
    * @param messages - Messages to compress
    * @param strategy - Compression strategy configuration
@@ -391,23 +416,27 @@ export class CompressionService implements ICompressionService {
       };
     }
 
+    // NEVER compress user messages - filter them out
+    const userMessages = messages.filter((m) => m.role === 'user');
+    const nonUserMessages = messages.filter((m) => m.role !== 'user');
+
     // Always preserve system prompt if it exists
-    const _systemPrompt = messages.find((m) => m.role === 'system');
-    const nonSystemMessages = messages.filter((m) => m.role !== 'system');
+    const _systemPrompt = nonUserMessages.find((m) => m.role === 'system');
+    const nonSystemMessages = nonUserMessages.filter((m) => m.role !== 'system');
 
     if (nonSystemMessages.length === 0) {
       return {
         summary: this.createEmptySummary(),
-        preserved: [],
+        preserved: userMessages,
         originalTokens: this.countMessagesTokens(messages),
-        compressedTokens: 0,
-        compressionRatio: 0,
+        compressedTokens: this.countMessagesTokens(userMessages),
+        compressionRatio: this.countMessagesTokens(userMessages) / this.countMessagesTokens(messages),
       };
     }
 
     // Calculate token budgets (Fractional Preservation)
     const recentTokenBudget = this.calculatePreserveTokens(
-      messages,
+      nonUserMessages,
       strategy.preserveRecent
     );
 
@@ -434,13 +463,17 @@ export class CompressionService implements ICompressionService {
     );
 
     if (olderMessages.length === 0) {
-      // Nothing to compress, just return what we have
+      // Nothing to compress, add user messages back and return
+      const allPreserved = [...userMessages, ...preserved]
+        .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+      
+      const userTokens = this.countMessagesTokens(userMessages);
       return {
         summary: this.createEmptySummary(),
-        preserved,
+        preserved: allPreserved,
         originalTokens: this.countMessagesTokens(messages),
-        compressedTokens: recentTokens,
-        compressionRatio: recentTokens / this.countMessagesTokens(messages),
+        compressedTokens: recentTokens + userTokens,
+        compressionRatio: (recentTokens + userTokens) / this.countMessagesTokens(messages),
       };
     }
 
@@ -478,12 +511,17 @@ export class CompressionService implements ICompressionService {
       timestamp: new Date(),
     };
 
-    const compressedTokens = this.countMessageTokens(summary) + recentTokens;
+    // Add user messages back to preserved (they're never compressed)
+    const allPreserved = [...userMessages, ...preserved]
+      .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+
+    const userTokens = this.countMessagesTokens(userMessages);
+    const compressedTokens = this.countMessageTokens(summary) + recentTokens + userTokens;
     const originalTokens = this.countMessagesTokens(messages);
 
     return {
       summary,
-      preserved,
+      preserved: allPreserved,
       originalTokens,
       compressedTokens,
       compressionRatio: compressedTokens / originalTokens,

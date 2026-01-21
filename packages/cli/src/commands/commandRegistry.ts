@@ -3,6 +3,8 @@ import type { ServiceContainer } from '@ollm/ollm-cli-core/services/serviceConta
 import type { MCPClient } from '@ollm/ollm-cli-core/mcp/types.js';
 import { homeCommand } from './homeCommand.js';
 import { sessionCommands } from './sessionCommands.js';
+import { snapshotCommands } from './snapshotCommands.js';
+import { configCommands } from './configCommands.js';
 import { modelCommands, createModelCommands } from './modelCommands.js';
 import { memoryCommands, createMemoryCommands } from './memoryCommands.js';
 import { templateCommands, createTemplateCommands } from './templateCommands.js';
@@ -46,6 +48,16 @@ export class CommandRegistry {
     
     // Register session commands
     for (const command of sessionCommands) {
+      this.register(command);
+    }
+    
+    // Register snapshot commands
+    for (const command of snapshotCommands) {
+      this.register(command);
+    }
+    
+    // Register config commands
+    for (const command of configCommands) {
       this.register(command);
     }
     

@@ -112,7 +112,7 @@ export function ModeSuggestionDialog({
         <Box marginTop={0}>
           <Text color={theme.text.accent}>
             {'█'.repeat(Math.floor(confidencePercent / 5))}
-            <Text color={theme.text.muted}>
+            <Text color={theme.text.secondary} dimColor>
               {'░'.repeat(20 - Math.floor(confidencePercent / 5))}
             </Text>
           </Text>
@@ -124,21 +124,21 @@ export function ModeSuggestionDialog({
         <Box marginBottom={1} paddingX={1} flexDirection="column">
           {suggestion.context.errorCount !== undefined && (
             <Box>
-              <Text color={theme.text.warning}>
+              <Text color={theme.status.warning}>
                 ⚠️  {suggestion.context.errorCount} error(s) detected
               </Text>
             </Box>
           )}
           {suggestion.context.planComplete && (
             <Box>
-              <Text color={theme.text.success}>
+              <Text color={theme.status.success}>
                 ✓ Plan appears complete
               </Text>
             </Box>
           )}
           {suggestion.context.hasTechnicalTerms && (
             <Box>
-              <Text color={theme.text.info}>
+              <Text color={theme.status.info}>
                 ℹ️  Technical implementation detected
               </Text>
             </Box>
@@ -170,7 +170,7 @@ export function ModeSuggestionDialog({
 
       {/* Instructions */}
       <Box paddingX={1}>
-        <Text color={theme.text.muted} dimColor>
+        <Text color={theme.text.secondary} dimColor>
           Use ↑/↓ to navigate, Enter to select, Esc to cancel
         </Text>
       </Box>

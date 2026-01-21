@@ -248,8 +248,8 @@ export class MCPOAuthProvider {
       const codeVerifier = this.generateCodeVerifier();
       codeChallenge = await this.generateCodeChallenge(codeVerifier);
       // Store code verifier for later use in token exchange
-      (this as any).pendingCodeVerifiers = (this as any).pendingCodeVerifiers || new Map();
-      (this as any).pendingCodeVerifiers.set(serverName, codeVerifier);
+      (this as unknown as { pendingCodeVerifiers?: Map<string, string> }).pendingCodeVerifiers = (this as unknown as { pendingCodeVerifiers?: Map<string, string> }).pendingCodeVerifiers || new Map();
+      (this as unknown as { pendingCodeVerifiers: Map<string, string> }).pendingCodeVerifiers.set(serverName, codeVerifier);
     }
 
     // Build authorization URL

@@ -362,7 +362,7 @@ export function buildChatLines(
         { text: 'ℹ️ ', color: theme.text.accent },
         { text: message.content.split('\n')[0].substring(0, 100) + (message.content.length > 100 ? '...' : ''), color: theme.text.secondary, dim: true }
       ], 0, true, message.id, 'header');
-      return; 
+      continue;
     }
 
     addLine([
