@@ -37,7 +37,7 @@ export function EnhancedFileExplorer({
   rootPath,
   ...props
 }: EnhancedFileExplorerProps) {
-  const [stats, setStats] = useState({
+  const [stats, _setStats] = useState({
     totalFiles: 0,
     focusedFiles: 0,
     gitStatus: 'clean' as 'clean' | 'modified' | 'untracked',

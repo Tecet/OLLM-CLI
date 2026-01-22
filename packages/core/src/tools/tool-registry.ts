@@ -199,7 +199,6 @@ export class ToolRegistry {
         return false;
       },
       async execute(_signal: AbortSignal) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const exec = (tool as any).execute;
         if (typeof exec !== 'function') throw new Error('Tool does not implement execute');
         return exec.call(tool, params, context);

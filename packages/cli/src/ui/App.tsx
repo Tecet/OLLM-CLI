@@ -53,7 +53,7 @@ import { WindowSwitcher } from './components/WindowSwitcher.js';
 import { ChatTab } from './components/tabs/ChatTab.js';
 import { ToolsTab } from './components/tabs/ToolsTab.js';
 import { HooksTab } from './components/tabs/HooksTab.js';
-import { FileExplorerComponent } from './components/file-explorer/FileExplorerComponent.js';
+import { EnhancedFileExplorer } from './components/file-explorer/EnhancedFileExplorer.js';
 import { KeybindsProvider, useKeybinds } from '../features/context/KeybindsContext.js';
 import { SearchTab } from './components/tabs/SearchTab.js';
 import { DocsTab } from './components/tabs/DocsTab.js';
@@ -860,12 +860,17 @@ ${toolSupport}
           return <MCPTab windowWidth={width} />;
         case 'files':
           return (
-            <FileExplorerComponent
+            <EnhancedFileExplorer
+              width={width}
+              height={height}
               rootPath={process.cwd()}
               autoLoadWorkspace={false}
               restoreState={true}
               excludePatterns={['node_modules', '.git', 'dist', 'coverage']}
               hasFocus={true}
+              showHeader={true}
+              showToolbar={true}
+              showStatusBar={true}
               toolRegistry={serviceContainer?.getToolRegistry()}
               policyEngine={serviceContainer?.getPolicyEngine()}
               messageBus={serviceContainer?.getHookService()?.getMessageBus()}

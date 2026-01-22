@@ -68,8 +68,16 @@ export {
 
 // Export components
 export { FileExplorerComponent, type FileExplorerComponentProps } from './FileExplorerComponent.js';
+export { EnhancedFileExplorer } from './EnhancedFileExplorer.js';
 export { FileTreeView, type FileTreeViewProps } from './FileTreeView.js';
 export { FocusedFilesPanel, type FocusedFilesPanelProps } from './FocusedFilesPanel.js';
+
+// Export utilities
+export { 
+  injectFocusedFiles, 
+  getFocusedFilesSummary, 
+  exceedsSizeThreshold 
+} from './FocusedFilesInjector.js';
 export { 
   SyntaxViewer, 
   type SyntaxViewerProps,

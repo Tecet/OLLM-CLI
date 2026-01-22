@@ -8,6 +8,8 @@ import { useUI } from './UIContext.js';
 import { HotSwapTool, MemoryDumpTool, PromptRegistry, MODE_METADATA } from '@ollm/core';
 import type { ToolCall as CoreToolCall, ContextMessage, ProviderMetrics, ToolSchema } from '@ollm/core';
 import { SnapshotManager as _PromptsSnapshotManager } from '@ollm/core/prompts/SnapshotManager.js';
+// removed unused import: injectFocusedFiles
+import { useFocusedFilesInjection } from './useFocusedFilesInjection.js';
 
 // Note: Global callbacks are now registered by AllCallbacksBridge component
 // These declarations are kept for backward compatibility during migration
@@ -220,6 +222,7 @@ export function ChatProvider({
   const { setLaunchScreenVisible, setTheme } = useUI();
   const { container: serviceContainer } = useServices();
   const { sendToLLM, cancelRequest, setCurrentModel, provider, currentModel, modelSupportsTools } = useModel();
+  const injectFocusedFilesIntoPrompt = useFocusedFilesInjection();
   
   const assistantMessageIdRef = useRef<string | null>(null);
   const manualContextRequestRef = useRef<{ modelId: string; onComplete: (value: number) => void | Promise<void> } | null>(null);
@@ -632,6 +635,9 @@ export function ChatProvider({
       if (!supportsTools) {
         systemPrompt += '\n\nNote: This model does not support function calling. Do not attempt to use tools or make tool calls.';
       }
+
+      // Inject focused files into system prompt
+      systemPrompt = injectFocusedFilesIntoPrompt(systemPrompt);
 
       // 1. Initial user message addition to context manager
       if (contextActions) {
@@ -1095,7 +1101,7 @@ export function ChatProvider({
         });
       }
     },
-    [addMessage, sendToLLM, setLaunchScreenVisible, contextActions, provider, currentModel, clearChat, modelSupportsTools, serviceContainer, cancelRequest]
+    [addMessage, sendToLLM, setLaunchScreenVisible, contextActions, provider, currentModel, clearChat, modelSupportsTools, serviceContainer, cancelRequest, injectFocusedFilesIntoPrompt]
   );
 
   const cancelGeneration = useCallback(() => {

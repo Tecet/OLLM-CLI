@@ -341,7 +341,6 @@ export function ContextManagerProvider({
         };
         
         const modeManager = new PromptModeManager(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           systemPromptBuilder as any,
           promptRegistry,
           contextAnalyzer

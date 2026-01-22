@@ -247,8 +247,7 @@ export class HookFileService {
    */
   validateHook(data: unknown): { valid: boolean; errors: string[] } {
     const errors: string[] = [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const d = data as any;
+    const d = data as Record<string, unknown>;
 
     // Required fields
     if (!d.name || typeof d.name !== 'string' || d.name.trim() === '') {

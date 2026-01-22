@@ -56,7 +56,7 @@ const defaultState: FocusState = {
 /**
  * Focus context
  */
-const FileFocusContext = createContext<FileFocusContextValue | undefined>(undefined);
+export const FileFocusContext = createContext<FileFocusContextValue | undefined>(undefined);
 
 /**
  * Props for FileFocusProvider

@@ -73,9 +73,7 @@ const DEFAULT_CONFIG: ContextConfig = {
 if (process.env.NODE_ENV === 'test' || !!process.env.VITEST) {
   if (!process.env.CONTEXT_DEBUG) {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (console as any).debug = () => {};
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (console as any).log = () => {};
     } catch (_e) {
       // ignore
@@ -87,9 +85,7 @@ if (process.env.NODE_ENV === 'test' || !!process.env.VITEST) {
 if (process.env.NODE_ENV === 'test' || !!process.env.VITEST) {
   if (!process.env.CONTEXT_DEBUG) {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (console as any).debug = () => {};
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (console as any).log = () => {};
     } catch (_e) {
       // ignore
@@ -102,9 +98,7 @@ if (process.env.NODE_ENV === 'test' || !!process.env.VITEST) {
 if (process.env.NODE_ENV === 'test' || !!process.env.VITEST) {
   if (!process.env.CONTEXT_DEBUG) {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (console as any).debug = () => {};
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (console as any).log = () => {};
     } catch (_e) {
       // ignore

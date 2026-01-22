@@ -217,7 +217,7 @@ try {
   // Attempt to require a generated module in the same directory
   // The generated file `generated_model_db.ts` will compile to JS next to this file in the build output.
   // Use require to avoid static import errors when the generated file is absent.
-  // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const gen = require('./generated_model_db');
   if (gen && Array.isArray(gen.GENERATED_MODEL_DB)) {
     GENERATED_ENTRIES = gen.GENERATED_MODEL_DB as any;
