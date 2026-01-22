@@ -28,7 +28,7 @@ import { UserPromptProvider } from '../features/context/UserPromptContext.js';
 import { HooksProvider } from './contexts/HooksContext.js';
 import { ToolsProvider } from './contexts/ToolsContext.js';
 import { MCPProvider } from './contexts/MCPContext.js';
-import { WindowProvider, useWindow } from './contexts/WindowContext.js';
+import { WindowProvider } from './contexts/WindowContext.js';
 import { TerminalProvider } from './contexts/TerminalContext.js';
 import { LaunchScreen } from './components/launch/LaunchScreen.js';
 import type { ProviderAdapter, ProviderRequest, ProviderEvent } from '@ollm/core';
@@ -45,9 +45,7 @@ import { TabBar, tabs } from './components/layout/TabBar.js';
 import { ChatInputArea } from './components/layout/ChatInputArea.js';
 import { SystemBar } from './components/layout/SystemBar.js';
 import { SidePanel } from './components/layout/SidePanel.js';
-import { Terminal } from './components/Terminal.js';
 import { GPUInfo } from './components/layout/StatusBar.js';
-import { WindowSwitcher } from './components/WindowSwitcher.js';
 // Model loading indicator not currently used here
 
 import { ChatTab } from './components/tabs/ChatTab.js';
@@ -61,7 +59,6 @@ import { GitHubTab } from './components/tabs/GitHubTab.js';
 import { SettingsTab } from './components/tabs/SettingsTab.js';
 import { MCPTab } from './components/tabs/MCPTab.js';
 import { DialogManager } from './components/dialogs/DialogManager.js';
-import { EditorMockup } from './components/code-editor/EditorMockup.js';
 
 import { useMouse, MouseProvider } from './hooks/useMouse.js';
 import { ErrorBoundary } from './components/ErrorBoundary.js';
@@ -222,7 +219,6 @@ function AppContent({ config }: AppContentProps) {
   const focusManager = useFocusManager();
   const lastWelcomeModelRef = useRef<string | null>(null);
   const prevModelLoadingRef = useRef<boolean>(modelLoading);
-  const { activeWindow } = useWindow();
 
     // Persist hardware info if newfound or better than what we have
   useEffect(() => {
@@ -789,53 +785,25 @@ ${toolSupport}
     );
   }
 
-  // Render active tab
+  /**
+   * Renders the active tab content
+   * 
+   * This function is responsible for rendering the main content area based on the active tab.
+   * The window system (Chat/Terminal/Editor) is managed within the ChatTab component using
+   * WindowSwitcher for visual indication.
+   * 
+   * Architecture Notes:
+   * - Each tab is responsible for its own content and layout
+   * - The ChatTab handles multiple windows (Chat, Terminal, Editor) internally
+   * - Other tabs (Tools, Hooks, Files, etc.) render their own content directly
+   * - Height and width are passed down to allow responsive layouts
+   * 
+   * @param height - Available height for the tab content
+   * @param width - Available width for the tab content
+   * @returns React element containing the active tab's content
+   */
   const renderActiveTab = (height: number, width: number) => {
     const content = (() => {
-      // If we're in terminal mode, show terminal in chat window area
-      if (activeWindow === 'terminal') {
-        const isTerminalFocused = focusManager.isFocused('chat-input') || focusManager.isFocused('chat-history');
-        return (
-          <Box 
-            height={height} 
-            width={width}
-            borderStyle={uiState.theme.border.style as BoxProps['borderStyle']} 
-            borderColor={isTerminalFocused ? uiState.theme.border.active : uiState.theme.border.primary} 
-            flexDirection="column"
-            overflow="hidden"
-          >
-            <Box width="100%" flexShrink={0} flexDirection="row" justifyContent="flex-end" paddingRight={1}>
-              <WindowSwitcher />
-            </Box>
-            <Box flexGrow={1} width="100%">
-              <Terminal height={height - 2} />
-            </Box>
-          </Box>
-        );
-      }
-
-      // If we're in editor mode, show editor in chat window area
-      if (activeWindow === 'editor') {
-        const isEditorFocused = focusManager.isFocused('chat-history');
-        return (
-          <Box 
-            height={height} 
-            width={width}
-            borderStyle={uiState.theme.border.style as BoxProps['borderStyle']} 
-            borderColor={isEditorFocused ? uiState.theme.border.active : uiState.theme.border.primary}
-            flexDirection="column"
-            overflow="hidden"
-          >
-            <Box width="100%" flexShrink={0} flexDirection="row" justifyContent="flex-end" paddingRight={1}>
-              <WindowSwitcher />
-            </Box>
-            <Box flexGrow={1} width="100%">
-              <EditorMockup width={width - 2} height={height - 3} />
-            </Box>
-          </Box>
-        );
-      }
-
       switch (uiState.activeTab) {
         case 'chat':
           return (

@@ -1,6 +1,9 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { Box, useInput, useStdout, BoxProps } from 'ink';
 import { WindowSwitcher } from '../WindowSwitcher.js';
+import { Terminal } from '../Terminal.js';
+import { EditorMockup } from '../code-editor/EditorMockup.js';
+import { useWindow } from '../../contexts/WindowContext.js';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { useChat } from '../../../features/context/ChatContext.js';
 import { useUI } from '../../../features/context/UIContext.js';
@@ -31,6 +34,15 @@ export interface ChatTabProps {
  * ChatTab component
  * 
  * Main chat interface with message history and input box.
+ * This component manages multiple windows (Chat, Terminal, Editor) and displays
+ * the active window based on WindowContext state.
+ * 
+ * Window Management:
+ * - Chat: Default window showing message history
+ * - Terminal: Interactive terminal for command execution
+ * - Editor: Code editor for file editing
+ * 
+ * The WindowSwitcher component provides visual indication of the active window.
  */
 export function ChatTab(props: ChatTabProps) {
   const { metricsConfig, reasoningConfig, columnWidth, height, showBorder = true } = props;
@@ -38,6 +50,7 @@ export function ChatTab(props: ChatTabProps) {
   const { state: uiState } = useUI();
   const { stdout } = useStdout();
   const { isFocused, exitToNavBar } = useFocusManager();
+  const { activeWindow } = useWindow();
   
   const hasFocus = isFocused('chat-history');
 
@@ -147,36 +160,58 @@ export function ChatTab(props: ChatTabProps) {
       borderStyle={showBorder ? (uiState.theme.border.style as BoxProps['borderStyle']) : undefined}
       borderColor={hasFocus ? uiState.theme.text.secondary : uiState.theme.border.primary}
     >
+        {/* Window Switcher - shows which window is active (Chat/Terminal/Editor) */}
         {props.showWindowSwitcher && (
           <Box width="100%" flexShrink={0} flexDirection="row" justifyContent="flex-end" paddingRight={1}>
             <WindowSwitcher />
           </Box>
         )}
-        <Box 
-          flexDirection="column"
-          paddingX={1}
-          flexGrow={1}
-          flexShrink={1}
-        >
-          <ChatHistory
-            messages={chatState.messages}
-            streaming={chatState.streaming}
-            waitingForResponse={chatState.waitingForResponse}
-            scrollToBottom={true}
-            theme={uiState.theme}
-            scrollOffset={scrollOffset}
-            maxVisibleLines={maxVisibleLines}
-            paddingY={0}
-            metricsConfig={finalMetricsConfig}
-            reasoningConfig={finalReasoningConfig}
-            width={columnWidth ? columnWidth - 2 : 78} 
-            selectedLineIndex={selectedLineIndex}
-            lines={lines}
-            scrollHintTop={hasFocus ? "Keyboard Up to scroll" : undefined}
-            scrollHintBottom={hasFocus ? "Keyboard Down to scroll" : undefined}
-            toggleHint={toggleHint}
-          />
-        </Box>
+        
+        {/* Render active window content */}
+        {activeWindow === 'chat' && (
+          <Box 
+            flexDirection="column"
+            paddingX={1}
+            flexGrow={1}
+            flexShrink={1}
+          >
+            <ChatHistory
+              messages={chatState.messages}
+              streaming={chatState.streaming}
+              waitingForResponse={chatState.waitingForResponse}
+              scrollToBottom={true}
+              theme={uiState.theme}
+              scrollOffset={scrollOffset}
+              maxVisibleLines={maxVisibleLines}
+              paddingY={0}
+              metricsConfig={finalMetricsConfig}
+              reasoningConfig={finalReasoningConfig}
+              width={columnWidth ? columnWidth - 2 : 78} 
+              selectedLineIndex={selectedLineIndex}
+              lines={lines}
+              scrollHintTop={hasFocus ? "Keyboard Up to scroll" : undefined}
+              scrollHintBottom={hasFocus ? "Keyboard Down to scroll" : undefined}
+              toggleHint={toggleHint}
+            />
+          </Box>
+        )}
+        
+        {/* Terminal Window */}
+        {activeWindow === 'terminal' && (
+          <Box flexGrow={1} width="100%">
+            <Terminal height={height - (props.showWindowSwitcher ? 3 : 2)} />
+          </Box>
+        )}
+        
+        {/* Editor Window */}
+        {activeWindow === 'editor' && (
+          <Box flexGrow={1} width="100%">
+            <EditorMockup 
+              width={columnWidth ? columnWidth - 2 : 78} 
+              height={height - (props.showWindowSwitcher ? 4 : 3)} 
+            />
+          </Box>
+        )}
     </Box>
   );
 }
