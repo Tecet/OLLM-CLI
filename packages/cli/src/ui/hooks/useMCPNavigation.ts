@@ -90,7 +90,7 @@ export interface MCPNavigationState {
 export function useMCPNavigation(): MCPNavigationState {
   const { state } = useMCP();
   const { servers } = state;
-  const { isFocused, exitToNavBar } = useFocusManager();
+  const { isFocused, exitOneLevel } = useFocusManager();
   
   // Navigation state
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -176,7 +176,7 @@ export function useMCPNavigation(): MCPNavigationState {
         // Auto-save on exit
         saveChanges();
       }
-      exitToNavBar();
+      exitOneLevel();
       return;
     }
     
@@ -220,7 +220,7 @@ export function useMCPNavigation(): MCPNavigationState {
         if (hasUnsavedChanges) {
           saveChanges();
         }
-        exitToNavBar();
+        exitOneLevel();
       } else if (selectedIndex >= 0 && selectedIndex < serverList.length) {
         // Toggle expand/collapse with Enter
         const serverName = serverList[selectedIndex].name;

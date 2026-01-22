@@ -120,7 +120,7 @@ This implementation plan breaks down the debugging and polishing work into discr
   - Remove commented-out code
   - _Requirements: US-2, US-3, TR-2, TR-3_
 
-- [ ] 12. Clean Up Focus Management
+- [x] 12. Clean Up Focus Management
   - Consolidate duplicate focus logic
   - Remove unused focus IDs
   - Add JSDoc to all focus-related functions
