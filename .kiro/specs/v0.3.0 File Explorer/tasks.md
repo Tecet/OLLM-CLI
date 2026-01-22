@@ -268,7 +268,7 @@ Each task builds on previous work and includes property-based tests to validate 
 
 ### Phase 5: File Operations (2-3 days)
 
-- [~] 19. Implement file operation handlers
+- [ ] 19. Implement file operation handlers
   - [x] 19.1 Create `FileOperations.ts` with CRUD operations
     - Implement `createFile()` with path validation
     - Implement `createFolder()` with path validation
@@ -391,8 +391,8 @@ Each task builds on previous work and includes property-based tests to validate 
     - **Property 39: Long Operations Display Loading Indicators**
     - **Validates: Requirements 11.4**
 
-- [~] 27. Implement performance optimizations
-  - [~] 27.1 Add performance monitoring and warnings
+- [ ] 27. Implement performance optimizations
+  - [ ] 27.1 Add performance monitoring and warnings
     - Warn when directory contains >1000 items
     - Implement memory monitoring for tree state
     - Add pagination for large directories

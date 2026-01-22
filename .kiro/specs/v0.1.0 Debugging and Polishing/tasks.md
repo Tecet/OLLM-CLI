@@ -12,7 +12,7 @@ This implementation plan breaks down the debugging and polishing work into discr
 
 ### Phase 1: High-Priority Module Audits (Week 1)
 
-- [ ] 1. Audit Window System
+- [x] 1. Audit Window System
   - Audit `packages/cli/src/ui/App.tsx` renderActiveTab function
   - Audit `packages/cli/src/ui/contexts/WindowContext.tsx`
   - Audit `packages/cli/src/ui/components/WindowSwitcher.tsx`
@@ -22,7 +22,7 @@ This implementation plan breaks down the debugging and polishing work into discr
   - Create audit document: `.dev/audits/window-system-audit.md`
   - _Requirements: US-1, TR-1_
 
-- [ ] 2. Audit Focus Management System
+- [x] 2. Audit Focus Management System
   - Audit `packages/cli/src/features/context/FocusContext.tsx`
   - Audit all focus-related hooks
   - Document focus hierarchy and navigation flow
@@ -31,7 +31,7 @@ This implementation plan breaks down the debugging and polishing work into discr
   - Create audit document: `.dev/audits/focus-management-audit.md`
   - _Requirements: US-1, TR-1_
 
-- [ ] 3. Audit Navigation System
+- [x] 3. Audit Navigation System
   - Audit Tab navigation implementation
   - Audit ESC key handling across all components
   - Audit keyboard shortcut handling
@@ -40,7 +40,7 @@ This implementation plan breaks down the debugging and polishing work into discr
   - Create audit document: `.dev/audits/navigation-system-audit.md`
   - _Requirements: US-1, TR-1_
 
-- [ ] 4. Audit File Explorer
+- [x] 4. Audit File Explorer
   - Audit `packages/cli/src/ui/components/file-explorer/FileExplorerComponent.tsx`
   - Audit `packages/cli/src/ui/components/file-explorer/FileTreeService.ts`
   - Audit `packages/cli/src/ui/components/file-explorer/FocusSystem.ts`
@@ -61,16 +61,17 @@ This implementation plan breaks down the debugging and polishing work into discr
 
 ### Phase 2: Medium-Priority Module Audits (Week 1-2)
 
-- [ ] 6. Audit Context Management
+- [x] 6. Audit Context Management
   - Audit `packages/core/src/context/contextManager.ts`
   - Audit `packages/core/src/context/compressionService.ts`
   - Audit `packages/core/src/context/snapshotManager.ts`
   - Document compression strategies
   - Identify memory optimization opportunities
+  - Read design documentation - docs\Context\New 
   - Create audit document: `.dev/audits/context-management-audit.md`
   - _Requirements: US-1, TR-1_
 
-- [ ] 7. Audit Provider System
+- [x] 7. Audit Provider System
   - Audit `packages/core/src/provider/types.ts`
   - Audit `packages/ollm-bridge/src/provider/localProvider.ts`
   - Document provider adapter pattern
@@ -79,25 +80,27 @@ This implementation plan breaks down the debugging and polishing work into discr
   - Create audit document: `.dev/audits/provider-system-audit.md`
   - _Requirements: US-1, TR-1_
 
-- [ ] 8. Audit Hook System
+- [x] 8. Audit Hook System
   - Audit `packages/core/src/hooks/hookRegistry.ts`
   - Audit `packages/core/src/hooks/hookRunner.ts`
   - Document hook lifecycle
   - Identify security concerns
   - List missing validation
+  - Hooks system is basic, need upgrade and more hooks.
   - Create audit document: `.dev/audits/hook-system-audit.md`
   - _Requirements: US-1, TR-1_
 
-- [ ] 9. Audit MCP Integration
+- [x] 9. Audit MCP Integration
   - Audit `packages/core/src/mcp/mcpClient.ts`
   - Audit `packages/cli/src/ui/components/tabs/MCPTab.tsx`
   - Document MCP protocol integration
   - Identify connection handling issues
   - List areas needing better error messages
+  - include - .dev\Tools unfinished works and .dev\websearch-audit.md
   - Create audit document: `.dev/audits/mcp-integration-audit.md`
   - _Requirements: US-1, TR-1_
 
-- [ ] 10. Audit UI Components
+- [x] 10. Audit UI Components
   - Audit all tab components (ChatTab, ToolsTab, HooksTab, etc.)
   - Audit panel components (SidePanel, WorkspacePanel)
   - Audit dialog components
