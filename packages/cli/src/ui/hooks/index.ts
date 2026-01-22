@@ -1,14 +1,9 @@
 /**
- * UI hooks exports
+ * Navigation Hooks
+ * 
+ * Shared hooks for consistent navigation behavior across the application.
  */
 
-export {
-  useKeyboardShortcuts,
-  useGlobalKeyboardShortcuts,
-  useContextKeyboardShortcuts,
-  type UseKeyboardShortcutsOptions,
-} from './useKeyboardShortcuts.js';
-
+export { useGlobalKeyboardShortcuts } from './useGlobalKeyboardShortcuts.js';
 export { useTabEscapeHandler } from './useTabEscapeHandler.js';
-export { useModalEscapeHandler } from './useModalEscapeHandler.js';
-export { useMCPNavigation, type MCPNavigationState, type NavigationActions } from './useMCPNavigation.js';
+export { useMouse, MouseProvider } from './useMouse.js';

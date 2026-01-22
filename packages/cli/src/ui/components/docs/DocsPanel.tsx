@@ -3,6 +3,7 @@ import { Box, Text, useInput } from 'ink';
 import { useUI } from '../../../features/context/UIContext.js';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { documentService } from '../../../services/documentService.js';
+import { useTabEscapeHandler } from '../../hooks/useTabEscapeHandler.js';
 
 // Keep WINDOW_SIZE as a fallback, but we'll calculate it dynamically
 
@@ -29,6 +30,9 @@ export function DocsPanel({ height, windowWidth }: DocsPanelProps) {
   const { state: uiState } = useUI();
   const focusManager = useFocusManager();
   const hasFocus = focusManager.isFocused('docs-panel');
+  
+  // Use shared escape handler for consistent navigation
+  useTabEscapeHandler(hasFocus);
 
   // Calculate absolute widths if windowWidth is provided
   const absoluteLeftWidth = windowWidth ? Math.floor(windowWidth * 0.3) : undefined;
@@ -195,11 +199,18 @@ export function DocsPanel({ height, windowWidth }: DocsPanelProps) {
     }
   };
 
-  const handleExit = () => {
-    focusManager.exitToNavBar();
-  };
-
-  // Handle keyboard input
+  /**
+   * Keyboard Navigation
+   * 
+   * Navigation Keys:
+   * - ↑/↓: Navigate documents or scroll content
+   * - ←/→: Switch between columns
+   * - Enter: Select document
+   * - ESC/0: Exit to nav bar (handled by useTabEscapeHandler)
+   * 
+   * Note: ESC handling is now managed by the shared useTabEscapeHandler hook
+   * for consistent hierarchical navigation across all tab components.
+   */
   useInput((input, key) => {
     if (!hasFocus) return;
 
@@ -211,10 +222,6 @@ export function DocsPanel({ height, windowWidth }: DocsPanelProps) {
       handleSwitchColumn('left');
     } else if (key.rightArrow) {
       handleSwitchColumn('right');
-    } else if (key.return && isOnExitItem) {
-      handleExit();
-    } else if (key.escape || input === '0') {
-      handleExit();
     }
   }, { isActive: hasFocus });
 

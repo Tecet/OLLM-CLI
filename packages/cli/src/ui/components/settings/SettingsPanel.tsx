@@ -9,6 +9,7 @@ import { useKeybinds } from '../../../features/context/KeybindsContext.js';
 import { ToolCapability, detectServerCapabilities } from '@ollm/ollm-cli-core/tools/tool-capabilities.js';
 import { builtInThemes } from '../../../config/styles.js';
 import { profileManager } from '../../../features/profiles/ProfileManager.js';
+import { useTabEscapeHandler } from '../../hooks/useTabEscapeHandler.js';
 
 const WINDOW_SIZE = 30; // Configurable window size
 
@@ -68,6 +69,9 @@ export function SettingsPanel({ windowWidth }: SettingsPanelProps) {
   const { state: mcpState, getServerTools } = useMCP();
   const { activeKeybinds, defaultKeybinds, setUserBind, restoreDefault, checkConflict } = useKeybinds();
   const hasFocus = focusManager.isFocused('settings-panel');
+  
+  // Use shared escape handler for consistent navigation
+  useTabEscapeHandler(hasFocus);
 
   // Calculate absolute widths if windowWidth is provided
   const absoluteLeftWidth = windowWidth ? Math.floor(windowWidth * 0.3) : undefined;
@@ -557,15 +561,25 @@ export function SettingsPanel({ windowWidth }: SettingsPanelProps) {
     setEditValue('');
   };
 
-  const handleExit = () => {
-    if (isEditingValue) {
-      handleCancelEdit();
-    } else {
-      focusManager.exitToNavBar();
-    }
-  };
-
-  // Handle keyboard input
+  /**
+   * Keyboard Navigation
+   * 
+   * Navigation Keys:
+   * - ↑/↓: Navigate settings
+   * - ←/→: Switch between columns
+   * - Enter: Edit setting or toggle
+   * - ESC: Cancel edit (if editing) or exit to nav bar (handled by useTabEscapeHandler)
+   * - 0: Exit to nav bar (handled by useTabEscapeHandler)
+   * 
+   * Edit Mode:
+   * - Enter: Save changes
+   * - ESC: Cancel changes
+   * - Backspace/Delete: Remove last character
+   * - Any input: Add to value (numbers for numeric, any for keybinds)
+   * 
+   * Note: ESC handling when not editing is now managed by the shared useTabEscapeHandler hook
+   * for consistent hierarchical navigation across all tab components.
+   */
   useInput((input, key) => {
     if (!hasFocus) return;
 
@@ -597,14 +611,11 @@ export function SettingsPanel({ windowWidth }: SettingsPanelProps) {
       } else if (key.rightArrow) {
         handleSwitchColumn('right');
       } else if (key.return) {
-        if (isOnExitItem) {
-          handleExit();
-        } else if (focusedColumn === 'right') {
+        if (focusedColumn === 'right') {
           handleEnterOnSetting();
         }
-      } else if (key.escape || input === '0') {
-        handleExit();
       }
+      // Note: ESC and '0' are now handled by useTabEscapeHandler
     }
   }, { isActive: hasFocus });
 

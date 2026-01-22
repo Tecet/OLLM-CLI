@@ -4,6 +4,7 @@ import { useUI } from '../../../features/context/UIContext.js';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { useTools } from '../../contexts/ToolsContext.js';
 import { ToolToggle } from './ToolToggle.js';
+import { useTabEscapeHandler } from '../../hooks/useTabEscapeHandler.js';
 
 // Category icon mapping (kept for backward compatibility, but now also in ToolsContext)
 const getCategoryIcon = (category: string): string => {
@@ -37,11 +38,14 @@ export interface ToolsPanelProps {
  */
 export function ToolsPanel({ modelSupportsTools = true, windowSize = 30, windowWidth }: ToolsPanelProps) {
   const { state: uiState } = useUI();
-  const { isFocused, exitToNavBar } = useFocusManager();
+  const { isFocused } = useFocusManager();
   const { state: toolsState, toggleTool, refreshTools } = useTools();
   
   // Check if this panel has focus
   const hasFocus = isFocused('tools-panel');
+  
+  // Use shared escape handler for consistent navigation
+  useTabEscapeHandler(hasFocus);
 
   // Calculate absolute widths if windowWidth is provided
   const absoluteLeftWidth = windowWidth ? Math.floor(windowWidth * 0.3) : undefined;
@@ -131,16 +135,6 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 30, windowW
     refreshTools();
   };
 
-  // Handle exit
-  const handleExit = () => {
-    if (hasUnsavedChanges) {
-      // TODO: Show save prompt dialog when DialogManager is ready
-      // For now, just save automatically
-      handleSave();
-    }
-    exitToNavBar();
-  };
-
   // Navigation handlers
   const handleNavigateUp = () => {
     if (isOnExitItem) {
@@ -182,12 +176,6 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 30, windowW
   };
 
   const handleToggleCurrent = () => {
-    // Check if we're on the Exit item
-    if (isOnExitItem) {
-      handleExit();
-      return;
-    }
-    
     const currentCategory = categoryData[selectedCategoryIndex];
     const currentTool = currentCategory.tools[selectedToolIndex];
     if (currentTool) {
@@ -195,7 +183,17 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 30, windowW
     }
   };
 
-  // Handle keyboard input directly
+  /**
+   * Keyboard Navigation
+   * 
+   * Navigation Keys:
+   * - ↑/↓: Navigate through tools
+   * - ←/→/Enter: Toggle tool enable/disable
+   * - ESC/0: Exit to nav bar (handled by useTabEscapeHandler)
+   * 
+   * Note: ESC handling is now managed by the shared useTabEscapeHandler hook
+   * for consistent hierarchical navigation across all tab components.
+   */
   useInput((input, key) => {
     if (!hasFocus) return;
 
@@ -205,8 +203,6 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 30, windowW
       handleNavigateDown();
     } else if (key.leftArrow || key.rightArrow || key.return) {
       handleToggleCurrent();
-    } else if (key.escape || input === '0') {
-      handleExit();
     }
   }, { isActive: hasFocus });
 

@@ -14,7 +14,6 @@
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { Box, Text, useStdout, BoxProps, useInput } from 'ink';
-import { isKey } from './utils/keyUtils.js';
 import { UIProvider, useUI, TabType } from '../features/context/UIContext.js';
 import { ChatProvider, useChat } from '../features/context/ChatContext.js';
 import { GPUProvider, useGPU } from '../features/context/GPUContext.js';
@@ -46,13 +45,13 @@ import { ChatInputArea } from './components/layout/ChatInputArea.js';
 import { SystemBar } from './components/layout/SystemBar.js';
 import { SidePanel } from './components/layout/SidePanel.js';
 import { GPUInfo } from './components/layout/StatusBar.js';
+import { useGlobalKeyboardShortcuts } from './hooks/useGlobalKeyboardShortcuts.js';
 // Model loading indicator not currently used here
 
 import { ChatTab } from './components/tabs/ChatTab.js';
 import { ToolsTab } from './components/tabs/ToolsTab.js';
 import { HooksTab } from './components/tabs/HooksTab.js';
 import { FileExplorerComponent } from './components/file-explorer/FileExplorerComponent.js';
-import { KeybindsProvider, useKeybinds } from '../features/context/KeybindsContext.js';
 import { SearchTab } from './components/tabs/SearchTab.js';
 import { DocsTab } from './components/tabs/DocsTab.js';
 import { GitHubTab } from './components/tabs/GitHubTab.js';
@@ -63,6 +62,7 @@ import { DialogManager } from './components/dialogs/DialogManager.js';
 import { useMouse, MouseProvider } from './hooks/useMouse.js';
 import { ErrorBoundary } from './components/ErrorBoundary.js';
 import { AllCallbacksBridge } from './components/AllCallbacksBridge.js';
+import { KeybindsProvider } from '../features/context/KeybindsContext.js';
 import { 
   WorkspaceProvider, 
   FileTreeProvider, 
@@ -106,7 +106,6 @@ function AppContent({ config }: AppContentProps) {
   const rightColumnWidth = Math.max(20, terminalWidth - leftColumnWidth);
   
   const { state: chatState, clearChat, cancelGeneration, contextUsage: _contextUsage, addMessage, activateMenu, requestManualContextInput, scrollUp, scrollDown } = useChat();
-  const { activeKeybinds } = useKeybinds();
   
   // Helper object for shortcuts (so we don't need to change all callbacks below)
   const chatActions = useMemo(() => ({ scrollUp, scrollDown }), [scrollUp, scrollDown]);
@@ -719,60 +718,37 @@ ${toolSupport}
     setCommandPaletteOpen((prev) => !prev);
   }, []);
 
-  const handleTabSwitch = useCallback((tab: TabType) => {
-    setActiveTab(tab);
-    focusManager.setFocus('nav-bar');
-    focusManager.setMode('browse');
-  }, [setActiveTab, focusManager]);
+  /**
+   * Global Keyboard Shortcuts
+   * 
+   * All global keyboard shortcuts are now handled by the useGlobalKeyboardShortcuts hook.
+   * This provides a centralized location for all shortcuts and makes them easier to maintain.
+   * 
+   * Shortcuts include:
+   * - Tab Navigation: Ctrl+1-9 to switch between tabs
+   * - Layout: Ctrl+B (toggle panel), Ctrl+K (command palette), Ctrl+Shift+D (debug)
+   * - Chat: Ctrl+L (clear), Ctrl+S (save), Ctrl+C (cancel)
+   * - Scroll: Ctrl+PageUp/Down, Meta+Up/Down
+   * - Focus: Tab, Shift+Tab, and direct focus shortcuts
+   * 
+   * See: packages/cli/src/ui/hooks/useGlobalKeyboardShortcuts.ts
+   * See: docs/keyboard-shortcuts.md for complete reference
+   */
+  useGlobalKeyboardShortcuts({
+    onToggleDebug: handleToggleDebug,
+    onCommandPalette: handleCommandPalette,
+    onSaveSession: handleSaveSession,
+    onScrollUp: chatActions.scrollUp,
+    onScrollDown: chatActions.scrollDown,
+  });
 
-  // Register global keyboard shortcuts
-  // Global keyboard shortcuts
+  // Debug key logging (only when debug mode is enabled)
   useInput((input, key) => {
-    // Debug log for keybinds - updated to visual state
-    const keyInfo = `input="${input}", key=${JSON.stringify(key)}`;
-    setLastPressedKey(keyInfo);
-
-    // Tab Navigation
-    if (isKey(input, key, activeKeybinds.tabNavigation.tabChat)) handleTabSwitch('chat');
-    else if (isKey(input, key, activeKeybinds.tabNavigation.tabTools)) handleTabSwitch('tools');
-    else if (isKey(input, key, activeKeybinds.tabNavigation.tabHooks)) handleTabSwitch('hooks');
-    else if (isKey(input, key, activeKeybinds.tabNavigation.tabFiles)) handleTabSwitch('files');
-    else if (isKey(input, key, activeKeybinds.tabNavigation.tabSearch)) handleTabSwitch('search');
-    else if (isKey(input, key, activeKeybinds.tabNavigation.tabDocs)) handleTabSwitch('docs');
-    else if (isKey(input, key, activeKeybinds.tabNavigation.tabGithub)) handleTabSwitch('github');
-    else if (isKey(input, key, activeKeybinds.tabNavigation.tabMcp)) handleTabSwitch('mcp');
-    else if (isKey(input, key, activeKeybinds.tabNavigation.tabSettings)) handleTabSwitch('settings');
-
-    // Layout
-    else if (isKey(input, key, activeKeybinds.layout.togglePanel)) toggleSidePanel();
-    else if (isKey(input, key, activeKeybinds.layout.commandPalette)) handleCommandPalette();
-    else if (isKey(input, key, activeKeybinds.layout.toggleDebug)) handleToggleDebug();
-
-    // Chat
-    else if (isKey(input, key, activeKeybinds.chat.clearChat)) clearChat();
-    else if (isKey(input, key, activeKeybinds.chat.saveSession)) handleSaveSession();
-    else if (isKey(input, key, activeKeybinds.chat.cancel)) {
-        if (chatState.streaming || chatState.waitingForResponse) {
-          cancelGeneration();
-        } else {
-          focusManager.exitOneLevel();  // ✅ Hierarchical navigation
-        }
+    if (debugMode) {
+      const keyInfo = `input="${input}", key=${JSON.stringify(key)}`;
+      setLastPressedKey(keyInfo);
     }
-
-    // Scroll Chat
-    else if (isKey(input, key, 'ctrl+pageup') || isKey(input, key, 'meta+up')) chatActions.scrollUp();
-    else if (isKey(input, key, 'ctrl+pagedown') || isKey(input, key, 'meta+down')) chatActions.scrollDown();
-
-    // Focus Management
-    else if (isKey(input, key, activeKeybinds.global.cycleNext)) focusManager.cycleFocus('next');
-    else if (isKey(input, key, activeKeybinds.global.cyclePrev)) focusManager.cycleFocus('previous');
-    else if (isKey(input, key, activeKeybinds.global.focusChatInput)) focusManager.setFocus('chat-input');
-    else if (isKey(input, key, activeKeybinds.global.focusNavigation)) focusManager.setFocus('nav-bar');
-    else if (isKey(input, key, activeKeybinds.global.focusContext)) focusManager.setFocus('context-panel');
-    else if (isKey(input, key, activeKeybinds.global.focusFileTree)) focusManager.setFocus('file-tree');
-    else if (isKey(input, key, activeKeybinds.global.focusFunctions)) focusManager.setFocus('functions');
-
-  }, { isActive: true });
+  }, { isActive: debugMode });
 
   // Show launch screen
   if (uiState.launchScreenVisible) {
