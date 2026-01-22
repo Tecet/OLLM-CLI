@@ -24,9 +24,14 @@
     "task:complete": "node scripts/task-tracker.js complete",
     "task:credits": "node scripts/task-tracker.js credits",
     "task:status": "node scripts/task-tracker.js status",
-    "task:sync": "node scripts/task-tracker.js sync"
+    "task:sync": "node scripts/task-tracker.js sync",
+    "generate-model-db": "node scripts/generate_model_db.js"
+    ,
+    "validate-profiles": "node scripts/validate_profiles.js",
+    "prebuild": "npm run generate-model-db"
   },
   "devDependencies": {
+    "ajv": "^8.12.0",
     "@eslint/js": "^9.39.2",
     "@testing-library/react": "^16.3.2",
     "@types/jsdom": "^27.0.0",

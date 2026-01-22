@@ -198,7 +198,7 @@ export class ToolRegistry {
       async shouldConfirmExecute() {
         return false;
       },
-      async execute(signal: AbortSignal) {
+      async execute(_signal: AbortSignal) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const exec = (tool as any).execute;
         if (typeof exec !== 'function') throw new Error('Tool does not implement execute');

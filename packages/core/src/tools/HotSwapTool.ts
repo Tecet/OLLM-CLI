@@ -160,15 +160,14 @@ export class HotSwapInvocation implements ToolInvocation<HotSwapParams, ToolResu
         this.snapshotManager
       );
 
-      await hotSwapService.swap(skills, preserveHistory);
+      // This tool explicitly switches to developer mode when invoked by the LLM
+      await hotSwapService.swap(skills, preserveHistory, 'developer');
 
       // Build success message with mode and snapshot info
       let msg = `Hot swap completed successfully. `;
-      
       if (this.modeManager && this.snapshotManager) {
         msg += `Mode transition snapshot created and stored. `;
       }
-      
       msg += `Current active skills: ${skills.join(', ') || 'Standard'}. `;
       if (preserveHistory) {
         msg += `Conversation history has been preserved. `;
@@ -176,14 +175,10 @@ export class HotSwapInvocation implements ToolInvocation<HotSwapParams, ToolResu
         msg += `Context has been cleared and reseeded from snapshot. `;
       }
       msg += `Mode switched to developer for implementation.`;
-      
-      if (this.snapshotManager) {
-        msg += ` Previous context can be restored when switching back from specialized modes.`;
-      }
-      
+
       return {
         llmContent: msg,
-        returnDisplay: msg,
+        returnDisplay: msg
       };
     } catch (error) {
        const err = error as Error;

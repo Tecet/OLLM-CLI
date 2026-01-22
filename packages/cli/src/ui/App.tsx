@@ -13,7 +13,6 @@
  */
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { execSync } from 'child_process';
 import { Box, Text, useStdout, BoxProps, useInput } from 'ink';
 import { isKey } from './utils/keyUtils.js';
 import { UIProvider, useUI, TabType } from '../features/context/UIContext.js';
@@ -46,7 +45,6 @@ import { TabBar, tabs } from './components/layout/TabBar.js';
 import { ChatInputArea } from './components/layout/ChatInputArea.js';
 import { SystemBar } from './components/layout/SystemBar.js';
 import { SidePanel } from './components/layout/SidePanel.js';
-import { Clock } from './components/layout/Clock.js';
 import { Terminal } from './components/Terminal.js';
 import { GPUInfo } from './components/layout/StatusBar.js';
 import { WindowSwitcher } from './components/WindowSwitcher.js';
@@ -71,10 +69,6 @@ import {
   WorkspaceProvider, 
   FileTreeProvider, 
   FileFocusProvider,
-  FileTreeService,
-  FocusSystem,
-  EditorIntegration,
-  FileOperations
 } from './components/file-explorer/index.js';
 
 // Dynamic require for LocalProvider to avoid build-time module resolution errors when bridge isn't installed
@@ -96,10 +90,10 @@ function AppContent({ config }: AppContentProps) {
   // Get terminal dimensions
   const { stdout } = useStdout();
   const terminalHeight = (stdout?.rows || 24) - 1; // reserve 1 for system
-  const rawTerminalWidth = stdout?.columns || 80;
+  const rawTerminalWidth = stdout?.columns || 100;
   
-  // Apply requested 3-char margin on both sides
-  const terminalWidth = Math.max(40, rawTerminalWidth - 6); 
+  // Apply requested 1-char margin on both sides (previously 3)
+  const terminalWidth = Math.max(40, rawTerminalWidth); 
 
   // Layout Calculations for 4-Row Restructuring
   const row1Height = Math.max(3, Math.floor(terminalHeight * 0.05));
@@ -112,15 +106,9 @@ function AppContent({ config }: AppContentProps) {
   const leftColumnWidth = Math.max(20, Math.floor(terminalWidth * 0.7));
   const rightColumnWidth = Math.max(20, terminalWidth - leftColumnWidth);
   
-  const { state: chatState, clearChat, cancelGeneration, contextUsage: _contextUsage, addMessage, activateMenu, requestManualContextInput, scrollUp, scrollDown, setCurrentInput } = useChat();
+  const { state: chatState, clearChat, cancelGeneration, contextUsage: _contextUsage, addMessage, activateMenu, requestManualContextInput, scrollUp, scrollDown } = useChat();
   const { activeKeybinds } = useKeybinds();
   
-  // File Explorer Services
-  const fileTreeService = useState(() => new FileTreeService())[0];
-  const focusSystem = useState(() => new FocusSystem())[0];
-  const editorIntegration = useState(() => new EditorIntegration())[0];
-  const fileOperations = useState(() => new FileOperations(process.cwd()))[0];
-
   // Helper object for shortcuts (so we don't need to change all callbacks below)
   const chatActions = useMemo(() => ({ scrollUp, scrollDown }), [scrollUp, scrollDown]);
 
@@ -139,10 +127,9 @@ function AppContent({ config }: AppContentProps) {
     const row2Start = row1End + 1;
     const row2End = row1End + row2Height; // Main Content
     // Row 3 (System) starts after Row 2
-    const row3Start = row2End + 1;
     const row3End = row2End + row3Height;
     // Row 4 (Input) starts after Row 3
-    const row4Start = row3End + 1;
+    const row4Start = row3End + 1; // row3End + 1 boundary
     // const row4End = row3End + row4Height;
 
     // Hit Testing
@@ -283,6 +270,25 @@ function AppContent({ config }: AppContentProps) {
     return createWelcomeMessage(modelName, currentContextSize, profile, effectiveGPUInfo);
   }, [currentModel, gpuInfo, contextState.usage.maxTokens]);
 
+  function getVramGBFromOption(opt: any): number {
+    if (!opt) return 0;
+    if (typeof opt.vram_estimate_gb === 'number') return opt.vram_estimate_gb;
+    if (typeof opt.vramEstimate_gb === 'number') return opt.vramEstimate_gb;
+    const candidate = (opt.vram_estimate || (opt as any).vramEstimate || '').toString();
+    const match = candidate.match(/([0-9]+(?:\.[0-9]+)?)/);
+    if (match) return Number(match[1]);
+    return 0;
+  }
+
+  function getVramDisplayFromOption(opt: any): string {
+    if (!opt) return '';
+    if (typeof opt.vram_estimate_gb === 'number') return `${opt.vram_estimate_gb.toFixed(1)} GB`;
+    if (typeof opt.vramEstimate_gb === 'number') return `${opt.vramEstimate_gb.toFixed(1)} GB`;
+    if (opt.vram_estimate) return opt.vram_estimate;
+    if ((opt as any).vramEstimate) return (opt as any).vramEstimate;
+    return '';
+  }
+
   const openModelContextMenu = useCallback((messageId?: string) => {
     const menuMessageId = messageId;
     const modelName = currentModel || 'Unknown Model';
@@ -321,7 +327,7 @@ function AppContent({ config }: AppContentProps) {
     const manager = contextActions.getManager();
     if (manager && provider && profile) { 
       for (const opt of profile.context_profiles) {
-        const vramNum = parseFloat(opt.vram_estimate.replace(' GB', ''));
+        const vramNum = getVramGBFromOption(opt);
         if (!isNaN(vramNum) && vramNum <= targetVRAM) {
           maxSafeSize = opt.size;
         }
@@ -363,11 +369,10 @@ function AppContent({ config }: AppContentProps) {
             }
 
             let vramStr = '';
-            if ('vram_estimate' in opt && opt.vram_estimate) {
-              vramStr = ` - ${opt.vram_estimate}`;
-            }
+            vramStr = getVramDisplayFromOption(opt);
+            if (vramStr) vramStr = ` - ${vramStr}`;
 
-            const vramEst = ('vram_estimate' in opt ? (opt as {vram_estimate: string}).vram_estimate : (opt as {vramEstimate: string}).vramEstimate) || '';
+            const vramEst = getVramDisplayFromOption(opt) || '';
 
             // Check if this option exceeds VRAM limits
             let isUnsafe = false;
@@ -554,7 +559,7 @@ ${toolSupport}
                 const optIsProfile = 'size' in opt;
                 const optSize = optIsProfile ? opt.size : (opt as ContextSizeOption).value;
                 const optLabel = optIsProfile ? opt.size_label : (opt as ContextSizeOption).label;
-                const optVram = optIsProfile ? opt.vram_estimate : (opt as ContextSizeOption).vramEstimate;
+                  const optVram = optIsProfile ? getVramDisplayFromOption(opt) : getVramDisplayFromOption(opt as any);
 
                 const sizeStr = optLabel || (optSize >= 1024 ? `${optSize / 1024}k` : `${optSize}`);
                 const vramEstimate = optVram || '';
@@ -909,9 +914,7 @@ ${toolSupport}
             overflow="hidden"
             flexWrap="nowrap"
           >
-            <Box flexShrink={0}>
-              <Clock borderColor={uiState.theme.border.primary} />
-            </Box>
+            {/* Clock moved to side panel header */}
 
             <Box flexGrow={1} flexDirection="row" justifyContent="center">
               <Box borderStyle={uiState.theme.border.style as BoxProps['borderStyle']} borderColor={focusManager.isFocused('nav-bar') ? uiState.theme.border.active : uiState.theme.border.primary}>
@@ -965,7 +968,13 @@ ${toolSupport}
 
         {/* Right: Full-Height Side Panel (30%) */}
         {uiState.sidePanelVisible && (
-          <Box width={Math.max(0, rightColumnWidth - 2)} flexShrink={0} minHeight={0} overflow="hidden">
+          <Box
+            // Use the precomputed rightColumnWidth so the side panel fills its column
+            width={rightColumnWidth}
+            flexShrink={0}
+            minHeight={0}
+            overflow="hidden"
+          >
             <SidePanel
               visible={uiState.sidePanelVisible}
               connection={{ status: 'connected', provider: config.provider.default }}

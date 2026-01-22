@@ -107,10 +107,7 @@ export function LoadingIndicator({
  * return <LoadingIndicator isLoading={isLoading} message="Loading data..." />;
  * ```
  */
-export function useLoadingState(
-  initialState = false,
-  delay = 500
-): [boolean, (loading: boolean) => void] {
+export function useLoadingState(initialState = false, _delay = 500) {
   const [isLoading, setIsLoading] = useState(initialState);
 
   return [isLoading, setIsLoading];

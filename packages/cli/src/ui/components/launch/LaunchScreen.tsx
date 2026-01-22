@@ -4,7 +4,7 @@ import { LlamaAnimation } from '../../../components/lama/LlamaAnimation.js';
 import { VersionBanner } from './VersionBanner.js';
 import { QuickActions } from './QuickActions.js';
 import { RecentSessions } from './RecentSessions.js';
-import type { Theme } from '../../../../config/types.js';
+import type { Theme } from '../../../config/types.js';
 
 interface Session {
   id: string;

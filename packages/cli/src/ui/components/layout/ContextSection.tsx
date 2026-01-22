@@ -6,7 +6,7 @@ import { useUI } from '../../../features/context/UIContext.js';
 import { useContextManager } from '../../../features/context/ContextManagerContext.js';
 
 // Helper to format tier display
-function formatTierDisplay(tier: string): string {
+function _formatTierDisplay(tier: string): string {
   // Extract tier number from "Tier X" format
   const match = tier.match(/Tier (\d+)/);
   if (!match) return tier;
@@ -24,7 +24,7 @@ function formatTierDisplay(tier: string): string {
 }
 
 // Helper to capitalize mode name
-function formatModeName(mode: string): string {
+function _formatModeName(mode: string): string {
   return mode.charAt(0).toUpperCase() + mode.slice(1);
 }
 
@@ -40,7 +40,7 @@ export function ContextSection() {
     modeIcon,
     modeColor,
     currentModeConfidence,
-    modeDuration,
+    _modeDuration,
     suggestedModes,
   } = useActiveContext();
 
@@ -58,7 +58,6 @@ export function ContextSection() {
           currentModeIcon={modeIcon}
           currentModeColor={modeColor}
           currentModeConfidence={currentModeConfidence}
-          modeDuration={modeDuration}
           suggestedModes={suggestedModes}
           allowedTools={allowedTools}
           theme={uiState.theme}

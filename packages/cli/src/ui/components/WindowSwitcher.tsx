@@ -5,11 +5,11 @@
  */
 
 import React from 'react';
-import { Box, BoxProps } from 'ink';
+import { Box, BoxProps as _BoxProps } from 'ink';
 import { DotIndicator } from './layout/DotIndicator.js';
 import { useWindow } from '../contexts/WindowContext.js';
 import { useUI } from '../../features/context/UIContext.js';
-import { Theme } from '../../config/types.js';
+import { Theme as _Theme } from '../../config/types.js';
 
 export function WindowSwitcher() {
   const { activeWindow } = useWindow();

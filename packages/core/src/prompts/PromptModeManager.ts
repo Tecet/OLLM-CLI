@@ -9,6 +9,7 @@ import { EventEmitter } from 'events';
 import type { ContextAnalyzer, ContextAnalysis, ModeType } from './ContextAnalyzer.js';
 import type { PromptRegistry } from './PromptRegistry.js';
 import type { SystemPromptBuilder } from '../context/SystemPromptBuilder.js';
+import type { ModelCapabilities } from '../services/modelManagementService.js';
 import { ModeMetricsTracker } from './ModeMetricsTracker.js';
 import { FocusModeManager } from './FocusModeManager.js';
 import { ModeTransitionAnimator } from './ModeTransitionAnimator.js';
@@ -47,6 +48,7 @@ export interface PromptBuildOptions {
     files?: string[];
   };
   additionalInstructions?: string;
+  modelCapabilities?: Partial<ModelCapabilities>;
 }
 
 /**
@@ -484,7 +486,13 @@ export class PromptModeManager extends EventEmitter {
     });
     sections.push(corePrompt);
     
-    // 2. Mode-specific template
+    // 2. Reasoning / model-capability-aware section
+    const modelCaps = options.modelCapabilities;
+    if (modelCaps?.reasoning) {
+      sections.push('# Reasoning Mode\n[REASONING MODE] You may include internal reasoning traces enclosed in <think>...</think>. Preserve these traces in snapshots under a separate reasoning_traces section so they can be reviewed or reloaded. When possible, emit concise analysis and then a final answer.');
+    }
+
+    // 3. Mode-specific template
     const modeTemplate = this.getModeTemplate(mode);
     sections.push(modeTemplate);
     

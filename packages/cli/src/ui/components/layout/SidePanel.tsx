@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { Box, Text, BoxProps, useInput } from 'ink';
 import { HeaderBar } from './HeaderBar.js';
+import { Clock } from './Clock.js';
 import { ConnectionStatus, GPUInfo } from './StatusBar.js';
 import { ContextSection } from './ContextSection.js';
 import { ActivePromptInfo } from './ActivePromptInfo.js';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
+import { useWindow } from '../../contexts/WindowContext.js';
+import { rightPanelHeaderLabel as _rightPanelHeaderLabel } from '../../utils/windowDisplayLabels.js';
 
 import { useChat } from '../../../features/context/ChatContext.js';
 import { useKeybinds } from '../../../features/context/KeybindsContext.js';
@@ -38,6 +41,10 @@ export function SidePanel({ visible, connection, model, gpu, theme, row1Height }
 
   const isToolsMode = activeSubWindow === 'tools';
 
+  const { activeWindow: _activeWindow } = useWindow();
+  // Use the side-panel's subwindow state for the header so switching to Workspace shows 'Workspace'
+  const headerLabel = isToolsMode ? 'Tools' : 'Workspace';
+
   // Handle sub-window switching within Row 3 when focused
   useInput((input, key) => {
     if (!contextFocused) return;
@@ -55,12 +62,19 @@ export function SidePanel({ visible, connection, model, gpu, theme, row1Height }
     <Box flexDirection="column" flexGrow={1} width="100%">
       {/* Row 1: HeaderBar - matching left side Row 1 height */}
       <Box flexShrink={0} height={row1Height} alignItems="center" width="100%">
-        <HeaderBar
-          connection={connection}
-          model={model}
-          gpu={gpu}
-          theme={theme}
-        />
+        <Box width="100%" flexDirection="row" alignItems="center" justifyContent="space-between">
+          <Box flexGrow={1}>
+            <HeaderBar
+              connection={connection}
+              model={model}
+              gpu={gpu}
+              theme={theme}
+            />
+          </Box>
+          <Box flexShrink={0} marginLeft={1}>
+            <Clock borderColor={theme.border.primary} />
+          </Box>
+        </Box>
       </Box>
 
       {/* Row 2: File Tree (Moved to top) + Active Prompt Info */}
@@ -86,9 +100,9 @@ export function SidePanel({ visible, connection, model, gpu, theme, row1Height }
         width="100%"
       >
         {/* Visual Dot Indicators & Tools Label */}
-        <Box flexDirection="row" alignItems="center" width="100%" paddingX={1} paddingTop={0}>
+           <Box flexDirection="row" alignItems="center" width="100%" paddingX={0} paddingTop={0}>
             <Box flexGrow={1} justifyContent="center">
-                 <Text color={theme.text.accent} bold>Tools</Text>
+              <Text color={theme.text.accent} bold>{headerLabel}</Text>
             </Box>
             <DotIndicator 
               total={2} 
@@ -109,20 +123,25 @@ export function SidePanel({ visible, connection, model, gpu, theme, row1Height }
         )}
       </Box>
 
-      {/* Row 4: Functions -> Context Usage Display */}
+      {/* Row 4: Functions -> Context Usage Display (3 lines) */}
       <Box 
-        height={4} 
+        height={3} 
         borderStyle={theme.border.style as BoxProps['borderStyle']} 
         borderColor={functionsFocused ? theme.text.secondary : theme.border.primary}
         flexShrink={0}
         overflow="hidden"
         width="100%"
         alignItems="center"
-        justifyContent="center"
+        justifyContent="space-between"
+        paddingX={1}
       >
-        <Box flexDirection="row">
+        <Box flexDirection="row" alignItems="center">
           <Text color={theme.text.secondary}>Context: </Text>
           <Text color={theme.text.accent} bold>{contextText}</Text>
+        </Box>
+
+        <Box flexDirection="row" alignItems="center">
+          {/* Right column intentionally left empty (confidence removed) */}
         </Box>
       </Box>
     </Box>

@@ -140,7 +140,7 @@ export function QuickActionsMenu({
   /**
    * Handle keyboard input
    */
-  /* eslint-disable @typescript-eslint/no-unused-vars */
+   
   const { activeKeybinds } = useKeybinds();
 
   useInput((input, key) => {

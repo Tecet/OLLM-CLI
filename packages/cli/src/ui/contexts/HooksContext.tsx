@@ -76,6 +76,7 @@ export function useHooks(): HooksContextValue {
 }
 
 import type { HookRegistry } from '@ollm/ollm-cli-core/hooks/index.js';
+import type { ServiceContainer } from '@ollm/ollm-cli-core/services/serviceContainer.js';
 
 export interface HooksProviderProps {
   children: ReactNode;
@@ -104,7 +105,7 @@ export function HooksProvider({
 
   // Get central hook registry from service container
   // Try to get the central service container; tests may not provide a ServiceProvider
-  let container: unknown;
+  let container: ServiceContainer | undefined;
   try {
     // If a ServiceProvider is present, this will return the container.
     // If not, `useServices()` throws; we catch and treat container as undefined.

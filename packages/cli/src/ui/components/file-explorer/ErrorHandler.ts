@@ -21,7 +21,7 @@ export interface ErrorContext {
  * @param context - Context where the error occurred
  * @returns Formatted error info
  */
-export function handleError(error: unknown, context: ErrorContext): ErrorInfo {
+export function handleError(error: unknown, _context: ErrorContext): ErrorInfo {
   const message = error instanceof Error ? error.message : String(error);
   
   // Log error with context (could be enhanced to use a logging service)

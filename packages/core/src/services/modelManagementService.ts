@@ -22,6 +22,7 @@ export interface ModelCapabilities {
   toolCalling: boolean;
   vision: boolean;
   streaming: boolean;
+  reasoning?: boolean;
 }
 
 /**

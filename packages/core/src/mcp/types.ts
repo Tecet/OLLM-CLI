@@ -75,6 +75,8 @@ export interface MCPServerConfig {
   cwd?: string;
   /** Server metadata (stored during installation for offline access) */
   metadata?: MCPServerMetadata;
+  /** List of tool names to auto-approve without user confirmation */
+  autoApprove?: string[];
 }
 
 /**

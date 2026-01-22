@@ -298,7 +298,9 @@ export interface UISettings {
 export interface ContextProfile {
   size: number;
   size_label?: string;
-  vram_estimate: string;
+  vram_estimate?: string;
+  /** Coerced numeric VRAM estimate in GB (preferred) */
+  vram_estimate_gb?: number;
   ollama_context_size?: number; // 85% cap for natural stops (optional, calculated if not provided)
 }
 
@@ -316,7 +318,9 @@ export interface LLMProfile {
   warmup_timeout?: number;
   ollama_url?: string;
   default_context?: number;
-  context_window: number;
+  // Use `max_context_window` as the canonical field name. Older files may still include `context_window`.
+  max_context_window?: number;
+  context_window?: number;
   context_profiles: ContextProfile[];
 }
 

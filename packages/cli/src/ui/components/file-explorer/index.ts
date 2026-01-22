@@ -35,15 +35,9 @@ export {
   type ExplorerState,
   type ExplorerPersistenceOptions,
 } from './ExplorerPersistence.js';
-export {
-  ErrorHandler,
-  globalErrorHandler,
+export { 
   handleError,
-  formatErrorForDisplay,
-  ErrorSeverity,
-  ErrorCategory,
   type ErrorInfo,
-  type ErrorDisplay,
 } from './ErrorHandler.js';
 
 // Export contexts and hooks

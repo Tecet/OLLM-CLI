@@ -59,8 +59,8 @@ export function MouseProvider({ children }: MouseProviderProps): React.ReactElem
     const handleData = (data: Buffer) => {
       const input = data.toString();
       
-      // Check for SGR mouse sequence: \x1b[<button;x;yM (or m)
-      const mouseRegex = /\x1b\[<(\d+);(\d+);(\d+)([Mm])/;
+      // Check for SGR mouse sequence: \\x1b[<button;x;yM (or m)
+      const mouseRegex = /\\x1b\[<(\d+);(\d+);(\d+)([Mm])/;
       const match = input.match(mouseRegex);
 
       if (match) {
@@ -76,7 +76,7 @@ export function MouseProvider({ children }: MouseProviderProps): React.ReactElem
         let mod = rawButton;
         const scroll = (mod & 64) === 64;
         mod &= ~64;
-        const drag = (mod & 32) === 32;
+        const _drag = (mod & 32) === 32;
         mod &= ~32;
         const ctrl = (mod & 16) === 16;
         mod &= ~16;

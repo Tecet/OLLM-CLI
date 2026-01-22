@@ -8,7 +8,7 @@
  * Requirements: 8.1, 8.2, 8.3, 8.4, 8.5
  */
 
-import simpleGit, { SimpleGit, StatusResult } from 'simple-git';
+import { simpleGit, SimpleGit, StatusResult } from 'simple-git';
 import { GitStatus } from './types.js';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -212,12 +212,13 @@ export class GitStatusService {
    * @returns Simple-git instance
    */
   private getGitInstance(repoPath: string): SimpleGit {
-    let git = this.gitInstances.get(repoPath);
-    if (!git) {
-      git = simpleGit(repoPath);
-      this.gitInstances.set(repoPath, git);
+    const git = this.gitInstances.get(repoPath);
+    if (git) {
+      return git;
     }
-    return git;
+    const newGit = simpleGit(repoPath);
+    this.gitInstances.set(repoPath, newGit);
+    return newGit;
   }
 
   /**

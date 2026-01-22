@@ -63,12 +63,16 @@ export function createWelcomeMessage(model: string, currentContextSize: number, 
   if (profile) {
     // Exact match from profile
     const currentProfileCtx = profile.context_profiles.find((p: ContextProfile) => p.size === currentContextSize);
-    vramUsage = currentProfileCtx ? currentProfileCtx.vram_estimate : 'Estimating...';
-    
+    if (currentProfileCtx) {
+      vramUsage = typeof currentProfileCtx.vram_estimate_gb === 'number' ? `${currentProfileCtx.vram_estimate_gb.toFixed(1)} GB` : (currentProfileCtx.vram_estimate || 'Estimating...');
+    } else {
+      vramUsage = 'Estimating...';
+    }
+
     contextTableRows = profile.context_profiles.map((opt: ContextProfile) => {
         const sizeLabel = opt.size_label || (opt.size >= 1024 ? `${opt.size/1024}k` : `${opt.size}`);
-        const row = `| ${sizeLabel.padEnd(5)} | ${opt.vram_estimate.padEnd(10)} |`;
-        // Removed explicit recommendation marker from table to keep it clean as per user design
+        const vramStr = typeof opt.vram_estimate_gb === 'number' ? `${opt.vram_estimate_gb.toFixed(1)} GB` : (opt.vram_estimate || '');
+        const row = `| ${sizeLabel.padEnd(5)} | ${vramStr.padEnd(10)} |`;
         return row;
     });
   } else {

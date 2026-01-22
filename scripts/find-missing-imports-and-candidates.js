@@ -10,7 +10,7 @@ if (!fs.existsSync(legacyDir)) {
 }
 
 const files = fs.readdirSync(legacyDir).filter(f => f.endsWith('.js'));
-const importRe = /(?:from\s+|require\()\s*['"](\.\.\/[\w\-\.\/@]+?)(?:['"])\)?/g;
+const importRe = /(?:from\s+|require\()\s*['"](\.\.\/[\w\-./@]+?)(?:['"])\)?/g;
 
 const referenced = new Set();
 for (const f of files) {

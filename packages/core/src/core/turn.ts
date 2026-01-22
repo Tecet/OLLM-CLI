@@ -13,7 +13,10 @@ import type {
 import type { PromptModeManager } from '../prompts/PromptModeManager.js';
 import type { SnapshotManager } from '../prompts/SnapshotManager.js';
 import type { ModeType } from '../prompts/ContextAnalyzer.js';
-import type { DeclarativeTool } from '../tools/types.js';
+import { 
+  
+  DeclarativeTool as _DeclarativeTool,
+} from '../tools/types.js';
 
 const isTestEnv = process.env.NODE_ENV === 'test' || !!process.env.VITEST;
 

@@ -8,7 +8,7 @@
  */
 
 import React, { useEffect, useRef, useCallback, useState } from 'react';
-import { Box, Text, useInput } from 'ink';
+import { Box, Text, useInput, Key } from 'ink';
 import { readFile } from 'fs/promises';
 import { useFileTree } from './FileTreeContext.js';
 import { useFileFocus } from './FileFocusContext.js';
@@ -22,7 +22,6 @@ import { QuickOpenDialog } from './QuickOpenDialog.js';
 import { FileOperations } from './FileOperations.js';
 import { FollowModeService } from './FollowModeService.js';
 import { HelpPanel } from './HelpPanel.js';
-import { LoadingIndicator, useLoadingState } from './LoadingIndicator.js';
 import { LoadingIndicator, useLoadingState } from './LoadingIndicator.js';
 import { useKeybinds } from '../../../features/context/KeybindsContext.js';
 import { isKey } from '../../utils/keyUtils.js';
@@ -372,19 +371,23 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
    */
   const handleQuickAction = useCallback(async (action: QuickAction) => {
     switch (action) {
-      case 'open':
+      case 'open': {
         await openViewer();
         break;
-      case 'focus':
+      }
+      case 'focus': {
         await toggleFocus();
         break;
-      case 'edit':
+      }
+      case 'edit': {
         await openInEditor();
         break;
-      case 'rename':
+      }
+      case 'rename': {
         showStatus('Rename functionality not yet implemented');
         break;
-      case 'delete':
+      }
+      case 'delete': {
         const selectedNode = getSelectedNode();
         if (!selectedNode) {
           showStatus('No file or folder selected');
@@ -435,7 +438,8 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
           },
         });
         break;
-      case 'copyPath':
+      }
+      case 'copyPath': {
         const node = getSelectedNode();
         if (node) {
           try {
@@ -447,6 +451,7 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
           }
         }
         break;
+      }
     }
   }, [openViewer, toggleFocus, openInEditor, getSelectedNode, fileOperations, showStatus, setIsLoading]);
 
@@ -467,7 +472,7 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
   /**
    * Handle LLM message for Follow Mode
    */
-  const handleLLMMessage = useCallback(async (message: string) => {
+  const _handleLLMMessage = useCallback(async (message: string) => {
     if (!treeState.followModeEnabled || !followModeService || !treeState.root) {
       return;
     }
@@ -492,7 +497,7 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
   /**
    * Handle keyboard input
    */
-  useInput((input, key) => {
+  const handleInput = useCallback((input: string, key: Key) => {
     if (helpPanelOpen) {
       if (isKey(input, key, activeKeybinds.chat.cancel) || input === '?') {
         setHelpPanelOpen(false);
@@ -547,7 +552,7 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
           try {
             await fileTreeService.expandDirectory(selectedNode, excludePatterns);
             expandDirectory(selectedNode.path);
-          } catch (err) {
+          } catch (_err) {
             showStatus('Error expanding directory');
           }
         })();
@@ -565,7 +570,7 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
             try {
               await fileTreeService.expandDirectory(selectedNode, excludePatterns);
               expandDirectory(selectedNode.path);
-            } catch (err) {
+            } catch (_err) {
               showStatus('Error expanding directory');
             }
           })();
@@ -607,7 +612,9 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
     treeState.followModeEnabled,
     showStatus,
     activeKeybinds
-  ], { isActive: hasFocus });
+  ]);
+
+  useInput(handleInput, { isActive: hasFocus });
 
   useEffect(() => {
     return () => {

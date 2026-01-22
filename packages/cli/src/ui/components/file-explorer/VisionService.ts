@@ -27,7 +27,7 @@ export class VisionService {
    */
   async processImage(imagePath: string): Promise<ImageMetadata> {
     // Read the image file
-    const imageBuffer = await readFile(imagePath);
+    const imageBuffer: Buffer = await readFile(imagePath);
     
     // Detect format and dimensions (placeholder - would use sharp in real implementation)
     const format = this.detectFormat(imagePath);
@@ -39,7 +39,7 @@ export class VisionService {
     }
 
     // Resize if needed
-    let finalBuffer = imageBuffer;
+    let finalBuffer: Buffer = imageBuffer;
     let resized = false;
     if (dimensions.width > this.maxDimension || dimensions.height > this.maxDimension) {
       finalBuffer = await this.resizeImage(imagePath, this.maxDimension);
@@ -61,7 +61,7 @@ export class VisionService {
   /**
    * Resize an image to fit within maxDimension while maintaining aspect ratio
    */
-  async resizeImage(imagePath: string, maxDimension: number): Promise<Buffer> {
+  async resizeImage(imagePath: string, _maxDimension: number): Promise<Buffer> {
     // In a real implementation, this would use sharp library
     // For now, return a placeholder that simulates resizing
     const imageBuffer = await readFile(imagePath);

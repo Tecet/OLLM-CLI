@@ -9,6 +9,7 @@ export interface ModelCapabilities {
   toolCalling: boolean;
   vision: boolean;
   streaming: boolean;
+  reasoning?: boolean;
 }
 
 export interface ModelEntry {
@@ -29,134 +30,16 @@ const DEFAULT_MODEL_ENTRY: Omit<ModelEntry, 'pattern' | 'family'> = {
     toolCalling: false,
     vision: false,
     streaming: true,
+    reasoning: false,
   },
   profiles: ['general'],
 };
 
 /**
- * Known model database with pattern matching
+ * Model database fallback: keep empty list here so JSON profiles are authoritative.
+ * The single-source-of-truth is `packages/cli/src/config/LLM_profiles.json`.
  */
-const MODEL_DATABASE: ModelEntry[] = [
-  {
-    pattern: 'llama3.1:*',
-    family: 'llama',
-    contextWindow: 128000,
-    capabilities: { toolCalling: true, vision: false, streaming: true },
-    profiles: ['general', 'code'],
-  },
-  {
-    pattern: 'llama3:*',
-    family: 'llama',
-    contextWindow: 8192,
-    capabilities: { toolCalling: true, vision: false, streaming: true },
-    profiles: ['general', 'code'],
-  },
-  {
-    pattern: 'codellama:*',
-    family: 'llama',
-    contextWindow: 16384,
-    capabilities: { toolCalling: false, vision: false, streaming: true },
-    profiles: ['code'],
-  },
-  {
-    pattern: 'mistral:*',
-    family: 'mistral',
-    contextWindow: 32768,
-    capabilities: { toolCalling: true, vision: false, streaming: true },
-    profiles: ['general', 'fast'],
-  },
-  {
-    pattern: 'phi3:*',
-    family: 'phi',
-    contextWindow: 4096,
-    capabilities: { toolCalling: false, vision: false, streaming: true },
-    profiles: ['fast'],
-  },
-  {
-    pattern: 'phi:*',
-    family: 'phi',
-    contextWindow: 2048,
-    capabilities: { toolCalling: false, vision: false, streaming: true },
-    profiles: ['fast'],
-  },
-  {
-    pattern: 'gemma:*',
-    family: 'gemma',
-    contextWindow: 8192,
-    capabilities: { toolCalling: false, vision: false, streaming: true },
-    profiles: ['fast', 'general'],
-  },
-  {
-    pattern: 'gemma2:*',
-    family: 'gemma',
-    contextWindow: 8192,
-    capabilities: { toolCalling: false, vision: false, streaming: true },
-    profiles: ['fast', 'general'],
-  },
-  {
-    pattern: 'deepseek-coder:*',
-    family: 'deepseek',
-    contextWindow: 16384,
-    capabilities: { toolCalling: false, vision: false, streaming: true },
-    profiles: ['code'],
-  },
-  {
-    pattern: 'qwen:*',
-    family: 'qwen',
-    contextWindow: 32768,
-    capabilities: { toolCalling: true, vision: false, streaming: true },
-    profiles: ['general', 'code'],
-  },
-  {
-    pattern: 'qwen2:*',
-    family: 'qwen',
-    contextWindow: 32768,
-    capabilities: { toolCalling: true, vision: false, streaming: true },
-    profiles: ['general', 'code'],
-  },
-  {
-    pattern: 'starcoder:*',
-    family: 'starcoder',
-    contextWindow: 8192,
-    capabilities: { toolCalling: false, vision: false, streaming: true },
-    profiles: ['code'],
-  },
-  {
-    pattern: 'starcoder2:*',
-    family: 'starcoder',
-    contextWindow: 16384,
-    capabilities: { toolCalling: false, vision: false, streaming: true },
-    profiles: ['code'],
-  },
-  {
-    pattern: 'wizardcoder:*',
-    family: 'wizardcoder',
-    contextWindow: 16384,
-    capabilities: { toolCalling: false, vision: false, streaming: true },
-    profiles: ['code'],
-  },
-  {
-    pattern: 'neural-chat:*',
-    family: 'neural-chat',
-    contextWindow: 8192,
-    capabilities: { toolCalling: false, vision: false, streaming: true },
-    profiles: ['general'],
-  },
-  {
-    pattern: 'orca:*',
-    family: 'orca',
-    contextWindow: 4096,
-    capabilities: { toolCalling: false, vision: false, streaming: true },
-    profiles: ['general'],
-  },
-  {
-    pattern: 'vicuna:*',
-    family: 'vicuna',
-    contextWindow: 4096,
-    capabilities: { toolCalling: false, vision: false, streaming: true },
-    profiles: ['general'],
-  },
-];
+const MODEL_DATABASE: ModelEntry[] = [];
 
 export class ModelDatabase {
   private entries: ModelEntry[];
@@ -190,7 +73,14 @@ export class ModelDatabase {
    */
   getContextWindow(modelName: string): number {
     const entry = this.lookup(modelName);
-    return entry?.contextWindow ?? DEFAULT_MODEL_ENTRY.contextWindow;
+    if (!entry) return DEFAULT_MODEL_ENTRY.contextWindow;
+    // Prefer raw profile value if available
+    try {
+      const idBase = entry.pattern.endsWith('*') ? entry.pattern.slice(0, -1) : entry.pattern;
+      const raw = (RAW_PROFILES && RAW_PROFILES[idBase]) || null;
+      if (raw && typeof raw.max_context_window === 'number') return Number(raw.max_context_window);
+    } catch (_) {}
+    return entry.contextWindow ?? DEFAULT_MODEL_ENTRY.contextWindow;
   }
 
   /**
@@ -198,7 +88,26 @@ export class ModelDatabase {
    */
   getCapabilities(modelName: string): ModelCapabilities {
     const entry = this.lookup(modelName);
-    return entry?.capabilities ?? DEFAULT_MODEL_ENTRY.capabilities;
+    if (!entry) return DEFAULT_MODEL_ENTRY.capabilities;
+    try {
+      const idBase = entry.pattern.endsWith('*') ? entry.pattern.slice(0, -1) : entry.pattern;
+      const raw = (RAW_PROFILES && RAW_PROFILES[idBase]) || null;
+      if (raw) {
+        const caps = raw.capabilities ?? {
+          toolCalling: Boolean(raw.tool_support),
+          vision: (Array.isArray(raw.abilities) && raw.abilities.some((a: string) => /visual|vision|multimodal/i.test(a))) || false,
+          streaming: raw.streaming ?? true,
+          reasoning: Boolean(raw.thinking_enabled) || (Array.isArray(raw.abilities) && raw.abilities.some((a: string) => /reasoning|think/i.test(a)))
+        };
+        return {
+          toolCalling: Boolean(caps.toolCalling),
+          vision: Boolean(caps.vision),
+          streaming: Boolean(caps.streaming),
+          reasoning: Boolean(caps.reasoning)
+        };
+      }
+    } catch (_) {}
+    return entry.capabilities ?? DEFAULT_MODEL_ENTRY.capabilities;
   }
 
   /**
@@ -206,7 +115,15 @@ export class ModelDatabase {
    */
   getSuitableProfiles(modelName: string): string[] {
     const entry = this.lookup(modelName);
-    return entry?.profiles ?? DEFAULT_MODEL_ENTRY.profiles;
+    if (!entry) return DEFAULT_MODEL_ENTRY.profiles;
+    try {
+      const idBase = entry.pattern.endsWith('*') ? entry.pattern.slice(0, -1) : entry.pattern;
+      const raw = (RAW_PROFILES && RAW_PROFILES[idBase]) || null;
+      if (raw && Array.isArray(raw.context_profiles)) {
+        return raw.context_profiles.map((c: any) => String(c.size_label ?? c.size));
+      }
+    } catch (_) {}
+    return entry.profiles ?? DEFAULT_MODEL_ENTRY.profiles;
   }
 
   /**
@@ -221,9 +138,115 @@ export class ModelDatabase {
    */
   getFamily(modelName: string): string | null {
     const entry = this.lookup(modelName);
-    return entry?.family ?? null;
+    if (!entry) return null;
+    try {
+      const idBase = entry.pattern.endsWith('*') ? entry.pattern.slice(0, -1) : entry.pattern;
+      const raw = (RAW_PROFILES && RAW_PROFILES[idBase]) || null;
+      if (raw && raw.family) return String(raw.family);
+    } catch (_) {}
+    return entry.family ?? null;
   }
 }
 
 // Export singleton instance
-export const modelDatabase = new ModelDatabase();
+import { existsSync, readFileSync } from 'fs';
+import { join } from 'path';
+
+function tryLoadProfilesFromCli(): ModelEntry[] | null {
+  try {
+    const p = join(process.cwd(), 'packages', 'cli', 'src', 'config', 'LLM_profiles.json');
+    if (!existsSync(p)) return null;
+    const raw = readFileSync(p, 'utf-8');
+    const json = JSON.parse(raw) as { models?: Array<any> };
+    if (!Array.isArray(json.models)) return null;
+
+    const entries: ModelEntry[] = json.models.map(m => {
+      const id: string = m.id || m.name || 'unknown';
+      // Treat each model as its own family (no grouping)
+      const family = String(id);
+      const contextWindow = Number(m.max_context_window ?? (Array.isArray(m.context_profiles) ? Math.max(...m.context_profiles.map((c: any) => Number(c.size || 0))) : 4096)) || 4096;
+      const caps = m.capabilities ?? {
+        toolCalling: Boolean(m.tool_support),
+        vision: (Array.isArray(m.abilities) && m.abilities.some((a: string) => /visual|vision|multimodal/i.test(a))) || false,
+        streaming: true,
+        reasoning: Boolean(m.thinking_enabled) || (Array.isArray(m.abilities) && m.abilities.some((a: string) => /reasoning|think/i.test(a)))
+      };
+
+      const profiles = Array.isArray(m.context_profiles) ? m.context_profiles.map((c: any) => String(c.size_label ?? c.size)) : ['general'];
+
+      return {
+        // Use exact model id as the routing pattern to avoid family-based grouping
+        pattern: `${id}`,
+        family: family,
+        contextWindow,
+        capabilities: {
+          toolCalling: Boolean(caps.toolCalling),
+          vision: Boolean(caps.vision),
+          streaming: Boolean(caps.streaming),
+          reasoning: Boolean(caps.reasoning)
+        },
+        profiles: profiles
+      } as ModelEntry;
+    });
+
+    return entries;
+  } catch (e) {
+    return null;
+  }
+}
+
+// Load raw profiles map (id -> profile object) for direct sourcing of fields
+function tryLoadRawProfiles(): Record<string, any> | null {
+  try {
+    const p = join(process.cwd(), 'packages', 'cli', 'src', 'config', 'LLM_profiles.json');
+    if (!existsSync(p)) return null;
+    const raw = readFileSync(p, 'utf-8');
+    const json = JSON.parse(raw) as { models?: Array<any> };
+    if (!Array.isArray(json.models)) return null;
+    const map: Record<string, any> = {};
+    for (const m of json.models) {
+      const id = m.id || m.name || String(m.name || 'unknown');
+      map[String(id)] = m;
+    }
+    return map;
+  } catch (e) {
+    return null;
+  }
+}
+
+// Prefer a generated TypeScript DB if present (faster startup, no runtime JSON parsing)
+let GENERATED_ENTRIES: ModelEntry[] | null = null;
+let GENERATED_RAW_PROFILES: Record<string, any> | null = null;
+try {
+  // Attempt to require a generated module in the same directory
+  // The generated file `generated_model_db.ts` will compile to JS next to this file in the build output.
+  // Use require to avoid static import errors when the generated file is absent.
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const gen = require('./generated_model_db');
+  if (gen && Array.isArray(gen.GENERATED_MODEL_DB)) {
+    GENERATED_ENTRIES = gen.GENERATED_MODEL_DB as any;
+    // Use generated raw profiles map if provided, otherwise build a simple map
+    if (gen.GENERATED_RAW_PROFILES) {
+      GENERATED_RAW_PROFILES = gen.GENERATED_RAW_PROFILES as any;
+    } else {
+      GENERATED_RAW_PROFILES = {};
+      for (const m of (GENERATED_ENTRIES ?? [])) {
+        const id = (m.pattern || '').endsWith('*') ? (m.pattern || '').slice(0, -1) : (m.pattern || '');
+        GENERATED_RAW_PROFILES[id] = m as any;
+      }
+    }
+  }
+} catch (e) {
+  // No generated file present; fall back to runtime JSON loader
+  GENERATED_ENTRIES = tryLoadProfilesFromCli();
+  GENERATED_RAW_PROFILES = tryLoadRawProfiles();
+}
+
+// Expose a RAW_PROFILES alias used by existing methods for backwards-compatibility
+const RAW_PROFILES = GENERATED_RAW_PROFILES ?? tryLoadRawProfiles();
+
+// Export a ModelDatabase that prefers generated profiles (if present) otherwise runtime JSON
+export const modelDatabase = new ModelDatabase(GENERATED_ENTRIES ?? MODEL_DATABASE);
+
+// Attach raw profiles map for external inspection (if needed)
+(modelDatabase as any)._rawProfiles = GENERATED_RAW_PROFILES ?? {};

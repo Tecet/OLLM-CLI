@@ -97,6 +97,13 @@ export class SnapshotStorageImpl implements SnapshotStorage {
   }
 
   /**
+   * Get path to snapshot ID -> session map
+   */
+  private getMapPath(): string {
+    return path.join(this.baseDir, 'snapshot-map.json');
+  }
+
+  /**
    * Get the base storage path
    */
   getBasePath(): string {
@@ -181,17 +188,30 @@ export class SnapshotStorageImpl implements SnapshotStorage {
     };
 
     const snapshotPath = this.getSnapshotPath(snapshot.sessionId, snapshot.id);
-    const tempPath = `${snapshotPath}.tmp`;
 
     try {
-      // Write to temporary file first (atomic write)
-      await fs.writeFile(tempPath, JSON.stringify(snapshotFile, null, 2), 'utf-8');
+      // Write snapshot directly to final path. Simpler and avoids intermittent rename errors on some environments.
+      await fs.writeFile(snapshotPath, JSON.stringify(snapshotFile, null, 2), 'utf-8');
 
-      // Rename to final location (atomic operation on most filesystems)
-      await fs.rename(tempPath, snapshotPath);
+      // Some environments may exhibit brief latency; retry stat a few times to avoid flaky ENOENT.
+      let stats: import('fs').Stats | undefined;
+      for (let i = 0; i < 5; i++) {
+        try {
+          stats = await fs.stat(snapshotPath);
+          break;
+        } catch (err) {
+          if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+            // wait briefly then retry
+            await new Promise(res => setTimeout(res, 10));
+            continue;
+          }
+          throw err;
+        }
+      }
 
-      // Get file size
-      const stats = await fs.stat(snapshotPath);
+      if (!stats) {
+        throw new Error(`Failed to stat snapshot after write: ${snapshotPath}`);
+      }
 
       // Update index
       await this.updateIndex(snapshot.sessionId, {
@@ -202,13 +222,23 @@ export class SnapshotStorageImpl implements SnapshotStorage {
         summary: snapshot.summary,
         size: stats.size
       });
-    } catch (error) {
-      // Clean up temp file if it exists
+
+      // Update quick lookup map to make existence checks reliable
       try {
-        await fs.unlink(tempPath);
-      } catch {
-        // Ignore cleanup errors
+        const mapPath = this.getMapPath();
+        let map: Record<string, string> = {};
+        try {
+          const existing = await fs.readFile(mapPath, 'utf-8');
+          map = JSON.parse(existing);
+        } catch (err) {
+          if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err;
+        }
+        map[snapshot.id] = snapshot.sessionId;
+        await fs.writeFile(mapPath, JSON.stringify(map, null, 2), 'utf-8');
+      } catch (_err) {
+        // non-fatal if map update fails
       }
+    } catch (error) {
       throw new Error(`Failed to save snapshot: ${(error as Error).message}`);
     }
   }
@@ -309,6 +339,8 @@ export class SnapshotStorageImpl implements SnapshotStorage {
     try {
       await fs.unlink(snapshotPath);
       await this.removeFromIndex(sessionId, snapshotId);
+      // Update quick map
+      await this.removeFromMap(snapshotId);
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
         // Already deleted, just update index
@@ -422,6 +454,20 @@ export class SnapshotStorageImpl implements SnapshotStorage {
     await this.saveIndex(sessionId, filtered);
   }
 
+  private async removeFromMap(snapshotId: string): Promise<void> {
+    try {
+      const mapPath = this.getMapPath();
+      const content = await fs.readFile(mapPath, 'utf-8');
+      const map: Record<string, string> = JSON.parse(content);
+      if (map[snapshotId]) {
+        delete map[snapshotId];
+        await fs.writeFile(mapPath, JSON.stringify(map, null, 2), 'utf-8');
+      }
+    } catch {
+      // ignore
+    }
+  }
+
   /**
    * Save index to disk
    */
@@ -439,17 +485,12 @@ export class SnapshotStorageImpl implements SnapshotStorage {
     const tempPath = `${indexPath}.tmp`;
 
     try {
-      await fs.writeFile(tempPath, JSON.stringify(index, null, 2), 'utf-8');
-      await fs.rename(tempPath, indexPath);
-      
+      // Write index directly to final location to avoid rename-related ENOENT on some platforms
+      await fs.writeFile(indexPath, JSON.stringify(index, null, 2), 'utf-8');
+
       // Update cache
       this.indexCache.set(sessionId, entries);
     } catch (error) {
-      try {
-        await fs.unlink(tempPath);
-      } catch {
-        // Ignore cleanup errors
-      }
       throw new Error(`Failed to save index: ${(error as Error).message}`);
     }
   }
@@ -510,6 +551,18 @@ export class SnapshotStorageImpl implements SnapshotStorage {
    */
   private async findSessionForSnapshot(snapshotId: string): Promise<string | null> {
     try {
+      // Fast-path: check the snapshot map for direct lookup
+      try {
+        const mapPath = this.getMapPath();
+        const content = await fs.readFile(mapPath, 'utf-8');
+        const map: Record<string, string> = JSON.parse(content);
+        if (map[snapshotId]) {
+          return map[snapshotId];
+        }
+      } catch {
+        // ignore and fall back to scanning directories
+      }
+
       // List all session directories
       const sessions = await fs.readdir(this.baseDir);
       

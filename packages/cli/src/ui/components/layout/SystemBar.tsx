@@ -20,7 +20,7 @@ export function SystemBar({ height, showBorder = true }: SystemBarProps) {
   const { modelLoading, warmupStatus } = useModel();
   const { state: uiState } = useUI();
   const { theme } = uiState;
-  const { isTerminalActive } = useWindow();
+  const { isTerminalActive, activeWindow } = useWindow();
   const { isFocused } = useFocusManager();
 
   const hasFocus = isFocused('system-bar'); 
@@ -41,7 +41,9 @@ export function SystemBar({ height, showBorder = true }: SystemBarProps) {
 
   // Determine status text
   let displayStatus = ' ';
-  if (isTerminalActive) {
+  if (activeWindow === 'editor') {
+    displayStatus = 'Editor Mode';
+  } else if (isTerminalActive) {
     displayStatus = 'Terminal Mode';
   } else if (warmupStatus?.active) {
     const elapsedSeconds = Math.max(0, Math.floor(warmupStatus.elapsedMs / 1000));
@@ -55,11 +57,13 @@ export function SystemBar({ height, showBorder = true }: SystemBarProps) {
   } else {
     displayStatus = 'IDLE';
   }
+  // Hide border when status is idle per user request
+  const effectiveBorderStyle = showBorder && displayStatus !== 'IDLE' ? (theme.border.style as BoxProps['borderStyle']) : undefined;
 
   return (
     <Box
       height={height}
-      borderStyle={showBorder ? (theme.border.style as BoxProps['borderStyle']) : undefined}
+      borderStyle={effectiveBorderStyle}
       borderColor={hasFocus ? theme.text.secondary : theme.border.primary}
       paddingX={1}
       flexDirection="row"

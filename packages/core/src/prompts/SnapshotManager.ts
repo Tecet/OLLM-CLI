@@ -58,6 +58,13 @@ export interface ModeTransitionSnapshot {
   
   // Mode-specific findings (for specialized modes)
   findings?: ModeFindings;
+  // Extracted reasoning traces (for reasoning-capable models)
+  reasoningTraces?: Array<{
+    content: string;
+    tokenCount?: number;
+    duration?: number;
+    complete?: boolean;
+  }>;
 }
 
 /**
@@ -109,6 +116,12 @@ export class SnapshotManager {
       activeTools: string[];
       currentTask?: string;
       findings?: ModeFindings;
+      reasoningTraces?: Array<{
+        content: string;
+        tokenCount?: number;
+        duration?: number;
+        complete?: boolean;
+      }>;
     }
   ): ModeTransitionSnapshot {
     // Extract last 5 messages
@@ -129,7 +142,8 @@ export class SnapshotManager {
       activeSkills: context.activeSkills,
       activeTools: context.activeTools,
       currentTask: context.currentTask ?? null,
-      findings: context.findings
+      findings: context.findings,
+      reasoningTraces: context.reasoningTraces
     };
     
     return snapshot;

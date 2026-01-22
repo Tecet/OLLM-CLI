@@ -17,7 +17,7 @@ function formatMB(bytes: number): string {
 }
 
 export function HeaderBar({ connection, model, gpu, theme, borderColor }: HeaderBarProps) {
-  const providerName = connection.provider || 'Ollama';
+  const _providerName = connection.provider; // Correctly get provider name from connection prop
 
   return (
     <Box 
@@ -27,17 +27,14 @@ export function HeaderBar({ connection, model, gpu, theme, borderColor }: Header
       overflow="hidden"
     >
       <Text wrap="truncate-end">
-        <Text color={theme.text.accent}>* </Text>
-        <Text color={theme.text.secondary}>{providerName}</Text>
+        <Text color={theme.text.primary} bold>LLM:</Text>
+        <Text color={theme.text.secondary} bold> {model}</Text>
         <Text color={theme.text.secondary}> | </Text>
-        <Text color={theme.text.primary} bold>L:</Text>
-        <Text color={theme.text.secondary} bold>{model}</Text>
-        <Text color={theme.text.secondary}> | </Text>
-        <Text color={theme.text.secondary}>V:</Text>
-        <Text color={theme.text.primary}>{gpu?.available ? `${formatMB(gpu.vramUsed)}/${formatMB(gpu.vramTotal)}` : 'N/A'}</Text>
+        <Text color={theme.text.secondary}>VRAM:</Text>
+        <Text color={theme.text.primary}> {gpu?.available ? `${formatMB(gpu.vramUsed)}/${formatMB(gpu.vramTotal)}` : 'N/A'}</Text>
         <Text color={theme.text.secondary}> | </Text>
         <Text color={theme.text.secondary}>T:</Text>
-        <Text color={theme.text.primary}>{gpu?.temperature || 0}</Text>
+        <Text color={theme.text.primary}> {gpu?.temperature || 0}</Text>
         <Text color={theme.text.primary}>°C</Text>
       </Text>
     </Box>

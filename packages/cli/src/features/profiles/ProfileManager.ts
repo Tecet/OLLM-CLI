@@ -21,7 +21,10 @@ export class ProfileManager {
     this.userModels = [];
     
     // Strategy: Use ~/.ollm/user_models.json
-    const homeDir = homedir();
+    // During tests (Vitest) prefer an isolated temp home directory to avoid global state
+    const homeDir = process.env.VITEST
+      ? join(require('os').tmpdir(), `ollm-vitest-${process.pid}`)
+      : homedir();
     const configDir = join(homeDir, '.ollm');
     this.userModelsPath = join(configDir, 'user_models.json');
     
@@ -97,7 +100,50 @@ export class ProfileManager {
   }
 
   private loadProfiles(): LLMProfile[] {
-      return profiles.models || [];
+      const raw = profiles.models || [];
+
+      // Normalize entries: support migration and coercion
+      const normalized = raw.map((m: any) => {
+        const entry = { ...m } as any;
+
+        // Support old key `context_window` -> `max_context_window`
+        if (entry.context_window && !entry.max_context_window) {
+          entry.max_context_window = entry.context_window;
+        }
+
+        // Ensure context_profiles exist
+        if (!Array.isArray(entry.context_profiles)) {
+          entry.context_profiles = [];
+        }
+
+        // Coerce vram_estimate strings to numeric GB field
+        for (const cp of entry.context_profiles) {
+          if (cp.vram_estimate_gb == null && typeof cp.vram_estimate === 'string') {
+            const match = cp.vram_estimate.match(/([0-9]+(?:\.[0-9]+)?)\s*GB/i);
+            if (match) {
+              cp.vram_estimate_gb = Number(match[1]);
+            } else {
+              // Fallback: try MB
+              const matchMb = cp.vram_estimate.match(/([0-9]+(?:\.[0-9]+)?)\s*MB/i);
+              if (matchMb) cp.vram_estimate_gb = Number(matchMb[1]) / 1024;
+            }
+          }
+        }
+
+        // Add capabilities object if missing
+        if (!entry.capabilities) {
+          entry.capabilities = {
+            toolCalling: Boolean(entry.tool_support),
+            vision: Array.isArray(entry.abilities) && entry.abilities.some((a: string) => /visual|vision|multimodal/i.test(a)),
+            streaming: entry.streaming ?? true,
+            reasoning: Boolean(entry.thinking_enabled) || (Array.isArray(entry.abilities) && entry.abilities.some((a: string) => /reasoning|think/i.test(a)))
+          };
+        }
+
+        return entry as LLMProfile;
+      });
+
+      return normalized as LLMProfile[];
   }
 
   private loadUserModels(): void {

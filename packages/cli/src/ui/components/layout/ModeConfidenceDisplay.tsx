@@ -1,5 +1,7 @@
 import React from 'react';
 import { Box, Text } from 'ink';
+import { useWindow } from '../../contexts/WindowContext.js';
+import { rightPanelHeaderLabel } from '../../utils/windowDisplayLabels.js';
 import type { ModeType } from '@ollm/ollm-cli-core';
 import type { Theme } from '../../../config/types.js';
 
@@ -8,7 +10,6 @@ interface ModeConfidenceDisplayProps {
   currentModeIcon: string;
   currentModeColor: string;
   currentModeConfidence: number;
-  modeDuration: number;
   suggestedModes: Array<{
     mode: ModeType;
     icon: string;
@@ -16,33 +17,10 @@ interface ModeConfidenceDisplayProps {
     reason: string;
   }>;
   allowedTools: string[];
+  theme: Theme;
 }
 
-/**
- * Format duration in milliseconds to human-readable string
- */
-function formatDuration(ms: number): string {
-  const seconds = Math.floor(ms / 1000);
-  const minutes = Math.floor(seconds / 60);
-  const hours = Math.floor(minutes / 60);
-  
-  if (hours > 0) {
-    return `${hours}h ${minutes % 60}m`;
-  } else if (minutes > 0) {
-    return `${minutes}m ${seconds % 60}s`;
-  } else {
-    return `${seconds}s`;
-  }
-}
-
-/**
- * Render confidence bar
- */
-function renderConfidenceBar(confidence: number, width: number = 10): string {
-  const filled = Math.round(confidence * width);
-  const empty = width - filled;
-  return '█'.repeat(filled) + '░'.repeat(empty);
-}
+// Time and confidence bar helpers removed; time display was requested to be removed.
 
 /**
  * Mode Confidence Display Component
@@ -53,40 +31,32 @@ export function ModeConfidenceDisplay({
   currentMode,
   currentModeIcon,
   currentModeColor,
-  currentModeConfidence,
-  modeDuration,
+  _currentModeConfidence,
   suggestedModes,
   allowedTools,
-  theme
-}: ModeConfidenceDisplayProps & { theme: Theme }) { 
+  theme,
+}: ModeConfidenceDisplayProps) { 
+  const { activeWindow } = useWindow();
+
+  const label = rightPanelHeaderLabel(activeWindow) ? `${rightPanelHeaderLabel(activeWindow)}:` : '';
+
   return (
     <Box flexDirection="column" paddingX={1} alignItems="flex-start">
-      {/* 1. Indicators at the very top */}
-      <Box flexDirection="column" marginBottom={1}>
-        <Box marginTop={0} alignSelf="flex-start">
-          <Text dimColor>Conf:</Text>
-          <Text> </Text>
-          <Text>{renderConfidenceBar(currentModeConfidence, 8)}</Text>
-          <Text> </Text>
-          <Text color={theme.text.accent}>{(currentModeConfidence * 100).toFixed(0)}%</Text>
-        </Box>
-        <Box marginTop={0} alignSelf="flex-start">
-          <Text dimColor>Time:</Text>
-          <Text> </Text>
-          <Text color={theme.status.success}>{formatDuration(modeDuration)}</Text>
-        </Box>
-      </Box>
 
-      {/* 2. Current Mode Identity with padding */}
+      {/* 1. Current Mode Identity with padding */}
       <Box flexDirection="column" marginBottom={1}>
-        <Box alignSelf="flex-start">
+        <Box marginTop={2} alignSelf="flex-start">
           <Text bold color={theme.status.info}>Mode:</Text>
           <Text> </Text>
           <Text bold color={currentModeColor}>{currentModeIcon} {currentMode ? currentMode.charAt(0).toUpperCase() + currentMode.slice(1) : 'Unknown'}</Text>
         </Box>
-        <Box marginTop={0} alignSelf="flex-start">
-          <Text dimColor>Tools:</Text>
-          <Text> </Text>
+        <Box marginTop={2} alignSelf="flex-start">
+          {label ? (
+            <>
+              <Text dimColor>{label}</Text>
+              <Text> </Text>
+            </>
+          ) : null}
           {allowedTools.length === 0 ? (
             <Text dimColor>None</Text>
           ) : allowedTools.includes('*') ? (

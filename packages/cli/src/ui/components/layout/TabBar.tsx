@@ -33,7 +33,7 @@ export interface TabBarProps {
 }
 
 export function TabBar({ activeTab, onTabChange, notifications, theme, noBorder }: TabBarProps & { noBorder?: boolean }) {
-  const { isFocused, activateContent, setFocus } = useFocusManager();
+  const { isFocused, activateContent, setFocus: _setFocus } = useFocusManager();
   const hasFocus = isFocused('nav-bar');
   const { activeKeybinds } = useKeybinds();
 

@@ -7,6 +7,7 @@ import { useModel } from './ModelContext.js';
 import { useUI } from './UIContext.js';
 import { HotSwapTool, MemoryDumpTool, PromptRegistry, MODE_METADATA } from '@ollm/core';
 import type { ToolCall as CoreToolCall, ContextMessage, ProviderMetrics, ToolSchema } from '@ollm/core';
+import { SnapshotManager as _PromptsSnapshotManager } from '@ollm/core/prompts/SnapshotManager.js';
 
 // Note: Global callbacks are now registered by AllCallbacksBridge component
 // These declarations are kept for backward compatibility during migration
@@ -573,12 +574,12 @@ export function ChatProvider({
           const manager = contextActions.getManager();
           if (manager && provider) {
               const modeManager = contextActions.getModeManager();
-              const snapshotManager = contextActions.getSnapshotManager();
+              const promptsSnapshotManager = contextActions.getPromptsSnapshotManager();
               
               // Register dynamic tools only if not already registered
               // These tools require runtime dependencies that aren't available at startup
               if (!toolRegistry.get('trigger_hot_swap')) {
-                toolRegistry.register(new HotSwapTool(manager, promptRegistry, provider, currentModel, modeManager || undefined, snapshotManager || undefined));
+                toolRegistry.register(new HotSwapTool(manager, promptRegistry, provider, currentModel, modeManager || undefined, promptsSnapshotManager || undefined));
               }
               if (!toolRegistry.get('memory_dump')) {
                 toolRegistry.register(new MemoryDumpTool(modeManager || undefined));

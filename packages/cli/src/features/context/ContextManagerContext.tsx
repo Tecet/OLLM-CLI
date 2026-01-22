@@ -27,7 +27,7 @@ import {
   createSnapshotManager,
 } from '@ollm/core';
 
-import { createSnapshotStorage } from '@ollm/core/context/snapshotStorage.js';
+import { createSnapshotStorage } from '@ollm/core';
 
 import type {
   ContextConfig,
@@ -40,11 +40,14 @@ import type {
   ProviderAdapter,
   ModeType,
   ModeTransition,
-  SnapshotConfig, // Added SnapshotConfig
-  SnapshotStorage // Added SnapshotStorage
+  SnapshotConfig as _SnapshotConfig,
+  SnapshotStorage as _SnapshotStorage,
 } from '@ollm/core';
 
-import { SettingsService } from '../../config/settingsService.js';
+import type { SnapshotManager as CoreSnapshotManager } from '@ollm/core';
+import { SnapshotManager as PromptsSnapshotManager } from '@ollm/core';
+
+import { SettingsService } from '../../config/settingsService';
 
 // Global reference for CLI commands
 let globalContextManager: ContextManagerActions | null = null;
@@ -170,13 +173,15 @@ export interface ContextManagerActions {
   getModeManager: () => PromptModeManager | null;
   
   /** Get the SnapshotManager instance */
-  getSnapshotManager: () => SnapshotManager | null;
+  getSnapshotManager: () => CoreSnapshotManager | null;
   
   /** Get the WorkflowManager instance */
   getWorkflowManager: () => WorkflowManager | null;
   
   /** Get the HybridModeManager instance */
   getHybridModeManager: () => import('@ollm/core').HybridModeManager | null;
+  /** Get the PromptsSnapshotManager instance */
+  getPromptsSnapshotManager: () => PromptsSnapshotManager | null;
   
   /** Switch to a hybrid mode */
   switchToHybridMode: (hybridMode: import('@ollm/core').HybridMode) => void;
@@ -297,13 +302,16 @@ export function ContextManagerProvider({
   const modeManagerRef = useRef<PromptModeManager | null>(null);
   
   // Snapshot manager reference
-  const snapshotManagerRef = useRef<SnapshotManager | null>(null);
+  const snapshotManagerRef = useRef<CoreSnapshotManager | null>(null);
   
   // Workflow manager reference
   const workflowManagerRef = useRef<WorkflowManager | null>(null);
   
   // Hybrid mode manager reference
   const hybridModeManagerRef = useRef<import('@ollm/core').HybridModeManager | null>(null);
+  
+  // Prompts Snapshot manager reference
+  const promptsSnapshotManagerRef = useRef<PromptsSnapshotManager | null>(null);
   
   // Mode change callback reference for cleanup
   const modeChangeCallbackRef = useRef<((transition: ModeTransition) => void) | null>(null);
@@ -372,6 +380,16 @@ export function ContextManagerProvider({
         const { HybridModeManager } = await import('@ollm/core');
         const hybridModeManager = new HybridModeManager();
         hybridModeManagerRef.current = hybridModeManager;
+        
+        // Create PromptsSnapshotManager (for mode transitions and HotSwapTool)
+        const promptsSnapshotManager = new PromptsSnapshotManager({
+          sessionId,
+          storagePath: path.join(os.homedir(), '.ollm', 'mode-transition-snapshots'),
+          maxCacheSize: 20, // Keep more mode snapshots
+          pruneAfterMs: 7200000, // 2 hours
+        });
+        await promptsSnapshotManager.initialize();
+        promptsSnapshotManagerRef.current = promptsSnapshotManager;
         
         // Listen for mode changes
         const modeChangeCallback = (transition: ModeTransition) => {
@@ -592,7 +610,8 @@ export function ContextManagerProvider({
         modeManagerRef.current = null;
       }
       if (snapshotManagerRef.current) {
-        snapshotManagerRef.current.clearCache();
+        // No clearCache() method on CoreSnapshotManager (SnapshotManagerImpl)
+      // snapshotManagerRef.current.clearCache(); // Removed due to type mismatch
         snapshotManagerRef.current = null;
       }
       modeChangeCallbackRef.current = null;
@@ -840,7 +859,7 @@ export function ContextManagerProvider({
             provider,
             modelId,
             modeManagerRef.current || undefined,
-            snapshotManagerRef.current || undefined
+            promptsSnapshotManagerRef.current || undefined
         );
         
         await hotSwapService.swap(newSkills);
@@ -996,6 +1015,10 @@ export function ContextManagerProvider({
     return modeManagerRef.current.getSerializableModeHistory();
   }, []);
 
+  const getPromptsSnapshotManager = useCallback(() => {
+    return promptsSnapshotManagerRef.current;
+  }, []);
+
   const actions: ContextManagerActions = useMemo(() => ({
     addMessage,
     compress,
@@ -1022,6 +1045,7 @@ export function ContextManagerProvider({
     getSnapshotManager,
     getWorkflowManager,
     getHybridModeManager,
+    getPromptsSnapshotManager, // Add this
     switchToHybridMode,
     switchMode,
     switchModeExplicit,
@@ -1051,6 +1075,7 @@ export function ContextManagerProvider({
     getSnapshotManager,
     getWorkflowManager,
     getHybridModeManager,
+    getPromptsSnapshotManager, // Add this
     switchToHybridMode,
     switchMode,
     switchModeExplicit,

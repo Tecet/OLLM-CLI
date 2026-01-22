@@ -155,6 +155,7 @@ export {
   createContextManager,
   createContextPool,
   createSnapshotManager,
+  createSnapshotStorage,
   createMemoryGuard,
   // Classes (for DI/testing)
   DefaultVRAMMonitor,
@@ -298,6 +299,7 @@ export {
   type WorkflowProgress,
   // Snapshot Manager (Mode Transitions)
   SnapshotManager as ModeSnapshotManager,
+  SnapshotManager,
   type ModeTransitionSnapshot,
   type ModeFindings,
   // Mode Transition Suggester

@@ -521,7 +521,7 @@ export class MCPMarketplace {
     try {
       const maybeCount = (wrapper as any)._meta?.count;
       if (typeof maybeCount === 'number' && maybeCount > 0) inferredInstallCount = maybeCount;
-    } catch {}
+    } catch { /* no-op, ignore metadata parsing errors */ }
 
     return {
       id,

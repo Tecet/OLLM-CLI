@@ -5,7 +5,10 @@ import { SnapshotParser } from './SnapshotParser.js';
 import { SystemPromptBuilder } from './SystemPromptBuilder.js';
 import { STATE_SNAPSHOT_PROMPT } from '../prompts/templates/stateSnapshot.js';
 import { PromptModeManager } from '../prompts/PromptModeManager.js';
+import type { ModeType } from '../prompts/ContextAnalyzer.js';
 import { SnapshotManager } from '../prompts/SnapshotManager.js';
+import { modelDatabase } from '../routing/modelDatabase.js';
+import { ReasoningParser } from '../services/reasoningParser.js';
 
 export class HotSwapService {
   constructor(
@@ -25,20 +28,40 @@ export class HotSwapService {
    * @param newSkills Optional list of skill IDs to activate in the new session.
    * @param preserveHistory Whether to keep existing message history (Soft Swap).
    */
-  async swap(newSkills?: string[], preserveHistory: boolean = true): Promise<void> {
+  async swap(newSkills?: string[], preserveHistory: boolean = true, toMode?: ModeType): Promise<void> {
     const messages = await this.contextManager.getMessages();
     const userMessages = messages.filter(m => m.role === 'user' || m.role === 'assistant');
     
     // Get current mode before clearing
-    const currentMode = this.modeManager?.getCurrentMode() || 'assistant';
+    const currentMode = this.modeManager?.getCurrentMode() || ('assistant' as ModeType);
+    const targetMode: ModeType = (toMode as ModeType) || currentMode;
     
     // 1. Create mode transition snapshot if managers are available
     // Snapshotting is always good, but only if we have enough history
     if (!preserveHistory && this.modeManager && this.snapshotManager && userMessages.length >= 3) {
       try {
+        // Collect reasoning traces (if any) using ReasoningParser
+        const reasoningParser = new ReasoningParser();
+        const reasoningTraces: Array<{content: string; tokenCount?: number; duration?: number; complete?: boolean}> = [];
+        for (const m of messages) {
+          // Only parse assistant outputs for reasoning traces
+          if (m.role === 'assistant' || m.role === 'system') {
+            try {
+              const parsed = reasoningParser.parse(m.content || '');
+              if (parsed && parsed.reasoning) {
+                // Normalize reasoning trace to expected snapshot shape
+                const traceContent = typeof parsed.reasoning === 'string' ? parsed.reasoning : JSON.stringify(parsed.reasoning);
+                reasoningTraces.push({ content: traceContent });
+              }
+            } catch (_e) {
+              // ignore parsing errors
+            }
+          }
+        }
+
         const snapshot = this.snapshotManager.createTransitionSnapshot(
           currentMode,
-          'developer', // HotSwap defaults to developer mode
+          targetMode,
           {
             messages: messages.map(m => ({
               role: m.role,
@@ -46,7 +69,8 @@ export class HotSwapService {
             })),
             activeSkills: this.modeManager.getActiveSkills(),
             activeTools: [], // Will be populated by tool registry
-            currentTask: undefined
+            currentTask: undefined,
+            reasoningTraces
           }
         );
         
@@ -81,19 +105,19 @@ export class HotSwapService {
       this.modeManager.updateSkills(newSkills);
     }
 
-    // 5. Switch to developer mode (skills imply implementation)
+    // 5. Switch to target mode (respect UI / caller intent)
     if (this.modeManager) {
-      this.modeManager.switchMode('developer', 'manual', 1.0);
-      console.log('[HotSwap] Switched to developer mode');
+      this.modeManager.switchMode(targetMode, 'manual', 1.0);
+      console.log(`[HotSwap] Switched to mode: ${targetMode}`);
     }
 
     // 6. Build System Prompt with ModeManager or fallback to SystemPromptBuilder
     let newSystemPrompt: string;
     
     if (this.modeManager) {
-      // Use ModeManager to build prompt
+      // Use ModeManager to build prompt for the target mode
       newSystemPrompt = this.modeManager.buildPrompt({
-        mode: 'developer',
+        mode: targetMode,
         skills: newSkills,
         tools: [], // Will be populated by tool registry
         workspace: {
@@ -135,7 +159,13 @@ export class HotSwapService {
   }
 
   private async generateSnapshot(messages: ContextMessage[]): Promise<string> {
-      const systemPrompt = STATE_SNAPSHOT_PROMPT.content;
+      // Build system prompt for snapshot generation. If the model supports reasoning,
+      // prepend an instruction to preserve reasoning traces.
+      const modelCaps = modelDatabase.getCapabilities(this.model || '');
+      let systemPrompt = STATE_SNAPSHOT_PROMPT.content;
+      if (modelCaps?.reasoning) {
+        systemPrompt = '[REASONING MODE] Preserve internal reasoning traces enclosed in <think>...</think>. Include them in a <reasoning_traces> section of the snapshot.\n\n' + systemPrompt;
+      }
       
       const providerMessages: ProviderMessage[] = messages.map(msg => ({
           role: msg.role,

@@ -60,7 +60,7 @@ const SHORTCUTS: Shortcut[] = [
  * Displays a modal with keyboard shortcuts organized by category.
  * Press Esc or '?' to close.
  */
-export function HelpPanel({ isOpen, onClose }: HelpPanelProps) {
+export function HelpPanel({ isOpen, onClose: _onClose }: HelpPanelProps) {
   if (!isOpen) {
     return null;
   }

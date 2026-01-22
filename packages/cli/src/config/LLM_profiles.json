@@ -16,43 +16,49 @@
       ],
       "tool_support": true,
       "ollama_url": "https://ollama.com/library/qwen2.5",
-      "context_window": 131072,
+      "max_context_window": 131072,
       "context_profiles": [
         {
           "size": 4096,
           "size_label": "4k",
           "vram_estimate": "5.5 GB",
-          "ollama_context_size": 3482
+          "ollama_context_size": 3482,
+          "vram_estimate_gb": 5.5
         },
         {
           "size": 8192,
           "size_label": "8k",
           "vram_estimate": "6.0 GB",
-          "ollama_context_size": 6963
+          "ollama_context_size": 6963,
+          "vram_estimate_gb": 6
         },
         {
           "size": 16384,
           "size_label": "16k",
           "vram_estimate": "7.0 GB",
-          "ollama_context_size": 13926
+          "ollama_context_size": 13926,
+          "vram_estimate_gb": 7
         },
         {
           "size": 32768,
           "size_label": "32k",
           "vram_estimate": "9.0 GB",
-          "ollama_context_size": 27853
+          "ollama_context_size": 27853,
+          "vram_estimate_gb": 9
         },
         {
           "size": 65536,
           "size_label": "64k",
           "vram_estimate": "13.5 GB",
-          "ollama_context_size": 55706
+          "ollama_context_size": 55706,
+          "vram_estimate_gb": 13.5
         },
         {
           "size": 131072,
           "size_label": "128k",
           "vram_estimate": "22.5 GB",
-          "ollama_context_size": 111411
+          "ollama_context_size": 111411,
+          "vram_estimate_gb": 22.5
         }
       ],
       "default_context": 4096
@@ -74,43 +80,49 @@
       "reasoning_buffer": "Variable",
       "warmup_timeout": 120000,
       "ollama_url": "https://ollama.com/library/deepseek-r1",
-      "context_window": 131072,
+      "max_context_window": 131072,
       "context_profiles": [
         {
           "size": 4096,
           "size_label": "4k",
           "vram_estimate": "5.5 GB",
-          "ollama_context_size": 3482
+          "ollama_context_size": 3482,
+          "vram_estimate_gb": 5.5
         },
         {
           "size": 8192,
           "size_label": "8k",
           "vram_estimate": "6.0 GB",
-          "ollama_context_size": 6963
+          "ollama_context_size": 6963,
+          "vram_estimate_gb": 6
         },
         {
           "size": 16384,
           "size_label": "16k",
           "vram_estimate": "7.0 GB",
-          "ollama_context_size": 13926
+          "ollama_context_size": 13926,
+          "vram_estimate_gb": 7
         },
         {
           "size": 32768,
           "size_label": "32k",
           "vram_estimate": "9.0 GB",
-          "ollama_context_size": 27853
+          "ollama_context_size": 27853,
+          "vram_estimate_gb": 9
         },
         {
           "size": 65536,
           "size_label": "64k",
           "vram_estimate": "13.5 GB",
-          "ollama_context_size": 55706
+          "ollama_context_size": 55706,
+          "vram_estimate_gb": 13.5
         },
         {
           "size": 131072,
           "size_label": "128k",
           "vram_estimate": "22.5 GB",
-          "ollama_context_size": 111411
+          "ollama_context_size": 111411,
+          "vram_estimate_gb": 22.5
         }
       ],
       "default_context": 4096
@@ -129,43 +141,49 @@
       ],
       "tool_support": false,
       "ollama_url": "https://ollama.com/library/phi3",
-      "context_window": 131072,
+      "max_context_window": 131072,
       "context_profiles": [
         {
           "size": 4096,
           "size_label": "4k",
           "vram_estimate": "2.8 GB",
-          "ollama_context_size": 3482
+          "ollama_context_size": 3482,
+          "vram_estimate_gb": 2.8
         },
         {
           "size": 8192,
           "size_label": "8k",
           "vram_estimate": "3.2 GB",
-          "ollama_context_size": 6963
+          "ollama_context_size": 6963,
+          "vram_estimate_gb": 3.2
         },
         {
           "size": 16384,
           "size_label": "16k",
           "vram_estimate": "4.0 GB",
-          "ollama_context_size": 13926
+          "ollama_context_size": 13926,
+          "vram_estimate_gb": 4
         },
         {
           "size": 32768,
           "size_label": "32k",
           "vram_estimate": "5.5 GB",
-          "ollama_context_size": 27853
+          "ollama_context_size": 27853,
+          "vram_estimate_gb": 5.5
         },
         {
           "size": 65536,
           "size_label": "64k",
           "vram_estimate": "8.5 GB",
-          "ollama_context_size": 55706
+          "ollama_context_size": 55706,
+          "vram_estimate_gb": 8.5
         },
         {
           "size": 131072,
           "size_label": "128k",
           "vram_estimate": "14.5 GB",
-          "ollama_context_size": 111411
+          "ollama_context_size": 111411,
+          "vram_estimate_gb": 14.5
         }
       ],
       "default_context": 4096
@@ -184,43 +202,49 @@
       ],
       "tool_support": true,
       "ollama_url": "https://ollama.com/library/llama3.2",
-      "context_window": 131072,
+      "max_context_window": 131072,
       "context_profiles": [
         {
           "size": 4096,
           "size_label": "4k",
           "vram_estimate": "2.5 GB",
-          "ollama_context_size": 2867
+          "ollama_context_size": 2867,
+          "vram_estimate_gb": 2.5
         },
         {
           "size": 8192,
           "size_label": "8k",
           "vram_estimate": "2.9 GB",
-          "ollama_context_size": 5734
+          "ollama_context_size": 5734,
+          "vram_estimate_gb": 2.9
         },
         {
           "size": 16384,
           "size_label": "16k",
           "vram_estimate": "3.7 GB",
-          "ollama_context_size": 11468
+          "ollama_context_size": 11468,
+          "vram_estimate_gb": 3.7
         },
         {
           "size": 32768,
           "size_label": "32k",
           "vram_estimate": "5.2 GB",
-          "ollama_context_size": 22937
+          "ollama_context_size": 22937,
+          "vram_estimate_gb": 5.2
         },
         {
           "size": 65536,
           "size_label": "64k",
           "vram_estimate": "8.2 GB",
-          "ollama_context_size": 45875
+          "ollama_context_size": 45875,
+          "vram_estimate_gb": 8.2
         },
         {
           "size": 131072,
           "size_label": "128k",
           "vram_estimate": "14.2 GB",
-          "ollama_context_size": 91750
+          "ollama_context_size": 91750,
+          "vram_estimate_gb": 14.2
         }
       ],
       "default_context": 4096
@@ -240,43 +264,49 @@
       "tool_support": true,
       "thinking_enabled": true,
       "ollama_url": "https://ollama.com/library/qwen3",
-      "context_window": 131072,
+      "max_context_window": 131072,
       "context_profiles": [
         {
           "size": 4096,
           "size_label": "4k",
           "vram_estimate": "3.0 GB",
-          "ollama_context_size": 3482
+          "ollama_context_size": 3482,
+          "vram_estimate_gb": 3
         },
         {
           "size": 8192,
           "size_label": "8k",
           "vram_estimate": "3.5 GB",
-          "ollama_context_size": 6963
+          "ollama_context_size": 6963,
+          "vram_estimate_gb": 3.5
         },
         {
           "size": 16384,
           "size_label": "16k",
           "vram_estimate": "4.5 GB",
-          "ollama_context_size": 13926
+          "ollama_context_size": 13926,
+          "vram_estimate_gb": 4.5
         },
         {
           "size": 32768,
           "size_label": "32k",
           "vram_estimate": "6.0 GB",
-          "ollama_context_size": 27853
+          "ollama_context_size": 27853,
+          "vram_estimate_gb": 6
         },
         {
           "size": 65536,
           "size_label": "64k",
           "vram_estimate": "9.5 GB",
-          "ollama_context_size": 55706
+          "ollama_context_size": 55706,
+          "vram_estimate_gb": 9.5
         },
         {
           "size": 131072,
           "size_label": "128k",
           "vram_estimate": "16.0 GB",
-          "ollama_context_size": 111411
+          "ollama_context_size": 111411,
+          "vram_estimate_gb": 16
         }
       ],
       "default_context": 4096
@@ -298,43 +328,49 @@
       "reasoning_buffer": "Variable",
       "warmup_timeout": 120000,
       "ollama_url": "https://ollama.com/library/deepseek-r1",
-      "context_window": 131072,
+      "max_context_window": 131072,
       "context_profiles": [
         {
           "size": 4096,
           "size_label": "4k",
           "vram_estimate": "1.5 GB",
-          "ollama_context_size": 3482
+          "ollama_context_size": 3482,
+          "vram_estimate_gb": 1.5
         },
         {
           "size": 8192,
           "size_label": "8k",
           "vram_estimate": "1.8 GB",
-          "ollama_context_size": 6963
+          "ollama_context_size": 6963,
+          "vram_estimate_gb": 1.8
         },
         {
           "size": 16384,
           "size_label": "16k",
           "vram_estimate": "2.4 GB",
-          "ollama_context_size": 13926
+          "ollama_context_size": 13926,
+          "vram_estimate_gb": 2.4
         },
         {
           "size": 32768,
           "size_label": "32k",
           "vram_estimate": "3.5 GB",
-          "ollama_context_size": 27853
+          "ollama_context_size": 27853,
+          "vram_estimate_gb": 3.5
         },
         {
           "size": 65536,
           "size_label": "64k",
           "vram_estimate": "5.8 GB",
-          "ollama_context_size": 55706
+          "ollama_context_size": 55706,
+          "vram_estimate_gb": 5.8
         },
         {
           "size": 131072,
           "size_label": "128k",
           "vram_estimate": "10.0 GB",
-          "ollama_context_size": 111411
+          "ollama_context_size": 111411,
+          "vram_estimate_gb": 10
         }
       ],
       "default_context": 4096
@@ -353,43 +389,49 @@
       ],
       "tool_support": true,
       "ollama_url": "https://ollama.com/library/gemma3",
-      "context_window": 131072,
+      "max_context_window": 131072,
       "context_profiles": [
         {
           "size": 4096,
           "size_label": "4k",
           "vram_estimate": "3.8 GB",
-          "ollama_context_size": 3482
+          "ollama_context_size": 3482,
+          "vram_estimate_gb": 3.8
         },
         {
           "size": 8192,
           "size_label": "8k",
           "vram_estimate": "4.3 GB",
-          "ollama_context_size": 6963
+          "ollama_context_size": 6963,
+          "vram_estimate_gb": 4.3
         },
         {
           "size": 16384,
           "size_label": "16k",
           "vram_estimate": "5.3 GB",
-          "ollama_context_size": 13926
+          "ollama_context_size": 13926,
+          "vram_estimate_gb": 5.3
         },
         {
           "size": 32768,
           "size_label": "32k",
           "vram_estimate": "7.2 GB",
-          "ollama_context_size": 27853
+          "ollama_context_size": 27853,
+          "vram_estimate_gb": 7.2
         },
         {
           "size": 65536,
           "size_label": "64k",
           "vram_estimate": "11.0 GB",
-          "ollama_context_size": 55706
+          "ollama_context_size": 55706,
+          "vram_estimate_gb": 11
         },
         {
           "size": 131072,
           "size_label": "128k",
           "vram_estimate": "18.5 GB",
-          "ollama_context_size": 111411
+          "ollama_context_size": 111411,
+          "vram_estimate_gb": 18.5
         }
       ],
       "default_context": 4096
@@ -407,46 +449,52 @@
       ],
       "tool_support": false,
       "ollama_url": "https://ollama.com/library/gemma3",
-      "context_window": 131072,
       "context_profiles": [
         {
           "size": 4096,
           "size_label": "4k",
           "vram_estimate": "1.2 GB",
-          "ollama_context_size": 2867
+          "ollama_context_size": 2867,
+          "vram_estimate_gb": 1.2
         },
         {
           "size": 8192,
           "size_label": "8k",
           "vram_estimate": "1.5 GB",
-          "ollama_context_size": 5734
+          "ollama_context_size": 5734,
+          "vram_estimate_gb": 1.5
         },
         {
           "size": 16384,
           "size_label": "16k",
           "vram_estimate": "2.0 GB",
-          "ollama_context_size": 11468
+          "ollama_context_size": 11468,
+          "vram_estimate_gb": 2
         },
         {
           "size": 32768,
           "size_label": "32k",
           "vram_estimate": "3.0 GB",
-          "ollama_context_size": 22937
+          "ollama_context_size": 22937,
+          "vram_estimate_gb": 3
         },
         {
           "size": 65536,
           "size_label": "64k",
           "vram_estimate": "5.0 GB",
-          "ollama_context_size": 45875
+          "ollama_context_size": 45875,
+          "vram_estimate_gb": 5
         },
         {
           "size": 131072,
           "size_label": "128k",
           "vram_estimate": "9.0 GB",
-          "ollama_context_size": 91750
+          "ollama_context_size": 91750,
+          "vram_estimate_gb": 9
         }
       ],
-      "default_context": 4096
+      "default_context": 4096,
+      "max_context_window": 131072
     },
     {
       "id": "qwen3-vl:8b",
@@ -462,46 +510,52 @@
       ],
       "tool_support": true,
       "ollama_url": "https://ollama.com/library/qwen3-vl",
-      "context_window": 131072,
       "context_profiles": [
         {
           "size": 4096,
           "size_label": "4k",
           "vram_estimate": "6.5 GB",
-          "ollama_context_size": 3482
+          "ollama_context_size": 3482,
+          "vram_estimate_gb": 6.5
         },
         {
           "size": 8192,
           "size_label": "8k",
           "vram_estimate": "7.0 GB",
-          "ollama_context_size": 6963
+          "ollama_context_size": 6963,
+          "vram_estimate_gb": 7
         },
         {
           "size": 16384,
           "size_label": "16k",
           "vram_estimate": "8.0 GB",
-          "ollama_context_size": 13926
+          "ollama_context_size": 13926,
+          "vram_estimate_gb": 8
         },
         {
           "size": 32768,
           "size_label": "32k",
           "vram_estimate": "10.0 GB",
-          "ollama_context_size": 27853
+          "ollama_context_size": 27853,
+          "vram_estimate_gb": 10
         },
         {
           "size": 65536,
           "size_label": "64k",
           "vram_estimate": "15.0 GB",
-          "ollama_context_size": 55706
+          "ollama_context_size": 55706,
+          "vram_estimate_gb": 15
         },
         {
           "size": 131072,
           "size_label": "128k",
           "vram_estimate": "26.0 GB",
-          "ollama_context_size": 111411
+          "ollama_context_size": 111411,
+          "vram_estimate_gb": 26
         }
       ],
-      "default_context": 4096
+      "default_context": 4096,
+      "max_context_window": 131072
     },
     {
       "id": "deepseek-r1:8b",
@@ -520,46 +574,52 @@
       "reasoning_buffer": "Variable",
       "warmup_timeout": 120000,
       "ollama_url": "https://ollama.com/library/deepseek-r1",
-      "context_window": 131072,
       "context_profiles": [
         {
           "size": 4096,
           "size_label": "4k",
           "vram_estimate": "6.0 GB",
-          "ollama_context_size": 3482
+          "ollama_context_size": 3482,
+          "vram_estimate_gb": 6
         },
         {
           "size": 8192,
           "size_label": "8k",
           "vram_estimate": "6.5 GB",
-          "ollama_context_size": 6963
+          "ollama_context_size": 6963,
+          "vram_estimate_gb": 6.5
         },
         {
           "size": 16384,
           "size_label": "16k",
           "vram_estimate": "7.5 GB",
-          "ollama_context_size": 13926
+          "ollama_context_size": 13926,
+          "vram_estimate_gb": 7.5
         },
         {
           "size": 32768,
           "size_label": "32k",
           "vram_estimate": "9.5 GB",
-          "ollama_context_size": 27853
+          "ollama_context_size": 27853,
+          "vram_estimate_gb": 9.5
         },
         {
           "size": 65536,
           "size_label": "64k",
           "vram_estimate": "14.5 GB",
-          "ollama_context_size": 55706
+          "ollama_context_size": 55706,
+          "vram_estimate_gb": 14.5
         },
         {
           "size": 131072,
           "size_label": "128k",
           "vram_estimate": "25.0 GB",
-          "ollama_context_size": 111411
+          "ollama_context_size": 111411,
+          "vram_estimate_gb": 25
         }
       ],
-      "default_context": 4096
+      "default_context": 4096,
+      "max_context_window": 131072
     }
   ],
   "fallback_model": {
