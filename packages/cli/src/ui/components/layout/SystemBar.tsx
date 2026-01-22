@@ -16,7 +16,7 @@ export interface SystemBarProps {
  * Displays "Agent Thinking" status and "Context Tokens" usage.
  */
 export function SystemBar({ height, showBorder = true }: SystemBarProps) {
-  const { state: chatState, contextUsage } = useChat();
+  const { state: chatState } = useChat();
   const { modelLoading, warmupStatus } = useModel();
   const { state: uiState } = useUI();
   const { theme } = uiState;
@@ -56,10 +56,6 @@ export function SystemBar({ height, showBorder = true }: SystemBarProps) {
     displayStatus = 'IDLE';
   }
 
-  const contextText = contextUsage
-    ? `${contextUsage.currentTokens}/${contextUsage.maxTokens}`
-    : '0/0';
-
   return (
     <Box
       height={height}
@@ -76,12 +72,6 @@ export function SystemBar({ height, showBorder = true }: SystemBarProps) {
         <Text color={isTerminalActive ? 'cyan' : theme.text.primary}>
           {displayStatus}
         </Text>
-      </Box>
-
-      <Box>
-        <Text color={theme.text.secondary}>Context:</Text>
-        <Text> </Text>
-        <Text color={theme.text.accent} bold>{contextText}</Text>
       </Box>
     </Box>
   );

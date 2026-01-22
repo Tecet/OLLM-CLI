@@ -126,15 +126,16 @@ function buildModeChangeNotification(
  * Get mode-specific guidance for LLM
  */
 function getModeGuidance(mode: ModeType): string {
-  const guidance: Record<ModeType, string> = {
+  // Not all ModeType variants necessarily have guidance here; use Partial to avoid exhaustive mapping
+  const guidance: Partial<Record<ModeType, string>> = {
     assistant: 'Focus on answering questions and providing explanations.',
     planning: 'Focus on research, design, and planning. You have read-only access to the codebase.',
     developer: 'Focus on implementation, refactoring, and code changes. You have full access to all tools.',
     debugger: 'Focus on finding root causes and implementing fixes. Analyze errors systematically.',
     reviewer: 'Focus on code quality assessment and providing constructive feedback.',
   };
-  
-  return guidance[mode] || '';
+
+  return guidance[mode] ?? '';
 }
 
 /**
@@ -251,73 +252,75 @@ export const modeCommand: Command = {
           // Add metrics display
           try {
             const metricsTracker = modeManager.getMetricsTracker();
-            const sessionSummary = metricsTracker.getSessionSummary();
-            const timeMetricsSummary = metricsTracker.getTimeMetricsSummary();
-            const modeSpecificMetrics = metricsTracker.getModeSpecificSummary(currentMode);
-            
-            // Session summary
-            statusMsg += `\n\nSession Metrics\n───────────────`;
-            statusMsg += `\nDuration: ${sessionSummary.duration}`;
-            statusMsg += `\nModes Used: ${sessionSummary.modesUsed}`;
-            statusMsg += `\nTransitions: ${sessionSummary.totalTransitions}`;
-            
-            if (sessionSummary.mostUsedMode) {
-              const mostUsedIcon = MODE_ICONS[sessionSummary.mostUsedMode] || '';
-              statusMsg += `\nMost Used: ${mostUsedIcon} ${sessionSummary.mostUsedMode}`;
-            }
-            
-            // Time breakdown for current mode
-            const currentModeTime = timeMetricsSummary.modeBreakdown.find(m => m.mode === currentMode);
-            if (currentModeTime && currentModeTime.duration > 0) {
-              const minutes = Math.floor(currentModeTime.duration / (1000 * 60));
-              const seconds = Math.floor((currentModeTime.duration % (1000 * 60)) / 1000);
-              statusMsg += `\nTime in ${currentMode}: ${minutes}m ${seconds}s (${currentModeTime.percentage.toFixed(1)}%)`;
-            }
-            
-            // Mode-specific metrics (if any)
-            const metricsKeys = Object.keys(modeSpecificMetrics);
-            if (metricsKeys.length > 0) {
-              statusMsg += `\n\n${currentMode.charAt(0).toUpperCase() + currentMode.slice(1)} Mode Metrics\n${'─'.repeat(currentMode.length + 14)}`;
-              
-              // Display up to 5 most relevant metrics
-              const displayMetrics = metricsKeys.slice(0, 5);
-              for (const key of displayMetrics) {
-                const value = modeSpecificMetrics[key];
-                // Format key as human-readable (camelCase to Title Case)
-                const formattedKey = key
-                  .replace(/([A-Z])/g, ' $1')
-                  .replace(/^./, str => str.toUpperCase())
-                  .trim();
-                statusMsg += `\n${formattedKey}: ${value}`;
+            if (metricsTracker) {
+              const sessionSummary = metricsTracker.getSessionSummary();
+              const timeMetricsSummary = metricsTracker.getTimeMetricsSummary();
+              const modeSpecificMetrics = metricsTracker.getModeSpecificSummary(currentMode);
+
+              // Session summary
+              statusMsg += `\n\nSession Metrics\n───────────────`;
+              statusMsg += `\nDuration: ${sessionSummary.duration}`;
+              statusMsg += `\nModes Used: ${sessionSummary.modesUsed}`;
+              statusMsg += `\nTransitions: ${sessionSummary.totalTransitions}`;
+
+              if (sessionSummary.mostUsedMode) {
+                const mostUsedIcon = MODE_ICONS[sessionSummary.mostUsedMode] || '';
+                statusMsg += `\nMost Used: ${mostUsedIcon} ${sessionSummary.mostUsedMode}`;
               }
-              
-              if (metricsKeys.length > 5) {
-                statusMsg += `\n... and ${metricsKeys.length - 5} more metrics`;
+
+              // Time breakdown for current mode
+              const currentModeTime = timeMetricsSummary.modeBreakdown.find(m => m.mode === currentMode);
+              if (currentModeTime && currentModeTime.duration > 0) {
+                const minutes = Math.floor(currentModeTime.duration / (1000 * 60));
+                const seconds = Math.floor((currentModeTime.duration % (1000 * 60)) / 1000);
+                statusMsg += `\nTime in ${currentMode}: ${minutes}m ${seconds}s (${currentModeTime.percentage.toFixed(1)}%)`;
               }
-            }
-            
-            // Productivity summary (if any activity)
-            const productivity = metricsTracker.getProductivitySummary();
-            const hasActivity = productivity.totalFiles > 0 || 
-                               productivity.totalBugsFixed > 0 || 
-                               productivity.totalVulnerabilitiesFixed > 0;
-            
-            if (hasActivity) {
-              statusMsg += `\n\nProductivity\n────────────`;
-              if (productivity.totalFiles > 0) {
-                statusMsg += `\nFiles Changed: ${productivity.totalFiles}`;
+
+              // Mode-specific metrics (if any)
+              const metricsKeys = Object.keys(modeSpecificMetrics);
+              if (metricsKeys.length > 0) {
+                statusMsg += `\n\n${currentMode.charAt(0).toUpperCase() + currentMode.slice(1)} Mode Metrics\n${'─'.repeat(currentMode.length + 14)}`;
+
+                // Display up to 5 most relevant metrics
+                const displayMetrics = metricsKeys.slice(0, 5);
+                for (const key of displayMetrics) {
+                  const value = modeSpecificMetrics[key];
+                  // Format key as human-readable (camelCase to Title Case)
+                  const formattedKey = key
+                    .replace(/([A-Z])/g, ' $1')
+                    .replace(/^./, str => str.toUpperCase())
+                    .trim();
+                  statusMsg += `\n${formattedKey}: ${value}`;
+                }
+
+                if (metricsKeys.length > 5) {
+                  statusMsg += `\n... and ${metricsKeys.length - 5} more metrics`;
+                }
               }
-              if (productivity.totalLines > 0) {
-                statusMsg += `\nLines Changed: ${productivity.totalLines}`;
-              }
-              if (productivity.totalBugsFixed > 0) {
-                statusMsg += `\nBugs Fixed: ${productivity.totalBugsFixed}`;
-              }
-              if (productivity.totalVulnerabilitiesFixed > 0) {
-                statusMsg += `\nVulnerabilities Fixed: ${productivity.totalVulnerabilitiesFixed}`;
-              }
-              if (productivity.totalOptimizations > 0) {
-                statusMsg += `\nOptimizations: ${productivity.totalOptimizations}`;
+
+              // Productivity summary (if any activity)
+              const productivity = metricsTracker.getProductivitySummary();
+              const hasActivity = productivity.totalFiles > 0 || 
+                                 productivity.totalBugsFixed > 0 || 
+                                 productivity.totalVulnerabilitiesFixed > 0;
+
+              if (hasActivity) {
+                statusMsg += `\n\nProductivity\n────────────`;
+                if (productivity.totalFiles > 0) {
+                  statusMsg += `\nFiles Changed: ${productivity.totalFiles}`;
+                }
+                if (productivity.totalLines > 0) {
+                  statusMsg += `\nLines Changed: ${productivity.totalLines}`;
+                }
+                if (productivity.totalBugsFixed > 0) {
+                  statusMsg += `\nBugs Fixed: ${productivity.totalBugsFixed}`;
+                }
+                if (productivity.totalVulnerabilitiesFixed > 0) {
+                  statusMsg += `\nVulnerabilities Fixed: ${productivity.totalVulnerabilitiesFixed}`;
+                }
+                if (productivity.totalOptimizations > 0) {
+                  statusMsg += `\nOptimizations: ${productivity.totalOptimizations}`;
+                }
               }
             }
           } catch (_error) {

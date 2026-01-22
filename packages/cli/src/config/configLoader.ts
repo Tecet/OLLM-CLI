@@ -20,9 +20,9 @@ let validate: ValidateFunction<Config> | null = null;
  */
 function getValidator() {
   if (!validate) {
-    const ajv = new Ajv({ allErrors: true, strict: false });
-    addFormats(ajv);
-    validate = ajv.compile(configSchema) as ValidateFunction<Config>;
+    const ajv = new (Ajv as any)({ allErrors: true, strict: false });
+    (addFormats as any)(ajv);
+    validate = (ajv.compile as any)(configSchema) as ValidateFunction<Config>;
   }
   return validate;
 }
@@ -32,37 +32,37 @@ function getValidator() {
  * Empty strings and whitespace-only strings in string fields are treated as missing values
  * Explicitly set values (including 0, false, empty arrays) are preserved
  */
-function deepMerge<T extends Record<string, unknown>>(target: T, source: Partial<T>): T {
-  const result = { ...target } as T;
+function deepMerge<T>(target: T, source: Partial<T>): T {
+  // Use loose internal typing to allow merging arbitrary config shapes
+  const result: any = { ...(target as any) };
 
   const isPlainObject = (value: unknown): value is Record<string, unknown> =>
     Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 
   for (const key of Object.keys(source) as Array<keyof T>) {
-    const sourceValue = source[key];
+    const sourceValue = (source as any)[key];
     const targetValue = result[key];
-    
+
     // Skip undefined values (but not null, 0, false, or empty string)
     if (sourceValue === undefined) {
       continue;
     }
-    
+
     // Skip empty or whitespace-only strings entirely (treat as missing)
-    // But preserve empty string if it's explicitly set (we can't distinguish, so we check trim)
     if (typeof sourceValue === 'string' && sourceValue.trim() === '') {
       continue;
     }
-    
+
     // For nested objects, recurse
     if (isPlainObject(sourceValue) && isPlainObject(targetValue)) {
-      result[key] = deepMerge(targetValue, sourceValue as Partial<typeof targetValue>) as T[typeof key];
+      result[key] = deepMerge(targetValue, sourceValue as Partial<typeof targetValue>);
     } else {
       // For all other values (including 0, false, null, empty arrays), source takes precedence
-      result[key] = sourceValue as T[typeof key];
+      result[key] = sourceValue;
     }
   }
-  
-  return result;
+
+  return result as T;
 }
 
 /**
@@ -210,7 +210,7 @@ function loadEnvConfig(): Partial<Config> {
         host: process.env.OLLAMA_HOST,
         timeout: 30000,
       },
-    };
+    } as any;
   }
   
   if (process.env.VLLM_HOST) {
@@ -220,7 +220,7 @@ function loadEnvConfig(): Partial<Config> {
         host: process.env.VLLM_HOST,
         apiKey: process.env.VLLM_API_KEY,
       },
-    };
+    } as any;
   }
   
   if (process.env.OPENAI_COMPATIBLE_HOST) {
@@ -230,7 +230,7 @@ function loadEnvConfig(): Partial<Config> {
         host: process.env.OPENAI_COMPATIBLE_HOST,
         apiKey: process.env.OPENAI_COMPATIBLE_API_KEY,
       },
-    };
+    } as any;
   }
   
   // Model settings
@@ -238,7 +238,7 @@ function loadEnvConfig(): Partial<Config> {
     config.model = {
       ...(config.model ?? {}),
       default: process.env.OLLM_DEFAULT_MODEL,
-    };
+    } as any;
   }
   
   // Logging

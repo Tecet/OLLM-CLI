@@ -6,7 +6,8 @@
 import type { Config } from './config/types.js';
 import { ProviderRegistry, ChatClient } from '@ollm/core';
 import { ToolRegistry } from '@ollm/core';
-import { LocalProvider } from '@ollm/ollm-bridge';
+import { LocalProvider } from '../../ollm-bridge/src/provider/localProvider.js';
+import type { DeclarativeTool } from '@ollm/ollm-cli-core/tools/types.js';
 
 /**
  * Error codes for non-interactive mode.
@@ -144,7 +145,7 @@ export class NonInteractiveRunner {
     
     // Initialize chat client
     // Cast toolRegistry to unknown to bypass type mismatch with Turn's ToolRegistry interface
-    const chatClient = new ChatClient(providerRegistry, toolRegistry as unknown as { get(name: string): DeclarativeTool<unknown, unknown> | undefined });
+    const chatClient = new ChatClient(providerRegistry, toolRegistry as unknown as any);
     
     // Determine model
     const model = options.model || options.config.model.default;

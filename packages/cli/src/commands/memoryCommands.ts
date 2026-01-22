@@ -178,7 +178,7 @@ export const memoryCommand: Command = {
     // Create service instance
     // TODO: This should be injected via dependency injection
     const service = new MemoryService({
-      storagePath: undefined, // Will use default
+      memoryPath: undefined, // Will use default
       tokenBudget: 500,
     });
     

@@ -152,7 +152,7 @@ export function createExtensionCommands(
         const showAll = args.includes('--all');
 
         try {
-          const extensions = extensionManager.getExtensions();
+          const extensions = extensionManager.getAllExtensions();
 
           if (extensions.length === 0) {
             return {
@@ -174,16 +174,18 @@ export function createExtensionCommands(
           }
 
           // Format extensions
-          const formatted = filtered.map((ext, index) => {
+          const formatted = filtered.map((ext: any, index: number) => {
             const status = ext.enabled ? '✅' : '❌';
             const hooks = ext.hooks?.length || 0;
             const mcpServers = Object.keys(ext.mcpServers || {}).length;
             const skills = ext.skills?.length || 0;
+            const metadata = ext.manifest || {};
+            const author = (metadata as any).author || 'unknown';
 
             return [
-              `${index + 1}. ${status} **${ext.name}** v${ext.version}`,
-              `   ${ext.description}`,
-              `   Author: ${ext.author}`,
+              `${index + 1}. ${status} **${metadata.name || ext.name}** v${metadata.version || ext.version}`,
+              `   ${metadata.description || ext.description}`,
+              `   Author: ${author}`,
               `   Hooks: ${hooks}, MCP Servers: ${mcpServers}, Skills: ${skills}`,
               `   Path: ${ext.path}`,
               '',
@@ -306,9 +308,9 @@ export function createExtensionCommands(
           }
 
           // Format extension info
-          const hooks = extension.hooks?.length || 0;
-          const mcpServers = Object.keys(extension.mcpServers || {}).length;
-          const skills = extension.skills?.length || 0;
+          const hooks = extension.hooks?.length ?? 0;
+          const mcpServers = Array.isArray(extension.mcpServers) ? extension.mcpServers.length : 0;
+          const skills = extension.skills?.length ?? 0;
           const status = extension.enabled ? '✅ Enabled' : '❌ Disabled';
 
           const info = [
@@ -318,9 +320,9 @@ export function createExtensionCommands(
             `**Description:**`,
             extension.description,
             '',
-            `**Author:** ${extension.author}`,
-            `**Repository:** ${extension.repository || 'N/A'}`,
-            `**License:** ${extension.license || 'N/A'}`,
+            `**Author:** ${((extension.manifest as any).author) || 'N/A'}`,
+            `**Repository:** ${((extension.manifest as any).repository) || 'N/A'}`,
+            `**License:** ${((extension.manifest as any).license) || 'N/A'}`,
             '',
             `**Components:**`,
             `- Hooks: ${hooks}`,
@@ -335,7 +337,8 @@ export function createExtensionCommands(
           if (extension.hooks && extension.hooks.length > 0) {
             info.push('', '**Hooks:**');
             extension.hooks.forEach(hook => {
-              info.push(`- ${hook.name} (${hook.event})`);
+              const ev = (hook as any).event ?? 'N/A';
+              info.push(`- ${hook.name} (${ev})`);
             });
           }
 
@@ -374,8 +377,8 @@ export function createExtensionCommands(
         try {
           await extensionManager.loadExtensions();
 
-          const extensions = extensionManager.getExtensions();
-          const enabled = extensions.filter(ext => ext.enabled).length;
+          const extensions = extensionManager.getAllExtensions();
+          const enabled = extensions.filter((ext: any) => ext.enabled).length;
 
           return {
             success: true,

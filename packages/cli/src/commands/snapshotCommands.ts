@@ -38,7 +38,23 @@ async function snapshotListHandler(args: string[]): Promise<CommandResult> {
 
   try {
     const manager = ensureContextManager();
-    const snapshots = await manager.listSnapshots(sessionId);
+    // Try to use the underlying raw manager when available (some implementations expose listSnapshots/getSnapshot differently)
+    const raw = manager.getManager();
+    let snapshots: any[] = [];
+    if (raw && typeof (raw as any).listSnapshots === 'function') {
+      try {
+        // Some implementations accept sessionId, others use the manager's session; try both
+        snapshots = await (raw as any).listSnapshots(sessionId);
+      } catch (_) {
+        snapshots = await (raw as any).listSnapshots();
+      }
+    } else {
+      const snapshotManager = manager.getSnapshotManager();
+      if (!snapshotManager) {
+        throw new Error('Snapshot manager is not available.');
+      }
+      snapshots = await (snapshotManager as any).listSnapshots(sessionId);
+    }
 
     if (snapshots.length === 0) {
       return {
@@ -92,7 +108,21 @@ async function snapshotShowHandler(args: string[]): Promise<CommandResult> {
 
   try {
     const manager = ensureContextManager();
-    const snapshot = await manager.getSnapshot(snapshotId);
+    const raw = manager.getManager();
+    let snapshot: any = null;
+    if (raw && typeof (raw as any).getSnapshot === 'function') {
+      try {
+        snapshot = await (raw as any).getSnapshot(snapshotId);
+      } catch (_) {
+        snapshot = null;
+      }
+    } else {
+      const snapshotManager = manager.getSnapshotManager();
+      if (!snapshotManager) {
+        throw new Error('Snapshot manager is not available.');
+      }
+      snapshot = await (snapshotManager as any).getSnapshot(snapshotId);
+    }
 
     if (!snapshot) {
       return {
@@ -150,7 +180,6 @@ async function snapshotRestoreHandler(args: string[]): Promise<CommandResult> {
 
     return {
       success: true,
-      action: 'restore-snapshot',
       message: `Context restored from snapshot: ${snapshotId}`,
       data: { snapshotId },
     };
@@ -177,7 +206,21 @@ async function snapshotRollbackHandler(args: string[]): Promise<CommandResult> {
 
   try {
     const manager = ensureContextManager();
-    const snapshots = await manager.listSnapshots(sessionId);
+    const raw = manager.getManager();
+    let snapshots: any[] = [];
+    if (raw && typeof (raw as any).listSnapshots === 'function') {
+      try {
+        snapshots = await (raw as any).listSnapshots(sessionId);
+      } catch (_) {
+        snapshots = await (raw as any).listSnapshots();
+      }
+    } else {
+      const snapshotManager = manager.getSnapshotManager();
+      if (!snapshotManager) {
+        throw new Error('Snapshot manager is not available.');
+      }
+      snapshots = await (snapshotManager as any).listSnapshots(sessionId);
+    }
 
     if (snapshots.length === 0) {
       return {
@@ -192,7 +235,6 @@ async function snapshotRollbackHandler(args: string[]): Promise<CommandResult> {
 
     return {
       success: true,
-      action: 'restore-snapshot',
       message: `Rolled back to snapshot: ${latest.id}\nTimestamp: ${new Date(latest.timestamp).toLocaleString()}`,
       data: { snapshotId: latest.id },
     };

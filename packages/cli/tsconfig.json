@@ -5,8 +5,15 @@
     "rootDir": "./src",
     "composite": true,
     "resolveJsonModule": true
+    ,"baseUrl": "../../",
+    "paths": {
+      "@ollm/core": ["packages/core/src/index.ts"],
+      "@ollm/core/*": ["packages/core/src/*"],
+      "@ollm/ollm-cli-core": ["packages/core/src/index.ts"],
+      "@ollm/ollm-cli-core/*": ["packages/core/src/*"]
+    }
   },
-  "include": ["src", "src/**/*.json"],
+  "include": ["src", "src/**/*.json", "../../types/**/*.d.ts"],
   "references": [
     { "path": "../core" },
     { "path": "../ollm-bridge" },

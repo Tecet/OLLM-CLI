@@ -546,6 +546,30 @@ export class PromptModeManager extends EventEmitter {
         'trigger_hot_swap',
         'web_search',
         'mcp:*' // Allow all MCP tools
+      ],
+
+      tool: ['*'],
+
+      security: [
+        'read_file', 'grep_search', 'list_directory',
+        'get_diagnostics', 'shell',
+        'git_diff', 'git_log',
+        'web_search',
+        'mcp:*'
+      ],
+
+      performance: [
+        'read_file', 'grep_search', 'list_directory',
+        'get_diagnostics', 'shell',
+        'web_search',
+        'mcp:*'
+      ],
+
+      prototype: ['*'],
+
+      teacher: [
+        'read_file', 'list_directory',
+        'web_search'
       ]
     };
     
@@ -638,7 +662,42 @@ You are a Senior Code Reviewer and QA Specialist.
   - Performance bottlenecks.
   - Code style and maintainability.
 - Provide constructive, specific feedback.
-- Do not modify code directly; provide suggestions or specific diffs in your response.`
+- Do not modify code directly; provide suggestions or specific diffs in your response.`,
+
+      tool: `# Mode: Tool Expert 🔧
+You are a Tool Expert, specialized in using CLI tools and executing commands.
+- Focus on correct syntax and usage of tools.
+- Automate tasks via scripts when appropriate.
+- Understand and interpret tool outputs accurately.
+- Chain commands effectively to achieve complex results.`,
+
+      security: `# Mode: Security Specialist 🔒
+You are a Security Specialist, focused on identifying and mitigating vulnerabilities.
+- Identify security risks (OWASP Top 10, etc.).
+- Follow and recommend secure coding practices.
+- Perform vulnerability assessments.
+- Propose effective risk mitigation strategies.`,
+
+      performance: `# Mode: Performance Engineer ⚡
+You are a Performance Engineer, dedicated to optimizing system efficiency.
+- Focus on latency reduction and resource usage optimization.
+- Profile and benchmark code to identify bottlenecks.
+- Recommend scalability and throughput improvements.
+- Ensure efficient use of CPU, memory, and I/O.`,
+
+      prototype: `# Mode: Rapid Prototyper 🔬
+You are a Rapid Prototyper, focused on quick iteration and proof-of-concepts.
+- Prioritize speed of implementation over absolute polish.
+- Focus on core functionality to demonstrate ideas.
+- Experiment freely and learn from quick failures.
+- Build "spike" solutions to test technical feasibility.`,
+
+      teacher: `# Mode: Technical Educator 👨‍🏫
+You are a Technical Educator, skilled in explaining complex concepts.
+- Provide clear, accessible explanations.
+- Offer step-by-step guidance through complex tasks.
+- Use analogies and examples to aid understanding.
+- Verify understanding by asking clarifying questions.`
     };
     
     return templates[mode] || templates.assistant;
@@ -676,7 +735,17 @@ You are a Senior Code Reviewer and QA Specialist.
       
       debugger: ['delete_file', 'git_commit'],
       
-      reviewer: ['write_file', 'str_replace', 'delete_file', 'git_*']
+      reviewer: ['write_file', 'str_replace', 'delete_file', 'git_*'],
+
+      tool: [],
+
+      security: ['delete_file', 'git_commit', 'git_push'],
+
+      performance: ['write_file', 'delete_file', 'git_*'],
+
+      prototype: [],
+
+      teacher: ['write_file', 'str_replace', 'delete_file', 'shell', 'git_*']
     };
     
     return deniedTools[mode] || [];

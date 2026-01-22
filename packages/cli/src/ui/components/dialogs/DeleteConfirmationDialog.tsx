@@ -28,11 +28,11 @@ export interface DeleteConfirmationDialogProps {
 export function DeleteConfirmationDialog({
   hook,
   onConfirm: _onConfirm,
-  onCancel: _onCancel,
+  onCancel,
   isDeletable,
 }: DeleteConfirmationDialogProps) {
   const { state: uiState } = useUI();
-  const [isDeleting, _setIsDeleting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Check if hook is deletable
   if (!isDeletable) {
@@ -64,12 +64,12 @@ export function DeleteConfirmationDialog({
   }
 
   const _handleConfirm = async () => {
-    setIsDeleting(true);
+    _setIsDeleting(true);
     try {
-      await onConfirm();
+      await _onConfirm();
       // Dialog will be closed by parent
     } catch {
-      setIsDeleting(false);
+      _setIsDeleting(false);
       // Error will be handled by parent
     }
   };

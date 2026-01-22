@@ -9,6 +9,38 @@ import type { DeclarativeTool, ToolSchema, ToolContext } from './types.js';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { GoalManager } from '../context/goalTypes.js';
 
+export type CreateGoalParams = {
+  description: string;
+  priority?: 'high' | 'medium' | 'low';
+  subtasks?: string[];
+};
+
+export type CreateCheckpointParams = {
+  description: string;
+  filesModified?: string[];
+  testsAdded?: string[];
+  decisionsLocked?: string[];
+};
+
+export type CompleteGoalParams = {
+  summary: string;
+  artifacts?: string[];
+};
+
+export type RecordDecisionParams = {
+  description: string;
+  rationale: string;
+  alternatives?: string[];
+  locked?: boolean;
+};
+
+export type SwitchGoalParams = {
+  action: 'pause' | 'resume' | 'new';
+  goalId?: string;
+  newGoalDescription?: string;
+  priority?: 'high' | 'medium' | 'low';
+};
+
 /**
  * Create Goal Tool
  * Allows LLM to create a new goal

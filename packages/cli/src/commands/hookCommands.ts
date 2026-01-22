@@ -105,7 +105,7 @@ export const hookDebugCommand: Command = {
         const lines = [
           `❌ ${failed.length} Failed Hook Executions:`,
           '',
-          ...failed.map(trace => 
+          ...failed.map((trace: any) => 
             `  ${trace.hookName} (${trace.event}) - ${trace.error || 'Unknown error'}`
           ),
         ];

@@ -90,7 +90,8 @@ describe('Chat Client - Property-Based Tests', () => {
             providerRegistry.register(provider);
             providerRegistry.setDefault('mock');
 
-            await collectEvents(client.chat('test prompt'));
+            const client = new ChatClient(providerRegistry, toolRegistry);
+            const events = await collectEvents(client.chat('test prompt'));
 
             // Extract text events from chat events
             const textEvents = events.filter((e) => e.type === 'text');
@@ -127,6 +128,11 @@ describe('Chat Client - Property-Based Tests', () => {
       // Validates: Requirements 2.1, 2.2, 2.3, 2.4
       await fc.assert(
         fc.asyncProperty(fc.string(), async (errorMessage: string) => {
+          const providerEvents = [
+            { type: 'error' as const, error: { message: errorMessage } },
+            { type: 'finish' as const, reason: 'error' as const }
+          ];
+
           const provider = new MockProvider(providerEvents);
           providerRegistry.register(provider);
           providerRegistry.setDefault('mock');

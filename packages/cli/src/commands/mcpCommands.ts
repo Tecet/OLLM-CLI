@@ -56,25 +56,25 @@ export const mcpListCommand: CommandHandler = async (
         if (showTools) {
           const tools = await mcpClient.getTools(server.name);
           output.push(`    Tools: ${tools.length}`);
-          tools.forEach((tool) => {
-            output.push(`      - ${tool.name}: ${tool.description}`);
-          });
+            tools.forEach((tool: any) => {
+              output.push(`      - ${tool.name}: ${tool.description}`);
+            });
         }
 
         if (showResources && mcpClient.getResources) {
           const resources = await mcpClient.getResources(server.name);
           output.push(`    Resources: ${resources.length}`);
-          resources.forEach((resource) => {
-            output.push(`      - ${resource.name} (${resource.uri})`);
-          });
+            resources.forEach((resource: any) => {
+              output.push(`      - ${resource.name} (${resource.uri})`);
+            });
         }
 
         if (showPrompts && mcpClient.getPrompts) {
           const prompts = await mcpClient.getPrompts(server.name);
           output.push(`    Prompts: ${prompts.length}`);
-          prompts.forEach((prompt) => {
-            output.push(`      - ${prompt.name}: ${prompt.description || 'No description'}`);
-          });
+            prompts.forEach((prompt: any) => {
+              output.push(`      - ${prompt.name}: ${prompt.description || 'No description'}`);
+            });
         }
       }
 
@@ -212,7 +212,7 @@ export const mcpToolsCommand: CommandHandler = async (
 
     const output = [
       `${tools.length} tool(s) from '${serverName}':\n`,
-      ...tools.map((tool, index) => {
+      ...tools.map((tool: any, index: number) => {
         return [
           `${index + 1}. ${tool.name}`,
           `   ${tool.description}`,
@@ -221,7 +221,6 @@ export const mcpToolsCommand: CommandHandler = async (
         ].join('\n');
       }),
     ].join('\n');
-
     return {
       success: true,
       message: output,
@@ -272,7 +271,7 @@ export const mcpResourcesCommand: CommandHandler = async (
 
     const output = [
       `${resources.length} resource(s) from '${serverName}':\n`,
-      ...resources.map((resource, index) => {
+      ...resources.map((resource: any, index: number) => {
         return [
           `${index + 1}. ${resource.name}`,
           `   URI: ${resource.uri}`,
@@ -333,13 +332,13 @@ export const mcpPromptsCommand: CommandHandler = async (
 
     const output = [
       `${prompts.length} prompt(s) from '${serverName}':\n`,
-      ...prompts.map((prompt, index) => {
+      ...prompts.map((prompt: any, index: number) => {
         const args = prompt.arguments || [];
         return [
           `${index + 1}. ${prompt.name}`,
           `   ${prompt.description || 'No description'}`,
           args.length > 0 ? `   Arguments:` : '',
-          ...args.map((arg) => `     - ${arg.name}${arg.required ? ' (required)' : ''}: ${arg.description || 'No description'}`),
+          ...args.map((arg: any) => `     - ${arg.name}${arg.required ? ' (required)' : ''}: ${arg.description || 'No description'}`),
           '',
         ].filter(Boolean).join('\n');
       }),
@@ -406,7 +405,7 @@ export const mcpStatusCommand: CommandHandler = async (
 
       const output = [
         `${servers.length} MCP server(s):\n`,
-        ...servers.map((server) => {
+        ...servers.map((server: any) => {
           const statusIcon = server.status.status === 'connected' ? '✓' 
             : server.status.status === 'error' ? '✗' 
             : '○';

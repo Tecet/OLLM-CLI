@@ -29,7 +29,7 @@ export interface CheckboxProps {
 export function Checkbox({
   label,
   checked,
-  _onChange,
+  onChange,
   disabled = false,
   description,
 }: CheckboxProps) {

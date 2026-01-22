@@ -1,5 +1,6 @@
 import type { MCPClient } from '../mcp/types.js';
 import type { ToolRegistry } from './tool-registry.js';
+import type { Tool } from './types.js';
 import { ToolCapability, detectServerCapabilities } from './tool-capabilities.js';
 import { EventEmitter } from 'events';
 

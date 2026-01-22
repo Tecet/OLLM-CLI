@@ -91,41 +91,23 @@ export const HelpOverlay: React.FC<HelpOverlayProps> = ({
 
             <HelpSection title="OAuth & Authentication">
               <HelpItem keys="O" description="Configure OAuth settings" />
-              <Text dimColor marginLeft={2}>
-                • Authorize with external services
-              </Text>
-              <Text dimColor marginLeft={2}>
-                • Refresh expired tokens
-              </Text>
-              <Text dimColor marginLeft={2}>
-                • Revoke access
-              </Text>
+              <Box marginLeft={2}><Text dimColor>• Authorize with external services</Text></Box>
+              <Box marginLeft={2}><Text dimColor>• Refresh expired tokens</Text></Box>
+              <Box marginLeft={2}><Text dimColor>• Revoke access</Text></Box>
             </HelpSection>
 
             <HelpSection title="Monitoring & Troubleshooting">
               <HelpItem keys="H" description="Open health monitor" />
-              <Text dimColor marginLeft={2}>
-                • View server health status
-              </Text>
-              <Text dimColor marginLeft={2}>
-                • Configure auto-restart
-              </Text>
-              <Text dimColor marginLeft={2}>
-                • Check response times
-              </Text>
+              <Box marginLeft={2}><Text dimColor>• View server health status</Text></Box>
+              <Box marginLeft={2}><Text dimColor>• Configure auto-restart</Text></Box>
+              <Box marginLeft={2}><Text dimColor>• Check response times</Text></Box>
             </HelpSection>
 
             <HelpSection title="Marketplace">
               <HelpItem keys="M" description="Browse and install servers" />
-              <Text dimColor marginLeft={2}>
-                • Search available servers
-              </Text>
-              <Text dimColor marginLeft={2}>
-                • View ratings and install counts
-              </Text>
-              <Text dimColor marginLeft={2}>
-                • Install with guided configuration
-              </Text>
+              <Box marginLeft={2}><Text dimColor>• Search available servers</Text></Box>
+              <Box marginLeft={2}><Text dimColor>• View ratings and install counts</Text></Box>
+              <Box marginLeft={2}><Text dimColor>• Install with guided configuration</Text></Box>
             </HelpSection>
 
             <HelpSection title="Server Status Indicators">
@@ -154,21 +136,11 @@ export const HelpOverlay: React.FC<HelpOverlayProps> = ({
             </HelpSection>
 
             <HelpSection title="Tips">
-              <Text dimColor marginLeft={2}>
-                • Changes to server settings are saved immediately
-              </Text>
-              <Text dimColor marginLeft={2}>
-                • Use left/right arrows for quick enable/disable
-              </Text>
-              <Text dimColor marginLeft={2}>
-                • Expand servers to see detailed statistics
-              </Text>
-              <Text dimColor marginLeft={2}>
-                • OAuth tokens are encrypted and stored securely
-              </Text>
-              <Text dimColor marginLeft={2}>
-                • Press ? anytime to show this help
-              </Text>
+              <Box marginLeft={2}><Text dimColor>• Changes to server settings are saved immediately</Text></Box>
+              <Box marginLeft={2}><Text dimColor>• Use left/right arrows for quick enable/disable</Text></Box>
+              <Box marginLeft={2}><Text dimColor>• Expand servers to see detailed statistics</Text></Box>
+              <Box marginLeft={2}><Text dimColor>• OAuth tokens are encrypted and stored securely</Text></Box>
+              <Box marginLeft={2}><Text dimColor>• Press ? anytime to show this help</Text></Box>
             </HelpSection>
           </>
         )}
@@ -184,34 +156,34 @@ export const HelpOverlay: React.FC<HelpOverlayProps> = ({
             </HelpSection>
 
             <HelpSection title="Server Information">
-              <Text dimColor marginLeft={2}>
+              <Text dimColor>
                 • ★ Rating - User ratings (1-5 stars)
               </Text>
-              <Text dimColor marginLeft={2}>
+              <Text dimColor>
                 • Install count - Number of installations
               </Text>
-              <Text dimColor marginLeft={2}>
+              <Text dimColor>
                 • 🔐 OAuth required - Needs authentication
               </Text>
-              <Text dimColor marginLeft={2}>
+              <Text dimColor>
                 • Requirements - System dependencies
               </Text>
             </HelpSection>
 
             <HelpSection title="Installation">
-              <Text dimColor marginLeft={2}>
+              <Text dimColor>
                 1. Select a server from the list
               </Text>
-              <Text dimColor marginLeft={2}>
+              <Text dimColor>
                 2. Press 'I' to open installation dialog
               </Text>
-              <Text dimColor marginLeft={2}>
+              <Text dimColor>
                 3. Configure required settings (API keys, etc.)
               </Text>
-              <Text dimColor marginLeft={2}>
+              <Text dimColor>
                 4. Choose auto-approve options
               </Text>
-              <Text dimColor marginLeft={2}>
+              <Text dimColor>
                 5. Confirm installation
               </Text>
             </HelpSection>
@@ -229,16 +201,16 @@ export const HelpOverlay: React.FC<HelpOverlayProps> = ({
             </HelpSection>
 
             <HelpSection title="Form Fields">
-              <Text dimColor marginLeft={2}>
+              <Text dimColor>
                 • Required fields are marked with *
               </Text>
-              <Text dimColor marginLeft={2}>
+              <Text dimColor>
                 • Help text appears below each field
               </Text>
-              <Text dimColor marginLeft={2}>
+              <Text dimColor>
                 • Validation errors shown in red
               </Text>
-              <Text dimColor marginLeft={2}>
+              <Text dimColor>
                 • Secret fields (API keys) are masked
               </Text>
             </HelpSection>

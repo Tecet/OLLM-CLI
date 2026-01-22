@@ -1,5 +1,6 @@
 {
   "files": [],
+  "include": ["types/**/*.d.ts"],
   "references": [
     { "path": "./packages/core" },
     { "path": "./packages/ollm-bridge" },

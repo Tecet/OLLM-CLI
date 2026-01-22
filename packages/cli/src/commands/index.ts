@@ -7,7 +7,7 @@ export { modelCommands } from './modelCommands.js';
 export { providerCommands } from './providerCommands.js';
 export { gitCommands } from './gitCommands.js';
 export { reviewCommands } from './reviewCommands.js';
-export { extensionCommands } from './extensionCommands.js';
+export { createExtensionCommands } from './extensionCommands.js';
 export { createMCPHealthCommands } from './mcpHealthCommands.js';
 export { themeCommands, createThemeCommands } from './themeCommands.js';
 export { contextCommands } from './contextCommands.js';

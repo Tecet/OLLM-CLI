@@ -39,7 +39,18 @@ export function createMCPHealthCommands(
 
           const results = await Promise.all(
             servers.map(async (server) => {
-              const result = await healthMonitor.checkHealth(server.name, mcpClient);
+              // Prefer monitor-provided health if available, otherwise fall back to client status
+              const result = healthMonitor.getServerHealth(server.name) ?? (() => {
+                const status = mcpClient.getServerStatus(server.name);
+                return {
+                  serverName: server.name,
+                  healthy: status.status === 'connected',
+                  status: status.status,
+                  error: status.error,
+                  timestamp: Date.now(),
+                } as any;
+              })();
+
               return { server, result };
             })
           );
@@ -96,7 +107,17 @@ export function createMCPHealthCommands(
         const serverName = args[0];
 
         try {
-          const result = await healthMonitor.checkHealth(serverName, mcpClient);
+          const maybe = healthMonitor.getServerHealth(serverName);
+          const result = maybe ?? (() => {
+            const status = mcpClient.getServerStatus(serverName);
+            return {
+              serverName,
+              healthy: status.status === 'connected',
+              status: status.status,
+              error: status.error,
+              timestamp: Date.now(),
+            } as any;
+          })();
 
           const icon = result.healthy ? '✅' : '❌';
           const output = [
@@ -146,17 +167,16 @@ export function createMCPHealthCommands(
         const serverName = args[0];
 
         try {
-          const success = await healthMonitor.restartServer(serverName, mcpClient);
-
-          if (success) {
+          try {
+            await healthMonitor.restartServer(serverName);
             return {
               success: true,
               message: `✅ Successfully restarted server "${serverName}"`,
             };
-          } else {
+          } catch (err) {
             return {
               success: false,
-              message: `❌ Failed to restart server "${serverName}"`,
+              message: `❌ Failed to restart server "${serverName}": ${err instanceof Error ? err.message : String(err)}`,
             };
           }
         } catch (error) {
@@ -176,7 +196,8 @@ export function createMCPHealthCommands(
       usage: '/mcp health start',
       handler: async (): Promise<CommandResult> => {
         try {
-          healthMonitor.start(mcpClient);
+          // Monitor was constructed with a client in core; start without args
+          healthMonitor.start();
 
           return {
             success: true,
@@ -227,7 +248,9 @@ export function createMCPHealthCommands(
       usage: '/mcp health status',
       handler: async (): Promise<CommandResult> => {
         try {
-          const isRunning = healthMonitor.isRunning();
+          // There is no public `isRunning()` on the monitor; infer running from monitored servers
+          const monitored = healthMonitor.getAllServerHealth();
+          const isRunning = monitored.length > 0;
           const servers = mcpClient.listServers();
 
           const output = [

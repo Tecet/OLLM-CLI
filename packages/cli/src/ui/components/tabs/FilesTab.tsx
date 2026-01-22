@@ -48,10 +48,12 @@ export function FilesTab({
     if (!treeState.root) {
       const initTree = async () => {
         try {
+          // console.log('Initializing file tree with root:', process.cwd());
           const rootNode = await fileTreeService.buildTree({
             rootPath: process.cwd(),
-            excludePatterns: ['node_modules', '.git', 'dist', 'coverage']
+            // excludePatterns: ['node_modules', '.git', 'dist', 'coverage']
           });
+          // console.log('File tree built, setting root:', rootNode);
           setRoot(rootNode);
         } catch (error) {
           console.error('Failed to initialize file tree:', error);

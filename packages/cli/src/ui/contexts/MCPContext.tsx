@@ -189,10 +189,21 @@ export function MCPProvider({
     container = undefined;
   }
 
+  // Narrowly-typed tool registry with a runtime guard
+  const isToolRegistry = (obj: unknown): obj is { register: (t: unknown) => void; unregister: (n: string) => void } => {
+    return Boolean(obj && typeof (obj as any).register === 'function' && typeof (obj as any).unregister === 'function');
+  };
+
   const toolRegistry = useMemo(() => {
-    if (container && typeof (container as Record<string, unknown>).getToolRegistry === 'function') {
-      return (container as Record<string, () => unknown>).getToolRegistry();
+    try {
+      if (container && typeof (container as any).getToolRegistry === 'function') {
+        const maybe = (container as any).getToolRegistry();
+        if (isToolRegistry(maybe)) return maybe;
+      }
+    } catch {
+      // fallthrough to fallback
     }
+
     // Minimal fallback tool registry used only for tests: register/unregister are no-ops
     return {
       register: () => {},
@@ -216,9 +227,8 @@ export function MCPProvider({
   const toolRouter = useMemo(() => {
     const settings = SettingsService.getInstance().getSettings();
     const config = settings.llm.toolRouting || DEFAULT_TOOL_ROUTING_CONFIG;
-    // Cast config to ToolRoutingConfig to ensure type safety 
-    // (SettingsService returns optional properties while ToolRouter expects slightly different structure)
-    return new ToolRouter(mcpClient, toolRegistry, config as ToolRoutingConfig);
+    // Use narrow any casts to bridge runtime-provided registries and clients
+    return new ToolRouter(mcpClient as any, toolRegistry as any, config as ToolRoutingConfig);
   }, [mcpClient, toolRegistry]);
 
   // Listen for settings changes to update router config
@@ -288,13 +298,13 @@ export function MCPProvider({
         
         // Check if server is already started (client may provide getServerStatus)
         let existingStatus: Record<string, unknown> | undefined;
-        if (typeof (mcpClient as Record<string, unknown>).getServerStatus === 'function') {
-          try {
-            existingStatus = await ((mcpClient as Record<string, (name: string) => Promise<Record<string, unknown>>>).getServerStatus(serverName));
-          } catch {
-            // ignore and continue
-            existingStatus = undefined;
+        try {
+          const getServerStatus = (mcpClient as any)?.getServerStatus;
+          if (typeof getServerStatus === 'function') {
+            existingStatus = await getServerStatus.call(mcpClient, serverName);
           }
+        } catch {
+          existingStatus = undefined;
         }
 
         if (existingStatus && existingStatus.status === 'disconnected') {
@@ -309,7 +319,9 @@ export function MCPProvider({
       }
       
       // Get server statuses from client (client may return a Promise)
-      const serverStatuses = await (mcpClient.getAllServerStatuses() as Promise<Map<string, MCPServerStatus>>);
+      // `getAllServerStatuses` may return either a Promise or a raw Map; normalize with Promise.resolve
+      const _serverStatuses = await Promise.resolve((mcpClient as any).getAllServerStatuses());
+      const serverStatuses = _serverStatuses as Map<string, MCPServerStatus>;
 
       // Build extended server status map
       const servers = new Map<string, ExtendedMCPServerStatus>();
@@ -349,7 +361,14 @@ export function MCPProvider({
         let toolsList: MCPTool[] = [];
         try {
           if (status.status === 'connected') {
-            toolsList = await mcpClient.getTools(serverName);
+            try {
+              const getTools = (mcpClient as any).getTools;
+              if (typeof getTools === 'function') {
+                toolsList = await getTools.call(mcpClient, serverName);
+              }
+            } catch (err) {
+              console.warn('getTools failed:', err);
+            }
           }
         } catch (error) {
           console.warn(`Failed to get tools for ${serverName}:`, error);
@@ -380,11 +399,11 @@ export function MCPProvider({
 
         // Determine health status. Prefer client-reported `health` when available,
         // otherwise infer from the connection `status`.
-        const statusRecord = status as Record<string, unknown>;
-        const health = statusRecord.health ? statusRecord.health :
-                (status.status === 'connected' ? 'healthy' :
-                status.status === 'error' ? 'unhealthy' :
-                'degraded');
+        const statusRecord: any = status;
+        const health = statusRecord?.health ??
+          (status.status === 'connected' ? 'healthy' :
+          status.status === 'error' ? 'unhealthy' :
+          'degraded');
 
         servers.set(serverName, {
           ...status,

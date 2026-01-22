@@ -130,11 +130,11 @@ export class SnapshotManagerImpl implements SnapshotManager {
         totalUserMessages: allUserMessages.length,
         // Add goal-related metadata
         activeGoalId: context.goalStack?.activeGoal?.id,
-        totalGoalsCompleted: context.goalStack?.stats.goalsCompleted || 0,
-        totalCheckpoints: context.goalStack?.stats.checkpointsCreated || 0,
+        totalGoalsCompleted: context.goalStack?.stats.completedGoals || 0,
+        totalCheckpoints: context.goalStack?.stats.totalCheckpoints || 0,
         // Add reasoning-related metadata
         isReasoningModel: !!context.reasoningStorage,
-        totalThinkingTokens: context.reasoningStorage?.stats.totalThinkingTokens || 0,
+        totalThinkingTokens: context.reasoningStorage?.totalThinkingTokens || 0,
       }
     };
 

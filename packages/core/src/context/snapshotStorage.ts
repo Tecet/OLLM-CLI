@@ -154,25 +154,27 @@ export class SnapshotStorageImpl implements SnapshotStorage {
       tokenCount: snapshot.tokenCount,
       summary: snapshot.summary,
       metadata: snapshot.metadata,
-      userMessages: snapshot.userMessages.map(msg => ({
+      // Support snapshots that provide only `messages` by deriving userMessages
+      userMessages: (snapshot.userMessages || snapshot.messages || []).map(msg => ({
         id: msg.id,
-        role: msg.role,
+        role: (msg as any).role || 'user',
         content: msg.content,
-        timestamp: msg.timestamp.toISOString(),
-        tokenCount: msg.tokenCount,
-        taskId: msg.taskId
+        timestamp: (msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp)).toISOString(),
+        tokenCount: (msg as any).tokenCount,
+        taskId: (msg as any).taskId
       })),
-      archivedUserMessages: snapshot.archivedUserMessages.map(msg => ({
+      // archivedUserMessages may be absent
+      archivedUserMessages: (snapshot.archivedUserMessages || []).map(msg => ({
         id: msg.id,
         summary: msg.summary,
-        timestamp: msg.timestamp.toISOString(),
+        timestamp: (msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp)).toISOString(),
         fullMessageAvailable: msg.fullMessageAvailable
       })),
-      messages: snapshot.messages.map(msg => ({
+      messages: (snapshot.messages || []).map(msg => ({
         id: msg.id,
         role: msg.role,
         content: msg.content,
-        timestamp: msg.timestamp.toISOString(),
+        timestamp: (msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp)).toISOString(),
         tokenCount: msg.tokenCount,
         metadata: msg.metadata
       }))
@@ -261,7 +263,12 @@ export class SnapshotStorageImpl implements SnapshotStorage {
           tokenCount: msg.tokenCount,
           metadata: msg.metadata as Record<string, unknown>
         })),
-        metadata: snapshotFile.metadata
+        metadata: {
+          ...snapshotFile.metadata,
+          totalUserMessages: snapshotFile.metadata.totalUserMessages || 0,
+          totalGoalsCompleted: snapshotFile.metadata.totalGoalsCompleted || 0,
+          totalCheckpoints: snapshotFile.metadata.totalCheckpoints || 0
+        }
       };
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === 'ENOENT') {

@@ -967,57 +967,88 @@ export function ChatProvider({
                   toolAllowed = toolSchemas.some(s => s.name === tc.name);
               }
 
-              if (tool && toolAllowed) {
-                  try {
-                      const toolContext = {
-                          messageBus: { requestConfirmation: async () => true },
-                          policyEngine: { evaluate: () => 'allow' as const, getRiskLevel: () => 'low' as const }
-                      };
-                      const invocation = tool.createInvocation(tc.args, toolContext);
-                      const result = await invocation.execute(new AbortController().signal) as { llmContent: string; returnDisplay: string };
-                      
-                      // Add tool result to context manager
-                      await contextActions.addMessage({
-                          role: 'tool',
-                          content: result.llmContent,
-                          toolCallId: tc.id
-                      });
-
-                      // Update UI with result
-                      const targetId = currentAssistantMsgId;
-                      setMessages(prev => prev.map(msg => 
-                          msg.id === targetId ? {
-                              ...msg,
-                              toolCalls: msg.toolCalls?.map(item => 
-                                  item.id === tc.id ? { ...item, status: 'success', result: result.returnDisplay } : item
-                              )
-                          } : msg
-                      ));
-
-                      // Emit after_tool hook event
-                      if (serviceContainer) {
-                        const hookService = serviceContainer.getHookService();
-                        hookService.emitEvent('after_tool', {
-                          toolName: tc.name,
-                          toolArgs: tc.args,
-                          result: result.returnDisplay,
-                          success: true,
-                          turn: turnCount,
-                          timestamp: new Date().toISOString(),
-                        });
-                      }
-
-                      if (tc.name === 'trigger_hot_swap') {
-                          // Post-swap: start a fresh assistant message for the next turn
-                          const swapMsg = addMessage({ role: 'assistant', content: '', expanded: true });
-                          currentAssistantMsgId = swapMsg.id;
-                          assistantMessageIdRef.current = currentAssistantMsgId;
-                      }
-                  } finally {
-                      // Tool execution completed
-                  }
-              } else {
-                  await contextActions.addMessage({
+                            if (tool && toolAllowed) {
+                              try {
+                                const toolContext = {
+                                  messageBus: { requestConfirmation: async () => true },
+                                  policyEngine: { evaluate: () => 'allow' as const, getRiskLevel: () => 'low' as const }
+                                };
+              
+                                let result: { llmContent: string; returnDisplay: string };
+              
+                                const createInvocation = (tool as any)?.createInvocation; // Safely access optional method
+                                const executeDirect = (tool as any)?.execute; // Safely access old direct execute method
+              
+                                if (typeof createInvocation === 'function') {
+                                  const invocation = createInvocation.call(tool, tc.args, toolContext);
+                                  result = await invocation.execute(new AbortController().signal) as { llmContent: string; returnDisplay: string };
+                                } else if (typeof executeDirect === 'function') {
+                                  // Fallback to old pattern where execute is directly on the tool
+                                  result = await executeDirect.call(tool, tc.args, toolContext) as { llmContent: string; returnDisplay: string };
+                                } else {
+                                  throw new Error(`Tool ${tc.name} does not have a valid execute or createInvocation method.`);
+                                }
+              
+                                // Add tool result to context manager
+                                await contextActions.addMessage({
+                                  role: 'tool',
+                                  content: result.llmContent,
+                                  toolCallId: tc.id
+                                });
+              
+                                // Update UI with result
+                                const targetId = currentAssistantMsgId;
+                                setMessages(prev => prev.map(msg => 
+                                  msg.id === targetId ? {
+                                    ...msg,
+                                    toolCalls: msg.toolCalls?.map(item => 
+                                      item.id === tc.id ? { ...item, status: 'success', result: result.returnDisplay } : item
+                                    )
+                                  } : msg
+                                ));
+              
+                                // Emit after_tool hook event
+                                if (serviceContainer) {
+                                  const hookService = serviceContainer.getHookService();
+                                  hookService.emitEvent('after_tool', {
+                                    toolName: tc.name,
+                                    toolArgs: tc.args,
+                                    result: result.returnDisplay,
+                                    success: true,
+                                    turn: turnCount,
+                                    timestamp: new Date().toISOString(),
+                                  });
+                                }
+              
+                                if (tc.name === 'trigger_hot_swap') {
+                                  // Post-swap: start a fresh assistant message for the next turn
+                                  const swapMsg = addMessage({ role: 'assistant', content: '', expanded: true });
+                                  currentAssistantMsgId = swapMsg.id;
+                                  assistantMessageIdRef.current = currentAssistantMsgId;
+                                }
+                              } catch (toolExecError) {
+                                const errorMessage = toolExecError instanceof Error ? toolExecError.message : String(toolExecError);
+                                await contextActions.addMessage({
+                                  role: 'tool',
+                                  content: `Error executing tool ${tc.name}: ${errorMessage}`,
+                                  toolCallId: tc.id
+                                });
+              
+                                // Emit after_tool hook event for failed tool
+                                if (serviceContainer) {
+                                  const hookService = serviceContainer.getHookService();
+                                  hookService.emitEvent('after_tool', {
+                                    toolName: tc.name,
+                                    toolArgs: tc.args,
+                                    error: errorMessage,
+                                    success: false,
+                                    turn: turnCount,
+                                    timestamp: new Date().toISOString(),
+                                  });
+                                }
+                                stopLoop = true;
+                              }
+                            } else {                  await contextActions.addMessage({
                       role: 'tool',
                       content: `Error: Tool ${tc.name} not found or denied`,
                       toolCallId: tc.id

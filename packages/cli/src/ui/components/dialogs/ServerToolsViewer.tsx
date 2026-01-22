@@ -234,7 +234,7 @@ export function ServerToolsViewer({
         </Box>
 
         {/* Tools list grouped by category */}
-        <Box flexDirection="column" marginBottom={1} maxHeight={20} overflow="hidden">
+        <Box flexDirection="column" marginBottom={1} height={20} overflow="hidden">
           {groupedTools.length === 0 ? (
             <Box marginY={2}>
               <Text dimColor>No tools available for this server</Text>

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any */
 import * as fc from 'fast-check';
 
 // Allow overriding runs via env var for CI or local experimentation
@@ -6,57 +7,14 @@ if (!Number.isNaN(runs)) {
   fc.configureGlobal({ numRuns: runs });
 }
 
-// Reduce console noise during property tests unless explicitly requested.
-// Instead of muting all logs, filter out known noisy patterns so useful
-// output (errors/warnings and other logs) remains available.
-const _origLog = console.log.bind(console);
-const _origInfo = console.info.bind(console);
+// Reduce console noise during tests unless explicitly requested.
+// When `VERBOSE_TESTS` is not set, mute non-error console output so test
+// runner output shows only pass/fail (the reporter controls test lines).
 if (!process.env.VERBOSE_TESTS) {
-  const suppressedPatterns: Array<string | RegExp> = [
-    '\\[HooksProvider\\]',
-    'getHookSettings',
-    'settingsService identity',
-  ];
-
-  const shouldSuppress = (args: unknown[]) => {
-    try {
-      const text = args
-        .map((a) => {
-          if (typeof a === 'string') return a;
-          try {
-            return JSON.stringify(a);
-          } catch {
-            return String(a);
-          }
-        })
-        .join(' ');
-      return suppressedPatterns.some((p) =>
-        typeof p === 'string' ? text.includes(p) : p.test(text),
-      );
-    } catch {
-      return false;
-    }
-  };
-
-  console.log = (...args: unknown[]) => {
-    if (shouldSuppress(args)) return;
-    try {
-      const sanitized = args.map((a) => sanitizeForLog(a));
-      _origLog(...(sanitized as any));
-    } catch (_e) {
-      _origLog(...(args as any));
-    }
-  };
-
-  console.info = (...args: unknown[]) => {
-    if (shouldSuppress(args)) return;
-    try {
-      const sanitized = args.map((a) => sanitizeForLog(a));
-      _origInfo(...(sanitized as any));
-    } catch (_e) {
-      _origInfo(...(args as any));
-    }
-  };
+  console.log = () => {};
+  console.info = () => {};
+  console.debug = () => {};
+  console.warn = () => {};
 }
  
 // Note: we avoid attempting to override `fc.assert` because some fast-check
@@ -67,7 +25,8 @@ if (!process.env.VERBOSE_TESTS) {
 export {};
 
 // Sanitize logged values to avoid dumping function/spy internals.
-function sanitizeForLog(value: unknown, depth = 0): unknown {
+// Prefixed with underscore to avoid unused-var lint failures when not used.
+function _sanitizeForLog(value: unknown, depth = 0): unknown {
   if (depth > 3) return '[Object]';
   if (value === null || value === undefined) return value;
   const t = typeof value;
@@ -83,18 +42,18 @@ function sanitizeForLog(value: unknown, depth = 0): unknown {
     }
 
     if (Array.isArray(anyVal)) {
-      return anyVal.map((v) => sanitizeForLog(v, depth + 1));
+      return anyVal.map((v) => _sanitizeForLog(v, depth + 1));
     }
 
     const out: Record<string, unknown> = {};
     for (const k of Object.keys(anyVal)) {
       try {
         const v = anyVal[k];
-        if (typeof v === 'function') {
-          out[k] = '[Function]';
-        } else {
-          out[k] = sanitizeForLog(v, depth + 1);
-        }
+          if (typeof v === 'function') {
+            out[k] = '[Function]';
+          } else {
+            out[k] = _sanitizeForLog(v, depth + 1);
+          }
       } catch {
         out[k] = '[Unserializable]';
       }
@@ -113,7 +72,7 @@ function sanitizeForLog(value: unknown, depth = 0): unknown {
 try {
   // Use require to avoid ESM import complexity in the test setup file
   // and to ensure this runs in Node test harness.
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
+   
   const childProcess = require('child_process');
   const { resolve } = require('path');
 
@@ -125,9 +84,9 @@ try {
   function patchedSpawn(command: any, argv?: any, options?: any) {
     try {
       // Normalize args/options for the common call signatures
-      let cmd = command;
-      let args = Array.isArray(argv) ? argv : [];
-      let opts = (Array.isArray(argv) ? options : argv) || {};
+      const cmd = command;
+      const args = Array.isArray(argv) ? argv : [];
+      const opts = (Array.isArray(argv) ? options : argv) || {};
 
       const base = typeof cmd === 'string' ? cmd.split(/[\\/]/).pop() : '';
 
@@ -146,8 +105,8 @@ try {
     }
 
     // Default behavior
-    // @ts-expect-error - pass through original types
-    return origSpawn.apply(childProcess, arguments as any);
+    // Call original spawn with the normalized args
+    return origSpawn.call(childProcess, command, argv, options);
   }
 
   // Patch spawn in the child_process module for the duration of the test run
@@ -155,6 +114,6 @@ try {
 } catch (err) {
   // If patching fails, do not break the test setup; tests will run with
   // original behavior (may be noisier on some platforms).
-  // eslint-disable-next-line no-console
+   
   console.warn('Failed to install spawn shim for tests:', err?.message || err);
 }

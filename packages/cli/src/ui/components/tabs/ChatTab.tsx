@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { Box, useInput, useStdout, BoxProps } from 'ink';
+import { WindowSwitcher } from '../WindowSwitcher.js';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { useChat } from '../../../features/context/ChatContext.js';
 import { useUI } from '../../../features/context/UIContext.js';
@@ -23,6 +24,7 @@ export interface ChatTabProps {
     maxVisibleLines: number;
     autoCollapseOnComplete?: boolean;
   };
+  showWindowSwitcher?: boolean;
 }
 
 /**
@@ -142,6 +144,11 @@ export function ChatTab(props: ChatTabProps) {
       borderStyle={showBorder ? (uiState.theme.border.style as BoxProps['borderStyle']) : undefined}
       borderColor={hasFocus ? uiState.theme.text.secondary : uiState.theme.border.primary}
     >
+        {props.showWindowSwitcher && (
+          <Box width="100%" flexShrink={0} flexDirection="row" justifyContent="flex-end" paddingRight={1}>
+            <WindowSwitcher />
+          </Box>
+        )}
         <Box 
           flexDirection="column"
           paddingX={1}

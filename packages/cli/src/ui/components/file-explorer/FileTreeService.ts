@@ -73,23 +73,34 @@ export class FileTreeService {
     currentDepth: number,
     maxDepth: number
   ): Promise<FileNode> {
-    const stats = await fs.stat(nodePath);
-    const name = path.basename(nodePath);
+    try {
+      const stats = await fs.stat(nodePath);
+      const name = path.basename(nodePath);
 
-    // Create base node
-    const node: FileNode = {
-      name,
-      path: nodePath,
-      type: stats.isDirectory() ? 'directory' : 'file',
-    };
+      // Create base node
+      const node: FileNode = {
+        name,
+        path: nodePath,
+        type: stats.isDirectory() ? 'directory' : 'file',
+      };
 
-    // If it's a directory and we haven't exceeded max depth, load children
-    if (stats.isDirectory() && currentDepth < maxDepth) {
-      node.expanded = false; // Directories start collapsed (lazy loading)
-      node.children = []; // Empty children array, will be loaded on expand
+      // If it's a directory and we haven't exceeded max depth, load children
+      if (stats.isDirectory() && currentDepth < maxDepth) {
+        node.expanded = false; // Directories start collapsed (lazy loading)
+        node.children = []; // Empty children array, will be loaded on expand
+      }
+
+      return node;
+    } catch (error) {
+      console.error(`Failed to stat ${nodePath}:`, error);
+      // Return a dummy file node so the tree building doesn't fail completely
+      return {
+        name: path.basename(nodePath),
+        path: nodePath,
+        type: 'file', // Treat as file if stat fails
+        gitStatus: 'ignored'
+      };
     }
-
-    return node;
   }
 
   /**
@@ -217,28 +228,6 @@ export class FileTreeService {
   }
 
   /**
-   * Get visible directories for virtual scrolling (Folders Column)
-   * 
-   * Flattens the tree into a list of visible directories only.
-   * 
-   * @param tree - Root node of the tree
-   * @param options - Options for visible window
-   * @returns Array of visible directory FileNode objects
-   */
-  getVisibleDirectories(tree: FileNode, options: GetVisibleNodesOptions): FileNode[] {
-    const { scrollOffset, windowSize = this.DEFAULT_WINDOW_SIZE } = options;
-
-    // Flatten the tree to get all visible directories
-    const flatNodes = this.flattenDirectories(tree);
-
-    // Return the window of visible nodes
-    const start = Math.max(0, scrollOffset);
-    const end = Math.min(flatNodes.length, start + windowSize);
-
-    return flatNodes.slice(start, end);
-  }
-
-  /**
    * Flatten the tree into a list of visible nodes
    * 
    * Recursively traverses the tree and collects all nodes that should
@@ -255,31 +244,6 @@ export class FileTreeService {
     if (node.type === 'directory' && node.expanded && node.children) {
       for (const child of node.children) {
         this.flattenTree(child, result);
-      }
-    }
-
-    return result;
-  }
-
-  /**
-   * Flatten the tree into a list of visible directories only
-   * 
-   * @param node - Current node
-   * @param result - Accumulator for visible directory nodes
-   * @returns Array of visible directory nodes
-   */
-  flattenDirectories(node: FileNode, result: FileNode[] = []): FileNode[] {
-    // Only add directories
-    if (node.type === 'directory') {
-      result.push(node);
-
-      // If the node is an expanded directory, add its directory children
-      if (node.expanded && node.children) {
-        for (const child of node.children) {
-          if (child.type === 'directory') {
-            this.flattenDirectories(child, result);
-          }
-        }
       }
     }
 

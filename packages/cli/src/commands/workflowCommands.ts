@@ -15,7 +15,7 @@
 
 import type { Command, CommandResult } from './types.js';
 import { getGlobalContextManager } from '../features/context/ContextManagerContext.js';
-import type { WorkflowDefinition, WorkflowProgress } from '@ollm/ollm-cli-core/prompts';
+import type { WorkflowDefinition, WorkflowProgress } from '@ollm/ollm-cli-core';
 
 /**
  * Helper to check if context manager is available
@@ -85,7 +85,7 @@ function formatProgress(progress: WorkflowProgress): string {
  * Format workflow definition for display
  */
 function formatWorkflowDefinition(workflow: WorkflowDefinition): string {
-  const steps = workflow.steps.map((step, index) => {
+  const steps = workflow.steps.map((step: any, index: number) => {
     const modeIcon = MODE_ICONS[step.mode] || '📝';
     const optional = step.optional ? ' (optional)' : '';
     return `  ${index + 1}. ${modeIcon} ${step.mode}: ${step.description}${optional}`;
@@ -529,26 +529,26 @@ export const workflowCommand: Command = {
     const subArgs = args.slice(1);
     
     switch (subcommand) {
-      case 'start':
-        return workflowStartCommand.execute(subArgs);
-      case 'status':
-        return workflowStatusCommand.execute(subArgs);
-      case 'next':
-        return workflowNextCommand.execute(subArgs);
-      case 'prev':
-      case 'previous':
-        return workflowPrevCommand.execute(subArgs);
-      case 'skip':
-        return workflowSkipCommand.execute(subArgs);
-      case 'pause':
-        return workflowPauseCommand.execute(subArgs);
-      case 'resume':
-        return workflowResumeCommand.execute(subArgs);
-      case 'exit':
-      case 'stop':
-        return workflowExitCommand.execute(subArgs);
-      case 'list':
-        return workflowListCommand.execute(subArgs);
+        case 'start':
+          return workflowStartCommand.execute!(subArgs, {} as any);
+        case 'status':
+          return workflowStatusCommand.execute!(subArgs, {} as any);
+        case 'next':
+          return workflowNextCommand.execute!(subArgs, {} as any);
+        case 'prev':
+        case 'previous':
+          return workflowPrevCommand.execute!(subArgs, {} as any);
+        case 'skip':
+          return workflowSkipCommand.execute!(subArgs, {} as any);
+        case 'pause':
+          return workflowPauseCommand.execute!(subArgs, {} as any);
+        case 'resume':
+          return workflowResumeCommand.execute!(subArgs, {} as any);
+        case 'exit':
+        case 'stop':
+          return workflowExitCommand.execute!(subArgs, {} as any);
+        case 'list':
+          return workflowListCommand.execute!(subArgs, {} as any);
       default:
         return {
           success: false,

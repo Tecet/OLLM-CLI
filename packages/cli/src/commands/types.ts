@@ -35,7 +35,7 @@ export interface CommandContext {
  */
 export type CommandHandler = (
   args: string[],
-  context?: CommandContext
+  context: CommandContext
 ) => Promise<CommandResult> | CommandResult;
 
 /**
@@ -46,5 +46,10 @@ export interface Command {
   aliases?: string[];
   description: string;
   usage?: string;
-  handler: CommandHandler;
+  /** Primary handler function (legacy modules may use `execute` instead) */
+  handler?: CommandHandler;
+  /** Example usages shown in help UI */
+  examples?: string[];
+  /** Backwards-compatible execute handler name used by some command modules */
+  execute?: CommandHandler;
 }

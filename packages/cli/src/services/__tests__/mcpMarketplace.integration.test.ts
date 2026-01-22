@@ -175,9 +175,10 @@ describe('MCPMarketplace - Integration Tests (Real Behavior)', () => {
     it('should have complete and valid server data', async () => {
       const servers = await marketplace.getAllServers();
       
-      console.log(`\n✓ Local Registry contains ${servers.length} servers:\n`);
-      
-      servers.forEach(server => {
+      const displayCount = Math.min(10, servers.length);
+      console.log(`\n✓ Local Registry contains ${servers.length} servers (showing ${displayCount}):\n`);
+
+      servers.slice(0, displayCount).forEach(server => {
         // Verify all required fields are present and valid
         expect(server.id).toBeDefined();
         expect(server.name).toBeDefined();

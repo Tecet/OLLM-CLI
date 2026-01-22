@@ -141,7 +141,12 @@ export class HybridModeManager {
       planning: 'Planner',
       developer: 'Developer',
       debugger: 'Debugger',
-      reviewer: 'Reviewer'
+      reviewer: 'Reviewer',
+      tool: 'Tool Expert',
+      security: 'Security',
+      performance: 'Performance',
+      prototype: 'Prototyper',
+      teacher: 'Teacher'
     };
     
     return modes.map(m => modeNames[m]).join(' + ');
@@ -156,7 +161,12 @@ export class HybridModeManager {
       planning: '📋',
       developer: '👨‍💻',
       debugger: '🐛',
-      reviewer: '👀'
+      reviewer: '👀',
+      tool: '🔧',
+      security: '🔒',
+      performance: '⚡',
+      prototype: '🔬',
+      teacher: '👨‍🏫'
     };
     
     return modes.map(m => modeIcons[m]).join('');
@@ -171,7 +181,12 @@ export class HybridModeManager {
       planning: 'yellow',
       developer: 'green',
       debugger: 'red',
-      reviewer: 'orange'
+      reviewer: 'orange',
+      tool: 'cyan',
+      security: 'purple',
+      performance: 'magenta',
+      prototype: 'bright-cyan',
+      teacher: 'warm-yellow'
     };
     
     // For multiple modes, combine colors
@@ -193,7 +208,12 @@ export class HybridModeManager {
       planning: 'Technical Architect & Planner',
       developer: 'Senior Software Engineer',
       debugger: 'Debugging Specialist',
-      reviewer: 'Code Reviewer'
+      reviewer: 'Code Reviewer',
+      tool: 'CLI & Tool Specialist',
+      security: 'Security Specialist',
+      performance: 'Performance Engineer',
+      prototype: 'Rapid Prototyper',
+      teacher: 'Technical Educator'
     };
     
     if (modes.length === 1) {
@@ -276,7 +296,12 @@ export class HybridModeManager {
       planning: 'For research and design work',
       developer: 'For implementation and coding',
       debugger: 'When analyzing errors and bugs',
-      reviewer: 'When assessing code quality'
+      reviewer: 'When assessing code quality',
+      tool: 'For tool execution and automation',
+      security: 'For security analysis and auditing',
+      performance: 'For optimization and efficiency',
+      prototype: 'For rapid experimentation and POCs',
+      teacher: 'For learning and tutorial guidance'
     };
     
     return guidance[mode];

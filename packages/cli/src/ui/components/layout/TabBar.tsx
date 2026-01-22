@@ -3,6 +3,8 @@ import { Box, Text, useInput, BoxProps } from 'ink';
 import { TabType } from '../../../features/context/UIContext.js';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { Theme } from '../../../config/types.js';
+import { useKeybinds } from '../../../features/context/KeybindsContext.js';
+import { isKey } from '../../utils/keyUtils.js';
 
 export interface Tab {
   id: TabType;
@@ -33,21 +35,22 @@ export interface TabBarProps {
 export function TabBar({ activeTab, onTabChange, notifications, theme, noBorder }: TabBarProps & { noBorder?: boolean }) {
   const { isFocused, activateContent, setFocus } = useFocusManager();
   const hasFocus = isFocused('nav-bar');
+  const { activeKeybinds } = useKeybinds();
 
   useInput((input, key) => {
     if (!hasFocus) return;
 
-    if (key.leftArrow) {
+    if (isKey(input, key, activeKeybinds.navigation.left)) {
        const currentIndex = tabs.findIndex(t => t.id === activeTab);
        const prevIndex = (currentIndex - 1 + tabs.length) % tabs.length;
        onTabChange(tabs[prevIndex].id);
     }
-    if (key.rightArrow) {
+    if (isKey(input, key, activeKeybinds.navigation.right)) {
        const currentIndex = tabs.findIndex(t => t.id === activeTab);
        const nextIndex = (currentIndex + 1) % tabs.length;
        onTabChange(tabs[nextIndex].id);
     }
-    if (key.return) {
+    if (isKey(input, key, activeKeybinds.navigation.select)) {
        // Activate current tab content (switch to active mode)
        activateContent(activeTab);
     }

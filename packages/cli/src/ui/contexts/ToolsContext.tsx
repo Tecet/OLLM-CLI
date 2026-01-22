@@ -104,9 +104,9 @@ export interface ToolsProviderProps {
 /**
  * Categorize a tool based on its name and description
  */
-function categorizeTool(tool: DeclarativeTool<Record<string, unknown>, unknown>): ToolCategory {
-  const name = tool.name.toLowerCase();
-  const desc = tool.schema.description?.toLowerCase() || '';
+function categorizeTool(tool: DeclarativeTool<any, any>): ToolCategory {
+  const name = String(tool.name).toLowerCase();
+  const desc = String(tool.schema?.description || '').toLowerCase();
   
   // File operations
   if (name.includes('read') || name.includes('write') || name.includes('edit')) {

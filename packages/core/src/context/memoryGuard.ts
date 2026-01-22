@@ -153,11 +153,36 @@ export class MemoryGuardImpl extends EventEmitter implements MemoryGuard {
     // Trigger automatic actions based on level
     switch (level) {
       case MemoryLevel.WARNING:
-      case MemoryLevel.CRITICAL:
-        // Just emit event, don't auto-compress or reduce
-        // The 85% cap strategy will handle stopping naturally
-        // Compression and snapshots happen when Ollama stops streaming
+        // Attempt automatic compression when available
         this.emit('threshold-reached', { level, percentage: this.contextPool.getUsage().percentage });
+        if (this.compressionService && this.currentContext) {
+          try {
+            const strategy = { type: 'hybrid', preserveRecent: Math.floor(this.currentContext.maxTokens ? this.currentContext.maxTokens * 0.3 : 4096), summaryMaxTokens: 1024 } as any;
+            const compressed = await this.compressionService.compress(this.currentContext.messages, strategy as any);
+            // Apply compression results if successful
+            if (compressed && compressed.preserved) {
+              // Rebuild messages: preserved messages + summary as assistant/system if present
+              const preserved = compressed.preserved || [];
+              const summaryMsg = compressed.summary ? [{ id: compressed.summary.id || 'summary', role: compressed.summary.role || 'assistant', content: compressed.summary.content || '', timestamp: compressed.summary.timestamp || new Date() }] : [];
+              this.currentContext.messages = [...preserved, ...summaryMsg];
+              this.currentContext.tokenCount = compressed.compressedTokens || this.currentContext.messages.length;
+              // Sync context pool tokens
+              try {
+                this.contextPool.setCurrentTokens(this.currentContext.tokenCount);
+              } catch {
+                // best-effort
+              }
+              this.emit('compressed', { level: MemoryLevel.WARNING, result: compressed });
+            }
+          } catch (err) {
+            console.error('Compression failed during memory warning handling:', err);
+          }
+        }
+        break;
+      case MemoryLevel.CRITICAL:
+        this.emit('threshold-reached', { level, percentage: this.contextPool.getUsage().percentage });
+        // Force context reduction at hard threshold
+        await this.forceContextReduction();
         break;
       case MemoryLevel.EMERGENCY:
         // >95%: Emergency actions only
@@ -195,10 +220,19 @@ export class MemoryGuardImpl extends EventEmitter implements MemoryGuard {
       const usage = this.contextPool.getUsage();
       
       // Emit warning that resize is pending
+      let hasActive = false;
+      try {
+        hasActive = typeof (this.contextPool as any).hasActiveRequests === 'function'
+          ? (this.contextPool as any).hasActiveRequests()
+          : false;
+      } catch {
+        hasActive = false;
+      }
+
       this.emit('context-resize-pending', {
         level: MemoryLevel.CRITICAL,
         currentSize: usage.maxTokens,
-        hasActiveRequests: this.contextPool.hasActiveRequests()
+        hasActiveRequests: hasActive
       });
       
       // Reduce context size by 20%

@@ -22,9 +22,12 @@ import {
   PromptRegistry,
   PromptModeManager,
   ContextAnalyzer,
-  ModeSnapshotManager,
+  // ModeSnapshotManager,
   WorkflowManager,
+  createSnapshotManager,
 } from '@ollm/core';
+
+import { createSnapshotStorage } from '@ollm/core/context/snapshotStorage.js';
 
 import type {
   ContextConfig,
@@ -37,6 +40,8 @@ import type {
   ProviderAdapter,
   ModeType,
   ModeTransition,
+  SnapshotConfig, // Added SnapshotConfig
+  SnapshotStorage // Added SnapshotStorage
 } from '@ollm/core';
 
 import { SettingsService } from '../../config/settingsService.js';
@@ -165,7 +170,7 @@ export interface ContextManagerActions {
   getModeManager: () => PromptModeManager | null;
   
   /** Get the SnapshotManager instance */
-  getSnapshotManager: () => ModeSnapshotManager | null;
+  getSnapshotManager: () => SnapshotManager | null;
   
   /** Get the WorkflowManager instance */
   getWorkflowManager: () => WorkflowManager | null;
@@ -292,7 +297,7 @@ export function ContextManagerProvider({
   const modeManagerRef = useRef<PromptModeManager | null>(null);
   
   // Snapshot manager reference
-  const snapshotManagerRef = useRef<ModeSnapshotManager | null>(null);
+  const snapshotManagerRef = useRef<SnapshotManager | null>(null);
   
   // Workflow manager reference
   const workflowManagerRef = useRef<WorkflowManager | null>(null);
@@ -343,15 +348,19 @@ export function ContextManagerProvider({
         
         const modeSnapshotPath = path.join(os.homedir(), '.ollm', 'mode-snapshots');
         
-        const snapshotManager = new ModeSnapshotManager({
-          sessionId,
-          storagePath: modeSnapshotPath,
-          maxCacheSize: 10,
-          pruneAfterMs: 3600000, // 1 hour
-        });
+        // FIX: Use createSnapshotManager and createSnapshotStorage, providing SnapshotConfig
+        const snapshotStorage = createSnapshotStorage(modeSnapshotPath);
+        const snapshotManager = createSnapshotManager(
+          snapshotStorage,
+          {
+            enabled: true, // Enable snapshots for mode manager
+            maxCount: 10,
+            autoCreate: true,
+            autoThreshold: 0.8 // Default threshold
+          }
+        );
         
-        // Initialize the snapshot manager
-        await snapshotManager.initialize();
+        // Initialize the snapshot manager (no 'initialize' method on SnapshotManagerImpl)
         
         snapshotManagerRef.current = snapshotManager;
         

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable @typescript-eslint/no-require-imports */
 // Tiny JSON-RPC mock server for tests
 // Usage: spawn this script and communicate via stdin/stdout using JSON-RPC 2.0 lines
 
@@ -9,7 +10,7 @@ const rl = readline.createInterface({ input: process.stdin, output: process.stdo
 function sendResponse(obj) {
   try {
     process.stdout.write(JSON.stringify(obj) + '\n');
-  } catch (e) {
+  } catch (_e) {
     // ignore
   }
 }
@@ -21,7 +22,7 @@ rl.on('line', (line) => {
   let msg;
   try {
     msg = JSON.parse(text);
-  } catch (err) {
+  } catch (_err) {
     // Ignore non-JSON lines to remain tolerant when test harnesses emit other output.
     if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
       console.error('jsonrpc-mock: ignored non-json input:', text);

@@ -70,6 +70,10 @@ export interface KeywordDetection {
 
 /**
  * Mode-specific keyword sets
+ *
+ * Use a relaxed string-keyed record here because we augment the map below
+ * with additional mode keys. We'll cast where a strict `Record<ModeType, *>`
+ * is required by callers.
  */
 const MODE_KEYWORDS: Record<ModeType, string[]> = {
   assistant: [
@@ -104,22 +108,19 @@ const MODE_KEYWORDS: Record<ModeType, string[]> = {
     'consistency', 'refactor suggestion', 'logic check', 'complexity',
     'security', 'vulnerability', 'secure', 'exploit', 'injection', 'auth',
     'encryption', 'mitigate', 'sanitize', 'hardened', 'risk'
-  ]
+  ],
+  tool: [
+    'tool', 'run tool', 'call tool', 'use tool', 'tool call', 'execute tool'
+  ],
+  security: [
+    'security', 'vulnerability', 'xss', 'csrf', 'sql injection', 'authentication', 'authorization'
+  ],
+  performance: [
+    'performance', 'latency', 'slow', 'optimize', 'benchmark', 'high cpu', 'memory'
+  ],
+  prototype: ['prototype', 'poc', 'proof of concept', 'spike'],
+  teacher: ['teach', 'explain', 'tutorial', 'walk me through']
 };
-
-// Add lightweight keywords for additional modes expected by tests
-// (assigning via type cast to augment the existing record)
-(MODE_KEYWORDS as Record<string, string[]> )['tool'] = [
-  'tool', 'run tool', 'call tool', 'use tool', 'tool call', 'execute tool'
-];
-(MODE_KEYWORDS as Record<string, string[]> )['security'] = [
-  'security', 'vulnerability', 'xss', 'csrf', 'sql injection', 'authentication', 'authorization'
-];
-(MODE_KEYWORDS as Record<string, string[]> )['performance'] = [
-  'performance', 'latency', 'slow', 'optimize', 'benchmark', 'high cpu', 'memory'
-];
-(MODE_KEYWORDS as Record<string, string[]> )['prototype'] = ['prototype', 'poc', 'proof of concept', 'spike'];
-(MODE_KEYWORDS as Record<string, string[]> )['teacher'] = ['teach', 'explain', 'tutorial', 'walk me through'];
 
 /**
  * Context Analyzer

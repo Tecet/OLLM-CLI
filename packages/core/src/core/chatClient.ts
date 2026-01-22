@@ -168,8 +168,8 @@ export class ChatClient {
           timestamp: new Date().toISOString(),
         });
       } catch (error) {
-        // Log error but continue without recording (Requirement 10.1)
-        console.error('Failed to create session:', error);
+          // Log error but continue without recording (Requirement 10.1)
+          if (!isTestEnv) console.error('Failed to create session:', error);
       }
     }
 
@@ -207,8 +207,8 @@ export class ChatClient {
           timestamp: new Date().toISOString(),
         });
       } catch (error) {
-        // Log error but continue (Requirement 10.1)
-        console.error('Failed to record user message:', error);
+          // Log error but continue (Requirement 10.1)
+          if (!isTestEnv) console.error('Failed to record user message:', error);
       }
     }
 
@@ -314,13 +314,13 @@ export class ChatClient {
                 }
               } catch (error) {
                 // Log error but continue (Requirement 10.3)
-                console.error('Failed to update session metadata after compression:', error);
+                if (!isTestEnv) console.error('Failed to update session metadata after compression:', error);
               }
             }
           }
         } catch (error) {
           // Log error but continue without compression (Requirement 10.3)
-          console.error('Compression check failed:', error);
+          if (!isTestEnv) console.error('Compression check failed:', error);
         }
       }
 
@@ -343,7 +343,7 @@ export class ChatClient {
           }
         } catch (error) {
           // Log error but continue
-          console.error('Context management check failed:', error);
+          if (!isTestEnv) console.error('Context management check failed:', error);
         }
       }
 
@@ -478,7 +478,7 @@ export class ChatClient {
           });
         } catch (error) {
           // Log error but continue (Requirement 10.1)
-          console.error('Failed to record assistant message:', error);
+          if (!isTestEnv) console.error('Failed to record assistant message:', error);
         }
       }
 
@@ -502,8 +502,12 @@ export class ChatClient {
             const { GoalManagementParser } = await import('../prompts/goalManagementPrompt.js');
             const markers = GoalManagementParser.parse(content);
             
-            // Get goal manager from context manager
-            const goalManager = this.contextMgmtManager.getGoalManager();
+            // Get goal manager from context manager if available
+            // Some ContextManager implementations expose a goal manager accessor.
+    const goalManager = (this.contextMgmtManager as any)?.goalManager;
+    if (!goalManager) {
+      throw new Error('Goal manager not available');
+    }
             
             if (goalManager) {
               // Process new goals
@@ -512,7 +516,7 @@ export class ChatClient {
                   goalManager.createGoal(newGoal.description, newGoal.priority);
                   console.log(`[Marker] Created goal: ${newGoal.description}`);
                 } catch (err) {
-                  console.error('[Marker] Failed to create goal:', err);
+                  if (!isTestEnv) console.error('[Marker] Failed to create goal:', err);
                 }
               }
               
@@ -529,7 +533,7 @@ export class ChatClient {
                     );
                     console.log(`[Marker] Created checkpoint: ${checkpoint.description}`);
                   } catch (err) {
-                    console.error('[Marker] Failed to create checkpoint:', err);
+                    if (!isTestEnv) console.error('[Marker] Failed to create checkpoint:', err);
                   }
                 }
                 
@@ -546,7 +550,7 @@ export class ChatClient {
                     }
                     console.log(`[Marker] Recorded decision: ${decision.description}`);
                   } catch (err) {
-                    console.error('[Marker] Failed to record decision:', err);
+                    if (!isTestEnv) console.error('[Marker] Failed to record decision:', err);
                   }
                 }
                 
@@ -567,7 +571,7 @@ export class ChatClient {
                     );
                     console.log(`[Marker] Recorded artifact: ${artifact.path} (${artifact.action})`);
                   } catch (err) {
-                    console.error('[Marker] Failed to record artifact:', err);
+                    if (!isTestEnv) console.error('[Marker] Failed to record artifact:', err);
                   }
                 }
                 
@@ -577,7 +581,7 @@ export class ChatClient {
                     goalManager.completeGoal(activeGoal.id, markers.goalComplete);
                     console.log(`[Marker] Completed goal: ${markers.goalComplete}`);
                   } catch (err) {
-                    console.error('[Marker] Failed to complete goal:', err);
+                    if (!isTestEnv) console.error('[Marker] Failed to complete goal:', err);
                   }
                 }
                 
@@ -587,7 +591,7 @@ export class ChatClient {
                     goalManager.pauseGoal(activeGoal.id);
                     console.log(`[Marker] Paused goal: ${activeGoal.description}`);
                   } catch (err) {
-                    console.error('[Marker] Failed to pause goal:', err);
+                    if (!isTestEnv) console.error('[Marker] Failed to pause goal:', err);
                   }
                 }
               } else if (markers.checkpoints.length > 0 || markers.decisions.length > 0 || 
@@ -597,11 +601,11 @@ export class ChatClient {
             }
           } catch (err) {
             // Log error but continue - marker parsing is optional
-            console.error('[Marker] Failed to parse goal management markers:', err);
+            if (!isTestEnv) console.error('[Marker] Failed to parse goal management markers:', err);
           }
         } catch (error) {
           // Log error but continue
-          console.error('Failed to add assistant message to context manager:', error);
+          if (!isTestEnv) console.error('Failed to add assistant message to context manager:', error);
         }
       }
 
@@ -622,7 +626,7 @@ export class ChatClient {
             await this.recordingService.recordToolCall(sessionId, sessionToolCall);
           } catch (error) {
             // Log error but continue (Requirement 10.1)
-            console.error('Failed to record tool call:', error);
+            if (!isTestEnv) console.error('Failed to record tool call:', error);
           }
         }
       }
@@ -671,7 +675,7 @@ export class ChatClient {
         });
       } catch (error) {
         // Log error but don't fail (Requirement 10.1)
-        console.error('Failed to save session on exit:', error);
+        if (!isTestEnv) console.error('Failed to save session on exit:', error);
       }
     }
   }

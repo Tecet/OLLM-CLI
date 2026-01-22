@@ -69,7 +69,7 @@ export interface ToolCallConfirmationDetails {
  * It provides methods to describe the operation, check if confirmation is needed,
  * and execute the tool.
  */
-export interface ToolInvocation<TParams extends object, TResult> {
+export interface ToolInvocation<TParams = unknown, TResult = unknown> {
   /**
    * The parameters for this tool invocation
    */
@@ -139,7 +139,7 @@ export interface ToolSchema {
  * It includes the tool's schema (for LLM consumption) and a factory
  * method to create invocations with specific parameters.
  */
-export interface DeclarativeTool<TParams extends object, TResult> {
+export interface DeclarativeTool<TParams = unknown, TResult = unknown> {
   /**
    * Unique identifier for this tool
    */
@@ -162,7 +162,7 @@ export interface DeclarativeTool<TParams extends object, TResult> {
    * @param context Tool context containing message bus and policy engine
    * @returns A tool invocation instance
    */
-  createInvocation(
+  createInvocation?(
     params: TParams,
     context: ToolContext
   ): ToolInvocation<TParams, TResult>;

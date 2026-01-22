@@ -46,6 +46,9 @@ import { MODE_METADATA } from './templates/modes/index.js';
 
 /**
  * Animation configurations for each mode
+ *
+ * Use a relaxed string-keyed record because we don't enumerate every
+ * `ModeType` member in this literal; callers may index by `ModeType`.
  */
 const MODE_ANIMATIONS: Record<ModeType, ModeAnimationConfig> = {
   assistant: {
@@ -77,6 +80,36 @@ const MODE_ANIMATIONS: Record<ModeType, ModeAnimationConfig> = {
     loadingVerb: 'Loading review checklist',
     completionVerb: 'Review mode active',
     duration: 600
+  },
+  tool: {
+    icon: MODE_METADATA.tool.icon,
+    loadingVerb: 'Activating tool expert mode',
+    completionVerb: 'Tool expert mode active',
+    duration: 500
+  },
+  security: {
+    icon: MODE_METADATA.security.icon,
+    loadingVerb: 'Initializing security audit',
+    completionVerb: 'Security mode active',
+    duration: 700
+  },
+  performance: {
+    icon: MODE_METADATA.performance.icon,
+    loadingVerb: 'Starting performance analysis',
+    completionVerb: 'Performance mode active',
+    duration: 600
+  },
+  prototype: {
+    icon: MODE_METADATA.prototype.icon,
+    loadingVerb: 'Enabling rapid prototyping',
+    completionVerb: 'Prototyper mode active',
+    duration: 500
+  },
+  teacher: {
+    icon: MODE_METADATA.teacher.icon,
+    loadingVerb: 'Activating teacher persona',
+    completionVerb: 'Teacher mode active',
+    duration: 500
   }
 };
 
@@ -233,9 +266,14 @@ export class ModeTransitionAnimator {
       planning: 'Planning',
       developer: 'Developer',
       debugger: 'Debugger',
-      reviewer: 'Reviewer'
+      reviewer: 'Reviewer',
+      tool: 'Tool Expert',
+      security: 'Security',
+      performance: 'Performance',
+      prototype: 'Prototyper',
+      teacher: 'Teacher'
     };
-    
+
     return names[mode] || mode;
   }
   

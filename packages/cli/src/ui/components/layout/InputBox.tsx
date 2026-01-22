@@ -82,11 +82,19 @@ export const InputBox = React.memo(function InputBox({
     // Sanitize pasted/typed input to avoid control characters and extremely long unbroken lines
     const sanitizeAndWrap = useCallback((s: string) => {
       if (!s) return s;
+      let out = s;
       // Remove zero-width spaces and carriage returns
-      let out = s.replace(/\u200B/g, '').replace(/\r/g, '');
-      // Strip simple ANSI escape CSI sequences like \x1B[...m and other common sequences
+      out = out.replace(/\u200B/g, '').replace(/\r/g, '');
+      
+      // Strip SGR mouse sequences specifically (e.g. [<0;12;34M), even if missing ESC
+      // This is necessary because sometimes the ESC key is consumed/stripped before reaching here
+      // eslint-disable-next-line no-control-regex
+      out = out.replace(/(?:\x1B)?\[<[0-9;]+[mM]/g, '');
+      
+      // Strip standard ANSI escape CSI sequences like \x1B[...m
       // eslint-disable-next-line no-control-regex
       out = out.replace(/\x1B\[[0-9;]*[A-Za-z]/g, '');
+      
       // Remove other non-printable control characters except tab (\t) and newline (\n)
       // eslint-disable-next-line no-control-regex
       out = out.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
@@ -137,7 +145,7 @@ export const InputBox = React.memo(function InputBox({
     }
 
     // Handle left arrow
-    if (key.leftArrow) {
+    if (key.leftArrow && !key.ctrl && !key.meta) {
       if (cursorPosition > 0) {
         setCursorPosition(cursorPosition - 1);
       }
@@ -145,7 +153,7 @@ export const InputBox = React.memo(function InputBox({
     }
 
     // Handle right arrow
-    if (key.rightArrow) {
+    if (key.rightArrow && !key.ctrl && !key.meta) {
       if (cursorPosition < localInput.length) {
         setCursorPosition(cursorPosition + 1);
       }
@@ -177,14 +185,14 @@ export const InputBox = React.memo(function InputBox({
       paddingY={0}
       width="100%"
     >
-      {/* History indicator - always reserve space to prevent layout shift */}
-      <Box height={1}>
-        <Text color={theme.text.secondary} dimColor>
-          {historyIndex >= 0 
-            ? `[Editing message ${userMessages.length - historyIndex} of ${userMessages.length}]`
-            : ''}
-        </Text>
-      </Box>
+      {/* History indicator - only show when editing history */}
+      {historyIndex >= 0 && (
+        <Box height={1}>
+          <Text color={theme.text.secondary} dimColor>
+            {`[Editing message ${userMessages.length - historyIndex} of ${userMessages.length}]`}
+          </Text>
+        </Box>
+      )}
 
       {/* Input prompt - static, no animations */}
       {/* Unified Input Area */}

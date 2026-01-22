@@ -6,7 +6,7 @@
 
 import React, { createContext, useContext, useState, useCallback } from 'react';
 
-export type WindowType = 'chat' | 'terminal';
+export type WindowType = 'chat' | 'terminal' | 'editor';
 
 interface WindowContextValue {
   activeWindow: WindowType;
@@ -14,6 +14,7 @@ interface WindowContextValue {
   switchWindow: () => void;
   isTerminalActive: boolean;
   isChatActive: boolean;
+  isEditorActive: boolean;
 }
 
 const WindowContext = createContext<WindowContextValue | undefined>(undefined);
@@ -22,7 +23,11 @@ export function WindowProvider({ children }: { children: React.ReactNode }) {
   const [activeWindow, setActiveWindow] = useState<WindowType>('chat');
 
   const switchWindow = useCallback(() => {
-    setActiveWindow(prev => prev === 'chat' ? 'terminal' : 'chat');
+    setActiveWindow(prev => {
+      if (prev === 'chat') return 'terminal';
+      if (prev === 'terminal') return 'editor';
+      return 'chat';
+    });
   }, []);
 
   const value: WindowContextValue = {
@@ -31,6 +36,7 @@ export function WindowProvider({ children }: { children: React.ReactNode }) {
     switchWindow,
     isTerminalActive: activeWindow === 'terminal',
     isChatActive: activeWindow === 'chat',
+    isEditorActive: activeWindow === 'editor',
   };
 
   return (

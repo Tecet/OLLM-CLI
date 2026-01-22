@@ -84,24 +84,24 @@ export function EditHookDialog({
     }
 
     if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
+      _setErrors(validationErrors);
       return;
     }
 
     // Save updates
-    setIsSaving(true);
+    _setIsSaving(true);
     try {
-      await onSave(hook.id, {
+      await _onSave(hook.id, {
         name: formData.name,
         command: formData.command,
         args: formData.args.length > 0 ? formData.args : undefined,
       });
       // Dialog will be closed by parent
     } catch (error) {
-      setErrors({
+      _setErrors({
         name: error instanceof Error ? error.message : 'Failed to update hook',
       });
-      setIsSaving(false);
+      _setIsSaving(false);
     }
   };
 

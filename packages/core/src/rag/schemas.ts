@@ -338,20 +338,26 @@ export function getTableSchema(tableName: string): TableSchema | undefined {
  */
 export function validateRecord(record: unknown, schema: TableSchema): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
-  
+  // Ensure record is an object we can inspect
+  if (typeof record !== 'object' || record === null) {
+    return { valid: false, errors: ['Record must be an object'] };
+  }
+
+  const rec = record as Record<string, any>;
+
   // Check required fields
   for (const field of schema.fields) {
-    if (field.required && !(field.name in record)) {
+    if (field.required && !(field.name in rec)) {
       errors.push(`Missing required field: ${field.name}`);
     }
   }
-  
+
   // Check vector dimensions
-  if ('vector' in record) {
-    if (!Array.isArray(record.vector)) {
+  if ('vector' in rec) {
+    if (!Array.isArray(rec.vector)) {
       errors.push('Vector must be an array');
-    } else if (record.vector.length !== schema.dimensions) {
-      errors.push(`Vector dimensions mismatch: expected ${schema.dimensions}, got ${record.vector.length}`);
+    } else if (rec.vector.length !== schema.dimensions) {
+      errors.push(`Vector dimensions mismatch: expected ${schema.dimensions}, got ${rec.vector.length}`);
     }
   }
   

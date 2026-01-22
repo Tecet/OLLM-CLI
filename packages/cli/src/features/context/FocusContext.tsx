@@ -63,15 +63,12 @@ export function FocusProvider({ children }: { children: ReactNode }) {
       list.push(activeMainFocus);
     }
 
-    // Always have nav-bar and system-bar
+    // Include nav-bar
     list.push('nav-bar');
-    list.push('system-bar');
 
-    // Add side panel items if visible
+    // Add side panel row 3 (context) if visible
     if (sidePanelVisible) {
       list.push('context-panel');
-      list.push('side-file-tree');
-      list.push('functions');
     }
 
     return list;

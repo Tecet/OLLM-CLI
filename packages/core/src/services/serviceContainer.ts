@@ -184,7 +184,8 @@ export class ServiceContainer {
         overrides: {},
       };
       
-      this._modelRouter = new ModelRouter(routingConfig as unknown as Parameters<typeof ModelRouter>[0]);
+      // routingConfig may come from partial user config; cast to any for the router constructor
+      this._modelRouter = new ModelRouter(routingConfig as any);
     }
     return this._modelRouter;
   }
@@ -403,8 +404,9 @@ export class ServiceContainer {
       // MCPClient should be set by the CLI layer
       // For now we use a dummy check or cast if we don't have it yet
       // In practice, this should be provided
+      // _mcpClient is provided by the CLI layer; cast to any for core package
       this._mcpHealthMonitor = new MCPHealthMonitor(
-        (this as unknown as { _mcpClient: unknown })._mcpClient,
+        (this as any)._mcpClient as any,
         {
           checkInterval: healthConfig.checkInterval,
           maxRestartAttempts: healthConfig.maxRestartAttempts,

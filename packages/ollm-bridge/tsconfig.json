@@ -4,8 +4,15 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "composite": true
+    ,"baseUrl": "../../",
+    "paths": {
+      "@ollm/core": ["packages/core/src/index.ts"],
+      "@ollm/core/*": ["packages/core/src/*"],
+      "@ollm/ollm-cli-core": ["packages/core/src/index.ts"],
+      "@ollm/ollm-cli-core/*": ["packages/core/src/*"]
+    }
   },
-  "include": ["src"],
+  "include": ["src", "../../types/**/*.d.ts"],
   "references": [
     { "path": "../core" }
   ]

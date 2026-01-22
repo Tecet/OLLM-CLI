@@ -102,7 +102,7 @@ export async function mainCLI(argvOverride?: string[], runOptions?: RunOptions) 
 
   // Parse arguments
   const argv = Yargs(hideBin(rawArgv))
-    .parserConfiguration({ 'case-sensitive': true })
+    .parserConfiguration({} as any)
     .version(false)
     .help(false)
     .strict()
@@ -213,7 +213,7 @@ export async function mainCLI(argvOverride?: string[], runOptions?: RunOptions) 
 // Load configuration
 let config: Config;
 try {
-  const cliOverrides: Partial<Config> = {};
+  const cliOverrides: any = {};
   
   // Apply CLI overrides
   if (argv.model) {
@@ -388,7 +388,7 @@ try {
   patchConsole: false, 
   exitOnCtrlC: true,
   alternateBuffer: true,
-});
+} as any);
 
   return 0;
 }

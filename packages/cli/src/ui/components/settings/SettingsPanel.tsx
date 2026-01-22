@@ -5,6 +5,7 @@ import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { useSettings } from '../../../features/context/SettingsContext.js';
 import { useModel } from '../../../features/context/ModelContext.js';
 import { useMCP } from '../../contexts/MCPContext.js';
+import { useKeybinds } from '../../../features/context/KeybindsContext.js';
 import { ToolCapability, detectServerCapabilities } from '@ollm/ollm-cli-core/tools/tool-capabilities.js';
 import { builtInThemes } from '../../../config/styles.js';
 import { profileManager } from '../../../features/profiles/ProfileManager.js';
@@ -16,12 +17,13 @@ interface Section {
   name: string;
 }
 
-type SettingType = 'header' | 'info' | 'choice' | 'toggle' | 'numeric' | 'select';
+type SettingType = 'header' | 'info' | 'choice' | 'toggle' | 'numeric' | 'select' | 'keybind' | 'action';
 
 interface SettingItem {
   id: string;
   label: string;
   value: string | number | boolean;
+  defaultValue?: string | number | boolean;
   type: SettingType;
   category: 'llm' | 'ui' | 'prompt';
   muted?: boolean;
@@ -33,6 +35,7 @@ interface SettingItem {
 }
 
 const sections: Section[] = [
+  { id: 'keybinds', name: 'Keybinds' },
   { id: 'provider', name: 'Provider Selection' },
   { id: 'model', name: 'LLM Models' },
   { id: 'options', name: 'LLM Options' },
@@ -63,6 +66,7 @@ export function SettingsPanel({ windowWidth }: SettingsPanelProps) {
   const { settings, updateLLMSetting, updateUISetting, updateToolRouting } = useSettings();
   const { currentModel, setCurrentModel } = useModel();
   const { state: mcpState, getServerTools } = useMCP();
+  const { activeKeybinds, defaultKeybinds, setUserBind, restoreDefault, checkConflict } = useKeybinds();
   const hasFocus = focusManager.isFocused('settings-panel');
 
   // Calculate absolute widths if windowWidth is provided
@@ -300,10 +304,60 @@ export function SettingsPanel({ windowWidth }: SettingsPanelProps) {
 
          return settingsList;
       }
+      case 'keybinds': {
+        // useKeybinds is called at the top level
+        const settingsList: SettingItem[] = [];
+
+        // Header with Restore Default action (simulated as top item)
+        settingsList.push({
+            id: 'restore_defaults',
+            label: '[ Restore All Defaults ]',
+            value: '',
+            type: 'action', // Custom type for buttons
+            category: 'ui'
+        });
+        settingsList.push({ id: 'spacer_kb_1', label: '', value: '', type: 'info', category: 'ui' });
+
+        // Iterate through all categories
+        Object.entries(activeKeybinds).forEach(([category, actions]) => {
+            // Add Section Header
+            const catLabel = category.charAt(0).toUpperCase() + category.slice(1).replace(/([A-Z])/g, ' $1');
+            settingsList.push({ 
+                id: `cat_${category}`, 
+                label: catLabel, 
+                value: '', 
+                type: 'header', 
+                category: 'ui' 
+            });
+
+            // Add each action in category
+            Object.entries(actions as Record<string, string>).forEach(([actionId, currentKey]) => {
+                const defaultKey = (defaultKeybinds as any)[category]?.[actionId];
+                const isModified = currentKey !== defaultKey;
+                
+                // Format label: "togglePanel" -> "Toggle Panel"
+                const actionLabel = actionId.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+
+                settingsList.push({
+                    id: `${category}:${actionId}`, // Composite ID for callback
+                    label: actionLabel,
+                    value: currentKey,
+                    defaultValue: defaultKey, // Pass default for display
+                    type: 'keybind', // Special type for keybind input
+                    category: 'ui',
+                    active: isModified // Highlight modified keys
+                });
+            });
+            
+            settingsList.push({ id: `spacer_${category}`, label: '', value: '', type: 'info', category: 'ui' });
+        });
+
+        return settingsList;
+      }
       default:
         return [];
     }
-  }, [currentSection, settings, uiState.theme.name, currentModel, capabilityProviders]);
+  }, [currentSection, settings, uiState.theme.name, currentModel, capabilityProviders, activeKeybinds, defaultKeybinds]);
 
   // Is focusable helper
   const isFocusable = (setting: SettingItem) => {
@@ -416,7 +470,14 @@ export function SettingsPanel({ windowWidth }: SettingsPanelProps) {
 
     const setting = currentSettings[selectedSettingIndex];
     
-    if (setting.type === 'numeric') {
+    if (setting.type === 'action') {
+        if (setting.id === 'restore_defaults') {
+            restoreDefault();
+        }
+    } else if (setting.type === 'keybind') {
+        setIsEditingValue(true);
+        setEditValue(String(setting.value));
+    } else if (setting.type === 'numeric') {
       setIsEditingValue(true);
       setEditValue(String(setting.value));
     } else if (setting.type === 'toggle') {
@@ -459,14 +520,32 @@ export function SettingsPanel({ windowWidth }: SettingsPanelProps) {
     if (!isEditingValue) return;
 
     const setting = currentSettings[selectedSettingIndex];
-    const numValue = parseFloat(editValue);
     
-    if (!isNaN(numValue)) {
-      if (setting.category === 'llm') {
-          updateLLMSetting(setting.id, numValue);
-      } else {
-          updateUISetting(setting.id, numValue);
-      }
+    if (setting.type === 'keybind') {
+        // Validate conflict
+        const conflict = checkConflict(editValue);
+        // If conflict exists and it's not the same action we are editing
+        if (conflict && `${conflict.category}:${conflict.id}` !== setting.id) {
+             // For now, simple console warn, better UI needed for alert
+             // We can just append "CONFLICT!" to the value temporarily or block
+             // But for MVP, let's just save. The user sees duplicates in the list.
+             // Ideally we would show a toast/modal.
+        }
+        
+        const [cat, id] = setting.id.split(':');
+        if (cat && id) {
+            setUserBind(cat, id, editValue);
+        }
+    } else {
+        const numValue = parseFloat(editValue);
+        
+        if (!isNaN(numValue)) {
+          if (setting.category === 'llm') {
+              updateLLMSetting(setting.id, numValue);
+          } else {
+              updateUISetting(setting.id, numValue);
+          }
+        }
     }
     
     setIsEditingValue(false);
@@ -491,6 +570,7 @@ export function SettingsPanel({ windowWidth }: SettingsPanelProps) {
     if (!hasFocus) return;
 
     if (isEditingValue) {
+      const setting = currentSettings[selectedSettingIndex];
       // In edit mode
       if (key.return) {
         handleSaveEdit();
@@ -498,8 +578,13 @@ export function SettingsPanel({ windowWidth }: SettingsPanelProps) {
         handleCancelEdit();
       } else if (key.backspace || key.delete) {
         setEditValue(prev => prev.slice(0, -1));
-      } else if (input && /[0-9.]/.test(input)) {
-        setEditValue(prev => prev + input);
+      } else if (input) {
+        // Allow any input for keybinds, restrict to numbers for numeric
+        if (setting.type === 'keybind') {
+            setEditValue(prev => prev + input);
+        } else if (/[0-9.]/.test(input)) {
+            setEditValue(prev => prev + input);
+        }
       }
     } else {
       // Normal navigation
@@ -709,10 +794,10 @@ export function SettingsPanel({ windowWidth }: SettingsPanelProps) {
                               {setting.label}:
                             </Text>
                           </Box>
-                          <Box>
+                          <Box width={setting.type === 'keybind' ? '25%' : undefined}>
                             {isEditing ? (
                               <Text color={uiState.theme.text.accent}>
-                                [{editValue}_] <Text dimColor>↵ Save Esc Cancel</Text>
+                                [{editValue}_] <Text dimColor>↵</Text>
                               </Text>
                             ) : (
                               <Text color={setting.muted ? uiState.theme.text.secondary : uiState.theme.text.primary} dimColor={setting.muted}>
@@ -723,6 +808,13 @@ export function SettingsPanel({ windowWidth }: SettingsPanelProps) {
                               </Text>
                             )}
                           </Box>
+                          {setting.type === 'keybind' && setting.defaultValue !== undefined && !isEditing && (
+                              <Box>
+                                  <Text dimColor color={uiState.theme.text.secondary}>
+                                      (Def: {String(setting.defaultValue)})
+                                  </Text>
+                              </Box>
+                          )}
                         </>
                       )}
                     </Box>

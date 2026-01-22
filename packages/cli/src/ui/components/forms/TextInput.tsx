@@ -33,7 +33,7 @@ export interface TextInputProps {
  */
 export function TextInput({
   value,
-  _onChange,
+  onChange,
   placeholder = '',
   mask = false,
   disabled = false,

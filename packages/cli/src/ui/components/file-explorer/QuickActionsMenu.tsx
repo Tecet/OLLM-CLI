@@ -10,6 +10,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { Box, Text, useInput } from 'ink';
+import { useKeybinds } from '../../../features/context/KeybindsContext.js';
 import type { FileNode } from './types.js';
 
 /**
@@ -139,8 +140,26 @@ export function QuickActionsMenu({
   /**
    * Handle keyboard input
    */
+  /* eslint-disable @typescript-eslint/no-unused-vars */
+  const { activeKeybinds } = useKeybinds();
+
   useInput((input, key) => {
     if (!isOpen) return;
+
+    // Helper to check key against config
+    const isKey = (cfgKey: string) => {
+        if (!cfgKey) return false;
+        const norm = (k: string) => k.toLowerCase().replace(/\s/g, '');
+        const inputKey = [
+            key.ctrl ? 'ctrl' : '',
+            key.meta ? 'meta' : '',
+            key.shift ? 'shift' : '',
+            input
+        ].filter(Boolean).join('+');
+
+        // Handle special keys if needed, though here we mostly use chars
+        return norm(inputKey) === norm(cfgKey);
+    };
 
     // Close menu on Esc
     if (key.escape) {
@@ -150,14 +169,14 @@ export function QuickActionsMenu({
 
     // Navigate with arrow keys
     if (key.upArrow) {
-      setSelectedIndex(prev => 
+      setSelectedIndex(prev =>
         prev > 0 ? prev - 1 : enabledOptions.length - 1
       );
       return;
     }
 
     if (key.downArrow) {
-      setSelectedIndex(prev => 
+      setSelectedIndex(prev =>
         prev < enabledOptions.length - 1 ? prev + 1 : 0
       );
       return;
@@ -171,11 +190,30 @@ export function QuickActionsMenu({
       return;
     }
 
+    // Keybinds from config
+    const kb = activeKeybinds.fileExplorer || {};
+
     // Direct action shortcuts
-    const option = enabledOptions.find(opt => opt.key === input);
-    if (option) {
-      handleSelect(option.action);
-    }
+    // Note: The original code checked `opt.key === input`.
+    // The new `isKey` helper checks for combined keys (ctrl+o, etc.).
+    // We need to map the keybinds to the actions.
+    const findAndHandleKeybind = (keybind: string | undefined, action: QuickAction) => {
+      if (isKey(keybind || menuOptions.find(opt => opt.action === action)?.key || '')) {
+        const option = enabledOptions.find(opt => opt.action === action);
+        if (option) {
+          handleSelect(option.action);
+          return true;
+        }
+      }
+      return false;
+    };
+
+    if (findAndHandleKeybind(kb.open, 'open')) return;
+    if (findAndHandleKeybind(kb.focus, 'focus')) return;
+    if (findAndHandleKeybind(kb.edit, 'edit')) return;
+    if (findAndHandleKeybind(kb.rename, 'rename')) return; // Assuming 'reveal' maps to 'rename' based on original keys
+    if (findAndHandleKeybind(kb.delete, 'delete')) return;
+    if (findAndHandleKeybind(kb.copyPath, 'copyPath')) return;
   });
 
   // Don't render if menu is not open

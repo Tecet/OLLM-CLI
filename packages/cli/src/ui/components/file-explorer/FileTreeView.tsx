@@ -7,7 +7,7 @@
  * Requirements: 2.1, 2.6, 2.7, 3.1, 3.4
  */
 
-import React, { useEffect, useRef, useCallback, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { readFile } from 'fs/promises';
 import { useFileTree } from './FileTreeContext.js';
@@ -23,6 +23,9 @@ import { FileOperations } from './FileOperations.js';
 import { FollowModeService } from './FollowModeService.js';
 import { HelpPanel } from './HelpPanel.js';
 import { LoadingIndicator, useLoadingState } from './LoadingIndicator.js';
+import { LoadingIndicator, useLoadingState } from './LoadingIndicator.js';
+import { useKeybinds } from '../../../features/context/KeybindsContext.js';
+import { isKey } from '../../utils/keyUtils.js';
 import type { FileNode, GitStatus } from './types.js';
 
 /**
@@ -146,6 +149,13 @@ function calculateIndentation(node: FileNode, rootPath: string): number {
   return Math.max(0, depth - 1); // Root is at depth 0
 }
 
+/**
+ * FileTreeView component
+ * 
+ * Renders the file tree with virtual scrolling, showing only the visible
+ * window of nodes. Displays icons, git status colors, and focus indicators.
+ * Supports keyboard navigation with debouncing and file focusing.
+ */
 export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, fileOperations, followModeService, excludePatterns = [], hasFocus = true }: FileTreeViewProps) {
   const { 
     state: treeState, 
@@ -154,106 +164,107 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
     moveCursorDown,
     expandDirectory,
     collapseDirectory,
-    getSelectedNode: getSelectedContextNode, // This gets the folder node now
+    getSelectedNode,
     toggleFollowMode,
     expandToPath,
   } = useFileTree();
   const { isFocused, addFocusedFile, removeFocusedFile } = useFileFocus();
+  const { activeKeybinds } = useKeybinds();
 
-  // Navigation State
-  const [activeColumn, setActiveColumn] = useState<'folders' | 'files'>('folders');
-  const [fileCursor, setFileCursor] = useState<number>(0);
-
-  // Status message state
+  // Status message state for user feedback
   const [statusMessage, setStatusMessage] = useState<string>('');
   const statusTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // UI States
+  // Help panel state
   const [helpPanelOpen, setHelpPanelOpen] = useState(false);
+
+  // Loading state for long operations
   const [isLoading, setIsLoading] = useLoadingState(false);
   const [loadingMessage, setLoadingMessage] = useState<string>('Loading...');
-  const [viewerState, setViewerState] = useState<{
+
+  // Viewer modal state
+  const [viewerState, setViewerState] = useState<{ 
     isOpen: boolean;
     filePath: string;
     content: string;
   } | null>(null);
+
+  // Quick actions menu state
   const [menuOpen, setMenuOpen] = useState(false);
+
+  // Quick Open dialog state
   const [quickOpenState, setQuickOpenState] = useState(false);
   const [quickOpenHistory, setQuickOpenHistory] = useState<string[]>([]);
-  const [confirmationState, setConfirmationState] = useState<{
+
+  // Confirmation dialog state
+  const [confirmationState, setConfirmationState] = useState<{ 
     isOpen: boolean;
     message: string;
     onConfirm: () => void;
   } | null>(null);
 
+  // Debouncing state
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const DEBOUNCE_DELAY = 50;
+  const DEBOUNCE_DELAY = 50; // 50ms debounce delay
 
-  // --- Helpers ---
-
+  /**
+   * Show a temporary status message
+   */
   const showStatus = useCallback((message: string) => {
     setStatusMessage(message);
-    if (statusTimerRef.current) clearTimeout(statusTimerRef.current);
+    
+    // Clear existing timer
+    if (statusTimerRef.current) {
+      clearTimeout(statusTimerRef.current);
+    }
+    
+    // Set new timer to clear message after 2 seconds
     statusTimerRef.current = setTimeout(() => {
       setStatusMessage('');
       statusTimerRef.current = null;
     }, 2000);
   }, []);
 
-  // Get currently selected folder from the tree state (Left Column)
-  const getSelectedDirectory = useCallback((): FileNode | null => {
-    return getSelectedContextNode();
-  }, [getSelectedContextNode]);
-
-  // Get files for the currently selected folder (Right Column)
-  const getCurrentFolderFiles = useCallback((): FileNode[] => {
-    try {
-      const dir = getSelectedDirectory();
-      if (!dir || !Array.isArray(dir.children)) return [];
-      return dir.children.filter(n => n.type === 'file');
-    } catch (err) {
-      // Defensive: if any unexpected error occurs while resolving children,
-      // return an empty file list so the UI doesn't crash when rendering.
-      // Errors will be surfaced to the status bar elsewhere.
-      return [];
-    }
-  }, [getSelectedDirectory]);
-
-  // Get currently selected file (based on local fileCursor)
-  const getSelectedFile = useCallback((): FileNode | null => {
-    const files = getCurrentFolderFiles();
-    if (fileCursor >= 0 && fileCursor < files.length) {
-      return files[fileCursor];
-    }
-    return null;
-  }, [fileCursor, getCurrentFolderFiles]);
-
-  // Combined selector for actions
-  const getActiveNode = useCallback((): FileNode | null => {
-    if (activeColumn === 'folders') return getSelectedDirectory();
-    return getSelectedFile();
-  }, [activeColumn, getSelectedDirectory, getSelectedFile]);
-
-  // Update file cursor when folder changes or files update
-  useEffect(() => {
-    const files = getCurrentFolderFiles();
-    // Reset cursor if out of bounds (e.g. folder change)
-    if (fileCursor >= files.length && files.length > 0) {
-      setFileCursor(files.length - 1);
-    } else if (files.length === 0) {
-      setFileCursor(0);
-    }
-  }, [treeState.cursorPosition, treeState.expandedPaths, getCurrentFolderFiles]); // Dep depends on folder change
-
-  // --- Actions ---
-
-  const toggleFocus = useCallback(async () => {
-    const selectedNode = getActiveNode();
-    if (!selectedNode || selectedNode.type === 'directory') {
-      showStatus('Select a file to focus');
+  /**
+   * Handle Quick Open file selection
+   */
+  const handleQuickOpenSelect = useCallback(async (node: FileNode) => {
+    if (!treeState.root) {
       return;
     }
+    showStatus(`Selected: ${node.name}`);
+    setQuickOpenState(false);
+  }, [treeState.root, showStatus]);
+
+  /**
+   * Update Quick Open history
+   */
+  const updateQuickOpenHistory = useCallback((filePath: string) => {
+    setQuickOpenHistory((prev) => {
+      const filtered = prev.filter(p => p !== filePath);
+      const updated = [filePath, ...filtered];
+      return updated.slice(0, 20);
+    });
+  }, []);
+
+  /**
+   * Toggle focus on the selected file
+   */
+  const toggleFocus = useCallback(async () => {
+    const selectedNode = getSelectedNode();
+    
+    if (!selectedNode) {
+      showStatus('No file selected');
+      return;
+    }
+    
+    if (selectedNode.type === 'directory') {
+      showStatus('Cannot focus directories');
+      return;
+    }
+    
     const filePath = selectedNode.path;
+    
     try {
       if (isFocused(filePath)) {
         focusSystem.unfocusFile(filePath);
@@ -262,188 +273,393 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
       } else {
         const focusedFile = await focusSystem.focusFile(filePath);
         addFocusedFile(focusedFile);
+        
         const truncatedMsg = focusedFile.truncated ? ' (truncated)' : '';
         showStatus(`Focused: ${selectedNode.name}${truncatedMsg}`);
       }
     } catch (error) {
-      showStatus(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      showStatus(`Error: ${errorMsg}`);
     }
-  }, [getActiveNode, isFocused, focusSystem, addFocusedFile, removeFocusedFile, showStatus]);
+  }, [getSelectedNode, isFocused, focusSystem, addFocusedFile, removeFocusedFile, showStatus]);
 
+  /**
+   * Open the selected file in the syntax viewer
+   */
   const openViewer = useCallback(async () => {
-    const selectedNode = getActiveNode();
-    if (!selectedNode || selectedNode.type === 'directory') {
-      showStatus('Select a file to view');
+    const selectedNode = getSelectedNode();
+    
+    if (!selectedNode) {
+      showStatus('No file selected');
       return;
     }
+    
+    if (selectedNode.type === 'directory') {
+      showStatus('Cannot view directories');
+      return;
+    }
+    
+    const filePath = selectedNode.path;
+    
     try {
       setIsLoading(true);
       setLoadingMessage('Loading file...');
-      const content = await readFile(selectedNode.path, 'utf-8');
-      setViewerState({ isOpen: true, filePath: selectedNode.path, content });
-      setStatusMessage('');
+      
+      const content = await readFile(filePath, 'utf-8');
+      
+      setViewerState({
+        isOpen: true,
+        filePath,
+        content,
+      });
+      
+      setStatusMessage(''); 
     } catch (error) {
-      showStatus(`Error reading file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      showStatus(`Error reading file: ${errorMsg}`);
     } finally {
       setIsLoading(false);
     }
-  }, [getActiveNode, showStatus]);
+  }, [getSelectedNode, showStatus, setIsLoading]);
 
-  const closeViewer = useCallback(() => setViewerState(null), []);
+  /**
+   * Close the syntax viewer modal
+   */
+  const closeViewer = useCallback(() => {
+    setViewerState(null);
+  }, []);
 
+  /**
+   * Open file in external editor
+   */
   const openInEditor = useCallback(async () => {
-    const selectedNode = getActiveNode();
-    if (!selectedNode || selectedNode.type === 'directory') {
-      showStatus('Select a file to edit');
+    const selectedNode = getSelectedNode();
+    
+    if (!selectedNode) {
+      showStatus('No file selected');
       return;
     }
+    
+    if (selectedNode.type === 'directory') {
+      showStatus('Cannot edit directories');
+      return;
+    }
+    
+    const filePath = selectedNode.path;
+    const editorCommand = editorIntegration.getEditorCommand();
+    
     try {
       setIsLoading(true);
-      const cmd = editorIntegration.getEditorCommand();
-      setLoadingMessage(`Opening in ${cmd}...`);
-      const result = await editorIntegration.openInEditor(selectedNode.path);
-      if (result.success) showStatus(`Editor closed successfully`);
-      else showStatus(`Editor exited with code ${result.exitCode}`);
+      setLoadingMessage(`Opening in ${editorCommand}...`);
+      
+      const result = await editorIntegration.openInEditor(filePath);
+      
+      if (result.success) {
+        showStatus(`Editor closed successfully`);
+      } else {
+        showStatus(`Editor exited with code ${result.exitCode}: ${result.error || 'Unknown error'}`);
+      }
     } catch (error) {
-      showStatus(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      showStatus(`Error opening editor: ${errorMsg}`);
     } finally {
       setIsLoading(false);
     }
-  }, [getActiveNode, editorIntegration, showStatus]);
+  }, [getSelectedNode, editorIntegration, showStatus, setIsLoading]);
 
+  /**
+   * Handle quick actions menu action selection
+   */
+  const handleQuickAction = useCallback(async (action: QuickAction) => {
+    switch (action) {
+      case 'open':
+        await openViewer();
+        break;
+      case 'focus':
+        await toggleFocus();
+        break;
+      case 'edit':
+        await openInEditor();
+        break;
+      case 'rename':
+        showStatus('Rename functionality not yet implemented');
+        break;
+      case 'delete':
+        const selectedNode = getSelectedNode();
+        if (!selectedNode) {
+          showStatus('No file or folder selected');
+          return;
+        }
+        
+        const isDirectory = selectedNode.type === 'directory';
+        const message = isDirectory
+          ? `Are you sure you want to delete the folder "${selectedNode.name}" and all its contents?`
+          : `Are you sure you want to delete "${selectedNode.name}"?`;
+        
+        setConfirmationState({
+          isOpen: true,
+          message,
+          onConfirm: async () => {
+            try {
+              setIsLoading(true);
+              setLoadingMessage(`Deleting ${selectedNode.name}...`);
+              
+              const alwaysConfirm = async () => true;
+              
+              let result;
+              if (isDirectory) {
+                result = await fileOperations.deleteFolder(
+                  selectedNode.path,
+                  alwaysConfirm,
+                  true // recursive
+                );
+              } else {
+                result = await fileOperations.deleteFile(
+                  selectedNode.path,
+                  alwaysConfirm
+                );
+              }
+              
+              if (result.success) {
+                showStatus(`Successfully deleted ${selectedNode.name}`);
+              } else {
+                showStatus(`Failed to delete: ${result.error}`);
+              }
+            } catch (error) {
+              const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+              showStatus(`Error deleting: ${errorMsg}`);
+            } finally {
+              setIsLoading(false);
+              setConfirmationState(null);
+            }
+          },
+        });
+        break;
+      case 'copyPath':
+        const node = getSelectedNode();
+        if (node) {
+          try {
+            const absolutePath = await fileOperations.copyPath(node.path);
+            showStatus(`Copied to clipboard: ${absolutePath}`);
+          } catch (error) {
+            const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+            showStatus(`Error copying path: ${errorMsg}`);
+          }
+        }
+        break;
+    }
+  }, [openViewer, toggleFocus, openInEditor, getSelectedNode, fileOperations, showStatus, setIsLoading]);
+
+  /**
+   * Debounced action executor
+   */
   const debouncedAction = useCallback((action: () => void) => {
-    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
     debounceTimerRef.current = setTimeout(() => {
       action();
       debounceTimerRef.current = null;
     }, DEBOUNCE_DELAY);
   }, []);
 
-  // --- Input Handling ---
+  /**
+   * Handle LLM message for Follow Mode
+   */
+  const handleLLMMessage = useCallback(async (message: string) => {
+    if (!treeState.followModeEnabled || !followModeService || !treeState.root) {
+      return;
+    }
 
-  useInput((input, key) => {
-    try {
-      if (viewerState?.isOpen) { if (key.escape) closeViewer(); return; }
-      if (helpPanelOpen) { if (key.escape || input === '?') setHelpPanelOpen(false); return; }
-      if (quickOpenState) return; // Handled by dialog
-      if (menuOpen) { if (key.escape) setMenuOpen(false); return; }
+    const rootPath = treeState.root.path;
+    const detectedPaths = followModeService.extractFromLLMResponse(message, {
+      rootPath,
+      filterByRoot: true,
+    });
 
-      if (key.ctrl && input === 'o') { setQuickOpenState(true); return; }
-      if (input === '?') { setHelpPanelOpen(true); return; }
-
-      // Navigation
-      if (input === 'j' || key.downArrow) {
-        debouncedAction(() => {
-          try {
-            if (activeColumn === 'folders') {
-              moveCursorDown();
-            } else {
-              const files = getCurrentFolderFiles();
-              setFileCursor(prev => Math.min(prev + 1, Math.max(0, files.length - 1)));
-            }
-          } catch (err) {
-            console.error('Navigation error (down):', err);
-            showStatus('Navigation error');
-          }
-        });
-      } else if (input === 'k' || key.upArrow) {
-        debouncedAction(() => {
-          try {
-            if (activeColumn === 'folders') {
-              moveCursorUp();
-            } else {
-              setFileCursor(prev => Math.max(0, prev - 1));
-            }
-          } catch (err) {
-            console.error('Navigation error (up):', err);
-            showStatus('Navigation error');
-          }
-        });
-      } else if (input === 'h' || key.leftArrow) {
-        // Move to Folders column
-        if (activeColumn === 'files') {
-          setActiveColumn('folders');
-        }
-      } else if (input === 'l' || key.rightArrow) {
-        // Move to Files column (only if there are files)
-        if (activeColumn === 'folders') {
-          const files = getCurrentFolderFiles();
-          if (files.length > 0) {
-            setActiveColumn('files');
-            setFileCursor(0); // Reset to top of list
-          } else {
-            showStatus('No files in this folder');
-          }
-        }
-      } else if (key.return) {
-        // Action based on column
-        if (activeColumn === 'folders') {
-          const dir = getSelectedDirectory();
-          if (dir) {
-            if (dir.expanded) {
-              collapseDirectory(dir.path);
-              fileTreeService.collapseDirectory(dir);
-            } else {
-              // Remove debounce for expansion to avoid state conflicts
-              (async () => {
-                try {
-                  await fileTreeService.expandDirectory(dir, excludePatterns);
-                  expandDirectory(dir.path);
-                } catch (err) {
-                  showStatus(`Error expanding: ${err instanceof Error ? err.message : String(err)}`);
-                }
-              })();
-            }
-          }
-        } else {
-          // In files column: View file
-          openViewer();
-        }
-      } else if (input === 'f') toggleFocus();
-      else if (input === 'v') openViewer();
-      else if (input === 'e') openInEditor();
-      else if (input === 'a') setMenuOpen(true);
-      else if (input === 'F') {
-        toggleFollowMode();
-        showStatus(`Follow Mode: ${!treeState.followModeEnabled ? 'Enabled' : 'Disabled'}`);
+    for (const filePath of detectedPaths) {
+      if (followModeService.shouldExpandToPath(filePath, rootPath)) {
+        await expandToPath(filePath);
+        showStatus(`Follow Mode: Expanded to ${filePath}`);
       }
-    } catch (err) {
-      // Catch any synchronous errors inside input handler so the app doesn't crash
-      console.error('Unhandled input handler error:', err);
-      showStatus(`Internal error: ${err instanceof Error ? err.message : 'Unknown'}`);
+    }
+  }, [treeState.followModeEnabled, treeState.root, followModeService, expandToPath, showStatus]);
+
+  /**
+   * Handle keyboard input
+   */
+  /**
+   * Handle keyboard input
+   */
+  useInput((input, key) => {
+    if (helpPanelOpen) {
+      if (isKey(input, key, activeKeybinds.chat.cancel) || input === '?') {
+        setHelpPanelOpen(false);
+      }
+      return;
+    }
+
+    if (viewerState?.isOpen) {
+      if (isKey(input, key, activeKeybinds.chat.cancel)) {
+        closeViewer();
+      }
+      return;
+    }
+
+    if (quickOpenState) {
+      return;
+    }
+
+    if (menuOpen) {
+      if (isKey(input, key, activeKeybinds.chat.cancel)) {
+        setMenuOpen(false);
+      }
+      return;
+    }
+
+    if (input === '?') {
+      setHelpPanelOpen(true);
+      return;
+    }
+
+    if (isKey(input, key, activeKeybinds.fileExplorer.quickOpen)) {
+      setQuickOpenState(true);
+      return;
+    }
+
+    if (isKey(input, key, activeKeybinds.fileExplorer.moveDown)) {
+      debouncedAction(() => moveCursorDown());
+    } else if (isKey(input, key, activeKeybinds.fileExplorer.moveUp)) {
+      debouncedAction(() => moveCursorUp());
+    } else if (isKey(input, key, activeKeybinds.fileExplorer.collapse)) {
+      const selectedNode = getSelectedNode();
+      if (selectedNode && selectedNode.type === 'directory' && selectedNode.expanded) {
+        debouncedAction(() => {
+          collapseDirectory(selectedNode.path);
+          fileTreeService.collapseDirectory(selectedNode);
+        });
+      }
+    } else if (isKey(input, key, activeKeybinds.fileExplorer.expand)) {
+      const selectedNode = getSelectedNode();
+      if (selectedNode && selectedNode.type === 'directory' && !selectedNode.expanded) {
+        (async () => {
+          try {
+            await fileTreeService.expandDirectory(selectedNode, excludePatterns);
+            expandDirectory(selectedNode.path);
+          } catch (err) {
+            showStatus('Error expanding directory');
+          }
+        })();
+      }
+    } else if (isKey(input, key, activeKeybinds.fileExplorer.select)) {
+      const selectedNode = getSelectedNode();
+      if (!selectedNode) return;
+      
+      if (selectedNode.type === 'directory') {
+        if (selectedNode.expanded) {
+          collapseDirectory(selectedNode.path);
+          fileTreeService.collapseDirectory(selectedNode);
+        } else {
+          (async () => {
+            try {
+              await fileTreeService.expandDirectory(selectedNode, excludePatterns);
+              expandDirectory(selectedNode.path);
+            } catch (err) {
+              showStatus('Error expanding directory');
+            }
+          })();
+        }
+      } else {
+        openViewer();
+      }
+    } else if (isKey(input, key, activeKeybinds.fileExplorer.focus)) {
+      toggleFocus();
+    } else if (isKey(input, key, activeKeybinds.fileExplorer.open)) {
+      openViewer();
+    } else if (isKey(input, key, activeKeybinds.fileExplorer.edit)) {
+      openInEditor();
+    } else if (isKey(input, key, activeKeybinds.fileExplorer.actions)) {
+      setMenuOpen(true);
+    } else if (isKey(input, key, activeKeybinds.fileExplorer.toggleFollow)) {
+      toggleFollowMode();
+      const newState = !treeState.followModeEnabled;
+      showStatus(`Follow Mode: ${newState ? 'Enabled' : 'Disabled'}`);
     }
   }, [
-    activeColumn, fileCursor, helpPanelOpen, viewerState, quickOpenState, menuOpen, 
-    moveCursorDown, moveCursorUp, getCurrentFolderFiles, getSelectedDirectory, 
-    collapseDirectory, expandDirectory, openViewer, toggleFocus, openInEditor, 
-    setMenuOpen, toggleFollowMode, treeState.followModeEnabled, showStatus, 
-    fileTreeService, excludePatterns
+    helpPanelOpen,
+    viewerState,
+    quickOpenState,
+    menuOpen,
+    closeViewer,
+    debouncedAction,
+    moveCursorDown,
+    moveCursorUp,
+    getSelectedNode,
+    collapseDirectory,
+    fileTreeService,
+    expandDirectory,
+    excludePatterns,
+    toggleFocus,
+    openViewer,
+    openInEditor,
+    toggleFollowMode,
+    treeState.followModeEnabled,
+    showStatus,
+    activeKeybinds
   ], { isActive: hasFocus });
 
-  // Update visible directories only (Left Column)
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      if (statusTimerRef.current) {
+        clearTimeout(statusTimerRef.current);
+      }
+    };
+  }, []);
+
   useEffect(() => {
     if (!treeState.root) {
       setVisibleWindow([]);
       return;
     }
-    const visibleDirs = fileTreeService.getVisibleDirectories(treeState.root, {
+
+    const visibleNodes = fileTreeService.getVisibleNodes(treeState.root, {
       scrollOffset: treeState.scrollOffset,
       windowSize: treeState.windowSize,
     });
-    setVisibleWindow(visibleDirs);
-  }, [treeState.root, treeState.scrollOffset, treeState.windowSize, treeState.expandedPaths, fileTreeService, setVisibleWindow]);
 
-  const rootPath = treeState.root?.path || '';
-  const currentFiles = getCurrentFolderFiles();
+    setVisibleWindow(visibleNodes);
+  }, [
+    treeState.root,
+    treeState.scrollOffset,
+    treeState.windowSize,
+    treeState.expandedPaths,
+    fileTreeService,
+    setVisibleWindow,
+  ]);
 
-  if (!treeState.root) return <Box><Text dimColor>No directory loaded</Text></Box>;
+  if (!treeState.root) {
+    return (
+      <Box flexDirection="column">
+        <Text dimColor>No directory loaded</Text>
+      </Box>
+    );
+  }
+
+  const rootPath = treeState.root.path;
 
   return (
     <Box flexDirection="column" height="100%">
-      {/* Header removed to prevent context crash */}
+      {helpPanelOpen && (
+        <HelpPanel
+          isOpen={helpPanelOpen}
+          onClose={() => setHelpPanelOpen(false)}
+        />
+      )}
 
-      {/* Dialogs & Overlays */}
-      {helpPanelOpen && <HelpPanel isOpen={helpPanelOpen} onClose={() => setHelpPanelOpen(false)} />}
       {quickOpenState && (
         <QuickOpenDialog
           isOpen={quickOpenState}
@@ -454,6 +670,7 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
           onHistoryUpdate={updateQuickOpenHistory}
         />
       )}
+
       {confirmationState?.isOpen && (
         <ConfirmationDialog
           isOpen={confirmationState.isOpen}
@@ -464,105 +681,95 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
           onCancel={() => setConfirmationState(null)}
         />
       )}
+
       {menuOpen && (
         <QuickActionsMenu
-          selectedNode={getActiveNode()}
+          selectedNode={getSelectedNode()}
           isOpen={menuOpen}
           onAction={handleQuickAction}
           onClose={() => setMenuOpen(false)}
         />
       )}
+
       {viewerState?.isOpen && (
-        <Box flexDirection="column" borderStyle="double" borderColor="cyan" padding={1} flexGrow={1}>
+        <Box
+          flexDirection="column"
+          borderStyle="double"
+          borderColor="cyan"
+          padding={1}
+          flexGrow={1}
+        >
           <Box marginBottom={1}>
-            <Text color="cyan" bold>Syntax Viewer</Text>
+            <Text color="cyan" bold>
+              Syntax Viewer
+            </Text>
             <Text color="gray"> (Press Esc to close)</Text>
           </Box>
-          <SyntaxViewer filePath={viewerState.filePath} content={viewerState.content} />
+          
+          <SyntaxViewer
+            filePath={viewerState.filePath}
+            content={viewerState.content}
+          />
         </Box>
       )}
 
-      {/* Main Two-Column Layout */}
       {!viewerState?.isOpen && !helpPanelOpen && (
-        <Box flexDirection="row" flexGrow={1} overflow="hidden">
-          {/* Left Column: Folders (30%) */}
-          <Box flexDirection="column" width="30%" borderStyle="none" paddingRight={1}>
+        <>
+          <LoadingIndicator isLoading={isLoading} message={loadingMessage} />
+
+          <Box flexDirection="column" flexGrow={1} overflow="hidden">
             {Array.isArray(treeState.visibleWindow) && treeState.visibleWindow.map((node, index) => {
-              if (!node || !node.path || !node.name) return null; // Safety check
-              const isSelected = index === treeState.cursorPosition;
-              // Highlight: Accent color if active column, otherwise Dim Accent
-              const highlightColor = activeColumn === 'folders' && isSelected ? 'cyan' : (isSelected ? 'gray' : undefined);
-              const indentation = calculateIndentation(node, rootPath);
+              if (!node || !node.path || !node.name) return null;
               
+              const isSelected = index === treeState.cursorPosition;
+              const isFocusedFile = isFocused(node.path);
+              const indentation = calculateIndentation(node, rootPath);
+              const icon = getNodeIcon(node);
+              const gitColor = getGitStatusColor(node.gitStatus);
+
               return (
                 <Box key={node.path} flexDirection="row">
                   <Text>{' '.repeat(indentation * 2)}</Text>
-                  <Text color={highlightColor}>
-                    {activeColumn === 'folders' && isSelected ? '> ' : '  '}
-                    {node.expanded ? ICONS.directoryExpanded : ICONS.directoryCollapsed} {node.name}
+                  
+                  <Text bold={isSelected} color={isSelected ? 'cyan' : undefined}>
+                    {isSelected ? '> ' : '  '}
                   </Text>
+                  
+                  <Text> {icon} </Text>
+                  
+                  <Text
+                    bold={isSelected}
+                    color={gitColor || (isSelected ? 'cyan' : undefined)}
+                  >
+                    {node.name}
+                  </Text>
+                  
+                  {isFocusedFile && (
+                    <Text> {ICONS.focusIndicator}</Text>
+                  )}
                 </Box>
               );
             })}
-            {treeState.visibleWindow.length === 0 && <Text dimColor>No folders</Text>}
+            
+            {treeState.visibleWindow.length === 0 && (
+              <Text dimColor>No items found</Text>
+            )}
           </Box>
-
-          {/* Right Column: Files (70%) */}
-          <Box flexDirection="column" width="70%" borderStyle="none" paddingLeft={1}>
-            {Array.isArray(currentFiles) && currentFiles.map((node, index) => {
-              if (!node || !node.path || !node.name) return null; // Safety check
-              const isSelected = index === fileCursor;
-              const isFocusedFile = isFocused(node.path);
-              const highlightColor = activeColumn === 'files' && isSelected ? 'cyan' : undefined;
-              const gitColor = getGitStatusColor(node.gitStatus);
-              const icon = getNodeIcon(node);
-
-              return (
-                <Box key={node.path} flexDirection="row">
-                  <Text color={highlightColor}>
-                    {activeColumn === 'files' && isSelected ? '> ' : '  '}
-                  </Text>
-                  <Text>{icon} </Text>
-                  <Text color={gitColor || highlightColor}>{node.name}</Text>
-                  {isFocusedFile && <Text> {ICONS.focusIndicator}</Text>}
-                </Box>
-              );
-            })}
-            {currentFiles.length === 0 && <Text dimColor>No files in this folder</Text>}
-          </Box>
-        </Box>
-      )}
-
-      {/* Footer / Status */}
-      {!viewerState?.isOpen && !helpPanelOpen && (
-        <Box flexDirection="column" marginTop={1}>
-          <LoadingIndicator isLoading={isLoading} message={loadingMessage} />
-          {statusMessage && <Text dimColor>{statusMessage}</Text>}
-          {treeState.followModeEnabled && (
-            <Box><Text color="cyan">Follow Mode: ON</Text></Box>
+          
+          {statusMessage && (
+            <Box marginTop={1}>
+              <Text dimColor>{statusMessage}</Text>
+            </Box>
           )}
-        </Box>
+          
+          {treeState.followModeEnabled && (
+            <Box marginTop={statusMessage ? 0 : 1}>
+              <Text color="cyan">Follow Mode: ON</Text>
+              <Text dimColor> (Press F to toggle)</Text>
+            </Box>
+          )}
+        </>
       )}
     </Box>
   );
-
-  // Stub handlers for Quick Open/Actions to satisfy linter if needed
-  async function handleQuickOpenSelect(node: FileNode) {
-    if (!treeState.root) return;
-    // Logic to navigate to folder and select file would go here
-    showStatus(`Selected: ${node.name}`);
-    setQuickOpenState(false);
-  }
-  function updateQuickOpenHistory(filePath: string) {
-    setQuickOpenHistory(prev => [filePath, ...prev.filter(p => p !== filePath)].slice(0, 20));
-  }
-  async function handleQuickAction(action: QuickAction) {
-    switch (action) {
-      case 'open': await openViewer(); break;
-      case 'focus': await toggleFocus(); break;
-      case 'edit': await openInEditor(); break;
-      case 'delete': /* ... existing delete logic ... */ break;
-      case 'copyPath': /* ... existing copy logic ... */ break;
-    }
-  }
 }

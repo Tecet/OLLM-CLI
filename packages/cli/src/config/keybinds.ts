@@ -34,7 +34,9 @@ export const keybindsData = {
   "layout": {
     "togglePanel": "ctrl+p",
     "commandPalette": "ctrl+k",
-    "toggleDebug": "ctrl+/"
+    "toggleDebug": "ctrl+/",
+    "switchWindowLeft": "ctrl+left",
+    "switchWindowRight": "ctrl+right"
   },
 
   /**
@@ -67,7 +69,30 @@ export const keybindsData = {
     "back": "backspace",
     "cycleFocus": "tab",
     "left": "left",
-    "right": "right"
+    "right": "right",
+    "moveUp": "up",
+    "moveDown": "down"
+  },
+
+  /**
+   * File Explorer shortcuts.
+   */
+  "fileExplorer": {
+    "open": "o",
+    "focus": "f",
+    "edit": "e",
+    "rename": "r",
+    "delete": "d",
+    "copyPath": "c",
+    "moveDown": "j",
+    "moveUp": "k",
+    "collapse": "h",
+    "expand": "l",
+    "toggleFollow": "F",
+    "toggleHelp": "?",
+    "select": "return",
+    "quickOpen": "p",
+    "actions": "a"
   },
 
   /**

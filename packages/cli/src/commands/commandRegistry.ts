@@ -300,7 +300,20 @@ export class CommandRegistry {
     }
 
     try {
-      return await command.handler(args);
+      // Build a lightweight CommandContext from available services
+      const ctx = {
+        extensionManager: this.serviceContainer ? this.serviceContainer.getExtensionManager() : undefined,
+        extensionRegistry: this.serviceContainer ? this.serviceContainer.getExtensionRegistry() : undefined,
+        mcpClient: this.mcpClient,
+        hookRegistry: this.serviceContainer ? this.serviceContainer.getHookService().getRegistry() : undefined,
+      };
+
+      const fn = command.handler ?? command.execute;
+      if (!fn) {
+        return { success: false, message: 'Command has no handler' };
+      }
+
+      return await fn(args, ctx as any);
     } catch (error) {
       return {
         success: false,

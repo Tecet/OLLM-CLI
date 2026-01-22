@@ -15,9 +15,16 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "composite": true,
+    "baseUrl": "../../",
+    "paths": {
+      "@ollm/core": ["packages/core/src/index.ts"],
+      "@ollm/core/*": ["packages/core/src/*"],
+      "@ollm/ollm-cli-core": ["packages/core/src/index.ts"],
+      "@ollm/ollm-cli-core/*": ["packages/core/src/*"]
+    },
     "noEmitOnError": false
   },
-  "include": ["src"],
+  "include": ["src", "../../types/**/*.d.ts"],
   "exclude": [
     "src/**/__tests__",
     "src/**/*.test.ts",

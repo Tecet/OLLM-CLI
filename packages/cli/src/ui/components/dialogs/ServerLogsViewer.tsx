@@ -284,7 +284,7 @@ export function ServerLogsViewer({
           <Box width={20}>
             <Text>Filter by level:</Text>
           </Box>
-          <Box>
+          <Box flexGrow={1}>
             <Button
               label={`${logLevel.toUpperCase()} (${filteredLogs.length} entries)`}
               onPress={cycleLogLevel}
@@ -292,7 +292,7 @@ export function ServerLogsViewer({
               icon="🔍"
             />
           </Box>
-          <Box marginLeft="auto">
+          <Box>
             <Text dimColor>Press F to cycle filters</Text>
           </Box>
         </Box>

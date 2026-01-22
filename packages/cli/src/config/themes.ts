@@ -57,8 +57,8 @@ export const themesData: Record<string, Theme> = {
    * Default Dark Theme
    * A balanced dark theme suitable for most terminals.
    */
-  "default-dark": {
-    "name": "default-dark",
+  "neon-dark": {
+    "name": "neon-dark",
     "bg": {
       "primary": "#1e1e1e",
       "secondary": "#252526",
@@ -97,8 +97,8 @@ export const themesData: Record<string, Theme> = {
    * Dracula
    * A high-contrast theme based on the popular Dracula specification.
    */
-  "dracula": {
-    "name": "dracula",
+  "dracula-dark": {
+    "name": "dracula-dark",
     "bg": {
       "primary": "#282a36",
       "secondary": "#44475a",
@@ -137,8 +137,8 @@ export const themesData: Record<string, Theme> = {
    * Nord
    * An arctic, north-bluish color palette.
    */
-  "nord": {
-    "name": "nord",
+  "nord-dark": {
+    "name": "nord-dark",
     "bg": {
       "primary": "#2e3440",
       "secondary": "#3b4252",
@@ -177,8 +177,8 @@ export const themesData: Record<string, Theme> = {
    * Monokai
    * A vibrant, high-contrast theme popular in Sublime Text.
    */
-  "monokai": {
-    "name": "monokai",
+  "monokai-dark": {
+    "name": "monokai-dark",
     "bg": {
       "primary": "#272822",
       "secondary": "#3e3d32",

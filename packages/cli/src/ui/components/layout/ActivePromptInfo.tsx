@@ -32,29 +32,21 @@ export function ActivePromptInfo() {
   const { state: contextState } = useContextManager();
   const { currentMode } = useActiveContext();
 
+  const modeStr = formatModeName(currentMode);
+  const tierStr = formatTierDisplay(contextState.effectivePromptTier);
+  const optimizationStr = contextState.autoSizeEnabled ? 'Auto' : 'User-optimized';
+
   return (
     <Box flexDirection="column" marginBottom={1} paddingX={1} alignSelf="flex-start">
-      <Text color={uiState.theme.status.info} bold>Active Prompt:</Text>
-      <Box marginLeft={1} alignSelf="flex-start">
+      <Box height={1} />
+      <Text>
+        <Text color={uiState.theme.status.info} bold>Active Prompt: </Text>
         <Text color={uiState.theme.text.primary}>
-          {formatModeName(currentMode)} {formatTierDisplay(contextState.effectivePromptTier)}
+          {modeStr} {tierStr}
         </Text>
-      </Box>
-      {contextState.effectivePromptTier !== contextState.actualContextTier && (
-        <Box marginLeft={1} alignSelf="flex-start">
-          <Text dimColor>
-            (Context: {formatTierDisplay(contextState.actualContextTier)})
-          </Text>
-        </Box>
-      )}
-      <Box marginLeft={1} alignSelf="flex-start">
-        <Text dimColor>
-          {contextState.autoSizeEnabled
-            ? '(Auto: Hardware-optimized)' 
-            : '(Manual: User-selected)'}
-        </Text>
-      </Box>
-      <Box marginLeft={1} alignSelf="flex-start">
+        <Text dimColor> ({optimizationStr})</Text>
+      </Text>
+      <Box marginTop={0} alignSelf="flex-start">
         <Text dimColor>
              Author: github.upstash
         </Text>

@@ -12,8 +12,10 @@
  * - Uses alternate screen buffer for flicker-free rendering
  */
 
-import { useState, useCallback, useEffect, useRef } from 'react';
-import { Box, Text, useStdout, BoxProps } from 'ink';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { execSync } from 'child_process';
+import { Box, Text, useStdout, BoxProps, useInput } from 'ink';
+import { isKey } from './utils/keyUtils.js';
 import { UIProvider, useUI, TabType } from '../features/context/UIContext.js';
 import { ChatProvider, useChat } from '../features/context/ChatContext.js';
 import { GPUProvider, useGPU } from '../features/context/GPUContext.js';
@@ -37,7 +39,6 @@ import type { MenuOption } from '../features/context/ChatContext.js';
 import { profileManager } from '../features/context/../profiles/ProfileManager.js';
 import { SettingsService } from '../config/settingsService.js';
 import { FocusProvider, useFocusManager } from '../features/context/FocusContext.js';
-import { keybindsData as keybinds } from '../config/keybinds.js';
 import { defaultDarkTheme } from '../config/styles.js';
 import { SettingsProvider } from '../features/context/SettingsContext.js';
 
@@ -54,16 +55,16 @@ import { WindowSwitcher } from './components/WindowSwitcher.js';
 import { ChatTab } from './components/tabs/ChatTab.js';
 import { ToolsTab } from './components/tabs/ToolsTab.js';
 import { HooksTab } from './components/tabs/HooksTab.js';
-import { FilesTab } from './components/tabs/FilesTab.js';
 import { FileExplorerComponent } from './components/file-explorer/FileExplorerComponent.js';
+import { KeybindsProvider, useKeybinds } from '../features/context/KeybindsContext.js';
 import { SearchTab } from './components/tabs/SearchTab.js';
 import { DocsTab } from './components/tabs/DocsTab.js';
 import { GitHubTab } from './components/tabs/GitHubTab.js';
 import { SettingsTab } from './components/tabs/SettingsTab.js';
 import { MCPTab } from './components/tabs/MCPTab.js';
 import { DialogManager } from './components/dialogs/DialogManager.js';
-import { useGlobalKeyboardShortcuts } from './hooks/useKeyboardShortcuts.js';
-import { useMouse } from './hooks/useMouse.js';
+
+import { useMouse, MouseProvider } from './hooks/useMouse.js';
 import { ErrorBoundary } from './components/ErrorBoundary.js';
 import { AllCallbacksBridge } from './components/AllCallbacksBridge.js';
 import { 
@@ -90,6 +91,7 @@ function AppContent({ config }: AppContentProps) {
   
   const [debugMode, setDebugMode] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [lastPressedKey, setLastPressedKey] = useState<string>('None');
   
   // Get terminal dimensions
   const { stdout } = useStdout();
@@ -102,7 +104,7 @@ function AppContent({ config }: AppContentProps) {
   // Layout Calculations for 4-Row Restructuring
   const row1Height = Math.max(3, Math.floor(terminalHeight * 0.05));
   const row3Height = 3; // Fixed height for single line of text + borders
-  const row4Height = 11; // Fixed height as per user request (reduced padding)
+  const row4Height = 8; // Adjusted to 8 as per user request
   
   // Calculate Row 2 (Chat) as remaining space to prevent gaps
   const row2Height = Math.max(18, terminalHeight - row1Height - row3Height - row4Height);
@@ -110,7 +112,8 @@ function AppContent({ config }: AppContentProps) {
   const leftColumnWidth = Math.max(20, Math.floor(terminalWidth * 0.7));
   const rightColumnWidth = Math.max(20, terminalWidth - leftColumnWidth);
   
-  const { state: chatState, clearChat, cancelGeneration, contextUsage: _contextUsage, addMessage, activateMenu, requestManualContextInput, scrollUp, scrollDown } = useChat();
+  const { state: chatState, clearChat, cancelGeneration, contextUsage: _contextUsage, addMessage, activateMenu, requestManualContextInput, scrollUp, scrollDown, setCurrentInput } = useChat();
+  const { activeKeybinds } = useKeybinds();
   
   // File Explorer Services
   const fileTreeService = useState(() => new FileTreeService())[0];
@@ -119,7 +122,7 @@ function AppContent({ config }: AppContentProps) {
   const fileOperations = useState(() => new FileOperations(process.cwd()))[0];
 
   // Helper object for shortcuts (so we don't need to change all callbacks below)
-  const chatActions = { scrollUp, scrollDown };
+  const chatActions = useMemo(() => ({ scrollUp, scrollDown }), [scrollUp, scrollDown]);
 
   // Mouse Handling
   useMouse((event) => {
@@ -213,8 +216,11 @@ function AppContent({ config }: AppContentProps) {
            focusManager.setFocus('context-panel');
         }
       }
-    } else if (action === 'scroll-up') {
-      chatActions.scrollUp();
+    } else if (action === 'down' && button === 'right') {
+      // Handle Right Click in Input Area (placeholder behavior)
+      if (y >= row4Start) {
+        chatActions.scrollUp();
+      }
     } else if (action === 'scroll-down') {
       chatActions.scrollDown();
     }
@@ -710,152 +716,60 @@ ${toolSupport}
     setCommandPaletteOpen((prev) => !prev);
   }, []);
 
+  const handleTabSwitch = useCallback((tab: TabType) => {
+    setActiveTab(tab);
+    focusManager.setFocus('nav-bar');
+    focusManager.setMode('browse');
+  }, [setActiveTab, focusManager]);
+
   // Register global keyboard shortcuts
-  useGlobalKeyboardShortcuts([
-    {
-      key: keybinds.tabNavigation.tabChat,
-      handler: () => setActiveTab('chat'),
-      description: 'Switch to Chat tab',
-    },
-    {
-      key: keybinds.tabNavigation.tabTools,
-      handler: () => setActiveTab('tools'),
-      description: 'Switch to Tools tab',
-    },
-    {
-      key: keybinds.tabNavigation.tabHooks,
-      handler: () => setActiveTab('hooks'),
-      description: 'Switch to Hooks tab',
-    },
-    {
-      key: keybinds.tabNavigation.tabFiles,
-      handler: () => setActiveTab('files'),
-      description: 'Switch to Files tab',
-    },
-    {
-      key: keybinds.tabNavigation.tabSearch,
-      handler: () => setActiveTab('search'),
-      description: 'Switch to Search tab',
-    },
-    {
-      key: keybinds.tabNavigation.tabDocs,
-      handler: () => setActiveTab('docs'),
-      description: 'Switch to Docs tab',
-    },
-    {
-      key: keybinds.tabNavigation.tabGithub,
-      handler: () => setActiveTab('github'),
-      description: 'Switch to GitHub tab',
-    },
-    {
-      key: keybinds.tabNavigation.tabMcp,
-      handler: () => setActiveTab('mcp'),
-      description: 'Switch to MCP tab',
-    },
-    {
-      key: keybinds.tabNavigation.tabSettings,
-      handler: () => setActiveTab('settings'),
-      description: 'Switch to Settings tab',
-    },
-    {
-      key: 'ctrl+p',
-      handler: toggleSidePanel,
-      description: 'Toggle side panel',
-    },
-    {
-      key: 'ctrl+k',
-      handler: handleCommandPalette,
-      description: 'Open command palette',
-    },
-    {
-      key: 'ctrl+/',
-      handler: handleToggleDebug,
-      description: 'Toggle debug mode',
-    },
-    {
-      key: 'ctrl+l',
-      handler: clearChat,
-      description: 'Clear chat',
-    },
-    {
-      key: 'ctrl+s',
-      handler: handleSaveSession,
-      description: 'Save session',
-    },
-    {
-      key: 'escape',
-      handler: () => {
+  // Global keyboard shortcuts
+  useInput((input, key) => {
+    // Debug log for keybinds - updated to visual state
+    const keyInfo = `input="${input}", key=${JSON.stringify(key)}`;
+    setLastPressedKey(keyInfo);
+
+    // Tab Navigation
+    if (isKey(input, key, activeKeybinds.tabNavigation.tabChat)) handleTabSwitch('chat');
+    else if (isKey(input, key, activeKeybinds.tabNavigation.tabTools)) handleTabSwitch('tools');
+    else if (isKey(input, key, activeKeybinds.tabNavigation.tabHooks)) handleTabSwitch('hooks');
+    else if (isKey(input, key, activeKeybinds.tabNavigation.tabFiles)) handleTabSwitch('files');
+    else if (isKey(input, key, activeKeybinds.tabNavigation.tabSearch)) handleTabSwitch('search');
+    else if (isKey(input, key, activeKeybinds.tabNavigation.tabDocs)) handleTabSwitch('docs');
+    else if (isKey(input, key, activeKeybinds.tabNavigation.tabGithub)) handleTabSwitch('github');
+    else if (isKey(input, key, activeKeybinds.tabNavigation.tabMcp)) handleTabSwitch('mcp');
+    else if (isKey(input, key, activeKeybinds.tabNavigation.tabSettings)) handleTabSwitch('settings');
+
+    // Layout
+    else if (isKey(input, key, activeKeybinds.layout.togglePanel)) toggleSidePanel();
+    else if (isKey(input, key, activeKeybinds.layout.commandPalette)) handleCommandPalette();
+    else if (isKey(input, key, activeKeybinds.layout.toggleDebug)) handleToggleDebug();
+
+    // Chat
+    else if (isKey(input, key, activeKeybinds.chat.clearChat)) clearChat();
+    else if (isKey(input, key, activeKeybinds.chat.saveSession)) handleSaveSession();
+    else if (isKey(input, key, activeKeybinds.chat.cancel)) {
         if (chatState.streaming || chatState.waitingForResponse) {
           cancelGeneration();
         } else {
           focusManager.exitToNavBar();
         }
-      },
-      description: 'Cancel current action or return to navigation',
-    },
-    // Global support for Chat Scrolling (Capture keys anywhere)
-    {
-        key: 'ctrl+pageup',
-        handler: () => chatActions.scrollUp(),
-        description: 'Scroll Chat Up'
-    },
-    {
-        key: 'ctrl+pagedown',
-        handler: () => chatActions.scrollDown(),
-        description: 'Scroll Chat Down'
-    },
-    // Alternative keys for better terminal compatibility
-    {
-        key: 'meta+up', // Alt+Up
-        handler: () => chatActions.scrollUp(),
-        description: 'Scroll Chat Up (Alt)'
-    },
-    {
-        key: 'meta+down', // Alt+Down
-        handler: () => chatActions.scrollDown(),
-        description: 'Scroll Chat Down (Alt)'
-    },
-    // Focus Management Shortcuts
-    {
-        key: keybinds.global.cycleNext,
-        handler: () => {
-            focusManager.cycleFocus('next');
-        },
-        description: 'Next Pane'
-    },
-    {
-        key: keybinds.global.cyclePrev,
-        handler: () => {
-            focusManager.cycleFocus('previous');
-        },
-        description: 'Previous Pane'
-    },
-    {
-        key: keybinds.global.focusChatInput,
-        handler: () => focusManager.setFocus('chat-input'),
-        description: 'Focus Chat Input'
-    },
-    {
-        key: keybinds.global.focusNavigation,
-        handler: () => focusManager.setFocus('nav-bar'),
-        description: 'Focus Navigation'
-    },
-    {
-        key: keybinds.global.focusContext,
-        handler: () => focusManager.setFocus('context-panel'),
-        description: 'Focus Context Panel'
-    },
-    {
-        key: keybinds.global.focusFileTree,
-        handler: () => focusManager.setFocus('file-tree'),
-        description: 'Focus File Tree'
-    },
-    {
-        key: keybinds.global.focusFunctions,
-        handler: () => focusManager.setFocus('functions'),
-        description: 'Focus Functions'
     }
-  ]);
+
+    // Scroll Chat
+    else if (isKey(input, key, 'ctrl+pageup') || isKey(input, key, 'meta+up')) chatActions.scrollUp();
+    else if (isKey(input, key, 'ctrl+pagedown') || isKey(input, key, 'meta+down')) chatActions.scrollDown();
+
+    // Focus Management
+    else if (isKey(input, key, activeKeybinds.global.cycleNext)) focusManager.cycleFocus('next');
+    else if (isKey(input, key, activeKeybinds.global.cyclePrev)) focusManager.cycleFocus('previous');
+    else if (isKey(input, key, activeKeybinds.global.focusChatInput)) focusManager.setFocus('chat-input');
+    else if (isKey(input, key, activeKeybinds.global.focusNavigation)) focusManager.setFocus('nav-bar');
+    else if (isKey(input, key, activeKeybinds.global.focusContext)) focusManager.setFocus('context-panel');
+    else if (isKey(input, key, activeKeybinds.global.focusFileTree)) focusManager.setFocus('file-tree');
+    else if (isKey(input, key, activeKeybinds.global.focusFunctions)) focusManager.setFocus('functions');
+
+  }, { isActive: true });
 
   // Show launch screen
   if (uiState.launchScreenVisible) {
@@ -870,72 +784,102 @@ ${toolSupport}
 
   // Render active tab
   const renderActiveTab = (height: number, width: number) => {
-    // If we're in terminal mode, override the active tab display
-    if (activeWindow === 'terminal') {
-      const isTerminalFocused = focusManager.isFocused('chat-input') || focusManager.isFocused('nav-bar');
-      return (
-        <Box 
-          height={height} 
-          width={width}
-          borderStyle={uiState.theme.border.style as BoxProps['borderStyle']} 
-          borderColor={isTerminalFocused ? uiState.theme.border.active : uiState.theme.border.primary} 
-          flexShrink={1} 
-          flexGrow={1} 
-          overflow="hidden"
-        >
-          <Terminal height={height} />
-        </Box>
-      );
-    }
+    const content = (() => {
+      // If we're in terminal mode, override the active tab display
+          if (activeWindow === 'terminal') {
+        const isTerminalFocused = focusManager.isFocused('chat-input') || focusManager.isFocused('nav-bar');
+        return (
+          <Box 
+            height={height} 
+            width={width}
+            borderStyle={uiState.theme.border.style as BoxProps['borderStyle']} 
+            borderColor={isTerminalFocused ? uiState.theme.border.active : uiState.theme.border.primary} 
+            flexShrink={1} 
+            flexGrow={1} 
+            overflow="hidden"
+          >
+            <Terminal height={height} />
+          </Box>
+        );
+      }
 
-    switch (uiState.activeTab) {
-      case 'chat':
+      if (activeWindow === 'editor') {
         return (
-          <ChatTab
-            height={height}
-            showBorder={true}
-            metricsConfig={{
-                enabled: config.ui?.metrics?.enabled !== false,
-                compactMode: config.ui?.metrics?.compactMode || false,
-                showPromptTokens: config.ui?.metrics?.showPromptTokens !== false,
-                showTTFT: config.ui?.metrics?.showTTFT !== false,
-                showInStatusBar: config.ui?.metrics?.showInStatusBar !== false,
-            }}
-            reasoningConfig={{
-                enabled: config.ui?.reasoning?.enabled !== false,
-                maxVisibleLines: config.ui?.reasoning?.maxVisibleLines || 8,
-                autoCollapseOnComplete: config.ui?.reasoning?.autoCollapseOnComplete !== false,
-            }}
-            columnWidth={width}
-          />
+          <Box 
+            height={height} 
+            width={width}
+            borderStyle={uiState.theme.border.style as BoxProps['borderStyle']} 
+            borderColor={uiState.theme.border.primary}
+            alignItems="center"
+            justifyContent="center"
+            flexDirection="column"
+          >
+            <Box width="100%" flexShrink={0} flexDirection="row" justifyContent="flex-end" paddingRight={1}>
+              <WindowSwitcher />
+            </Box>
+            <Box flexGrow={1} alignItems="center" justifyContent="center">
+              <Text>Editor - Coming Soon</Text>
+            </Box>
+          </Box>
         );
-      case 'tools':
-        return <ToolsTab width={width} />;
-      case 'hooks':
-        return <HooksTab windowWidth={width} />;
-      case 'mcp':
-        return <MCPTab windowWidth={width} />;
-      case 'files':
-        return (
-          <FileExplorerComponent
-            rootPath={process.cwd()}
-            autoLoadWorkspace={false}
-            restoreState={true}
-            excludePatterns={['node_modules', '.git', 'dist', 'coverage']}
-            hasFocus={true}
-          />
-        );
-      case 'search':
-        return <SearchTab width={width} />;
-      case 'docs':
-        return <DocsTab height={height} width={width} />;
-      case 'github':
-        return <GitHubTab width={width} />;
-      case 'settings':
-        return <SettingsTab width={width} />;
-      default:
-        return <SearchTab width={width} />;
-    }
+      }
+
+      switch (uiState.activeTab) {
+        case 'chat':
+          return (
+            <ChatTab
+              height={height}
+              showBorder={true}
+              showWindowSwitcher={true}
+              metricsConfig={{
+                  enabled: config.ui?.metrics?.enabled !== false,
+                  compactMode: config.ui?.metrics?.compactMode || false,
+                  showPromptTokens: config.ui?.metrics?.showPromptTokens !== false,
+                  showTTFT: config.ui?.metrics?.showTTFT !== false,
+                  showInStatusBar: config.ui?.metrics?.showInStatusBar !== false,
+              }}
+              reasoningConfig={{
+                  enabled: config.ui?.reasoning?.enabled !== false,
+                  maxVisibleLines: config.ui?.reasoning?.maxVisibleLines || 8,
+                  autoCollapseOnComplete: config.ui?.reasoning?.autoCollapseOnComplete !== false,
+              }}
+              columnWidth={width}
+            />
+          );
+        case 'tools':
+          return <ToolsTab width={width} />;
+        case 'hooks':
+          return <HooksTab windowWidth={width} />;
+        case 'mcp':
+          return <MCPTab windowWidth={width} />;
+        case 'files':
+          return (
+            <FileExplorerComponent
+              rootPath={process.cwd()}
+              autoLoadWorkspace={false}
+              restoreState={true}
+              excludePatterns={['node_modules', '.git', 'dist', 'coverage']}
+              hasFocus={true}
+            />
+          );
+        case 'search':
+          return <SearchTab width={width} />;
+        case 'docs':
+          return <DocsTab height={height} width={width} />;
+        case 'github':
+          return <GitHubTab width={width} />;
+        case 'settings':
+          return <SettingsTab width={width} />;
+        default:
+          return <SearchTab width={width} />;
+      }
+    })();
+
+    return (
+      <Box width={width} height={height}>
+        {content}
+      </Box>
+    );
   };
 
   // Calculate notification counts
@@ -980,10 +924,7 @@ ${toolSupport}
                 />
               </Box>
             </Box>
-            
-            <Box flexShrink={0}>
-              <WindowSwitcher />
-            </Box>
+
           </Box>
 
           {/* Model Loading Indicator - now shown in SystemBar instead */}
@@ -1001,9 +942,9 @@ ${toolSupport}
                 <Box width={spacerWidth} />
                 
                 {/* Middle Content */}
-                <Box width={mainContentWidth} flexDirection="column">
-                  {renderActiveTab(row2Height, mainContentWidth)}
-                </Box>
+                      <Box width={mainContentWidth} flexDirection="column" position="relative">
+                        {renderActiveTab(row2Height, mainContentWidth)}
+                      </Box>
                 
                 {/* Right Spacer */}
                 <Box width={spacerWidth} />
@@ -1011,8 +952,12 @@ ${toolSupport}
             );
           })()}
           
-          {/* Row 3: System Bar (10%, Yellow) */}
-          <SystemBar height={row3Height} showBorder={true} />
+          {/* Row 3: System Bar + Window Switcher */}
+          <Box height={row3Height} flexDirection="row" width="100%">
+            <Box flexGrow={1}>
+              <SystemBar height={row3Height} showBorder={true} />
+            </Box>
+          </Box>
           
           {/* Row 4: User Input Box (25%, Red) */}
           <ChatInputArea height={row4Height} showBorder={true} />
@@ -1047,6 +992,7 @@ ${toolSupport}
           <Text>Side Panel: {uiState.sidePanelVisible ? 'Visible' : 'Hidden'}</Text>
           <Text>GPU: {gpuInfo ? `${gpuInfo.vendor} - ${gpuInfo.temperature}°C` : 'N/A'}</Text>
           <Text>Messages: {chatState.messages.length}</Text>
+          <Text color="yellow">Key: {lastPressedKey}</Text>
         </Box>
       )}
 
@@ -1195,69 +1141,73 @@ export function App({ config }: AppProps) {
         initialSidePanelVisible={initialSidePanelVisible}
         initialTheme={initialTheme}
       >
-        <WindowProvider>
-          <TerminalProvider>
-            <SettingsProvider>
-          <DialogProvider>
-            <ServiceProvider
-              provider={provider}
-              config={config}
-              workspacePath={workspacePath}
-            >
-              <HooksProvider>
-                <ToolsProvider>
-                  <MCPProvider>
-                    <UserPromptProvider>
-                      <GPUProvider 
-                        pollingInterval={config.status?.pollInterval || 5000}
-                        autoStart={config.ui?.showGpuStats !== false}
-                      >
-                        <ContextManagerProvider
-                          sessionId={sessionId}
-                          modelInfo={modelInfo}
-                          modelId={initialModel}
-                          config={contextConfig}
-                          provider={provider}
-                        >
-                          <ModelProvider
-                            provider={provider}
-                            initialModel={initialModel}
-                          >
-                            <ChatProvider>
-                              <AllCallbacksBridge onOpenModelMenu={() => {
-                                // This will be wired up properly when we refactor AppContent
-                                // For now, the global callback will be registered
-                                console.warn('openModelMenu called from bridge - needs wiring');
-                              }}>
-                                <ReviewProvider>
-                                  <FocusProvider>
-                                    <ActiveContextProvider>
-                                      <ErrorBoundary>
-                                        <WorkspaceProvider>
-                                          <FileTreeProvider>
-                                            <FileFocusProvider>
-                                              <AppContent config={config} />
-                                            </FileFocusProvider>
-                                          </FileTreeProvider>
-                                        </WorkspaceProvider>
-                                      </ErrorBoundary>
-                                    </ActiveContextProvider>
-                                  </FocusProvider>
-                                </ReviewProvider>
-                              </AllCallbacksBridge>
-                            </ChatProvider>
-                          </ModelProvider>
-                        </ContextManagerProvider>
-                      </GPUProvider>
-                  </UserPromptProvider>
-                </MCPProvider>
-              </ToolsProvider>
-            </HooksProvider>
-          </ServiceProvider>
-          </DialogProvider>
+        <SettingsProvider>
+          <KeybindsProvider>
+            <WindowProvider>
+              <TerminalProvider>
+                <DialogProvider>
+                  <ServiceProvider
+                    provider={provider}
+                    config={config}
+                    workspacePath={workspacePath}
+                  >
+                    <HooksProvider>
+                      <ToolsProvider>
+                        <MCPProvider>
+                          <UserPromptProvider>
+                            <GPUProvider 
+                              pollingInterval={config.status?.pollInterval || 5000}
+                              autoStart={config.ui?.showGpuStats !== false}
+                            >
+                              <ContextManagerProvider
+                                sessionId={sessionId}
+                                modelInfo={modelInfo}
+                                modelId={initialModel}
+                                config={contextConfig}
+                                provider={provider}
+                              >
+                                <ModelProvider
+                                  provider={provider}
+                                  initialModel={initialModel}
+                                >
+                                  <ChatProvider>
+                                    <AllCallbacksBridge onOpenModelMenu={() => {
+                                      // This will be wired up properly when we refactor AppContent
+                                      // For now, the global callback will be registered
+                                      console.warn('openModelMenu called from bridge - needs wiring');
+                                    }}>
+                                      <ReviewProvider>
+                                        <FocusProvider>
+                                          <ActiveContextProvider>
+                                            <ErrorBoundary>
+                                              <MouseProvider>
+                                                <WorkspaceProvider>
+                                                  <FileTreeProvider>
+                                                    <FileFocusProvider>
+                                                      <AppContent config={config} />
+                                                    </FileFocusProvider>
+                                                  </FileTreeProvider>
+                                                </WorkspaceProvider>
+                                              </MouseProvider>
+                                            </ErrorBoundary>
+                                          </ActiveContextProvider>
+                                        </FocusProvider>
+                                      </ReviewProvider>
+                                    </AllCallbacksBridge>
+                                  </ChatProvider>
+                                </ModelProvider>
+                              </ContextManagerProvider>
+                            </GPUProvider>
+                        </UserPromptProvider>
+                      </MCPProvider>
+                    </ToolsProvider>
+                  </HooksProvider>
+                </ServiceProvider>
+                </DialogProvider>
+              </TerminalProvider>
+            </WindowProvider>
+          </KeybindsProvider>
         </SettingsProvider>
-          </TerminalProvider>
-        </WindowProvider>
       </UIProvider>
     </ErrorBoundary>
   );

@@ -12,32 +12,15 @@
  */
 
 import type { Command, CommandResult } from './types.js';
+import type { ModelInfo } from '@ollm/ollm-cli-core/provider/types.js';
 import { SettingsService } from '../config/settingsService.js';
 import { profileManager } from '../features/profiles/ProfileManager.js';
 // import type { ModelManagementService } from '@ollm/core/services/modelManagementService.js';
 // import type { ServiceContainer } from '@ollm/core/services/serviceContainer.js';
-type ModelSummary = {
-  name: string;
-  sizeBytes?: number;
-  modifiedAt?: string | Date;
-};
+type ModelSummary = Pick<ModelInfo, 'name' | 'sizeBytes' | 'modifiedAt'>;
 
-type ModelCapabilities = {
-  toolCalling: boolean;
-  vision: boolean;
-  streaming: boolean;
-};
-
-type ModelDetails = {
-  name: string;
-  family: string;
-  size: number;
-  sizeBytes?: number;
-  modifiedAt: string | Date;
-  contextWindow: number;
-  capabilities: ModelCapabilities;
-  parameterCount?: number;
-};
+// Use core `ModelInfo` for detailed model information
+type ModelDetails = ModelInfo;
 
 type PullProgress = {
   percentage: number;
@@ -251,26 +234,36 @@ async function modelInfoHandler(args: string[], service: ModelManagementService)
   try {
     const model = await service.showModel(modelName);
     
-    // Format model information
-    const size = (model.size / (1024 * 1024 * 1024)).toFixed(2);
-    const modifiedAt = model.modifiedAt instanceof Date ? model.modifiedAt : new Date(model.modifiedAt);
-    const date = modifiedAt.toLocaleDateString();
-    const capabilities = [];
-    if (model.capabilities.toolCalling) capabilities.push('tool calling');
-    if (model.capabilities.vision) capabilities.push('vision');
-    if (model.capabilities.streaming) capabilities.push('streaming');
-    
+    // Format model information using core `ModelInfo` shape with fallbacks
+    const sizeBytes = (model as any).sizeBytes ?? (model as any).size ?? undefined;
+    const size = sizeBytes ? (sizeBytes / (1024 * 1024 * 1024)).toFixed(2) : 'N/A';
+
+    const modifiedAtRaw = (model as any).modifiedAt ?? (model as any).modifiedAt;
+    const modifiedAt = modifiedAtRaw instanceof Date ? modifiedAtRaw : (modifiedAtRaw ? new Date(modifiedAtRaw) : undefined);
+    const date = modifiedAt ? modifiedAt.toLocaleDateString() : 'N/A';
+
+    const details = (model as any).details ?? {};
+    const capabilitiesObj = details.capabilities ?? (model as any).capabilities ?? {};
+    const capabilities: string[] = [];
+    if (capabilitiesObj?.toolCalling) capabilities.push('tool calling');
+    if (capabilitiesObj?.vision) capabilities.push('vision');
+    if (capabilitiesObj?.streaming) capabilities.push('streaming');
+
+    const family = details.family ?? (model as any).family ?? 'unknown';
+    const contextWindow = details.contextWindow ?? (model as any).contextWindow ?? 'N/A';
+    const parameterCount = details.parameterCount ?? (model as any).parameterCount ?? 0;
+
     const info = [
       `Model: ${model.name}`,
-      `Family: ${model.family}`,
+      `Family: ${family}`,
       `Size: ${size} GB`,
-      `Context Window: ${model.contextWindow} tokens`,
+      `Context Window: ${contextWindow} tokens`,
       `Modified: ${date}`,
       `Capabilities: ${capabilities.join(', ') || 'none'}`,
     ];
-    
-    if (model.parameterCount) {
-      info.push(`Parameters: ${(model.parameterCount / 1e9).toFixed(1)}B`);
+
+    if (parameterCount) {
+      info.push(`Parameters: ${(parameterCount / 1e9).toFixed(1)}B`);
     }
     
     return {

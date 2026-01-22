@@ -185,6 +185,27 @@ export class ToolRegistry {
     }
 
     // Create and return the invocation
-    return tool.createInvocation(params, context);
+    if (typeof tool.createInvocation === 'function') {
+      return tool.createInvocation(params, context);
+    }
+
+    // Backcompat: support tools that only implement a runtime `execute(params, context)`
+    // by creating an adapter invocation that calls `execute` when invoked.
+    const adapter: ToolInvocation<unknown, unknown> = {
+      params,
+      getDescription: () => (tool.displayName || tool.name),
+      toolLocations: () => [],
+      async shouldConfirmExecute() {
+        return false;
+      },
+      async execute(signal: AbortSignal) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const exec = (tool as any).execute;
+        if (typeof exec !== 'function') throw new Error('Tool does not implement execute');
+        return exec.call(tool, params, context);
+      }
+    };
+
+    return adapter;
   }
 }

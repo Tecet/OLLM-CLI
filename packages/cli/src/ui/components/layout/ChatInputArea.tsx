@@ -12,6 +12,8 @@ import { useUI } from '../../../features/context/UIContext.js';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { useWindow } from '../../contexts/WindowContext.js';
 import { useTerminal } from '../../hooks/useTerminal.js';
+import { useKeybinds } from '../../../features/context/KeybindsContext.js';
+import { isKey } from '../../utils/keyUtils.js';
 
 export interface ChatInputAreaProps {
   /** Optional assigned height from layout */
@@ -26,6 +28,7 @@ export const ChatInputArea = memo(function ChatInputArea({ height, showBorder = 
   const { isFocused, exitToNavBar } = useFocusManager();
   const { activeWindow, switchWindow } = useWindow();
   const { sendCommand } = useTerminal();
+  const { activeKeybinds } = useKeybinds();
   
   const hasFocus = isFocused('chat-input');
   const isTerminalActive = activeWindow === 'terminal';
@@ -39,20 +42,6 @@ export const ChatInputArea = memo(function ChatInputArea({ height, showBorder = 
       return (
         <Box height={1} paddingX={1}>
           <Text color={theme.text.accent} bold>{statusMessage}</Text>
-        </Box>
-      );
-    }
-    if (streaming) {
-      return (
-        <Box height={1} paddingX={1}>
-          <Text color={theme.text.secondary} dimColor italic>Assistant is typing... (Type 'stop' to cancel)</Text>
-        </Box>
-      );
-    }
-    if (waitingForResponse) {
-      return (
-        <Box height={1} paddingX={1}>
-          <Text color={theme.text.secondary} dimColor italic>Waiting for response... (Type 'stop' to cancel)</Text>
         </Box>
       );
     }
@@ -92,21 +81,21 @@ export const ChatInputArea = memo(function ChatInputArea({ height, showBorder = 
       // Input Logic only works if we have focus!
       if (!hasFocus) return;
 
-      // Window switching logic - cycle through windows with arrows
-      if (key.leftArrow || key.rightArrow) {
+      // Window switching logic - cycle through windows with specific ctrl keys
+      if (isKey(input, key, activeKeybinds.layout.switchWindowLeft) || isKey(input, key, activeKeybinds.layout.switchWindowRight)) {
           switchWindow();
           return;
       }
 
       if (chatState.inputMode !== 'menu') return;
 
-      if (key.upArrow) {
+      if (isKey(input, key, activeKeybinds.navigation.moveUp)) {
           navigateMenu('up');
-      } else if (key.downArrow) {
+      } else if (isKey(input, key, activeKeybinds.navigation.moveDown)) {
           navigateMenu('down');
-      } else if (key.return) {
+      } else if (isKey(input, key, activeKeybinds.navigation.select)) {
           executeMenuOption();
-      } else if (key.escape) {
+      } else if (isKey(input, key, activeKeybinds.chat.cancel)) {
           if (chatState.inputMode === 'menu') {
               setInputMode('text');
               setMenuState({ active: false });
@@ -122,9 +111,9 @@ export const ChatInputArea = memo(function ChatInputArea({ height, showBorder = 
   if (isTerminalActive && hasFocus) borderColor = 'cyan';
 
   const totalMenuOptions = chatState.menuState.options.length;
-  const menuPaddingTop = 1;
+  const menuPaddingTop = 0;
   const menuBorderRows = showBorder ? 2 : 0;
-  const statusRows = (statusMessage || streaming || waitingForResponse) ? 1 : 0;
+  const statusRows = statusMessage ? 1 : 0;
   const maxVisibleMenuOptions = Math.max(1, height - menuBorderRows - menuPaddingTop - statusRows);
   const menuWindowSize = totalMenuOptions === 0 ? 0 : Math.min(maxVisibleMenuOptions, totalMenuOptions);
   const menuStartIndex = totalMenuOptions === 0

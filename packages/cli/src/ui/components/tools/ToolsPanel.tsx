@@ -249,25 +249,6 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 30, windowW
     return null;
   }, [categoryData, selectedCategoryIndex, selectedToolIndex]);
 
-  // Model doesn't support tools - MOVE AFTER HOOKS
-  if (!modelSupportsTools) {
-    return (
-      <Box flexDirection="column" padding={2}>
-        <Text color={uiState.theme.status.warning} bold>
-          ⚠ Model doesn't support tools
-        </Text>
-        <Box marginTop={1}>
-          <Text color={uiState.theme.text.secondary}>
-            The current model does not support function calling.
-          </Text>
-        </Box>
-        <Text color={uiState.theme.text.secondary}>
-          Switch to a tool-capable model to use tools.
-        </Text>
-      </Box>
-    );
-  }
-
   return (
     <Box flexDirection="column" height="100%" width={windowWidth}>
       {/* Header */}
@@ -276,6 +257,13 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 30, windowW
         paddingX={1}
         flexShrink={0}
       >
+        {!modelSupportsTools && (
+          <Box marginBottom={1} paddingX={1} borderStyle="round" borderColor={uiState.theme.status.warning}>
+            <Text color={uiState.theme.status.warning} bold>
+              ⚠ Model doesn't support tools. These settings will take effect when you switch to a compatible model.
+            </Text>
+          </Box>
+        )}
         <Box justifyContent="space-between" width="100%" overflow="hidden">
           <Box flexShrink={0}>
             <Text bold color={hasFocus ? uiState.theme.text.accent : uiState.theme.text.primary}>

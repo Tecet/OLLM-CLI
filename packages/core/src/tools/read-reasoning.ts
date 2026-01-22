@@ -12,7 +12,7 @@ import type { ReasoningTrace } from '../context/reasoningTypes.js';
 /**
  * Parameters for read reasoning tool
  */
-interface ReadReasoningParams {
+export interface ReadReasoningParams {
   goalId?: string;
   traceId?: string;
   limit?: number;

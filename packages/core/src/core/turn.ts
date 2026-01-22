@@ -21,7 +21,7 @@ const isTestEnv = process.env.NODE_ENV === 'test' || !!process.env.VITEST;
  * Minimal ToolRegistry interface for tool execution.
  */
 export interface ToolRegistry {
-  get(name: string): DeclarativeTool<unknown, unknown> | undefined;
+  get(name: string): Tool | undefined;
 }
 
 /**
