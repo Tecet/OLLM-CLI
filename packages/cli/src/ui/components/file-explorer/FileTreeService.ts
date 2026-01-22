@@ -112,73 +112,112 @@ export class FileTreeService {
    * Loads the directory contents from the filesystem and populates
    * the children array. Applies exclude patterns during loading.
    * 
+   * **Lazy Loading Strategy:**
+   * This method implements lazy loading - directories are only loaded
+   * when explicitly expanded by the user. This improves performance
+   * for large directory trees by avoiding unnecessary filesystem reads.
+   * 
+   * **Algorithm:**
+   * 1. Validate node is a directory and not already expanded
+   * 2. Read directory contents from filesystem
+   * 3. Filter out excluded paths (node_modules, .git, etc.)
+   * 4. Create FileNode objects for each entry
+   * 5. Prepare subdirectories for lazy loading (empty children array)
+   * 6. Sort children (directories first, then alphabetically)
+   * 7. Update node with children and mark as expanded
+   * 
+   * **Error Handling:**
+   * - Permission denied: Logs error, marks node as unexpanded
+   * - File not found: Logs error, marks node as unexpanded
+   * - Other errors: Logs error, marks node as unexpanded
+   * 
+   * **Performance:**
+   * - Time: O(n log n) where n = number of children (due to sorting)
+   * - Space: O(n) for children array
+   * - Filesystem: 1 readdir call per expansion
+   * 
    * @param node - Directory node to expand
-   * @param excludePatterns - Glob patterns to exclude
-   * @param maxDepth - Maximum depth to traverse
+   * @param excludePatterns - Glob patterns to exclude (e.g., ['node_modules', '*.log'])
+   * @param maxDepth - Maximum depth to traverse (prevents infinite recursion)
    * @returns Promise resolving when expansion is complete
+   * @throws {Error} If node is not a directory
    */
   async expandDirectory(
     node: FileNode,
     excludePatterns: string[] = [],
     maxDepth: number = this.DEFAULT_MAX_DEPTH
   ): Promise<void> {
+    // Validate that we're expanding a directory
     if (node.type !== 'directory') {
       throw new Error('Cannot expand non-directory node');
     }
 
+    // Skip if already expanded (idempotent operation)
     if (node.expanded) {
-      return; // Already expanded
+      return;
     }
 
-    // Create matcher for exclude patterns
+    // Create matcher for exclude patterns using picomatch
+    // This allows glob patterns like 'node_modules/**' or '*.log'
     const isExcluded = excludePatterns.length > 0
       ? picomatch(excludePatterns)
       : () => false;
 
     try {
-      // Read directory contents
+      // Read directory contents from filesystem
+      // withFileTypes: true returns Dirent objects with type information
+      // This avoids additional stat() calls for each entry
       const entries = await fs.readdir(node.path, { withFileTypes: true });
 
-      // Calculate current depth
+      // Calculate current depth to enforce maxDepth limit
+      // This prevents loading directories beyond the depth limit
       const currentDepth = this.calculateDepth(node.path);
 
-      // Build child nodes
+      // Build child nodes from directory entries
       const children: FileNode[] = [];
       for (const entry of entries) {
         const childPath = path.join(node.path, entry.name);
 
-        // Skip excluded paths
+        // Skip excluded paths (both full path and name matching)
+        // This allows patterns like 'node_modules' or '**/dist/**'
         if (isExcluded(childPath) || isExcluded(entry.name)) {
           continue;
         }
 
+        // Create child node with basic information
         const childNode: FileNode = {
           name: entry.name,
           path: childPath,
           type: entry.isDirectory() ? 'directory' : 'file',
         };
 
-        // If it's a directory, prepare for lazy loading
+        // Prepare subdirectories for lazy loading
+        // Only if we haven't exceeded the maximum depth
         if (entry.isDirectory() && currentDepth < maxDepth) {
           childNode.expanded = false;
-          childNode.children = [];
+          childNode.children = []; // Empty array signals "not yet loaded"
         }
 
         children.push(childNode);
       }
 
-      // Sort: directories first, then files, both alphabetically
+      // Sort children: directories first, then files, both alphabetically
+      // This provides a consistent, predictable ordering in the UI
       children.sort((a, b) => {
+        // If same type, sort alphabetically (case-insensitive)
         if (a.type === b.type) {
           return a.name.localeCompare(b.name);
         }
+        // Directories come before files
         return a.type === 'directory' ? -1 : 1;
       });
 
+      // Update node with loaded children and mark as expanded
       node.children = children;
       node.expanded = true;
     } catch (error) {
-      // Handle permission errors or other filesystem errors
+      // Handle filesystem errors gracefully
+      // Common errors: EACCES (permission denied), ENOENT (not found)
       const errorInfo = handleError(error, {
         operation: 'expandDirectory',
         nodePath: node.path,
@@ -186,6 +225,8 @@ export class FileTreeService {
       
       console.error(`Failed to expand directory ${node.path}:`, errorInfo.message);
       
+      // Mark node as unexpanded with empty children
+      // This allows retry if the user tries to expand again
       node.children = [];
       node.expanded = false;
     }
@@ -213,20 +254,53 @@ export class FileTreeService {
    * Flattens the tree into a list of visible nodes (respecting expanded state)
    * and returns a window of nodes based on scroll offset and window size.
    * 
+   * **Virtual Scrolling:**
+   * This method implements virtual scrolling to improve performance for large
+   * file trees. Instead of rendering all nodes, we only render a "window" of
+   * visible nodes based on the current scroll position.
+   * 
+   * **Algorithm:**
+   * 1. Flatten the tree to get all visible nodes (respecting expanded state)
+   * 2. Calculate the visible window based on scroll offset and window size
+   * 3. Return only the nodes within the visible window
+   * 
+   * **Example:**
+   * ```
+   * Tree with 1000 nodes, windowSize=15, scrollOffset=100
+   * Returns nodes 100-114 (15 nodes starting at offset 100)
+   * 
+   * This means only 15 nodes are rendered in the UI, even though
+   * the tree has 1000 nodes. As the user scrolls, we update the
+   * scrollOffset and re-render with a different window.
+   * ```
+   * 
+   * **Performance:**
+   * - Time: O(n) where n = total visible nodes (due to flattening)
+   * - Space: O(windowSize) for the returned window
+   * - Rendering: Only windowSize nodes rendered, not all nodes
+   * 
+   * **Optimization Opportunity:**
+   * Consider caching the flattened tree and only invalidating when
+   * expand/collapse occurs. This would reduce time complexity to O(1)
+   * for repeated calls with the same tree state.
+   * 
    * @param tree - Root node of the tree
-   * @param options - Options for visible window
-   * @returns Array of visible FileNode objects
+   * @param options - Options for visible window (scrollOffset, windowSize)
+   * @returns Array of visible FileNode objects within the window
    */
   getVisibleNodes(tree: FileNode, options: GetVisibleNodesOptions): FileNode[] {
     const { scrollOffset, windowSize = this.DEFAULT_WINDOW_SIZE } = options;
 
     // Flatten the tree to get all visible nodes
+    // This respects the expanded state of directories
     const flatNodes = this.flattenTree(tree);
 
-    // Return the window of visible nodes
+    // Calculate the visible window boundaries
+    // Ensure we don't go out of bounds
     const start = Math.max(0, scrollOffset);
     const end = Math.min(flatNodes.length, start + windowSize);
 
+    // Return only the nodes within the visible window
     return flatNodes.slice(start, end);
   }
 
@@ -236,14 +310,41 @@ export class FileTreeService {
    * Recursively traverses the tree and collects all nodes that should
    * be visible (i.e., nodes whose parents are expanded).
    * 
-   * @param node - Current node
-   * @param result - Accumulator for visible nodes
-   * @returns Array of visible nodes
+   * **Algorithm:**
+   * 1. Add current node to result array
+   * 2. If node is an expanded directory with children:
+   *    - Recursively flatten each child
+   * 3. Return accumulated result
+   * 
+   * **Performance Note:**
+   * This method is O(n) where n = number of visible nodes.
+   * For large trees (1000+ nodes), consider caching the result
+   * and invalidating only when expand/collapse occurs.
+   * 
+   * **Example:**
+   * ```
+   * Tree:
+   *   root/
+   *   ├── folder1/ (expanded)
+   *   │   ├── file1.txt
+   *   │   └── file2.txt
+   *   └── folder2/ (collapsed)
+   *       └── file3.txt
+   * 
+   * Result: [root, folder1, file1.txt, file2.txt, folder2]
+   * Note: file3.txt is NOT included because folder2 is collapsed
+   * ```
+   * 
+   * @param node - Current node to flatten
+   * @param result - Accumulator for visible nodes (internal use)
+   * @returns Array of visible nodes in depth-first order
    */
   flattenTree(node: FileNode, result: FileNode[] = []): FileNode[] {
+    // Add current node to the result
     result.push(node);
 
-    // If the node is an expanded directory, add its children
+    // If the node is an expanded directory, recursively add its children
+    // This creates a depth-first traversal of the visible tree
     if (node.type === 'directory' && node.expanded && node.children) {
       for (const child of node.children) {
         this.flattenTree(child, result);

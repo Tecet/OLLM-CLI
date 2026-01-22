@@ -136,7 +136,7 @@ This implementation plan breaks down the debugging and polishing work into discr
   - Add keyboard shortcut reference
   - _Requirements: US-2, US-3, TR-2, TR-3_
 
-- [ ] 14. Clean Up File Explorer
+- [x] 14. Clean Up File Explorer
   - Remove unused file operation methods
   - Consolidate error handling
   - Add comments to complex file tree logic
@@ -144,7 +144,7 @@ This implementation plan breaks down the debugging and polishing work into discr
   - Document integration points
   - _Requirements: US-2, US-3, TR-2, TR-3_
 
-- [ ] 15. Clean Up Code Editor
+- [~] 15. Clean Up Code Editor
   - Remove placeholder/mock code
   - Add comments to syntax highlighting logic
   - Document editor architecture in README
