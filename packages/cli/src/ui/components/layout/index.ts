@@ -11,3 +11,5 @@ export {
   type GPUInfo,
 } from './StatusBar.js';
 export { InputBox, type InputBoxProps } from './InputBox.js';
+export { TwoColumnLayout, type TwoColumnLayoutProps } from './TwoColumnLayout.js';
+export { TabContainer, type TabContainerProps } from './TabContainer.js';
