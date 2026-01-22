@@ -168,7 +168,7 @@ This implementation plan breaks down the debugging and polishing work into discr
   - Add implementation guide
   - _Requirements: US-2, US-3, TR-2, TR-3_
 
-- [ ] 18. Clean Up Hook System
+- [x] 18. Clean Up Hook System
   - Remove unused hook types
   - Consolidate hook validation
   - Add JSDoc to hook interfaces
@@ -176,7 +176,7 @@ This implementation plan breaks down the debugging and polishing work into discr
   - Add hook development guide
   - _Requirements: US-2, US-3, TR-2, TR-3_
 
-- [ ] 19. Clean Up MCP Integration
+- [~] 19. Clean Up MCP Integration
   - Remove unused MCP methods
   - Consolidate connection handling
   - Add comments to protocol logic
