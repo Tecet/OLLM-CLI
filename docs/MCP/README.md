@@ -10,6 +10,8 @@ Welcome to the MCP documentation for OLLM CLI. This guide covers the Model Conte
 
 ### Quick Access
 - **[📑 Complete Documentation Index](MCP_index.md)** - Comprehensive index with summaries
+- **[🔧 Integration Guide](MCP-INTEGRATION-GUIDE.md)** - Complete MCP integration documentation
+- **[🔍 Troubleshooting Guide](TROUBLESHOOTING.md)** - Common issues and solutions
 
 ### Getting Started
 - **[Getting Started Guide](getting-started.md)** - Quick start guide for MCP, hooks, and extensions

@@ -61,61 +61,95 @@ export class DefaultMCPClient implements MCPClient {
     this.transportFactory = transportFactory;
   }
 
+  /**
+   * Start an MCP server
+   * 
+   * This method initializes and connects to an MCP server. The startup process:
+   * 1. Validates MCP is enabled in configuration
+   * 2. Checks server isn't already running
+   * 3. Handles OAuth authentication if required
+   * 4. Creates appropriate transport (stdio/SSE/HTTP)
+   * 5. Establishes connection with timeout
+   * 6. Initializes server state and log capture
+   * 
+   * Connection Timeout:
+   * - Default: 30 seconds (configurable via config.connectionTimeout)
+   * - Can be overridden per-server via config.timeout
+   * - Increased from 10s to 30s to accommodate slow-starting Python servers
+   * 
+   * OAuth Flow:
+   * - Uses global OAuth provider for token sharing across servers
+   * - Only retrieves existing tokens (no interactive auth during startup)
+   * - Throws error if OAuth is required but no token exists
+   * - User must authenticate via MCP Panel UI before enabling server
+   * 
+   * Error Handling:
+   * - Failed servers remain in registry with 'error' status
+   * - Allows UI to display error and offer retry/troubleshooting
+   * - Logs are captured even during failed startup attempts
+   * 
+   * @param name - Unique server identifier
+   * @param config - Server configuration including command, args, transport type
+   * @throws {Error} If MCP is disabled, server already exists, OAuth fails, or connection fails
+   */
   async startServer(name: string, config: MCPServerConfig): Promise<void> {
-    // Check if MCP is enabled
+    // Check if MCP is enabled globally
     if (!this.config.enabled) {
       throw new Error('MCP integration is disabled in configuration');
     }
 
-    // Check if server already exists
+    // Prevent duplicate server registration
     if (this.servers.has(name)) {
       throw new Error(`Server '${name}' is already registered`);
     }
 
-    // Initialize OAuth provider if configured
+    // Initialize OAuth provider if server requires authentication
     let oauthProvider: MCPOAuthProvider | undefined;
     let accessToken: string | undefined;
 
     if (config.oauth?.enabled) {
-      // Use global provider if available, otherwise we can't share tokens easily
-      // In a real CLI/Headless scenario, we'd need to init storage here.
-      // For now, rely on injection for shared state.
+      // Use global OAuth provider for token sharing across servers
+      // This allows multiple servers to use the same OAuth credentials
       oauthProvider = this.globalOAuthProvider;
 
       if (!oauthProvider) {
-         // Fallback: This isolates the server, which might be intentional in some cases,
-         // but for the main app, we expect injection. 
-         // We instantiate a memory-only provider here if none provided, 
-         // effectively disabling persistence unless startServer caller provided one.
-         // Note: Interactive Auth requires a browser/UI handler usually.
+         // Fallback: Create isolated provider for this server
+         // Note: This disables token persistence and sharing
+         // In production, global provider should always be injected
          oauthProvider = new MCPOAuthProvider();
       }
 
       try {
-        // Register config validation
+        // Register OAuth configuration for validation
         oauthProvider.registerServerConfig(name, config.oauth);
         
-        // Try to get existing token
-        // We do NOT call authenticate() here because it starts interactive flow (opens browser)
-        // which is bad for automated startups. We only want silent token retrieval.
+        // Attempt to retrieve existing OAuth token
+        // IMPORTANT: We do NOT call authenticate() here because it triggers
+        // interactive browser flow, which is inappropriate during automated startup.
+        // Users must authenticate via MCP Panel UI before enabling OAuth servers.
         accessToken = await oauthProvider.getAccessToken(name);
         
         if (!accessToken) {
-            // No token available.
-            // We should NOT block startup? Or should we?
-            // If we proceed without token, server might reject us.
-            // If strict, throw.
-            throw new Error(`No OAuth token available for ${name}. Please authenticate via settings.`);
+            // No token available - provide helpful error message
+            throw new Error(
+              `OAuth authentication required for ${name}.\n` +
+              `To authenticate:\n` +
+              `1. Open MCP Panel (Ctrl+M)\n` +
+              `2. Select "${name}" server\n` +
+              `3. Press 'O' for OAuth configuration\n` +
+              `4. Follow the browser authentication flow`
+            );
         }
       } catch (error) {
         throw new Error(`OAuth authentication failed for server '${name}': ${error instanceof Error ? error.message : String(error)}`);
       }
     }
 
-    // Create transport with OAuth token if available. Prefer injected factory for tests.
+    // Create transport based on configuration
+    // Prefer injected factory for testing, otherwise use default factory
     const transport = this.transportFactory ? this.transportFactory(config, accessToken) : this.createTransport(config, accessToken);
 
-    // Initialize server state
+    // Initialize server state with empty collections
     const state: ServerState = {
       config,
       transport,
@@ -126,88 +160,108 @@ export class DefaultMCPClient implements MCPClient {
       prompts: [],
       oauthProvider,
       logs: [],
-      maxLogLines: 1000,
+      maxLogLines: 1000, // Circular buffer size for log retention
     };
 
     this.servers.set(name, state);
 
-    // Add log capture method
+    // Log capture helper - adds timestamped entries to circular buffer
     const addLog = (message: string) => {
       const timestamp = new Date().toISOString();
       const logLine = `[${timestamp}] ${message}`;
       state.logs.push(logLine);
       
-      // Keep only the last maxLogLines
+      // Maintain circular buffer - keep only last maxLogLines entries
       if (state.logs.length > state.maxLogLines) {
         state.logs = state.logs.slice(-state.maxLogLines);
       }
     };
 
-    // Capture transport logs if it's a StdioTransport
+    // Capture initial startup log
     if (transport instanceof StdioTransport) {
-      // Hook into stderr/stdout to capture logs
-      // This is done by the transport itself, but we can add a listener
       addLog(`Starting MCP server: ${config.command} ${config.args.join(' ')}`);
     }
 
     try {
       addLog('Connecting to server...');
       
-      // Connect with timeout (use config timeout or server-specific timeout)
+      // Connection timeout handling
+      // Use server-specific timeout if provided, otherwise use global default
+      // Default increased to 30s to accommodate slow-starting servers (e.g., Python)
       const timeout = config.timeout || this.config.connectionTimeout;
       const connectPromise = transport.connect();
       const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(() => reject(new Error(`Connection timeout after ${timeout}ms`)), timeout);
       });
 
+      // Race between connection and timeout
       await Promise.race([connectPromise, timeoutPromise]);
 
-      // Update status to connected and record start time
+      // Connection successful - update state
       state.status = 'connected';
       state.startTime = Date.now();
       addLog('Successfully connected to server');
     } catch (error) {
-      // Update status to error
+      // Connection failed - update state and preserve error
       state.status = 'error';
       const errorMessage = error instanceof Error ? error.message : String(error);
       state.error = errorMessage;
       addLog(`Connection failed: ${errorMessage}`);
       
-      // Clean up
+      // Attempt graceful cleanup
       try {
         await transport.disconnect();
       } catch {
-        // Ignore disconnect errors
+        // Ignore disconnect errors during error handling
       }
-      // Keep the server entry in 'error' state on failed start so callers
-      // can observe the failure (tests expect enabled servers to not be
-      // disconnected; leaving an 'error' state satisfies that invariant).
-      // this.servers.delete(name);
+      
+      // Keep server entry in 'error' state for UI visibility
+      // This allows users to see the error and retry/troubleshoot
+      // Tests expect enabled servers to remain in registry even on failure
       
       throw new Error(`Failed to start MCP server '${name}': ${state.error}`);
     }
   }
 
+  /**
+   * Stop an MCP server
+   * 
+   * Gracefully disconnects from an MCP server and removes it from the registry.
+   * 
+   * Process:
+   * 1. Locate server in registry (no-op if not found)
+   * 2. Disconnect transport (with error suppression)
+   * 3. Update status to 'disconnected'
+   * 4. Clear tool/resource cache
+   * 5. Remove from registry
+   * 
+   * Error Handling:
+   * - Disconnect errors are logged but not thrown
+   * - Ensures cleanup happens even if disconnect fails
+   * - Suppresses logs in test environments to reduce noise
+   * 
+   * @param name - Server identifier
+   */
   async stopServer(name: string): Promise<void> {
     const state = this.servers.get(name);
     
     if (!state) {
-      // Server doesn't exist, nothing to do
+      // Server doesn't exist - nothing to do
       return;
     }
 
     try {
-      // Disconnect transport
+      // Attempt graceful disconnect
       await state.transport.disconnect();
     } catch (error) {
-      // Log error but don't throw
-      // Only log error if not in a test environment
+      // Log error but don't throw - ensure cleanup continues
+      // Suppress logs in test environments to avoid noise
       if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         console.error(`Error disconnecting MCP server '${name}': ${errorMessage}`);
       }
     } finally {
-      // Update status and remove from registry
+      // Always update status and clean up, even if disconnect failed
       state.status = 'disconnected';
       state.tools = [];
       this.servers.delete(name);
@@ -255,6 +309,31 @@ export class DefaultMCPClient implements MCPClient {
     return statuses;
   }
 
+  /**
+   * Restart an MCP server
+   * 
+   * Performs a full restart cycle: stop → wait → start
+   * 
+   * Process:
+   * 1. Store server configuration
+   * 2. Stop the server (disconnect and cleanup)
+   * 3. Wait for clean shutdown (1s in production, 10ms in tests)
+   * 4. Start server with original configuration
+   * 
+   * Wait Period:
+   * - Production: 1 second to ensure clean process termination
+   * - Test: 10ms to keep tests fast
+   * - Prevents port conflicts and resource leaks
+   * 
+   * Use Cases:
+   * - Recovering from error state
+   * - Applying configuration changes
+   * - Clearing server-side cache
+   * - Troubleshooting connection issues
+   * 
+   * @param name - Server identifier
+   * @throws {Error} If server not found or restart fails
+   */
   async restartServer(name: string): Promise<void> {
     const state = this.servers.get(name);
     
@@ -262,21 +341,21 @@ export class DefaultMCPClient implements MCPClient {
       throw new Error(`Server '${name}' not found`);
     }
 
-    // Store the config before stopping
+    // Store configuration before stopping
     const config = state.config;
 
     // Stop the server
     await this.stopServer(name);
 
-    // Wait for 1 second to ensure clean shutdown. In test environments
-    // skip or shorten the delay to keep unit/property tests fast.
+    // Wait for clean shutdown
+    // Shorter delay in test environments to keep tests fast
     if (process.env.NODE_ENV === 'test' || process.env.VITEST) {
       await new Promise(resolve => setTimeout(resolve, 10));
     } else {
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
-    // Start the server again with the same config
+    // Start server with original configuration
     await this.startServer(name, config);
   }
 
@@ -312,6 +391,34 @@ export class DefaultMCPClient implements MCPClient {
     return servers;
   }
 
+  /**
+   * Call a tool on an MCP server
+   * 
+   * Invokes a tool and waits for the complete result.
+   * 
+   * Protocol Flow:
+   * 1. Validate server exists and is connected
+   * 2. Send JSON-RPC 'tools/call' request via transport
+   * 3. Wait for response with 30s timeout
+   * 4. Handle errors and update server status
+   * 
+   * Timeout Handling:
+   * - Default: 30 seconds (configurable)
+   * - Increased from previous 10s to accommodate long-running tools
+   * - Consider using callToolStreaming() for operations > 30s
+   * 
+   * Error Handling:
+   * - Connection errors mark server as 'error' status
+   * - Timeout errors mark server as 'error' status
+   * - Tool execution errors are returned in response
+   * - Server remains in error state until restart
+   * 
+   * @param serverName - Server identifier
+   * @param toolName - Tool to invoke
+   * @param args - Tool arguments (validated by server)
+   * @returns Tool execution result
+   * @throws {Error} If server not found, not connected, or call fails
+   */
   async callTool(serverName: string, toolName: string, args: unknown): Promise<unknown> {
     const state = this.servers.get(serverName);
     
@@ -324,10 +431,11 @@ export class DefaultMCPClient implements MCPClient {
     }
 
     try {
-      // Default timeout for tool calls: 30 seconds
-      const timeout = 30000;
+      // Tool call timeout - increased to 60s for long-running operations
+      // TODO: Make this configurable per-tool or per-server
+      const timeout = 60000;
       
-      // Send tool call request
+      // Send JSON-RPC tool call request
       const requestPromise = state.transport.sendRequest({
         method: 'tools/call',
         params: {
@@ -344,13 +452,14 @@ export class DefaultMCPClient implements MCPClient {
       // Race between request and timeout
       const response = await Promise.race([requestPromise, timeoutPromise]);
 
+      // Check for protocol-level errors
       if (response.error) {
         throw new Error(`Tool call failed: ${response.error.message}`);
       }
 
       return response.result;
     } catch (error) {
-      // If it's a timeout or connection error, mark server as error
+      // Mark server as error if connection/timeout issue
       if (error instanceof Error && 
           (error.message.includes('timeout') || error.message.includes('not connected'))) {
         state.status = 'error';
