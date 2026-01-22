@@ -79,7 +79,7 @@ export class ModelDatabase {
       const idBase = entry.pattern.endsWith('*') ? entry.pattern.slice(0, -1) : entry.pattern;
       const raw = (RAW_PROFILES && RAW_PROFILES[idBase]) || null;
       if (raw && typeof raw.max_context_window === 'number') return Number(raw.max_context_window);
-    } catch (_) {}
+    } catch (_e) { void _e; }
     return entry.contextWindow ?? DEFAULT_MODEL_ENTRY.contextWindow;
   }
 
@@ -106,7 +106,7 @@ export class ModelDatabase {
           reasoning: Boolean(caps.reasoning)
         };
       }
-    } catch (_) {}
+    } catch (_e) { void _e; }
     return entry.capabilities ?? DEFAULT_MODEL_ENTRY.capabilities;
   }
 
@@ -122,7 +122,7 @@ export class ModelDatabase {
       if (raw && Array.isArray(raw.context_profiles)) {
         return raw.context_profiles.map((c: any) => String(c.size_label ?? c.size));
       }
-    } catch (_) {}
+    } catch (_e) { void _e; }
     return entry.profiles ?? DEFAULT_MODEL_ENTRY.profiles;
   }
 
@@ -143,7 +143,7 @@ export class ModelDatabase {
       const idBase = entry.pattern.endsWith('*') ? entry.pattern.slice(0, -1) : entry.pattern;
       const raw = (RAW_PROFILES && RAW_PROFILES[idBase]) || null;
       if (raw && raw.family) return String(raw.family);
-    } catch (_) {}
+    } catch (_e) { void _e; }
     return entry.family ?? null;
   }
 }
@@ -190,9 +190,7 @@ function tryLoadProfilesFromCli(): ModelEntry[] | null {
     });
 
     return entries;
-  } catch (e) {
-    return null;
-  }
+  } catch (_e) { void _e; return null; }
 }
 
 // Load raw profiles map (id -> profile object) for direct sourcing of fields
@@ -209,9 +207,7 @@ function tryLoadRawProfiles(): Record<string, any> | null {
       map[String(id)] = m;
     }
     return map;
-  } catch (e) {
-    return null;
-  }
+  } catch (_e) { void _e; return null; }
 }
 
 // Prefer a generated TypeScript DB if present (faster startup, no runtime JSON parsing)
@@ -221,7 +217,7 @@ try {
   // Attempt to require a generated module in the same directory
   // The generated file `generated_model_db.ts` will compile to JS next to this file in the build output.
   // Use require to avoid static import errors when the generated file is absent.
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
   const gen = require('./generated_model_db');
   if (gen && Array.isArray(gen.GENERATED_MODEL_DB)) {
     GENERATED_ENTRIES = gen.GENERATED_MODEL_DB as any;
@@ -236,7 +232,7 @@ try {
       }
     }
   }
-} catch (e) {
+} catch (_e) { void _e; 
   // No generated file present; fall back to runtime JSON loader
   GENERATED_ENTRIES = tryLoadProfilesFromCli();
   GENERATED_RAW_PROFILES = tryLoadRawProfiles();

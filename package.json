@@ -25,18 +25,17 @@
     "task:credits": "node scripts/task-tracker.js credits",
     "task:status": "node scripts/task-tracker.js status",
     "task:sync": "node scripts/task-tracker.js sync",
-    "generate-model-db": "node scripts/generate_model_db.js"
-    ,
+    "generate-model-db": "node scripts/generate_model_db.js",
     "validate-profiles": "node scripts/validate_profiles.js",
     "prebuild": "npm run generate-model-db"
   },
   "devDependencies": {
-    "ajv": "^8.12.0",
     "@eslint/js": "^9.39.2",
     "@testing-library/react": "^16.3.2",
     "@types/jsdom": "^27.0.0",
     "@types/node": "^20.0.0",
     "@vitest/coverage-v8": "^4.0.17",
+    "ajv": "^8.12.0",
     "esbuild": "^0.27.2",
     "eslint": "^9.0.0",
     "eslint-plugin-react": "^7.37.5",
@@ -55,6 +54,7 @@
   "dependencies": {
     "jimp": "^1.6.0",
     "node-pty": "^1.1.0",
+    "sharp": "^0.34.5",
     "strip-ansi": "^7.1.2",
     "terminal-image": "^1.1.0",
     "tiktoken": "^1.0.22"

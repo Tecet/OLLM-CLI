@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
-import { homedir } from 'os';
+import { homedir, tmpdir } from 'os';
 import profilesData from '../../config/LLM_profiles.json' with { type: 'json' };
 import { defaultContextBehavior } from '../../config/defaults.js';
 import type { LLMProfile, ContextSettings, ContextBehaviorProfile, ContextProfile, UserModelEntry, ProfilesData } from '../../config/types.js';
@@ -23,7 +23,7 @@ export class ProfileManager {
     // Strategy: Use ~/.ollm/user_models.json
     // During tests (Vitest) prefer an isolated temp home directory to avoid global state
     const homeDir = process.env.VITEST
-      ? join(require('os').tmpdir(), `ollm-vitest-${process.pid}`)
+      ? join(tmpdir(), `ollm-vitest-${process.pid}`)
       : homedir();
     const configDir = join(homeDir, '.ollm');
     this.userModelsPath = join(configDir, 'user_models.json');

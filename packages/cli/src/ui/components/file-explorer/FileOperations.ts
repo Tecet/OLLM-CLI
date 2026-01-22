@@ -17,6 +17,10 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { PathSanitizer, PathTraversalError, WorkspaceBoundaryError } from './PathSanitizer.js';
+import type { ToolRegistry } from '@ollm/ollm-cli-core/tools/tool-registry.js';
+import type { PolicyEngine } from '@ollm/ollm-cli-core/policy/policyEngine.js';
+import type { MessageBus } from '@ollm/ollm-cli-core/hooks/messageBus.js';
+import type { ToolContext } from '@ollm/ollm-cli-core/tools/types.js';
 
 /**
  * Error thrown when a file operation fails
@@ -62,14 +66,30 @@ export type ConfirmationCallback = (message: string) => Promise<boolean>;
 
 /**
  * FileOperations service for safe file system operations
+ * 
+ * This service now integrates with the core tool system to:
+ * - Use tool registry for file operations
+ * - Apply policy engine for confirmations
+ * - Emit hook events for automation
  */
 export class FileOperations {
   private pathSanitizer: PathSanitizer;
   private workspaceRoot?: string;
+  private toolRegistry?: ToolRegistry;
+  private policyEngine?: PolicyEngine;
+  private messageBus?: MessageBus;
 
-  constructor(workspaceRoot?: string) {
+  constructor(
+    workspaceRoot?: string,
+    toolRegistry?: ToolRegistry,
+    policyEngine?: PolicyEngine,
+    messageBus?: MessageBus
+  ) {
     this.pathSanitizer = new PathSanitizer();
     this.workspaceRoot = workspaceRoot;
+    this.toolRegistry = toolRegistry;
+    this.policyEngine = policyEngine;
+    this.messageBus = messageBus;
   }
 
   /**
@@ -77,6 +97,23 @@ export class FileOperations {
    */
   setWorkspaceRoot(root: string): void {
     this.workspaceRoot = root;
+  }
+
+  /**
+   * Create tool context for tool invocations
+   */
+  private createToolContext(): ToolContext {
+    return {
+      messageBus: this.messageBus,
+      policyEngine: this.policyEngine,
+    };
+  }
+
+  /**
+   * Use tool system if available, otherwise fall back to direct filesystem operations
+   */
+  private shouldUseToolSystem(): boolean {
+    return !!(this.toolRegistry && this.policyEngine && this.messageBus);
   }
 
   /**
@@ -136,46 +173,23 @@ export class FileOperations {
    * 
    * @param filePath - Path where the file should be created
    * @param content - Initial content for the file (default: empty string)
+   * @param confirm - Optional confirmation callback for UI integration
    * @returns Result of the operation
    */
-  async createFile(filePath: string, content: string = ''): Promise<FileOperationResult> {
+  async createFile(filePath: string, content: string = '', confirm?: ConfirmationCallback): Promise<FileOperationResult> {
     try {
       // Validate path
       const sanitizedPath = this.validatePath(filePath);
       
-      // Check if file already exists
-      try {
-        await fs.access(sanitizedPath);
-        return {
-          success: false,
-          error: 'File already exists',
-          path: sanitizedPath
-        };
-      } catch {
-        // File doesn't exist, which is what we want
+      // Use tool system if available
+      if (this.shouldUseToolSystem()) {
+        return await this.createFileWithTool(sanitizedPath, content, confirm);
       }
       
-      // Check parent directory write permission
-      if (!await this.checkParentWritePermission(sanitizedPath)) {
-        throw new PermissionError(sanitizedPath, 'create file');
-      }
-      
-      // Create the file
-      await fs.writeFile(sanitizedPath, content, 'utf-8');
-      
-      return {
-        success: true,
-        path: sanitizedPath
-      };
+      // Fall back to direct filesystem operations
+      return await this.createFileDirectly(sanitizedPath, content);
     } catch (error) {
       if (error instanceof PathTraversalError || error instanceof WorkspaceBoundaryError) {
-        return {
-          success: false,
-          error: error.message,
-          path: filePath
-        };
-      }
-      if (error instanceof PermissionError) {
         return {
           success: false,
           error: error.message,
@@ -190,6 +204,93 @@ export class FileOperations {
         path: filePath
       };
     }
+  }
+
+  /**
+   * Create file using tool system (with policy enforcement and hook events)
+   */
+  private async createFileWithTool(
+    sanitizedPath: string,
+    content: string,
+    confirm?: ConfirmationCallback
+  ): Promise<FileOperationResult> {
+    const tool = this.toolRegistry!.get('write_file');
+    if (!tool) {
+      // Tool not available, fall back to direct operation
+      return await this.createFileDirectly(sanitizedPath, content);
+    }
+
+    const invocation = tool.createInvocation(
+      { path: sanitizedPath, content, overwrite: false },
+      this.createToolContext()
+    );
+
+    // Check if validation error
+    if ('type' in invocation && invocation.type === 'ValidationError') {
+      return {
+        success: false,
+        error: invocation.message,
+        path: sanitizedPath
+      };
+    }
+
+    // Check if confirmation needed
+    const shouldConfirm = await invocation.shouldConfirmExecute(new AbortController().signal);
+    if (shouldConfirm && confirm) {
+      const confirmed = await confirm(
+        `Create file ${path.basename(sanitizedPath)}?\n${shouldConfirm.description}`
+      );
+      if (!confirmed) {
+        return {
+          success: false,
+          error: 'Operation cancelled by user',
+          path: sanitizedPath
+        };
+      }
+    }
+
+    // Execute the tool
+    const _result = await invocation.execute(new AbortController().signal);
+
+    // Emit hook event
+    if (this.messageBus) {
+      await this.messageBus.emit('file:created', { path: sanitizedPath, content });
+    }
+
+    return {
+      success: true,
+      path: sanitizedPath
+    };
+  }
+
+  /**
+   * Create file directly (legacy fallback)
+   */
+  private async createFileDirectly(sanitizedPath: string, content: string): Promise<FileOperationResult> {
+    // Check if file already exists
+    try {
+      await fs.access(sanitizedPath);
+      return {
+        success: false,
+        error: 'File already exists',
+        path: sanitizedPath
+      };
+    } catch {
+      // File doesn't exist, which is what we want
+    }
+    
+    // Check parent directory write permission
+    if (!await this.checkParentWritePermission(sanitizedPath)) {
+      throw new PermissionError(sanitizedPath, 'create file');
+    }
+    
+    // Create the file
+    await fs.writeFile(sanitizedPath, content, 'utf-8');
+    
+    return {
+      success: true,
+      path: sanitizedPath
+    };
   }
 
   /**

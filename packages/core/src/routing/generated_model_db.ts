@@ -644,7 +644,6 @@ export const GENERATED_RAW_PROFILES = {
     ],
     "tool_support": false,
     "ollama_url": "https://ollama.com/library/gemma3",
-    "context_window": 131072,
     "context_profiles": [
       {
         "size": 4096,
@@ -706,7 +705,6 @@ export const GENERATED_RAW_PROFILES = {
     ],
     "tool_support": true,
     "ollama_url": "https://ollama.com/library/qwen3-vl",
-    "context_window": 131072,
     "context_profiles": [
       {
         "size": 4096,
@@ -771,7 +769,6 @@ export const GENERATED_RAW_PROFILES = {
     "reasoning_buffer": "Variable",
     "warmup_timeout": 120000,
     "ollama_url": "https://ollama.com/library/deepseek-r1",
-    "context_window": 131072,
     "context_profiles": [
       {
         "size": 4096,

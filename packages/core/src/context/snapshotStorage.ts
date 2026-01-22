@@ -482,8 +482,6 @@ export class SnapshotStorageImpl implements SnapshotStorage {
       snapshots: entries
     };
 
-    const tempPath = `${indexPath}.tmp`;
-
     try {
       // Write index directly to final location to avoid rename-related ENOENT on some platforms
       await fs.writeFile(indexPath, JSON.stringify(index, null, 2), 'utf-8');
@@ -562,17 +560,28 @@ export class SnapshotStorageImpl implements SnapshotStorage {
       } catch {
         // ignore and fall back to scanning directories
       }
-
       // List all session directories
       const sessions = await fs.readdir(this.baseDir);
-      
+
+      // First, directly check for snapshot file existence under each session's snapshots directory.
+      for (const sessionId of sessions) {
+        try {
+          const candidate = path.join(this.baseDir, sessionId, 'snapshots', `snapshot-${snapshotId}.json`);
+          await fs.access(candidate);
+          return sessionId;
+        } catch {
+          // not present, continue
+        }
+      }
+
+      // Fallback: check indices if present
       for (const sessionId of sessions) {
         const index = await this.loadIndex(sessionId);
         if (index.some(e => e.id === snapshotId)) {
           return sessionId;
         }
       }
-      
+
       return null;
     } catch {
       return null;

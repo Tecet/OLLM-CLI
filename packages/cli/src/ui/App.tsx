@@ -19,7 +19,7 @@ import { UIProvider, useUI, TabType } from '../features/context/UIContext.js';
 import { ChatProvider, useChat } from '../features/context/ChatContext.js';
 import { GPUProvider, useGPU } from '../features/context/GPUContext.js';
 import { ReviewProvider, useReview } from '../features/context/ReviewContext.js';
-import { ServiceProvider } from '../features/context/ServiceContext.js';
+import { ServiceProvider, useServices } from '../features/context/ServiceContext.js';
 import { ContextManagerProvider, useContextManager } from '../features/context/ContextManagerContext.js';
 import { ModelProvider, useModel } from '../features/context/ModelContext.js';
 import { ActiveContextProvider } from '../features/context/ActiveContextState.js';
@@ -82,6 +82,7 @@ interface AppContentProps {
 function AppContent({ config }: AppContentProps) {
   // Use global UI state for launch screen visibility
   const { state: uiState, setActiveTab, toggleSidePanel, setLaunchScreenVisible } = useUI();
+  const { container: serviceContainer } = useServices();
   
   const [debugMode, setDebugMode] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
@@ -865,6 +866,9 @@ ${toolSupport}
               restoreState={true}
               excludePatterns={['node_modules', '.git', 'dist', 'coverage']}
               hasFocus={true}
+              toolRegistry={serviceContainer?.getToolRegistry()}
+              policyEngine={serviceContainer?.getPolicyEngine()}
+              messageBus={serviceContainer?.getHookService()?.getMessageBus()}
             />
           );
         case 'search':

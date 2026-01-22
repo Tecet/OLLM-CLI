@@ -29,6 +29,9 @@ import { FollowModeService } from './FollowModeService.js';
 import { ExplorerPersistence } from './ExplorerPersistence.js';
 import { PathSanitizer } from './PathSanitizer.js';
 import type { WorkspaceConfig, FocusedFile } from './types.js';
+import type { ToolRegistry } from '@ollm/ollm-cli-core/tools/tool-registry.js';
+import type { PolicyEngine } from '@ollm/ollm-cli-core/policy/policyEngine.js';
+import type { MessageBus } from '@ollm/ollm-cli-core/hooks/messageBus.js';
 
 /**
  * Props for FileExplorerComponent
@@ -46,6 +49,12 @@ export interface FileExplorerComponentProps {
   excludePatterns?: string[];
   /** Whether the component has focus for keyboard input */
   hasFocus?: boolean;
+  
+  /** Tool system integration (optional) */
+  toolRegistry?: ToolRegistry;
+  policyEngine?: PolicyEngine;
+  messageBus?: MessageBus;
+  
   /** Callback when workspace is loaded */
   onWorkspaceLoaded?: (config: WorkspaceConfig) => void;
   /** Callback when state is restored */
@@ -104,6 +113,9 @@ export function FileExplorerComponent({
   restoreState = true,
   excludePatterns = [],
   hasFocus = true,
+  toolRegistry,
+  policyEngine,
+  messageBus,
   onWorkspaceLoaded,
   onStateRestored,
   onError,
@@ -121,9 +133,14 @@ export function FileExplorerComponent({
     const pathSanitizer = new PathSanitizer();
     const gitStatusService = new GitStatusService();
     const fileTreeService = new FileTreeService();
-    const focusSystem = new FocusSystem();
+    const focusSystem = new FocusSystem(messageBus);  // Pass messageBus
     const editorIntegration = new EditorIntegration();
-    const fileOperations = new FileOperations(rootPath);
+    const fileOperations = new FileOperations(
+      rootPath,
+      toolRegistry,   // Pass toolRegistry
+      policyEngine,   // Pass policyEngine
+      messageBus      // Pass messageBus
+    );
     const followModeService = new FollowModeService();
     const workspaceManager = new WorkspaceManager();
     const explorerPersistence = new ExplorerPersistence(rootPath);

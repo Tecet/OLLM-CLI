@@ -19,6 +19,7 @@ import * as fs from 'fs/promises';
 import { FocusedFile } from './types.js';
 import { PathSanitizer } from './PathSanitizer.js';
 import { handleError } from './ErrorHandler.js';
+import type { MessageBus } from '@ollm/ollm-cli-core/hooks/messageBus.js';
 
 /**
  * Maximum file size for focus (8KB)
@@ -31,10 +32,12 @@ const MAX_FILE_SIZE = 8 * 1024; // 8KB in bytes
 export class FocusSystem {
   private focusedFiles: Map<string, FocusedFile>;
   private pathSanitizer: PathSanitizer;
+  private messageBus?: MessageBus;
 
-  constructor() {
+  constructor(messageBus?: MessageBus) {
     this.focusedFiles = new Map();
     this.pathSanitizer = new PathSanitizer();
+    this.messageBus = messageBus;
   }
 
   /**
@@ -86,6 +89,11 @@ export class FocusSystem {
       // Add to focused files map
       this.focusedFiles.set(sanitizedPath, focusedFile);
 
+      // Emit hook event
+      if (this.messageBus) {
+        await this.messageBus.emit('file:focused', { path: sanitizedPath, size: fileSize });
+      }
+
       return focusedFile;
     } catch (error) {
       const errorInfo = handleError(error, {
@@ -106,6 +114,11 @@ export class FocusSystem {
     // Sanitize the path to ensure we're using the same key
     const sanitizedPath = this.pathSanitizer.sanitize(filePath);
     this.focusedFiles.delete(sanitizedPath);
+
+    // Emit hook event
+    if (this.messageBus) {
+      this.messageBus.emitSync('file:unfocused', { path: sanitizedPath });
+    }
   }
 
   /**
