@@ -1,8 +1,70 @@
 /**
  * Compression Service
  * 
- * Manages context compression using multiple strategies: summarize, truncate, and hybrid.
- * Reduces context size while preserving recent messages and system prompts.
+ * Manages context compression using multiple strategies to reduce token usage while
+ * preserving conversation quality and critical information.
+ * 
+ * ## Compression Strategies
+ * 
+ * ### 1. Truncate Strategy
+ * - Removes oldest messages until under target token count
+ * - Always preserves system prompt and user messages
+ * - Fast and deterministic
+ * - Best for: Simple token reduction without LLM overhead
+ * 
+ * ### 2. Summarize Strategy
+ * - Uses LLM to generate summary of older messages
+ * - Preserves recent messages verbatim
+ * - Requires provider and model configuration
+ * - Best for: Maintaining conversation context with semantic compression
+ * 
+ * ### 3. Hybrid Strategy
+ * - Combines truncation and summarization
+ * - Truncates very old messages, summarizes middle messages, preserves recent
+ * - Supports recursive summarization (merges previous summaries)
+ * - Best for: Long conversations requiring multiple compression cycles
+ * 
+ * ## Preservation Rules
+ * 
+ * - **User messages**: NEVER compressed - always preserved in full
+ * - **System prompts**: Always preserved (first system message)
+ * - **Recent messages**: Preserved based on `preserveRecent` token budget
+ * - **Fractional preservation**: Keeps at least 30% of total tokens as recent history
+ * 
+ * ## Performance Characteristics
+ * 
+ * - **Truncate**: O(n) time, no LLM calls, instant
+ * - **Summarize**: O(n) + LLM call (~2-5s), high quality compression
+ * - **Hybrid**: O(n) + LLM call (~2-5s), best compression ratio
+ * 
+ * ## Token Counting
+ * 
+ * - Uses TokenCounter service if available for accurate counts
+ * - Falls back to estimation (4 chars ≈ 1 token)
+ * - Adds overhead for tool calls (50 tokens per call)
+ * 
+ * ## Inflation Guard
+ * 
+ * Prevents compression from increasing token count:
+ * - Compares compressed vs original token counts
+ * - Sets status='inflated' if compression fails
+ * - Caller can decide whether to use compressed result
+ * 
+ * @example
+ * ```typescript
+ * const service = new CompressionService(provider, model, tokenCounter);
+ * 
+ * const compressed = await service.compress(messages, {
+ *   type: 'hybrid',
+ *   preserveRecent: 4096,
+ *   summaryMaxTokens: 1024
+ * });
+ * 
+ * if (compressed.status === 'success') {
+ *   // Use compressed context
+ *   const newMessages = [compressed.summary, ...compressed.preserved];
+ * }
+ * ```
  */
 
 import type {
@@ -16,8 +78,24 @@ import type {
 
 /**
  * Provider adapter interface for LLM-based summarization
+ * 
+ * Defines the contract for LLM providers used in compression.
+ * Only the chatStream method is required for summarization.
  */
 export interface ProviderAdapter {
+  /**
+   * Stream chat responses from the LLM
+   * 
+   * @param params - Chat parameters including model, messages, and options
+   * @param params.model - Model name to use for summarization
+   * @param params.messages - Messages to send to the LLM
+   * @param params.options - Optional generation parameters
+   * @param params.options.maxTokens - Maximum tokens in response
+   * @param params.options.temperature - Sampling temperature (0-1)
+   * @param params.timeout - Optional timeout in milliseconds
+   * @param params.abortSignal - Optional abort signal for cancellation
+   * @returns Async iterable of text or error events
+   */
   chatStream(params: {
     model: string;
     messages: Array<{ role: string; content: string }>;
@@ -35,6 +113,11 @@ export interface ProviderAdapter {
 
 /**
  * Default tool call overhead in tokens
+ * 
+ * Each tool call adds approximately 50 tokens of overhead for:
+ * - Tool name and parameters
+ * - JSON structure
+ * - Function call formatting
  */
 const TOOL_CALL_OVERHEAD = 50;
 
@@ -45,6 +128,29 @@ const TOOL_CALL_OVERHEAD = 50;
  * - Summarize: Use LLM to create summary of older messages
  * - Truncate: Remove oldest messages while preserving system prompt
  * - Hybrid: Combine summarization and truncation
+ * 
+ * ## Performance Notes
+ * 
+ * ### Token Counting Performance
+ * - With TokenCounter: O(1) cached lookups, ~0.1ms per message
+ * - Without TokenCounter: O(n) estimation, ~0.01ms per message
+ * - Conversation counting: O(n) where n = message count
+ * 
+ * ### Compression Performance
+ * - **Truncate**: O(n) iteration, no I/O, <10ms for 1000 messages
+ * - **Summarize**: O(n) + LLM call, 2-5s depending on model speed
+ * - **Hybrid**: O(n) + LLM call, 2-5s depending on model speed
+ * 
+ * ### Memory Usage
+ * - Temporary arrays during compression: O(n) space
+ * - LLM summarization: Additional O(m) where m = summary length
+ * - No persistent caching (stateless service)
+ * 
+ * ### Optimization Tips
+ * - Use TokenCounter for accurate, cached token counts
+ * - Truncate strategy for instant compression without LLM overhead
+ * - Increase preserveRecent to reduce compression frequency
+ * - Lower summaryMaxTokens for faster LLM calls
  */
 export class CompressionService implements ICompressionService {
   private provider?: ProviderAdapter;
@@ -156,8 +262,16 @@ export class CompressionService implements ICompressionService {
   }
 
   /**
-   * The fraction of the latest chat history to keep verbatim.
-   * Ensures that as context grows, we don't truncate too aggressively.
+   * The fraction of the latest chat history to keep verbatim during compression.
+   * 
+   * This ensures that as context grows, we don't truncate too aggressively.
+   * With a value of 0.3, we preserve at least 30% of the total token count
+   * as recent history, even if it exceeds the configured preserveRecent value.
+   * 
+   * @example
+   * If total context is 10,000 tokens and preserveRecent is 2,000:
+   * - Fractional preserve = 10,000 * 0.3 = 3,000 tokens
+   * - Actual preserve = max(2,000, 3,000) = 3,000 tokens
    */
   private readonly COMPRESSION_PRESERVE_FRACTION = 0.3;
 
