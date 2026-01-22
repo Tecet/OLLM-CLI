@@ -288,8 +288,6 @@ export function HooksTab({ windowSize = 30, windowWidth }: HooksTabProps) {
 
   // Handle keyboard input
   useInput((input, key) => {
-    if (!hasFocus) return;
-
     // Handle dialog keyboard input
     if (dialogState.type !== null) {
       if (key.escape || input === 'c' || input === 'C') {
@@ -302,6 +300,9 @@ export function HooksTab({ windowSize = 30, windowWidth }: HooksTabProps) {
       return;
     }
 
+    // Allow ESC to bubble to global handler when no dialog is open
+    if (key.escape) return;
+
     // Handle navigation
     if (key.upArrow) {
       handleNavigateUp();
@@ -309,7 +310,8 @@ export function HooksTab({ windowSize = 30, windowWidth }: HooksTabProps) {
       handleNavigateDown();
     } else if (key.leftArrow || key.rightArrow || key.return) {
       handleToggleCurrent();
-    } else if (key.escape || input === '0') {
+    } else if (input === '0') {
+      // '0' still works as shortcut to exit
       exitToNavBar();
     } else if (input === 'a' || input === 'A') {
       openAddDialog();

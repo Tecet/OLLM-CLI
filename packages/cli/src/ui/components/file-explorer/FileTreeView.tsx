@@ -19,11 +19,13 @@ import { SyntaxViewer } from './SyntaxViewer.js';
 import { QuickActionsMenu, type QuickAction } from './QuickActionsMenu.js';
 import { ConfirmationDialog } from './ConfirmationDialog.js';
 import { QuickOpenDialog } from './QuickOpenDialog.js';
+import { FileSearchDialog, type SearchResult } from './FileSearchDialog.js';
 import { FileOperations } from './FileOperations.js';
 import { FollowModeService } from './FollowModeService.js';
 import { HelpPanel } from './HelpPanel.js';
-import { LoadingIndicator, useLoadingState } from './LoadingIndicator.js';
+import { LoadingIndicator } from './LoadingIndicator.js';
 import { useKeybinds } from '../../../features/context/KeybindsContext.js';
+import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { isKey } from '../../utils/keyUtils.js';
 import type { FileNode, GitStatus } from './types.js';
 
@@ -41,6 +43,10 @@ export interface FileTreeViewProps {
   fileOperations: FileOperations;
   /** Follow mode service instance for detecting LLM-referenced files */
   followModeService?: FollowModeService;
+  /** Tool registry for search functionality */
+  toolRegistry?: any; // Using any to avoid circular dependency
+  /** Root path for search operations */
+  rootPath?: string;
   /** Exclude patterns for filtering */
   excludePatterns?: string[];
   /** Whether the component has focus */
@@ -155,7 +161,7 @@ function calculateIndentation(node: FileNode, rootPath: string): number {
  * window of nodes. Displays icons, git status colors, and focus indicators.
  * Supports keyboard navigation with debouncing and file focusing.
  */
-export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, fileOperations, followModeService, excludePatterns = [], hasFocus = true }: FileTreeViewProps) {
+export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, fileOperations, followModeService, toolRegistry, rootPath = process.cwd(), excludePatterns = [], hasFocus = true }: FileTreeViewProps) {
   const { 
     state: treeState, 
     setVisibleWindow, 
@@ -169,6 +175,7 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
   } = useFileTree();
   const { isFocused, addFocusedFile, removeFocusedFile } = useFileFocus();
   const { activeKeybinds } = useKeybinds();
+  const focusManager = useFocusManager();
 
   // Status message state for user feedback
   const [statusMessage, setStatusMessage] = useState<string>('');
@@ -178,7 +185,7 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
   const [helpPanelOpen, setHelpPanelOpen] = useState(false);
 
   // Loading state for long operations
-  const [isLoading, setIsLoading] = useLoadingState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState<string>('Loading...');
 
   // Viewer modal state
@@ -194,6 +201,9 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
   // Quick Open dialog state
   const [quickOpenState, setQuickOpenState] = useState(false);
   const [quickOpenHistory, setQuickOpenHistory] = useState<string[]>([]);
+
+  // Search dialog state
+  const [searchDialogOpen, setSearchDialogOpen] = useState(false);
 
   // Confirmation dialog state
   const [confirmationState, setConfirmationState] = useState<{ 
@@ -234,6 +244,29 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
     showStatus(`Selected: ${node.name}`);
     setQuickOpenState(false);
   }, [treeState.root, showStatus]);
+
+  /**
+   * Handle search result selection
+   */
+  const handleSearchSelect = useCallback(async (result: SearchResult) => {
+    try {
+      // Expand to the file path
+      await expandToPath(result.path);
+      
+      // Open the file in viewer
+      const content = await readFile(result.path, 'utf-8');
+      setViewerState({
+        isOpen: true,
+        filePath: result.path,
+        content,
+      });
+      
+      showStatus(`Opened: ${result.path}:${result.line}`);
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      showStatus(`Error opening file: ${errorMsg}`);
+    }
+  }, [expandToPath, showStatus]);
 
   /**
    * Update Quick Open history
@@ -312,6 +345,9 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
         content,
       });
       
+      // Register modal with focus manager
+      focusManager.openModal('syntax-viewer');
+      
       setStatusMessage(''); 
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';
@@ -319,14 +355,16 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
     } finally {
       setIsLoading(false);
     }
-  }, [getSelectedNode, showStatus, setIsLoading]);
+  }, [getSelectedNode, showStatus, setIsLoading, focusManager]);
 
   /**
    * Close the syntax viewer modal
    */
   const closeViewer = useCallback(() => {
     setViewerState(null);
-  }, []);
+    // Return focus to parent (file-tree)
+    focusManager.closeModal();
+  }, [focusManager]);
 
   /**
    * Open file in external editor
@@ -501,38 +539,87 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
     if (helpPanelOpen) {
       if (isKey(input, key, activeKeybinds.chat.cancel) || input === '?') {
         setHelpPanelOpen(false);
+        focusManager.closeModal();
       }
       return;
     }
 
     if (viewerState?.isOpen) {
       if (isKey(input, key, activeKeybinds.chat.cancel)) {
-        closeViewer();
+        closeViewer();  // Will call focusManager.closeModal()
       }
       return;
     }
 
     if (quickOpenState) {
+      // Quick open dialog handles its own input
+      return;
+    }
+
+    if (searchDialogOpen) {
+      // Search dialog handles its own input
       return;
     }
 
     if (menuOpen) {
       if (isKey(input, key, activeKeybinds.chat.cancel)) {
         setMenuOpen(false);
+        focusManager.closeModal();
       }
       return;
     }
 
     if (input === '?') {
       setHelpPanelOpen(true);
+      focusManager.openModal('help-panel');
       return;
     }
 
     if (isKey(input, key, activeKeybinds.fileExplorer.quickOpen)) {
       setQuickOpenState(true);
+      focusManager.openModal('quick-open-dialog');
       return;
     }
 
+    // Ctrl+F to open search dialog
+    if (input === 'f' && key.ctrl) {
+      setSearchDialogOpen(true);
+      focusManager.openModal('search-dialog');
+      return;
+    }
+
+    // Arrow key navigation (direct support)
+    if (key.downArrow) {
+      debouncedAction(() => moveCursorDown());
+      return;
+    } else if (key.upArrow) {
+      debouncedAction(() => moveCursorUp());
+      return;
+    } else if (key.leftArrow) {
+      const selectedNode = getSelectedNode();
+      if (selectedNode && selectedNode.type === 'directory' && selectedNode.expanded) {
+        debouncedAction(() => {
+          collapseDirectory(selectedNode.path);
+          fileTreeService.collapseDirectory(selectedNode);
+        });
+      }
+      return;
+    } else if (key.rightArrow) {
+      const selectedNode = getSelectedNode();
+      if (selectedNode && selectedNode.type === 'directory' && !selectedNode.expanded) {
+        (async () => {
+          try {
+            await fileTreeService.expandDirectory(selectedNode, excludePatterns);
+            expandDirectory(selectedNode.path);
+          } catch (_err) {
+            showStatus('Error expanding directory');
+          }
+        })();
+      }
+      return;
+    }
+
+    // Keybind-based navigation (fallback)
     if (isKey(input, key, activeKeybinds.fileExplorer.moveDown)) {
       debouncedAction(() => moveCursorDown());
     } else if (isKey(input, key, activeKeybinds.fileExplorer.moveUp)) {
@@ -586,6 +673,7 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
       openInEditor();
     } else if (isKey(input, key, activeKeybinds.fileExplorer.actions)) {
       setMenuOpen(true);
+      focusManager.openModal('quick-actions-menu');
     } else if (isKey(input, key, activeKeybinds.fileExplorer.toggleFollow)) {
       toggleFollowMode();
       const newState = !treeState.followModeEnabled;
@@ -595,6 +683,7 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
     helpPanelOpen,
     viewerState,
     quickOpenState,
+    searchDialogOpen,
     menuOpen,
     closeViewer,
     debouncedAction,
@@ -614,7 +703,16 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
     activeKeybinds
   ]);
 
-  useInput(handleInput, { isActive: hasFocus });
+  useInput(handleInput, { 
+    isActive: hasFocus && (
+      focusManager.isFocused('file-tree') || 
+      focusManager.isFocused('syntax-viewer') ||
+      focusManager.isFocused('help-panel') ||
+      focusManager.isFocused('search-dialog') ||
+      focusManager.isFocused('quick-open-dialog') ||
+      focusManager.isFocused('quick-actions-menu')
+    )
+  });
 
   useEffect(() => {
     return () => {
@@ -656,7 +754,7 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
     );
   }
 
-  const rootPath = treeState.root.path;
+  const treeRootPath = treeState.root.path;
 
   return (
     <Box flexDirection="column" height="100%">
@@ -675,6 +773,16 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
           onClose={() => setQuickOpenState(false)}
           history={quickOpenHistory}
           onHistoryUpdate={updateQuickOpenHistory}
+        />
+      )}
+
+      {searchDialogOpen && (
+        <FileSearchDialog
+          visible={searchDialogOpen}
+          onClose={() => setSearchDialogOpen(false)}
+          onSelect={handleSearchSelect}
+          toolRegistry={toolRegistry}
+          rootPath={treeState.root?.path || rootPath}
         />
       )}
 
@@ -730,7 +838,7 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
               
               const isSelected = index === treeState.cursorPosition;
               const isFocusedFile = isFocused(node.path);
-              const indentation = calculateIndentation(node, rootPath);
+              const indentation = calculateIndentation(node, treeRootPath);
               const icon = getNodeIcon(node);
               const gitColor = getGitStatusColor(node.gitStatus);
 

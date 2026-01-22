@@ -474,8 +474,11 @@ export class SnapshotStorageImpl implements SnapshotStorage {
   private async saveIndex(sessionId: string, entries: SnapshotIndexEntry[]): Promise<void> {
     const indexPath = this.getIndexPath(sessionId);
     const snapshotDir = this.getSnapshotDir(sessionId);
-    
+    const indexDir = path.dirname(indexPath);
+
+    // Ensure the snapshot directory (and index parent) exist
     await this.ensureDir(snapshotDir);
+    await this.ensureDir(indexDir);
 
     const index: SnapshotIndex = {
       version: SNAPSHOT_VERSION,

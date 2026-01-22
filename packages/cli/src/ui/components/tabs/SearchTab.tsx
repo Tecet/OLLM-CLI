@@ -37,10 +37,8 @@ export function SearchTab({ width }: SearchTabProps) {
   useInput((input, key) => {
     if (!hasFocus) return;
 
-    if (key.escape) {
-      exitToNavBar();
-      return;
-    }
+    // Allow ESC to bubble to global handler
+    if (key.escape) return;
 
     // Input Region Handling
     if (activeRegion === 'input') {

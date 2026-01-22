@@ -47,7 +47,7 @@ import type {
 import type { SnapshotManager as CoreSnapshotManager } from '@ollm/core';
 import { SnapshotManager as PromptsSnapshotManager } from '@ollm/core';
 
-import { SettingsService } from '../../config/settingsService';
+import { SettingsService } from '../../config/settingsService.js';
 
 // Global reference for CLI commands
 let globalContextManager: ContextManagerActions | null = null;

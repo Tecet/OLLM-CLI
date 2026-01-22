@@ -96,19 +96,21 @@ export class HookFileService {
       const hookId = path.basename(filePath, '.json');
 
       // Build UIHook object
+      const raw = data as any;
+
       const hook: UIHook = {
         id: hookId,
-        name: data.name,
-        version: data.version || '1.0.0',
-        description: data.description,
+        name: raw.name,
+        version: raw.version || '1.0.0',
+        description: raw.description,
         when: {
-          type: data.when.type,
-          patterns: data.when.patterns,
+          type: raw.when?.type,
+          patterns: raw.when?.patterns,
         },
         then: {
-          type: data.then.type,
-          prompt: data.then.prompt,
-          command: data.then.command,
+          type: raw.then?.type,
+          prompt: raw.then?.prompt,
+          command: raw.then?.command,
         },
         enabled: true, // Will be overridden by settings
         trusted: false, // Will be set by HookRegistry
@@ -257,8 +259,10 @@ export class HookFileService {
     if (!d.when || typeof d.when !== 'object') {
       errors.push('Missing required field: when');
     } else {
+      const when = d.when as Record<string, any>;
+
       // Validate when.type
-      if (!d.when.type) {
+      if (!when.type) {
         errors.push('Missing required field: when.type');
       } else {
         const validEventTypes = [
@@ -269,14 +273,14 @@ export class HookFileService {
           'promptSubmit',
           'agentStop',
         ];
-        if (!validEventTypes.includes(d.when.type)) {
-          errors.push(`Invalid event type: ${d.when.type}`);
+        if (!validEventTypes.includes(when.type)) {
+          errors.push(`Invalid event type: ${when.type}`);
         }
 
         // File events require patterns
         const fileEventTypes = ['fileEdited', 'fileCreated', 'fileDeleted'];
-        if (fileEventTypes.includes(d.when.type)) {
-          if (!d.when.patterns || !Array.isArray(d.when.patterns) || d.when.patterns.length === 0) {
+        if (fileEventTypes.includes(when.type)) {
+          if (!when.patterns || !Array.isArray(when.patterns) || when.patterns.length === 0) {
             errors.push('File event types require at least one pattern');
           }
         }
@@ -286,25 +290,27 @@ export class HookFileService {
     if (!d.then || typeof d.then !== 'object') {
       errors.push('Missing required field: then');
     } else {
+      const then = d.then as Record<string, any>;
+
       // Validate then.type
-      if (!d.then.type) {
+      if (!then.type) {
         errors.push('Missing required field: then.type');
       } else {
         const validActionTypes = ['askAgent', 'runCommand'];
-        if (!validActionTypes.includes(d.then.type)) {
-          errors.push(`Invalid action type: ${d.then.type}`);
+        if (!validActionTypes.includes(then.type)) {
+          errors.push(`Invalid action type: ${then.type}`);
         }
 
         // askAgent requires prompt
-        if (d.then.type === 'askAgent') {
-          if (!d.then.prompt || typeof d.then.prompt !== 'string' || d.then.prompt.trim() === '') {
+        if (then.type === 'askAgent') {
+          if (!then.prompt || typeof then.prompt !== 'string' || then.prompt.trim() === '') {
             errors.push('askAgent action requires a prompt');
           }
         }
 
         // runCommand requires command
-        if (d.then.type === 'runCommand') {
-          if (!d.then.command || typeof d.then.command !== 'string' || d.then.command.trim() === '') {
+        if (then.type === 'runCommand') {
+          if (!then.command || typeof then.command !== 'string' || then.command.trim() === '') {
             errors.push('runCommand action requires a command');
           }
         }

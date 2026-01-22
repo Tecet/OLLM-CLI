@@ -18,7 +18,6 @@ import { WorkspaceProvider } from './WorkspaceContext.js';
 import { FileFocusProvider } from './FileFocusContext.js';
 import { FileTreeProvider } from './FileTreeContext.js';
 import { FileTreeView } from './FileTreeView.js';
-import { FocusedFilesPanel } from './FocusedFilesPanel.js';
 import { WorkspaceManager } from './WorkspaceManager.js';
 import { FileTreeService } from './FileTreeService.js';
 import { GitStatusService } from './GitStatusService.js';
@@ -28,7 +27,7 @@ import { FileOperations } from './FileOperations.js';
 import { FollowModeService } from './FollowModeService.js';
 import { ExplorerPersistence } from './ExplorerPersistence.js';
 import { PathSanitizer } from './PathSanitizer.js';
-import type { WorkspaceConfig, FocusedFile } from './types.js';
+import type { WorkspaceConfig, FocusedFile, FileNode } from './types.js';
 import type { ToolRegistry } from '@ollm/ollm-cli-core/tools/tool-registry.js';
 import type { PolicyEngine } from '@ollm/ollm-cli-core/policy/policyEngine.js';
 import type { MessageBus } from '@ollm/ollm-cli-core/hooks/messageBus.js';
@@ -180,8 +179,10 @@ export function FileExplorerComponent({
 
   // Initial tree state
   const [treeState, setTreeState] = useState<{
+    root: FileNode | null;
     expandedPaths: Set<string>;
   }>({
+    root: null,
     expandedPaths: new Set(),
   });
 
@@ -242,9 +243,10 @@ export function FileExplorerComponent({
 
           // Restore expanded directories
           if (persistedState.expandedDirectories.length > 0) {
-            setTreeState({
+            setTreeState(prev => ({
+              ...prev,
               expandedPaths: new Set(persistedState.expandedDirectories),
-            });
+            }));
           }
 
           // Restore focused files
@@ -295,9 +297,18 @@ export function FileExplorerComponent({
         statusMessage: 'Building file tree...',
       }));
 
-      // The FileTreeView component will handle building the tree
-      // We just need to mark initialization as complete
-
+      // Build the file tree from rootPath
+      const rootNode = await services.fileTreeService.buildTree({
+        rootPath,
+        excludePatterns,
+      });
+      
+      // Set the root node in tree state
+      setTreeState(prev => ({
+        ...prev,
+        root: rootNode,
+      }));
+      
       // Initialization complete
       setInitState({
         isInitializing: false,
@@ -387,26 +398,20 @@ export function FileExplorerComponent({
       <FileFocusProvider initialState={focusState}>
         <FileTreeProvider initialState={treeState}>
           <Box flexDirection="column" height="100%">
-            {/* Main content area with file tree and focused files panel */}
+            {/* Main content area with file tree */}
             <Box flexDirection="row" flexGrow={1}>
-              {/* File tree view (left side, takes 70% width) */}
-              <Box flexDirection="column" flexGrow={7} marginRight={1}>
+              {/* File tree view (full width) */}
+              <Box flexDirection="column" flexGrow={1}>
                 <FileTreeView
                   fileTreeService={services.fileTreeService}
                   focusSystem={services.focusSystem}
                   editorIntegration={services.editorIntegration}
                   fileOperations={services.fileOperations}
                   followModeService={services.followModeService}
+                  toolRegistry={toolRegistry}
+                  rootPath={rootPath}
                   excludePatterns={excludePatterns}
                   hasFocus={hasFocus}
-                />
-              </Box>
-
-              {/* Focused files panel (right side, takes 30% width) */}
-              <Box flexDirection="column" flexGrow={3}>
-                <FocusedFilesPanel
-                  title="Focused Files"
-                  showDetails={true}
                 />
               </Box>
             </Box>

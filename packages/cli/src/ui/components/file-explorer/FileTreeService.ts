@@ -69,9 +69,9 @@ export class FileTreeService {
    */
   private async buildTreeRecursive(
     nodePath: string,
-    isExcluded: (path: string) => boolean,
-    currentDepth: number,
-    maxDepth: number
+    _isExcluded: (path: string) => boolean,
+    _currentDepth: number,
+    _maxDepth: number
   ): Promise<FileNode> {
     try {
       const stats = await fs.stat(nodePath);
@@ -84,10 +84,13 @@ export class FileTreeService {
         type: stats.isDirectory() ? 'directory' : 'file',
       };
 
-      // If it's a directory and we haven't exceeded max depth, load children
-      if (stats.isDirectory() && currentDepth < maxDepth) {
+      // If it's a directory, always initialize children array
+      if (stats.isDirectory()) {
         node.expanded = false; // Directories start collapsed (lazy loading)
         node.children = []; // Empty children array, will be loaded on expand
+        
+        // If we haven't exceeded max depth, we can load children later
+        // But we still initialize the array even at maxDepth
       }
 
       return node;

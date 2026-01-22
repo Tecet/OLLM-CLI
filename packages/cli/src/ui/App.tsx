@@ -53,7 +53,7 @@ import { WindowSwitcher } from './components/WindowSwitcher.js';
 import { ChatTab } from './components/tabs/ChatTab.js';
 import { ToolsTab } from './components/tabs/ToolsTab.js';
 import { HooksTab } from './components/tabs/HooksTab.js';
-import { EnhancedFileExplorer } from './components/file-explorer/EnhancedFileExplorer.js';
+import { FileExplorerComponent } from './components/file-explorer/FileExplorerComponent.js';
 import { KeybindsProvider, useKeybinds } from '../features/context/KeybindsContext.js';
 import { SearchTab } from './components/tabs/SearchTab.js';
 import { DocsTab } from './components/tabs/DocsTab.js';
@@ -61,6 +61,7 @@ import { GitHubTab } from './components/tabs/GitHubTab.js';
 import { SettingsTab } from './components/tabs/SettingsTab.js';
 import { MCPTab } from './components/tabs/MCPTab.js';
 import { DialogManager } from './components/dialogs/DialogManager.js';
+import { EditorMockup } from './components/code-editor/EditorMockup.js';
 
 import { useMouse, MouseProvider } from './hooks/useMouse.js';
 import { ErrorBoundary } from './components/ErrorBoundary.js';
@@ -758,7 +759,7 @@ ${toolSupport}
         if (chatState.streaming || chatState.waitingForResponse) {
           cancelGeneration();
         } else {
-          focusManager.exitToNavBar();
+          focusManager.exitOneLevel();  // ✅ Hierarchical navigation
         }
     }
 
@@ -791,40 +792,45 @@ ${toolSupport}
   // Render active tab
   const renderActiveTab = (height: number, width: number) => {
     const content = (() => {
-      // If we're in terminal mode, override the active tab display
-          if (activeWindow === 'terminal') {
-        const isTerminalFocused = focusManager.isFocused('chat-input') || focusManager.isFocused('nav-bar');
+      // If we're in terminal mode, show terminal in chat window area
+      if (activeWindow === 'terminal') {
+        const isTerminalFocused = focusManager.isFocused('chat-input') || focusManager.isFocused('chat-history');
         return (
           <Box 
             height={height} 
             width={width}
             borderStyle={uiState.theme.border.style as BoxProps['borderStyle']} 
             borderColor={isTerminalFocused ? uiState.theme.border.active : uiState.theme.border.primary} 
-            flexShrink={1} 
-            flexGrow={1} 
+            flexDirection="column"
             overflow="hidden"
           >
-            <Terminal height={height} />
+            <Box width="100%" flexShrink={0} flexDirection="row" justifyContent="flex-end" paddingRight={1}>
+              <WindowSwitcher />
+            </Box>
+            <Box flexGrow={1} width="100%">
+              <Terminal height={height - 2} />
+            </Box>
           </Box>
         );
       }
 
+      // If we're in editor mode, show editor in chat window area
       if (activeWindow === 'editor') {
+        const isEditorFocused = focusManager.isFocused('chat-history');
         return (
           <Box 
             height={height} 
             width={width}
             borderStyle={uiState.theme.border.style as BoxProps['borderStyle']} 
-            borderColor={uiState.theme.border.primary}
-            alignItems="center"
-            justifyContent="center"
+            borderColor={isEditorFocused ? uiState.theme.border.active : uiState.theme.border.primary}
             flexDirection="column"
+            overflow="hidden"
           >
             <Box width="100%" flexShrink={0} flexDirection="row" justifyContent="flex-end" paddingRight={1}>
               <WindowSwitcher />
             </Box>
-            <Box flexGrow={1} alignItems="center" justifyContent="center">
-              <Text>Editor - Coming Soon</Text>
+            <Box flexGrow={1} width="100%">
+              <EditorMockup width={width - 2} height={height - 3} />
             </Box>
           </Box>
         );
@@ -860,21 +866,35 @@ ${toolSupport}
           return <MCPTab windowWidth={width} />;
         case 'files':
           return (
-            <EnhancedFileExplorer
-              width={width}
-              height={height}
-              rootPath={process.cwd()}
-              autoLoadWorkspace={false}
-              restoreState={true}
-              excludePatterns={['node_modules', '.git', 'dist', 'coverage']}
-              hasFocus={true}
-              showHeader={true}
-              showToolbar={true}
-              showStatusBar={true}
-              toolRegistry={serviceContainer?.getToolRegistry()}
-              policyEngine={serviceContainer?.getPolicyEngine()}
-              messageBus={serviceContainer?.getHookService()?.getMessageBus()}
-            />
+            <Box flexDirection="column" width={width} height={height}>
+              {/* Simple header */}
+              <Box borderStyle="round" borderColor="cyan" paddingX={1} marginBottom={1}>
+                <Box flexDirection="row" justifyContent="space-between">
+                  <Text color="cyan" bold>📁 File Explorer</Text>
+                  <Text dimColor>
+                    <Text color="cyan">↑↓</Text> Navigate | 
+                    <Text color="cyan"> Enter</Text> Open | 
+                    <Text color="cyan"> F</Text> Focus | 
+                    <Text color="cyan"> Ctrl+F</Text> Search | 
+                    <Text color="cyan"> ?</Text> Help
+                  </Text>
+                </Box>
+              </Box>
+              
+              {/* File Explorer */}
+              <Box flexGrow={1}>
+                <FileExplorerComponent
+                  rootPath={process.cwd()}
+                  autoLoadWorkspace={false}
+                  restoreState={true}
+                  excludePatterns={['node_modules', '.git', 'dist', 'coverage']}
+                  hasFocus={uiState.activeTab === 'files'}
+                  toolRegistry={serviceContainer?.getToolRegistry()}
+                  policyEngine={serviceContainer?.getPolicyEngine()}
+                  messageBus={serviceContainer?.getHookService()?.getMessageBus()}
+                />
+              </Box>
+            </Box>
           );
         case 'search':
           return <SearchTab width={width} />;
@@ -954,7 +974,7 @@ ${toolSupport}
                 <Box width={spacerWidth} />
                 
                 {/* Middle Content */}
-                      <Box width={mainContentWidth} flexDirection="column" position="relative">
+                      <Box width={mainContentWidth} flexDirection="column">
                         {renderActiveTab(row2Height, mainContentWidth)}
                       </Box>
                 

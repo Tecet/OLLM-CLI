@@ -129,7 +129,10 @@ export function ChatTab(props: ChatTabProps) {
       return;
     }
 
-    if (key.escape || input === '0') {
+    // Allow ESC to bubble to global handler (unless in menu)
+    if (key.escape && !chatState.menuState.active && input !== '0') return;
+
+    if (input === '0') {
       exitToNavBar();
       return;
     }

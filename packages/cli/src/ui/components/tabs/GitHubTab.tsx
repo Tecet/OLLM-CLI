@@ -24,9 +24,10 @@ export const GitHubTab: React.FC<{ width?: number }> = ({ width }) => {
 
   // Handle keyboard input
   useInput((input, key) => {
-    if (!hasFocus) return;
+    // Allow ESC to bubble to global handler
+    if (key.escape) return;
 
-    if (key.escape || input === '0') {
+    if (input === '0') {
       exitToNavBar();
     }
     // Allow enter to also exit as there's nothing to select yet

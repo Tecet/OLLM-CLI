@@ -103,10 +103,11 @@ export class FileOperations {
    * Create tool context for tool invocations
    */
   private createToolContext(): ToolContext {
+    // We only call this when `shouldUseToolSystem()` is true, so assert non-null for TS
     return {
-      messageBus: this.messageBus,
-      policyEngine: this.policyEngine,
-    };
+      messageBus: this.messageBus!,
+      policyEngine: this.policyEngine!,
+    } as unknown as ToolContext;
   }
 
   /**
@@ -125,6 +126,12 @@ export class FileOperations {
    * @throws {WorkspaceBoundaryError} If path is outside workspace (when workspace is set)
    */
   private validatePath(inputPath: string): string {
+    // If we have a workspace root and the path is relative, resolve it against workspace root
+    if (this.workspaceRoot && !path.isAbsolute(inputPath)) {
+      const resolvedPath = path.join(this.workspaceRoot, inputPath);
+      return this.pathSanitizer.validateWorkspacePath(resolvedPath, this.workspaceRoot);
+    }
+    
     if (this.workspaceRoot) {
       return this.pathSanitizer.validateWorkspacePath(inputPath, this.workspaceRoot);
     }
@@ -187,7 +194,7 @@ export class FileOperations {
       }
       
       // Fall back to direct filesystem operations
-      return await this.createFileDirectly(sanitizedPath, content);
+      return await this.createFileDirectly(sanitizedPath, content, confirm);
     } catch (error) {
       if (error instanceof PathTraversalError || error instanceof WorkspaceBoundaryError) {
         return {
@@ -220,13 +227,18 @@ export class FileOperations {
       return await this.createFileDirectly(sanitizedPath, content);
     }
 
-    const invocation = tool.createInvocation(
+    // Ensure tool supports invocation creation
+    if (typeof tool.createInvocation !== 'function') {
+      return await this.createFileDirectly(sanitizedPath, content);
+    }
+
+    const invocation: any = tool.createInvocation(
       { path: sanitizedPath, content, overwrite: false },
       this.createToolContext()
     );
 
     // Check if validation error
-    if ('type' in invocation && invocation.type === 'ValidationError') {
+    if (invocation && invocation.type === 'ValidationError') {
       return {
         success: false,
         error: invocation.message,
@@ -235,7 +247,9 @@ export class FileOperations {
     }
 
     // Check if confirmation needed
-    const shouldConfirm = await invocation.shouldConfirmExecute(new AbortController().signal);
+    const shouldConfirm = invocation && typeof invocation.shouldConfirmExecute === 'function'
+      ? await invocation.shouldConfirmExecute(new AbortController().signal)
+      : null;
     if (shouldConfirm && confirm) {
       const confirmed = await confirm(
         `Create file ${path.basename(sanitizedPath)}?\n${shouldConfirm.description}`
@@ -249,12 +263,18 @@ export class FileOperations {
       }
     }
 
-    // Execute the tool
-    const _result = await invocation.execute(new AbortController().signal);
+    // Execute the tool if supported
+    if (invocation && typeof invocation.execute === 'function') {
+       
+      const _result = await invocation.execute(new AbortController().signal);
+    } else {
+      // Fallback if tool invocation isn't executable
+      return await this.createFileDirectly(sanitizedPath, content);
+    }
 
-    // Emit hook event
+    // Emit hook event (cast to any for event name compatibility)
     if (this.messageBus) {
-      await this.messageBus.emit('file:created', { path: sanitizedPath, content });
+      await (this.messageBus.emit as any)('file:created', { path: sanitizedPath, content });
     }
 
     return {
@@ -266,7 +286,19 @@ export class FileOperations {
   /**
    * Create file directly (legacy fallback)
    */
-  private async createFileDirectly(sanitizedPath: string, content: string): Promise<FileOperationResult> {
+  private async createFileDirectly(sanitizedPath: string, content: string, confirm?: ConfirmationCallback): Promise<FileOperationResult> {
+    // Check confirmation if provided
+    if (confirm) {
+      const confirmed = await confirm(`Create file ${path.basename(sanitizedPath)}?`);
+      if (!confirmed) {
+        return {
+          success: false,
+          error: 'Operation cancelled by user',
+          path: sanitizedPath
+        };
+      }
+    }
+    
     // Check if file already exists
     try {
       await fs.access(sanitizedPath);
@@ -297,13 +329,29 @@ export class FileOperations {
    * Create a new folder
    * 
    * @param folderPath - Path where the folder should be created
-   * @param recursive - Whether to create parent directories (default: false)
+   * @param confirmOrRecursive - Confirmation callback or boolean for recursive creation
    * @returns Result of the operation
    */
-  async createFolder(folderPath: string, recursive: boolean = false): Promise<FileOperationResult> {
+  async createFolder(folderPath: string, confirmOrRecursive?: ConfirmationCallback | boolean): Promise<FileOperationResult> {
+    // Determine if second parameter is confirmation callback or recursive flag
+    const confirm = typeof confirmOrRecursive === 'function' ? confirmOrRecursive : undefined;
+    const recursive = typeof confirmOrRecursive === 'boolean' ? confirmOrRecursive : false;
+    
     try {
       // Validate path
       const sanitizedPath = this.validatePath(folderPath);
+      
+      // Check confirmation if provided
+      if (confirm) {
+        const confirmed = await confirm(`Create folder ${path.basename(sanitizedPath)}?`);
+        if (!confirmed) {
+          return {
+            success: false,
+            error: 'Operation cancelled by user',
+            path: sanitizedPath
+          };
+        }
+      }
       
       // Check if folder already exists
       try {

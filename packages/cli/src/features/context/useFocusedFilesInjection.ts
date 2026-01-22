@@ -19,7 +19,7 @@ import { injectFocusedFiles } from '../../ui/components/file-explorer/FocusedFil
  * @returns Function to inject focused files into a prompt
  */
 export function useFocusedFilesInjection(): (prompt: string) => string {
-  // Try to access FileFocusContext, but don't throw if not available
+  // Access FileFocusContext (call hooks unconditionally)
   const fileFocusContext = useContext(FileFocusContext);
   
   return (prompt: string): string => {

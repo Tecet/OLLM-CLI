@@ -14,6 +14,7 @@ import { useKeybinds } from '../../../features/context/KeybindsContext.js';
 import { isKey } from '../../utils/keyUtils.js';
 import { Theme } from '../../../config/types.js';
 import { DotIndicator } from './DotIndicator.js';
+import { WorkspacePanel } from './WorkspacePanel.js';
 
 export interface SidePanelProps {
   visible: boolean;
@@ -114,12 +115,12 @@ export function SidePanel({ visible, connection, model, gpu, theme, row1Height }
         {isToolsMode ? (
           <ContextSection />
         ) : (
-          <Box flexDirection="column" paddingX={1} paddingY={1}>
-            <Text color={theme.text.accent} bold>Workspace</Text>
-            <Box marginTop={1}>
-              <Text dimColor>No projects active in this workspace.</Text>
-            </Box>
-          </Box>
+          <WorkspacePanel 
+            theme={theme}
+            height={0} // Will be calculated by flex
+            width={0} // Will be calculated by flex
+            hasFocus={contextFocused}
+          />
         )}
       </Box>
 

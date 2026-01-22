@@ -78,8 +78,8 @@ export const ChatInputArea = memo(function ChatInputArea({ height, showBorder = 
   }, [sendMessage, isTerminalActive, sendCommand, setCurrentInput, streaming, waitingForResponse, cancelGeneration]);
 
   useInput(async (input, key) => {
-      // Input Logic only works if we have focus!
-      if (!hasFocus) return;
+      // Allow Tab to bubble up to global handler for focus cycling
+      if (key.tab) return;
 
       // Window switching logic - cycle through windows with specific ctrl keys
       if (isKey(input, key, activeKeybinds.layout.switchWindowLeft) || isKey(input, key, activeKeybinds.layout.switchWindowRight)) {
@@ -87,8 +87,13 @@ export const ChatInputArea = memo(function ChatInputArea({ height, showBorder = 
           return;
       }
 
-      if (chatState.inputMode !== 'menu') return;
+      if (chatState.inputMode !== 'menu') {
+          // When not in menu mode, allow ESC to bubble to global handler
+          if (key.escape) return;
+          return;
+      }
 
+      // Menu mode handlers
       if (isKey(input, key, activeKeybinds.navigation.moveUp)) {
           navigateMenu('up');
       } else if (isKey(input, key, activeKeybinds.navigation.moveDown)) {
@@ -96,14 +101,11 @@ export const ChatInputArea = memo(function ChatInputArea({ height, showBorder = 
       } else if (isKey(input, key, activeKeybinds.navigation.select)) {
           executeMenuOption();
       } else if (isKey(input, key, activeKeybinds.chat.cancel)) {
-          if (chatState.inputMode === 'menu') {
-              setInputMode('text');
-              setMenuState({ active: false });
-          } else {
-              exitToNavBar();
-          }
+          // ESC in menu mode closes the menu
+          setInputMode('text');
+          setMenuState({ active: false });
       }
-  }, { isActive: chatState.inputMode === 'menu' || hasFocus }); // Allow hook to run to check hasFocus condition
+  }, { isActive: hasFocus || chatState.inputMode === 'menu' });
 
   // Border Color Logic
   let borderColor = theme.border.primary;

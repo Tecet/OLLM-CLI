@@ -1320,8 +1320,6 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
    * Handle keyboard navigation
    */
   useInput((input, key) => {
-    if (!hasFocus) return;
-    
     // Handle dialog keyboard input
     if (dialogState.type !== null) {
       if (key.escape) {
@@ -1331,6 +1329,9 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
       }
       return;
     }
+    
+    // Allow ESC to bubble to global handler when no dialog is open
+    if (key.escape) return;
     
     // Show help overlay on '?' key
     if (input === '?') {
@@ -1349,7 +1350,8 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
       handleNavigateRight();
     } else if (key.return) {
       handleSelect();
-    } else if (key.escape || input === '0') {
+    } else if (input === '0') {
+      // '0' still works as shortcut to exit
       exitToNavBar();
     } else if (input === 'r' || input === 'R') {
       // Restart server

@@ -2,21 +2,30 @@ import React, { createContext, useContext, useState, useCallback, useMemo, React
 import { useUI } from './UIContext.js';
 
 export type FocusableId = 
-  | 'chat-input' 
-  | 'chat-history' 
-  | 'nav-bar' 
-  | 'context-panel' 
-  | 'system-bar'
-  | 'file-tree' 
-  | 'side-file-tree'
-  | 'functions'
-  | 'tools-panel'
-  | 'hooks-panel'
-  | 'mcp-panel'
-  | 'docs-panel'
-  | 'settings-panel'
-  | 'search-panel'
-  | 'github-tab';
+  // Level 1: Tab Cycle (Main UI Areas - can reach with Tab key)
+  | 'chat-input'      // User input area
+  | 'chat-history'    // Chat window/history
+  | 'nav-bar'         // Navigation bar (tab selector)
+  | 'context-panel'   // Side panel (right side)
+  | 'system-bar'      // System status bar
+  // Level 2: Tab Content (Deeper than Tab cycle)
+  | 'file-tree'       // Files tab content
+  | 'side-file-tree'  // Workspace panel in side panel
+  | 'functions'       // Functions panel
+  | 'tools-panel'     // Tools tab content
+  | 'hooks-panel'     // Hooks tab content
+  | 'mcp-panel'       // MCP tab content
+  | 'docs-panel'      // Docs tab content
+  | 'settings-panel'  // Settings tab content
+  | 'search-panel'    // Search tab content
+  | 'github-tab'      // GitHub tab content
+  // Level 3+: Modals & Viewers (Deepest)
+  | 'syntax-viewer'
+  | 'search-dialog'
+  | 'quick-open-dialog'
+  | 'confirmation-dialog'
+  | 'help-panel'
+  | 'quick-actions-menu';
 
 export type NavigationMode = 'browse' | 'active';
 
@@ -27,9 +36,13 @@ export interface FocusContextValue {
   setMode: (mode: NavigationMode) => void;
   activateContent: (activeTab: string) => void;
   exitToNavBar: () => void;
+  exitOneLevel: () => void;
+  openModal: (modalId: FocusableId) => void;
+  closeModal: () => void;
   cycleFocus: (direction: 'next' | 'previous') => void;
   isFocused: (id: FocusableId) => boolean;
   isActive: () => boolean;
+  getFocusLevel: (id: FocusableId) => number;
 }
 
 const FocusContext = createContext<FocusContextValue | undefined>(undefined);
@@ -40,39 +53,24 @@ export function FocusProvider({ children }: { children: ReactNode }) {
 
   const [activeId, setActiveId] = useState<FocusableId>('chat-input');
   const [mode, setModeState] = useState<NavigationMode>('browse');
+  const [modalParent, setModalParent] = useState<FocusableId | null>(null);
 
-  // Dynamically calculate the focus cycle based on what's visible
+  // Tab cycle for Level 1 (Main UI Areas)
+  // Fixed cycle: User Input → Chat Window → Nav Bar → Side Panel → (repeat)
   const currentCycle = useMemo(() => {
-    const list: FocusableId[] = ['chat-input'];
-
-    // Add main content panel based on active tab
-    const tabToFocusMap: Record<string, FocusableId> = {
-      'chat': 'chat-history',
-      'tools': 'tools-panel',
-      'hooks': 'hooks-panel',
-      'mcp': 'mcp-panel',
-      'docs': 'docs-panel',
-      'settings': 'settings-panel',
-      'search': 'search-panel',
-      'files': 'context-panel', // Maps to the Context Files list in FilesTab
-      'github': 'github-tab',
-    };
-
-    const activeMainFocus = tabToFocusMap[activeTab];
-    if (activeMainFocus) {
-      list.push(activeMainFocus);
-    }
-
-    // Include nav-bar
-    list.push('nav-bar');
-
-    // Add side panel row 3 (context) if visible
+    const cycle: FocusableId[] = [
+      'chat-input',    // User Input
+      'chat-history',  // Chat Window
+      'nav-bar',       // Nav Bar
+    ];
+    
+    // Add side panel if visible
     if (sidePanelVisible) {
-      list.push('context-panel');
+      cycle.push('context-panel');
     }
-
-    return list;
-  }, [activeTab, sidePanelVisible]);
+    
+    return cycle;
+  }, [sidePanelVisible]);
 
   const setFocus = useCallback((id: FocusableId) => {
     setActiveId(id);
@@ -133,8 +131,113 @@ export function FocusProvider({ children }: { children: ReactNode }) {
 
   const isActive = useCallback(() => mode === 'active', [mode]);
 
+  // Get focus level for hierarchical navigation
+  const getFocusLevel = useCallback((id: FocusableId): number => {
+    // Level 1: Tab Cycle - Main UI areas reachable with Tab key
+    const level1: FocusableId[] = [
+      'chat-input',
+      'chat-history',
+      'nav-bar',
+      'context-panel',
+      'system-bar',
+    ];
+    
+    // Level 2: Tab Content - Deeper navigation within tabs
+    const level2: FocusableId[] = [
+      'file-tree',
+      'side-file-tree',
+      'functions',
+      'tools-panel',
+      'hooks-panel',
+      'mcp-panel',
+      'docs-panel',
+      'settings-panel',
+      'search-panel',
+      'github-tab',
+    ];
+    
+    // Level 3+: Modals & Viewers - Deepest level
+    const level3: FocusableId[] = [
+      'syntax-viewer',
+      'search-dialog',
+      'quick-open-dialog',
+      'confirmation-dialog',
+      'help-panel',
+      'quick-actions-menu',
+    ];
+
+    if (level3.includes(id)) return 3;
+    if (level2.includes(id)) return 2;
+    if (level1.includes(id)) return 1;
+    return 1; // Default to Level 1
+  }, []);
+
+  // Hierarchical ESC navigation - moves up one level
+  const exitOneLevel = useCallback(() => {
+    const currentLevel = getFocusLevel(activeId);
+
+    if (currentLevel === 3) {
+      // Level 3 (Modals/Viewers) → Return to parent (Level 2)
+      if (modalParent) {
+        setActiveId(modalParent);
+        setModalParent(null);
+      } else {
+        // Fallback: go to nav-bar on chat tab
+        setActiveTab('chat');
+        setActiveId('nav-bar');
+        setModeState('browse');
+      }
+    } else if (currentLevel === 2) {
+      // Level 2 (Tab Content) → Go to nav-bar (Level 1)
+      setActiveId('nav-bar');
+      setModeState('browse');
+    } else if (currentLevel === 1) {
+      // Level 1 (Tab Cycle) → Two-step process
+      if (activeId === 'nav-bar' && activeTab === 'chat') {
+        // Already on Chat tab in navbar → Go to user input
+        setActiveId('chat-input');
+      } else {
+        // Not on Chat tab in navbar → Switch to Chat tab (stay in navbar)
+        setActiveTab('chat');
+        setActiveId('nav-bar');
+        setModeState('browse');
+      }
+    }
+  }, [activeId, modalParent, getFocusLevel, activeTab, setActiveTab]);
+
+  // Open a modal and track its parent
+  const openModal = useCallback((modalId: FocusableId) => {
+    setModalParent(activeId);
+    setActiveId(modalId);
+  }, [activeId]);
+
+  // Close modal and return to parent
+  const closeModal = useCallback(() => {
+    if (modalParent) {
+      setActiveId(modalParent);
+      setModalParent(null);
+    } else {
+      // Fallback: exit one level
+      exitOneLevel();
+    }
+  }, [modalParent, exitOneLevel]);
+
   return (
-    <FocusContext.Provider value={{ activeId, mode, setFocus, setMode, activateContent, exitToNavBar, cycleFocus, isFocused, isActive }}>
+    <FocusContext.Provider value={{ 
+      activeId, 
+      mode, 
+      setFocus, 
+      setMode, 
+      activateContent, 
+      exitToNavBar, 
+      exitOneLevel,
+      openModal,
+      closeModal,
+      cycleFocus, 
+      isFocused, 
+      isActive,
+      getFocusLevel,
+    }}>
       {children}
     </FocusContext.Provider>
   );

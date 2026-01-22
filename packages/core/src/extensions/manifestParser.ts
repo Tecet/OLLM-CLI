@@ -109,12 +109,13 @@ const MANIFEST_SCHEMA = {
  * Manifest parser for extension system
  */
 export class ManifestParser {
-  private ajv: InstanceType<typeof Ajv>;
+  private ajv: any;
   private validator: ValidateFunction;
   private errors: string[] = [];
 
   constructor() {
-    this.ajv = new Ajv({ allErrors: true });
+    // Ajv package may be an ESM module; use a tolerant construct to satisfy TS under different interop modes
+    this.ajv = new (Ajv as any)({ allErrors: true });
     this.validator = this.ajv.compile(MANIFEST_SCHEMA);
   }
 

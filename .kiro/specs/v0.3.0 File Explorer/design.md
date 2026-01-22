@@ -741,13 +741,42 @@ packages/cli/src/ui/components/file-explorer/
 - Don't expose system paths in error messages
 - Validate user input before filesystem operations
 
+## Current Implementation Status
+
+### Completed Features ✅
+1. **Workspace Management**: Multi-project support with .ollm-workspace files
+2. **File Tree Navigation**: Virtual scrolling with keyboard navigation
+3. **Focus System**: File content injection into LLM context
+4. **Git Status**: Color-coded git status indicators
+5. **External Editor Integration**: Spawn $EDITOR for file editing
+6. **Syntax Viewer**: Read-only file viewing with syntax highlighting
+7. **File Operations**: Create, rename, delete, copy path
+8. **Quick Open**: Fuzzy file search (Ctrl+O)
+9. **Quick Actions Menu**: Context menu for file operations
+10. **State Persistence**: Save/restore expanded directories and focused files
+11. **Follow Mode**: Auto-expand to LLM-referenced files
+12. **Vision Service**: Image processing and encoding
+13. **Workspace Panel**: 3-panel layout in side panel (Focused Files / File Tree / Keybinds)
+14. **File Search**: Content search using grep tool (Ctrl+F) ✅ **NEW**
+
+### Partially Implemented ⚠️
+1. **File Operations Tests**: Core functionality works, but property-based tests incomplete
+2. **Performance Monitoring**: Basic warnings exist, but comprehensive monitoring pending
+3. **Vision Service Tests**: Service implemented but tests not complete
+
+### Pending Features ⏳
+1. **Batch Operations**: Multi-select and batch delete/rename
+2. **FileTreeService Integration**: Unify with ls tool
+3. **File Watching**: Auto-reload on external changes
+4. **Diff Viewer**: View changes before committing
+5. **Property-Based Tests**: Many correctness properties not yet tested
+
 ## Future Enhancements
 
-1. **Multi-select**: Select multiple files for batch operations
+1. **Multi-select**: Select multiple files for batch operations (planned)
 2. **Drag and Drop**: Move files by dragging in terminal (if supported)
 3. **File Preview**: Show file preview in split pane
-4. **Search in Files**: Grep-style search across workspace
-5. **Bookmarks**: Save frequently accessed paths
-6. **Custom Icons**: User-defined icon mappings
-7. **Themes**: Customizable color schemes
-8. **Remote Filesystems**: Support for SSH/FTP browsing
+4. **Bookmarks**: Save frequently accessed paths
+5. **Custom Icons**: User-defined icon mappings
+6. **Themes**: Customizable color schemes
+7. **Remote Filesystems**: Support for SSH/FTP browsing

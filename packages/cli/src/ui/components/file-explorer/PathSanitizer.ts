@@ -51,6 +51,11 @@ export class PathSanitizer {
    * @throws {PathTraversalError} If path contains traversal sequences
    */
   sanitize(inputPath: string): string {
+    // Handle empty string
+    if (!inputPath || inputPath.trim() === '') {
+      return '';
+    }
+    
     // First check for traversal sequences before any normalization
     this.rejectTraversal(inputPath);
     
@@ -61,6 +66,26 @@ export class PathSanitizer {
     const absolute = path.resolve(normalized);
     
     return absolute;
+  }
+
+  /**
+   * Check if a path is absolute
+   * 
+   * @param inputPath - The path to check
+   * @returns true if the path is absolute, false otherwise
+   */
+  isAbsolute(inputPath: string): boolean {
+    return path.isAbsolute(inputPath);
+  }
+
+  /**
+   * Normalize a path (resolve . and .. segments, handle separators)
+   * 
+   * @param inputPath - The path to normalize
+   * @returns The normalized path
+   */
+  normalize(inputPath: string): string {
+    return path.normalize(inputPath);
   }
 
   /**

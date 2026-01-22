@@ -24,6 +24,8 @@ import { ExtensionRegistry } from '../extensions/extensionRegistry.js';
 import { MCPOAuthProvider, KeytarTokenStorage, FileTokenStorage } from '../mcp/mcpOAuth.js';
 import { MCPHealthMonitor } from '../mcp/mcpHealthMonitor.js';
 import { ToolRegistry, registerBuiltInTools } from '../tools/index.js';
+import { PolicyEngine } from '../policy/policyEngine.js';
+import type { PolicyConfig } from '../policy/policyRules.js';
 
 /**
  * Configuration for model management
@@ -99,6 +101,7 @@ export interface CoreConfig {
   hooks?: HookConfig;
   extensions?: ExtensionConfig;
   mcpHealth?: MCPHealthConfig;
+  policy?: PolicyConfig;
 }
 
 /**
@@ -140,6 +143,7 @@ export class ServiceContainer {
   private _mcpOAuthProvider?: MCPOAuthProvider;
   private _mcpHealthMonitor?: MCPHealthMonitor;
   private _toolRegistry?: ToolRegistry;
+  private _policyEngine?: PolicyEngine;
   
   constructor(config: ServiceContainerConfig) {
     this.provider = config.provider;
@@ -317,6 +321,32 @@ export class ServiceContainer {
    */
   setToolRegistry(registry: ToolRegistry): void {
     this._toolRegistry = registry;
+  }
+  
+  /**
+   * Get the Policy Engine
+   * 
+   * Returns the policy engine for tool execution approval workflows.
+   * The policy engine determines whether tool executions require user confirmation.
+   */
+  getPolicyEngine(): PolicyEngine {
+    if (!this._policyEngine) {
+      const policyConfig = this.config.policy || {
+        defaultAction: 'ask', // Default to asking for confirmation
+        rules: [],
+      };
+      this._policyEngine = new PolicyEngine(policyConfig);
+    }
+    return this._policyEngine;
+  }
+  
+  /**
+   * Set the Policy Engine
+   * 
+   * Allows the CLI layer to provide a pre-configured PolicyEngine.
+   */
+  setPolicyEngine(engine: PolicyEngine): void {
+    this._policyEngine = engine;
   }
   
   /**

@@ -89,9 +89,9 @@ export class FocusSystem {
       // Add to focused files map
       this.focusedFiles.set(sanitizedPath, focusedFile);
 
-      // Emit hook event
+      // Emit hook event (using generic event type)
       if (this.messageBus) {
-        await this.messageBus.emit('file:focused', { path: sanitizedPath, size: fileSize });
+        await this.messageBus.emit('fileEdited' as any, { path: sanitizedPath, size: fileSize });
       }
 
       return focusedFile;
@@ -115,9 +115,9 @@ export class FocusSystem {
     const sanitizedPath = this.pathSanitizer.sanitize(filePath);
     this.focusedFiles.delete(sanitizedPath);
 
-    // Emit hook event
+    // Emit hook event (using generic event type)
     if (this.messageBus) {
-      this.messageBus.emitSync('file:unfocused', { path: sanitizedPath });
+      this.messageBus.emitSync('fileEdited' as any, { path: sanitizedPath });
     }
   }
 
@@ -128,6 +128,35 @@ export class FocusSystem {
    */
   getFocusedFiles(): FocusedFile[] {
     return Array.from(this.focusedFiles.values());
+  }
+
+  /**
+   * Get the focused files map
+   * 
+   * @returns Map of file paths to FocusedFile objects
+   */
+  getFocusedFilesMap(): Map<string, FocusedFile> {
+    return this.focusedFiles;
+  }
+
+  /**
+   * Get total size of all focused files
+   * 
+   * @returns Total size in bytes
+   */
+  getTotalFocusedSize(): number {
+    let total = 0;
+    for (const file of this.focusedFiles.values()) {
+      total += file.size;
+    }
+    return total;
+  }
+
+  /**
+   * Clear all focused files
+   */
+  clearAllFocused(): void {
+    this.focusedFiles.clear();
   }
 
   /**
