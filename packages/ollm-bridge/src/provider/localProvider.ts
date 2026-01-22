@@ -43,6 +43,11 @@ const TOKEN_MULTIPLIERS: Record<string, number> = {
 
 const logger = createLogger('LocalProvider');
 
+/**
+ * Check if payload contains tools
+ * @param payload - Request payload to check
+ * @returns True if payload has non-empty tools array
+ */
 function payloadHasTools(payload: { tools?: unknown }): boolean {
   return Array.isArray(payload.tools) && payload.tools.length > 0;
 }
@@ -50,6 +55,9 @@ function payloadHasTools(payload: { tools?: unknown }): boolean {
 /**
  * Check if error message indicates tool unsupported error
  * Uses multiple patterns to detect various Ollama error formats
+ * 
+ * @param errorText - Error message text from Ollama
+ * @returns True if error indicates tools are not supported
  */
 function isToolUnsupportedError(errorText: string): boolean {
   const patterns = [
@@ -76,7 +84,52 @@ function isToolUnsupportedError(errorText: string): boolean {
 }
 
 /**
+ * Format HTTP error message with status and details
+ * @param status - HTTP status code
+ * @param statusText - HTTP status text
+ * @param details - Additional error details
+ * @returns Formatted error message
+ */
+function formatHttpError(status: number, statusText: string, details: string): string {
+  const trimmed = details.trim();
+  return trimmed.length > 0
+    ? `HTTP ${status}: ${statusText} - ${trimmed}`
+    : `HTTP ${status}: ${statusText}`;
+}
+
+/**
  * Local provider adapter for Ollama-compatible servers.
+ * 
+ * This provider connects to a local Ollama server (or compatible API)
+ * and implements the full ProviderAdapter interface with support for:
+ * - Streaming chat completions
+ * - Function/tool calling with automatic retry on unsupported errors
+ * - Token counting (tiktoken + character-based fallback)
+ * - Model management (list, pull, delete, show, unload)
+ * - Thinking/reasoning mode
+ * - Timeout and abort signal handling
+ * 
+ * Key Features:
+ * - Automatic tool unsupported error detection and retry
+ * - Healer pattern for malformed tool calls from small models
+ * - Flexible token counting with multiple strategies
+ * - Comprehensive tool schema validation
+ * - Inactivity timeout that resets on each chunk
+ * 
+ * @example
+ * ```typescript
+ * const provider = new LocalProvider({
+ *   baseUrl: 'http://localhost:11434',
+ *   timeout: 30000,
+ *   tokenCountingMethod: 'tiktoken',
+ * });
+ * 
+ * for await (const event of provider.chatStream(request)) {
+ *   if (event.type === 'text') {
+ *     console.log(event.value);
+ *   }
+ * }
+ * ```
  */
 export class LocalProvider implements ProviderAdapter {
   readonly name = 'local';
@@ -84,7 +137,39 @@ export class LocalProvider implements ProviderAdapter {
   constructor(private config: LocalProviderConfig) {}
 
   /**
-   * Stream chat completion from the local server.
+   * Stream chat completion from the local Ollama server.
+   * 
+   * This method implements the core streaming functionality with:
+   * - Automatic retry on tool unsupported errors (removes tools and retries)
+   * - Inactivity timeout that resets on each chunk received
+   * - Abort signal support for request cancellation
+   * - NDJSON stream parsing with error recovery
+   * - Healer pattern for malformed tool calls
+   * 
+   * Error Handling:
+   * - HTTP errors: Emits error event with status code
+   * - Tool unsupported: Emits error event, then retries without tools
+   * - Network errors: Emits error event
+   * - Abort: Emits finish event and returns
+   * - Malformed JSON: Logs warning and continues (doesn't break stream)
+   * 
+   * @param request - The chat request with messages, tools, and options
+   * @returns Async iterable of provider events
+   * 
+   * @example
+   * ```typescript
+   * const request: ProviderRequest = {
+   *   model: 'llama3.2',
+   *   messages: [{ role: 'user', parts: [{ type: 'text', text: 'Hello' }] }],
+   *   tools: [{ name: 'search', description: 'Search the web' }],
+   *   options: { temperature: 0.7, num_ctx: 8192 },
+   *   timeout: 30000,
+   * };
+   * 
+   * for await (const event of provider.chatStream(request)) {
+   *   console.log(event);
+   * }
+   * ```
    */
   async *chatStream(request: ProviderRequest): AsyncIterable<ProviderEvent> {
     const url = `${this.config.baseUrl}/api/chat`;
@@ -111,17 +196,12 @@ export class LocalProvider implements ProviderAdapter {
       think: request.think, // Pass thinking parameter to Ollama
     };
 
-    // DEBUG: Log the num_ctx being sent to Ollama
+    // Log context window configuration for debugging
     if (request.options?.num_ctx) {
-      logger.info('Sending num_ctx to Ollama', { 
+      logger.debug('Sending context window configuration to Ollama', { 
         model: request.model,
         num_ctx: request.options.num_ctx 
       });
-      console.log(`[LocalProvider] ⚠️ Sending num_ctx=${request.options.num_ctx} to Ollama for model ${request.model}`);
-      console.log(`[LocalProvider] Full request body:`, JSON.stringify(body, null, 2));
-    } else {
-      console.warn(`[LocalProvider] ⚠️ No num_ctx in request options!`);
-      console.log(`[LocalProvider] Request options:`, request.options);
     }
 
     // Use request-specific timeout if provided, otherwise use config timeout, default to 30s
@@ -213,9 +293,7 @@ export class LocalProvider implements ProviderAdapter {
           yield {
             type: 'error',
             error: {
-              message: details.length > 0
-                ? `HTTP ${response.status}: ${response.statusText} - ${details}`
-                : `HTTP ${response.status}: ${response.statusText}`,
+              message: formatHttpError(response.status, response.statusText, details),
               code: String(response.status),
             },
           };
@@ -308,6 +386,16 @@ export class LocalProvider implements ProviderAdapter {
 
   /**
    * Map internal messages to Ollama format.
+   * 
+   * Converts the internal Message format to Ollama's expected format:
+   * - Adds system prompt as first message if provided
+   * - Concatenates message parts (text and image placeholders)
+   * - Maps tool calls to Ollama's tool_calls format
+   * - Preserves tool call IDs for tool responses
+   * 
+   * @param messages - Internal message array
+   * @param systemPrompt - Optional system prompt to prepend
+   * @returns Array of Ollama-formatted messages
    */
   private mapMessages(messages: Message[], systemPrompt?: string): unknown[] {
     const mapped = [];
@@ -537,6 +625,16 @@ export class LocalProvider implements ProviderAdapter {
 
   /**
    * Map tool schemas to Ollama function calling format.
+   * 
+   * Validates each tool schema before mapping to ensure:
+   * - Tool names are valid (alphanumeric, underscore, dash, dot, slash)
+   * - Parameters are valid JSON Schema
+   * - No circular references in schemas
+   * - Constraints are not conflicting
+   * 
+   * @param tools - Array of tool schemas to map
+   * @returns Array of Ollama-formatted function definitions
+   * @throws {Error} If any tool schema is invalid
    */
   private mapTools(tools: ToolSchema[]): unknown[] {
     // Validate each tool schema before mapping
@@ -555,7 +653,29 @@ export class LocalProvider implements ProviderAdapter {
   }
 
   /**
-   * Map server response chunks to provider events.
+   * Map Ollama response chunks to provider events.
+   * 
+   * This method handles several edge cases:
+   * 
+   * 1. Thinking Mode: Ollama's native thinking support is mapped to
+   *    thinking events for display to the user.
+   * 
+   * 2. Healer Pattern: Some small models output tool calls as JSON strings
+   *    in the content field instead of using tool_calls. We detect and
+   *    convert these to proper tool_call events using conservative heuristics:
+   *    - Must be valid JSON object
+   *    - Must have 'name' field (string, no spaces, < 50 chars)
+   *    - Must have 'parameters' or 'args' field
+   * 
+   * 3. Tool Call Arguments: Ollama can send arguments as either a string
+   *    (JSON) or an object. We normalize to object format and handle
+   *    parsing errors gracefully.
+   * 
+   * 4. Finish Reason: Maps Ollama's done_reason to standard finish reasons
+   *    (stop, length, tool).
+   * 
+   * @param chunk - Raw chunk from Ollama NDJSON stream
+   * @yields ProviderEvent objects (text, thinking, tool_call, finish)
    */
   private *mapChunkToEvents(chunk: unknown): Iterable<ProviderEvent> {
     const c = chunk as Record<string, unknown>;
@@ -693,8 +813,22 @@ export class LocalProvider implements ProviderAdapter {
   }
 
   /**
-   * Get token multiplier for a specific model family
-   * @param model - Model name
+   * Get token multiplier for a specific model family.
+   * 
+   * Uses empirical testing data to determine the average characters per token
+   * for different model families. Falls back to a conservative default if the
+   * model family is not recognized.
+   * 
+   * Multipliers:
+   * - llama: 0.25 (~4 chars/token)
+   * - mistral: 0.27 (~3.7 chars/token)
+   * - gemma: 0.26 (~3.8 chars/token)
+   * - qwen: 0.28 (~3.6 chars/token)
+   * - phi: 0.26 (~3.8 chars/token)
+   * - codellama: 0.25 (~4 chars/token)
+   * - default: 0.25 (conservative)
+   * 
+   * @param model - Model name to get multiplier for
    * @returns Token multiplier (chars per token)
    */
   private getTokenMultiplier(model: string): number {
@@ -716,8 +850,16 @@ export class LocalProvider implements ProviderAdapter {
   }
 
   /**
-   * Count tokens using tiktoken library (accurate method)
-   * @param request - Provider request
+   * Count tokens using tiktoken library (accurate method).
+   * 
+   * Uses the tiktoken library with cl100k_base encoding (used by GPT-3.5/4)
+   * as a good approximation for most models. This method is more accurate
+   * than character-based estimation but requires loading the tiktoken library.
+   * 
+   * Falls back to multiplier method if tiktoken fails to load or encounters
+   * an error during encoding.
+   * 
+   * @param request - Provider request to count tokens for
    * @returns Token count
    */
   private async countTokensWithTiktoken(request: ProviderRequest): Promise<number> {
@@ -759,9 +901,16 @@ export class LocalProvider implements ProviderAdapter {
   }
 
   /**
-   * Count tokens using character multiplier (fast fallback method)
-   * @param request - Provider request
-   * @returns Token count
+   * Count tokens using character multiplier (fast fallback method).
+   * 
+   * Estimates token count by multiplying character count by a model-specific
+   * multiplier. This method is fast but less accurate than tiktoken.
+   * 
+   * The multiplier is determined by the model family (llama, mistral, etc.)
+   * and represents the average characters per token for that family.
+   * 
+   * @param request - Provider request to count tokens for
+   * @returns Estimated token count
    */
   private countTokensWithMultiplier(request: ProviderRequest): Promise<number> {
     let totalChars = 0;
@@ -793,7 +942,16 @@ export class LocalProvider implements ProviderAdapter {
 
   /**
    * Count tokens in a request using fallback estimation.
-   * Uses tiktoken for accurate counting, falls back to character-based estimation.
+   * 
+   * Supports two token counting methods:
+   * - 'tiktoken': Accurate counting using tiktoken library (default)
+   * - 'multiplier': Fast character-based estimation
+   * 
+   * The method can be configured via LocalProviderConfig.tokenCountingMethod.
+   * Tiktoken method automatically falls back to multiplier if it fails.
+   * 
+   * @param request - The chat request to count tokens for
+   * @returns Estimated token count
    */
   async countTokens(request: ProviderRequest): Promise<number> {
     const method = this.config.tokenCountingMethod || 'tiktoken';
@@ -806,7 +964,13 @@ export class LocalProvider implements ProviderAdapter {
   }
 
   /**
-   * List available models from the local server.
+   * List available models from the local Ollama server.
+   * 
+   * Fetches the list of models from the /api/tags endpoint and maps
+   * them to the ModelInfo format.
+   * 
+   * @returns Array of model information
+   * @throws {Error} If the request fails
    */
   async listModels(): Promise<ModelInfo[]> {
     const url = `${this.config.baseUrl}/api/tags`;
@@ -822,7 +986,21 @@ export class LocalProvider implements ProviderAdapter {
   }
 
   /**
-   * Pull/download a model from the local server.
+   * Pull/download a model from the Ollama registry.
+   * 
+   * Downloads a model and streams progress updates via the onProgress callback.
+   * The download is streamed as NDJSON with status and progress information.
+   * 
+   * @param name - Model name to pull (e.g., 'llama3.2', 'mistral:7b')
+   * @param onProgress - Optional callback for progress updates
+   * @throws {Error} If the request fails
+   * 
+   * @example
+   * ```typescript
+   * await provider.pullModel('llama3.2', (progress) => {
+   *   console.log(`${progress.status}: ${progress.completed}/${progress.total}`);
+   * });
+   * ```
    */
   async pullModel(
     name: string,
@@ -867,7 +1045,13 @@ export class LocalProvider implements ProviderAdapter {
   }
 
   /**
-   * Delete a model from the local server.
+   * Delete a model from the local Ollama server.
+   * 
+   * Permanently removes a model from local storage.
+   * This operation cannot be undone.
+   * 
+   * @param name - Model name to delete
+   * @throws {Error} If the request fails
    */
   async deleteModel(name: string): Promise<void> {
     const url = `${this.config.baseUrl}/api/delete`;
@@ -880,6 +1064,12 @@ export class LocalProvider implements ProviderAdapter {
 
   /**
    * Unload a model from memory (Ollama keep_alive=0).
+   * 
+   * Frees memory by unloading a model that is currently loaded.
+   * This is useful for managing memory on systems with limited resources.
+   * 
+   * @param name - Model name to unload
+   * @throws {Error} If the model cannot be unloaded
    */
   async unloadModel(name: string): Promise<void> {
     const url = `${this.config.baseUrl}/api/generate`;
@@ -896,17 +1086,21 @@ export class LocalProvider implements ProviderAdapter {
 
     if (!response.ok) {
       const details = await response.text();
-      const suffix = details.trim();
       throw new Error(
-        suffix.length > 0
-          ? `Failed to unload model "${name}": HTTP ${response.status} ${response.statusText} - ${suffix}`
-          : `Failed to unload model "${name}": HTTP ${response.status} ${response.statusText}`
+        `Failed to unload model "${name}": ${formatHttpError(response.status, response.statusText, details)}`
       );
     }
   }
 
   /**
    * Get detailed information about a model.
+   * 
+   * Fetches comprehensive information about a specific model including
+   * size, modification date, and model details (format, family, parameters).
+   * 
+   * @param name - Model name to inspect
+   * @returns Detailed model information
+   * @throws {Error} If the request fails or model not found
    */
   async showModel(name: string): Promise<ModelInfo> {
     const url = `${this.config.baseUrl}/api/show`;

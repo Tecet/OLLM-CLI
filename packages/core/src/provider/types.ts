@@ -135,36 +135,171 @@ export interface PullProgress {
 
 /**
  * Provider adapter interface.
+ * 
  * Implementations connect the core runtime to specific LLM backends.
+ * All providers must implement chatStream, while other methods are optional.
+ * 
+ * Provider Lifecycle:
+ * 1. Provider instantiated with configuration
+ * 2. chatStream called for each inference request
+ * 3. Events streamed back to caller via AsyncIterable
+ * 4. Provider cleaned up on application exit
+ * 
+ * Error Handling:
+ * - Providers should emit error events rather than throwing
+ * - Network errors should be caught and converted to error events
+ * - Validation errors can throw during initialization
+ * 
+ * @example
+ * ```typescript
+ * // Basic usage
+ * const provider = new LocalProvider({ baseUrl: 'http://localhost:11434' });
+ * 
+ * for await (const event of provider.chatStream(request)) {
+ *   if (event.type === 'text') {
+ *     console.log(event.value);
+ *   } else if (event.type === 'error') {
+ *     console.error(event.error.message);
+ *   }
+ * }
+ * ```
+ * 
+ * @example
+ * ```typescript
+ * // With tool calling
+ * const request: ProviderRequest = {
+ *   model: 'llama3.2',
+ *   messages: [{ role: 'user', parts: [{ type: 'text', text: 'Hello' }] }],
+ *   tools: [{ name: 'search', description: 'Search the web' }],
+ * };
+ * 
+ * for await (const event of provider.chatStream(request)) {
+ *   if (event.type === 'tool_call') {
+ *     console.log('Tool called:', event.value.name);
+ *   }
+ * }
+ * ```
  */
 export interface ProviderAdapter {
-  /** Unique name for this provider */
+  /** 
+   * Unique identifier for this provider.
+   * Used for provider selection and logging.
+   * Should be lowercase and URL-safe (e.g., 'local', 'vllm', 'openai').
+   */
   name: string;
 
   /**
    * Stream chat completion from the provider.
-   * @param request The chat request
+   * 
+   * This is the core method that all providers must implement.
+   * It should stream events as they arrive from the LLM backend.
+   * 
+   * Event Types:
+   * - `text`: Incremental text tokens from the model
+   * - `thinking`: Reasoning/thinking tokens (if supported)
+   * - `tool_call`: Function/tool call requests from the model
+   * - `finish`: Completion with reason and optional metrics
+   * - `error`: Error information (should not throw)
+   * 
+   * Timeout Handling:
+   * - Providers should respect request.timeout if provided
+   * - Providers should respect request.abortSignal for cancellation
+   * - Inactivity timeouts should reset on each chunk received
+   * 
+   * @param request - The chat request with messages, tools, and options
    * @returns Async iterable of provider events
+   * 
+   * @example
+   * ```typescript
+   * async *chatStream(request: ProviderRequest): AsyncIterable<ProviderEvent> {
+   *   const response = await fetch(url, { body: JSON.stringify(request) });
+   *   
+   *   for await (const chunk of parseStream(response.body)) {
+   *     if (chunk.content) {
+   *       yield { type: 'text', value: chunk.content };
+   *     }
+   *   }
+   *   
+   *   yield { type: 'finish', reason: 'stop' };
+   * }
+   * ```
    */
   chatStream(request: ProviderRequest): AsyncIterable<ProviderEvent>;
 
   /**
    * Count tokens in a request (optional).
-   * @param request The chat request
-   * @returns Estimated token count
+   * 
+   * Provides an estimate of how many tokens the request will consume.
+   * Used for context window management and cost estimation.
+   * 
+   * Implementation Strategies:
+   * - Accurate: Use tiktoken or model-specific tokenizer
+   * - Fast: Use character-based estimation (chars * multiplier)
+   * - Fallback: Return undefined if not supported
+   * 
+   * @param request - The chat request to count tokens for
+   * @returns Estimated token count, or undefined if not supported
+   * 
+   * @example
+   * ```typescript
+   * async countTokens(request: ProviderRequest): Promise<number> {
+   *   let total = 0;
+   *   if (request.systemPrompt) {
+   *     total += this.tokenize(request.systemPrompt).length;
+   *   }
+   *   for (const msg of request.messages) {
+   *     for (const part of msg.parts) {
+   *       if (part.type === 'text') {
+   *         total += this.tokenize(part.text).length;
+   *       }
+   *     }
+   *   }
+   *   return total;
+   * }
+   * ```
    */
   countTokens?(request: ProviderRequest): Promise<number>;
 
   /**
    * List available models (optional).
+   * 
+   * Returns information about models available from this provider.
+   * Used for model selection UI and validation.
+   * 
    * @returns Array of model information
+   * @throws {Error} If the provider cannot list models
+   * 
+   * @example
+   * ```typescript
+   * async listModels(): Promise<ModelInfo[]> {
+   *   const response = await fetch(`${this.baseUrl}/api/tags`);
+   *   const data = await response.json();
+   *   return data.models.map(m => ({
+   *     name: m.name,
+   *     sizeBytes: m.size,
+   *     modifiedAt: m.modified_at,
+   *   }));
+   * }
+   * ```
    */
   listModels?(): Promise<ModelInfo[]>;
 
   /**
    * Pull/download a model (optional).
-   * @param name Model name
-   * @param onProgress Progress callback
+   * 
+   * Downloads a model from a registry or repository.
+   * Progress updates are provided via the onProgress callback.
+   * 
+   * @param name - Model name or identifier
+   * @param onProgress - Optional callback for progress updates
+   * @throws {Error} If the model cannot be pulled
+   * 
+   * @example
+   * ```typescript
+   * await provider.pullModel('llama3.2', (progress) => {
+   *   console.log(`${progress.status}: ${progress.completed}/${progress.total}`);
+   * });
+   * ```
    */
   pullModel?(
     name: string,
@@ -173,20 +308,53 @@ export interface ProviderAdapter {
 
   /**
    * Delete a model (optional).
-   * @param name Model name
+   * 
+   * Removes a model from local storage.
+   * This operation is typically irreversible.
+   * 
+   * @param name - Model name to delete
+   * @throws {Error} If the model cannot be deleted
+   * 
+   * @example
+   * ```typescript
+   * await provider.deleteModel('llama3.2');
+   * ```
    */
   deleteModel?(name: string): Promise<void>;
 
   /**
    * Get detailed information about a model (optional).
-   * @param name Model name
-   * @returns Model information
+   * 
+   * Returns comprehensive information about a specific model,
+   * including size, parameters, and capabilities.
+   * 
+   * @param name - Model name to inspect
+   * @returns Detailed model information
+   * @throws {Error} If the model cannot be found
+   * 
+   * @example
+   * ```typescript
+   * const info = await provider.showModel('llama3.2');
+   * console.log(`Model size: ${info.sizeBytes} bytes`);
+   * console.log(`Parameters: ${info.details?.parameter_size}`);
+   * ```
    */
   showModel?(name: string): Promise<ModelInfo>;
 
   /**
    * Unload a model from memory (optional).
-   * @param name Model name
+   * 
+   * Frees memory by unloading a model that is currently loaded.
+   * Useful for managing memory on systems with limited resources.
+   * 
+   * @param name - Model name to unload
+   * @throws {Error} If the model cannot be unloaded
+   * 
+   * @example
+   * ```typescript
+   * // Unload model to free memory
+   * await provider.unloadModel('llama3.2');
+   * ```
    */
   unloadModel?(name: string): Promise<void>;
 }
