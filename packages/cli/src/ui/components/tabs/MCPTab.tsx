@@ -31,6 +31,7 @@ import {
 import { ErrorBoundary } from '../ErrorBoundary.js';
 import { ErrorBanner } from '../mcp/ErrorDisplay.js';
 import { LoadingSpinner } from '../mcp/LoadingSpinner.js';
+import { ServerStatusBanner } from '../mcp/ServerStatusBanner.js';
 
 import type { MCPMarketplaceServer } from '../../../services/mcpMarketplace.js';
 
@@ -41,7 +42,7 @@ export interface MCPTabProps {
 /**
  * Detail view navigation items for server details
  */
-type ServerDetailNavItem = 'exit' | 'toggle' | 'editkeys' | 'delete';
+type ServerDetailNavItem = 'exit' | 'enable' | 'disable' | 'delete';
 
 /**
  * Server Details Content Component - Shows installed server details
@@ -73,28 +74,6 @@ function ServerDetailsContent({ server, activeColumn, onToggle, onDelete, onRefr
   
   // Track if we're in a refresh period (servers reconnecting)
   const [isRefreshing, setIsRefreshing] = useState(false);
-  
-  // Health check countdown timer (30 seconds)
-  const [healthCheckCountdown, setHealthCheckCountdown] = useState(30);
-  
-  // Update countdown every second
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setHealthCheckCountdown(prev => {
-        if (prev <= 1) {
-          return 30; // Reset to 30 when it reaches 0
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    
-    return () => clearInterval(interval);
-  }, []);
-  
-  // Reset countdown when server status changes
-  useEffect(() => {
-    setHealthCheckCountdown(30);
-  }, [server.status, server.health]);
   
   // Clear refreshing state after 3 seconds
   useEffect(() => {
@@ -164,20 +143,20 @@ function ServerDetailsContent({ server, activeColumn, onToggle, onDelete, onRefr
     // Handle navigation
     if (key.upArrow) {
       if (navItem === 'delete') {
-        setNavItem('toggle');
-      } else if (navItem === 'toggle') {
+        setNavItem(server.config.disabled ? 'enable' : 'disable');
+      } else if (navItem === 'enable' || navItem === 'disable') {
         setNavItem('exit');
       }
     } else if (key.downArrow) {
       if (navItem === 'exit') {
-        setNavItem('toggle');
-      } else if (navItem === 'toggle') {
+        setNavItem(server.config.disabled ? 'enable' : 'disable');
+      } else if (navItem === 'enable' || navItem === 'disable') {
         setNavItem('delete');
       }
     } else if (key.return) {
       if (navItem === 'exit') {
         // Exit handled by parent
-      } else if (navItem === 'toggle') {
+      } else if (navItem === 'enable' || navItem === 'disable') {
         // Toggle server enabled/disabled
         setToggleState({ status: 'toggling' });
         onToggle()
@@ -216,39 +195,13 @@ function ServerDetailsContent({ server, activeColumn, onToggle, onDelete, onRefr
       
       <Text> </Text>
       
-      {/* Health Status (display only) */}
-      <Box flexShrink={0}>
-        <Text>
-          <Text bold>Health:</Text>{' '}
-          <Text color={
-            isRefreshing ? uiState.theme.status.info :
-            server.health === 'healthy' ? uiState.theme.status.success :
-            server.health === 'degraded' ? uiState.theme.status.warning : uiState.theme.status.error
-          }>
-            {isRefreshing ? '⟳ Reconnecting...' :
-             server.health === 'healthy' ? '✓ Healthy' :
-             server.health === 'degraded' ? '⚠ Degraded' :
-             '✗ Unhealthy'}
-          </Text>
-          {!server.config.disabled && !isRefreshing && (
-            <Text dimColor> (Next check: {healthCheckCountdown}s)</Text>
-          )}
-        </Text>
-      </Box>
-      
-      {/* Status Toggle (navigable) */}
-      <Box flexShrink={0}>
-        <Text bold color={navItem === 'toggle' ? uiState.theme.text.accent : 'white'}>
-          {navItem === 'toggle' ? '▶ ' : '  '}Status: <Text color={server.config.disabled ? uiState.theme.status.error : uiState.theme.status.success}>
-            {server.config.disabled ? '○ Disabled' : '● Enabled'}
-          </Text>
-        </Text>
-        {navItem === 'toggle' && toggleState.status === 'idle' && (
-          <Text dimColor> (Press Enter to toggle)</Text>
-        )}
-        {toggleState.status === 'toggling' && (
-          <Text dimColor> Updating...</Text>
-        )}
+      {/* Status Banner - Informational Display Only */}
+      <Box flexShrink={0} marginBottom={1}>
+        <ServerStatusBanner
+          health={server.health}
+          isEnabled={!server.config.disabled}
+          isConnecting={isRefreshing || toggleState.status === 'toggling'}
+        />
       </Box>
       
       <Text> </Text>
@@ -378,12 +331,31 @@ function ServerDetailsContent({ server, activeColumn, onToggle, onDelete, onRefr
         )}
       </Box>
       
-      {/* Delete Button / Confirmation / Status - Bottom */}
+      {/* Action Buttons - Bottom */}
       <Box flexDirection="column" flexShrink={0} marginTop={1}>
         {deleteState.status === 'idle' && (
-          <Text bold color={navItem === 'delete' ? 'yellow' : 'red'}>
-            {navItem === 'delete' ? '▶ ' : '  '}[D] Delete Server
-          </Text>
+          <>
+            <Text bold>Actions:</Text>
+            <Box gap={4} marginTop={1}>
+              {server.config.disabled ? (
+                <Text bold color={navItem === 'enable' ? 'yellow' : 'green'}>
+                  {navItem === 'enable' ? '▶ ' : '  '}[E] Enable Server
+                </Text>
+              ) : (
+                <Text bold color={navItem === 'disable' ? 'yellow' : 'gray'}>
+                  {navItem === 'disable' ? '▶ ' : '  '}[D] Disable Server
+                </Text>
+              )}
+              <Text bold color={navItem === 'delete' ? 'yellow' : 'red'}>
+                {navItem === 'delete' ? '▶ ' : '  '}[X] Delete Server
+              </Text>
+            </Box>
+            {toggleState.status === 'toggling' && (
+              <Box marginTop={1}>
+                <Text dimColor>⟳ Updating server status...</Text>
+              </Box>
+            )}
+          </>
         )}
         
         {deleteState.status === 'confirm' && (
