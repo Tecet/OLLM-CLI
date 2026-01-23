@@ -46,7 +46,8 @@ export function TerminalProvider({ children }: { children: React.ReactNode }) {
       ptyProcessRef.current = ptyProcess;
       setIsRunning(true);
 
-      ptyProcess.onData((data) => {
+      // Store disposables for cleanup
+      const dataDisposable = ptyProcess.onData((data) => {
         setRawOutput(prev => [...prev.slice(-1000), data]);
         setOutput(prev => {
           const newOutput = [...prev, {
@@ -57,14 +58,31 @@ export function TerminalProvider({ children }: { children: React.ReactNode }) {
         });
       });
 
-      ptyProcess.onExit(() => {
+      const exitDisposable = ptyProcess.onExit(() => {
         setIsRunning(false);
       });
 
       return () => {
-        if (ptyProcessRef.current) {
-          ptyProcessRef.current.kill();
+        // Dispose event listeners first
+        if (dataDisposable) {
+          dataDisposable.dispose();
         }
+        if (exitDisposable) {
+          exitDisposable.dispose();
+        }
+        
+        // Then kill the process
+        if (ptyProcessRef.current) {
+          try {
+            ptyProcessRef.current.kill();
+          } catch (error) {
+            // Process may already be dead
+            console.warn('Failed to kill PTY process:', error);
+          }
+        }
+        
+        // Clear ref
+        ptyProcessRef.current = null;
       };
     } catch (error) {
       console.error('Failed to spawn terminal:', error);

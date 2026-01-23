@@ -56,6 +56,8 @@ export function MouseProvider({ children }: MouseProviderProps): React.ReactElem
   }, [isRawModeSupported, setRawMode]);
 
   useEffect(() => {
+    if (!stdin) return;
+    
     const handleData = (data: Buffer) => {
       const input = data.toString();
       
@@ -117,14 +119,11 @@ export function MouseProvider({ children }: MouseProviderProps): React.ReactElem
       }
     };
 
-    if (stdin) {
-      stdin.on('data', handleData);
-    }
+    stdin.on('data', handleData);
 
     return () => {
-      if (stdin) {
-        stdin.off('data', handleData);
-      }
+      // Use removeListener instead of off for better compatibility
+      stdin.removeListener('data', handleData);
     };
   }, [stdin]);
 

@@ -87,6 +87,10 @@ describe('Chat Client - Property-Based Tests', () => {
             ];
 
             const provider = new MockProvider(eventsWithFinish);
+            
+            // Unregister if already exists (for property test iterations)
+            providerRegistry.unregister('mock');
+            
             providerRegistry.register(provider);
             providerRegistry.setDefault('mock');
 
@@ -134,6 +138,7 @@ describe('Chat Client - Property-Based Tests', () => {
           ];
 
           const provider = new MockProvider(providerEvents);
+          providerRegistry.unregister('mock');
           providerRegistry.register(provider);
           providerRegistry.setDefault('mock');
 
@@ -179,6 +184,7 @@ describe('Chat Client - Property-Based Tests', () => {
       ];
 
       const provider = new MockProvider(providerEvents);
+      providerRegistry.unregister('mock');
       providerRegistry.register(provider);
       providerRegistry.setDefault('mock');
 
@@ -245,6 +251,7 @@ describe('Chat Client - Property-Based Tests', () => {
             ];
 
             const provider = new MockProvider(providerEvents);
+            providerRegistry.unregister('mock');
             providerRegistry.register(provider);
             providerRegistry.setDefault('mock');
 
@@ -293,6 +300,7 @@ describe('Chat Client - Property-Based Tests', () => {
             ];
 
             const provider = new MockProvider(providerEvents);
+            providerRegistry.unregister('mock');
             providerRegistry.register(provider);
             providerRegistry.setDefault('mock');
 
@@ -342,6 +350,7 @@ describe('Chat Client - Unit Tests', () => {
       ];
 
       const provider = new MockProvider(providerEvents);
+      providerRegistry.unregister('mock');
       providerRegistry.register(provider);
       providerRegistry.setDefault('mock');
 
@@ -396,6 +405,7 @@ describe('Chat Client - Unit Tests', () => {
         },
       };
 
+      providerRegistry.unregister('mock');
       providerRegistry.register(provider);
       providerRegistry.setDefault('mock');
 
@@ -458,6 +468,7 @@ describe('Chat Client - Unit Tests', () => {
       ];
 
       const provider = new MockProvider(providerEvents);
+      providerRegistry.unregister('mock');
       providerRegistry.register(provider);
       providerRegistry.setDefault('mock');
 
@@ -493,6 +504,7 @@ describe('Chat Client - Unit Tests', () => {
       ];
 
       const provider = new MockProvider(providerEvents);
+      providerRegistry.unregister('mock');
       providerRegistry.register(provider);
       providerRegistry.setDefault('mock');
 
@@ -554,6 +566,7 @@ describe('Chat Client - Unit Tests', () => {
       ];
 
       const provider = new MockProvider(providerEvents);
+      providerRegistry.unregister('mock');
       providerRegistry.register(provider);
       providerRegistry.setDefault('mock');
 
@@ -615,6 +628,7 @@ describe('Chat Client - Unit Tests', () => {
               },
             };
 
+            providerRegistry.unregister('mock');
             providerRegistry.register(provider);
             providerRegistry.setDefault('mock');
 
@@ -680,6 +694,7 @@ describe('Chat Client - Unit Tests', () => {
             ];
 
             const provider = new MockProvider(providerEvents);
+            providerRegistry.unregister('mock');
             providerRegistry.register(provider);
             providerRegistry.setDefault('mock');
 
@@ -745,6 +760,7 @@ describe('Chat Client - Unit Tests', () => {
               },
             };
 
+            providerRegistry.unregister('mock');
             providerRegistry.register(provider);
             providerRegistry.setDefault('mock');
 
@@ -822,6 +838,7 @@ describe('Chat Client - Session Recording Integration', () => {
       ];
 
       const provider = new MockProvider(providerEvents);
+      providerRegistry.unregister('mock');
       providerRegistry.register(provider);
       providerRegistry.setDefault('mock');
 
@@ -891,6 +908,7 @@ describe('Chat Client - Session Recording Integration', () => {
         },
       };
 
+      providerRegistry.unregister('mock');
       providerRegistry.register(provider);
       providerRegistry.setDefault('mock');
 
@@ -919,6 +937,7 @@ describe('Chat Client - Session Recording Integration', () => {
       ];
 
       const provider = new MockProvider(providerEvents);
+      providerRegistry.unregister('mock');
       providerRegistry.register(provider);
       providerRegistry.setDefault('mock');
 
@@ -957,6 +976,7 @@ describe('Chat Client - Session Recording Integration', () => {
       ];
 
       const provider = new MockProvider(providerEvents);
+      providerRegistry.unregister('mock');
       providerRegistry.register(provider);
       providerRegistry.setDefault('mock');
 
@@ -998,6 +1018,7 @@ describe('Chat Client - Session Recording Integration', () => {
       ];
 
       const provider = new MockProvider(providerEvents);
+      providerRegistry.unregister('mock');
       providerRegistry.register(provider);
       providerRegistry.setDefault('mock');
 
@@ -1055,6 +1076,7 @@ describe('Chat Client - Session Recording Integration', () => {
       ];
 
       const provider = new MockProvider(providerEvents);
+      providerRegistry.unregister('mock');
       providerRegistry.register(provider);
       providerRegistry.setDefault('mock');
 
@@ -1115,6 +1137,7 @@ describe('Chat Client - Session Recording Integration', () => {
         yield* originalChatStream(request);
       };
 
+      providerRegistry.unregister('mock');
       providerRegistry.register(provider);
       providerRegistry.setDefault('mock');
 
@@ -1138,6 +1161,7 @@ describe('Chat Client - Session Recording Integration', () => {
       ];
 
       const provider = new MockProvider(providerEvents);
+      providerRegistry.unregister('mock');
       providerRegistry.register(provider);
       providerRegistry.setDefault('mock');
 
@@ -1172,6 +1196,7 @@ describe('Chat Client - Session Recording Integration', () => {
       ];
 
       const provider = new MockProvider(providerEvents);
+      providerRegistry.unregister('mock');
       providerRegistry.register(provider);
       providerRegistry.setDefault('mock');
 
@@ -1209,6 +1234,7 @@ describe('Chat Client - Session Recording Integration', () => {
       ];
 
       const provider = new MockProvider(providerEvents);
+      providerRegistry.unregister('mock');
       providerRegistry.register(provider);
       providerRegistry.setDefault('mock');
 
@@ -1252,6 +1278,7 @@ describe('Chat Client - Loop Detection Integration', () => {
       ];
 
       const provider = new MockProvider(providerEvents);
+      providerRegistry.unregister('mock');
       providerRegistry.register(provider);
       providerRegistry.setDefault('mock');
 
@@ -1303,6 +1330,7 @@ describe('Chat Client - Loop Detection Integration', () => {
       ];
 
       const provider = new MockProvider(providerEvents);
+      providerRegistry.unregister('mock');
       providerRegistry.register(provider);
       providerRegistry.setDefault('mock');
 
@@ -1376,6 +1404,7 @@ describe('Chat Client - Loop Detection Integration', () => {
         },
       };
 
+      providerRegistry.unregister('mock');
       providerRegistry.register(provider);
       providerRegistry.setDefault('mock');
 
@@ -1426,6 +1455,7 @@ describe('Chat Client - Loop Detection Integration', () => {
       ];
 
       const provider = new MockProvider(providerEvents);
+      providerRegistry.unregister('mock');
       providerRegistry.register(provider);
       providerRegistry.setDefault('mock');
 
@@ -1474,6 +1504,7 @@ describe('Chat Client - Loop Detection Integration', () => {
         },
       };
 
+      providerRegistry.unregister('mock');
       providerRegistry.register(provider);
       providerRegistry.setDefault('mock');
 
@@ -1541,6 +1572,7 @@ describe('Chat Client - Context Manager Integration', () => {
         yield* originalChatStream(request);
       };
 
+      providerRegistry.unregister('mock');
       providerRegistry.register(provider);
       providerRegistry.setDefault('mock');
 
@@ -1586,6 +1618,7 @@ describe('Chat Client - Context Manager Integration', () => {
         yield* originalChatStream(request);
       };
 
+      providerRegistry.unregister('mock');
       providerRegistry.register(provider);
       providerRegistry.setDefault('mock');
 
@@ -1644,6 +1677,7 @@ describe('Chat Client - Context Manager Integration', () => {
         yield* originalChatStream(request);
       };
 
+      providerRegistry.unregister('mock');
       providerRegistry.register(provider);
       providerRegistry.setDefault('mock');
 
@@ -1683,6 +1717,7 @@ describe('Chat Client - Context Manager Integration', () => {
       ];
 
       const provider = new MockProvider(providerEvents);
+      providerRegistry.unregister('mock');
       providerRegistry.register(provider);
       providerRegistry.setDefault('mock');
 
@@ -1731,6 +1766,7 @@ describe('Chat Client - Context Manager Integration', () => {
         },
       };
 
+      providerRegistry.unregister('mock');
       providerRegistry.register(provider);
       providerRegistry.setDefault('mock');
 

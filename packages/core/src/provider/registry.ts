@@ -167,6 +167,27 @@ export class ProviderRegistry {
   }
 
   /**
+   * Unregister a provider.
+   * 
+   * Removes a provider from the registry. If the provider was set as default,
+   * the default provider will be cleared.
+   * 
+   * @param name - The name of the provider to unregister
+   * @returns true if the provider was unregistered, false if it wasn't registered
+   * 
+   * @example
+   * ```typescript
+   * registry.unregister('local');
+   * ```
+   */
+  unregister(name: string): boolean {
+    if (this.defaultProviderName === name) {
+      this.defaultProviderName = undefined;
+    }
+    return this.providers.delete(name);
+  }
+
+  /**
    * List all registered provider names.
    * 
    * Returns an array of all provider names that have been registered.

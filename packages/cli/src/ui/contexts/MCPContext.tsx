@@ -241,7 +241,13 @@ export function MCPProvider({
     };
     
     const unsubscribe = SettingsService.getInstance().addChangeListener(handleSettingsChange);
-    return unsubscribe;
+    
+    // Cleanup: remove listener on unmount
+    return () => {
+      if (typeof unsubscribe === 'function') {
+        unsubscribe();
+      }
+    };
   }, [toolRouter]);
 
   /*
