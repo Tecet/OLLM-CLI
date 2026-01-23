@@ -300,6 +300,55 @@ export function MCPProvider({
     };
   }, [toolRouter]);
 
+  /**
+   * Emit a system message
+   * Defined early to avoid circular dependencies with other callbacks
+   */
+  const emitSystemMessage = useCallback((
+    type: SystemMessage['type'],
+    message: string,
+    dismissible: boolean = true
+  ) => {
+    const newMessage: SystemMessage = {
+      id: `${Date.now()}-${Math.random()}`,
+      type,
+      message,
+      timestamp: Date.now(),
+      dismissible,
+    };
+    
+    setSystemMessages(prev => {
+      const updated = [...prev, newMessage];
+      // Notify all listeners with updated messages
+      systemMessageListeners.current.forEach(listener => {
+        listener(updated);
+      });
+      return updated;
+    });
+    
+    // Auto-dismiss success messages after 5 seconds
+    if (type === 'success') {
+      setTimeout(() => {
+        setSystemMessages(prev => prev.filter(m => m.id !== newMessage.id));
+      }, 5000);
+    }
+  }, []); // No dependencies needed - uses functional setState
+  
+  /**
+   * Subscribe to system messages
+   * Defined early to avoid circular dependencies with other callbacks
+   */
+  const subscribeToSystemMessages = useCallback((
+    callback: (messages: SystemMessage[]) => void
+  ): (() => void) => {
+    systemMessageListeners.current.add(callback);
+    
+    // Return unsubscribe function
+    return () => {
+      systemMessageListeners.current.delete(callback);
+    };
+  }, []);
+
   /*
    * Register tools for a server
    */
@@ -989,51 +1038,6 @@ export function MCPProvider({
    */
   const clearError = useCallback(() => {
     setState(prev => ({ ...prev, error: null }));
-  }, []);
-  
-  /**
-   * Emit a system message
-   */
-  const emitSystemMessage = useCallback((
-    type: SystemMessage['type'],
-    message: string,
-    dismissible: boolean = true
-  ) => {
-    const newMessage: SystemMessage = {
-      id: `${Date.now()}-${Math.random()}`,
-      type,
-      message,
-      timestamp: Date.now(),
-      dismissible,
-    };
-    
-    setSystemMessages(prev => [...prev, newMessage]);
-    
-    // Notify all listeners
-    systemMessageListeners.current.forEach(listener => {
-      listener([...systemMessages, newMessage]);
-    });
-    
-    // Auto-dismiss success messages after 5 seconds
-    if (type === 'success') {
-      setTimeout(() => {
-        setSystemMessages(prev => prev.filter(m => m.id !== newMessage.id));
-      }, 5000);
-    }
-  }, [systemMessages]);
-  
-  /**
-   * Subscribe to system messages
-   */
-  const subscribeToSystemMessages = useCallback((
-    callback: (messages: SystemMessage[]) => void
-  ): (() => void) => {
-    systemMessageListeners.current.add(callback);
-    
-    // Return unsubscribe function
-    return () => {
-      systemMessageListeners.current.delete(callback);
-    };
   }, []);
   
   // Notify listeners when system messages change
