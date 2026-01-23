@@ -467,12 +467,19 @@ export function MCPProvider({
         try {
           if (status.status === 'connected') {
             try {
-              const getTools = (mcpClient as any).getTools;
-              if (typeof getTools === 'function') {
-                toolsList = await getTools.call(mcpClient, serverName);
-              }
+              // Retry tool loading with exponential backoff
+              toolsList = await retryWithBackoff(async () => {
+                const getTools = (mcpClient as any).getTools;
+                if (typeof getTools === 'function') {
+                  const tools = await getTools.call(mcpClient, serverName);
+                  return tools || [];
+                }
+                return [];
+              }, { maxAttempts: 3, initialDelay: 500 });
             } catch (err) {
-              console.warn('getTools failed:', err);
+              console.warn(`Failed to get tools for ${serverName} after retries:`, err);
+              // Emit warning but don't fail the entire load
+              emitSystemMessage('warning', `Could not load tools for ${serverName}. Server is connected but tools are unavailable.`);
             }
           }
         } catch (error) {
@@ -533,7 +540,7 @@ export function MCPProvider({
         error: error instanceof Error ? error.message : 'Failed to load servers',
       }));
     }
-  }, [mcpClient, oauthProvider, registerServerTools, unregisterServerTools]);
+  }, [mcpClient, oauthProvider, registerServerTools, unregisterServerTools, emitSystemMessage]);
 
   /**
    * Load marketplace data
@@ -589,6 +596,11 @@ export function MCPProvider({
     try {
       await retryWithBackoff(async () => {
         if (newConfig.disabled) {
+          // Explicitly unregister tools before stopping server
+          if (server.toolsList && server.toolsList.length > 0) {
+            unregisterServerTools(serverName, server.toolsList);
+            lastRegisteredTools.current.delete(serverName);
+          }
           await mcpClient.stopServer(serverName);
         } else {
           await mcpClient.startServer(serverName, newConfig);
@@ -610,6 +622,7 @@ export function MCPProvider({
       // Ensure tools are unregistered if start failed
       if (server.toolsList) {
           unregisterServerTools(serverName, server.toolsList);
+          lastRegisteredTools.current.delete(serverName);
       }
 
       // Revert optimistic update on error
@@ -625,7 +638,7 @@ export function MCPProvider({
 
     // Reload servers to get actual state
     await loadServers();
-  }, [state.servers, mcpClient, loadServers, unregisterServerTools, emitSystemMessage]);
+  }, [state.servers, mcpClient, loadServers, unregisterServerTools, emitSystemMessage, lastRegisteredTools]);
 
   /**
    * Restart a server

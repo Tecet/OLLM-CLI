@@ -46,6 +46,11 @@ export class ToolRegistry {
    * @param tool The tool to register
    */
   register(tool: DeclarativeTool<unknown, unknown>): void {
+    // Warn if replacing existing tool
+    if (this.tools.has(tool.name)) {
+      console.warn(`[ToolRegistry] Tool '${tool.name}' already registered, replacing with new definition`);
+    }
+    
     this.tools.set(tool.name, tool);
     // Register the schema for validation
     globalValidator.registerSchema(tool.name, tool.schema);
