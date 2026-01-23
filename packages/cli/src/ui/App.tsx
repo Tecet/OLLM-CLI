@@ -21,7 +21,6 @@ import { ErrorBoundary } from './components/ErrorBoundary.js';
 import { FileExplorerComponent } from './components/file-explorer/FileExplorerComponent.js';
 import { 
   WorkspaceProvider, 
-  FileTreeProvider, 
   FileFocusProvider,
 } from './components/file-explorer/index.js';
 import { LaunchScreen } from './components/launch/LaunchScreen.js';
@@ -833,7 +832,7 @@ ${toolSupport}
                   autoLoadWorkspace={false}
                   restoreState={true}
                   excludePatterns={['node_modules', '.git', 'dist', 'coverage']}
-                  hasFocus={uiState.activeTab === 'files'}
+                  hasFocus={focusManager.isFocused('file-tree')}
                   toolRegistry={serviceContainer?.getToolRegistry()}
                   policyEngine={serviceContainer?.getPolicyEngine()}
                   messageBus={serviceContainer?.getHookService()?.getMessageBus()}
@@ -1165,11 +1164,9 @@ export function App({ config }: AppProps) {
                                             <ErrorBoundary>
                                               <MouseProvider>
                                                 <WorkspaceProvider>
-                                                  <FileTreeProvider>
-                                                    <FileFocusProvider>
-                                                      <AppContent config={config} />
-                                                    </FileFocusProvider>
-                                                  </FileTreeProvider>
+                                                  <FileFocusProvider>
+                                                    <AppContent config={config} />
+                                                  </FileFocusProvider>
                                                 </WorkspaceProvider>
                                               </MouseProvider>
                                             </ErrorBoundary>

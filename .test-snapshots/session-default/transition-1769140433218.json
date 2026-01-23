@@ -1,0 +1,31 @@
+{
+  "id": "snapshot-1769140433218-2ju3gyxj6",
+  "timestamp": "2026-01-23T03:53:53.218Z",
+  "fromMode": "assistant",
+  "toMode": "assistant",
+  "recentMessages": [
+    {
+      "role": "user",
+      "content": "Please debug this.",
+      "timestamp": "2026-01-23T03:53:53.217Z"
+    },
+    {
+      "role": "assistant",
+      "content": "I will inspect. <think>Root cause: missing semicolon</think> I suggest fix.",
+      "timestamp": "2026-01-23T03:53:53.218Z"
+    },
+    {
+      "role": "user",
+      "content": "Proceed with fix.",
+      "timestamp": "2026-01-23T03:53:53.218Z"
+    }
+  ],
+  "activeSkills": [],
+  "activeTools": [],
+  "currentTask": null,
+  "reasoningTraces": [
+    {
+      "content": "{\"content\":\"Root cause: missing semicolon\",\"tokenCount\":8,\"duration\":0,\"complete\":true}"
+    }
+  ]
+}

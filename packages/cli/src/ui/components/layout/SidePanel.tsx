@@ -27,7 +27,7 @@ export interface SidePanelProps {
 }
 
 export function SidePanel({ visible, connection, model, gpu, theme, row1Height }: SidePanelProps) {
-  const { isFocused } = useFocusManager();
+  const { isFocused, setFocus: focusManagerSetFocus } = useFocusManager();
   const { contextUsage } = useChat();
   const { activeKeybinds } = useKeybinds();
   
@@ -47,7 +47,7 @@ export function SidePanel({ visible, connection, model, gpu, theme, row1Height }
   // Use the side-panel's subwindow state for the header so switching to Workspace shows 'Workspace'
   const headerLabel = isToolsMode ? 'Tools' : 'Workspace';
 
-  // Handle sub-window switching within Row 3 when focused
+  // Handle sub-window switching and activation within side panel
   useInput((input, key) => {
     if (!contextFocused) return;
 

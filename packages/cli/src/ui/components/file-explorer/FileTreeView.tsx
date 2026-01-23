@@ -708,14 +708,12 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
   ]);
 
   useInput(handleInput, { 
-    isActive: hasFocus && (
-      focusManager.isFocused('file-tree') || 
+    isActive: hasFocus || 
       focusManager.isFocused('syntax-viewer') ||
       focusManager.isFocused('help-panel') ||
       focusManager.isFocused('search-dialog') ||
       focusManager.isFocused('quick-open-dialog') ||
       focusManager.isFocused('quick-actions-menu')
-    )
   });
 
   useEffect(() => {
@@ -744,6 +742,7 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
     treeState.root,
     treeState.scrollOffset,
     treeState.windowSize,
+    treeState.expandedPaths, // Add this dependency to recalculate when expansion changes
     fileTreeService,
   ]);
 

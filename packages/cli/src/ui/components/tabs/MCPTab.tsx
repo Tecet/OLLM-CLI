@@ -624,7 +624,7 @@ function MarketplaceContent({ activeColumn, onRefreshServers, height: _height = 
       return;
     }
     
-    // Handle detail view navigation
+    // Handle detail view navigation (Level 3)
     if (view === 'detail') {
       if (key.upArrow) {
         setDetailNavItem('exit');
@@ -632,7 +632,7 @@ function MarketplaceContent({ activeColumn, onRefreshServers, height: _height = 
         setDetailNavItem('install');
       } else if (key.return) {
         if (detailNavItem === 'exit') {
-          // Back to list
+          // Back to list (Level 3 → Level 2)
           setView('list');
           setSelectedServer(null);
           setDetailNavItem('exit');
@@ -649,7 +649,7 @@ function MarketplaceContent({ activeColumn, onRefreshServers, height: _height = 
           }
         }
       } else if (key.escape) {
-        // Back to list
+        // Back to list (Level 3 → Level 2)
         setView('list');
         setSelectedServer(null);
         setDetailNavItem('exit');
@@ -681,7 +681,7 @@ function MarketplaceContent({ activeColumn, onRefreshServers, height: _height = 
     } else if (key.downArrow) {
       setSelectedIndex(prev => Math.min(servers.length - 1, prev + 1));
     } else if (key.return && servers[selectedIndex]) {
-      // Show server details
+      // Show server details (Level 2 → Level 3)
       setSelectedServer(servers[selectedIndex]);
       setView('detail');
       setDetailNavItem('exit');
@@ -1319,9 +1319,14 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
   
   /**
    * Handle keyboard navigation
+   * 
+   * MCP Tab uses a 3-level hierarchy:
+   * - Level 1: Left column (menu/list)
+   * - Level 2: Right column (content area)
+   * - Level 3: Detail views (handled by child components via modal system)
    */
   useInput((input, key) => {
-    // Handle dialog keyboard input
+    // Handle dialog keyboard input (Level 3+)
     if (dialogState.type !== null) {
       if (key.escape) {
         handleCloseDialog();
@@ -1331,8 +1336,18 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
       return;
     }
     
-    // Allow ESC to bubble to global handler when no dialog is open
-    if (key.escape) return;
+    // Handle ESC hierarchically:
+    // Level 2 (right column) → Level 1 (left column)
+    // Level 1 (left column) → Exit tab (bubble to global handler)
+    if (key.escape) {
+      if (activeColumn === 'right') {
+        // Go back to left column
+        setActiveColumn('left');
+        return; // Don't bubble - we handled it
+      }
+      // If in left column, allow ESC to bubble to exit the tab
+      return;
+    }
     
     // Show help overlay on '?' key
     if (input === '?') {

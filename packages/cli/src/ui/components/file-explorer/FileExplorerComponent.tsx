@@ -12,7 +12,7 @@
  * Requirements: 1.1 (Workspace loading), 12.2 (State restoration)
  */
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { Box, Text } from 'ink';
 
 import { EditorIntegration } from './EditorIntegration.js';
@@ -305,10 +305,14 @@ export function FileExplorerComponent({
         excludePatterns,
       });
       
+      // Don't auto-expand - let user open it manually
+      // This avoids state synchronization issues
+      
       // Set the root node in tree state (local state for persistence)
       setTreeState(prev => ({
         ...prev,
         root: rootNode,
+        expandedPaths: new Set(), // Start with nothing expanded
       }));
       
       // Note: The FileTreeContext will be updated via initialState prop
@@ -436,10 +440,19 @@ function FileExplorerContent({
   toolRegistry?: any;
 }) {
   const { setRoot } = useFileTree();
+  const hasInitializedRef = useRef(false);
+  const lastRootPathRef = useRef<string | null>(null);
   
-  // Update context when tree state changes
+  // Initialize context with tree root once per root path
   useEffect(() => {
-    if (treeState.root) {
+    const currentRootPath = treeState.root?.path || null;
+    
+    // Only initialize if:
+    // 1. We have a root
+    // 2. Either we haven't initialized yet, OR the root path changed
+    if (treeState.root && (!hasInitializedRef.current || currentRootPath !== lastRootPathRef.current)) {
+      hasInitializedRef.current = true;
+      lastRootPathRef.current = currentRootPath;
       setRoot(treeState.root);
     }
   }, [treeState.root, setRoot]);

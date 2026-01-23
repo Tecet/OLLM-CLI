@@ -235,10 +235,7 @@ export function WorkspacePanel({ theme, hasFocus }: WorkspacePanelProps) {
         }
       }
     }
-  }, { isActive: hasFocus && (
-    focusManager.isFocused('side-file-tree') || 
-    focusManager.isFocused('syntax-viewer')
-  ) });
+  }, { isActive: hasFocus });
 
   // Get focused files array - access from state property
   const focusedFiles = fileFocusContext.state.focusedFiles;
