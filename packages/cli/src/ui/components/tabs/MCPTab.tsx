@@ -1483,11 +1483,6 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
       if (selectedItem?.type === 'server' && selectedItem.server) {
         setDialogState({ type: 'uninstall', serverName: selectedItem.server.name });
       }
-    } else if (input === 't' || input === 'T') {
-      // View tools
-      if (selectedItem?.type === 'server' && selectedItem.server) {
-        setDialogState({ type: 'tools', serverName: selectedItem.server.name });
-      }
     } else if (input === 'l' || input === 'L') {
       // View logs
       if (selectedItem?.type === 'server' && selectedItem.server) {
