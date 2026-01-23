@@ -1,50 +1,134 @@
 {
-  "timestamp": "2026-01-22T13:03:26.194Z",
-  "snapshotId": "e7d8e7aa-4ce4-4217-81fd-508731e16bd2",
+  "timestamp": "2026-01-23T01:22:20.740Z",
+  "snapshotId": "3a829fe4-af25-4e44-8c4b-dcc2f25d943f",
   "contextMessages": {
-    "total": 6,
+    "total": 20,
     "byRole": {
-      "user": 3,
-      "assistant": 2,
-      "system": 1,
+      "user": 10,
+      "assistant": 10,
+      "system": 0,
       "tool": 0
     },
     "details": [
       {
-        "role": "system",
-        "id": "system-1769086955748",
-        "contentLength": 2851,
-        "preview": "You are a coding assistant focused on practical solutions.\n\nCore Behavior:\n- Write clean, working co"
-      },
-      {
         "role": "user",
-        "id": "msg-1769086581797-4yacytz5n",
-        "contentLength": 8,
-        "preview": "continue"
+        "id": "msg-0",
+        "contentLength": 32,
+        "preview": "Test message 0 with some content"
       },
       {
         "role": "assistant",
-        "id": "msg-1769086665285-8ldq11nra",
-        "contentLength": 5816,
-        "preview": "I'll continue generating the content for the remaining prime numbers.\n\n**6. The Sixth Prime Number**"
+        "id": "msg-1",
+        "contentLength": 32,
+        "preview": "Test message 1 with some content"
       },
       {
         "role": "user",
-        "id": "msg-1769086738286-blcgg43dd",
-        "contentLength": 8,
-        "preview": "continue"
+        "id": "msg-2",
+        "contentLength": 32,
+        "preview": "Test message 2 with some content"
       },
       {
         "role": "assistant",
-        "id": "msg-1769086797644-5grg3jixq",
-        "contentLength": 3350,
-        "preview": "**The Next Prime Numbers**\n\nAs we continue our exploration of prime numbers, we arrive at the next f"
+        "id": "msg-3",
+        "contentLength": 32,
+        "preview": "Test message 3 with some content"
       },
       {
         "role": "user",
-        "id": "msg-1769086955748-t0eivhq1f",
-        "contentLength": 8,
-        "preview": "continue"
+        "id": "msg-4",
+        "contentLength": 32,
+        "preview": "Test message 4 with some content"
+      },
+      {
+        "role": "assistant",
+        "id": "msg-5",
+        "contentLength": 32,
+        "preview": "Test message 5 with some content"
+      },
+      {
+        "role": "user",
+        "id": "msg-6",
+        "contentLength": 32,
+        "preview": "Test message 6 with some content"
+      },
+      {
+        "role": "assistant",
+        "id": "msg-7",
+        "contentLength": 32,
+        "preview": "Test message 7 with some content"
+      },
+      {
+        "role": "user",
+        "id": "msg-8",
+        "contentLength": 32,
+        "preview": "Test message 8 with some content"
+      },
+      {
+        "role": "assistant",
+        "id": "msg-9",
+        "contentLength": 32,
+        "preview": "Test message 9 with some content"
+      },
+      {
+        "role": "user",
+        "id": "msg-10",
+        "contentLength": 33,
+        "preview": "Test message 10 with some content"
+      },
+      {
+        "role": "assistant",
+        "id": "msg-11",
+        "contentLength": 33,
+        "preview": "Test message 11 with some content"
+      },
+      {
+        "role": "user",
+        "id": "msg-12",
+        "contentLength": 33,
+        "preview": "Test message 12 with some content"
+      },
+      {
+        "role": "assistant",
+        "id": "msg-13",
+        "contentLength": 33,
+        "preview": "Test message 13 with some content"
+      },
+      {
+        "role": "user",
+        "id": "msg-14",
+        "contentLength": 33,
+        "preview": "Test message 14 with some content"
+      },
+      {
+        "role": "assistant",
+        "id": "msg-15",
+        "contentLength": 33,
+        "preview": "Test message 15 with some content"
+      },
+      {
+        "role": "user",
+        "id": "msg-16",
+        "contentLength": 33,
+        "preview": "Test message 16 with some content"
+      },
+      {
+        "role": "assistant",
+        "id": "msg-17",
+        "contentLength": 33,
+        "preview": "Test message 17 with some content"
+      },
+      {
+        "role": "user",
+        "id": "msg-18",
+        "contentLength": 33,
+        "preview": "Test message 18 with some content"
+      },
+      {
+        "role": "assistant",
+        "id": "msg-19",
+        "contentLength": 33,
+        "preview": "Test message 19 with some content"
       }
     ]
   }
