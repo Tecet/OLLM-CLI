@@ -599,7 +599,13 @@ export function MCPProvider({
   const toggleServer = useCallback(async (serverName: string) => {
     // Enqueue operation to prevent race conditions
     return enqueueServerOperation(serverName, async () => {
-      const server = state.servers.get(serverName);
+      // Get fresh server state (not from closure)
+      let server: ExtendedMCPServerStatus | undefined;
+      setState(prev => {
+        server = prev.servers.get(serverName);
+        return prev; // No state change, just reading
+      });
+      
       if (!server) {
         const errorMsg = `Server '${serverName}' not found`;
         emitSystemMessage('error', errorMsg);
@@ -634,8 +640,8 @@ export function MCPProvider({
         await retryWithBackoff(async () => {
           if (newConfig.disabled) {
             // Explicitly unregister tools before stopping server
-            if (server.toolsList && server.toolsList.length > 0) {
-              unregisterServerTools(serverName, server.toolsList);
+            if (server!.toolsList && server!.toolsList.length > 0) {
+              unregisterServerTools(serverName, server!.toolsList);
               lastRegisteredTools.current.delete(serverName);
             }
             await mcpClient.stopServer(serverName);
@@ -676,7 +682,7 @@ export function MCPProvider({
       // Reload servers to get actual state
       await loadServers();
     });
-  }, [state.servers, mcpClient, loadServers, unregisterServerTools, emitSystemMessage, lastRegisteredTools, enqueueServerOperation]);
+  }, [mcpClient, loadServers, unregisterServerTools, emitSystemMessage, lastRegisteredTools, enqueueServerOperation]);
 
   /**
    * Restart a server
