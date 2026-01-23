@@ -848,6 +848,8 @@ ${toolSupport}
           return <GitHubTab width={width} />;
         case 'settings':
           return <SettingsTab width={width} />;
+        case 'bug-report':
+          return <BugReportTab width={width} />;
         default:
           return <SearchTab width={width} />;
       }

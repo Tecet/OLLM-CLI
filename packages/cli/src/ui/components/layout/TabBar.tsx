@@ -24,6 +24,7 @@ export const tabs: Tab[] = [
   { id: 'github', label: 'GitHub', icon: '🐙', shortcut: 'Ctrl+7' },
   { id: 'mcp', label: 'MCP', icon: '🔌', shortcut: 'Ctrl+8' },
   { id: 'settings', label: 'Settings', icon: '⚙', shortcut: 'Ctrl+9' },
+  { id: 'bug-report', label: 'Bug Report', icon: '🐛', shortcut: 'Ctrl+0' },
 ];
 
 export interface TabBarProps {

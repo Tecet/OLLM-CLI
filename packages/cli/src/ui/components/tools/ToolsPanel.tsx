@@ -142,7 +142,6 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 30, windowW
   const [scrollOffset, setScrollOffset] = useState(0);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isOnExitItem, setIsOnExitItem] = useState(false); // Track if Exit item is selected
-  const [isOnBugReportItem, setIsOnBugReportItem] = useState(false); // Track if Bug Report item is selected
   
   // Get categories from context (dynamic from ToolRegistry)
   const categoryData = toolsState.categories;
@@ -158,7 +157,7 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 30, windowW
 
   // Calculate total items for windowed rendering
   const totalItems = useMemo(() => {
-    return categoryData.reduce((sum, { tools }) => sum + tools.length + 1, 0) + 2; // +1 for category header, +1 for Exit item, +1 for Bug Report item
+    return categoryData.reduce((sum, { tools }) => sum + tools.length + 1, 0) + 1; // +1 for category header, +1 for Exit item
   }, [categoryData]);
 
   // Visible window size (adjust based on terminal height)
@@ -167,7 +166,7 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 30, windowW
   // Calculate which categories and tools should be visible in the current window
   const visibleItems = useMemo(() => {
     const items: Array<{
-      type: 'exit' | 'category' | 'tool' | 'bug-report';
+      type: 'exit' | 'category' | 'tool';
       categoryIndex: number;
       toolIndex?: number;
       position: number;
@@ -201,13 +200,6 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 30, windowW
       });
     });
 
-    // Add Bug Report item at the end
-    items.push({
-      type: 'bug-report',
-      categoryIndex: -1,
-      position: position++,
-    });
-
     // Filter to visible window
     return items.filter(
       item => item.position >= scrollOffset && item.position < scrollOffset + WINDOW_SIZE
@@ -235,15 +227,6 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 30, windowW
       return;
     }
     
-    if (isOnBugReportItem) {
-      // Move from Bug Report to last tool of last category
-      const lastCategory = categoryData[categoryData.length - 1];
-      setIsOnBugReportItem(false);
-      setSelectedCategoryIndex(categoryData.length - 1);
-      setSelectedToolIndex(lastCategory.tools.length - 1);
-      return;
-    }
-    
     if (selectedToolIndex > 0) {
       setSelectedToolIndex(prev => prev - 1);
     } else if (selectedCategoryIndex > 0) {
@@ -267,11 +250,6 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 30, windowW
       return;
     }
     
-    if (isOnBugReportItem) {
-      // Already at Bug Report, can't go down
-      return;
-    }
-    
     const currentCategory = categoryData[selectedCategoryIndex];
     if (selectedToolIndex < currentCategory.tools.length - 1) {
       setSelectedToolIndex(prev => prev + 1);
@@ -279,18 +257,10 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 30, windowW
       // Move to next category's first tool
       setSelectedCategoryIndex(prev => prev + 1);
       setSelectedToolIndex(0);
-    } else {
-      // At last tool of last category, move to Bug Report
-      setIsOnBugReportItem(true);
     }
   };
 
   const handleToggleCurrent = () => {
-    if (isOnExitItem || isOnBugReportItem) {
-      // No toggle action for Exit or Bug Report items
-      return;
-    }
-    
     const currentCategory = categoryData[selectedCategoryIndex];
     const currentTool = currentCategory.tools[selectedToolIndex];
     if (currentTool) {
@@ -304,9 +274,6 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 30, windowW
    * Navigation Keys:
    * - ↑/↓: Navigate through tools
    * - ←/→/Enter: Toggle tool enable/disable
-   * - B: Jump to Bug Report
-   * - D: Open Discord (when on Bug Report)
-   * - G: Open GitHub (when on Bug Report)
    * - ESC/0: Exit to nav bar (handled by useTabEscapeHandler)
    * 
    * Note: ESC handling is now managed by the shared useTabEscapeHandler hook
@@ -320,52 +287,12 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 30, windowW
     } else if (key.downArrow) {
       handleNavigateDown();
     } else if (key.leftArrow || key.rightArrow || key.return) {
-      if (!isOnBugReportItem) {
-        handleToggleCurrent();
-      }
-    } else if (input.toLowerCase() === 'b') {
-      // Jump to Bug Report
-      setIsOnExitItem(false);
-      setIsOnBugReportItem(true);
-      // Scroll to bottom to show Bug Report
-      setScrollOffset(Math.max(0, totalItems - WINDOW_SIZE));
-    } else if (isOnBugReportItem && input.toLowerCase() === 'd') {
-      // Open Discord
-      openURL('https://discord.gg/9GuCwdrB');
-    } else if (isOnBugReportItem && input.toLowerCase() === 'g') {
-      // Open GitHub
-      openURL('https://github.com/Tecet/OLLM/issues');
+      handleToggleCurrent();
     }
   }, { isActive: hasFocus });
 
-  // Helper function to open URLs
-  const openURL = (url: string) => {
-    const { exec } = require('child_process');
-    const command = 
-      process.platform === 'win32' ? `start "" "${url}"` :
-      process.platform === 'darwin' ? `open "${url}"` :
-      `xdg-open "${url}"`;
-      
-    exec(command, (error: Error | null) => {
-      if (error) {
-        console.error(`Failed to open URL: ${error.message}`);
-      }
-    });
-  };
-
   // Auto-scroll to keep selected item visible
   useEffect(() => {
-    if (isOnExitItem) {
-      setScrollOffset(0);
-      return;
-    }
-    
-    if (isOnBugReportItem) {
-      // Scroll to bottom to show Bug Report
-      setScrollOffset(Math.max(0, totalItems - WINDOW_SIZE));
-      return;
-    }
-    
     let currentPosition = 1; // Start at 1 because Exit is at position 0
     for (let i = 0; i < selectedCategoryIndex; i++) {
       currentPosition += categoryData[i].tools.length + 1;
@@ -377,7 +304,7 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 30, windowW
     } else if (currentPosition >= scrollOffset + WINDOW_SIZE) {
       setScrollOffset(currentPosition - WINDOW_SIZE + 1);
     }
-  }, [selectedCategoryIndex, selectedToolIndex, isOnExitItem, isOnBugReportItem, categoryData, scrollOffset, WINDOW_SIZE, totalItems]);
+  }, [selectedCategoryIndex, selectedToolIndex, categoryData, scrollOffset, WINDOW_SIZE]);
 
   // Calculate enabled/disabled counts (currently unused)
   /*
@@ -479,7 +406,7 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 30, windowW
           </Box>
           <Box flexShrink={1} marginLeft={1}>
             <Text wrap="truncate-end" color={hasFocus ? uiState.theme.text.primary : uiState.theme.text.secondary}>
-              ↑↓:Nav Enter:Toggle B:Bug 0/Esc:Exit{hasUnsavedChanges ? '*' : ''}
+              ↑↓:Nav Enter:Toggle 0/Esc:Exit{hasUnsavedChanges ? '*' : ''}
             </Text>
           </Box>
         </Box>
@@ -527,22 +454,6 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 30, windowW
                     <Text> </Text>
                   </>
                 );
-              } else if (item.type === 'bug-report') {
-                // Render Bug Report item
-                return (
-                  <>
-                    <Text key="bug-report-spacer-1"> </Text>
-                    <Text key="bug-report-spacer-2"> </Text>
-                    <Box key="bug-report-item">
-                      <Text
-                        bold={isOnBugReportItem && hasFocus}
-                        color={isOnBugReportItem && hasFocus ? uiState.theme.text.accent : uiState.theme.text.primary}
-                      >
-                        🐛 Report Bug          [B]
-                      </Text>
-                    </Box>
-                  </>
-                );
               } else if (item.type === 'category') {
                 const categoryInfo = categoryData[item.categoryIndex];
                 
@@ -564,7 +475,7 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 30, windowW
                 const categoryInfo = categoryData[item.categoryIndex];
                 const tool = categoryInfo.tools[item.toolIndex!];
                 const isSelectedCategory = item.categoryIndex === selectedCategoryIndex;
-                const isToolSelected = hasFocus && !isOnExitItem && !isOnBugReportItem && isSelectedCategory && item.toolIndex === selectedToolIndex;
+                const isToolSelected = hasFocus && isSelectedCategory && item.toolIndex === selectedToolIndex;
                 const isEnabled = toolStates[tool.id] ?? true;
 
                 return (
@@ -611,129 +522,7 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 30, windowW
           paddingX={2} 
           paddingY={2}
         >
-          {isOnBugReportItem ? (
-            // Show Bug Report panel
-            <Box flexDirection="column">
-              <Text bold color={uiState.theme.text.accent}>
-                🐛 Found a Bug? We're Here to Help!
-              </Text>
-              
-              <Text></Text>
-              <Text></Text>
-              
-              <Text color={uiState.theme.text.primary}>
-                Hey there! 👋
-              </Text>
-              
-              <Text></Text>
-              
-              <Text color={uiState.theme.text.secondary}>
-                Thanks for helping us make OLLM CLI better. Whether you've found a bug,
-              </Text>
-              <Text color={uiState.theme.text.secondary}>
-                have a feature suggestion, or just need help - we'd love to hear from you!
-              </Text>
-              
-              <Text></Text>
-              <Text color={uiState.theme.text.secondary}>
-                ───────────────────────────────────────────────────────────────────
-              </Text>
-              <Text></Text>
-              
-              <Text bold color={uiState.theme.text.primary}>
-                📝 Before You Report:
-              </Text>
-              
-              <Text></Text>
-              
-              <Text color={uiState.theme.text.secondary}>
-                  ✓ Check if the issue still happens after restarting OLLM CLI
-              </Text>
-              <Text color={uiState.theme.text.secondary}>
-                  ✓ Make sure you're running the latest version (v0.1.0)
-              </Text>
-              <Text color={uiState.theme.text.secondary}>
-                  ✓ Try to reproduce the issue to confirm it's consistent
-              </Text>
-              
-              <Text></Text>
-              
-              <Text bold color={uiState.theme.text.primary}>
-                📋 What Makes a Great Bug Report:
-              </Text>
-              
-              <Text></Text>
-              
-              <Text color={uiState.theme.text.secondary}>
-                  • Clear description of what went wrong
-              </Text>
-              <Text color={uiState.theme.text.secondary}>
-                  • Steps to reproduce (1, 2, 3...)
-              </Text>
-              <Text color={uiState.theme.text.secondary}>
-                  • Expected vs actual behavior
-              </Text>
-              <Text color={uiState.theme.text.secondary}>
-                  • Your OS and OLLM CLI version
-              </Text>
-              <Text color={uiState.theme.text.secondary}>
-                  • Screenshots or error messages (if applicable)
-              </Text>
-              
-              <Text></Text>
-              <Text color={uiState.theme.text.secondary}>
-                ───────────────────────────────────────────────────────────────────
-              </Text>
-              <Text></Text>
-              
-              <Text bold color={uiState.theme.text.primary}>
-                🚀 Choose Your Platform:
-              </Text>
-              
-              <Text></Text>
-              
-              <Text color={uiState.theme.text.secondary}>
-                  <Text color={uiState.theme.text.accent}>[D]</Text> Discord Community (Recommended for quick help)
-              </Text>
-              <Text color={uiState.theme.text.secondary}>
-                      Chat with the community, get instant feedback, and report bugs
-              </Text>
-              <Text color={uiState.theme.text.accent}>
-                      https://discord.gg/9GuCwdrB
-              </Text>
-              
-              <Text></Text>
-              
-              <Text color={uiState.theme.text.secondary}>
-                  <Text color={uiState.theme.text.accent}>[G]</Text> GitHub Issues (For detailed bug reports)
-              </Text>
-              <Text color={uiState.theme.text.secondary}>
-                      Create a formal issue with full details and tracking
-              </Text>
-              <Text color={uiState.theme.text.accent}>
-                      https://github.com/Tecet/OLLM/issues
-              </Text>
-              
-              <Text></Text>
-              <Text color={uiState.theme.text.secondary}>
-                ───────────────────────────────────────────────────────────────────
-              </Text>
-              <Text></Text>
-              
-              <Text color={uiState.theme.text.secondary}>
-                💡 Pro Tip: Discord is great for quick questions and discussions,
-              </Text>
-              <Text color={uiState.theme.text.secondary}>
-                           while GitHub is better for detailed bug tracking.
-              </Text>
-              
-              <Text></Text>
-              
-              <Text color={uiState.theme.text.secondary} dimColor>
-                Navigation: Press D for Discord • Press G for GitHub • Esc to go back
-              </Text>
-            </Box>
-          ) : selectedTool ? (
+          {selectedTool ? (
             <>
               {/* Tool name */}
               <Text bold color={uiState.theme.text.accent}>
