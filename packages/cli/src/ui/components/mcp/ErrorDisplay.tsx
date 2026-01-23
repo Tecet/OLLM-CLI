@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { Box, Text } from 'ink';
+import { Box, Text, useInput } from 'ink';
 
 import { useUI } from '../../../features/context/UIContext.js';
 
@@ -110,16 +110,6 @@ export const ErrorBanner: React.FC<ErrorDisplayProps> = ({
       <Box marginLeft={1} flexGrow={1}>
         <Text color={theme.text.primary}>{firstLine}</Text>
       </Box>
-      {canRetry && onRetry && (
-        <Box marginLeft={2}>
-          <Text color={theme.text.secondary}>[R] Retry</Text>
-        </Box>
-      )}
-      {onDismiss && (
-        <Box marginLeft={1}>
-          <Text color={theme.text.secondary}>[D] Dismiss</Text>
-        </Box>
-      )}
     </Box>
   );
 };

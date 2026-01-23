@@ -118,6 +118,10 @@ export interface MCPContextValue {
   // Tool Management
   /** Get tools for a server */
   getServerTools: (serverName: string) => MCPTool[];
+  
+  // Error Management
+  /** Clear the current error state */
+  clearError: () => void;
   /** Set tool auto-approve status */
   setToolAutoApprove: (serverName: string, toolName: string, approve: boolean) => Promise<void>;
   
@@ -906,6 +910,13 @@ export function MCPProvider({
     };
   }, [loadServers]);
 
+  /**
+   * Clear error state
+   */
+  const clearError = useCallback(() => {
+    setState(prev => ({ ...prev, error: null }));
+  }, []);
+
   const value: MCPContextValue = {
     state,
     toggleServer,
@@ -923,6 +934,7 @@ export function MCPProvider({
     searchMarketplace,
     refreshMarketplace,
     refreshServers,
+    clearError,
     toolRouter,
   };
 

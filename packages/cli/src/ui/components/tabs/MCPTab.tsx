@@ -17,7 +17,6 @@ import { Box, Text, useInput, useStdout } from 'ink';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { useUI } from '../../../features/context/UIContext.js';
 import { useMCP, type ExtendedMCPServerStatus } from '../../contexts/MCPContext.js';
-import { useNotifications } from '../../hooks/useNotifications.js';
 import { APIKeyInputDialog } from '../dialogs/APIKeyInputDialog.js';
 import { 
   ServerConfigDialog,
@@ -32,8 +31,6 @@ import {
 import { ErrorBoundary } from '../ErrorBoundary.js';
 import { ErrorBanner } from '../mcp/ErrorDisplay.js';
 import { LoadingSpinner } from '../mcp/LoadingSpinner.js';
-import { NotificationContainer } from '../mcp/Notification.js';
-import { OperationProgress } from '../mcp/OperationProgress.js';
 
 import type { MCPMarketplaceServer } from '../../../services/mcpMarketplace.js';
 
@@ -465,6 +462,7 @@ interface MarketplaceContentProps {
   activeColumn: 'left' | 'right';
   onRefreshServers: () => Promise<void>;
   height?: number;
+  onDetailViewChange: (isInDetail: boolean) => void;
 }
 
 /**
@@ -477,7 +475,7 @@ type MarketplaceView = 'list' | 'detail' | 'apikey';
  */
 type DetailNavItem = 'exit' | 'install';
 
-function MarketplaceContent({ activeColumn, onRefreshServers, height: _height = 20 }: MarketplaceContentProps) {
+function MarketplaceContent({ activeColumn, onRefreshServers, height: _height = 20, onDetailViewChange }: MarketplaceContentProps) {
   const { state: uiState } = useUI();
   const { searchMarketplace } = useMCP();
   const [searchQuery, setSearchQuery] = useState('');
@@ -497,6 +495,11 @@ function MarketplaceContent({ activeColumn, onRefreshServers, height: _height = 
     status: 'idle',
     selection: 'no',
   });
+  
+  // Notify parent when entering/exiting detail view
+  useEffect(() => {
+    onDetailViewChange(view === 'detail' || view === 'apikey');
+  }, [view, onDetailViewChange]);
   
   // Fixed window size - display exactly 10 servers at a time
   const windowSize = 10;
@@ -1065,6 +1068,7 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
     configureServer,
     uninstallServer,
     refreshServers,
+    clearError,
   } = useMCP();
   
   // Check if this panel has focus (for navigation and dialogs)
@@ -1075,20 +1079,19 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
   // Get terminal height for calculating content area
   const terminalHeight = (stdout?.rows || 24) - 1;
   
-  // Use notification hook for feedback
-  const {
-    notifications,
-    removeNotification,
-    showSuccess,
-    showError,
-    showInfo,
-  } = useNotifications();
-  
   // Navigation state
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [activeColumn, setActiveColumn] = useState<'left' | 'right'>('left');
   const [scrollOffset, setScrollOffset] = useState(0);
   const windowSize = 15; // Number of items visible in left column
+  
+  // Track if we're in a detail view (Level 3) to prevent ESC from bubbling
+  const [isInDetailView, setIsInDetailView] = useState(false);
+  
+  // Callback for child components to notify when entering/exiting detail views
+  const handleDetailViewChange = useCallback((isInDetail: boolean) => {
+    setIsInDetailView(isInDetail);
+  }, []);
   
   // Track servers that are reconnecting (show "Reconnecting..." instead of "Disconnected")
   // Show reconnecting for servers with error status until they connect
@@ -1102,6 +1105,9 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
   
   // Dialog state
   const [dialogState, setDialogState] = useState<DialogState>({ type: null });
+  
+  // Status message for operations
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
   
   // Build menu items for left column
   const menuItems = useMemo((): MenuItem[] => {
@@ -1185,20 +1191,11 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
         break;
         
       case 'server':
-        // Toggle server enabled/disabled state (only in active mode)
-        if (selectedItem.server && canModifyState) {
-          try {
-            await toggleServer(selectedItem.server.name);
-          } catch (error) {
-            showError(
-              'Toggle failed',
-              error instanceof Error ? error.message : 'Failed to toggle server'
-            );
-          }
-        }
+        // Server selection just shows details in right column
+        // Enable/disable happens in the detail view, not here
         break;
     }
-  }, [selectedItem, exitToNavBar, toggleServer, showError, canModifyState]);
+  }, [selectedItem, exitToNavBar]);
   
   // Auto-scroll to keep selected item visible
   useEffect(() => {
@@ -1231,11 +1228,10 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
               serverName={dialogState.serverName}
               onClose={handleCloseDialog}
               onSave={async (config) => {
+                setStatusMessage('Saving configuration...');
                 await configureServer(dialogState.serverName!, config);
-                showSuccess(
-                  'Configuration saved',
-                  `${dialogState.serverName} has been configured successfully`
-                );
+                setStatusMessage('Configuration saved successfully');
+                setTimeout(() => setStatusMessage(null), 3000);
                 handleCloseDialog();
               }}
             />
@@ -1293,11 +1289,10 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
               onClose={handleCloseDialog}
               onConfirm={async () => {
                 const serverName = dialogState.serverName!;
+                setStatusMessage(`Uninstalling ${serverName}...`);
                 await uninstallServer(serverName);
-                showSuccess(
-                  'Server uninstalled',
-                  `${serverName} has been uninstalled successfully`
-                );
+                setStatusMessage(`${serverName} uninstalled successfully`);
+                setTimeout(() => setStatusMessage(null), 3000);
                 handleCloseDialog();
               }}
             />
@@ -1326,6 +1321,16 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
    * - Level 3: Detail views (handled by child components via modal system)
    */
   useInput((input, key) => {
+    // Handle error state input
+    if (state.error) {
+      if (key.return || key.escape || input === '0') {
+        // Clear error and return to main menu
+        clearError();
+        exitToNavBar();
+      }
+      return; // Don't process other inputs in error state
+    }
+
     // Handle dialog keyboard input (Level 3+)
     if (dialogState.type !== null) {
       if (key.escape) {
@@ -1340,6 +1345,11 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
     // Level 2 (right column) → Level 1 (left column)
     // Level 1 (left column) → Exit tab (bubble to global handler)
     if (key.escape) {
+      // Don't handle ESC if we're in a detail view (Level 3) - let child handle it
+      if (isInDetailView) {
+        return;
+      }
+      
       if (activeColumn === 'right') {
         // Go back to left column
         setActiveColumn('left');
@@ -1373,13 +1383,15 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
       // Restart server
       if (selectedItem?.type === 'server' && selectedItem.server) {
         const server = selectedItem.server;
-        showInfo('Restarting server', `${server.name} is restarting...`);
+        setStatusMessage(`Restarting ${server.name}...`);
         restartServer(server.name)
           .then(() => {
-            showSuccess('Server restarted', `${server.name} has been restarted`);
+            setStatusMessage(`${server.name} restarted successfully`);
+            setTimeout(() => setStatusMessage(null), 3000);
           })
           .catch(err => {
-            showError('Failed to restart', err instanceof Error ? err.message : 'Unknown error');
+            setStatusMessage(`Failed to restart: ${err instanceof Error ? err.message : 'Unknown error'}`);
+            setTimeout(() => setStatusMessage(null), 5000);
           });
       }
     } else if (input === 'c' || input === 'C') {
@@ -1425,29 +1437,17 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
     );
   }
   
-  // Error state with retry option
+  // Error state with back navigation
   if (state.error) {
     return (
       <Box flexDirection="column" padding={2}>
         <ErrorBanner
           message={state.error}
-          canRetry={true}
-          onRetry={() => {
-            refreshServers().catch(err => {
-              console.error('Failed to refresh servers:', err);
-            });
-          }}
-          onDismiss={() => {
-            refreshServers().catch(err => {
-              console.error('Failed to refresh servers:', err);
-            });
-          }}
         />
         <Box marginTop={2}>
-          <Text dimColor>Press </Text>
-          <Text bold color="cyan">
-            Esc or 0
-          </Text>
+          <Text bold color={uiState.theme.text.accent}>▶ ← Back</Text>
+          <Text dimColor> - Press </Text>
+          <Text bold color="cyan">Enter, Esc or 0</Text>
           <Text dimColor> to return to main menu</Text>
         </Box>
       </Box>
@@ -1456,12 +1456,6 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
   
   return (
     <Box flexDirection="column" height="100%">
-      {/* Notification Container */}
-      <NotificationContainer
-        notifications={notifications}
-        onDismiss={removeNotification}
-      />
-      
       {/* Header with focus indicator */}
       <Box flexDirection="column" paddingX={1} paddingY={1} flexShrink={0}>
         <Box justifyContent="space-between" width="100%" overflow="hidden">
@@ -1673,6 +1667,7 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
               activeColumn={activeColumn}
               height={terminalHeight}
               onRefreshServers={refreshServers}
+              onDetailViewChange={handleDetailViewChange}
             />
           )}
           
@@ -1701,22 +1696,25 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
           )}
           </Box>
 
-          {/* Bottom Action Hints */}
-          <Box flexShrink={0} marginTop={1}>
-            <Text dimColor>R:Restart C:Config U:Uninstall T:Tools L:Logs ?:Help 0:Exit</Text>
+          {/* Bottom Status Area */}
+          <Box flexShrink={0} marginTop={1} height={3} borderStyle="single" borderColor={uiState.theme.border.primary} paddingX={1}>
+            {statusMessage ? (
+              <Text color={uiState.theme.text.primary}>{statusMessage}</Text>
+            ) : state.operationsInProgress.size > 0 ? (
+              <Text color={uiState.theme.text.secondary}>
+                {Array.from(state.operationsInProgress.entries()).map(([name, op]) => 
+                  `${name}: ${op}...`
+                ).join(' | ')}
+              </Text>
+            ) : (
+              <Text dimColor> </Text>
+            )}
           </Box>
         </Box>
       </Box>
       )}
 
       {dialogState.type !== null && renderDialog()}
-
-      {/* Operation Progress */}
-      {state.operationsInProgress.size > 0 && (
-        <Box borderStyle="single" borderColor={uiState.theme.text.accent} paddingX={1}>
-          <OperationProgress operations={state.operationsInProgress} />
-        </Box>
-      )}
       
       {/* Render active dialog (moved inside conditional above) */}
     </Box>

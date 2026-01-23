@@ -102,9 +102,15 @@ export class DefaultMCPClient implements MCPClient {
       throw new Error('MCP integration is disabled in configuration');
     }
 
-    // Prevent duplicate server registration
-    if (this.servers.has(name)) {
-      throw new Error(`Server '${name}' is already registered`);
+    // Check if server is already running (not just registered)
+    const existingServer = this.servers.get(name);
+    if (existingServer && (existingServer.status === 'connected' || existingServer.status === 'starting')) {
+      throw new Error(`Server '${name}' is already running`);
+    }
+    
+    // If server exists but is in error/disconnected state, remove it first
+    if (existingServer) {
+      this.servers.delete(name);
     }
 
     // Initialize OAuth provider if server requires authentication
