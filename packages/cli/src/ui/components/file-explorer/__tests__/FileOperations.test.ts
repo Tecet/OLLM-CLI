@@ -8,7 +8,7 @@ import { writeFileSync, mkdirSync, rmSync, existsSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 import { FileOperations } from '../FileOperations.js';
 
@@ -94,8 +94,7 @@ describe('FileOperations', () => {
       const newName = 'new.txt';
       writeFileSync(oldPath, 'Content');
 
-      const confirmFn = vi.fn().mockResolvedValue(true);
-      const result = await fileOps.renameFile(oldName, newName, confirmFn);
+      const result = await fileOps.renameFile(oldName, newName);
 
       expect(result.success).toBe(true);
       expect(existsSync(oldPath)).toBe(false);
@@ -109,8 +108,7 @@ describe('FileOperations', () => {
       writeFileSync(oldPath, 'Old content');
       writeFileSync(newPath, 'New content');
 
-      const confirmFn = vi.fn().mockResolvedValue(true);
-      const result = await fileOps.renameFile(oldName, 'new.txt', confirmFn);
+      const result = await fileOps.renameFile(oldName, 'new.txt');
 
       expect(result.success).toBe(false);
       expect(result.error).toBeDefined();

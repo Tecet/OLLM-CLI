@@ -11,6 +11,8 @@
 import * as fs from 'fs/promises';
 import * as os from 'os';
 import * as path from 'path';
+// Import centralized error class
+import { WorkspaceBoundaryError } from '../errors/index.js';
 
 /**
  * Workspace boundary configuration
@@ -35,26 +37,14 @@ export interface WorkspaceBoundaryConfig {
 /**
  * Workspace information for LLM
  */
+/**
+ * Workspace information for LLM
+ */
 export interface WorkspaceInfo {
   workspacePath: string;
   ollmDataPath: string;
   allowedOllmPaths: string[];
   restrictions: string[];
-}
-
-/**
- * Workspace boundary error
- */
-export class WorkspaceBoundaryError extends Error {
-  constructor(
-    message: string,
-    public attemptedPath: string,
-    public workspacePath: string,
-    public allowedPaths: string[]
-  ) {
-    super(message);
-    this.name = 'WorkspaceBoundaryError';
-  }
 }
 
 /**

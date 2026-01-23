@@ -30,6 +30,7 @@ export interface ChatTabProps {
     autoCollapseOnComplete?: boolean;
   };
   showWindowSwitcher?: boolean;
+  [key: string]: unknown; // Index signature for profileRender compatibility
 }
 
 /**

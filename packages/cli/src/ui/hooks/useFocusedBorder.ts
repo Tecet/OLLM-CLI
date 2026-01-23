@@ -16,7 +16,7 @@
  * ```
  */
 
-import { useFocusManager } from '../../features/context/FocusContext.js';
+import { useFocusManager, FocusableId } from '../../features/context/FocusContext.js';
 import { useUI } from '../../features/context/UIContext.js';
 
 /**
@@ -25,10 +25,10 @@ import { useUI } from '../../features/context/UIContext.js';
  * @param focusId - The focus ID to check
  * @returns Border color string (active or primary from theme)
  */
-export function useFocusedBorder(focusId: string): string {
+export function useFocusedBorder(focusId: FocusableId): string {
   const { isFocused } = useFocusManager();
-  const { uiState } = useUI();
-  const theme = uiState.theme;
+  const { state } = useUI();
+  const theme = state.theme;
 
   const hasFocus = isFocused(focusId);
 
@@ -41,13 +41,13 @@ export function useFocusedBorder(focusId: string): string {
  * @param focusId - The focus ID to check
  * @returns Object with hasFocus boolean and borderColor string
  */
-export function useFocusedState(focusId: string): {
+export function useFocusedState(focusId: FocusableId): {
   hasFocus: boolean;
   borderColor: string;
 } {
   const { isFocused } = useFocusManager();
-  const { uiState } = useUI();
-  const theme = uiState.theme;
+  const { state } = useUI();
+  const theme = state.theme;
 
   const hasFocus = isFocused(focusId);
   const borderColor = hasFocus ? theme.border.active : theme.border.primary;

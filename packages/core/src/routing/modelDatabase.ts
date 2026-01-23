@@ -2,12 +2,11 @@
  * Model Database - Registry of known model capabilities, context limits, and characteristics
  */
 
-// @ts-expect-error - picomatch doesn't have type definitions
-
 // Export singleton instance
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 
+// @ts-expect-error - picomatch doesn't have type definitions
 import picomatch from 'picomatch';
 
 export interface ModelCapabilities {

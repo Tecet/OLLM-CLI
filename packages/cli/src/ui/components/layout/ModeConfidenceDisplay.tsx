@@ -33,7 +33,7 @@ export function ModeConfidenceDisplay({
   currentMode,
   currentModeIcon,
   currentModeColor,
-  _currentModeConfidence,
+  currentModeConfidence,
   suggestedModes,
   allowedTools,
   theme,

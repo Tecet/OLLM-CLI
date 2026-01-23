@@ -23,7 +23,7 @@ describe('EditorMockup Performance', () => {
   });
 
   afterEach(() => {
-    performanceMarks = [];
+    _performanceMarks = [];
   });
 
   describe('Rendering Performance', () => {

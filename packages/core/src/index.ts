@@ -1,5 +1,40 @@
 // Core package entry point
 
+// Error handling system
+export {
+  OllmError,
+  FileSystemError,
+  ConfigError,
+  ProviderConnectionError,
+  ModelError,
+  WorkspaceBoundaryError,
+  ToolExecutionError,
+  InputValidationError,
+  TimeoutError,
+  AbortError,
+  MCPConnectionError,
+  HookError,
+  ContextError,
+  NonInteractiveError,
+  isOllmError,
+  isNodeError,
+  getErrorMessage,
+  getErrorStack,
+  createErrorContext,
+} from './errors/index.js';
+
+export {
+  handleFileSystemError,
+  handleJSONParseError,
+  handleProviderError,
+  withTimeout,
+  checkAborted,
+  withRetry,
+  withFallback,
+  collectErrors,
+  AggregateError,
+} from './errors/errorHandlers.js';
+
 // Provider types and interfaces
 export type {
   Role,

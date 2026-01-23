@@ -4,6 +4,7 @@
  */
 
 import { ProviderRegistry, ChatClient , ToolRegistry } from '@ollm/core';
+import { NonInteractiveError } from '@ollm/ollm-cli-core/errors/index.js';
 
 import { LocalProvider } from '../../ollm-bridge/src/provider/localProvider.js';
 
@@ -21,18 +22,8 @@ export enum NonInteractiveErrorCode {
   GENERAL_ERROR = 5,
 }
 
-/**
- * Non-interactive error with exit code.
- */
-export class NonInteractiveError extends Error {
-  constructor(
-    message: string,
-    public exitCode: NonInteractiveErrorCode = NonInteractiveErrorCode.GENERAL_ERROR
-  ) {
-    super(message);
-    this.name = 'NonInteractiveError';
-  }
-}
+// Re-export NonInteractiveError from centralized errors
+export { NonInteractiveError };
 
 /**
  * Options for non-interactive execution.

@@ -25,12 +25,13 @@ import React from 'react';
 import { Box, Text } from 'ink';
 
 import { useFocusedBorder } from '../../hooks/useFocusedBorder.js';
+import type { FocusableId } from '../../../features/context/FocusContext.js';
 
-import type { Theme } from '../../config/types.js';
+import type { Theme } from '../../../config/types.js';
 
 export interface TabContainerProps {
   /** Focus ID for this tab */
-  focusId: string;
+  focusId: FocusableId;
   /** Tab content */
   children: React.ReactNode;
   /** Optional title displayed at the top */

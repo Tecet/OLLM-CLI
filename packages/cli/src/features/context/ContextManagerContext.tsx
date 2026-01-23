@@ -366,8 +366,8 @@ export function ContextManagerProvider({
         );
         
         // Initialize the snapshot manager (no 'initialize' method on SnapshotManagerImpl)
-        
-        snapshotManagerRef.current = snapshotManager;
+        // Note: Type mismatch between context SnapshotManager and prompts SnapshotManager
+        promptsSnapshotManagerRef.current = snapshotManager as unknown as PromptsSnapshotManager;
         
         // Create WorkflowManager
         const workflowManager = new WorkflowManager(modeManager);

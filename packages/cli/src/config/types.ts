@@ -2,6 +2,9 @@
  * Configuration types for OLLM CLI
  */
 
+// Re-export ConfigError from centralized errors
+export { ConfigError } from '@ollm/ollm-cli-core/errors/index.js';
+
 export interface ProviderConfig {
   default: string;
   ollama?: {
@@ -154,41 +157,10 @@ export interface ValidationResult {
   errors: ValidationError[];
 }
 
-/**
- * Configuration error with enhanced details
- */
-export class ConfigError extends Error {
-  constructor(
-    message: string,
-    public readonly filePath?: string,
-    public readonly line?: number,
-    public readonly column?: number,
-    public readonly snippet?: string
-  ) {
-    super(message);
-    this.name = 'ConfigError';
-  }
-  
-  toString(): string {
-    let result = `Configuration Error: ${this.message}`;
-    
-    if (this.filePath) {
-      result += `\n  File: ${this.filePath}`;
-    }
-    
-    if (this.line !== undefined) {
-      result += `\n  Line: ${this.line}`;
-      if (this.column !== undefined) {
-        result += `, Column: ${this.column}`;
-      }
-    }
-    
-    if (this.snippet) {
-      result += `\n\n${this.snippet}`;
-    }
-    
-    return result;
-  }
+export interface UISettings {
+  theme: Theme;
+  typography: Typography;
+  keybinds: Keybinds;
 }
 
 /**
@@ -281,15 +253,6 @@ export interface Keybinds {
   select: string;
   back: string;
   cycleFocus: string;
-}
-
-/**
- * Combined UI Settings (Theme + Look & Feel)
- */
-export interface UISettings {
-  theme: Theme;
-  typography: Typography;
-  keybinds: Keybinds;
 }
 
 /**
