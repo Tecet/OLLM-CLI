@@ -7,6 +7,18 @@
 import type { MCPClient, MCPServerConfig, MCPServerStatusType } from './types.js';
 
 /**
+ * Connection phase for tracking server connection lifecycle
+ */
+export type ConnectionPhase = 
+  | 'stopped'        // Server is disabled/stopped
+  | 'starting'       // Server process starting
+  | 'connecting'     // Waiting for initial connection
+  | 'health-check'   // Running health checks (1-3 attempts)
+  | 'connected'      // Fully connected and healthy
+  | 'unhealthy'      // Connected but health checks failed
+  | 'error';         // Connection failed
+
+/**
  * Health check result
  */
 export interface HealthCheckResult {
@@ -16,6 +28,8 @@ export interface HealthCheckResult {
   healthy: boolean;
   /** Status type */
   status: MCPServerStatusType;
+  /** Connection phase */
+  phase: ConnectionPhase;
   /** Error message if unhealthy */
   error?: string;
   /** Timestamp of the check */
@@ -50,10 +64,14 @@ interface ServerHealthState {
   name: string;
   /** Last known status */
   lastStatus: MCPServerStatusType;
+  /** Current connection phase */
+  phase: ConnectionPhase;
   /** Server configuration */
   config?: MCPServerConfig;
   /** Number of consecutive failures */
   consecutiveFailures: number;
+  /** Number of health check attempts during current connection */
+  healthCheckAttempts: number;
   /** Number of restart attempts */
   restartAttempts: number;
   /** Timestamp of last health check */
@@ -69,6 +87,7 @@ interface ServerHealthState {
  */
 export type HealthMonitorEventType = 
   | 'health-check'
+  | 'phase-change'
   | 'server-unhealthy'
   | 'server-recovered'
   | 'restart-attempt'
@@ -219,6 +238,7 @@ export class MCPHealthMonitor {
     const listener: HealthMonitorEventListener = (event) => {
       // Only emit health updates for relevant events
       if (event.type === 'health-check' || 
+          event.type === 'phase-change' ||
           event.type === 'server-unhealthy' || 
           event.type === 'server-recovered') {
         const health = this.getServerHealth(event.serverName);
@@ -230,10 +250,30 @@ export class MCPHealthMonitor {
 
     this.addEventListener(listener);
 
-    // Return unsubscribe function
     return () => {
       this.removeEventListener(listener);
     };
+  }
+
+  /**
+   * Update server connection phase and emit event if changed
+   */
+  private updatePhase(serverName: string, newPhase: ConnectionPhase): void {
+    const state = this.serverStates.get(serverName);
+    if (!state) return;
+
+    const oldPhase = state.phase;
+    if (oldPhase === newPhase) return;
+
+    state.phase = newPhase;
+
+    // Emit phase change event
+    this.emitEvent({
+      type: 'phase-change',
+      serverName,
+      timestamp: Date.now(),
+      data: { oldPhase, newPhase },
+    });
   }
 
   /**
@@ -317,11 +357,23 @@ export class MCPHealthMonitor {
 
     for (const server of servers) {
       if (!this.serverStates.has(server.name)) {
+        // Determine initial phase based on server status
+        let initialPhase: ConnectionPhase = 'stopped';
+        if (server.status.status === 'connected') {
+          initialPhase = 'connected';
+        } else if (server.status.status === 'starting') {
+          initialPhase = 'starting';
+        } else if (server.status.status === 'error') {
+          initialPhase = 'error';
+        }
+        
         this.serverStates.set(server.name, {
           name: server.name,
           lastStatus: server.status.status,
+          phase: initialPhase,
           config: server.config,
           consecutiveFailures: 0,
+          healthCheckAttempts: 0,
           restartAttempts: 0,
           lastCheckTime: Date.now(),
           currentBackoffDelay: this.config.initialBackoffDelay,
