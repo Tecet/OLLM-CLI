@@ -23,6 +23,56 @@ const getCategoryIcon = (category: string): string => {
   return categoryIcons[category] || '📦';
 };
 
+// Enhanced tool descriptions
+const getEnhancedDescription = (toolId: string): string => {
+  const descriptions: Record<string, string> = {
+    'glob': 'This powerful tool searches your entire codebase for files matching specific patterns. It supports glob syntax with wildcards, allowing you to quickly locate files by name, extension, or path structure. Perfect for finding configuration files, source code, or any files matching a specific naming convention across your project.',
+    'grep': 'A sophisticated text search tool that scans through file contents to find specific patterns or text. It uses regular expressions for advanced pattern matching, making it ideal for finding function definitions, variable usage, or any text pattern across multiple files. Essential for code analysis and refactoring tasks.',
+    'read-file': 'Reads and displays the complete contents of a single file from your workspace. This tool is fundamental for examining source code, configuration files, documentation, or any text-based file. It provides the full context needed to understand file structure and content.',
+    'read-multiple-files': 'Efficiently reads multiple files at once, allowing you to examine several related files simultaneously. This is particularly useful when you need to understand how different parts of your codebase interact, compare implementations, or review related configuration files together.',
+    'edit-file': 'A precise file editing tool that modifies specific sections of a file using search-and-replace operations. It ensures safe, targeted changes by requiring exact text matching, preventing accidental modifications. Ideal for refactoring, bug fixes, and incremental code updates.',
+    'write-file': 'Creates new files or completely overwrites existing ones with new content. This tool is essential for generating new source files, creating configuration files, or replacing entire file contents when needed. Use with caution as it replaces all existing content.',
+    'list-directory': 'Provides a detailed directory listing showing files, folders, sizes, and permissions. It helps you understand project structure, locate specific directories, and navigate the file system hierarchy. Supports recursive listing to explore nested directory structures.',
+    'search-web': 'Searches the internet for current information, documentation, tutorials, and solutions to technical problems. This tool is invaluable when you need up-to-date information about libraries, frameworks, APIs, or when researching solutions to coding challenges.',
+    'fetch-web': 'Retrieves and displays content from specific web URLs. Perfect for accessing online documentation, reading API specifications, fetching remote configuration files, or examining web resources. It brings external web content directly into your workflow.',
+    'execute-shell': 'Executes shell commands directly in your system terminal. This powerful tool allows you to run build scripts, install packages, run tests, manage git operations, or execute any command-line operation. Essential for development workflows and automation.',
+    'memory': 'Stores and retrieves important information across conversation sessions. Use it to save key decisions, project context, coding patterns, or any information you want to remember for future reference. It creates persistent memory that survives session restarts.',
+    'complete-goal': 'Marks a specific goal or task as completed in your workflow. This tool helps track progress on multi-step projects, ensuring that completed objectives are properly recorded and acknowledged.',
+    'create-checkpoint': 'Creates a snapshot of the current conversation state, allowing you to save important decision points or milestones. You can return to these checkpoints later if needed, making it easier to explore different approaches.',
+    'create-goal': 'Defines a new goal or objective for the AI to work towards. This tool helps structure complex projects by breaking them into manageable, trackable goals that can be pursued systematically.',
+    'manage-todos': 'Manages a list of pending tasks and action items. Add, complete, or review todos to keep track of what needs to be done in your project. Essential for organizing work and maintaining focus on priorities.',
+    'read-past-reasoning': 'Retrieves and reviews previous reasoning, decisions, and thought processes from earlier in the conversation. This helps maintain context and consistency across long development sessions.',
+    'record-decision': 'Documents important decisions made during development, including the rationale behind them. This creates a decision log that helps maintain project consistency and provides context for future changes.',
+    'switch-goal': 'Changes focus from one goal to another, allowing you to manage multiple objectives and switch between different aspects of your project as needed.',
+  };
+  return descriptions[toolId] || 'No detailed description available for this tool.';
+};
+
+// Tool usage examples with command highlighting
+const getToolUsageExample = (toolId: string, accentColor: string): string => {
+  const examples: Record<string, string> = {
+    'glob': 'Use this tool when you need to find files by pattern. For example, to find all TypeScript files: "Find all *.ts files" or "Show me all configuration files matching *.config.js". The tool supports wildcards like * and ** for recursive searches.',
+    'grep': 'Use this tool to search for text within files. For example: "Search for the function definition of handleSubmit" or "Find all TODO comments in the codebase". You can use regular expressions for advanced pattern matching.',
+    'read-file': 'Use this tool when you need to examine a specific file. Simply mention the file: "Show me the contents of @src/index.ts" or "Read the package.json file". The @ symbol can be used to reference files explicitly.',
+    'read-multiple-files': 'Use this tool to read several related files at once. For example: "Show me both the component and its test file" or "Read all configuration files in the config directory".',
+    'edit-file': 'Use this tool for precise file modifications. Describe the change you want: "Change the port from 3000 to 8080 in server.ts" or "Update the function name from oldName to newName". The tool will show you a diff before applying changes.',
+    'write-file': 'Use this tool to create new files or replace entire file contents. For example: "Create a new component file called Button.tsx" or "Generate a README.md file for this project".',
+    'list-directory': 'Use this tool to explore directory structure. For example: "Show me what\'s in the src folder" or "List all files in the current directory". Use the /ls command for quick directory listings.',
+    'search-web': 'Use this tool when you need current information from the internet. For example: "Search for the latest React 19 features" or "Find documentation for the Express.js middleware API".',
+    'fetch-web': 'Use this tool to retrieve content from specific URLs. For example: "Fetch the content from https://api.example.com/docs" or "Get the README from the GitHub repository URL".',
+    'execute-shell': 'Use this tool to run terminal commands. For example: "Run npm install" or "Execute the test suite with npm test". Use the /shell command for quick command execution.',
+    'memory': 'Use this tool to save important information. For example: "Remember that we\'re using TypeScript strict mode" or "Save the API endpoint URL for later". Use /memory to manage stored information.',
+    'complete-goal': 'Use this tool when you finish a task. For example: "Mark the authentication feature as complete" or "Complete the goal of setting up the database".',
+    'create-checkpoint': 'Use this tool to save progress points. For example: "Create a checkpoint before refactoring" or "Save the current state as a milestone".',
+    'create-goal': 'Use this tool to define new objectives. For example: "Create a goal to implement user authentication" or "Add a goal for writing unit tests".',
+    'manage-todos': 'Use this tool to track tasks. For example: "Add a todo to fix the login bug" or "Show me all pending todos". Use /todos to quickly manage your task list.',
+    'read-past-reasoning': 'Use this tool to review previous decisions. For example: "What was our reasoning for choosing this architecture?" or "Review the decisions made about the database schema".',
+    'record-decision': 'Use this tool to document important choices. For example: "Record the decision to use PostgreSQL instead of MongoDB" or "Document why we chose this design pattern".',
+    'switch-goal': 'Use this tool to change focus. For example: "Switch to working on the frontend" or "Change focus to the testing goal".',
+  };
+  return examples[toolId] || 'This tool can be used by describing what you want to accomplish in natural language.';
+};
+
 export interface ToolsPanelProps {
   modelSupportsTools?: boolean;
   windowSize?: number;
@@ -399,17 +449,29 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 30, windowW
                 </Text>
               </Box>
 
-              {/* Tool description */}
-              <Box marginTop={2}>
-                <Text color={uiState.theme.text.primary}>
-                  {selectedTool.description}
+              {/* Tool status */}
+              <Box marginTop={1}>
+                <Text color={toolStates[selectedTool.id] ? uiState.theme.status.success : uiState.theme.status.error}>
+                  Status: {toolStates[selectedTool.id] ? '✓ Enabled' : '✗ Disabled'}
                 </Text>
               </Box>
 
-              {/* Tool status */}
-              <Box marginTop={2}>
-                <Text color={toolStates[selectedTool.id] ? uiState.theme.status.success : uiState.theme.status.error}>
-                  Status: {toolStates[selectedTool.id] ? '✓ Enabled' : '✗ Disabled'}
+              <Text></Text>
+              <Text></Text>
+
+              {/* Enhanced tool description */}
+              <Box marginTop={1} flexDirection="column">
+                <Text color={uiState.theme.text.primary}>
+                  {getEnhancedDescription(selectedTool.id)}
+                </Text>
+              </Box>
+
+              {/* Example of use */}
+              <Box marginTop={2} flexDirection="column">
+                <Text bold color={uiState.theme.text.primary}>Example of use:</Text>
+                <Text></Text>
+                <Text color={uiState.theme.text.secondary}>
+                  {getToolUsageExample(selectedTool.id, uiState.theme.text.accent)}
                 </Text>
               </Box>
             </>
