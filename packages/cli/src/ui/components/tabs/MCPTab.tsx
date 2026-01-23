@@ -1926,9 +1926,6 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
               <Text bold color={uiState.theme.text.accent}>═══════════════════════════════════════════════════════════════════</Text>
             </Box>
           )}
-              <Text bold color={uiState.theme.text.accent}>═══════════════════════════════════════════════════════════════════</Text>
-            </Box>
-          )}
           
           {selectedItem?.type === 'marketplace' && (
             <MarketplaceContent 
