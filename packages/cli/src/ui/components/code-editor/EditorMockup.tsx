@@ -4,9 +4,14 @@
  * A visual mockup of the code editor showing syntax-highlighted TypeScript code.
  * Displays sample code from LlamaAnimation.tsx with proper color coding.
  * This is a placeholder until the full editor is implemented.
+ * 
+ * Performance Optimizations:
+ * - React.memo to prevent unnecessary re-renders
+ * - useMemo for visible lines calculation
+ * - Memoized line rendering components
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Box, Text } from 'ink';
 
 interface EditorMockupProps {
@@ -271,53 +276,75 @@ const SAMPLE_CODE = [
   ]},
 ];
 
-export const EditorMockup: React.FC<EditorMockupProps> = ({ width = 80, height = 30 }) => {
-  // Calculate visible lines based on height (subtract 2 for header and footer)
-  const contentHeight = Math.max(1, height - 2);
-  const visibleLines = Math.min(contentHeight, SAMPLE_CODE.length);
-  const displayLines = SAMPLE_CODE.slice(0, visibleLines);
-
-  return (
-    <Box flexDirection="column" width={width} height={height}>
-      {/* Header */}
-      <Box borderStyle="single" borderColor="cyan" paddingX={1} width="100%">
-        <Text color="cyan" bold>📄 LlamaAnimation.tsx</Text>
-        <Text color="gray"> [Read-Only Preview]</Text>
-        <Text color="white"> | </Text>
-        <Text color="gray">Line {visibleLines}/{SAMPLE_CODE.length}</Text>
+/**
+ * Memoized code line component for efficient rendering
+ * Only re-renders when the line data changes
+ */
+const CodeLine = React.memo<{ line: typeof SAMPLE_CODE[0] }>(
+  function CodeLine({ line }) {
+    return (
+      <Box key={line.line} width="100%">
+        {/* Line number */}
+        <Box width={4} marginRight={1} flexShrink={0}>
+          <Text color="gray">{line.line.toString().padStart(3, ' ')}</Text>
+        </Box>
+        
+        {/* Code content with syntax highlighting */}
+        <Box flexGrow={1} overflow="hidden">
+          {line.content.length === 0 ? (
+            <Text> </Text>
+          ) : (
+            line.content.map((token, idx) => (
+              <Text key={idx} color={token.color as any}>
+                {token.text}
+              </Text>
+            ))
+          )}
+        </Box>
       </Box>
+    );
+  }
+);
 
-      {/* Code Content */}
-      <Box flexDirection="column" flexGrow={1} paddingX={1} width="100%" overflow="hidden">
-        {displayLines.map((line) => (
-          <Box key={line.line} width="100%">
-            {/* Line number */}
-            <Box width={4} marginRight={1} flexShrink={0}>
-              <Text color="gray">{line.line.toString().padStart(3, ' ')}</Text>
-            </Box>
-            
-            {/* Code content with syntax highlighting */}
-            <Box flexGrow={1} overflow="hidden">
-              {line.content.length === 0 ? (
-                <Text> </Text>
-              ) : (
-                line.content.map((token, idx) => (
-                  <Text key={idx} color={token.color as any}>
-                    {token.text}
-                  </Text>
-                ))
-              )}
-            </Box>
-          </Box>
-        ))}
-      </Box>
+export const EditorMockup = React.memo<EditorMockupProps>(
+  function EditorMockup({ width = 80, height = 30 }) {
+    // Memoize visible lines calculation to avoid recomputing on every render
+    const displayLines = useMemo(() => {
+      const contentHeight = Math.max(1, height - 2);
+      const visibleLines = Math.min(contentHeight, SAMPLE_CODE.length);
+      return SAMPLE_CODE.slice(0, visibleLines);
+    }, [height]);
 
-      {/* Footer */}
-      <Box borderStyle="single" borderColor="cyan" paddingX={1} width="100%">
-        <Text color="yellow">⚠️  Code Editor Coming Soon</Text>
-        <Text color="gray"> | </Text>
-        <Text color="white">This is a preview mockup</Text>
+    // Memoize stats for header
+    const stats = useMemo(() => ({
+      visibleCount: displayLines.length,
+      totalCount: SAMPLE_CODE.length
+    }), [displayLines.length]);
+
+    return (
+      <Box flexDirection="column" width={width} height={height}>
+        {/* Header */}
+        <Box borderStyle="single" borderColor="cyan" paddingX={1} width="100%">
+          <Text color="cyan" bold>📄 LlamaAnimation.tsx</Text>
+          <Text color="gray"> [Read-Only Preview]</Text>
+          <Text color="white"> | </Text>
+          <Text color="gray">Line {stats.visibleCount}/{stats.totalCount}</Text>
+        </Box>
+
+        {/* Code Content */}
+        <Box flexDirection="column" flexGrow={1} paddingX={1} width="100%" overflow="hidden">
+          {displayLines.map((line) => (
+            <CodeLine key={line.line} line={line} />
+          ))}
+        </Box>
+
+        {/* Footer */}
+        <Box borderStyle="single" borderColor="cyan" paddingX={1} width="100%">
+          <Text color="yellow">⚠️  Code Editor Coming Soon</Text>
+          <Text color="gray"> | </Text>
+          <Text color="white">This is a preview mockup</Text>
+        </Box>
       </Box>
-    </Box>
-  );
-};
+    );
+  }
+);
