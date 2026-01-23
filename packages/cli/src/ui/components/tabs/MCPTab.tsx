@@ -1429,18 +1429,8 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
     }
   }, { isActive: hasFocus });
   
-  // Loading state
-  if (state.isLoading) {
-    return (
-      <LoadingSpinner
-        message="Loading MCP servers..."
-        spinnerType="dots"
-        color="cyan"
-        centered={true}
-        padded={true}
-      />
-    );
-  }
+  // Note: Removed full-screen loading check - loading state now shown in left column
+  // This allows marketplace to remain accessible during server loading
   
   // Error state with back navigation
   if (state.error) {
@@ -1548,10 +1538,23 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
             </Text>
             <Text> </Text>
             
+            {/* Loading indicator when servers are loading */}
+            {state.isLoading && (
+              <Box paddingLeft={2} flexDirection="column">
+                <LoadingSpinner
+                  message="Loading MCP servers..."
+                  spinnerType="dots"
+                  color="cyan"
+                  centered={false}
+                  padded={false}
+                />
+              </Box>
+            )}
+            
             {/* Render Server items */}
-            {visibleItems.filter(item => item.type === 'server').length === 0 ? (
+            {!state.isLoading && visibleItems.filter(item => item.type === 'server').length === 0 ? (
               <Text dimColor>  No servers installed</Text>
-            ) : (
+            ) : !state.isLoading ? (
               visibleItems.map((item, index) => {
                 const actualIndex = scrollOffset + index;
                 const isSelected = hasFocus && activeColumn === 'left' && actualIndex === selectedIndex;
@@ -1597,7 +1600,7 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
                 
                 return null;
               })
-            )}
+            ) : null}
           </Box>
           
           {/* Scroll indicator at bottom */}
