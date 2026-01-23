@@ -108,50 +108,50 @@ export interface ToolsProviderProps {
  */
 function categorizeTool(tool: DeclarativeTool<any, any>): ToolCategory {
   const name = String(tool.name).toLowerCase();
-  const desc = String(tool.schema?.description || '').toLowerCase();
   
-  // Web tools (check first to avoid miscategorization)
-  if (name.includes('web') || name.includes('fetch') || name.includes('http') || name.includes('url') || name.includes('search') && (name.includes('web') || desc.includes('web') || desc.includes('internet'))) {
-    return 'web';
-  }
-  
-  // File operations
-  if (name.includes('read') || name.includes('write') || name.includes('edit')) {
-    if (name.includes('file') || desc.includes('file')) {
-      return 'file-operations';
-    }
-  }
-  
-  // File discovery
-  if (name.includes('glob') || name.includes('grep') || name.includes('ls')) {
+  // File Discovery: glob, grep, ls
+  if (name === 'glob' || name === 'grep' || name === 'ls') {
     return 'file-discovery';
   }
   
-  // Shell
-  if (name.includes('shell') || name.includes('execute') || name.includes('command')) {
+  // File Operations: read_file, read_many_files, edit_file, write_file
+  if (name === 'read_file' || name === 'read_many_files' || name === 'edit_file' || name === 'write_file') {
+    return 'file-operations';
+  }
+  
+  // Shell: shell
+  if (name === 'shell') {
     return 'shell';
   }
   
-  // Memory
-  if (name.includes('memory') || name.includes('remember') || name.includes('recall')) {
+  // Memory: memory, remember, write_memory_dump
+  if (name === 'memory' || name === 'remember' || name === 'write_memory_dump') {
     return 'memory';
   }
   
-  // Context (goals, checkpoints, reasoning, decisions, todos)
-  if (name.includes('goal') || name.includes('checkpoint') || name.includes('reasoning') || name.includes('decision') || name.includes('todo') || name.includes('swap')) {
-    return 'other';
+  // Context: create_goal, complete_goal, create_checkpoint, record_decision, switch_goal, read_reasoning, trigger_hot_swap
+  if (name === 'create_goal' || name === 'complete_goal' || name === 'create_checkpoint' || 
+      name === 'record_decision' || name === 'switch_goal' || name === 'read_reasoning' || 
+      name === 'trigger_hot_swap') {
+    return 'context';
+  }
+  
+  // Web: web_search, web_fetch
+  if (name === 'web_search' || name === 'web_fetch') {
+    return 'web';
   }
   
   // MCP tools (from Model Context Protocol)
-  if (name.startsWith('mcp_') || desc.includes('mcp')) {
+  if (name.startsWith('mcp_')) {
     return 'mcp';
   }
   
   // Extension tools
-  if (name.includes('extension') || desc.includes('extension')) {
+  if (name.includes('extension')) {
     return 'extension';
   }
   
+  // Other: write_todos, search_documentation, and anything else
   return 'other';
 }
 
@@ -160,15 +160,15 @@ function categorizeTool(tool: DeclarativeTool<any, any>): ToolCategory {
  */
 function getCategoryDisplayName(category: ToolCategory): string {
   const names: Record<ToolCategory, string> = {
-    'file-operations': 'File Operations',
     'file-discovery': 'File Discovery',
+    'file-operations': 'File Operations',
     'shell': 'Shell',
-    'web': 'Web',
     'memory': 'Memory',
     'context': 'Context',
+    'web': 'Web',
+    'other': 'Other',
     'mcp': 'MCP Tools',
     'extension': 'Extensions',
-    'other': 'Other',
   };
   return names[category];
 }
@@ -178,17 +178,35 @@ function getCategoryDisplayName(category: ToolCategory): string {
  */
 function getCategoryIcon(category: ToolCategory): string {
   const icons: Record<ToolCategory, string> = {
-    'file-operations': '📝',
     'file-discovery': '🔍',
+    'file-operations': '📝',
     'shell': '⚡',
-    'web': '🌐',
     'memory': '💾',
     'context': '🔄',
+    'web': '🌐',
+    'other': '📦',
     'mcp': '🔌',
     'extension': '🧩',
-    'other': '📦',
   };
   return icons[category];
+}
+
+/**
+ * Get sort order for categories
+ */
+function getCategorySortOrder(category: ToolCategory): number {
+  const order: Record<ToolCategory, number> = {
+    'file-discovery': 1,
+    'file-operations': 2,
+    'shell': 3,
+    'memory': 4,
+    'context': 5,
+    'web': 6,
+    'other': 7,
+    'mcp': 8,
+    'extension': 9,
+  };
+  return order[category] || 999;
 }
 
 /**
@@ -271,7 +289,7 @@ export function ToolsProvider({
           icon: getCategoryIcon(category),
           tools: tools.sort((a, b) => a.displayName.localeCompare(b.displayName)),
         }))
-        .sort((a, b) => a.displayName.localeCompare(b.displayName));
+        .sort((a, b) => getCategorySortOrder(a.category) - getCategorySortOrder(b.category));
 
       setState({
         categories,

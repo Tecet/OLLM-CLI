@@ -42,14 +42,14 @@ const getEnhancedDescription = (toolId: string): string => {
     'remember': 'A simplified memory tool for quickly storing important facts or information. It provides an easy way to save context that you want the AI to remember throughout your conversation and future sessions.',
     'write_memory_dump': 'Creates a comprehensive snapshot of the current conversation context and memory state. This tool is useful for debugging, creating backups, or exporting the current state of your working session.',
     
-    // Other Tools (Goal Management & Context)
+    // Context Tools (Goal Management & Reasoning)
+    'create_goal': 'Defines a new goal or objective for the AI to work towards. This tool helps structure complex projects by breaking them into manageable, trackable goals that can be pursued systematically. Essential for organizing multi-step development tasks.',
     'complete_goal': 'Marks a specific goal or task as completed in your workflow. This tool helps track progress on multi-step projects, ensuring that completed objectives are properly recorded and acknowledged.',
     'create_checkpoint': 'Creates a snapshot of the current conversation state, allowing you to save important decision points or milestones. You can return to these checkpoints later if needed, making it easier to explore different approaches.',
-    'create_goal': 'Defines a new goal or objective for the AI to work towards. This tool helps structure complex projects by breaking them into manageable, trackable goals that can be pursued systematically. Essential for organizing multi-step development tasks.',
-    'write_todos': 'Manages a list of pending tasks and action items. Add, complete, or review todos to keep track of what needs to be done in your project. Essential for organizing work and maintaining focus on priorities.',
-    'read_reasoning': 'Retrieves and reviews previous reasoning, decisions, and thought processes from earlier in the conversation. This helps maintain context and consistency across long development sessions, allowing you to understand why certain decisions were made.',
     'record_decision': 'Documents important decisions made during development, including the rationale behind them. This creates a decision log that helps maintain project consistency and provides context for future changes.',
     'switch_goal': 'Changes focus from one goal to another, allowing you to manage multiple objectives and switch between different aspects of your project as needed. Useful for managing complex projects with multiple workstreams.',
+    'read_reasoning': 'Retrieves and reviews previous reasoning, decisions, and thought processes from earlier in the conversation. This helps maintain context and consistency across long development sessions, allowing you to understand why certain decisions were made.',
+    'trigger_hot_swap': 'Dynamically switches between different AI models or configurations during a conversation. This advanced tool allows you to leverage different model capabilities for different tasks without restarting your session.',
     
     // Shell Tool
     'shell': 'Executes shell commands directly in your system terminal. This powerful tool allows you to run build scripts, install packages, run tests, manage git operations, or execute any command-line operation. Essential for development workflows and automation.',
@@ -58,8 +58,8 @@ const getEnhancedDescription = (toolId: string): string => {
     'web_search': 'Searches the internet for current information, documentation, tutorials, and solutions to technical problems. This tool is invaluable when you need up-to-date information about libraries, frameworks, APIs, or when researching solutions to coding challenges.',
     'web_fetch': 'Retrieves and displays content from specific web URLs. Perfect for accessing online documentation, reading API specifications, fetching remote configuration files, or examining web resources. It brings external web content directly into your workflow.',
     
-    // Advanced Tools (not currently visible in UI)
-    'trigger_hot_swap': 'Dynamically switches between different AI models or configurations during a conversation. This advanced tool allows you to leverage different model capabilities for different tasks without restarting your session.',
+    // Other Tools (Task Management & Documentation)
+    'write_todos': 'Manages a list of pending tasks and action items. Add, complete, or review todos to keep track of what needs to be done in your project. Essential for organizing work and maintaining focus on priorities.',
     'search_documentation': 'Searches through project documentation and indexed content using semantic search. This tool helps you find relevant information in large documentation sets by understanding the meaning of your query, not just keyword matching.',
   };
   return descriptions[toolId] || 'This tool provides specialized functionality for your development workflow. Enable it to access its capabilities during your conversations.';
@@ -84,14 +84,14 @@ const getToolUsageExample = (toolId: string, accentColor: string): string => {
     'remember': 'Use this tool to quickly store facts. For example: "Remember that the database port is 5432" or "Store the fact that we use ESLint for linting".',
     'write_memory_dump': 'Use this tool to create a snapshot of the current session. For example: "Create a memory dump for debugging" or "Export the current conversation state".',
     
-    // Other Tools (Goal Management & Context)
+    // Context Tools (Goal Management & Reasoning)
+    'create_goal': 'Use this tool to define new objectives. For example: "Create a goal to implement user authentication" or "Add a goal for writing unit tests".',
     'complete_goal': 'Use this tool when you finish a task. For example: "Mark the authentication feature as complete" or "Complete the goal of setting up the database".',
     'create_checkpoint': 'Use this tool to save progress points. For example: "Create a checkpoint before refactoring" or "Save the current state as a milestone".',
-    'create_goal': 'Use this tool to define new objectives. For example: "Create a goal to implement user authentication" or "Add a goal for writing unit tests".',
-    'write_todos': 'Use this tool to track tasks. For example: "Add a todo to fix the login bug" or "Show me all pending todos". Use /todos to quickly manage your task list.',
-    'read_reasoning': 'Use this tool to review previous decisions. For example: "What was our reasoning for choosing this architecture?" or "Review the decisions made about the database schema".',
     'record_decision': 'Use this tool to document important choices. For example: "Record the decision to use PostgreSQL instead of MongoDB" or "Document why we chose this design pattern".',
     'switch_goal': 'Use this tool to change focus. For example: "Switch to working on the frontend" or "Change focus to the testing goal".',
+    'read_reasoning': 'Use this tool to review previous decisions. For example: "What was our reasoning for choosing this architecture?" or "Review the decisions made about the database schema".',
+    'trigger_hot_swap': 'Use this tool to switch models mid-conversation. For example: "Switch to a faster model for simple tasks" or "Use a more capable model for complex reasoning".',
     
     // Shell Tool
     'shell': 'Use this tool to run terminal commands. For example: "Run npm install" or "Execute the test suite with npm test". Use the /shell command for quick command execution.',
@@ -100,8 +100,8 @@ const getToolUsageExample = (toolId: string, accentColor: string): string => {
     'web_search': 'Use this tool when you need current information from the internet. For example: "Search for the latest React 19 features" or "Find documentation for the Express.js middleware API".',
     'web_fetch': 'Use this tool to retrieve content from specific URLs. For example: "Fetch the content from https://api.example.com/docs" or "Get the README from the GitHub repository URL".',
     
-    // Advanced Tools (not currently visible in UI)
-    'trigger_hot_swap': 'Use this tool to switch models mid-conversation. For example: "Switch to a faster model for simple tasks" or "Use a more capable model for complex reasoning".',
+    // Other Tools (Task Management & Documentation)
+    'write_todos': 'Use this tool to track tasks. For example: "Add a todo to fix the login bug" or "Show me all pending todos". Use /todos to quickly manage your task list.',
     'search_documentation': 'Use this tool to find information in documentation. For example: "Search the docs for authentication examples" or "Find information about the API endpoints".',
   };
   return examples[toolId] || 'This tool can be used by describing what you want to accomplish in natural language. The AI will automatically invoke it when appropriate.';
