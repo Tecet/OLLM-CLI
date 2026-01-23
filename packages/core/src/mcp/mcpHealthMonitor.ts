@@ -28,6 +28,10 @@ export interface HealthCheckResult {
 export interface HealthMonitorConfig {
   /** Health check interval in milliseconds (default: 30000 = 30s) */
   checkInterval?: number;
+  /** Fast check interval for initial checks in milliseconds (default: 1000 = 1s) */
+  fastCheckInterval?: number;
+  /** Number of fast checks before switching to normal interval (default: 5) */
+  fastCheckCount?: number;
   /** Maximum restart attempts (default: 3) */
   maxRestartAttempts?: number;
   /** Initial backoff delay in milliseconds (default: 1000 = 1s) */
@@ -95,7 +99,9 @@ export type HealthMonitorEventListener = (event: HealthMonitorEvent) => void;
  * Default configuration values
  */
 const DEFAULT_CONFIG: Required<HealthMonitorConfig> = {
-  checkInterval: 5000, // 5 seconds (reduced from 30s for faster status updates)
+  checkInterval: 5000, // 5 seconds for normal checks
+  fastCheckInterval: 1000, // 1 second for initial checks (faster feedback)
+  fastCheckCount: 5, // First 5 checks are fast, then switch to normal interval
   maxRestartAttempts: 3,
   initialBackoffDelay: 1000, // 1 second
   maxBackoffDelay: 60000, // 1 minute
@@ -115,6 +121,7 @@ export class MCPHealthMonitor {
   private listeners: HealthMonitorEventListener[] = [];
   private isRunning = false;
   private restartLocks: Map<string, Promise<void>> = new Map();
+  private checkCount = 0; // Track number of checks for fast initial checks
 
   constructor(client: MCPClient, config?: HealthMonitorConfig) {
     this.client = client;
@@ -130,17 +137,38 @@ export class MCPHealthMonitor {
     }
 
     this.isRunning = true;
+    this.checkCount = 0;
 
     // Initialize server states
     this.initializeServerStates();
 
-    // Start periodic health checks
-    this.checkIntervalId = setInterval(() => {
-      this.performHealthChecks();
-    }, this.config.checkInterval);
+    // Perform immediate initial check
+    void this.performHealthChecks();
 
-    // Perform initial health check
-    this.performHealthChecks();
+    // Schedule next check with dynamic interval
+    this.scheduleNextCheck();
+  }
+
+  /**
+   * Schedule next health check with dynamic interval
+   * Uses fast interval for initial checks, then switches to normal interval
+   */
+  private scheduleNextCheck(): void {
+    if (!this.isRunning) {
+      return;
+    }
+
+    this.checkCount++;
+    
+    // Use fast interval for first N checks, then switch to normal interval
+    const interval = this.checkCount <= this.config.fastCheckCount
+      ? this.config.fastCheckInterval
+      : this.config.checkInterval;
+
+    this.checkIntervalId = setTimeout(() => {
+      void this.performHealthChecks();
+      this.scheduleNextCheck();
+    }, interval);
   }
 
   /**
@@ -308,16 +336,19 @@ export class MCPHealthMonitor {
   }
 
   /**
-   * Perform health checks on all servers
+   * Perform health checks on all servers (in parallel)
    */
-  private performHealthChecks(): void {
+  private async performHealthChecks(): Promise<void> {
     // Update server states list
     this.initializeServerStates();
 
-    // Check each server
-    for (const [serverName, state] of this.serverStates.entries()) {
-      this.checkServerHealth(serverName, state);
-    }
+    // Check all servers in parallel for better performance
+    const checks = Array.from(this.serverStates.entries()).map(
+      ([serverName, state]) => this.checkServerHealth(serverName, state)
+    );
+
+    // Wait for all checks to complete (or fail)
+    await Promise.allSettled(checks);
   }
 
   /**
@@ -325,7 +356,7 @@ export class MCPHealthMonitor {
    * @param serverName - Server name
    * @param state - Server health state
    */
-  private checkServerHealth(serverName: string, state: ServerHealthState): void {
+  private async checkServerHealth(serverName: string, state: ServerHealthState): Promise<void> {
     const now = Date.now();
     const status = this.client.getServerStatus(serverName);
 

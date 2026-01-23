@@ -478,6 +478,20 @@ export function MCPProvider({
         disabled: !isCurrentlyDisabled,
       };
 
+      // Optimistic UI update - show status change immediately for better UX
+      setState(prev => {
+        const servers = new Map(prev.servers);
+        const serverState = servers.get(serverName);
+        if (serverState) {
+          servers.set(serverName, {
+            ...serverState,
+            status: isCurrentlyDisabled ? 'starting' : 'disconnected',
+            config: newConfig,
+          });
+        }
+        return { ...prev, servers };
+      });
+
       // Update configuration first
       await mcpConfigService.updateServerConfig(serverName, newConfig as unknown as MCPServerConfig);
 
@@ -502,6 +516,9 @@ export function MCPProvider({
             unregisterServerTools(serverName, server.toolsList);
         }
 
+        // Revert optimistic update on error
+        await loadServers();
+
         // Re-throw with more context
         if (server.config.oauth?.enabled) {
           throw new Error(`OAuth authentication failed for ${serverName}. Please check OAuth configuration.`);
@@ -509,7 +526,7 @@ export function MCPProvider({
         throw startError;
       }
 
-      // Reload servers
+      // Reload servers to get actual state
       await loadServers();
     } catch (error) {
       const parsedError = parseError(error);
