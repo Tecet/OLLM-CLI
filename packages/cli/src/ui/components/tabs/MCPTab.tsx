@@ -1321,6 +1321,11 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
    * - Level 3: Detail views (handled by child components via modal system)
    */
   useInput((input, key) => {
+    // Don't handle input during loading
+    if (state.isLoading) {
+      return;
+    }
+
     // Handle error state input
     if (state.error) {
       if (key.return || key.escape || input === '0') {
@@ -1677,7 +1682,12 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
               activeColumn={activeColumn}
               onToggle={async () => {
                 // Toggle server enabled/disabled in settings
-                await toggleServer(selectedItem.server!.name);
+                try {
+                  await toggleServer(selectedItem.server!.name);
+                } catch (err) {
+                  // Error is already set in MCPContext state, just log it
+                  console.error('Toggle failed:', err);
+                }
               }}
               onDelete={async () => {
                 // Permanently delete server from settings
