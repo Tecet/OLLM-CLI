@@ -330,6 +330,59 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 30, windowW
     return null;
   }, [categoryData, selectedCategoryIndex, selectedToolIndex]);
 
+  // Get tool version and status
+  const getToolVersion = (toolId: string): { version: string; status: 'Stable' | 'Beta' | 'Alpha' } => {
+    const versions: Record<string, { version: string; status: 'Stable' | 'Beta' | 'Alpha' }> = {
+      // File Discovery - Stable
+      'glob': { version: 'v0.1.0', status: 'Stable' },
+      'grep': { version: 'v0.1.0', status: 'Stable' },
+      'ls': { version: 'v0.1.0', status: 'Stable' },
+      
+      // File Operations - Stable
+      'read_file': { version: 'v0.1.0', status: 'Stable' },
+      'read_many_files': { version: 'v0.1.0', status: 'Stable' },
+      'edit_file': { version: 'v0.1.0', status: 'Stable' },
+      'write_file': { version: 'v0.1.0', status: 'Stable' },
+      
+      // Shell - Stable
+      'shell': { version: 'v0.1.0', status: 'Stable' },
+      
+      // Memory - Stable
+      'memory': { version: 'v0.1.0', status: 'Stable' },
+      'remember': { version: 'v0.1.0', status: 'Beta' },
+      'write_memory_dump': { version: 'v0.1.0', status: 'Beta' },
+      
+      // Context - Beta/Alpha
+      'create_goal': { version: 'v0.1.0', status: 'Beta' },
+      'complete_goal': { version: 'v0.1.0', status: 'Beta' },
+      'create_checkpoint': { version: 'v0.1.0', status: 'Beta' },
+      'record_decision': { version: 'v0.1.0', status: 'Beta' },
+      'switch_goal': { version: 'v0.1.0', status: 'Beta' },
+      'read_reasoning': { version: 'v0.1.0', status: 'Beta' },
+      'trigger_hot_swap': { version: 'v0.1.0', status: 'Alpha' },
+      
+      // Web - Stable
+      'web_search': { version: 'v0.1.0', status: 'Stable' },
+      'web_fetch': { version: 'v0.1.0', status: 'Stable' },
+      
+      // Other
+      'write_todos': { version: 'v0.1.0', status: 'Stable' },
+      'search_documentation': { version: 'v0.1.0', status: 'Alpha' },
+    };
+    return versions[toolId] || { version: 'v0.1.0', status: 'Beta' };
+  };
+
+  // Get quick commands for tools
+  const getQuickCommands = (toolId: string): string[] => {
+    const commands: Record<string, string[]> = {
+      'ls': ['/ls'],
+      'shell': ['/shell'],
+      'memory': ['/memory'],
+      'write_todos': ['/todos'],
+    };
+    return commands[toolId] || [];
+  };
+
   return (
     <Box flexDirection="column" height="100%" width={windowWidth}>
       {/* Header */}
@@ -476,11 +529,21 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 30, windowW
                 {selectedTool.displayName}
               </Text>
 
-              {/* Tool version */}
+              {/* Tool version and status */}
               <Box marginTop={1}>
-                <Text color={uiState.theme.text.secondary}>
-                  Version: v0.1.0
-                </Text>
+                {(() => {
+                  const { version, status } = getToolVersion(selectedTool.id);
+                  const statusColor = 
+                    status === 'Stable' ? uiState.theme.status.success :
+                    status === 'Beta' ? uiState.theme.status.warning :
+                    uiState.theme.status.error;
+                  
+                  return (
+                    <Text color={uiState.theme.text.secondary}>
+                      Version: {version} <Text color={statusColor}>({status})</Text>
+                    </Text>
+                  );
+                })()}
               </Box>
 
               {/* Tool status */}
@@ -508,6 +571,25 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 30, windowW
                   {getToolUsageExample(selectedTool.id, uiState.theme.text.accent)}
                 </Text>
               </Box>
+
+              {/* Quick Commands (if available) */}
+              {(() => {
+                const commands = getQuickCommands(selectedTool.id);
+                if (commands.length > 0) {
+                  return (
+                    <Box marginTop={2} flexDirection="column">
+                      <Text bold color={uiState.theme.text.primary}>Quick Commands:</Text>
+                      <Text></Text>
+                      {commands.map(cmd => (
+                        <Text key={cmd} color={uiState.theme.text.accent}>
+                          {cmd} - Quick access in chat
+                        </Text>
+                      ))}
+                    </Box>
+                  );
+                }
+                return null;
+              })()}
             </>
           ) : (
             <Text color={uiState.theme.text.secondary}>
