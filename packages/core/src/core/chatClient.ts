@@ -9,7 +9,7 @@ import { Turn, type TurnEvent, type ToolRegistry, type ChatOptions } from './tur
 import type { ChatRecordingService } from '../services/chatRecordingService.js';
 import type { ChatCompressionService } from '../services/chatCompressionService.js';
 import { LoopDetectionService } from '../services/loopDetectionService.js';
-import type { ContextManager as ServicesContextManager } from '../services/contextManager.js';
+import type { DynamicContextInjector as ServicesContextManager } from '../services/dynamicContextInjector.js';
 import type { ContextManager as ContextMgmtManager } from '../context/types.js';
 import type { SessionMessage, SessionToolCall, ServicesConfig } from '../services/types.js';
 import { mergeServicesConfig } from '../services/config.js';

@@ -143,5 +143,5 @@ export class DynamicContextInjector {
   }
 }
 
-// Backwards-compatible alias: some modules/tests expect `ContextManager`.
-export class ContextManager extends DynamicContextInjector {}
+// Export alias for backwards compatibility
+export { DynamicContextInjector as ContextManager };

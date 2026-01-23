@@ -7,7 +7,7 @@ import { useModel } from './ModelContext.js';
 import { useUI } from './UIContext.js';
 import { HotSwapTool, MemoryDumpTool, PromptRegistry, MODE_METADATA } from '@ollm/core';
 import type { ToolCall as CoreToolCall, ContextMessage, ProviderMetrics, ToolSchema } from '@ollm/core';
-import { SnapshotManager as _PromptsSnapshotManager } from '@ollm/core/prompts/SnapshotManager.js';
+import { SnapshotManager as _PromptsSnapshotManager } from '@ollm/core/prompts/modeSnapshotManager.js';
 // removed unused import: injectFocusedFiles
 import { useFocusedFilesInjection } from './useFocusedFilesInjection.js';
 

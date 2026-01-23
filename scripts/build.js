@@ -27,7 +27,7 @@ async function build() {
     await esbuild.build(config);
 
     // Copy llama sprite assets for runtime usage
-    const assetsSource = join(__dirname, '..', 'packages', 'cli', 'src', 'components', 'lama', 'lama_sprite');
+    const assetsSource = join(__dirname, '..', 'packages', 'cli', 'src', 'ui', 'components', 'animations', 'lama', 'lama_sprite');
     const assetsTarget = join(__dirname, '..', 'packages', 'cli', 'dist', 'lama_sprite');
     await mkdir(assetsTarget, { recursive: true });
     await cp(assetsSource, assetsTarget, { recursive: true });

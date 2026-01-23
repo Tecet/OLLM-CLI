@@ -11,7 +11,7 @@ import { HotSwapService } from '../context/HotSwapService.js';
 import { PromptRegistry } from '../prompts/PromptRegistry.js';
 import { ProviderAdapter } from '../provider/types.js';
 import { PromptModeManager } from '../prompts/PromptModeManager.js';
-import { SnapshotManager } from '../prompts/SnapshotManager.js';
+import { SnapshotManager } from '../prompts/modeSnapshotManager.js';
 
 export interface HotSwapParams {
   skills?: string[];

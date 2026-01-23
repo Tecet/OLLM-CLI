@@ -11,7 +11,7 @@ import type {
   GenerationOptions,
 } from '../provider/types.js';
 import type { PromptModeManager } from '../prompts/PromptModeManager.js';
-import type { SnapshotManager } from '../prompts/SnapshotManager.js';
+import type { SnapshotManager } from '../prompts/modeSnapshotManager.js';
 import type { ModeType } from '../prompts/ContextAnalyzer.js';
 import { 
   

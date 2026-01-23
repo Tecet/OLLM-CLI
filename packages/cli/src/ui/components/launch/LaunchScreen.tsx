@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, useInput, useStdout } from 'ink';
-import { LlamaAnimation } from '../../../components/lama/LlamaAnimation.js';
+import { LlamaAnimation } from '../animations/lama/LlamaAnimation.js';
 import { VersionBanner } from './VersionBanner.js';
 import { QuickActions } from './QuickActions.js';
 import { RecentSessions } from './RecentSessions.js';

@@ -251,7 +251,7 @@ This implementation plan breaks down the debugging and polishing work into discr
   - Document naming conventions
   - _Requirements: US-5, TR-5_
 
-- [ ] 28. Standardize File Structure
+- [x] 28. Standardize File Structure
   - Review directory structure
   - Move misplaced files
   - Group related files
@@ -259,7 +259,7 @@ This implementation plan breaks down the debugging and polishing work into discr
   - Document file structure
   - _Requirements: US-5, TR-5_
 
-- [ ] 29. Standardize Import Patterns
+- [~] 29. Standardize Import Patterns
   - Review all import statements
   - Use consistent import order
   - Use consistent import style
