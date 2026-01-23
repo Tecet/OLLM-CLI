@@ -5,6 +5,7 @@
  * tool discovery, and tool invocations.
  */
 
+import { createLogger } from '../utils/logger.js';
 import { DEFAULT_MCP_CONFIG } from './config.js';
 import { substituteEnvObject } from './envSubstitution.js';
 import { MCPOAuthProvider } from './mcpOAuth.js';
@@ -23,6 +24,8 @@ import {
 } from './types.js';
 
 import type { MCPConfig } from './config.js';
+
+const logger = createLogger('MCPClient');
 
 /**
  * Internal server state
@@ -256,11 +259,10 @@ export class DefaultMCPClient implements MCPClient {
       await state.transport.disconnect();
     } catch (error) {
       // Log error but don't throw - ensure cleanup continues
-      // Suppress logs in test environments to avoid noise
-      if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        console.error(`Error disconnecting MCP server '${name}': ${errorMessage}`);
-      }
+      logger.error('Error disconnecting MCP server', {
+        serverName: name,
+        error: error instanceof Error ? error.message : String(error)
+      });
     } finally {
       // Always update status and clean up, even if disconnect failed
       state.status = 'disconnected';
