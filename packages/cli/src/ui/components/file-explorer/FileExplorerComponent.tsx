@@ -19,7 +19,7 @@ import { EditorIntegration } from './EditorIntegration.js';
 import { ExplorerPersistence } from './ExplorerPersistence.js';
 import { FileFocusProvider } from './FileFocusContext.js';
 import { FileOperations } from './FileOperations.js';
-import { FileTreeProvider } from './FileTreeContext.js';
+import { FileTreeProvider, useFileTree } from './FileTreeContext.js';
 import { FileTreeService } from './FileTreeService.js';
 import { FileTreeView } from './FileTreeView.js';
 import { FocusSystem } from './FocusSystem.js';
@@ -305,11 +305,14 @@ export function FileExplorerComponent({
         excludePatterns,
       });
       
-      // Set the root node in tree state
+      // Set the root node in tree state (local state for persistence)
       setTreeState(prev => ({
         ...prev,
         root: rootNode,
       }));
+      
+      // Note: The FileTreeContext will be updated via initialState prop
+      // when the provider mounts with the updated treeState
       
       // Initialization complete
       setInitState({
@@ -399,28 +402,67 @@ export function FileExplorerComponent({
   return (
     <WorkspaceProvider initialState={workspaceState}>
       <FileFocusProvider initialState={focusState}>
-        <FileTreeProvider initialState={treeState}>
-          <Box flexDirection="column" height="100%">
-            {/* Main content area with file tree */}
-            <Box flexDirection="row" flexGrow={1}>
-              {/* File tree view (full width) */}
-              <Box flexDirection="column" flexGrow={1}>
-                <FileTreeView
-                  fileTreeService={services.fileTreeService}
-                  focusSystem={services.focusSystem}
-                  editorIntegration={services.editorIntegration}
-                  fileOperations={services.fileOperations}
-                  followModeService={services.followModeService}
-                  toolRegistry={toolRegistry}
-                  rootPath={rootPath}
-                  excludePatterns={excludePatterns}
-                  hasFocus={hasFocus}
-                />
-              </Box>
-            </Box>
-          </Box>
+        <FileTreeProvider initialState={{ root: treeState.root, expandedPaths: treeState.expandedPaths }}>
+          <FileExplorerContent
+            services={services}
+            treeState={treeState}
+            rootPath={rootPath}
+            excludePatterns={excludePatterns}
+            hasFocus={hasFocus}
+            toolRegistry={toolRegistry}
+          />
         </FileTreeProvider>
       </FileFocusProvider>
     </WorkspaceProvider>
+  );
+}
+
+/**
+ * Inner component that has access to FileTreeContext
+ */
+function FileExplorerContent({
+  services,
+  treeState,
+  rootPath,
+  excludePatterns,
+  hasFocus,
+  toolRegistry,
+}: {
+  services: any;
+  treeState: { root: FileNode | null; expandedPaths: Set<string> };
+  rootPath: string;
+  excludePatterns: string[];
+  hasFocus: boolean;
+  toolRegistry?: any;
+}) {
+  const { setRoot } = useFileTree();
+  
+  // Update context when tree state changes
+  useEffect(() => {
+    if (treeState.root) {
+      setRoot(treeState.root);
+    }
+  }, [treeState.root, setRoot]);
+  
+  return (
+    <Box flexDirection="column" height="100%">
+      {/* Main content area with file tree */}
+      <Box flexDirection="row" flexGrow={1}>
+        {/* File tree view (full width) */}
+        <Box flexDirection="column" flexGrow={1}>
+          <FileTreeView
+            fileTreeService={services.fileTreeService}
+            focusSystem={services.focusSystem}
+            editorIntegration={services.editorIntegration}
+            fileOperations={services.fileOperations}
+            followModeService={services.followModeService}
+            toolRegistry={toolRegistry}
+            rootPath={rootPath}
+            excludePatterns={excludePatterns}
+            hasFocus={hasFocus}
+          />
+        </Box>
+      </Box>
+    </Box>
   );
 }
