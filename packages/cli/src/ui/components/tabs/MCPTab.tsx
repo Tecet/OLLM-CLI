@@ -43,7 +43,17 @@ export interface MCPTabProps {
 /**
  * Detail view navigation items for server details
  */
-type ServerDetailNavItem = 'exit' | 'enable' | 'disable' | 'delete';
+type ServerDetailNavItem = 'exit' | 'tools' | 'enable' | 'disable' | 'delete';
+
+/**
+ * View mode for server details
+ */
+type ServerDetailView = 'details' | 'tools';
+
+/**
+ * Tools view navigation items
+ */
+type ToolsNavItem = 'exit' | 'selectAll' | 'selectNone' | 'tool' | 'save' | 'close';
 
 /**
  * Server Details Content Component - Shows installed server details
@@ -58,7 +68,13 @@ interface ServerDetailsContentProps {
 
 function ServerDetailsContent({ server, activeColumn, onToggle, onDelete, onRefreshServers }: ServerDetailsContentProps) {
   const { state: uiState } = useUI();
+  const { setToolAutoApprove } = useMCP();
+  const [view, setView] = useState<ServerDetailView>('details');
   const [navItem, setNavItem] = useState<ServerDetailNavItem>('exit');
+  const [toolsNavItem, setToolsNavItem] = useState<ToolsNavItem>('exit');
+  const [selectedToolIndex, setSelectedToolIndex] = useState(0);
+  const [toolSelections, setToolSelections] = useState<Map<string, boolean>>(new Map());
+  const [isSaving, setIsSaving] = useState(false);
   const [toggleState, setToggleState] = useState<{
     status: 'idle' | 'toggling';
   }>({
@@ -72,6 +88,16 @@ function ServerDetailsContent({ server, activeColumn, onToggle, onDelete, onRefr
     status: 'idle',
     selection: 'no',
   });
+  
+  // Initialize tool selections from server config
+  useEffect(() => {
+    const selections = new Map<string, boolean>();
+    const autoApprove = server.config.autoApprove || [];
+    server.toolsList.forEach(tool => {
+      selections.set(tool.name, autoApprove.includes(tool.name));
+    });
+    setToolSelections(selections);
+  }, [server.toolsList, server.config.autoApprove]);
   
   // Handle keyboard input when right column is active
   useInput((input, key) => {
@@ -132,10 +158,14 @@ function ServerDetailsContent({ server, activeColumn, onToggle, onDelete, onRefr
       if (navItem === 'delete') {
         setNavItem(server.config.disabled ? 'enable' : 'disable');
       } else if (navItem === 'enable' || navItem === 'disable') {
+        setNavItem('tools');
+      } else if (navItem === 'tools') {
         setNavItem('exit');
       }
     } else if (key.downArrow) {
       if (navItem === 'exit') {
+        setNavItem('tools');
+      } else if (navItem === 'tools') {
         setNavItem(server.config.disabled ? 'enable' : 'disable');
       } else if (navItem === 'enable' || navItem === 'disable') {
         setNavItem('delete');
@@ -143,6 +173,10 @@ function ServerDetailsContent({ server, activeColumn, onToggle, onDelete, onRefr
     } else if (key.return) {
       if (navItem === 'exit') {
         // Exit handled by parent
+      } else if (navItem === 'tools') {
+        // Show tools view
+        setView('tools');
+        setToolsNavItem('exit');
       } else if (navItem === 'enable' || navItem === 'disable') {
         // Toggle server enabled/disabled
         setToggleState({ status: 'toggling' });
@@ -163,6 +197,95 @@ function ServerDetailsContent({ server, activeColumn, onToggle, onDelete, onRefr
     }
   }, { isActive: activeColumn === 'right' });
   
+  // Render tools view
+  if (view === 'tools') {
+    const autoApprovedCount = Array.from(toolSelections.values()).filter(Boolean).length;
+    
+    return (
+      <Box flexDirection="column" height="100%" width="100%">
+        {/* Help Text - Top Right */}
+        <Box flexShrink={0} justifyContent="flex-end">
+          <Text dimColor>
+            ↑↓: Navigate | Enter: Select | Esc: Back
+          </Text>
+        </Box>
+        
+        {/* Exit Item */}
+        <Box flexShrink={0}>
+          <Text bold color={toolsNavItem === 'exit' ? uiState.theme.text.accent : 'white'}>
+            {toolsNavItem === 'exit' ? '▶ ' : '  '}← Exit
+          </Text>
+        </Box>
+        
+        <Text> </Text>
+        
+        {/* Header */}
+        <Text bold color={uiState.theme.text.accent}>
+          Tools: {server.name}
+        </Text>
+        <Text> </Text>
+        <Text>
+          <Text bold>Server:</Text> {server.name}
+        </Text>
+        <Text>
+          <Text bold>Total Tools:</Text> {server.toolsList.length} | <Text bold>Auto-Approved:</Text> {autoApprovedCount}
+        </Text>
+        <Text> </Text>
+        <Text> </Text>
+        
+        {/* Select All / None */}
+        <Text bold color={toolsNavItem === 'selectAll' ? uiState.theme.text.accent : 'white'}>
+          {toolsNavItem === 'selectAll' ? '▶ ' : '  '}[A] ☑ Select All
+        </Text>
+        <Text bold color={toolsNavItem === 'selectNone' ? uiState.theme.text.accent : 'white'}>
+          {toolsNavItem === 'selectNone' ? '▶ ' : '  '}[N] ☐ Select None
+        </Text>
+        <Text> </Text>
+        <Text> </Text>
+        
+        {/* Tools List */}
+        <Box flexDirection="column" flexGrow={1} overflow="hidden">
+          {server.toolsList.length === 0 ? (
+            <Text dimColor>No tools available for this server</Text>
+          ) : (
+            server.toolsList.map((tool, index) => {
+              const isSelected = toolsNavItem === 'tool' && selectedToolIndex === index;
+              const isChecked = toolSelections.get(tool.name) || false;
+              
+              return (
+                <Text key={tool.name} bold={isSelected} color={isSelected ? uiState.theme.text.accent : 'white'}>
+                  {isSelected ? '▶ ' : '  '}[{isChecked ? '✓' : ' '}] {tool.name}
+                </Text>
+              );
+            })
+          )}
+        </Box>
+        
+        <Text> </Text>
+        <Text> </Text>
+        
+        {/* Save / Close */}
+        <Box flexDirection="column" flexShrink={0}>
+          <Text bold color={toolsNavItem === 'save' ? uiState.theme.text.accent : 'green'}>
+            {toolsNavItem === 'save' ? '▶ ' : '  '}[S] 💾 Save{isSaving ? ' (Saving...)' : ''}
+          </Text>
+          <Text bold color={toolsNavItem === 'close' ? uiState.theme.text.accent : 'white'}>
+            {toolsNavItem === 'close' ? '▶ ' : '  '}[Esc] Close
+          </Text>
+          <Text> </Text>
+          <Text> </Text>
+          <Text color={uiState.theme.status.warning}>
+            💡 Tip: Auto-approved tools will execute without confirmation prompts.
+          </Text>
+          <Text color={uiState.theme.status.warning}>
+            Only auto-approve tools you trust completely.
+          </Text>
+        </Box>
+      </Box>
+    );
+  }
+  
+  // Render details view
   return (
     <Box flexDirection="column" height="100%" width="100%">
       {/* Help Text - Top Right */}
@@ -321,17 +444,21 @@ function ServerDetailsContent({ server, activeColumn, onToggle, onDelete, onRefr
         {deleteState.status === 'idle' && (
           <>
             <Text bold>Actions:</Text>
-            <Box gap={4} marginTop={1}>
+            <Text> </Text>
+            <Box flexDirection="column" marginTop={1}>
+              <Text bold color={navItem === 'tools' ? uiState.theme.text.accent : 'cyan'}>
+                {navItem === 'tools' ? '▶ ' : '  '}[T] Available Tools
+              </Text>
               {server.config.disabled ? (
-                <Text bold color={navItem === 'enable' ? 'yellow' : 'green'}>
+                <Text bold color={navItem === 'enable' ? uiState.theme.text.accent : 'green'}>
                   {navItem === 'enable' ? '▶ ' : '  '}[E] Enable Server
                 </Text>
               ) : (
-                <Text bold color={navItem === 'disable' ? 'yellow' : 'gray'}>
+                <Text bold color={navItem === 'disable' ? uiState.theme.text.accent : 'gray'}>
                   {navItem === 'disable' ? '▶ ' : '  '}[D] Disable Server
                 </Text>
               )}
-              <Text bold color={navItem === 'delete' ? 'yellow' : 'red'}>
+              <Text bold color={navItem === 'delete' ? uiState.theme.text.accent : 'red'}>
                 {navItem === 'delete' ? '▶ ' : '  '}[X] Delete Server
               </Text>
             </Box>
@@ -1590,6 +1717,8 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
                           {statusText}
                         </Text>
                       </Box>
+                      {/* Empty line for visual separation */}
+                      <Text> </Text>
                     </Box>
                   );
                 }
