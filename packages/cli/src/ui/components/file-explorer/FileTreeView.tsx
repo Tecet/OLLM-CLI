@@ -725,26 +725,29 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
     };
   }, []);
 
-  useEffect(() => {
+  // Performance optimization: Memoize visible window calculation
+  // This prevents unnecessary recalculations when unrelated state changes
+  const visibleNodes = React.useMemo(() => {
     if (!treeState.root) {
-      setVisibleWindow([]);
-      return;
+      return [];
     }
 
-    const visibleNodes = fileTreeService.getVisibleNodes(treeState.root, {
+    return fileTreeService.getVisibleNodes(treeState.root, {
       scrollOffset: treeState.scrollOffset,
       windowSize: treeState.windowSize,
     });
-
-    setVisibleWindow(visibleNodes);
   }, [
     treeState.root,
     treeState.scrollOffset,
     treeState.windowSize,
-    treeState.expandedPaths,
+    treeState.expandedPaths,  // Invalidate when expand/collapse occurs
     fileTreeService,
-    setVisibleWindow,
   ]);
+
+  // Update visible window in state when it changes
+  useEffect(() => {
+    setVisibleWindow(visibleNodes);
+  }, [visibleNodes, setVisibleWindow]);
 
   if (!treeState.root) {
     return (
