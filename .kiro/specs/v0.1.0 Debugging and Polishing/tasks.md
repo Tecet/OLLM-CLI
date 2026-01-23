@@ -50,7 +50,7 @@ This implementation plan breaks down the debugging and polishing work into discr
   - Create audit document: `.dev/audits/file-explorer-audit.md`
   - _Requirements: US-1, TR-1_
 
-- [ ] 5. Audit Code Editor
+- [x] 5. Audit Code Editor
   - Audit `packages/cli/src/ui/components/code-editor/EditorMockup.tsx`
   - Audit editor services (if implemented)
   - Document syntax highlighting integration
@@ -144,7 +144,7 @@ This implementation plan breaks down the debugging and polishing work into discr
   - Document integration points
   - _Requirements: US-2, US-3, TR-2, TR-3_
 
-- [ ] 15. Clean Up Code Editor
+- [x] 15. Clean Up Code Editor
   - Remove placeholder/mock code
   - Add comments to syntax highlighting logic
   - Document editor architecture in README
@@ -243,7 +243,7 @@ This implementation plan breaks down the debugging and polishing work into discr
 
 ### Phase 5: Code Consistency (Week 3)
 
-- [ ] 27. Standardize Naming Conventions
+- [x] 27. Standardize Naming Conventions
   - Review all file names for consistency
   - Review all function names for consistency
   - Review all variable names for consistency
