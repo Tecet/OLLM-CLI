@@ -19,8 +19,6 @@ export { OAuthConfigDialog } from './OAuthConfigDialog.js';
 export type { OAuthConfigDialogProps } from './OAuthConfigDialog.js';
 export { InstallServerDialog } from './InstallServerDialog.js';
 export type { InstallServerDialogProps } from './InstallServerDialog.js';
-export { ServerToolsViewer } from './ServerToolsViewer.js';
-export type { ServerToolsViewerProps } from './ServerToolsViewer.js';
 export { HealthMonitorDialog } from './HealthMonitorDialog.js';
 export type { HealthMonitorDialogProps } from './HealthMonitorDialog.js';
 export { ServerLogsViewer } from './ServerLogsViewer.js';

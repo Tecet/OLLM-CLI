@@ -21,7 +21,6 @@ import { APIKeyInputDialog } from '../dialogs/APIKeyInputDialog.js';
 import { 
   ServerConfigDialog,
   OAuthConfigDialog,
-  ServerToolsViewer,
   HealthMonitorDialog,
   ServerLogsViewer,
   UninstallConfirmDialog,
@@ -1072,7 +1071,6 @@ function MarketplaceContent({ activeColumn, onRefreshServers, height: _height = 
 type DialogType = 
   | 'configure'
   | 'oauth'
-  | 'tools'
   | 'health'
   | 'logs'
   | 'marketplace'
@@ -1330,17 +1328,6 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
         return (
           <DialogErrorBoundary onClose={handleCloseDialog} dialogName="OAuth Configuration">
             <OAuthConfigDialog
-              serverName={dialogState.serverName}
-              onClose={handleCloseDialog}
-            />
-          </DialogErrorBoundary>
-        );
-      
-      case 'tools':
-        if (!dialogState.serverName) return null;
-        return (
-          <DialogErrorBoundary onClose={handleCloseDialog} dialogName="Server Tools">
-            <ServerToolsViewer
               serverName={dialogState.serverName}
               onClose={handleCloseDialog}
             />
