@@ -507,7 +507,8 @@ export function FocusProvider({ children }: { children: ReactNode }) {
         setModeState('browse');
       }
     } else if (currentLevel === 2) {
-      // Level 2 (Tab Content) → Go to nav-bar (Level 1)
+      // Level 2 (Tab Content) → Go to nav-bar on Chat tab (Level 1)
+      setActiveTab('chat');
       setActiveId('nav-bar');
       setModeState('browse');
     } else if (currentLevel === 1) {

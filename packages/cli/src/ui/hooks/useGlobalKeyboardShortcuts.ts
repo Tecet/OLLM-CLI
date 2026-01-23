@@ -74,15 +74,24 @@ export function useGlobalKeyboardShortcuts(options: UseGlobalKeyboardShortcutsOp
   }, [setActiveTab, focusManager]);
 
   /**
-   * Handle cancel action
-   * Cancels generation if streaming, otherwise exits one level
+   * Handle ESC key - hierarchical navigation with cancellation side effect
+   * 
+   * ESC always performs hierarchical navigation (moving up one level).
+   * If generation is in progress, it also cancels the generation as a side effect.
+   * 
+   * Navigation flow:
+   * - Level 3 (Modal) → Level 2 (Parent)
+   * - Level 2 (Tab Content) → Level 1 (Navbar-Chat)
+   * - Level 1 (Navbar-Chat) → User Input
    */
-  const handleCancel = useCallback(() => {
+  const handleEscape = useCallback(() => {
+    // Side effect: Cancel generation if streaming
     if (chatState.streaming || chatState.waitingForResponse) {
       cancelGeneration();
-    } else {
-      focusManager.exitOneLevel();
     }
+    
+    // Primary action: Always perform hierarchical navigation
+    focusManager.exitOneLevel();
   }, [chatState.streaming, chatState.waitingForResponse, cancelGeneration, focusManager]);
 
   // Register global keyboard shortcuts
@@ -122,8 +131,11 @@ export function useGlobalKeyboardShortcuts(options: UseGlobalKeyboardShortcutsOp
       clearChat();
     } else if (isKey(input, key, activeKeybinds.chat.saveSession)) {
       onSaveSession?.();
-    } else if (isKey(input, key, activeKeybinds.chat.cancel)) {
-      handleCancel();
+    }
+    
+    // ESC key - hierarchical navigation (with cancellation side effect when streaming)
+    else if (key.escape) {
+      handleEscape();
     }
 
     // Scroll Chat Shortcuts
