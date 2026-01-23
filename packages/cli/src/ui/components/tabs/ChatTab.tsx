@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, memo } from 'react';
 import { Box, useInput, useStdout, BoxProps } from 'ink';
 import { WindowSwitcher } from '../WindowSwitcher.js';
 import { Terminal } from '../Terminal.js';
@@ -8,6 +8,7 @@ import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { useChat } from '../../../features/context/ChatContext.js';
 import { useUI } from '../../../features/context/UIContext.js';
 import { buildChatLines, ChatHistory, messageHasLargeDiff } from '../chat/ChatHistory.js';
+import { profileRender } from '../../utils/performanceProfiler.js';
 
 export interface ChatTabProps {
   /** Assigned height from layout */
@@ -43,8 +44,16 @@ export interface ChatTabProps {
  * - Editor: Code editor for file editing
  * 
  * The WindowSwitcher component provides visual indication of the active window.
+ * 
+ * Performance Optimizations:
+ * - Memoized with React.memo to prevent unnecessary re-renders
+ * - Expensive computations (buildChatLines) are memoized with useMemo
+ * - Config objects are memoized to prevent reference changes
+ * - Profiling available with OLLM_PROFILE_RENDERS=true
  */
-export function ChatTab(props: ChatTabProps) {
+function ChatTabComponent(props: ChatTabProps) {
+  // Profile renders for performance monitoring
+  profileRender('ChatTab', props);
   const { metricsConfig, reasoningConfig, columnWidth, height, showBorder = true } = props;
   const { state: chatState, scrollOffset, selectedLineIndex, setSelectedLineIndex, updateMessage } = useChat(); 
   const { state: uiState } = useUI();
@@ -64,35 +73,51 @@ export function ChatTab(props: ChatTabProps) {
     [reasoningConfig]
   );
 
-  const leftWidth = columnWidth ?? stdout?.columns ?? 80;
-  const contentWidth = Math.min(100, Math.max(20, Math.floor(leftWidth * 0.8)));
-  const maxVisibleLines = height - 4; // account for border and scroll indicators
+  // Memoize layout calculations to prevent recalculation on every render
+  const layoutMetrics = useMemo(() => {
+    const leftWidth = columnWidth ?? stdout?.columns ?? 80;
+    const contentWidth = Math.min(100, Math.max(20, Math.floor(leftWidth * 0.8)));
+    const maxVisibleLines = height - 4; // account for border and scroll indicators
+    return { leftWidth, contentWidth, maxVisibleLines };
+  }, [columnWidth, stdout?.columns, height]);
+
+  // Memoize expensive chat line building operation
+  // This is one of the most expensive operations in the chat UI
   const lines = useMemo(() => buildChatLines(
     chatState.messages,
     uiState.theme,
     finalMetricsConfig,
     finalReasoningConfig,
     0,
-    contentWidth - 2,
+    layoutMetrics.contentWidth - 2,
     2
-  ), [chatState.messages, uiState.theme, finalMetricsConfig, finalReasoningConfig, contentWidth]);
+  ), [chatState.messages, uiState.theme, finalMetricsConfig, finalReasoningConfig, layoutMetrics.contentWidth]);
   const lastLineCountRef = useRef(0);
-  const selectedLine = lines[Math.min(Math.max(selectedLineIndex, 0), Math.max(0, lines.length - 1))];
-  const selectedMessage = selectedLine?.messageId
-    ? chatState.messages.find(item => item.id === selectedLine.messageId)
-    : undefined;
-  const selectedHasToggle = Boolean(
-    (selectedLine?.kind === 'header' &&
-      selectedMessage &&
-      (selectedMessage.reasoning || selectedMessage.toolCalls?.some(tc => {
-        const hasArgs = tc.arguments && Object.keys(tc.arguments).length > 0;
-        return hasArgs || Boolean(tc.result);
-      }))) ||
-    (selectedLine?.kind === 'diff-summary' &&
-      selectedMessage &&
-      messageHasLargeDiff(selectedMessage.content))
-  );
-  const toggleHint = selectedHasToggle ? 'Left/Right to toggle details' : undefined;
+  
+  // Memoize selected line calculations to avoid recalculating on every render
+  const selectedLineData = useMemo(() => {
+    const clampedIndex = Math.min(Math.max(selectedLineIndex, 0), Math.max(0, lines.length - 1));
+    const selectedLine = lines[clampedIndex];
+    const selectedMessage = selectedLine?.messageId
+      ? chatState.messages.find(item => item.id === selectedLine.messageId)
+      : undefined;
+    
+    const selectedHasToggle = Boolean(
+      (selectedLine?.kind === 'header' &&
+        selectedMessage &&
+        (selectedMessage.reasoning || selectedMessage.toolCalls?.some(tc => {
+          const hasArgs = tc.arguments && Object.keys(tc.arguments).length > 0;
+          return hasArgs || Boolean(tc.result);
+        }))) ||
+      (selectedLine?.kind === 'diff-summary' &&
+        selectedMessage &&
+        messageHasLargeDiff(selectedMessage.content))
+    );
+    
+    const toggleHint = selectedHasToggle ? 'Left/Right to toggle details' : undefined;
+    
+    return { selectedLine, selectedMessage, selectedHasToggle, toggleHint };
+  }, [selectedLineIndex, lines, chatState.messages]);
 
   useEffect(() => {
     const total = lines.length;
@@ -125,11 +150,8 @@ export function ChatTab(props: ChatTabProps) {
       return;
     }
     if (key.rightArrow || key.leftArrow) {
-      const clampedIndex = Math.min(Math.max(selectedLineIndex, 0), Math.max(0, lines.length - 1));
-      const line = lines[clampedIndex];
-      if (!line?.messageId) return;
-      const message = chatState.messages.find(item => item.id === line.messageId);
-      if (!message) return;
+      const { selectedLine: line, selectedMessage: message } = selectedLineData;
+      if (!line?.messageId || !message) return;
       const isDiffSummaryLine = line.kind === 'diff-summary';
       const hasExpandableDiff = isDiffSummaryLine && messageHasLargeDiff(message.content);
       const hasExpandableReasoning = !isDiffSummaryLine && Boolean(message.reasoning);
@@ -151,6 +173,16 @@ export function ChatTab(props: ChatTabProps) {
     }
   }, { isActive: hasFocus });
 
+  // Memoize window switcher to prevent unnecessary re-renders
+  const windowSwitcher = useMemo(() => {
+    if (!props.showWindowSwitcher) return null;
+    return (
+      <Box width="100%" flexShrink={0} flexDirection="row" justifyContent="flex-end" paddingRight={1}>
+        <WindowSwitcher />
+      </Box>
+    );
+  }, [props.showWindowSwitcher]);
+
   return (
     <Box 
       flexDirection="column" 
@@ -161,11 +193,7 @@ export function ChatTab(props: ChatTabProps) {
       borderColor={hasFocus ? uiState.theme.text.secondary : uiState.theme.border.primary}
     >
         {/* Window Switcher - shows which window is active (Chat/Terminal/Editor) */}
-        {props.showWindowSwitcher && (
-          <Box width="100%" flexShrink={0} flexDirection="row" justifyContent="flex-end" paddingRight={1}>
-            <WindowSwitcher />
-          </Box>
-        )}
+        {windowSwitcher}
         
         {/* Render active window content */}
         {activeWindow === 'chat' && (
@@ -182,7 +210,7 @@ export function ChatTab(props: ChatTabProps) {
               scrollToBottom={true}
               theme={uiState.theme}
               scrollOffset={scrollOffset}
-              maxVisibleLines={maxVisibleLines}
+              maxVisibleLines={layoutMetrics.maxVisibleLines}
               paddingY={0}
               metricsConfig={finalMetricsConfig}
               reasoningConfig={finalReasoningConfig}
@@ -191,7 +219,7 @@ export function ChatTab(props: ChatTabProps) {
               lines={lines}
               scrollHintTop={hasFocus ? "Keyboard Up to scroll" : undefined}
               scrollHintBottom={hasFocus ? "Keyboard Down to scroll" : undefined}
-              toggleHint={toggleHint}
+              toggleHint={selectedLineData.toggleHint}
             />
           </Box>
         )}
@@ -215,3 +243,26 @@ export function ChatTab(props: ChatTabProps) {
     </Box>
   );
 }
+
+
+/**
+ * Memoized ChatTab component
+ * 
+ * Only re-renders when props actually change, preventing unnecessary
+ * re-renders when parent components update.
+ * 
+ * Custom comparison function ensures we only re-render when meaningful
+ * props change (height, width, configs, etc.)
+ */
+export const ChatTab = memo(ChatTabComponent, (prevProps, nextProps) => {
+  // Custom comparison to prevent unnecessary re-renders
+  return (
+    prevProps.height === nextProps.height &&
+    prevProps.showBorder === nextProps.showBorder &&
+    prevProps.columnWidth === nextProps.columnWidth &&
+    prevProps.showWindowSwitcher === nextProps.showWindowSwitcher &&
+    // Deep compare configs (they should be stable references from useMemo)
+    prevProps.metricsConfig === nextProps.metricsConfig &&
+    prevProps.reasoningConfig === nextProps.reasoningConfig
+  );
+});
