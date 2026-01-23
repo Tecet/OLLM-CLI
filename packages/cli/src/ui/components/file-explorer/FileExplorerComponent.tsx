@@ -305,15 +305,60 @@ export function FileExplorerComponent({
         excludePatterns,
       });
       
-      // Don't auto-expand - let user open it manually
-      // This avoids state synchronization issues
-      
-      // Set the root node in tree state (local state for persistence)
-      setTreeState(prev => ({
-        ...prev,
-        root: rootNode,
-        expandedPaths: new Set(), // Start with nothing expanded
-      }));
+      // If we've loaded a workspace, auto-expand directories so the
+      // tree shows the full workspace structure by default. This will
+      // recursively expand directories using the FileTreeService's
+      // lazy-loading expansion. For very large workspaces this can be
+      // I/O intensive; consider limiting depth if needed.
+      if (loadedWorkspace) {
+        const expandAll = async (node: any) => {
+          if (!node || node.type !== 'directory') return;
+          try {
+            await services.fileTreeService.expandDirectory(node, excludePatterns);
+          } catch (_err) {
+            // Ignore expansion errors for individual nodes
+          }
+
+          const children = node.children || [];
+          for (const child of children) {
+            if (child.type === 'directory') {
+              await expandAll(child);
+            }
+          }
+        };
+
+        // Expand entire tree starting at root
+        try {
+          await expandAll(rootNode);
+        } catch (_err) {
+          // If full expansion fails, we fall back to showing the root only
+        }
+
+        // Collect all directory paths that are now expanded
+        const allDirs: string[] = [];
+        const collectDirs = (n: any) => {
+          if (!n) return;
+          if (n.type === 'directory') {
+            allDirs.push(n.path);
+            const ch = n.children || [];
+            for (const c of ch) collectDirs(c);
+          }
+        };
+        collectDirs(rootNode);
+
+        setTreeState(prev => ({
+          ...prev,
+          root: rootNode,
+          expandedPaths: new Set(allDirs),
+        }));
+      } else {
+        // Don't auto-expand for browse mode - let user open it manually
+        setTreeState(prev => ({
+          ...prev,
+          root: rootNode,
+          expandedPaths: new Set(), // Start with nothing expanded
+        }));
+      }
       
       // Note: The FileTreeContext will be updated via initialState prop
       // when the provider mounts with the updated treeState

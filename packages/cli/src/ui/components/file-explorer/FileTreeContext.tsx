@@ -115,12 +115,32 @@ export function FileTreeProvider({
   });
 
   const setRoot = useCallback((root: FileNode | null) => {
-    setState((prev) => ({
-      ...prev,
-      root,
-      cursorPosition: 0,
-      scrollOffset: 0,
-    }));
+    setState((prev) => {
+      // If the root path hasn't changed, preserve the user's cursor position
+      // and scroll offset so activating the Files tab doesn't snap back to
+      // the top of the tree unexpectedly.
+      try {
+        const prevPath = prev.root?.path;
+        const newPath = root?.path;
+
+        if (prevPath && newPath && prevPath === newPath) {
+          return {
+            ...prev,
+            root,
+          };
+        }
+      } catch (_err) {
+        // Fall through to resetting if any unexpected error occurs
+      }
+
+      // New root (or previous root missing) — reset cursor and scroll
+      return {
+        ...prev,
+        root,
+        cursorPosition: 0,
+        scrollOffset: 0,
+      };
+    });
   }, []);
 
   const setCursorPosition = useCallback((position: number) => {
