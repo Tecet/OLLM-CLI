@@ -8,8 +8,8 @@
 import { spawn, ChildProcess } from 'child_process';
 import { EventEmitter } from 'events';
 
-import { createLogger } from '../utils/logger.js';
 import { MCPTransport, MCPRequest, MCPResponse } from './types.js';
+import { createLogger } from '../utils/logger.js';
 
 const logger = createLogger('MCPTransport');
 

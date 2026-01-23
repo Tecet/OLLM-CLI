@@ -101,7 +101,7 @@ export interface HybridModeListProps {
   selectedId?: string;
 }
 
-export function HybridModeList({ hybridModes, onSelect, selectedId }: HybridModeListProps) {
+export function HybridModeList({ hybridModes, onSelect: _onSelect, selectedId }: HybridModeListProps) {
   if (hybridModes.length === 0) {
     return (
       <Box paddingX={1}>

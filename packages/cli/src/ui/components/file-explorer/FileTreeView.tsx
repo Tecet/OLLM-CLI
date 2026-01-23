@@ -742,7 +742,6 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
     treeState.root,
     treeState.scrollOffset,
     treeState.windowSize,
-    treeState.expandedPaths, // Add this dependency to recalculate when expansion changes
     fileTreeService,
   ]);
 

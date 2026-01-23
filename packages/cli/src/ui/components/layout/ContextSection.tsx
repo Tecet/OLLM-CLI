@@ -41,7 +41,7 @@ export function ContextSection() {
     modeIcon,
     modeColor,
     currentModeConfidence,
-    modeDuration,
+    modeDuration: _modeDuration,
     suggestedModes,
   } = useActiveContext();
 

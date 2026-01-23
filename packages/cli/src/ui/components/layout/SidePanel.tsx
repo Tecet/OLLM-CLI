@@ -27,7 +27,7 @@ export interface SidePanelProps {
 }
 
 export function SidePanel({ visible, connection, model, gpu, theme, row1Height }: SidePanelProps) {
-  const { isFocused, setFocus: focusManagerSetFocus } = useFocusManager();
+  const { isFocused, setFocus: _focusManagerSetFocus } = useFocusManager();
   const { contextUsage } = useChat();
   const { activeKeybinds } = useKeybinds();
   

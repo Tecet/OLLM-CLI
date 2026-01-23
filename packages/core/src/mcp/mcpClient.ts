@@ -5,7 +5,6 @@
  * tool discovery, and tool invocations.
  */
 
-import { createLogger } from '../utils/logger.js';
 import { DEFAULT_MCP_CONFIG } from './config.js';
 import { substituteEnvObject } from './envSubstitution.js';
 import { MCPOAuthProvider } from './mcpOAuth.js';
@@ -22,6 +21,7 @@ import {
   MCPStreamChunk,
   MCPTransport,
 } from './types.js';
+import { createLogger } from '../utils/logger.js';
 
 import type { MCPConfig } from './config.js';
 

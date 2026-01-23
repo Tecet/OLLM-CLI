@@ -11,6 +11,7 @@
 import * as fs from 'fs/promises';
 import * as os from 'os';
 import * as path from 'path';
+
 // Import centralized error class
 import { WorkspaceBoundaryError } from '../errors/index.js';
 

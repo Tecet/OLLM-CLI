@@ -162,6 +162,9 @@ describe('MCPConfigService', () => {
     });
 
     it('should handle corrupted JSON gracefully', async () => {
+      // Suppress expected error logs during this test
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      
       // Create corrupted config
       const userConfigPath = path.join(tempDir, '.ollm', 'settings', 'mcp.json');
       fs.mkdirSync(path.dirname(userConfigPath), { recursive: true });
@@ -171,6 +174,9 @@ describe('MCPConfigService', () => {
 
       // Should return empty config instead of throwing
       expect(config).toEqual({ mcpServers: {} });
+      
+      // Restore console.error
+      consoleErrorSpy.mockRestore();
     });
 
     it('should handle invalid config structure gracefully', async () => {

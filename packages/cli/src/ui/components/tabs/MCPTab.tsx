@@ -1074,7 +1074,7 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
   // Check if this panel has focus (for navigation and dialogs)
   const hasFocus = isFocused('mcp-panel');
   // Check if we're in active mode (for state-modifying actions like toggle)
-  const canModifyState = hasFocus && isActive();
+  const _canModifyState = hasFocus && isActive();
   
   // Get terminal height for calculating content area
   const terminalHeight = (stdout?.rows || 24) - 1;

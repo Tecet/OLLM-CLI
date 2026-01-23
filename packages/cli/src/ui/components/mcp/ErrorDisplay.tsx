@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { Box, Text, useInput } from 'ink';
+import { Box, Text } from 'ink';
 
 import { useUI } from '../../../features/context/UIContext.js';
 
@@ -89,9 +89,9 @@ export const CompactErrorDisplay: React.FC<{ message: string }> = ({ message }) 
  */
 export const ErrorBanner: React.FC<ErrorDisplayProps> = ({
   message,
-  canRetry = false,
-  onRetry,
-  onDismiss,
+  canRetry: _canRetry = false,
+  onRetry: _onRetry,
+  onDismiss: _onDismiss,
 }) => {
   const { state: { theme } } = useUI();
 

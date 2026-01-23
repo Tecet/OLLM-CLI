@@ -191,7 +191,7 @@ export async function withTimeout<T>(
   
   try {
     // Combine signals if provided
-    const combinedSignal = signal 
+    const _combinedSignal = signal 
       ? combineAbortSignals([signal, controller.signal])
       : controller.signal;
     
