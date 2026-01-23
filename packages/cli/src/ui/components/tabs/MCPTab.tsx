@@ -32,6 +32,7 @@ import { ErrorBoundary } from '../ErrorBoundary.js';
 import { ErrorBanner } from '../mcp/ErrorDisplay.js';
 import { LoadingSpinner } from '../mcp/LoadingSpinner.js';
 import { ServerStatusBanner } from '../mcp/ServerStatusBanner.js';
+import { SystemMessages, type SystemMessage } from '../mcp/SystemMessages.js';
 
 import type { MCPMarketplaceServer } from '../../../services/mcpMarketplace.js';
 
@@ -1041,6 +1042,7 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
     uninstallServer,
     refreshServers,
     clearError,
+    subscribeToSystemMessages,
   } = useMCP();
   
   // Check if this panel has focus (for navigation and dialogs)
@@ -1080,6 +1082,18 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
   
   // Status message for operations
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  
+  // System messages for errors and notifications
+  const [systemMessages, setSystemMessages] = useState<SystemMessage[]>([]);
+  
+  // Subscribe to system messages from MCPContext
+  useEffect(() => {
+    const unsubscribe = subscribeToSystemMessages((messages) => {
+      setSystemMessages(messages);
+    });
+    
+    return unsubscribe;
+  }, [subscribeToSystemMessages]);
   
   // Build menu items for left column
   const menuItems = useMemo((): MenuItem[] => {
@@ -1585,6 +1599,19 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
                 </Text>
               </Box>
             </>
+          )}
+          
+          {/* System Messages at bottom of left column */}
+          {systemMessages.length > 0 && (
+            <Box flexShrink={0} marginTop={1}>
+              <SystemMessages
+                messages={systemMessages}
+                onDismiss={(id) => {
+                  setSystemMessages(prev => prev.filter(m => m.id !== id));
+                }}
+                isActive={hasFocus && activeColumn === 'left'}
+              />
+            </Box>
           )}
         </Box>
         

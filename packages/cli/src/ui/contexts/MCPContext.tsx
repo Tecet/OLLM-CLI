@@ -37,6 +37,22 @@ import type {
 } from '@ollm/ollm-cli-core/mcp/types.js';
 
 /**
+ * System message type for non-invasive notifications
+ */
+export interface SystemMessage {
+  /** Unique message ID */
+  id: string;
+  /** Message type */
+  type: 'error' | 'warning' | 'info' | 'success';
+  /** Message text */
+  message: string;
+  /** Timestamp when message was created */
+  timestamp: number;
+  /** Whether the message can be dismissed */
+  dismissible: boolean;
+}
+
+/**
  * Extended MCP server configuration with UI-specific fields
  */
 export interface ExtendedMCPServerConfig extends MCPServerConfig {
@@ -89,6 +105,22 @@ export interface MCPState {
 }
 
 /**
+ * System message type for non-invasive notifications
+ */
+export interface SystemMessage {
+  /** Unique message ID */
+  id: string;
+  /** Message type */
+  type: 'error' | 'warning' | 'info' | 'success';
+  /** Message text */
+  message: string;
+  /** Timestamp when message was created */
+  timestamp: number;
+  /** Whether the message can be dismissed */
+  dismissible: boolean;
+}
+
+/**
  * MCP context value
  */
 export interface MCPContextValue {
@@ -124,6 +156,10 @@ export interface MCPContextValue {
   clearError: () => void;
   /** Set tool auto-approve status */
   setToolAutoApprove: (serverName: string, toolName: string, approve: boolean) => Promise<void>;
+  /** Emit a system message */
+  emitSystemMessage: (type: SystemMessage['type'], message: string, dismissible?: boolean) => void;
+  /** Subscribe to system messages */
+  subscribeToSystemMessages: (callback: (messages: SystemMessage[]) => void) => () => void;
   
   // Logs & Monitoring
   /** Get server logs */
@@ -188,6 +224,10 @@ export function MCPProvider({
 
   // Track registered tools to avoid state dependency in loadServers
   const lastRegisteredTools = React.useRef<Map<string, MCPTool[]>>(new Map());
+  
+  // System messages state
+  const [systemMessages, setSystemMessages] = useState<SystemMessage[]>([]);
+  const systemMessageListeners = React.useRef<Set<(messages: SystemMessage[]) => void>>(new Set());
 
   // Try to get services from ServiceContext. Tests may not provide a ServiceProvider,
   // so fall back to a minimal no-op tool registry to avoid throwing in test environments.
@@ -466,77 +506,77 @@ export function MCPProvider({
    * Toggle server enabled/disabled state
    */
   const toggleServer = useCallback(async (serverName: string) => {
-    try {
-      const server = state.servers.get(serverName);
-      if (!server) {
-        throw new Error(`Server '${serverName}' not found`);
-      }
-
-      const isCurrentlyDisabled = server.config.disabled || false;
-      const newConfig = {
-        ...server.config,
-        disabled: !isCurrentlyDisabled,
-      };
-
-      // Optimistic UI update - show status change immediately for better UX
-      setState(prev => {
-        const servers = new Map(prev.servers);
-        const serverState = servers.get(serverName);
-        if (serverState) {
-          servers.set(serverName, {
-            ...serverState,
-            status: isCurrentlyDisabled ? 'starting' : 'disconnected',
-            config: newConfig,
-          });
-        }
-        return { ...prev, servers };
-      });
-
-      // Update configuration first
-      await mcpConfigService.updateServerConfig(serverName, newConfig as unknown as MCPServerConfig);
-
-      // Start or stop the server with retry logic
-      try {
-        await retryWithBackoff(async () => {
-          if (newConfig.disabled) {
-            await mcpClient.stopServer(serverName);
-          } else {
-            await mcpClient.startServer(serverName, newConfig);
-          }
-        }, { maxAttempts: 2 });
-      } catch (startError) {
-        // If starting fails, revert the config change
-        await mcpConfigService.updateServerConfig(serverName, {
-          ...newConfig,
-          disabled: true,
-        } as unknown as MCPServerConfig);
-        
-        // Ensure tools are unregistered if start failed
-        if (server.toolsList) {
-            unregisterServerTools(serverName, server.toolsList);
-        }
-
-        // Revert optimistic update on error
-        await loadServers();
-
-        // Re-throw with more context
-        if (server.config.oauth?.enabled) {
-          throw new Error(`OAuth authentication failed for ${serverName}. Please check OAuth configuration.`);
-        }
-        throw startError;
-      }
-
-      // Reload servers to get actual state
-      await loadServers();
-    } catch (error) {
-      const parsedError = parseError(error);
-      setState(prev => ({
-        ...prev,
-        error: formatErrorMessage(parsedError),
-      }));
-      throw error;
+    const server = state.servers.get(serverName);
+    if (!server) {
+      const errorMsg = `Server '${serverName}' not found`;
+      emitSystemMessage('error', errorMsg);
+      throw new Error(errorMsg);
     }
-  }, [state.servers, mcpClient, loadServers, unregisterServerTools]);
+
+    const isCurrentlyDisabled = server.config.disabled || false;
+    const newConfig = {
+      ...server.config,
+      disabled: !isCurrentlyDisabled,
+    };
+
+    // Optimistic UI update - show status change immediately for better UX
+    setState(prev => {
+      const servers = new Map(prev.servers);
+      const serverState = servers.get(serverName);
+      if (serverState) {
+        servers.set(serverName, {
+          ...serverState,
+          status: isCurrentlyDisabled ? 'starting' : 'disconnected',
+          config: newConfig,
+        });
+      }
+      return { ...prev, servers };
+    });
+
+    // Update configuration first
+    await mcpConfigService.updateServerConfig(serverName, newConfig as unknown as MCPServerConfig);
+
+    // Start or stop the server with retry logic
+    try {
+      await retryWithBackoff(async () => {
+        if (newConfig.disabled) {
+          await mcpClient.stopServer(serverName);
+        } else {
+          await mcpClient.startServer(serverName, newConfig);
+        }
+      }, { maxAttempts: 2 });
+      
+      // Emit success message
+      emitSystemMessage(
+        'success',
+        `${serverName} ${newConfig.disabled ? 'disabled' : 'enabled'} successfully`
+      );
+    } catch (_startError) {
+      // If starting fails, revert the config change
+      await mcpConfigService.updateServerConfig(serverName, {
+        ...newConfig,
+        disabled: true,
+      } as unknown as MCPServerConfig);
+      
+      // Ensure tools are unregistered if start failed
+      if (server.toolsList) {
+          unregisterServerTools(serverName, server.toolsList);
+      }
+
+      // Revert optimistic update on error
+      await loadServers();
+
+      // Emit error message with more context
+      const errorMsg = server.config.oauth?.enabled
+        ? `OAuth authentication failed for ${serverName}. Please check OAuth configuration.`
+        : `Failed to ${newConfig.disabled ? 'disable' : 'enable'} ${serverName}`;
+      emitSystemMessage('error', errorMsg);
+      throw new Error(errorMsg);
+    }
+
+    // Reload servers to get actual state
+    await loadServers();
+  }, [state.servers, mcpClient, loadServers, unregisterServerTools, emitSystemMessage]);
 
   /**
    * Restart a server
@@ -555,12 +595,13 @@ export function MCPProvider({
       }, { maxAttempts: 3 });
 
       await loadServers();
+      
+      // Emit success message
+      emitSystemMessage('success', `${serverName} restarted successfully`);
     } catch (error) {
       const parsedError = parseError(error);
-      setState(prev => ({
-        ...prev,
-        error: formatErrorMessage(parsedError),
-      }));
+      const errorMsg = `Failed to restart ${serverName}: ${formatErrorMessage(parsedError)}`;
+      emitSystemMessage('error', errorMsg);
       throw error;
     } finally {
       // Clear operation
@@ -570,7 +611,7 @@ export function MCPProvider({
         return { ...prev, operationsInProgress: ops };
       });
     }
-  }, [mcpClient, loadServers]);
+  }, [mcpClient, loadServers, emitSystemMessage]);
 
   /**
    * Install a server from marketplace
@@ -606,15 +647,16 @@ export function MCPProvider({
       // Reload servers and marketplace
       await loadServers();
       await loadMarketplace();
+      
+      // Emit success message
+      emitSystemMessage('success', `${serverDetails.name} installed successfully`);
     } catch (error) {
       const parsedError = parseError(error);
-      setState(prev => ({
-        ...prev,
-        error: formatErrorMessage(parsedError),
-      }));
+      const errorMsg = `Installation failed: ${formatErrorMessage(parsedError)}`;
+      emitSystemMessage('error', errorMsg);
       throw error;
     }
-  }, [mcpClient, loadServers, loadMarketplace]);
+  }, [mcpClient, loadServers, loadMarketplace, emitSystemMessage]);
 
   /**
    * Uninstall a server
@@ -655,14 +697,15 @@ export function MCPProvider({
       
       // Reload servers
       await loadServers();
+      
+      // Emit success message
+      emitSystemMessage('success', `${serverName} uninstalled successfully`);
     } catch (error) {
-      setState(prev => ({
-        ...prev,
-        error: error instanceof Error ? error.message : 'Failed to uninstall server',
-      }));
+      const errorMsg = error instanceof Error ? error.message : 'Failed to uninstall server';
+      emitSystemMessage('error', `Failed to uninstall ${serverName}: ${errorMsg}`);
       throw error;
     }
-  }, [state.servers, mcpClient, oauthProvider, loadServers, unregisterServerTools]);
+  }, [state.servers, mcpClient, oauthProvider, loadServers, unregisterServerTools, emitSystemMessage]);
 
   /**
    * Configure a server
@@ -679,15 +722,16 @@ export function MCPProvider({
       
       // Reload servers
       await loadServers();
+      
+      // Emit success message
+      emitSystemMessage('success', `${serverName} configuration updated successfully`);
     } catch (error) {
       const parsedError = parseError(error);
-      setState(prev => ({
-        ...prev,
-        error: formatErrorMessage(parsedError),
-      }));
+      const errorMsg = `Failed to configure ${serverName}: ${formatErrorMessage(parsedError)}`;
+      emitSystemMessage('error', errorMsg);
       throw error;
     }
-  }, [mcpClient, loadServers]);
+  }, [mcpClient, loadServers, emitSystemMessage]);
 
   /**
    * Configure OAuth for a server
@@ -696,7 +740,9 @@ export function MCPProvider({
     try {
       const server = state.servers.get(serverName);
       if (!server) {
-        throw new Error(`Server '${serverName}' not found`);
+        const errorMsg = `Server '${serverName}' not found`;
+        emitSystemMessage('error', errorMsg);
+        throw new Error(errorMsg);
       }
 
       const newConfig = {
@@ -709,15 +755,16 @@ export function MCPProvider({
       
       // Reload servers
       await loadServers();
+      
+      // Emit success message
+      emitSystemMessage('success', `OAuth configured for ${serverName}`);
     } catch (error) {
       const parsedError = parseError(error);
-      setState(prev => ({
-        ...prev,
-        error: formatErrorMessage(parsedError),
-      }));
+      const errorMsg = `Failed to configure OAuth for ${serverName}: ${formatErrorMessage(parsedError)}`;
+      emitSystemMessage('error', errorMsg);
       throw error;
     }
-  }, [state.servers, loadServers]);
+  }, [state.servers, loadServers, emitSystemMessage]);
 
   /**
    * Refresh OAuth token
@@ -726,7 +773,9 @@ export function MCPProvider({
     try {
       const server = state.servers.get(serverName);
       if (!server?.config.oauth) {
-        throw new Error(`Server '${serverName}' does not have OAuth configured`);
+        const errorMsg = `Server '${serverName}' does not have OAuth configured`;
+        emitSystemMessage('error', errorMsg);
+        throw new Error(errorMsg);
       }
 
       await retryWithBackoff(async () => {
@@ -735,15 +784,16 @@ export function MCPProvider({
       
       // Reload servers to update OAuth status
       await loadServers();
+      
+      // Emit success message
+      emitSystemMessage('success', `OAuth token refreshed for ${serverName}`);
     } catch (error) {
       const parsedError = parseError(error);
-      setState(prev => ({
-        ...prev,
-        error: formatErrorMessage(parsedError),
-      }));
+      const errorMsg = `Failed to refresh OAuth token for ${serverName}: ${formatErrorMessage(parsedError)}`;
+      emitSystemMessage('error', errorMsg);
       throw error;
     }
-  }, [state.servers, oauthProvider, loadServers]);
+  }, [state.servers, oauthProvider, loadServers, emitSystemMessage]);
 
   /**
    * Revoke OAuth access
@@ -755,15 +805,16 @@ export function MCPProvider({
       
       // Reload servers to update OAuth status
       await loadServers();
+      
+      // Emit success message
+      emitSystemMessage('success', `OAuth access revoked for ${serverName}`);
     } catch (error) {
       const parsedError = parseError(error);
-      setState(prev => ({
-        ...prev,
-        error: formatErrorMessage(parsedError),
-      }));
+      const errorMsg = `Failed to revoke OAuth access for ${serverName}: ${formatErrorMessage(parsedError)}`;
+      emitSystemMessage('error', errorMsg);
       throw error;
     }
-  }, [state.servers, oauthProvider, loadServers]);
+  }, [state.servers, oauthProvider, loadServers, emitSystemMessage]);
 
   /**
    * Get tools for a server
@@ -780,7 +831,9 @@ export function MCPProvider({
     try {
       const server = state.servers.get(serverName);
       if (!server) {
-        throw new Error(`Server '${serverName}' not found`);
+        const errorMsg = `Server '${serverName}' not found`;
+        emitSystemMessage('error', errorMsg);
+        throw new Error(errorMsg);
       }
 
       const currentAutoApprove = server.config.autoApprove || [];
@@ -806,15 +859,19 @@ export function MCPProvider({
       
       // Reload servers
       await loadServers();
+      
+      // Emit success message
+      emitSystemMessage(
+        'success',
+        `Tool ${toolName} ${approve ? 'added to' : 'removed from'} auto-approve list`
+      );
     } catch (error) {
       const parsedError = parseError(error);
-      setState(prev => ({
-        ...prev,
-        error: formatErrorMessage(parsedError),
-      }));
+      const errorMsg = `Failed to update auto-approve for ${toolName}: ${formatErrorMessage(parsedError)}`;
+      emitSystemMessage('error', errorMsg);
       throw error;
     }
-  }, [state.servers, loadServers]);
+  }, [state.servers, loadServers, emitSystemMessage]);
 
   /**
    * Search marketplace servers
@@ -933,6 +990,58 @@ export function MCPProvider({
   const clearError = useCallback(() => {
     setState(prev => ({ ...prev, error: null }));
   }, []);
+  
+  /**
+   * Emit a system message
+   */
+  const emitSystemMessage = useCallback((
+    type: SystemMessage['type'],
+    message: string,
+    dismissible: boolean = true
+  ) => {
+    const newMessage: SystemMessage = {
+      id: `${Date.now()}-${Math.random()}`,
+      type,
+      message,
+      timestamp: Date.now(),
+      dismissible,
+    };
+    
+    setSystemMessages(prev => [...prev, newMessage]);
+    
+    // Notify all listeners
+    systemMessageListeners.current.forEach(listener => {
+      listener([...systemMessages, newMessage]);
+    });
+    
+    // Auto-dismiss success messages after 5 seconds
+    if (type === 'success') {
+      setTimeout(() => {
+        setSystemMessages(prev => prev.filter(m => m.id !== newMessage.id));
+      }, 5000);
+    }
+  }, [systemMessages]);
+  
+  /**
+   * Subscribe to system messages
+   */
+  const subscribeToSystemMessages = useCallback((
+    callback: (messages: SystemMessage[]) => void
+  ): (() => void) => {
+    systemMessageListeners.current.add(callback);
+    
+    // Return unsubscribe function
+    return () => {
+      systemMessageListeners.current.delete(callback);
+    };
+  }, []);
+  
+  // Notify listeners when system messages change
+  useEffect(() => {
+    systemMessageListeners.current.forEach(listener => {
+      listener(systemMessages);
+    });
+  }, [systemMessages]);
 
   const value: MCPContextValue = {
     state,
@@ -952,6 +1061,8 @@ export function MCPProvider({
     refreshMarketplace,
     refreshServers,
     clearError,
+    emitSystemMessage,
+    subscribeToSystemMessages,
     toolRouter,
   };
 
