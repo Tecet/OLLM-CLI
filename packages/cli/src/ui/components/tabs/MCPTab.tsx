@@ -103,6 +103,110 @@ function ServerDetailsContent({ server, activeColumn, onToggle, onDelete, onRefr
   useInput((input, key) => {
     if (activeColumn !== 'right') return;
     
+    // Handle tools view navigation
+    if (view === 'tools') {
+      if (key.upArrow) {
+        if (toolsNavItem === 'close') {
+          setToolsNavItem('save');
+        } else if (toolsNavItem === 'save') {
+          if (server.toolsList.length > 0) {
+            setToolsNavItem('tool');
+            setSelectedToolIndex(server.toolsList.length - 1);
+          } else {
+            setToolsNavItem('selectNone');
+          }
+        } else if (toolsNavItem === 'tool') {
+          if (selectedToolIndex > 0) {
+            setSelectedToolIndex(prev => prev - 1);
+          } else {
+            setToolsNavItem('selectNone');
+          }
+        } else if (toolsNavItem === 'selectNone') {
+          setToolsNavItem('selectAll');
+        } else if (toolsNavItem === 'selectAll') {
+          setToolsNavItem('exit');
+        }
+      } else if (key.downArrow) {
+        if (toolsNavItem === 'exit') {
+          setToolsNavItem('selectAll');
+        } else if (toolsNavItem === 'selectAll') {
+          setToolsNavItem('selectNone');
+        } else if (toolsNavItem === 'selectNone') {
+          if (server.toolsList.length > 0) {
+            setToolsNavItem('tool');
+            setSelectedToolIndex(0);
+          } else {
+            setToolsNavItem('save');
+          }
+        } else if (toolsNavItem === 'tool') {
+          if (selectedToolIndex < server.toolsList.length - 1) {
+            setSelectedToolIndex(prev => prev + 1);
+          } else {
+            setToolsNavItem('save');
+          }
+        } else if (toolsNavItem === 'save') {
+          setToolsNavItem('close');
+        }
+      } else if (key.return) {
+        if (toolsNavItem === 'exit') {
+          // Go back to details view
+          setView('details');
+          setNavItem('exit');
+        } else if (toolsNavItem === 'selectAll') {
+          // Select all tools (only if there are tools)
+          if (server.toolsList.length > 0) {
+            const newSelections = new Map(toolSelections);
+            server.toolsList.forEach(tool => {
+              newSelections.set(tool.name, true);
+            });
+            setToolSelections(newSelections);
+          }
+        } else if (toolsNavItem === 'selectNone') {
+          // Deselect all tools (only if there are tools)
+          if (server.toolsList.length > 0) {
+            const newSelections = new Map(toolSelections);
+            server.toolsList.forEach(tool => {
+              newSelections.set(tool.name, false);
+            });
+            setToolSelections(newSelections);
+          }
+        } else if (toolsNavItem === 'tool') {
+          // Toggle tool selection
+          const tool = server.toolsList[selectedToolIndex];
+          if (tool) {
+            const newSelections = new Map(toolSelections);
+            newSelections.set(tool.name, !toolSelections.get(tool.name));
+            setToolSelections(newSelections);
+          }
+        } else if (toolsNavItem === 'save') {
+          // Save tool selections
+          setIsSaving(true);
+          Promise.all(
+            Array.from(toolSelections.entries()).map(([toolName, isSelected]) =>
+              setToolAutoApprove(server.name, toolName, isSelected)
+            )
+          )
+            .then(() => {
+              setIsSaving(false);
+              onRefreshServers().catch(console.error);
+            })
+            .catch(err => {
+              console.error('Failed to save tool selections:', err);
+              setIsSaving(false);
+            });
+        } else if (toolsNavItem === 'close') {
+          // Close and go back to details
+          setView('details');
+          setNavItem('exit');
+        }
+      } else if (key.escape) {
+        // Go back to details view
+        setView('details');
+        setNavItem('exit');
+      }
+      return;
+    }
+    
     // Handle delete confirmation
     if (deleteState.status === 'confirm') {
       if (key.upArrow) {
@@ -200,6 +304,9 @@ function ServerDetailsContent({ server, activeColumn, onToggle, onDelete, onRefr
   // Render tools view
   if (view === 'tools') {
     const autoApprovedCount = Array.from(toolSelections.values()).filter(Boolean).length;
+    const allSelected = server.toolsList.length > 0 && autoApprovedCount === server.toolsList.length;
+    const noneSelected = autoApprovedCount === 0;
+    const hasTools = server.toolsList.length > 0;
     
     return (
       <Box flexDirection="column" height="100%" width="100%">
@@ -234,11 +341,19 @@ function ServerDetailsContent({ server, activeColumn, onToggle, onDelete, onRefr
         <Text> </Text>
         
         {/* Select All / None */}
-        <Text bold color={toolsNavItem === 'selectAll' ? uiState.theme.text.accent : 'white'}>
-          {toolsNavItem === 'selectAll' ? '▶ ' : '  '}[A] ☑ Select All
+        <Text 
+          bold 
+          color={toolsNavItem === 'selectAll' ? uiState.theme.text.accent : (hasTools ? 'white' : 'gray')}
+          dimColor={!hasTools}
+        >
+          {toolsNavItem === 'selectAll' ? '▶ ' : '  '}[A] {allSelected ? '☑' : '☐'} Select All
         </Text>
-        <Text bold color={toolsNavItem === 'selectNone' ? uiState.theme.text.accent : 'white'}>
-          {toolsNavItem === 'selectNone' ? '▶ ' : '  '}[N] ☐ Select None
+        <Text 
+          bold 
+          color={toolsNavItem === 'selectNone' ? uiState.theme.text.accent : (hasTools ? 'white' : 'gray')}
+          dimColor={!hasTools}
+        >
+          {toolsNavItem === 'selectNone' ? '▶ ' : '  '}[N] {noneSelected ? '☑' : '☐'} Select None
         </Text>
         <Text> </Text>
         <Text> </Text>
@@ -1015,14 +1130,19 @@ function MarketplaceContent({ activeColumn, onRefreshServers, height: _height = 
         </Text>
       </Box>
       
+      <Text> </Text>
+      
       {/* Search Container - STATIC */}
-      <Box flexShrink={0} marginTop={1} marginBottom={1}>
-        <Text bold>Search: </Text>
+      <Box flexShrink={0}>
+        <Text bold color={uiState.theme.text.accent}>Search: </Text>
         <Text color={isSearchFocused ? 'yellow' : 'gray'}>
           {searchQuery || 'type / to search'}
           {isSearchFocused && <Text color="yellow">_</Text>}
         </Text>
       </Box>
+      
+      <Text> </Text>
+      <Text> </Text>
       
       {/* Scroll up indicator */}
       {showScrollUp && (
@@ -1756,8 +1876,6 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
           flexDirection="column" 
           width={absoluteRightWidth ?? "70%"} 
           flexShrink={0}
-          borderStyle="single" 
-          borderColor={hasFocus && activeColumn === 'right' ? uiState.theme.text.accent : uiState.theme.border.primary}
           paddingX={2} 
           paddingY={2}
         >
@@ -1767,13 +1885,20 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
           </Box>
 
           <Box flexDirection="column" flexGrow={1} overflow="hidden">
-          {(!selectedItem || (selectedItem?.type === 'exit' && activeColumn === 'left')) && (
+          {(!selectedItem || selectedItem?.type === 'exit') && (
             <Box flexDirection="column" paddingX={2} paddingY={1}>
               <Text bold color={uiState.theme.text.accent}>═══════════════════════════════════════════════════════════════════</Text>
               <Text></Text>
               <Text bold color={uiState.theme.text.accent}>                    MCP Registry - Marketplace</Text>
               <Text></Text>
               <Text>The MCP registry provides MCP clients with a list of MCP servers.</Text>
+              <Text></Text>
+              <Text></Text>
+              <Text>OLLM use Official Open Source MCP Registry</Text>
+              <Text></Text>
+              <Text>MCP Registry: https://registry.modelcontextprotocol.io/</Text>
+              <Text>MCP Registry Documentation: https://registry.modelcontextprotocol.io/docs</Text>
+              <Text></Text>
               <Text></Text>
               <Text color={uiState.theme.text.secondary}>───────────────────────────────────────────────────────────────────</Text>
               <Text></Text>
@@ -1794,14 +1919,6 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
               <Text color={uiState.theme.text.secondary} dimColor>Press Enter to browse marketplace or ↑↓ to navigate</Text>
               <Text></Text>
               <Text bold color={uiState.theme.text.accent}>═══════════════════════════════════════════════════════════════════</Text>
-            </Box>
-          )}
-          
-          {selectedItem?.type === 'exit' && activeColumn === 'right' && (
-            <Box flexDirection="column" alignItems="center" justifyContent="center" height="100%">
-              <Text color={uiState.theme.text.secondary} dimColor>
-                ⬅️  Press Enter or Esc to exit
-              </Text>
             </Box>
           )}
           
