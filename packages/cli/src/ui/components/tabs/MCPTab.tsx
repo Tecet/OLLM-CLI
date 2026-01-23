@@ -92,9 +92,9 @@ function ServerDetailsContent({ server, activeColumn, onToggle, onDelete, onRefr
     
     // Handle delete confirmation
     if (deleteState.status === 'confirm') {
-      if (key.leftArrow) {
+      if (key.upArrow) {
         setDeleteState(prev => ({ ...prev, selection: 'yes' }));
-      } else if (key.rightArrow) {
+      } else if (key.downArrow) {
         setDeleteState(prev => ({ ...prev, selection: 'no' }));
       } else if (key.return) {
         if (deleteState.selection === 'yes') {
@@ -364,7 +364,7 @@ function ServerDetailsContent({ server, activeColumn, onToggle, onDelete, onRefr
             <Text bold color="red">
               Delete {server.name}?
             </Text>
-            <Box gap={4} marginTop={1}>
+            <Box flexDirection="column" marginTop={1}>
               <Text bold color={deleteState.selection === 'yes' ? 'yellow' : 'white'}>
                 {deleteState.selection === 'yes' ? '▶ ' : '  '}Yes
               </Text>
@@ -374,7 +374,7 @@ function ServerDetailsContent({ server, activeColumn, onToggle, onDelete, onRefr
             </Box>
             <Box marginTop={1}>
               <Text dimColor>
-                ←→: Select | Enter: Confirm | Esc: Cancel
+                ↑↓: Select | Enter: Confirm | Esc: Cancel
               </Text>
             </Box>
           </>
@@ -534,9 +534,9 @@ function MarketplaceContent({ activeColumn, onRefreshServers, height: _height = 
     
     // Handle install confirmation
     if (installState.status === 'confirm') {
-      if (key.leftArrow) {
+      if (key.upArrow) {
         setInstallState(prev => ({ ...prev, selection: 'yes' }));
-      } else if (key.rightArrow) {
+      } else if (key.downArrow) {
         setInstallState(prev => ({ ...prev, selection: 'no' }));
       } else if (key.return) {
         if (installState.selection === 'yes' && selectedServer) {
@@ -824,7 +824,7 @@ function MarketplaceContent({ activeColumn, onRefreshServers, height: _height = 
               <Text bold color="cyan">
                 Install {selectedServer.name}?
               </Text>
-              <Box gap={4} marginTop={1}>
+              <Box flexDirection="column" marginTop={1}>
                 <Text bold color={installState.selection === 'yes' ? 'yellow' : 'white'}>
                   {installState.selection === 'yes' ? '▶ ' : '  '}Yes
                 </Text>
@@ -834,7 +834,7 @@ function MarketplaceContent({ activeColumn, onRefreshServers, height: _height = 
               </Box>
               <Box marginTop={1}>
                 <Text dimColor>
-                  ←→: Select | Enter: Confirm | Esc: Cancel
+                  ↑↓: Select | Enter: Confirm | Esc: Cancel
                 </Text>
               </Box>
             </>

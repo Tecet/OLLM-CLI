@@ -489,7 +489,7 @@ describe('Model Management Integration Tests', () => {
     it('should remove deleted model from list', async () => {
       await fc.assert(
         fc.asyncProperty(
-          // Generate random model list
+          // Generate random model list with unique names
           fc.array(
             fc.record({
               name: fc.string({ minLength: 1, maxLength: 50 }),
@@ -497,7 +497,13 @@ describe('Model Management Integration Tests', () => {
               modifiedAt: fc.date().map((d) => d.toISOString()),
             }),
             { minLength: 2, maxLength: 10 }
-          ),
+          ).map((models) => {
+            // Ensure unique names by appending index
+            return models.map((model, idx) => ({
+              ...model,
+              name: `${model.name.trim() || 'model'}-${idx}`,
+            }));
+          }),
           // Generate index of model to delete
           fc.integer({ min: 0, max: 9 }),
           async (mockModels, deleteIndex) => {

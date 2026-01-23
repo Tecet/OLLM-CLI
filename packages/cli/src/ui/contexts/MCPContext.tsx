@@ -506,15 +506,43 @@ export function MCPProvider({
               toolsList = await retryWithBackoff(async () => {
                 const getTools = (mcpClient as any).getTools;
                 if (typeof getTools === 'function') {
-                  const tools = await getTools.call(mcpClient, serverName);
-                  return tools || [];
+                  try {
+                    const tools = await getTools.call(mcpClient, serverName);
+                    return tools || [];
+                  } catch (toolError: any) {
+                    // If the error indicates no tools are available (not an actual error),
+                    // return empty array instead of throwing
+                    const errorMsg = toolError?.message || String(toolError);
+                    if (
+                      errorMsg.includes('no tools') ||
+                      errorMsg.includes('tools/list') ||
+                      errorMsg.includes('not implemented') ||
+                      errorMsg.includes('Method not found')
+                    ) {
+                      // Server doesn't provide tools - this is valid
+                      return [];
+                    }
+                    // Real error - rethrow to trigger retry
+                    throw toolError;
+                  }
                 }
                 return [];
               }, { maxAttempts: 3, initialDelay: 500 });
+              // Note: toolsList can be empty array - that's valid, not an error
             } catch (err) {
               console.warn(`Failed to get tools for ${serverName} after retries:`, err);
-              // Emit warning but don't fail the entire load
-              emitSystemMessage('warning', `Could not load tools for ${serverName}. Server is connected but tools are unavailable.`);
+              // Only emit warning if server is still in config and there's a real error
+              if (serverConfig) {
+                const errorMsg = err instanceof Error ? err.message : String(err);
+                // Only show warning for actual errors, not "no tools available" situations
+                if (
+                  !errorMsg.includes('no tools') &&
+                  !errorMsg.includes('not implemented') &&
+                  !errorMsg.includes('Method not found')
+                ) {
+                  emitSystemMessage('warning', `Could not load tools for ${serverName}. Check server logs for details.`);
+                }
+              }
             }
           }
         } catch (error) {
@@ -609,6 +637,8 @@ export function MCPProvider({
       }
 
       const isCurrentlyDisabled = server.config.disabled || false;
+      const isActuallyRunning = server.status === 'connected';
+      
       const newConfig = {
         ...server.config,
         disabled: !isCurrentlyDisabled,
@@ -635,14 +665,22 @@ export function MCPProvider({
       try {
         await retryWithBackoff(async () => {
           if (newConfig.disabled) {
-            // Explicitly unregister tools before stopping server
-            if (server.toolsList && server.toolsList.length > 0) {
-              unregisterServerTools(serverName, server.toolsList);
-              lastRegisteredTools.current.delete(serverName);
+            // Disabling: stop the server if it's running
+            if (isActuallyRunning) {
+              // Explicitly unregister tools before stopping server
+              if (server.toolsList && server.toolsList.length > 0) {
+                unregisterServerTools(serverName, server.toolsList);
+                lastRegisteredTools.current.delete(serverName);
+              }
+              await mcpClient.stopServer(serverName);
             }
-            await mcpClient.stopServer(serverName);
+            // If not running, just update config (already done above)
           } else {
-            await mcpClient.startServer(serverName, newConfig);
+            // Enabling: start the server if it's not running
+            if (!isActuallyRunning) {
+              await mcpClient.startServer(serverName, newConfig);
+            }
+            // If already running, just update config (already done above)
           }
         }, { maxAttempts: 2 });
         
