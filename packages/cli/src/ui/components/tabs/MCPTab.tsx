@@ -73,19 +73,6 @@ function ServerDetailsContent({ server, activeColumn, onToggle, onDelete, onRefr
     selection: 'no',
   });
   
-  // Track if we're in a refresh period (servers reconnecting)
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  
-  // Clear refreshing state after 3 seconds
-  useEffect(() => {
-    if (isRefreshing) {
-      const timer = setTimeout(() => {
-        setIsRefreshing(false);
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [isRefreshing]);
-  
   // Handle keyboard input when right column is active
   useInput((input, key) => {
     if (activeColumn !== 'right') return;
@@ -105,7 +92,6 @@ function ServerDetailsContent({ server, activeColumn, onToggle, onDelete, onRefr
           onDelete()
             .then(() => {
               setDeleteState({ status: 'success', selection: 'no' });
-              setIsRefreshing(true); // Mark as refreshing
             })
             .catch(err => {
               setDeleteState({
@@ -163,7 +149,6 @@ function ServerDetailsContent({ server, activeColumn, onToggle, onDelete, onRefr
         onToggle()
           .then(() => {
             setToggleState({ status: 'idle' });
-            setIsRefreshing(true); // Mark as refreshing
             // Refresh to show updated status
             onRefreshServers().catch(console.error);
           })
@@ -199,9 +184,8 @@ function ServerDetailsContent({ server, activeColumn, onToggle, onDelete, onRefr
       {/* Status Banner - Informational Display Only */}
       <Box flexShrink={0} marginBottom={1}>
         <ServerStatusBanner
-          health={server.health}
+          phase={server.phase}
           isEnabled={!server.config.disabled}
-          isConnecting={isRefreshing || toggleState.status === 'toggling'}
         />
       </Box>
       

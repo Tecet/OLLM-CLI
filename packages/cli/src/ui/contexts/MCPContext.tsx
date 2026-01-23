@@ -540,9 +540,10 @@ export function MCPProvider({
                 if (
                   !errorMsg.includes('no tools') &&
                   !errorMsg.includes('not implemented') &&
-                  !errorMsg.includes('Method not found')
+                  !errorMsg.includes('Method not found') &&
+                  !errorMsg.includes('tools/list')
                 ) {
-                  emitSystemMessage('warning', `Could not load tools for ${serverName}. Check server logs for details.`);
+                  emitSystemMessage('info', `Tools not loaded for ${serverName}. This may be normal if the server doesn't provide tools. Check MCP server specification or logs if unexpected.`);
                 }
               }
             }
@@ -654,6 +655,7 @@ export function MCPProvider({
           servers.set(serverName, {
             ...serverState,
             status: isCurrentlyDisabled ? 'starting' : 'disconnected',
+            phase: isCurrentlyDisabled ? 'starting' : 'stopped',
             config: newConfig,
           });
         }

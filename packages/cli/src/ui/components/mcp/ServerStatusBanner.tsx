@@ -11,28 +11,25 @@ import { Box, Text } from 'ink';
 import { useUI } from '../../../features/context/UIContext.js';
 
 export interface ServerStatusBannerProps {
-  /** Server health status */
-  health: 'healthy' | 'degraded' | 'unhealthy';
+  /** Connection phase */
+  phase?: 'stopped' | 'starting' | 'connecting' | 'health-check' | 'connected' | 'unhealthy' | 'error';
   /** Whether the server is enabled */
   isEnabled: boolean;
-  /** Whether the server is currently connecting/starting */
-  isConnecting?: boolean;
 }
 
 /**
  * ServerStatusBanner Component
  * 
- * Displays a colored banner showing server health and enabled/disabled status.
+ * Displays a colored banner showing server connection phase and enabled/disabled status.
  * Uses rounded borders and appropriate colors for visual clarity.
  */
 export const ServerStatusBanner: React.FC<ServerStatusBannerProps> = ({
-  health,
+  phase = 'stopped',
   isEnabled,
-  isConnecting = false,
 }) => {
   const { state: uiState } = useUI();
   
-  // Determine banner content and color based on state
+  // Determine banner content and color based on phase
   let icon: string;
   let text: string;
   let color: string;
@@ -41,22 +38,43 @@ export const ServerStatusBanner: React.FC<ServerStatusBannerProps> = ({
     icon = '⚪';
     text = 'Disabled';
     color = 'gray';
-  } else if (isConnecting) {
-    icon = '🟡';
-    text = 'Connecting • Enabled';
-    color = 'yellow';
-  } else if (health === 'healthy') {
-    icon = '🟢';
-    text = 'Healthy • Enabled';
-    color = uiState.theme.status.success;
-  } else if (health === 'degraded') {
-    icon = '🟡';
-    text = 'Degraded • Enabled';
-    color = uiState.theme.status.warning;
   } else {
-    icon = '🔴';
-    text = 'Unhealthy • Enabled';
-    color = uiState.theme.status.error;
+    switch (phase) {
+      case 'starting':
+        icon = '🟡';
+        text = 'Starting • Enabled';
+        color = 'yellow';
+        break;
+      case 'connecting':
+        icon = '🟡';
+        text = 'Connecting • Enabled';
+        color = 'yellow';
+        break;
+      case 'health-check':
+        icon = '🟡';
+        text = 'Checking Health • Enabled';
+        color = 'yellow';
+        break;
+      case 'connected':
+        icon = '🟢';
+        text = 'Healthy • Enabled';
+        color = uiState.theme.status.success;
+        break;
+      case 'unhealthy':
+        icon = '🔴';
+        text = 'Unhealthy • Enabled';
+        color = uiState.theme.status.error;
+        break;
+      case 'error':
+        icon = '🔴';
+        text = 'Connection Failed • Enabled';
+        color = uiState.theme.status.error;
+        break;
+      default:
+        icon = '⚪';
+        text = 'Stopped • Enabled';
+        color = 'gray';
+    }
   }
   
   return (
