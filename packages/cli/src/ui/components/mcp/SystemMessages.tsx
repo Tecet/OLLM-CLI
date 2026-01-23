@@ -62,12 +62,12 @@ export const SystemMessages: React.FC<SystemMessagesProps> = ({
   
   return (
     <Box flexDirection="column" borderStyle="single" borderColor="gray" flexShrink={0}>
-      {/* Header */}
-      <Box paddingX={1} borderStyle="single" borderColor="gray" flexShrink={0}>
+      {/* Header - Center aligned */}
+      <Box paddingX={1} borderStyle="single" borderColor="gray" flexShrink={0} justifyContent="center">
         <Text bold>📢 System Messages</Text>
       </Box>
       
-      {/* Messages */}
+      {/* Messages - Center aligned */}
       <Box flexDirection="column" flexShrink={0} maxHeight={10} overflow="hidden">
         {messages.map(msg => {
           const icon = msg.type === 'error' ? '❌' :
@@ -79,7 +79,7 @@ export const SystemMessages: React.FC<SystemMessagesProps> = ({
                        uiState.theme.status.success;
           
           return (
-            <Box key={msg.id} flexDirection="column" paddingX={1} paddingY={1} flexShrink={0}>
+            <Box key={msg.id} flexDirection="column" paddingX={1} paddingY={1} flexShrink={0} alignItems="center">
               <Text color={color}>
                 {icon} {msg.message}
               </Text>
