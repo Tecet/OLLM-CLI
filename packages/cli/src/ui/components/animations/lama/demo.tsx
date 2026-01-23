@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, Box, Text } from 'ink';
+
 import { LlamaAnimation } from './LlamaAnimation.js';
 
 const Layout = () => (

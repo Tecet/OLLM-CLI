@@ -7,6 +7,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { Box, Text, useInput } from 'ink';
+
 import type { MCPMarketplaceServer } from '../../../services/mcpMarketplace.js';
 
 export interface APIKeyInputDialogProps {

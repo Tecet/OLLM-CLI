@@ -9,6 +9,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Box, Text, useInput } from 'ink';
+
 import { FileNode } from './types.js';
 
 /**

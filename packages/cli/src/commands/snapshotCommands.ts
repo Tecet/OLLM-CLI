@@ -9,8 +9,9 @@
  * - /snapshot create - Manually create snapshot
  */
 
-import type { Command, CommandResult } from './types.js';
 import { getGlobalContextManager } from '../features/context/ContextManagerContext.js';
+
+import type { Command, CommandResult } from './types.js';
 
 /**
  * Helper to check if context manager is available

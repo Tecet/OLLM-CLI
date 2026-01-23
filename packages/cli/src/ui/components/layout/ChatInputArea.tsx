@@ -6,13 +6,14 @@
  */
 import React, { memo, useCallback, useMemo } from 'react';
 import { Box, Text, useInput, BoxProps } from 'ink';
+
 import { InputBox } from './InputBox.js';
 import { useChat, Message } from '../../../features/context/ChatContext.js';
-import { useUI } from '../../../features/context/UIContext.js';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
+import { useKeybinds } from '../../../features/context/KeybindsContext.js';
+import { useUI } from '../../../features/context/UIContext.js';
 import { useWindow } from '../../contexts/WindowContext.js';
 import { useTerminal } from '../../hooks/useTerminal.js';
-import { useKeybinds } from '../../../features/context/KeybindsContext.js';
 import { isKey } from '../../utils/keyUtils.js';
 
 export interface ChatInputAreaProps {
@@ -25,7 +26,7 @@ export interface ChatInputAreaProps {
 export const ChatInputArea = memo(function ChatInputArea({ height, showBorder = true }: ChatInputAreaProps) {
   const { state: chatState, setCurrentInput, sendMessage, cancelGeneration, executeMenuOption, navigateMenu, setInputMode, setMenuState } = useChat();
   const { state: uiState } = useUI();
-  const { isFocused, exitToNavBar } = useFocusManager();
+  const { isFocused } = useFocusManager();
   const { activeWindow, switchWindow } = useWindow();
   const { sendCommand } = useTerminal();
   const { activeKeybinds } = useKeybinds();

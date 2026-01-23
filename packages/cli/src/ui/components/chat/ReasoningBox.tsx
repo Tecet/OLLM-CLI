@@ -7,8 +7,10 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Box, Text } from 'ink';
-import type { ReasoningBlock } from '../../../../../core/src/services/reasoningParser.js';
+
 import { Theme } from '../../../config/types.js';
+
+import type { ReasoningBlock } from '../../../../../core/src/services/reasoningParser.js';
 
 export interface ReasoningBoxProps {
   reasoning: ReasoningBlock;

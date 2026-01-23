@@ -7,8 +7,9 @@
 
 import { promises as fs } from 'fs';
 import { join } from 'path';
-import type { Message } from '../provider/types.js';
+
 import type { ModeType } from './ContextAnalyzer.js';
+import type { Message } from '../provider/types.js';
 
 /**
  * Mode-specific findings from specialized modes

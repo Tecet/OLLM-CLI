@@ -16,11 +16,13 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { Box, Text, useInput } from 'ink';
+
 import { Dialog, markEscHandled } from './Dialog.js';
 import { InstallServerDialog } from './InstallServerDialog.js';
+import { useMCP } from '../../contexts/MCPContext.js';
 import { Button } from '../forms/Button.js';
 import { LoadingSpinner } from '../mcp/LoadingSpinner.js';
-import { useMCP } from '../../contexts/MCPContext.js';
+
 import type { MCPMarketplaceServer } from '../../../services/mcpMarketplace.js';
 import type { MCPServerConfig } from '@ollm/ollm-cli-core/mcp/types.js';
 

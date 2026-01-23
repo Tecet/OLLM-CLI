@@ -4,9 +4,10 @@
  * Manages a shared terminal session using node-pty
  */
 
+import os from 'os';
+
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import * as pty from 'node-pty';
-import os from 'os';
 
 export interface TerminalLine {
   text: string;

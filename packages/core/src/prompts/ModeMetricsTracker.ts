@@ -5,8 +5,9 @@
  */
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync, unlinkSync } from 'fs';
-import { join } from 'path';
 import { homedir } from 'os';
+import { join } from 'path';
+
 import type { ModeType } from './ContextAnalyzer.js';
 import type { ModeTransition } from './PromptModeManager.js';
 

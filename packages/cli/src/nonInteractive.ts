@@ -3,10 +3,11 @@
  * Handles single-prompt execution without the TUI.
  */
 
-import type { Config } from './config/types.js';
-import { ProviderRegistry, ChatClient } from '@ollm/core';
-import { ToolRegistry } from '@ollm/core';
+import { ProviderRegistry, ChatClient , ToolRegistry } from '@ollm/core';
+
 import { LocalProvider } from '../../ollm-bridge/src/provider/localProvider.js';
+
+import type { Config } from './config/types.js';
 import type { DeclarativeTool as _DeclarativeTool } from '@ollm/ollm-cli-core/tools/types.js';
 
 /**

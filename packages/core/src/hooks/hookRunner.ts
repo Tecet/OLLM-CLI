@@ -7,12 +7,14 @@
 
 import { spawn } from 'child_process';
 import * as path from 'path';
-import type { Hook, HookEvent, HookInput, HookOutput } from './types.js';
-import { HookTranslator } from './hookTranslator.js';
-import type { TrustedHooks } from './trustedHooks.js';
-import type { HooksConfig } from './config.js';
+
 import { DEFAULT_HOOKS_CONFIG } from './config.js';
 import { getHookDebugger } from './hookDebugger.js';
+import { HookTranslator } from './hookTranslator.js';
+
+import type { HooksConfig } from './config.js';
+import type { TrustedHooks } from './trustedHooks.js';
+import type { Hook, HookEvent, HookInput, HookOutput } from './types.js';
 
 /**
  * Result of hook execution including metadata

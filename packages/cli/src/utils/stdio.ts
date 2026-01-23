@@ -1,5 +1,6 @@
-import { coreEvents } from './events.js';
 import process from 'node:process';
+
+import { coreEvents } from './events.js';
 
 // Capture the original stdout and stderr write methods before any monkey patching occurs.
 const originalStdoutWrite = process.stdout.write.bind(process.stdout);

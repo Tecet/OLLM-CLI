@@ -9,11 +9,25 @@
  * - Server configuration and lifecycle management
  */
 
+import os from 'os';
+import path from 'path';
+
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode, useMemo } from 'react';
-import { DefaultMCPClient } from '@ollm/ollm-cli-core/mcp/mcpClient.js';
+
 import { DefaultMCPToolWrapper } from '@ollm/ollm-cli-core/mcp/index.js';
+import { DefaultMCPClient } from '@ollm/ollm-cli-core/mcp/mcpClient.js';
 import { MCPHealthMonitor } from '@ollm/ollm-cli-core/mcp/mcpHealthMonitor.js';
 import { MCPOAuthProvider, FileTokenStorage } from '@ollm/ollm-cli-core/mcp/mcpOAuth.js';
+import { ToolRouter, type ToolRoutingConfig, DEFAULT_TOOL_ROUTING_CONFIG } from '@ollm/ollm-cli-core/tools/index.js';
+
+import { SettingsService } from '../../config/settingsService.js';
+import { useServices } from '../../features/context/ServiceContext.js';
+import { mcpConfigService, type MCPConfigFile } from '../../services/mcpConfigService.js';
+import { mcpMarketplace, type MCPMarketplaceServer } from '../../services/mcpMarketplace.js';
+import { parseError, retryWithBackoff, formatErrorMessage } from '../utils/errorHandling.js';
+
+
+
 import type { 
   MCPClient, 
   MCPServerConfig, 
@@ -21,14 +35,6 @@ import type {
   MCPTool,
   MCPOAuthConfig
 } from '@ollm/ollm-cli-core/mcp/types.js';
-import { mcpConfigService, type MCPConfigFile } from '../../services/mcpConfigService.js';
-import { mcpMarketplace, type MCPMarketplaceServer } from '../../services/mcpMarketplace.js';
-import { parseError, retryWithBackoff, formatErrorMessage } from '../utils/errorHandling.js';
-import path from 'path';
-import os from 'os';
-import { ToolRouter, type ToolRoutingConfig, DEFAULT_TOOL_ROUTING_CONFIG } from '@ollm/ollm-cli-core/tools/index.js';
-import { useServices } from '../../features/context/ServiceContext.js';
-import { SettingsService } from '../../config/settingsService.js';
 
 /**
  * Extended MCP server configuration with UI-specific fields

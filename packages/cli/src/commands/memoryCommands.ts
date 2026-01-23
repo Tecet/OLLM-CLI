@@ -8,8 +8,9 @@
  * - /memory clear - Clear all memories
  */
 
-import type { Command, CommandResult } from './types.js';
 import { MemoryService } from '@ollm/core';
+
+import type { Command, CommandResult } from './types.js';
 
 /**
  * /memory list - Show all memories

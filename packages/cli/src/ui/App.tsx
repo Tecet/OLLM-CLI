@@ -14,64 +14,65 @@
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { Box, Text, useStdout, BoxProps, useInput } from 'ink';
-import { UIProvider, useUI, TabType } from '../features/context/UIContext.js';
-import { ChatProvider, useChat } from '../features/context/ChatContext.js';
-import { GPUProvider, useGPU } from '../features/context/GPUContext.js';
-import { ReviewProvider, useReview } from '../features/context/ReviewContext.js';
-import { ServiceProvider, useServices } from '../features/context/ServiceContext.js';
-import { ContextManagerProvider, useContextManager } from '../features/context/ContextManagerContext.js';
-import { ModelProvider, useModel } from '../features/context/ModelContext.js';
-import { ActiveContextProvider } from '../features/context/ActiveContextState.js';
-import { DialogProvider } from './contexts/DialogContext.js';
-import { UserPromptProvider } from '../features/context/UserPromptContext.js';
-import { HooksProvider } from './contexts/HooksContext.js';
-import { ToolsProvider } from './contexts/ToolsContext.js';
-import { MCPProvider } from './contexts/MCPContext.js';
-import { WindowProvider } from './contexts/WindowContext.js';
-import { TerminalProvider } from './contexts/TerminalContext.js';
-import { LaunchScreen } from './components/launch/LaunchScreen.js';
-import type { ProviderAdapter, ProviderRequest, ProviderEvent } from '@ollm/core';
-import { createWelcomeMessage, createCompactWelcomeMessage, CONTEXT_OPTIONS, ContextSizeOption } from '../features/context/SystemMessages.js';
-import { ContextProfile } from '../config/types.js';
-import type { MenuOption } from '../features/context/ChatContext.js';
-import { profileManager } from '../features/context/../profiles/ProfileManager.js';
-import { SettingsService } from '../config/settingsService.js';
-import { FocusProvider, useFocusManager } from '../features/context/FocusContext.js';
-import { defaultDarkTheme } from '../config/styles.js';
-import { SettingsProvider } from '../features/context/SettingsContext.js';
 
-import { TabBar, tabs } from './components/layout/TabBar.js';
-import { ChatInputArea } from './components/layout/ChatInputArea.js';
-import { SystemBar } from './components/layout/SystemBar.js';
-import { SidePanel } from './components/layout/SidePanel.js';
-import { GPUInfo } from './components/layout/StatusBar.js';
-import { useGlobalKeyboardShortcuts } from './hooks/useGlobalKeyboardShortcuts.js';
-// Model loading indicator not currently used here
-
-import { ChatTab } from './components/tabs/ChatTab.js';
-import { ToolsTab } from './components/tabs/ToolsTab.js';
-import { HooksTab } from './components/tabs/HooksTab.js';
-import { FileExplorerComponent } from './components/file-explorer/FileExplorerComponent.js';
-import { SearchTab } from './components/tabs/SearchTab.js';
-import { DocsTab } from './components/tabs/DocsTab.js';
-import { GitHubTab } from './components/tabs/GitHubTab.js';
-import { SettingsTab } from './components/tabs/SettingsTab.js';
-import { MCPTab } from './components/tabs/MCPTab.js';
-import { DialogManager } from './components/dialogs/DialogManager.js';
-
-import { useMouse, MouseProvider } from './hooks/useMouse.js';
-import { ErrorBoundary } from './components/ErrorBoundary.js';
 import { AllCallbacksBridge } from './components/AllCallbacksBridge.js';
-import { KeybindsProvider } from '../features/context/KeybindsContext.js';
+import { DialogManager } from './components/dialogs/DialogManager.js';
+import { ErrorBoundary } from './components/ErrorBoundary.js';
+import { FileExplorerComponent } from './components/file-explorer/FileExplorerComponent.js';
 import { 
   WorkspaceProvider, 
   FileTreeProvider, 
   FileFocusProvider,
 } from './components/file-explorer/index.js';
+import { LaunchScreen } from './components/launch/LaunchScreen.js';
+import { ChatInputArea } from './components/layout/ChatInputArea.js';
+import { SidePanel } from './components/layout/SidePanel.js';
+import { GPUInfo } from './components/layout/StatusBar.js';
+import { SystemBar } from './components/layout/SystemBar.js';
+import { TabBar, tabs } from './components/layout/TabBar.js';
+import { ChatTab } from './components/tabs/ChatTab.js';
+import { DocsTab } from './components/tabs/DocsTab.js';
+import { GitHubTab } from './components/tabs/GitHubTab.js';
+import { HooksTab } from './components/tabs/HooksTab.js';
+import { MCPTab } from './components/tabs/MCPTab.js';
+import { SearchTab } from './components/tabs/SearchTab.js';
+import { SettingsTab } from './components/tabs/SettingsTab.js';
+import { ToolsTab } from './components/tabs/ToolsTab.js';
+import { DialogProvider } from './contexts/DialogContext.js';
+import { HooksProvider } from './contexts/HooksContext.js';
+import { MCPProvider } from './contexts/MCPContext.js';
+import { TerminalProvider } from './contexts/TerminalContext.js';
+import { ToolsProvider } from './contexts/ToolsContext.js';
+import { WindowProvider } from './contexts/WindowContext.js';
+import { SettingsService } from '../config/settingsService.js';
+import { defaultDarkTheme } from '../config/styles.js';
+import { ContextProfile } from '../config/types.js';
+import { useGlobalKeyboardShortcuts } from './hooks/useGlobalKeyboardShortcuts.js';
+import { useMouse, MouseProvider } from './hooks/useMouse.js';
+import { profileManager } from '../features/context/../profiles/ProfileManager.js';
+import { ActiveContextProvider } from '../features/context/ActiveContextState.js';
+import { ChatProvider, useChat } from '../features/context/ChatContext.js';
+import { ContextManagerProvider, useContextManager } from '../features/context/ContextManagerContext.js';
+import { FocusProvider, useFocusManager } from '../features/context/FocusContext.js';
+import { GPUProvider, useGPU } from '../features/context/GPUContext.js';
+import { KeybindsProvider } from '../features/context/KeybindsContext.js';
+import { ModelProvider, useModel } from '../features/context/ModelContext.js';
+import { ReviewProvider, useReview } from '../features/context/ReviewContext.js';
+import { ServiceProvider, useServices } from '../features/context/ServiceContext.js';
+import { SettingsProvider } from '../features/context/SettingsContext.js';
+import { createWelcomeMessage, createCompactWelcomeMessage, CONTEXT_OPTIONS, ContextSizeOption } from '../features/context/SystemMessages.js';
+import { UIProvider, useUI, TabType } from '../features/context/UIContext.js';
+import { UserPromptProvider } from '../features/context/UserPromptContext.js';
+
+import type { Config, Theme } from '../config/types.js';
+import type { MenuOption } from '../features/context/ChatContext.js';
+import type { ProviderAdapter, ProviderRequest, ProviderEvent } from '@ollm/core';
+// Model loading indicator not currently used here
+
+
 
 // Dynamic require for LocalProvider to avoid build-time module resolution errors when bridge isn't installed
 declare const require: (moduleName: string) => { LocalProvider: unknown } | unknown;
-import type { Config, Theme } from '../config/types.js';
 
 interface AppContentProps {
   config: Config;
@@ -79,7 +80,7 @@ interface AppContentProps {
 
 function AppContent({ config }: AppContentProps) {
   // Use global UI state for launch screen visibility
-  const { state: uiState, setActiveTab, toggleSidePanel, setLaunchScreenVisible } = useUI();
+  const { state: uiState, setActiveTab, setLaunchScreenVisible } = useUI();
   const { container: serviceContainer } = useServices();
   
   const [debugMode, setDebugMode] = useState(false);
@@ -105,7 +106,7 @@ function AppContent({ config }: AppContentProps) {
   const leftColumnWidth = Math.max(20, Math.floor(terminalWidth * 0.7));
   const rightColumnWidth = Math.max(20, terminalWidth - leftColumnWidth);
   
-  const { state: chatState, clearChat, cancelGeneration, contextUsage: _contextUsage, addMessage, activateMenu, requestManualContextInput, scrollUp, scrollDown } = useChat();
+  const { state: chatState, contextUsage: _contextUsage, addMessage, activateMenu, requestManualContextInput, scrollUp, scrollDown } = useChat();
   
   // Helper object for shortcuts (so we don't need to change all callbacks below)
   const chatActions = useMemo(() => ({ scrollUp, scrollDown }), [scrollUp, scrollDown]);

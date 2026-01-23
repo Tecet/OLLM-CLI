@@ -13,8 +13,9 @@
  * - /workflow list - List available workflows
  */
 
-import type { Command, CommandResult } from './types.js';
 import { getGlobalContextManager } from '../features/context/ContextManagerContext.js';
+
+import type { Command, CommandResult } from './types.js';
 import type { WorkflowDefinition, WorkflowProgress } from '@ollm/ollm-cli-core';
 
 /**

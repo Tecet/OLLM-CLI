@@ -1,8 +1,10 @@
+import { readFileSync } from 'fs';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
+
 import React from 'react';
 import { Box, Text } from 'ink';
-import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+
 import { Theme } from '../../../config/types.js';
 
 // Get package.json path

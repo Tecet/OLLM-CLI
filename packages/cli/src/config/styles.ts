@@ -10,9 +10,10 @@
  * - Provide type-safe access to visual definitions
  */
 
-import { themesData } from './themes.js';
-import type { Theme, UISettings } from './types.js';
 import { defaultTypography, defaultKeybinds } from './defaults.js';
+import { themesData } from './themes.js';
+
+import type { Theme, UISettings } from './types.js';
 
 /**
  * Built-in Themes Registry

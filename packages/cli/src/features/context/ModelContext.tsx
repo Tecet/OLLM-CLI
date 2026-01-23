@@ -8,10 +8,12 @@
  */
 
 import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from 'react';
-import type { ProviderAdapter, Message as ProviderMessage, ToolCall, ToolSchema, ProviderMetrics } from '@ollm/core';
-import { profileManager } from '../profiles/ProfileManager.js';
+
 import { SettingsService } from '../../config/settingsService.js';
 import { useUICallbacks } from '../../ui/contexts/UICallbacksContext.js';
+import { profileManager } from '../profiles/ProfileManager.js';
+
+import type { ProviderAdapter, Message as ProviderMessage, ToolCall, ToolSchema, ProviderMetrics } from '@ollm/core';
 
 /**
  * Model context value

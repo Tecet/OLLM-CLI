@@ -16,9 +16,11 @@
  */
 
 import * as fs from 'fs/promises';
-import { FocusedFile } from './types.js';
-import { PathSanitizer } from './PathSanitizer.js';
+
 import { handleError } from './ErrorHandler.js';
+import { PathSanitizer } from './PathSanitizer.js';
+import { FocusedFile } from './types.js';
+
 import type { MessageBus } from '@ollm/ollm-cli-core/hooks/messageBus.js';
 
 /**

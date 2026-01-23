@@ -5,6 +5,8 @@
  * invocation, error translation, and result formatting.
  */
 
+import { DefaultMCPSchemaConverter } from './mcpSchemaConverter.js';
+
 import type {
   MCPClient,
   MCPTool,
@@ -17,7 +19,6 @@ import type {
   ToolContext,
   ToolCallConfirmationDetails,
 } from '../tools/types.js';
-import { DefaultMCPSchemaConverter } from './mcpSchemaConverter.js';
 
 export type { ToolResult };
 

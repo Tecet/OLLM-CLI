@@ -16,10 +16,12 @@
 
 import * as fs from 'fs/promises';
 import * as path from 'path';
+
 import { PathSanitizer, PathTraversalError, WorkspaceBoundaryError } from './PathSanitizer.js';
-import type { ToolRegistry } from '@ollm/ollm-cli-core/tools/tool-registry.js';
-import type { PolicyEngine } from '@ollm/ollm-cli-core/policy/policyEngine.js';
+
 import type { MessageBus } from '@ollm/ollm-cli-core/hooks/messageBus.js';
+import type { PolicyEngine } from '@ollm/ollm-cli-core/policy/policyEngine.js';
+import type { ToolRegistry } from '@ollm/ollm-cli-core/tools/tool-registry.js';
 import type { ToolContext } from '@ollm/ollm-cli-core/tools/types.js';
 
 /**

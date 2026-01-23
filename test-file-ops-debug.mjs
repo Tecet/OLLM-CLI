@@ -1,7 +1,8 @@
-import { FileOperations } from './packages/cli/src/ui/components/file-explorer/FileOperations.js';
-import * as path from 'path';
-import * as os from 'os';
 import * as fs from 'fs/promises';
+import * as os from 'os';
+import * as path from 'path';
+
+import { FileOperations } from './packages/cli/src/ui/components/file-explorer/FileOperations.js';
 
 const testDir = path.join(os.tmpdir(), 'debug-test');
 await fs.mkdir(testDir, { recursive: true });

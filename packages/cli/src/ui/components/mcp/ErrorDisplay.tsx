@@ -7,6 +7,7 @@
 
 import React from 'react';
 import { Box, Text } from 'ink';
+
 import { useUI } from '../../../features/context/UIContext.js';
 
 export interface ErrorDisplayProps {

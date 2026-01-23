@@ -6,11 +6,12 @@
  */
 
 import { exec } from 'child_process';
-import { promisify } from 'util';
-import { totalmem, freemem } from 'os';
 import { EventEmitter } from 'events';
-import { VRAMMonitor, VRAMInfo, GPUType, GPUDetector } from './types.js';
+import { totalmem, freemem } from 'os';
+import { promisify } from 'util';
+
 import { createGPUDetector } from './gpuDetector.js';
+import { VRAMMonitor, VRAMInfo, GPUType, GPUDetector } from './types.js';
 
 const execAsync = promisify(exec);
 

@@ -17,12 +17,14 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { Box, Text } from 'ink';
+
 import { Dialog } from './Dialog.js';
-import { FormField } from '../forms/FormField.js';
-import { TextInput, validators } from '../forms/TextInput.js';
+import { useMCP } from '../../contexts/MCPContext.js';
 import { ButtonGroup } from '../forms/Button.js';
 import { CheckboxGroup } from '../forms/Checkbox.js';
-import { useMCP } from '../../contexts/MCPContext.js';
+import { FormField } from '../forms/FormField.js';
+import { TextInput, validators } from '../forms/TextInput.js';
+
 import type { MCPOAuthConfig } from '@ollm/ollm-cli-core/mcp/types.js';
 
 export interface OAuthConfigDialogProps {

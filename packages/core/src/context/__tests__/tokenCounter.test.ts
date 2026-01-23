@@ -7,9 +7,11 @@
  * Feature: stage-04b-context-management
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
 import fc from 'fast-check';
+import { describe, it, expect, beforeEach } from 'vitest';
+
 import { TokenCounterService } from '../tokenCounter.js';
+
 import type { Message, ToolCall } from '../types.js';
 
 describe('Token Counter - Property-Based Tests', () => {

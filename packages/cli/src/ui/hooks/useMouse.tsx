@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, createContext, useContext, useCallback, ReactNode } from 'react';
 import { useStdin } from 'ink';
+
 import { enableMouseEvents, disableMouseEvents } from '../../utils/terminal.js';
 
 export type MouseAction = 'down' | 'up' | 'scroll-up' | 'scroll-down' | 'move';

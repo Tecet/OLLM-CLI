@@ -6,9 +6,10 @@
  * access safety through atomic writes.
  */
 
+import { randomUUID } from 'crypto';
 import { promises as fs } from 'fs';
 import * as path from 'path';
-import { randomUUID } from 'crypto';
+
 import type {
   DeclarativeTool,
   ToolInvocation,

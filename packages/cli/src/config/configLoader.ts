@@ -5,13 +5,16 @@
 import { readFileSync, existsSync } from 'fs';
 import { homedir } from 'os';
 import { join } from 'path';
-import { parse as parseYaml } from 'yaml';
+
 import Ajv, { type ValidateFunction } from 'ajv';
 import addFormats from 'ajv-formats';
-import type { Config, ConfigSource, ValidationError, ValidationResult } from './types.js';
-import { ConfigError } from './types.js';
+import { parse as parseYaml } from 'yaml';
+
 import { defaultConfig } from './defaults.js';
 import { configSchema } from './schema.js';
+import { ConfigError } from './types.js';
+
+import type { Config, ConfigSource, ValidationError, ValidationResult } from './types.js';
 
 let validate: ValidateFunction<Config> | null = null;
 

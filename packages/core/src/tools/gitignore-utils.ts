@@ -7,7 +7,9 @@
 
 import { promises as fs } from 'fs';
 import * as path from 'path';
+
 import ignoreFactory from 'ignore';
+
 import type { Ignore } from 'ignore';
 
 // Create ignore instance - handle ESM default export

@@ -3,8 +3,8 @@
  * Runs prompts through multiple models for side-by-side evaluation.
  */
 
-import type { ProviderAdapter, ProviderRequest } from '../provider/types.js';
 import type { TokenCounter } from '../context/types.js';
+import type { ProviderAdapter, ProviderRequest } from '../provider/types.js';
 
 /**
  * Result from a single model execution.

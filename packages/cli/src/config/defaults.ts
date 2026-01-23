@@ -8,8 +8,9 @@
  * - Default feature flags
  */
 
-import type { Config, Typography, Keybinds, ContextSettings } from './types.js';
 import { keybindsData } from './keybinds.js';
+
+import type { Config, Typography, Keybinds, ContextSettings } from './types.js';
 
 /**
  * Default Context Behavior

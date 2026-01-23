@@ -14,6 +14,7 @@
  */
 
 import { useState, useCallback } from 'react';
+
 import type { NotificationType } from '../components/mcp/Notification.js';
 
 export interface Notification {

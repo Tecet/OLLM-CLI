@@ -1,4 +1,5 @@
 ﻿import { Box, Text, BoxProps } from 'ink';
+
 import { ConnectionStatus, GPUInfo } from './StatusBar.js';
 import { Theme } from '../../../config/types.js';
 

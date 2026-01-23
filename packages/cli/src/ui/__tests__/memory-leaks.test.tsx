@@ -4,9 +4,10 @@
  * Tests to verify that components properly cleanup resources on unmount
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render } from 'ink-testing-library';
 import React from 'react';
+import { render } from 'ink-testing-library';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
 import { TerminalProvider, useTerminal } from '../contexts/TerminalContext.js';
 import { MouseProvider } from '../hooks/useMouse.js';
 

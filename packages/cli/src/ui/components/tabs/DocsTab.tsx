@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { DocsPanel } from '../docs/DocsPanel.js';
 
 /**

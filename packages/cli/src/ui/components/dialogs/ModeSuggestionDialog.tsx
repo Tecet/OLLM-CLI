@@ -7,6 +7,7 @@
 
 import React from 'react';
 import { Box, Text } from 'ink';
+
 import type { Theme } from '../../../config/types.js';
 import type { ModeTransitionSuggestion } from '@ollm/ollm-cli-core';
 

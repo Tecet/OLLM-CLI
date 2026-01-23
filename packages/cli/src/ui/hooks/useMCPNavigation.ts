@@ -20,8 +20,9 @@
 
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { Key } from 'ink';
-import { useMCP } from '../contexts/MCPContext.js';
+
 import { useFocusManager } from '../../features/context/FocusContext.js';
+import { useMCP } from '../contexts/MCPContext.js';
 
 /**
  * Action callbacks for navigation events
@@ -267,7 +268,7 @@ export function useMCPNavigation(): MCPNavigationState {
     adjustScroll,
     toggleServer,
     saveChanges,
-    exitToNavBar,
+    exitOneLevel,
   ]);
   
   // Auto-scroll when selected index changes

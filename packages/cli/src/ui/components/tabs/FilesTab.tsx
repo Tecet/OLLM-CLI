@@ -1,7 +1,9 @@
 import React, { useEffect } from 'react';
 import { Box, Text } from 'ink';
-import { useUI } from '../../../features/context/UIContext.js';
+
 import { useFocusManager } from '../../../features/context/FocusContext.js';
+import { useUI } from '../../../features/context/UIContext.js';
+import { ErrorBoundary } from '../ErrorBoundary.js';
 import { 
   FileTreeView, 
   FileTreeService, 
@@ -10,7 +12,6 @@ import {
   FileOperations,
   useFileTree
 } from '../file-explorer/index.js';
-import { ErrorBoundary } from '../ErrorBoundary.js';
 
 export interface FilesTabProps {
   /** Width of the tab container */

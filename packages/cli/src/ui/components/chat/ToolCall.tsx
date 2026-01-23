@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Box, Text } from 'ink';
+
 import { ToolCall as ToolCallType } from '../../../features/context/ChatContext.js';
 
 export interface ToolCallProps {

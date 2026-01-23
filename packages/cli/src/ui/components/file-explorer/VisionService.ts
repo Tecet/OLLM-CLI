@@ -9,7 +9,9 @@
  */
 
 import { readFile } from 'fs/promises';
+
 import sharp from 'sharp';
+
 import { ImageMetadata } from './types.js';
 
 export class VisionService {

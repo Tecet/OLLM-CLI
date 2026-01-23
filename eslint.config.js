@@ -1,8 +1,9 @@
 import js from '@eslint/js';
-import tseslint from 'typescript-eslint';
+import importPlugin from 'eslint-plugin-import';
 import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
 import globals from 'globals';
+import tseslint from 'typescript-eslint';
 
 export default [
   // Ignore patterns
@@ -35,6 +36,7 @@ export default [
     plugins: {
       react,
       'react-hooks': reactHooks,
+      import: importPlugin,
     },
     rules: {
       // React rules
@@ -56,6 +58,53 @@ export default [
           caughtErrorsIgnorePattern: '^_',
         },
       ],
+
+      // Import ordering rules
+      'import/order': ['error', {
+        'groups': [
+          'builtin',      // Node built-ins
+          'external',     // npm packages
+          'internal',     // @ollm/* packages
+          ['parent', 'sibling'],  // ../ and ./
+          'type',         // import type
+        ],
+        'pathGroups': [
+          {
+            'pattern': 'react',
+            'group': 'external',
+            'position': 'before',
+          },
+          {
+            'pattern': 'react-**',
+            'group': 'external',
+            'position': 'before',
+          },
+          {
+            'pattern': 'ink',
+            'group': 'external',
+            'position': 'before',
+          },
+          {
+            'pattern': 'ink-**',
+            'group': 'external',
+            'position': 'before',
+          },
+          {
+            'pattern': '@ollm/**',
+            'group': 'internal',
+          },
+        ],
+        'pathGroupsExcludedImportTypes': ['builtin', 'type'],
+        'newlines-between': 'always',
+        'alphabetize': {
+          'order': 'asc',
+          'caseInsensitive': true,
+        },
+        'distinctGroup': false,
+      }],
+      'import/no-duplicates': 'error',
+      'import/first': 'error',
+      'import/newline-after-import': 'error',
     },
     settings: {
       react: {

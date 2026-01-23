@@ -9,6 +9,7 @@
 import { createHash } from 'crypto';
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import { dirname } from 'path';
+
 import type { Hook, HookApproval } from './types.js';
 
 /**

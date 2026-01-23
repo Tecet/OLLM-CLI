@@ -19,6 +19,7 @@
 
 import React from 'react';
 import { Box } from 'ink';
+
 import type { Theme } from '../../config/types.js';
 
 export interface TwoColumnLayoutProps {

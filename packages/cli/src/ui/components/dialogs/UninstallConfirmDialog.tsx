@@ -13,6 +13,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { Box, Text } from 'ink';
+
 import { Dialog } from './Dialog.js';
 import { ButtonGroup } from '../forms/Button.js';
 

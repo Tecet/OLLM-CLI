@@ -9,8 +9,9 @@
 
 import React from 'react';
 import { Box, Text } from 'ink';
-import { StreamingIndicator } from '../chat/StreamingIndicator.js';
+
 import { FadeTransition, Pulse } from './FadeTransition.js';
+import { StreamingIndicator } from '../chat/StreamingIndicator.js';
 
 export interface ProgressIndicatorProps {
   /** Operation being performed */

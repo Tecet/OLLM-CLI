@@ -1,6 +1,6 @@
 import { createContextManager } from '../contextManager.js';
-import { OperationalMode } from '../types.js';
-import { SYSTEM_PROMPT_TEMPLATES } from '../types.js';
+import { OperationalMode , SYSTEM_PROMPT_TEMPLATES } from '../types.js';
+
 
 describe('Prompt routing - tier × mode', () => {
   test('applies tier1-assistant when autoSize is false and targetSize=4096', async () => {

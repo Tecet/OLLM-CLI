@@ -6,10 +6,11 @@
  */
 
 import { vi } from 'vitest';
-import type { MCPClient } from '@ollm/ollm-cli-core/mcp/types.js';
+
+import type { ExtendedMCPServerStatus } from '../MCPContext.js';
 import type { MCPHealthMonitor } from '@ollm/ollm-cli-core/mcp/mcpHealthMonitor.js';
 import type { MCPOAuthProvider } from '@ollm/ollm-cli-core/mcp/mcpOAuth.js';
-import type { ExtendedMCPServerStatus } from '../MCPContext.js';
+import type { MCPClient } from '@ollm/ollm-cli-core/mcp/types.js';
 
 /**
  * Create a mock MCPClient for testing

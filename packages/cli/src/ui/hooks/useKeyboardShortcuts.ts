@@ -4,6 +4,7 @@
 
 import { useEffect } from 'react';
 import { useInput } from 'ink';
+
 import { keyboardHandler, KeyboardShortcut } from '../services/keyboardHandler.js';
 
 export interface UseKeyboardShortcutsOptions {

@@ -8,7 +8,8 @@
  */
 
 import { z } from 'zod';
-import type { Hook, HookSource } from './types.js';
+
+import type { HookSource } from './types.js';
 
 /**
  * Hook configuration interface

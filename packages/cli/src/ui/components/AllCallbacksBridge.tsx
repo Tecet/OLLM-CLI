@@ -9,8 +9,9 @@
  */
 
 import React, { useEffect, useCallback, ReactNode } from 'react';
-import { useUserPrompt } from '../../features/context/UserPromptContext.js';
+
 import { useChat } from '../../features/context/ChatContext.js';
+import { useUserPrompt } from '../../features/context/UserPromptContext.js';
 import { UICallbacksProvider, type UICallbacks } from '../contexts/UICallbacksContext.js';
 
 // Global callback type declarations

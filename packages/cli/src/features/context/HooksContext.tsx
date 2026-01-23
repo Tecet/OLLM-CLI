@@ -7,14 +7,16 @@
  */
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+
+import { SettingsService } from '../../config/settingsService.js';
+import { HookFileService } from '../../services/hookFileService.js';
+
 import type { 
   UIHook, 
   HookCategory, 
   HookTestResult,
   UIHookEventType 
 } from '../hooks/types.js';
-import { HookFileService } from '../../services/hookFileService.js';
-import { SettingsService } from '../../config/settingsService.js';
 
 /**
  * Context value interface

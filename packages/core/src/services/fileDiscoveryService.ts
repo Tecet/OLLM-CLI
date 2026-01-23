@@ -9,22 +9,25 @@
  * - Watch for file system changes
  */
 
-import { fdir } from 'fdir';
 import { promises as fs } from 'fs';
 import * as fsSync from 'fs';
 import * as path from 'path';
+
+import { fdir } from 'fdir';
 import ignoreFactory from 'ignore';
-import type { Ignore } from 'ignore';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore - picomatch doesn't have types
 import picomatch from 'picomatch';
+
+import { sanitizeErrorMessage } from './errorSanitization.js';
+
 import type {
   FileEntry,
   DiscoveryOptions,
   Disposable,
   FileChangeEvent,
 } from './types.js';
-import { sanitizeErrorMessage } from './errorSanitization.js';
+import type { Ignore } from 'ignore';
 
 /**
  * Configuration options for FileDiscoveryService

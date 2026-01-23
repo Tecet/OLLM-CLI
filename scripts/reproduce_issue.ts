@@ -1,8 +1,8 @@
 
+import { SystemPromptBuilder } from '../packages/core/src/context/SystemPromptBuilder.js';
+import { ContextAnalyzer } from '../packages/core/src/prompts/ContextAnalyzer.js';
 import { PromptModeManager, ModeType } from '../packages/core/src/prompts/PromptModeManager.js';
 import { PromptRegistry } from '../packages/core/src/prompts/PromptRegistry.js';
-import { ContextAnalyzer } from '../packages/core/src/prompts/ContextAnalyzer.js';
-import { SystemPromptBuilder } from '../packages/core/src/context/SystemPromptBuilder.js';
 
 // Mock Tool Registry and File System
 const mockTools = [

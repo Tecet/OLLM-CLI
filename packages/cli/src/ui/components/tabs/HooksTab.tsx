@@ -1,14 +1,17 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Box, Text, useInput } from 'ink';
-import { useUI } from '../../../features/context/UIContext.js';
+
+import { HookRegistry } from '@ollm/ollm-cli-core/hooks/hookRegistry.js';
+
 import { useFocusManager } from '../../../features/context/FocusContext.js';
+import { useUI } from '../../../features/context/UIContext.js';
 import { useHooks } from '../../contexts/HooksContext.js';
 import { AddHookDialog, type HookFormData } from '../dialogs/AddHookDialog.js';
-import { EditHookDialog } from '../dialogs/EditHookDialog.js';
 import { DeleteConfirmationDialog } from '../dialogs/DeleteConfirmationDialog.js';
+import { EditHookDialog } from '../dialogs/EditHookDialog.js';
 import { TestHookDialog } from '../dialogs/TestHookDialog.js';
 import { HookItem } from '../hooks/HookItem.js';
-import { HookRegistry } from '@ollm/ollm-cli-core/hooks/hookRegistry.js';
+
 import type { Hook } from '@ollm/ollm-cli-core/hooks/types.js';
 
 // Category icon mapping with enhanced visual icons

@@ -3,6 +3,7 @@
  */
 
 import fc from 'fast-check';
+
 import type { Hook, HookEvent, HookInput, HookOutput, HookSource } from '../types.js';
 
 /**

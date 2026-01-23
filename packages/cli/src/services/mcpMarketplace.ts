@@ -7,8 +7,9 @@
  * Connects to the official MCP Registry at registry.modelcontextprotocol.io
  */
 
-import type { MCPServerConfig } from '@ollm/ollm-cli-core/mcp/types.js';
 import { mcpConfigService } from './mcpConfigService.js';
+
+import type { MCPServerConfig } from '@ollm/ollm-cli-core/mcp/types.js';
 
 /**
  * MCP marketplace server information

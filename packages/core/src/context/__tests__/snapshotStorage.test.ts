@@ -5,12 +5,15 @@
  * for JSON format, corruption detection, and recovery.
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import fc from 'fast-check';
 import * as fs from 'fs/promises';
-import * as path from 'path';
 import * as os from 'os';
+import * as path from 'path';
+
+import fc from 'fast-check';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+
 import { createSnapshotStorage } from '../snapshotStorage.js';
+
 import type { ContextSnapshot, Message } from '../types.js';
 
 describe('SnapshotStorage', () => {

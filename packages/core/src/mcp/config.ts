@@ -4,6 +4,7 @@
  */
 
 import { z } from 'zod';
+
 import type { MCPServerConfig } from './types.js';
 
 /**

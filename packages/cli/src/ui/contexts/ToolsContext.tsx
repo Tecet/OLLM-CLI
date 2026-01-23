@@ -9,9 +9,11 @@
  */
 
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode, useMemo } from 'react';
-import type { DeclarativeTool, ToolSchema } from '@ollm/ollm-cli-core/tools/types.js';
+
 import { SettingsService } from '../../config/settingsService.js';
 import { useServices } from '../../features/context/ServiceContext.js';
+
+import type { DeclarativeTool, ToolSchema } from '@ollm/ollm-cli-core/tools/types.js';
 
 /**
  * Tool category for organizing tools in the UI

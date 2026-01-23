@@ -5,9 +5,10 @@
  * - /compare "<prompt>" <model1> <model2> [model3] - Compare models
  */
 
+import { ComparisonService } from '@ollm/core';
+
 import type { Command, CommandResult } from './types.js';
 import type { ProviderAdapter } from '@ollm/core';
-import { ComparisonService } from '@ollm/core';
 
 /**
  * /compare "<prompt>" <model1> <model2> [model3] - Compare models

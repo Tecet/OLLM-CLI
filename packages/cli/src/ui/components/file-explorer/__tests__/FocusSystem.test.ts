@@ -4,11 +4,13 @@
  * Tests for file focusing, unfocusing, and focus management
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { FocusSystem } from '../FocusSystem.js';
 import { writeFileSync, mkdirSync, rmSync } from 'fs';
-import { join } from 'path';
 import { tmpdir } from 'os';
+import { join } from 'path';
+
+import { describe, it, expect, beforeEach } from 'vitest';
+
+import { FocusSystem } from '../FocusSystem.js';
 
 describe('FocusSystem', () => {
   let focusSystem: FocusSystem;
@@ -29,7 +31,7 @@ describe('FocusSystem', () => {
     // Cleanup
     try {
       rmSync(testDir, { recursive: true, force: true });
-    } catch (error) {
+    } catch (_error) {
       // Ignore cleanup errors
     }
   });

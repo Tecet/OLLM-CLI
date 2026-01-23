@@ -13,7 +13,9 @@
 
 import React from 'react';
 import { Box, Text } from 'ink';
+
 import { useUI } from './UIContext.js';
+
 import type { Theme } from '../../config/types.js';
 
 /**

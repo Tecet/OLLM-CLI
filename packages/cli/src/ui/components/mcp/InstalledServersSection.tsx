@@ -12,8 +12,10 @@
 
 import React from 'react';
 import { Box, Text } from 'ink';
+
 import { ServerItem } from './ServerItem.js';
 import { ServerSkeleton } from './ServerSkeleton.js';
+
 import type { ExtendedMCPServerStatus } from '../../contexts/MCPContext.js';
 
 export interface InstalledServersSectionProps {

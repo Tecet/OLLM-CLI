@@ -10,10 +10,13 @@
 
 import { promises as fs } from 'fs';
 import * as path from 'path';
+
 // @ts-expect-error - picomatch doesn't have type definitions
 import picomatch from 'picomatch';
-import type { FileNode } from './types.js';
+
 import { handleError } from './ErrorHandler.js';
+
+import type { FileNode } from './types.js';
 
 /**
  * Options for building the file tree

@@ -1,9 +1,11 @@
 import React from 'react';
 import { Box, Text } from 'ink';
+
 import { useWindow } from '../../contexts/WindowContext.js';
 import { rightPanelHeaderLabel } from '../../utils/windowDisplayLabels.js';
-import type { ModeType } from '@ollm/ollm-cli-core';
+
 import type { Theme } from '../../../config/types.js';
+import type { ModeType } from '@ollm/ollm-cli-core';
 
 interface ModeConfidenceDisplayProps {
   currentMode: ModeType;

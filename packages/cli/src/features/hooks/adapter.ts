@@ -6,8 +6,8 @@
  * This adapter bridges the two representations.
  */
 
-import type { Hook as CoreHook } from '@ollm/ollm-cli-core/hooks/types.js';
 import type { UIHook, UIHookEventType, UIHookActionType } from './types.js';
+import type { Hook as CoreHook } from '@ollm/ollm-cli-core/hooks/types.js';
 
 /**
  * Convert a core Hook to a UI Hook

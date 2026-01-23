@@ -14,11 +14,13 @@
 
 import React, { useState, useCallback, useMemo } from 'react';
 import { Box, Text } from 'ink';
+
 import { Dialog } from './Dialog.js';
+import { useUI } from '../../../features/context/UIContext.js';
+import { useMCP } from '../../contexts/MCPContext.js';
 import { Button, ButtonGroup } from '../forms/Button.js';
 import { Checkbox } from '../forms/Checkbox.js';
-import { useMCP } from '../../contexts/MCPContext.js';
-import { useUI } from '../../../features/context/UIContext.js';
+
 import type { MCPTool } from '@ollm/ollm-cli-core/mcp/types.js';
 
 export interface ServerToolsViewerProps {

@@ -5,10 +5,11 @@
  * providing a clean separation between event emission and hook execution.
  */
 
-import type { HookEvent, Hook, HookInput } from './types.js';
+import { MessageBus, type EventListener } from './messageBus.js';
+
 import type { HookRegistry } from './hookRegistry.js';
 import type { HookRunner } from './hookRunner.js';
-import { MessageBus, type EventListener } from './messageBus.js';
+import type { HookEvent, Hook, HookInput } from './types.js';
 
 /**
  * Options for hook event handler

@@ -6,6 +6,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
+
 import { MCPMarketplace } from '../mcpMarketplace.js';
 
 describe('MCPMarketplace - Integration Tests (Real Behavior)', () => {

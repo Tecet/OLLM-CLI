@@ -1,9 +1,10 @@
 ﻿import React from 'react';
 import { Box, Text, useInput, BoxProps } from 'ink';
-import { TabType } from '../../../features/context/UIContext.js';
-import { useFocusManager } from '../../../features/context/FocusContext.js';
+
 import { Theme } from '../../../config/types.js';
+import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { useKeybinds } from '../../../features/context/KeybindsContext.js';
+import { TabType } from '../../../features/context/UIContext.js';
 import { isKey } from '../../utils/keyUtils.js';
 
 export interface Tab {

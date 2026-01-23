@@ -9,6 +9,7 @@
  */
 
 import { createHash } from 'crypto';
+
 import { sanitizeErrorMessage } from './errorSanitization.js';
 
 export interface LoopPattern {

@@ -5,6 +5,9 @@
  * timeouts, and policy-controlled confirmation.
  */
 
+import { EnvironmentSanitizationService } from '../services/environmentSanitization.js';
+import { ShellExecutionService, type ShellExecutionOptions } from '../services/shellExecutionService.js';
+
 import type {
   DeclarativeTool,
   ToolInvocation,
@@ -15,8 +18,6 @@ import type {
   PolicyEngineInterface,
   MessageBus,
 } from './types.js';
-import { ShellExecutionService, type ShellExecutionOptions } from '../services/shellExecutionService.js';
-import { EnvironmentSanitizationService } from '../services/environmentSanitization.js';
 
 /**
  * Parameters for shell command execution

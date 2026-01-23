@@ -1,4 +1,5 @@
 import { spawn } from 'child_process';
+
 import { EnvironmentSanitizationService } from './environmentSanitization.js';
 
 export interface ShellExecutionOptions {

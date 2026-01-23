@@ -1,8 +1,9 @@
 import React from 'react';
 import { Box, Text } from 'ink';
-import { Theme } from '../../../config/types.js';
-import { ToolMetadata } from '../../../config/toolsConfig.js';
+
 import { ToolToggle } from './ToolToggle.js';
+import { ToolMetadata } from '../../../config/toolsConfig.js';
+import { Theme } from '../../../config/types.js';
 
 export interface ToolItemProps {
   tool: ToolMetadata;

@@ -6,9 +6,11 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+
 import * as yaml from 'yaml';
-import { Theme } from '../../config/types.js';
+
 import { builtInThemes, defaultDarkTheme } from '../../config/styles.js';
+import { Theme } from '../../config/types.js';
 
 export interface ThemeManagerOptions {
   customThemePath?: string;

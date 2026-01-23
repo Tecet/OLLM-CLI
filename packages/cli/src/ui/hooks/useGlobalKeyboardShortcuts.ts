@@ -23,13 +23,14 @@
  * ```
  */
 
-import { useInput } from 'ink';
 import { useCallback } from 'react';
-import { isKey } from '../utils/keyUtils.js';
-import { useKeybinds } from '../../features/context/KeybindsContext.js';
-import { useUI, TabType } from '../../features/context/UIContext.js';
+import { useInput } from 'ink';
+
 import { useChat } from '../../features/context/ChatContext.js';
 import { useFocusManager } from '../../features/context/FocusContext.js';
+import { useKeybinds } from '../../features/context/KeybindsContext.js';
+import { useUI, TabType } from '../../features/context/UIContext.js';
+import { isKey } from '../utils/keyUtils.js';
 
 interface UseGlobalKeyboardShortcutsOptions {
   onToggleDebug?: () => void;

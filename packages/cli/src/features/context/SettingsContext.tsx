@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import { SettingsService, UserSettings } from '../../config/settingsService.js';
-import { useUI } from './UIContext.js';
 
+import { useUI } from './UIContext.js';
+import { SettingsService, UserSettings } from '../../config/settingsService.js';
 import { builtInThemes } from '../../config/styles.js';
 
 type SettingValue = string | number | boolean;

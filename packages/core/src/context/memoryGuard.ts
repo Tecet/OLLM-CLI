@@ -6,9 +6,11 @@
  */
 
 import { EventEmitter } from 'events';
+
 import {
   MemoryLevel
 } from './types.js';
+
 import type {
   MemoryGuard,
   VRAMMonitor,

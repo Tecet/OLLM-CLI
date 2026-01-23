@@ -1,5 +1,6 @@
 import React from 'react';
 import { Text } from 'ink';
+
 import { Pulse } from './FadeTransition.js';
 
 export type HealthStatus = 'healthy' | 'degraded' | 'unhealthy' | 'stopped' | 'connecting';

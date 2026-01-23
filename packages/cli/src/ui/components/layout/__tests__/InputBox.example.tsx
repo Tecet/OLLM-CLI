@@ -6,8 +6,9 @@
 
 import React, { useState } from 'react';
 import { Box, Text } from 'ink';
-import { InputBox } from '../InputBox.js';
+
 import { mockTheme } from '../../__tests__/testUtils.js';
+import { InputBox } from '../InputBox.js';
 
 /**
  * Example 1: Basic Usage

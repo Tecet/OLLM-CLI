@@ -1,9 +1,10 @@
+import fs from 'fs/promises';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
 import React, { useState, useEffect, useReducer, memo } from 'react';
 import { Box, Text, useStdout } from 'ink';
 import terminalImage from 'terminal-image';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import fs from 'fs/promises';
 
 // --- CONFIGURATION ---
 const __filename = fileURLToPath(import.meta.url);

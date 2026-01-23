@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Box, Text, useInput } from 'ink';
-import { useUI } from '../../../features/context/UIContext.js';
+
 import { useFocusManager } from '../../../features/context/FocusContext.js';
+import { useUI } from '../../../features/context/UIContext.js';
 import { documentService } from '../../../services/documentService.js';
 import { useTabEscapeHandler } from '../../hooks/useTabEscapeHandler.js';
 

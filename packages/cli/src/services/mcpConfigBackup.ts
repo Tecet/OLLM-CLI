@@ -6,8 +6,9 @@
  */
 
 import fs from 'fs';
-import path from 'path';
 import os from 'os';
+import path from 'path';
+
 import type { MCPConfigFile } from './mcpConfigService.js';
 
 /**

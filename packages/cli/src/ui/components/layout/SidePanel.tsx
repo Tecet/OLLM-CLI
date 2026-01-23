@@ -1,20 +1,21 @@
 import React, { useState } from 'react';
 import { Box, Text, BoxProps, useInput } from 'ink';
-import { HeaderBar } from './HeaderBar.js';
-import { Clock } from './Clock.js';
-import { ConnectionStatus, GPUInfo } from './StatusBar.js';
-import { ContextSection } from './ContextSection.js';
+
 import { ActivePromptInfo } from './ActivePromptInfo.js';
+import { Clock } from './Clock.js';
+import { ContextSection } from './ContextSection.js';
+import { DotIndicator } from './DotIndicator.js';
+import { HeaderBar } from './HeaderBar.js';
+import { ConnectionStatus, GPUInfo } from './StatusBar.js';
+import { WorkspacePanel } from './WorkspacePanel.js';
+import { Theme } from '../../../config/types.js';
+import { useChat } from '../../../features/context/ChatContext.js';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
+import { useKeybinds } from '../../../features/context/KeybindsContext.js';
 import { useWindow } from '../../contexts/WindowContext.js';
+import { isKey } from '../../utils/keyUtils.js';
 import { rightPanelHeaderLabel as _rightPanelHeaderLabel } from '../../utils/windowDisplayLabels.js';
 
-import { useChat } from '../../../features/context/ChatContext.js';
-import { useKeybinds } from '../../../features/context/KeybindsContext.js';
-import { isKey } from '../../utils/keyUtils.js';
-import { Theme } from '../../../config/types.js';
-import { DotIndicator } from './DotIndicator.js';
-import { WorkspacePanel } from './WorkspacePanel.js';
 
 export interface SidePanelProps {
   visible: boolean;

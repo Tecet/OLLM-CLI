@@ -11,6 +11,7 @@
 
 import React from 'react';
 import { Box, Text } from 'ink';
+
 import { Dialog } from './Dialog.js';
 
 export interface HelpOverlayProps {

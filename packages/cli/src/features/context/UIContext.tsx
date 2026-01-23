@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 
-import { Theme, Keybinds } from '../../config/types.js';
 import { defaultKeybinds } from '../../config/defaults.js';
 import { defaultDarkTheme } from '../../config/styles.js';
+import { Theme, Keybinds } from '../../config/types.js';
 
 export type TabType = 'chat' | 'search' | 'files' | 'tools' | 'hooks' | 'mcp' | 'docs' | 'github' | 'settings';
 

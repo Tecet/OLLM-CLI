@@ -23,8 +23,10 @@
 
 import React from 'react';
 import { Box, Text } from 'ink';
-import type { Theme } from '../../config/types.js';
+
 import { useFocusedBorder } from '../../hooks/useFocusedBorder.js';
+
+import type { Theme } from '../../config/types.js';
 
 export interface TabContainerProps {
   /** Focus ID for this tab */

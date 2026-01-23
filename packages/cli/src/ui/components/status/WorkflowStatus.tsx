@@ -6,6 +6,7 @@
 
 import React from 'react';
 import { Box, Text } from 'ink';
+
 import type { WorkflowProgress } from '@ollm/ollm-cli-core/prompts/index.js';
 
 export interface WorkflowStatusProps {

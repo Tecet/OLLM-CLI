@@ -4,8 +4,10 @@
  * Handles database initialization, table creation, and schema management for the RAG system.
  */
 
-import * as lancedb from 'vectordb';
 import { mkdir } from 'fs/promises';
+
+import * as lancedb from 'vectordb';
+
 import type { RAGConfig } from './RAGSystem.js';
 
 /**

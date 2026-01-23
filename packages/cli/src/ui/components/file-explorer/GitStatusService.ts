@@ -8,11 +8,14 @@
  * Requirements: 8.1, 8.2, 8.3, 8.4, 8.5
  */
 
-import { simpleGit, SimpleGit, StatusResult } from 'simple-git';
-import { GitStatus } from './types.js';
-import * as path from 'path';
 import * as fs from 'fs';
+import * as path from 'path';
+
+import { simpleGit, SimpleGit, StatusResult } from 'simple-git';
+
 import { handleError } from './ErrorHandler.js';
+import { GitStatus } from './types.js';
+
 
 /**
  * Cache entry for git status results

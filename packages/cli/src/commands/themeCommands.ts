@@ -7,10 +7,11 @@
  * - /theme preview <name> - Preview a theme temporarily
  */
 
+import { SettingsService } from '../config/settingsService.js';
+import { getThemeManager } from '../ui/services/themeManager.js';
+
 import type { Command, CommandResult } from './types.js';
 import type { Theme } from '../config/types.js';
-import { getThemeManager } from '../ui/services/themeManager.js';
-import { SettingsService } from '../config/settingsService.js';
 
 /**
  * /theme list - List available themes

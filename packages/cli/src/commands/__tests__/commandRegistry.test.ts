@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+
 import { CommandRegistry } from '../commandRegistry.js';
+
 import type { Command } from '../types.js';
 
 describe('CommandRegistry', () => {

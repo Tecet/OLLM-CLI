@@ -1,9 +1,10 @@
 import React from 'react';
 import { Box, Text } from 'ink';
-import { useActiveContext } from '../../../features/context/ActiveContextState.js';
+
 import { ModeConfidenceDisplay } from './ModeConfidenceDisplay.js';
-import { useUI } from '../../../features/context/UIContext.js';
+import { useActiveContext } from '../../../features/context/ActiveContextState.js';
 import { useContextManager } from '../../../features/context/ContextManagerContext.js';
+import { useUI } from '../../../features/context/UIContext.js';
 
 // Helper to format tier display
 function _formatTierDisplay(tier: string): string {

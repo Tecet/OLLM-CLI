@@ -5,10 +5,12 @@
  * and unit tests for threshold actions.
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import * as fc from 'fast-check';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+
 import { MemoryGuardImpl, createMemoryGuard } from '../memoryGuard.js';
 import { MemoryLevel } from '../types.js';
+
 import type {
   VRAMMonitor,
   ContextPool,

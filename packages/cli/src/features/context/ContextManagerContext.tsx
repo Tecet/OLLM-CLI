@@ -14,7 +14,6 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode, useMemo } from 'react';
 
-// Import from @ollm/core using the aliased types
 import {
   MemoryLevel,
   createContextManager,
@@ -22,12 +21,13 @@ import {
   PromptRegistry,
   PromptModeManager,
   ContextAnalyzer,
-  // ModeSnapshotManager,
   WorkflowManager,
   createSnapshotManager,
+  createSnapshotStorage,
+  SnapshotManager as PromptsSnapshotManager,
 } from '@ollm/core';
 
-import { createSnapshotStorage } from '@ollm/core';
+import { SettingsService } from '../../config/settingsService.js';
 
 import type {
   ContextConfig,
@@ -42,12 +42,10 @@ import type {
   ModeTransition,
   SnapshotConfig as _SnapshotConfig,
   SnapshotStorage as _SnapshotStorage,
-} from '@ollm/core';
+ SnapshotManager as CoreSnapshotManager } from '@ollm/core';
 
-import type { SnapshotManager as CoreSnapshotManager } from '@ollm/core';
-import { SnapshotManager as PromptsSnapshotManager } from '@ollm/core';
 
-import { SettingsService } from '../../config/settingsService.js';
+
 
 // Global reference for CLI commands
 let globalContextManager: ContextManagerActions | null = null;

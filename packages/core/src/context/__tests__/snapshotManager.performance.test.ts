@@ -9,10 +9,11 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+
 import { createSnapshotManager } from '../snapshotManager.js';
 import { createSnapshotStorage } from '../snapshotStorage.js';
+
 import type { ConversationContext, Message, SnapshotManager, SnapshotStorage } from '../types.js';
-import { randomUUID } from 'crypto';
 
 describe('SnapshotManager Performance', () => {
   let manager: SnapshotManager;
@@ -158,11 +159,17 @@ describe('SnapshotManager Performance', () => {
         await highCountManager.deleteSnapshot(snapshot.id);
       }
       
-      // Create 10 snapshots
+      // Create 10 snapshots with small delays to ensure they're all created
       for (let i = 0; i < 10; i++) {
         const context = createContext(10);
         await highCountManager.createSnapshot(context);
+        // Small delay to ensure snapshot is fully created
+        await new Promise(resolve => setTimeout(resolve, 5));
       }
+      
+      // Verify we have 10 snapshots before timing the list operation
+      const preCheckSnapshots = await highCountManager.listSnapshots(sessionId);
+      expect(preCheckSnapshots.length).toBe(10);
       
       const start = performance.now();
       const snapshots = await highCountManager.listSnapshots(sessionId);
@@ -281,7 +288,7 @@ describe('SnapshotManager Performance', () => {
 
   describe('Concurrent Operations', () => {
     it('should handle concurrent snapshot creation', async () => {
-      const contexts = Array.from({ length: 5 }, (_, i) => createContext(20));
+      const contexts = Array.from({ length: 5 }, () => createContext(20));
       
       const start = performance.now();
       const snapshots = await Promise.all(

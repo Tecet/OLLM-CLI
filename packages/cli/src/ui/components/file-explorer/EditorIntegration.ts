@@ -13,8 +13,9 @@
 import { spawn } from 'child_process';
 import { readFile } from 'fs/promises';
 import { platform } from 'os';
-import { PathSanitizer } from './PathSanitizer.js';
+
 import { handleError } from './ErrorHandler.js';
+import { PathSanitizer } from './PathSanitizer.js';
 
 /**
  * Result of opening a file in an editor

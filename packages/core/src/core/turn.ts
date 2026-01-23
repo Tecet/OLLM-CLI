@@ -3,6 +3,14 @@
  * A turn represents a single conversation cycle including model response and tool executions.
  */
 
+import { 
+  
+  DeclarativeTool as _DeclarativeTool,
+} from '../tools/types.js';
+
+import type { ModeType } from '../prompts/ContextAnalyzer.js';
+import type { SnapshotManager } from '../prompts/modeSnapshotManager.js';
+import type { PromptModeManager } from '../prompts/PromptModeManager.js';
 import type {
   Message,
   ProviderAdapter,
@@ -10,13 +18,6 @@ import type {
   ToolCall,
   GenerationOptions,
 } from '../provider/types.js';
-import type { PromptModeManager } from '../prompts/PromptModeManager.js';
-import type { SnapshotManager } from '../prompts/modeSnapshotManager.js';
-import type { ModeType } from '../prompts/ContextAnalyzer.js';
-import { 
-  
-  DeclarativeTool as _DeclarativeTool,
-} from '../tools/types.js';
 
 const isTestEnv = process.env.NODE_ENV === 'test' || !!process.env.VITEST;
 

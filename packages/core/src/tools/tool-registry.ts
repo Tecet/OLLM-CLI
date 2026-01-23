@@ -5,8 +5,9 @@
  * Manages the lifecycle of tools and provides access to tool schemas for LLM consumption.
  */
 
-import type { DeclarativeTool, ToolSchema, ToolContext, ToolInvocation } from './types.js';
 import { globalValidator, type ValidationError } from './validation.js';
+
+import type { DeclarativeTool, ToolSchema, ToolContext, ToolInvocation } from './types.js';
 
 /**
  * Interface for checking tool enabled state

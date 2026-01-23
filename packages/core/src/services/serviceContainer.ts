@@ -9,23 +9,24 @@
  * - Clean shutdown of services
  */
 
-import type { ProviderAdapter } from '../provider/types.js';
-import { ModelManagementService } from './modelManagementService.js';
-import { ModelRouter } from '../routing/modelRouter.js';
-import { modelDatabase } from '../routing/modelDatabase.js';
-import { MemoryService } from './memoryService.js';
-import { TemplateService } from './templateService.js';
 import { ComparisonService } from './comparisonService.js';
-import { ProjectProfileService } from './projectProfileService.js';
 import { HookService } from './hookService.js';
-import type { ApprovalCallback } from '../hooks/trustedHooks.js';
+import { MemoryService } from './memoryService.js';
+import { ModelManagementService } from './modelManagementService.js';
+import { ProjectProfileService } from './projectProfileService.js';
+import { TemplateService } from './templateService.js';
 import { ExtensionManager } from '../extensions/extensionManager.js';
 import { ExtensionRegistry } from '../extensions/extensionRegistry.js';
-import { MCPOAuthProvider, KeytarTokenStorage, FileTokenStorage } from '../mcp/mcpOAuth.js';
 import { MCPHealthMonitor } from '../mcp/mcpHealthMonitor.js';
-import { ToolRegistry, registerBuiltInTools } from '../tools/index.js';
+import { MCPOAuthProvider, KeytarTokenStorage, FileTokenStorage } from '../mcp/mcpOAuth.js';
 import { PolicyEngine } from '../policy/policyEngine.js';
+import { modelDatabase } from '../routing/modelDatabase.js';
+import { ModelRouter } from '../routing/modelRouter.js';
+import { ToolRegistry, registerBuiltInTools } from '../tools/index.js';
+
+import type { ApprovalCallback } from '../hooks/trustedHooks.js';
 import type { PolicyConfig } from '../policy/policyRules.js';
+import type { ProviderAdapter } from '../provider/types.js';
 
 /**
  * Configuration for model management

@@ -6,10 +6,12 @@
  */
 
 import * as fs from 'fs/promises';
-import * as path from 'path';
 import * as os from 'os';
-import type { ContextSnapshot, SnapshotMetadata, SnapshotStorage } from './types.js';
+import * as path from 'path';
+
 import { logPathDiagnostics } from '../utils/pathValidation.js';
+
+import type { ContextSnapshot, SnapshotMetadata, SnapshotStorage } from './types.js';
 
 /**
  * Snapshot file format version

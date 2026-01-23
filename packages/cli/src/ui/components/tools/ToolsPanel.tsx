@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Box, Text, useInput } from 'ink';
-import { useUI } from '../../../features/context/UIContext.js';
-import { useFocusManager } from '../../../features/context/FocusContext.js';
-import { useTools } from '../../contexts/ToolsContext.js';
+
 import { ToolToggle } from './ToolToggle.js';
+import { useFocusManager } from '../../../features/context/FocusContext.js';
+import { useUI } from '../../../features/context/UIContext.js';
+import { useTools } from '../../contexts/ToolsContext.js';
 import { useTabEscapeHandler } from '../../hooks/useTabEscapeHandler.js';
 
 // Category icon mapping (kept for backward compatibility, but now also in ToolsContext)
@@ -127,8 +128,8 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 30, windowW
     setHasUnsavedChanges(true); // Mark as changed
   };
 
-  // Handle save
-  const handleSave = () => {
+  // Handle save (currently unused - settings auto-persist via toggleTool)
+  const _handleSave = () => {
     // Settings are already persisted via toggleTool
     // Just clear the unsaved changes flag and refresh
     setHasUnsavedChanges(false);

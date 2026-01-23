@@ -1,31 +1,32 @@
-import type { Command, CommandResult } from './types.js';
-import type { ServiceContainer } from '@ollm/ollm-cli-core/services/serviceContainer.js';
-import type { MCPClient } from '@ollm/ollm-cli-core/mcp/types.js';
+import { comparisonCommands, createComparisonCommands } from './comparisonCommands.js';
+import { configCommands } from './configCommands.js';
+import { contextCommands } from './contextCommands.js';
+import { createExtensionCommands } from './extensionCommands.js';
+import { gitCommands } from './gitCommands.js';
 import { homeCommand } from './homeCommand.js';
+import { hookCommands } from './hookCommands.js';
+import { createMCPHealthCommands } from './mcpHealthCommands.js';
+import { createMCPOAuthCommands } from './mcpOAuthCommands.js';
+import { memoryCommands, createMemoryCommands } from './memoryCommands.js';
+import { metricsCommands } from './metricsCommands.js';
+import { modeCommands } from './modeCommands.js';
+import { modelCommands, createModelCommands } from './modelCommands.js';
+import { modeShortcuts } from './modeShortcuts.js';
+import { projectCommands, createProjectCommands } from './projectCommands.js';
+import { providerCommands } from './providerCommands.js';
+import { reasoningCommands } from './reasoningCommands.js';
+import { reviewCommands } from './reviewCommands.js';
 import { sessionCommands } from './sessionCommands.js';
 import { snapshotCommands } from './snapshotCommands.js';
-import { configCommands } from './configCommands.js';
-import { modelCommands, createModelCommands } from './modelCommands.js';
-import { memoryCommands, createMemoryCommands } from './memoryCommands.js';
 import { templateCommands, createTemplateCommands } from './templateCommands.js';
-import { comparisonCommands, createComparisonCommands } from './comparisonCommands.js';
-import { projectCommands, createProjectCommands } from './projectCommands.js';
-import { createExtensionCommands } from './extensionCommands.js';
-import { createMCPOAuthCommands } from './mcpOAuthCommands.js';
-import { createMCPHealthCommands } from './mcpHealthCommands.js';
-import { hookCommands } from './hookCommands.js';
-import { providerCommands } from './providerCommands.js';
-import { gitCommands } from './gitCommands.js';
-import { reviewCommands } from './reviewCommands.js';
 import { themeCommands, createThemeCommands } from './themeCommands.js';
-import { contextCommands } from './contextCommands.js';
-import { metricsCommands } from './metricsCommands.js';
-import { reasoningCommands } from './reasoningCommands.js';
 import { utilityCommands } from './utilityCommands.js';
-import { modeCommands } from './modeCommands.js';
-import { modeShortcuts } from './modeShortcuts.js';
 import { workflowCommand } from './workflowCommands.js';
+
+import type { Command, CommandResult } from './types.js';
 import type { Theme } from '../config/types.js';
+import type { MCPClient } from '@ollm/ollm-cli-core/mcp/types.js';
+import type { ServiceContainer } from '@ollm/ollm-cli-core/services/serviceContainer.js';
 
 /**
  * Command Registry

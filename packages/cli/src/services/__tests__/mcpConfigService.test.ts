@@ -2,11 +2,14 @@
  * Tests for MCP Configuration Service
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import fs from 'fs';
-import path from 'path';
 import os from 'os';
+import path from 'path';
+
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+
 import { MCPConfigService } from '../mcpConfigService.js';
+
 import type { MCPServerConfig } from '@ollm/ollm-cli-core/mcp/types.js';
 
 describe('MCPConfigService', () => {

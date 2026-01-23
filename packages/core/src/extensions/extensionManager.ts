@@ -5,18 +5,20 @@
  * Manages extension state persistence and integrates with hook registry.
  */
 
+import { randomUUID } from 'crypto';
 import { readdir, stat } from 'fs/promises';
 import { join, resolve, sep } from 'path';
-import { randomUUID } from 'crypto';
-import type { Extension, ExtensionManifest, MCPServerConfig } from './types.js';
+
 import { ManifestParser } from './manifestParser.js';
-import type { Hook, HookEvent } from '../hooks/types.js';
-import type { HookRegistry } from '../hooks/hookRegistry.js';
 import { ExtensionSettingsManager, type ResolvedExtensionSetting } from './settingsIntegration.js';
-import type { MCPClient } from '../mcp/types.js';
-import type { MCPToolWrapper } from '../mcp/mcpToolWrapper.js';
-import type { ToolRegistry } from '../tools/tool-registry.js';
 import { SkillRegistry } from './skillRegistry.js';
+
+import type { Extension, ExtensionManifest, MCPServerConfig } from './types.js';
+import type { HookRegistry } from '../hooks/hookRegistry.js';
+import type { Hook, HookEvent } from '../hooks/types.js';
+import type { MCPToolWrapper } from '../mcp/mcpToolWrapper.js';
+import type { MCPClient } from '../mcp/types.js';
+import type { ToolRegistry } from '../tools/tool-registry.js';
 
 const isTestEnv = process.env.NODE_ENV === 'test' || !!process.env.VITEST;
 

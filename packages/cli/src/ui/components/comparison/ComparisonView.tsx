@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Box, Text } from 'ink';
+
 export interface ModelResult {
   model: string;
   response: string;

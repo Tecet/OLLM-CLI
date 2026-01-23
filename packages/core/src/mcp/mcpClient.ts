@@ -5,6 +5,10 @@
  * tool discovery, and tool invocations.
  */
 
+import { DEFAULT_MCP_CONFIG } from './config.js';
+import { substituteEnvObject } from './envSubstitution.js';
+import { MCPOAuthProvider } from './mcpOAuth.js';
+import { StdioTransport, SSETransport, HTTPTransport } from './mcpTransport.js';
 import {
   MCPClient,
   MCPServerConfig,
@@ -17,11 +21,8 @@ import {
   MCPStreamChunk,
   MCPTransport,
 } from './types.js';
-import { StdioTransport, SSETransport, HTTPTransport } from './mcpTransport.js';
-import { substituteEnvObject } from './envSubstitution.js';
+
 import type { MCPConfig } from './config.js';
-import { DEFAULT_MCP_CONFIG } from './config.js';
-import { MCPOAuthProvider } from './mcpOAuth.js';
 
 /**
  * Internal server state

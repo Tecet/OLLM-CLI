@@ -7,13 +7,16 @@
  * - Bottom (Red): Keybinds legend - keyboard shortcuts
  */
 
+import { readFile } from 'fs/promises';
+
 import { useState, useEffect, useMemo } from 'react';
 import { Box, Text, useInput, measureElement } from 'ink';
-import { readFile } from 'fs/promises';
+
 import { Theme } from '../../../config/types.js';
-import { useFileFocus, FileTreeService, FocusSystem, SyntaxViewer } from '../file-explorer/index.js';
-import { useServices } from '../../../features/context/ServiceContext.js';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
+import { useServices } from '../../../features/context/ServiceContext.js';
+import { useFileFocus, FileTreeService, FocusSystem, SyntaxViewer } from '../file-explorer/index.js';
+
 import type { FileNode } from '../file-explorer/types.js';
 
 export interface WorkspacePanelProps {

@@ -7,11 +7,12 @@
 
 import React from 'react';
 import { Box, Text, useInput } from 'ink';
-import { useDialog } from '../../contexts/DialogContext.js';
-import { useUI } from '../../../features/context/UIContext.js';
-import { useUserPrompt } from '../../../features/context/UserPromptContext.js';
+
 import { HookApprovalDialog } from './HookApprovalDialog.js';
 import { UserPromptDialog } from './UserPromptDialog.js';
+import { useUI } from '../../../features/context/UIContext.js';
+import { useUserPrompt } from '../../../features/context/UserPromptContext.js';
+import { useDialog } from '../../contexts/DialogContext.js';
 
 /**
  * Manager component that renders active dialogs

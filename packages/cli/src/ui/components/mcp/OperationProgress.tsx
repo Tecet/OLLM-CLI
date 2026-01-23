@@ -9,6 +9,7 @@
 
 import React from 'react';
 import { Box } from 'ink';
+
 import { ProgressIndicator } from './ProgressIndicator.js';
 
 export interface OperationProgressProps {

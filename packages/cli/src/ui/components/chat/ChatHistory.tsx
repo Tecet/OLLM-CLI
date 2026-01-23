@@ -1,6 +1,8 @@
 import React from 'react';
 import { Box, Text } from 'ink';
+
 import { Message as MessageType } from '../../../features/context/ChatContext.js';
+
 import type { Theme } from '../../../config/types.js';
 
 export interface ChatHistoryProps {

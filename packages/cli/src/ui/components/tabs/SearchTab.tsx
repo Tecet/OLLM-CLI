@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Box, Text, useInput } from 'ink';
-import { useUI } from '../../../features/context/UIContext.js';
+
 import { useFocusManager } from '../../../features/context/FocusContext.js';
+import { useUI } from '../../../features/context/UIContext.js';
 
 /**
  * SearchTab component
@@ -22,7 +23,7 @@ export interface SearchTabProps {
 
 export function SearchTab({ width }: SearchTabProps) {
   const { state: uiState } = useUI();
-  const { isFocused, exitToNavBar } = useFocusManager();
+  const { isFocused } = useFocusManager();
   const [searchQuery, setSearchQuery] = useState('');
   
   // Calculate absolute widths if width is provided

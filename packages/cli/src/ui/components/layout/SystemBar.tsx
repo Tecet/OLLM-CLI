@@ -1,10 +1,11 @@
 ﻿import React, { useEffect, useState } from 'react';
 import { Box, Text, BoxProps } from 'ink';
+
 import { useChat } from '../../../features/context/ChatContext.js';
-import { useUI } from '../../../features/context/UIContext.js';
-import { useModel } from '../../../features/context/ModelContext.js';
-import { useWindow } from '../../contexts/WindowContext.js';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
+import { useModel } from '../../../features/context/ModelContext.js';
+import { useUI } from '../../../features/context/UIContext.js';
+import { useWindow } from '../../contexts/WindowContext.js';
 
 export interface SystemBarProps {
   height: number;

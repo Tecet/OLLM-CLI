@@ -3,6 +3,7 @@
  */
 
 import * as fc from 'fast-check';
+
 import type {
   SessionMessage,
   SessionToolCall,

@@ -9,9 +9,10 @@
  */
 
 import React, { ReactNode, useCallback } from 'react';
-import { UICallbacksProvider, type UICallbacks } from '../contexts/UICallbacksContext.js';
-import { useUserPrompt } from '../../features/context/UserPromptContext.js';
+
 import { useChat } from '../../features/context/ChatContext.js';
+import { useUserPrompt } from '../../features/context/UserPromptContext.js';
+import { UICallbacksProvider, type UICallbacks } from '../contexts/UICallbacksContext.js';
 
 export interface UICallbacksBridgeProps {
   children: ReactNode;

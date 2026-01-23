@@ -5,8 +5,8 @@
  * to prevent unauthorized access to system resources.
  */
 
-import { resolve, relative, sep } from 'path';
 import { homedir } from 'os';
+import { resolve, relative, sep } from 'path';
 
 /**
  * Permission types

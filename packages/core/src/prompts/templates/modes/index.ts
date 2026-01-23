@@ -6,9 +6,9 @@
  */
 
 import { ASSISTANT_MODE_TEMPLATE } from './assistant.js';
-import { PLANNING_MODE_TEMPLATE } from './planning.js';
-import { DEVELOPER_MODE_TEMPLATE } from './developer.js';
 import { DEBUGGER_MODE_TEMPLATE } from './debugger.js';
+import { DEVELOPER_MODE_TEMPLATE } from './developer.js';
+import { PLANNING_MODE_TEMPLATE } from './planning.js';
 import { REVIEWER_MODE_TEMPLATE } from './reviewer.js';
 
 export const TOOL_MODE_TEMPLATE = `You are a Tool Expert, specialized in using CLI tools and executing commands.

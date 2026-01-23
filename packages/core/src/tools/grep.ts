@@ -7,8 +7,11 @@
 
 import { promises as fs } from 'fs';
 import * as path from 'path';
+
 import { glob as globSearch } from 'glob';
+
 import { loadGitignore } from './gitignore-utils.js';
+
 import type {
   DeclarativeTool,
   ToolInvocation,

@@ -5,8 +5,9 @@
  * Implements keyword detection, confidence scoring, and conversation analysis.
  */
 
-import type { Message } from '../provider/types.js';
 import { MODE_METADATA } from './templates/modes/index.js';
+
+import type { Message } from '../provider/types.js';
 
 /**
  * Available mode types in the system

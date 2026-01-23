@@ -3,6 +3,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
+
 import {
   MockProvider,
   createSimpleMockProvider,
@@ -10,6 +11,7 @@ import {
   createErrorMockProvider,
   createDelayedMockProvider,
 } from '../mockProvider.js';
+
 import type { ProviderEvent, ProviderRequest } from '@ollm/core';
 
 describe('MockProvider', () => {

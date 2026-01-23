@@ -89,6 +89,21 @@ git push origin feature/your-feature-name
 - Use interfaces for object shapes
 - Use type aliases for unions and complex types
 
+### Import Conventions
+
+**IMPORTANT**: All code must follow the official import conventions documented in [`docs/IMPORT-CONVENTIONS.md`](docs/IMPORT-CONVENTIONS.md).
+
+#### Quick Reference
+
+1. **Node built-ins** (fs, path, os)
+2. **External dependencies** (react, ink, npm packages)
+3. **Internal dependencies** (@ollm/*, relative imports with .js extension)
+4. **Type imports** (always use `import type` syntax)
+
+**Blank lines** between each group, **alphabetical** sorting within groups.
+
+See [`docs/IMPORT-CONVENTIONS.md`](docs/IMPORT-CONVENTIONS.md) for complete details and examples.
+
 ### Code Style
 
 - Use 2 spaces for indentation
@@ -103,7 +118,7 @@ All code must pass ESLint and Prettier checks:
 
 ```bash
 npm run lint        # Check for linting errors
-npm run lint:fix    # Auto-fix linting errors
+npm run lint -- --fix  # Auto-fix linting errors
 npm run format      # Format code with Prettier
 ```
 

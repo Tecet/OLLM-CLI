@@ -3,6 +3,7 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
+
 import { profileManager } from '../../profiles/ProfileManager.js';
 
 describe('ModelContext - Tool Support Detection', () => {

@@ -14,23 +14,25 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { Box, Text } from 'ink';
-import { WorkspaceProvider } from './WorkspaceContext.js';
-import { FileFocusProvider } from './FileFocusContext.js';
-import { FileTreeProvider } from './FileTreeContext.js';
-import { FileTreeView } from './FileTreeView.js';
-import { WorkspaceManager } from './WorkspaceManager.js';
-import { FileTreeService } from './FileTreeService.js';
-import { GitStatusService } from './GitStatusService.js';
-import { FocusSystem } from './FocusSystem.js';
+
 import { EditorIntegration } from './EditorIntegration.js';
-import { FileOperations } from './FileOperations.js';
-import { FollowModeService } from './FollowModeService.js';
 import { ExplorerPersistence } from './ExplorerPersistence.js';
+import { FileFocusProvider } from './FileFocusContext.js';
+import { FileOperations } from './FileOperations.js';
+import { FileTreeProvider } from './FileTreeContext.js';
+import { FileTreeService } from './FileTreeService.js';
+import { FileTreeView } from './FileTreeView.js';
+import { FocusSystem } from './FocusSystem.js';
+import { FollowModeService } from './FollowModeService.js';
+import { GitStatusService } from './GitStatusService.js';
 import { PathSanitizer } from './PathSanitizer.js';
+import { WorkspaceProvider } from './WorkspaceContext.js';
+import { WorkspaceManager } from './WorkspaceManager.js';
+
 import type { WorkspaceConfig, FocusedFile, FileNode } from './types.js';
-import type { ToolRegistry } from '@ollm/ollm-cli-core/tools/tool-registry.js';
-import type { PolicyEngine } from '@ollm/ollm-cli-core/policy/policyEngine.js';
 import type { MessageBus } from '@ollm/ollm-cli-core/hooks/messageBus.js';
+import type { PolicyEngine } from '@ollm/ollm-cli-core/policy/policyEngine.js';
+import type { ToolRegistry } from '@ollm/ollm-cli-core/tools/tool-registry.js';
 
 /**
  * Props for FileExplorerComponent
@@ -339,6 +341,7 @@ export function FileExplorerComponent({
     onWorkspaceLoaded,
     onStateRestored,
     onError,
+    excludePatterns,
   ]);
 
   // Initialize on mount

@@ -3,10 +3,12 @@
  * These tests validate the correctness properties defined in the design document.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
 import fc from 'fast-check';
-import { ChatClient, type ChatEvent } from '../chatClient.js';
+import { describe, it, expect, beforeEach } from 'vitest';
+
 import { ProviderRegistry } from '../../provider/registry.js';
+import { ChatClient, type ChatEvent } from '../chatClient.js';
+
 import type { ProviderAdapter, ProviderEvent, ProviderRequest } from '../../provider/types.js';
 import type { ToolRegistry, Tool } from '../turn.js';
 
@@ -1577,8 +1579,8 @@ describe('Chat Client - Context Manager Integration', () => {
       providerRegistry.setDefault('mock');
 
       // Create context manager with some context
-      const { ContextManager } = await import('../../services/contextManager.js');
-      const contextManager = new ContextManager();
+      const { DynamicContextInjector } = await import('../../services/dynamicContextInjector.js');
+      const contextManager = new DynamicContextInjector();
       contextManager.addContext('test-context', 'This is test context', {
         priority: 100,
         source: 'user',
@@ -1623,8 +1625,8 @@ describe('Chat Client - Context Manager Integration', () => {
       providerRegistry.setDefault('mock');
 
       // Create context manager with multiple contexts
-      const { ContextManager } = await import('../../services/contextManager.js');
-      const contextManager = new ContextManager();
+      const { DynamicContextInjector } = await import('../../services/dynamicContextInjector.js');
+      const contextManager = new DynamicContextInjector();
       contextManager.addContext('low-priority', 'Low priority context', {
         priority: 10,
         source: 'system',
@@ -1682,8 +1684,8 @@ describe('Chat Client - Context Manager Integration', () => {
       providerRegistry.setDefault('mock');
 
       // Create context manager
-      const { ContextManager } = await import('../../services/contextManager.js');
-      const contextManager = new ContextManager();
+      const { DynamicContextInjector } = await import('../../services/dynamicContextInjector.js');
+      const contextManager = new DynamicContextInjector();
       contextManager.addContext('additional-context', 'Additional context', {
         priority: 50,
         source: 'extension',
@@ -1776,8 +1778,8 @@ describe('Chat Client - Context Manager Integration', () => {
       });
 
       // Create context manager
-      const { ContextManager } = await import('../../services/contextManager.js');
-      const contextManager = new ContextManager();
+      const { DynamicContextInjector } = await import('../../services/dynamicContextInjector.js');
+      const contextManager = new DynamicContextInjector();
       contextManager.addContext('persistent-context', 'Context for all turns', {
         priority: 100,
         source: 'system',

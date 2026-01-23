@@ -4,8 +4,9 @@
  * Integrates with Model Database for per-model context window limits.
  */
 
-import type { ProviderAdapter, ProviderRequest } from '../provider/types.js';
 import { ModelDatabase, modelDatabase } from '../routing/modelDatabase.js';
+
+import type { ProviderAdapter, ProviderRequest } from '../provider/types.js';
 
 /**
  * Configuration for token limit enforcement

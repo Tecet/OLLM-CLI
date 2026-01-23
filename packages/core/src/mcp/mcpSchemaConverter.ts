@@ -6,6 +6,7 @@
  */
 
 import { MCPTool } from './types.js';
+
 import type { ToolSchema } from '../tools/types.js';
 
 // Re-export ToolSchema for convenience

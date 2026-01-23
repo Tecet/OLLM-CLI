@@ -11,6 +11,24 @@
  */
 
 import { EventEmitter } from 'events';
+
+import { CompressionService as CompressionServiceImpl } from './compressionService.js';
+import { createContextPool } from './contextPool.js';
+import { loadJitContext } from './jitDiscovery.js';
+import { createMemoryGuard } from './memoryGuard.js';
+import { createSnapshotManager } from './snapshotManager.js';
+import { createSnapshotStorage } from './snapshotStorage.js';
+import { createTokenCounter } from './tokenCounter.js';
+import { 
+  MemoryLevel,
+  ContextTier,
+  TIER_CONFIGS,
+  OperationalMode,
+  MODE_PROFILES,
+  SYSTEM_PROMPT_TEMPLATES
+} from './types.js';
+import { createVRAMMonitor } from './vramMonitor.js';
+
 import type {
   ContextManager,
   ContextConfig,
@@ -27,22 +45,6 @@ import type {
   SnapshotStorage,
   ModelInfo
 } from './types.js';
-import { 
-  MemoryLevel,
-  ContextTier,
-  TIER_CONFIGS,
-  OperationalMode,
-  MODE_PROFILES,
-  SYSTEM_PROMPT_TEMPLATES
-} from './types.js';
-import { createVRAMMonitor } from './vramMonitor.js';
-import { createTokenCounter } from './tokenCounter.js';
-import { createContextPool } from './contextPool.js';
-import { createSnapshotManager } from './snapshotManager.js';
-import { CompressionService as CompressionServiceImpl } from './compressionService.js';
-import { createMemoryGuard } from './memoryGuard.js';
-import { createSnapshotStorage } from './snapshotStorage.js';
-import { loadJitContext } from './jitDiscovery.js';
 
 /**
  * Default context configuration

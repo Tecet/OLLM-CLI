@@ -6,15 +6,16 @@
  * Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6, 9.7
  */
 
-import { describe, it, expect, beforeAll } from 'vitest';
 import * as fc from 'fast-check';
+import { describe, it, expect, beforeAll } from 'vitest';
+
 import {
   isServerAvailable,
   skipIfNoServer,
   getServerUrl,
   fixtureModels,
-} from '@ollm/test-utils';
-import { MockProvider } from '@ollm/test-utils';
+ MockProvider } from '@ollm/test-utils';
+
 import type { ModelInfo, PullProgress } from '@ollm/core';
 
 describe('Model Management Integration Tests', () => {

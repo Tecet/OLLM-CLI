@@ -13,6 +13,7 @@
 
 import React from 'react';
 import { Box, Text, useInput } from 'ink';
+
 import { useUI } from '../../../features/context/UIContext.js';
 
 // Module-level flag used to indicate that an Esc keypress was handled

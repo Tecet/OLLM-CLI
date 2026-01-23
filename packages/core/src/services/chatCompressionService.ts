@@ -5,16 +5,18 @@
  * Supports multiple compression strategies: summarize, truncate, and hybrid.
  */
 
+import { EventEmitter } from 'events';
+
+import { sanitizeErrorMessage } from './errorSanitization.js';
+import { STATE_SNAPSHOT_PROMPT } from '../prompts/templates/stateSnapshot.js';
+
 import type {
   SessionMessage,
   CompressionOptions,
   CompressionResult,
 } from './types.js';
-import type { ProviderAdapter } from '../provider/types.js';
 import type { TokenCounter } from '../context/types.js';
-import { sanitizeErrorMessage } from './errorSanitization.js';
-import { STATE_SNAPSHOT_PROMPT } from '../prompts/templates/stateSnapshot.js';
-import { EventEmitter } from 'events';
+import type { ProviderAdapter } from '../provider/types.js';
 
 /**
  * Chat Compression Service

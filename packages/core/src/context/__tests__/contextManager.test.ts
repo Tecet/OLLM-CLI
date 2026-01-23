@@ -4,9 +4,11 @@
  * Tests for the main orchestration layer that coordinates all context management services.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
 import * as fc from 'fast-check';
+import { describe, it, expect, beforeEach } from 'vitest';
+
 import { createContextManager, ConversationContextManager } from '../contextManager.js';
+
 import type {
   ModelInfo,
   ContextConfig,

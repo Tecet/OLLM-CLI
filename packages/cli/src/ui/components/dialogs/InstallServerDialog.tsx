@@ -15,12 +15,14 @@
 
 import React, { useState, useCallback } from 'react';
 import { Box, Text } from 'ink';
+
 import { Dialog } from './Dialog.js';
-import { FormField } from '../forms/FormField.js';
-import { TextInput, validators } from '../forms/TextInput.js';
 import { Button, ButtonGroup } from '../forms/Button.js';
 import { Checkbox } from '../forms/Checkbox.js';
+import { FormField } from '../forms/FormField.js';
+import { TextInput, validators } from '../forms/TextInput.js';
 import { ProgressIndicator } from '../mcp/ProgressIndicator.js';
+
 import type { MCPMarketplaceServer } from '../../../services/mcpMarketplace.js';
 import type { MCPServerConfig } from '@ollm/ollm-cli-core/mcp/types.js';
 

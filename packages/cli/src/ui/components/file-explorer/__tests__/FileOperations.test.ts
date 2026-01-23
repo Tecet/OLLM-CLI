@@ -4,11 +4,13 @@
  * Tests for file CRUD operations with tool integration
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { FileOperations } from '../FileOperations.js';
 import { writeFileSync, mkdirSync, rmSync, existsSync } from 'fs';
-import { join } from 'path';
 import { tmpdir } from 'os';
+import { join } from 'path';
+
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+import { FileOperations } from '../FileOperations.js';
 
 describe('FileOperations', () => {
   let fileOps: FileOperations;
@@ -23,7 +25,7 @@ describe('FileOperations', () => {
   afterEach(() => {
     try {
       rmSync(testDir, { recursive: true, force: true });
-    } catch (error) {
+    } catch (_error) {
       // Ignore cleanup errors
     }
   });

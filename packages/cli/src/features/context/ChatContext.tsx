@@ -1,19 +1,20 @@
-import React, { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from 'react';
 import fs from 'fs';
-import { useContextManager } from './ContextManagerContext.js';
-import { commandRegistry } from '../../commands/index.js';
-import { useServices } from './ServiceContext.js';
-import { useModel } from './ModelContext.js';
-import { useUI } from './UIContext.js';
-import { HotSwapTool, MemoryDumpTool, PromptRegistry, MODE_METADATA } from '@ollm/core';
-import type { ToolCall as CoreToolCall, ContextMessage, ProviderMetrics, ToolSchema } from '@ollm/core';
-import { SnapshotManager as _PromptsSnapshotManager } from '@ollm/core/prompts/modeSnapshotManager.js';
-// removed unused import: injectFocusedFiles
-import { useFocusedFilesInjection } from './useFocusedFilesInjection.js';
 
-// Note: Global callbacks are now registered by AllCallbacksBridge component
-// These declarations are kept for backward compatibility during migration
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from 'react';
+
+import { HotSwapTool, MemoryDumpTool, PromptRegistry, MODE_METADATA } from '@ollm/core';
+import { SnapshotManager as _PromptsSnapshotManager } from '@ollm/core/prompts/modeSnapshotManager.js';
+
+import { useContextManager } from './ContextManagerContext.js';
+import { useModel } from './ModelContext.js';
+import { useServices } from './ServiceContext.js';
+import { useUI } from './UIContext.js';
+import { useFocusedFilesInjection } from './useFocusedFilesInjection.js';
+import { commandRegistry } from '../../commands/index.js';
 import { SettingsService } from '../../config/settingsService.js';
+
+import type { ToolCall as CoreToolCall, ContextMessage, ProviderMetrics, ToolSchema } from '@ollm/core';
+
 
 declare global {
   var __ollmModelSwitchCallback: ((model: string) => void) | undefined;

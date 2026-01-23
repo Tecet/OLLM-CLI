@@ -10,6 +10,7 @@
 
 import { homedir } from 'os';
 import { join } from 'path';
+
 import {
   HookRegistry,
   HookRunner,
@@ -19,6 +20,7 @@ import {
   MessageBus,
   getMessageBus,
 } from '../hooks/index.js';
+
 import type { TrustedHooksConfig, ApprovalCallback } from '../hooks/trustedHooks.js';
 import type { Hook, HookEvent, HookInput } from '../hooks/types.js';
 

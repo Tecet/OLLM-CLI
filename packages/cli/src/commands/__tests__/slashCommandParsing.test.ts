@@ -8,6 +8,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
+
 import { CommandRegistry } from '../commandRegistry.js';
 
 describe('Slash Command Parsing', () => {

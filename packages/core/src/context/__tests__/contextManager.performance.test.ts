@@ -9,7 +9,9 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
+
 import { ConversationContextManager } from '../contextManager.js';
+
 import type { Message, ModelInfo } from '../types.js';
 
 describe('ContextManager Performance', () => {

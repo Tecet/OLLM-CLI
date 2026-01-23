@@ -7,11 +7,13 @@
  */
 
 import fs from 'fs';
-import path from 'path';
-import os from 'os';
 import { watch, type FSWatcher } from 'fs';
-import type { MCPServerConfig } from '@ollm/ollm-cli-core/mcp/types.js';
+import os from 'os';
+import path from 'path';
+
 import { mcpConfigBackup } from './mcpConfigBackup.js';
+
+import type { MCPServerConfig } from '@ollm/ollm-cli-core/mcp/types.js';
 
 /**
  * MCP configuration with server definitions

@@ -6,8 +6,8 @@
  * within each source type.
  */
 
-import type { Hook, HookEvent, HookContext, HookExecutionPlan } from './types.js';
 import type { HookRegistry } from './hookRegistry.js';
+import type { Hook, HookEvent, HookContext, HookExecutionPlan } from './types.js';
 
 /**
  * Planner for determining hook execution order

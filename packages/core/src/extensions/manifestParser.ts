@@ -5,7 +5,9 @@
  */
 
 import { readFile } from 'fs/promises';
+
 import Ajv, { type ValidateFunction, type ErrorObject } from 'ajv';
+
 import type { ExtensionManifest } from './types.js';
 
 /**

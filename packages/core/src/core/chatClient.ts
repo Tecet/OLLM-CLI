@@ -3,18 +3,19 @@
  * Main entry point for chat interactions. Manages conversation state and coordinates turns.
  */
 
-import type { Message, ToolCall, ProviderAdapter } from '../provider/types.js';
-import type { ProviderRegistry } from '../provider/registry.js';
 import { Turn, type TurnEvent, type ToolRegistry, type ChatOptions } from './turn.js';
-import type { ChatRecordingService } from '../services/chatRecordingService.js';
-import type { ChatCompressionService } from '../services/chatCompressionService.js';
-import { LoopDetectionService } from '../services/loopDetectionService.js';
-import type { DynamicContextInjector as ServicesContextManager } from '../services/dynamicContextInjector.js';
-import type { ContextManager as ContextMgmtManager } from '../context/types.js';
-import type { SessionMessage, SessionToolCall, ServicesConfig } from '../services/types.js';
-import { mergeServicesConfig } from '../services/config.js';
-import { ModelDatabase, modelDatabase } from '../routing/modelDatabase.js';
 import { getMessageBus } from '../hooks/messageBus.js';
+import { ModelDatabase, modelDatabase } from '../routing/modelDatabase.js';
+import { mergeServicesConfig } from '../services/config.js';
+import { LoopDetectionService } from '../services/loopDetectionService.js';
+
+import type { ContextManager as ContextMgmtManager } from '../context/types.js';
+import type { ProviderRegistry } from '../provider/registry.js';
+import type { Message, ToolCall, ProviderAdapter } from '../provider/types.js';
+import type { ChatCompressionService } from '../services/chatCompressionService.js';
+import type { ChatRecordingService } from '../services/chatRecordingService.js';
+import type { DynamicContextInjector as ServicesContextManager } from '../services/dynamicContextInjector.js';
+import type { SessionMessage, SessionToolCall, ServicesConfig } from '../services/types.js';
 
 const isTestEnv = process.env.NODE_ENV === 'test' || !!process.env.VITEST;
 

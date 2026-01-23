@@ -7,26 +7,29 @@
  * Requirements: 2.1, 2.6, 2.7, 3.1, 3.4
  */
 
+import { readFile } from 'fs/promises';
+
 import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { Box, Text, useInput, Key } from 'ink';
-import { readFile } from 'fs/promises';
-import { useFileTree } from './FileTreeContext.js';
+
+import { ConfirmationDialog } from './ConfirmationDialog.js';
+import { EditorIntegration } from './EditorIntegration.js';
 import { useFileFocus } from './FileFocusContext.js';
+import { FileOperations } from './FileOperations.js';
+import { FileSearchDialog, type SearchResult } from './FileSearchDialog.js';
+import { useFileTree } from './FileTreeContext.js';
 import { FileTreeService } from './FileTreeService.js';
 import { FocusSystem } from './FocusSystem.js';
-import { EditorIntegration } from './EditorIntegration.js';
-import { SyntaxViewer } from './SyntaxViewer.js';
-import { QuickActionsMenu, type QuickAction } from './QuickActionsMenu.js';
-import { ConfirmationDialog } from './ConfirmationDialog.js';
-import { QuickOpenDialog } from './QuickOpenDialog.js';
-import { FileSearchDialog, type SearchResult } from './FileSearchDialog.js';
-import { FileOperations } from './FileOperations.js';
 import { FollowModeService } from './FollowModeService.js';
 import { HelpPanel } from './HelpPanel.js';
 import { LoadingIndicator } from './LoadingIndicator.js';
-import { useKeybinds } from '../../../features/context/KeybindsContext.js';
+import { QuickActionsMenu, type QuickAction } from './QuickActionsMenu.js';
+import { QuickOpenDialog } from './QuickOpenDialog.js';
+import { SyntaxViewer } from './SyntaxViewer.js';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
+import { useKeybinds } from '../../../features/context/KeybindsContext.js';
 import { isKey } from '../../utils/keyUtils.js';
+
 import type { FileNode, GitStatus } from './types.js';
 
 /**
@@ -700,7 +703,8 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
     toggleFollowMode,
     treeState.followModeEnabled,
     showStatus,
-    activeKeybinds
+    activeKeybinds,
+    focusManager,
   ]);
 
   useInput(handleInput, { 
@@ -740,7 +744,6 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
     treeState.root,
     treeState.scrollOffset,
     treeState.windowSize,
-    treeState.expandedPaths,  // Invalidate when expand/collapse occurs
     fileTreeService,
   ]);
 

@@ -1,7 +1,9 @@
 import React from 'react';
 import { Box, Text } from 'ink';
+
 import { InputBox } from './InputBox.js';
 import { StreamingIndicator } from '../chat/StreamingIndicator.js';
+
 import type { Theme } from '../../../config/types.js';
 
 export interface StaticInputAreaProps {

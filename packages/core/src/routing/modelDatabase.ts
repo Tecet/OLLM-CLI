@@ -3,6 +3,11 @@
  */
 
 // @ts-expect-error - picomatch doesn't have type definitions
+
+// Export singleton instance
+import { existsSync, readFileSync } from 'fs';
+import { join } from 'path';
+
 import picomatch from 'picomatch';
 
 export interface ModelCapabilities {
@@ -147,10 +152,6 @@ export class ModelDatabase {
     return entry.family ?? null;
   }
 }
-
-// Export singleton instance
-import { existsSync, readFileSync } from 'fs';
-import { join } from 'path';
 
 function tryLoadProfilesFromCli(): ModelEntry[] | null {
   try {

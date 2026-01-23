@@ -6,19 +6,8 @@
  */
 
 // Import tool classes for registration function
-import { ReadFileTool } from './read-file.js';
-import { ReadManyFilesTool } from './read-many-files.js';
-import { WriteFileTool } from './write-file.js';
 import { EditFileTool } from './edit-file.js';
 import { GlobTool } from './glob.js';
-import { GrepTool } from './grep.js';
-import { LsTool } from './ls.js';
-import { ShellTool } from './shell.js';
-import { WebFetchTool } from './web-fetch.js';
-import { WebSearchTool } from './web-search.js';
-import { MemoryTool } from './memory.js';
-import { WriteTodosTool } from './write-todos.js';
-import { ToolRegistry } from './tool-registry.js';
 import { 
   CreateGoalTool, 
   CreateCheckpointTool, 
@@ -26,7 +15,18 @@ import {
   RecordDecisionTool, 
   SwitchGoalTool 
 } from './goal-management.js';
+import { GrepTool } from './grep.js';
+import { LsTool } from './ls.js';
+import { MemoryTool } from './memory.js';
+import { ReadFileTool } from './read-file.js';
+import { ReadManyFilesTool } from './read-many-files.js';
 import { ReadReasoningTool } from './read-reasoning.js';
+import { ShellTool } from './shell.js';
+import { ToolRegistry } from './tool-registry.js';
+import { WebFetchTool } from './web-fetch.js';
+import { WebSearchTool } from './web-search.js';
+import { WriteFileTool } from './write-file.js';
+import { WriteTodosTool } from './write-todos.js';
 
 // Export tool registry
 export { ToolRegistry } from './tool-registry.js';

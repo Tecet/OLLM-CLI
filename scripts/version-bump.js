@@ -9,10 +9,10 @@
  * Usage: node scripts/version-bump.js [major|minor|patch] [--dry-run]
  */
 
+import { execSync } from 'child_process';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { execSync } from 'child_process';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

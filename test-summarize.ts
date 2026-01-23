@@ -3,6 +3,7 @@
  */
 
 import { ChatCompressionService } from './packages/core/src/services/chatCompressionService.js';
+
 import type { SessionMessage } from './packages/core/src/services/types.js';
 
 async function testSummarize() {

@@ -10,6 +10,7 @@
  * - \x1b[?1049l - Leave alternate screen buffer
  */
 import React, { useEffect, ReactNode } from 'react';
+
 import {
   enterAlternateScreen,
   exitAlternateScreen,

@@ -1,14 +1,15 @@
 import React, { useEffect, useMemo, useRef, memo } from 'react';
 import { Box, useInput, useStdout, BoxProps } from 'ink';
-import { WindowSwitcher } from '../WindowSwitcher.js';
-import { Terminal } from '../Terminal.js';
-import { EditorMockup } from '../code-editor/EditorMockup.js';
-import { useWindow } from '../../contexts/WindowContext.js';
-import { useFocusManager } from '../../../features/context/FocusContext.js';
+
 import { useChat } from '../../../features/context/ChatContext.js';
+import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { useUI } from '../../../features/context/UIContext.js';
-import { buildChatLines, ChatHistory, messageHasLargeDiff } from '../chat/ChatHistory.js';
+import { useWindow } from '../../contexts/WindowContext.js';
 import { profileRender } from '../../utils/performanceProfiler.js';
+import { buildChatLines, ChatHistory, messageHasLargeDiff } from '../chat/ChatHistory.js';
+import { EditorMockup } from '../code-editor/EditorMockup.js';
+import { Terminal } from '../Terminal.js';
+import { WindowSwitcher } from '../WindowSwitcher.js';
 
 export interface ChatTabProps {
   /** Assigned height from layout */

@@ -1,13 +1,15 @@
 import React from 'react';
-import { ServiceProvider } from '../../features/context/ServiceContext.js';
-import { DialogProvider } from '../contexts/DialogContext.js';
-import { UIProvider } from '../../features/context/UIContext.js';
+
+import { SettingsService } from '../../config/settingsService.js';
 import { FocusProvider } from '../../features/context/FocusContext.js';
-import { ToolsProvider } from '../contexts/ToolsContext.js';
+import { ServiceProvider } from '../../features/context/ServiceContext.js';
+import { UIProvider } from '../../features/context/UIContext.js';
+import { DialogProvider } from '../contexts/DialogContext.js';
 import { MCPProvider } from '../contexts/MCPContext.js';
+import { ToolsProvider } from '../contexts/ToolsContext.js';
+
 import type { Config } from '../../config/types.js';
 import type { ProviderAdapter } from '@ollm/ollm-cli-core/provider/types.js';
-import { SettingsService } from '../../config/settingsService.js';
 
 const mockProvider = {} as ProviderAdapter;
 

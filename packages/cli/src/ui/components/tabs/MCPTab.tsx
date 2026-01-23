@@ -11,20 +11,14 @@
  * Validates: Requirements 1.1-1.6, 12.1-12.15, NFR-7
  */
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
-import React from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Box, Text, useInput, useStdout } from 'ink';
-import { useMCP, type ExtendedMCPServerStatus } from '../../contexts/MCPContext.js';
-import { useUI } from '../../../features/context/UIContext.js';
+
 import { useFocusManager } from '../../../features/context/FocusContext.js';
+import { useUI } from '../../../features/context/UIContext.js';
+import { useMCP, type ExtendedMCPServerStatus } from '../../contexts/MCPContext.js';
 import { useNotifications } from '../../hooks/useNotifications.js';
-import { LoadingSpinner } from '../mcp/LoadingSpinner.js';
-import { OperationProgress } from '../mcp/OperationProgress.js';
-import { ErrorBanner } from '../mcp/ErrorDisplay.js';
-import { NotificationContainer } from '../mcp/Notification.js';
-import { ErrorBoundary } from '../ErrorBoundary.js';
 import { APIKeyInputDialog } from '../dialogs/APIKeyInputDialog.js';
-import type { MCPMarketplaceServer } from '../../../services/mcpMarketplace.js';
 import { 
   ServerConfigDialog,
   OAuthConfigDialog,
@@ -35,6 +29,13 @@ import {
   DialogErrorBoundary,
   HelpOverlay,
 } from '../dialogs/index.js';
+import { ErrorBoundary } from '../ErrorBoundary.js';
+import { ErrorBanner } from '../mcp/ErrorDisplay.js';
+import { LoadingSpinner } from '../mcp/LoadingSpinner.js';
+import { NotificationContainer } from '../mcp/Notification.js';
+import { OperationProgress } from '../mcp/OperationProgress.js';
+
+import type { MCPMarketplaceServer } from '../../../services/mcpMarketplace.js';
 
 export interface MCPTabProps {
   windowWidth?: number;

@@ -7,6 +7,7 @@
 
 import { useState } from 'react';
 import { useInput } from 'ink';
+
 import { useWindow } from '../contexts/WindowContext.js';
 import { useTerminal } from '../hooks/useTerminal.js';
 

@@ -6,13 +6,15 @@
  */
 
 import { EventEmitter } from 'events';
+
+import { FocusModeManager } from './FocusModeManager.js';
+import { ModeMetricsTracker } from './ModeMetricsTracker.js';
+import { ModeTransitionAnimator } from './ModeTransitionAnimator.js';
+
 import type { ContextAnalyzer, ContextAnalysis, ModeType } from './ContextAnalyzer.js';
 import type { PromptRegistry } from './PromptRegistry.js';
 import type { SystemPromptBuilder } from '../context/SystemPromptBuilder.js';
 import type { ModelCapabilities } from '../services/modelManagementService.js';
-import { ModeMetricsTracker } from './ModeMetricsTracker.js';
-import { FocusModeManager } from './FocusModeManager.js';
-import { ModeTransitionAnimator } from './ModeTransitionAnimator.js';
 
 /**
  * Mode configuration

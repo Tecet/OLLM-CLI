@@ -1,7 +1,8 @@
-import type { Tool, ToolInvocation, ToolResult, ToolCallConfirmationDetails, ToolContext, ToolSchema, DeclarativeTool } from './types.js';
-import type { ToolRouter } from './toolRouter.js';
 import { ToolCapability } from './tool-capabilities.js';
 import { WebSearchTool, type SearchProvider, type SearchResult } from './web-search.js';
+
+import type { ToolRouter } from './toolRouter.js';
+import type { Tool, ToolInvocation, ToolResult, ToolCallConfirmationDetails, ToolContext, ToolSchema, DeclarativeTool } from './types.js';
 
 export class MCPSearchProvider implements SearchProvider {
   constructor(private router: ToolRouter, private capability: ToolCapability.WEB_SEARCH | ToolCapability.DOCUMENTATION_SEARCH) {}

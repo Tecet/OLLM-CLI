@@ -15,9 +15,10 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { Box, Text } from 'ink';
+
 import { Dialog } from './Dialog.js';
-import { Button, ButtonGroup } from '../forms/Button.js';
 import { useMCP } from '../../contexts/MCPContext.js';
+import { Button, ButtonGroup } from '../forms/Button.js';
 
 export interface ServerLogsViewerProps {
   /** Server name to view logs for */

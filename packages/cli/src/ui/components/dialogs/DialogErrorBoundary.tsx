@@ -7,6 +7,7 @@
 
 import React, { ReactNode } from 'react';
 import { Box, Text } from 'ink';
+
 import { ErrorBoundary } from '../ErrorBoundary.js';
 
 export interface DialogErrorBoundaryProps {

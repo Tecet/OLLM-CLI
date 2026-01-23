@@ -5,8 +5,8 @@
  */
 
 import { promises as fs } from 'fs';
-import { join, dirname } from 'path';
 import { homedir } from 'os';
+import { join, dirname } from 'path';
 
 /**
  * Category of memory entry

@@ -30,6 +30,7 @@
  */
 
 import { useInput } from 'ink';
+
 import { useFocusManager } from '../../features/context/FocusContext.js';
 
 export function useModalEscapeHandler(isOpen: boolean, onClose: () => void): void {

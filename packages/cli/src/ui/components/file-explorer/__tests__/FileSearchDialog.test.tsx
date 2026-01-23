@@ -4,9 +4,10 @@
  * Tests for file content search dialog
  */
 
-import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { render } from 'ink-testing-library';
+import { describe, it, expect, vi } from 'vitest';
+
 import { FileSearchDialog } from '../FileSearchDialog.js';
 
 describe('FileSearchDialog', () => {

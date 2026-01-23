@@ -10,6 +10,7 @@
 
 import React from 'react';
 import { Box, Text } from 'ink';
+
 import type { MCPMarketplaceServer } from '../../../services/mcpMarketplace.js';
 
 export interface MarketplacePreviewProps {

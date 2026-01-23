@@ -7,6 +7,7 @@
 
 import React from 'react';
 import { Box, Text } from 'ink';
+
 import type { HybridMode } from '@ollm/core';
 
 export interface HybridModeDisplayProps {

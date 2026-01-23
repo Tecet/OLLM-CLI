@@ -16,6 +16,7 @@
 
 import React from 'react';
 import { Box, Text } from 'ink';
+
 import type { ExtendedMCPServerStatus } from '../../contexts/MCPContext.js';
 
 export interface ServerDetailsProps {

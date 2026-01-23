@@ -1,8 +1,9 @@
+import path from 'path';
+import { fileURLToPath } from 'url';
+
 import React, { useState, useEffect, useReducer, useMemo, memo, useRef } from 'react';
 import { Box, Text, useStdout } from 'ink';
 import { Jimp, ResizeStrategy } from 'jimp';
-import path from 'path';
-import { fileURLToPath } from 'url';
 
 // --- CONFIGURATION ---
 const __filename = fileURLToPath(import.meta.url);

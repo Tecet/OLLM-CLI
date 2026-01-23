@@ -9,7 +9,9 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
+
 import { CompressionService } from '../compressionService.js';
+
 import type { Message, CompressionStrategy } from '../types.js';
 
 describe('CompressionService Performance', () => {

@@ -6,6 +6,7 @@
  */
 
 import { useContext } from 'react';
+
 import { FileFocusContext } from '../../ui/components/file-explorer/FileFocusContext.js';
 import { injectFocusedFiles } from '../../ui/components/file-explorer/FocusedFilesInjector.js';
 

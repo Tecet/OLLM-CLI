@@ -1,14 +1,17 @@
+import { readFileSync , appendFileSync, mkdirSync, existsSync } from 'fs';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
+
 import React from 'react';
 import { render, Text } from 'ink';
-import Yargs from 'yargs/yargs';
 import { hideBin } from 'yargs/helpers';
-import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import Yargs from 'yargs/yargs';
+
 import { loadConfig } from './config/configLoader.js';
-import type { Config } from './config/types.js';
 import { patchStdio, createWorkingStdio } from './utils/stdio.js';
-import { appendFileSync, mkdirSync, existsSync } from 'fs';
+
+import type { Config } from './config/types.js';
+
 
 // Get package.json path
 const __filename = fileURLToPath(import.meta.url);

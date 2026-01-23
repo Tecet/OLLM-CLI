@@ -13,8 +13,8 @@
  */
 
 import fs from 'fs';
-import path from 'path';
 import os from 'os';
+import path from 'path';
 
 // Parse command line arguments
 const args = process.argv.slice(2);

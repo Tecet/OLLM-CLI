@@ -4,8 +4,8 @@
  * Handles storage initialization tasks including migration and directory setup.
  */
 
-import { runMigrationIfNeeded } from './storageMigration.js';
 import { ensureStorageDirectories, logAllStorageLocations } from './pathValidation.js';
+import { runMigrationIfNeeded } from './storageMigration.js';
 
 /**
  * Initialize storage system

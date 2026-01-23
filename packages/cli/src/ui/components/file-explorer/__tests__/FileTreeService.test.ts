@@ -4,9 +4,9 @@
  * Tests for file tree building, directory expansion, and node management
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
+
 import { FileTreeService } from '../FileTreeService.js';
-import type { FileNode } from '../types.js';
 
 describe('FileTreeService', () => {
   let service: FileTreeService;

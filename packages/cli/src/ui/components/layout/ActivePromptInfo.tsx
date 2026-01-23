@@ -1,8 +1,9 @@
 import React from 'react';
 import { Box, Text } from 'ink';
+
 import { useActiveContext } from '../../../features/context/ActiveContextState.js';
-import { useUI } from '../../../features/context/UIContext.js';
 import { useContextManager } from '../../../features/context/ContextManagerContext.js';
+import { useUI } from '../../../features/context/UIContext.js';
 
 // Helper to format tier display
 function formatTierDisplay(tier: string): string {

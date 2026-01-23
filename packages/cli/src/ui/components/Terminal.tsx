@@ -5,13 +5,13 @@
  */
 
 import React, { useMemo, useEffect } from 'react';
-import { Box, Text, useStdout } from 'ink';
+import { Box, Text, useStdout , useInput } from 'ink';
 import stripAnsi from 'strip-ansi';
-import { useTerminal } from '../hooks/useTerminal.js';
-import { useUI } from '../../features/context/UIContext.js';
+
 import { useFocusManager } from '../../features/context/FocusContext.js';
-import { useInput } from 'ink';
+import { useUI } from '../../features/context/UIContext.js';
 import { useWindow } from '../contexts/WindowContext.js';
+import { useTerminal } from '../hooks/useTerminal.js';
 
 export interface TerminalProps {
   height: number;

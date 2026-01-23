@@ -1,3 +1,10 @@
+import { HotSwapService } from '../context/HotSwapService.js';
+import { ContextManager } from '../context/types.js';
+import { SnapshotManager } from '../prompts/modeSnapshotManager.js';
+import { PromptModeManager } from '../prompts/PromptModeManager.js';
+import { PromptRegistry } from '../prompts/PromptRegistry.js';
+import { ProviderAdapter } from '../provider/types.js';
+
 import type {
   DeclarativeTool,
   ToolInvocation,
@@ -6,12 +13,6 @@ import type {
   ToolSchema,
   ToolCallConfirmationDetails,
 } from './types.js';
-import { ContextManager } from '../context/types.js';
-import { HotSwapService } from '../context/HotSwapService.js';
-import { PromptRegistry } from '../prompts/PromptRegistry.js';
-import { ProviderAdapter } from '../provider/types.js';
-import { PromptModeManager } from '../prompts/PromptModeManager.js';
-import { SnapshotManager } from '../prompts/modeSnapshotManager.js';
 
 export interface HotSwapParams {
   skills?: string[];

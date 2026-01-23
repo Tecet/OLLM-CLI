@@ -12,6 +12,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Box, Text, useInput } from 'ink';
 import TextInput from 'ink-text-input';
+
 import type { ToolRegistry } from '@ollm/ollm-cli-core/tools/tool-registry.js';
 import type { ToolInvocation } from '@ollm/ollm-cli-core/tools/types.js';
 

@@ -5,6 +5,7 @@
  */
 
 import { randomUUID } from 'crypto';
+
 import type {
   Goal,
   GoalStack,

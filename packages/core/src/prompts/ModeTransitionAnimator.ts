@@ -5,8 +5,11 @@
  * Provides visual feedback to users when modes change.
  */
 
+import { MODE_METADATA } from './templates/modes/index.js';
+
 import type { ModeType } from './ContextAnalyzer.js';
 import type { ModeTransition } from './PromptModeManager.js';
+
 
 /**
  * Animation data for a mode transition
@@ -41,8 +44,6 @@ interface ModeAnimationConfig {
   completionVerb: string;
   duration: number;
 }
-
-import { MODE_METADATA } from './templates/modes/index.js';
 
 /**
  * Animation configurations for each mode

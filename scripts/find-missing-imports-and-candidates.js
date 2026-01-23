@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
+const cp = require('child_process');
 const fs = require('fs');
 const path = require('path');
-const cp = require('child_process');
 
 const legacyDir = path.resolve('.dev/legacy/test');
 if (!fs.existsSync(legacyDir)) {

@@ -1,8 +1,9 @@
 import React from 'react';
 import { Box, Text, useInput } from 'ink';
-import { PlannedFeaturesList } from '../github/PlannedFeaturesList.js';
+
 import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { useUI } from '../../../features/context/UIContext.js';
+import { PlannedFeaturesList } from '../github/PlannedFeaturesList.js';
 
 /**
  * GitHubTab Component

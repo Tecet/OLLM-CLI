@@ -11,16 +11,18 @@
 
 import { randomUUID } from 'node:crypto';
 import { mkdir, readFile, writeFile, readdir, unlink, rename, open } from 'node:fs/promises';
-import { join } from 'node:path';
 import { homedir } from 'node:os';
+import { join } from 'node:path';
+
+import { sanitizeErrorMessage } from './errorSanitization.js';
+import { validateStoragePath, logPathDiagnostics } from '../utils/pathValidation.js';
+
 import type {
   Session,
   SessionMessage,
   SessionToolCall,
   SessionSummary,
 } from './types.js';
-import { sanitizeErrorMessage } from './errorSanitization.js';
-import { validateStoragePath, logPathDiagnostics } from '../utils/pathValidation.js';
 
 /**
  * Configuration options for ChatRecordingService

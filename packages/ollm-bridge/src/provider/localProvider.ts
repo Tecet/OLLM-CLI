@@ -3,6 +3,8 @@
  * Implements the ProviderAdapter interface to connect to a local server.
  */
 
+import { createLogger } from '@ollm/core';
+
 import type {
   ProviderAdapter,
   ProviderRequest,
@@ -13,7 +15,6 @@ import type {
   ModelInfo,
   PullProgress,
 } from '@ollm/core';
-import { createLogger } from '@ollm/core';
 
 /**
  * Configuration for the local provider.

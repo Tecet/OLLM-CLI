@@ -8,6 +8,7 @@
  */
 
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+
 import { FocusedFile } from './types.js';
 
 /**

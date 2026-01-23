@@ -6,9 +6,11 @@
  * - /config show - Show current configuration
  */
 
-import type { Command, CommandResult } from './types.js';
-import { getDefaultStorageLocations, logAllStorageLocations } from '../../../core/src/utils/pathValidation.js';
 import * as os from 'os';
+
+import { getDefaultStorageLocations, logAllStorageLocations } from '../../../core/src/utils/pathValidation.js';
+
+import type { Command, CommandResult } from './types.js';
 
 /**
  * /config paths - Show storage paths

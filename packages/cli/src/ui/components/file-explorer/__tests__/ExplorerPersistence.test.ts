@@ -4,11 +4,13 @@
  * Tests for state persistence and restoration
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { ExplorerPersistence } from '../ExplorerPersistence.js';
-import { mkdirSync, rmSync, existsSync } from 'fs';
-import { join } from 'path';
+import { mkdirSync, rmSync, existsSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
+import { join } from 'path';
+
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+
+import { ExplorerPersistence } from '../ExplorerPersistence.js';
 
 describe('ExplorerPersistence', () => {
   let persistence: ExplorerPersistence;
@@ -23,7 +25,7 @@ describe('ExplorerPersistence', () => {
   afterEach(() => {
     try {
       rmSync(testDir, { recursive: true, force: true });
-    } catch (error) {
+    } catch (_error) {
       // Ignore cleanup errors
     }
   });
@@ -86,7 +88,7 @@ describe('ExplorerPersistence', () => {
       // Save invalid JSON
       const statePath = join(testDir, '.ollm', 'explorer-state.json');
       mkdirSync(join(testDir, '.ollm'), { recursive: true });
-      require('fs').writeFileSync(statePath, 'invalid json{');
+      writeFileSync(statePath, 'invalid json{');
 
       const loaded = persistence.loadState();
 

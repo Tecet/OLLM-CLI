@@ -1,14 +1,15 @@
-import { ContextManager, Message as ContextMessage } from './types.js';
-import { ProviderAdapter, Message as ProviderMessage } from '../provider/types.js';
-import { PromptRegistry } from '../prompts/PromptRegistry.js';
 import { SnapshotParser } from './snapshotParser.js';
 import { SystemPromptBuilder } from './SystemPromptBuilder.js';
-import { STATE_SNAPSHOT_PROMPT } from '../prompts/templates/stateSnapshot.js';
-import { PromptModeManager } from '../prompts/PromptModeManager.js';
-import type { ModeType } from '../prompts/ContextAnalyzer.js';
+import { ContextManager, Message as ContextMessage } from './types.js';
 import { SnapshotManager } from '../prompts/modeSnapshotManager.js';
+import { PromptModeManager } from '../prompts/PromptModeManager.js';
+import { PromptRegistry } from '../prompts/PromptRegistry.js';
+import { STATE_SNAPSHOT_PROMPT } from '../prompts/templates/stateSnapshot.js';
+import { ProviderAdapter, Message as ProviderMessage } from '../provider/types.js';
 import { modelDatabase } from '../routing/modelDatabase.js';
 import { ReasoningParser } from '../services/reasoningParser.js';
+
+import type { ModeType } from '../prompts/ContextAnalyzer.js';
 
 export class HotSwapService {
   constructor(

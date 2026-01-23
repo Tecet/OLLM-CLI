@@ -9,10 +9,14 @@
  */
 
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode, useMemo } from 'react';
-import type { Hook, HookEvent } from '@ollm/ollm-cli-core/hooks/types.js';
+
 import { SettingsService } from '../../config/settingsService.js';
-import { loadHooksFromFiles } from '../../services/hookLoader.js';
 import { useServices } from '../../features/context/ServiceContext.js';
+import { loadHooksFromFiles } from '../../services/hookLoader.js';
+
+import type { HookRegistry } from '@ollm/ollm-cli-core/hooks/index.js';
+import type { Hook, HookEvent } from '@ollm/ollm-cli-core/hooks/types.js';
+import type { ServiceContainer } from '@ollm/ollm-cli-core/services/serviceContainer.js';
 
 /**
  * Hook category for organizing hooks in the UI
@@ -74,9 +78,6 @@ export function useHooks(): HooksContextValue {
   }
   return context;
 }
-
-import type { HookRegistry } from '@ollm/ollm-cli-core/hooks/index.js';
-import type { ServiceContainer } from '@ollm/ollm-cli-core/services/serviceContainer.js';
 
 export interface HooksProviderProps {
   children: ReactNode;

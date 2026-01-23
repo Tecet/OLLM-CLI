@@ -6,8 +6,9 @@
  */
 
 import { spawn, ChildProcess } from 'child_process';
-import { MCPTransport, MCPRequest, MCPResponse } from './types.js';
 import { EventEmitter } from 'events';
+
+import { MCPTransport, MCPRequest, MCPResponse } from './types.js';
 
 /**
  * Base class for MCP transports

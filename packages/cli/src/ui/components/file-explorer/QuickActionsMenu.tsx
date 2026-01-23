@@ -10,7 +10,9 @@
 
 import React, { useState, useCallback } from 'react';
 import { Box, Text, useInput } from 'ink';
+
 import { useKeybinds } from '../../../features/context/KeybindsContext.js';
+
 import type { FileNode } from './types.js';
 
 /**

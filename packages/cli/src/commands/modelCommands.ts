@@ -11,10 +11,11 @@
  * - /model unload <name> - Unload model
  */
 
-import type { Command, CommandResult } from './types.js';
-import type { ModelInfo } from '@ollm/ollm-cli-core/provider/types.js';
 import { SettingsService } from '../config/settingsService.js';
 import { profileManager } from '../features/profiles/ProfileManager.js';
+
+import type { Command, CommandResult } from './types.js';
+import type { ModelInfo } from '@ollm/ollm-cli-core/provider/types.js';
 // import type { ModelManagementService } from '@ollm/core/services/modelManagementService.js';
 // import type { ServiceContainer } from '@ollm/core/services/serviceContainer.js';
 type ModelSummary = Pick<ModelInfo, 'name' | 'sizeBytes' | 'modifiedAt'>;

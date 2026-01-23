@@ -1,7 +1,8 @@
 import React from 'react';
 import { Box, Text } from 'ink';
-import type { Hook } from '@ollm/ollm-cli-core/hooks/types.js';
+
 import type { Theme } from '../../../config/types.js';
+import type { Hook } from '@ollm/ollm-cli-core/hooks/types.js';
 
 export interface HookItemProps {
   /** The hook to display */

@@ -28,10 +28,11 @@
 
 import React from 'react';
 import { Box, BoxProps as _BoxProps } from 'ink';
+
 import { DotIndicator } from './layout/DotIndicator.js';
-import { useWindow } from '../contexts/WindowContext.js';
-import { useUI } from '../../features/context/UIContext.js';
 import { Theme as _Theme } from '../../config/types.js';
+import { useUI } from '../../features/context/UIContext.js';
+import { useWindow } from '../contexts/WindowContext.js';
 
 /**
  * WindowSwitcher Component

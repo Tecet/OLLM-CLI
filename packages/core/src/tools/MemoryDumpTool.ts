@@ -1,6 +1,9 @@
 
 import { promises as fs } from 'fs';
 import * as path from 'path';
+
+import { PromptModeManager } from '../prompts/PromptModeManager.js';
+
 import type {
   DeclarativeTool,
   ToolInvocation,
@@ -8,7 +11,6 @@ import type {
   ToolContext,
   ToolSchema,
 } from './types.js';
-import { PromptModeManager } from '../prompts/PromptModeManager.js';
 
 export interface MemoryDumpParams {
   content: string;

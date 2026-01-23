@@ -6,16 +6,17 @@
  * Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6
  */
 
-import { describe, it, expect, beforeAll } from 'vitest';
 import * as fc from 'fast-check';
+import { describe, it, expect, beforeAll } from 'vitest';
+
 import {
   isServerAvailable,
   getServerUrl,
   createTextChunkSequence,
   createToolCallSequence,
   fixtureTools,
-} from '@ollm/test-utils';
-import { MockProvider } from '@ollm/test-utils';
+ MockProvider } from '@ollm/test-utils';
+
 import type { ProviderEvent, ProviderRequest } from '@ollm/core';
 
 describe('Streaming Integration Tests', () => {

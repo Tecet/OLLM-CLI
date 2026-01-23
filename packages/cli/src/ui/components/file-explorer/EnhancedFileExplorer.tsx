@@ -10,6 +10,7 @@
 
 import React, { useState } from 'react';
 import { Box, Text } from 'ink';
+
 import { FileExplorerComponent, FileExplorerComponentProps } from './FileExplorerComponent.js';
 
 interface EnhancedFileExplorerProps extends FileExplorerComponentProps {

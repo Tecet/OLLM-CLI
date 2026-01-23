@@ -6,7 +6,9 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
+
 import { FileTreeService } from '../FileTreeService.js';
+
 import type { FileNode } from '../types.js';
 
 describe('FileTreeService Performance Optimizations', () => {
@@ -73,7 +75,7 @@ describe('FileTreeService Performance Optimizations', () => {
     });
 
     it('should track cache version', () => {
-      const tree: FileNode = {
+      const _tree: FileNode = {
         name: 'root',
         path: '/root',
         type: 'directory',

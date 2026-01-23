@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+
 import Ajv from 'ajv';
 
 const schemaPath = path.join(process.cwd(), 'scripts', 'LLM_profiles.schema.json');

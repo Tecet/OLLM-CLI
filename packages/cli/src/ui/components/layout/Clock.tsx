@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Text, BoxProps } from 'ink';
+
 import { useUI } from '../../../features/context/UIContext.js';
 
 interface ClockProps {

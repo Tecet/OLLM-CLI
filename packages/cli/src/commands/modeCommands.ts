@@ -17,10 +17,12 @@
  * - /mode focus extend <minutes> - Extend current focus session
  */
 
-import type { Command, CommandResult } from './types.js';
-import { getGlobalContextManager } from '../features/context/ContextManagerContext.js';
-import type { ModeType, ModeTransition } from '@ollm/core';
 import { MODE_METADATA } from '@ollm/core';
+
+import { getGlobalContextManager } from '../features/context/ContextManagerContext.js';
+
+import type { Command, CommandResult } from './types.js';
+import type { ModeType, ModeTransition } from '@ollm/core';
 
 /**
  * Helper to check if context manager is available

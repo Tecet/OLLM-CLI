@@ -1,5 +1,6 @@
 import React from 'react';
 import { Box, Text } from 'ink';
+
 import { Theme } from '../../../config/types.js';
 
 export interface ThemePickerProps {

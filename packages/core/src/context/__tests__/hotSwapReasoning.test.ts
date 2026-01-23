@@ -1,6 +1,7 @@
 import { join } from 'path';
-import { HotSwapService } from '../HotSwapService.js';
+
 import { SnapshotManager } from '../../prompts/modeSnapshotManager.js';
+import { HotSwapService } from '../HotSwapService.js';
 
 describe('HotSwap reasoning traces', () => {
   test('stores reasoningTraces in transition snapshot when messages contain <think> blocks', async () => {

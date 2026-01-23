@@ -4,16 +4,17 @@
  * Tests rendering performance, re-render behavior, and memory characteristics
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render } from 'ink-testing-library';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+
 import { EditorMockup } from '../EditorMockup.js';
 
 describe('EditorMockup Performance', () => {
-  let performanceMarks: string[] = [];
+  let _performanceMarks: string[] = [];
 
   beforeEach(() => {
-    performanceMarks = [];
+    _performanceMarks = [];
     // Clear any existing marks
     if (typeof performance !== 'undefined' && performance.clearMarks) {
       performance.clearMarks();

@@ -1,8 +1,9 @@
 import React from 'react';
 import { Box, Text } from 'ink';
-import { Theme } from '../../../config/types.js';
-import { ToolCategory, ToolMetadata } from '../../../config/toolsConfig.js';
+
 import { ToolItem } from './ToolItem.js';
+import { ToolCategory, ToolMetadata } from '../../../config/toolsConfig.js';
+import { Theme } from '../../../config/types.js';
 
 export interface CategorySectionProps {
   category: ToolCategory;

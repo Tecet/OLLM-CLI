@@ -7,8 +7,10 @@
  */
 
 import { HookRegistry } from '@ollm/ollm-cli-core/hooks/hookRegistry.js';
+
 import { hookFileService } from './hookFileService.js';
 import { uiHookToCoreHook } from '../features/hooks/adapter.js';
+
 import type { UIHook } from '../features/hooks/types.js';
 import type { HookEvent } from '@ollm/ollm-cli-core/hooks/types.js';
 

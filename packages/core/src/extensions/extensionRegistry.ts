@@ -5,10 +5,10 @@
  * from remote sources (GitHub, npm, etc.)
  */
 
-import { mkdir, writeFile, readFile, rm } from 'fs/promises';
-import { join } from 'path';
 import { createHash } from 'crypto';
+import { mkdir, writeFile, readFile, rm } from 'fs/promises';
 import { homedir } from 'os';
+import { join } from 'path';
 
 /**
  * Extension metadata from registry

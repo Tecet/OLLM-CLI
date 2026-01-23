@@ -1,14 +1,16 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { Box, Text, useInput, BoxProps } from 'ink';
-import { useUI } from '../../../features/context/UIContext.js';
-import { useFocusManager } from '../../../features/context/FocusContext.js';
-import { useSettings } from '../../../features/context/SettingsContext.js';
-import { useModel } from '../../../features/context/ModelContext.js';
-import { useMCP } from '../../contexts/MCPContext.js';
-import { useKeybinds } from '../../../features/context/KeybindsContext.js';
+
 import { ToolCapability, detectServerCapabilities } from '@ollm/ollm-cli-core/tools/tool-capabilities.js';
+
 import { builtInThemes } from '../../../config/styles.js';
+import { useFocusManager } from '../../../features/context/FocusContext.js';
+import { useKeybinds } from '../../../features/context/KeybindsContext.js';
+import { useModel } from '../../../features/context/ModelContext.js';
+import { useSettings } from '../../../features/context/SettingsContext.js';
+import { useUI } from '../../../features/context/UIContext.js';
 import { profileManager } from '../../../features/profiles/ProfileManager.js';
+import { useMCP } from '../../contexts/MCPContext.js';
 import { useTabEscapeHandler } from '../../hooks/useTabEscapeHandler.js';
 
 const WINDOW_SIZE = 30; // Configurable window size

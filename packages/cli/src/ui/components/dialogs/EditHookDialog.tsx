@@ -12,7 +12,9 @@
 
 import React, { useState } from 'react';
 import { Box, Text } from 'ink';
+
 import { useUI } from '../../../features/context/UIContext.js';
+
 import type { Hook } from '@ollm/ollm-cli-core/hooks/types.js';
 
 export interface EditHookDialogProps {

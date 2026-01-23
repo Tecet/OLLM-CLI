@@ -1,6 +1,7 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
-import { join } from 'path';
 import { homedir } from 'os';
+import { join } from 'path';
+
 import { keybindsData } from '../config/keybinds.js';
 
 export class KeybindsService {

@@ -18,6 +18,7 @@
  */
 
 import { useInput } from 'ink';
+
 import { useFocusManager } from '../../features/context/FocusContext.js';
 
 export interface TabNavigationOptions {

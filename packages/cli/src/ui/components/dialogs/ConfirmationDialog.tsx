@@ -17,9 +17,10 @@
 
 import React, { useState, useCallback } from 'react';
 import { Box, Text } from 'ink';
+
 import { Dialog } from './Dialog.js';
-import { ButtonGroup } from '../forms/Button.js';
 import { useUI } from '../../../features/context/UIContext.js';
+import { ButtonGroup } from '../forms/Button.js';
 
 export type ConfirmationLevel = 'info' | 'warning' | 'danger';
 

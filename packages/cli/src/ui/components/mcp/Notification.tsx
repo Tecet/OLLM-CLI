@@ -18,7 +18,9 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { Box, Text } from 'ink';
+
 import { useUI } from '../../../features/context/UIContext.js';
+
 import type { Theme } from '../../../config/types.js';
 
 export type NotificationType = 'success' | 'error' | 'warning' | 'info';

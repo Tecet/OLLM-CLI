@@ -11,9 +11,10 @@
  * - /context stats - Detailed statistics
  */
 
-import type { Command, CommandResult } from './types.js';
-import { getGlobalContextManager } from '../features/context/ContextManagerContext.js';
 import { SettingsService } from '../config/settingsService.js';
+import { getGlobalContextManager } from '../features/context/ContextManagerContext.js';
+
+import type { Command, CommandResult } from './types.js';
 
 /**
  * Helper to check if context manager is available

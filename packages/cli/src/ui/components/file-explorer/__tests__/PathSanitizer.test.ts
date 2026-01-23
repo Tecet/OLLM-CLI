@@ -4,9 +4,11 @@
  * Tests for path normalization and sanitization
  */
 
-import { describe, it, expect } from 'vitest';
-import { PathSanitizer } from '../PathSanitizer.js';
 import { sep } from 'path';
+
+import { describe, it, expect } from 'vitest';
+
+import { PathSanitizer } from '../PathSanitizer.js';
 
 describe('PathSanitizer', () => {
   const sanitizer = new PathSanitizer();

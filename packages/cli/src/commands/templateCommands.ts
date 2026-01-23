@@ -7,8 +7,9 @@
  * - /template create <name> - Create new template
  */
 
-import type { Command, CommandResult } from './types.js';
 import { TemplateService } from '@ollm/core';
+
+import type { Command, CommandResult } from './types.js';
 
 /**
  * /template list - Show available templates

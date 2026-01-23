@@ -6,6 +6,7 @@
  */
 
 import { EventEmitter } from 'events';
+
 import type { ModeType } from './ContextAnalyzer.js';
 import type { PromptModeManager } from './PromptModeManager.js';
 

@@ -1,6 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useContextManager } from './ContextManagerContext.js';
+
 import { ModeType, Role, MessagePart, MODE_METADATA } from '@ollm/ollm-cli-core';
+
+import { useContextManager } from './ContextManagerContext.js';
+import { useHooks } from '../../ui/contexts/HooksContext.js';
+import { useMCP } from '../../ui/contexts/MCPContext.js';
+import { useTools } from '../../ui/contexts/ToolsContext.js';
 
 interface ActiveContextState {
   activeSkills: string[];
@@ -35,10 +40,6 @@ interface DataEvent {
   hooks?: string[];
   servers?: string[];
 }
-
-import { useMCP } from '../../ui/contexts/MCPContext.js';
-import { useTools } from '../../ui/contexts/ToolsContext.js';
-import { useHooks } from '../../ui/contexts/HooksContext.js';
 
     // ModeChangedEvent interface removed as it was unused and replaced by ModeTransitionPayload locally
 

@@ -1,8 +1,10 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
-import { join } from 'path';
 import { homedir, tmpdir } from 'os';
-import profilesData from '../../config/LLM_profiles.json' with { type: 'json' };
+import { join } from 'path';
+
 import { defaultContextBehavior } from '../../config/defaults.js';
+import profilesData from '../../config/LLM_profiles.json' with { type: 'json' };
+
 import type { LLMProfile, ContextSettings, ContextBehaviorProfile, ContextProfile, UserModelEntry, ProfilesData } from '../../config/types.js';
 
 const profiles = profilesData as ProfilesData;

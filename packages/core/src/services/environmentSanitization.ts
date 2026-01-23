@@ -7,8 +7,10 @@
 
 // @ts-expect-error - picomatch doesn't have type definitions
 import picomatch from 'picomatch';
-import type { SanitizationConfig } from './types.js';
+
 import { sanitizeErrorMessage } from './errorSanitization.js';
+
+import type { SanitizationConfig } from './types.js';
 
 /**
  * Default environment variables that are always allowed
