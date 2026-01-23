@@ -63,12 +63,13 @@ interface ServerDetailsContentProps {
   onToggle: () => Promise<void>;
   onDelete: () => Promise<void>;
   onRefreshServers: () => Promise<void>;
+  initialView?: ServerDetailView;
 }
 
-function ServerDetailsContent({ server, activeColumn, onToggle, onDelete, onRefreshServers }: ServerDetailsContentProps) {
+function ServerDetailsContent({ server, activeColumn, onToggle, onDelete, onRefreshServers, initialView = 'details' }: ServerDetailsContentProps) {
   const { state: uiState } = useUI();
   const { setToolAutoApprove } = useMCP();
-  const [view, setView] = useState<ServerDetailView>('details');
+  const [view, setView] = useState<ServerDetailView>(initialView);
   const [navItem, setNavItem] = useState<ServerDetailNavItem>('exit');
   const [toolsNavItem, setToolsNavItem] = useState<ToolsNavItem>('exit');
   const [selectedToolIndex, setSelectedToolIndex] = useState(0);
@@ -1171,6 +1172,9 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
   // Track if we're in a detail view (Level 3) to prevent ESC from bubbling
   const [isInDetailView, setIsInDetailView] = useState(false);
   
+  // Track initial view for server details (details or tools)
+  const [serverDetailInitialView, setServerDetailInitialView] = useState<ServerDetailView>('details');
+  
   // Callback for child components to notify when entering/exiting detail views
   const handleDetailViewChange = useCallback((isInDetail: boolean) => {
     setIsInDetailView(isInDetail);
@@ -1238,6 +1242,11 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
     }
     return null;
   }, [menuItems, selectedIndex]);
+  
+  // Reset server detail view when selection changes
+  useEffect(() => {
+    setServerDetailInitialView('details');
+  }, [selectedItem]);
   
   // Navigation handlers
   const handleNavigateUp = useCallback(() => {
@@ -1482,6 +1491,12 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
       // Uninstall server
       if (selectedItem?.type === 'server' && selectedItem.server) {
         setDialogState({ type: 'uninstall', serverName: selectedItem.server.name });
+      }
+    } else if (input === 't' || input === 'T') {
+      // Open tools view for selected server
+      if (selectedItem?.type === 'server' && selectedItem.server) {
+        setServerDetailInitialView('tools');
+        setActiveColumn('right');
       }
     } else if (input === 'l' || input === 'L') {
       // View logs
@@ -1803,6 +1818,7 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
             <ServerDetailsContent
               server={selectedItem.server}
               activeColumn={activeColumn}
+              initialView={serverDetailInitialView}
               onToggle={async () => {
                 // Toggle server enabled/disabled in settings
                 try {
