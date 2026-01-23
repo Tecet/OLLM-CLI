@@ -110,6 +110,11 @@ function categorizeTool(tool: DeclarativeTool<any, any>): ToolCategory {
   const name = String(tool.name).toLowerCase();
   const desc = String(tool.schema?.description || '').toLowerCase();
   
+  // Web tools (check first to avoid miscategorization)
+  if (name.includes('web') || name.includes('fetch') || name.includes('http') || name.includes('url') || name.includes('search') && (name.includes('web') || desc.includes('web') || desc.includes('internet'))) {
+    return 'web';
+  }
+  
   // File operations
   if (name.includes('read') || name.includes('write') || name.includes('edit')) {
     if (name.includes('file') || desc.includes('file')) {
@@ -118,7 +123,7 @@ function categorizeTool(tool: DeclarativeTool<any, any>): ToolCategory {
   }
   
   // File discovery
-  if (name.includes('glob') || name.includes('grep') || name.includes('ls') || name.includes('search')) {
+  if (name.includes('glob') || name.includes('grep') || name.includes('ls')) {
     return 'file-discovery';
   }
   
@@ -127,19 +132,14 @@ function categorizeTool(tool: DeclarativeTool<any, any>): ToolCategory {
     return 'shell';
   }
   
-  // Web
-  if (name.includes('web') || name.includes('fetch') || name.includes('http') || name.includes('url')) {
-    return 'web';
-  }
-  
   // Memory
   if (name.includes('memory') || name.includes('remember') || name.includes('recall')) {
     return 'memory';
   }
   
-  // Context
-  if (name.includes('context') || name.includes('swap') || name.includes('snapshot')) {
-    return 'context';
+  // Context (goals, checkpoints, reasoning, decisions, todos)
+  if (name.includes('goal') || name.includes('checkpoint') || name.includes('reasoning') || name.includes('decision') || name.includes('todo') || name.includes('swap')) {
+    return 'other';
   }
   
   // MCP tools (from Model Context Protocol)
