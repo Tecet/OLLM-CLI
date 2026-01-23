@@ -293,6 +293,7 @@ export class MCPHealthMonitor {
       serverName,
       healthy: status.status === 'connected',
       status: status.status,
+      phase: state.phase,
       error: status.error,
       timestamp: state.lastCheckTime,
     };
@@ -415,21 +416,78 @@ export class MCPHealthMonitor {
     // Update last check time
     state.lastCheckTime = now;
 
-    // Emit health check event
+    // Update connection phase based on status
+    const wasHealthy = state.lastStatus === 'connected';
+    const isHealthy = status.status === 'connected';
+    
+    // Phase transitions
+    if (status.status === 'starting') {
+      // Server is starting up
+      this.updatePhase(serverName, 'starting');
+      state.healthCheckAttempts = 0;
+    } else if (status.status === 'disconnected') {
+      // Server disconnected
+      if (state.phase === 'starting' || state.phase === 'connected' || state.phase === 'health-check') {
+        // Was running, now disconnected - enter connecting phase
+        this.updatePhase(serverName, 'connecting');
+        state.healthCheckAttempts = 0;
+      } else if (state.phase === 'stopped') {
+        // Stay stopped
+      }
+    } else if (status.status === 'connected') {
+      // Server is connected
+      if (state.phase === 'starting' || state.phase === 'connecting') {
+        // First connection - enter health check phase
+        this.updatePhase(serverName, 'health-check');
+        state.healthCheckAttempts = 1;
+      } else if (state.phase === 'health-check') {
+        // In health check phase - increment attempts
+        state.healthCheckAttempts++;
+        
+        // After 3 successful checks, mark as fully connected
+        if (state.healthCheckAttempts >= 3) {
+          this.updatePhase(serverName, 'connected');
+          state.healthCheckAttempts = 0;
+          // Reset failure counters on successful connection
+          state.consecutiveFailures = 0;
+        }
+      } else if (state.phase === 'unhealthy' && isHealthy) {
+        // Recovering from unhealthy - go through health check again
+        this.updatePhase(serverName, 'health-check');
+        state.healthCheckAttempts = 1;
+      } else if (state.phase === 'error') {
+        // Recovering from error - go through health check
+        this.updatePhase(serverName, 'health-check');
+        state.healthCheckAttempts = 1;
+      }
+    } else if (status.status === 'error') {
+      // Server error
+      this.updatePhase(serverName, 'error');
+      state.healthCheckAttempts = 0;
+    }
+
+    // Emit health check event with phase
     this.emitEvent({
       type: 'health-check',
       serverName,
       timestamp: now,
-      data: { status: status.status },
+      data: { status: status.status, phase: state.phase },
     });
 
     // Check if status changed
-    const wasHealthy = state.lastStatus === 'connected';
-    const isHealthy = status.status === 'connected';
-
     if (!isHealthy) {
       // Server is unhealthy
       state.consecutiveFailures++;
+
+      // Only mark as unhealthy after 3 consecutive failures
+      // Don't mark as unhealthy during initial connection phases
+      if (state.consecutiveFailures >= 3 && 
+          state.phase !== 'starting' && 
+          state.phase !== 'connecting' &&
+          state.phase !== 'health-check' &&
+          state.phase !== 'error') {
+        this.updatePhase(serverName, 'unhealthy');
+      }
 
       if (wasHealthy) {
         this.emitEvent({

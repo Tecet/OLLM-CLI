@@ -70,6 +70,8 @@ export interface ExtendedMCPServerStatus extends MCPServerStatus {
   config: ExtendedMCPServerConfig;
   /** Health status */
   health: 'healthy' | 'degraded' | 'unhealthy';
+  /** Connection phase */
+  phase?: 'stopped' | 'starting' | 'connecting' | 'health-check' | 'connected' | 'unhealthy' | 'error';
   /** Tools provided by the server */
   toolsList: MCPTool[];
   /** OAuth connection status */
@@ -1099,6 +1101,7 @@ export function MCPProvider({
             ...server,
             health: health.healthy ? 'healthy' : 'unhealthy',
             status: health.status,
+            phase: health.phase,
             error: health.error,
           });
         }

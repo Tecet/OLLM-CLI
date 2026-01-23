@@ -1067,16 +1067,6 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
     setIsInDetailView(isInDetail);
   }, []);
   
-  // Track servers that are reconnecting (show "Reconnecting..." instead of "Disconnected")
-  // Show reconnecting for servers with error status until they connect
-  const reconnectingServers = useMemo(() => {
-    return new Set(
-      Array.from(state.servers.values())
-        .filter(s => s.status === 'error' && !s.config.disabled)
-        .map(s => s.name)
-    );
-  }, [state.servers]);
-  
   // Dialog state
   const [dialogState, setDialogState] = useState<DialogState>({ type: null });
   
@@ -1547,18 +1537,59 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
                 
                 // Render Server item
                 if (item.type === 'server' && item.server) {
-                  const healthColor = 
-                    item.server.health === 'healthy' ? 'green' :
-                    item.server.health === 'degraded' ? 'yellow' : 'red';
-                  
-                  // Determine status text and color
+                  const phase = item.server.phase || 'stopped';
                   const isDisabled = item.server.config.disabled;
-                  const isReconnecting = reconnectingServers.has(item.server.name);
-                  const statusColor = isDisabled ? 'gray' :
-                                     isReconnecting ? 'cyan' :
-                                     item.server.status === 'connected' ? 'green' : 
-                                     item.server.status === 'error' ? 'red' : 
-                                     'yellow';
+                  
+                  // Determine icon color based on phase
+                  let iconColor = 'gray';
+                  if (!isDisabled) {
+                    if (phase === 'connected') {
+                      iconColor = 'green';
+                    } else if (phase === 'starting' || phase === 'connecting' || phase === 'health-check') {
+                      iconColor = 'yellow';
+                    } else if (phase === 'unhealthy' || phase === 'error') {
+                      iconColor = 'red';
+                    }
+                  }
+                  
+                  // Determine status text and color based on phase
+                  let statusText = '○ Stopped';
+                  let statusColor = 'gray';
+                  
+                  if (isDisabled) {
+                    statusText = '○ Disabled';
+                    statusColor = 'gray';
+                  } else {
+                    switch (phase) {
+                      case 'starting':
+                        statusText = '⟳ Starting...';
+                        statusColor = 'yellow';
+                        break;
+                      case 'connecting':
+                        statusText = '⟳ Connecting...';
+                        statusColor = 'yellow';
+                        break;
+                      case 'health-check':
+                        statusText = '⟳ Checking health...';
+                        statusColor = 'yellow';
+                        break;
+                      case 'connected':
+                        statusText = '✓ Connected';
+                        statusColor = 'green';
+                        break;
+                      case 'unhealthy':
+                        statusText = '✗ Unhealthy';
+                        statusColor = 'red';
+                        break;
+                      case 'error':
+                        statusText = '✗ Connection failed';
+                        statusColor = 'red';
+                        break;
+                      default:
+                        statusText = '○ Stopped';
+                        statusColor = 'gray';
+                    }
+                  }
                   
                   return (
                     <Box key={item.server.name} flexDirection="column">
@@ -1567,19 +1598,14 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
                         color={isSelected ? uiState.theme.text.accent : (isDisabled ? 'gray' : uiState.theme.text.primary)}
                         dimColor={isDisabled}
                       >
-                        <Text color={isDisabled ? 'gray' : healthColor}>{item.icon}</Text> {item.label}
+                        <Text color={iconColor}>{item.icon}</Text> {item.label}
                       </Text>
-                      {isSelected && (
-                        <Box paddingLeft={2}>
-                          <Text dimColor={isDisabled} color={statusColor}>
-                            {isDisabled ? '○ Disabled' : 
-                             isReconnecting ? '⟳ Reconnecting...' :
-                             item.server.status === 'connected' ? '✓ Connected' : 
-                             item.server.status === 'error' ? '✗ Disconnected' : 
-                             '○ Stopped'}
-                          </Text>
-                        </Box>
-                      )}
+                      {/* Always show status line (not just when selected) */}
+                      <Box paddingLeft={2}>
+                        <Text dimColor={isDisabled} color={statusColor}>
+                          {statusText}
+                        </Text>
+                      </Box>
                     </Box>
                   );
                 }
