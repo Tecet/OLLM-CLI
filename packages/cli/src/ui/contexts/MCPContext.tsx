@@ -228,6 +228,9 @@ export function MCPProvider({
   // System messages state
   const [systemMessages, setSystemMessages] = useState<SystemMessage[]>([]);
   const systemMessageListeners = React.useRef<Set<(messages: SystemMessage[]) => void>>(new Set());
+  
+  // Operation queue to prevent race conditions on rapid enable/disable
+  const operationQueues = React.useRef<Map<string, Promise<void>>>(new Map());
 
   // Try to get services from ServiceContext. Tests may not provide a ServiceProvider,
   // so fall back to a minimal no-op tool registry to avoid throwing in test environments.
@@ -347,6 +350,38 @@ export function MCPProvider({
     return () => {
       systemMessageListeners.current.delete(callback);
     };
+  }, []);
+  
+  /**
+   * Enqueue an operation for a server to prevent race conditions
+   * Operations for the same server are serialized
+   */
+  const enqueueServerOperation = useCallback(async <T,>(
+    serverName: string,
+    operation: () => Promise<T>
+  ): Promise<T> => {
+    // Get existing queue for this server
+    const existingQueue = operationQueues.current.get(serverName) || Promise.resolve();
+    
+    // Create new promise that waits for existing queue then runs operation
+    const newQueue = existingQueue
+      .then(() => operation())
+      .catch((error) => {
+        // Re-throw error but don't break the queue
+        throw error;
+      })
+      .finally(() => {
+        // Clean up if this is still the current queue
+        if (operationQueues.current.get(serverName) === newQueue) {
+          operationQueues.current.delete(serverName);
+        }
+      });
+    
+    // Store the new queue
+    operationQueues.current.set(serverName, newQueue as Promise<void>);
+    
+    // Wait for and return the result
+    return newQueue as Promise<T>;
   }, []);
 
   /*
@@ -562,118 +597,124 @@ export function MCPProvider({
    * Toggle server enabled/disabled state
    */
   const toggleServer = useCallback(async (serverName: string) => {
-    const server = state.servers.get(serverName);
-    if (!server) {
-      const errorMsg = `Server '${serverName}' not found`;
-      emitSystemMessage('error', errorMsg);
-      throw new Error(errorMsg);
-    }
-
-    const isCurrentlyDisabled = server.config.disabled || false;
-    const newConfig = {
-      ...server.config,
-      disabled: !isCurrentlyDisabled,
-    };
-
-    // Optimistic UI update - show status change immediately for better UX
-    setState(prev => {
-      const servers = new Map(prev.servers);
-      const serverState = servers.get(serverName);
-      if (serverState) {
-        servers.set(serverName, {
-          ...serverState,
-          status: isCurrentlyDisabled ? 'starting' : 'disconnected',
-          config: newConfig,
-        });
+    // Enqueue operation to prevent race conditions
+    return enqueueServerOperation(serverName, async () => {
+      const server = state.servers.get(serverName);
+      if (!server) {
+        const errorMsg = `Server '${serverName}' not found`;
+        emitSystemMessage('error', errorMsg);
+        throw new Error(errorMsg);
       }
-      return { ...prev, servers };
-    });
 
-    // Update configuration first
-    await mcpConfigService.updateServerConfig(serverName, newConfig as unknown as MCPServerConfig);
+      const isCurrentlyDisabled = server.config.disabled || false;
+      const newConfig = {
+        ...server.config,
+        disabled: !isCurrentlyDisabled,
+      };
 
-    // Start or stop the server with retry logic
-    try {
-      await retryWithBackoff(async () => {
-        if (newConfig.disabled) {
-          // Explicitly unregister tools before stopping server
-          if (server.toolsList && server.toolsList.length > 0) {
+      // Optimistic UI update - show status change immediately for better UX
+      setState(prev => {
+        const servers = new Map(prev.servers);
+        const serverState = servers.get(serverName);
+        if (serverState) {
+          servers.set(serverName, {
+            ...serverState,
+            status: isCurrentlyDisabled ? 'starting' : 'disconnected',
+            config: newConfig,
+          });
+        }
+        return { ...prev, servers };
+      });
+
+      // Update configuration first
+      await mcpConfigService.updateServerConfig(serverName, newConfig as unknown as MCPServerConfig);
+
+      // Start or stop the server with retry logic
+      try {
+        await retryWithBackoff(async () => {
+          if (newConfig.disabled) {
+            // Explicitly unregister tools before stopping server
+            if (server.toolsList && server.toolsList.length > 0) {
+              unregisterServerTools(serverName, server.toolsList);
+              lastRegisteredTools.current.delete(serverName);
+            }
+            await mcpClient.stopServer(serverName);
+          } else {
+            await mcpClient.startServer(serverName, newConfig);
+          }
+        }, { maxAttempts: 2 });
+        
+        // Emit success message
+        emitSystemMessage(
+          'success',
+          `${serverName} ${newConfig.disabled ? 'disabled' : 'enabled'} successfully`
+        );
+      } catch (_startError) {
+        // If starting fails, revert the config change
+        await mcpConfigService.updateServerConfig(serverName, {
+          ...newConfig,
+          disabled: true,
+        } as unknown as MCPServerConfig);
+        
+        // Ensure tools are unregistered if start failed
+        if (server.toolsList) {
             unregisterServerTools(serverName, server.toolsList);
             lastRegisteredTools.current.delete(serverName);
-          }
-          await mcpClient.stopServer(serverName);
-        } else {
-          await mcpClient.startServer(serverName, newConfig);
         }
-      }, { maxAttempts: 2 });
-      
-      // Emit success message
-      emitSystemMessage(
-        'success',
-        `${serverName} ${newConfig.disabled ? 'disabled' : 'enabled'} successfully`
-      );
-    } catch (_startError) {
-      // If starting fails, revert the config change
-      await mcpConfigService.updateServerConfig(serverName, {
-        ...newConfig,
-        disabled: true,
-      } as unknown as MCPServerConfig);
-      
-      // Ensure tools are unregistered if start failed
-      if (server.toolsList) {
-          unregisterServerTools(serverName, server.toolsList);
-          lastRegisteredTools.current.delete(serverName);
+
+        // Revert optimistic update on error
+        await loadServers();
+
+        // Emit error message with more context
+        const errorMsg = server.config.oauth?.enabled
+          ? `OAuth authentication failed for ${serverName}. Please check OAuth configuration.`
+          : `Failed to ${newConfig.disabled ? 'disable' : 'enable'} ${serverName}`;
+        emitSystemMessage('error', errorMsg);
+        throw new Error(errorMsg);
       }
 
-      // Revert optimistic update on error
+      // Reload servers to get actual state
       await loadServers();
-
-      // Emit error message with more context
-      const errorMsg = server.config.oauth?.enabled
-        ? `OAuth authentication failed for ${serverName}. Please check OAuth configuration.`
-        : `Failed to ${newConfig.disabled ? 'disable' : 'enable'} ${serverName}`;
-      emitSystemMessage('error', errorMsg);
-      throw new Error(errorMsg);
-    }
-
-    // Reload servers to get actual state
-    await loadServers();
-  }, [state.servers, mcpClient, loadServers, unregisterServerTools, emitSystemMessage, lastRegisteredTools]);
+    });
+  }, [state.servers, mcpClient, loadServers, unregisterServerTools, emitSystemMessage, lastRegisteredTools, enqueueServerOperation]);
 
   /**
    * Restart a server
    */
   const restartServer = useCallback(async (serverName: string) => {
-    try {
-      // Mark operation as in progress
-      setState(prev => ({
-        ...prev,
-        operationsInProgress: new Map(prev.operationsInProgress).set(serverName, 'restart'),
-      }));
+    // Enqueue operation to prevent race conditions
+    return enqueueServerOperation(serverName, async () => {
+      try {
+        // Mark operation as in progress
+        setState(prev => ({
+          ...prev,
+          operationsInProgress: new Map(prev.operationsInProgress).set(serverName, 'restart'),
+        }));
 
-      // Restart with retry logic
-      await retryWithBackoff(async () => {
-        await mcpClient.restartServer(serverName);
-      }, { maxAttempts: 3 });
+        // Restart with retry logic
+        await retryWithBackoff(async () => {
+          await mcpClient.restartServer(serverName);
+        }, { maxAttempts: 3 });
 
-      await loadServers();
-      
-      // Emit success message
-      emitSystemMessage('success', `${serverName} restarted successfully`);
-    } catch (error) {
-      const parsedError = parseError(error);
-      const errorMsg = `Failed to restart ${serverName}: ${formatErrorMessage(parsedError)}`;
-      emitSystemMessage('error', errorMsg);
-      throw error;
-    } finally {
-      // Clear operation
-      setState(prev => {
-        const ops = new Map(prev.operationsInProgress);
-        ops.delete(serverName);
-        return { ...prev, operationsInProgress: ops };
-      });
-    }
-  }, [mcpClient, loadServers, emitSystemMessage]);
+        await loadServers();
+        
+        // Emit success message
+        emitSystemMessage('success', `${serverName} restarted successfully`);
+      } catch (error) {
+        const parsedError = parseError(error);
+        const errorMsg = `Failed to restart ${serverName}: ${formatErrorMessage(parsedError)}`;
+        emitSystemMessage('error', errorMsg);
+        throw error;
+      } finally {
+        // Clear operation
+        setState(prev => {
+          const ops = new Map(prev.operationsInProgress);
+          ops.delete(serverName);
+          return { ...prev, operationsInProgress: ops };
+        });
+      }
+    });
+  }, [mcpClient, loadServers, emitSystemMessage, enqueueServerOperation]);
 
   /**
    * Install a server from marketplace
@@ -773,27 +814,30 @@ export function MCPProvider({
    * Configure a server
    */
   const configureServer = useCallback(async (serverName: string, config: MCPServerConfig) => {
-    try {
-      // Update configuration
-      await mcpConfigService.updateServerConfig(serverName, config);
-      
-      // Restart the server with new config (with retry)
-      await retryWithBackoff(async () => {
-        await mcpClient.restartServer(serverName);
-      }, { maxAttempts: 2 });
-      
-      // Reload servers
-      await loadServers();
-      
-      // Emit success message
-      emitSystemMessage('success', `${serverName} configuration updated successfully`);
-    } catch (error) {
-      const parsedError = parseError(error);
-      const errorMsg = `Failed to configure ${serverName}: ${formatErrorMessage(parsedError)}`;
-      emitSystemMessage('error', errorMsg);
-      throw error;
-    }
-  }, [mcpClient, loadServers, emitSystemMessage]);
+    // Enqueue operation to prevent race conditions
+    return enqueueServerOperation(serverName, async () => {
+      try {
+        // Update configuration
+        await mcpConfigService.updateServerConfig(serverName, config);
+        
+        // Restart the server with new config (with retry)
+        await retryWithBackoff(async () => {
+          await mcpClient.restartServer(serverName);
+        }, { maxAttempts: 2 });
+        
+        // Reload servers
+        await loadServers();
+        
+        // Emit success message
+        emitSystemMessage('success', `${serverName} configuration updated successfully`);
+      } catch (error) {
+        const parsedError = parseError(error);
+        const errorMsg = `Failed to configure ${serverName}: ${formatErrorMessage(parsedError)}`;
+        emitSystemMessage('error', errorMsg);
+        throw error;
+      }
+    });
+  }, [mcpClient, loadServers, emitSystemMessage, enqueueServerOperation]);
 
   /**
    * Configure OAuth for a server
