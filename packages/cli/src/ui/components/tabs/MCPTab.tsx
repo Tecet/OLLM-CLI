@@ -1886,15 +1886,20 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
 
           <Box flexDirection="column" flexGrow={1} overflow="hidden">
           {(!selectedItem || selectedItem?.type === 'exit') && (
-            <Box flexDirection="column" paddingX={2} paddingY={1}>
+            <Box flexDirection="column" paddingX={2} paddingY={1} alignItems="center" width="100%">
+              <Text></Text>
+              <Text></Text>
+              <Text></Text>
+              <Text></Text>
+              
               <Text bold color={uiState.theme.text.accent}>═══════════════════════════════════════════════════════════════════</Text>
               <Text></Text>
-              <Text bold color={uiState.theme.text.accent}>                    MCP Registry - Marketplace</Text>
+              <Text bold color={uiState.theme.text.accent}>MCP Registry - Marketplace</Text>
               <Text></Text>
               <Text>The MCP registry provides MCP clients with a list of MCP servers.</Text>
               <Text></Text>
               <Text></Text>
-              <Text>OLLM use Official Open Source MCP Registry</Text>
+              <Text bold color={uiState.theme.text.accent}>OLLM CLI use Official Open Source MCP Registry</Text>
               <Text></Text>
               <Text>MCP Registry: https://registry.modelcontextprotocol.io/</Text>
               <Text>MCP Registry Documentation: https://registry.modelcontextprotocol.io/docs</Text>
@@ -1918,6 +1923,9 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
               <Text></Text>
               <Text color={uiState.theme.text.secondary} dimColor>Press Enter to browse marketplace or ↑↓ to navigate</Text>
               <Text></Text>
+              <Text bold color={uiState.theme.text.accent}>═══════════════════════════════════════════════════════════════════</Text>
+            </Box>
+          )}
               <Text bold color={uiState.theme.text.accent}>═══════════════════════════════════════════════════════════════════</Text>
             </Box>
           )}
