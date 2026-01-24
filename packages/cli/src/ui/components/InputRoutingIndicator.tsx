@@ -7,9 +7,10 @@ import type { InputDestination } from '../contexts/InputRoutingContext.js';
 interface InputRoutingIndicatorProps {
   activeDestination: InputDestination;
   theme: Theme;
+  compact?: boolean;
 }
 
-export function InputRoutingIndicator({ activeDestination, theme }: InputRoutingIndicatorProps) {
+export function InputRoutingIndicator({ activeDestination, theme, compact = false }: InputRoutingIndicatorProps) {
   const destinations: Array<{ id: InputDestination; label: string }> = [
     { id: 'llm', label: 'LLM' },
     { id: 'editor', label: 'E' },
@@ -18,7 +19,7 @@ export function InputRoutingIndicator({ activeDestination, theme }: InputRouting
   ];
 
   return (
-    <Box flexDirection="row" gap={1} paddingX={1}>
+    <Box flexDirection="row" gap={1} paddingX={compact ? 0 : 1}>
       <Text color={theme.text.secondary}>[</Text>
       {destinations.map((dest, index) => (
         <React.Fragment key={dest.id}>
@@ -27,7 +28,6 @@ export function InputRoutingIndicator({ activeDestination, theme }: InputRouting
             color={activeDestination === dest.id ? theme.text.accent : theme.text.secondary}
             bold={activeDestination === dest.id}
           >
-            {activeDestination === dest.id ? '●' : ''}
             {dest.label}
           </Text>
         </React.Fragment>

@@ -56,6 +56,11 @@ export function SidePanel({ visible, connection, model, gpu, theme, row1Height, 
   useInput((input, key) => {
     if (!contextFocused) return;
 
+    if (key.ctrl && (key.leftArrow || key.rightArrow)) {
+      switchRightPanel();
+      return;
+    }
+
     if (isKey(input, key, activeKeybinds.layout.switchWindowLeft) || isKey(input, key, activeKeybinds.layout.switchWindowRight)) {
       switchRightPanel();
     }

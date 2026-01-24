@@ -61,7 +61,7 @@ function ChatTabComponent(props: ChatTabProps) {
   const { state: uiState } = useUI();
   const { stdout } = useStdout();
   const { isFocused, exitToNavBar } = useFocusManager();
-  const { activeWindow } = useWindow();
+  const { activeWindow, switchWindow } = useWindow();
   
   const hasFocus = isFocused('chat-history');
 
@@ -143,6 +143,11 @@ function ChatTabComponent(props: ChatTabProps) {
   useInput((input, key) => {
     if (!hasFocus) return;
 
+    if (key.ctrl && (key.leftArrow || key.rightArrow)) {
+      switchWindow();
+      return;
+    }
+
     if (key.upArrow) {
       setSelectedLineIndex((prev: number) => Math.max(0, prev - 1));
       return;
@@ -151,7 +156,7 @@ function ChatTabComponent(props: ChatTabProps) {
       setSelectedLineIndex((prev: number) => Math.min(Math.max(0, lines.length - 1), prev + 1));
       return;
     }
-    if (key.rightArrow || key.leftArrow) {
+    if ((key.rightArrow || key.leftArrow) && !key.ctrl && !key.meta) {
       const { selectedLine: line, selectedMessage: message } = selectedLineData;
       if (!line?.messageId || !message) return;
       const isDiffSummaryLine = line.kind === 'diff-summary';

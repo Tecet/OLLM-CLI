@@ -4,7 +4,7 @@
  * This component subscribes directly to ChatContext and only extracts the state it needs,
  * preventing re-renders from other chat state changes (like messages during streaming).
  */
-import React, { memo, useCallback, useMemo } from 'react';
+import React, { memo, useCallback, useEffect, useMemo } from 'react';
 import { Box, Text, useInput, BoxProps } from 'ink';
 
 import { InputBox } from './InputBox.js';
@@ -17,7 +17,6 @@ import { useWindow } from '../../contexts/WindowContext.js';
 import { useTerminal } from '../../hooks/useTerminal.js';
 import { useTerminal2 } from '../../hooks/useTerminal2.js';
 import { isKey } from '../../utils/keyUtils.js';
-import { InputRoutingIndicator } from '../InputRoutingIndicator.js';
 
 export interface ChatInputAreaProps {
   /** Optional assigned height from layout */
@@ -29,7 +28,7 @@ export interface ChatInputAreaProps {
 export const ChatInputArea = memo(function ChatInputArea({ height, showBorder = true }: ChatInputAreaProps) {
   const { state: chatState, setCurrentInput, sendMessage, cancelGeneration, executeMenuOption, navigateMenu, setInputMode, setMenuState } = useChat();
   const { state: uiState } = useUI();
-  const { isFocused } = useFocusManager();
+  const { isFocused, setFocus } = useFocusManager();
   const { switchWindow } = useWindow();
   const { sendCommand, sendRawInput: sendRawInputT1 } = useTerminal();
   const { sendRawInput: sendRawInputT2 } = useTerminal2();
@@ -41,6 +40,12 @@ export const ChatInputArea = memo(function ChatInputArea({ height, showBorder = 
   
   const { currentInput, streaming, waitingForResponse, messages, statusMessage } = chatState;
   const theme = uiState.theme;
+
+  useEffect(() => {
+    if (isTerminalActive) {
+      setFocus('chat-input');
+    }
+  }, [isTerminalActive, setFocus]);
 
   // Render sticky status line
   const renderStatus = () => {
@@ -108,9 +113,27 @@ export const ChatInputArea = memo(function ChatInputArea({ height, showBorder = 
       if (activeDestination === 'terminal1' || activeDestination === 'terminal2') {
           const sendRaw = activeDestination === 'terminal1' ? sendRawInputT1 : sendRawInputT2;
 
+          if (key.escape) {
+              setActiveDestination('llm');
+              return;
+          }
+          if (isKey(input, key, activeKeybinds.terminal.scrollUp) || isKey(input, key, activeKeybinds.terminal.scrollDown)) {
+              return;
+          }
+          if (isKey(input, key, activeKeybinds.terminal.historyUp)) {
+              sendRaw('\x1b[A');
+              return;
+          }
+          if (isKey(input, key, activeKeybinds.terminal.historyDown)) {
+              sendRaw('\x1b[B');
+              return;
+          }
+          if (key.tab) {
+              return;
+          }
           if (key.return) {
               sendRaw('\r');
-          } else if (key.backspace) {
+          } else if (key.backspace || key.delete || input === '\b' || input === '\x7f' || (key.ctrl && input === 'h')) {
               sendRaw('\x7f');
           } else if (key.ctrl && input === 'c') {
               sendRaw('\x03');
@@ -149,7 +172,7 @@ export const ChatInputArea = memo(function ChatInputArea({ height, showBorder = 
           setInputMode('text');
           setMenuState({ active: false });
       }
-  }, { isActive: hasFocus || chatState.inputMode === 'menu' });
+  }, { isActive: hasFocus || chatState.inputMode === 'menu' || isTerminalActive });
 
   // Border Color Logic
   let borderColor = theme.border.primary;
@@ -195,7 +218,6 @@ export const ChatInputArea = memo(function ChatInputArea({ height, showBorder = 
       borderColor={borderColor}
     >
       {renderStatus()}
-      <InputRoutingIndicator activeDestination={activeDestination} theme={theme} />
       <Box flexGrow={1}>
         {chatState.inputMode === 'text' ? (
           <InputBox

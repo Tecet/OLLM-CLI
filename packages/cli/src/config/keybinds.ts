@@ -96,6 +96,16 @@ export const keybindsData = {
   },
 
   /**
+   * Terminal shortcuts.
+   */
+  "terminal": {
+    "scrollUp": "up",
+    "scrollDown": "down",
+    "historyUp": "ctrl+up",
+    "historyDown": "ctrl+down"
+  },
+
+  /**
    * Global focus management shortcuts.
    */
   "global": {

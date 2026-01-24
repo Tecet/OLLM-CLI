@@ -7,6 +7,7 @@ import { useModel } from '../../../features/context/ModelContext.js';
 import { useUI } from '../../../features/context/UIContext.js';
 import { useInputRouting } from '../../contexts/InputRoutingContext.js';
 import { useWindow } from '../../contexts/WindowContext.js';
+import { InputRoutingIndicator } from '../InputRoutingIndicator.js';
 
 export interface SystemBarProps {
   height: number;
@@ -70,21 +71,30 @@ export function SystemBar({ height, showBorder = true }: SystemBarProps) {
   const effectiveBorderStyle = showBorder && displayStatus !== 'IDLE' ? (theme.border.style as BoxProps['borderStyle']) : undefined;
 
   return (
-    <Box
-      height={height}
-      borderStyle={effectiveBorderStyle}
-      borderColor={hasFocus ? theme.text.secondary : theme.border.primary}
-      paddingX={1}
-      flexDirection="row"
-      alignItems="center"
-      justifyContent="space-between"
-    >
-      <Box>
+    <Box height={height} width="100%" flexDirection="row" alignItems="center" justifyContent="space-between">
+      <Box
+        height={height}
+        flexGrow={1}
+        borderStyle={effectiveBorderStyle}
+        borderColor={hasFocus ? theme.text.secondary : theme.border.primary}
+        paddingX={1}
+        alignItems="center"
+      >
         <Text color={theme.text.accent} bold>OLLM:</Text>
         <Text> </Text>
         <Text color={isTerminalMode ? 'cyan' : theme.text.primary}>
           {displayStatus}
         </Text>
+      </Box>
+      <Box
+        height={height}
+        flexShrink={0}
+        borderStyle={theme.border.style as BoxProps['borderStyle']}
+        borderColor={theme.border.primary}
+        paddingX={1}
+        alignItems="center"
+      >
+        <InputRoutingIndicator activeDestination={activeDestination} theme={theme} compact />
       </Box>
     </Box>
   );

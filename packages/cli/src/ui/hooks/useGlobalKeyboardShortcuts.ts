@@ -30,6 +30,7 @@ import { useChat } from '../../features/context/ChatContext.js';
 import { useFocusManager } from '../../features/context/FocusContext.js';
 import { useKeybinds } from '../../features/context/KeybindsContext.js';
 import { useUI, TabType } from '../../features/context/UIContext.js';
+import { useInputRouting } from '../contexts/InputRoutingContext.js';
 import { isKey } from '../utils/keyUtils.js';
 
 interface UseGlobalKeyboardShortcutsOptions {
@@ -54,6 +55,7 @@ export function useGlobalKeyboardShortcuts(options: UseGlobalKeyboardShortcutsOp
   const { setActiveTab, toggleSidePanel } = useUI();
   const { clearChat, cancelGeneration, state: chatState } = useChat();
   const focusManager = useFocusManager();
+  const { activeDestination, setActiveDestination } = useInputRouting();
 
   const {
     onToggleDebug,
@@ -96,6 +98,25 @@ export function useGlobalKeyboardShortcuts(options: UseGlobalKeyboardShortcutsOp
 
   // Register global keyboard shortcuts
   useInput((input, key) => {
+    const isTerminalInput = activeDestination === 'terminal1' || activeDestination === 'terminal2';
+    if (isTerminalInput) {
+      if (key.escape) {
+        setActiveDestination('llm');
+        focusManager.setFocus('chat-input');
+        focusManager.setMode('browse');
+        return;
+      }
+      if (isKey(input, key, activeKeybinds.global.cycleNext)) {
+        focusManager.cycleFocus('next');
+        return;
+      }
+      if (isKey(input, key, activeKeybinds.global.cyclePrev)) {
+        focusManager.cycleFocus('previous');
+        return;
+      }
+      return;
+    }
+
     // Tab Navigation (Ctrl+1-9)
     if (isKey(input, key, activeKeybinds.tabNavigation.tabChat)) {
       handleTabSwitch('chat');

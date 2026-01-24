@@ -184,7 +184,7 @@ export function WorkspacePanel({ theme, hasFocus }: WorkspacePanelProps) {
           console.error('Failed to read file:', err);
         });
       }
-    } else if (key.rightArrow) {
+    } else if (key.rightArrow && !key.ctrl && !key.meta) {
       // Expand directory on right arrow (only expand, don't collapse)
       const selectedFile = flattenedFiles[selectedIndex];
       if (selectedFile && selectedFile.type === 'directory' && !selectedFile.expanded) {
@@ -201,7 +201,7 @@ export function WorkspacePanel({ theme, hasFocus }: WorkspacePanelProps) {
           });
         }
       }
-    } else if (key.leftArrow) {
+    } else if (key.leftArrow && !key.ctrl && !key.meta) {
       // Collapse directory on left arrow
       const selectedFile = flattenedFiles[selectedIndex];
       if (selectedFile && selectedFile.type === 'directory' && selectedFile.expanded) {

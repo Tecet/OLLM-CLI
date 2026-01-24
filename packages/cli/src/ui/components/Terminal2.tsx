@@ -11,6 +11,9 @@ import { useFocusManager } from '../../features/context/FocusContext.js';
 import { useUI } from '../../features/context/UIContext.js';
 import { useWindow } from '../contexts/WindowContext.js';
 import { useTerminal2 } from '../hooks/useTerminal2.js';
+import { useInputRouting } from '../contexts/InputRoutingContext.js';
+import { useKeybinds } from '../../features/context/KeybindsContext.js';
+import { isKey } from '../utils/keyUtils.js';
 
 import type { AnsiLine, AnsiToken } from '../../utils/terminalSerializer.js';
 
@@ -24,8 +27,11 @@ export function Terminal2({ height }: Terminal2Props) {
   const { state: uiState } = useUI();
   const { isFocused } = useFocusManager();
   const { activeRightPanel } = useWindow();
+  const { activeDestination } = useInputRouting();
+  const { activeKeybinds } = useKeybinds();
 
   const hasFocus = isFocused('context-panel') && activeRightPanel === 'terminal2';
+  const isTerminalInput = activeDestination === 'terminal2';
 
   const width = useMemo(() => {
     if (!stdout) return 40;
@@ -34,30 +40,29 @@ export function Terminal2({ height }: Terminal2Props) {
     return Math.max(10, Math.floor(effectiveColumns * widthFactor));
   }, [stdout, uiState.sidePanelVisible]);
 
-  useEffect(() => {
-    const visibleHeight = Math.max(1, height - 3);
-    resize(width, visibleHeight);
-  }, [width, height, resize]);
+  const chromeRows = 1;
+  const visibleHeight = Math.max(1, height - chromeRows);
 
-  const visibleHeight = Math.max(1, height - 3);
+  useEffect(() => {
+    resize(width, visibleHeight);
+  }, [width, visibleHeight, resize]);
   const [scrollOffset, setScrollOffset] = React.useState(0);
   const allLines = useMemo(() => output, [output]);
   const maxScroll = Math.max(0, allLines.length - visibleHeight);
 
   useInput((input, key) => {
-    const isAltScroll = key.meta && (key.upArrow || key.downArrow);
-    if (!hasFocus && !isAltScroll) return;
+    if (!hasFocus && !isTerminalInput) return;
 
-    if (key.upArrow) {
+    if (isKey(input, key, activeKeybinds.terminal.scrollUp)) {
       setScrollOffset(prev => Math.min(prev + 1, maxScroll));
-    } else if (key.downArrow) {
+    } else if (isKey(input, key, activeKeybinds.terminal.scrollDown)) {
       setScrollOffset(prev => Math.max(prev - 1, 0));
     }
-  }, { isActive: activeRightPanel === 'terminal2' && !hasFocus });
+  }, { isActive: activeRightPanel === 'terminal2' || isTerminalInput });
 
   useEffect(() => {
     setScrollOffset(0);
-  }, [allLines.length]);
+  }, [output]);
 
   const visibleLines = useMemo(() => {
     const start = Math.max(0, allLines.length - visibleHeight - scrollOffset);

@@ -10,6 +10,9 @@ import { Box, Text, useStdout, useInput } from 'ink';
 import { useFocusManager } from '../../features/context/FocusContext.js';
 import { useUI } from '../../features/context/UIContext.js';
 import { useWindow } from '../contexts/WindowContext.js';
+import { useInputRouting } from '../contexts/InputRoutingContext.js';
+import { useKeybinds } from '../../features/context/KeybindsContext.js';
+import { isKey } from '../utils/keyUtils.js';
 import { useTerminal } from '../hooks/useTerminal.js';
 
 import type { AnsiToken, AnsiLine } from '../../utils/terminalSerializer.js';
@@ -32,20 +35,23 @@ export function Terminal({ height }: TerminalProps) {
     return Math.max(10, Math.floor(effectiveColumns * widthFactor));
   }, [stdout, uiState.sidePanelVisible]);
 
+  // Calculate available lines based on height (account for top padding)
+  const chromeRows = 1;
+  const visibleHeight = Math.max(1, height - chromeRows);
+
   // Sync PTY size with UI size
   useEffect(() => {
-    const visibleHeight = Math.max(1, height - 3); // Account for borders and top padding
     resize(width, visibleHeight);
-  }, [width, height, resize]);
-
-  // Calculate available lines based on height
-  const visibleHeight = Math.max(1, height - 3);
+  }, [width, visibleHeight, resize]);
 
   // Scroll State
   const [scrollOffset, setScrollOffset] = React.useState(0);
   const { isFocused } = useFocusManager();
   const { activeWindow } = useWindow();
+  const { activeDestination } = useInputRouting();
+  const { activeKeybinds } = useKeybinds();
   const hasFocus = isFocused('chat-input') && activeWindow === 'terminal';
+  const isTerminalInput = activeDestination === 'terminal1';
 
   // Output is already structured as AnsiLine[] (array of token arrays)
   const allLines = useMemo(() => {
@@ -57,22 +63,19 @@ export function Terminal({ height }: TerminalProps) {
 
   // Handle keys for scrolling - only when terminal is visible and NOT when typing in input
   useInput((input, key) => {
-    // Only scroll if terminal is active and focused, OR if using global Alt+Scroll
-    const isAltScroll = key.meta && (key.upArrow || key.downArrow);
-    
-    if (!hasFocus && !isAltScroll) return;
+    if (!hasFocus && !isTerminalInput) return;
 
-    if (key.upArrow) {
+    if (isKey(input, key, activeKeybinds.terminal.scrollUp)) {
       setScrollOffset(prev => Math.min(prev + 1, maxScroll));
-    } else if (key.downArrow) {
+    } else if (isKey(input, key, activeKeybinds.terminal.scrollDown)) {
       setScrollOffset(prev => Math.max(prev - 1, 0));
     }
-  }, { isActive: activeWindow === 'terminal' && !hasFocus }); // Only active when terminal window is shown but input doesn't have focus
+  }, { isActive: activeWindow === 'terminal' || isTerminalInput }); // Allow scroll when terminal is visible or terminal input is active
 
   // Reset scroll when new output arrives if we were at the bottom (0)
   useEffect(() => {
-      setScrollOffset(0);
-  }, [allLines.length]);
+    setScrollOffset(0);
+  }, [output]);
 
   const visibleLines = useMemo(() => {
       const start = Math.max(0, allLines.length - visibleHeight - scrollOffset);

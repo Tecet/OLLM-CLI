@@ -31,7 +31,11 @@ export function Terminal2Provider({ children }: { children: React.ReactNode }) {
   const xtermRef = useRef<Terminal | null>(null);
 
   useEffect(() => {
-    const shell = os.platform() === 'win32' ? 'powershell.exe' : 'bash';
+    const isWindows = os.platform() === 'win32';
+    const shell = isWindows ? 'powershell.exe' : 'bash';
+    const shellArgs = isWindows
+      ? ['-NoProfile', '-NoLogo', '-NoExit', '-Command', 'Set-PSReadLineOption -PredictionSource None']
+      : [];
 
     try {
       const xterm = new Terminal({
@@ -42,7 +46,7 @@ export function Terminal2Provider({ children }: { children: React.ReactNode }) {
       });
       xtermRef.current = xterm;
 
-      const ptyProcess = pty.spawn(shell, [], {
+      const ptyProcess = pty.spawn(shell, shellArgs, {
         name: 'xterm-color',
         cols: 80,
         rows: 30,
@@ -55,25 +59,29 @@ export function Terminal2Provider({ children }: { children: React.ReactNode }) {
 
       const dataDisposable = ptyProcess.onData((data) => {
         try {
-          xterm.write(data);
-          const simpleOutput: AnsiOutput = [];
-          for (let i = 0; i < xterm.rows; i++) {
-            const line = xterm.buffer.active.getLine(i);
-            if (line) {
-              const text = line.translateToString(false);
-              simpleOutput.push([{
-                text: text || ' ',
-                bold: false,
-                italic: false,
-                underline: false,
-                dim: false,
-                inverse: false,
-                fg: '',
-                bg: '',
-              }]);
+          xterm.write(data, () => {
+            const simpleOutput: AnsiOutput = [];
+            const buffer = xterm.buffer.active;
+            const totalLines = buffer.length;
+            const startIndex = Math.max(0, totalLines - xterm.rows);
+            for (let i = startIndex; i < totalLines; i++) {
+              const line = buffer.getLine(i);
+              if (line) {
+                const text = line.translateToString(false);
+                simpleOutput.push([{
+                  text: text || ' ',
+                  bold: false,
+                  italic: false,
+                  underline: false,
+                  dim: false,
+                  inverse: false,
+                  fg: '',
+                  bg: '',
+                }]);
+              }
             }
-          }
-          setOutput(simpleOutput);
+            setOutput(simpleOutput);
+          });
         } catch (err) {
           console.error('Terminal 2 data processing error:', err);
         }

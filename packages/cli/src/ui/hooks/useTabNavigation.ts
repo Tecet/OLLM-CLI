@@ -77,13 +77,13 @@ export function useTabNavigation(options: TabNavigationOptions): void {
       }
 
       // Left arrow navigation
-      if (key.leftArrow && onLeft) {
+      if (key.leftArrow && !key.ctrl && !key.meta && onLeft) {
         onLeft();
         return;
       }
 
       // Right arrow navigation
-      if (key.rightArrow && onRight) {
+      if (key.rightArrow && !key.ctrl && !key.meta && onRight) {
         onRight();
         return;
       }
