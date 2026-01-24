@@ -133,15 +133,25 @@ class Cell {
 
 export function serializeTerminalToObject(terminal: Terminal): AnsiOutput {
   const buffer = terminal.buffer.active;
+  return serializeTerminalRange(terminal, buffer.viewportY, terminal.rows);
+}
+
+export function serializeTerminalRange(
+  terminal: Terminal,
+  startLine: number,
+  rowCount: number,
+): AnsiOutput {
+  const buffer = terminal.buffer.active;
   const cursorX = buffer.cursorX;
-  const cursorY = buffer.cursorY;
+  const cursorY = buffer.baseY + buffer.cursorY;
   const defaultFg = '';
   const defaultBg = '';
 
   const result: AnsiOutput = [];
 
-  for (let y = 0; y < terminal.rows; y++) {
-    const line = buffer.getLine(buffer.viewportY + y);
+  for (let y = 0; y < rowCount; y++) {
+    const bufferLineIndex = startLine + y;
+    const line = buffer.getLine(bufferLineIndex);
     const currentLine: AnsiLine = [];
     if (!line) {
       result.push(currentLine);
@@ -153,7 +163,7 @@ export function serializeTerminalToObject(terminal: Terminal): AnsiOutput {
 
     for (let x = 0; x < terminal.cols; x++) {
       const cellData = line.getCell(x);
-      const cell = new Cell(cellData || null, x, y, cursorX, cursorY);
+      const cell = new Cell(cellData || null, x, bufferLineIndex, cursorX, cursorY);
 
       if (x > 0 && !cell.equals(lastCell)) {
         if (currentText) {

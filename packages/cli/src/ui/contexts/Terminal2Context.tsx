@@ -10,6 +10,7 @@ import React, { createContext, useContext, useEffect, useRef, useState, useCallb
 import { Terminal } from '@xterm/headless';
 import * as pty from 'node-pty';
 
+import { serializeTerminalRange } from '../../utils/terminalSerializer.js';
 import type { AnsiOutput } from '../../utils/terminalSerializer.js';
 
 interface Terminal2ContextValue {
@@ -60,27 +61,11 @@ export function Terminal2Provider({ children }: { children: React.ReactNode }) {
       const dataDisposable = ptyProcess.onData((data) => {
         try {
           xterm.write(data, () => {
-            const simpleOutput: AnsiOutput = [];
             const buffer = xterm.buffer.active;
             const totalLines = buffer.length;
             const startIndex = Math.max(0, totalLines - xterm.rows);
-            for (let i = startIndex; i < totalLines; i++) {
-              const line = buffer.getLine(i);
-              if (line) {
-                const text = line.translateToString(false);
-                simpleOutput.push([{
-                  text: text || ' ',
-                  bold: false,
-                  italic: false,
-                  underline: false,
-                  dim: false,
-                  inverse: false,
-                  fg: '',
-                  bg: '',
-                }]);
-              }
-            }
-            setOutput(simpleOutput);
+            const serialized = serializeTerminalRange(xterm, startIndex, xterm.rows);
+            setOutput(serialized);
           });
         } catch (err) {
           console.error('Terminal 2 data processing error:', err);

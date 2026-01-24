@@ -6,7 +6,6 @@ import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { useModel } from '../../../features/context/ModelContext.js';
 import { useUI } from '../../../features/context/UIContext.js';
 import { useInputRouting } from '../../contexts/InputRoutingContext.js';
-import { useWindow } from '../../contexts/WindowContext.js';
 import { InputRoutingIndicator } from '../InputRoutingIndicator.js';
 
 export interface SystemBarProps {
@@ -23,7 +22,6 @@ export function SystemBar({ height, showBorder = true }: SystemBarProps) {
   const { modelLoading, warmupStatus } = useModel();
   const { state: uiState } = useUI();
   const { theme } = uiState;
-  const { isTerminalActive, activeWindow, activeRightPanel } = useWindow();
   const { activeDestination } = useInputRouting();
   const { isFocused } = useFocusManager();
 
@@ -43,18 +41,16 @@ export function SystemBar({ height, showBorder = true }: SystemBarProps) {
     return () => clearInterval(interval);
   }, [modelLoading, streaming, waitingForResponse, spinnerFrames.length]);
 
-  // Determine status text
+  // Determine status text based only on input destination
   let displayStatus = ' ';
-  const isTerminalMode = isTerminalActive || activeDestination === 'terminal1' || activeDestination === 'terminal2';
+  const isTerminalMode = activeDestination === 'terminal1' || activeDestination === 'terminal2';
 
-  if (activeWindow === 'editor' || activeDestination === 'editor') {
-    displayStatus = 'Editor Mode';
+  if (activeDestination === 'editor') {
+    displayStatus = 'Editor';
   } else if (activeDestination === 'terminal2') {
     displayStatus = 'Terminal 2';
-  } else if (activeRightPanel === 'llm-chat') {
-    displayStatus = 'LLM Chat (Right)';
-  } else if (isTerminalMode) {
-    displayStatus = 'Terminal Mode';
+  } else if (activeDestination === 'terminal1') {
+    displayStatus = 'Terminal 1';
   } else if (warmupStatus?.active) {
     const elapsedSeconds = Math.max(0, Math.floor(warmupStatus.elapsedMs / 1000));
     displayStatus = `Warming model (try ${warmupStatus.attempt}, ${elapsedSeconds}s) ${spinnerFrames[spinnerIndex]}`;
@@ -65,10 +61,12 @@ export function SystemBar({ height, showBorder = true }: SystemBarProps) {
   } else if (waitingForResponse) {
     displayStatus = `Thinking ${spinnerFrames[spinnerIndex]}`;
   } else {
-    displayStatus = 'IDLE';
+    displayStatus = 'LLM Chat';
   }
-  // Hide border when status is idle per user request
-  const effectiveBorderStyle = showBorder && displayStatus !== 'IDLE' ? (theme.border.style as BoxProps['borderStyle']) : undefined;
+  // Hide border when idle in LLM chat mode per user request
+  const effectiveBorderStyle = showBorder && displayStatus !== 'LLM Chat'
+    ? (theme.border.style as BoxProps['borderStyle'])
+    : undefined;
 
   return (
     <Box height={height} width="100%" flexDirection="row" alignItems="center" justifyContent="space-between">

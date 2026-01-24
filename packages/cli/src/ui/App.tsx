@@ -835,6 +835,7 @@ ${toolSupport}
                   autoLoadWorkspace={true}
                   restoreState={false}
                   excludePatterns={['node_modules', '.git', 'dist', 'coverage']}
+                  windowSize={Math.max(10, height - 6)}
                   hasFocus={focusManager.isFocused('file-tree')}
                   toolRegistry={serviceContainer?.getToolRegistry()}
                   policyEngine={serviceContainer?.getPolicyEngine()}

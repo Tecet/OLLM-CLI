@@ -56,13 +56,19 @@ export function SidePanel({ visible, connection, model, gpu, theme, row1Height, 
   useInput((input, key) => {
     if (!contextFocused) return;
 
-    if (key.ctrl && (key.leftArrow || key.rightArrow)) {
-      switchRightPanel();
+    if (key.ctrl && key.leftArrow) {
+      switchRightPanel('prev');
+      return;
+    }
+    if (key.ctrl && key.rightArrow) {
+      switchRightPanel('next');
       return;
     }
 
-    if (isKey(input, key, activeKeybinds.layout.switchWindowLeft) || isKey(input, key, activeKeybinds.layout.switchWindowRight)) {
-      switchRightPanel();
+    if (isKey(input, key, activeKeybinds.layout.switchWindowLeft)) {
+      switchRightPanel('prev');
+    } else if (isKey(input, key, activeKeybinds.layout.switchWindowRight)) {
+      switchRightPanel('next');
     }
   }, { isActive: contextFocused });
 

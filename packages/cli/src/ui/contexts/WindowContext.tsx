@@ -57,11 +57,11 @@ interface WindowContextValue {
   /** Set the active right panel view directly */
   setActiveRightPanel: (panel: RightPanelType) => void;
   
-  /** Cycle to the next window (chat -> terminal -> editor -> chat) */
-  switchWindow: () => void;
+  /** Cycle windows (chat -> terminal -> editor -> chat) */
+  switchWindow: (direction?: 'next' | 'prev') => void;
 
-  /** Cycle to the next right panel view (tools -> workspace -> llm-chat -> terminal2) */
-  switchRightPanel: () => void;
+  /** Cycle right panel views (tools -> workspace -> llm-chat -> terminal2) */
+  switchRightPanel: (direction?: 'next' | 'prev') => void;
   
   /** Convenience flag: true if terminal is active */
   isTerminalActive: boolean;
@@ -92,20 +92,23 @@ export function WindowProvider({ children }: { children: React.ReactNode }) {
    * Cycles through windows in order: chat -> terminal -> editor -> chat
    * Used by keyboard shortcuts (Ctrl+Left/Right) for quick navigation
    */
-  const switchWindow = useCallback(() => {
+  const switchWindow = useCallback((direction: 'next' | 'prev' = 'next') => {
+    const order: WindowType[] = ['chat', 'terminal', 'editor'];
     setActiveWindow(prev => {
-      if (prev === 'chat') return 'terminal';
-      if (prev === 'terminal') return 'editor';
-      return 'chat';
+      const currentIndex = order.indexOf(prev);
+      const delta = direction === 'next' ? 1 : -1;
+      const nextIndex = (currentIndex + delta + order.length) % order.length;
+      return order[nextIndex];
     });
   }, []);
 
-  const switchRightPanel = useCallback(() => {
+  const switchRightPanel = useCallback((direction: 'next' | 'prev' = 'next') => {
+    const order: RightPanelType[] = ['tools', 'workspace', 'llm-chat', 'terminal2'];
     setActiveRightPanel(prev => {
-      if (prev === 'tools') return 'workspace';
-      if (prev === 'workspace') return 'llm-chat';
-      if (prev === 'llm-chat') return 'terminal2';
-      return 'tools';
+      const currentIndex = order.indexOf(prev);
+      const delta = direction === 'next' ? 1 : -1;
+      const nextIndex = (currentIndex + delta + order.length) % order.length;
+      return order[nextIndex];
     });
   }, []);
 

@@ -25,8 +25,12 @@ export function InputRouter({ onChatSubmit, disabled = false }: InputRouterProps
     if (disabled) return;
 
     // Handle left/right arrow keys for window switching
-    if (key.leftArrow || key.rightArrow) {
-      switchWindow();
+    if (key.leftArrow) {
+      switchWindow('prev');
+      return;
+    }
+    if (key.rightArrow) {
+      switchWindow('next');
       return;
     }
 

@@ -89,31 +89,33 @@ export const ChatInputArea = memo(function ChatInputArea({ height, showBorder = 
   }, [sendMessage, activeDestination, sendCommand, setCurrentInput, streaming, waitingForResponse, cancelGeneration]);
 
   useInput(async (input, key) => {
-      if (key.ctrl && key.leftArrow) {
-          cycleDestination('prev');
-          return;
-      }
-      if (key.ctrl && key.rightArrow) {
-          cycleDestination('next');
-          return;
-      }
-      if (key.ctrl && input === '1') {
-          setActiveDestination('llm');
-          return;
-      }
-      if (key.ctrl && input === '2') {
-          setActiveDestination('terminal1');
-          return;
-      }
-      if (key.ctrl && input === '3') {
-          setActiveDestination('terminal2');
-          return;
+      if (hasFocus) {
+          if (key.ctrl && key.leftArrow) {
+              cycleDestination('prev');
+              return;
+          }
+          if (key.ctrl && key.rightArrow) {
+              cycleDestination('next');
+              return;
+          }
+          if (key.ctrl && input === '1') {
+              setActiveDestination('llm');
+              return;
+          }
+          if (key.ctrl && input === '2') {
+              setActiveDestination('terminal1');
+              return;
+          }
+          if (key.ctrl && input === '3') {
+              setActiveDestination('terminal2');
+              return;
+          }
       }
 
       if (activeDestination === 'terminal1' || activeDestination === 'terminal2') {
           const sendRaw = activeDestination === 'terminal1' ? sendRawInputT1 : sendRawInputT2;
 
-          if (key.escape) {
+          if (key.escape && hasFocus) {
               setActiveDestination('llm');
               return;
           }
@@ -149,8 +151,12 @@ export const ChatInputArea = memo(function ChatInputArea({ height, showBorder = 
       if (key.tab) return;
 
       // Window switching logic - cycle through windows with specific ctrl keys
-      if (isKey(input, key, activeKeybinds.layout.switchWindowLeft) || isKey(input, key, activeKeybinds.layout.switchWindowRight)) {
-          switchWindow();
+      if (isKey(input, key, activeKeybinds.layout.switchWindowLeft)) {
+          switchWindow('prev');
+          return;
+      }
+      if (isKey(input, key, activeKeybinds.layout.switchWindowRight)) {
+          switchWindow('next');
           return;
       }
 

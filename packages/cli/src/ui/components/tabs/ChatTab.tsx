@@ -143,8 +143,12 @@ function ChatTabComponent(props: ChatTabProps) {
   useInput((input, key) => {
     if (!hasFocus) return;
 
-    if (key.ctrl && (key.leftArrow || key.rightArrow)) {
-      switchWindow();
+    if (key.ctrl && key.leftArrow) {
+      switchWindow('prev');
+      return;
+    }
+    if (key.ctrl && key.rightArrow) {
+      switchWindow('next');
       return;
     }
 

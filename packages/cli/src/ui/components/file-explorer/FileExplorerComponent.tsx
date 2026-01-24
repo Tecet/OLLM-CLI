@@ -3,7 +3,7 @@
  * 
  * This is the top-level component that composes all file explorer sub-components
  * and manages their lifecycle. It handles:
- * - Context provider composition (Workspace, FileFocus, FileTree)
+ * - Context provider composition (Workspace, FileTree)
  * - Service instantiation and initialization
  * - Workspace loading on mount
  * - State persistence restoration
@@ -12,12 +12,12 @@
  * Requirements: 1.1 (Workspace loading), 12.2 (State restoration)
  */
 
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { Box, Text } from 'ink';
 
 import { EditorIntegration } from './EditorIntegration.js';
 import { ExplorerPersistence } from './ExplorerPersistence.js';
-import { FileFocusProvider } from './FileFocusContext.js';
+import { useFileFocus } from './FileFocusContext.js';
 import { FileOperations } from './FileOperations.js';
 import { FileTreeProvider, useFileTree } from './FileTreeContext.js';
 import { FileTreeService } from './FileTreeService.js';
@@ -29,7 +29,7 @@ import { PathSanitizer } from './PathSanitizer.js';
 import { WorkspaceProvider } from './WorkspaceContext.js';
 import { WorkspaceManager } from './WorkspaceManager.js';
 
-import type { WorkspaceConfig, FocusedFile, FileNode } from './types.js';
+import type { WorkspaceConfig, FileNode } from './types.js';
 import type { MessageBus } from '@ollm/ollm-cli-core/hooks/messageBus.js';
 import type { PolicyEngine } from '@ollm/ollm-cli-core/policy/policyEngine.js';
 import type { ToolRegistry } from '@ollm/ollm-cli-core/tools/tool-registry.js';
@@ -50,6 +50,8 @@ export interface FileExplorerComponentProps {
   excludePatterns?: string[];
   /** Whether the component has focus for keyboard input */
   hasFocus?: boolean;
+  /** Visible window size for virtual scrolling */
+  windowSize?: number;
   
   /** Tool system integration (optional) */
   toolRegistry?: ToolRegistry;
@@ -84,8 +86,8 @@ interface InitializationState {
  * This component serves as the entry point for the File Explorer UI.
  * It composes all sub-components and manages their lifecycle:
  * 
- * 1. **Context Providers**: Wraps the component tree with WorkspaceProvider,
- *    FileFocusProvider, and FileTreeProvider to provide shared state.
+ * 1. **Context Providers**: Wraps the component tree with WorkspaceProvider
+ *    and FileTreeProvider to provide shared state.
  * 
  * 2. **Service Instantiation**: Creates instances of all required services
  *    (WorkspaceManager, FileTreeService, FocusSystem, etc.) and passes them
@@ -114,6 +116,7 @@ export function FileExplorerComponent({
   restoreState = true,
   excludePatterns = [],
   hasFocus = true,
+  windowSize,
   toolRegistry,
   policyEngine,
   messageBus,
@@ -121,6 +124,10 @@ export function FileExplorerComponent({
   onStateRestored,
   onError,
 }: FileExplorerComponentProps) {
+  const excludePatternsKey = useMemo(() => excludePatterns.join('|'), [excludePatterns]);
+  const stableExcludePatterns = useMemo(() => excludePatterns, [excludePatternsKey]);
+  const fileFocusContext = useFileFocus();
+
   // Initialization state
   const [initState, setInitState] = useState<InitializationState>({
     isInitializing: true,
@@ -172,13 +179,6 @@ export function FileExplorerComponent({
     rootPath,
   });
 
-  // Initial focus state
-  const [focusState, setFocusState] = useState<{
-    focusedFiles: Map<string, FocusedFile>;
-  }>({
-    focusedFiles: new Map(),
-  });
-
   // Initial tree state
   const [treeState, setTreeState] = useState<{
     root: FileNode | null;
@@ -198,6 +198,7 @@ export function FileExplorerComponent({
    * 4. Restore focused files
    */
   const initialize = useCallback(async () => {
+    let restoredExpandedPaths = new Set<string>();
     try {
       setInitState({
         isInitializing: true,
@@ -245,6 +246,7 @@ export function FileExplorerComponent({
 
           // Restore expanded directories
           if (persistedState.expandedDirectories.length > 0) {
+            restoredExpandedPaths = new Set(persistedState.expandedDirectories);
             setTreeState(prev => ({
               ...prev,
               expandedPaths: new Set(persistedState.expandedDirectories),
@@ -253,21 +255,15 @@ export function FileExplorerComponent({
 
           // Restore focused files
           if (persistedState.focusedFiles.length > 0) {
-            const focusedFilesMap = new Map<string, FocusedFile>();
-            
             for (const filePath of persistedState.focusedFiles) {
               try {
                 const focusedFile = await services.focusSystem.focusFile(filePath);
-                focusedFilesMap.set(filePath, focusedFile);
+                fileFocusContext.addFocusedFile(focusedFile);
               } catch (error) {
                 // Skip files that can't be focused (e.g., deleted files)
                 console.warn(`Failed to restore focused file: ${filePath}`, error);
               }
             }
-
-            setFocusState({
-              focusedFiles: focusedFilesMap,
-            });
           }
 
           // Restore active project if in workspace mode
@@ -302,7 +298,7 @@ export function FileExplorerComponent({
       // Build the file tree from rootPath
       const rootNode = await services.fileTreeService.buildTree({
         rootPath,
-        excludePatterns,
+        excludePatterns: stableExcludePatterns,
       });
       
       // If we've loaded a workspace, auto-expand directories so the
@@ -314,7 +310,7 @@ export function FileExplorerComponent({
         const expandAll = async (node: any) => {
           if (!node || node.type !== 'directory') return;
           try {
-            await services.fileTreeService.expandDirectory(node, excludePatterns);
+            await services.fileTreeService.expandDirectory(node, stableExcludePatterns);
           } catch (_err) {
             // Ignore expansion errors for individual nodes
           }
@@ -352,11 +348,20 @@ export function FileExplorerComponent({
           expandedPaths: new Set(allDirs),
         }));
       } else {
-        // Don't auto-expand for browse mode - let user open it manually
+        // Always expand the root directory so the tree is visible
+        try {
+          await services.fileTreeService.expandDirectory(rootNode, stableExcludePatterns);
+        } catch (_err) {
+          // Ignore expansion errors for initial root
+        }
+
+        const nextExpanded = new Set(restoredExpandedPaths);
+        nextExpanded.add(rootNode.path);
+
         setTreeState(prev => ({
           ...prev,
           root: rootNode,
-          expandedPaths: new Set(), // Start with nothing expanded
+          expandedPaths: nextExpanded,
         }));
       }
       
@@ -393,7 +398,7 @@ export function FileExplorerComponent({
     onWorkspaceLoaded,
     onStateRestored,
     onError,
-    excludePatterns,
+    stableExcludePatterns,
   ]);
 
   // Initialize on mount
@@ -407,7 +412,7 @@ export function FileExplorerComponent({
       try {
         // Get current state from contexts
         const currentExpandedPaths = Array.from(treeState.expandedPaths);
-        const currentFocusedFiles = Array.from(focusState.focusedFiles.keys());
+        const currentFocusedFiles = Array.from(fileFocusContext.state.focusedFiles.keys());
 
         // Save state
         services.explorerPersistence.saveState({
@@ -420,7 +425,7 @@ export function FileExplorerComponent({
         console.warn('Failed to save state on unmount:', error);
       }
     };
-  }, [services, treeState, focusState, workspaceState]);
+  }, [services, treeState, workspaceState, fileFocusContext.state.focusedFiles]);
 
   // Show loading state during initialization
   if (initState.isInitializing) {
@@ -450,18 +455,19 @@ export function FileExplorerComponent({
   // Render the file explorer with all contexts
   return (
     <WorkspaceProvider initialState={workspaceState}>
-      <FileFocusProvider initialState={focusState}>
-        <FileTreeProvider initialState={{ root: treeState.root, expandedPaths: treeState.expandedPaths }}>
-          <FileExplorerContent
-            services={services}
-            treeState={treeState}
-            rootPath={rootPath}
-            excludePatterns={excludePatterns}
-            hasFocus={hasFocus}
-            toolRegistry={toolRegistry}
-          />
-        </FileTreeProvider>
-      </FileFocusProvider>
+      <FileTreeProvider
+        initialState={{ root: treeState.root, expandedPaths: treeState.expandedPaths }}
+        windowSize={windowSize}
+      >
+        <FileExplorerContent
+          services={services}
+          treeState={treeState}
+          rootPath={rootPath}
+          excludePatterns={stableExcludePatterns}
+          hasFocus={hasFocus}
+          toolRegistry={toolRegistry}
+        />
+      </FileTreeProvider>
     </WorkspaceProvider>
   );
 }

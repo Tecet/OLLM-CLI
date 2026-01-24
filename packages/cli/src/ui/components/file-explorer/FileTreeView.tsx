@@ -168,8 +168,8 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
   const { 
     state: treeState, 
     setVisibleWindow, 
-    moveCursorUp, 
-    moveCursorDown,
+    setCursorPosition,
+    setScrollOffset,
     expandDirectory,
     collapseDirectory,
     getSelectedNode,
@@ -239,6 +239,12 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
       statusTimerRef.current = null;
     }, 2000);
   }, []);
+
+  useEffect(() => {
+    if (hasFocus) {
+      lastFocusTimeRef.current = Date.now();
+    }
+  }, [hasFocus]);
 
   /**
    * Handle Quick Open file selection
@@ -513,6 +519,37 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
     }, DEBOUNCE_DELAY);
   }, []);
 
+  const moveDown = useCallback(() => {
+    const windowLength = treeState.visibleWindow.length;
+    if (windowLength === 0) return;
+
+    if (treeState.cursorPosition < windowLength - 1) {
+      setCursorPosition(treeState.cursorPosition + 1);
+      return;
+    }
+
+    if (treeState.root) {
+      const totalVisible = fileTreeService.getTotalVisibleCount(treeState.root);
+      const canScroll = treeState.scrollOffset + windowLength < totalVisible;
+      if (canScroll) {
+        setScrollOffset(treeState.scrollOffset + 1);
+      }
+    }
+  }, [treeState, setCursorPosition, setScrollOffset, fileTreeService]);
+
+  const moveUp = useCallback(() => {
+    if (treeState.visibleWindow.length === 0) return;
+
+    if (treeState.cursorPosition > 0) {
+      setCursorPosition(treeState.cursorPosition - 1);
+      return;
+    }
+
+    if (treeState.scrollOffset > 0) {
+      setScrollOffset(treeState.scrollOffset - 1);
+    }
+  }, [treeState, setCursorPosition, setScrollOffset]);
+
   /**
    * Handle LLM message for Follow Mode
    */
@@ -596,10 +633,10 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
 
     // Arrow key navigation (direct support)
     if (key.downArrow) {
-      debouncedAction(() => moveCursorDown());
+      moveDown();
       return;
     } else if (key.upArrow) {
-      debouncedAction(() => moveCursorUp());
+      moveUp();
       return;
     } else if (key.leftArrow) {
       const selectedNode = getSelectedNode();
@@ -627,9 +664,9 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
 
     // Keybind-based navigation (fallback)
     if (isKey(input, key, activeKeybinds.fileExplorer.moveDown)) {
-      debouncedAction(() => moveCursorDown());
+      moveDown();
     } else if (isKey(input, key, activeKeybinds.fileExplorer.moveUp)) {
-      debouncedAction(() => moveCursorUp());
+      moveUp();
     } else if (isKey(input, key, activeKeybinds.fileExplorer.collapse)) {
       const selectedNode = getSelectedNode();
       if (selectedNode && selectedNode.type === 'directory' && selectedNode.expanded) {
@@ -703,8 +740,8 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
     menuOpen,
     closeViewer,
     debouncedAction,
-    moveCursorDown,
-    moveCursorUp,
+    moveDown,
+    moveUp,
     getSelectedNode,
     collapseDirectory,
     fileTreeService,
@@ -755,6 +792,7 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
     treeState.root,
     treeState.scrollOffset,
     treeState.windowSize,
+    treeState.expandedPaths,
     fileTreeService,
   ]);
 
@@ -900,6 +938,11 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
               <Text dimColor> (Press F to toggle)</Text>
             </Box>
           )}
+          
+          <Box marginTop={1}>
+            <Text dimColor>
+            </Text>
+          </Box>
         </>
       )}
     </Box>
