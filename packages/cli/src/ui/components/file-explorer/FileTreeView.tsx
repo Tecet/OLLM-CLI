@@ -218,6 +218,9 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
   // Debouncing state
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const DEBOUNCE_DELAY = 50; // 50ms debounce delay
+  // Timestamp when this component last gained focus — used to suppress
+  // the activating Enter that may be delivered twice (nav-bar -> file-tree).
+  const lastFocusTimeRef = useRef<number>(0);
 
   /**
    * Show a temporary status message
@@ -648,19 +651,29 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
         })();
       }
     } else if (isKey(input, key, activeKeybinds.fileExplorer.select)) {
+      // Suppress immediate select when focus was just given to avoid the
+      // Enter key press that activated the Files tab from also toggling
+      // the directory open/closed state.
+      if (Date.now() - lastFocusTimeRef.current < 200) {
+        return;
+      }
+
       const selectedNode = getSelectedNode();
       if (!selectedNode) return;
-      
+
       if (selectedNode.type === 'directory') {
         if (selectedNode.expanded) {
           collapseDirectory(selectedNode.path);
           fileTreeService.collapseDirectory(selectedNode);
         } else {
+          // Expand directory - do this synchronously to prevent double-toggle
+          expandDirectory(selectedNode.path);
           (async () => {
             try {
               await fileTreeService.expandDirectory(selectedNode, excludePatterns);
-              expandDirectory(selectedNode.path);
             } catch (_err) {
+              // If expansion fails, collapse it back
+              collapseDirectory(selectedNode.path);
               showStatus('Error expanding directory');
             }
           })();

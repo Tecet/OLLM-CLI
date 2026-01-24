@@ -1,41 +1,48 @@
 /**
  * Terminal Context
  * 
- * Manages a shared terminal session using node-pty
+ * Manages a shared terminal session using node-pty + xterm.js headless
  */
 
 import os from 'os';
 
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import * as pty from 'node-pty';
+import { Terminal } from '@xterm/headless';
 
-export interface TerminalLine {
-  text: string;
-  timestamp: number;
-}
+import { serializeTerminalToObject, type AnsiOutput } from '../../utils/terminalSerializer.js';
 
 interface TerminalContextValue {
-  output: TerminalLine[];
+  output: AnsiOutput;
   isRunning: boolean;
   sendCommand: (command: string) => void;
   clear: () => void;
   interrupt: () => void;
   resize: (cols: number, rows: number) => void;
-  rawOutput: string[];
 }
 
 const TerminalContext = createContext<TerminalContextValue | undefined>(undefined);
 
 export function TerminalProvider({ children }: { children: React.ReactNode }) {
-  const [output, setOutput] = useState<TerminalLine[]>([]);
-  const [rawOutput, setRawOutput] = useState<string[]>([]);
+  const [output, setOutput] = useState<AnsiOutput>([]);
   const [isRunning, setIsRunning] = useState(false);
   const ptyProcessRef = useRef<pty.IPty | null>(null);
+  const xtermRef = useRef<Terminal | null>(null);
 
   useEffect(() => {
     const shell = os.platform() === 'win32' ? 'powershell.exe' : 'bash';
     
     try {
+      // Create xterm.js headless terminal
+      const xterm = new Terminal({
+        cols: 80,
+        rows: 30,
+        scrollback: 1000,
+        allowProposedApi: true, // Required for buffer access
+      });
+      xtermRef.current = xterm;
+
+      // Create PTY process
       const ptyProcess = pty.spawn(shell, [], {
         name: 'xterm-color',
         cols: 80,
@@ -47,16 +54,35 @@ export function TerminalProvider({ children }: { children: React.ReactNode }) {
       ptyProcessRef.current = ptyProcess;
       setIsRunning(true);
 
-      // Store disposables for cleanup
+      // Pipe PTY output to xterm (xterm parses ANSI codes)
       const dataDisposable = ptyProcess.onData((data) => {
-        setRawOutput(prev => [...prev.slice(-1000), data]);
-        setOutput(prev => {
-          const newOutput = [...prev, {
-            text: data,
-            timestamp: Date.now(),
-          }];
-          return newOutput.slice(-500); // Keep last 500 chunks
-        });
+        try {
+          xterm.write(data);
+          
+          // Simple approach: Just extract all lines from buffer
+          const simpleOutput: AnsiOutput = [];
+          for (let i = 0; i < xterm.rows; i++) {
+            const line = xterm.buffer.active.getLine(i);
+            if (line) {
+              const text = line.translateToString(false); // false = don't trim
+              // Always add the line, even if empty
+              simpleOutput.push([{ 
+                text: text || ' ', 
+                bold: false, 
+                italic: false, 
+                underline: false, 
+                dim: false, 
+                inverse: false, 
+                fg: '', 
+                bg: '' 
+              }]);
+            }
+          }
+          
+          setOutput(simpleOutput);
+        } catch (err) {
+          console.error('Terminal data processing error:', err);
+        }
       });
 
       const exitDisposable = ptyProcess.onExit(() => {
@@ -72,12 +98,17 @@ export function TerminalProvider({ children }: { children: React.ReactNode }) {
           exitDisposable.dispose();
         }
         
+        // Dispose xterm
+        if (xtermRef.current) {
+          xtermRef.current.dispose();
+          xtermRef.current = null;
+        }
+        
         // Then kill the process
         if (ptyProcessRef.current) {
           try {
             ptyProcessRef.current.kill();
           } catch (error) {
-            // Process may already be dead
             console.warn('Failed to kill PTY process:', error);
           }
         }
@@ -87,6 +118,7 @@ export function TerminalProvider({ children }: { children: React.ReactNode }) {
       };
     } catch (error) {
       console.error('Failed to spawn terminal:', error);
+      setIsRunning(false);
       return () => {};
     }
   }, []);
@@ -98,10 +130,11 @@ export function TerminalProvider({ children }: { children: React.ReactNode }) {
   }, [isRunning]);
 
   const clear = useCallback(() => {
-    setOutput([]);
-    setRawOutput([]);
+    if (xtermRef.current) {
+      xtermRef.current.clear();
+      setOutput([]);
+    }
     if (ptyProcessRef.current && isRunning) {
-      // Send a sequence to clear the physical terminal screen if supported
       ptyProcessRef.current.write('clear\r');
     }
   }, [isRunning]);
@@ -113,11 +146,22 @@ export function TerminalProvider({ children }: { children: React.ReactNode }) {
   }, [isRunning]);
 
   const resize = useCallback((cols: number, rows: number) => {
+    const safeRows = Math.max(1, rows);
+    const safeCols = Math.max(1, cols);
+    
+    if (xtermRef.current) {
+      try {
+        xtermRef.current.resize(safeCols, safeRows);
+      } catch (err) {
+        // Silently fail
+      }
+    }
+    
     if (ptyProcessRef.current && isRunning) {
       try {
-        ptyProcessRef.current.resize(Math.max(1, cols), Math.max(1, rows));
-      } catch (_err) {
-        // Silently fail if resize is called on a dead process
+        ptyProcessRef.current.resize(safeCols, safeRows);
+      } catch (err) {
+        // Silently fail
       }
     }
   }, [isRunning]);
@@ -129,8 +173,7 @@ export function TerminalProvider({ children }: { children: React.ReactNode }) {
     clear,
     interrupt,
     resize,
-    rawOutput
-  }), [output, isRunning, sendCommand, clear, interrupt, resize, rawOutput]);
+  }), [output, isRunning, sendCommand, clear, interrupt, resize]);
 
   return (
     <TerminalContext.Provider value={value}>

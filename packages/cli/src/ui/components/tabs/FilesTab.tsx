@@ -40,7 +40,7 @@ export function FilesTab({
 }: FilesTabProps) {
   const { state: uiState } = useUI();
   const { isFocused } = useFocusManager();
-  const { state: treeState, setRoot } = useFileTree();
+  const { state: treeState, setRoot, expandDirectory, setCursorPosition, setScrollOffset } = useFileTree();
 
   const hasFocus = isFocused('file-tree'); // Use 'file-tree' focus ID
 
@@ -63,6 +63,36 @@ export function FilesTab({
       initTree();
     }
   }, [treeState.root, fileTreeService, setRoot]);
+
+  // When the file-tree receives focus, ensure the root is expanded and
+  // the first folder (if any) is selected so keyboard navigation works
+  useEffect(() => {
+    if (!hasFocus || !treeState.root) return;
+
+    const ensureRootOpen = async () => {
+      try {
+        // Mark root as expanded in context (instant)
+        expandDirectory(treeState.root.path);
+
+        // Load children (lazy-load) so visible nodes are populated
+        await fileTreeService.expandDirectory(treeState.root, ['node_modules', '.git', 'dist', 'coverage']);
+
+        // Reset scroll and position to show top of tree
+        setScrollOffset(0);
+
+        // If root has children, select the first child (index 1 in flattened list),
+        // otherwise select root (index 0)
+        const firstIndex = (treeState.root.children && treeState.root.children.length > 0) ? 1 : 0;
+        setCursorPosition(firstIndex);
+      } catch (err) {
+        // Fail silently but log for debugging
+        // eslint-disable-next-line no-console
+        console.error('Failed to open file tree on focus:', err);
+      }
+    };
+
+    ensureRootOpen();
+  }, [hasFocus, treeState.root, expandDirectory, fileTreeService, setCursorPosition, setScrollOffset]);
 
   return (
     <Box flexDirection="column" height="100%" width={width} padding={1}>

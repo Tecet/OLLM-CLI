@@ -402,6 +402,7 @@ export function FocusProvider({ children }: { children: ReactNode }) {
         'github': 'github-tab',      // Exception: uses -tab suffix
         'settings': 'settings-panel',
         'chat': 'chat-history',
+        'bug-report': 'bug-report-tab',
       };
       
       const targetFocus = tabToFocusMap[activeTab] || 'chat-input';

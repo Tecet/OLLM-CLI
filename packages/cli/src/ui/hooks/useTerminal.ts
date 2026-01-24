@@ -5,4 +5,3 @@
  */
 
 export { useTerminal } from '../contexts/TerminalContext.js';
-export type { TerminalLine } from '../contexts/TerminalContext.js';

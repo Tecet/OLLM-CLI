@@ -1,17 +1,17 @@
 /**
  * Terminal Component
  * 
- * Displays terminal output and handles terminal sessions
+ * Displays terminal output with proper ANSI code rendering using xterm.js headless
  */
 
 import React, { useMemo, useEffect } from 'react';
-import { Box, Text, useStdout , useInput } from 'ink';
-import stripAnsi from 'strip-ansi';
+import { Box, Text, useStdout, useInput } from 'ink';
 
 import { useFocusManager } from '../../features/context/FocusContext.js';
 import { useUI } from '../../features/context/UIContext.js';
 import { useWindow } from '../contexts/WindowContext.js';
 import { useTerminal } from '../hooks/useTerminal.js';
+import type { AnsiToken, AnsiLine } from '../../utils/terminalSerializer.js';
 
 export interface TerminalProps {
   height: number;
@@ -46,18 +46,15 @@ export function Terminal({ height }: TerminalProps) {
   const { activeWindow } = useWindow();
   const hasFocus = isFocused('chat-input') && activeWindow === 'terminal';
 
-  // Combine and split output to handle newlines correctly and manage scrollback
+  // Output is already structured as AnsiLine[] (array of token arrays)
   const allLines = useMemo(() => {
-    const combined = output.map(o => o.text).join('');
-    // Split and filter out empty lines at the very end to keep prompt visible
-    const split = stripAnsi(combined).split(/\r?\n/);
-    return split;
+    return output;
   }, [output]);
 
   // Max scroll is total lines minus what's visible
   const maxScroll = Math.max(0, allLines.length - visibleHeight);
 
-  // Handle keys for scrolling
+  // Handle keys for scrolling - only when terminal is visible and NOT when typing in input
   useInput((input, key) => {
     // Only scroll if terminal is active and focused, OR if using global Alt+Scroll
     const isAltScroll = key.meta && (key.upArrow || key.downArrow);
@@ -69,7 +66,7 @@ export function Terminal({ height }: TerminalProps) {
     } else if (key.downArrow) {
       setScrollOffset(prev => Math.max(prev - 1, 0));
     }
-  }, { isActive: true });
+  }, { isActive: activeWindow === 'terminal' && !hasFocus }); // Only active when terminal window is shown but input doesn't have focus
 
   // Reset scroll when new output arrives if we were at the bottom (0)
   useEffect(() => {
@@ -79,28 +76,35 @@ export function Terminal({ height }: TerminalProps) {
   const visibleLines = useMemo(() => {
       const start = Math.max(0, allLines.length - visibleHeight - scrollOffset);
       const end = allLines.length - scrollOffset;
-      const slice = allLines.slice(start, end);
-
-      // Collapse adjacent identical lines to reduce UI spam (e.g., repeated status messages)
-      const collapsed: string[] = [];
-      let lastLine: string | null = null;
-      let count = 0;
-      for (const l of slice) {
-        if (l === lastLine) {
-          count += 1;
-        } else {
-          if (lastLine !== null) {
-            collapsed.push(count > 1 ? `${lastLine}  (x${count})` : lastLine);
-          }
-          lastLine = l;
-          count = 1;
-        }
-      }
-      if (lastLine !== null) {
-        collapsed.push(count > 1 ? `${lastLine}  (x${count})` : lastLine);
-      }
-      return collapsed;
+      return allLines.slice(start, end);
   }, [allLines, visibleHeight, scrollOffset]);
+
+  // Render a single line with ANSI tokens
+  const renderLine = (line: AnsiLine, index: number) => {
+    // Safety check for empty or invalid lines
+    if (!line || !Array.isArray(line) || line.length === 0) {
+      return <Box key={index}><Text> </Text></Box>;
+    }
+    
+    return (
+      <Box key={index} flexShrink={1}>
+        {line.map((token: AnsiToken, tokenIndex: number) => (
+          <Text
+            key={tokenIndex}
+            color={token.fg || undefined}
+            backgroundColor={token.bg || undefined}
+            inverse={token.inverse}
+            dimColor={token.dim}
+            bold={token.bold}
+            italic={token.italic}
+            underline={token.underline}
+          >
+            {token.text}
+          </Text>
+        ))}
+      </Box>
+    );
+  };
 
   return (
     <Box 
@@ -115,19 +119,22 @@ export function Terminal({ height }: TerminalProps) {
       overflow="hidden"
       alignItems="flex-start"
     >
-      {visibleLines.length === 0 ? (
-        <Box marginTop={1} alignSelf="flex-start">
-          <Text dimColor>Terminal ready. Type commands and press Enter. {isRunning ? '●' : '○'}</Text>
-        </Box>
-      ) : (
-        visibleLines.map((line, index) => (
-          <Box key={index} alignSelf="flex-start">
-            <Text wrap="wrap">
-              {line}
-            </Text>
+      {/* Container to isolate terminal rendering */}
+      <Box 
+        flexDirection="column" 
+        width="100%"
+        height="100%"
+        overflow="hidden"
+        flexShrink={1}
+      >
+        {visibleLines.length === 0 ? (
+          <Box marginTop={1}>
+            <Text dimColor>Terminal ready. Type commands and press Enter. {isRunning ? '●' : '○'}</Text>
           </Box>
-        ))
-      )}
+        ) : (
+          visibleLines.map((line, index) => renderLine(line, index))
+        )}
+      </Box>
     </Box>
   );
 }

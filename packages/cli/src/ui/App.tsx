@@ -29,6 +29,7 @@ import { SidePanel } from './components/layout/SidePanel.js';
 import { GPUInfo } from './components/layout/StatusBar.js';
 import { SystemBar } from './components/layout/SystemBar.js';
 import { TabBar, tabs } from './components/layout/TabBar.js';
+import { BugReportTab } from './components/tabs/BugReportTab.js';
 import { ChatTab } from './components/tabs/ChatTab.js';
 import { DocsTab } from './components/tabs/DocsTab.js';
 import { GitHubTab } from './components/tabs/GitHubTab.js';
@@ -829,8 +830,8 @@ ${toolSupport}
               <Box flexGrow={1}>
                 <FileExplorerComponent
                   rootPath={process.cwd()}
-                  autoLoadWorkspace={false}
-                  restoreState={true}
+                  autoLoadWorkspace={true}
+                  restoreState={false}
                   excludePatterns={['node_modules', '.git', 'dist', 'coverage']}
                   hasFocus={focusManager.isFocused('file-tree')}
                   toolRegistry={serviceContainer?.getToolRegistry()}
