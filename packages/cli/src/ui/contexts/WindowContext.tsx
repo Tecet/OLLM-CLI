@@ -38,6 +38,7 @@ import React, { createContext, useContext, useState, useCallback } from 'react';
  * - 'editor': Code editor for file editing
  */
 export type WindowType = 'chat' | 'terminal' | 'editor';
+export type RightPanelType = 'tools' | 'workspace' | 'llm-chat' | 'terminal2';
 
 /**
  * Window Context value interface
@@ -46,12 +47,21 @@ export type WindowType = 'chat' | 'terminal' | 'editor';
 interface WindowContextValue {
   /** Currently active window */
   activeWindow: WindowType;
+
+  /** Currently active right panel view */
+  activeRightPanel: RightPanelType;
   
   /** Set the active window directly */
   setActiveWindow: (window: WindowType) => void;
+
+  /** Set the active right panel view directly */
+  setActiveRightPanel: (panel: RightPanelType) => void;
   
   /** Cycle to the next window (chat -> terminal -> editor -> chat) */
   switchWindow: () => void;
+
+  /** Cycle to the next right panel view (tools -> workspace -> llm-chat -> terminal2) */
+  switchRightPanel: () => void;
   
   /** Convenience flag: true if terminal is active */
   isTerminalActive: boolean;
@@ -76,6 +86,7 @@ const WindowContext = createContext<WindowContextValue | undefined>(undefined);
 export function WindowProvider({ children }: { children: React.ReactNode }) {
   // Default to chat window on startup
   const [activeWindow, setActiveWindow] = useState<WindowType>('chat');
+  const [activeRightPanel, setActiveRightPanel] = useState<RightPanelType>('tools');
 
   /**
    * Cycles through windows in order: chat -> terminal -> editor -> chat
@@ -89,10 +100,22 @@ export function WindowProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const switchRightPanel = useCallback(() => {
+    setActiveRightPanel(prev => {
+      if (prev === 'tools') return 'workspace';
+      if (prev === 'workspace') return 'llm-chat';
+      if (prev === 'llm-chat') return 'terminal2';
+      return 'tools';
+    });
+  }, []);
+
   const value: WindowContextValue = {
     activeWindow,
+    activeRightPanel,
     setActiveWindow,
+    setActiveRightPanel,
     switchWindow,
+    switchRightPanel,
     isTerminalActive: activeWindow === 'terminal',
     isChatActive: activeWindow === 'chat',
     isEditorActive: activeWindow === 'editor',

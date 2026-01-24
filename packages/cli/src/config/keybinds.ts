@@ -35,8 +35,8 @@ export const keybindsData = {
     "togglePanel": "ctrl+p",
     "commandPalette": "ctrl+k",
     "toggleDebug": "ctrl+/",
-    "switchWindowLeft": "ctrl+left",
-    "switchWindowRight": "ctrl+right"
+    "switchWindowLeft": "ctrl+shift+tab",
+    "switchWindowRight": "ctrl+tab"
   },
 
   /**

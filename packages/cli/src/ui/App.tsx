@@ -15,6 +15,9 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { Box, Text, useStdout, BoxProps, useInput } from 'ink';
 
+import { SettingsService } from '../config/settingsService.js';
+import { defaultDarkTheme } from '../config/styles.js';
+import { ContextProfile } from '../config/types.js';
 import { AllCallbacksBridge } from './components/AllCallbacksBridge.js';
 import { DialogManager } from './components/dialogs/DialogManager.js';
 import { ErrorBoundary } from './components/ErrorBoundary.js';
@@ -40,13 +43,12 @@ import { SettingsTab } from './components/tabs/SettingsTab.js';
 import { ToolsTab } from './components/tabs/ToolsTab.js';
 import { DialogProvider } from './contexts/DialogContext.js';
 import { HooksProvider } from './contexts/HooksContext.js';
+import { InputRoutingProvider } from './contexts/InputRoutingContext.js';
 import { MCPProvider } from './contexts/MCPContext.js';
+import { Terminal2Provider } from './contexts/Terminal2Context.js';
 import { TerminalProvider } from './contexts/TerminalContext.js';
 import { ToolsProvider } from './contexts/ToolsContext.js';
 import { WindowProvider } from './contexts/WindowContext.js';
-import { SettingsService } from '../config/settingsService.js';
-import { defaultDarkTheme } from '../config/styles.js';
-import { ContextProfile } from '../config/types.js';
 import { useGlobalKeyboardShortcuts } from './hooks/useGlobalKeyboardShortcuts.js';
 import { useMouse, MouseProvider } from './hooks/useMouse.js';
 import { profileManager } from '../features/context/../profiles/ProfileManager.js';
@@ -958,6 +960,7 @@ ${toolSupport}
               gpu={gpuInfo as unknown as GPUInfo | null}
               theme={uiState.theme}
               row1Height={row1Height}
+              width={rightColumnWidth}
             />
           </Box>
         )}
@@ -1129,7 +1132,9 @@ export function App({ config }: AppProps) {
         <SettingsProvider>
           <KeybindsProvider>
             <WindowProvider>
-              <TerminalProvider>
+              <InputRoutingProvider>
+                <TerminalProvider>
+                  <Terminal2Provider>
                 <DialogProvider>
                   <ServiceProvider
                     provider={provider}
@@ -1187,7 +1192,9 @@ export function App({ config }: AppProps) {
                   </HooksProvider>
                 </ServiceProvider>
                 </DialogProvider>
-              </TerminalProvider>
+                  </Terminal2Provider>
+                </TerminalProvider>
+              </InputRoutingProvider>
             </WindowProvider>
           </KeybindsProvider>
         </SettingsProvider>

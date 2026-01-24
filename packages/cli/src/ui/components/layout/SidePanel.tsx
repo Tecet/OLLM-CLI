@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Box, Text, BoxProps, useInput } from 'ink';
+import React from 'react';
+import { Box, Text, BoxProps, useInput, useStdout } from 'ink';
 
 import { ActivePromptInfo } from './ActivePromptInfo.js';
 import { Clock } from './Clock.js';
@@ -14,7 +14,8 @@ import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { useKeybinds } from '../../../features/context/KeybindsContext.js';
 import { useWindow } from '../../contexts/WindowContext.js';
 import { isKey } from '../../utils/keyUtils.js';
-import { rightPanelHeaderLabel as _rightPanelHeaderLabel } from '../../utils/windowDisplayLabels.js';
+import { RightPanelLLMChat } from '../RightPanelLLMChat.js';
+import { Terminal2 } from '../Terminal2.js';
 
 
 export interface SidePanelProps {
@@ -24,14 +25,14 @@ export interface SidePanelProps {
   gpu: GPUInfo | null;
   theme: Theme;
   row1Height?: number;
+  width?: number;
 }
 
-export function SidePanel({ visible, connection, model, gpu, theme, row1Height }: SidePanelProps) {
-  const { isFocused, setFocus: _focusManagerSetFocus } = useFocusManager();
+export function SidePanel({ visible, connection, model, gpu, theme, row1Height, width }: SidePanelProps) {
+  const { isFocused } = useFocusManager();
   const { contextUsage } = useChat();
   const { activeKeybinds } = useKeybinds();
-  
-  const [activeSubWindow, setActiveSubWindow] = useState<'tools' | 'workspace'>('tools');
+  const { stdout } = useStdout();
   
   const contextFocused = isFocused('context-panel');
   const fileTreeFocused = isFocused('side-file-tree');
@@ -41,24 +42,44 @@ export function SidePanel({ visible, connection, model, gpu, theme, row1Height }
     ? `${contextUsage.currentTokens}/${contextUsage.maxTokens}`
     : '0/0';
 
-  const isToolsMode = activeSubWindow === 'tools';
+  const { activeRightPanel, switchRightPanel } = useWindow();
 
-  const { activeWindow: _activeWindow } = useWindow();
-  // Use the side-panel's subwindow state for the header so switching to Workspace shows 'Workspace'
-  const headerLabel = isToolsMode ? 'Tools' : 'Workspace';
+  const headerLabel = activeRightPanel === 'tools'
+    ? 'Tools'
+    : activeRightPanel === 'workspace'
+    ? 'Workspace'
+    : activeRightPanel === 'llm-chat'
+    ? 'LLM Chat'
+    : 'Terminal 2';
 
   // Handle sub-window switching and activation within side panel
   useInput((input, key) => {
     if (!contextFocused) return;
 
     if (isKey(input, key, activeKeybinds.layout.switchWindowLeft) || isKey(input, key, activeKeybinds.layout.switchWindowRight)) {
-      setActiveSubWindow(prev => prev === 'tools' ? 'workspace' : 'tools');
+      switchRightPanel();
     }
   }, { isActive: contextFocused });
 
   if (!visible) {
     return null;
   }
+
+  const totalHeight = (stdout?.rows || 24) - 1;
+  const resolvedRow1Height = row1Height || 3;
+  const rightPanelRow2Height = 10;
+  const rightPanelRow4Height = 3;
+  const rightPanelRow3Height = Math.max(6, totalHeight - resolvedRow1Height - rightPanelRow2Height - rightPanelRow4Height);
+
+  const rightPanelWidth = Math.max(20, width || Math.floor((stdout?.columns || 80) * 0.3));
+
+  const rightPanelIndex = activeRightPanel === 'tools'
+    ? 0
+    : activeRightPanel === 'workspace'
+    ? 1
+    : activeRightPanel === 'llm-chat'
+    ? 2
+    : 3;
 
   return (
     <Box flexDirection="column" flexGrow={1} width="100%">
@@ -107,21 +128,26 @@ export function SidePanel({ visible, connection, model, gpu, theme, row1Height }
               <Text color={theme.text.accent} bold>{headerLabel}</Text>
             </Box>
             <DotIndicator 
-              total={2} 
-              active={isToolsMode ? 0 : 1} 
+              total={4} 
+              active={rightPanelIndex} 
               theme={theme} 
             />
         </Box>
 
-        {isToolsMode ? (
-          <ContextSection />
-        ) : (
+        {activeRightPanel === 'tools' && <ContextSection />}
+        {activeRightPanel === 'workspace' && (
           <WorkspacePanel 
             theme={theme}
-            height={0} // Will be calculated by flex
-            width={0} // Will be calculated by flex
+            height={0}
+            width={0}
             hasFocus={contextFocused}
           />
+        )}
+        {activeRightPanel === 'llm-chat' && (
+          <RightPanelLLMChat height={rightPanelRow3Height} width={rightPanelWidth} />
+        )}
+        {activeRightPanel === 'terminal2' && (
+          <Terminal2 height={rightPanelRow3Height} />
         )}
       </Box>
 

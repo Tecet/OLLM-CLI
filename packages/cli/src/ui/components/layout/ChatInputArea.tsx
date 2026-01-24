@@ -12,9 +12,12 @@ import { useChat, Message } from '../../../features/context/ChatContext.js';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { useKeybinds } from '../../../features/context/KeybindsContext.js';
 import { useUI } from '../../../features/context/UIContext.js';
+import { useInputRouting } from '../../contexts/InputRoutingContext.js';
 import { useWindow } from '../../contexts/WindowContext.js';
 import { useTerminal } from '../../hooks/useTerminal.js';
+import { useTerminal2 } from '../../hooks/useTerminal2.js';
 import { isKey } from '../../utils/keyUtils.js';
+import { InputRoutingIndicator } from '../InputRoutingIndicator.js';
 
 export interface ChatInputAreaProps {
   /** Optional assigned height from layout */
@@ -27,12 +30,14 @@ export const ChatInputArea = memo(function ChatInputArea({ height, showBorder = 
   const { state: chatState, setCurrentInput, sendMessage, cancelGeneration, executeMenuOption, navigateMenu, setInputMode, setMenuState } = useChat();
   const { state: uiState } = useUI();
   const { isFocused } = useFocusManager();
-  const { activeWindow, switchWindow } = useWindow();
-  const { sendCommand } = useTerminal();
+  const { switchWindow } = useWindow();
+  const { sendCommand, sendRawInput: sendRawInputT1 } = useTerminal();
+  const { sendRawInput: sendRawInputT2 } = useTerminal2();
+  const { activeDestination, cycleDestination, setActiveDestination, inputMode } = useInputRouting();
   const { activeKeybinds } = useKeybinds();
   
   const hasFocus = isFocused('chat-input');
-  const isTerminalActive = activeWindow === 'terminal';
+  const isTerminalActive = activeDestination === 'terminal1' || activeDestination === 'terminal2';
   
   const { currentInput, streaming, waitingForResponse, messages, statusMessage } = chatState;
   const theme = uiState.theme;
@@ -58,9 +63,9 @@ export const ChatInputArea = memo(function ChatInputArea({ height, showBorder = 
   // Memoize submit handler
   const handleSubmit = useCallback(async (value: string) => {
     if (value.trim()) {
-      if (isTerminalActive) {
+      if (activeDestination === 'terminal1') {
         sendCommand(value);
-        setCurrentInput(''); // Clear input after sending to terminal
+        setCurrentInput('');
       } else {
         // Handle input during streaming/waiting
         if (streaming || waitingForResponse) {
@@ -76,9 +81,47 @@ export const ChatInputArea = memo(function ChatInputArea({ height, showBorder = 
         await sendMessage(value);
       }
     }
-  }, [sendMessage, isTerminalActive, sendCommand, setCurrentInput, streaming, waitingForResponse, cancelGeneration]);
+  }, [sendMessage, activeDestination, sendCommand, setCurrentInput, streaming, waitingForResponse, cancelGeneration]);
 
   useInput(async (input, key) => {
+      if (key.ctrl && key.leftArrow) {
+          cycleDestination('prev');
+          return;
+      }
+      if (key.ctrl && key.rightArrow) {
+          cycleDestination('next');
+          return;
+      }
+      if (key.ctrl && input === '1') {
+          setActiveDestination('llm');
+          return;
+      }
+      if (key.ctrl && input === '2') {
+          setActiveDestination('terminal1');
+          return;
+      }
+      if (key.ctrl && input === '3') {
+          setActiveDestination('terminal2');
+          return;
+      }
+
+      if (activeDestination === 'terminal1' || activeDestination === 'terminal2') {
+          const sendRaw = activeDestination === 'terminal1' ? sendRawInputT1 : sendRawInputT2;
+
+          if (key.return) {
+              sendRaw('\r');
+          } else if (key.backspace) {
+              sendRaw('\x7f');
+          } else if (key.ctrl && input === 'c') {
+              sendRaw('\x03');
+          } else if (key.ctrl && input === 'd') {
+              sendRaw('\x04');
+          } else if (input && !key.ctrl && !key.meta) {
+              sendRaw(input);
+          }
+          return;
+      }
+
       // Allow Tab to bubble up to global handler for focus cycling
       if (key.tab) return;
 
@@ -135,8 +178,12 @@ export const ChatInputArea = memo(function ChatInputArea({ height, showBorder = 
 
   // Determine placeholder based on mode
   let placeholder = hasFocus ? 'Type a message... (Enter to send)' : 'Focus elsewhere... (Ctrl+Space to focus)';
-  if (isTerminalActive) {
-    placeholder = hasFocus ? 'Enter terminal command... (Enter to execute)' : 'Terminal inactive...';
+  if (activeDestination === 'terminal1') {
+    placeholder = hasFocus ? 'Terminal 1 input (raw mode)' : 'Terminal 1 inactive...';
+  } else if (activeDestination === 'terminal2') {
+    placeholder = hasFocus ? 'Terminal 2 input (raw mode)' : 'Terminal 2 inactive...';
+  } else if (activeDestination === 'editor') {
+    placeholder = 'Editor input disabled...';
   }
 
   return (
@@ -148,6 +195,7 @@ export const ChatInputArea = memo(function ChatInputArea({ height, showBorder = 
       borderColor={borderColor}
     >
       {renderStatus()}
+      <InputRoutingIndicator activeDestination={activeDestination} theme={theme} />
       <Box flexGrow={1}>
         {chatState.inputMode === 'text' ? (
           <InputBox
@@ -156,7 +204,7 @@ export const ChatInputArea = memo(function ChatInputArea({ height, showBorder = 
             onSubmit={handleSubmit}
             userMessages={userMessages}
             placeholder={placeholder}
-            disabled={!isTerminalActive && !hasFocus} 
+            disabled={inputMode !== 'line-buffered' || !hasFocus}
             theme={theme}
           />
         ) : (

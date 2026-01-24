@@ -5,6 +5,7 @@ import { useChat } from '../../../features/context/ChatContext.js';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { useModel } from '../../../features/context/ModelContext.js';
 import { useUI } from '../../../features/context/UIContext.js';
+import { useInputRouting } from '../../contexts/InputRoutingContext.js';
 import { useWindow } from '../../contexts/WindowContext.js';
 
 export interface SystemBarProps {
@@ -21,7 +22,8 @@ export function SystemBar({ height, showBorder = true }: SystemBarProps) {
   const { modelLoading, warmupStatus } = useModel();
   const { state: uiState } = useUI();
   const { theme } = uiState;
-  const { isTerminalActive, activeWindow } = useWindow();
+  const { isTerminalActive, activeWindow, activeRightPanel } = useWindow();
+  const { activeDestination } = useInputRouting();
   const { isFocused } = useFocusManager();
 
   const hasFocus = isFocused('system-bar'); 
@@ -42,9 +44,15 @@ export function SystemBar({ height, showBorder = true }: SystemBarProps) {
 
   // Determine status text
   let displayStatus = ' ';
-  if (activeWindow === 'editor') {
+  const isTerminalMode = isTerminalActive || activeDestination === 'terminal1' || activeDestination === 'terminal2';
+
+  if (activeWindow === 'editor' || activeDestination === 'editor') {
     displayStatus = 'Editor Mode';
-  } else if (isTerminalActive) {
+  } else if (activeDestination === 'terminal2') {
+    displayStatus = 'Terminal 2';
+  } else if (activeRightPanel === 'llm-chat') {
+    displayStatus = 'LLM Chat (Right)';
+  } else if (isTerminalMode) {
     displayStatus = 'Terminal Mode';
   } else if (warmupStatus?.active) {
     const elapsedSeconds = Math.max(0, Math.floor(warmupStatus.elapsedMs / 1000));
@@ -74,7 +82,7 @@ export function SystemBar({ height, showBorder = true }: SystemBarProps) {
       <Box>
         <Text color={theme.text.accent} bold>OLLM:</Text>
         <Text> </Text>
-        <Text color={isTerminalActive ? 'cyan' : theme.text.primary}>
+        <Text color={isTerminalMode ? 'cyan' : theme.text.primary}>
           {displayStatus}
         </Text>
       </Box>
