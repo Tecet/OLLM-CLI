@@ -22,8 +22,7 @@ describe('SnapshotStorage', () => {
 
   beforeEach(async () => {
     // Create temporary test directory
-    testDir = path.join(os.tmpdir(), `snapshot-test-${Date.now()}`);
-    await fs.mkdir(testDir, { recursive: true });
+    testDir = await fs.mkdtemp(path.join(os.tmpdir(), 'snapshot-test-'));
     storage = createSnapshotStorage(testDir);
   });
 

@@ -1,6 +1,7 @@
+import { exec } from 'child_process';
+
 import { useState } from 'react';
 import { Box, Text, useInput } from 'ink';
-import { exec } from 'child_process';
 
 import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { useUI } from '../../../features/context/UIContext.js';

@@ -11,6 +11,7 @@ import { useFocusManager } from '../../features/context/FocusContext.js';
 import { useUI } from '../../features/context/UIContext.js';
 import { useWindow } from '../contexts/WindowContext.js';
 import { useTerminal } from '../hooks/useTerminal.js';
+
 import type { AnsiToken, AnsiLine } from '../../utils/terminalSerializer.js';
 
 export interface TerminalProps {

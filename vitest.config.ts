@@ -28,6 +28,7 @@ export default defineConfig({
       // Tests placed under any `docs` or `documentation` folders
       '**/docs/**',
       '**/documentation/**',
+      '**/node_modules/**',
       // Tests with `doc`/`docs` in filename
       '**/*doc*.test.*',
       '**/*docs*.test.*',

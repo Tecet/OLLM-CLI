@@ -66,7 +66,7 @@ const getEnhancedDescription = (toolId: string): string => {
 };
 
 // Tool usage examples with command highlighting
-const getToolUsageExample = (toolId: string, accentColor: string): string => {
+const getToolUsageExample = (toolId: string): string => {
   const examples: Record<string, string> = {
     // File Discovery Tools
     'glob': 'Use this tool when you need to find files by pattern. For example, to find all TypeScript files: "Find all *.ts files" or "Show me all configuration files matching *.config.js". The tool supports wildcards like * and ** for recursive searches.',
@@ -568,7 +568,7 @@ export function ToolsPanel({ modelSupportsTools = true, windowSize = 30, windowW
                 <Text bold color={uiState.theme.text.primary}>Example of use:</Text>
                 <Text></Text>
                 <Text color={uiState.theme.text.secondary}>
-                  {getToolUsageExample(selectedTool.id, uiState.theme.text.accent)}
+                  {getToolUsageExample(selectedTool.id)}
                 </Text>
               </Box>
 

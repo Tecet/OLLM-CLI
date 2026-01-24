@@ -86,7 +86,6 @@ export function FilesTab({
         setCursorPosition(firstIndex);
       } catch (err) {
         // Fail silently but log for debugging
-        // eslint-disable-next-line no-console
         console.error('Failed to open file tree on focus:', err);
       }
     };

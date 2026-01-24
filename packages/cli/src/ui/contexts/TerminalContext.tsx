@@ -7,10 +7,10 @@
 import os from 'os';
 
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback, useMemo } from 'react';
-import * as pty from 'node-pty';
 import { Terminal } from '@xterm/headless';
+import * as pty from 'node-pty';
 
-import { serializeTerminalToObject, type AnsiOutput } from '../../utils/terminalSerializer.js';
+import type { AnsiOutput } from '../../utils/terminalSerializer.js';
 
 interface TerminalContextValue {
   output: AnsiOutput;
@@ -152,7 +152,7 @@ export function TerminalProvider({ children }: { children: React.ReactNode }) {
     if (xtermRef.current) {
       try {
         xtermRef.current.resize(safeCols, safeRows);
-      } catch (err) {
+      } catch (_err) {
         // Silently fail
       }
     }
@@ -160,7 +160,7 @@ export function TerminalProvider({ children }: { children: React.ReactNode }) {
     if (ptyProcessRef.current && isRunning) {
       try {
         ptyProcessRef.current.resize(safeCols, safeRows);
-      } catch (err) {
+      } catch (_err) {
         // Silently fail
       }
     }
