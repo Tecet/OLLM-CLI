@@ -117,9 +117,10 @@ try {
 
   // Patch spawn in the child_process module for the duration of the test run
   childProcess.spawn = patchedSpawn;
-} catch (err) {
+} catch (err: unknown) {
   // If patching fails, do not break the test setup; tests will run with
   // original behavior (may be noisier on some platforms).
-   
-  console.warn('Failed to install spawn shim for tests:', err?.message || err);
+  
+  const errMsg = err instanceof Error ? err.message : String(err);
+  console.warn('Failed to install spawn shim for tests:', errMsg);
 }
