@@ -6,13 +6,10 @@
  */
 
 import { MessageBus, type EventListener } from './messageBus.js';
-import { createLogger } from '../utils/logger.js';
 
 import type { HookRegistry } from './hookRegistry.js';
 import type { HookRunner } from './hookRunner.js';
 import type { HookEvent, Hook, HookInput } from './types.js';
-
-const logger = createLogger('hookEventHandler');
 
 /**
  * Options for hook event handler
@@ -110,7 +107,7 @@ export class HookEventHandler {
     }
 
     if (this.options.logging) {
-      logger.info('HookEventHandler started and listening for events');
+      console.log('HookEventHandler started and listening for events');
     }
   }
 
@@ -128,7 +125,7 @@ export class HookEventHandler {
     this.listenerIds.clear();
 
     if (this.options.logging) {
-      logger.info('HookEventHandler stopped');
+      console.log('HookEventHandler stopped');
     }
   }
 
@@ -159,7 +156,7 @@ export class HookEventHandler {
     }
 
     if (this.options.logging) {
-      logger.debug(`Executing ${hooks.length} hook(s) for event '${event}'`);
+      console.log(`Executing ${hooks.length} hook(s) for event '${event}'`);
     }
 
     // Prepare hook input
@@ -177,7 +174,7 @@ export class HookEventHandler {
         return await this.executeHooksSequential(hooks, input);
       }
     } catch (error) {
-      logger.error(`Error handling event '${event}':`, { error: error instanceof Error ? error.message : String(error) });
+      console.error(`Error handling event '${event}':`, error);
       return {
         event,
         hooksExecuted: 0,
@@ -190,7 +187,7 @@ export class HookEventHandler {
     } finally {
       const duration = Date.now() - startTime;
       if (this.options.logging) {
-        logger.debug(`Event '${event}' handling completed in ${duration}ms`);
+        console.log(`Event '${event}' handling completed in ${duration}ms`);
       }
     }
   }

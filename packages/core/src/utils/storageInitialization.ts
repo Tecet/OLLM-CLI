@@ -4,11 +4,8 @@
  * Handles storage initialization tasks including migration and directory setup.
  */
 
-import { createLogger } from './logger.js';
 import { ensureStorageDirectories, logAllStorageLocations } from './pathValidation.js';
 import { runMigrationIfNeeded } from './storageMigration.js';
-
-const logger = createLogger('storageInitialization');
 
 /**
  * Initialize storage system
@@ -20,8 +17,7 @@ const logger = createLogger('storageInitialization');
  * 3. Ensure all storage directories exist
  */
 export async function initializeStorage(): Promise<void> {
-
-  logger.info('[Storage] Initializing storage system...');
+  console.log('[Storage] Initializing storage system...');
   
   // Log storage locations for debugging
   logAllStorageLocations();
@@ -32,33 +28,33 @@ export async function initializeStorage(): Promise<void> {
     
     if (migrationResult) {
       if (migrationResult.success) {
-        logger.info('[Storage] Migration completed successfully');
-        logger.info(`[Storage] Sessions migrated: ${migrationResult.sessionsMigrated}`);
-        logger.info(`[Storage] Snapshots migrated: ${migrationResult.snapshotsMigrated}`);
+        console.log('[Storage] Migration completed successfully');
+        console.log(`[Storage] Sessions migrated: ${migrationResult.sessionsMigrated}`);
+        console.log(`[Storage] Snapshots migrated: ${migrationResult.snapshotsMigrated}`);
       } else {
-        logger.warn('[Storage] Migration had errors:');
+        console.warn('[Storage] Migration had errors:');
         for (const error of migrationResult.errors) {
-          logger.warn(`[Storage]   - ${error}`);
+          console.warn(`[Storage]   - ${error}`);
         }
       }
     } else {
-      logger.info('[Storage] No migration needed');
+      console.log('[Storage] No migration needed');
     }
   } catch (error) {
-    logger.error('[Storage] Migration failed:', { error: error instanceof Error ? error.message : String(error) });
+    console.error('[Storage] Migration failed:', error);
     // Don't throw - allow app to continue even if migration fails
   }
   
   // Ensure all storage directories exist
   try {
     await ensureStorageDirectories();
-    logger.info('[Storage] All storage directories verified');
+    console.log('[Storage] All storage directories verified');
   } catch (error) {
-    logger.error('[Storage] Failed to create storage directories:', { error: error instanceof Error ? error.message : String(error) });
+    console.error('[Storage] Failed to create storage directories:', error);
     throw error; // This is critical - can't continue without storage
   }
   
-  logger.info('[Storage] Storage initialization complete');
+  console.log('[Storage] Storage initialization complete');
 }
 
 /**
@@ -72,8 +68,8 @@ export async function initializeStorageSafe(): Promise<boolean> {
     await initializeStorage();
     return true;
   } catch (error) {
-    logger.error('[Storage] Storage initialization failed:', { error: error instanceof Error ? error.message : String(error) });
-    logger.error('[Storage] Application may not function correctly');
+    console.error('[Storage] Storage initialization failed:', error);
+    console.error('[Storage] Application may not function correctly');
     return false;
   }
 }

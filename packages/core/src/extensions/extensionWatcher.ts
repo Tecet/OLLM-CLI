@@ -7,11 +7,7 @@
 
 import { watch, type FSWatcher } from 'fs';
 
-import { createLogger } from '../utils/logger.js';
-
 import type { ExtensionManager } from './extensionManager.js';
-
-const logger = createLogger('extensionWatcher');
 
 /**
  * File change event
@@ -81,8 +77,7 @@ export class ExtensionWatcher {
     }
 
     this.enabled = true;
-    
-    logger.info(`Extension watcher started (watching ${extensions.length} extensions)`);
+    console.log(`Extension watcher started (watching ${extensions.length} extensions)`);
   }
 
   /**
@@ -102,12 +97,12 @@ export class ExtensionWatcher {
     // Close all watchers
     for (const [name, watcher] of this.watchers.entries()) {
       watcher.close();
-      logger.info(`Stopped watching extension: ${name}`);
+      console.log(`Stopped watching extension: ${name}`);
     }
     this.watchers.clear();
 
     this.enabled = false;
-    logger.info('Extension watcher stopped');
+    console.log('Extension watcher stopped');
   }
 
   /**
@@ -147,13 +142,16 @@ export class ExtensionWatcher {
 
       // Handle watcher errors
       watcher.on('error', (error) => {
-        logger.error(`Watcher error for extension '${name}':`, { error: error instanceof Error ? error.message : String(error) });
+        console.error(`Watcher error for extension '${name}':`, error);
       });
 
       this.watchers.set(name, watcher);
-      logger.info(`Started watching extension: ${name}`);
+      console.log(`Started watching extension: ${name}`);
     } catch (error) {
-      logger.error(`Failed to watch extension '${name}':`, { error: error instanceof Error ? error.message : String(error) });
+      console.error(
+        `Failed to watch extension '${name}':`,
+        error instanceof Error ? error.message : String(error)
+      );
     }
   }
 
@@ -179,7 +177,7 @@ export class ExtensionWatcher {
     watcher.close();
     this.watchers.delete(name);
 
-    logger.info(`Stopped watching extension: ${name}`);
+    console.log(`Stopped watching extension: ${name}`);
   }
 
   /**
@@ -218,13 +216,18 @@ export class ExtensionWatcher {
     const timer = setTimeout(async () => {
       this.debounceTimers.delete(name);
 
-      logger.info(`File ${eventType} detected in extension '${name}': ${filename}`);
+      console.log(
+        `File ${eventType} detected in extension '${name}': ${filename}`
+      );
 
       try {
         // Reload the extension
         await this.reloadExtension(name);
       } catch (error) {
-        logger.error(`Failed to reload extension '${name}':`, { error: error instanceof Error ? error.message : String(error) });
+        console.error(
+          `Failed to reload extension '${name}':`,
+          error instanceof Error ? error.message : String(error)
+        );
       }
     }, this.config.debounceDelay);
 
@@ -237,13 +240,13 @@ export class ExtensionWatcher {
    * @param name - Extension name
    */
   private async reloadExtension(name: string): Promise<void> {
-    logger.info(`Reloading extension: ${name}`);
+    console.log(`Reloading extension: ${name}`);
 
     try {
       // Use extension manager to reload
       await this.extensionManager.reloadExtension(name);
 
-      logger.info(`Successfully reloaded extension: ${name}`);
+      console.log(`Successfully reloaded extension: ${name}`);
     } catch (error) {
       throw new Error(
         `Failed to reload extension: ${error instanceof Error ? error.message : String(error)}`

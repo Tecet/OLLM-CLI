@@ -21,11 +21,8 @@ import {
   MCPStreamChunk,
   MCPTransport,
 } from './types.js';
-import { createLogger } from '../utils/logger.js';
 
 import type { MCPConfig } from './config.js';
-
-const logger = createLogger('MCPClient');
 
 /**
  * Internal server state
@@ -102,15 +99,9 @@ export class DefaultMCPClient implements MCPClient {
       throw new Error('MCP integration is disabled in configuration');
     }
 
-    // Check if server is already running (not just registered)
-    const existingServer = this.servers.get(name);
-    if (existingServer && (existingServer.status === 'connected' || existingServer.status === 'starting')) {
-      throw new Error(`Server '${name}' is already running`);
-    }
-    
-    // If server exists but is in error/disconnected state, remove it first
-    if (existingServer) {
-      this.servers.delete(name);
+    // Prevent duplicate server registration
+    if (this.servers.has(name)) {
+      throw new Error(`Server '${name}' is already registered`);
     }
 
     // Initialize OAuth provider if server requires authentication
@@ -265,10 +256,11 @@ export class DefaultMCPClient implements MCPClient {
       await state.transport.disconnect();
     } catch (error) {
       // Log error but don't throw - ensure cleanup continues
-      logger.error('Error disconnecting MCP server', {
-        serverName: name,
-        error: error instanceof Error ? error.message : String(error)
-      });
+      // Suppress logs in test environments to avoid noise
+      if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error(`Error disconnecting MCP server '${name}': ${errorMessage}`);
+      }
     } finally {
       // Always update status and clean up, even if disconnect failed
       state.status = 'disconnected';
