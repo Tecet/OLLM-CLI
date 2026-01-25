@@ -69,9 +69,21 @@ export function TerminalProvider({ children }: { children: React.ReactNode }) {
         try {
           xterm.write(data, () => {
             const buffer = xterm.buffer.active;
+            // Use the terminal's viewportY to align with serializeTerminalRange expectations
+            const viewportY = (buffer as any).viewportY ?? 0;
             const totalLines = buffer.length;
-            const startIndex = Math.max(0, totalLines - xterm.rows);
+            const startIndex = Math.max(0, viewportY);
             const serialized = serializeTerminalRange(xterm, startIndex, xterm.rows);
+
+            // Emit lightweight debug info to help diagnose missing input artefacts
+            try {
+              const lastLine = serialized[serialized.length - 1] || [];
+              const lastText = lastLine.map(t => t.text).join('');
+              logger.debug('PTY data chunk length=%d, viewportY=%d, totalLines=%d, startIndex=%d, lastLineLen=%d', data.length, viewportY, totalLines, startIndex, lastText.length);
+            } catch (_e) {
+              // ignore logging errors
+            }
+
             setOutput(serialized);
           });
         } catch (err) {
