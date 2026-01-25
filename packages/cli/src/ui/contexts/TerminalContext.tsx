@@ -39,7 +39,7 @@ export function TerminalProvider({ children }: { children: React.ReactNode }) {
     const isWindows = os.platform() === 'win32';
     const shell = isWindows ? 'powershell.exe' : 'bash';
     const shellArgs = isWindows
-      ? ['-NoProfile', '-NoLogo', '-NoExit', '-Command', 'Set-PSReadLineOption -PredictionSource None']
+      ? ['-NoProfile', '-NoLogo', '-NoExit', '-Command', 'if (Get-Command Set-PSReadLineOption -ErrorAction SilentlyContinue) { Set-PSReadLineOption -PredictionSource None -ErrorAction SilentlyContinue }']
       : [];
     
     try {

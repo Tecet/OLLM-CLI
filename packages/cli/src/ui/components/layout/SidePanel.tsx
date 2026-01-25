@@ -155,7 +155,7 @@ export function SidePanel({ visible, connection, model, gpu, theme, row1Height, 
           <RightPanelLLMChat height={rightPanelRow3Height} width={rightPanelWidth} />
         )}
         {activeRightPanel === 'terminal2' && (
-          <Terminal2 height={rightPanelRow3Height} />
+          <Terminal2 height={rightPanelRow3Height - 3} />
         )}
       </Box>
 

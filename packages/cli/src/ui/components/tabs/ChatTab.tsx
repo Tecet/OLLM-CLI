@@ -238,7 +238,9 @@ function ChatTabComponent(props: ChatTabProps) {
         {/* Terminal Window */}
         {activeWindow === 'terminal' && (
           <Box flexGrow={1} width="100%">
-            <Terminal height={height - (props.showWindowSwitcher ? 3 : 2)} />
+            <Terminal 
+              height={height - (props.showWindowSwitcher ? 3 : 2)} 
+            />
           </Box>
         )}
         

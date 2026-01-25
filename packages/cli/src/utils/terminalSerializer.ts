@@ -34,7 +34,7 @@ export const enum ColorMode {
 }
 
 class Cell {
-  private readonly cell: IBufferCell | null;
+  private readonly chars: string;
   private readonly x: number;
   private readonly y: number;
   private readonly cursorX: number;
@@ -52,15 +52,19 @@ class Cell {
     cursorX: number,
     cursorY: number,
   ) {
-    this.cell = cell;
     this.x = x;
     this.y = y;
     this.cursorX = cursorX;
     this.cursorY = cursorY;
 
     if (!cell) {
+      this.chars = ' ';
       return;
     }
+
+    // Crucially, copy the characters immediately because xterm.js
+    // reuses the same IBufferCell object when iterating lines.
+    this.chars = cell.getChars() || ' ';
 
     if (cell.isInverse()) {
       this.attributes += Attribute.inverse;
@@ -112,7 +116,7 @@ class Cell {
   }
 
   getChars(): string {
-    return this.cell?.getChars() || ' ';
+    return this.chars;
   }
 
   isAttribute(attribute: Attribute): boolean {
@@ -158,7 +162,7 @@ export function serializeTerminalRange(
       continue;
     }
 
-    let lastCell = new Cell(null, -1, -1, cursorX, cursorY);
+    let lastCell = new Cell(null, -1, -y, cursorX, cursorY); // y offset to ensure initial mismatch
     let currentText = '';
 
     for (let x = 0; x < terminal.cols; x++) {

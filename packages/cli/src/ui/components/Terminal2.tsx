@@ -22,7 +22,7 @@ export interface Terminal2Props {
 }
 
 export function Terminal2({ height }: Terminal2Props) {
-  const { output, isRunning, resize } = useTerminal2();
+  const { output, resize } = useTerminal2();
   const { stdout } = useStdout();
   const { state: uiState } = useUI();
   const { isFocused } = useFocusManager();
@@ -33,19 +33,28 @@ export function Terminal2({ height }: Terminal2Props) {
   const hasFocus = isFocused('context-panel') && activeRightPanel === 'terminal2';
   const isTerminalInput = activeDestination === 'terminal2';
 
+  // Conservative width calculation for side panel
   const width = useMemo(() => {
     if (!stdout) return 40;
-    const effectiveColumns = stdout.columns - 6;
-    const widthFactor = uiState.sidePanelVisible ? 0.3 : 1.0;
-    return Math.max(10, Math.floor(effectiveColumns * widthFactor));
-  }, [stdout, uiState.sidePanelVisible]);
+    
+    // Total column space available for the app
+    const terminalWidth = Math.max(40, stdout.columns);
+    
+    // Side panel width is 30% of total
+    const rightPanelWidth = Math.floor(terminalWidth * 0.3);
+    
+    // Subtract UI overhead:
+    // Terminal border (2) + Padding (4) + SidePanel border (inherited)
+    // Plus 6 char safety buffer
+    return Math.max(10, rightPanelWidth - 14);
+  }, [stdout]);
 
-  const chromeRows = 1;
-  const visibleHeight = Math.max(1, height - chromeRows);
+  const visibleHeight = Math.max(2, height - 2);
 
   useEffect(() => {
     resize(width, visibleHeight);
   }, [width, visibleHeight, resize]);
+
   const [scrollOffset, setScrollOffset] = React.useState(0);
   const allLines = useMemo(() => output, [output]);
   const maxScroll = Math.max(0, allLines.length - visibleHeight);
@@ -71,26 +80,28 @@ export function Terminal2({ height }: Terminal2Props) {
   }, [allLines, visibleHeight, scrollOffset]);
 
   const renderLine = (line: AnsiLine, index: number) => {
-    if (!line || !Array.isArray(line) || line.length === 0) {
-      return <Box key={index}><Text> </Text></Box>;
+    if (!line || line.length === 0) {
+      return <Box key={index} height={1}><Text> </Text></Box>;
     }
 
     return (
-      <Box key={index} flexShrink={1}>
-        {line.map((token: AnsiToken, tokenIndex: number) => (
-          <Text
-            key={tokenIndex}
-            color={token.fg || undefined}
-            backgroundColor={token.bg || undefined}
-            inverse={token.inverse}
-            dimColor={token.dim}
-            bold={token.bold}
-            italic={token.italic}
-            underline={token.underline}
-          >
-            {token.text}
-          </Text>
-        ))}
+      <Box key={index} height={1} flexShrink={0} overflow="hidden">
+        <Text wrap="wrap">
+          {line.map((token: AnsiToken, tokenIndex: number) => (
+            <Text
+              key={tokenIndex}
+              color={token.fg || undefined}
+              backgroundColor={token.bg || undefined}
+              inverse={token.inverse}
+              dimColor={token.dim}
+              bold={token.bold}
+              italic={token.italic}
+              underline={token.underline}
+            >
+              {(token.text || '').replace(/ /g, '\u00A0')}
+            </Text>
+          ))}
+        </Text>
       </Box>
     );
   };
@@ -98,30 +109,15 @@ export function Terminal2({ height }: Terminal2Props) {
   return (
     <Box
       flexDirection="column"
-      height="100%"
-      width="100%"
-      paddingX={1}
-      paddingTop={1}
-      paddingBottom={0}
       flexGrow={1}
-      flexShrink={1}
+      width="100%"
+      paddingX={2}
+      borderStyle="single"
+      borderColor={uiState.theme.border.primary}
       overflow="hidden"
-      alignItems="flex-start"
     >
-      <Box
-        flexDirection="column"
-        width="100%"
-        height="100%"
-        overflow="hidden"
-        flexShrink={1}
-      >
-        {visibleLines.length === 0 ? (
-          <Box marginTop={1}>
-            <Text dimColor>Terminal 2 ready. Type commands and press Enter. {isRunning ? '●' : '○'}</Text>
-          </Box>
-        ) : (
-          visibleLines.map((line, index) => renderLine(line, index))
-        )}
+      <Box flexDirection="column" width="100%" height="100%" overflow="hidden">
+        {visibleLines.map((line, index) => renderLine(line, index))}
       </Box>
     </Box>
   );

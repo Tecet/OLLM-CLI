@@ -1,7 +1,8 @@
 /**
  * Terminal Component
  * 
- * Displays terminal output with proper ANSI code rendering using xterm.js headless
+ * Displays terminal output with proper ANSI code rendering.
+ * Uses a highly conservative width calculation to prevent overflow and clipping.
  */
 
 import React, { useMemo, useEffect } from 'react';
@@ -22,22 +23,36 @@ export interface TerminalProps {
 }
 
 export function Terminal({ height }: TerminalProps) {
-  const { output, isRunning, resize } = useTerminal();
+  const { output, resize } = useTerminal();
   const { stdout } = useStdout();
   const { state: uiState } = useUI();
 
   // Determine width based on available terminal width and sidepanel state
   const width = useMemo(() => {
     if (!stdout) return 80;
-    const sidePanelVisible = uiState.sidePanelVisible;
-    const effectiveColumns = stdout.columns - 6; // Accounts for paddingX={3} in App.tsx
-    const widthFactor = sidePanelVisible ? 0.7 : 1.0;
-    return Math.max(10, Math.floor(effectiveColumns * widthFactor));
+    
+    // Replicate App.tsx layout math for Row 2
+    const totalCols = stdout.columns;
+    const appTerminalWidth = Math.max(40, totalCols);
+    const leftColumnWidth = Math.max(20, Math.floor(appTerminalWidth * 0.7));
+    
+    // Width of the column containing the tab content
+    const baseWidth = uiState.sidePanelVisible ? leftColumnWidth - 1 : appTerminalWidth - 1;
+    
+    // Spacer logic from App.tsx (Line 1001-1002)
+    const spacerWidth = Math.floor(baseWidth * 0.1);
+    const mainContentWidth = baseWidth - (2 * spacerWidth);
+    
+    // Subtract internal UI overhead:
+    // ChatTab border (2) + Terminal border (2) + Terminal padding (4)
+    // Plus a 6-char safety buffer for word-wrap and font variations
+    const ptyCols = Math.max(10, mainContentWidth - 14);
+    
+    return ptyCols;
   }, [stdout, uiState.sidePanelVisible]);
 
-  // Calculate available lines based on height (account for top padding)
-  const chromeRows = 1;
-  const visibleHeight = Math.max(1, height - chromeRows);
+  // Terminal height calculation (account for top bar and borders)
+  const visibleHeight = Math.max(2, height - 2);
 
   // Sync PTY size with UI size
   useEffect(() => {
@@ -53,15 +68,11 @@ export function Terminal({ height }: TerminalProps) {
   const hasFocus = isFocused('chat-input') && activeWindow === 'terminal';
   const isTerminalInput = activeDestination === 'terminal1';
 
-  // Output is already structured as AnsiLine[] (array of token arrays)
-  const allLines = useMemo(() => {
-    return output;
-  }, [output]);
-
-  // Max scroll is total lines minus what's visible
+  // Output 
+  const allLines = useMemo(() => output, [output]);
   const maxScroll = Math.max(0, allLines.length - visibleHeight);
 
-  // Handle keys for scrolling - only when terminal is visible and NOT when typing in input
+  // Handle keys for scrolling
   useInput((input, key) => {
     if (!hasFocus && !isTerminalInput) return;
 
@@ -70,9 +81,9 @@ export function Terminal({ height }: TerminalProps) {
     } else if (isKey(input, key, activeKeybinds.terminal.scrollDown)) {
       setScrollOffset(prev => Math.max(prev - 1, 0));
     }
-  }, { isActive: activeWindow === 'terminal' || isTerminalInput }); // Allow scroll when terminal is visible or terminal input is active
+  }, { isActive: activeWindow === 'terminal' || isTerminalInput });
 
-  // Reset scroll when new output arrives if we were at the bottom (0)
+  // Reset scroll when new output arrives
   useEffect(() => {
     setScrollOffset(0);
   }, [output]);
@@ -83,33 +94,30 @@ export function Terminal({ height }: TerminalProps) {
       return allLines.slice(start, end);
   }, [allLines, visibleHeight, scrollOffset]);
 
-  // Render a single line with ANSI tokens
+  // Render a single line
   const renderLine = (line: AnsiLine, index: number) => {
-    // Safety check for empty or invalid lines
-    if (!line || !Array.isArray(line) || line.length === 0) {
-      return <Box key={index}><Text> </Text></Box>;
+    if (!line || line.length === 0) {
+      return <Box key={index} height={1}><Text> </Text></Box>;
     }
     
     return (
-      <Box key={index} flexShrink={1}>
-        {line.map((token: AnsiToken, tokenIndex: number) => {
-          const text = token.text ? token.text.replace(/ /g, '\u00A0') : token.text;
-          return (
+      <Box key={index} height={1} flexShrink={0} width="100%" overflow="hidden">
+        <Text wrap="wrap">
+          {line.map((token: AnsiToken, tokenIndex: number) => (
             <Text
               key={tokenIndex}
-              // Temporarily disable colors to debug rendering artefacts
-              color={undefined}
-              backgroundColor={undefined}
+              color={token.fg}
+              backgroundColor={token.bg}
               inverse={token.inverse}
               dimColor={token.dim}
               bold={token.bold}
               italic={token.italic}
               underline={token.underline}
             >
-              {text}
+              {(token.text || '').replace(/ /g, '\u00A0')}
             </Text>
-          );
-        })}
+          ))}
+        </Text>
       </Box>
     );
   };
@@ -117,31 +125,15 @@ export function Terminal({ height }: TerminalProps) {
   return (
     <Box 
       flexDirection="column" 
-      height="100%" 
-      width="100%"
-      paddingX={1} 
-      paddingTop={1}
-      paddingBottom={0}
       flexGrow={1}
-      flexShrink={1}
+      width="100%"
+      paddingX={2}
+      borderStyle="single"
+      borderColor={uiState.theme.border.primary}
       overflow="hidden"
-      alignItems="flex-start"
     >
-      {/* Container to isolate terminal rendering */}
-      <Box 
-        flexDirection="column" 
-        width="100%"
-        height="100%"
-        overflow="hidden"
-        flexShrink={1}
-      >
-        {visibleLines.length === 0 ? (
-          <Box marginTop={1}>
-            <Text dimColor>Terminal ready. Type commands and press Enter. {isRunning ? '●' : '○'}</Text>
-          </Box>
-        ) : (
-          visibleLines.map((line, index) => renderLine(line, index))
-        )}
+      <Box flexDirection="column" width="100%" height="100%" overflow="hidden">
+        {visibleLines.map((line, index) => renderLine(line, index))}
       </Box>
     </Box>
   );
