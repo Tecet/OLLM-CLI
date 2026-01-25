@@ -1,6 +1,3 @@
-import { createLogger } from '../../../../core/src/utils/logger.js';
-
-const logger = createLogger('ContextManagerContext');
 /**
  * Context Manager Context
  * 
@@ -30,6 +27,7 @@ import {
   SnapshotManager as PromptsSnapshotManager,
 } from '@ollm/core';
 
+import { createLogger } from '../../../../core/src/utils/logger.js';
 import { SettingsService } from '../../config/settingsService.js';
 
 import type {
@@ -46,6 +44,8 @@ import type {
   SnapshotConfig as _SnapshotConfig,
   SnapshotStorage as _SnapshotStorage,
  SnapshotManager as CoreSnapshotManager } from '@ollm/core';
+
+const logger = createLogger('ContextManagerContext');
 
 
 

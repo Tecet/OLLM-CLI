@@ -1,6 +1,4 @@
 import { createLogger } from '../utils/logger.js';
-
-const logger = createLogger('hookDebugger');
 /**
  * Hook Debugger
  * 
@@ -8,6 +6,8 @@ const logger = createLogger('hookDebugger');
  */
 
 import type { Hook, HookEvent } from './types.js';
+
+const logger = createLogger('hookDebugger');
 
 /**
  * Hook execution trace entry

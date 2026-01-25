@@ -1,6 +1,3 @@
-import { createLogger } from '../utils/logger.js';
-
-const logger = createLogger('promptOrchestrator');
 /**
  * PromptOrchestrator
  *
@@ -12,8 +9,11 @@ import { SystemPromptBuilder } from './SystemPromptBuilder.js';
 import { ContextTier, OperationalMode } from './types.js';
 import { PromptRegistry } from '../prompts/PromptRegistry.js';
 import { TieredPromptStore } from '../prompts/tieredPromptStore.js';
+import { createLogger } from '../utils/logger.js';
 
 import type { ContextPool, ConversationContext, Message, TokenCounter } from './types.js';
+
+const logger = createLogger('promptOrchestrator');
 
 type EmitFn = (event: string, payload?: unknown) => void;
 

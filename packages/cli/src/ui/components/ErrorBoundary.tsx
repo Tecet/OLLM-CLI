@@ -1,6 +1,3 @@
-import { createLogger } from '../../../../core/src/utils/logger.js';
-
-const logger = createLogger('ErrorBoundary');
 /**
  * Error Boundary Component
  * Catches errors in React components and displays user-friendly error messages.
@@ -9,7 +6,10 @@ const logger = createLogger('ErrorBoundary');
 import React, { Component, ReactNode } from 'react';
 import { Box, Text } from 'ink';
 
+import { createLogger } from '../../../../core/src/utils/logger.js';
 import { useUI } from '../../features/context/UIContext.js';
+
+const logger = createLogger('ErrorBoundary');
 
 interface ErrorBoundaryProps {
   children: ReactNode;

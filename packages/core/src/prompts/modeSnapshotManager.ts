@@ -1,6 +1,3 @@
-import { createLogger } from '../utils/logger.js';
-
-const logger = createLogger('modeSnapshotManager');
 /**
  * Snapshot Manager for Dynamic Prompt System
  * 
@@ -11,8 +8,12 @@ const logger = createLogger('modeSnapshotManager');
 import { promises as fs } from 'fs';
 import { join } from 'path';
 
+import { createLogger } from '../utils/logger.js';
+
 import type { ModeType } from './ContextAnalyzer.js';
 import type { Message } from '../provider/types.js';
+
+const logger = createLogger('modeSnapshotManager');
 
 /**
  * Mode-specific findings from specialized modes

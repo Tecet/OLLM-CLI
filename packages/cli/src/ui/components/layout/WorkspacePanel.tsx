@@ -1,6 +1,3 @@
-import { createLogger } from '../../../../../core/src/utils/logger.js';
-
-const logger = createLogger('WorkspacePanel');
 /**
  * WorkspacePanel - 3-panel workspace view for the side panel
  * 
@@ -15,12 +12,15 @@ import { readFile } from 'fs/promises';
 import { useState, useEffect, useMemo } from 'react';
 import { Box, Text, useInput, measureElement } from 'ink';
 
+import { createLogger } from '../../../../../core/src/utils/logger.js';
 import { Theme } from '../../../config/types.js';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { useServices } from '../../../features/context/ServiceContext.js';
 import { useFileFocus, FileTreeService, FocusSystem, SyntaxViewer } from '../file-explorer/index.js';
 
 import type { FileNode } from '../file-explorer/types.js';
+
+const logger = createLogger('WorkspacePanel');
 
 export interface WorkspacePanelProps {
   theme: Theme;

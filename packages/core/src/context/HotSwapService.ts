@@ -1,4 +1,3 @@
-import { createLogger } from '../utils/logger.js';
 import { SnapshotParser } from './snapshotParser.js';
 import { ContextManager, Message as ContextMessage, OperationalMode } from './types.js';
 import { SnapshotManager } from '../prompts/modeSnapshotManager.js';
@@ -8,8 +7,11 @@ import { STATE_SNAPSHOT_PROMPT } from '../prompts/templates/stateSnapshot.js';
 import { ProviderAdapter, Message as ProviderMessage } from '../provider/types.js';
 import { modelDatabase } from '../routing/modelDatabase.js';
 import { ReasoningParser } from '../services/reasoningParser.js';
+import { createLogger } from '../utils/logger.js';
 
 import type { ModeType } from '../prompts/ContextAnalyzer.js';
+
+const logger = createLogger('HotSwapService');
 
 export class HotSwapService {
   constructor(
@@ -104,8 +106,6 @@ export class HotSwapService {
     // 4. Update skills if available
     if (newSkills) {
       this.modeManager?.updateSkills(newSkills);
-
-const logger = createLogger('HotSwapService');
       this.contextManager.setActiveSkills?.(newSkills);
     }
 

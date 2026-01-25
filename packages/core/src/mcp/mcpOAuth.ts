@@ -1,6 +1,3 @@
-import { createLogger } from '../utils/logger.js';
-
-const logger = createLogger('mcpOAuth');
 /**
  * OAuth 2.0 Provider for MCP Servers
  * 
@@ -11,6 +8,10 @@ const logger = createLogger('mcpOAuth');
 import { exec } from 'child_process';
 import { createServer, type Server } from 'http';
 import { parse as parseUrl } from 'url';
+
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('mcpOAuth');
 
 /**
  * OAuth configuration for an MCP server

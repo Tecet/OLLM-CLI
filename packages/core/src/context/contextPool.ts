@@ -1,6 +1,4 @@
 import { createLogger } from '../utils/logger.js';
-
-const logger = createLogger('contextPool');
 /**
  * Context Pool Service
  * 
@@ -16,6 +14,8 @@ import type {
   ModelInfo,
   KVQuantization
 } from './types.js';
+
+const logger = createLogger('contextPool');
 
 /**
  * Default context pool configuration

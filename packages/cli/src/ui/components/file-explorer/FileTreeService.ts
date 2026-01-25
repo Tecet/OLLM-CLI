@@ -1,6 +1,3 @@
-import { createLogger } from '../../../../../core/src/utils/logger.js';
-
-const logger = createLogger('FileTreeService');
 /**
  * FileTreeService
  * 
@@ -18,8 +15,11 @@ import * as path from 'path';
 import picomatch from 'picomatch';
 
 import { handleError } from './ErrorHandler.js';
+import { createLogger } from '../../../../../core/src/utils/logger.js';
 
 import type { FileNode } from './types.js';
+
+const logger = createLogger('FileTreeService');
 
 /**
  * Options for building the file tree

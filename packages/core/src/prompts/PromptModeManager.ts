@@ -1,6 +1,3 @@
-import { createLogger } from '../utils/logger.js';
-
-const logger = createLogger('PromptModeManager');
 /**
  * Prompt Mode Manager for Dynamic Prompt System
  * 
@@ -13,9 +10,12 @@ import { EventEmitter } from 'events';
 import { FocusModeManager } from './FocusModeManager.js';
 import { ModeMetricsTracker } from './ModeMetricsTracker.js';
 import { ModeTransitionAnimator } from './ModeTransitionAnimator.js';
+import { createLogger } from '../utils/logger.js';
 
 import type { ContextAnalyzer, ContextAnalysis, ModeType } from './ContextAnalyzer.js';
 import type { ModelCapabilities } from '../services/modelManagementService.js';
+
+const logger = createLogger('PromptModeManager');
 
 /**
  * Mode configuration

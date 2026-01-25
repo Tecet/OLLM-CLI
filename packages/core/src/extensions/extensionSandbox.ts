@@ -1,6 +1,3 @@
-import { createLogger } from '../utils/logger.js';
-
-const logger = createLogger('extensionSandbox');
 /**
  * Extension Sandbox for permission management
  * 
@@ -10,6 +7,10 @@ const logger = createLogger('extensionSandbox');
 
 import { homedir } from 'os';
 import { resolve, relative, sep } from 'path';
+
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('extensionSandbox');
 
 /**
  * Permission types

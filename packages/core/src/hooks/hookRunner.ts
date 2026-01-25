@@ -1,6 +1,3 @@
-import { createLogger } from '../utils/logger.js';
-
-const logger = createLogger('hookRunner');
 /**
  * HookRunner executes hooks with timeout and error handling
  * 
@@ -14,10 +11,13 @@ import * as path from 'path';
 import { DEFAULT_HOOKS_CONFIG } from './config.js';
 import { getHookDebugger } from './hookDebugger.js';
 import { HookTranslator } from './hookTranslator.js';
+import { createLogger } from '../utils/logger.js';
 
 import type { HooksConfig } from './config.js';
 import type { TrustedHooks } from './trustedHooks.js';
 import type { Hook, HookEvent, HookInput, HookOutput } from './types.js';
+
+const logger = createLogger('hookRunner');
 
 /**
  * Result of hook execution including metadata

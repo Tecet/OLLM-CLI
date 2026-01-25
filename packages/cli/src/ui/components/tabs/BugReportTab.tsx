@@ -1,9 +1,9 @@
-import { createLogger } from '../../../../../core/src/utils/logger.js';
 import { exec } from 'child_process';
 
 import { useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 
+import { createLogger } from '../../../../../core/src/utils/logger.js';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { useUI } from '../../../features/context/UIContext.js';
 import { useTabEscapeHandler } from '../../hooks/useTabEscapeHandler.js';

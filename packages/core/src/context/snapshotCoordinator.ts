@@ -1,6 +1,5 @@
 import { createLogger } from '../utils/logger.js';
 
-const logger = createLogger('snapshotCoordinator');
 /**
  * SnapshotCoordinator
  *
@@ -15,6 +14,8 @@ import type {
   SnapshotStorage,
   ContextPool,
 } from './types.js';
+
+const logger = createLogger('snapshotCoordinator');
 
 type EmitFn = (event: string, payload?: unknown) => void;
 

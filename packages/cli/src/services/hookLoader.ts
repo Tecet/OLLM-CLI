@@ -1,6 +1,3 @@
-import { createLogger } from '../../../core/src/utils/logger.js';
-
-const logger = createLogger('hookLoader');
 /**
  * Hook Loader Service
  * 
@@ -12,10 +9,13 @@ const logger = createLogger('hookLoader');
 import { HookRegistry } from '@ollm/ollm-cli-core/hooks/hookRegistry.js';
 
 import { hookFileService } from './hookFileService.js';
+import { createLogger } from '../../../core/src/utils/logger.js';
 import { uiHookToCoreHook } from '../features/hooks/adapter.js';
 
 import type { UIHook } from '../features/hooks/types.js';
 import type { HookEvent } from '@ollm/ollm-cli-core/hooks/types.js';
+
+const logger = createLogger('hookLoader');
 
 /**
  * Map UI event types to core hook events

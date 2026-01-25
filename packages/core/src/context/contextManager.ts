@@ -1,6 +1,3 @@
-import { createLogger } from '../utils/logger.js';
-
-const logger = createLogger('contextManager');
 /**
  * Context Manager
  * 
@@ -26,6 +23,7 @@ import {
   MODE_PROFILES
 } from './types.js';
 import { createVRAMMonitor } from './vramMonitor.js';
+import { createLogger } from '../utils/logger.js';
 
 import type { CheckpointManager } from './checkpointManager.js';
 import type { ContextModuleOverrides, ContextModules } from './contextModules.js';
@@ -43,6 +41,8 @@ import type {
   MemoryGuard,
   ModelInfo
 } from './types.js';
+
+const logger = createLogger('contextManager');
 
 // During test runs we silence verbose context-manager logs to keep test output clean.
 // Keep warnings/errors so real failures are still visible. Use CONTEXT_DEBUG=1 to override.

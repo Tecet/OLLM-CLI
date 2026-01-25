@@ -1,6 +1,6 @@
-import { createLogger } from '../../../../core/src/utils/logger.js';
+import React, { createContext, useContext, ReactNode } from 'react';
 
-const logger = createLogger('UICallbacksContext');
+import { createLogger } from '../../../../core/src/utils/logger.js';
 /**
  * UI Callbacks Context
  * 
@@ -9,7 +9,8 @@ const logger = createLogger('UICallbacksContext');
  * dependency injection using React Context.
  */
 
-import React, { createContext, useContext, ReactNode } from 'react';
+
+const logger = createLogger('UICallbacksContext');
 
 /**
  * UI Callbacks interface

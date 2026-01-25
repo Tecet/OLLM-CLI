@@ -1,10 +1,10 @@
-import { createLogger } from '../../../../core/src/utils/logger.js';
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-const logger = createLogger('KeybindsContext');
-
+import { createLogger } from '../../../../core/src/utils/logger.js';
 import { keybindsData } from '../../config/keybinds.js';
 import { KeybindsService } from '../../services/KeybindsService.js';
+
+const logger = createLogger('KeybindsContext');
 
 type KeybindsData = typeof keybindsData;
 

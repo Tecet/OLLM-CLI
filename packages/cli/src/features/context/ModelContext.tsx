@@ -1,6 +1,3 @@
-import { createLogger } from '../../../../core/src/utils/logger.js';
-
-const logger = createLogger('ModelContext');
 /**
  * Model Context for managing the current model and LLM communication
  * 
@@ -17,11 +14,14 @@ import { calculateContextSizing } from './contextSizing.js';
 import { useOptionalGPU } from './GPUContext.js';
 import { deriveGPUPlacementHints } from './gpuHints.js';
 import { setLastGPUPlacementHints } from './gpuHintStore.js';
+import { createLogger } from '../../../../core/src/utils/logger.js';
 import { SettingsService } from '../../config/settingsService.js';
 import { useUICallbacks } from '../../ui/contexts/UICallbacksContext.js';
 import { profileManager } from '../profiles/ProfileManager.js';
 
 import type { ProviderAdapter, Message as ProviderMessage, ToolCall, ToolSchema, ProviderMetrics } from '@ollm/core';
+
+const logger = createLogger('ModelContext');
 
 /**
  * Model context value

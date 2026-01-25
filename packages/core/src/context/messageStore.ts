@@ -1,6 +1,5 @@
 import { createLogger } from '../utils/logger.js';
 
-const logger = createLogger('messageStore');
 /**
  * MessageStore
  *
@@ -16,6 +15,8 @@ import type {
   TokenCounter,
   ContextPool,
 } from './types.js';
+
+const logger = createLogger('messageStore');
 
 type EmitFn = (event: string, payload?: unknown) => void;
 

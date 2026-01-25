@@ -1,13 +1,13 @@
-import { createLogger } from '../utils/logger.js';
 import { EventEmitter } from 'events';
 
 import { ToolCapability, detectServerCapabilities } from './tool-capabilities.js';
-
-const logger = createLogger('toolRouter');
+import { createLogger } from '../utils/logger.js';
 
 import type { ToolRegistry } from './tool-registry.js';
 import type { Tool } from './types.js';
 import type { MCPClient } from '../mcp/types.js';
+
+const logger = createLogger('toolRouter');
 
 /**
  * Configuration for tool routing

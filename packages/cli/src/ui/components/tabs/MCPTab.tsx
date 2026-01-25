@@ -1,6 +1,3 @@
-import { createLogger } from '../../../../../core/src/utils/logger.js';
-
-const logger = createLogger('MCPTab');
 /**
  * MCPTab Component
  * 
@@ -17,6 +14,7 @@ const logger = createLogger('MCPTab');
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Box, Text, useInput, useStdout } from 'ink';
 
+import { createLogger } from '../../../../../core/src/utils/logger.js';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { useUI } from '../../../features/context/UIContext.js';
 import { useMCP, type ExtendedMCPServerStatus } from '../../contexts/MCPContext.js';
@@ -37,6 +35,8 @@ import { ServerStatusBanner } from '../mcp/ServerStatusBanner.js';
 import { SystemMessages, type SystemMessage } from '../mcp/SystemMessages.js';
 
 import type { MCPMarketplaceServer } from '../../../services/mcpMarketplace.js';
+
+const logger = createLogger('MCPTab');
 
 export interface MCPTabProps {
   windowWidth?: number;

@@ -1,12 +1,12 @@
 import { createLogger } from '../utils/logger.js';
-
-const logger = createLogger('registry');
 /**
  * Provider Registry
  * Manages registration and resolution of provider adapters.
  */
 
 import type { ProviderAdapter } from './types.js';
+
+const logger = createLogger('registry');
 
 /**
  * Provider Registry

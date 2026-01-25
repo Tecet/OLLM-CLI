@@ -1,8 +1,9 @@
+import fs from 'fs';
+import path from 'path';
+
 import { createLogger } from '../../../core/src/utils/logger.js';
 
 const logger = createLogger('documentService');
-import fs from 'fs';
-import path from 'path';
 
 export interface DocFile {
   title: string;

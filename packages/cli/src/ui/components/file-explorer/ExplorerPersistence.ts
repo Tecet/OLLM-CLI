@@ -1,6 +1,3 @@
-import { createLogger } from '../../../../../core/src/utils/logger.js';
-
-const logger = createLogger('ExplorerPersistence');
 /**
  * ExplorerPersistence - Manages state persistence for File Explorer
  * 
@@ -17,6 +14,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import { handleError } from './ErrorHandler.js';
+import { createLogger } from '../../../../../core/src/utils/logger.js';
+
+const logger = createLogger('ExplorerPersistence');
 
 /**
  * Explorer state that gets persisted to disk

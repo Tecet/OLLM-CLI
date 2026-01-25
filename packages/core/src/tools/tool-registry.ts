@@ -1,6 +1,5 @@
+import { globalValidator, type ValidationError } from './validation.js';
 import { createLogger } from '../utils/logger.js';
-
-const logger = createLogger('tool-registry');
 /**
  * Tool Registry
  * 
@@ -8,9 +7,10 @@ const logger = createLogger('tool-registry');
  * Manages the lifecycle of tools and provides access to tool schemas for LLM consumption.
  */
 
-import { globalValidator, type ValidationError } from './validation.js';
 
 import type { DeclarativeTool, ToolSchema, ToolContext, ToolInvocation } from './types.js';
+
+const logger = createLogger('tool-registry');
 
 /**
  * Interface for checking tool enabled state

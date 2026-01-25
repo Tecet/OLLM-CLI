@@ -1,6 +1,3 @@
-import { createLogger } from '../utils/logger.js';
-
-const logger = createLogger('loopDetectionService');
 /**
  * Loop Detection Service
  *
@@ -14,6 +11,9 @@ const logger = createLogger('loopDetectionService');
 import { createHash } from 'crypto';
 
 import { sanitizeErrorMessage } from './errorSanitization.js';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('loopDetectionService');
 
 export interface LoopPattern {
   type: 'repeated-tool' | 'repeated-output' | 'turn-limit';

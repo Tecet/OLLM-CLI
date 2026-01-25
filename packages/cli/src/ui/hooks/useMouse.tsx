@@ -1,7 +1,7 @@
-import { createLogger } from '../../../../core/src/utils/logger.js';
 import React, { useEffect, useRef, createContext, useContext, useCallback, ReactNode } from 'react';
 import { useStdin } from 'ink';
 
+import { createLogger } from '../../../../core/src/utils/logger.js';
 import { enableMouseEvents, disableMouseEvents } from '../../utils/terminal.js';
 
 const logger = createLogger('useMouse');

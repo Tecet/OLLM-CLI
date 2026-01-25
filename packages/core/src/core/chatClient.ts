@@ -1,6 +1,3 @@
-import { createLogger } from '../utils/logger.js';
-
-const logger = createLogger('chatClient');
 /**
  * Chat Client
  * Main entry point for chat interactions. Manages conversation state and coordinates turns.
@@ -11,6 +8,7 @@ import { getMessageBus } from '../hooks/messageBus.js';
 import { ModelDatabase, modelDatabase } from '../routing/modelDatabase.js';
 import { mergeServicesConfig } from '../services/config.js';
 import { LoopDetectionService } from '../services/loopDetectionService.js';
+import { createLogger } from '../utils/logger.js';
 
 import type { ContextManager as ContextMgmtManager } from '../context/types.js';
 import type { ProviderRegistry } from '../provider/registry.js';
@@ -19,6 +17,8 @@ import type { ChatCompressionService } from '../services/chatCompressionService.
 import type { ChatRecordingService } from '../services/chatRecordingService.js';
 import type { DynamicContextInjector as ServicesContextManager } from '../services/dynamicContextInjector.js';
 import type { SessionMessage, SessionToolCall, ServicesConfig } from '../services/types.js';
+
+const logger = createLogger('chatClient');
 
 const isTestEnv = process.env.NODE_ENV === 'test' || !!process.env.VITEST;
 

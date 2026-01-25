@@ -1,6 +1,3 @@
-import { createLogger } from '../../../../../core/src/utils/logger.js';
-
-const logger = createLogger('HealthMonitorDialog');
 /**
  * HealthMonitorDialog - Dialog for monitoring MCP server health
  * 
@@ -21,6 +18,7 @@ import React, { useState, useCallback } from 'react';
 import { Box, Text } from 'ink';
 
 import { Dialog } from './Dialog.js';
+import { createLogger } from '../../../../../core/src/utils/logger.js';
 import { useMCP } from '../../contexts/MCPContext.js';
 import { Button, ButtonGroup } from '../forms/Button.js';
 import { Checkbox } from '../forms/Checkbox.js';
@@ -28,6 +26,8 @@ import { FormField } from '../forms/FormField.js';
 import { TextInput } from '../forms/TextInput.js';
 
 import type { ExtendedMCPServerStatus } from '../../contexts/MCPContext.js';
+
+const logger = createLogger('HealthMonitorDialog');
 
 export interface HealthMonitorDialogProps {
   /** Callback when dialog should close */

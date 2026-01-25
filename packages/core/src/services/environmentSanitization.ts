@@ -1,6 +1,3 @@
-import { createLogger } from '../utils/logger.js';
-
-const logger = createLogger('environmentSanitization');
 /**
  * Environment Sanitization Service
  *
@@ -12,8 +9,11 @@ const logger = createLogger('environmentSanitization');
 import picomatch from 'picomatch';
 
 import { sanitizeErrorMessage } from './errorSanitization.js';
+import { createLogger } from '../utils/logger.js';
 
 import type { SanitizationConfig } from './types.js';
+
+const logger = createLogger('environmentSanitization');
 
 /**
  * Default environment variables that are always allowed

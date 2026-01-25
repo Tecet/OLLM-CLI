@@ -1,4 +1,3 @@
-import { createLogger } from '../../../../core/src/utils/logger.js';
 import fs, { existsSync, readFileSync } from 'fs';
 import path from 'path';
 
@@ -21,6 +20,7 @@ import { useModel } from './ModelContext.js';
 import { useServices } from './ServiceContext.js';
 import { useUI } from './UIContext.js';
 import { useFocusedFilesInjection } from './useFocusedFilesInjection.js';
+import { createLogger } from '../../../../core/src/utils/logger.js';
 import { commandRegistry } from '../../commands/index.js';
 import { SettingsService } from '../../config/settingsService.js';
 import { profileManager } from '../profiles/ProfileManager.js';

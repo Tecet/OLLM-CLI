@@ -1,6 +1,6 @@
-import { createLogger } from '../utils/logger.js';
+import { z } from 'zod';
 
-const logger = createLogger('config');
+import { createLogger } from '../utils/logger.js';
 /**
  * Hook system configuration management
  * 
@@ -10,9 +10,10 @@ const logger = createLogger('config');
  * @module hooks/config
  */
 
-import { z } from 'zod';
 
 import type { HookSource } from './types.js';
+
+const _logger = createLogger('config');
 
 /**
  * Hook configuration interface

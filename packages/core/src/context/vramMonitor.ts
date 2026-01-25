@@ -1,13 +1,3 @@
-import { createLogger } from '../utils/logger.js';
-
-const logger = createLogger('vramMonitor');
-/**
- * VRAM Monitor Service
- * 
- * Monitors GPU memory availability and emits low-memory events.
- * Supports NVIDIA, AMD, Apple Silicon, and falls back to system RAM for CPU-only mode.
- */
-
 import { exec } from 'child_process';
 import { EventEmitter } from 'events';
 import { totalmem, freemem } from 'os';
@@ -15,6 +5,16 @@ import { promisify } from 'util';
 
 import { createGPUDetector } from './gpuDetector.js';
 import { VRAMMonitor, VRAMInfo, GPUType, GPUDetector } from './types.js';
+import { createLogger } from '../utils/logger.js';
+
+/**
+ * VRAM Monitor Service
+ * 
+ * Monitors GPU memory availability and emits low-memory events.
+ * Supports NVIDIA, AMD, Apple Silicon, and falls back to system RAM for CPU-only mode.
+ */
+
+const logger = createLogger('vramMonitor');
 
 const execAsync = promisify(exec);
 

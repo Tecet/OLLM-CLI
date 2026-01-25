@@ -1,6 +1,3 @@
-import { createLogger } from '../utils/logger.js';
-
-const logger = createLogger('trustedHooks');
 /**
  * TrustedHooks manages hook trust verification and approval
  * 
@@ -13,7 +10,11 @@ import { createHash } from 'crypto';
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import { dirname } from 'path';
 
+import { createLogger } from '../utils/logger.js';
+
 import type { Hook, HookApproval } from './types.js';
+
+const logger = createLogger('trustedHooks');
 
 /**
  * Storage format for trusted hooks

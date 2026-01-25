@@ -1,6 +1,3 @@
-import { createLogger } from '../../../../../core/src/utils/logger.js';
-
-const logger = createLogger('FileExplorerComponent');
 /**
  * FileExplorerComponent - Main container for File Explorer UI
  * 
@@ -31,11 +28,14 @@ import { GitStatusService } from './GitStatusService.js';
 import { PathSanitizer } from './PathSanitizer.js';
 import { WorkspaceProvider } from './WorkspaceContext.js';
 import { WorkspaceManager } from './WorkspaceManager.js';
+import { createLogger } from '../../../../../core/src/utils/logger.js';
 
 import type { WorkspaceConfig, FileNode } from './types.js';
 import type { MessageBus } from '@ollm/ollm-cli-core/hooks/messageBus.js';
 import type { PolicyEngine } from '@ollm/ollm-cli-core/policy/policyEngine.js';
 import type { ToolRegistry } from '@ollm/ollm-cli-core/tools/tool-registry.js';
+
+const logger = createLogger('FileExplorerComponent');
 
 /**
  * Props for FileExplorerComponent

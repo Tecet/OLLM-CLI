@@ -1,6 +1,5 @@
+import { HookEvent } from './types.js';
 import { createLogger } from '../utils/logger.js';
-
-const logger = createLogger('messageBus');
 /**
  * Message Bus for Hook System
  * 
@@ -8,7 +7,8 @@ const logger = createLogger('messageBus');
  * Supports priority-based listeners, async event emission, and wildcard events.
  */
 
-import { HookEvent } from './types.js';
+
+const logger = createLogger('messageBus');
 
 /**
  * Listener function for message bus events

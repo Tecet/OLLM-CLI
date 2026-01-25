@@ -1,6 +1,3 @@
-import { createLogger } from '../../../../core/src/utils/logger.js';
-
-const logger = createLogger('MCPContext');
 /**
  * MCPContext - Manages MCP server state and operations for the MCP Panel UI
  * 
@@ -23,6 +20,7 @@ import { MCPHealthMonitor } from '@ollm/ollm-cli-core/mcp/mcpHealthMonitor.js';
 import { MCPOAuthProvider, FileTokenStorage } from '@ollm/ollm-cli-core/mcp/mcpOAuth.js';
 import { ToolRouter, type ToolRoutingConfig, DEFAULT_TOOL_ROUTING_CONFIG } from '@ollm/ollm-cli-core/tools/index.js';
 
+import { createLogger } from '../../../../core/src/utils/logger.js';
 import { SettingsService } from '../../config/settingsService.js';
 import { useServices } from '../../features/context/ServiceContext.js';
 import { mcpConfigService, type MCPConfigFile } from '../../services/mcpConfigService.js';
@@ -38,6 +36,8 @@ import type {
   MCPTool,
   MCPOAuthConfig
 } from '@ollm/ollm-cli-core/mcp/types.js';
+
+const logger = createLogger('MCPContext');
 
 /**
  * System message type for non-invasive notifications

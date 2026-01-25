@@ -1,6 +1,3 @@
-import { createLogger } from '../../../../../core/src/utils/logger.js';
-
-const logger = createLogger('ServerLogsViewer');
 /**
  * ServerLogsViewer - Dialog for viewing MCP server logs
  * 
@@ -20,8 +17,11 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { Box, Text } from 'ink';
 
 import { Dialog } from './Dialog.js';
+import { createLogger } from '../../../../../core/src/utils/logger.js';
 import { useMCP } from '../../contexts/MCPContext.js';
 import { Button, ButtonGroup } from '../forms/Button.js';
+
+const logger = createLogger('ServerLogsViewer');
 
 export interface ServerLogsViewerProps {
   /** Server name to view logs for */

@@ -1,6 +1,3 @@
-import { createLogger } from '../utils/logger.js';
-
-const logger = createLogger('chatCompressionService');
 /**
  * Chat Compression Service
  *
@@ -12,6 +9,7 @@ import { EventEmitter } from 'events';
 
 import { sanitizeErrorMessage } from './errorSanitization.js';
 import { STATE_SNAPSHOT_PROMPT } from '../prompts/templates/stateSnapshot.js';
+import { createLogger } from '../utils/logger.js';
 
 import type {
   SessionMessage,
@@ -20,6 +18,8 @@ import type {
 } from './types.js';
 import type { TokenCounter } from '../context/types.js';
 import type { ProviderAdapter } from '../provider/types.js';
+
+const logger = createLogger('chatCompressionService');
 
 /**
  * Chat Compression Service

@@ -1,7 +1,7 @@
-import { createLogger } from '../../../../../core/src/utils/logger.js';
 import React, { useEffect } from 'react';
 import { Box, Text } from 'ink';
 
+import { createLogger } from '../../../../../core/src/utils/logger.js';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { useUI } from '../../../features/context/UIContext.js';
 import { ErrorBoundary } from '../ErrorBoundary.js';

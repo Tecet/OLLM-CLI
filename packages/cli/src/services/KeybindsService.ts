@@ -1,11 +1,11 @@
-import { createLogger } from '../../../core/src/utils/logger.js';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { homedir } from 'os';
 import { join } from 'path';
 
-const logger = createLogger('KeybindsService');
-
+import { createLogger } from '../../../core/src/utils/logger.js';
 import { keybindsData } from '../config/keybinds.js';
+
+const logger = createLogger('KeybindsService');
 
 export class KeybindsService {
   private static instance: KeybindsService;

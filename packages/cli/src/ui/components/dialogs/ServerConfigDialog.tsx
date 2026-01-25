@@ -1,6 +1,3 @@
-import { createLogger } from '../../../../../core/src/utils/logger.js';
-
-const logger = createLogger('ServerConfigDialog');
 /**
  * ServerConfigDialog - Dialog for configuring MCP server settings
  * 
@@ -20,6 +17,7 @@ import React, { useState, useCallback } from 'react';
 import { Box, Text } from 'ink';
 
 import { Dialog } from './Dialog.js';
+import { createLogger } from '../../../../../core/src/utils/logger.js';
 import { useMCP } from '../../contexts/MCPContext.js';
 import { Button, ButtonGroup } from '../forms/Button.js';
 import { CheckboxGroup } from '../forms/Checkbox.js';
@@ -28,6 +26,8 @@ import { TextInput, validators } from '../forms/TextInput.js';
 import { Tooltip } from '../forms/Tooltip.js';
 
 import type { MCPServerConfig } from '@ollm/ollm-cli-core/mcp/types.js';
+
+const logger = createLogger('ServerConfigDialog');
 
 export interface ServerConfigDialogProps {
   /** Server name being configured */

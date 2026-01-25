@@ -1,6 +1,3 @@
-import { createLogger } from '../../../../../core/src/utils/logger.js';
-
-const logger = createLogger('SyntaxViewer');
 /**
  * SyntaxViewer Component
  * 
@@ -13,6 +10,10 @@ const logger = createLogger('SyntaxViewer');
 import React, { useEffect, useState } from 'react';
 import { Box, Text } from 'ink';
 import { codeToHtml, bundledLanguages } from 'shiki';
+
+import { createLogger } from '../../../../../core/src/utils/logger.js';
+
+const logger = createLogger('SyntaxViewer');
 
 /**
  * Props for SyntaxViewer component

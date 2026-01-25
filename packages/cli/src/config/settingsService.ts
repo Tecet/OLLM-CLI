@@ -1,9 +1,10 @@
-import { createLogger } from '../../../core/src/utils/logger.js';
-
-const logger = createLogger('settingsService');
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { homedir } from 'os';
 import { join } from 'path';
+
+import { createLogger } from '../../../core/src/utils/logger.js';
+
+const logger = createLogger('settingsService');
 
 export interface UserSettings {
   ui: {

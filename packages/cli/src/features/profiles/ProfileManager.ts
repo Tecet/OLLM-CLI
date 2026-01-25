@@ -1,10 +1,10 @@
-import { createLogger } from '../../../../core/src/utils/logger.js';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { homedir, tmpdir } from 'os';
 import { join } from 'path';
 
 import { refreshModelDatabase } from '@ollm/core';
 
+import { createLogger } from '../../../../core/src/utils/logger.js';
 import { defaultContextBehavior } from '../../config/defaults.js';
 import profilesData from '../../config/LLM_profiles.json' with { type: 'json' };
 

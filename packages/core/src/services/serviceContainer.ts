@@ -1,6 +1,3 @@
-import { createLogger } from '../utils/logger.js';
-
-const logger = createLogger('serviceContainer');
 /**
  * Service Container for dependency injection
  * 
@@ -27,10 +24,13 @@ import { PolicyEngine } from '../policy/policyEngine.js';
 import { modelDatabase } from '../routing/modelDatabase.js';
 import { ModelRouter } from '../routing/modelRouter.js';
 import { ToolRegistry, registerBuiltInTools } from '../tools/index.js';
+import { createLogger } from '../utils/logger.js';
 
 import type { ApprovalCallback } from '../hooks/trustedHooks.js';
 import type { PolicyConfig } from '../policy/policyRules.js';
 import type { ProviderAdapter } from '../provider/types.js';
+
+const logger = createLogger('serviceContainer');
 
 /**
  * Configuration for model management

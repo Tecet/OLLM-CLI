@@ -1,6 +1,3 @@
-import { createLogger } from '../utils/logger.js';
-
-const logger = createLogger('projectProfileService');
 /**
  * Project Profile Service for auto-detecting project type and applying project-specific configuration
  * Supports TypeScript, Python, Rust, Go, and documentation profiles
@@ -11,6 +8,10 @@ import { promises as fs } from 'fs';
 import { join } from 'path';
 
 import { parse as parseYaml } from 'yaml';
+
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('projectProfileService');
 
 /**
  * Project profile configuration

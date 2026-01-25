@@ -1,6 +1,6 @@
-import { createLogger } from '../utils/logger.js';
+import { randomUUID } from 'crypto';
 
-const logger = createLogger('snapshotManager');
+import { createLogger } from '../utils/logger.js';
 /**
  * Snapshot Manager Service
  * 
@@ -71,7 +71,6 @@ const logger = createLogger('snapshotManager');
  * ```
  */
 
-import { randomUUID } from 'crypto';
 
 import type {
   SnapshotManager,
@@ -81,6 +80,8 @@ import type {
   SnapshotConfig,
   Message
 } from './types.js';
+
+const logger = createLogger('snapshotManager');
 
 /**
  * Threshold callback function

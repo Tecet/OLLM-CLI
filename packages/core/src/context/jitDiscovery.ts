@@ -1,8 +1,9 @@
+import * as fs from 'fs/promises';
+import * as path from 'path';
+
 import { createLogger } from '../utils/logger.js';
 
 const logger = createLogger('jitDiscovery');
-import * as fs from 'fs/promises';
-import * as path from 'path';
 
 /**
  * Result of a context discovery operation

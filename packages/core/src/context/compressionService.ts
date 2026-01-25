@@ -1,6 +1,4 @@
 import { createLogger } from '../utils/logger.js';
-
-const logger = createLogger('compressionService');
 /**
  * Compression Service
  * 
@@ -78,6 +76,8 @@ import type {
   CompressionEstimate,
   TokenCounter,
 } from './types.js';
+
+const logger = createLogger('compressionService');
 
 /**
  * Provider adapter interface for LLM-based summarization

@@ -1,13 +1,14 @@
-import { createLogger } from '../../../../../../core/src/utils/logger.js';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 import React, { useState, useEffect, useReducer, memo } from 'react';
-
-const logger = createLogger('LlamaAnimationPicture');
 import { Box, Text, useStdout } from 'ink';
 import terminalImage from 'terminal-image';
+
+import { createLogger } from '../../../../../../core/src/utils/logger.js';
+
+const logger = createLogger('LlamaAnimationPicture');
 
 // --- CONFIGURATION ---
 const __filename = fileURLToPath(import.meta.url);

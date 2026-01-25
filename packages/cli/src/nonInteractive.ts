@@ -1,6 +1,3 @@
-import { createLogger } from '../../core/src/utils/logger.js';
-
-const logger = createLogger('nonInteractive');
 /**
  * Non-Interactive Runner
  * Handles single-prompt execution without the TUI.
@@ -9,10 +6,13 @@ const logger = createLogger('nonInteractive');
 import { ProviderRegistry, ChatClient , ToolRegistry } from '@ollm/core';
 import { NonInteractiveError } from '@ollm/ollm-cli-core/errors/index.js';
 
+import { createLogger } from '../../core/src/utils/logger.js';
 import { LocalProvider } from '../../ollm-bridge/src/provider/localProvider.js';
 
 import type { Config } from './config/types.js';
 import type { DeclarativeTool as _DeclarativeTool } from '@ollm/ollm-cli-core/tools/types.js';
+
+const logger = createLogger('nonInteractive');
 
 /**
  * Error codes for non-interactive mode.

@@ -1,11 +1,11 @@
-import { createLogger } from '../../../../../core/src/utils/logger.js';
-
-const logger = createLogger('SearchTab');
 import React, { useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 
+import { createLogger } from '../../../../../core/src/utils/logger.js';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { useUI } from '../../../features/context/UIContext.js';
+
+const _logger = createLogger('SearchTab');
 
 /**
  * SearchTab component

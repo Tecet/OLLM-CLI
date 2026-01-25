@@ -1,6 +1,3 @@
-import { createLogger } from '../../../../../core/src/utils/logger.js';
-
-const logger = createLogger('GitStatusService');
 /**
  * GitStatusService - Git integration for file status tracking
  * 
@@ -18,6 +15,9 @@ import { simpleGit, SimpleGit, StatusResult } from 'simple-git';
 
 import { handleError } from './ErrorHandler.js';
 import { GitStatus } from './types.js';
+import { createLogger } from '../../../../../core/src/utils/logger.js';
+
+const logger = createLogger('GitStatusService');
 
 
 /**

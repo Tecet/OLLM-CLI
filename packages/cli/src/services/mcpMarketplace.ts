@@ -1,6 +1,5 @@
+import { mcpConfigService } from './mcpConfigService.js';
 import { createLogger } from '../../../core/src/utils/logger.js';
-
-const logger = createLogger('mcpMarketplace');
 /**
  * MCP Marketplace Service
  * 
@@ -10,9 +9,10 @@ const logger = createLogger('mcpMarketplace');
  * Connects to the official MCP Registry at registry.modelcontextprotocol.io
  */
 
-import { mcpConfigService } from './mcpConfigService.js';
 
 import type { MCPServerConfig } from '@ollm/ollm-cli-core/mcp/types.js';
+
+const logger = createLogger('mcpMarketplace');
 
 /**
  * MCP marketplace server information

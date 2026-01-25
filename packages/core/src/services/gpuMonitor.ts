@@ -1,6 +1,3 @@
-import { createLogger } from '../utils/logger.js';
-
-const logger = createLogger('gpuMonitor');
 /**
  * GPU Monitor Service
  * 
@@ -10,6 +7,10 @@ const logger = createLogger('gpuMonitor');
 
 import { exec } from 'child_process';
 import { promisify } from 'util';
+
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('gpuMonitor');
 
 const execAsync = promisify(exec);
 

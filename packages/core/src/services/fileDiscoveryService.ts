@@ -1,6 +1,3 @@
-import { createLogger } from '../utils/logger.js';
-
-const logger = createLogger('fileDiscoveryService');
 /**
  * FileDiscoveryService - Fast project file scanning with ignore pattern support
  * 
@@ -23,6 +20,7 @@ import ignoreFactory from 'ignore';
 import picomatch from 'picomatch';
 
 import { sanitizeErrorMessage } from './errorSanitization.js';
+import { createLogger } from '../utils/logger.js';
 
 import type {
   FileEntry,
@@ -31,6 +29,8 @@ import type {
   FileChangeEvent,
 } from './types.js';
 import type { Ignore } from 'ignore';
+
+const logger = createLogger('fileDiscoveryService');
 
 /**
  * Configuration options for FileDiscoveryService

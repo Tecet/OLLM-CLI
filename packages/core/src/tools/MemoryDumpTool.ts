@@ -1,11 +1,9 @@
-import { createLogger } from '../utils/logger.js';
 
 import { promises as fs } from 'fs';
 import * as path from 'path';
 
 import { PromptModeManager } from '../prompts/PromptModeManager.js';
-
-const logger = createLogger('MemoryDumpTool');
+import { createLogger } from '../utils/logger.js';
 
 import type {
   DeclarativeTool,
@@ -14,6 +12,8 @@ import type {
   ToolContext,
   ToolSchema,
 } from './types.js';
+
+const logger = createLogger('MemoryDumpTool');
 
 export interface MemoryDumpParams {
   content: string;

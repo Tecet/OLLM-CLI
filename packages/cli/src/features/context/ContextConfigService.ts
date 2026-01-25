@@ -1,6 +1,7 @@
-import { createLogger } from '../../../../core/src/utils/logger.js';
 import { promises as fs } from 'fs';
 import * as path from 'path';
+
+import { createLogger } from '../../../../core/src/utils/logger.js';
 
 export interface ContextProfile {
   name: string;
@@ -46,6 +47,8 @@ export class ContextConfigService {
     this.configPath = path.join(workspacePath, 'llm_context.json');
   }
 
+  private readonly logger = createLogger('ContextConfigService');
+
   async load(): Promise<void> {
     try {
       const data = await fs.readFile(this.configPath, 'utf-8');
@@ -60,9 +63,7 @@ export class ContextConfigService {
     try {
       await fs.writeFile(this.configPath, JSON.stringify(this.config, null, 2), 'utf-8');
     } catch (error) {
-      logger.warn('Failed to save context config:', error);
-
-const logger = createLogger('ContextConfigService');
+      this.logger.warn('Failed to save context config:', error);
     }
   }
 

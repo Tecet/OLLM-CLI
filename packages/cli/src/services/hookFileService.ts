@@ -1,11 +1,12 @@
-import { createLogger } from '../../../core/src/utils/logger.js';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
 
-const logger = createLogger('hookFileService');
+import { createLogger } from '../../../core/src/utils/logger.js';
 
 import type { UIHook } from '../features/hooks/types.js';
+
+const logger = createLogger('hookFileService');
 
 /**
  * Hook File Service

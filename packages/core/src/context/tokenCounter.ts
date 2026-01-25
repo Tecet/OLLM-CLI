@@ -1,6 +1,4 @@
 import { createLogger } from '../utils/logger.js';
-
-const logger = createLogger('tokenCounter');
 /**
  * Token Counter Service
  * 
@@ -12,6 +10,8 @@ const logger = createLogger('tokenCounter');
 
 import type { TokenCounter, TokenCountCache, Message } from './types.js';
 import type { ProviderAdapter } from '../provider/types.js';
+
+const logger = createLogger('tokenCounter');
 
 /**
  * Default tool call overhead in tokens

@@ -1,6 +1,3 @@
-import { createLogger } from '../utils/logger.js';
-
-const logger = createLogger('chatRecordingService');
 /**
  * ChatRecordingService - Handles session persistence and management
  * 
@@ -18,6 +15,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 
 import { sanitizeErrorMessage } from './errorSanitization.js';
+import { createLogger } from '../utils/logger.js';
 import { validateStoragePath, logPathDiagnostics } from '../utils/pathValidation.js';
 
 import type {
@@ -26,6 +24,8 @@ import type {
   SessionToolCall,
   SessionSummary,
 } from './types.js';
+
+const logger = createLogger('chatRecordingService');
 
 /**
  * Configuration options for ChatRecordingService

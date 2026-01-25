@@ -1,6 +1,3 @@
-import { createLogger } from '../../../../../core/src/utils/logger.js';
-
-const logger = createLogger('WorkspaceManager');
 /**
  * WorkspaceManager - Manages multi-project workspace configuration
  * 
@@ -17,6 +14,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import { WorkspaceConfig, ProjectConfig } from './types.js';
+import { createLogger } from '../../../../../core/src/utils/logger.js';
+
+const logger = createLogger('WorkspaceManager');
 
 /**
  * WorkspaceManager handles loading and managing workspace configurations

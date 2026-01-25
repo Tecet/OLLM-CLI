@@ -1,12 +1,10 @@
+import { MemoryLevel } from './types.js';
 import { createLogger } from '../utils/logger.js';
-
-const logger = createLogger('compressionCoordinator');
 /**
  * CompressionCoordinator
  *
  * Centralizes all compression and checkpoint strategies so the manager can stay lean.
  */
-import { MemoryLevel } from './types.js';
 
 import type { CheckpointManager } from './checkpointManager.js';
 import type {
@@ -22,6 +20,8 @@ import type {
   SnapshotConfig,
   TokenCounter,
 } from './types.js';
+
+const logger = createLogger('compressionCoordinator');
 
 type EmitFn = (event: string, payload?: unknown) => void;
 

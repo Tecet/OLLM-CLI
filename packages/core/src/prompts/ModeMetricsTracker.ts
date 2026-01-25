@@ -1,6 +1,3 @@
-import { createLogger } from '../utils/logger.js';
-
-const logger = createLogger('ModeMetricsTracker');
 /**
  * Mode Metrics Tracker for Dynamic Prompt System
  * 
@@ -11,8 +8,12 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync, unlinkSync } from '
 import { homedir } from 'os';
 import { join } from 'path';
 
+import { createLogger } from '../utils/logger.js';
+
 import type { ModeType } from './ContextAnalyzer.js';
 import type { ModeTransition } from './PromptModeManager.js';
+
+const logger = createLogger('ModeMetricsTracker');
 
 /**
  * Time spent in a mode during a session

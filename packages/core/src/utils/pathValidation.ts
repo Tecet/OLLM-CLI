@@ -1,6 +1,3 @@
-import { createLogger } from './logger.js';
-
-const logger = createLogger('pathValidation');
 /**
  * Path Validation Utilities
  * 
@@ -10,6 +7,10 @@ const logger = createLogger('pathValidation');
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
+
+import { createLogger } from './logger.js';
+
+const logger = createLogger('pathValidation');
 
 /**
  * Path validation result

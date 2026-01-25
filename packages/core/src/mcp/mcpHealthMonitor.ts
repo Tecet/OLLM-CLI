@@ -1,6 +1,4 @@
 import { createLogger } from '../utils/logger.js';
-
-const logger = createLogger('mcpHealthMonitor');
 /**
  * MCP Health Monitor
  * 
@@ -8,6 +6,8 @@ const logger = createLogger('mcpHealthMonitor');
  */
 
 import type { MCPClient, MCPServerConfig, MCPServerStatusType } from './types.js';
+
+const logger = createLogger('mcpHealthMonitor');
 
 /**
  * Connection phase for tracking server connection lifecycle

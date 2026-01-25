@@ -1,6 +1,3 @@
-import { createLogger } from '../utils/logger.js';
-
-const logger = createLogger('extensionManager');
 /**
  * ExtensionManager handles extension lifecycle
  * 
@@ -15,6 +12,7 @@ import { join, resolve, sep } from 'path';
 import { ManifestParser } from './manifestParser.js';
 import { ExtensionSettingsManager, type ResolvedExtensionSetting } from './settingsIntegration.js';
 import { SkillRegistry } from './skillRegistry.js';
+import { createLogger } from '../utils/logger.js';
 
 import type { Extension, ExtensionManifest, MCPServerConfig } from './types.js';
 import type { HookRegistry } from '../hooks/hookRegistry.js';
@@ -22,6 +20,8 @@ import type { Hook, HookEvent } from '../hooks/types.js';
 import type { MCPToolWrapper } from '../mcp/mcpToolWrapper.js';
 import type { MCPClient } from '../mcp/types.js';
 import type { ToolRegistry } from '../tools/tool-registry.js';
+
+const logger = createLogger('extensionManager');
 
 const isTestEnv = process.env.NODE_ENV === 'test' || !!process.env.VITEST;
 

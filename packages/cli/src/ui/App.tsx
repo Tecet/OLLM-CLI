@@ -1,6 +1,4 @@
-import { createLogger } from '../../../core/src/utils/logger.js';
 
-const logger = createLogger('App');
 /**
  * Main App component - integrates all contexts and wires up the UI
  * 
@@ -17,12 +15,13 @@ const logger = createLogger('App');
 
 import { spawn } from 'child_process';
 import { openSync, mkdirSync } from 'fs';
-import { join } from 'path';
 import { homedir } from 'os';
+import { join } from 'path';
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { Box, Text, useStdout, BoxProps, useInput } from 'ink';
 
+import { createLogger } from '../../../core/src/utils/logger.js';
 import { SettingsService } from '../config/settingsService.js';
 import { defaultDarkTheme } from '../config/styles.js';
 import { ContextProfile } from '../config/types.js';
@@ -79,6 +78,7 @@ import type { Config, Theme } from '../config/types.js';
 import type { MenuOption } from '../features/context/ChatContext.js';
 import type { ProviderAdapter, ProviderRequest, ProviderEvent } from '@ollm/core';
 // Model loading indicator not currently used here
+const logger = createLogger('App');
 
 
 
@@ -248,7 +248,7 @@ function AppContent({ config }: AppContentProps) {
   const startOllamaServe = useCallback((): void => {
     try {
       const logDir = join(homedir(), '.ollm', 'logs');
-      try { mkdirSync(logDir, { recursive: true }); } catch {}
+      try { mkdirSync(logDir, { recursive: true }); } catch { /* ignore if already exists */ }
       const logFile = join(logDir, 'ollama_server.log');
       const out = openSync(logFile, 'a');
       const err = openSync(logFile, 'a');

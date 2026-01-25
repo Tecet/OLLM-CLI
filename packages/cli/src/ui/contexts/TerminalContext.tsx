@@ -1,6 +1,3 @@
-import { createLogger } from '../../../../core/src/utils/logger.js';
-
-const logger = createLogger('TerminalContext');
 /**
  * Terminal Context
  * 
@@ -13,9 +10,12 @@ import React, { createContext, useContext, useEffect, useRef, useState, useCallb
 import { Terminal } from '@xterm/headless';
 import * as pty from 'node-pty';
 
+import { createLogger } from '../../../../core/src/utils/logger.js';
 import { serializeTerminalRange } from '../../utils/terminalSerializer.js';
 
 import type { AnsiOutput } from '../../utils/terminalSerializer.js';
+
+const logger = createLogger('TerminalContext');
 
 interface TerminalContextValue {
   output: AnsiOutput;

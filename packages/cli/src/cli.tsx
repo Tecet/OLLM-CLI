@@ -1,4 +1,3 @@
-import { createLogger } from '../../core/src/utils/logger.js';
 import { readFileSync , appendFileSync, mkdirSync, existsSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
@@ -10,10 +9,11 @@ import Yargs from 'yargs/yargs';
 
 import { loadConfig } from './config/configLoader.js';
 import { patchStdio, createWorkingStdio } from './utils/stdio.js';
-
-const logger = createLogger('cli');
+import { createLogger } from '../../core/src/utils/logger.js';
 
 import type { Config } from './config/types.js';
+
+const logger = createLogger('cli');
 
 
 // Get package.json path

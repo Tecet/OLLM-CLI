@@ -1,6 +1,3 @@
-import { createLogger } from '../../../core/src/utils/logger.js';
-
-const logger = createLogger('mcpCleanup');
 /**
  * MCP Cleanup Service
  * 
@@ -13,6 +10,10 @@ import * as fs from 'fs/promises';
 import * as os from 'os';
 import * as path from 'path';
 import { promisify } from 'util';
+
+import { createLogger } from '../../../core/src/utils/logger.js';
+
+const logger = createLogger('mcpCleanup');
 
 const execAsync = promisify(exec);
 

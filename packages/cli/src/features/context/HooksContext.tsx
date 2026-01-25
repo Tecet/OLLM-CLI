@@ -1,16 +1,6 @@
-import { createLogger } from '../../../../core/src/utils/logger.js';
-
-const logger = createLogger('HooksContext');
-/**
- * HooksContext - State management for the Hooks Panel UI
- * 
- * Provides hook data and management functions to all hook-related components.
- * Integrates with HookFileService for file operations and SettingsService for
- * enabled state persistence.
- */
-
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 
+import { createLogger } from '../../../../core/src/utils/logger.js';
 import { SettingsService } from '../../config/settingsService.js';
 import { HookFileService } from '../../services/hookFileService.js';
 
@@ -20,6 +10,16 @@ import type {
   HookTestResult,
   UIHookEventType 
 } from '../hooks/types.js';
+/**
+ * HooksContext - State management for the Hooks Panel UI
+ * 
+ * Provides hook data and management functions to all hook-related components.
+ * Integrates with HookFileService for file operations and SettingsService for
+ * enabled state persistence.
+ */
+
+
+const logger = createLogger('HooksContext');
 
 /**
  * Context value interface

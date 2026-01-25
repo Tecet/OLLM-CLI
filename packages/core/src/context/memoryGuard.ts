@@ -1,6 +1,3 @@
-import { createLogger } from '../utils/logger.js';
-
-const logger = createLogger('memoryGuard');
 /**
  * Memory Guard Service
  * 
@@ -13,6 +10,7 @@ import { EventEmitter } from 'events';
 import {
   MemoryLevel
 } from './types.js';
+import { createLogger } from '../utils/logger.js';
 
 import type {
   MemoryGuard,
@@ -23,6 +21,8 @@ import type {
   ConversationContext,
   MemoryGuardConfig
 } from './types.js';
+
+const logger = createLogger('memoryGuard');
 
 /**
  * Default memory guard configuration

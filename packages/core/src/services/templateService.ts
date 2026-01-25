@@ -1,6 +1,3 @@
-import { createLogger } from '../utils/logger.js';
-
-const logger = createLogger('templateService');
 /**
  * Template Service for managing reusable prompt templates
  * Supports variable substitution and template persistence
@@ -12,6 +9,10 @@ import { homedir } from 'os';
 import { join } from 'path';
 
 import { parse as parseYaml } from 'yaml';
+
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('templateService');
 
 /**
  * Variable definition in a template

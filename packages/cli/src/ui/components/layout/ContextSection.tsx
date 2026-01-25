@@ -1,11 +1,14 @@
-import { createLogger } from '../../../../../core/src/utils/logger.js';
 import React from 'react';
 import { Box, Text } from 'ink';
 
 import { ModeConfidenceDisplay } from './ModeConfidenceDisplay.js';
+import { createLogger } from '../../../../../core/src/utils/logger.js';
 import { useActiveContext } from '../../../features/context/ActiveContextState.js';
 import { useContextManager } from '../../../features/context/ContextManagerContext.js';
 import { useUI } from '../../../features/context/UIContext.js';
+
+// Logger
+const logger = createLogger('ContextSection');
 
 // Helper to format tier display
 function _formatTierDisplay(tier: string): string {
@@ -22,8 +25,6 @@ function _formatTierDisplay(tier: string): string {
     '5': '64K+'
   };
 
-const logger = createLogger('ContextSection');
-  
   return tierRanges[tierNum] || tier;
 }
 

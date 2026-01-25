@@ -1,6 +1,3 @@
-import { createLogger } from '../../../../../core/src/utils/logger.js';
-
-const logger = createLogger('APIKeyInputDialog');
 /**
  * API Key Input Dialog
  * 
@@ -11,7 +8,11 @@ const logger = createLogger('APIKeyInputDialog');
 import React, { useState, useCallback } from 'react';
 import { Box, Text, useInput } from 'ink';
 
+import { createLogger } from '../../../../../core/src/utils/logger.js';
+
 import type { MCPMarketplaceServer } from '../../../services/mcpMarketplace.js';
+
+const logger = createLogger('APIKeyInputDialog');
 
 export interface APIKeyInputDialogProps {
   /** Server being installed */

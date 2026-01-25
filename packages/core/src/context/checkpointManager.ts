@@ -1,6 +1,5 @@
 import { createLogger } from '../utils/logger.js';
 
-const logger = createLogger('checkpointManager');
 /**
  * CheckpointManager
  *
@@ -16,6 +15,8 @@ import type {
   TaskDefinition,
   TokenCounter,
 } from './types.js';
+
+const logger = createLogger('checkpointManager');
 
 type EmitFn = (event: string, payload?: unknown) => void;
 

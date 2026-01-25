@@ -8,6 +8,7 @@
 import { watch, type FSWatcher } from 'fs';
 
 import { createLogger } from '../utils/logger.js';
+
 import type { ExtensionManager } from './extensionManager.js';
 
 const logger = createLogger('extensionWatcher');

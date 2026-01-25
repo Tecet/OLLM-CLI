@@ -1,6 +1,3 @@
-import { createLogger } from '../../../core/src/utils/logger.js';
-
-const logger = createLogger('mcpConfigBackup');
 /**
  * MCP Configuration Backup and Restore Service
  * 
@@ -12,7 +9,11 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 
+import { createLogger } from '../../../core/src/utils/logger.js';
+
 import type { MCPConfigFile } from './mcpConfigService.js';
+
+const logger = createLogger('mcpConfigBackup');
 
 /**
  * Backup metadata

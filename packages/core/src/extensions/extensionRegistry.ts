@@ -1,6 +1,3 @@
-import { createLogger } from '../utils/logger.js';
-
-const logger = createLogger('extensionRegistry');
 /**
  * Extension Registry for marketplace functionality
  * 
@@ -12,6 +9,10 @@ import { createHash } from 'crypto';
 import { mkdir, writeFile, readFile, rm } from 'fs/promises';
 import { homedir } from 'os';
 import { join } from 'path';
+
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('extensionRegistry');
 
 /**
  * Extension metadata from registry

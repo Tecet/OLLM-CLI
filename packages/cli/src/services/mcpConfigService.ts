@@ -1,6 +1,3 @@
-import { createLogger } from '../../../core/src/utils/logger.js';
-
-const logger = createLogger('mcpConfigService');
 /**
  * MCP Configuration Service
  * 
@@ -15,8 +12,11 @@ import os from 'os';
 import path from 'path';
 
 import { mcpConfigBackup } from './mcpConfigBackup.js';
+import { createLogger } from '../../../core/src/utils/logger.js';
 
 import type { MCPServerConfig } from '@ollm/ollm-cli-core/mcp/types.js';
+
+const logger = createLogger('mcpConfigService');
 
 /**
  * MCP configuration with server definitions

@@ -1,14 +1,14 @@
-import { createLogger } from '../../../../core/src/utils/logger.js';
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 import { ModeType, Role, MessagePart, MODE_METADATA } from '@ollm/ollm-cli-core';
 
-const logger = createLogger('ActiveContextState');
-
 import { useContextManager } from './ContextManagerContext.js';
+import { createLogger } from '../../../../core/src/utils/logger.js';
 import { useHooks } from '../../ui/contexts/HooksContext.js';
 import { useMCP } from '../../ui/contexts/MCPContext.js';
 import { useTools } from '../../ui/contexts/ToolsContext.js';
+
+const logger = createLogger('ActiveContextState');
 
 interface ActiveContextState {
   activeSkills: string[];

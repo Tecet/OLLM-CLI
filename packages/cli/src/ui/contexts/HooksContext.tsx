@@ -1,6 +1,13 @@
-import { createLogger } from '../../../../core/src/utils/logger.js';
+import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode, useMemo } from 'react';
 
-const logger = createLogger('HooksContext');
+import { createLogger } from '../../../../core/src/utils/logger.js';
+import { SettingsService } from '../../config/settingsService.js';
+import { useServices } from '../../features/context/ServiceContext.js';
+import { loadHooksFromFiles } from '../../services/hookLoader.js';
+
+import type { HookRegistry } from '@ollm/ollm-cli-core/hooks/index.js';
+import type { Hook, HookEvent } from '@ollm/ollm-cli-core/hooks/types.js';
+import type { ServiceContainer } from '@ollm/ollm-cli-core/services/serviceContainer.js';
 /**
  * HooksContext - Manages hook state and operations for the Hooks Panel UI
  * 
@@ -11,15 +18,8 @@ const logger = createLogger('HooksContext');
  * - Error handling for corrupted hooks
  */
 
-import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode, useMemo } from 'react';
 
-import { SettingsService } from '../../config/settingsService.js';
-import { useServices } from '../../features/context/ServiceContext.js';
-import { loadHooksFromFiles } from '../../services/hookLoader.js';
-
-import type { HookRegistry } from '@ollm/ollm-cli-core/hooks/index.js';
-import type { Hook, HookEvent } from '@ollm/ollm-cli-core/hooks/types.js';
-import type { ServiceContainer } from '@ollm/ollm-cli-core/services/serviceContainer.js';
+const logger = createLogger('HooksContext');
 
 /**
  * Hook category for organizing hooks in the UI
