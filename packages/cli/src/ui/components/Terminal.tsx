@@ -92,21 +92,24 @@ export function Terminal({ height }: TerminalProps) {
     
     return (
       <Box key={index} flexShrink={1}>
-        {line.map((token: AnsiToken, tokenIndex: number) => (
-          <Text
-            key={tokenIndex}
-            // Temporarily disable colors to debug rendering artefacts
-            color={undefined}
-            backgroundColor={undefined}
-            inverse={token.inverse}
-            dimColor={token.dim}
-            bold={token.bold}
-            italic={token.italic}
-            underline={token.underline}
-          >
-            {token.text}
-          </Text>
-        ))}
+        {line.map((token: AnsiToken, tokenIndex: number) => {
+          const text = token.text ? token.text.replace(/ /g, '\u00A0') : token.text;
+          return (
+            <Text
+              key={tokenIndex}
+              // Temporarily disable colors to debug rendering artefacts
+              color={undefined}
+              backgroundColor={undefined}
+              inverse={token.inverse}
+              dimColor={token.dim}
+              bold={token.bold}
+              italic={token.italic}
+              underline={token.underline}
+            >
+              {text}
+            </Text>
+          );
+        })}
       </Box>
     );
   };
