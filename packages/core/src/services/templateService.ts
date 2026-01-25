@@ -1,3 +1,6 @@
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('templateService');
 /**
  * Template Service for managing reusable prompt templates
  * Supports variable substitution and template persistence
@@ -123,7 +126,7 @@ export class TemplateService {
           // Log error but continue loading other templates
           const err = error as NodeJS.ErrnoException;
           const message = err.message || String(error);
-          console.warn(`Failed to load template ${filePath}: ${message}`);
+          logger.warn(`Failed to load template ${filePath}: ${message}`);
         }
       }
     } catch (error: unknown) {

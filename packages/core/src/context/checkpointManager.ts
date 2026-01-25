@@ -1,3 +1,6 @@
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('checkpointManager');
 /**
  * CheckpointManager
  *
@@ -197,7 +200,7 @@ export class CheckpointManager {
     const COMPACT_AGE = 6;
     const totalCompressions = context.metadata.compressionHistory.length;
 
-    console.log('[ContextManager] compressOldCheckpoints:', {
+    logger.info('[ContextManager] compressOldCheckpoints:', {
       totalCompressions,
       checkpointCount: context.checkpoints.length
     });
@@ -214,7 +217,7 @@ export class CheckpointManager {
         age = checkpointIndex >= 0 ? totalCompressions - checkpointIndex : totalCompressions;
       }
 
-      console.log('[ContextManager] Checkpoint age:', {
+      logger.info('[ContextManager] Checkpoint age:', {
         checkpointId: checkpoint.id,
         level: checkpoint.level,
         age,
@@ -223,7 +226,7 @@ export class CheckpointManager {
       });
 
       if (age >= COMPACT_AGE && checkpoint.level !== 1) {
-        console.log('[ContextManager] Compressing checkpoint to COMPACT:', checkpoint.id);
+        logger.info('[ContextManager] Compressing checkpoint to COMPACT:', checkpoint.id);
         checkpoint.level = 1;
         checkpoint.compressedAt = new Date();
         checkpoint.compressionCount++;
@@ -234,7 +237,7 @@ export class CheckpointManager {
         const newTokens = await this.tokenCounter.countTokens(checkpoint.summary.content);
         checkpoint.currentTokens = newTokens;
       } else if (age >= MODERATE_AGE && checkpoint.level === 3) {
-        console.log('[ContextManager] Compressing checkpoint to MODERATE:', checkpoint.id);
+        logger.info('[ContextManager] Compressing checkpoint to MODERATE:', checkpoint.id);
         checkpoint.level = 2;
         checkpoint.compressedAt = new Date();
         checkpoint.compressionCount++;

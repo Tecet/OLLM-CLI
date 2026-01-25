@@ -1,3 +1,6 @@
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('contextPool');
 /**
  * Context Pool Service
  * 
@@ -80,7 +83,7 @@ export class ContextPoolImpl implements ContextPool {
 
     // If auto-sizing is disabled, use target size
     if (!this.config.autoSize) {
-      console.log('[ContextPool] Auto-size disabled, using target:', this.config.targetContextSize);
+      logger.info('[ContextPool] Auto-size disabled, using target:', this.config.targetContextSize);
       return this.clampSize(this.config.targetContextSize);
     }
 
@@ -93,7 +96,7 @@ export class ContextPoolImpl implements ContextPool {
     // Calculate usable VRAM
     const usableVRAM = vramInfo.available - this.config.reserveBuffer;
 
-    console.log('[ContextPool] VRAM Calculation:', {
+    logger.info('[ContextPool] VRAM Calculation:', {
       totalVRAM: vramInfo.total,
       usedVRAM: vramInfo.used,
       availableVRAM: vramInfo.available,
@@ -106,7 +109,7 @@ export class ContextPoolImpl implements ContextPool {
 
     // Ensure we have positive usable VRAM
     if (usableVRAM <= 0) {
-      console.warn('[ContextPool] No usable VRAM, using minimum:', this.config.minContextSize);
+      logger.warn('[ContextPool] No usable VRAM, using minimum:', this.config.minContextSize);
       return this.config.minContextSize;
     }
 
@@ -115,7 +118,7 @@ export class ContextPoolImpl implements ContextPool {
 
     // Clamp to min/max and model limit
     const finalSize = this.clampSize(Math.min(optimalSize, modelInfo.contextLimit));
-    console.log('[ContextPool] Final context size:', finalSize);
+    logger.info('[ContextPool] Final context size:', finalSize);
     
     return finalSize;
   }
@@ -196,7 +199,7 @@ export class ContextPoolImpl implements ContextPool {
 
     // If still have active requests after timeout, log warning but proceed
     if (this.hasActiveRequests()) {
-      console.warn(`Context resize proceeding with ${this.activeRequests} active requests still in flight`);
+      logger.warn(`Context resize proceeding with ${this.activeRequests} active requests still in flight`);
     }
 
     // Call resize callback if provided (coordinates with provider)

@@ -1,3 +1,6 @@
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('projectProfileService');
 /**
  * Project Profile Service for auto-detecting project type and applying project-specific configuration
  * Supports TypeScript, Python, Rust, Go, and documentation profiles
@@ -254,7 +257,7 @@ export class ProjectProfileService {
           // File doesn't exist, continue to next
           const err = error as NodeJS.ErrnoException;
           if (err.code !== 'ENOENT') {
-            console.warn(`Error checking ${filePath}: ${err.message}`);
+            logger.warn(`Error checking ${filePath}: ${err.message}`);
           }
         }
       }

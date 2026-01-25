@@ -1,3 +1,6 @@
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('compressionService');
 /**
  * Compression Service
  * 
@@ -500,7 +503,7 @@ export class CompressionService implements ICompressionService {
         );
       } catch (error) {
         // Fall back to placeholder if LLM summarization fails
-        console.warn('LLM summarization failed, using placeholder:', error);
+        logger.warn('LLM summarization failed, using placeholder:', error);
         summaryText = this.createSummaryPlaceholder(messagesToSummarize);
       }
     } else {
@@ -660,7 +663,7 @@ export class CompressionService implements ICompressionService {
         );
       } catch (error) {
         // Fall back to placeholder if LLM summarization fails
-        console.warn(
+        logger.warn(
           'LLM summarization failed in hybrid strategy, using placeholder:',
           error
         );

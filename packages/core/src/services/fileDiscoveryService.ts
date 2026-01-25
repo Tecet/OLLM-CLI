@@ -1,3 +1,6 @@
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('fileDiscoveryService');
 /**
  * FileDiscoveryService - Fast project file scanning with ignore pattern support
  * 
@@ -183,7 +186,7 @@ export class FileDiscoveryService {
         if (!stats.isDirectory()) {
           // Only log error if not in a test environment
           if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
-            console.error(`Cannot watch ${sanitizeErrorMessage(root)}: not a directory`);
+            logger.error(`Cannot watch ${sanitizeErrorMessage(root)}: not a directory`);
           }
           return;
         }
@@ -227,13 +230,13 @@ export class FileDiscoveryService {
         // Handle watcher errors
         watcher.on('error', (error) => {
           const errorMessage = error instanceof Error ? error.message : String(error);
-          console.error(`File watcher error for ${sanitizeErrorMessage(root)}:`, sanitizeErrorMessage(errorMessage));
+          logger.error(`File watcher error for ${sanitizeErrorMessage(root)}:`, sanitizeErrorMessage(errorMessage));
         });
       } catch (error) {
         // Only log error if not in a test environment
         if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
           const errorMessage = error instanceof Error ? error.message : String(error);
-          console.error(`Failed to start file watcher for ${sanitizeErrorMessage(root)}:`, sanitizeErrorMessage(errorMessage));
+          logger.error(`Failed to start file watcher for ${sanitizeErrorMessage(root)}:`, sanitizeErrorMessage(errorMessage));
         }
       }
     })();

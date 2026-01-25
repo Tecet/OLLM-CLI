@@ -1,3 +1,6 @@
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('gpuMonitor');
 /**
  * GPU Monitor Service
  * 
@@ -108,7 +111,7 @@ export class DefaultGPUMonitor implements GPUMonitor {
    */
   private logWarning(message: string): void {
     if (process.env.OLLM_LOG_LEVEL === 'debug') {
-      console.warn(`[GPU Monitor] ${message}`);
+      logger.warn(`[GPU Monitor] ${message}`);
     }
   }
 
@@ -117,7 +120,7 @@ export class DefaultGPUMonitor implements GPUMonitor {
    */
   private logError(message: string, error?: unknown): void {
     if (process.env.OLLM_LOG_LEVEL === 'debug') {
-      console.error(`[GPU Monitor] ${message}`, error);
+      logger.error(`[GPU Monitor] ${message}`, error);
     }
   }
 

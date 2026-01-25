@@ -1,3 +1,6 @@
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('loopDetectionService');
 /**
  * Loop Detection Service
  *
@@ -208,7 +211,7 @@ export class LoopDetectionService {
       } catch (error) {
         // Silently catch callback errors to prevent one bad callback from affecting others
         const errorMessage = error instanceof Error ? error.message : String(error);
-        console.error('Error in loop detection callback:', sanitizeErrorMessage(errorMessage));
+        logger.error('Error in loop detection callback:', sanitizeErrorMessage(errorMessage));
       }
     }
   }

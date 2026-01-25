@@ -1,6 +1,9 @@
+import { createLogger } from '../utils/logger.js';
 import { EventEmitter } from 'events';
 
 import { ToolCapability, detectServerCapabilities } from './tool-capabilities.js';
+
+const logger = createLogger('toolRouter');
 
 import type { ToolRegistry } from './tool-registry.js';
 import type { Tool } from './types.js';
@@ -74,7 +77,7 @@ export class ToolRouter extends EventEmitter {
           const capabilities = detectServerCapabilities(server.name, tools as unknown as Tool[]);
           this.capabilityMap.set(server.name, capabilities);
         } catch (error) {
-          console.error(`Failed to discover capabilities for ${server.name}:`, error);
+          logger.error(`Failed to discover capabilities for ${server.name}:`, error);
         }
       }
     }

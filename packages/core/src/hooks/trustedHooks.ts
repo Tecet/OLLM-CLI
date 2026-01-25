@@ -1,3 +1,6 @@
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('trustedHooks');
 /**
  * TrustedHooks manages hook trust verification and approval
  * 
@@ -147,7 +150,7 @@ export class TrustedHooks {
     // If no approval callback is configured, deny by default
     if (!this.config.approvalCallback) {
       if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
-        console.warn(
+        logger.warn(
           `Hook '${hook.name}' requires approval but no approval callback is configured. Denying by default.`
         );
       }
@@ -165,7 +168,7 @@ export class TrustedHooks {
       // If approval callback throws, deny by default
       if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
         const errorMessage = error instanceof Error ? error.message : String(error);
-        console.error(`Error requesting approval for hook '${hook.name}': ${errorMessage}`);
+        logger.error(`Error requesting approval for hook '${hook.name}': ${errorMessage}`);
       }
       return false;
     }
@@ -215,7 +218,7 @@ export class TrustedHooks {
         } catch (_error) {
           // If file read fails, fall back to hashing command and args
           if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
-            console.warn(`Failed to read hook script at ${hook.sourcePath}, using command hash instead`);
+            logger.warn(`Failed to read hook script at ${hook.sourcePath}, using command hash instead`);
           }
         }
       }

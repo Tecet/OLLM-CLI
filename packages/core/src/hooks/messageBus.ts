@@ -1,3 +1,6 @@
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('messageBus');
 /**
  * Message Bus for Hook System
  * 
@@ -138,7 +141,7 @@ export class MessageBus {
       try {
         await record.listener(event, data);
       } catch (error) {
-        console.error(`Error in MessageBus listener for event '${event}':`, error);
+        logger.error(`Error in MessageBus listener for event '${event}':`, error);
       }
 
       if (record.once) {

@@ -1,3 +1,6 @@
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('envSubstitution');
 /**
  * Environment Variable Substitution
  * 
@@ -26,7 +29,7 @@ export function substituteEnvVars(
     const envValue = env[varName];
     
     if (envValue === undefined) {
-      console.warn(`Environment variable '${varName}' not found, using empty string`);
+      logger.warn(`Environment variable '${varName}' not found, using empty string`);
       return '';
     }
     

@@ -1,3 +1,6 @@
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('PromptModeManager');
 /**
  * Prompt Mode Manager for Dynamic Prompt System
  * 
@@ -241,7 +244,7 @@ export class PromptModeManager extends EventEmitter {
       this.metricsTracker.saveMetricsToDisk();
     } catch (error) {
       // Log error but don't throw - metrics persistence should not break functionality
-      console.error('Failed to persist mode metrics:', error);
+      logger.error('Failed to persist mode metrics:', error);
     }
   }
   
@@ -272,7 +275,7 @@ export class PromptModeManager extends EventEmitter {
     try {
       return this.metricsTracker.loadMetricsFromDisk();
     } catch (error) {
-      console.error('Failed to load mode metrics:', error);
+      logger.error('Failed to load mode metrics:', error);
       return false;
     }
   }
@@ -288,7 +291,7 @@ export class PromptModeManager extends EventEmitter {
       this.metricsTracker.clearPersistedMetrics();
       this.metricsTracker.resetMetrics();
     } catch (error) {
-      console.error('Failed to clear mode metrics:', error);
+      logger.error('Failed to clear mode metrics:', error);
     }
   }
   

@@ -1,3 +1,6 @@
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('mcpHealthMonitor');
 /**
  * MCP Health Monitor
  * 
@@ -641,7 +644,7 @@ export class MCPHealthMonitor {
         listener(event);
       } catch (error) {
         // Ignore listener errors
-        console.error('Error in health monitor event listener:', error);
+        logger.error('Error in health monitor event listener:', error);
       }
     }
   }

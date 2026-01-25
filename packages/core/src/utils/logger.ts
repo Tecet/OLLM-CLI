@@ -1,7 +1,14 @@
+import { createLogger } from './logger.js';
+
+const logger = createLogger('logger');
 /**
  * Logger utility for OLLM CLI
  * Provides structured logging with configurable log levels
  */
+
+import * as fs from 'fs';
+import * as path from 'path';
+import * as os from 'os';
 
 export interface Logger {
   debug(message: string, meta?: Record<string, unknown>): void;
@@ -35,25 +42,52 @@ export function createLogger(name: string): Logger {
     return `[${timestamp}] [${level.toUpperCase()}] [${name}] ${message}${metaStr}`;
   };
   
+  /* File Logging Support */
+  const logDir = path.join(os.homedir(), '.ollm', 'logs');
+  try {
+    if (!fs.existsSync(logDir)) {
+      fs.mkdirSync(logDir, { recursive: true });
+    }
+  } catch (_e) {
+    // ignore
+  }
+  const logFile = path.join(logDir, 'debug.log');
+
+  const logToFile = (formattedMsg: string) => {
+    try {
+      fs.appendFileSync(logFile, formattedMsg + '\n');
+    } catch (_e) {
+      // ignore
+    }
+  };
+
   return {
     debug: (message: string, meta?: Record<string, unknown>) => {
+      const msg = formatMessage('debug', message, meta);
+      logToFile(msg);
       if (currentLevel <= 0) {
-        console.debug(formatMessage('debug', message, meta));
+        logger.debug(msg);
       }
     },
     info: (message: string, meta?: Record<string, unknown>) => {
+      const msg = formatMessage('info', message, meta);
+      logToFile(msg);
       if (currentLevel <= 1) {
-        console.info(formatMessage('info', message, meta));
+        logger.info(msg);
       }
     },
     warn: (message: string, meta?: Record<string, unknown>) => {
+      const msg = formatMessage('warn', message, meta);
+      logToFile(msg);
       if (currentLevel <= 2) {
-        console.warn(formatMessage('warn', message, meta));
+        logger.warn(msg);
       }
     },
     error: (message: string, meta?: Record<string, unknown>) => {
+      const msg = formatMessage('error', message, meta);
+      logToFile(msg);
       if (currentLevel <= 3) {
-        console.error(formatMessage('error', message, meta));
+        logger.error(msg);
       }
     },
   };

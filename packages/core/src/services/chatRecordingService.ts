@@ -1,3 +1,6 @@
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('chatRecordingService');
 /**
  * ChatRecordingService - Handles session persistence and management
  * 
@@ -173,7 +176,7 @@ export class ChatRecordingService {
           // Only log error if not in a test environment
           if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
             const errorMessage = error instanceof Error ? error.message : String(error);
-            console.error(`Failed to load session ${file}:`, sanitizeErrorMessage(errorMessage));
+            logger.error(`Failed to load session ${file}:`, sanitizeErrorMessage(errorMessage));
           }
         }
       }
@@ -186,7 +189,7 @@ export class ChatRecordingService {
       return summaries;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error('Failed to list sessions:', sanitizeErrorMessage(errorMessage));
+      logger.error('Failed to list sessions:', sanitizeErrorMessage(errorMessage));
       return [];
     }
   }

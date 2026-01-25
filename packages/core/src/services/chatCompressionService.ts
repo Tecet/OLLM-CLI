@@ -1,3 +1,6 @@
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('chatCompressionService');
 /**
  * Chat Compression Service
  *
@@ -295,7 +298,7 @@ export class ChatCompressionService extends EventEmitter {
       } catch (error) {
         // Fall back to placeholder if LLM summarization fails
         const errorMessage = error instanceof Error ? error.message : String(error);
-        console.warn('LLM summarization failed, using placeholder:', sanitizeErrorMessage(errorMessage));
+        logger.warn('LLM summarization failed, using placeholder:', sanitizeErrorMessage(errorMessage));
         summaryText = this.createSummaryPlaceholder(messagesToSummarize);
       }
     } else {
@@ -383,7 +386,7 @@ export class ChatCompressionService extends EventEmitter {
       } catch (error) {
         // Fall back to placeholder if LLM summarization fails
         const errorMessage = error instanceof Error ? error.message : String(error);
-        console.warn('LLM summarization failed in hybrid strategy, using placeholder:', sanitizeErrorMessage(errorMessage));
+        logger.warn('LLM summarization failed in hybrid strategy, using placeholder:', sanitizeErrorMessage(errorMessage));
         summaryText = this.createSummaryPlaceholder(middleMessages);
       }
     } else {
@@ -552,7 +555,7 @@ Summary:`;
         const closeTag = `</${tag}>`;
         
         if (!xml.includes(openTag) || !xml.includes(closeTag)) {
-          console.warn(`XML validation failed: Missing tag ${tag}`);
+          logger.warn(`XML validation failed: Missing tag ${tag}`);
           return false;
         }
 
@@ -561,14 +564,14 @@ Summary:`;
         const closeIndex = xml.indexOf(closeTag);
         
         if (closeIndex <= openIndex) {
-          console.warn(`XML validation failed: Invalid tag order for ${tag}`);
+          logger.warn(`XML validation failed: Invalid tag order for ${tag}`);
           return false;
         }
       }
 
       return true;
     } catch (error) {
-      console.warn('XML validation error:', error);
+      logger.warn('XML validation error:', error);
       return false;
     }
   }
@@ -614,7 +617,7 @@ Summary:`;
 
       return indentedLines.join('\n');
     } catch (error) {
-      console.warn('XML formatting error:', error);
+      logger.warn('XML formatting error:', error);
       return xml; // Return original if formatting fails
     }
   }

@@ -1,3 +1,6 @@
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('jitDiscovery');
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
@@ -71,7 +74,7 @@ export async function loadJitContext(
           files.push({ path: filePath, content });
           alreadyLoadedPaths.add(filePath);
         } catch (_error) {
-          console.warn(`Failed to read context file: ${filePath}`, _error);
+          logger.warn(`Failed to read context file: ${filePath}`, _error);
         }
       }
     }

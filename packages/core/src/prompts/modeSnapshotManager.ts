@@ -1,3 +1,6 @@
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('modeSnapshotManager');
 /**
  * Snapshot Manager for Dynamic Prompt System
  * 
@@ -448,7 +451,7 @@ ${currentPlan.map(p => `    ${this.escapeXml(p)}`).join('\n')}
       await fs.writeFile(filePath, JSON.stringify(snapshot, null, 2), 'utf-8');
     } catch (error) {
       // Log error but don't throw - disk persistence is optional
-      console.error('Failed to persist snapshot:', error);
+      logger.error('Failed to persist snapshot:', error);
     }
   }
 }

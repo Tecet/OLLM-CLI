@@ -1,3 +1,4 @@
+import { createLogger } from '../utils/logger.js';
 import { SnapshotParser } from './snapshotParser.js';
 import { ContextManager, Message as ContextMessage, OperationalMode } from './types.js';
 import { SnapshotManager } from '../prompts/modeSnapshotManager.js';
@@ -76,9 +77,9 @@ export class HotSwapService {
         
         // Store snapshot before clearing
         await this.snapshotManager.storeSnapshot(snapshot, true);
-        console.log('[HotSwap] Mode transition snapshot created and stored');
+        logger.info('[HotSwap] Mode transition snapshot created and stored');
       } catch (error) {
-        console.error('[HotSwap] Failed to create transition snapshot:', error);
+        logger.error('[HotSwap] Failed to create transition snapshot:', error);
         // Continue with swap even if snapshot fails
       }
     }
@@ -89,27 +90,29 @@ export class HotSwapService {
     if (!preserveHistory && userMessages.length >= 3) {
       snapshotXml = await this.generateSnapshot(messages);
     } else {
-      console.log(`[HotSwap] Skipping XML snapshot (preserveHistory=${preserveHistory}, messages=${userMessages.length}).`);
+      logger.info(`[HotSwap] Skipping XML snapshot (preserveHistory=${preserveHistory}, messages=${userMessages.length}).`);
     }
     
     // 3. Clear Context (Only if NOT preserving history)
     if (!preserveHistory) {
-      console.log('[HotSwap] Clearing context for fresh start');
+      logger.info('[HotSwap] Clearing context for fresh start');
       await this.contextManager.clear();
     } else {
-      console.log('[HotSwap] Preserving conversation history (Soft Swap)');
+      logger.info('[HotSwap] Preserving conversation history (Soft Swap)');
     }
 
     // 4. Update skills if available
     if (newSkills) {
       this.modeManager?.updateSkills(newSkills);
+
+const logger = createLogger('HotSwapService');
       this.contextManager.setActiveSkills?.(newSkills);
     }
 
     // 5. Switch to target mode (respect UI / caller intent)
     if (this.modeManager) {
       this.modeManager.switchMode(targetMode, 'manual', 1.0);
-      console.log(`[HotSwap] Switched to mode: ${targetMode}`);
+      logger.info(`[HotSwap] Switched to mode: ${targetMode}`);
     }
 
     // 6. Update system prompt via core routing
@@ -132,7 +135,7 @@ export class HotSwapService {
     
     // 8. Emit events for UI
     if (newSkills) {
-      console.log('[HotSwap] Switching to new skills:', newSkills);
+      logger.info('[HotSwap] Switching to new skills:', newSkills);
       // Emit custom event for UI updates
       this.contextManager.emit('active-skills-updated', { skills: newSkills });
     }

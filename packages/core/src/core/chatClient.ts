@@ -1,3 +1,6 @@
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('chatClient');
 /**
  * Chat Client
  * Main entry point for chat interactions. Manages conversation state and coordinates turns.
@@ -120,7 +123,7 @@ export class ChatClient {
           contextSize: usage.maxTokens,
           ollamaContextSize: Math.floor(usage.maxTokens * 0.85),
         };
-        if (!isTestEnv) console.log(`[ChatClient] Context size from manager: ${usage.maxTokens}, Ollama: ${Math.floor(usage.maxTokens * 0.85)}`);
+        if (!isTestEnv) logger.info(`[ChatClient] Context size from manager: ${usage.maxTokens}, Ollama: ${Math.floor(usage.maxTokens * 0.85)}`);
       } else {
         // Fallback to default
         const defaultContextSize = 8192;
@@ -130,17 +133,17 @@ export class ChatClient {
           contextSize: defaultContextSize,
           ollamaContextSize: defaultOllamaSize,
         };
-        if (!isTestEnv) console.warn(`[ChatClient] No context size specified, using default ${defaultContextSize} (Ollama: ${defaultOllamaSize})`);
+        if (!isTestEnv) logger.warn(`[ChatClient] No context size specified, using default ${defaultContextSize} (Ollama: ${defaultOllamaSize})`);
       }
     } else {
-      if (!isTestEnv) console.log(`[ChatClient] Context size: ${options.contextSize}, Ollama: ${options.ollamaContextSize}`);
+      if (!isTestEnv) logger.info(`[ChatClient] Context size: ${options.contextSize}, Ollama: ${options.ollamaContextSize}`);
     }
 
     // Sync context manager threshold with Ollama context size
     // This ensures we snapshot/summarize exactly when Ollama hits its limit
     if (this.contextMgmtManager && options?.contextSize && options?.ollamaContextSize) {
       const ratio = options.ollamaContextSize / options.contextSize;
-      if (!isTestEnv) console.log(`[ChatClient] Syncing autoThreshold to ${ratio.toFixed(4)}`);
+      if (!isTestEnv) logger.info(`[ChatClient] Syncing autoThreshold to ${ratio.toFixed(4)}`);
       
       const currentConfig = this.contextMgmtManager.config;
       if (currentConfig) {
@@ -170,7 +173,7 @@ export class ChatClient {
         });
       } catch (error) {
           // Log error but continue without recording (Requirement 10.1)
-          if (!isTestEnv) console.error('Failed to create session:', error);
+          if (!isTestEnv) logger.error('Failed to create session:', error);
       }
     }
 
@@ -209,7 +212,7 @@ export class ChatClient {
         });
       } catch (error) {
           // Log error but continue (Requirement 10.1)
-          if (!isTestEnv) console.error('Failed to record user message:', error);
+          if (!isTestEnv) logger.error('Failed to record user message:', error);
       }
     }
 
@@ -315,13 +318,13 @@ export class ChatClient {
                 }
               } catch (error) {
                 // Log error but continue (Requirement 10.3)
-                if (!isTestEnv) console.error('Failed to update session metadata after compression:', error);
+                if (!isTestEnv) logger.error('Failed to update session metadata after compression:', error);
               }
             }
           }
         } catch (error) {
           // Log error but continue without compression (Requirement 10.3)
-          if (!isTestEnv) console.error('Compression check failed:', error);
+          if (!isTestEnv) logger.error('Compression check failed:', error);
         }
       }
 
@@ -344,7 +347,7 @@ export class ChatClient {
           }
         } catch (error) {
           // Log error but continue
-          if (!isTestEnv) console.error('Context management check failed:', error);
+          if (!isTestEnv) logger.error('Context management check failed:', error);
         }
       }
 
@@ -479,7 +482,7 @@ export class ChatClient {
           });
         } catch (error) {
           // Log error but continue (Requirement 10.1)
-          if (!isTestEnv) console.error('Failed to record assistant message:', error);
+          if (!isTestEnv) logger.error('Failed to record assistant message:', error);
         }
       }
 
@@ -515,9 +518,9 @@ export class ChatClient {
               for (const newGoal of markers.newGoals) {
                 try {
                   goalManager.createGoal(newGoal.description, newGoal.priority);
-                  console.log(`[Marker] Created goal: ${newGoal.description}`);
+                  logger.info(`[Marker] Created goal: ${newGoal.description}`);
                 } catch (err) {
-                  if (!isTestEnv) console.error('[Marker] Failed to create goal:', err);
+                  if (!isTestEnv) logger.error('[Marker] Failed to create goal:', err);
                 }
               }
               
@@ -532,9 +535,9 @@ export class ChatClient {
                       {},
                       checkpoint.description
                     );
-                    console.log(`[Marker] Created checkpoint: ${checkpoint.description}`);
+                    logger.info(`[Marker] Created checkpoint: ${checkpoint.description}`);
                   } catch (err) {
-                    if (!isTestEnv) console.error('[Marker] Failed to create checkpoint:', err);
+                    if (!isTestEnv) logger.error('[Marker] Failed to create checkpoint:', err);
                   }
                 }
                 
@@ -549,9 +552,9 @@ export class ChatClient {
                     if (decision.locked) {
                       goalManager.lockDecision(activeGoal.id, decisionObj.id);
                     }
-                    console.log(`[Marker] Recorded decision: ${decision.description}`);
+                    logger.info(`[Marker] Recorded decision: ${decision.description}`);
                   } catch (err) {
-                    if (!isTestEnv) console.error('[Marker] Failed to record decision:', err);
+                    if (!isTestEnv) logger.error('[Marker] Failed to record decision:', err);
                   }
                 }
                 
@@ -570,9 +573,9 @@ export class ChatClient {
                       artifact.path,
                       artifact.action
                     );
-                    console.log(`[Marker] Recorded artifact: ${artifact.path} (${artifact.action})`);
+                    logger.info(`[Marker] Recorded artifact: ${artifact.path} (${artifact.action})`);
                   } catch (err) {
-                    if (!isTestEnv) console.error('[Marker] Failed to record artifact:', err);
+                    if (!isTestEnv) logger.error('[Marker] Failed to record artifact:', err);
                   }
                 }
                 
@@ -580,9 +583,9 @@ export class ChatClient {
                 if (markers.goalComplete) {
                   try {
                     goalManager.completeGoal(activeGoal.id, markers.goalComplete);
-                    console.log(`[Marker] Completed goal: ${markers.goalComplete}`);
+                    logger.info(`[Marker] Completed goal: ${markers.goalComplete}`);
                   } catch (err) {
-                    if (!isTestEnv) console.error('[Marker] Failed to complete goal:', err);
+                    if (!isTestEnv) logger.error('[Marker] Failed to complete goal:', err);
                   }
                 }
                 
@@ -590,23 +593,23 @@ export class ChatClient {
                 if (markers.goalPause) {
                   try {
                     goalManager.pauseGoal(activeGoal.id);
-                    console.log(`[Marker] Paused goal: ${activeGoal.description}`);
+                    logger.info(`[Marker] Paused goal: ${activeGoal.description}`);
                   } catch (err) {
-                    if (!isTestEnv) console.error('[Marker] Failed to pause goal:', err);
+                    if (!isTestEnv) logger.error('[Marker] Failed to pause goal:', err);
                   }
                 }
               } else if (markers.checkpoints.length > 0 || markers.decisions.length > 0 || 
                          markers.artifacts.length > 0 || markers.goalComplete || markers.goalPause) {
-                console.warn('[Marker] No active goal - checkpoint/decision/artifact/complete/pause markers ignored');
+                logger.warn('[Marker] No active goal - checkpoint/decision/artifact/complete/pause markers ignored');
               }
             }
           } catch (err) {
             // Log error but continue - marker parsing is optional
-            if (!isTestEnv) console.error('[Marker] Failed to parse goal management markers:', err);
+            if (!isTestEnv) logger.error('[Marker] Failed to parse goal management markers:', err);
           }
         } catch (error) {
           // Log error but continue
-          if (!isTestEnv) console.error('Failed to add assistant message to context manager:', error);
+          if (!isTestEnv) logger.error('Failed to add assistant message to context manager:', error);
         }
       }
 
@@ -627,7 +630,7 @@ export class ChatClient {
             await this.recordingService.recordToolCall(sessionId, sessionToolCall);
           } catch (error) {
             // Log error but continue (Requirement 10.1)
-            if (!isTestEnv) console.error('Failed to record tool call:', error);
+            if (!isTestEnv) logger.error('Failed to record tool call:', error);
           }
         }
       }
@@ -676,7 +679,7 @@ export class ChatClient {
         });
       } catch (error) {
         // Log error but don't fail (Requirement 10.1)
-        if (!isTestEnv) console.error('Failed to save session on exit:', error);
+        if (!isTestEnv) logger.error('Failed to save session on exit:', error);
       }
     }
   }

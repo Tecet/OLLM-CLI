@@ -1,3 +1,4 @@
+import { createLogger } from '../utils/logger.js';
 /**
  * MCP Transport Implementation
  * 
@@ -97,7 +98,7 @@ export class StdioTransport extends BaseMCPTransport {
           if (!this.connected) {
             reject(new Error(`MCP Server '${this.command}' failed to become ready within timeout`));
           }
-        }, 10000); // 10 second timeout for readiness
+        }, 20000); // 20 second timeout for readiness
 
         // Set up readiness check - wait for first successful response
         const checkReadiness = () => {
@@ -115,7 +116,7 @@ export class StdioTransport extends BaseMCPTransport {
           };
 
           // Try to send initialize request
-            this.sendRequest(initRequest, 5000)
+            this.sendRequest(initRequest, 15000)
               .then(() => {
                 clearTimeout(readinessTimeout);
                 this.connected = true;
@@ -687,7 +688,7 @@ export class SSETransport extends BaseMCPTransport {
       pending.resolve(response);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error('SSE failed to parse JSON-RPC message:', errorMessage, message);
+      logger.error('SSE failed to parse JSON-RPC message:', errorMessage, message);
     }
   }
 }

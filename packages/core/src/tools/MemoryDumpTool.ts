@@ -1,8 +1,11 @@
+import { createLogger } from '../utils/logger.js';
 
 import { promises as fs } from 'fs';
 import * as path from 'path';
 
 import { PromptModeManager } from '../prompts/PromptModeManager.js';
+
+const logger = createLogger('MemoryDumpTool');
 
 import type {
   DeclarativeTool,
@@ -77,7 +80,7 @@ export class MemoryDumpInvocation implements ToolInvocation<MemoryDumpParams, To
        // Handle "Tool" mode transition: if we are in 'tool' mode, check what we came from
        // const effectiveMode = (currentMode === 'tool' && previousMode) ? previousMode : currentMode;
        
-       console.log(`[DEBUG] MemoryDumpInvocation. mode: ${currentMode}`);
+       logger.info(`[DEBUG] MemoryDumpInvocation. mode: ${currentMode}`);
 
        // 1. Basic Mode Guard
        if (!currentMode || currentMode === 'assistant') {

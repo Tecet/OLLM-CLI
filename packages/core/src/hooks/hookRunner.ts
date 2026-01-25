@@ -1,3 +1,6 @@
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('hookRunner');
 /**
  * HookRunner executes hooks with timeout and error handling
  * 
@@ -249,7 +252,7 @@ export class HookRunner {
       if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         const extensionInfo = hook.extensionName ? ` (from extension '${hook.extensionName}')` : '';
-        console.error(`Hook execution failed for '${hook.name}'${extensionInfo}: ${errorMessage}`);
+        logger.error(`Hook execution failed for '${hook.name}'${extensionInfo}: ${errorMessage}`);
       }
       
       hookDebugger.endTrace(traceId, undefined, error instanceof Error ? error : new Error(String(error)));
@@ -295,7 +298,7 @@ export class HookRunner {
       } else {
         // Skip hook if not approved
         if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
-          console.warn(`Hook ${hook.name} was not approved and will be skipped`);
+          logger.warn(`Hook ${hook.name} was not approved and will be skipped`);
         }
         return false;
       }
@@ -387,7 +390,7 @@ export class HookRunner {
         if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
           const errorMessage = error instanceof Error ? error.message : String(error);
           const extensionInfo = hook.extensionName ? ` (from extension '${hook.extensionName}')` : '';
-          console.error(`Hook '${hook.name}'${extensionInfo} failed: ${errorMessage}`);
+          logger.error(`Hook '${hook.name}'${extensionInfo} failed: ${errorMessage}`);
         }
         
         // Add error result
@@ -481,7 +484,7 @@ export class HookRunner {
         if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
           const errorMessage = error instanceof Error ? error.message : String(error);
           const extensionInfo = hook.extensionName ? ` (from extension '${hook.extensionName}')` : '';
-          console.error(`Hook '${hook.name}'${extensionInfo} failed: ${errorMessage}`);
+          logger.error(`Hook '${hook.name}'${extensionInfo} failed: ${errorMessage}`);
         }
         
         // Add error result

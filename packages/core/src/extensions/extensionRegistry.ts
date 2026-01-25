@@ -1,3 +1,6 @@
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('extensionRegistry');
 /**
  * Extension Registry for marketplace functionality
  * 
@@ -222,12 +225,12 @@ export class ExtensionRegistry {
       }
 
       // Download extension
-      console.log(`Downloading extension '${name}' v${metadata.version}...`);
+      logger.info(`Downloading extension '${name}' v${metadata.version}...`);
       const downloadPath = await this.downloadExtension(metadata);
 
       // Verify checksum
       if (this.verifyChecksums) {
-        console.log('Verifying checksum...');
+        logger.info('Verifying checksum...');
         const valid = await this.verifyChecksum(downloadPath, metadata.checksum);
         if (!valid) {
           // Clean up downloaded file
@@ -243,13 +246,13 @@ export class ExtensionRegistry {
       }
 
       // Extract extension
-      console.log('Extracting extension...');
+      logger.info('Extracting extension...');
       const installPath = await this.extractExtension(downloadPath, name);
 
       // Clean up downloaded file
       await rm(downloadPath, { force: true });
 
-      console.log(`Successfully installed extension '${name}' v${metadata.version}`);
+      logger.info(`Successfully installed extension '${name}' v${metadata.version}`);
 
       return {
         name,
@@ -276,7 +279,7 @@ export class ExtensionRegistry {
   async uninstall(name: string): Promise<void> {
     const extensionPath = join(this.installDir, name);
     await rm(extensionPath, { recursive: true, force: true });
-    console.log(`Uninstalled extension '${name}'`);
+    logger.info(`Uninstalled extension '${name}'`);
   }
 
   /**
@@ -345,7 +348,7 @@ export class ExtensionRegistry {
     } catch (error) {
       // Return cached data if available, even if expired
       if (this.cache.has('registry')) {
-        console.warn('Using cached registry data due to fetch error');
+        logger.warn('Using cached registry data due to fetch error');
         return this.cache.get('registry')!;
       }
 

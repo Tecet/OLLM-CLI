@@ -1,3 +1,6 @@
+import { createLogger } from './logger.js';
+
+const logger = createLogger('pathValidation');
 /**
  * Path Validation Utilities
  * 
@@ -124,15 +127,15 @@ export function validateStoragePath(
 export function logPathDiagnostics(label: string, dirPath: string): void {
   const result = validateStoragePath(dirPath, false);
   
-  console.log(`[Storage] ${label}:`);
-  console.log(`  Path: ${dirPath}`);
-  console.log(`  Resolved: ${result.resolved}`);
-  console.log(`  Exists: ${result.exists}`);
-  console.log(`  Writable: ${result.writable}`);
-  console.log(`  Valid: ${result.valid}`);
+  logger.info(`[Storage] ${label}:`);
+  logger.info(`  Path: ${dirPath}`);
+  logger.info(`  Resolved: ${result.resolved}`);
+  logger.info(`  Exists: ${result.exists}`);
+  logger.info(`  Writable: ${result.writable}`);
+  logger.info(`  Valid: ${result.valid}`);
   
   if (result.error) {
-    console.log(`  Error: ${result.error}`);
+    logger.info(`  Error: ${result.error}`);
   }
 }
 
@@ -167,13 +170,13 @@ export function getDefaultStorageLocations(): StorageLocations {
 export function logAllStorageLocations(): void {
   const locations = getDefaultStorageLocations();
   
-  console.log('[Storage] Default Locations:');
-  console.log(`  Home: ${os.homedir()}`);
-  console.log(`  Platform: ${os.platform()}`);
-  console.log(`  Sessions: ${locations.sessions}`);
-  console.log(`  Context Snapshots: ${locations.contextSnapshots}`);
-  console.log(`  Config: ${locations.config}`);
-  console.log(`  Cache: ${locations.cache}`);
+  logger.info('[Storage] Default Locations:');
+  logger.info(`  Home: ${os.homedir()}`);
+  logger.info(`  Platform: ${os.platform()}`);
+  logger.info(`  Sessions: ${locations.sessions}`);
+  logger.info(`  Context Snapshots: ${locations.contextSnapshots}`);
+  logger.info(`  Config: ${locations.config}`);
+  logger.info(`  Cache: ${locations.cache}`);
 }
 
 /**

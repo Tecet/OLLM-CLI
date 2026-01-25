@@ -1,3 +1,6 @@
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('snapshotCoordinator');
 /**
  * SnapshotCoordinator
  *
@@ -85,7 +88,7 @@ export class SnapshotCoordinator {
     try {
       return await this.snapshotStorage.load(snapshotId);
     } catch (error) {
-      console.error(`Failed to load snapshot ${snapshotId}:`, error);
+      logger.error(`Failed to load snapshot ${snapshotId}:`, error);
       return null;
     }
   }

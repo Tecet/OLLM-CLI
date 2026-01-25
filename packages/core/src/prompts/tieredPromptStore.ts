@@ -1,8 +1,11 @@
+import { createLogger } from '../utils/logger.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 import { ContextTier, OperationalMode } from '../context/types.js';
+
+const logger = createLogger('tieredPromptStore');
 
 const TIER_KEY_BY_CONTEXT: Record<ContextTier, string> = {
   [ContextTier.TIER_1_MINIMAL]: 'tier1',
@@ -41,7 +44,7 @@ export class TieredPromptStore {
           const content = fs.readFileSync(filePath, 'utf8').trim();
           this.templates.set(this.makeKey(mode, tierKey), content);
         } catch (error) {
-          console.warn(`[TieredPromptStore] Missing prompt template: ${filePath}`, error);
+          logger.warn(`[TieredPromptStore] Missing prompt template: ${filePath}`, error);
         }
       }
     }

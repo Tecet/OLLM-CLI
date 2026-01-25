@@ -1,3 +1,6 @@
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('types');
 /**
  * Core types and interfaces for the provider system.
  * These types define the contract between the chat runtime and LLM provider adapters.
@@ -163,9 +166,9 @@ export interface PullProgress {
  * 
  * for await (const event of provider.chatStream(request)) {
  *   if (event.type === 'text') {
- *     console.log(event.value);
+ *     logger.info(event.value);
  *   } else if (event.type === 'error') {
- *     console.error(event.error.message);
+ *     logger.error(event.error.message);
  *   }
  * }
  * ```
@@ -181,7 +184,7 @@ export interface PullProgress {
  * 
  * for await (const event of provider.chatStream(request)) {
  *   if (event.type === 'tool_call') {
- *     console.log('Tool called:', event.value.name);
+ *     logger.info('Tool called:', event.value.name);
  *   }
  * }
  * ```
@@ -303,7 +306,7 @@ export interface ProviderAdapter {
    * @example
    * ```typescript
    * await provider.pullModel('llama3.2', (progress) => {
-   *   console.log(`${progress.status}: ${progress.completed}/${progress.total}`);
+   *   logger.info(`${progress.status}: ${progress.completed}/${progress.total}`);
    * });
    * ```
    */
@@ -341,8 +344,8 @@ export interface ProviderAdapter {
    * @example
    * ```typescript
    * const info = await provider.showModel('llama3.2');
-   * console.log(`Model size: ${info.sizeBytes} bytes`);
-   * console.log(`Parameters: ${info.details?.parameter_size}`);
+   * logger.info(`Model size: ${info.sizeBytes} bytes`);
+   * logger.info(`Parameters: ${info.details?.parameter_size}`);
    * ```
    */
   showModel?(name: string): Promise<ModelInfo>;

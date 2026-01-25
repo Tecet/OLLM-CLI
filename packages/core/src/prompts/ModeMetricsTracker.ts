@@ -1,3 +1,6 @@
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('ModeMetricsTracker');
 /**
  * Mode Metrics Tracker for Dynamic Prompt System
  * 
@@ -800,7 +803,7 @@ export class ModeMetricsTracker {
       const serialized = this.serializeMetrics();
       writeFileSync(metricsPath, JSON.stringify(serialized, null, 2), 'utf-8');
     } catch (error) {
-      console.error('Failed to save mode metrics to disk:', error);
+      logger.error('Failed to save mode metrics to disk:', error);
     }
   }
   
@@ -825,7 +828,7 @@ export class ModeMetricsTracker {
       this.deserializeMetrics(serialized);
       return true;
     } catch (error) {
-      console.error('Failed to load mode metrics from disk:', error);
+      logger.error('Failed to load mode metrics from disk:', error);
       return false;
     }
   }
@@ -843,7 +846,7 @@ export class ModeMetricsTracker {
         unlinkSync(metricsPath);
       }
     } catch (error) {
-      console.error('Failed to clear persisted metrics:', error);
+      logger.error('Failed to clear persisted metrics:', error);
     }
   }
 }

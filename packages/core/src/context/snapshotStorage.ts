@@ -1,3 +1,6 @@
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('snapshotStorage');
 /**
  * Snapshot Storage Service
  * 
@@ -423,7 +426,7 @@ export class SnapshotStorageImpl implements SnapshotStorage {
       }
       
       // Corrupted index, try to rebuild from files
-      console.warn(`Corrupted index for session ${sessionId}, rebuilding...`);
+      logger.warn(`Corrupted index for session ${sessionId}, rebuilding...`);
       return await this.rebuildIndex(sessionId);
     }
   }
@@ -530,7 +533,7 @@ export class SnapshotStorageImpl implements SnapshotStorage {
           });
         } catch (_error) {
           // Skip corrupted files
-          console.warn(`Skipping corrupted snapshot file: ${file}`);
+          logger.warn(`Skipping corrupted snapshot file: ${file}`);
         }
       }
 

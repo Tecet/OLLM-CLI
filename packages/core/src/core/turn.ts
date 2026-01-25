@@ -1,3 +1,6 @@
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('turn');
 /**
  * Turn management for conversation cycles.
  * A turn represents a single conversation cycle including model response and tool executions.
@@ -302,7 +305,7 @@ export class Turn {
     } else if (this.options.useModeLinkedTemperature && this.options.modeManager) {
       const currentMode = this.options.modeManager.getCurrentMode();
       opts.temperature = this.options.modeManager.getPreferredTemperature(currentMode);
-      if (!isTestEnv) console.log(`[Turn] Using mode-linked temperature: ${opts.temperature} for mode: ${currentMode}`);
+      if (!isTestEnv) logger.info(`[Turn] Using mode-linked temperature: ${opts.temperature} for mode: ${currentMode}`);
     }
 
     if (this.options.maxTokens !== undefined) {
@@ -313,13 +316,13 @@ export class Turn {
     // Use ollamaContextSize if provided, otherwise fall back to contextSize
     if (this.options.ollamaContextSize !== undefined) {
       opts.num_ctx = this.options.ollamaContextSize;
-      if (!isTestEnv) console.log(`[Turn] Setting num_ctx from ollamaContextSize: ${opts.num_ctx}`);
+      if (!isTestEnv) logger.info(`[Turn] Setting num_ctx from ollamaContextSize: ${opts.num_ctx}`);
     } else if (this.options.contextSize !== undefined) {
       // Fallback: calculate 85% if only contextSize is provided
       opts.num_ctx = Math.floor(this.options.contextSize * 0.85);
-      if (!isTestEnv) console.log(`[Turn] Setting num_ctx from contextSize (85%): ${opts.num_ctx}`);
+      if (!isTestEnv) logger.info(`[Turn] Setting num_ctx from contextSize (85%): ${opts.num_ctx}`);
     } else {
-      if (!isTestEnv) console.warn('[Turn] No context size provided, num_ctx will not be set!');
+      if (!isTestEnv) logger.warn('[Turn] No context size provided, num_ctx will not be set!');
     }
 
     return Object.keys(opts).length > 0 ? opts : undefined;

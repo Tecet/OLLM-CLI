@@ -1,3 +1,6 @@
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('tokenCounter');
 /**
  * Token Counter Service
  * 
@@ -87,7 +90,7 @@ export class TokenCounterService implements TokenCounter {
         return Math.round(count * this.modelMultiplier);
       } catch (error) {
         // Fall through to estimation on error
-        console.warn('Provider token counting failed, using fallback estimation:', error);
+        logger.warn('Provider token counting failed, using fallback estimation:', error);
       }
     }
 

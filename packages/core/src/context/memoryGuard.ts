@@ -1,3 +1,6 @@
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('memoryGuard');
 /**
  * Memory Guard Service
  * 
@@ -147,7 +150,7 @@ export class MemoryGuardImpl extends EventEmitter implements MemoryGuard {
         try {
           await cb();
         } catch (error) {
-          console.error(`Error in memory guard threshold callback for ${level}:`, error);
+          logger.error(`Error in memory guard threshold callback for ${level}:`, error);
         }
       }
     }
@@ -177,7 +180,7 @@ export class MemoryGuardImpl extends EventEmitter implements MemoryGuard {
               this.emit('compressed', { level: MemoryLevel.WARNING, result: compressed });
             }
           } catch (err) {
-            console.error('Compression failed during memory warning handling:', err);
+            logger.error('Compression failed during memory warning handling:', err);
           }
         }
         break;
@@ -248,7 +251,7 @@ export class MemoryGuardImpl extends EventEmitter implements MemoryGuard {
         newSize
       });
     } catch (error) {
-      console.error('Failed to reduce context size:', error);
+      logger.error('Failed to reduce context size:', error);
       this.emit('context-resize-failed', {
         level: MemoryLevel.CRITICAL,
         error: error instanceof Error ? error.message : String(error)
@@ -283,7 +286,7 @@ export class MemoryGuardImpl extends EventEmitter implements MemoryGuard {
             actions.push('Skipped snapshot (no user messages)');
           }
         } catch (error) {
-          console.error('Failed to create emergency snapshot:', error);
+          logger.error('Failed to create emergency snapshot:', error);
           actions.push('Failed to create snapshot');
         }
       }
@@ -321,7 +324,7 @@ export class MemoryGuardImpl extends EventEmitter implements MemoryGuard {
       });
 
     } catch (error) {
-      console.error('Emergency actions failed:', error);
+      logger.error('Emergency actions failed:', error);
       this.emit('emergency-failed', { error });
     }
   }

@@ -1,3 +1,6 @@
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('registry');
 /**
  * Provider Registry
  * Manages registration and resolution of provider adapters.
@@ -100,7 +103,7 @@ export class ProviderRegistry {
    * if (provider) {
    *   // Use provider
    * } else {
-   *   console.error('Provider not found');
+   *   logger.error('Provider not found');
    * }
    * ```
    */
@@ -149,7 +152,7 @@ export class ProviderRegistry {
    *   const provider = registry.getDefault();
    *   // Use provider
    * } catch (error) {
-   *   console.error('No default provider configured');
+   *   logger.error('No default provider configured');
    * }
    * ```
    */
@@ -198,7 +201,7 @@ export class ProviderRegistry {
    * @example
    * ```typescript
    * const providers = registry.list();
-   * console.log('Available providers:', providers.join(', '));
+   * logger.info('Available providers:', providers.join(', '));
    * // Output: "Available providers: local, vllm, openai"
    * ```
    */

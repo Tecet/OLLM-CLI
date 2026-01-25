@@ -1,3 +1,6 @@
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('serviceContainer');
 /**
  * Service Container for dependency injection
  * 
@@ -217,7 +220,7 @@ export class ServiceContainer {
       
       // Load memories on initialization
       this._memoryService.load().catch(err => {
-        console.error('Failed to load memories:', err);
+        logger.error('Failed to load memories:', err);
       });
     }
     return this._memoryService;
@@ -240,7 +243,7 @@ export class ServiceContainer {
       
       // Load templates on initialization
       this._templateService.loadTemplates().catch(err => {
-        console.error('Failed to load templates:', err);
+        logger.error('Failed to load templates:', err);
       });
     }
     return this._templateService;

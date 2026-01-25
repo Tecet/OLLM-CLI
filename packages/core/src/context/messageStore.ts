@@ -1,3 +1,6 @@
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('messageStore');
 /**
  * MessageStore
  *
@@ -78,7 +81,7 @@ export class MessageStore {
 
     try {
       if (!this.isTestEnv) {
-        console.debug('[ContextManager] addMessage: tokenCount=', tokenCount, 'currentContext.tokenCount=', context.tokenCount, 'currentContext.maxTokens=', context.maxTokens);
+        logger.debug('[ContextManager] addMessage: tokenCount=', tokenCount, 'currentContext.tokenCount=', context.tokenCount, 'currentContext.maxTokens=', context.maxTokens);
       }
     } catch (_e) {
       // ignore logging errors
@@ -136,10 +139,10 @@ export class MessageStore {
 
       if (safetySnapshotNeeded || turnBasedSnapshotNeeded) {
         const reason = safetySnapshotNeeded ? 'User Input > 85%' : 'Periodic Backup (5 turns)';
-        console.log(`[ContextManager] Safety Snapshot Triggered (${reason}) - Pre-generation backup`);
+        logger.info(`[ContextManager] Safety Snapshot Triggered (${reason}) - Pre-generation backup`);
 
         this.createSnapshot().catch(err =>
-          console.error('[ContextManager] Snapshot failed:', err)
+          logger.error('[ContextManager] Snapshot failed:', err)
         );
 
         this.lastSnapshotTokens = context.tokenCount;
@@ -150,7 +153,7 @@ export class MessageStore {
     if (message.role === 'assistant') {
       // Post-assistant checks include threshold callbacks and compression.
       try {
-        console.debug('[ContextManager] calling snapshotManager.checkThresholds', { currentTokens: context.tokenCount, maxTokens: context.maxTokens });
+        logger.debug('[ContextManager] calling snapshotManager.checkThresholds', { currentTokens: context.tokenCount, maxTokens: context.maxTokens });
       } catch (_e) {
         // ignore logging errors
       }
@@ -200,7 +203,7 @@ export class MessageStore {
       this.snapshotManager.checkThresholds(context.tokenCount + this.inflightTokens, context.maxTokens);
       this.ensureMidStreamGuard();
     } catch (e) {
-      console.error('[ContextManager] reportInflightTokens failed', e);
+      logger.error('[ContextManager] reportInflightTokens failed', e);
     }
   }
 
@@ -213,7 +216,7 @@ export class MessageStore {
       this.inflightTokens = 0;
       this.contextPool.setCurrentTokens(context.tokenCount);
     } catch (e) {
-      console.error('[ContextManager] clearInflightTokens failed', e);
+      logger.error('[ContextManager] clearInflightTokens failed', e);
     }
   }
 
@@ -269,7 +272,7 @@ export class MessageStore {
     this.midStreamGuardActive = true;
     const guardPromise = this.compress()
       .catch((error) => {
-        console.error('[ContextManager] mid-stream guard compression failed', error);
+        logger.error('[ContextManager] mid-stream guard compression failed', error);
       })
       .finally(() => {
         this.midStreamGuardActive = false;

@@ -1,3 +1,6 @@
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('promptOrchestrator');
 /**
  * PromptOrchestrator
  *
@@ -74,7 +77,7 @@ export class PromptOrchestrator {
   getSystemPromptForTierAndMode(mode: OperationalMode, tier: ContextTier): string {
     const template = this.promptStore.get(mode, tier);
     if (!template) {
-      console.warn(`[ContextManager] No prompt template found for ${mode} in tier ${tier}, using fallback`);
+      logger.warn(`[ContextManager] No prompt template found for ${mode} in tier ${tier}, using fallback`);
       const fallback = this.promptStore.get(OperationalMode.DEVELOPER, ContextTier.TIER_3_STANDARD);
       return fallback ?? '';
     }

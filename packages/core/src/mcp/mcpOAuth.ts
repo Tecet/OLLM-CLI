@@ -1,3 +1,6 @@
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('mcpOAuth');
 /**
  * OAuth 2.0 Provider for MCP Servers
  * 
@@ -147,7 +150,7 @@ export class MCPOAuthProvider {
         // Check if we have config
         const config = this.configs.get(serverName);
         if (!config) {
-          console.warn(`Cannot auto-refresh token for ${serverName}: No config registered`);
+          logger.warn(`Cannot auto-refresh token for ${serverName}: No config registered`);
           return undefined;
         }
 
@@ -358,7 +361,7 @@ export class MCPOAuthProvider {
         });
       } catch (error) {
         // Ignore revocation errors, still clean up locally
-        console.warn(`Failed to revoke token with provider: ${error}`);
+        logger.warn(`Failed to revoke token with provider: ${error}`);
       }
     }
 
@@ -486,9 +489,9 @@ export class MCPOAuthProvider {
       }, 5 * 60 * 1000); // 5 minute timeout
 
       server.listen(port, () => {
-        console.log(`OAuth callback server listening on http://localhost:${port}`);
-        console.log(`Opening browser for authentication...`);
-        console.log(`Authorization URL: ${authUrl}`);
+        logger.info(`OAuth callback server listening on http://localhost:${port}`);
+        logger.info(`Opening browser for authentication...`);
+        logger.info(`Authorization URL: ${authUrl}`);
         
         // Open browser (platform-specific)
         this.openBrowser(authUrl);
@@ -635,8 +638,8 @@ export class MCPOAuthProvider {
 
     exec(command, (error: Error | null) => {
       if (error) {
-        console.error('Failed to open browser:', error);
-        console.log('Please open this URL manually:', url);
+        logger.error('Failed to open browser:', error);
+        logger.info('Please open this URL manually:', url);
       }
     });
   }
@@ -808,7 +811,7 @@ export async function createTokenStorage(fallbackFile: string): Promise<TokenSto
     return new KeytarTokenStorage();
   } catch {
     // Fall back to file storage
-    console.warn('Keytar not available, using file-based token storage (less secure)');
+    logger.warn('Keytar not available, using file-based token storage (less secure)');
     return new FileTokenStorage(fallbackFile);
   }
 }
