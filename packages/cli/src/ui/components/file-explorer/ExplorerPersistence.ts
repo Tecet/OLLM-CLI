@@ -156,6 +156,7 @@ export class ExplorerPersistence {
         const errorInfo = handleError(error, {
           operation: 'loadState',
           stateFilePath: this.stateFilePath,
+          silent: this.silent,
         });
         
         console.warn(`Failed to load explorer state: ${errorInfo.message}. Using default state.`);

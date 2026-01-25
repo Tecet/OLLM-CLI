@@ -1,4 +1,3 @@
-import { createLogger } from '../utils/logger.js';
 /**
  * MCP Transport Implementation
  * 
@@ -11,6 +10,7 @@ import { EventEmitter } from 'events';
 
 import { MCPTransport, MCPRequest, MCPResponse } from './types.js';
 import { createLogger } from '../utils/logger.js';
+
 
 const logger = createLogger('MCPTransport');
 
@@ -688,7 +688,10 @@ export class SSETransport extends BaseMCPTransport {
       pending.resolve(response);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error('SSE failed to parse JSON-RPC message:', errorMessage, message);
+      logger.error('SSE failed to parse JSON-RPC message', {
+        error: errorMessage,
+        message: message.substring(0, 100)
+      });
     }
   }
 }

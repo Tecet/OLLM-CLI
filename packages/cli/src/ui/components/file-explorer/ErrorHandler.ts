@@ -52,7 +52,10 @@ export interface ErrorContext {
   /** File path involved (alias for nodePath) */
   filePath?: string;
   /** Additional context data */
+  /** Additional context data */
   [key: string]: unknown;
+  /** If true, suppress console logging */
+  silent?: boolean;
 }
 
 /**
@@ -209,6 +212,11 @@ function formatErrorMessage(message: string, code: string | undefined, context: 
  * like Winston, Bunyan, or a cloud logging provider.
  */
 function logError(error: unknown, context: ErrorContext, category: ErrorCategory): void {
+  // Suppress logging if silent option is true
+  if (context.silent) {
+    return;
+  }
+
   // For now, just log to console
   // In production, this would send to a logging service
   console.error(`[FileExplorer] ${category}:`, {

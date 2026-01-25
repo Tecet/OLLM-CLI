@@ -10,7 +10,7 @@
     "build": "node scripts/build.js",
     "dev": "echo 'Dev mode not yet implemented'",
     "start": "node packages/cli/dist/cli.js",
-    "test": "vitest -c .dev/vitest.priority.config.ts run",
+    "test": "vitest run",
     "test:all": "vitest run",
     "test:unit": "vitest run",
     "//validate-docs": "DISABLED: node scripts/validate-docs.js",

@@ -323,13 +323,28 @@ export class FileTreeService {
    * @returns Cached or freshly flattened tree
    */
   getFlattenedTree(tree: FileNode): FileNode[] {
-    // Return cached result if available
-    if (this.flattenedCache) {
+    // Return cached result if available (strict null check for micro-optim)
+    if (this.flattenedCache !== null) {
       return this.flattenedCache;
     }
-    
-    // Flatten and cache
-    this.flattenedCache = this.flattenTree(tree);
+
+    // Flatten iteratively and cache (avoid recursion overhead)
+    const stack: FileNode[] = [tree];
+    const result: FileNode[] = [];
+
+    while (stack.length > 0) {
+      const node = stack.shift()!;
+      result.push(node);
+
+      if (node.type === 'directory' && node.expanded && node.children && node.children.length > 0) {
+        // Push children in order so that shifting yields depth-first order
+        for (let i = node.children.length - 1; i >= 0; i--) {
+          stack.unshift(node.children[i]);
+        }
+      }
+    }
+
+    this.flattenedCache = result;
     return this.flattenedCache;
   }
   
@@ -457,11 +472,9 @@ export class FileTreeService {
    * @returns Array of visible nodes in depth-first order
    */
   flattenTree(node: FileNode, result: FileNode[] = []): FileNode[] {
-    // Add current node to the result
+    // Fallback recursive implementation (kept for backwards compatibility)
     result.push(node);
 
-    // If the node is an expanded directory, recursively add its children
-    // This creates a depth-first traversal of the visible tree
     if (node.type === 'directory' && node.expanded && node.children) {
       for (const child of node.children) {
         this.flattenTree(child, result);
