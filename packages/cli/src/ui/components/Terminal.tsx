@@ -95,8 +95,9 @@ export function Terminal({ height }: TerminalProps) {
         {line.map((token: AnsiToken, tokenIndex: number) => (
           <Text
             key={tokenIndex}
-            color={token.fg || undefined}
-            backgroundColor={token.bg || undefined}
+            // Temporarily disable colors to debug rendering artefacts
+            color={undefined}
+            backgroundColor={undefined}
             inverse={token.inverse}
             dimColor={token.dim}
             bold={token.bold}
