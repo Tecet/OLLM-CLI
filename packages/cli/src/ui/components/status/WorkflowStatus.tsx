@@ -38,13 +38,7 @@ function getModeIcon(mode: string): string {
     assistant: '💬',
     planning: '📋',
     developer: '👨‍💻',
-    tool: '🔧',
-    debugger: '🐛',
-    security: '🔒',
-    reviewer: '👀',
-    performance: '⚡',
-    prototype: '⚡🔬',
-    teacher: '👨‍🏫'
+    debugger: '🐛'
   };
   return icons[mode] || '📝';
 }

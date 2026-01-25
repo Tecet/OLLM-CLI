@@ -204,31 +204,33 @@ export class SnapshotManagerImpl implements SnapshotManager {
     // Generate unique ID
     const id = randomUUID();
 
-    // DEBUG: Write debug info to file
-    try {
-      const fs = await import('fs/promises');
-      const debugInfo = {
-        timestamp: new Date().toISOString(),
-        snapshotId: id,
-        contextMessages: {
-          total: context.messages.length,
-          byRole: {
-            user: context.messages.filter(m => m.role === 'user').length,
-            assistant: context.messages.filter(m => m.role === 'assistant').length,
-            system: context.messages.filter(m => m.role === 'system').length,
-            tool: context.messages.filter(m => m.role === 'tool').length
-          },
-          details: context.messages.map(m => ({
-            role: m.role,
-            id: m.id,
-            contentLength: m.content.length,
-            preview: m.content.substring(0, 100)
-          }))
-        }
-      };
-      await fs.writeFile('snapshot-debug.json', JSON.stringify(debugInfo, null, 2));
-    } catch {
-      // Ignore debug errors
+    // DEBUG: Write debug info to file only when explicitly enabled.
+    if (process.env.OLLM_SNAPSHOT_DEBUG === '1' && !process.env.VITEST) {
+      try {
+        const fs = await import('fs/promises');
+        const debugInfo = {
+          timestamp: new Date().toISOString(),
+          snapshotId: id,
+          contextMessages: {
+            total: context.messages.length,
+            byRole: {
+              user: context.messages.filter(m => m.role === 'user').length,
+              assistant: context.messages.filter(m => m.role === 'assistant').length,
+              system: context.messages.filter(m => m.role === 'system').length,
+              tool: context.messages.filter(m => m.role === 'tool').length
+            },
+            details: context.messages.map(m => ({
+              role: m.role,
+              id: m.id,
+              contentLength: m.content.length,
+              preview: m.content.substring(0, 100)
+            }))
+          }
+        };
+        await fs.writeFile('snapshot-debug.json', JSON.stringify(debugInfo, null, 2));
+      } catch {
+        // Ignore debug errors
+      }
     }
 
     // CRITICAL FIX: Keep ALL user messages in full (never compress!)

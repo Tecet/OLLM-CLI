@@ -124,8 +124,7 @@ export function FileExplorerComponent({
   onStateRestored,
   onError,
 }: FileExplorerComponentProps) {
-  const excludePatternsKey = useMemo(() => excludePatterns.join('|'), [excludePatterns]);
-  const stableExcludePatterns = useMemo(() => excludePatterns, [excludePatternsKey]);
+  const stableExcludePatterns = useMemo(() => excludePatterns, [excludePatterns]);
   const fileFocusContext = useFileFocus();
 
   // Initialization state
@@ -398,6 +397,7 @@ export function FileExplorerComponent({
     onWorkspaceLoaded,
     onStateRestored,
     onError,
+    fileFocusContext,
     stableExcludePatterns,
   ]);
 

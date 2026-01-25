@@ -2,7 +2,7 @@
  * Hybrid Mode Manager for Dynamic Prompt System
  * 
  * Manages hybrid modes that combine capabilities from multiple modes.
- * Enables complex workflows like secure development or performance-focused development.
+ * Enables workflows that combine planning, development, and debugging.
  */
 
 import type { ModeType } from './ContextAnalyzer.js';
@@ -24,54 +24,23 @@ export interface HybridMode {
  * Preset hybrid modes
  */
 export const PRESET_HYBRID_MODES: Record<string, HybridMode> = {
-  'secure-developer': {
-    id: 'secure-developer',
-    name: 'Secure Developer',
-    description: 'Development with security-first mindset',
-    icon: '🔒👨‍💻',
-    color: 'purple',
-    modes: ['developer', 'reviewer'],
-    persona: 'Senior Software Engineer with Security Expertise'
+  'plan-develop': {
+    id: 'plan-develop',
+    name: 'Plan and Build',
+    description: 'Planning plus implementation',
+    icon: '📐💻',
+    color: 'yellow-green',
+    modes: ['planning', 'developer'],
+    persona: 'Architect and Implementer'
   },
-  
-  'perf-developer': {
-    id: 'perf-developer',
-    name: 'Performance Developer',
-    description: 'Development focused on performance optimization',
-    icon: '⚡👨‍💻',
-    color: 'magenta',
+  'dev-debug': {
+    id: 'dev-debug',
+    name: 'Develop and Debug',
+    description: 'Implementation with debugging focus',
+    icon: '💻🐛',
+    color: 'green-red',
     modes: ['developer', 'debugger'],
-    persona: 'Senior Software Engineer with Performance Expertise'
-  },
-  
-  'security-debugger': {
-    id: 'security-debugger',
-    name: 'Security Debugger',
-    description: 'Debugging with security vulnerability detection',
-    icon: '🔒🐛',
-    color: 'red-purple',
-    modes: ['debugger', 'reviewer'],
-    persona: 'Debugging Specialist with Security Awareness'
-  },
-  
-  'quality-developer': {
-    id: 'quality-developer',
-    name: 'Quality Developer',
-    description: 'Development with continuous code review',
-    icon: '👀👨‍💻',
-    color: 'orange-green',
-    modes: ['developer', 'reviewer'],
-    persona: 'Senior Software Engineer with Quality Focus'
-  },
-  
-  'full-stack-developer': {
-    id: 'full-stack-developer',
-    name: 'Full Stack Developer',
-    description: 'Development with security, performance, and quality checks',
-    icon: '🚀',
-    color: 'rainbow',
-    modes: ['developer', 'debugger', 'reviewer'],
-    persona: 'Full Stack Engineer with Comprehensive Expertise'
+    persona: 'Developer and Debugger'
   }
 };
 
@@ -140,13 +109,7 @@ export class HybridModeManager {
       assistant: 'Assistant',
       planning: 'Planner',
       developer: 'Developer',
-      debugger: 'Debugger',
-      reviewer: 'Reviewer',
-      tool: 'Tool Expert',
-      security: 'Security',
-      performance: 'Performance',
-      prototype: 'Prototyper',
-      teacher: 'Teacher'
+      debugger: 'Debugger'
     };
     
     return modes.map(m => modeNames[m]).join(' + ');
@@ -160,13 +123,7 @@ export class HybridModeManager {
       assistant: '💬',
       planning: '📋',
       developer: '👨‍💻',
-      debugger: '🐛',
-      reviewer: '👀',
-      tool: '🔧',
-      security: '🔒',
-      performance: '⚡',
-      prototype: '🔬',
-      teacher: '👨‍🏫'
+      debugger: '🐛'
     };
     
     return modes.map(m => modeIcons[m]).join('');
@@ -180,13 +137,7 @@ export class HybridModeManager {
       assistant: 'blue',
       planning: 'yellow',
       developer: 'green',
-      debugger: 'red',
-      reviewer: 'orange',
-      tool: 'cyan',
-      security: 'purple',
-      performance: 'magenta',
-      prototype: 'bright-cyan',
-      teacher: 'warm-yellow'
+      debugger: 'red'
     };
     
     // For multiple modes, combine colors
@@ -207,13 +158,7 @@ export class HybridModeManager {
       assistant: 'Helpful AI Assistant',
       planning: 'Technical Architect & Planner',
       developer: 'Senior Software Engineer',
-      debugger: 'Debugging Specialist',
-      reviewer: 'Code Reviewer',
-      tool: 'CLI & Tool Specialist',
-      security: 'Security Specialist',
-      performance: 'Performance Engineer',
-      prototype: 'Rapid Prototyper',
-      teacher: 'Technical Educator'
+      debugger: 'Debugging Specialist'
     };
     
     if (modes.length === 1) {
@@ -295,13 +240,7 @@ export class HybridModeManager {
       assistant: 'For general questions and explanations',
       planning: 'For research and design work',
       developer: 'For implementation and coding',
-      debugger: 'When analyzing errors and bugs',
-      reviewer: 'When assessing code quality',
-      tool: 'For tool execution and automation',
-      security: 'For security analysis and auditing',
-      performance: 'For optimization and efficiency',
-      prototype: 'For rapid experimentation and POCs',
-      teacher: 'For learning and tutorial guidance'
+      debugger: 'When analyzing errors and bugs'
     };
     
     return guidance[mode];

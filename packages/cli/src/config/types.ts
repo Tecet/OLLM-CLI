@@ -88,17 +88,13 @@ export interface ModeEnableConfig {
  * Prompt mode configuration
  */
 export interface PromptConfig {
-  mode: 'auto' | 'assistant' | 'planning' | 'developer' | 'tool' | 'debugger' | 'security' | 'reviewer' | 'performance';
+  mode: 'auto' | 'assistant' | 'planning' | 'developer' | 'debugger';
   switching: ModeSwitchingConfig;
   modes: {
     assistant: ModeEnableConfig;
     planning: ModeEnableConfig;
     developer: ModeEnableConfig;
-    tool: ModeEnableConfig;
     debugger: ModeEnableConfig;
-    security: ModeEnableConfig;
-    reviewer: ModeEnableConfig;
-    performance: ModeEnableConfig;
   };
 }
 

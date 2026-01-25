@@ -792,7 +792,6 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
     treeState.root,
     treeState.scrollOffset,
     treeState.windowSize,
-    treeState.expandedPaths,
     fileTreeService,
   ]);
 

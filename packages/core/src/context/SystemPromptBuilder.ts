@@ -1,5 +1,4 @@
 import { PromptRegistry } from '../prompts/PromptRegistry.js';
-import { IDENTITY_PROMPT } from '../prompts/templates/identity.js';
 import { MANDATES_PROMPT } from '../prompts/templates/mandates.js';
 import { REALITY_CHECK_PROMPT } from '../prompts/templates/sanity.js';
 
@@ -14,7 +13,6 @@ export interface SystemPromptConfig {
 export class SystemPromptBuilder {
   constructor(private registry: PromptRegistry) {
     // Register core prompts by default
-    this.registry.register(IDENTITY_PROMPT);
     this.registry.register(MANDATES_PROMPT);
     this.registry.register(REALITY_CHECK_PROMPT);
   }
@@ -25,20 +23,13 @@ export class SystemPromptBuilder {
   build(config: SystemPromptConfig): string {
     const sections: string[] = [];
 
-    // 1. Identity (Tier 1)
-    const identity = this.registry.get('core-identity');
-    if (identity) {
-      const agentType = config.interactive ? 'an interactive ' : 'a non-interactive ';
-      sections.push(identity.content.replace('{{agentType}}', agentType));
-    }
-
-    // 2. Mandates (Tier 1)
+    // 1. Mandates (Tier 1)
     const mandates = this.registry.get('core-mandates');
     if (mandates) {
       sections.push(mandates.content);
     }
 
-    // 3. Active Skills (Tier 2)
+    // 2. Active Skills (Tier 2)
     if (config.skills && config.skills.length > 0) {
       const skillsContent: string[] = [];
       for (const skillId of config.skills) {
@@ -52,7 +43,7 @@ export class SystemPromptBuilder {
       }
     }
 
-    // 4. Sanity Checks (Tier 2/3 - Optional)
+    // 3. Sanity Checks (Tier 2/3 - Optional)
     if (config.useSanityChecks) {
       const sanity = this.registry.get('sanity-reality-check');
       if (sanity) {
@@ -60,7 +51,7 @@ export class SystemPromptBuilder {
       }
     }
 
-    // 5. Custom/Additional Instructions
+    // 4. Custom/Additional Instructions
     if (config.additionalInstructions) {
       sections.push('# Additional Instructions\n' + config.additionalInstructions);
     }

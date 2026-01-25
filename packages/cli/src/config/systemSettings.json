@@ -4,7 +4,11 @@
   },
   "llm": {
     "model": "llama3.2:3b",
-    "contextSize": 4096
+    "contextSize": 4096,
+    "contextCapRatio": 0.85,
+    "forceNumGpu": 999,
+    "ollamaAutoStart": false,
+    "ollamaHealthCheck": true
   },
   "hardware": {
     "gpuCount": 1,

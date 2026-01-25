@@ -126,11 +126,7 @@ export const defaultConfig: Config = {
       assistant: { enabled: true },
       planning: { enabled: true },
       developer: { enabled: true },
-      tool: { enabled: true },
       debugger: { enabled: true },
-      security: { enabled: true },
-      reviewer: { enabled: true },
-      performance: { enabled: true },
     },
   },
 };

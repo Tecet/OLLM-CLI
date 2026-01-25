@@ -1,9 +1,10 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { testPromptCommand } from '../utilityCommands.js';
 import * as contextContext from '../../features/context/ContextManagerContext.js';
-import { profileManager } from '../../features/profiles/ProfileManager.js';
 import * as gpuStore from '../../features/context/gpuHintStore.js';
+import { profileManager } from '../../features/profiles/ProfileManager.js';
+import { testPromptCommand } from '../utilityCommands.js';
+
 import type { ContextMessage, GPUInfo } from '@ollm/core';
 
 describe('/test prompt command', () => {
@@ -11,7 +12,7 @@ describe('/test prompt command', () => {
 
   beforeEach(() => {
     addSystemMessage = vi.fn();
-    globalThis.__ollmAddSystemMessage = addSystemMessage;
+    globalThis.__ollmAddSystemMessage = addSystemMessage as unknown as (message: string) => void;
   });
 
   afterEach(() => {
@@ -22,7 +23,9 @@ describe('/test prompt command', () => {
   it('fails when the context manager is missing', async () => {
     vi.spyOn(contextContext, 'getGlobalContextManager').mockReturnValue(null);
 
-    const result = await testPromptCommand.handler([]);
+    const handler = testPromptCommand.handler;
+    expect(handler).toBeDefined();
+    const result = await handler!([], {});
 
     expect(result.success).toBe(false);
     expect(result.message).toContain('Context Manager not initialized');
@@ -37,9 +40,8 @@ describe('/test prompt command', () => {
           role: 'user',
           content: 'Hello',
           timestamp: new Date(),
-          metadata: { model: 'llama3.2:3b', contextSize: 4096, compressionHistory: [] },
         },
-      ]) as Promise<ContextMessage[]>,
+      ] as ContextMessage[]),
       getSystemPrompt: vi.fn().mockReturnValue('System prompt'),
       getCurrentMode: vi.fn().mockReturnValue('assistant'),
       getUsage: vi.fn().mockReturnValue({
@@ -77,16 +79,17 @@ describe('/test prompt command', () => {
     };
     vi.spyOn(gpuStore, 'getLastGPUInfo').mockReturnValue(gpuInfo);
 
-    const result = await testPromptCommand.handler([]);
+    const handler = testPromptCommand.handler;
+    expect(handler).toBeDefined();
+    const result = await handler!([], {});
 
     expect(result.success).toBe(true);
     expect(addSystemMessage).toHaveBeenCalled();
     const logged = addSystemMessage.mock.calls[0][0];
-    expect(logged).toContain('=== Test Prompt Dump ===');
-    expect(logged).toContain('System Prompt:');
-    expect(logged).toContain('Context snippet');
-    expect(logged).toContain('GPU hints:');
-    expect(logged).toContain('GPU hints: num_gpu=1, gpu_layers=8');
-    expect(logged).toContain('GPU info: Test GPU - 6.0 GB total / 3.0 GB free');
+    expect(logged).toContain('=== Options ===');
+    expect(logged).toContain('=== Assistant Tier 1 ===');
+    expect(logged).toContain('=== Rules ===');
+    expect(logged).toContain('=== Mock User Message ===');
+    expect(logged).toContain('=== Ollama Payload (collapsed) ===');
   });
 });

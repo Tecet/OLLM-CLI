@@ -1,22 +1,111 @@
-import fs from 'fs';
+import fs, { existsSync, readFileSync } from 'fs';
+import path from 'path';
 
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from 'react';
 
-import { HotSwapTool, MemoryDumpTool, PromptRegistry, MODE_METADATA } from '@ollm/core';
-import { SnapshotManager as _PromptsSnapshotManager } from '@ollm/core/prompts/modeSnapshotManager.js';
+import {
+  ContextTier,
+  HotSwapTool,
+  MemoryDumpTool,
+  MODE_METADATA,
+  OperationalMode,
+  PromptRegistry,
+  PromptsSnapshotManager as _PromptsSnapshotManager,
+  TieredPromptStore,
+} from '@ollm/core';
 
 import { useContextManager } from './ContextManagerContext.js';
+import { validateManualContext } from './contextSizing.js';
 import { useModel } from './ModelContext.js';
 import { useServices } from './ServiceContext.js';
 import { useUI } from './UIContext.js';
 import { useFocusedFilesInjection } from './useFocusedFilesInjection.js';
 import { commandRegistry } from '../../commands/index.js';
 import { SettingsService } from '../../config/settingsService.js';
-import { validateManualContext } from './contextSizing.js';
 import { profileManager } from '../profiles/ProfileManager.js';
 
 import type { ToolCall as CoreToolCall, ContextMessage, ProviderMetrics, ToolSchema } from '@ollm/core';
 
+const tieredPromptStore = new TieredPromptStore();
+tieredPromptStore.load();
+
+function resolveTierForSize(size: number): ContextTier {
+  if (size < 8192) return ContextTier.TIER_1_MINIMAL;
+  if (size < 16384) return ContextTier.TIER_2_BASIC;
+  if (size < 32768) return ContextTier.TIER_3_STANDARD;
+  if (size < 65536) return ContextTier.TIER_4_PREMIUM;
+  return ContextTier.TIER_5_ULTRA;
+}
+
+function toOperationalMode(mode: string): OperationalMode {
+  switch (mode) {
+    case 'assistant':
+      return OperationalMode.ASSISTANT;
+    case 'planning':
+      return OperationalMode.PLANNING;
+    case 'debugger':
+      return OperationalMode.DEBUGGER;
+    case 'developer':
+    default:
+      return OperationalMode.DEVELOPER;
+  }
+}
+
+function tierToKey(tier: ContextTier): string {
+  switch (tier) {
+    case ContextTier.TIER_1_MINIMAL:
+      return 'tier1';
+    case ContextTier.TIER_2_BASIC:
+      return 'tier2';
+    case ContextTier.TIER_3_STANDARD:
+      return 'tier3';
+    case ContextTier.TIER_4_PREMIUM:
+    case ContextTier.TIER_5_ULTRA:
+      return 'tier4';
+    default:
+      return 'tier3';
+  }
+}
+
+function loadTierPromptWithFallback(mode: OperationalMode, tier: ContextTier): string {
+  const fromStore = tieredPromptStore.get(mode, tier);
+  if (fromStore) {
+    return fromStore;
+  }
+
+  const tierKey = tierToKey(tier);
+  const candidates = [
+    path.join(process.cwd(), 'packages', 'core', 'dist', 'prompts', 'templates', mode, `${tierKey}.txt`),
+    path.join(process.cwd(), 'packages', 'core', 'src', 'prompts', 'templates', mode, `${tierKey}.txt`),
+  ];
+
+  for (const candidate of candidates) {
+    try {
+      if (existsSync(candidate)) {
+        const content = readFileSync(candidate, 'utf8').trim();
+        if (content) {
+          return content;
+        }
+      }
+    } catch (_e) {
+      // ignore and keep trying
+    }
+  }
+
+  return '';
+}
+
+function stripSection(source: string, section: string): string {
+  if (!section) return source;
+  const trimmed = source.trim();
+  const target = section.trim();
+  if (!target) return source;
+  const index = trimmed.indexOf(target);
+  if (index === -1) return source;
+  const before = trimmed.slice(0, index).trim();
+  const after = trimmed.slice(index + target.length).trim();
+  return [before, after].filter(Boolean).join('\n\n').trim();
+}
 
 declare global {
   var __ollmModelSwitchCallback: ((model: string) => void) | undefined;
@@ -228,6 +317,7 @@ export function ChatProvider({
   const injectFocusedFilesIntoPrompt = useFocusedFilesInjection();
   
   const assistantMessageIdRef = useRef<string | null>(null);
+  const recordingSessionIdRef = useRef<string | null>(null);
   const manualContextRequestRef = useRef<{ modelId: string; onComplete: (value: number) => void | Promise<void> } | null>(null);
   const compressionOccurredRef = useRef(false);
   const compressionRetryCountRef = useRef(0);
@@ -248,6 +338,36 @@ export function ChatProvider({
     // Note: We don't automatically add to contextManager here anymore to avoid duplication
     // and to ensure better control over tool call/result sequencing.
   }, []);
+
+  const recordSessionMessage = useCallback(async (role: 'user' | 'assistant', text: string) => {
+    if (!serviceContainer) {
+      return;
+    }
+    const recordingService = serviceContainer.getChatRecordingService?.();
+    if (!recordingService) {
+      return;
+    }
+    if (!recordingSessionIdRef.current) {
+      try {
+        recordingSessionIdRef.current = await recordingService.createSession(
+          currentModel,
+          provider?.name ?? 'unknown'
+        );
+      } catch (error) {
+        console.error('[ChatRecording] Failed to create session:', error);
+        return;
+      }
+    }
+    try {
+      await recordingService.recordMessage(recordingSessionIdRef.current, {
+        role,
+        parts: [{ type: 'text', text }],
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('[ChatRecording] Failed to record message:', error);
+    }
+  }, [serviceContainer, currentModel, provider]);
   
   const clearChat = useCallback(() => {
     setMessages([]);
@@ -533,8 +653,7 @@ export function ChatProvider({
           
           if (shouldSwitch) {
             // TASK 7.4: Create transition snapshot if switching to specialized mode
-            // Specialized modes: debugger, security, reviewer, performance
-            const specializedModes = ['debugger', 'security', 'reviewer', 'performance'];
+            const specializedModes = ['debugger'];
             if (specializedModes.includes(analysis.mode)) {
               // Create snapshot before switching
               try {
@@ -624,30 +743,24 @@ export function ChatProvider({
         }
       }
 
-      if (modeManager) {
-        const currentMode = modeManager.getCurrentMode();
-        
-        // Rebuild system prompt to ensure it matches current mode and filtered tools
-        // toolSchemas is already filtered by mode permissions via getFunctionSchemasForMode
-        const filteredToolsForPrompt = (toolSchemas || []).map(t => ({ name: t.name }));
-
-        const updatedPrompt = modeManager.buildPrompt({
-          mode: currentMode,
-          skills: modeManager.getActiveSkills(),
-          tools: filteredToolsForPrompt,
-          workspace: {
-            path: process.cwd()
-          }
-        });
-        
-        contextActions.setSystemPrompt(updatedPrompt);
-      }
-
       // Get system prompt and add tool support note if needed
       let systemPrompt = contextActions.getSystemPrompt();
+      const usageForTier = contextActions.getUsage();
+      const coreManager = contextActions.getManager?.();
+      const coreMode = coreManager?.getMode?.() ?? contextActions.getCurrentMode?.() ?? 'assistant';
+      const effectiveTier = resolveTierForSize(usageForTier.maxTokens);
+      const tierPrompt = loadTierPromptWithFallback(
+        toOperationalMode(coreMode),
+        effectiveTier
+      );
       if (!supportsTools) {
         systemPrompt += '\n\nNote: This model does not support function calling. Do not attempt to use tools or make tool calls.';
       }
+      const toolNote = supportsTools
+        ? ''
+        : 'Note: This model does not support function calling. Do not attempt to use tools or make tool calls.';
+      const rulesOnly = stripSection(stripSection(systemPrompt, tierPrompt), toolNote);
+      systemPrompt = [tierPrompt, rulesOnly, toolNote].filter(Boolean).join('\n\n');
 
       // Inject focused files into system prompt
       systemPrompt = injectFocusedFilesIntoPrompt(systemPrompt);
@@ -656,6 +769,7 @@ export function ChatProvider({
       if (contextActions) {
           await contextActions.addMessage({ role: 'user', content });
       }
+      await recordSessionMessage('user', content);
 
       // Assistant message ID for this turn
       const assistantMsg = addMessage({
@@ -701,18 +815,16 @@ export function ChatProvider({
           });
         } catch (_e) { /* ignore */ }
         
-        // CRITICAL FIX: Don't filter out checkpoint summaries!
-        // Checkpoint summaries have role='system' but contain compressed conversation history
-        // The main system prompt is passed separately via systemPrompt parameter
+        // Exclude system messages from the payload; system prompt is sent separately.
         const history = currentContext
-          .filter((m: ContextMessage) => m.role !== 'system' || !m.id.startsWith('system-')) // Only filter out the main system prompt
+          .filter((m: ContextMessage) => m.role !== 'system')
           .map((m: ContextMessage) => ({
             role: m.role as 'user' | 'assistant' | 'system' | 'tool',
             content: m.content || '',
             toolCalls: m.toolCalls?.map(tc => ({
-                id: tc.id,
-                name: tc.name,
-                args: tc.args
+              id: tc.id,
+              name: tc.name,
+              args: tc.args
             })),
             toolCallId: m.toolCallId
           }));
@@ -940,6 +1052,9 @@ export function ChatProvider({
                       args: tc.args
                   }] : undefined
               });
+              if (assistantContent) {
+                await recordSessionMessage('assistant', assistantContent);
+              }
               
               // If we only have tool calls and no content, we can optionally hide the empty bubble in UI
               // but for now we keep it for status visibility.
@@ -1114,7 +1229,7 @@ export function ChatProvider({
         });
       }
     },
-    [addMessage, sendToLLM, setLaunchScreenVisible, contextActions, provider, currentModel, clearChat, modelSupportsTools, serviceContainer, cancelRequest, injectFocusedFilesIntoPrompt]
+    [addMessage, sendToLLM, setLaunchScreenVisible, contextActions, provider, currentModel, clearChat, modelSupportsTools, serviceContainer, cancelRequest, injectFocusedFilesIntoPrompt, recordSessionMessage]
   );
 
   const cancelGeneration = useCallback(() => {

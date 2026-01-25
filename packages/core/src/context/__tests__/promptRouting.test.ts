@@ -1,6 +1,17 @@
+import { TieredPromptStore } from '../../prompts/tieredPromptStore.js';
 import { createContextManager } from '../contextManager.js';
-import { OperationalMode , SYSTEM_PROMPT_TEMPLATES } from '../types.js';
+import { ContextTier, OperationalMode } from '../types.js';
 
+const store = new TieredPromptStore();
+store.load();
+
+const getTierForSize = (size: number): ContextTier => {
+  if (size < 8192) return ContextTier.TIER_1_MINIMAL;
+  if (size < 16384) return ContextTier.TIER_2_BASIC;
+  if (size < 32768) return ContextTier.TIER_3_STANDARD;
+  if (size < 65536) return ContextTier.TIER_4_PREMIUM;
+  return ContextTier.TIER_5_ULTRA;
+};
 
 describe('Prompt routing - tier × mode', () => {
   test('applies tier1-assistant when autoSize is false and targetSize=4096', async () => {
@@ -13,15 +24,17 @@ describe('Prompt routing - tier × mode', () => {
 
     const prompt = manager.getSystemPrompt();
     expect(prompt).toBeTruthy();
-    // Expect the assistant Tier 1 template short phrase to be present
-    expect(prompt).toMatch(/You are a helpful assistant/i);
+    const expected = store.get(OperationalMode.ASSISTANT, ContextTier.TIER_1_MINIMAL);
+    expect(expected).toBeTruthy();
+    expect(prompt).toContain(expected as string);
   });
 
-  test('full matrix: 5 tiers × 4 modes produce a prompt (smoke test)', async () => {
+  test('full matrix: 5 tiers × 4 modes include tiered prompt content', async () => {
     const tiers: Array<{ size: number; name: string }> = [
       { size: 2048, name: 'tier1' },
-      { size: 4096, name: 'tier2' },
-      { size: 8192, name: 'tier3' },
+      { size: 4096, name: 'tier1-high' },
+      { size: 8192, name: 'tier2' },
+      { size: 16384, name: 'tier3' },
       { size: 32768, name: 'tier4' },
       { size: 65536, name: 'tier5' }
     ];
@@ -42,19 +55,18 @@ describe('Prompt routing - tier × mode', () => {
         manager.setMode(mode);
         const prompt = manager.getSystemPrompt();
         expect(prompt).toBeTruthy();
-        // basic smoke assertion: prompt contains a mode-related keyword
-        if (mode === OperationalMode.DEVELOPER) expect(prompt).toMatch(/code|TypeScript|developer/i);
-        if (mode === OperationalMode.PLANNING) expect(prompt).toMatch(/plan|task|estimate|Planning/i);
-        if (mode === OperationalMode.ASSISTANT) expect(prompt).toMatch(/assistant|helpful|explain/i);
-        if (mode === OperationalMode.DEBUGGER) expect(prompt).toMatch(/debug|error|stack trace|reproduce|reproduction/i);
+        const expected = store.get(mode, getTierForSize(tier.size));
+        expect(expected).toBeTruthy();
+        expect(prompt).toContain(expected as string);
       }
     }
   }, 20000);
 
-  test('exhaustive: each tier × mode uses the correct SYSTEM_PROMPT_TEMPLATES entry', async () => {
+  test('exhaustive: each tier × mode uses the correct prompt file content', async () => {
     const tierCases: Array<{ size: number; key: string }> = [
       { size: 2048, key: 'tier1' },
-      { size: 5000, key: 'tier2' },
+      { size: 4096, key: 'tier1-high' },
+      { size: 10000, key: 'tier2' },
       { size: 16000, key: 'tier3' },
       { size: 50000, key: 'tier4' },
       { size: 100000, key: 'tier5' }
@@ -75,11 +87,9 @@ describe('Prompt routing - tier × mode', () => {
         manager.setMode(mode);
 
         const prompt = manager.getSystemPrompt();
-        const expectedKey = `${tierCase.key}-${mode}`;
-        const expected = SYSTEM_PROMPT_TEMPLATES[expectedKey];
-
-        expect(expected).toBeDefined();
-        expect(prompt).toBe(expected.template);
+        const expected = store.get(mode, getTierForSize(tierCase.size));
+        expect(expected).toBeTruthy();
+        expect(prompt).toContain(expected as string);
       }
     }
   }, 30000);

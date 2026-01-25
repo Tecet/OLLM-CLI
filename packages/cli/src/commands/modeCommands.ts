@@ -6,12 +6,9 @@
  * - /mode planning - Switch to planning mode
  * - /mode developer - Switch to developer mode
  * - /mode debugger - Switch to debugger mode
- * - /mode reviewer - Switch to reviewer mode
  * - /mode auto - Enable automatic mode switching
  * - /mode status - Show current mode and auto-switch status
  * - /mode history - Show recent mode transitions
- * - /mode hybrid <mode1> <mode2> [...] - Create and switch to hybrid mode
- * - /mode hybrid list - List available preset hybrid modes
  * - /mode focus <mode> <duration> - Lock to a mode for deep work
  * - /mode focus off - Disable focus mode
  * - /mode focus extend <minutes> - Extend current focus session
@@ -133,8 +130,7 @@ function getModeGuidance(mode: ModeType): string {
     assistant: 'Focus on answering questions and providing explanations.',
     planning: 'Focus on research, design, and planning. You have read-only access to the codebase.',
     developer: 'Focus on implementation, refactoring, and code changes. You have full access to all tools.',
-    debugger: 'Focus on finding root causes and implementing fixes. Analyze errors systematically.',
-    reviewer: 'Focus on code quality assessment and providing constructive feedback.',
+    debugger: 'Focus on finding root causes and implementing fixes. Analyze errors systematically.'
   };
 
   return guidance[mode] ?? '';
@@ -146,7 +142,7 @@ function getModeGuidance(mode: ModeType): string {
 export const modeCommand: Command = {
   name: '/mode',
   aliases: ['/m'],
-  description: 'Manage prompt modes (usage: /mode [assistant|planning|developer|debugger|reviewer|auto|status|history])',
+  description: 'Manage prompt modes (usage: /mode [assistant|planning|developer|debugger|auto|status|history])',
   usage: '/mode [subcommand]',
   handler: async (args: string[]): Promise<CommandResult> => {
     try {
@@ -174,8 +170,7 @@ export const modeCommand: Command = {
 
       // Handle mode switching commands
       const validModes: ModeType[] = [
-        'assistant', 'planning', 'developer',
-        'debugger', 'reviewer'
+        'assistant', 'planning', 'developer', 'debugger'
       ];
       
       if (validModes.includes(subcommand as ModeType)) {
@@ -303,8 +298,7 @@ export const modeCommand: Command = {
               // Productivity summary (if any activity)
               const productivity = metricsTracker.getProductivitySummary();
               const hasActivity = productivity.totalFiles > 0 || 
-                                 productivity.totalBugsFixed > 0 || 
-                                 productivity.totalVulnerabilitiesFixed > 0;
+                                 productivity.totalBugsFixed > 0;
 
               if (hasActivity) {
                 statusMsg += `\n\nProductivity\n────────────`;
@@ -316,12 +310,6 @@ export const modeCommand: Command = {
                 }
                 if (productivity.totalBugsFixed > 0) {
                   statusMsg += `\nBugs Fixed: ${productivity.totalBugsFixed}`;
-                }
-                if (productivity.totalVulnerabilitiesFixed > 0) {
-                  statusMsg += `\nVulnerabilities Fixed: ${productivity.totalVulnerabilitiesFixed}`;
-                }
-                if (productivity.totalOptimizations > 0) {
-                  statusMsg += `\nOptimizations: ${productivity.totalOptimizations}`;
                 }
               }
             }
@@ -351,128 +339,6 @@ export const modeCommand: Command = {
             `\n\n🤖 = Auto-switch, 👤 = Manual`;
           
           return { success: true, message: historyMsg };
-        }
-
-        case 'hybrid': {
-          // Get hybrid mode manager
-          const hybridManager = manager.getHybridModeManager();
-          if (!hybridManager) {
-            return {
-              success: false,
-              message: 'Hybrid mode manager is not available.',
-            };
-          }
-          
-          // Handle subcommands
-          if (args.length === 1) {
-            // No subcommand - show help
-            return {
-              success: true,
-              message: 
-                `Hybrid Mode Commands\n` +
-                `───────────────────\n` +
-                `/mode hybrid list - List available preset hybrid modes\n` +
-                `/mode hybrid <mode1> <mode2> [...] - Create and switch to hybrid mode\n` +
-                `/mode hybrid <preset-id> - Switch to preset hybrid mode\n\n` +
-                `Examples:\n` +
-                `  /mode hybrid developer security - Secure development\n` +
-                `  /mode hybrid secure-developer - Use preset secure developer mode\n` +
-                `  /mode hybrid developer performance reviewer - Multi-mode hybrid`,
-            };
-          }
-          
-          const hybridSubcommand = args[1].toLowerCase();
-          
-          // List preset hybrid modes
-          if (hybridSubcommand === 'list') {
-            const presets = hybridManager.getPresetHybridModes();
-            
-            if (presets.length === 0) {
-              return {
-                success: true,
-                message: 'No preset hybrid modes available.',
-              };
-            }
-            
-            let listMsg = `Preset Hybrid Modes\n${'─'.repeat(20)}\n`;
-            
-            for (const preset of presets) {
-              listMsg += `\n${preset.icon} ${preset.name} (${preset.id})\n`;
-              listMsg += `  ${preset.description}\n`;
-              listMsg += `  Modes: ${preset.modes.join(', ')}\n`;
-            }
-            
-            listMsg += `\nUse /mode hybrid <preset-id> to activate a preset.`;
-            
-            return { success: true, message: listMsg };
-          }
-          
-          // Check if it's a preset ID
-          const presetMode = hybridManager.getHybridModeById(hybridSubcommand);
-          if (presetMode) {
-            // Switch to preset hybrid mode
-            manager.switchToHybridMode(presetMode);
-            
-            return {
-              success: true,
-              message: 
-                `Switched to ${presetMode.icon} ${presetMode.name}\n` +
-                `${presetMode.description}\n` +
-                `Modes: ${presetMode.modes.join(', ')}\n\n` +
-                `Auto-switching has been disabled.`,
-            };
-          }
-          
-          // Parse mode names from arguments
-          const modeNames = args.slice(1);
-          const modes: ModeType[] = [];
-          const invalidModes: string[] = [];
-          
-          for (const modeName of modeNames) {
-            if (validModes.includes(modeName as ModeType)) {
-              modes.push(modeName as ModeType);
-            } else {
-              invalidModes.push(modeName);
-            }
-          }
-          
-          if (invalidModes.length > 0) {
-            return {
-              success: false,
-              message: 
-                `Invalid mode(s): ${invalidModes.join(', ')}\n\n` +
-                `Valid modes: ${validModes.join(', ')}`,
-            };
-          }
-          
-          if (modes.length === 0) {
-            return {
-              success: false,
-              message: 'Please specify at least one mode.',
-            };
-          }
-          
-          if (modes.length === 1) {
-            return {
-              success: false,
-              message: 
-                `Hybrid mode requires at least 2 modes.\n` +
-                `Use /mode ${modes[0]} to switch to a single mode.`,
-            };
-          }
-          
-          // Create and switch to hybrid mode
-          const hybridMode = hybridManager.createHybridMode(modes);
-          manager.switchToHybridMode(hybridMode);
-          
-          return {
-            success: true,
-            message: 
-              `Created and switched to ${hybridMode.icon} ${hybridMode.name}\n` +
-              `${hybridMode.description}\n` +
-              `Persona: ${hybridMode.persona}\n\n` +
-              `Auto-switching has been disabled.`,
-          };
         }
 
         case 'focus': {
@@ -649,13 +515,11 @@ export const modeCommand: Command = {
               `  assistant   - ${MODE_DESCRIPTIONS.assistant}\n` +
               `  planning    - ${MODE_DESCRIPTIONS.planning}\n` +
               `  developer   - ${MODE_DESCRIPTIONS.developer}\n` +
-              `  debugger    - ${MODE_DESCRIPTIONS.debugger}\n` +
-              `  reviewer    - ${MODE_DESCRIPTIONS.reviewer}\n\n` +
+              `  debugger    - ${MODE_DESCRIPTIONS.debugger}\n\n` +
               `Special commands:\n` +
               `  auto    - Enable automatic mode switching\n` +
               `  status  - Show current mode and settings\n` +
               `  history - Show recent mode transitions\n` +
-              `  hybrid  - Create and manage hybrid modes\n` +
               `  focus   - Lock to a mode for deep work sessions`,
           };
       }

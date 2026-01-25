@@ -106,7 +106,7 @@ export const configSchema = {
       properties: {
         mode: {
           type: 'string',
-          enum: ['auto', 'assistant', 'planning', 'developer', 'tool', 'debugger', 'security', 'reviewer', 'performance'],
+          enum: ['auto', 'assistant', 'planning', 'developer', 'debugger'],
         },
         switching: {
           type: 'object',
@@ -142,13 +142,6 @@ export const configSchema = {
               },
               required: ['enabled'],
             },
-            tool: {
-              type: 'object',
-              properties: {
-                enabled: { type: 'boolean' },
-              },
-              required: ['enabled'],
-            },
             debugger: {
               type: 'object',
               properties: {
@@ -156,29 +149,8 @@ export const configSchema = {
               },
               required: ['enabled'],
             },
-            security: {
-              type: 'object',
-              properties: {
-                enabled: { type: 'boolean' },
-              },
-              required: ['enabled'],
-            },
-            reviewer: {
-              type: 'object',
-              properties: {
-                enabled: { type: 'boolean' },
-              },
-              required: ['enabled'],
-            },
-            performance: {
-              type: 'object',
-              properties: {
-                enabled: { type: 'boolean' },
-              },
-              required: ['enabled'],
-            },
           },
-          required: ['assistant', 'planning', 'developer', 'tool', 'debugger', 'security', 'reviewer', 'performance'],
+          required: ['assistant', 'planning', 'developer', 'debugger'],
         },
       },
       required: ['mode', 'switching', 'modes'],

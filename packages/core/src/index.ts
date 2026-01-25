@@ -184,6 +184,8 @@ export {
   // Types and interfaces
   GPUType,
   MemoryLevel,
+  ContextTier,
+  OperationalMode,
   // Factory functions
   createGPUDetector,
   createVRAMMonitor,
@@ -202,6 +204,10 @@ export {
 export {
   deriveGPUPlacementHints,
 } from './context/gpuHints.js';
+
+// Prompt routing helpers
+export { TieredPromptStore } from './prompts/tieredPromptStore.js';
+export { SnapshotManager as PromptsSnapshotManager } from './prompts/modeSnapshotManager.js';
 
 export type {
   VRAMInfo,
@@ -351,13 +357,8 @@ export {
   type ModeTimeMetrics,
   type ModeTransitionMetrics,
   type DebuggerModeMetrics,
-  type SecurityModeMetrics,
-  type ReviewerModeMetrics,
-  type PerformanceModeMetrics,
   type PlanningModeMetrics,
   type DeveloperModeMetrics,
-  type PrototypeModeMetrics,
-  type TeacherModeMetrics,
   type ToolModeMetrics,
   type AggregatedMetrics,
   type SerializableMetrics,
@@ -365,18 +366,14 @@ export {
   HybridModeManager,
   type HybridMode,
   PRESET_HYBRID_MODES,
-  // Mode Templates
-  ASSISTANT_MODE_TEMPLATE,
-  PLANNING_MODE_TEMPLATE,
-  DEVELOPER_MODE_TEMPLATE,
-  TOOL_MODE_TEMPLATE,
-  DEBUGGER_MODE_TEMPLATE,
-  SECURITY_MODE_TEMPLATE,
-  REVIEWER_MODE_TEMPLATE,
-  PERFORMANCE_MODE_TEMPLATE,
-  MODE_TEMPLATES,
   MODE_METADATA,
   // Mode Transition Animator
   ModeTransitionAnimator,
   type TransitionAnimation,
 } from './prompts/index.js';
+
+export {
+  ModelDatabase,
+  modelDatabase,
+  refreshModelDatabase,
+} from './routing/modelDatabase.js';

@@ -136,8 +136,18 @@ function formatHttpError(status: number, statusText: string, details: string): s
 export class LocalProvider implements ProviderAdapter {
   readonly name = 'local';
   private readonly vramMonitor = createVRAMMonitor();
+  private readonly baseUrl: string;
 
-  constructor(private config: LocalProviderConfig) {}
+  constructor(private config: LocalProviderConfig) {
+    this.baseUrl = this.normalizeBaseUrl(config.baseUrl);
+  }
+
+  private normalizeBaseUrl(baseUrl: string): string {
+    if (/^https?:\/\//i.test(baseUrl)) {
+      return baseUrl;
+    }
+    return `http://${baseUrl}`;
+  }
 
   private async getGPUPlacementHints(numCtx?: number): Promise<GPUPlacementHints | undefined> {
     if (!numCtx || numCtx <= 0) {
@@ -194,13 +204,23 @@ export class LocalProvider implements ProviderAdapter {
    * ```
    */
   async *chatStream(request: ProviderRequest): AsyncIterable<ProviderEvent> {
-    const url = `${this.config.baseUrl}/api/chat`;
+    const url = `${this.baseUrl}/api/chat`;
     const gpuHints = await this.getGPUPlacementHints(request.options?.num_ctx);
     const generationOptions = request.options ?? {};
-    const optionsPayload = {
+    const mergedOptions = {
       ...generationOptions,
       ...(gpuHints ?? {}),
-    };
+    } as Record<string, unknown>;
+    const optionsPayload: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(mergedOptions)) {
+      if (value !== null && value !== undefined) {
+        optionsPayload[key] = value;
+      }
+    }
+    if (typeof optionsPayload.gpu_layers === 'number') {
+      optionsPayload.num_gpu_layers = optionsPayload.gpu_layers;
+      delete optionsPayload.gpu_layers;
+    }
     const defaultFinishEvent: ProviderEvent = {
       type: 'finish',
       reason: 'stop',
@@ -402,9 +422,13 @@ export class LocalProvider implements ProviderAdapter {
           }
           return;
         }
+        const causeText = (error as Error & { cause?: unknown }).cause;
+        const causeMessage = causeText instanceof Error ? causeText.message : causeText ? String(causeText) : '';
         yield {
           type: 'error',
-          error: { message: error.message },
+          error: {
+            message: `Failed to reach Ollama at ${this.baseUrl}: ${error.message}${causeMessage ? ` (${causeMessage})` : ''}`,
+          },
         };
       }
     } finally {
@@ -1001,7 +1025,7 @@ export class LocalProvider implements ProviderAdapter {
    * @throws {Error} If the request fails
    */
   async listModels(): Promise<ModelInfo[]> {
-    const url = `${this.config.baseUrl}/api/tags`;
+    const url = `${this.baseUrl}/api/tags`;
     const response = await fetch(url);
     const data = await response.json();
 
@@ -1034,7 +1058,7 @@ export class LocalProvider implements ProviderAdapter {
     name: string,
     onProgress?: (progress: PullProgress) => void
   ): Promise<void> {
-    const url = `${this.config.baseUrl}/api/pull`;
+    const url = `${this.baseUrl}/api/pull`;
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1082,7 +1106,7 @@ export class LocalProvider implements ProviderAdapter {
    * @throws {Error} If the request fails
    */
   async deleteModel(name: string): Promise<void> {
-    const url = `${this.config.baseUrl}/api/delete`;
+    const url = `${this.baseUrl}/api/delete`;
     await fetch(url, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
@@ -1100,7 +1124,7 @@ export class LocalProvider implements ProviderAdapter {
    * @throws {Error} If the model cannot be unloaded
    */
   async unloadModel(name: string): Promise<void> {
-    const url = `${this.config.baseUrl}/api/generate`;
+    const url = `${this.baseUrl}/api/generate`;
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1131,7 +1155,7 @@ export class LocalProvider implements ProviderAdapter {
    * @throws {Error} If the request fails or model not found
    */
   async showModel(name: string): Promise<ModelInfo> {
-    const url = `${this.config.baseUrl}/api/show`;
+    const url = `${this.baseUrl}/api/show`;
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

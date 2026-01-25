@@ -68,7 +68,7 @@ export const SystemMessages: React.FC<SystemMessagesProps> = ({
       </Box>
       
       {/* Messages - Center aligned */}
-      <Box flexDirection="column" flexShrink={0} maxHeight={10} overflow="hidden" width="100%">
+      <Box flexDirection="column" flexShrink={0} width="100%">
         {messages.map(msg => {
           const icon = msg.type === 'error' ? '❌' :
                       msg.type === 'warning' ? '⚠️' :

@@ -61,6 +61,8 @@ export interface GenerationOptions {
   num_gpu?: number;
   /** Hint for how many layers to keep on GPU (Ollama placement guidance) */
   gpu_layers?: number;
+  /** Ollama-specific alias for GPU layer placement */
+  num_gpu_layers?: number;
 }
 
 /**

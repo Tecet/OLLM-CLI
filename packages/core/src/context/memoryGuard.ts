@@ -267,13 +267,20 @@ export class MemoryGuardImpl extends EventEmitter implements MemoryGuard {
       // 1. Create emergency snapshot if possible
       if (this.snapshotManager && this.currentContext) {
         try {
-          const snapshot = await this.snapshotManager.createSnapshot(
-            this.currentContext
+          const hasUserMessages = this.currentContext.messages.some(
+            m => m.role === 'user'
           );
-          if (snapshot && snapshot.id) {
-            actions.push(`Created emergency snapshot: ${snapshot.id}`);
+          if (hasUserMessages) {
+            const snapshot = await this.snapshotManager.createSnapshot(
+              this.currentContext
+            );
+            if (snapshot && snapshot.id) {
+              actions.push(`Created emergency snapshot: ${snapshot.id}`);
+            } else {
+              actions.push('Snapshot created but no ID returned');
+            }
           } else {
-            actions.push('Snapshot created but no ID returned');
+            actions.push('Skipped snapshot (no user messages)');
           }
         } catch (error) {
           console.error('Failed to create emergency snapshot:', error);

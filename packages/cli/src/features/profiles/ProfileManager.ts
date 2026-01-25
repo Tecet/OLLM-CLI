@@ -2,15 +2,12 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { homedir, tmpdir } from 'os';
 import { join } from 'path';
 
+import { refreshModelDatabase } from '@ollm/core';
+
 import { defaultContextBehavior } from '../../config/defaults.js';
 import profilesData from '../../config/LLM_profiles.json' with { type: 'json' };
 
 import type { LLMProfile, ContextSettings, ContextBehaviorProfile, ContextProfile, UserModelEntry, ProfilesData } from '../../config/types.js';
-
-interface LLMModelsStore {
-  models: LLMProfile[];
-  user_models: UserModelEntry[];
-}
 
 const profiles = profilesData as ProfilesData;
 
@@ -21,8 +18,6 @@ export class ProfileManager {
   private profiles: LLMProfile[];
   private contextSettings: ContextSettings;
   private userModels: UserModelEntry[];
-  private llmModelsPath: string;
-  private llmModelsData: LLMModelsStore;
   private userModelsPath: string;
 
   constructor() {
@@ -36,13 +31,9 @@ export class ProfileManager {
       : homedir();
     const configDir = join(homeDir, '.ollm');
     this.userModelsPath = join(configDir, 'user_models.json');
-    this.llmModelsPath = join(configDir, 'LLM_models.json');
     
     this.ensureConfigExists(configDir);
-    this.ensureLLMModelsFile();
-    this.llmModelsData = this.loadLLMModelsStore();
     this.profiles = this.loadProfiles();
-    this.applyStoreProfiles(this.llmModelsData.models);
     this.loadUserModels();
     
     // Auto-refresh on startup (async, non-blocking)
@@ -153,18 +144,6 @@ export class ProfileManager {
     return entry as LLMProfile;
   }
 
-  private applyStoreProfiles(models?: LLMProfile[]): void {
-    const entries = Array.isArray(models) && models.length > 0
-      ? models
-      : this.llmModelsData?.models ?? [];
-
-    if (entries.length === 0) {
-      return;
-    }
-
-    this.profiles = entries.map(model => this.normalizeRawProfile(model));
-  }
-
   private loadUserModels(): void {
       try {
           if (!existsSync(this.userModelsPath)) {
@@ -203,7 +182,7 @@ export class ProfileManager {
     const normalized = models.map(model => this.normalizeUserModelEntry(model));
     this.userModels = normalized;
     this.saveUserModels(this.userModels);
-    this.syncLLMModelsFile();
+    refreshModelDatabase();
   }
 
   private buildFallbackContextProfiles(sizeBytes?: number): { profiles: ContextProfile[]; defaultContext: number } {
@@ -296,7 +275,7 @@ export class ProfileManager {
       entry.manual_context = value;
     }
     this.saveUserModels(this.userModels);
-    this.syncLLMModelsFile();
+    refreshModelDatabase();
   }
 
   public getCombinedModels(): Array<{ id: string; name: string; profile?: LLMProfile }> {
@@ -383,91 +362,6 @@ export class ProfileManager {
     };
   }
 
-  private cloneProfileForLLMStore(profile: LLMProfile): LLMProfile {
-    const contextProfiles = (profile.context_profiles ?? []).map(cp => ({
-      ...cp,
-      ollama_context_size: cp.ollama_context_size ?? Math.max(1, Math.floor(cp.size * 0.85)),
-    }));
-
-    return {
-      ...profile,
-      max_context_window: profile.max_context_window ?? profile.context_window ?? 0,
-      context_profiles: contextProfiles,
-      quantization: profile.quantization ?? 'auto',
-    };
-  }
-
-  private cloneUserModelForStore(model: UserModelEntry): UserModelEntry {
-    return {
-      ...model,
-      context_profiles: model.context_profiles,
-    };
-  }
-
-  private buildDefaultLLMModelsStore(): LLMModelsStore {
-    const entries = (profiles.models || []).map(raw => this.normalizeRawProfile(raw));
-    return {
-      models: entries.map(profile => this.cloneProfileForLLMStore(profile)),
-      user_models: [],
-    };
-  }
-
-  private ensureLLMModelsFile(): void {
-    if (existsSync(this.llmModelsPath)) {
-      return;
-    }
-
-    const store = this.buildDefaultLLMModelsStore();
-    try {
-      writeFileSync(this.llmModelsPath, JSON.stringify(store, null, 2), 'utf-8');
-    } catch (error) {
-      console.warn('Failed to create LLM models store:', error);
-    }
-  }
-
-  private loadLLMModelsStore(): LLMModelsStore {
-    if (!existsSync(this.llmModelsPath)) {
-      return this.buildDefaultLLMModelsStore();
-    }
-
-    try {
-      const content = readFileSync(this.llmModelsPath, 'utf-8');
-      const parsed = JSON.parse(content) as Partial<LLMModelsStore>;
-      return this.normalizeLLMModelsStore(parsed);
-    } catch (error) {
-      console.warn('Failed to load LLM models store:', error);
-      return this.buildDefaultLLMModelsStore();
-    }
-  }
-
-  private normalizeLLMModelsStore(store: Partial<LLMModelsStore>): LLMModelsStore {
-    const fallbackProfiles = (profiles.models || []).map(raw => this.normalizeRawProfile(raw));
-    const baseModels = Array.isArray(store.models) && store.models.length > 0
-      ? store.models
-      : fallbackProfiles;
-    const models = baseModels.map(model => this.cloneProfileForLLMStore(model));
-    const userModels = Array.isArray(store.user_models)
-      ? store.user_models.map(model => this.normalizeUserModelEntry(model))
-      : [];
-
-    return { models, user_models: userModels };
-  }
-
-  private syncLLMModelsFile(): void {
-    const store: LLMModelsStore = {
-      models: this.profiles.map(profile => this.cloneProfileForLLMStore(profile)),
-      user_models: this.userModels.map(model => this.cloneUserModelForStore(model)),
-    };
-
-    try {
-      writeFileSync(this.llmModelsPath, JSON.stringify(store, null, 2), 'utf-8');
-      this.llmModelsData = store;
-      this.applyStoreProfiles(store.models);
-    } catch (error) {
-      console.warn('Failed to sync LLM models store:', error);
-    }
-  }
-
   private normalizeSearchKey(value: string): string {
     return value.toLowerCase().replace(/[^a-z0-9]/g, '');
   }
@@ -495,6 +389,8 @@ export class ProfileManager {
     const fallbackProfile = profile ?? {
       id: 'llama3.2:3b',
       name: 'Llama 3.2 3B',
+      creator: 'Unknown',
+      parameters: 'Unknown',
       description: 'Fallback LLM entry',
       abilities: [],
       context_profiles: [],

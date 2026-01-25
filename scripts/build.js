@@ -5,6 +5,7 @@
  * Bundles the CLI using esbuild configuration
  */
 
+import { spawn } from 'child_process';
 import { cp, mkdir } from 'fs/promises';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
@@ -14,9 +15,31 @@ import * as esbuild from 'esbuild';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+function runCommand(command, args, options = {}) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, { stdio: 'inherit', ...options });
+    child.on('error', reject);
+    child.on('close', (code) => {
+      if (code === 0) {
+        resolve();
+      } else {
+        reject(new Error(`Command failed (${command} ${args.join(' ')}): exit ${code}`));
+      }
+    });
+  });
+}
+
 async function build() {
   try {
     console.log('Building OLLM CLI...');
+
+    const npmExecPath = process.env.npm_execpath;
+    if (!npmExecPath) {
+      throw new Error('npm_execpath is not available; please run via npm.');
+    }
+    await runCommand(process.execPath, [npmExecPath, 'run', 'build', '-w', 'packages/ollm-bridge'], {
+      cwd: join(__dirname, '..'),
+    });
 
     // Load esbuild config
     const configPath = join(__dirname, '..', 'esbuild.config.js');

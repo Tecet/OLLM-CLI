@@ -20,20 +20,6 @@ export interface ModeFindings {
     rootCause: string | null;
     fixes: string[];
   };
-  security?: {
-    vulnerabilities: string[];
-    recommendations: string[];
-  };
-  reviewer?: {
-    issues: string[];
-    suggestions: string[];
-    positives?: string[];
-  };
-  performance?: {
-    bottlenecks: string[];
-    optimizations: string[];
-    estimatedImprovement?: string;
-  };
 }
 
 /**
@@ -96,12 +82,19 @@ export class SnapshotManager {
     this.sessionId = options.sessionId ?? 'default';
     this.storagePath = options.storagePath ?? join(process.cwd(), '.ollm', 'snapshots');
   }
+
+  private getSessionPath(): string {
+    const sessionFolder = this.sessionId.startsWith('session-')
+      ? this.sessionId
+      : `session-${this.sessionId}`;
+    return join(this.storagePath, sessionFolder);
+  }
   
   /**
    * Initialize the snapshot manager (create storage directories)
    */
   async initialize(): Promise<void> {
-    const sessionPath = join(this.storagePath, `session-${this.sessionId}`);
+    const sessionPath = this.getSessionPath();
     await fs.mkdir(sessionPath, { recursive: true });
   }
   
@@ -255,7 +248,7 @@ ${currentPlan.map(p => `    ${this.escapeXml(p)}`).join('\n')}
     
     // Prune from disk
     try {
-      const sessionPath = join(this.storagePath, `session-${this.sessionId}`);
+      const sessionPath = this.getSessionPath();
       const files = await fs.readdir(sessionPath);
       
       for (const file of files) {
@@ -318,56 +311,6 @@ ${currentPlan.map(p => `    ${this.escapeXml(p)}`).join('\n')}
         parts.push(`Suggested Fixes:\n${fixes.map((f, i) => `  ${i + 1}. ${f}`).join('\n')}`);
       }
       parts.push('\nContinue implementation with these findings in mind.');
-    }
-    
-    // Format security findings
-    if (snapshot.findings.security) {
-      const { vulnerabilities, recommendations } = snapshot.findings.security;
-      parts.push('[Security Audit Results]');
-      if (vulnerabilities.length > 0) {
-        parts.push(`Vulnerabilities Found: ${vulnerabilities.length}`);
-        parts.push(vulnerabilities.map((v, i) => `  ${i + 1}. ${v}`).join('\n'));
-      }
-      if (recommendations.length > 0) {
-        parts.push('\nRecommendations:');
-        parts.push(recommendations.map((r, i) => `  ${i + 1}. ${r}`).join('\n'));
-      }
-      parts.push('\nApply these security fixes before continuing.');
-    }
-    
-    // Format reviewer findings
-    if (snapshot.findings.reviewer) {
-      const { issues, suggestions, positives } = snapshot.findings.reviewer;
-      parts.push('[Code Review Results]');
-      if (issues.length > 0) {
-        parts.push(`Issues Found: ${issues.length}`);
-        parts.push(issues.map((i, idx) => `  ${idx + 1}. ${i}`).join('\n'));
-      }
-      if (suggestions.length > 0) {
-        parts.push('\nSuggestions:');
-        parts.push(suggestions.map((s, idx) => `  ${idx + 1}. ${s}`).join('\n'));
-      }
-      if (positives && positives.length > 0) {
-        parts.push('\nPositive Aspects:');
-        parts.push(positives.map((p, idx) => `  ${idx + 1}. ${p}`).join('\n'));
-      }
-    }
-    
-    // Format performance findings
-    if (snapshot.findings.performance) {
-      const { bottlenecks, optimizations, estimatedImprovement } = snapshot.findings.performance;
-      parts.push('[Performance Analysis Results]');
-      if (bottlenecks.length > 0) {
-        parts.push(`Bottlenecks Identified: ${bottlenecks.length}`);
-        parts.push(bottlenecks.map((b, i) => `  ${i + 1}. ${b}`).join('\n'));
-      }
-      if (optimizations.length > 0) {
-        parts.push('\nRecommended Optimizations:');
-        parts.push(optimizations.map((o, i) => `  ${i + 1}. ${o}`).join('\n'));
-      }
-      if (estimatedImprovement) {
-        parts.push(`\nEstimated Improvement: ${estimatedImprovement}`);
-      }
     }
     
     return parts.length > 0 ? parts.join('\n') : null;
@@ -498,7 +441,7 @@ ${currentPlan.map(p => `    ${this.escapeXml(p)}`).join('\n')}
   
   private async persistSnapshot(snapshot: ModeTransitionSnapshot): Promise<void> {
     try {
-      const sessionPath = join(this.storagePath, `session-${this.sessionId}`);
+      const sessionPath = this.getSessionPath();
       const filename = `transition-${snapshot.timestamp.getTime()}.json`;
       const filePath = join(sessionPath, filename);
       

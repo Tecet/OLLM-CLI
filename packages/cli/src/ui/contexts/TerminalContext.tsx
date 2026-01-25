@@ -11,6 +11,7 @@ import { Terminal } from '@xterm/headless';
 import * as pty from 'node-pty';
 
 import { serializeTerminalRange } from '../../utils/terminalSerializer.js';
+
 import type { AnsiOutput } from '../../utils/terminalSerializer.js';
 
 interface TerminalContextValue {

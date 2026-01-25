@@ -33,12 +33,6 @@ export interface ModeTransitionSuggestion {
     planComplete?: boolean;
     /** Whether technical terms were detected (for assistant->planning) */
     hasTechnicalTerms?: boolean;
-    /** Whether security keywords were detected */
-    hasSecurityKeywords?: boolean;
-    /** Whether performance keywords were detected */
-    hasPerformanceKeywords?: boolean;
-    /** Whether review keywords were detected */
-    hasReviewKeywords?: boolean;
   };
 }
 
@@ -58,12 +52,6 @@ export interface ConversationContext {
   hasTechnicalTerms: boolean;
   /** Whether a plan appears complete */
   planComplete: boolean;
-  /** Whether security keywords are present */
-  hasSecurityKeywords: boolean;
-  /** Whether performance keywords are present */
-  hasPerformanceKeywords: boolean;
-  /** Whether review keywords are present */
-  hasReviewKeywords: boolean;
   /** Number of code blocks in recent messages */
   codeBlockCount: number;
 }
@@ -168,7 +156,6 @@ export class ModeTransitionSuggester {
     // Try each suggestion pattern in order of priority
     const suggestion = 
       this.suggestDebuggerMode(context) ||
-      this.suggestReviewerMode(context) ||
       this.suggestPlanningMode(context) ||
       this.suggestDeveloperMode(context);
     
@@ -224,84 +211,6 @@ export class ModeTransitionSuggester {
         autoSwitch: false,  // Ask user first
         context: {
           errorCount: context.errorCount
-        }
-      };
-    }
-    
-    return null;
-  }
-  
-  /**
-   * Suggest security mode when security keywords are detected
-   */
-  private suggestSecurityMode(context: ConversationContext): ModeTransitionSuggestion | null {
-    // Don't suggest if already in security mode
-    if (context.currentMode === 'security') {
-      return null;
-    }
-    
-    // Check for security keywords
-    if (context.hasSecurityKeywords) {
-      return {
-        currentMode: context.currentMode,
-        suggestedMode: 'security',
-        reason: 'Security concerns detected. Switch to Security mode for thorough audit?',
-        confidence: 0.85,
-        autoSwitch: false,  // Ask user first
-        context: {
-          hasSecurityKeywords: true
-        }
-      };
-    }
-    
-    return null;
-  }
-  
-  /**
-   * Suggest performance mode when performance keywords are detected
-   */
-  private suggestPerformanceMode(context: ConversationContext): ModeTransitionSuggestion | null {
-    // Don't suggest if already in performance mode
-    if (context.currentMode === 'performance') {
-      return null;
-    }
-    
-    // Check for performance keywords
-    if (context.hasPerformanceKeywords) {
-      return {
-        currentMode: context.currentMode,
-        suggestedMode: 'performance',
-        reason: 'Performance concerns detected. Switch to Performance mode for optimization?',
-        confidence: 0.80,
-        autoSwitch: false,  // Ask user first
-        context: {
-          hasPerformanceKeywords: true
-        }
-      };
-    }
-    
-    return null;
-  }
-  
-  /**
-   * Suggest reviewer mode when review keywords are detected
-   */
-  private suggestReviewerMode(context: ConversationContext): ModeTransitionSuggestion | null {
-    // Only suggest from developer mode
-    if (context.currentMode !== 'developer') {
-      return null;
-    }
-    
-    // Check for review keywords
-    if (context.hasReviewKeywords) {
-      return {
-        currentMode: 'developer',
-        suggestedMode: 'reviewer',
-        reason: 'Code review requested. Switch to Reviewer mode for quality assessment?',
-        confidence: 0.80,
-        autoSwitch: false,  // Ask user first
-        context: {
-          hasReviewKeywords: true
         }
       };
     }
@@ -374,73 +283,6 @@ export class ModeTransitionSuggester {
   }
   
   /**
-   * Suggest prototype mode for quick experiments
-   */
-  private suggestPrototypeMode(context: ConversationContext): ModeTransitionSuggestion | null {
-    // Don't suggest if already in prototype mode
-    if (context.currentMode === 'prototype') {
-      return null;
-    }
-    
-    // Look for experiment/prototype keywords in recent messages
-    const hasPrototypeKeywords = context.messages.some(msg => {
-      const content = this.getMessageContent(msg).toLowerCase();
-      return content.includes('experiment') ||
-             content.includes('prototype') ||
-             content.includes('quick test') ||
-             content.includes('proof of concept') ||
-             content.includes('spike');
-    });
-    
-    if (hasPrototypeKeywords) {
-      return {
-        currentMode: context.currentMode,
-        suggestedMode: 'prototype',
-        reason: 'Quick experiment detected. Switch to Prototype mode for rapid testing?',
-        confidence: 0.75,
-        autoSwitch: false,  // Ask user first
-        context: {}
-      };
-    }
-    
-    return null;
-  }
-  
-  /**
-   * Suggest teacher mode for learning
-   */
-  private suggestTeacherMode(context: ConversationContext): ModeTransitionSuggestion | null {
-    // Don't suggest if already in teacher mode
-    if (context.currentMode === 'teacher') {
-      return null;
-    }
-    
-    // Look for learning/explanation keywords in recent messages
-    const hasTeacherKeywords = context.messages.some(msg => {
-      const content = this.getMessageContent(msg).toLowerCase();
-      return content.includes('explain') ||
-             content.includes('teach me') ||
-             content.includes('how does') ||
-             content.includes('why') ||
-             content.includes('understand') ||
-             content.includes('learn');
-    });
-    
-    if (hasTeacherKeywords && context.currentMode === 'assistant') {
-      return {
-        currentMode: 'assistant',
-        suggestedMode: 'teacher',
-        reason: 'Learning question detected. Switch to Teacher mode for detailed explanation?',
-        confidence: 0.70,
-        autoSwitch: false,  // Ask user first
-        context: {}
-      };
-    }
-    
-    return null;
-  }
-  
-  /**
    * Extract text content from a message
    */
   private getMessageContent(message: Message): string {
@@ -477,15 +319,6 @@ export class ModeTransitionSuggester {
     // Check if plan is complete
     const planComplete = this.detectPlanComplete(recentMessages);
     
-    // Detect security keywords
-    const hasSecurityKeywords = this.detectSecurityKeywords(recentMessages);
-    
-    // Detect performance keywords
-    const hasPerformanceKeywords = this.detectPerformanceKeywords(recentMessages);
-    
-    // Detect review keywords
-    const hasReviewKeywords = this.detectReviewKeywords(recentMessages);
-    
     // Count code blocks
     const codeBlockCount = this.countCodeBlocks(recentMessages);
     
@@ -496,9 +329,6 @@ export class ModeTransitionSuggester {
       errorCount,
       hasTechnicalTerms,
       planComplete,
-      hasSecurityKeywords,
-      hasPerformanceKeywords,
-      hasReviewKeywords,
       codeBlockCount
     };
   }
@@ -571,72 +401,6 @@ export class ModeTransitionSuggester {
       
       for (const phrase of completionPhrases) {
         if (content.includes(phrase)) {
-          return true;
-        }
-      }
-    }
-    
-    return false;
-  }
-  
-  /**
-   * Detect security keywords
-   */
-  private detectSecurityKeywords(messages: Message[]): boolean {
-    const securityKeywords = [
-      'security', 'vulnerability', 'exploit', 'injection', 'xss', 'csrf',
-      'authentication', 'authorization', 'encrypt', 'sanitize', 'attack'
-    ];
-    
-    for (const msg of messages) {
-      const content = this.getMessageContent(msg).toLowerCase();
-      
-      for (const keyword of securityKeywords) {
-        if (content.includes(keyword)) {
-          return true;
-        }
-      }
-    }
-    
-    return false;
-  }
-  
-  /**
-   * Detect performance keywords
-   */
-  private detectPerformanceKeywords(messages: Message[]): boolean {
-    const performanceKeywords = [
-      'performance', 'optimize', 'slow', 'fast', 'benchmark', 'profile',
-      'latency', 'throughput', 'memory', 'cpu', 'bottleneck', 'speed'
-    ];
-    
-    for (const msg of messages) {
-      const content = this.getMessageContent(msg).toLowerCase();
-      
-      for (const keyword of performanceKeywords) {
-        if (content.includes(keyword)) {
-          return true;
-        }
-      }
-    }
-    
-    return false;
-  }
-  
-  /**
-   * Detect review keywords
-   */
-  private detectReviewKeywords(messages: Message[]): boolean {
-    const reviewKeywords = [
-      'review', 'check', 'assess', 'evaluate', 'quality', 'best practices',
-      'code review', 'feedback', 'critique'
-    ];
-    
-    for (const msg of messages) {
-      const content = this.getMessageContent(msg).toLowerCase();
-      
-      for (const keyword of reviewKeywords) {
-        if (content.includes(keyword)) {
           return true;
         }
       }

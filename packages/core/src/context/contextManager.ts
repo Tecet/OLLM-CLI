@@ -11,6 +11,7 @@
  */
 
 import { EventEmitter } from 'events';
+import { join } from 'path';
 
 import { CompressionService as CompressionServiceImpl } from './compressionService.js';
 import { createContextPool } from './contextPool.js';
@@ -18,16 +19,18 @@ import { loadJitContext } from './jitDiscovery.js';
 import { createMemoryGuard } from './memoryGuard.js';
 import { createSnapshotManager } from './snapshotManager.js';
 import { createSnapshotStorage } from './snapshotStorage.js';
+import { SystemPromptBuilder } from './SystemPromptBuilder.js';
 import { createTokenCounter } from './tokenCounter.js';
 import { 
   MemoryLevel,
   ContextTier,
   TIER_CONFIGS,
   OperationalMode,
-  MODE_PROFILES,
-  SYSTEM_PROMPT_TEMPLATES
+  MODE_PROFILES
 } from './types.js';
 import { createVRAMMonitor } from './vramMonitor.js';
+import { PromptRegistry } from '../prompts/PromptRegistry.js';
+import { TieredPromptStore } from '../prompts/tieredPromptStore.js';
 
 import type {
   ContextManager,
@@ -132,6 +135,9 @@ export class ConversationContextManager extends EventEmitter implements ContextM
   private compressionService: ICompressionService;
   private memoryGuard: MemoryGuard;
   private snapshotStorage: SnapshotStorage;
+  private promptRegistry: PromptRegistry;
+  private promptStore: TieredPromptStore;
+  private systemPromptBuilder: SystemPromptBuilder;
   
   private currentContext: ConversationContext;
   private inflightTokens: number = 0;
@@ -168,6 +174,23 @@ export class ConversationContextManager extends EventEmitter implements ContextM
     // Initialize services (use provided or create new)
     this.vramMonitor = services?.vramMonitor || createVRAMMonitor();
     this.tokenCounter = services?.tokenCounter || createTokenCounter();
+    this.promptRegistry = new PromptRegistry();
+    this.promptStore = new TieredPromptStore();
+    this.promptStore.load();
+    if (!this.promptStore.get(OperationalMode.ASSISTANT, ContextTier.TIER_1_MINIMAL)) {
+      const srcTemplates = join(process.cwd(), 'packages', 'core', 'src', 'prompts', 'templates');
+      const fallbackStore = new TieredPromptStore(
+        join(process.cwd(), 'packages', 'core', 'dist', 'prompts', 'templates')
+      );
+      fallbackStore.load();
+      this.promptStore = fallbackStore;
+      if (!this.promptStore.get(OperationalMode.ASSISTANT, ContextTier.TIER_1_MINIMAL)) {
+        const srcStore = new TieredPromptStore(srcTemplates);
+        srcStore.load();
+        this.promptStore = srcStore;
+      }
+    }
+    this.systemPromptBuilder = new SystemPromptBuilder(this.promptRegistry);
     
     // Create context pool with resize callback
     this.contextPool = services?.contextPool || createContextPool(
@@ -197,12 +220,13 @@ export class ConversationContextManager extends EventEmitter implements ContextM
           previousActualTier,
           newActualTier: this.actualContextTier,
           effectivePromptTier: this.getEffectivePromptTier(),
-          promptTierStable: this.config.autoSize // Prompt tier is stable when auto-sizing
+          promptTierStable: !this.config.autoSize
         });
         
-        // Note: We do NOT call updateSystemPrompt() here
-        // When auto-sizing is enabled, effective prompt tier stays locked to hardware capability
-        // When auto-sizing is disabled, user manually controls context size so no auto-resize happens
+        // Update prompt if the effective tier changed (auto-sizing can shift context tiers)
+        if (previousActualTier !== this.actualContextTier) {
+          this.updateSystemPrompt();
+        }
       }
     );
     
@@ -284,13 +308,15 @@ export class ConversationContextManager extends EventEmitter implements ContextM
       
       // If auto-size is enabled, recalculate optimal size
       if (this.config.autoSize) {
-        const optimalSize = this.contextPool.calculateOptimalSize(
+        const maxPossibleContext = this.contextPool.calculateOptimalSize(
           vramInfo,
           this.modelInfo
         );
+        const recommendedSize = this.getRecommendedAutoSize(maxPossibleContext);
         
-        if (optimalSize !== this.contextPool.currentSize) {
-          await this.contextPool.resize(optimalSize);
+        if (recommendedSize !== this.contextPool.currentSize) {
+          await this.contextPool.resize(recommendedSize);
+          this.contextPool.updateConfig({ targetContextSize: recommendedSize });
         }
       }
     });
@@ -318,19 +344,13 @@ export class ConversationContextManager extends EventEmitter implements ContextM
           // Emit a high-level summarizing event so UI can show progress
           this.emit('summarizing', { usage: this.getUsage() });
 
-          // 1) Create a snapshot for recovery (store full context pre-summary)
-          // MOVED UP: Create snapshot BEFORE checking if we can compress
-          let snapshot: ContextSnapshot | null = null;
-          try {
-            snapshot = await this.snapshotManager.createSnapshot(
-              this.currentContext
-            );
-            this.emit('auto-snapshot-created', snapshot);
-            console.log('[ContextManager] auto-snapshot-created', { id: snapshot.id, tokenCount: snapshot.tokenCount });
-          } catch (error) {
-            console.error('[ContextManager] snapshot creation failed', error);
-            this.emit('snapshot-error', error);
-            // continue - summarization can still proceed even if snapshot failed
+          const hasUserMessages = this.currentContext.messages.some(
+            m => m.role === 'user'
+          );
+          if (!hasUserMessages) {
+            console.log('[ContextManager] No user messages, skipping snapshot/compression');
+            this.autoSummaryRunning = false;
+            return;
           }
 
           // EMERGENCY FIX #1: Check if there are enough compressible messages
@@ -350,6 +370,20 @@ export class ConversationContextManager extends EventEmitter implements ContextM
             });
             this.autoSummaryRunning = false; // RELEASE LOCK since we are aborting compression
             return;
+          }
+
+          // 1) Create a snapshot for recovery (store full context pre-summary)
+          let snapshot: ContextSnapshot | null = null;
+          try {
+            snapshot = await this.snapshotManager.createSnapshot(
+              this.currentContext
+            );
+            this.emit('auto-snapshot-created', snapshot);
+            console.log('[ContextManager] auto-snapshot-created', { id: snapshot.id, tokenCount: snapshot.tokenCount });
+          } catch (error) {
+            console.error('[ContextManager] snapshot creation failed', error);
+            this.emit('snapshot-error', error);
+            // continue - summarization can still proceed even if snapshot failed
           }
 
           // 2) Perform an LLM-based summary of the current conversation and replace
@@ -523,11 +557,13 @@ export class ConversationContextManager extends EventEmitter implements ContextM
     console.log('[ContextManager] Hardware capability tier:', this.hardwareCapabilityTier);
     
     if (this.config.autoSize) {
-      const optimalSize = this.contextPool.calculateOptimalSize(
+      const maxPossibleContext = this.contextPool.calculateOptimalSize(
         vramInfo,
         this.modelInfo
       );
-      await this.contextPool.resize(optimalSize);
+      const recommendedSize = this.getRecommendedAutoSize(maxPossibleContext);
+      await this.contextPool.resize(recommendedSize);
+      this.contextPool.updateConfig({ targetContextSize: recommendedSize });
       
       // Update current context
       this.currentContext.maxTokens = this.contextPool.currentSize;
@@ -539,9 +575,8 @@ export class ConversationContextManager extends EventEmitter implements ContextM
       this.tierConfig = newTierConfig;
       this.actualContextTier = newTierConfig.tier;
       
-      // With auto-sizing, prompt tier is locked to hardware capability
-      // This prevents mid-conversation prompt changes when context auto-adjusts
-      console.log('[ContextManager] Auto-sizing enabled - prompt tier locked to hardware capability');
+      // With auto-sizing, prompt tier follows actual context size
+      console.log('[ContextManager] Auto-sizing enabled - prompt tier follows actual context size');
       console.log('[ContextManager] Actual context tier:', this.actualContextTier);
       console.log('[ContextManager] Effective prompt tier:', this.getEffectivePromptTier());
       
@@ -551,7 +586,7 @@ export class ConversationContextManager extends EventEmitter implements ContextM
         actualContextTier: this.actualContextTier,
         hardwareCapabilityTier: this.hardwareCapabilityTier,
         effectivePromptTier: this.getEffectivePromptTier(),
-        promptTierLocked: true
+        promptTierLocked: false
       });
     } else {
       // Even without autoSize, detect the actual context tier
@@ -560,7 +595,7 @@ export class ConversationContextManager extends EventEmitter implements ContextM
       this.currentTier = tierConfig.tier;
       this.tierConfig = tierConfig;
       
-      console.log('[ContextManager] Manual context sizing - using higher of hardware or actual tier');
+      console.log('[ContextManager] Manual context sizing - using actual context tier');
       console.log('[ContextManager] Actual context tier:', this.actualContextTier);
       console.log('[ContextManager] Effective prompt tier:', this.getEffectivePromptTier());
     }
@@ -575,7 +610,7 @@ export class ConversationContextManager extends EventEmitter implements ContextM
       hardwareCapabilityTier: this.hardwareCapabilityTier,
       effectivePromptTier: this.getEffectivePromptTier(),
       autoSizeEnabled: this.config.autoSize,
-      promptTierLocked: this.config.autoSize
+      promptTierLocked: false
     });
   }
 
@@ -654,18 +689,14 @@ export class ConversationContextManager extends EventEmitter implements ContextM
             promptTierLocked: this.config.autoSize
           });
           
-          // Update system prompt if not using auto-sizing OR if we just switched to manual
-          // (with auto-sizing, prompt stays locked to hardware capability)
-          if (!this.config.autoSize) {
-            console.log('[ContextManager] Manual context sizing - updating system prompt to match new tier');
-            this.updateSystemPrompt();
-            
-            this.emit('system-prompt-updated', {
-              tier: newEffectiveTier,
-              mode: this.currentMode,
-              prompt: this.getSystemPrompt()
-            });
-          }
+          console.log('[ContextManager] Updating system prompt to match new tier');
+          this.updateSystemPrompt();
+          
+          this.emit('system-prompt-updated', {
+            tier: newEffectiveTier,
+            mode: this.currentMode,
+            prompt: this.getSystemPrompt()
+          });
         }
       }
     }
@@ -881,33 +912,71 @@ export class ConversationContextManager extends EventEmitter implements ContextM
   // Adaptive Context System fields
   private currentTier: ContextTier = ContextTier.TIER_3_STANDARD;
   private tierConfig: import('./types.js').TierConfig = TIER_CONFIGS[ContextTier.TIER_3_STANDARD];
-  private currentMode: OperationalMode = OperationalMode.DEVELOPER;
-  private modeProfile: import('./types.js').ModeProfile = MODE_PROFILES[OperationalMode.DEVELOPER];
+  private currentMode: OperationalMode = OperationalMode.ASSISTANT;
+  private modeProfile: import('./types.js').ModeProfile = MODE_PROFILES[OperationalMode.ASSISTANT];
   
   // Hardware capability tier (based on VRAM) - determines prompt quality
   private hardwareCapabilityTier: ContextTier = ContextTier.TIER_3_STANDARD;
   // Actual context tier (based on user selection) - determines context window size
   private actualContextTier: ContextTier = ContextTier.TIER_3_STANDARD;
 
+  private getTierForSize(size: number): ContextTier {
+    const tiers: Array<{ size: number; tier: ContextTier }> = [
+      { size: 4096, tier: ContextTier.TIER_1_MINIMAL },
+      { size: 8192, tier: ContextTier.TIER_2_BASIC },
+      { size: 16384, tier: ContextTier.TIER_3_STANDARD },
+      { size: 32768, tier: ContextTier.TIER_4_PREMIUM },
+      { size: 65536, tier: ContextTier.TIER_5_ULTRA }
+    ];
+
+    let selected = ContextTier.TIER_1_MINIMAL;
+    for (const entry of tiers) {
+      if (size >= entry.size) {
+        selected = entry.tier;
+      }
+    }
+    return selected;
+  }
+
+  private getTierTargetSize(tier: ContextTier): number {
+    const sizes: Record<ContextTier, number> = {
+      [ContextTier.TIER_1_MINIMAL]: 4096,
+      [ContextTier.TIER_2_BASIC]: 8192,
+      [ContextTier.TIER_3_STANDARD]: 16384,
+      [ContextTier.TIER_4_PREMIUM]: 32768,
+      [ContextTier.TIER_5_ULTRA]: 65536
+    };
+    return sizes[tier];
+  }
+
+  private getLowerTier(tier: ContextTier): ContextTier {
+    const order: ContextTier[] = [
+      ContextTier.TIER_1_MINIMAL,
+      ContextTier.TIER_2_BASIC,
+      ContextTier.TIER_3_STANDARD,
+      ContextTier.TIER_4_PREMIUM,
+      ContextTier.TIER_5_ULTRA
+    ];
+    const index = order.indexOf(tier);
+    if (index <= 0) {
+      return ContextTier.TIER_1_MINIMAL;
+    }
+    return order[index - 1];
+  }
+
+  private getRecommendedAutoSize(maxPossibleContext: number): number {
+    const maxTier = this.getTierForSize(maxPossibleContext);
+    const recommendedTier = this.getLowerTier(maxTier);
+    const recommendedSize = this.getTierTargetSize(recommendedTier);
+    return Math.min(recommendedSize, maxPossibleContext);
+  }
+
   /**
    * Detect context tier based on max tokens (actual context window)
    */
   private detectContextTier(): import('./types.js').TierConfig {
     const maxTokens = this.currentContext.maxTokens;
-    
-    if (maxTokens <= 4096) {
-      return TIER_CONFIGS[ContextTier.TIER_1_MINIMAL];
-    }
-    if (maxTokens <= 8192) {
-      return TIER_CONFIGS[ContextTier.TIER_2_BASIC];
-    }
-    if (maxTokens <= 32768) {
-      return TIER_CONFIGS[ContextTier.TIER_3_STANDARD];
-    }
-    if (maxTokens <= 65536) {
-      return TIER_CONFIGS[ContextTier.TIER_4_PREMIUM];
-    }
-    return TIER_CONFIGS[ContextTier.TIER_5_ULTRA];
+    return TIER_CONFIGS[this.getTierForSize(maxTokens)];
   }
 
   /**
@@ -931,19 +1000,7 @@ export class ConversationContextManager extends EventEmitter implements ContextM
       console.log('[ContextManager] Hardware can support context size:', maxPossibleContext);
       
       // Map the possible context size to a tier
-      if (maxPossibleContext <= 4096) {
-        return ContextTier.TIER_1_MINIMAL;
-      }
-      if (maxPossibleContext <= 8192) {
-        return ContextTier.TIER_2_BASIC;
-      }
-      if (maxPossibleContext <= 32768) {
-        return ContextTier.TIER_3_STANDARD;
-      }
-      if (maxPossibleContext <= 65536) {
-        return ContextTier.TIER_4_PREMIUM;
-      }
-      return ContextTier.TIER_5_ULTRA;
+      return this.getTierForSize(maxPossibleContext);
     } catch (error) {
       console.warn('[ContextManager] Failed to detect hardware capability, defaulting to Tier 3', error);
       // Default to Tier 3 if detection fails
@@ -953,19 +1010,9 @@ export class ConversationContextManager extends EventEmitter implements ContextM
 
   /**
    * Get the effective tier for prompt selection
-   * When auto-context is enabled, we lock to hardware capability tier at startup
-   * to prevent mid-conversation prompt changes when context size adjusts.
-   * When auto-context is disabled, we use the actual context tier (user's manual selection).
+   * Prompt tier follows the actual context size for both auto and manual sizing.
    */
   private getEffectivePromptTier(): ContextTier {
-    // If auto-sizing is enabled, always use hardware capability tier
-    // This prevents prompt changes when context auto-adjusts during conversation
-    if (this.config.autoSize) {
-      return this.hardwareCapabilityTier;
-    }
-    
-    // Manual mode: use the actual context tier (what user manually selected)
-    // This allows users to explicitly choose a smaller context and get the appropriate prompt
     return this.actualContextTier;
   }
 
@@ -996,64 +1043,48 @@ export class ConversationContextManager extends EventEmitter implements ContextM
 
   /**
    * Get system prompt for current tier and mode
-   * Uses effective prompt tier (hardware capability) not actual context tier
+   * Uses effective prompt tier (actual context size)
    */
   private getSystemPromptForTierAndMode(): string {
     const tier = this.getEffectivePromptTier(); // Use hardware capability tier
     const mode = this.currentMode;
     
-    // Map tier string to tier number (e.g., "8-32K" -> "tier3")
-    const tierMap: Record<string, string> = {
-      '2-4K': 'tier1',
-      '4-8K': 'tier2',
-      '8-32K': 'tier3',
-      '32-64K': 'tier4',
-      '64K+': 'tier5'
-    };
-    
-    const tierKey = tierMap[tier] || 'tier3';
-    const key = `${tierKey}-${mode}`;
-    
-    const template = SYSTEM_PROMPT_TEMPLATES[key];
-    
+    const template = this.promptStore.get(mode, tier);
     if (!template) {
-      // Fallback to tier3-developer
-      console.warn(`[ContextManager] No prompt template found for ${key}, using fallback`);
-      return SYSTEM_PROMPT_TEMPLATES['tier3-developer'].template;
+      console.warn(`[ContextManager] No prompt template found for ${mode} in tier ${tier}, using fallback`);
+      const fallback = this.promptStore.get(OperationalMode.DEVELOPER, ContextTier.TIER_3_STANDARD);
+      return fallback ?? '';
     }
-    
-    return template.template;
+    return template;
   }
 
   /**
    * Get system prompt token budget for current tier and mode
-   * Uses effective prompt tier (hardware capability) not actual context tier
+   * Uses effective prompt tier (actual context size)
    */
   private getSystemPromptTokenBudget(): number {
     const tier = this.getEffectivePromptTier(); // Use hardware capability tier
-    const mode = this.currentMode;
-    
-    // Map tier string to tier number (e.g., "8-32K" -> "tier3")
-    const tierMap: Record<string, string> = {
-      '2-4K': 'tier1',
-      '4-8K': 'tier2',
-      '8-32K': 'tier3',
-      '32-64K': 'tier4',
-      '64K+': 'tier5'
+    const budgets: Record<ContextTier, number> = {
+      [ContextTier.TIER_1_MINIMAL]: 200,
+      [ContextTier.TIER_2_BASIC]: 500,
+      [ContextTier.TIER_3_STANDARD]: 1000,
+      [ContextTier.TIER_4_PREMIUM]: 1500,
+      [ContextTier.TIER_5_ULTRA]: 1500
     };
-    
-    const tierKey = tierMap[tier] || 'tier3';
-    const key = `${tierKey}-${mode}`;
-    
-    const template = SYSTEM_PROMPT_TEMPLATES[key];
-    return template?.tokenBudget || 1000;
+    return budgets[tier] ?? 1000;
   }
 
   /**
    * Update system prompt based on current tier and mode
    */
   private updateSystemPrompt(): void {
-    const newPrompt = this.getSystemPromptForTierAndMode();
+    const basePrompt = this.systemPromptBuilder.build({
+      interactive: true,
+      useSanityChecks: false,
+      skills: this.activeSkills
+    });
+    const tierPrompt = this.getSystemPromptForTierAndMode();
+    const newPrompt = [tierPrompt, basePrompt].filter(Boolean).join('\n\n');
     
     // Set the prompt without emitting event
     const systemPrompt: Message = {
@@ -1239,12 +1270,33 @@ export class ConversationContextManager extends EventEmitter implements ContextM
   }
 
   /**
-   * Compress for Tier 1 (2-8K) - Rollover strategy
+   * Compress for Tier 1 (2-4K) - Rollover strategy
    * Creates snapshot and starts fresh with ultra-compact summary
    */
   private async compressForTier1(): Promise<void> {
     console.log('[ContextManager] Tier 1 rollover compression triggered');
     
+    const baseSystemPrompt = this.currentContext.systemPrompt
+      ?? this.currentContext.messages.find(m => m.id.startsWith('system-'))
+      ?? this.currentContext.messages.find(m => m.role === 'system');
+    const userAssistantMessages = this.currentContext.messages.filter(
+      m => m.role === 'user' || m.role === 'assistant'
+    );
+
+    if (userAssistantMessages.length === 0) {
+      this.currentContext.messages = baseSystemPrompt ? [baseSystemPrompt] : [];
+      const newTokenCount = this.tokenCounter.countConversationTokens(this.currentContext.messages);
+      this.currentContext.tokenCount = newTokenCount;
+      this.contextPool.setCurrentTokens(newTokenCount);
+      this.emit('rollover-complete', {
+        snapshot: null,
+        summary: null,
+        originalTokens: 0,
+        compressedTokens: newTokenCount
+      });
+      return;
+    }
+
     // 1. Create snapshot for recovery
     let snapshot: import('./types.js').ContextSnapshot | null = null;
     try {
@@ -1257,7 +1309,7 @@ export class ConversationContextManager extends EventEmitter implements ContextM
     }
     
     // 2. Generate ultra-compact summary (200-300 tokens)
-    const recentMessages = this.currentContext.messages.slice(-10); // Last 10 messages
+    const recentMessages = userAssistantMessages.slice(-10); // Last 10 user/assistant messages
     const summaryContent = this.generateCompactSummary(recentMessages);
     
     const summaryMessage: Message = {
@@ -1268,7 +1320,7 @@ export class ConversationContextManager extends EventEmitter implements ContextM
     };
     
     // 3. Reset context with system prompt + summary
-    const systemMessages = this.currentContext.messages.filter(m => m.role === 'system');
+    const systemMessages = baseSystemPrompt ? [baseSystemPrompt] : [];
     
     this.currentContext.messages = [
       ...systemMessages,
@@ -1311,7 +1363,7 @@ export class ConversationContextManager extends EventEmitter implements ContextM
   }
   
   /**
-   * Compress for Tier 2 (8-16K) - Smart compression
+   * Compress for Tier 2 (8K) - Smart compression
    * Creates ONE detailed checkpoint + preserves critical info
    */
   private async compressForTier2(): Promise<void> {
@@ -1509,7 +1561,7 @@ export class ConversationContextManager extends EventEmitter implements ContextM
   }
   
   /**
-   * Compress for Tier 3 (16-32K) - Progressive checkpoints (ENHANCED)
+   * Compress for Tier 3 (16K) - Progressive checkpoints (ENHANCED)
    * Creates 3-5 checkpoints with hierarchical compression + never-compressed sections
    */
   private async compressForTier3(): Promise<void> {
@@ -1630,7 +1682,7 @@ export class ConversationContextManager extends EventEmitter implements ContextM
   }
   
   /**
-   * Compress for Tier 4 (32K+) - Structured checkpoints
+   * Compress for Tier 4 (32K) - Structured checkpoints
    * Creates up to 10 checkpoints with rich metadata and semantic merging
    */
   private async compressForTier4(): Promise<void> {
@@ -2224,7 +2276,7 @@ export class ConversationContextManager extends EventEmitter implements ContextM
     console.log(`  - Effective Prompt Tier: ${this.getEffectivePromptTier()}`);
     console.log(`  - Actual Context Tier: ${this.actualContextTier}`);
     console.log(`  - Current Mode: ${this.currentMode}`);
-    console.log(`  - Auto-sizing: ${this.config.autoSize ? 'enabled (prompt locked to hardware)' : 'disabled (prompt follows context)'}`);
+    console.log(`  - Auto-sizing: ${this.config.autoSize ? 'enabled (prompt follows context size)' : 'disabled (manual context size)'}`);
     console.log(`  - Prompt length: ${content.length} chars, ${systemPrompt.tokenCount} tokens`);
     console.log(`  - Prompt preview: ${content.substring(0, 200)}...`);
     

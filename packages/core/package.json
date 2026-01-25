@@ -8,7 +8,7 @@
     "./*": "./dist/*"
   },
   "scripts": {
-    "build": "tsc -b"
+    "build": "tsc -b && node ./scripts/copy-prompts.cjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",

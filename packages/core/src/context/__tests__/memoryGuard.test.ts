@@ -581,6 +581,12 @@ describe('MemoryGuard - Unit Tests', () => {
             role: 'system',
             content: 'System',
             timestamp: new Date()
+          },
+          {
+            id: '2',
+            role: 'user',
+            content: 'User message',
+            timestamp: new Date()
           }
         ],
         systemPrompt: {

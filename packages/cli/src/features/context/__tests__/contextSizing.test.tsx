@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import type { UserModelEntry } from '../../../config/types.js';
+
 import { calculateContextSizing, getMaxContextWindow, validateManualContext } from '../contextSizing.js';
+
+import type { UserModelEntry } from '../../../config/types.js';
 
 const baseEntry: UserModelEntry = {
   id: 'test-model:7b',

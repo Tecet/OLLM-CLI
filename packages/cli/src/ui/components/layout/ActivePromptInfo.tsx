@@ -14,9 +14,9 @@ function formatTierDisplay(tier: string): string {
   const tierNum = match[1];
   const tierRanges: Record<string, string> = {
     '1': '2-4K',
-    '2': '4-8K',
-    '3': '8-32K',
-    '4': '32-64K',
+    '2': '8K',
+    '3': '16K',
+    '4': '32K',
     '5': '64K+'
   };
   

@@ -52,45 +52,6 @@ export interface DebuggerModeMetrics {
 }
 
 /**
- * Security mode specific metrics
- */
-export interface SecurityModeMetrics {
-  vulnerabilitiesFound: number;     // Number of vulnerabilities identified
-  criticalVulnerabilities: number;  // Number of critical severity issues
-  highVulnerabilities: number;      // Number of high severity issues
-  mediumVulnerabilities: number;    // Number of medium severity issues
-  lowVulnerabilities: number;       // Number of low severity issues
-  fixesApplied: number;             // Number of security fixes implemented
-  auditsPerformed: number;          // Number of security audits
-  commonVulnerabilityTypes: Map<string, number>;  // Vulnerability type frequency
-}
-
-/**
- * Reviewer mode specific metrics
- */
-export interface ReviewerModeMetrics {
-  reviewsPerformed: number;    // Number of code reviews
-  issuesFound: number;         // Number of issues identified
-  suggestionsGiven: number;    // Number of suggestions provided
-  positiveFeedback: number;    // Number of positive comments
-  filesReviewed: number;       // Number of files reviewed
-  linesReviewed: number;       // Total lines of code reviewed
-  averageReviewTime: number;   // Average time per review (ms)
-}
-
-/**
- * Performance mode specific metrics
- */
-export interface PerformanceModeMetrics {
-  bottlenecksFound: number;         // Number of bottlenecks identified
-  optimizationsApplied: number;     // Number of optimizations implemented
-  benchmarksRun: number;            // Number of benchmarks executed
-  averageImprovement: number;       // Average performance improvement (%)
-  profilesGenerated: number;        // Number of performance profiles
-  optimizationCategories: Map<string, number>;  // Optimization type frequency
-}
-
-/**
  * Planning mode specific metrics
  */
 export interface PlanningModeMetrics {
@@ -117,31 +78,7 @@ export interface DeveloperModeMetrics {
 }
 
 /**
- * Prototype mode specific metrics
- */
-export interface PrototypeModeMetrics {
-  prototypesCreated: number;   // Number of prototypes built
-  experimentsRun: number;      // Number of experiments conducted
-  successfulPrototypes: number; // Number of successful prototypes
-  failedPrototypes: number;    // Number of failed prototypes
-  averagePrototypeTime: number; // Average time per prototype (ms)
-  transitionsToProduction: number; // Number of prototypes moved to production
-}
-
-/**
- * Teacher mode specific metrics
- */
-export interface TeacherModeMetrics {
-  conceptsExplained: number;   // Number of concepts explained
-  examplesProvided: number;    // Number of examples given
-  questionsAsked: number;      // Number of questions asked to check understanding
-  analogiesUsed: number;       // Number of analogies used
-  tutorialsSuggested: number;  // Number of tutorials recommended
-  averageExplanationTime: number; // Average time per explanation (ms)
-}
-
-/**
- * Tool mode specific metrics
+ * Tool execution metrics
  */
 export interface ToolModeMetrics {
   toolsExecuted: number;       // Number of tools executed
@@ -163,13 +100,8 @@ export interface AggregatedMetrics {
   
   // Mode-specific metrics
   debuggerMetrics: DebuggerModeMetrics;
-  securityMetrics: SecurityModeMetrics;
-  reviewerMetrics: ReviewerModeMetrics;
-  performanceMetrics: PerformanceModeMetrics;
   planningMetrics: PlanningModeMetrics;
   developerMetrics: DeveloperModeMetrics;
-  prototypeMetrics: PrototypeModeMetrics;
-  teacherMetrics: TeacherModeMetrics;
   toolMetrics: ToolModeMetrics;
   
   // Session-level metrics
@@ -189,23 +121,6 @@ export type ModeEvent =
   | { type: 'debugger:bug-found'; severity: 'critical' | 'high' | 'medium' | 'low' }
   | { type: 'debugger:fix-applied'; success: boolean; timeToFix: number }
   
-  // Security events
-  | { type: 'security:vulnerability-found'; severity: 'critical' | 'high' | 'medium' | 'low'; vulnerabilityType: string }
-  | { type: 'security:fix-applied'; vulnerabilityType: string }
-  | { type: 'security:audit-performed'; filesScanned: number }
-  
-  // Reviewer events
-  | { type: 'reviewer:review-performed'; filesReviewed: number; linesReviewed: number; timeSpent: number }
-  | { type: 'reviewer:issue-found'; severity: 'critical' | 'high' | 'medium' | 'low' }
-  | { type: 'reviewer:suggestion-given'; category: string }
-  | { type: 'reviewer:positive-feedback'; category: string }
-  
-  // Performance events
-  | { type: 'performance:bottleneck-found'; category: string }
-  | { type: 'performance:optimization-applied'; category: string; improvement: number }
-  | { type: 'performance:benchmark-run'; metric: string; value: number }
-  | { type: 'performance:profile-generated'; profileType: string }
-  
   // Planning events
   | { type: 'planning:plan-created'; planType: string }
   | { type: 'planning:research-query'; query: string }
@@ -221,18 +136,6 @@ export type ModeEvent =
   | { type: 'developer:commit-created'; message: string }
   | { type: 'developer:refactoring-performed'; refactoringType: string }
   
-  // Prototype events
-  | { type: 'prototype:prototype-created'; prototypeType: string }
-  | { type: 'prototype:experiment-run'; experimentType: string; success: boolean }
-  | { type: 'prototype:transition-to-production'; prototypeId: string }
-  
-  // Teacher events
-  | { type: 'teacher:concept-explained'; concept: string; timeSpent: number }
-  | { type: 'teacher:example-provided'; exampleType: string }
-  | { type: 'teacher:question-asked'; questionType: string }
-  | { type: 'teacher:analogy-used'; analogyType: string }
-  | { type: 'teacher:tutorial-suggested'; tutorialTopic: string }
-  
   // Tool events
   | { type: 'tool:tool-executed'; toolName: string; success: boolean; executionTime: number };
 
@@ -243,13 +146,8 @@ export interface SerializableMetrics {
   timeMetrics: Array<[ModeType, ModeTimeMetrics]>;
   transitionMetrics: Array<[string, ModeTransitionMetrics]>;
   debuggerMetrics: Omit<DebuggerModeMetrics, 'commonErrorTypes'> & { commonErrorTypes: Array<[string, number]> };
-  securityMetrics: Omit<SecurityModeMetrics, 'commonVulnerabilityTypes'> & { commonVulnerabilityTypes: Array<[string, number]> };
-  reviewerMetrics: ReviewerModeMetrics;
-  performanceMetrics: Omit<PerformanceModeMetrics, 'optimizationCategories'> & { optimizationCategories: Array<[string, number]> };
   planningMetrics: PlanningModeMetrics;
   developerMetrics: DeveloperModeMetrics;
-  prototypeMetrics: PrototypeModeMetrics;
-  teacherMetrics: TeacherModeMetrics;
   toolMetrics: Omit<ToolModeMetrics, 'mostUsedTools'> & { mostUsedTools: Array<[string, number]> };
   sessionStart: string;
   sessionDuration: number;
@@ -280,13 +178,8 @@ export class ModeMetricsTracker {
       timeMetrics: new Map(),
       transitionMetrics: new Map(),
       debuggerMetrics: this.initializeDebuggerMetrics(),
-      securityMetrics: this.initializeSecurityMetrics(),
-      reviewerMetrics: this.initializeReviewerMetrics(),
-      performanceMetrics: this.initializePerformanceMetrics(),
       planningMetrics: this.initializePlanningMetrics(),
       developerMetrics: this.initializeDeveloperMetrics(),
-      prototypeMetrics: this.initializePrototypeMetrics(),
-      teacherMetrics: this.initializeTeacherMetrics(),
       toolMetrics: this.initializeToolMetrics(),
       sessionStart: new Date(),
       sessionDuration: 0,
@@ -304,42 +197,6 @@ export class ModeMetricsTracker {
       successRate: 0,
       averageTimeToFix: 0,
       commonErrorTypes: new Map()
-    };
-  }
-  
-  private initializeSecurityMetrics(): SecurityModeMetrics {
-    return {
-      vulnerabilitiesFound: 0,
-      criticalVulnerabilities: 0,
-      highVulnerabilities: 0,
-      mediumVulnerabilities: 0,
-      lowVulnerabilities: 0,
-      fixesApplied: 0,
-      auditsPerformed: 0,
-      commonVulnerabilityTypes: new Map()
-    };
-  }
-  
-  private initializeReviewerMetrics(): ReviewerModeMetrics {
-    return {
-      reviewsPerformed: 0,
-      issuesFound: 0,
-      suggestionsGiven: 0,
-      positiveFeedback: 0,
-      filesReviewed: 0,
-      linesReviewed: 0,
-      averageReviewTime: 0
-    };
-  }
-  
-  private initializePerformanceMetrics(): PerformanceModeMetrics {
-    return {
-      bottlenecksFound: 0,
-      optimizationsApplied: 0,
-      benchmarksRun: 0,
-      averageImprovement: 0,
-      profilesGenerated: 0,
-      optimizationCategories: new Map()
     };
   }
   
@@ -364,28 +221,6 @@ export class ModeMetricsTracker {
       testsWritten: 0,
       commitsCreated: 0,
       refactoringsPerformed: 0
-    };
-  }
-  
-  private initializePrototypeMetrics(): PrototypeModeMetrics {
-    return {
-      prototypesCreated: 0,
-      experimentsRun: 0,
-      successfulPrototypes: 0,
-      failedPrototypes: 0,
-      averagePrototypeTime: 0,
-      transitionsToProduction: 0
-    };
-  }
-  
-  private initializeTeacherMetrics(): TeacherModeMetrics {
-    return {
-      conceptsExplained: 0,
-      examplesProvided: 0,
-      questionsAsked: 0,
-      analogiesUsed: 0,
-      tutorialsSuggested: 0,
-      averageExplanationTime: 0
     };
   }
   
@@ -540,84 +375,6 @@ export class ModeMetricsTracker {
         break;
       }
       
-      // Security events
-      case 'security:vulnerability-found':
-        this.metrics.securityMetrics.vulnerabilitiesFound++;
-        this.incrementMapCounter(this.metrics.securityMetrics.commonVulnerabilityTypes, event.vulnerabilityType);
-        
-        // Increment severity counters
-        switch (event.severity) {
-          case 'critical':
-            this.metrics.securityMetrics.criticalVulnerabilities++;
-            break;
-          case 'high':
-            this.metrics.securityMetrics.highVulnerabilities++;
-            break;
-          case 'medium':
-            this.metrics.securityMetrics.mediumVulnerabilities++;
-            break;
-          case 'low':
-            this.metrics.securityMetrics.lowVulnerabilities++;
-            break;
-        }
-        break;
-      
-      case 'security:fix-applied':
-        this.metrics.securityMetrics.fixesApplied++;
-        break;
-      
-      case 'security:audit-performed':
-        this.metrics.securityMetrics.auditsPerformed++;
-        break;
-      
-      // Reviewer events
-      case 'reviewer:review-performed': {
-        this.metrics.reviewerMetrics.reviewsPerformed++;
-        this.metrics.reviewerMetrics.filesReviewed += event.filesReviewed;
-        this.metrics.reviewerMetrics.linesReviewed += event.linesReviewed;
-        
-        // Update average review time
-        const totalReviewTime = this.metrics.reviewerMetrics.averageReviewTime * (this.metrics.reviewerMetrics.reviewsPerformed - 1);
-        this.metrics.reviewerMetrics.averageReviewTime = (totalReviewTime + event.timeSpent) / this.metrics.reviewerMetrics.reviewsPerformed;
-        break;
-      }
-      
-      case 'reviewer:issue-found':
-        this.metrics.reviewerMetrics.issuesFound++;
-        break;
-      
-      case 'reviewer:suggestion-given':
-        this.metrics.reviewerMetrics.suggestionsGiven++;
-        break;
-      
-      case 'reviewer:positive-feedback':
-        this.metrics.reviewerMetrics.positiveFeedback++;
-        break;
-      
-      // Performance events
-      case 'performance:bottleneck-found':
-        this.metrics.performanceMetrics.bottlenecksFound++;
-        this.incrementMapCounter(this.metrics.performanceMetrics.optimizationCategories, event.category);
-        break;
-      
-      case 'performance:optimization-applied': {
-        this.metrics.performanceMetrics.optimizationsApplied++;
-        this.incrementMapCounter(this.metrics.performanceMetrics.optimizationCategories, event.category);
-        
-        // Update average improvement
-        const totalImprovement = this.metrics.performanceMetrics.averageImprovement * (this.metrics.performanceMetrics.optimizationsApplied - 1);
-        this.metrics.performanceMetrics.averageImprovement = (totalImprovement + event.improvement) / this.metrics.performanceMetrics.optimizationsApplied;
-        break;
-      }
-      
-      case 'performance:benchmark-run':
-        this.metrics.performanceMetrics.benchmarksRun++;
-        break;
-      
-      case 'performance:profile-generated':
-        this.metrics.performanceMetrics.profilesGenerated++;
-        break;
-      
       // Planning events
       case 'planning:plan-created':
         this.metrics.planningMetrics.plansCreated++;
@@ -664,50 +421,6 @@ export class ModeMetricsTracker {
       
       case 'developer:refactoring-performed':
         this.metrics.developerMetrics.refactoringsPerformed++;
-        break;
-      
-      // Prototype events
-      case 'prototype:prototype-created':
-        this.metrics.prototypeMetrics.prototypesCreated++;
-        break;
-      
-      case 'prototype:experiment-run':
-        this.metrics.prototypeMetrics.experimentsRun++;
-        if (event.success) {
-          this.metrics.prototypeMetrics.successfulPrototypes++;
-        } else {
-          this.metrics.prototypeMetrics.failedPrototypes++;
-        }
-        break;
-      
-      case 'prototype:transition-to-production':
-        this.metrics.prototypeMetrics.transitionsToProduction++;
-        break;
-      
-      // Teacher events
-      case 'teacher:concept-explained': {
-        this.metrics.teacherMetrics.conceptsExplained++;
-        
-        // Update average explanation time
-        const totalExplanationTime = this.metrics.teacherMetrics.averageExplanationTime * (this.metrics.teacherMetrics.conceptsExplained - 1);
-        this.metrics.teacherMetrics.averageExplanationTime = (totalExplanationTime + event.timeSpent) / this.metrics.teacherMetrics.conceptsExplained;
-        break;
-      }
-      
-      case 'teacher:example-provided':
-        this.metrics.teacherMetrics.examplesProvided++;
-        break;
-      
-      case 'teacher:question-asked':
-        this.metrics.teacherMetrics.questionsAsked++;
-        break;
-      
-      case 'teacher:analogy-used':
-        this.metrics.teacherMetrics.analogiesUsed++;
-        break;
-      
-      case 'teacher:tutorial-suggested':
-        this.metrics.teacherMetrics.tutorialsSuggested++;
         break;
       
       // Tool events
@@ -847,19 +560,8 @@ export class ModeMetricsTracker {
         ...this.metrics.debuggerMetrics,
         commonErrorTypes: Array.from(this.metrics.debuggerMetrics.commonErrorTypes.entries())
       },
-      securityMetrics: {
-        ...this.metrics.securityMetrics,
-        commonVulnerabilityTypes: Array.from(this.metrics.securityMetrics.commonVulnerabilityTypes.entries())
-      },
-      reviewerMetrics: this.metrics.reviewerMetrics,
-      performanceMetrics: {
-        ...this.metrics.performanceMetrics,
-        optimizationCategories: Array.from(this.metrics.performanceMetrics.optimizationCategories.entries())
-      },
       planningMetrics: this.metrics.planningMetrics,
       developerMetrics: this.metrics.developerMetrics,
-      prototypeMetrics: this.metrics.prototypeMetrics,
-      teacherMetrics: this.metrics.teacherMetrics,
       toolMetrics: {
         ...this.metrics.toolMetrics,
         mostUsedTools: Array.from(this.metrics.toolMetrics.mostUsedTools.entries())
@@ -883,19 +585,8 @@ export class ModeMetricsTracker {
         ...serialized.debuggerMetrics,
         commonErrorTypes: new Map(serialized.debuggerMetrics.commonErrorTypes)
       },
-      securityMetrics: {
-        ...serialized.securityMetrics,
-        commonVulnerabilityTypes: new Map(serialized.securityMetrics.commonVulnerabilityTypes)
-      },
-      reviewerMetrics: serialized.reviewerMetrics,
-      performanceMetrics: {
-        ...serialized.performanceMetrics,
-        optimizationCategories: new Map(serialized.performanceMetrics.optimizationCategories)
-      },
       planningMetrics: serialized.planningMetrics,
       developerMetrics: serialized.developerMetrics,
-      prototypeMetrics: serialized.prototypeMetrics,
-      teacherMetrics: serialized.teacherMetrics,
       toolMetrics: {
         ...serialized.toolMetrics,
         mostUsedTools: new Map(serialized.toolMetrics.mostUsedTools)
@@ -1004,16 +695,6 @@ export class ModeMetricsTracker {
           testsWritten: metrics.developerMetrics.testsWritten,
           commitsCreated: metrics.developerMetrics.commitsCreated
         };
-      
-      case 'reviewer':
-        return {
-          reviewsPerformed: metrics.reviewerMetrics.reviewsPerformed,
-          issuesFound: metrics.reviewerMetrics.issuesFound,
-          suggestionsGiven: metrics.reviewerMetrics.suggestionsGiven,
-          filesReviewed: metrics.reviewerMetrics.filesReviewed,
-          linesReviewed: metrics.reviewerMetrics.linesReviewed,
-          averageReviewTime: `${(metrics.reviewerMetrics.averageReviewTime / 1000).toFixed(1)}s`
-        };
 
       default:
         return {};
@@ -1041,9 +722,6 @@ export class ModeMetricsTracker {
     totalTests: number;
     totalCommits: number;
     totalBugsFixed: number;
-    totalVulnerabilitiesFixed: number;
-    totalOptimizations: number;
-    totalReviews: number;
   } {
     const metrics = this.getMetrics();
     
@@ -1057,10 +735,7 @@ export class ModeMetricsTracker {
         metrics.developerMetrics.linesRemoved,
       totalTests: metrics.developerMetrics.testsWritten,
       totalCommits: metrics.developerMetrics.commitsCreated,
-      totalBugsFixed: metrics.debuggerMetrics.fixesApplied,
-      totalVulnerabilitiesFixed: metrics.securityMetrics.fixesApplied,
-      totalOptimizations: metrics.performanceMetrics.optimizationsApplied,
-      totalReviews: metrics.reviewerMetrics.reviewsPerformed
+      totalBugsFixed: metrics.debuggerMetrics.fixesApplied
     };
   }
   

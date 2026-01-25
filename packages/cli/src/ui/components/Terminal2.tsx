@@ -8,11 +8,11 @@ import React, { useMemo, useEffect } from 'react';
 import { Box, Text, useStdout, useInput } from 'ink';
 
 import { useFocusManager } from '../../features/context/FocusContext.js';
+import { useKeybinds } from '../../features/context/KeybindsContext.js';
 import { useUI } from '../../features/context/UIContext.js';
+import { useInputRouting } from '../contexts/InputRoutingContext.js';
 import { useWindow } from '../contexts/WindowContext.js';
 import { useTerminal2 } from '../hooks/useTerminal2.js';
-import { useInputRouting } from '../contexts/InputRoutingContext.js';
-import { useKeybinds } from '../../features/context/KeybindsContext.js';
 import { isKey } from '../utils/keyUtils.js';
 
 import type { AnsiLine, AnsiToken } from '../../utils/terminalSerializer.js';

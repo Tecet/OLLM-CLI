@@ -16,13 +16,7 @@ export type ModeType =
   | 'assistant'
   | 'planning'
   | 'developer'
-  | 'debugger'
-  | 'reviewer'
-  | 'tool'
-  | 'security'
-  | 'performance'
-  | 'prototype'
-  | 'teacher';
+  | 'debugger';
 
 /**
  * Result of context analysis
@@ -91,36 +85,13 @@ const MODE_KEYWORDS: Record<ModeType, string[]> = {
     'code', 'implement', 'feature', 'build', 'create', 'write', 'refactor',
     'add', 'new', 'function', 'class', 'component', 'script', 'logic',
     'setup', 'config', 'install', 'update', 'modify', 'change',
-    'prototype', 'experiment', 'quick test', 'proof of concept', 'spike',
-    'throwaway', 'poc', 'rapid', 'quick and dirty',
-    'run', 'execute', 'call tool', 'use tool', 'list tools', 'get help with tools',
-    'how to use', 'tool syntax', 'what tools', 'automated', 'scripted'
+    'run', 'execute', 'automated', 'scripted'
   ],
   debugger: [
     'debug', 'fix', 'bug', 'error', 'exception', 'stack trace', 'failing',
     'broken', 'not working', 'investigate', 'diagnose', 'root cause', 'crash',
-    'logs', 'output', 'console', 'terminal', 'test failure', 'issue',
-    'performance', 'slow', 'latency', 'high cpu', 'memory leak', 'optimize',
-    'profiling', 'benchmark', 'efficient', 'bottleneck'
-  ],
-  reviewer: [
-    'review', 'audit', 'best practices', 'improve', 'quality', 'style',
-    'readability', 'structure', 'conventions', 'feedback', 'linter', 'prettier',
-    'consistency', 'refactor suggestion', 'logic check', 'complexity',
-    'security', 'vulnerability', 'secure', 'exploit', 'injection', 'auth',
-    'encryption', 'mitigate', 'sanitize', 'hardened', 'risk'
-  ],
-  tool: [
-    'tool', 'run tool', 'call tool', 'use tool', 'tool call', 'execute tool'
-  ],
-  security: [
-    'security', 'vulnerability', 'xss', 'csrf', 'sql injection', 'authentication', 'authorization'
-  ],
-  performance: [
-    'performance', 'latency', 'slow', 'optimize', 'benchmark', 'high cpu', 'memory'
-  ],
-  prototype: ['prototype', 'poc', 'proof of concept', 'spike'],
-  teacher: ['teach', 'explain', 'tutorial', 'walk me through']
+    'logs', 'output', 'console', 'terminal', 'test failure', 'issue'
+  ]
 };
 
 /**
@@ -172,13 +143,7 @@ export class ContextAnalyzer {
       assistant: this.calculateModeConfidence(recentMessages, 'assistant'),
       planning: this.calculateModeConfidence(recentMessages, 'planning'),
       developer: this.calculateModeConfidence(recentMessages, 'developer'),
-      debugger: this.calculateModeConfidence(recentMessages, 'debugger'),
-      reviewer: this.calculateModeConfidence(recentMessages, 'reviewer'),
-      tool: this.calculateModeConfidence(recentMessages, 'tool'),
-      security: this.calculateModeConfidence(recentMessages, 'security'),
-      performance: this.calculateModeConfidence(recentMessages, 'performance'),
-      prototype: this.calculateModeConfidence(recentMessages, 'prototype'),
-      teacher: this.calculateModeConfidence(recentMessages, 'teacher')
+      debugger: this.calculateModeConfidence(recentMessages, 'debugger')
     };
 
     // Detect keywords and metadata
@@ -199,17 +164,6 @@ export class ContextAnalyzer {
     const detections = this.detectKeywords(allText);
     if (detections.some(d => d.mode === 'developer')) {
       modeConfidences.developer += 0.25;
-    }
-
-    // If security patterns present, boost both security and reviewer (reviewer wins)
-    if (this.detectSecurityKeywords(allText)) {
-      modeConfidences.security += 0.15;
-      modeConfidences.reviewer += 0.35;
-    }
-
-    // Boost tool if recent assistant toolCalls present
-    if (this.detectToolUsage(messages) === 'tool') {
-      modeConfidences.tool += 0.3;
     }
 
     // Ensure confidences don't exceed 1.0 after adjustments
@@ -243,18 +197,12 @@ export class ContextAnalyzer {
       switch (mode) {
         case 'debugger':
           return metadata.errorMessagesPresent ? 'error analysis recommended' : 'root cause investigation';
-        case 'reviewer':
-          return 'Code quality assessment';
         case 'planning':
           return 'Plan/architecture suggested';
         case 'developer':
           return metadata.toolsUsed.length > 0 ? 'tool usage detected' : 'implementation ready';
         case 'assistant':
           return 'General assistance';
-        case 'security':
-          return metadata.toolsUsed.length > 0 ? 'security review suggested' : 'security/vulnerability analysis';
-        case 'tool':
-          return 'tool mode: external tool calls detected';
         default:
           return 'Suggested context switch';
       }
@@ -347,27 +295,6 @@ export class ContextAnalyzer {
     return detections;
   }
   
-  /**
-   * Check if tool usage indicates mode switch
-   * 
-   * @param messages - Messages to analyze
-   * @returns Recommended mode based on tool usage, or null
-   */
-  detectToolUsage(messages: Message[]): ModeType | null {
-    const recentMessages = messages.slice(-3);
-    
-    // Check for tool calls in recent messages
-    const hasToolCalls = recentMessages.some(m =>
-      m.role === 'assistant' && m.toolCalls && m.toolCalls.length > 0
-    );
-    
-    if (hasToolCalls) {
-      return 'tool';
-    }
-    
-    return null;
-  }
-  
   private analyzeMetadataForResponse(messages: Message[]): ContextAnalysis['metadata'] {
     const allText = messages
       .map(m => m.parts.filter(p => p.type === 'text').map(p => (p as { type: 'text'; text: string }).text).join(' '))
@@ -446,23 +373,10 @@ export class ContextAnalyzer {
   
   /**
    * Detect security-related keywords in text
-   * 
-   * @param text - Text to analyze
-   * @returns True if security keywords detected
+   *
+   * Deprecated: security mode removed, kept for potential future use.
    */
-  private detectSecurityKeywords(text: string): boolean {
-    const securityPatterns = [
-      /SQL injection/i,
-      /XSS/i,
-      /CSRF/i,
-      /CVE-\d{4}-\d{4,}/i,
-      /OWASP/i,
-      /authentication/i,
-      /authorization/i,
-      /vulnerability/i,
-      /exploit/i
-    ];
-    
-    return securityPatterns.some(pattern => pattern.test(text));
+  private detectSecurityKeywords(_text: string): boolean {
+    return false;
   }
 }

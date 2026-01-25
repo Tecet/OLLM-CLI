@@ -150,9 +150,11 @@ export function BugReportTab({ width }: BugReportTabProps) {
           </Box>
           
           {/* Before You Report */}
-          <Text bold color={uiState.theme.text.primary} marginBottom={1}>
-            📝 Before You Report:
-          </Text>
+          <Box marginBottom={1}>
+            <Text bold color={uiState.theme.text.primary}>
+              📝 Before You Report:
+            </Text>
+          </Box>
           
           <Text color={uiState.theme.text.secondary}>
               ✓ Check if the issue still happens after restarting OLLM CLI
@@ -160,14 +162,18 @@ export function BugReportTab({ width }: BugReportTabProps) {
           <Text color={uiState.theme.text.secondary}>
               ✓ Make sure you're running the latest version (v0.1.0)
           </Text>
-          <Text color={uiState.theme.text.secondary} marginBottom={2}>
+          <Box marginBottom={2}>
+            <Text color={uiState.theme.text.secondary}>
               ✓ Try to reproduce the issue to confirm it's consistent
-          </Text>
+            </Text>
+          </Box>
           
           {/* What Makes a Great Bug Report */}
-          <Text bold color={uiState.theme.text.primary} marginBottom={1}>
-            📋 What Makes a Great Bug Report:
-          </Text>
+          <Box marginBottom={1}>
+            <Text bold color={uiState.theme.text.primary}>
+              📋 What Makes a Great Bug Report:
+            </Text>
+          </Box>
           
           <Text color={uiState.theme.text.secondary}>
               • Clear description of what went wrong
@@ -181,14 +187,18 @@ export function BugReportTab({ width }: BugReportTabProps) {
           <Text color={uiState.theme.text.secondary}>
               • Your OS and OLLM CLI version
           </Text>
-          <Text color={uiState.theme.text.secondary} marginBottom={2}>
+          <Box marginBottom={2}>
+            <Text color={uiState.theme.text.secondary}>
               • Screenshots or error messages (if applicable)
-          </Text>
+            </Text>
+          </Box>
           
           {/* Choose Your Platform */}
-          <Text bold color={uiState.theme.text.primary} marginBottom={1}>
-            🚀 Choose Your Platform:
-          </Text>
+          <Box marginBottom={1}>
+            <Text bold color={uiState.theme.text.primary}>
+              🚀 Choose Your Platform:
+            </Text>
+          </Box>
           
           <Box justifyContent="center" marginBottom={1}>
             <Text color={uiState.theme.text.secondary}>
@@ -235,8 +245,6 @@ export function BugReportTab({ width }: BugReportTabProps) {
       {showConfirmation && (
         <Box
           position="absolute"
-          top={0}
-          left={0}
           width="100%"
           height="100%"
           justifyContent="center"

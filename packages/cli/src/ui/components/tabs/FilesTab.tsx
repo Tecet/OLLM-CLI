@@ -70,19 +70,21 @@ export function FilesTab({
     if (!hasFocus || !treeState.root) return;
 
     const ensureRootOpen = async () => {
+      const root = treeState.root;
+      if (!root) return;
       try {
         // Mark root as expanded in context (instant)
-        expandDirectory(treeState.root.path);
+        expandDirectory(root.path);
 
         // Load children (lazy-load) so visible nodes are populated
-        await fileTreeService.expandDirectory(treeState.root, ['node_modules', '.git', 'dist', 'coverage']);
+        await fileTreeService.expandDirectory(root, ['node_modules', '.git', 'dist', 'coverage']);
 
         // Reset scroll and position to show top of tree
         setScrollOffset(0);
 
         // If root has children, select the first child (index 1 in flattened list),
         // otherwise select root (index 0)
-        const firstIndex = (treeState.root.children && treeState.root.children.length > 0) ? 1 : 0;
+        const firstIndex = (root.children && root.children.length > 0) ? 1 : 0;
         setCursorPosition(firstIndex);
       } catch (err) {
         // Fail silently but log for debugging

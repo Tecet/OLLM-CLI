@@ -12,8 +12,6 @@ import { ModeMetricsTracker } from './ModeMetricsTracker.js';
 import { ModeTransitionAnimator } from './ModeTransitionAnimator.js';
 
 import type { ContextAnalyzer, ContextAnalysis, ModeType } from './ContextAnalyzer.js';
-import type { PromptRegistry } from './PromptRegistry.js';
-import type { SystemPromptBuilder } from '../context/SystemPromptBuilder.js';
 import type { ModelCapabilities } from '../services/modelManagementService.js';
 
 /**
@@ -104,8 +102,6 @@ export class PromptModeManager extends EventEmitter {
   private readonly cooldownPeriod = 10000;  // 10 seconds
   
   constructor(
-    private promptBuilder: SystemPromptBuilder,
-    private promptRegistry: PromptRegistry,
     private contextAnalyzer: ContextAnalyzer,
     config: { enableMetrics?: boolean } = {}
   ) {
@@ -472,52 +468,11 @@ export class PromptModeManager extends EventEmitter {
   
   /**
    * Build prompt for current mode
+   *
+   * Deprecated: system prompts are handled by ContextManager and tiered prompt files.
    */
-  buildPrompt(options: PromptBuildOptions): string {
-    const { mode, skills = [], tools, workspace, additionalInstructions } = options;
-    
-    // Build sections
-    const sections: string[] = [];
-    
-    // 1. Core system prompt (identity + mandates) using SystemPromptBuilder
-    const corePrompt = this.promptBuilder.build({
-      interactive: true,
-      useSanityChecks: false,
-      skills: skills,
-      additionalInstructions: undefined // We'll add this separately after mode template
-    });
-    sections.push(corePrompt);
-    
-    // 2. Reasoning / model-capability-aware section
-    const modelCaps = options.modelCapabilities;
-    if (modelCaps?.reasoning) {
-      sections.push('# Reasoning Mode\n[REASONING MODE] You may include internal reasoning traces enclosed in <think>...</think>. Preserve these traces in snapshots under a separate reasoning_traces section so they can be reviewed or reloaded. When possible, emit concise analysis and then a final answer.');
-    }
-
-    // 3. Mode-specific template
-    const modeTemplate = this.getModeTemplate(mode);
-    sections.push(modeTemplate);
-    
-    // 3. Workspace context
-    if (workspace) {
-      sections.push(`# Workspace Context\nPath: ${workspace.path}`);
-      if (workspace.files && workspace.files.length > 0) {
-        sections.push(`Files: ${workspace.files.length} files in workspace`);
-      }
-    }
-    
-    // 4. Available tools
-    const allowedTools = this.filterToolsForMode(tools, mode);
-    if (allowedTools.length > 0) {
-      sections.push(`# Available Tools\n${allowedTools.map(t => `- ${t.name}`).join('\n')}`);
-    }
-    
-    // 5. Additional instructions
-    if (additionalInstructions) {
-      sections.push('# Additional Instructions\n' + additionalInstructions);
-    }
-    
-    return sections.join('\n\n');
+  buildPrompt(_options: PromptBuildOptions): string {
+    return '';
   }
   
   /**
@@ -525,19 +480,16 @@ export class PromptModeManager extends EventEmitter {
    */
   getAllowedTools(mode: ModeType): string[] {
     const toolAccess: Record<ModeType, string[]> = {
-      assistant: [], // No tools allowed by default in Assistant mode for maximum safety
-      
+      assistant: [],
       planning: [
         'web_search', 'web_fetch',
         'read_file', 'read_multiple_files',
         'grep_search', 'file_search', 'list_directory',
         'get_diagnostics', 'write_memory_dump',
         'trigger_hot_swap',
-        'mcp:*' // Allow all MCP tools (namespaced)
+        'mcp:*'
       ],
-      
       developer: ['*'],
-      
       debugger: [
         'read_file', 'grep_search', 'list_directory',
         'get_diagnostics', 'shell',
@@ -546,40 +498,7 @@ export class PromptModeManager extends EventEmitter {
         'write_file', 'str_replace',
         'write_memory_dump',
         'trigger_hot_swap',
-        'mcp:*' // Allow all MCP tools
-      ],
-      
-      reviewer: [
-        'read_file', 'grep_search', 'list_directory',
-        'get_diagnostics', 'shell',
-        'git_diff', 'git_log',
-        'trigger_hot_swap',
-        'web_search',
-        'mcp:*' // Allow all MCP tools
-      ],
-
-      tool: ['*'],
-
-      security: [
-        'read_file', 'grep_search', 'list_directory',
-        'get_diagnostics', 'shell',
-        'git_diff', 'git_log',
-        'web_search',
         'mcp:*'
-      ],
-
-      performance: [
-        'read_file', 'grep_search', 'list_directory',
-        'get_diagnostics', 'shell',
-        'web_search',
-        'mcp:*'
-      ],
-
-      prototype: ['*'],
-
-      teacher: [
-        'read_file', 'list_directory',
-        'web_search'
       ]
     };
     
@@ -625,100 +544,11 @@ export class PromptModeManager extends EventEmitter {
   }
 
   /**
-   * Get mode template content
-   */
-  public getModeTemplate(mode: ModeType): string {
-    const templates: Record<ModeType, string> = {
-      assistant: `# Mode: Assistant 💬
-You are OLLM, an intelligent and versatile AI assistant.
-- Your primary goal is to be helpful, harmless, and honest.
-- You can answer questions, explain concepts, and assist with general tasks.
-- If provided with tools, use them to verify information or perform tasks.
-- Adapt your tone to be professional yet conversational.`,
-      
-      planning: `# Mode: Planning 📋
-You are a Senior Technical Architect and Planner.
-- Your focus is strictly on **Analysis**, **Design**, and **Planning**.
-- **DO NOT** write implementation code or modify files.
-- **DO** use available tools to explore the codebase, read documentation, and understand requirements.
-- Produce detailed, step-by-step implementation plans in Markdown.
-- Anticipate edge cases, dependency issues, and architectural implications.`,
-      
-      developer: `# Mode: Developer 👨‍💻
-You are a Senior Software Engineer.
-- Your focus is on **Implementation**, **Refactoring**, and **Code Modification**.
-- Write clean, maintainable, and efficient code following project patterns.
-- Always read the relevant file before editing it to understand context.
-- When creating new files, ensure directory structures exist.
-- Verify your changes when possible.`,
-      
-      debugger: `# Mode: Debugger 🐛
-You are a Lead Debugging Specialist.
-- Your focus is on **Root Cause Analysis** and **Bug Fixing**.
-- Systematically diagnose issues:
-  1. Analyze error messages and logs.
-  2. Inspect the immediate code and related dependencies.
-  3. Formulate a hypothesis.
-  4. Verify the hypothesis (using reproduction steps if available).
-  5. Implement a fix.
-- Avoid guessing; use tools to gather evidence.`,
-      
-      reviewer: `# Mode: Code Reviewer 👀
-You are a Senior Code Reviewer and QA Specialist.
-- Your focus is on **Code Quality**, **Safety**, and **Best Practices**.
-- Read and analyze code for:
-  - Logic errors and bugs.
-  - Security vulnerabilities.
-  - Performance bottlenecks.
-  - Code style and maintainability.
-- Provide constructive, specific feedback.
-- Do not modify code directly; provide suggestions or specific diffs in your response.`,
-
-      tool: `# Mode: Tool Expert 🔧
-You are a Tool Expert, specialized in using CLI tools and executing commands.
-- Focus on correct syntax and usage of tools.
-- Automate tasks via scripts when appropriate.
-- Understand and interpret tool outputs accurately.
-- Chain commands effectively to achieve complex results.`,
-
-      security: `# Mode: Security Specialist 🔒
-You are a Security Specialist, focused on identifying and mitigating vulnerabilities.
-- Identify security risks (OWASP Top 10, etc.).
-- Follow and recommend secure coding practices.
-- Perform vulnerability assessments.
-- Propose effective risk mitigation strategies.`,
-
-      performance: `# Mode: Performance Engineer ⚡
-You are a Performance Engineer, dedicated to optimizing system efficiency.
-- Focus on latency reduction and resource usage optimization.
-- Profile and benchmark code to identify bottlenecks.
-- Recommend scalability and throughput improvements.
-- Ensure efficient use of CPU, memory, and I/O.`,
-
-      prototype: `# Mode: Rapid Prototyper 🔬
-You are a Rapid Prototyper, focused on quick iteration and proof-of-concepts.
-- Prioritize speed of implementation over absolute polish.
-- Focus on core functionality to demonstrate ideas.
-- Experiment freely and learn from quick failures.
-- Build "spike" solutions to test technical feasibility.`,
-
-      teacher: `# Mode: Technical Educator 👨‍🏫
-You are a Technical Educator, skilled in explaining complex concepts.
-- Provide clear, accessible explanations.
-- Offer step-by-step guidance through complex tasks.
-- Use analogies and examples to aid understanding.
-- Verify understanding by asking clarifying questions.`
-    };
-    
-    return templates[mode] || templates.assistant;
-  }
-
-  /**
    * Get preferred temperature for a mode based on tiered architecture
    */
   getPreferredTemperature(mode: ModeType): number {
     const technicalModes: ModeType[] = ['developer', 'debugger'];
-    const standardModes: ModeType[] = ['planning', 'reviewer'];
+    const standardModes: ModeType[] = ['planning'];
     const creativeModes: ModeType[] = ['assistant'];
 
     if (technicalModes.includes(mode)) return 0.1;
@@ -743,19 +573,7 @@ You are a Technical Educator, skilled in explaining complex concepts.
       
       developer: [],
       
-      debugger: ['delete_file', 'git_commit'],
-      
-      reviewer: ['write_file', 'str_replace', 'delete_file', 'git_*'],
-
-      tool: [],
-
-      security: ['delete_file', 'git_commit', 'git_push'],
-
-      performance: ['write_file', 'delete_file', 'git_*'],
-
-      prototype: [],
-
-      teacher: ['write_file', 'str_replace', 'delete_file', 'shell', 'git_*']
+      debugger: ['delete_file', 'git_commit']
     };
     
     return deniedTools[mode] || [];

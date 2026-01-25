@@ -9,6 +9,7 @@
  * - Clean shutdown of services
  */
 
+import { ChatRecordingService } from './chatRecordingService.js';
 import { ComparisonService } from './comparisonService.js';
 import { HookService } from './hookService.js';
 import { MemoryService } from './memoryService.js';
@@ -137,6 +138,7 @@ export class ServiceContainer {
   private _memoryService?: MemoryService;
   private _templateService?: TemplateService;
   private _comparisonService?: ComparisonService;
+  private _chatRecordingService?: ChatRecordingService;
   private _projectProfileService?: ProjectProfileService;
   private _hookService?: HookService;
   private _extensionManager?: ExtensionManager;
@@ -252,6 +254,20 @@ export class ServiceContainer {
       this._comparisonService = new ComparisonService(this.provider);
     }
     return this._comparisonService;
+  }
+
+  /**
+   * Get the Chat Recording Service
+   */
+  getChatRecordingService(): ChatRecordingService {
+    if (!this._chatRecordingService) {
+      this._chatRecordingService = new ChatRecordingService({
+        dataDir: `${this.userHome}/.ollm/sessions`,
+        autoSave: true,
+        maxSessions: 100
+      });
+    }
+    return this._chatRecordingService;
   }
   
   /**

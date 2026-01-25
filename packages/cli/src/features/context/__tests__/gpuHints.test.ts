@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import type { GPUInfo } from '@ollm/core';
+
 import { deriveGPUPlacementHints } from '../gpuHints.js';
+
+import type { GPUInfo } from '@ollm/core';
 
 const GB = 1024 ** 3;
 

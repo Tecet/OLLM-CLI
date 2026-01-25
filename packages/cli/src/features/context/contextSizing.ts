@@ -33,13 +33,18 @@ export function clampContextSize(requested: number, entry: UserModelEntry): numb
   return Math.min(requested, getMaxContextWindow(entry));
 }
 
-export function calculateContextSizing(requested: number, entry: UserModelEntry): ContextSizingResult {
+export function calculateContextSizing(
+  requested: number,
+  entry: UserModelEntry,
+  contextCapRatio: number = 0.85
+): ContextSizingResult {
   const max = getMaxContextWindow(entry);
   const allowed = Math.max(1, Math.min(requested, max));
   const sortedProfiles = sortProfiles(entry.context_profiles ?? []);
   const matchingProfile = sortedProfiles.find(profile => profile.size === allowed);
   const fallbackProfile = matchingProfile ?? (sortedProfiles.length > 0 ? sortedProfiles[sortedProfiles.length - 1] : undefined);
-  const ollamaContextSize = fallbackProfile?.ollama_context_size ?? Math.max(1, Math.floor(allowed * 0.85));
+  const safeRatio = Number.isFinite(contextCapRatio) ? Math.min(1, Math.max(0.01, contextCapRatio)) : 0.85;
+  const ollamaContextSize = fallbackProfile?.ollama_context_size ?? Math.max(1, Math.floor(allowed * safeRatio));
   const ratio = Math.min(1, Math.max(0.01, ollamaContextSize / allowed));
 
   return {

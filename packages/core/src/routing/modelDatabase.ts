@@ -4,8 +4,8 @@
 
 // Export singleton instance
 import { existsSync, readFileSync } from 'fs';
-import { join } from 'path';
 import { homedir, tmpdir } from 'os';
+import { join } from 'path';
 
 // @ts-expect-error - picomatch doesn't have type definitions
 import picomatch from 'picomatch';
@@ -45,14 +45,14 @@ const DEFAULT_MODEL_ENTRY: Omit<ModelEntry, 'pattern' | 'family'> = {
  * The single-source-of-truth is `packages/cli/src/config/LLM_profiles.json`.
  */
 const MODEL_DATABASE: ModelEntry[] = [];
-const LLM_MODELS_FILENAME = 'LLM_models.json';
+const USER_MODELS_FILENAME = 'user_models.json';
 const VITEST_OLLM_PREFIX = 'ollm-vitest';
 
-interface LLMModelsStore {
-  models?: Array<Record<string, unknown>>;
+interface UserModelsStore {
   user_models?: Array<Record<string, unknown>>;
 }
 
+let RAW_PROFILES: Record<string, any> | null = null;
 export class ModelDatabase {
   private entries: ModelEntry[];
   private matchers: Map<string, ReturnType<typeof picomatch>>;
@@ -218,11 +218,11 @@ function tryLoadRawProfiles(): Record<string, any> | null {
   } catch (_e) { void _e; return null; }
 }
 
-function getRuntimeLLMModelsPath(): string {
+function getRuntimeUserModelsPath(): string {
   const base = process.env.VITEST
     ? join(tmpdir(), `${VITEST_OLLM_PREFIX}-${process.pid}`)
     : homedir();
-  return join(base, '.ollm', LLM_MODELS_FILENAME);
+  return join(base, '.ollm', USER_MODELS_FILENAME);
 }
 
 function buildModelEntryFromProfile(profile: Record<string, any>): ModelEntry {
@@ -265,16 +265,16 @@ function buildModelEntryFromProfile(profile: Record<string, any>): ModelEntry {
 
 function tryLoadRuntimeLLMModels(): { entries: ModelEntry[]; raw: Record<string, any> } | null {
   try {
-    const path = getRuntimeLLMModelsPath();
+    const path = getRuntimeUserModelsPath();
     if (!existsSync(path)) return null;
     const content = readFileSync(path, 'utf-8');
-    const parsed = JSON.parse(content) as LLMModelsStore;
-    if (!Array.isArray(parsed.models) || parsed.models.length === 0) return null;
+    const parsed = JSON.parse(content) as UserModelsStore;
+    if (!Array.isArray(parsed.user_models) || parsed.user_models.length === 0) return null;
 
     const entries: ModelEntry[] = [];
     const rawMap: Record<string, any> = {};
 
-    for (const model of parsed.models) {
+    for (const model of parsed.user_models) {
       const entry = buildModelEntryFromProfile(model);
       entries.push(entry);
       const key = String(model.id || model.name || entry.pattern || 'unknown');
@@ -288,10 +288,6 @@ function tryLoadRuntimeLLMModels(): { entries: ModelEntry[]; raw: Record<string,
 }
 
 // Prefer a generated TypeScript DB if present (faster startup, no runtime JSON parsing)
-const runtimeStore = tryLoadRuntimeLLMModels();
-const runtimeEntries = runtimeStore?.entries ?? null;
-const runtimeRawProfiles = runtimeStore?.raw ?? null;
-
 let GENERATED_ENTRIES: ModelEntry[] | null = null;
 let GENERATED_RAW_PROFILES: Record<string, any> | null = null;
 try {
@@ -317,11 +313,22 @@ try {
   }
 } catch (_e) { void _e; }
 
-const FALLBACK_ENTRIES = runtimeEntries ?? GENERATED_ENTRIES ?? tryLoadProfilesFromCli() ?? MODEL_DATABASE;
-const RAW_PROFILES = runtimeRawProfiles ?? GENERATED_RAW_PROFILES ?? tryLoadRawProfiles();
+function resolveModelStore(): { entries: ModelEntry[]; rawProfiles: Record<string, any> | null } {
+  const runtimeStore = tryLoadRuntimeLLMModels();
+  const entries = runtimeStore?.entries ?? GENERATED_ENTRIES ?? tryLoadProfilesFromCli() ?? MODEL_DATABASE;
+  const rawProfiles = runtimeStore?.raw ?? GENERATED_RAW_PROFILES ?? tryLoadRawProfiles();
+  return { entries, rawProfiles: rawProfiles ?? null };
+}
 
-// Export a ModelDatabase that prefers runtime overrides, then generated profiles, otherwise fallback data
-export const modelDatabase = new ModelDatabase(FALLBACK_ENTRIES);
-
-// Attach raw profiles map for external inspection (if needed)
+const initialStore = resolveModelStore();
+RAW_PROFILES = initialStore.rawProfiles;
+export let modelDatabase = new ModelDatabase(initialStore.entries);
 (modelDatabase as any)._rawProfiles = RAW_PROFILES ?? {};
+
+export function refreshModelDatabase(): void {
+  const nextStore = resolveModelStore();
+  RAW_PROFILES = nextStore.rawProfiles;
+  const refreshed = new ModelDatabase(nextStore.entries);
+  (refreshed as any)._rawProfiles = RAW_PROFILES ?? {};
+  modelDatabase = refreshed;
+}

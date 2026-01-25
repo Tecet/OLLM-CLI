@@ -91,7 +91,7 @@ export const PREDEFINED_WORKFLOWS: Record<string, WorkflowDefinition> = {
   feature_development: {
     id: 'feature_development',
     name: 'Feature Development',
-    description: 'Complete workflow for developing a new feature from planning to review',
+    description: 'Complete workflow for developing a new feature from planning to implementation',
     tags: ['development', 'feature'],
     steps: [
       {
@@ -107,16 +107,10 @@ export const PREDEFINED_WORKFLOWS: Record<string, WorkflowDefinition> = {
         instructions: 'Write code following the plan and existing patterns'
       },
       {
-        id: 'review',
-        mode: 'reviewer',
-        description: 'Review the implementation',
-        instructions: 'Check code quality, test coverage, and best practices'
-      },
-      {
-        id: 'refine',
+        id: 'verify',
         mode: 'developer',
-        description: 'Address review feedback',
-        instructions: 'Fix issues identified in review and improve code quality'
+        description: 'Verify the implementation',
+        instructions: 'Validate behavior, tests, and edge cases'
       }
     ]
   },
@@ -138,95 +132,6 @@ export const PREDEFINED_WORKFLOWS: Record<string, WorkflowDefinition> = {
         mode: 'developer',
         description: 'Implement the fix',
         instructions: 'Apply the fix and add tests to prevent regression'
-      },
-      {
-        id: 'verify',
-        mode: 'reviewer',
-        description: 'Verify the fix',
-        instructions: 'Ensure the fix resolves the issue without side effects',
-        optional: true
-      }
-    ]
-  },
-  
-  security_hardening: {
-    id: 'security_hardening',
-    name: 'Security Hardening',
-    description: 'Workflow for identifying and fixing security vulnerabilities',
-    tags: ['security', 'audit'],
-    steps: [
-      {
-        id: 'audit',
-        mode: 'security',
-        description: 'Perform security audit',
-        instructions: 'Scan for vulnerabilities and identify security issues'
-      },
-      {
-        id: 'fix',
-        mode: 'developer',
-        description: 'Fix security issues',
-        instructions: 'Implement security fixes and apply best practices'
-      },
-      {
-        id: 'verify',
-        mode: 'security',
-        description: 'Verify security improvements',
-        instructions: 'Re-audit to confirm vulnerabilities are resolved'
-      }
-    ]
-  },
-  
-  performance_optimization: {
-    id: 'performance_optimization',
-    name: 'Performance Optimization',
-    description: 'Workflow for analyzing and improving performance',
-    tags: ['performance', 'optimization'],
-    steps: [
-      {
-        id: 'analyze',
-        mode: 'performance',
-        description: 'Analyze performance bottlenecks',
-        instructions: 'Profile code, identify slow operations, and measure metrics'
-      },
-      {
-        id: 'optimize',
-        mode: 'developer',
-        description: 'Implement optimizations',
-        instructions: 'Apply performance improvements and refactor inefficient code'
-      },
-      {
-        id: 'measure',
-        mode: 'performance',
-        description: 'Measure improvements',
-        instructions: 'Benchmark optimizations and verify performance gains'
-      }
-    ]
-  },
-  
-  learning_session: {
-    id: 'learning_session',
-    name: 'Learning Session',
-    description: 'Workflow for learning a concept and applying it',
-    tags: ['learning', 'education'],
-    steps: [
-      {
-        id: 'learn',
-        mode: 'teacher',
-        description: 'Learn the concept',
-        instructions: 'Understand the fundamentals and best practices'
-      },
-      {
-        id: 'experiment',
-        mode: 'prototype',
-        description: 'Experiment with the concept',
-        instructions: 'Build a quick prototype to validate understanding',
-        optional: true
-      },
-      {
-        id: 'implement',
-        mode: 'developer',
-        description: 'Implement production code',
-        instructions: 'Apply the concept in production-quality code'
       }
     ]
   }

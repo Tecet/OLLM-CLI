@@ -143,9 +143,6 @@ export interface ContextManagerActions {
 
   /** Get the current system prompt string */
   getSystemPrompt: () => string;
-  
-  /** Set the system prompt */
-  setSystemPrompt: (prompt: string) => void;
 
   /** Register event listener */
   on: (event: string, callback: (data: unknown) => void) => void;
@@ -175,14 +172,8 @@ export interface ContextManagerActions {
   
   /** Get the WorkflowManager instance */
   getWorkflowManager: () => WorkflowManager | null;
-  
-  /** Get the HybridModeManager instance */
-  getHybridModeManager: () => import('@ollm/core').HybridModeManager | null;
   /** Get the PromptsSnapshotManager instance */
   getPromptsSnapshotManager: () => PromptsSnapshotManager | null;
-  
-  /** Switch to a hybrid mode */
-  switchToHybridMode: (hybridMode: import('@ollm/core').HybridMode) => void;
   
   /** Switch to a specific mode */
   switchMode: (mode: ModeType) => void;
@@ -305,9 +296,6 @@ export function ContextManagerProvider({
   // Workflow manager reference
   const workflowManagerRef = useRef<WorkflowManager | null>(null);
   
-  // Hybrid mode manager reference
-  const hybridModeManagerRef = useRef<import('@ollm/core').HybridModeManager | null>(null);
-  
   // Prompts Snapshot manager reference
   const promptsSnapshotManagerRef = useRef<PromptsSnapshotManager | null>(null);
   
@@ -323,26 +311,8 @@ export function ContextManagerProvider({
         managerRef.current = manager;
         
         // Create PromptModeManager
-        // Note: SystemPromptBuilder is created internally by ContextManager
-        // We need to get the PromptRegistry and create the mode manager
-        const promptRegistry = new PromptRegistry();
         const contextAnalyzer = new ContextAnalyzer();
-        
-        // For now, we'll create a simple SystemPromptBuilder wrapper
-        // In a full implementation, this would be passed from ContextManager
-        const systemPromptBuilder = {
-          build: (_config: unknown) => {
-            // This is a simplified version - the real implementation
-            // would use the actual SystemPromptBuilder from ContextManager
-            return manager.getSystemPrompt();
-          }
-        };
-        
-        const modeManager = new PromptModeManager(
-          systemPromptBuilder as any,
-          promptRegistry,
-          contextAnalyzer
-        );
+        const modeManager = new PromptModeManager(contextAnalyzer);
         
         modeManagerRef.current = modeManager;
         
@@ -373,11 +343,6 @@ export function ContextManagerProvider({
         const workflowManager = new WorkflowManager(modeManager);
         workflowManagerRef.current = workflowManager;
         
-        // Create HybridModeManager
-        const { HybridModeManager } = await import('@ollm/core');
-        const hybridModeManager = new HybridModeManager();
-        hybridModeManagerRef.current = hybridModeManager;
-        
         // Create PromptsSnapshotManager (for mode transitions and HotSwapTool)
         const promptsSnapshotManager = new PromptsSnapshotManager({
           sessionId,
@@ -396,18 +361,8 @@ export function ContextManagerProvider({
           // Persist mode changes to settings (for both auto and manual)
           SettingsService.getInstance().setMode(transition.to);
           
-          // Rebuild system prompt with new mode
-          // Note: Tools and skills will be populated by the caller (ChatContext)
-          // This ensures the prompt is updated even for automatic mode switches
-          const newPrompt = modeManager.buildPrompt({
-            mode: transition.to,
-            tools: [], // Will be populated by ChatContext when available
-            skills: modeManager.getActiveSkills(),
-            workspace: undefined, // Will be populated by ChatContext when available
-          });
-          
-          // Update system prompt in ContextManager
-          manager.setSystemPrompt(newPrompt);
+          // Update system prompt in ContextManager via core routing
+          manager.setMode(transition.to as any);
           
           // Save mode history to session metadata (Subtask 17.5)
           // Note: This will be integrated when ChatRecordingService is available in the context
@@ -419,6 +374,36 @@ export function ContextManagerProvider({
             trigger: transition.trigger,
             confidence: transition.confidence
           });
+
+          const promptsSnapshotManager = promptsSnapshotManagerRef.current;
+          if (promptsSnapshotManager && managerRef.current) {
+            (async () => {
+              try {
+                const messages = await managerRef.current!.getMessages();
+                const hasUserMessages = messages.some(m => m.role === 'user');
+                if (!hasUserMessages) {
+                  return;
+                }
+
+                const snapshot = promptsSnapshotManager.createTransitionSnapshot(
+                  transition.from,
+                  transition.to,
+                  {
+                    messages: messages.map(m => ({
+                      role: m.role,
+                      parts: [{ type: 'text', text: m.content }]
+                    })),
+                    activeSkills: modeManager.getActiveSkills(),
+                    activeTools: [],
+                    currentTask: undefined
+                  }
+                );
+                await promptsSnapshotManager.storeSnapshot(snapshot, true);
+              } catch (error) {
+                console.error('[ModeSnapshot] Failed to capture transition snapshot:', error);
+              }
+            })();
+          }
         };
         
         modeChangeCallbackRef.current = modeChangeCallback;
@@ -458,9 +443,9 @@ export function ContextManagerProvider({
             if (typeof tier === 'string') {
               const tierMap: Record<string, string> = {
                 '2-4K': 'Tier 1',
-                '4-8K': 'Tier 2',
-                '8-32K': 'Tier 3',
-                '32-64K': 'Tier 4',
+                '8K': 'Tier 2',
+                '16K': 'Tier 3',
+                '32K': 'Tier 4',
                 '64K+': 'Tier 5'
               };
               return tierMap[tier] || `Tier ${tier}`;
@@ -544,46 +529,9 @@ export function ContextManagerProvider({
         // Restore auto-switch preference
         modeManager.setAutoSwitch(savedAutoSwitch);
         
-        // Build initial system prompt for Assistant mode
-        const initialPrompt = modeManager.buildPrompt({
-          mode: startMode as ModeType,
-          tools: [], // Will be populated later when tools are registered
-          skills: [], // Will be populated later when skills are loaded
-          workspace: undefined, // Will be populated later when workspace is loaded
-        });
-        
-        // Set system prompt in ContextManager
-        manager.setSystemPrompt(initialPrompt);
-        
         // Update state
         setCurrentMode(startMode as ModeType);
         setAutoSwitchEnabled(savedAutoSwitch);
-        
-        // Listen for compression event (Subtask 15.1)
-        const compressionCallback = () => {
-          console.log('Compression complete, rebuilding prompt with current mode');
-          
-          // Rebuild prompt with ModeManager after compression (Subtask 15.2)
-          if (modeManagerRef.current) {
-            // Preserve current mode after compression (Subtask 15.3)
-            const currentMode = modeManagerRef.current.getCurrentMode();
-            
-            const newPrompt = modeManagerRef.current.buildPrompt({
-              mode: currentMode,
-              tools: [], // Will be populated by ChatContext when available
-              skills: modeManagerRef.current.getActiveSkills(),
-              workspace: undefined, // Will be populated by ChatContext when available
-            });
-            
-            // Update system prompt in ContextManager (Subtask 15.4)
-            manager.setSystemPrompt(newPrompt);
-            
-            console.log(`System prompt rebuilt after compression (mode: ${currentMode})`);
-          }
-        };
-        
-        // Register compression listener on the manager
-        manager.on('compressed', compressionCallback);
         
         setError(null);
       } catch (err) {
@@ -778,13 +726,6 @@ export function ContextManagerProvider({
     return managerRef.current?.getSystemPrompt() || '';
   }, []);
   
-  const setSystemPrompt = useCallback((prompt: string) => {
-    if (!managerRef.current) {
-      console.warn('ContextManager not initialized');
-      return;
-    }
-    managerRef.current.setSystemPrompt(prompt);
-  }, []);
   
   // Memory level change effect
   useEffect(() => {
@@ -895,45 +836,6 @@ export function ContextManagerProvider({
     return workflowManagerRef.current;
   }, []);
   
-  const getHybridModeManager = useCallback(() => {
-    return hybridModeManagerRef.current;
-  }, []);
-  
-  const switchToHybridMode = useCallback((hybridMode: import('@ollm/core').HybridMode) => {
-    if (!modeManagerRef.current || !hybridModeManagerRef.current) {
-      console.warn('Mode managers not initialized');
-      return;
-    }
-    
-    // Set active hybrid mode
-    hybridModeManagerRef.current.setActiveHybridMode(hybridMode);
-    
-    // Disable auto-switching
-    modeManagerRef.current.setAutoSwitch(false);
-    setAutoSwitchEnabled(false);
-    
-    // Build hybrid prompt
-    const hybridPrompt = hybridModeManagerRef.current.combinePrompts(
-      hybridMode.modes,
-      (mode) => modeManagerRef.current!.getModeTemplate?.(mode) || ''
-    );
-    
-    // Set the hybrid prompt
-    if (managerRef.current) {
-      managerRef.current.setSystemPrompt(hybridPrompt);
-    }
-    
-    // Update current mode to the first mode in the hybrid
-    // (for display purposes)
-    setCurrentMode(hybridMode.modes[0]);
-    
-    // Persist settings
-    SettingsService.getInstance().setMode(hybridMode.modes[0]);
-    SettingsService.getInstance().setAutoSwitch(false);
-    
-    console.log(`Switched to hybrid mode: ${hybridMode.name} (${hybridMode.modes.join(', ')})`);
-  }, []);
-  
   const switchMode = useCallback((mode: ModeType) => {
     if (!modeManagerRef.current) {
       console.warn('PromptModeManager not initialized');
@@ -943,6 +845,7 @@ export function ContextManagerProvider({
     modeManagerRef.current.forceMode(mode);
     setCurrentMode(mode);
     setAutoSwitchEnabled(false);
+    managerRef.current?.setMode?.(mode as any);
     
     // Persist mode preference to settings
     SettingsService.getInstance().setMode(mode);
@@ -959,6 +862,7 @@ export function ContextManagerProvider({
     modeManagerRef.current.switchMode(mode, 'explicit', 1.0);
     setCurrentMode(mode);
     setAutoSwitchEnabled(false);
+    managerRef.current?.setMode?.(mode as any);
     
     // Persist mode preference to settings
     SettingsService.getInstance().setMode(mode);
@@ -1029,7 +933,6 @@ export function ContextManagerProvider({
     resize,
     hotSwap,
     getSystemPrompt,
-    setSystemPrompt,
     on,
     off,
     getUsage: () => managerRef.current?.getUsage() || DEFAULT_USAGE,
@@ -1041,9 +944,7 @@ export function ContextManagerProvider({
     getModeManager,
     getSnapshotManager,
     getWorkflowManager,
-    getHybridModeManager,
     getPromptsSnapshotManager, // Add this
-    switchToHybridMode,
     switchMode,
     switchModeExplicit,
     setAutoSwitch: setAutoSwitchAction,
@@ -1065,15 +966,12 @@ export function ContextManagerProvider({
     resize,
     hotSwap,
     getSystemPrompt,
-    setSystemPrompt,
     on,
     off,
     getModeManager,
     getSnapshotManager,
     getWorkflowManager,
-    getHybridModeManager,
     getPromptsSnapshotManager, // Add this
-    switchToHybridMode,
     switchMode,
     switchModeExplicit,
     setAutoSwitchAction,

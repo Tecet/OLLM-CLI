@@ -48,13 +48,7 @@ const MODE_ICONS: Record<string, string> = {
   assistant: '💬',
   planning: '📋',
   developer: '👨‍💻',
-  tool: '🔧',
   debugger: '🐛',
-  security: '🔒',
-  reviewer: '👀',
-  performance: '⚡',
-  prototype: '⚡🔬',
-  teacher: '👨‍🏫',
 };
 
 /**
@@ -517,11 +511,8 @@ export const workflowCommand: Command = {
           '  /workflow list - List available workflows',
           '',
           'Available Workflows:',
-          '  - feature_development: Planning → Developer → Reviewer → Developer',
-          '  - bug_fix: Debugger → Developer → Reviewer',
-          '  - security_hardening: Security → Developer → Security',
-          '  - performance_optimization: Performance → Developer → Performance',
-          '  - learning_session: Teacher → Prototype → Developer'
+          '  - feature_development: Planning → Developer → Verify',
+          '  - bug_fix: Debugger → Developer'
         ].join('\n')
       };
     }

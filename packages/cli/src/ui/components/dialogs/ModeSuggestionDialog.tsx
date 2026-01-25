@@ -29,13 +29,7 @@ const MODE_ICONS: Record<string, string> = {
   assistant: '💬',
   planning: '📋',
   developer: '👨‍💻',
-  tool: '🔧',
-  debugger: '🐛',
-  security: '🔒',
-  reviewer: '👀',
-  performance: '⚡',
-  prototype: '⚡🔬',
-  teacher: '👨‍🏫'
+  debugger: '🐛'
 };
 
 /**

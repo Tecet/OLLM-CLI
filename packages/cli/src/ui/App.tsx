@@ -12,6 +12,8 @@
  * - Uses alternate screen buffer for flicker-free rendering
  */
 
+import { spawn } from 'child_process';
+
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { Box, Text, useStdout, BoxProps, useInput } from 'ink';
 
@@ -28,11 +30,11 @@ import {
 } from './components/file-explorer/index.js';
 import { LaunchScreen } from './components/launch/LaunchScreen.js';
 import { ChatInputArea } from './components/layout/ChatInputArea.js';
+import { Clock } from './components/layout/Clock.js';
 import { SidePanel } from './components/layout/SidePanel.js';
 import { GPUInfo } from './components/layout/StatusBar.js';
 import { SystemBar } from './components/layout/SystemBar.js';
 import { TabBar, tabs } from './components/layout/TabBar.js';
-import { Clock } from './components/layout/Clock.js';
 import { BugReportTab } from './components/tabs/BugReportTab.js';
 import { ChatTab } from './components/tabs/ChatTab.js';
 import { DocsTab } from './components/tabs/DocsTab.js';
@@ -222,6 +224,81 @@ function AppContent({ config }: AppContentProps) {
   const focusManager = useFocusManager();
   const lastWelcomeModelRef = useRef<string | null>(null);
   const prevModelLoadingRef = useRef<boolean>(modelLoading);
+  const ollamaInitRef = useRef(false);
+
+  const checkOllamaHealth = useCallback(async (host: string, timeoutMs: number): Promise<boolean> => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const response = await fetch(`${host}/api/version`, { signal: controller.signal });
+      return response.ok;
+    } catch {
+      return false;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }, []);
+
+  const startOllamaServe = useCallback((): void => {
+    const child = spawn('ollama', ['serve'], {
+      detached: true,
+      stdio: 'ignore',
+      windowsHide: true
+    });
+    child.on('error', (error) => {
+      console.warn('[Ollama] Failed to start server:', error);
+    });
+    child.unref();
+  }, []);
+
+  const normalizeOllamaHost = useCallback((host: string): string => {
+    if (/^https?:\/\//i.test(host)) {
+      return host;
+    }
+    return `http://${host}`;
+  }, []);
+
+  useEffect(() => {
+    if (ollamaInitRef.current) return;
+    ollamaInitRef.current = true;
+
+    const settings = SettingsService.getInstance().getSettings();
+    const autoStart = settings.llm?.ollamaAutoStart ?? false;
+    const healthCheck = settings.llm?.ollamaHealthCheck ?? true;
+    const ollamaHost = normalizeOllamaHost(config.provider.ollama?.host ?? 'http://localhost:11434');
+
+    const run = async (): Promise<void> => {
+      if (!healthCheck) return;
+
+      const isHealthy = await checkOllamaHealth(ollamaHost, 2500);
+      if (isHealthy) {
+        addMessage({ role: 'system', content: 'Ollama is reachable.', excludeFromContext: true });
+        return;
+      }
+
+      if (!autoStart) {
+        addMessage({ role: 'system', content: `Ollama is not reachable at ${ollamaHost}.`, excludeFromContext: true });
+        return;
+      }
+
+      addMessage({ role: 'system', content: 'Starting Ollama server...', excludeFromContext: true });
+      startOllamaServe();
+
+      const maxAttempts = 8;
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        const ok = await checkOllamaHealth(ollamaHost, 2500);
+        if (ok) {
+          addMessage({ role: 'system', content: 'Ollama server is ready.', excludeFromContext: true });
+          return;
+        }
+        await new Promise(resolve => setTimeout(resolve, 750));
+      }
+
+      addMessage({ role: 'system', content: `Ollama did not respond at ${ollamaHost}.`, excludeFromContext: true });
+    };
+
+    void run();
+  }, [addMessage, checkOllamaHealth, config.provider.ollama?.host, normalizeOllamaHost, startOllamaServe]);
 
     // Persist hardware info if newfound or better than what we have
   useEffect(() => {

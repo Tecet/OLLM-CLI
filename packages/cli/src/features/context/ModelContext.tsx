@@ -9,16 +9,15 @@
 
 import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from 'react';
 
-import { SettingsService } from '../../config/settingsService.js';
-import { useUICallbacks } from '../../ui/contexts/UICallbacksContext.js';
 import { useContextManager } from './ContextManagerContext.js';
 import { calculateContextSizing } from './contextSizing.js';
-import { profileManager } from '../profiles/ProfileManager.js';
 import { useOptionalGPU } from './GPUContext.js';
 import { deriveGPUPlacementHints } from './gpuHints.js';
 import { setLastGPUPlacementHints } from './gpuHintStore.js';
+import { SettingsService } from '../../config/settingsService.js';
+import { useUICallbacks } from '../../ui/contexts/UICallbacksContext.js';
+import { profileManager } from '../profiles/ProfileManager.js';
 
-import type { UserModelEntry } from '../../config/types.js';
 import type { ProviderAdapter, Message as ProviderMessage, ToolCall, ToolSchema, ProviderMetrics } from '@ollm/core';
 
 /**
@@ -758,8 +757,10 @@ export function ModelProvider({
       const settings = settingsService.getSettings();
       const requestedContextSize = settings.llm?.contextSize ?? modelEntry.default_context ?? 4096;
       const temperature = settings.llm?.temperature ?? 0.1;
+      const contextCapRatio = settings.llm?.contextCapRatio ?? 0.85;
+      const forcedNumGpu = settings.llm?.forceNumGpu;
 
-      const contextSizing = calculateContextSizing(requestedContextSize, modelEntry);
+      const contextSizing = calculateContextSizing(requestedContextSize, modelEntry, contextCapRatio);
       const { allowed, ollamaContextSize } = contextSizing;
 
       const gpuHints = deriveGPUPlacementHints(
@@ -767,6 +768,7 @@ export function ModelProvider({
         ollamaContextSize
       );
       setLastGPUPlacementHints(gpuHints);
+      const effectiveNumGpu = Number.isFinite(forcedNumGpu) ? forcedNumGpu : gpuHints?.num_gpu;
 
       if (allowed !== requestedContextSize) {
         settingsService.setContextSize(allowed);
@@ -797,6 +799,7 @@ export function ModelProvider({
           num_ctx: ollamaContextSize, // Use 85% capped size for natural stops
           temperature: temperatureOverride ?? temperature,
           ...(gpuHints ?? {}),
+          num_gpu: effectiveNumGpu,
         },
       });
 
@@ -871,7 +874,7 @@ export function ModelProvider({
     } finally {
       abortControllerRef.current = null;
     }
-  }, [provider, currentModel, cancelRequest, modelLoading, modelSupportsTools, isTimeoutError, isToolUnsupportedError, clearWarmupStatus, handleToolError, saveToolSupport]);
+  }, [provider, currentModel, cancelRequest, modelLoading, modelSupportsTools, isTimeoutError, isToolUnsupportedError, clearWarmupStatus, handleToolError, saveToolSupport, gpuContext?.info, syncAutoThreshold]);
 
   const value: ModelContextValue = {
     currentModel,

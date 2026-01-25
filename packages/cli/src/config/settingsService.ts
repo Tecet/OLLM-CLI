@@ -12,6 +12,10 @@ export interface UserSettings {
     contextSize?: number;
     temperature?: number;
     modeLinkedTemperature?: boolean;
+    contextCapRatio?: number;
+    forceNumGpu?: number;
+    ollamaAutoStart?: boolean;
+    ollamaHealthCheck?: boolean;
     warmup?: {
       enabled?: boolean;
       maxAttempts?: number;
@@ -64,7 +68,11 @@ export class SettingsService {
         ui: { theme: 'default' }, 
         llm: { 
             model: 'llama3.2:3b',
-            modeLinkedTemperature: true
+            modeLinkedTemperature: true,
+            contextCapRatio: 0.85,
+            forceNumGpu: 999,
+            ollamaAutoStart: false,
+            ollamaHealthCheck: true
         },
         tools: {}
     }; 

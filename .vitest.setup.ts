@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
-import * as fc from 'fast-check';
 import { Console as NodeConsole } from 'console';
+
+import * as fc from 'fast-check';
 
 // Allow overriding runs via env var for CI or local experimentation
 const runs = parseInt(process.env.FAST_CHECK_RUNS || '20', 10);

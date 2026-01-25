@@ -7,64 +7,178 @@
  * - /home - Return to launch screen (already implemented in homeCommand.ts)
  */
 
-import type { Command, CommandResult } from './types.js';
+import { existsSync, readFileSync } from 'fs';
+import { join } from 'path';
+
+import { ContextTier, OperationalMode, TieredPromptStore } from '@ollm/core';
+
 import { SettingsService } from '../config/settingsService.js';
-import { profileManager } from '../features/profiles/ProfileManager.js';
-import { calculateContextSizing } from '../features/context/contextSizing.js';
-import { getLastGPUInfo } from '../features/context/gpuHintStore.js';
-import { deriveGPUPlacementHints, type GPUPlacementHints } from '../features/context/gpuHints.js';
 import { getGlobalContextManager } from '../features/context/ContextManagerContext.js';
-import type { ContextMessage, GPUInfo } from '@ollm/core';
+import { calculateContextSizing } from '../features/context/contextSizing.js';
+import { deriveGPUPlacementHints } from '../features/context/gpuHints.js';
+import { getLastGPUInfo } from '../features/context/gpuHintStore.js';
+import { profileManager } from '../features/profiles/ProfileManager.js';
 
-const MAX_CONTEXT_SNIPPET = 6;
+import type { Command, CommandResult } from './types.js';
+import type { ContextMessage } from '@ollm/core';
 
-function formatContextSnippet(messages: ContextMessage[]): string {
-  const snippet = messages.slice(-MAX_CONTEXT_SNIPPET);
-  return snippet
-    .map((msg) => {
-      const preview = (msg.content ?? '').replace(/\s+/g, ' ').trim();
-      const truncated = preview.length > 120 ? `${preview.slice(0, 120)}…` : preview;
-      return `[${msg.role.toUpperCase()}] ${truncated || '<empty>'}`;
-    })
-    .join('\n');
+function resolveTierForSize(size: number): ContextTier {
+  if (size < 8192) return ContextTier.TIER_1_MINIMAL;
+  if (size < 16384) return ContextTier.TIER_2_BASIC;
+  if (size < 32768) return ContextTier.TIER_3_STANDARD;
+  if (size < 65536) return ContextTier.TIER_4_PREMIUM;
+  return ContextTier.TIER_5_ULTRA;
 }
 
-function buildPromptPreviewMessage(data: {
-  mode: string;
-  modelId: string;
+function toOperationalMode(mode: string): OperationalMode {
+  switch (mode) {
+    case 'assistant':
+      return OperationalMode.ASSISTANT;
+    case 'planning':
+      return OperationalMode.PLANNING;
+    case 'debugger':
+      return OperationalMode.DEBUGGER;
+    case 'developer':
+    default:
+      return OperationalMode.DEVELOPER;
+  }
+}
+
+function tierToKey(tier: ContextTier): string {
+  switch (tier) {
+    case ContextTier.TIER_1_MINIMAL:
+      return 'tier1';
+    case ContextTier.TIER_2_BASIC:
+      return 'tier2';
+    case ContextTier.TIER_3_STANDARD:
+      return 'tier3';
+    case ContextTier.TIER_4_PREMIUM:
+    case ContextTier.TIER_5_ULTRA:
+      return 'tier4';
+    default:
+      return 'tier3';
+  }
+}
+
+function loadTierPromptWithFallback(mode: OperationalMode, tier: ContextTier): string {
+  try {
+    const store = new TieredPromptStore();
+    store.load();
+    const fromStore = store.get(mode, tier);
+    if (fromStore) {
+      return fromStore;
+    }
+  } catch (_error) {
+    // Ignore and fall back to direct file lookup.
+  }
+
+  const tierKey = tierToKey(tier);
+  const candidates = [
+    join(process.cwd(), 'packages', 'core', 'dist', 'prompts', 'templates', mode, `${tierKey}.txt`),
+    join(process.cwd(), 'packages', 'core', 'src', 'prompts', 'templates', mode, `${tierKey}.txt`),
+  ];
+
+  for (const candidate of candidates) {
+    try {
+      if (existsSync(candidate)) {
+        const content = readFileSync(candidate, 'utf8').trim();
+        if (content) {
+          return content;
+        }
+      }
+    } catch (_e) {
+      // ignore and keep trying
+    }
+  }
+
+  return '';
+}
+
+function stripSection(source: string, section: string): string {
+  if (!section) return source;
+  const trimmed = source.trim();
+  const target = section.trim();
+  if (!target) return source;
+  const index = trimmed.indexOf(target);
+  if (index === -1) return source;
+  const before = trimmed.slice(0, index).trim();
+  const after = trimmed.slice(index + target.length).trim();
+  return [before, after].filter(Boolean).join('\n\n').trim();
+}
+
+function buildStructuredContent(input: {
   systemPrompt: string;
-  snippet: string;
-  usage: { currentTokens: number; maxTokens: number; percentage: number };
-  contextSizing: ReturnType<typeof calculateContextSizing>;
-  temperature: number;
-  gpuHints?: GPUPlacementHints | null;
-  gpuInfo?: GPUInfo | null;
+  tierPrompt: string;
+  toolNote: string | null;
+  userMessages: string[];
+  toolNames: string[];
+}): Record<string, string[]> {
+  let rules = input.systemPrompt;
+  rules = stripSection(rules, input.tierPrompt);
+  if (input.toolNote) {
+    rules = stripSection(rules, input.toolNote);
+  }
+
+  return {
+    rules: rules ? [rules] : [],
+    systemPrompt: input.tierPrompt ? [input.tierPrompt] : [],
+    userMessage: input.userMessages,
+    directives: input.toolNote ? [input.toolNote] : [],
+    tools: input.toolNames,
+  };
+}
+
+function formatTierLabel(tier: ContextTier): string {
+  switch (tier) {
+    case ContextTier.TIER_1_MINIMAL:
+      return 'Tier 1';
+    case ContextTier.TIER_2_BASIC:
+      return 'Tier 2';
+    case ContextTier.TIER_3_STANDARD:
+      return 'Tier 3';
+    case ContextTier.TIER_4_PREMIUM:
+      return 'Tier 4';
+    case ContextTier.TIER_5_ULTRA:
+      return 'Tier 5';
+    default:
+      return 'Tier';
+  }
+}
+
+function formatModeLabel(mode: string): string {
+  if (!mode) return 'Mode';
+  return mode.charAt(0).toUpperCase() + mode.slice(1);
+}
+
+function buildPromptPreviewMessage(input: {
+  optionsText: string;
+  systemHeader: string;
+  systemPrompt: string;
+  rules: string;
+  mockUserMessage: string;
+  payloadJson: string;
+  showPayload: boolean;
 }): string {
-  const { mode, modelId, systemPrompt, snippet, usage, contextSizing, temperature } = data;
-  const gpuLine = data.gpuHints
-    ? `GPU hints: num_gpu=${data.gpuHints.num_gpu}, gpu_layers=${data.gpuHints.gpu_layers}`
-    : 'GPU hints: unavailable';
-  const formatGB = (value: number): string => (value / (1024 * 1024 * 1024)).toFixed(1);
-  const gpuInfoLine = data.gpuInfo
-    ? `GPU info: ${data.gpuInfo.model ?? data.gpuInfo.vendor ?? 'Unknown'} - ${formatGB(data.gpuInfo.vramTotal)} GB total / ${formatGB(data.gpuInfo.vramFree)} GB free`
-    : 'GPU info: unavailable';
+  const spacer = '\n\n';
+  const payloadSpacer = '\n\n\n';
+  const payloadBlock = input.showPayload
+    ? `=== Ollama Payload (JSON) ===\n${input.payloadJson}`
+    : '=== Ollama Payload (collapsed) ===\nUse `/test prompt --full` to show the full JSON payload.';
+
   return [
-    '=== Test Prompt Dump ===',
-    `Mode: ${mode}`,
-    `Model: ${modelId}`,
-    `Context usage: ${usage.currentTokens} / ${usage.maxTokens} (${Math.round(usage.percentage)}%)`,
-    `Effective context cap (num_ctx): ${contextSizing.ollamaContextSize} (${Math.round(contextSizing.ratio * 100)}% of allowed ${contextSizing.allowed})`,
-    `Temperature: ${temperature}`,
-    gpuLine,
-    gpuInfoLine,
-    '',
-    'System Prompt:',
-    systemPrompt || '<empty>',
-    '',
-    'Context snippet (latest messages):',
-    snippet || '(no messages tracked yet)',
-    '',
-    'AI prompt payload would include the system prompt above followed by the conversation snippet.'
+    '=== Options ===',
+    input.optionsText,
+    spacer,
+    `=== ${input.systemHeader} ===`,
+    input.systemPrompt || '<empty>',
+    spacer,
+    '=== Rules ===',
+    input.rules || '<empty>',
+    spacer,
+    '=== Mock User Message ===',
+    input.mockUserMessage,
+    payloadSpacer,
+    payloadBlock,
   ].join('\n');
 }
 
@@ -151,7 +265,7 @@ export const testPromptCommand: Command = {
   name: '/test prompt',
   description: 'Dump the current prompt/context details as a system message',
   usage: '/test prompt',
-  handler: async (): Promise<CommandResult> => {
+  handler: async (args: string[] = []): Promise<CommandResult> => {
     try {
       const manager = getGlobalContextManager();
       if (!manager) {
@@ -159,27 +273,101 @@ export const testPromptCommand: Command = {
       }
 
       const contextMessages = await manager.getContext();
-      const systemPrompt = manager.getSystemPrompt();
 
       const settings = SettingsService.getInstance().getSettings();
       const modelId = settings.llm?.model ?? 'llama3.2:3b';
       const modelEntry = profileManager.getModelEntry(modelId);
       const requestedContextSize = settings.llm?.contextSize ?? modelEntry.default_context ?? 4096;
-      const contextSizing = calculateContextSizing(requestedContextSize, modelEntry);
+      const contextCapRatio = settings.llm?.contextCapRatio ?? 0.85;
+      const contextSizing = calculateContextSizing(requestedContextSize, modelEntry, contextCapRatio);
       const temperature = settings.llm?.temperature ?? 0.1;
-      const snippet = formatContextSnippet(contextMessages);
+      const forcedNumGpu = settings.llm?.forceNumGpu;
+      const history = contextMessages
+        .filter((m: ContextMessage) => m.role !== 'system')
+        .map((m: ContextMessage) => ({
+          ...m,
+          content: m.content || ''
+        }));
       const lastGPUInfo = getLastGPUInfo();
       const gpuHints = deriveGPUPlacementHints(lastGPUInfo, contextSizing.ollamaContextSize);
-      const preview = buildPromptPreviewMessage({
-        mode: manager.getCurrentMode(),
-        modelId,
+      const effectiveNumGpu = Number.isFinite(forcedNumGpu) ? forcedNumGpu : gpuHints?.num_gpu;
+      const coreManager = manager.getManager?.();
+      const coreMode = manager.getCurrentMode?.() ?? coreManager?.getMode?.() ?? 'unknown';
+      const effectiveTierEnum = resolveTierForSize(manager.getUsage().maxTokens);
+      const expectedTierPrompt = loadTierPromptWithFallback(
+        toOperationalMode(coreMode),
+        effectiveTierEnum
+      );
+      let systemPrompt = manager.getSystemPrompt();
+      const modelSupportsTools = modelEntry?.tool_support ?? false;
+      const toolNote = modelSupportsTools
+        ? ''
+        : 'Note: This model does not support function calling. Do not attempt to use tools or make tool calls.';
+      if (!modelSupportsTools) {
+        systemPrompt += `\n\n${toolNote}`;
+      }
+      const rulesOnly = stripSection(stripSection(systemPrompt, expectedTierPrompt), toolNote);
+      systemPrompt = [expectedTierPrompt, rulesOnly, toolNote].filter(Boolean).join('\n\n');
+      const profile = profileManager.findProfile(modelId);
+      const thinkingEnabled = profile?.thinking_enabled ?? false;
+      const structuredContent = buildStructuredContent({
         systemPrompt,
-        snippet,
-        usage: manager.getUsage(),
-        contextSizing,
-        temperature,
-        gpuHints,
-        gpuInfo: lastGPUInfo,
+        tierPrompt: expectedTierPrompt,
+        toolNote,
+        userMessages: history.filter(m => m.role === 'user').map(m => m.content || ''),
+        toolNames: [],
+      });
+      const showPayload = args.includes('--full');
+      const payloadJson = JSON.stringify({
+        model: modelId,
+        messages: [
+          ...(systemPrompt
+            ? [{ role: 'system', content: systemPrompt }]
+            : []),
+          ...history.map(m => ({
+            role: m.role,
+            content: m.content,
+            tool_calls: m.toolCalls?.map(tc => ({
+              id: tc.id,
+              type: 'function',
+              function: {
+                name: tc.name,
+                arguments: tc.args
+              }
+            })),
+            tool_call_id: m.toolCallId,
+          }))
+        ],
+        tools: [],
+        options: {
+          num_ctx: contextSizing.ollamaContextSize,
+          temperature: temperature,
+          num_gpu: effectiveNumGpu ?? null,
+          num_gpu_layers: gpuHints?.gpu_layers ?? null,
+        },
+        stream: true,
+        think: thinkingEnabled
+      }, null, 2);
+
+      const optionsText = [
+        `Model: ${modelId}`,
+        `Mode: ${coreMode}`,
+        `Context usage: ${manager.getUsage().currentTokens} / ${manager.getUsage().maxTokens} (${Math.round(manager.getUsage().percentage)}%)`,
+        `Effective context cap (num_ctx): ${contextSizing.ollamaContextSize} (${Math.round(contextSizing.ratio * 100)}% of allowed ${contextSizing.allowed})`,
+        `Temperature: ${temperature}`,
+        `GPU hints: ${gpuHints ? `num_gpu=${gpuHints.num_gpu}, num_gpu_layers=${gpuHints.gpu_layers}` : 'unavailable'}`,
+        `GPU override (settings): ${Number.isFinite(forcedNumGpu) ? forcedNumGpu : 'none'}`,
+        `GPU info: ${lastGPUInfo ? `${lastGPUInfo.model ?? lastGPUInfo.vendor ?? 'Unknown'} - ${(lastGPUInfo.vramTotal / (1024 * 1024 * 1024)).toFixed(1)} GB total / ${(lastGPUInfo.vramFree / (1024 * 1024 * 1024)).toFixed(1)} GB free` : 'unavailable'}`,
+      ].join('\n');
+      const systemHeader = `${formatModeLabel(coreMode)} ${formatTierLabel(effectiveTierEnum)}`;
+      const preview = buildPromptPreviewMessage({
+        optionsText,
+        systemHeader,
+        systemPrompt,
+        rules: structuredContent.rules.join('\n\n'),
+        mockUserMessage: 'Here is a short mock user message for testing prompt structure and output formatting.',
+        payloadJson,
+        showPayload,
       });
 
       const addSystemMessage = globalThis.__ollmAddSystemMessage;

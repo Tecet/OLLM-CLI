@@ -51,6 +51,7 @@ export type FocusableId =
   | 'settings-panel'  // Settings tab content
   | 'search-panel'    // Search tab content
   | 'github-tab'      // GitHub tab content (exception: uses -tab suffix)
+  | 'bug-report-tab'  // Bug report tab content (exception: uses -tab suffix)
   // Level 3+: Modals & Viewers (Deepest)
   | 'syntax-viewer'
   | 'search-dialog'
@@ -295,6 +296,7 @@ const LEVEL_2_IDS: ReadonlySet<FocusableId> = new Set([
   'settings-panel',
   'search-panel',
   'github-tab',
+  'bug-report-tab',
 ]);
 
 const LEVEL_3_IDS: ReadonlySet<FocusableId> = new Set([

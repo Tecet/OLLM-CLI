@@ -1,6 +1,5 @@
 import { SnapshotParser } from './snapshotParser.js';
-import { SystemPromptBuilder } from './SystemPromptBuilder.js';
-import { ContextManager, Message as ContextMessage } from './types.js';
+import { ContextManager, Message as ContextMessage, OperationalMode } from './types.js';
 import { SnapshotManager } from '../prompts/modeSnapshotManager.js';
 import { PromptModeManager } from '../prompts/PromptModeManager.js';
 import { PromptRegistry } from '../prompts/PromptRegistry.js';
@@ -101,9 +100,10 @@ export class HotSwapService {
       console.log('[HotSwap] Preserving conversation history (Soft Swap)');
     }
 
-    // 4. Update skills in ModeManager if available
-    if (this.modeManager && newSkills) {
-      this.modeManager.updateSkills(newSkills);
+    // 4. Update skills if available
+    if (newSkills) {
+      this.modeManager?.updateSkills(newSkills);
+      this.contextManager.setActiveSkills?.(newSkills);
     }
 
     // 5. Switch to target mode (respect UI / caller intent)
@@ -112,29 +112,10 @@ export class HotSwapService {
       console.log(`[HotSwap] Switched to mode: ${targetMode}`);
     }
 
-    // 6. Build System Prompt with ModeManager or fallback to SystemPromptBuilder
-    let newSystemPrompt: string;
-    
-    if (this.modeManager) {
-      // Use ModeManager to build prompt for the target mode
-      newSystemPrompt = this.modeManager.buildPrompt({
-        mode: targetMode,
-        skills: newSkills,
-        tools: [], // Will be populated by tool registry
-        workspace: {
-          path: process.cwd()
-        }
-      });
-    } else {
-      // Fallback to SystemPromptBuilder
-      const systemPromptBuilder = new SystemPromptBuilder(this.promptRegistry);
-      newSystemPrompt = systemPromptBuilder.build({
-        interactive: true,
-        skills: newSkills
-      });
+    // 6. Update system prompt via core routing
+    if (this.contextManager.setMode) {
+      this.contextManager.setMode(targetMode as OperationalMode);
     }
-    
-    this.contextManager.setSystemPrompt(newSystemPrompt);
 
     // 7. Reseed with XML Snapshot (if available)
     if (snapshotXml) {

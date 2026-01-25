@@ -75,42 +75,6 @@ const MODE_ANIMATIONS: Record<ModeType, ModeAnimationConfig> = {
     loadingVerb: 'Analyzing error patterns',
     completionVerb: 'Debugger mode active',
     duration: 700
-  },
-  reviewer: {
-    icon: MODE_METADATA.reviewer.icon,
-    loadingVerb: 'Loading review checklist',
-    completionVerb: 'Review mode active',
-    duration: 600
-  },
-  tool: {
-    icon: MODE_METADATA.tool.icon,
-    loadingVerb: 'Activating tool expert mode',
-    completionVerb: 'Tool expert mode active',
-    duration: 500
-  },
-  security: {
-    icon: MODE_METADATA.security.icon,
-    loadingVerb: 'Initializing security audit',
-    completionVerb: 'Security mode active',
-    duration: 700
-  },
-  performance: {
-    icon: MODE_METADATA.performance.icon,
-    loadingVerb: 'Starting performance analysis',
-    completionVerb: 'Performance mode active',
-    duration: 600
-  },
-  prototype: {
-    icon: MODE_METADATA.prototype.icon,
-    loadingVerb: 'Enabling rapid prototyping',
-    completionVerb: 'Prototyper mode active',
-    duration: 500
-  },
-  teacher: {
-    icon: MODE_METADATA.teacher.icon,
-    loadingVerb: 'Activating teacher persona',
-    completionVerb: 'Teacher mode active',
-    duration: 500
   }
 };
 
@@ -266,13 +230,7 @@ export class ModeTransitionAnimator {
       assistant: 'Assistant',
       planning: 'Planning',
       developer: 'Developer',
-      debugger: 'Debugger',
-      reviewer: 'Reviewer',
-      tool: 'Tool Expert',
-      security: 'Security',
-      performance: 'Performance',
-      prototype: 'Prototyper',
-      teacher: 'Teacher'
+      debugger: 'Debugger'
     };
 
     return names[mode] || mode;
@@ -292,8 +250,6 @@ export class ModeTransitionAnimator {
     const contextualMessages: Record<string, string> = {
       'developer->debugger': `${MODE_METADATA.debugger.icon} Error detected. Switching to systematic debugging...`,
       'debugger->developer': '✓ Bug analysis complete. Returning to development...',
-      'developer->reviewer': `${MODE_METADATA.reviewer.icon} Code ready for review. Switching to review mode...`,
-      'reviewer->developer': '✓ Review complete. Returning to development...',
       'assistant->planning': `${MODE_METADATA.planning.icon} Switching to planning mode for design work...`,
       'planning->developer': `${MODE_METADATA.developer.icon} Plan complete. Ready to implement...`,
       'developer->planning': `${MODE_METADATA.planning.icon} Stepping back to planning mode...`
