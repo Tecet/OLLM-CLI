@@ -53,23 +53,19 @@ export function SidePanel({ visible, connection, model, gpu, theme, row1Height, 
 
   // Handle sub-window switching and activation within side panel
   useInput((input, key) => {
-    if (!contextFocused) return;
+    // Check if any element in the side panel has focus
+    const hasSideFocus = contextFocused || fileTreeFocused || functionsFocused || isFocused('side-file-tree');
+    if (!hasSideFocus) return;
 
-    if (key.ctrl && key.leftArrow) {
-      switchRightPanel('prev');
-      return;
-    }
-    if (key.ctrl && key.rightArrow) {
-      switchRightPanel('next');
-      return;
-    }
+    const isWindowSwitchLeft = (key.ctrl && key.leftArrow) || isKey(input, key, activeKeybinds.layout.switchWindowLeft);
+    const isWindowSwitchRight = (key.ctrl && key.rightArrow) || isKey(input, key, activeKeybinds.layout.switchWindowRight);
 
-    if (isKey(input, key, activeKeybinds.layout.switchWindowLeft)) {
+    if (isWindowSwitchLeft) {
       switchRightPanel('prev');
-    } else if (isKey(input, key, activeKeybinds.layout.switchWindowRight)) {
+    } else if (isWindowSwitchRight) {
       switchRightPanel('next');
     }
-  }, { isActive: contextFocused });
+  }, { isActive: true });
 
   if (!visible) {
     return null;
@@ -152,7 +148,7 @@ export function SidePanel({ visible, connection, model, gpu, theme, row1Height, 
           />
         )}
         {activeRightPanel === 'llm-chat' && (
-          <RightPanelLLMChat height={rightPanelRow3Height} width={rightPanelWidth} />
+          <RightPanelLLMChat height={rightPanelRow3Height - 3} width={rightPanelWidth} />
         )}
         {activeRightPanel === 'terminal2' && (
           <Terminal2 height={rightPanelRow3Height - 3} />

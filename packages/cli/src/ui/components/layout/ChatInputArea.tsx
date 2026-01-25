@@ -27,7 +27,6 @@ export interface ChatInputAreaProps {
 }
 
 export const ChatInputArea = memo(function ChatInputArea({ height, showBorder = true }: ChatInputAreaProps) {
-  const logger = createLogger('ChatInputArea');
   const { state: chatState, setCurrentInput, sendMessage, cancelGeneration, executeMenuOption, navigateMenu, setInputMode, setMenuState } = useChat();
   const { state: uiState } = useUI();
   const { isFocused, setFocus } = useFocusManager();
@@ -136,16 +135,12 @@ export const ChatInputArea = memo(function ChatInputArea({ height, showBorder = 
               return;
           }
           if (key.return) {
-              try { logger.debug('sendRaw forwarding RETURN'); } catch {};
               sendRaw('\r');
           } else if (key.backspace || key.delete || input === '\b' || input === '\x7f' || (key.ctrl && input === 'h')) {
-              try { logger.debug('sendRaw forwarding BACKSPACE/DELETE'); } catch {};
               sendRaw('\x7f');
           } else if (key.ctrl && input === 'c') {
-              try { logger.debug('sendRaw forwarding CTRL+C'); } catch {};
               sendRaw('\x03');
           } else if (key.ctrl && input === 'd') {
-              try { logger.debug('sendRaw forwarding CTRL+D'); } catch {};
               sendRaw('\x04');
             } else if (input && !key.ctrl && !key.meta) {
               // Sanitize raw input before sending to PTY: strip SGR mouse sequences
@@ -163,10 +158,6 @@ export const ChatInputArea = memo(function ChatInputArea({ height, showBorder = 
 
               const safe = sanitize(input);
               if (safe.length > 0) {
-                try {
-                  const codes = Array.from(safe).map(c => c.charCodeAt(0)).join(',');
-                  logger.debug('sendRaw forwarding chars len=%d text=%s codes=%s', safe.length, safe.replace(/\n/g,'\\n'), codes);
-                } catch (_e) {}
                 sendRaw(safe);
               }
           }
@@ -177,16 +168,15 @@ export const ChatInputArea = memo(function ChatInputArea({ height, showBorder = 
       if (key.tab) return;
 
       // Window switching logic - cycle through windows with specific ctrl keys
-      // Only allow this if not in side-panel terminal mode to prevent dual-switching
-      if (activeDestination !== 'terminal2') {
-          if (isKey(input, key, activeKeybinds.layout.switchWindowLeft)) {
-              switchWindow('prev');
-              return;
-          }
-          if (isKey(input, key, activeKeybinds.layout.switchWindowRight)) {
-              switchWindow('next');
-              return;
-          }
+      // Note: We only reach here if activeDestination is 'llm' or 'editor' 
+      // because terminal modes return early above.
+      if (isKey(input, key, activeKeybinds.layout.switchWindowLeft)) {
+          switchWindow('prev');
+          return;
+      }
+      if (isKey(input, key, activeKeybinds.layout.switchWindowRight)) {
+          switchWindow('next');
+          return;
       }
 
       if (chatState.inputMode !== 'menu') {

@@ -3,8 +3,10 @@ import { Box, useInput, useStdout, BoxProps } from 'ink';
 
 import { useChat } from '../../../features/context/ChatContext.js';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
+import { useKeybinds } from '../../../features/context/KeybindsContext.js';
 import { useUI } from '../../../features/context/UIContext.js';
 import { useWindow } from '../../contexts/WindowContext.js';
+import { isKey } from '../../utils/keyUtils.js';
 import { profileRender } from '../../utils/performanceProfiler.js';
 import { buildChatLines, ChatHistory, messageHasLargeDiff } from '../chat/ChatHistory.js';
 import { EditorMockup } from '../code-editor/EditorMockup.js';
@@ -62,6 +64,7 @@ function ChatTabComponent(props: ChatTabProps) {
   const { stdout } = useStdout();
   const { isFocused, exitToNavBar } = useFocusManager();
   const { activeWindow, switchWindow } = useWindow();
+  const { activeKeybinds } = useKeybinds();
   
   const hasFocus = isFocused('chat-history');
 
@@ -143,11 +146,14 @@ function ChatTabComponent(props: ChatTabProps) {
   useInput((input, key) => {
     if (!hasFocus) return;
 
-    if (key.ctrl && key.leftArrow) {
+    const isWindowSwitchLeft = (key.ctrl && key.leftArrow) || isKey(input, key, activeKeybinds.layout.switchWindowLeft);
+    const isWindowSwitchRight = (key.ctrl && key.rightArrow) || isKey(input, key, activeKeybinds.layout.switchWindowRight);
+
+    if (isWindowSwitchLeft) {
       switchWindow('prev');
       return;
     }
-    if (key.ctrl && key.rightArrow) {
+    if (isWindowSwitchRight) {
       switchWindow('next');
       return;
     }

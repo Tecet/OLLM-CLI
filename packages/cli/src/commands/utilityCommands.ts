@@ -18,6 +18,8 @@ import { calculateContextSizing } from '../features/context/contextSizing.js';
 import { deriveGPUPlacementHints } from '../features/context/gpuHints.js';
 import { getLastGPUInfo } from '../features/context/gpuHintStore.js';
 import { profileManager } from '../features/profiles/ProfileManager.js';
+import { getGlobalFocusedFiles } from '../ui/components/file-explorer/FileFocusContext.js';
+import { injectFocusedFiles } from '../ui/components/file-explorer/FocusedFilesInjector.js';
 
 import type { Command, CommandResult } from './types.js';
 import type { ContextMessage } from '@ollm/core';
@@ -307,6 +309,13 @@ export const testPromptCommand: Command = {
       if (!modelSupportsTools && !systemPrompt.includes('Note: This model does not support function calling')) {
         systemPrompt += `\n\n${toolNote}`;
       }
+
+      // Inject focused files for accurate preview
+      const focusedFiles = getGlobalFocusedFiles();
+      if (focusedFiles.length > 0) {
+        systemPrompt = injectFocusedFiles(focusedFiles, systemPrompt);
+      }
+
       const profile = profileManager.findProfile(modelId);
       const thinkingEnabled = profile?.thinking_enabled ?? false;
       const structuredContent = buildStructuredContent({

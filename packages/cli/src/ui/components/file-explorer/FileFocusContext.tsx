@@ -7,7 +7,7 @@
  * Requirements: 3.1 (Focus system for LLM context)
  */
 
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 
 import { FocusedFile } from './types.js';
 
@@ -57,6 +57,16 @@ const defaultState: FocusState = {
 /**
  * Focus context
  */
+/**
+ * Global reference for non-React access (e.g., commands)
+ */
+let globalFocusedFiles: () => FocusedFile[] = () => [];
+
+export const getGlobalFocusedFiles = () => globalFocusedFiles();
+export const setGlobalFocusedFilesAccessor = (accessor: () => FocusedFile[]) => {
+  globalFocusedFiles = accessor;
+};
+
 export const FileFocusContext = createContext<FileFocusContextValue | undefined>(undefined);
 
 /**
@@ -81,6 +91,12 @@ export function FileFocusProvider({ children, initialState }: FileFocusProviderP
       ? initialState.focusedFiles 
       : new Map(),
   });
+
+  // Sync global accessor for non-React context access (e.g., commands)
+  useEffect(() => {
+    setGlobalFocusedFilesAccessor(() => Array.from(state.focusedFiles.values()));
+    return () => setGlobalFocusedFilesAccessor(() => []);
+  }, [state.focusedFiles]);
 
   const addFocusedFile = useCallback((file: FocusedFile) => {
     setState((prev) => {

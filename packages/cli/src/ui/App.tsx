@@ -1244,29 +1244,29 @@ export function App({ config }: AppProps) {
                                   provider={provider}
                                   initialModel={initialModel}
                                 >
-                                  <ChatProvider>
-                                    <AllCallbacksBridge onOpenModelMenu={() => {
-                                      // This will be wired up properly when we refactor AppContent
-                                      // For now, the global callback will be registered
-                                      console.warn('openModelMenu called from bridge - needs wiring');
-                                    }}>
-                                      <ReviewProvider>
-                                        <FocusProvider>
-                                          <ActiveContextProvider>
-                                            <ErrorBoundary>
-                                              <MouseProvider>
-                                                <WorkspaceProvider>
-                                                  <FileFocusProvider>
+                                  <WorkspaceProvider>
+                                    <FileFocusProvider>
+                                      <ChatProvider>
+                                        <AllCallbacksBridge onOpenModelMenu={() => {
+                                          // This will be wired up properly when we refactor AppContent
+                                          // For now, the global callback will be registered
+                                          console.warn('openModelMenu called from bridge - needs wiring');
+                                        }}>
+                                          <ReviewProvider>
+                                            <FocusProvider>
+                                              <ActiveContextProvider>
+                                                <ErrorBoundary>
+                                                  <MouseProvider>
                                                     <AppContent config={config} />
-                                                  </FileFocusProvider>
-                                                </WorkspaceProvider>
-                                              </MouseProvider>
-                                            </ErrorBoundary>
-                                          </ActiveContextProvider>
-                                        </FocusProvider>
-                                      </ReviewProvider>
-                                    </AllCallbacksBridge>
-                                  </ChatProvider>
+                                                  </MouseProvider>
+                                                </ErrorBoundary>
+                                              </ActiveContextProvider>
+                                            </FocusProvider>
+                                          </ReviewProvider>
+                                        </AllCallbacksBridge>
+                                      </ChatProvider>
+                                    </FileFocusProvider>
+                                  </WorkspaceProvider>
                                 </ModelProvider>
                               </ContextManagerProvider>
                             </GPUProvider>

@@ -2,7 +2,6 @@
 import { Box, Text, BoxProps } from 'ink';
 
 import { useChat } from '../../../features/context/ChatContext.js';
-import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { useModel } from '../../../features/context/ModelContext.js';
 import { useUI } from '../../../features/context/UIContext.js';
 import { useInputRouting } from '../../contexts/InputRoutingContext.js';
@@ -17,15 +16,12 @@ export interface SystemBarProps {
  * SystemBar (Row 3)
  * Displays "Agent Thinking" status and "Context Tokens" usage.
  */
-export function SystemBar({ height, showBorder = true }: SystemBarProps) {
+export function SystemBar({ height }: SystemBarProps) {
   const { state: chatState } = useChat();
   const { modelLoading, warmupStatus } = useModel();
   const { state: uiState } = useUI();
   const { theme } = uiState;
   const { activeDestination } = useInputRouting();
-  const { isFocused } = useFocusManager();
-
-  const hasFocus = isFocused('system-bar'); 
 
   const { streaming, waitingForResponse } = chatState;
 
@@ -63,18 +59,14 @@ export function SystemBar({ height, showBorder = true }: SystemBarProps) {
   } else {
     displayStatus = 'LLM Chat';
   }
-  // Hide border when idle in LLM chat mode per user request
-  const effectiveBorderStyle = showBorder && displayStatus !== 'LLM Chat'
-    ? (theme.border.style as BoxProps['borderStyle'])
-    : undefined;
 
   return (
     <Box height={height} width="100%" flexDirection="row" alignItems="center" justifyContent="space-between">
       <Box
         height={height}
         flexGrow={1}
-        borderStyle={effectiveBorderStyle}
-        borderColor={hasFocus ? theme.text.secondary : theme.border.primary}
+        borderStyle={undefined}
+        borderColor={theme.border.primary}
         paddingX={1}
         alignItems="center"
       >
@@ -87,7 +79,7 @@ export function SystemBar({ height, showBorder = true }: SystemBarProps) {
       <Box
         height={height}
         flexShrink={0}
-        borderStyle={theme.border.style as BoxProps['borderStyle']}
+        borderStyle={uiState.theme.border.style as BoxProps['borderStyle']}
         borderColor={theme.border.primary}
         paddingX={1}
         alignItems="center"

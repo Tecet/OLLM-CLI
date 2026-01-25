@@ -2,7 +2,8 @@
  * Terminal Component
  * 
  * Displays terminal output with proper ANSI code rendering.
- * Uses a highly conservative width calculation to prevent overflow and clipping.
+ * Centers the terminal content within the available column width.
+ * Borders are disabled as per user request to use container boundaries.
  */
 
 import React, { useMemo, useEffect } from 'react';
@@ -31,9 +32,9 @@ export function Terminal({ height }: TerminalProps) {
   const width = useMemo(() => {
     if (!stdout) return 80;
     
-    // Replicate App.tsx layout math for Row 2
-    const totalCols = stdout.columns;
-    const appTerminalWidth = Math.max(40, totalCols);
+    // Total column space available for the app
+    const stdoutCols = stdout.columns;
+    const appTerminalWidth = Math.max(40, stdoutCols);
     const leftColumnWidth = Math.max(20, Math.floor(appTerminalWidth * 0.7));
     
     // Width of the column containing the tab content
@@ -44,15 +45,17 @@ export function Terminal({ height }: TerminalProps) {
     const mainContentWidth = baseWidth - (2 * spacerWidth);
     
     // Subtract internal UI overhead:
-    // ChatTab border (2) + Terminal border (2) + Terminal padding (4)
-    // Plus a 6-char safety buffer for word-wrap and font variations
-    const ptyCols = Math.max(10, mainContentWidth - 14);
+    // ChatTab border (2) + Terminal padding (4) [Border removed]
+    // Plus a small safety buffer for word-wrap and font variations
+    // We reduced subtraction from 14 to 10 because internal borders are gone (+2 width x2 sides = 4)
+    const ptyCols = Math.max(10, mainContentWidth - 10);
     
     return ptyCols;
   }, [stdout, uiState.sidePanelVisible]);
 
   // Terminal height calculation (account for top bar and borders)
-  const visibleHeight = Math.max(2, height - 2);
+  // [Border removed, so we gain 2 lines of vertical space]
+  const visibleHeight = Math.max(2, height);
 
   // Sync PTY size with UI size
   useEffect(() => {
@@ -128,11 +131,10 @@ export function Terminal({ height }: TerminalProps) {
       flexGrow={1}
       width="100%"
       paddingX={2}
-      borderStyle="single"
-      borderColor={uiState.theme.border.primary}
       overflow="hidden"
+      alignItems="center" // Centering the content column
     >
-      <Box flexDirection="column" width="100%" height="100%" overflow="hidden">
+      <Box flexDirection="column" width={width} height="100%" overflow="hidden">
         {visibleLines.map((line, index) => renderLine(line, index))}
       </Box>
     </Box>
