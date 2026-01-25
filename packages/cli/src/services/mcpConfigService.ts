@@ -1,3 +1,6 @@
+import { createLogger } from '../../../core/src/utils/logger.js';
+
+const logger = createLogger('mcpConfigService');
 /**
  * MCP Configuration Service
  * 
@@ -112,7 +115,7 @@ export class MCPConfigService {
         await mcpConfigBackup.createBackup(this.userConfigPath, 'Before save');
       }
     } catch (error) {
-      console.warn('Failed to create backup before save:', error);
+      logger.warn('Failed to create backup before save:', error);
       // Continue with save even if backup fails
     }
 
@@ -139,7 +142,7 @@ export class MCPConfigService {
         );
       }
     } catch (error) {
-      console.warn('Failed to create backup before update:', error);
+      logger.warn('Failed to create backup before update:', error);
       // Continue with update even if backup fails
     }
 
@@ -259,17 +262,17 @@ export class MCPConfigService {
 
       // Validate structure
       if (!data.mcpServers || typeof data.mcpServers !== 'object') {
-        console.warn(`Invalid MCP config structure in ${filePath}, using empty config`);
+        logger.warn(`Invalid MCP config structure in ${filePath}, using empty config`);
         return { mcpServers: {} };
       }
 
       return data as MCPConfigFile;
     } catch (error) {
       if (error instanceof SyntaxError) {
-        console.error(`JSON parsing error in ${filePath}:`, error.message);
+        logger.error(`JSON parsing error in ${filePath}:`, error.message);
         
         // Attempt to recover from corruption
-        console.log('Attempting to recover from corrupted configuration...');
+        logger.info('Attempting to recover from corrupted configuration...');
         const recovered = await mcpConfigBackup.recoverFromCorruption(filePath);
         
         if (recovered) {
@@ -279,11 +282,11 @@ export class MCPConfigService {
             const data = JSON.parse(content);
             return data as MCPConfigFile;
           } catch (retryError) {
-            console.error('Failed to load recovered configuration:', retryError);
+            logger.error('Failed to load recovered configuration:', retryError);
           }
         }
       } else {
-        console.error(`Failed to load MCP config from ${filePath}:`, error);
+        logger.error(`Failed to load MCP config from ${filePath}:`, error);
       }
       return { mcpServers: {} };
     }
@@ -384,7 +387,7 @@ export class MCPConfigService {
       try {
         listener(event);
       } catch (error) {
-        console.error('Error in config change listener:', error);
+        logger.error('Error in config change listener:', error);
       }
     }
   }

@@ -1,3 +1,6 @@
+import { createLogger } from '../../../../../core/src/utils/logger.js';
+
+const logger = createLogger('GitStatusService');
 /**
  * GitStatusService - Git integration for file status tracking
  * 
@@ -122,7 +125,7 @@ export class GitStatusService {
       });
       
       if (!this.silent) {
-        console.error(`Failed to get git status for ${repoPath}:`, errorInfo.message);
+        logger.error(`Failed to get git status for ${repoPath}:`, errorInfo.message);
       }
       
       return new Map();

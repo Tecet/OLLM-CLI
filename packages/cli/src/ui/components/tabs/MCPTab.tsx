@@ -1,3 +1,6 @@
+import { createLogger } from '../../../../../core/src/utils/logger.js';
+
+const logger = createLogger('MCPTab');
 /**
  * MCPTab Component
  * 
@@ -191,7 +194,7 @@ function ServerDetailsContent({ server, activeColumn, onToggle, onDelete, onRefr
               onRefreshServers().catch(console.error);
             })
             .catch(err => {
-              console.error('Failed to save tool selections:', err);
+              logger.error('Failed to save tool selections:', err);
               setIsSaving(false);
             });
         } else if (toolsNavItem === 'close') {
@@ -291,7 +294,7 @@ function ServerDetailsContent({ server, activeColumn, onToggle, onDelete, onRefr
             onRefreshServers().catch(console.error);
           })
           .catch(err => {
-            console.error('Failed to toggle server:', err);
+            logger.error('Failed to toggle server:', err);
             setToggleState({ status: 'idle' });
           });
       } else if (navItem === 'delete') {
@@ -711,7 +714,7 @@ function MarketplaceContent({ activeColumn, onRefreshServers, height: _height = 
         const results = await searchMarketplace('');
         setServers(results);
       } catch (err) {
-        console.error('Failed to load marketplace:', err);
+        logger.error('Failed to load marketplace:', err);
       } finally {
         setIsLoading(false);
       }
@@ -729,7 +732,7 @@ function MarketplaceContent({ activeColumn, onRefreshServers, height: _height = 
         setSelectedIndex(0);
         setScrollOffset(0);
       } catch (err) {
-        console.error('Search failed:', err);
+        logger.error('Search failed:', err);
       } finally {
         setIsLoading(false);
       }
@@ -806,7 +809,7 @@ function MarketplaceContent({ activeColumn, onRefreshServers, height: _height = 
             setSelectedServer(null);
             setDetailNavItem('exit');
           }).catch(err => {
-            console.error('Failed to refresh servers:', err);
+            logger.error('Failed to refresh servers:', err);
             setInstallState({ status: 'idle', selection: 'no' });
             setView('list');
             setSelectedServer(null);
@@ -1947,7 +1950,7 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
                   await toggleServer(selectedItem.server!.name);
                 } catch (err) {
                   // Error is already set in MCPContext state, just log it
-                  console.error('Toggle failed:', err);
+                  logger.error('Toggle failed:', err);
                 }
               }}
               onDelete={async () => {

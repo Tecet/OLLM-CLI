@@ -1,3 +1,6 @@
+import { createLogger } from '../../../../core/src/utils/logger.js';
+
+const logger = createLogger('errorLogger');
 /**
  * Error logging utilities for UI components
  */
@@ -40,15 +43,15 @@ export function logError(context: string, error: unknown, details?: Record<strin
   }
   
   const timestamp = new Date().toISOString();
-  console.error(`[${timestamp}] [${context}] Error:`, error);
+  logger.error(`[${timestamp}] [${context}] Error:`, error);
   
   if (details) {
-    console.error(`[${timestamp}] [${context}] Details:`, details);
+    logger.error(`[${timestamp}] [${context}] Details:`, details);
   }
   
   // Log stack trace if available
   if (error instanceof Error && error.stack) {
-    console.error(`[${timestamp}] [${context}] Stack:`, error.stack);
+    logger.error(`[${timestamp}] [${context}] Stack:`, error.stack);
   }
 }
 
@@ -61,10 +64,10 @@ export function logWarning(context: string, message: string, details?: Record<st
   }
   
   const timestamp = new Date().toISOString();
-  console.warn(`[${timestamp}] [${context}] Warning: ${message}`);
+  logger.warn(`[${timestamp}] [${context}] Warning: ${message}`);
   
   if (details) {
-    console.warn(`[${timestamp}] [${context}] Details:`, details);
+    logger.warn(`[${timestamp}] [${context}] Details:`, details);
   }
 }
 
@@ -77,10 +80,10 @@ export function logInfo(context: string, message: string, details?: Record<strin
   }
   
   const timestamp = new Date().toISOString();
-  console.log(`[${timestamp}] [${context}] ${message}`);
+  logger.info(`[${timestamp}] [${context}] ${message}`);
   
   if (details) {
-    console.log(`[${timestamp}] [${context}] Details:`, details);
+    logger.info(`[${timestamp}] [${context}] Details:`, details);
   }
 }
 
@@ -93,10 +96,10 @@ export function logDebug(context: string, message: string, details?: Record<stri
   }
   
   const timestamp = new Date().toISOString();
-  console.log(`[${timestamp}] [${context}] [DEBUG] ${message}`);
+  logger.info(`[${timestamp}] [${context}] [DEBUG] ${message}`);
   
   if (details) {
-    console.log(`[${timestamp}] [${context}] [DEBUG] Details:`, details);
+    logger.info(`[${timestamp}] [${context}] [DEBUG] Details:`, details);
   }
 }
 

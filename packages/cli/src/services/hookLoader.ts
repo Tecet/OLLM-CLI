@@ -1,3 +1,6 @@
+import { createLogger } from '../../../core/src/utils/logger.js';
+
+const logger = createLogger('hookLoader');
 /**
  * Hook Loader Service
  * 
@@ -43,7 +46,7 @@ export async function loadHooksFromFiles(registry: HookRegistry): Promise<number
         registerUIHook(registry, uiHook);
         loadedCount++;
       } catch (error) {
-        console.error(`Failed to register user hook ${uiHook.id}:`, error);
+        logger.error(`Failed to register user hook ${uiHook.id}:`, error);
       }
     }
 
@@ -54,13 +57,13 @@ export async function loadHooksFromFiles(registry: HookRegistry): Promise<number
         registerUIHook(registry, uiHook);
         loadedCount++;
       } catch (error) {
-        console.error(`Failed to register workspace hook ${uiHook.id}:`, error);
+        logger.error(`Failed to register workspace hook ${uiHook.id}:`, error);
       }
     }
 
-    console.log(`Loaded ${loadedCount} hooks from files`);
+    logger.info(`Loaded ${loadedCount} hooks from files`);
   } catch (error) {
-    console.error('Error loading hooks from files:', error);
+    logger.error('Error loading hooks from files:', error);
   }
 
   return loadedCount;

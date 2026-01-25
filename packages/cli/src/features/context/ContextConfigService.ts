@@ -1,3 +1,4 @@
+import { createLogger } from '../../../../core/src/utils/logger.js';
 import { promises as fs } from 'fs';
 import * as path from 'path';
 
@@ -59,7 +60,9 @@ export class ContextConfigService {
     try {
       await fs.writeFile(this.configPath, JSON.stringify(this.config, null, 2), 'utf-8');
     } catch (error) {
-      console.warn('Failed to save context config:', error);
+      logger.warn('Failed to save context config:', error);
+
+const logger = createLogger('ContextConfigService');
     }
   }
 

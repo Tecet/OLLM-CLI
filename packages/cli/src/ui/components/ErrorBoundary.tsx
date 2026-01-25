@@ -1,3 +1,6 @@
+import { createLogger } from '../../../../core/src/utils/logger.js';
+
+const logger = createLogger('ErrorBoundary');
 /**
  * Error Boundary Component
  * Catches errors in React components and displays user-friendly error messages.
@@ -42,8 +45,8 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
     // Log error to debug output
     if (process.env.OLLM_LOG_LEVEL === 'debug') {
-      console.error('[Error Boundary] Component error:', error);
-      console.error('[Error Boundary] Error info:', errorInfo);
+      logger.error('[Error Boundary] Component error:', error);
+      logger.error('[Error Boundary] Error info:', errorInfo);
     }
 
     this.setState({

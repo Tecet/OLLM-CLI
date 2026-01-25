@@ -1,3 +1,6 @@
+import { createLogger } from '../../../../core/src/utils/logger.js';
+
+const logger = createLogger('performanceProfiler');
 /**
  * Performance Profiler Utility
  * 
@@ -103,7 +106,7 @@ export function measureTime<T>(label: string, fn: () => T): T {
   const duration = endTime - startTime;
 
   if (duration > 10) { // Only log if > 10ms
-    console.log(`[Performance] ${label}: ${duration.toFixed(2)}ms`);
+    logger.info(`[Performance] ${label}: ${duration.toFixed(2)}ms`);
   }
 
   return result;
@@ -136,35 +139,35 @@ export function getAllRenderProfiles(): Map<string, RenderProfile> {
  */
 export function printRenderStats(): void {
   if (!ENABLE_PROFILING) {
-    console.log('[Performance] Profiling is disabled. Set OLLM_PROFILE_RENDERS=true to enable.');
+    logger.info('[Performance] Profiling is disabled. Set OLLM_PROFILE_RENDERS=true to enable.');
     return;
   }
 
-  console.log('\n=== Render Performance Statistics ===\n');
+  logger.info('\n=== Render Performance Statistics ===\n');
   
   const profiles = Array.from(renderProfiles.values())
     .sort((a, b) => b.renderCount - a.renderCount);
 
   for (const profile of profiles) {
-    console.log(`${profile.componentName}:`);
-    console.log(`  Renders: ${profile.renderCount}`);
-    console.log(`  Props Changes: ${profile.propsChanges}`);
-    console.log(`  Avg Time: ${profile.averageRenderTime.toFixed(2)}ms`);
-    console.log(`  Last Time: ${profile.lastRenderTime.toFixed(2)}ms`);
-    console.log(`  Total Time: ${profile.totalRenderTime.toFixed(2)}ms`);
+    logger.info(`${profile.componentName}:`);
+    logger.info(`  Renders: ${profile.renderCount}`);
+    logger.info(`  Props Changes: ${profile.propsChanges}`);
+    logger.info(`  Avg Time: ${profile.averageRenderTime.toFixed(2)}ms`);
+    logger.info(`  Last Time: ${profile.lastRenderTime.toFixed(2)}ms`);
+    logger.info(`  Total Time: ${profile.totalRenderTime.toFixed(2)}ms`);
     
     // Warn about potential issues
     if (profile.renderCount > 100) {
-      console.log(`  ⚠️  High render count - consider memoization`);
+      logger.info(`  ⚠️  High render count - consider memoization`);
     }
     if (profile.averageRenderTime > 16) {
-      console.log(`  ⚠️  Slow renders - consider optimization`);
+      logger.info(`  ⚠️  Slow renders - consider optimization`);
     }
     if (profile.renderCount > profile.propsChanges * 2) {
-      console.log(`  ⚠️  Many renders without props changes - check dependencies`);
+      logger.info(`  ⚠️  Many renders without props changes - check dependencies`);
     }
     
-    console.log('');
+    logger.info('');
   }
 }
 

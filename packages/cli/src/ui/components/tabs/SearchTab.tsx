@@ -1,3 +1,6 @@
+import { createLogger } from '../../../../../core/src/utils/logger.js';
+
+const logger = createLogger('SearchTab');
 import React, { useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 
@@ -50,7 +53,7 @@ export function SearchTab({ width }: SearchTabProps) {
       
       if (key.return) {
         // Trigger Search (Mock)
-        // console.log('Searching for:', searchQuery);
+        // logger.info('Searching for:', searchQuery);
         return;
       }
 

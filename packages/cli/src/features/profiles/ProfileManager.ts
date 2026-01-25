@@ -1,3 +1,4 @@
+import { createLogger } from '../../../../core/src/utils/logger.js';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { homedir, tmpdir } from 'os';
 import { join } from 'path';
@@ -8,6 +9,8 @@ import { defaultContextBehavior } from '../../config/defaults.js';
 import profilesData from '../../config/LLM_profiles.json' with { type: 'json' };
 
 import type { LLMProfile, ContextSettings, ContextBehaviorProfile, ContextProfile, UserModelEntry, ProfilesData } from '../../config/types.js';
+
+const logger = createLogger('ProfileManager');
 
 const profiles = profilesData as ProfilesData;
 
@@ -40,7 +43,7 @@ export class ProfileManager {
     this.refreshMetadataAsync().catch(err => {
       // Silent fail - not critical for startup
       if (process.env.OLLM_LOG_LEVEL === 'debug') {
-        console.warn('Failed to refresh model metadata:', err);
+        logger.warn('Failed to refresh model metadata:', err);
       }
     });
   }
@@ -55,7 +58,7 @@ export class ProfileManager {
               this.saveUserModels([]);
           }
       } catch (error) {
-          console.warn('Failed to initialize models config:', error);
+          logger.warn('Failed to initialize models config:', error);
       }
   }
 
@@ -98,7 +101,7 @@ export class ProfileManager {
       // Silent fail - not critical for startup
       // Only log in debug mode to avoid noise
       if (process.env.OLLM_LOG_LEVEL === 'debug') {
-        console.warn('Model metadata refresh failed:', error instanceof Error ? error.message : 'Unknown error');
+        logger.warn('Model metadata refresh failed:', error instanceof Error ? error.message : 'Unknown error');
       }
     }
   }
@@ -154,7 +157,7 @@ export class ProfileManager {
           const models = Array.isArray(data.user_models) ? data.user_models : [];
           this.setUserModels(models);
       } catch (error) {
-          console.warn('Failed to load user models list:', error);
+          logger.warn('Failed to load user models list:', error);
       }
   }
 
@@ -165,7 +168,7 @@ export class ProfileManager {
           };
           writeFileSync(this.userModelsPath, JSON.stringify(data, null, 2), 'utf-8');
       } catch (error) {
-          console.error('Failed to save user models list:', error);
+          logger.error('Failed to save user models list:', error);
       }
   }
 

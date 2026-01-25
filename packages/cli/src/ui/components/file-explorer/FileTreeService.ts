@@ -1,3 +1,6 @@
+import { createLogger } from '../../../../../core/src/utils/logger.js';
+
+const logger = createLogger('FileTreeService');
 /**
  * FileTreeService
  * 
@@ -110,7 +113,7 @@ export class FileTreeService {
 
       return node;
     } catch (error) {
-      console.error(`Failed to stat ${nodePath}:`, error);
+      logger.error(`Failed to stat ${nodePath}:`, error);
       // Return a dummy file node so the tree building doesn't fail completely
       return {
         name: path.basename(nodePath),
@@ -256,7 +259,7 @@ export class FileTreeService {
         nodePath: node.path,
       });
       
-      console.error(`Failed to expand directory ${node.path}:`, errorInfo.message);
+      logger.error(`Failed to expand directory ${node.path}:`, errorInfo.message);
       
       // Mark node as unexpanded with empty children
       // This allows retry if the user tries to expand again

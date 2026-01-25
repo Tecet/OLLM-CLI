@@ -1,3 +1,6 @@
+import { createLogger } from '../../../../../core/src/utils/logger.js';
+
+const logger = createLogger('APIKeyInputDialog');
 /**
  * API Key Input Dialog
  * 
@@ -127,7 +130,7 @@ export function APIKeyInputDialog({ server, onInstall, onCancel }: APIKeyInputDi
         if (field.getKeyUrl) {
           // In a real implementation, this would open the browser
           // For now, just show the URL
-          console.log(`Open browser: ${field.getKeyUrl}`);
+          logger.info(`Open browser: ${field.getKeyUrl}`);
         }
       }
     }

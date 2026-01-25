@@ -1,3 +1,6 @@
+import { createLogger } from '../../../../../core/src/utils/logger.js';
+
+const logger = createLogger('WorkspacePanel');
 /**
  * WorkspacePanel - 3-panel workspace view for the side panel
  * 
@@ -106,7 +109,7 @@ export function WorkspacePanel({ theme, hasFocus }: WorkspacePanelProps) {
         rebuildFlattenedList(tree);
         setIsLoading(false);
       } catch (error) {
-        console.error('Failed to build file tree:', error);
+        logger.error('Failed to build file tree:', error);
         setIsLoading(false);
       }
     };
@@ -167,7 +170,7 @@ export function WorkspacePanel({ theme, hasFocus }: WorkspacePanelProps) {
               actualNode.expanded = true;
               rebuildFlattenedList(fileTree);
             }).catch(err => {
-              console.error('Failed to expand directory:', err);
+              logger.error('Failed to expand directory:', err);
             });
           }
         }
@@ -181,7 +184,7 @@ export function WorkspacePanel({ theme, hasFocus }: WorkspacePanelProps) {
           });
           focusManager.openModal('syntax-viewer');  // Register with focus manager
         }).catch(err => {
-          console.error('Failed to read file:', err);
+          logger.error('Failed to read file:', err);
         });
       }
     } else if (key.rightArrow && !key.ctrl && !key.meta) {
@@ -197,7 +200,7 @@ export function WorkspacePanel({ theme, hasFocus }: WorkspacePanelProps) {
             // Rebuild the flattened list to show the expanded children
             rebuildFlattenedList(fileTree);
           }).catch(err => {
-            console.error('Failed to expand directory:', err);
+            logger.error('Failed to expand directory:', err);
           });
         }
       }
@@ -230,7 +233,7 @@ export function WorkspacePanel({ theme, hasFocus }: WorkspacePanelProps) {
             // Add to the global FileFocusContext
             fileFocusContext.addFocusedFile(focusedFile);
           }).catch(err => {
-            console.error('Failed to focus file:', err);
+            logger.error('Failed to focus file:', err);
           });
         }
       }

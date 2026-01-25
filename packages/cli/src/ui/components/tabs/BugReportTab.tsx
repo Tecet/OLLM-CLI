@@ -1,3 +1,4 @@
+import { createLogger } from '../../../../../core/src/utils/logger.js';
 import { exec } from 'child_process';
 
 import { useState } from 'react';
@@ -6,6 +7,8 @@ import { Box, Text, useInput } from 'ink';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { useUI } from '../../../features/context/UIContext.js';
 import { useTabEscapeHandler } from '../../hooks/useTabEscapeHandler.js';
+
+const logger = createLogger('BugReportTab');
 
 export interface BugReportTabProps {
   width?: number;
@@ -42,7 +45,7 @@ export function BugReportTab({ width }: BugReportTabProps) {
       
     exec(command, (error: Error | null) => {
       if (error) {
-        console.error(`Failed to open URL: ${error.message}`);
+        logger.error(`Failed to open URL: ${error.message}`);
       }
     });
   };

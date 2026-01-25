@@ -1,3 +1,6 @@
+import { createLogger } from '../../../../../core/src/utils/logger.js';
+
+const logger = createLogger('HealthMonitorDialog');
 /**
  * HealthMonitorDialog - Dialog for monitoring MCP server health
  * 
@@ -272,7 +275,7 @@ export function HealthMonitorDialog({
     try {
       await restartServer(serverName);
     } catch (error) {
-      console.error(`Failed to restart server ${serverName}:`, error);
+      logger.error(`Failed to restart server ${serverName}:`, error);
     } finally {
       setRestartingServers(prev => {
         const next = new Set(prev);
@@ -298,7 +301,7 @@ export function HealthMonitorDialog({
     try {
       await toggleServer(serverName);
     } catch (error) {
-      console.error(`Failed to enable server ${serverName}:`, error);
+      logger.error(`Failed to enable server ${serverName}:`, error);
     }
   }, [toggleServer]);
 
@@ -310,7 +313,7 @@ export function HealthMonitorDialog({
     try {
       await refreshServers();
     } catch (error) {
-      console.error('Failed to refresh servers:', error);
+      logger.error('Failed to refresh servers:', error);
     } finally {
       setIsRefreshing(false);
     }

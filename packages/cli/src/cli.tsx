@@ -1,3 +1,4 @@
+import { createLogger } from '../../core/src/utils/logger.js';
 import { readFileSync , appendFileSync, mkdirSync, existsSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
@@ -9,6 +10,8 @@ import Yargs from 'yargs/yargs';
 
 import { loadConfig } from './config/configLoader.js';
 import { patchStdio, createWorkingStdio } from './utils/stdio.js';
+
+const logger = createLogger('cli');
 
 import type { Config } from './config/types.js';
 
@@ -111,7 +114,7 @@ export async function mainCLI(argvOverride?: string[], runOptions?: RunOptions) 
     .strict()
     .fail((msg, err) => {
       if (err) throw err;
-      console.error(`Error: ${msg}`);
+      logger.error(`Error: ${msg}`);
       if (runOptions?.exitOnComplete ?? true) process.exit(1);
       throw new Error(msg);
     })
@@ -261,32 +264,32 @@ try {
     cliOverrides: Object.keys(cliOverrides).length > 0 ? cliOverrides : undefined,
   });
   } catch (error) {
-    console.error(`Configuration error: ${error instanceof Error ? error.message : String(error)}`);
+    logger.error(`Configuration error: ${error instanceof Error ? error.message : String(error)}`);
     if (runOptions?.exitOnComplete ?? true) process.exit(1);
     throw error;
   }
 
 // TODO: Implement model management commands
   if (argv.listModels) {
-    console.log('Model management not yet implemented');
+    logger.info('Model management not yet implemented');
     if (runOptions?.exitOnComplete ?? true) process.exit(0);
     return 0;
   }
 
   if (argv.pullModel) {
-    console.log(`Pull model not yet implemented: ${argv.pullModel}`);
+    logger.info(`Pull model not yet implemented: ${argv.pullModel}`);
     if (runOptions?.exitOnComplete ?? true) process.exit(0);
     return 0;
   }
 
   if (argv.removeModel) {
-    console.log(`Remove model not yet implemented: ${argv.removeModel}`);
+    logger.info(`Remove model not yet implemented: ${argv.removeModel}`);
     if (runOptions?.exitOnComplete ?? true) process.exit(0);
     return 0;
   }
 
   if (argv.modelInfo) {
-    console.log(`Model info not yet implemented: ${argv.modelInfo}`);
+    logger.info(`Model info not yet implemented: ${argv.modelInfo}`);
     if (runOptions?.exitOnComplete ?? true) process.exit(0);
     return 0;
   }
@@ -304,7 +307,7 @@ if (argv.prompt) {
     if (stdinContent) {
       prompt = stdinContent;
     } else {
-      console.error('Error: No input provided via stdin');
+      logger.error('Error: No input provided via stdin');
       process.exit(1);
     }
   }
@@ -321,7 +324,7 @@ if (argv.prompt) {
       // Output result
       const output = runner.formatOutput(result, (argv.output as 'text' | 'json' | 'stream-json') || 'text');
       if (output) {
-        console.log(output);
+        logger.info(output);
       }
 
       if (runOptions?.exitOnComplete ?? true) process.exit(0);
@@ -335,8 +338,8 @@ if (argv.prompt) {
 
 // Ink requires a TTY-capable stdin for raw mode input handling.
 if (!process.stdin.isTTY) {
-  console.error('Error: interactive mode requires a TTY-capable stdin.');
-  console.error('Tip: use --prompt for non-interactive mode.');
+  logger.error('Error: interactive mode requires a TTY-capable stdin.');
+  logger.error('Tip: use --prompt for non-interactive mode.');
   if (runOptions?.exitOnComplete ?? true) process.exit(1);
   throw new Error('TTY required');
 }
@@ -361,7 +364,7 @@ try {
     try {
       const msg = `[uncaughtException] ${new Date().toISOString()} ${err instanceof Error ? err.stack || err.message : String(err)}\n`;
       appendFileSync(logPath, msg);
-      console.error(msg);
+      logger.error(msg);
     } catch {
       // ignore
     }
@@ -373,7 +376,7 @@ try {
     try {
       const msg = `[unhandledRejection] ${new Date().toISOString()} ${reason instanceof Error ? reason.stack || reason.message : JSON.stringify(reason)}\n`;
       appendFileSync(logPath, msg);
-      console.error(msg);
+      logger.error(msg);
     } catch {
       // ignore
     }
@@ -407,7 +410,7 @@ const isMainModule = import.meta.url === scriptUrl;
 
 if (isMainModule) {
   mainCLI().catch((error) => {
-    console.error('Fatal error:', error);
+    logger.error('Fatal error:', error);
     process.exit(1);
   });
 }

@@ -1,3 +1,6 @@
+import { createLogger } from '../../../../../core/src/utils/logger.js';
+
+const logger = createLogger('SyntaxViewer');
 /**
  * SyntaxViewer Component
  * 
@@ -187,7 +190,7 @@ export const SyntaxViewer: React.FC<SyntaxViewerProps> = ({
         setHighlightedContent(text);
       } catch (err) {
         // If highlighting fails, fall back to plain text
-        console.error('Syntax highlighting error:', err);
+        logger.error('Syntax highlighting error:', err);
         setError(err instanceof Error ? err.message : 'Unknown error');
         setHighlightedContent(content);
       } finally {

@@ -1,6 +1,9 @@
+import { createLogger } from '../../../../core/src/utils/logger.js';
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 import { ModeType, Role, MessagePart, MODE_METADATA } from '@ollm/ollm-cli-core';
+
+const logger = createLogger('ActiveContextState');
 
 import { useContextManager } from './ContextManagerContext.js';
 import { useHooks } from '../../ui/contexts/HooksContext.js';
@@ -233,7 +236,7 @@ export const ActiveContextProvider: React.FC<{ children: ReactNode }> = ({ child
             }));
           }
       } catch (err) {
-          console.warn('Failed to get context for analysis:', err);
+          logger.warn('Failed to get context for analysis:', err);
       }
 
       const contextAnalyzer = modeManager?.getContextAnalyzer();

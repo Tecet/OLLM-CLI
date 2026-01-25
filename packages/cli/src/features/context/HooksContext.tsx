@@ -1,3 +1,6 @@
+import { createLogger } from '../../../../core/src/utils/logger.js';
+
+const logger = createLogger('HooksContext');
 /**
  * HooksContext - State management for the Hooks Panel UI
  * 
@@ -100,7 +103,7 @@ export const HooksProvider: React.FC<HooksProviderProps> = ({ children }) => {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load hooks';
       setError(errorMessage);
-      console.error('Error loading hooks:', err);
+      logger.error('Error loading hooks:', err);
     } finally {
       setLoading(false);
     }

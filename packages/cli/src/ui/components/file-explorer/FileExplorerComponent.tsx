@@ -1,3 +1,6 @@
+import { createLogger } from '../../../../../core/src/utils/logger.js';
+
+const logger = createLogger('FileExplorerComponent');
 /**
  * FileExplorerComponent - Main container for File Explorer UI
  * 
@@ -229,7 +232,7 @@ export function FileExplorerComponent({
           }
         } catch (error) {
           // Workspace loading failed, continue in browse mode
-          console.warn('Failed to load workspace:', error);
+          logger.warn('Failed to load workspace:', error);
         }
       }
 
@@ -260,7 +263,7 @@ export function FileExplorerComponent({
                 fileFocusContext.addFocusedFile(focusedFile);
               } catch (error) {
                 // Skip files that can't be focused (e.g., deleted files)
-                console.warn(`Failed to restore focused file: ${filePath}`, error);
+                logger.warn(`Failed to restore focused file: ${filePath}`, error);
               }
             }
           }
@@ -284,7 +287,7 @@ export function FileExplorerComponent({
           }
         } catch (error) {
           // State restoration failed, continue with default state
-          console.warn('Failed to restore state:', error);
+          logger.warn('Failed to restore state:', error);
         }
       }
 
@@ -422,7 +425,7 @@ export function FileExplorerComponent({
           lastActiveProject: workspaceState.activeProject,
         });
       } catch (error) {
-        console.warn('Failed to save state on unmount:', error);
+        logger.warn('Failed to save state on unmount:', error);
       }
     };
   }, [services, treeState, workspaceState, fileFocusContext.state.focusedFiles]);

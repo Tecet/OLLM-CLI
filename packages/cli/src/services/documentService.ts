@@ -1,3 +1,6 @@
+import { createLogger } from '../../../core/src/utils/logger.js';
+
+const logger = createLogger('documentService');
 import fs from 'fs';
 import path from 'path';
 
@@ -33,7 +36,7 @@ export class DocumentService {
     try {
       // Check if base path exists
       if (!fs.existsSync(this.basePath)) {
-        console.warn(`Documentation path not found: ${this.basePath}`);
+        logger.warn(`Documentation path not found: ${this.basePath}`);
         return folders;
       }
 
@@ -68,7 +71,7 @@ export class DocumentService {
 
       return folders;
     } catch (error) {
-      console.error('Error discovering documents:', error);
+      logger.error('Error discovering documents:', error);
       return folders;
     }
   }
@@ -100,7 +103,7 @@ export class DocumentService {
 
       return documents;
     } catch (error) {
-      console.error(`Error scanning folder ${folderPath}:`, error);
+      logger.error(`Error scanning folder ${folderPath}:`, error);
       return documents;
     }
   }
@@ -113,7 +116,7 @@ export class DocumentService {
       const content = await fs.promises.readFile(filePath, 'utf-8');
       return content;
     } catch (error) {
-      console.error(`Error loading document ${filePath}:`, error);
+      logger.error(`Error loading document ${filePath}:`, error);
       return `Error loading document: ${error}`;
     }
   }

@@ -1,3 +1,6 @@
+import { createLogger } from '../../../../../core/src/utils/logger.js';
+
+const logger = createLogger('ExplorerPersistence');
 /**
  * ExplorerPersistence - Manages state persistence for File Explorer
  * 
@@ -130,7 +133,7 @@ export class ExplorerPersistence {
       // Validate state structure
       if (!this.isValidState(rawState)) {
         if (!this.silent) {
-          console.warn('Corrupted explorer state file detected. Resetting to default state.');
+          logger.warn('Corrupted explorer state file detected. Resetting to default state.');
         }
         return { ...DEFAULT_STATE };
       }
@@ -158,7 +161,7 @@ export class ExplorerPersistence {
           stateFilePath: this.stateFilePath,
         });
         
-        console.warn(`Failed to load explorer state: ${errorInfo.message}. Using default state.`);
+        logger.warn(`Failed to load explorer state: ${errorInfo.message}. Using default state.`);
       }
       return { ...DEFAULT_STATE };
     }

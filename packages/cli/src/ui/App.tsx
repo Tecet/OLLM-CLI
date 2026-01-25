@@ -1,3 +1,6 @@
+import { createLogger } from '../../../core/src/utils/logger.js';
+
+const logger = createLogger('App');
 /**
  * Main App component - integrates all contexts and wires up the UI
  * 
@@ -13,6 +16,9 @@
  */
 
 import { spawn } from 'child_process';
+import { openSync, mkdirSync } from 'fs';
+import { join } from 'path';
+import { homedir } from 'os';
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { Box, Text, useStdout, BoxProps, useInput } from 'ink';
@@ -240,15 +246,28 @@ function AppContent({ config }: AppContentProps) {
   }, []);
 
   const startOllamaServe = useCallback((): void => {
-    const child = spawn('ollama', ['serve'], {
-      detached: true,
-      stdio: 'ignore',
-      windowsHide: true
-    });
-    child.on('error', (error) => {
-      console.warn('[Ollama] Failed to start server:', error);
-    });
-    child.unref();
+    try {
+      const logDir = join(homedir(), '.ollm', 'logs');
+      try { mkdirSync(logDir, { recursive: true }); } catch {}
+      const logFile = join(logDir, 'ollama_server.log');
+      const out = openSync(logFile, 'a');
+      const err = openSync(logFile, 'a');
+
+      // On Windows, use shell: true to locate ollama in PATH correctly
+      const child = spawn('ollama', ['serve'], {
+        detached: true,
+        stdio: ['ignore', out, err],
+        windowsHide: true,
+        shell: process.platform === 'win32' // Use shell on Windows to support installers/shims
+      });
+      
+      child.on('error', (error) => {
+        logger.warn('[Ollama] Failed to spawn process:', error);
+      });
+      child.unref();
+    } catch (err) {
+      logger.warn('[Ollama] Exception starting server:', err);
+    }
   }, []);
 
   const normalizeOllamaHost = useCallback((host: string): string => {
@@ -284,7 +303,7 @@ function AppContent({ config }: AppContentProps) {
       addMessage({ role: 'system', content: 'Starting Ollama server...', excludeFromContext: true });
       startOllamaServe();
 
-      const maxAttempts = 8;
+      const maxAttempts = 15;
       for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         const ok = await checkOllamaHealth(ollamaHost, 2500);
         if (ok) {
@@ -786,7 +805,7 @@ ${toolSupport}
 
   // Handle save session
   const handleSaveSession = useCallback(async () => {
-    console.log('Save session');
+    logger.info('Save session');
   }, []);
 
   // Handle toggle debug
@@ -1127,7 +1146,7 @@ export function App({ config }: AppProps) {
       return parseFloat(match[1]);
     }
     // Default to 7B if can't determine
-    console.warn(`[App] Could not extract model size from "${modelName}", defaulting to 7B`);
+    logger.warn(`[App] Could not extract model size from "${modelName}", defaulting to 7B`);
     return 7;
   };
 
@@ -1200,7 +1219,7 @@ export function App({ config }: AppProps) {
       initialTheme = builtInThemes[initialThemeName];
     }
   } catch (e) {
-    console.warn('Failed to load initial theme from built-ins, using default:', e);
+    logger.warn('Failed to load initial theme from built-ins, using default:', e);
   }
   
   // Get workspace path (if available)
@@ -1247,7 +1266,7 @@ export function App({ config }: AppProps) {
                                     <AllCallbacksBridge onOpenModelMenu={() => {
                                       // This will be wired up properly when we refactor AppContent
                                       // For now, the global callback will be registered
-                                      console.warn('openModelMenu called from bridge - needs wiring');
+                                      logger.warn('openModelMenu called from bridge - needs wiring');
                                     }}>
                                       <ReviewProvider>
                                         <FocusProvider>

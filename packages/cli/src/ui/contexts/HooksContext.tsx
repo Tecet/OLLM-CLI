@@ -1,3 +1,6 @@
+import { createLogger } from '../../../../core/src/utils/logger.js';
+
+const logger = createLogger('HooksContext');
 /**
  * HooksContext - Manages hook state and operations for the Hooks Panel UI
  * 
@@ -124,8 +127,8 @@ export function HooksProvider({
   
   const settingsService = useMemo(() => customSettings || SettingsService.getInstance(), [customSettings]);
   // Debug: log whether we are using a custom settings instance (tests) or the singleton
-  console.debug('[HooksProvider] using customSettings?', !!customSettings);
-  console.debug('[HooksProvider] settingsService identity', settingsService);
+  logger.debug('[HooksProvider] using customSettings?', !!customSettings);
+  logger.debug('[HooksProvider] settingsService identity', settingsService);
 
   /**
    * Categorize hooks by event type
@@ -234,9 +237,9 @@ export function HooksProvider({
       const hookSettings = settingsService.getHookSettings();
       // Debug: snapshot of settings read
       try {
-        console.debug('[HooksProvider] read hookSettings', JSON.stringify(hookSettings));
+        logger.debug('[HooksProvider] read hookSettings', JSON.stringify(hookSettings));
       } catch {
-        console.debug('[HooksProvider] read hookSettings (unserializable)');
+        logger.debug('[HooksProvider] read hookSettings (unserializable)');
       }
       const enabledHooks = new Set<string>();
       
@@ -277,7 +280,7 @@ export function HooksProvider({
       const newEnabledState = !currentlyEnabled;
 
       // Update settings
-      console.debug('[HooksProvider] setHookEnabled', hookId, newEnabledState);
+      logger.debug('[HooksProvider] setHookEnabled', hookId, newEnabledState);
       settingsService.setHookEnabled(hookId, newEnabledState);
 
       // Update local state
@@ -289,7 +292,7 @@ export function HooksProvider({
           newEnabledHooks.delete(hookId);
         }
 
-        console.debug('[HooksProvider] updating local enabledHooks for', hookId, '->', newEnabledState);
+        logger.debug('[HooksProvider] updating local enabledHooks for', hookId, '->', newEnabledState);
 
         return {
           ...prev,

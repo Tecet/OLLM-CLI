@@ -1,3 +1,6 @@
+import { createLogger } from '../../../../core/src/utils/logger.js';
+
+const logger = createLogger('MCPContext');
 /**
  * MCPContext - Manages MCP server state and operations for the MCP Panel UI
  * 
@@ -454,7 +457,7 @@ export function MCPProvider({
           try {
             await mcpClient.startServer(serverName, serverConfig);
           } catch (error) {
-            console.warn(`Failed to start server ${serverName}:`, error);
+            logger.warn(`Failed to start server ${serverName}:`, error);
             // Continue with other servers even if one fails
           }
         }
@@ -532,7 +535,7 @@ export function MCPProvider({
               }, { maxAttempts: 3, initialDelay: 500 });
               // Note: toolsList can be empty array - that's valid, not an error
             } catch (err) {
-              console.warn(`Failed to get tools for ${serverName} after retries:`, err);
+              logger.warn(`Failed to get tools for ${serverName} after retries:`, err);
               // Only emit warning if server is still in config and there's a real error
               if (serverConfig) {
                 const errorMsg = err instanceof Error ? err.message : String(err);
@@ -549,7 +552,7 @@ export function MCPProvider({
             }
           }
         } catch (error) {
-          console.warn(`Failed to get tools for ${serverName}:`, error);
+          logger.warn(`Failed to get tools for ${serverName}:`, error);
         }
 
         // Manage tool registration
@@ -571,7 +574,7 @@ export function MCPProvider({
           try {
             oauthStatus = await oauthProvider.getOAuthStatus(serverName);
           } catch (error) {
-            console.warn(`Failed to get OAuth status for ${serverName}:`, error);
+            logger.warn(`Failed to get OAuth status for ${serverName}:`, error);
           }
         }
 
@@ -619,7 +622,7 @@ export function MCPProvider({
         marketplace: servers,
       }));
     } catch (error) {
-      console.warn('Failed to load marketplace:', error);
+      logger.warn('Failed to load marketplace:', error);
       // Don't set error state for marketplace failures
     }
   }, []);
@@ -838,7 +841,7 @@ export function MCPProvider({
         try {
           await oauthProvider.revokeAccess(serverName, server.config.oauth);
         } catch (error) {
-          console.warn(`Failed to revoke OAuth for ${serverName}:`, error);
+          logger.warn(`Failed to revoke OAuth for ${serverName}:`, error);
         }
       }
       
@@ -1030,7 +1033,7 @@ export function MCPProvider({
     try {
       return await mcpMarketplace.searchServers(query);
     } catch (error) {
-      console.warn('Failed to search marketplace:', error);
+      logger.warn('Failed to search marketplace:', error);
       return [];
     }
   }, []);
@@ -1043,7 +1046,7 @@ export function MCPProvider({
       await mcpMarketplace.refreshCache();
       await loadMarketplace();
     } catch (error) {
-      console.warn('Failed to refresh marketplace:', error);
+      logger.warn('Failed to refresh marketplace:', error);
     }
   }, [loadMarketplace]);
 
@@ -1054,7 +1057,7 @@ export function MCPProvider({
     try {
       return await mcpClient.getServerLogs(serverName, lines);
     } catch (error) {
-      console.error(`Failed to get logs for ${serverName}:`, error);
+      logger.error(`Failed to get logs for ${serverName}:`, error);
       return [];
     }
   }, [mcpClient]);
@@ -1065,7 +1068,7 @@ export function MCPProvider({
   const clearServerLogs = useCallback(async (serverName: string): Promise<void> => {
     // This would require implementing log clearing in MCPClient
     // For now, this is a placeholder
-    console.warn(`Clear logs not yet implemented for ${serverName}`);
+    logger.warn(`Clear logs not yet implemented for ${serverName}`);
   }, []);
 
   /**

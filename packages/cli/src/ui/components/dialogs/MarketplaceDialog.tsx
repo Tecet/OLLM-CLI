@@ -1,3 +1,6 @@
+import { createLogger } from '../../../../../core/src/utils/logger.js';
+
+const logger = createLogger('MarketplaceDialog');
 /**
  * MarketplaceDialog - Dialog for browsing and installing MCP servers from marketplace
  * 
@@ -237,7 +240,7 @@ export function MarketplaceDialog({ onClose }: MarketplaceDialogProps) {
       setInstallDialogServer(null);
     } catch (err) {
       // Error is handled by InstallServerDialog
-      console.error('Installation failed:', err);
+      logger.error('Installation failed:', err);
     }
   }, [installServer]);
 

@@ -1,8 +1,11 @@
+import { createLogger } from '../../../../../../core/src/utils/logger.js';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 import React, { useState, useEffect, useReducer, memo } from 'react';
+
+const logger = createLogger('LlamaAnimationPicture');
 import { Box, Text, useStdout } from 'ink';
 import terminalImage from 'terminal-image';
 
@@ -61,7 +64,7 @@ async function preRenderFrames(height: number): Promise<FrameCache | null> {
         
         return cache;
     } catch (e) {
-        console.error('Failed to pre-render frames:', e);
+        logger.error('Failed to pre-render frames:', e);
         return null;
     }
 }

@@ -1,3 +1,6 @@
+import { createLogger } from '../../../../../core/src/utils/logger.js';
+
+const logger = createLogger('ServerLogsViewer');
 /**
  * ServerLogsViewer - Dialog for viewing MCP server logs
  * 
@@ -179,7 +182,7 @@ export function ServerLogsViewer({
       const logLines = await getServerLogs(serverName, 100);
       setLogs(logLines);
     } catch (error) {
-      console.error(`Failed to load logs for ${serverName}:`, error);
+      logger.error(`Failed to load logs for ${serverName}:`, error);
       setLogs([]);
     } finally {
       setIsLoading(false);
@@ -220,14 +223,14 @@ export function ServerLogsViewer({
       const logText = filteredLogs.map(entry => entry.raw).join('\n');
       
       // Simulate clipboard copy (would use clipboardy or similar in production)
-      console.log('Copying logs to clipboard:', logText);
+      logger.info('Copying logs to clipboard:', logText);
       
       // In a terminal environment, we might write to a temp file
       // or use platform-specific clipboard commands
       
       await new Promise(resolve => setTimeout(resolve, 500));
     } catch (error) {
-      console.error('Failed to copy logs:', error);
+      logger.error('Failed to copy logs:', error);
     } finally {
       setIsCopying(false);
     }
@@ -244,7 +247,7 @@ export function ServerLogsViewer({
         await loadLogs();
       }
     } catch (error) {
-      console.error('Failed to clear logs:', error);
+      logger.error('Failed to clear logs:', error);
     } finally {
       setIsClearing(false);
     }

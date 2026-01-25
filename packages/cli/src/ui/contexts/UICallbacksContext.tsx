@@ -1,3 +1,6 @@
+import { createLogger } from '../../../../core/src/utils/logger.js';
+
+const logger = createLogger('UICallbacksContext');
 /**
  * UI Callbacks Context
  * 
@@ -46,21 +49,21 @@ export interface UICallbacks {
  */
 const defaultCallbacks: UICallbacks = {
   promptUser: async (message: string, options: string[]) => {
-    console.warn('[UICallbacks] promptUser called but no callback registered:', message);
+    logger.warn('[UICallbacks] promptUser called but no callback registered:', message);
     // Default to last option (usually the safe/conservative choice)
     return options[options.length - 1];
   },
   
   addSystemMessage: (message: string) => {
-    console.warn('[UICallbacks] addSystemMessage called but no callback registered:', message);
+    logger.warn('[UICallbacks] addSystemMessage called but no callback registered:', message);
   },
   
   clearContext: () => {
-    console.warn('[UICallbacks] clearContext called but no callback registered');
+    logger.warn('[UICallbacks] clearContext called but no callback registered');
   },
   
   openModelMenu: () => {
-    console.warn('[UICallbacks] openModelMenu called but no callback registered');
+    logger.warn('[UICallbacks] openModelMenu called but no callback registered');
   },
 };
 

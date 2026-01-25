@@ -1,6 +1,9 @@
+import { createLogger } from '../../../core/src/utils/logger.js';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
+
+const logger = createLogger('hookFileService');
 
 import type { UIHook } from '../features/hooks/types.js';
 
@@ -67,7 +70,7 @@ export class HookFileService {
 
       return hooks;
     } catch (error) {
-      console.error(`Error loading hooks from ${directory}:`, error);
+      logger.error(`Error loading hooks from ${directory}:`, error);
       return hooks;
     }
   }
@@ -89,7 +92,7 @@ export class HookFileService {
       // Validate hook structure
       const validation = this.validateHook(data);
       if (!validation.valid) {
-        console.warn(`Invalid hook file ${filePath}:`, validation.errors);
+        logger.warn(`Invalid hook file ${filePath}:`, validation.errors);
         return null;
       }
 
@@ -121,9 +124,9 @@ export class HookFileService {
       return hook;
     } catch (error) {
       if (error instanceof SyntaxError) {
-        console.error(`JSON parsing error in ${filePath}:`, error.message);
+        logger.error(`JSON parsing error in ${filePath}:`, error.message);
       } else {
-        console.error(`Failed to load hook file ${filePath}:`, error);
+        logger.error(`Failed to load hook file ${filePath}:`, error);
       }
       return null;
     }

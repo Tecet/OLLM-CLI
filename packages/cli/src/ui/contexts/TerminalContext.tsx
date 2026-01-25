@@ -1,3 +1,6 @@
+import { createLogger } from '../../../../core/src/utils/logger.js';
+
+const logger = createLogger('TerminalContext');
 /**
  * Terminal Context
  * 
@@ -72,7 +75,7 @@ export function TerminalProvider({ children }: { children: React.ReactNode }) {
             setOutput(serialized);
           });
         } catch (err) {
-          console.error('Terminal data processing error:', err);
+          logger.error('Terminal data processing error:', err);
         }
       });
 
@@ -100,7 +103,7 @@ export function TerminalProvider({ children }: { children: React.ReactNode }) {
           try {
             ptyProcessRef.current.kill();
           } catch (error) {
-            console.warn('Failed to kill PTY process:', error);
+            logger.warn('Failed to kill PTY process:', error);
           }
         }
         
@@ -108,7 +111,7 @@ export function TerminalProvider({ children }: { children: React.ReactNode }) {
         ptyProcessRef.current = null;
       };
     } catch (error) {
-      console.error('Failed to spawn terminal:', error);
+      logger.error('Failed to spawn terminal:', error);
       setIsRunning(false);
       return () => {};
     }

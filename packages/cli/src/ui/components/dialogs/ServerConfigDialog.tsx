@@ -1,3 +1,6 @@
+import { createLogger } from '../../../../../core/src/utils/logger.js';
+
+const logger = createLogger('ServerConfigDialog');
 /**
  * ServerConfigDialog - Dialog for configuring MCP server settings
  * 
@@ -211,7 +214,7 @@ export function ServerConfigDialog({
       onClose();
     } catch (error) {
       // Error handling - could show error message in dialog
-      console.error('Failed to save configuration:', error);
+      logger.error('Failed to save configuration:', error);
     } finally {
       setIsSaving(false);
     }

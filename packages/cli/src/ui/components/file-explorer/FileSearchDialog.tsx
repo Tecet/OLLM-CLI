@@ -1,3 +1,6 @@
+import { createLogger } from '../../../../../core/src/utils/logger.js';
+
+const logger = createLogger('FileSearchDialog');
 /**
  * FileSearchDialog - Search file contents using grep tool
  * 
@@ -90,7 +93,7 @@ export function FileSearchDialog({
     try {
       const grepTool = toolRegistry.get('grep');
       if (!grepTool || !grepTool.createInvocation) {
-        console.error('grep tool not available');
+        logger.error('grep tool not available');
         setIsSearching(false);
         return;
       }
@@ -118,7 +121,7 @@ export function FileSearchDialog({
       setResults(parsedResults);
       setSelectedIndex(0);
     } catch (error) {
-      console.error('Search error:', error);
+      logger.error('Search error:', error);
     } finally {
       setIsSearching(false);
     }

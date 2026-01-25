@@ -1,3 +1,6 @@
+import { createLogger } from '../../../../core/src/utils/logger.js';
+
+const logger = createLogger('keyboardHandler');
 /**
  * Keyboard shortcut handler service
  * Manages keyboard shortcuts and their execution
@@ -54,7 +57,7 @@ export class KeyboardHandler {
       } else {
         // Only warn if not in a test environment
         if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
-          console.warn(
+          logger.warn(
             `Keyboard shortcut conflict: ${shortcut.key} is already registered. Using default.`
           );
         }

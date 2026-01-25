@@ -1,3 +1,6 @@
+import { createLogger } from '../../../../core/src/utils/logger.js';
+
+const logger = createLogger('ServiceContext');
 /**
  * Service Context for React components
  * 
@@ -124,19 +127,19 @@ export function ServiceProvider({
     extensionManager.setMCPClient(mcpClient);
     extensionManager.setMCPToolWrapper(mcpToolWrapper);
     
-    console.log('✅ MCP integration initialized: MCPClient and MCPToolWrapper wired into ExtensionManager');
+    logger.info('✅ MCP integration initialized: MCPClient and MCPToolWrapper wired into ExtensionManager');
   }, [container]);
   
   // Initialize services on mount
   useEffect(() => {
     container.initializeAll().catch(err => {
-      console.error('Failed to initialize services:', err);
+      logger.error('Failed to initialize services:', err);
     });
     
     // Cleanup on unmount
     return () => {
       container.shutdown().catch(err => {
-        console.error('Failed to shutdown services:', err);
+        logger.error('Failed to shutdown services:', err);
       });
     };
   }, [container]);

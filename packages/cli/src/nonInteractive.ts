@@ -1,3 +1,6 @@
+import { createLogger } from '../../core/src/utils/logger.js';
+
+const logger = createLogger('nonInteractive');
 /**
  * Non-Interactive Runner
  * Handles single-prompt execution without the TUI.
@@ -281,7 +284,7 @@ export class NonInteractiveRunner {
    * @param event The event to emit
    */
   private emitStreamEvent(event: StreamEvent): void {
-    console.log(JSON.stringify(event));
+    logger.info(JSON.stringify(event));
   }
   
   /**
@@ -290,7 +293,7 @@ export class NonInteractiveRunner {
    */
   handleError(error: Error | NonInteractiveError): never {
     // Write error to stderr
-    console.error(`\nError: ${error.message}`);
+    logger.error(`\nError: ${error.message}`);
     
     // Determine exit code
     let exitCode = NonInteractiveErrorCode.GENERAL_ERROR;
@@ -301,61 +304,61 @@ export class NonInteractiveRunner {
       // Provide helpful suggestions based on error type
       switch (exitCode) {
         case NonInteractiveErrorCode.PROVIDER_CONNECTION_FAILURE:
-          console.error('\n❌ Connection Status: Failed');
-          console.error('\nRetry Options:');
-          console.error('  1. Check that the provider service is running');
-          console.error('  2. Verify the host URL in your configuration');
-          console.error('  3. Try using --host to specify a different endpoint');
-          console.error('  4. Check firewall settings');
-          console.error('\nFor Ollama:');
-          console.error('  - Start Ollama: ollama serve');
-          console.error('  - Default host: http://localhost:11434');
+          logger.error('\n❌ Connection Status: Failed');
+          logger.error('\nRetry Options:');
+          logger.error('  1. Check that the provider service is running');
+          logger.error('  2. Verify the host URL in your configuration');
+          logger.error('  3. Try using --host to specify a different endpoint');
+          logger.error('  4. Check firewall settings');
+          logger.error('\nFor Ollama:');
+          logger.error('  - Start Ollama: ollama serve');
+          logger.error('  - Default host: http://localhost:11434');
           break;
         
         case NonInteractiveErrorCode.MODEL_NOT_FOUND:
-          console.error('\n❌ Model Status: Not Found');
-          console.error('\nRetry Options:');
-          console.error('  1. Use --list-models to see available models');
-          console.error('  2. Pull the model with --pull-model <name>');
-          console.error('  3. Check the model name spelling');
-          console.error('\nExample:');
-          console.error('  ollm --pull-model llama3.2:3b');
-          console.error('  ollm --list-models');
+          logger.error('\n❌ Model Status: Not Found');
+          logger.error('\nRetry Options:');
+          logger.error('  1. Use --list-models to see available models');
+          logger.error('  2. Pull the model with --pull-model <name>');
+          logger.error('  3. Check the model name spelling');
+          logger.error('\nExample:');
+          logger.error('  ollm --pull-model llama3.2:3b');
+          logger.error('  ollm --list-models');
           break;
         
         case NonInteractiveErrorCode.TIMEOUT:
-          console.error('\n⏱️  Connection Status: Timeout');
-          console.error('\nRetry Options:');
-          console.error('  1. Increase the timeout in your configuration');
-          console.error('  2. Check provider connectivity and performance');
-          console.error('  3. Try a smaller model or simpler prompt');
-          console.error('  4. Retry the request');
-          console.error('\nConfiguration:');
-          console.error('  Add to ~/.ollm/config.yaml:');
-          console.error('  provider:');
-          console.error('    ollama:');
-          console.error('      timeout: 60000  # 60 seconds');
+          logger.error('\n⏱️  Connection Status: Timeout');
+          logger.error('\nRetry Options:');
+          logger.error('  1. Increase the timeout in your configuration');
+          logger.error('  2. Check provider connectivity and performance');
+          logger.error('  3. Try a smaller model or simpler prompt');
+          logger.error('  4. Retry the request');
+          logger.error('\nConfiguration:');
+          logger.error('  Add to ~/.ollm/config.yaml:');
+          logger.error('  provider:');
+          logger.error('    ollama:');
+          logger.error('      timeout: 60000  # 60 seconds');
           break;
         
         case NonInteractiveErrorCode.INVALID_OUTPUT_FORMAT:
-          console.error('\n❌ Invalid Output Format');
-          console.error('\nValid output formats:');
-          console.error('  - text        Plain text response only');
-          console.error('  - json        JSON object with response and metadata');
-          console.error('  - stream-json NDJSON stream of events');
-          console.error('\nExample:');
-          console.error('  ollm --prompt "Hello" --output json');
+          logger.error('\n❌ Invalid Output Format');
+          logger.error('\nValid output formats:');
+          logger.error('  - text        Plain text response only');
+          logger.error('  - json        JSON object with response and metadata');
+          logger.error('  - stream-json NDJSON stream of events');
+          logger.error('\nExample:');
+          logger.error('  ollm --prompt "Hello" --output json');
           break;
         
         default:
-          console.error('\nFor more help, run: ollm --help');
+          logger.error('\nFor more help, run: ollm --help');
           break;
       }
     } else {
-      console.error('\nFor more help, run: ollm --help');
+      logger.error('\nFor more help, run: ollm --help');
     }
     
-    console.error(''); // Empty line before exit
+    logger.error(''); // Empty line before exit
     process.exit(exitCode);
   }
 }

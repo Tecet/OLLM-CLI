@@ -1,3 +1,4 @@
+import { createLogger } from '../../../../core/src/utils/logger.js';
 import fs, { existsSync, readFileSync } from 'fs';
 import path from 'path';
 
@@ -25,6 +26,8 @@ import { SettingsService } from '../../config/settingsService.js';
 import { profileManager } from '../profiles/ProfileManager.js';
 
 import type { ToolCall as CoreToolCall, ContextMessage, ProviderMetrics, ToolSchema } from '@ollm/core';
+
+const logger = createLogger('ChatContext');
 
 const tieredPromptStore = new TieredPromptStore();
 tieredPromptStore.load();
@@ -354,7 +357,7 @@ export function ChatProvider({
           provider?.name ?? 'unknown'
         );
       } catch (error) {
-        console.error('[ChatRecording] Failed to create session:', error);
+        logger.error('[ChatRecording] Failed to create session:', error);
         return;
       }
     }
@@ -365,7 +368,7 @@ export function ChatProvider({
         timestamp: new Date().toISOString()
       });
     } catch (error) {
-      console.error('[ChatRecording] Failed to record message:', error);
+      logger.error('[ChatRecording] Failed to record message:', error);
     }
   }, [serviceContainer, currentModel, provider]);
   
@@ -659,7 +662,7 @@ export function ChatProvider({
               try {
                 await contextActions.createSnapshot();
               } catch (snapshotError) {
-                console.warn('Failed to create transition snapshot:', snapshotError);
+                logger.warn('Failed to create transition snapshot:', snapshotError);
                 // Continue with mode switch even if snapshot fails
               }
             }
@@ -675,7 +678,7 @@ export function ChatProvider({
             });
           }
         } catch (modeError) {
-          console.error('Mode switching error:', modeError);
+          logger.error('Mode switching error:', modeError);
           // Continue with normal flow even if mode switching fails
         }
       }
@@ -834,12 +837,12 @@ export function ChatProvider({
         let thinkingContent = ''; // Track thinking content from Ollama
 
         // DEBUG: Log exact request being sent to LLM
-        console.log('=== LLM REQUEST DEBUG ===');
-        console.log('[DEBUG] System Prompt (first 500 chars):', systemPrompt?.substring(0, 500));
-        console.log('[DEBUG] History length:', history.length);
-        console.log('[DEBUG] History roles:', history.map((m: {role: string}) => m.role));
-        console.log('[DEBUG] Tools being sent:', toolSchemas?.map(t => t.name) || 'NONE');
-        console.log('=========================');
+        logger.info('=== LLM REQUEST DEBUG ===');
+        logger.info('[DEBUG] System Prompt (first 500 chars):', systemPrompt?.substring(0, 500));
+        logger.info('[DEBUG] History length:', history.length);
+        logger.info('[DEBUG] History roles:', history.map((m: {role: string}) => m.role));
+        logger.info('[DEBUG] Tools being sent:', toolSchemas?.map(t => t.name) || 'NONE');
+        logger.info('=========================');
 
         // Emit before_model hook event
         if (serviceContainer) {
@@ -1060,7 +1063,7 @@ export function ChatProvider({
               // but for now we keep it for status visibility.
           } else if (turnCount === 1) {
               // If the very first turn produced nothing, something is wrong
-              console.warn('LLM produced empty response on first turn');
+              logger.warn('LLM produced empty response on first turn');
           }
 
           if (toolCallReceived) {
@@ -1209,7 +1212,7 @@ export function ChatProvider({
               stopLoop = true;
           }
         } catch (turnErr) {
-            console.error('Agent Turn Error:', turnErr);
+            logger.error('Agent Turn Error:', turnErr);
             stopLoop = true;
         }
       }

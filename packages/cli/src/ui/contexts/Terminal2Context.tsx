@@ -1,3 +1,6 @@
+import { createLogger } from '../../../../core/src/utils/logger.js';
+
+const logger = createLogger('Terminal2Context');
 /**
  * Terminal 2 Context
  *
@@ -69,7 +72,7 @@ export function Terminal2Provider({ children }: { children: React.ReactNode }) {
             setOutput(serialized);
           });
         } catch (err) {
-          console.error('Terminal 2 data processing error:', err);
+          logger.error('Terminal 2 data processing error:', err);
         }
       });
 
@@ -94,14 +97,14 @@ export function Terminal2Provider({ children }: { children: React.ReactNode }) {
           try {
             ptyProcessRef.current.kill();
           } catch (error) {
-            console.warn('Failed to kill Terminal 2 PTY process:', error);
+            logger.warn('Failed to kill Terminal 2 PTY process:', error);
           }
         }
 
         ptyProcessRef.current = null;
       };
     } catch (error) {
-      console.error('Failed to spawn Terminal 2:', error);
+      logger.error('Failed to spawn Terminal 2:', error);
       setIsRunning(false);
       return () => {};
     }

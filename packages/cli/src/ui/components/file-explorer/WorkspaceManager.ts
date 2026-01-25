@@ -1,3 +1,6 @@
+import { createLogger } from '../../../../../core/src/utils/logger.js';
+
+const logger = createLogger('WorkspaceManager');
 /**
  * WorkspaceManager - Manages multi-project workspace configuration
  * 
@@ -76,7 +79,7 @@ export class WorkspaceManager {
       // Validate required project fields
       if (!project.name || !project.path) {
         if (!this.silent) {
-          console.warn(`Skipping project with missing name or path: ${JSON.stringify(project)}`);
+          logger.warn(`Skipping project with missing name or path: ${JSON.stringify(project)}`);
         }
         continue;
       }
@@ -89,7 +92,7 @@ export class WorkspaceManager {
       // Check if project path exists
       if (!fs.existsSync(projectPath)) {
         if (!this.silent) {
-          console.warn(`Skipping project "${project.name}" with invalid path: ${projectPath}`);
+          logger.warn(`Skipping project "${project.name}" with invalid path: ${projectPath}`);
         }
         continue;
       }
@@ -97,7 +100,7 @@ export class WorkspaceManager {
       // Check if project path is a directory
       if (!fs.statSync(projectPath).isDirectory()) {
         if (!this.silent) {
-          console.warn(`Skipping project "${project.name}" - path is not a directory: ${projectPath}`);
+          logger.warn(`Skipping project "${project.name}" - path is not a directory: ${projectPath}`);
         }
         continue;
       }

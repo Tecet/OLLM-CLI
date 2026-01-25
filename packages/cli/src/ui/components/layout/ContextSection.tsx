@@ -1,3 +1,4 @@
+import { createLogger } from '../../../../../core/src/utils/logger.js';
 import React from 'react';
 import { Box, Text } from 'ink';
 
@@ -20,6 +21,8 @@ function _formatTierDisplay(tier: string): string {
     '4': '32K',
     '5': '64K+'
   };
+
+const logger = createLogger('ContextSection');
   
   return tierRanges[tierNum] || tier;
 }
@@ -46,9 +49,9 @@ export function ContextSection() {
   } = useActiveContext();
 
   // Debug logging
-  console.log('[ContextSection] RENDER - effectivePromptTier:', contextState.effectivePromptTier);
-  console.log('[ContextSection] RENDER - actualContextTier:', contextState.actualContextTier);
-  console.log('[ContextSection] RENDER - currentMode:', currentMode);
+  logger.info('[ContextSection] RENDER - effectivePromptTier:', contextState.effectivePromptTier);
+  logger.info('[ContextSection] RENDER - actualContextTier:', contextState.actualContextTier);
+  logger.info('[ContextSection] RENDER - currentMode:', currentMode);
 
   return (
     <Box flexDirection="column" alignItems="flex-start">

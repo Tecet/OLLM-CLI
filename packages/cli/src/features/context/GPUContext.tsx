@@ -1,8 +1,11 @@
+import { createLogger } from '../../../../core/src/utils/logger.js';
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 
 import { createGPUMonitor, type GPUInfo, type GPUMonitor } from '@ollm/core';
 
 import { setLastGPUInfo } from './gpuHintStore.js';
+
+const logger = createLogger('GPUContext');
 
 export interface GPUContextValue {
   /** Current GPU information, null if not yet loaded */
@@ -55,7 +58,7 @@ export function GPUProvider({
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err));
       setError(error);
-      console.warn('Failed to get GPU info:', error);
+      logger.warn('Failed to get GPU info:', error);
     } finally {
       setLoading(false);
     }

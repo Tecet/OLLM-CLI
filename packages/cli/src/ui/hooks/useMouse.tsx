@@ -1,7 +1,10 @@
+import { createLogger } from '../../../../core/src/utils/logger.js';
 import React, { useEffect, useRef, createContext, useContext, useCallback, ReactNode } from 'react';
 import { useStdin } from 'ink';
 
 import { enableMouseEvents, disableMouseEvents } from '../../utils/terminal.js';
+
+const logger = createLogger('useMouse');
 
 export type MouseAction = 'down' | 'up' | 'scroll-up' | 'scroll-down' | 'move';
 export type MouseButton = 'left' | 'middle' | 'right' | 'none';
@@ -148,7 +151,7 @@ export function useMouse(onMouse: (event: MouseEvent) => void) {
   // So we just warn or do nothing.
   useEffect(() => {
     if (!context) {
-      console.warn('useMouse used outside MouseProvider - mouse events will not work');
+      logger.warn('useMouse used outside MouseProvider - mouse events will not work');
     }
   }, [context]);
 }

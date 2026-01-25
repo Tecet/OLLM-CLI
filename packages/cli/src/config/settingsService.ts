@@ -1,3 +1,6 @@
+import { createLogger } from '../../../core/src/utils/logger.js';
+
+const logger = createLogger('settingsService');
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { homedir } from 'os';
 import { join } from 'path';
@@ -61,7 +64,7 @@ export class SettingsService {
     const homeDir = homedir();
     const configDir = join(homeDir, '.ollm');
     this.settingsPath = join(configDir, 'settings.json');
-    console.log(`[SettingsService] Initializing with path: ${this.settingsPath}`);
+    logger.info(`[SettingsService] Initializing with path: ${this.settingsPath}`);
     
     // Default settings
     this.settings = { 
@@ -71,7 +74,7 @@ export class SettingsService {
             modeLinkedTemperature: true,
             contextCapRatio: 0.85,
             forceNumGpu: 999,
-            ollamaAutoStart: false,
+            ollamaAutoStart: true,
             ollamaHealthCheck: true
         },
         tools: {}
@@ -87,7 +90,7 @@ export class SettingsService {
    */
   public static getInstance(): SettingsService {
     if (!SettingsService.instance) {
-      console.log('[SettingsService] Creating new instance');
+      logger.info('[SettingsService] Creating new instance');
       SettingsService.instance = new SettingsService();
     }
     return SettingsService.instance;
@@ -96,24 +99,24 @@ export class SettingsService {
   private ensureConfigExists(configDir: string): void {
       try {
           if (!existsSync(configDir)) {
-              console.log(`[SettingsService] Creating config directory: ${configDir}`);
+              logger.info(`[SettingsService] Creating config directory: ${configDir}`);
               mkdirSync(configDir, { recursive: true });
           }
           
           // If file doesn't exist, save our defaults there immediately
           if (!existsSync(this.settingsPath)) {
-              console.log(`[SettingsService] Creating default settings file: ${this.settingsPath}`);
+              logger.info(`[SettingsService] Creating default settings file: ${this.settingsPath}`);
               this.saveSettings();
           }
       } catch (error) {
-          console.warn('Failed to initialize settings directory:', error);
+          logger.warn('Failed to initialize settings directory:', error);
       }
   }
 
   private loadSettings(): void {
     try {
       if (existsSync(this.settingsPath)) {
-        console.log(`[SettingsService] Loading settings from: ${this.settingsPath}`);
+        logger.info(`[SettingsService] Loading settings from: ${this.settingsPath}`);
         const content = readFileSync(this.settingsPath, 'utf-8');
         const loaded = JSON.parse(content);
         // Shallow merge defaults with loaded to ensure structure exists
@@ -127,17 +130,17 @@ export class SettingsService {
         };
       }
     } catch (error) {
-      console.error('Failed to load system settings:', error);
+      logger.error('Failed to load system settings:', error);
     }
   }
 
   private saveSettings(): void {
     try {
-      console.log(`[SettingsService] Saving settings to: ${this.settingsPath}`);
+      logger.info(`[SettingsService] Saving settings to: ${this.settingsPath}`);
       writeFileSync(this.settingsPath, JSON.stringify(this.settings, null, 2), 'utf-8');
       this.notifyListeners();
     } catch (error) {
-      console.error('Failed to save system settings:', error);
+      logger.error('Failed to save system settings:', error);
     }
   }
 
@@ -146,7 +149,7 @@ export class SettingsService {
         try {
             listener();
         } catch (error) {
-            console.error('[SettingsService] Error in listener:', error);
+            logger.error('[SettingsService] Error in listener:', error);
         }
     });
   }

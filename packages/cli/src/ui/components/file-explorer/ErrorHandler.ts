@@ -1,3 +1,6 @@
+import { createLogger } from '../../../../../core/src/utils/logger.js';
+
+const logger = createLogger('ErrorHandler');
 /**
  * ErrorHandler - Centralized error handling for File Explorer
  * 
@@ -20,7 +23,7 @@
  *     operation: 'readFile',
  *     filePath: path,
  *   });
- *   console.error(errorInfo.message);
+ *   logger.error(errorInfo.message);
  * }
  * ```
  */
@@ -211,7 +214,7 @@ function formatErrorMessage(message: string, code: string | undefined, context: 
 function logError(error: unknown, context: ErrorContext, category: ErrorCategory): void {
   // For now, just log to console
   // In production, this would send to a logging service
-  console.error(`[FileExplorer] ${category}:`, {
+  logger.error(`[FileExplorer] ${category}:`, {
     operation: context.operation,
     path: context.nodePath || context.filePath,
     error: error instanceof Error ? error.message : String(error),
