@@ -1,6 +1,3 @@
-import { randomUUID } from 'crypto';
-
-import { createLogger } from '../utils/logger.js';
 /**
  * Snapshot Manager Service
  * 
@@ -71,6 +68,7 @@ import { createLogger } from '../utils/logger.js';
  * ```
  */
 
+import { randomUUID } from 'crypto';
 
 import type {
   SnapshotManager,
@@ -80,8 +78,6 @@ import type {
   SnapshotConfig,
   Message
 } from './types.js';
-
-const logger = createLogger('snapshotManager');
 
 /**
  * Threshold callback function
@@ -197,7 +193,7 @@ export class SnapshotManagerImpl implements SnapshotManager {
    * @example
    * ```typescript
    * const snapshot = await manager.createSnapshot(context);
-   * logger.info(`Snapshot ${snapshot.id} created with ${snapshot.tokenCount} tokens`);
+   * console.log(`Snapshot ${snapshot.id} created with ${snapshot.tokenCount} tokens`);
    * ```
    */
   async createSnapshot(context: ConversationContext): Promise<ContextSnapshot> {
@@ -306,7 +302,7 @@ export class SnapshotManagerImpl implements SnapshotManager {
    * @example
    * ```typescript
    * const context = await manager.restoreSnapshot('snapshot-123');
-   * logger.info(`Restored ${context.messages.length} messages`);
+   * console.log(`Restored ${context.messages.length} messages`);
    * ```
    */
   async restoreSnapshot(snapshotId: string): Promise<ConversationContext> {
@@ -374,7 +370,7 @@ export class SnapshotManagerImpl implements SnapshotManager {
    * ```typescript
    * const snapshots = await manager.listSnapshots('session-123');
    * for (const snapshot of snapshots) {
-   *   logger.info(`${snapshot.id}: ${snapshot.summary} (${snapshot.tokenCount} tokens)`);
+   *   console.log(`${snapshot.id}: ${snapshot.summary} (${snapshot.tokenCount} tokens)`);
    * }
    * ```
    */
@@ -389,7 +385,7 @@ export class SnapshotManagerImpl implements SnapshotManager {
         snapshots.push(snapshot);
       } catch (error) {
         // Skip corrupted snapshots
-        logger.warn(`Failed to load snapshot ${meta.id}: ${(error as Error).message}`);
+        console.warn(`Failed to load snapshot ${meta.id}: ${(error as Error).message}`);
       }
     }
 
@@ -407,7 +403,7 @@ export class SnapshotManagerImpl implements SnapshotManager {
    * @example
    * ```typescript
    * await manager.deleteSnapshot('snapshot-123');
-   * logger.info('Snapshot deleted');
+   * console.log('Snapshot deleted');
    * ```
    */
   async deleteSnapshot(snapshotId: string): Promise<void> {
@@ -427,7 +423,7 @@ export class SnapshotManagerImpl implements SnapshotManager {
    * @example
    * ```typescript
    * manager.onContextThreshold(0.85, () => {
-   *   logger.info('Context is 85% full, consider compression');
+   *   console.log('Context is 85% full, consider compression');
    * });
    * ```
    */
@@ -453,7 +449,7 @@ export class SnapshotManagerImpl implements SnapshotManager {
    * @example
    * ```typescript
    * manager.onBeforeOverflow(() => {
-   *   logger.warn('Context nearly full! Emergency compression needed');
+   *   console.warn('Context nearly full! Emergency compression needed');
    * });
    * ```
    */
@@ -558,7 +554,7 @@ export class SnapshotManagerImpl implements SnapshotManager {
         try {
           await this.storage.delete(meta.id);
         } catch (error) {
-          logger.warn(`Failed to delete snapshot ${meta.id}: ${(error as Error).message}`);
+          console.warn(`Failed to delete snapshot ${meta.id}: ${(error as Error).message}`);
         }
       }
     }

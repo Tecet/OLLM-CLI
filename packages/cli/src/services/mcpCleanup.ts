@@ -11,10 +11,6 @@ import * as os from 'os';
 import * as path from 'path';
 import { promisify } from 'util';
 
-import { createLogger } from '../../../core/src/utils/logger.js';
-
-const logger = createLogger('mcpCleanup');
-
 const execAsync = promisify(exec);
 
 /**
@@ -41,7 +37,7 @@ export class MCPCleanupService {
       }
       // mcp-remote servers don't need cleanup (no local files)
     } catch (error) {
-      logger.warn(`Failed to cleanup ${serverName}:`, error);
+      console.warn(`Failed to cleanup ${serverName}:`, error);
       // Don't throw - cleanup is best-effort
     }
   }
@@ -84,9 +80,9 @@ export class MCPCleanupService {
         const entryPath = path.join(npxCachePath, entry);
         try {
           await fs.rm(entryPath, { recursive: true, force: true });
-          logger.info(`Cleaned up npx cache: ${entry}`);
+          console.log(`Cleaned up npx cache: ${entry}`);
         } catch (error) {
-          logger.warn(`Failed to remove cache entry ${entry}:`, error);
+          console.warn(`Failed to remove cache entry ${entry}:`, error);
         }
       }
 
@@ -99,7 +95,7 @@ export class MCPCleanupService {
         // Ignore errors - cache clean is best-effort
       }
     } catch (error) {
-      logger.warn(`Failed to cleanup npx package ${packageName}:`, error);
+      console.warn(`Failed to cleanup npx package ${packageName}:`, error);
     }
   }
 
@@ -122,9 +118,9 @@ export class MCPCleanupService {
       await execAsync(`docker rmi ${imageName}`, {
         timeout: 10000,
       });
-      logger.info(`Cleaned up Docker image: ${imageName}`);
+      console.log(`Cleaned up Docker image: ${imageName}`);
     } catch (error) {
-      logger.warn(`Failed to cleanup Docker image ${imageName}:`, error);
+      console.warn(`Failed to cleanup Docker image ${imageName}:`, error);
     }
   }
 
@@ -138,9 +134,9 @@ export class MCPCleanupService {
       await execAsync('npm cache clean --force', {
         timeout: 30000,
       });
-      logger.info('Cleaned up npm cache');
+      console.log('Cleaned up npm cache');
     } catch (error) {
-      logger.warn('Failed to clean npm cache:', error);
+      console.warn('Failed to clean npm cache:', error);
     }
   }
 
@@ -162,7 +158,7 @@ export class MCPCleanupService {
       const size = await this.getDirectorySize(npxCachePath);
       return size;
     } catch (error) {
-      logger.warn('Failed to calculate cache size:', error);
+      console.warn('Failed to calculate cache size:', error);
       return 0;
     }
   }

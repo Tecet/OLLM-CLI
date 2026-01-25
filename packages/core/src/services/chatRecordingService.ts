@@ -15,7 +15,6 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 
 import { sanitizeErrorMessage } from './errorSanitization.js';
-import { createLogger } from '../utils/logger.js';
 import { validateStoragePath, logPathDiagnostics } from '../utils/pathValidation.js';
 
 import type {
@@ -24,8 +23,6 @@ import type {
   SessionToolCall,
   SessionSummary,
 } from './types.js';
-
-const logger = createLogger('chatRecordingService');
 
 /**
  * Configuration options for ChatRecordingService
@@ -176,7 +173,7 @@ export class ChatRecordingService {
           // Only log error if not in a test environment
           if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
             const errorMessage = error instanceof Error ? error.message : String(error);
-            logger.error(`Failed to load session ${file}:`, sanitizeErrorMessage(errorMessage));
+            console.error(`Failed to load session ${file}:`, sanitizeErrorMessage(errorMessage));
           }
         }
       }
@@ -189,7 +186,7 @@ export class ChatRecordingService {
       return summaries;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error('Failed to list sessions:', sanitizeErrorMessage(errorMessage));
+      console.error('Failed to list sessions:', sanitizeErrorMessage(errorMessage));
       return [];
     }
   }

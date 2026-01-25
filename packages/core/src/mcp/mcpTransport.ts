@@ -1,3 +1,4 @@
+import { createLogger } from '../utils/logger.js';
 /**
  * MCP Transport Implementation
  * 
@@ -9,6 +10,9 @@ import { spawn, ChildProcess } from 'child_process';
 import { EventEmitter } from 'events';
 
 import { MCPTransport, MCPRequest, MCPResponse } from './types.js';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('MCPTransport');
 
 /**
  * Base class for MCP transports
@@ -94,7 +98,7 @@ export class StdioTransport extends BaseMCPTransport {
           if (!this.connected) {
             reject(new Error(`MCP Server '${this.command}' failed to become ready within timeout`));
           }
-        }, 10000); // 10 second timeout for readiness
+        }, 20000); // 20 second timeout for readiness
 
         // Set up readiness check - wait for first successful response
         const checkReadiness = () => {
@@ -112,7 +116,7 @@ export class StdioTransport extends BaseMCPTransport {
           };
 
           // Try to send initialize request
-            this.sendRequest(initRequest, 5000)
+            this.sendRequest(initRequest, 15000)
               .then(() => {
                 clearTimeout(readinessTimeout);
                 this.connected = true;
@@ -120,11 +124,11 @@ export class StdioTransport extends BaseMCPTransport {
               })
               .catch((error) => {
                 // If initialize fails, still mark as connected but log warning
-                // Some MCP servers may not support initialize. Suppress noisy
-                // warnings during unit tests to avoid polluting test output.
-                if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
-                  console.warn(`MCP Server '${this.command}' initialize failed, assuming ready:`, error.message);
-                }
+                // Some MCP servers may not support initialize
+                logger.warn('MCP Server initialize failed, assuming ready', {
+                  command: this.command,
+                  error: error.message
+                });
                 clearTimeout(readinessTimeout);
                 this.connected = true;
                 resolve();
@@ -133,8 +137,10 @@ export class StdioTransport extends BaseMCPTransport {
 
         // Handle process errors
         this.process.on('error', (error: Error) => {
-          const errorMessage = error.message || String(error);
-          console.error(`MCP Server '${this.command}' process error: ${errorMessage}`);
+          logger.error('MCP Server process error', {
+            command: this.command,
+            error: error.message || String(error)
+          });
           this.connected = false;
           errorOccurred = true;
           clearTimeout(readinessTimeout);
@@ -151,7 +157,11 @@ export class StdioTransport extends BaseMCPTransport {
             const currentSizeMB = (this.outputSize / (1024 * 1024)).toFixed(1);
             const errorMsg = `MCP Server '${this.command}' exceeded output size limit: ${currentSizeMB}MB > ${sizeMB}MB. Consider implementing streaming or reducing output size.`;
             
-            console.error(errorMsg);
+            logger.error('MCP Server exceeded output size limit', {
+              command: this.command,
+              currentSizeMB,
+              limitSizeMB: sizeMB
+            });
             this.connected = false;
             
             // Kill the process gracefully first, then force if needed
@@ -178,15 +188,19 @@ export class StdioTransport extends BaseMCPTransport {
         // Handle stderr (log errors but don't fail)
         this.process.stderr?.on('data', (data: Buffer) => {
           const stderrOutput = data.toString().trim();
-          console.error(`MCP Server '${this.command}' stderr: ${stderrOutput}`);
+          logger.error('MCP Server stderr output', {
+            command: this.command,
+            stderr: stderrOutput
+          });
         });
 
         // Handle process exit
         this.process.on('exit', (code: number | null, signal: string | null) => {
-          // Avoid noisy stdout during unit tests; only log in non-test environments.
-          if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
-            console.log(`MCP Server exited with code ${code}, signal ${signal}`);
-          }
+          logger.info('MCP Server exited', {
+            command: this.command,
+            code,
+            signal
+          });
           this.connected = false;
 
           // Reject all pending requests
@@ -355,18 +369,20 @@ export class StdioTransport extends BaseMCPTransport {
       // Extract the request ID
       const id = jsonRpcResponse.id;
       if (typeof id !== 'number') {
-        if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
-          console.error(`MCP Server '${this.command}' received message without valid ID:`, message);
-        }
+        logger.error('MCP Server received message without valid ID', {
+          command: this.command,
+          message: message.substring(0, 100)
+        });
         return;
       }
 
       // Find the pending request
       const pending = this.pendingRequests.get(id);
       if (!pending) {
-        if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
-          console.error(`MCP Server '${this.command}' received response for unknown request ID:`, id);
-        }
+        logger.error('MCP Server received response for unknown request ID', {
+          command: this.command,
+          id
+        });
         return;
       }
 
@@ -386,12 +402,12 @@ export class StdioTransport extends BaseMCPTransport {
       // Resolve the promise
       pending.resolve(response);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      // Parsing errors are noisy when tests spawn simple commands (like `echo`).
-      // Only log as an error in non-test environments; in tests prefer silence.
-      if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
-        console.error(`MCP Server '${this.command}' failed to parse JSON-RPC message: ${errorMessage}`, message);
-      }
+      // Parsing errors can occur when servers send non-JSON output
+      logger.debug('Failed to parse JSON-RPC message', {
+        command: this.command,
+        error: error instanceof Error ? error.message : String(error),
+        message: message.substring(0, 100)
+      });
     }
   }
 }
@@ -487,14 +503,20 @@ export class SSETransport extends BaseMCPTransport {
               }
             } catch (error) {
               if (error instanceof Error && error.name !== 'AbortError') {
-                console.error('SSE stream error:', error);
+                logger.error('SSE stream error', {
+                  url: this.url,
+                  error: error.message
+                });
               }
               this.connected = false;
             }
           })
           .catch((error) => {
             if (error instanceof Error && error.name !== 'AbortError') {
-              console.error('SSE connection error:', error);
+              logger.error('SSE connection error', {
+                url: this.url,
+                error: error.message
+              });
               reject(error);
             }
           });
@@ -632,14 +654,20 @@ export class SSETransport extends BaseMCPTransport {
       // Extract the request ID
       const id = jsonRpcResponse.id;
       if (typeof id !== 'number') {
-        console.error('SSE received message without valid ID:', message);
+        logger.error('SSE received message without valid ID', {
+          url: this.url,
+          message: message.substring(0, 100)
+        });
         return;
       }
 
       // Find the pending request
       const pending = this.pendingRequests.get(id);
       if (!pending) {
-        console.error('SSE received response for unknown request ID:', id);
+        logger.error('SSE received response for unknown request ID', {
+          url: this.url,
+          id
+        });
         return;
       }
 
@@ -660,7 +688,7 @@ export class SSETransport extends BaseMCPTransport {
       pending.resolve(response);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error('SSE failed to parse JSON-RPC message:', errorMessage, message);
+      logger.error('SSE failed to parse JSON-RPC message:', errorMessage, message);
     }
   }
 }

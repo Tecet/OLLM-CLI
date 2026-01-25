@@ -1,6 +1,13 @@
+/**
+ * HooksContext - State management for the Hooks Panel UI
+ * 
+ * Provides hook data and management functions to all hook-related components.
+ * Integrates with HookFileService for file operations and SettingsService for
+ * enabled state persistence.
+ */
+
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 
-import { createLogger } from '../../../../core/src/utils/logger.js';
 import { SettingsService } from '../../config/settingsService.js';
 import { HookFileService } from '../../services/hookFileService.js';
 
@@ -10,16 +17,6 @@ import type {
   HookTestResult,
   UIHookEventType 
 } from '../hooks/types.js';
-/**
- * HooksContext - State management for the Hooks Panel UI
- * 
- * Provides hook data and management functions to all hook-related components.
- * Integrates with HookFileService for file operations and SettingsService for
- * enabled state persistence.
- */
-
-
-const logger = createLogger('HooksContext');
 
 /**
  * Context value interface
@@ -103,7 +100,7 @@ export const HooksProvider: React.FC<HooksProviderProps> = ({ children }) => {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load hooks';
       setError(errorMessage);
-      logger.error('Error loading hooks:', err);
+      console.error('Error loading hooks:', err);
     } finally {
       setLoading(false);
     }

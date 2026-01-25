@@ -6,10 +6,7 @@
 import React, { Component, ReactNode } from 'react';
 import { Box, Text } from 'ink';
 
-import { createLogger } from '../../../../core/src/utils/logger.js';
 import { useUI } from '../../features/context/UIContext.js';
-
-const logger = createLogger('ErrorBoundary');
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -45,8 +42,8 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
     // Log error to debug output
     if (process.env.OLLM_LOG_LEVEL === 'debug') {
-      logger.error('[Error Boundary] Component error:', error);
-      logger.error('[Error Boundary] Error info:', errorInfo);
+      console.error('[Error Boundary] Component error:', error);
+      console.error('[Error Boundary] Error info:', errorInfo);
     }
 
     this.setState({

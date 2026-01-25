@@ -1,13 +1,10 @@
 import { EventEmitter } from 'events';
 
 import { ToolCapability, detectServerCapabilities } from './tool-capabilities.js';
-import { createLogger } from '../utils/logger.js';
 
 import type { ToolRegistry } from './tool-registry.js';
 import type { Tool } from './types.js';
 import type { MCPClient } from '../mcp/types.js';
-
-const logger = createLogger('toolRouter');
 
 /**
  * Configuration for tool routing
@@ -77,7 +74,7 @@ export class ToolRouter extends EventEmitter {
           const capabilities = detectServerCapabilities(server.name, tools as unknown as Tool[]);
           this.capabilityMap.set(server.name, capabilities);
         } catch (error) {
-          logger.error(`Failed to discover capabilities for ${server.name}:`, error);
+          console.error(`Failed to discover capabilities for ${server.name}:`, error);
         }
       }
     }

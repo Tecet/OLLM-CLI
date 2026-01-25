@@ -8,10 +8,6 @@
 import { homedir } from 'os';
 import { resolve, relative, sep } from 'path';
 
-import { createLogger } from '../utils/logger.js';
-
-const logger = createLogger('extensionSandbox');
-
 /**
  * Permission types
  */
@@ -134,7 +130,7 @@ export class ExtensionSandbox {
     };
 
     this.permissions.set(extensionName, fullPermissions);
-    logger.info(`Registered permissions for extension: ${extensionName}`);
+    console.log(`Registered permissions for extension: ${extensionName}`);
   }
 
   /**
@@ -144,7 +140,7 @@ export class ExtensionSandbox {
    */
   unregisterPermissions(extensionName: string): void {
     this.permissions.delete(extensionName);
-    logger.info(`Unregistered permissions for extension: ${extensionName}`);
+    console.log(`Unregistered permissions for extension: ${extensionName}`);
   }
 
   /**
@@ -446,7 +442,7 @@ export class ExtensionSandbox {
         break;
     }
 
-    logger.info(`Granted ${permission.type} permission to extension: ${extensionName}`);
+    console.log(`Granted ${permission.type} permission to extension: ${extensionName}`);
   }
 
   /**
@@ -485,7 +481,7 @@ export class ExtensionSandbox {
         break;
     }
 
-    logger.info(`Revoked ${permission.type} permission from extension: ${extensionName}`);
+    console.log(`Revoked ${permission.type} permission from extension: ${extensionName}`);
   }
 
   /**
@@ -547,7 +543,7 @@ export class ExtensionSandbox {
    */
   setEnabled(enabled: boolean): void {
     this.config.enabled = enabled;
-    logger.info(`Extension sandbox ${enabled ? 'enabled' : 'disabled'}`);
+    console.log(`Extension sandbox ${enabled ? 'enabled' : 'disabled'}`);
   }
 
   /**

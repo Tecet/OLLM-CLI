@@ -9,11 +9,8 @@
 import picomatch from 'picomatch';
 
 import { sanitizeErrorMessage } from './errorSanitization.js';
-import { createLogger } from '../utils/logger.js';
 
 import type { SanitizationConfig } from './types.js';
-
-const logger = createLogger('environmentSanitization');
 
 /**
  * Default environment variables that are always allowed
@@ -95,7 +92,7 @@ export class EnvironmentSanitizationService {
     } catch (error) {
       // Log warning and fall back to defaults
       const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.warn(
+      console.warn(
         'Invalid sanitization configuration, using defaults:',
         sanitizeErrorMessage(errorMessage)
       );

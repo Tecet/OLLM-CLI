@@ -1,6 +1,3 @@
-import { z } from 'zod';
-
-import { createLogger } from '../utils/logger.js';
 /**
  * Hook system configuration management
  * 
@@ -10,10 +7,9 @@ import { createLogger } from '../utils/logger.js';
  * @module hooks/config
  */
 
+import { z } from 'zod';
 
 import type { HookSource } from './types.js';
-
-const _logger = createLogger('config');
 
 /**
  * Hook configuration interface
@@ -165,7 +161,7 @@ export function mergeHooksConfig(
  *   const config = validateHooksConfig({ timeout: 60000 });
  * } catch (error) {
  *   if (error instanceof z.ZodError) {
- *     logger.error('Invalid config:', error.errors);
+ *     console.error('Invalid config:', error.errors);
  *   }
  * }
  * ```
@@ -187,7 +183,7 @@ export function validateHooksConfig(config: unknown): HooksConfig {
  * ```typescript
  * const result = validateHook(hook);
  * if (!result.valid) {
- *   logger.error('Invalid hook:', result.error);
+ *   console.error('Invalid hook:', result.error);
  * }
  * ```
  */
@@ -282,7 +278,7 @@ export function validateHookId(id: string): boolean {
  * ```typescript
  * const result = validateHookCommand('node');
  * if (!result.valid) {
- *   logger.error('Invalid command:', result.error);
+ *   console.error('Invalid command:', result.error);
  * }
  * ```
  */

@@ -27,7 +27,6 @@ import {
   SnapshotManager as PromptsSnapshotManager,
 } from '@ollm/core';
 
-import { createLogger } from '../../../../core/src/utils/logger.js';
 import { SettingsService } from '../../config/settingsService.js';
 
 import type {
@@ -44,8 +43,6 @@ import type {
   SnapshotConfig as _SnapshotConfig,
   SnapshotStorage as _SnapshotStorage,
  SnapshotManager as CoreSnapshotManager } from '@ollm/core';
-
-const logger = createLogger('ContextManagerContext');
 
 
 
@@ -359,7 +356,7 @@ export function ContextManagerProvider({
         // Listen for mode changes
         const modeChangeCallback = (transition: ModeTransition) => {
           setCurrentMode(transition.to);
-          logger.info(`Mode changed: ${transition.from} → ${transition.to} (${transition.trigger})`);
+          console.log(`Mode changed: ${transition.from} → ${transition.to} (${transition.trigger})`);
           
           // Persist mode changes to settings (for both auto and manual)
           SettingsService.getInstance().setMode(transition.to);
@@ -403,7 +400,7 @@ export function ContextManagerProvider({
                 );
                 await promptsSnapshotManager.storeSnapshot(snapshot, true);
               } catch (error) {
-                logger.error('[ModeSnapshot] Failed to capture transition snapshot:', error);
+                console.error('[ModeSnapshot] Failed to capture transition snapshot:', error);
               }
             })();
           }
@@ -415,7 +412,7 @@ export function ContextManagerProvider({
         // Listen for auto-switch changes
         const autoSwitchChangeCallback = (enabled: boolean) => {
           setAutoSwitchEnabled(enabled);
-          logger.info(`Auto-switch ${enabled ? 'enabled' : 'disabled'}`);
+          console.log(`Auto-switch ${enabled ? 'enabled' : 'disabled'}`);
           
           // Persist auto-switch preference to settings
           SettingsService.getInstance().setAutoSwitch(enabled);
@@ -429,8 +426,8 @@ export function ContextManagerProvider({
           const fs = await import('fs');
           fs.appendFileSync('context-debug.log', `[${new Date().toISOString()}] TIER CHANGE EVENT: ${JSON.stringify(data)}\n`);
           
-          logger.info('[UI] ===== TIER CHANGE EVENT RECEIVED =====');
-          logger.info('[UI] Event data:', data);
+          console.log('[UI] ===== TIER CHANGE EVENT RECEIVED =====');
+          console.log('[UI] Event data:', data);
           
           const tierData = data as {
             tier?: string | number;
@@ -458,10 +455,10 @@ export function ContextManagerProvider({
             return `Tier ${tier}`;
           };
           
-          logger.info('[UI] Before state updates:');
-          logger.info('[UI]   currentTier:', currentTierRef.current);
-          logger.info('[UI]   effectivePromptTier:', effectivePromptTierRef.current);
-          logger.info('[UI]   actualContextTier:', actualContextTierRef.current);
+          console.log('[UI] Before state updates:');
+          console.log('[UI]   currentTier:', currentTierRef.current);
+          console.log('[UI]   effectivePromptTier:', effectivePromptTierRef.current);
+          console.log('[UI]   actualContextTier:', actualContextTierRef.current);
           
           // Update currentTier (use tier if available, otherwise use effectivePromptTier)
           const newCurrentTier = tierData.tier !== undefined 
@@ -471,26 +468,26 @@ export function ContextManagerProvider({
             : currentTierRef.current;
 
           if (newCurrentTier !== currentTierRef.current) {
-            logger.info('[UI] Setting currentTier to:', newCurrentTier);
+            console.log('[UI] Setting currentTier to:', newCurrentTier);
             setCurrentTier(newCurrentTier);
           }
           
           if (tierData.effectivePromptTier !== undefined) {
             const newEffective = tierToString(tierData.effectivePromptTier);
-            logger.info('[UI] Setting effectivePromptTier to:', newEffective);
+            console.log('[UI] Setting effectivePromptTier to:', newEffective);
             setEffectivePromptTier(newEffective);
           }
           if (tierData.actualContextTier !== undefined) {
             const newActual = tierToString(tierData.actualContextTier);
-            logger.info('[UI] Setting actualContextTier to:', newActual);
+            console.log('[UI] Setting actualContextTier to:', newActual);
             setActualContextTier(newActual);
           }
           
           // Force a re-render to ensure UI updates
           setForceUpdateCounter(prev => prev + 1);
           
-          logger.info(`[UI] Tier changed: Current=${newCurrentTier}, Effective=${tierToString(tierData.effectivePromptTier)}, Actual=${tierToString(tierData.actualContextTier)}`);
-          logger.info('[UI] ===== TIER CHANGE EVENT END =====');
+          console.log(`[UI] Tier changed: Current=${newCurrentTier}, Effective=${tierToString(tierData.effectivePromptTier)}, Actual=${tierToString(tierData.actualContextTier)}`);
+          console.log('[UI] ===== TIER CHANGE EVENT END =====');
         };
         
         manager.on('tier-changed', tierChangeCallback);
@@ -539,7 +536,7 @@ export function ContextManagerProvider({
         setError(null);
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        logger.error('Failed to initialize ContextManager:', message);
+        console.error('Failed to initialize ContextManager:', message);
         setError(message);
         setActive(false);
       }
@@ -586,7 +583,7 @@ export function ContextManagerProvider({
   // Add message action
   const addMessage = useCallback(async (message: Omit<ContextMessage, 'id' | 'timestamp' | 'tokenCount'>) => {
     if (!managerRef.current) {
-      logger.warn('ContextManager not initialized');
+      console.warn('ContextManager not initialized');
       return;
     }
     
@@ -602,7 +599,7 @@ export function ContextManagerProvider({
       setError(null);
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : String(err);
-      logger.error('Failed to add message:', errorMsg);
+      console.error('Failed to add message:', errorMsg);
       setError(errorMsg);
     }
   }, []);
@@ -610,7 +607,7 @@ export function ContextManagerProvider({
   // Compress context action
   const compress = useCallback(async () => {
     if (!managerRef.current) {
-      logger.warn('ContextManager not initialized');
+      console.warn('ContextManager not initialized');
       return;
     }
     
@@ -623,7 +620,7 @@ export function ContextManagerProvider({
       setError(null);
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : String(err);
-      logger.error('Failed to compress context:', errorMsg);
+      console.error('Failed to compress context:', errorMsg);
       setError(errorMsg);
     } finally {
       setCompressing(false);
@@ -633,7 +630,7 @@ export function ContextManagerProvider({
   // Clear context action
   const clear = useCallback(async () => {
     if (!managerRef.current) {
-      logger.warn('ContextManager not initialized');
+      console.warn('ContextManager not initialized');
       return;
     }
     
@@ -643,7 +640,7 @@ export function ContextManagerProvider({
       setError(null);
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : String(err);
-      logger.error('Failed to clear context:', errorMsg);
+      console.error('Failed to clear context:', errorMsg);
       setError(errorMsg);
     }
   }, []);
@@ -665,7 +662,7 @@ export function ContextManagerProvider({
       return snapshot;
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : String(err);
-      logger.error('Failed to create snapshot:', errorMsg);
+      console.error('Failed to create snapshot:', errorMsg);
       setError(errorMsg);
       throw err;
     }
@@ -674,7 +671,7 @@ export function ContextManagerProvider({
   // Restore snapshot action
   const restoreSnapshot = useCallback(async (snapshotId: string) => {
     if (!managerRef.current) {
-      logger.warn('ContextManager not initialized');
+      console.warn('ContextManager not initialized');
       return;
     }
     
@@ -684,7 +681,7 @@ export function ContextManagerProvider({
       setError(null);
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : String(err);
-      logger.error('Failed to restore snapshot:', errorMsg);
+      console.error('Failed to restore snapshot:', errorMsg);
       setError(errorMsg);
     }
   }, []);
@@ -697,14 +694,14 @@ export function ContextManagerProvider({
       const updatedSnapshots = await managerRef.current.listSnapshots();
       setSnapshots(updatedSnapshots);
     } catch (err) {
-      logger.error('Failed to refresh snapshots:', err);
+      console.error('Failed to refresh snapshots:', err);
     }
   }, []);
   
   // Update config action
   const updateConfig = useCallback((newConfig: Partial<ContextConfig>) => {
     if (!managerRef.current) {
-      logger.warn('ContextManager not initialized');
+      console.warn('ContextManager not initialized');
       return;
     }
     
@@ -760,9 +757,9 @@ export function ContextManagerProvider({
     const logMsg = `[${new Date().toISOString()}] ===== RESIZE CALLED =====\nTarget size: ${size} tokens\n`;
     fs.appendFileSync('context-debug.log', logMsg);
     
-    logger.info(`[ContextManagerContext] ===== RESIZE CALLED =====`);
-    logger.info(`[ContextManagerContext] Target size: ${size} tokens`);
-    logger.info(`[ContextManagerContext] Disabling auto-size`);
+    console.log(`[ContextManagerContext] ===== RESIZE CALLED =====`);
+    console.log(`[ContextManagerContext] Target size: ${size} tokens`);
+    console.log(`[ContextManagerContext] Disabling auto-size`);
     
     // Update config which will trigger internal resize
     managerRef.current.updateConfig({ targetSize: size, autoSize: false });
@@ -778,16 +775,16 @@ export function ContextManagerProvider({
     
     fs.appendFileSync('context-debug.log', `Resize complete. New usage: ${JSON.stringify(newUsage)}\n`);
     
-    logger.info(`[ContextManagerContext] Resize complete`);
-    logger.info(`[ContextManagerContext] New usage:`, newUsage);
-    logger.info(`[ContextManagerContext] ===== RESIZE END =====`);
+    console.log(`[ContextManagerContext] Resize complete`);
+    console.log(`[ContextManagerContext] New usage:`, newUsage);
+    console.log(`[ContextManagerContext] ===== RESIZE END =====`);
   }, []);
 
   // Hot Swap Action
   const hotSwap = useCallback(async (newSkills?: string[]) => {
     if (!managerRef.current) return;
     if (!provider) {
-        logger.warn('HotSwap unavailable: No provider connected');
+        console.warn('HotSwap unavailable: No provider connected');
         return;
     }
 
@@ -808,7 +805,7 @@ export function ContextManagerProvider({
         setError(null);
     } catch (err) {
         const errorMsg = err instanceof Error ? err.message : String(err);
-        logger.error('Failed to hot swap:', errorMsg);
+        console.error('Failed to hot swap:', errorMsg);
         setError(errorMsg);
     }
   }, [provider, modelId]);
@@ -841,7 +838,7 @@ export function ContextManagerProvider({
   
   const switchMode = useCallback((mode: ModeType) => {
     if (!modeManagerRef.current) {
-      logger.warn('PromptModeManager not initialized');
+      console.warn('PromptModeManager not initialized');
       return;
     }
     
@@ -857,7 +854,7 @@ export function ContextManagerProvider({
   
   const switchModeExplicit = useCallback((mode: ModeType) => {
     if (!modeManagerRef.current) {
-      logger.warn('PromptModeManager not initialized');
+      console.warn('PromptModeManager not initialized');
       return;
     }
     
@@ -874,7 +871,7 @@ export function ContextManagerProvider({
   
   const setAutoSwitchAction = useCallback((enabled: boolean) => {
     if (!modeManagerRef.current) {
-      logger.warn('PromptModeManager not initialized');
+      console.warn('PromptModeManager not initialized');
       return;
     }
     
@@ -897,7 +894,7 @@ export function ContextManagerProvider({
     confidence: number;
   }>) => {
     if (!modeManagerRef.current) {
-      logger.warn('PromptModeManager not initialized');
+      console.warn('PromptModeManager not initialized');
       return;
     }
     
@@ -907,12 +904,12 @@ export function ContextManagerProvider({
     const currentMode = modeManagerRef.current.getCurrentMode();
     setCurrentMode(currentMode);
     
-    logger.info(`Restored mode history with ${history.length} transitions, current mode: ${currentMode}`);
+    console.log(`Restored mode history with ${history.length} transitions, current mode: ${currentMode}`);
   }, []);
   
   const getModeHistoryAction = useCallback(() => {
     if (!modeManagerRef.current) {
-      logger.warn('PromptModeManager not initialized');
+      console.warn('PromptModeManager not initialized');
       return [];
     }
     

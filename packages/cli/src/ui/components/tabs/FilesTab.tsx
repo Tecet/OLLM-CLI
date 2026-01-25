@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import { Box, Text } from 'ink';
 
-import { createLogger } from '../../../../../core/src/utils/logger.js';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { useUI } from '../../../features/context/UIContext.js';
 import { ErrorBoundary } from '../ErrorBoundary.js';
@@ -13,8 +12,6 @@ import {
   FileOperations,
   useFileTree
 } from '../file-explorer/index.js';
-
-const logger = createLogger('FilesTab');
 
 export interface FilesTabProps {
   /** Width of the tab container */
@@ -52,15 +49,15 @@ export function FilesTab({
     if (!treeState.root) {
       const initTree = async () => {
         try {
-          // logger.info('Initializing file tree with root:', process.cwd());
+          // console.log('Initializing file tree with root:', process.cwd());
           const rootNode = await fileTreeService.buildTree({
             rootPath: process.cwd(),
             // excludePatterns: ['node_modules', '.git', 'dist', 'coverage']
           });
-          // logger.info('File tree built, setting root:', rootNode);
+          // console.log('File tree built, setting root:', rootNode);
           setRoot(rootNode);
         } catch (error) {
-          logger.error('Failed to initialize file tree:', error);
+          console.error('Failed to initialize file tree:', error);
         }
       };
       initTree();
@@ -91,7 +88,7 @@ export function FilesTab({
         setCursorPosition(firstIndex);
       } catch (err) {
         // Fail silently but log for debugging
-        logger.error('Failed to open file tree on focus:', err);
+        console.error('Failed to open file tree on focus:', err);
       }
     };
 

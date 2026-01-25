@@ -1,4 +1,3 @@
-import { createLogger } from '../utils/logger.js';
 /**
  * Hook Debugger
  * 
@@ -6,8 +5,6 @@ import { createLogger } from '../utils/logger.js';
  */
 
 import type { Hook, HookEvent } from './types.js';
-
-const logger = createLogger('hookDebugger');
 
 /**
  * Hook execution trace entry
@@ -273,7 +270,7 @@ export class HookDebugger {
    */
   private logTraceStart(trace: HookTraceEntry): void {
     const formatted = this.formatTraceStart(trace);
-    logger.info(formatted);
+    console.log(formatted);
   }
 
   /**
@@ -281,7 +278,7 @@ export class HookDebugger {
    */
   private logTraceEnd(trace: HookTraceEntry): void {
     const formatted = this.formatTrace(trace, this.config.format);
-    logger.info(formatted);
+    console.log(formatted);
   }
 
   /**

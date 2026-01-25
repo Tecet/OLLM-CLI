@@ -14,7 +14,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Box, Text, useInput, useStdout } from 'ink';
 
-import { createLogger } from '../../../../../core/src/utils/logger.js';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { useUI } from '../../../features/context/UIContext.js';
 import { useMCP, type ExtendedMCPServerStatus } from '../../contexts/MCPContext.js';
@@ -35,8 +34,6 @@ import { ServerStatusBanner } from '../mcp/ServerStatusBanner.js';
 import { SystemMessages, type SystemMessage } from '../mcp/SystemMessages.js';
 
 import type { MCPMarketplaceServer } from '../../../services/mcpMarketplace.js';
-
-const logger = createLogger('MCPTab');
 
 export interface MCPTabProps {
   windowWidth?: number;
@@ -194,7 +191,7 @@ function ServerDetailsContent({ server, activeColumn, onToggle, onDelete, onRefr
               onRefreshServers().catch(console.error);
             })
             .catch(err => {
-              logger.error('Failed to save tool selections:', err);
+              console.error('Failed to save tool selections:', err);
               setIsSaving(false);
             });
         } else if (toolsNavItem === 'close') {
@@ -294,7 +291,7 @@ function ServerDetailsContent({ server, activeColumn, onToggle, onDelete, onRefr
             onRefreshServers().catch(console.error);
           })
           .catch(err => {
-            logger.error('Failed to toggle server:', err);
+            console.error('Failed to toggle server:', err);
             setToggleState({ status: 'idle' });
           });
       } else if (navItem === 'delete') {
@@ -714,7 +711,7 @@ function MarketplaceContent({ activeColumn, onRefreshServers, height: _height = 
         const results = await searchMarketplace('');
         setServers(results);
       } catch (err) {
-        logger.error('Failed to load marketplace:', err);
+        console.error('Failed to load marketplace:', err);
       } finally {
         setIsLoading(false);
       }
@@ -732,7 +729,7 @@ function MarketplaceContent({ activeColumn, onRefreshServers, height: _height = 
         setSelectedIndex(0);
         setScrollOffset(0);
       } catch (err) {
-        logger.error('Search failed:', err);
+        console.error('Search failed:', err);
       } finally {
         setIsLoading(false);
       }
@@ -809,7 +806,7 @@ function MarketplaceContent({ activeColumn, onRefreshServers, height: _height = 
             setSelectedServer(null);
             setDetailNavItem('exit');
           }).catch(err => {
-            logger.error('Failed to refresh servers:', err);
+            console.error('Failed to refresh servers:', err);
             setInstallState({ status: 'idle', selection: 'no' });
             setView('list');
             setSelectedServer(null);
@@ -1950,7 +1947,7 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
                   await toggleServer(selectedItem.server!.name);
                 } catch (err) {
                   // Error is already set in MCPContext state, just log it
-                  logger.error('Toggle failed:', err);
+                  console.error('Toggle failed:', err);
                 }
               }}
               onDelete={async () => {

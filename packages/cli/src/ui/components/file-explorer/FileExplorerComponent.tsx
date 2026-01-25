@@ -28,14 +28,11 @@ import { GitStatusService } from './GitStatusService.js';
 import { PathSanitizer } from './PathSanitizer.js';
 import { WorkspaceProvider } from './WorkspaceContext.js';
 import { WorkspaceManager } from './WorkspaceManager.js';
-import { createLogger } from '../../../../../core/src/utils/logger.js';
 
 import type { WorkspaceConfig, FileNode } from './types.js';
 import type { MessageBus } from '@ollm/ollm-cli-core/hooks/messageBus.js';
 import type { PolicyEngine } from '@ollm/ollm-cli-core/policy/policyEngine.js';
 import type { ToolRegistry } from '@ollm/ollm-cli-core/tools/tool-registry.js';
-
-const logger = createLogger('FileExplorerComponent');
 
 /**
  * Props for FileExplorerComponent
@@ -232,7 +229,7 @@ export function FileExplorerComponent({
           }
         } catch (error) {
           // Workspace loading failed, continue in browse mode
-          logger.warn('Failed to load workspace:', error);
+          console.warn('Failed to load workspace:', error);
         }
       }
 
@@ -263,7 +260,7 @@ export function FileExplorerComponent({
                 fileFocusContext.addFocusedFile(focusedFile);
               } catch (error) {
                 // Skip files that can't be focused (e.g., deleted files)
-                logger.warn(`Failed to restore focused file: ${filePath}`, error);
+                console.warn(`Failed to restore focused file: ${filePath}`, error);
               }
             }
           }
@@ -287,7 +284,7 @@ export function FileExplorerComponent({
           }
         } catch (error) {
           // State restoration failed, continue with default state
-          logger.warn('Failed to restore state:', error);
+          console.warn('Failed to restore state:', error);
         }
       }
 
@@ -425,7 +422,7 @@ export function FileExplorerComponent({
           lastActiveProject: workspaceState.activeProject,
         });
       } catch (error) {
-        logger.warn('Failed to save state on unmount:', error);
+        console.warn('Failed to save state on unmount:', error);
       }
     };
   }, [services, treeState, workspaceState, fileFocusContext.state.focusedFiles]);

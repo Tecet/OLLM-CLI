@@ -10,10 +10,6 @@ import { mkdir, writeFile, readFile, rm } from 'fs/promises';
 import { homedir } from 'os';
 import { join } from 'path';
 
-import { createLogger } from '../utils/logger.js';
-
-const logger = createLogger('extensionRegistry');
-
 /**
  * Extension metadata from registry
  */
@@ -226,12 +222,12 @@ export class ExtensionRegistry {
       }
 
       // Download extension
-      logger.info(`Downloading extension '${name}' v${metadata.version}...`);
+      console.log(`Downloading extension '${name}' v${metadata.version}...`);
       const downloadPath = await this.downloadExtension(metadata);
 
       // Verify checksum
       if (this.verifyChecksums) {
-        logger.info('Verifying checksum...');
+        console.log('Verifying checksum...');
         const valid = await this.verifyChecksum(downloadPath, metadata.checksum);
         if (!valid) {
           // Clean up downloaded file
@@ -247,13 +243,13 @@ export class ExtensionRegistry {
       }
 
       // Extract extension
-      logger.info('Extracting extension...');
+      console.log('Extracting extension...');
       const installPath = await this.extractExtension(downloadPath, name);
 
       // Clean up downloaded file
       await rm(downloadPath, { force: true });
 
-      logger.info(`Successfully installed extension '${name}' v${metadata.version}`);
+      console.log(`Successfully installed extension '${name}' v${metadata.version}`);
 
       return {
         name,
@@ -280,7 +276,7 @@ export class ExtensionRegistry {
   async uninstall(name: string): Promise<void> {
     const extensionPath = join(this.installDir, name);
     await rm(extensionPath, { recursive: true, force: true });
-    logger.info(`Uninstalled extension '${name}'`);
+    console.log(`Uninstalled extension '${name}'`);
   }
 
   /**
@@ -349,7 +345,7 @@ export class ExtensionRegistry {
     } catch (error) {
       // Return cached data if available, even if expired
       if (this.cache.has('registry')) {
-        logger.warn('Using cached registry data due to fetch error');
+        console.warn('Using cached registry data due to fetch error');
         return this.cache.get('registry')!;
       }
 

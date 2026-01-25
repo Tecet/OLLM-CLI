@@ -9,12 +9,9 @@ import * as fs from 'fs/promises';
 import * as os from 'os';
 import * as path from 'path';
 
-import { createLogger } from '../utils/logger.js';
 import { logPathDiagnostics } from '../utils/pathValidation.js';
 
 import type { ContextSnapshot, SnapshotMetadata, SnapshotStorage } from './types.js';
-
-const logger = createLogger('snapshotStorage');
 
 /**
  * Snapshot file format version
@@ -426,7 +423,7 @@ export class SnapshotStorageImpl implements SnapshotStorage {
       }
       
       // Corrupted index, try to rebuild from files
-      logger.warn(`Corrupted index for session ${sessionId}, rebuilding...`);
+      console.warn(`Corrupted index for session ${sessionId}, rebuilding...`);
       return await this.rebuildIndex(sessionId);
     }
   }
@@ -533,7 +530,7 @@ export class SnapshotStorageImpl implements SnapshotStorage {
           });
         } catch (_error) {
           // Skip corrupted files
-          logger.warn(`Skipping corrupted snapshot file: ${file}`);
+          console.warn(`Skipping corrupted snapshot file: ${file}`);
         }
       }
 

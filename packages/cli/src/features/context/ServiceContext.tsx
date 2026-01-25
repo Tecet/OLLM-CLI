@@ -12,15 +12,12 @@ import { DefaultMCPClient, DefaultMCPToolWrapper } from '@ollm/ollm-cli-core/mcp
 import { ServiceContainer, createServiceContainer } from '@ollm/ollm-cli-core/services/serviceContainer.js';
 import { ToolRegistry, registerBuiltInTools } from '@ollm/ollm-cli-core/tools/index.js';
 
-import { createLogger } from '../../../../core/src/utils/logger.js';
 import { SettingsService } from '../../config/settingsService.js';
 import { useDialog } from '../../ui/contexts/DialogContext.js';
 
 import type { Config } from '../../config/types.js';
 import type { Hook } from '@ollm/ollm-cli-core/hooks/types.js';
 import type { ProviderAdapter } from '@ollm/ollm-cli-core/provider/types.js';
-
-const logger = createLogger('ServiceContext');
 
 
 /**
@@ -127,19 +124,19 @@ export function ServiceProvider({
     extensionManager.setMCPClient(mcpClient);
     extensionManager.setMCPToolWrapper(mcpToolWrapper);
     
-    logger.info('✅ MCP integration initialized: MCPClient and MCPToolWrapper wired into ExtensionManager');
+    console.log('✅ MCP integration initialized: MCPClient and MCPToolWrapper wired into ExtensionManager');
   }, [container]);
   
   // Initialize services on mount
   useEffect(() => {
     container.initializeAll().catch(err => {
-      logger.error('Failed to initialize services:', err);
+      console.error('Failed to initialize services:', err);
     });
     
     // Cleanup on unmount
     return () => {
       container.shutdown().catch(err => {
-        logger.error('Failed to shutdown services:', err);
+        console.error('Failed to shutdown services:', err);
       });
     };
   }, [container]);

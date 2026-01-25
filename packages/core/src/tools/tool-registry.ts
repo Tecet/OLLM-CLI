@@ -1,5 +1,3 @@
-import { globalValidator, type ValidationError } from './validation.js';
-import { createLogger } from '../utils/logger.js';
 /**
  * Tool Registry
  * 
@@ -7,10 +5,9 @@ import { createLogger } from '../utils/logger.js';
  * Manages the lifecycle of tools and provides access to tool schemas for LLM consumption.
  */
 
+import { globalValidator, type ValidationError } from './validation.js';
 
 import type { DeclarativeTool, ToolSchema, ToolContext, ToolInvocation } from './types.js';
-
-const logger = createLogger('tool-registry');
 
 /**
  * Interface for checking tool enabled state
@@ -51,7 +48,7 @@ export class ToolRegistry {
   register(tool: DeclarativeTool<unknown, unknown>): void {
     // Warn if replacing existing tool
     if (this.tools.has(tool.name)) {
-      logger.warn(`[ToolRegistry] Tool '${tool.name}' already registered, replacing with new definition`);
+      console.warn(`[ToolRegistry] Tool '${tool.name}' already registered, replacing with new definition`);
     }
     
     this.tools.set(tool.name, tool);

@@ -10,10 +10,6 @@ import { join } from 'path';
 
 import { parse as parseYaml } from 'yaml';
 
-import { createLogger } from '../utils/logger.js';
-
-const logger = createLogger('templateService');
-
 /**
  * Variable definition in a template
  */
@@ -127,7 +123,7 @@ export class TemplateService {
           // Log error but continue loading other templates
           const err = error as NodeJS.ErrnoException;
           const message = err.message || String(error);
-          logger.warn(`Failed to load template ${filePath}: ${message}`);
+          console.warn(`Failed to load template ${filePath}: ${message}`);
         }
       }
     } catch (error: unknown) {

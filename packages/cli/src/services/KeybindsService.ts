@@ -2,10 +2,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { homedir } from 'os';
 import { join } from 'path';
 
-import { createLogger } from '../../../core/src/utils/logger.js';
 import { keybindsData } from '../config/keybinds.js';
-
-const logger = createLogger('KeybindsService');
 
 export class KeybindsService {
   private static instance: KeybindsService;
@@ -45,7 +42,7 @@ export class KeybindsService {
       // User keys that are present override defaults.
       return this.deepMerge(keybindsData, userKeybinds);
     } catch (error) {
-      logger.error('Failed to load user keybinds:', error);
+      console.error('Failed to load user keybinds:', error);
       return keybindsData;
     }
   }
@@ -54,7 +51,7 @@ export class KeybindsService {
     try {
       writeFileSync(this.configPath, JSON.stringify(keybinds, null, 2), 'utf-8');
     } catch (error) {
-      logger.error('Failed to save user keybinds:', error);
+      console.error('Failed to save user keybinds:', error);
     }
   }
 

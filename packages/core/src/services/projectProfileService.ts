@@ -9,10 +9,6 @@ import { join } from 'path';
 
 import { parse as parseYaml } from 'yaml';
 
-import { createLogger } from '../utils/logger.js';
-
-const logger = createLogger('projectProfileService');
-
 /**
  * Project profile configuration
  */
@@ -258,7 +254,7 @@ export class ProjectProfileService {
           // File doesn't exist, continue to next
           const err = error as NodeJS.ErrnoException;
           if (err.code !== 'ENOENT') {
-            logger.warn(`Error checking ${filePath}: ${err.message}`);
+            console.warn(`Error checking ${filePath}: ${err.message}`);
           }
         }
       }

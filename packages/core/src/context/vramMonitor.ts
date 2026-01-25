@@ -1,12 +1,6 @@
-import { exec } from 'child_process';
-import { EventEmitter } from 'events';
-import { totalmem, freemem } from 'os';
-import { promisify } from 'util';
-
-import { createGPUDetector } from './gpuDetector.js';
-import { VRAMMonitor, VRAMInfo, GPUType, GPUDetector } from './types.js';
 import { createLogger } from '../utils/logger.js';
 
+const logger = createLogger('vramMonitor');
 /**
  * VRAM Monitor Service
  * 
@@ -14,7 +8,13 @@ import { createLogger } from '../utils/logger.js';
  * Supports NVIDIA, AMD, Apple Silicon, and falls back to system RAM for CPU-only mode.
  */
 
-const logger = createLogger('vramMonitor');
+import { exec } from 'child_process';
+import { EventEmitter } from 'events';
+import { totalmem, freemem } from 'os';
+import { promisify } from 'util';
+
+import { createGPUDetector } from './gpuDetector.js';
+import { VRAMMonitor, VRAMInfo, GPUType, GPUDetector } from './types.js';
 
 const execAsync = promisify(exec);
 
@@ -128,9 +128,7 @@ export class DefaultVRAMMonitor extends EventEmitter implements VRAMMonitor {
         }
       } catch (error) {
         // Log error but don't stop monitoring
-        logger.error('VRAM monitoring error:', {
-          error: error instanceof Error ? error.message : String(error)
-        });
+        logger.error('VRAM monitoring error:', error);
       }
     }, intervalMs);
   }
@@ -173,9 +171,7 @@ export class DefaultVRAMMonitor extends EventEmitter implements VRAMMonitor {
         return { total, used, available, modelLoaded };
       }
     } catch (error) {
-      logger.warn('Failed to query NVIDIA GPU memory, falling back to system RAM:', {
-        error: error instanceof Error ? error.message : String(error)
-      });
+      logger.warn('Failed to query NVIDIA GPU memory, falling back to system RAM:', error);
     }
 
     // Fallback to system RAM
@@ -205,9 +201,7 @@ export class DefaultVRAMMonitor extends EventEmitter implements VRAMMonitor {
         return { total, used, available, modelLoaded };
       }
     } catch (error) {
-      logger.warn('Failed to query AMD GPU memory, falling back to system RAM:', {
-        error: error instanceof Error ? error.message : String(error)
-      });
+      logger.warn('Failed to query AMD GPU memory, falling back to system RAM:', error);
     }
 
     // Fallback to system RAM
@@ -245,9 +239,7 @@ export class DefaultVRAMMonitor extends EventEmitter implements VRAMMonitor {
         return { total, used, available, modelLoaded };
       }
     } catch (error) {
-      logger.warn('Failed to query Apple Silicon memory, falling back to system RAM:', {
-        error: error instanceof Error ? error.message : String(error)
-      });
+      logger.warn('Failed to query Apple Silicon memory, falling back to system RAM:', error);
     }
 
     // Fallback to system RAM
@@ -302,9 +294,7 @@ export class DefaultVRAMMonitor extends EventEmitter implements VRAMMonitor {
 
       return { total, used, available, modelLoaded };
     } catch (error) {
-      logger.warn('Failed to query Windows GPU memory, falling back to system RAM:', {
-        error: error instanceof Error ? error.message : String(error)
-      });
+      logger.warn('Failed to query Windows GPU memory, falling back to system RAM:', error);
     }
 
     // Fallback to system RAM

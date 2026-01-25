@@ -9,11 +9,8 @@ import { SystemPromptBuilder } from './SystemPromptBuilder.js';
 import { ContextTier, OperationalMode } from './types.js';
 import { PromptRegistry } from '../prompts/PromptRegistry.js';
 import { TieredPromptStore } from '../prompts/tieredPromptStore.js';
-import { createLogger } from '../utils/logger.js';
 
 import type { ContextPool, ConversationContext, Message, TokenCounter } from './types.js';
-
-const logger = createLogger('promptOrchestrator');
 
 type EmitFn = (event: string, payload?: unknown) => void;
 
@@ -77,7 +74,7 @@ export class PromptOrchestrator {
   getSystemPromptForTierAndMode(mode: OperationalMode, tier: ContextTier): string {
     const template = this.promptStore.get(mode, tier);
     if (!template) {
-      logger.warn(`[ContextManager] No prompt template found for ${mode} in tier ${tier}, using fallback`);
+      console.warn(`[ContextManager] No prompt template found for ${mode} in tier ${tier}, using fallback`);
       const fallback = this.promptStore.get(OperationalMode.DEVELOPER, ContextTier.TIER_3_STANDARD);
       return fallback ?? '';
     }

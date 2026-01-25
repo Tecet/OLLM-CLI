@@ -8,10 +8,6 @@
 import { exec } from 'child_process';
 import { promisify } from 'util';
 
-import { createLogger } from '../utils/logger.js';
-
-const logger = createLogger('gpuMonitor');
-
 const execAsync = promisify(exec);
 
 /**
@@ -112,7 +108,7 @@ export class DefaultGPUMonitor implements GPUMonitor {
    */
   private logWarning(message: string): void {
     if (process.env.OLLM_LOG_LEVEL === 'debug') {
-      logger.warn(`[GPU Monitor] ${message}`);
+      console.warn(`[GPU Monitor] ${message}`);
     }
   }
 
@@ -121,7 +117,7 @@ export class DefaultGPUMonitor implements GPUMonitor {
    */
   private logError(message: string, error?: unknown): void {
     if (process.env.OLLM_LOG_LEVEL === 'debug') {
-      logger.error(`[GPU Monitor] ${message}`, error);
+      console.error(`[GPU Monitor] ${message}`, error);
     }
   }
 

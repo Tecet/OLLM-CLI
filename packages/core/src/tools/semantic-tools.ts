@@ -1,11 +1,8 @@
 import { ToolCapability } from './tool-capabilities.js';
 import { WebSearchTool, type SearchProvider, type SearchResult } from './web-search.js';
-import { createLogger } from '../utils/logger.js';
 
 import type { ToolRouter } from './toolRouter.js';
 import type { Tool, ToolInvocation, ToolResult, ToolCallConfirmationDetails, ToolContext, ToolSchema, DeclarativeTool } from './types.js';
-
-const logger = createLogger('semantic-tools');
 
 export class MCPSearchProvider implements SearchProvider {
   constructor(private router: ToolRouter, private capability: ToolCapability.WEB_SEARCH | ToolCapability.DOCUMENTATION_SEARCH) {}
@@ -60,7 +57,7 @@ export class MCPSearchProvider implements SearchProvider {
       // We need flexible parsing.
       return this.parseResults(result);
     } catch (error) {
-      logger.error('MCP Search failed:', error);
+      console.error('MCP Search failed:', error);
       throw error;
     }
   }

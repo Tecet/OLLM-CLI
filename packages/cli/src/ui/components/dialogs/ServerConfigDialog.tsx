@@ -17,7 +17,6 @@ import React, { useState, useCallback } from 'react';
 import { Box, Text } from 'ink';
 
 import { Dialog } from './Dialog.js';
-import { createLogger } from '../../../../../core/src/utils/logger.js';
 import { useMCP } from '../../contexts/MCPContext.js';
 import { Button, ButtonGroup } from '../forms/Button.js';
 import { CheckboxGroup } from '../forms/Checkbox.js';
@@ -26,8 +25,6 @@ import { TextInput, validators } from '../forms/TextInput.js';
 import { Tooltip } from '../forms/Tooltip.js';
 
 import type { MCPServerConfig } from '@ollm/ollm-cli-core/mcp/types.js';
-
-const logger = createLogger('ServerConfigDialog');
 
 export interface ServerConfigDialogProps {
   /** Server name being configured */
@@ -214,7 +211,7 @@ export function ServerConfigDialog({
       onClose();
     } catch (error) {
       // Error handling - could show error message in dialog
-      logger.error('Failed to save configuration:', error);
+      console.error('Failed to save configuration:', error);
     } finally {
       setIsSaving(false);
     }

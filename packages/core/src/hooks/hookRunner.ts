@@ -11,13 +11,10 @@ import * as path from 'path';
 import { DEFAULT_HOOKS_CONFIG } from './config.js';
 import { getHookDebugger } from './hookDebugger.js';
 import { HookTranslator } from './hookTranslator.js';
-import { createLogger } from '../utils/logger.js';
 
 import type { HooksConfig } from './config.js';
 import type { TrustedHooks } from './trustedHooks.js';
 import type { Hook, HookEvent, HookInput, HookOutput } from './types.js';
-
-const logger = createLogger('hookRunner');
 
 /**
  * Result of hook execution including metadata
@@ -252,7 +249,7 @@ export class HookRunner {
       if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         const extensionInfo = hook.extensionName ? ` (from extension '${hook.extensionName}')` : '';
-        logger.error(`Hook execution failed for '${hook.name}'${extensionInfo}: ${errorMessage}`);
+        console.error(`Hook execution failed for '${hook.name}'${extensionInfo}: ${errorMessage}`);
       }
       
       hookDebugger.endTrace(traceId, undefined, error instanceof Error ? error : new Error(String(error)));
@@ -298,7 +295,7 @@ export class HookRunner {
       } else {
         // Skip hook if not approved
         if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
-          logger.warn(`Hook ${hook.name} was not approved and will be skipped`);
+          console.warn(`Hook ${hook.name} was not approved and will be skipped`);
         }
         return false;
       }
@@ -390,7 +387,7 @@ export class HookRunner {
         if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
           const errorMessage = error instanceof Error ? error.message : String(error);
           const extensionInfo = hook.extensionName ? ` (from extension '${hook.extensionName}')` : '';
-          logger.error(`Hook '${hook.name}'${extensionInfo} failed: ${errorMessage}`);
+          console.error(`Hook '${hook.name}'${extensionInfo} failed: ${errorMessage}`);
         }
         
         // Add error result
@@ -484,7 +481,7 @@ export class HookRunner {
         if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
           const errorMessage = error instanceof Error ? error.message : String(error);
           const extensionInfo = hook.extensionName ? ` (from extension '${hook.extensionName}')` : '';
-          logger.error(`Hook '${hook.name}'${extensionInfo} failed: ${errorMessage}`);
+          console.error(`Hook '${hook.name}'${extensionInfo} failed: ${errorMessage}`);
         }
         
         // Add error result

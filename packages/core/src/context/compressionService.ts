@@ -1,4 +1,3 @@
-import { createLogger } from '../utils/logger.js';
 /**
  * Compression Service
  * 
@@ -76,8 +75,6 @@ import type {
   CompressionEstimate,
   TokenCounter,
 } from './types.js';
-
-const logger = createLogger('compressionService');
 
 /**
  * Provider adapter interface for LLM-based summarization
@@ -503,7 +500,7 @@ export class CompressionService implements ICompressionService {
         );
       } catch (error) {
         // Fall back to placeholder if LLM summarization fails
-        logger.warn('LLM summarization failed, using placeholder:', error);
+        console.warn('LLM summarization failed, using placeholder:', error);
         summaryText = this.createSummaryPlaceholder(messagesToSummarize);
       }
     } else {
@@ -663,7 +660,7 @@ export class CompressionService implements ICompressionService {
         );
       } catch (error) {
         // Fall back to placeholder if LLM summarization fails
-        logger.warn(
+        console.warn(
           'LLM summarization failed in hybrid strategy, using placeholder:',
           error
         );

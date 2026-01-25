@@ -1,10 +1,9 @@
-import { MemoryLevel } from './types.js';
-import { createLogger } from '../utils/logger.js';
 /**
  * CompressionCoordinator
  *
  * Centralizes all compression and checkpoint strategies so the manager can stay lean.
  */
+import { MemoryLevel } from './types.js';
 
 import type { CheckpointManager } from './checkpointManager.js';
 import type {
@@ -20,8 +19,6 @@ import type {
   SnapshotConfig,
   TokenCounter,
 } from './types.js';
-
-const logger = createLogger('compressionCoordinator');
 
 type EmitFn = (event: string, payload?: unknown) => void;
 
@@ -127,7 +124,7 @@ export class CompressionCoordinator {
    * Tier 1 rollover - create a snapshot and keep an ultra-compact summary.
    */
   private async compressForTier1(): Promise<void> {
-    logger.info('[ContextManager] Tier 1 rollover compression triggered');
+    console.log('[ContextManager] Tier 1 rollover compression triggered');
 
     const context = this.getContext();
     const baseSystemPrompt = context.systemPrompt
@@ -155,9 +152,9 @@ export class CompressionCoordinator {
     try {
       snapshot = await this.snapshotManager.createSnapshot(context);
       this.emit('rollover-snapshot-created', { snapshot });
-      logger.info('[ContextManager] Rollover snapshot created', { id: snapshot.id });
+      console.log('[ContextManager] Rollover snapshot created', { id: snapshot.id });
     } catch (error) {
-      if (!this.isTestEnv) logger.error('[ContextManager] Rollover snapshot creation failed', error);
+      if (!this.isTestEnv) console.error('[ContextManager] Rollover snapshot creation failed', error);
       this.emit('snapshot-error', error);
     }
 
@@ -216,11 +213,11 @@ export class CompressionCoordinator {
   async handleAutoThreshold(): Promise<void> {
     const now = Date.now();
     if (this.autoSummaryRunning) {
-      logger.debug('[ContextManager] autoThreshold reached but auto-summary already running; skipping');
+      console.debug('[ContextManager] autoThreshold reached but auto-summary already running; skipping');
       return;
     }
     if (this.lastAutoSummaryAt && (now - this.lastAutoSummaryAt) < this.autoSummaryCooldownMs) {
-      logger.debug('[ContextManager] autoThreshold reached but within cooldown; skipping');
+      console.debug('[ContextManager] autoThreshold reached but within cooldown; skipping');
       return;
     }
 
@@ -228,14 +225,14 @@ export class CompressionCoordinator {
     this.lastAutoSummaryAt = now;
 
     const context = this.getContext();
-    logger.info('[ContextManager] autoThreshold reached, starting snapshot and summarization checks', { usage: this.getUsage() });
+    console.log('[ContextManager] autoThreshold reached, starting snapshot and summarization checks', { usage: this.getUsage() });
     this.emit('summarizing', { usage: this.getUsage() });
 
     const hasUserMessages = context.messages.some(
       m => m.role === 'user'
     );
     if (!hasUserMessages) {
-      logger.info('[ContextManager] No user messages, skipping snapshot/compression');
+      console.log('[ContextManager] No user messages, skipping snapshot/compression');
       this.autoSummaryRunning = false;
       return;
     }
@@ -248,7 +245,7 @@ export class CompressionCoordinator {
 
     const MIN_MESSAGES_TO_COMPRESS = 10;
     if (compressibleMessages.length < MIN_MESSAGES_TO_COMPRESS) {
-      logger.info('[ContextManager] Not enough compressible messages, skipping compression', {
+      console.log('[ContextManager] Not enough compressible messages, skipping compression', {
         compressible: compressibleMessages.length,
         minimum: MIN_MESSAGES_TO_COMPRESS,
         total: context.messages.length,
@@ -262,9 +259,9 @@ export class CompressionCoordinator {
     try {
       snapshot = await this.snapshotManager.createSnapshot(context);
       this.emit('auto-snapshot-created', snapshot);
-      logger.info('[ContextManager] auto-snapshot-created', { id: snapshot.id, tokenCount: snapshot.tokenCount });
+      console.log('[ContextManager] auto-snapshot-created', { id: snapshot.id, tokenCount: snapshot.tokenCount });
     } catch (error) {
-      logger.error('[ContextManager] snapshot creation failed', error);
+      console.error('[ContextManager] snapshot creation failed', error);
       this.emit('snapshot-error', error);
     }
 
@@ -275,15 +272,15 @@ export class CompressionCoordinator {
         summaryMaxTokens: this.config.compression.summaryMaxTokens
       };
 
-      logger.info('[ContextManager] invoking compressionService.compress', { strategy });
+      console.log('[ContextManager] invoking compressionService.compress', { strategy });
       const compressed = await this.compressionService.compress(
         context.messages,
         strategy
       );
-      logger.info('[ContextManager] compressionService.compress completed', { originalTokens: compressed.originalTokens, compressedTokens: compressed.compressedTokens, status: compressed.status });
+      console.log('[ContextManager] compressionService.compress completed', { originalTokens: compressed.originalTokens, compressedTokens: compressed.compressedTokens, status: compressed.status });
 
       if (compressed.status === 'inflated') {
-        logger.info('[ContextManager] Compression skipped - no messages to compress', { status: compressed.status });
+        console.log('[ContextManager] Compression skipped - no messages to compress', { status: compressed.status });
         this.emit('compression-skipped', { reason: compressed.status });
         return;
       }
@@ -317,7 +314,7 @@ export class CompressionCoordinator {
         if (context.checkpoints.length > MAX_CHECKPOINTS) {
           const removed = context.checkpoints.length - MAX_CHECKPOINTS;
           context.checkpoints = context.checkpoints.slice(-MAX_CHECKPOINTS);
-          logger.info('[ContextManager] Checkpoint limit reached, removed oldest checkpoints', {
+          console.log('[ContextManager] Checkpoint limit reached, removed oldest checkpoints', {
             removed,
             remaining: context.checkpoints.length
           });
@@ -356,11 +353,11 @@ export class CompressionCoordinator {
           ratio: compressed.compressionRatio
         });
       } else {
-        logger.warn('[ContextManager] compression returned no summary');
+        console.warn('[ContextManager] compression returned no summary');
         this.emit('auto-summary-failed', { reason: 'no-summary' });
       }
     } catch (error) {
-      logger.error('[ContextManager] auto-summary failed', error);
+      console.error('[ContextManager] auto-summary failed', error);
       this.emit('auto-summary-failed', { error });
     } finally {
       this.autoSummaryRunning = false;
@@ -371,7 +368,7 @@ export class CompressionCoordinator {
    * Tier 2 smart compression with a single detailed checkpoint.
    */
   private async compressForTier2(): Promise<void> {
-    logger.info('[ContextManager] Tier 2 smart compression triggered');
+    console.log('[ContextManager] Tier 2 smart compression triggered');
 
     const context = this.getContext();
     const preserved = this.checkpointManager.preserveNeverCompressed(context);
@@ -497,7 +494,7 @@ export class CompressionCoordinator {
    * Tier 3 progressive checkpoints with hierarchical compression.
    */
   private async compressForTier3(): Promise<void> {
-    logger.info('[ContextManager] Tier 3 progressive compression triggered');
+    console.log('[ContextManager] Tier 3 progressive compression triggered');
 
     const context = this.getContext();
     const preserved = this.checkpointManager.preserveNeverCompressed(context);
@@ -609,7 +606,7 @@ export class CompressionCoordinator {
    * Tier 4 structured compression with broader summaries.
    */
   private async compressForTier4(): Promise<void> {
-    logger.info('[ContextManager] Tier 4 structured compression triggered');
+    console.log('[ContextManager] Tier 4 structured compression triggered');
 
     const context = this.getContext();
     const preserved = this.checkpointManager.preserveNeverCompressed(context);
@@ -729,7 +726,7 @@ export class CompressionCoordinator {
    * Tier 5 ultra structured compression with maximal detail.
    */
   private async compressForTier5(): Promise<void> {
-    logger.info('[ContextManager] Tier 5 ultra structured compression triggered');
+    console.log('[ContextManager] Tier 5 ultra structured compression triggered');
 
     const context = this.getContext();
     const preserved = this.checkpointManager.preserveNeverCompressed(context);
@@ -850,7 +847,7 @@ export class CompressionCoordinator {
    */
   async compress(): Promise<void> {
     const tier = this.getTierConfig();
-    logger.info('[ContextManager] compress invoked', {
+    console.log('[ContextManager] compress invoked', {
       tier: tier.tier,
       strategy: tier.strategy,
       messageCount: this.getContext().messages.length
@@ -875,17 +872,17 @@ export class CompressionCoordinator {
           }
           break;
         default:
-          logger.warn(`[ContextManager] Unknown strategy ${tier.strategy}, using progressive`);
+          console.warn(`[ContextManager] Unknown strategy ${tier.strategy}, using progressive`);
           await this.compressForTier3();
       }
 
-      logger.info('[ContextManager] compression complete', {
+      console.log('[ContextManager] compression complete', {
         tier: tier.tier,
         newTokenCount: this.getContext().tokenCount,
         checkpointCount: this.getContext().checkpoints?.length || 0
       });
     } catch (error) {
-      logger.error('[ContextManager] compression failed', error);
+      console.error('[ContextManager] compression failed', error);
       this.emit('compression-error', { error, tier: tier.tier });
       throw error;
     }

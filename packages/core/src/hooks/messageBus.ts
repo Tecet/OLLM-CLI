@@ -1,5 +1,3 @@
-import { HookEvent } from './types.js';
-import { createLogger } from '../utils/logger.js';
 /**
  * Message Bus for Hook System
  * 
@@ -7,8 +5,7 @@ import { createLogger } from '../utils/logger.js';
  * Supports priority-based listeners, async event emission, and wildcard events.
  */
 
-
-const logger = createLogger('messageBus');
+import { HookEvent } from './types.js';
 
 /**
  * Listener function for message bus events
@@ -141,7 +138,7 @@ export class MessageBus {
       try {
         await record.listener(event, data);
       } catch (error) {
-        logger.error(`Error in MessageBus listener for event '${event}':`, error);
+        console.error(`Error in MessageBus listener for event '${event}':`, error);
       }
 
       if (record.once) {

@@ -1,10 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-import { createLogger } from '../../../../core/src/utils/logger.js';
 import { keybindsData } from '../../config/keybinds.js';
 import { KeybindsService } from '../../services/KeybindsService.js';
-
-const logger = createLogger('KeybindsContext');
 
 type KeybindsData = typeof keybindsData;
 
@@ -22,7 +19,7 @@ export function useKeybinds() {
   const context = useContext(KeybindsContext);
   if (!context) {
     // Graceful fallback to avoid runtime crashes during dev/init
-    logger.warn('useKeybinds: Context missing, returning defaults');
+    console.warn('useKeybinds: Context missing, returning defaults');
     return {
       activeKeybinds: keybindsData,
       defaultKeybinds: keybindsData,

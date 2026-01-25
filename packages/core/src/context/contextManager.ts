@@ -23,7 +23,6 @@ import {
   MODE_PROFILES
 } from './types.js';
 import { createVRAMMonitor } from './vramMonitor.js';
-import { createLogger } from '../utils/logger.js';
 
 import type { CheckpointManager } from './checkpointManager.js';
 import type { ContextModuleOverrides, ContextModules } from './contextModules.js';
@@ -41,8 +40,6 @@ import type {
   MemoryGuard,
   ModelInfo
 } from './types.js';
-
-const logger = createLogger('contextManager');
 
 // During test runs we silence verbose context-manager logs to keep test output clean.
 // Keep warnings/errors so real failures are still visible. Use CONTEXT_DEBUG=1 to override.
@@ -262,7 +259,7 @@ export class ConversationContextManager extends EventEmitter implements ContextM
     // Detect hardware capability tier (for prompt selection)
     // This is locked at startup and won't change during the session
     this.hardwareCapabilityTier = await this.detectHardwareCapabilityTier();
-    logger.info('[ContextManager] Hardware capability tier:', this.hardwareCapabilityTier);
+    console.log('[ContextManager] Hardware capability tier:', this.hardwareCapabilityTier);
     
     if (this.config.autoSize) {
       const maxPossibleContext = this.contextPool.calculateOptimalSize(
@@ -284,9 +281,9 @@ export class ConversationContextManager extends EventEmitter implements ContextM
       this.actualContextTier = newTierConfig.tier;
       
       // With auto-sizing, prompt tier follows actual context size
-      logger.info('[ContextManager] Auto-sizing enabled - prompt tier follows actual context size');
-      logger.info('[ContextManager] Actual context tier:', this.actualContextTier);
-      logger.info('[ContextManager] Effective prompt tier:', this.getEffectivePromptTier());
+      console.log('[ContextManager] Auto-sizing enabled - prompt tier follows actual context size');
+      console.log('[ContextManager] Actual context tier:', this.actualContextTier);
+      console.log('[ContextManager] Effective prompt tier:', this.getEffectivePromptTier());
       
       this.emit('tier-changed', { 
         tier: this.currentTier, 
@@ -303,9 +300,9 @@ export class ConversationContextManager extends EventEmitter implements ContextM
       this.currentTier = tierConfig.tier;
       this.tierConfig = tierConfig;
       
-      logger.info('[ContextManager] Manual context sizing - using actual context tier');
-      logger.info('[ContextManager] Actual context tier:', this.actualContextTier);
-      logger.info('[ContextManager] Effective prompt tier:', this.getEffectivePromptTier());
+      console.log('[ContextManager] Manual context sizing - using actual context tier');
+      console.log('[ContextManager] Actual context tier:', this.actualContextTier);
+      console.log('[ContextManager] Effective prompt tier:', this.getEffectivePromptTier());
     }
     
     // Apply initial system prompt based on effective tier (hardware capability) and mode
@@ -386,7 +383,7 @@ export class ConversationContextManager extends EventEmitter implements ContextM
         
         // Emit tier-changed event if tier actually changed OR if effective tier changed
         if (oldTier !== this.actualContextTier || oldEffectiveTier !== newEffectiveTier) {
-          logger.info(`[ContextManager] Tier changed: actual ${oldTier} → ${this.actualContextTier}, effective ${oldEffectiveTier} → ${newEffectiveTier}`);
+          console.log(`[ContextManager] Tier changed: actual ${oldTier} → ${this.actualContextTier}, effective ${oldEffectiveTier} → ${newEffectiveTier}`);
           
           this.emit('tier-changed', {
             tier: this.currentTier,
@@ -397,7 +394,7 @@ export class ConversationContextManager extends EventEmitter implements ContextM
             promptTierLocked: this.config.autoSize
           });
           
-          logger.info('[ContextManager] Updating system prompt to match new tier');
+          console.log('[ContextManager] Updating system prompt to match new tier');
           this.updateSystemPrompt();
           
           this.emit('system-prompt-updated', {
@@ -525,12 +522,12 @@ export class ConversationContextManager extends EventEmitter implements ContextM
         this.modelInfo
       );
       
-      logger.info('[ContextManager] Hardware can support context size:', maxPossibleContext);
+      console.log('[ContextManager] Hardware can support context size:', maxPossibleContext);
       
       // Map the possible context size to a tier
       return this.getTierForSize(maxPossibleContext);
     } catch (error) {
-      logger.warn('[ContextManager] Failed to detect hardware capability, defaulting to Tier 3', error);
+      console.warn('[ContextManager] Failed to detect hardware capability, defaulting to Tier 3', error);
       // Default to Tier 3 if detection fails
       return ContextTier.TIER_3_STANDARD;
     }
@@ -747,13 +744,13 @@ export class ConversationContextManager extends EventEmitter implements ContextM
     };
     
     // Log prompt details for verification
-    logger.info('[ContextManager] Setting system prompt:');
-    logger.info(`  - Effective Prompt Tier: ${this.getEffectivePromptTier()}`);
-    logger.info(`  - Actual Context Tier: ${this.actualContextTier}`);
-    logger.info(`  - Current Mode: ${this.currentMode}`);
-    logger.info(`  - Auto-sizing: ${this.config.autoSize ? 'enabled (prompt follows context size)' : 'disabled (manual context size)'}`);
-    logger.info(`  - Prompt length: ${content.length} chars, ${systemPrompt.tokenCount} tokens`);
-    logger.info(`  - Prompt preview: ${content.substring(0, 200)}...`);
+    console.log('[ContextManager] Setting system prompt:');
+    console.log(`  - Effective Prompt Tier: ${this.getEffectivePromptTier()}`);
+    console.log(`  - Actual Context Tier: ${this.actualContextTier}`);
+    console.log(`  - Current Mode: ${this.currentMode}`);
+    console.log(`  - Auto-sizing: ${this.config.autoSize ? 'enabled (prompt follows context size)' : 'disabled (manual context size)'}`);
+    console.log(`  - Prompt length: ${content.length} chars, ${systemPrompt.tokenCount} tokens`);
+    console.log(`  - Prompt preview: ${content.substring(0, 200)}...`);
     
     // Track prompts if it's a registered prompt
     if (content) {

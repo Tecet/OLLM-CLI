@@ -1,13 +1,3 @@
-import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode, useMemo } from 'react';
-
-import { createLogger } from '../../../../core/src/utils/logger.js';
-import { SettingsService } from '../../config/settingsService.js';
-import { useServices } from '../../features/context/ServiceContext.js';
-import { loadHooksFromFiles } from '../../services/hookLoader.js';
-
-import type { HookRegistry } from '@ollm/ollm-cli-core/hooks/index.js';
-import type { Hook, HookEvent } from '@ollm/ollm-cli-core/hooks/types.js';
-import type { ServiceContainer } from '@ollm/ollm-cli-core/services/serviceContainer.js';
 /**
  * HooksContext - Manages hook state and operations for the Hooks Panel UI
  * 
@@ -18,8 +8,15 @@ import type { ServiceContainer } from '@ollm/ollm-cli-core/services/serviceConta
  * - Error handling for corrupted hooks
  */
 
+import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode, useMemo } from 'react';
 
-const logger = createLogger('HooksContext');
+import { SettingsService } from '../../config/settingsService.js';
+import { useServices } from '../../features/context/ServiceContext.js';
+import { loadHooksFromFiles } from '../../services/hookLoader.js';
+
+import type { HookRegistry } from '@ollm/ollm-cli-core/hooks/index.js';
+import type { Hook, HookEvent } from '@ollm/ollm-cli-core/hooks/types.js';
+import type { ServiceContainer } from '@ollm/ollm-cli-core/services/serviceContainer.js';
 
 /**
  * Hook category for organizing hooks in the UI
@@ -127,8 +124,8 @@ export function HooksProvider({
   
   const settingsService = useMemo(() => customSettings || SettingsService.getInstance(), [customSettings]);
   // Debug: log whether we are using a custom settings instance (tests) or the singleton
-  logger.debug('[HooksProvider] using customSettings?', !!customSettings);
-  logger.debug('[HooksProvider] settingsService identity', settingsService);
+  console.debug('[HooksProvider] using customSettings?', !!customSettings);
+  console.debug('[HooksProvider] settingsService identity', settingsService);
 
   /**
    * Categorize hooks by event type
@@ -237,9 +234,9 @@ export function HooksProvider({
       const hookSettings = settingsService.getHookSettings();
       // Debug: snapshot of settings read
       try {
-        logger.debug('[HooksProvider] read hookSettings', JSON.stringify(hookSettings));
+        console.debug('[HooksProvider] read hookSettings', JSON.stringify(hookSettings));
       } catch {
-        logger.debug('[HooksProvider] read hookSettings (unserializable)');
+        console.debug('[HooksProvider] read hookSettings (unserializable)');
       }
       const enabledHooks = new Set<string>();
       
@@ -280,7 +277,7 @@ export function HooksProvider({
       const newEnabledState = !currentlyEnabled;
 
       // Update settings
-      logger.debug('[HooksProvider] setHookEnabled', hookId, newEnabledState);
+      console.debug('[HooksProvider] setHookEnabled', hookId, newEnabledState);
       settingsService.setHookEnabled(hookId, newEnabledState);
 
       // Update local state
@@ -292,7 +289,7 @@ export function HooksProvider({
           newEnabledHooks.delete(hookId);
         }
 
-        logger.debug('[HooksProvider] updating local enabledHooks for', hookId, '->', newEnabledState);
+        console.debug('[HooksProvider] updating local enabledHooks for', hookId, '->', newEnabledState);
 
         return {
           ...prev,

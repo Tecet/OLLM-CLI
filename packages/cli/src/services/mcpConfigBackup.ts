@@ -9,11 +9,7 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 
-import { createLogger } from '../../../core/src/utils/logger.js';
-
 import type { MCPConfigFile } from './mcpConfigService.js';
-
-const logger = createLogger('mcpConfigBackup');
 
 /**
  * Backup metadata
@@ -127,7 +123,7 @@ export class MCPConfigBackupService {
       const backup = await this.findMostRecentBackup(configPath);
 
       if (!backup) {
-        logger.warn('No backup found for restoration');
+        console.warn('No backup found for restoration');
         return false;
       }
 
@@ -144,12 +140,12 @@ export class MCPConfigBackupService {
       // Restore from backup
       await fs.promises.copyFile(backup.backupPath, configPath);
 
-      logger.info(`Configuration restored from backup: ${backup.backupPath}`);
-      logger.info(`Corrupted file saved to: ${corruptedBackupPath}`);
+      console.log(`Configuration restored from backup: ${backup.backupPath}`);
+      console.log(`Corrupted file saved to: ${corruptedBackupPath}`);
 
       return true;
     } catch (error) {
-      logger.error('Failed to restore from backup:', error);
+      console.error('Failed to restore from backup:', error);
       return false;
     }
   }
@@ -182,11 +178,11 @@ export class MCPConfigBackupService {
       // Restore from backup
       await fs.promises.copyFile(backupPath, configPath);
 
-      logger.info(`Configuration restored from: ${backupPath}`);
+      console.log(`Configuration restored from: ${backupPath}`);
 
       return true;
     } catch (error) {
-      logger.error('Failed to restore from specific backup:', error);
+      console.error('Failed to restore from specific backup:', error);
       return false;
     }
   }
@@ -244,7 +240,7 @@ export class MCPConfigBackupService {
 
       return backups;
     } catch (error) {
-      logger.error('Failed to list backups:', error);
+      console.error('Failed to list backups:', error);
       return [];
     }
   }
@@ -280,13 +276,13 @@ export class MCPConfigBackupService {
    * @returns True if recovery was successful
    */
   async recoverFromCorruption(configPath: string): Promise<boolean> {
-    logger.info('Attempting to recover from configuration corruption...');
+    console.log('Attempting to recover from configuration corruption...');
 
     // First, try to restore from the most recent backup
     const restored = await this.restoreFromBackup(configPath);
 
     if (restored) {
-      logger.info('Configuration successfully restored from backup');
+      console.log('Configuration successfully restored from backup');
       return true;
     }
 
@@ -299,17 +295,17 @@ export class MCPConfigBackupService {
         
         // If we can parse it and it has the right structure, it's not corrupted
         if (data && typeof data === 'object' && data.mcpServers && typeof data.mcpServers === 'object') {
-          logger.info('Current configuration is valid, not overwriting');
+          console.log('Current configuration is valid, not overwriting');
           return true; // File is fine, no need to create empty config
         }
       }
     } catch (_checkError) {
       // File is truly corrupted or missing, proceed to create empty config
-      logger.info('Configuration is truly corrupted or missing');
+      console.log('Configuration is truly corrupted or missing');
     }
 
     // Only create empty config if file is missing or truly corrupted
-    logger.info('No backup available and file is corrupted/missing, creating new empty configuration');
+    console.log('No backup available and file is corrupted/missing, creating new empty configuration');
 
     try {
       const emptyConfig: MCPConfigFile = {
@@ -329,10 +325,10 @@ export class MCPConfigBackupService {
         'utf-8'
       );
 
-      logger.info('New empty configuration created');
+      console.log('New empty configuration created');
       return true;
     } catch (error) {
-      logger.error('Failed to create new configuration:', error);
+      console.error('Failed to create new configuration:', error);
       return false;
     }
   }
@@ -449,13 +445,13 @@ export class MCPConfigBackupService {
             }
           } catch (error) {
             if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
-              logger.warn(`Failed to delete old backup ${backup.backupPath}:`, error);
+              console.warn(`Failed to delete old backup ${backup.backupPath}:`, error);
             }
           }
         }
       }
     } catch (error) {
-      logger.error('Failed to cleanup old backups:', error);
+      console.error('Failed to cleanup old backups:', error);
     }
   }
 

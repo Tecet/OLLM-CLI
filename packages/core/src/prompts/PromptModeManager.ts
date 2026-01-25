@@ -10,12 +10,9 @@ import { EventEmitter } from 'events';
 import { FocusModeManager } from './FocusModeManager.js';
 import { ModeMetricsTracker } from './ModeMetricsTracker.js';
 import { ModeTransitionAnimator } from './ModeTransitionAnimator.js';
-import { createLogger } from '../utils/logger.js';
 
 import type { ContextAnalyzer, ContextAnalysis, ModeType } from './ContextAnalyzer.js';
 import type { ModelCapabilities } from '../services/modelManagementService.js';
-
-const logger = createLogger('PromptModeManager');
 
 /**
  * Mode configuration
@@ -244,7 +241,7 @@ export class PromptModeManager extends EventEmitter {
       this.metricsTracker.saveMetricsToDisk();
     } catch (error) {
       // Log error but don't throw - metrics persistence should not break functionality
-      logger.error('Failed to persist mode metrics:', error);
+      console.error('Failed to persist mode metrics:', error);
     }
   }
   
@@ -275,7 +272,7 @@ export class PromptModeManager extends EventEmitter {
     try {
       return this.metricsTracker.loadMetricsFromDisk();
     } catch (error) {
-      logger.error('Failed to load mode metrics:', error);
+      console.error('Failed to load mode metrics:', error);
       return false;
     }
   }
@@ -291,7 +288,7 @@ export class PromptModeManager extends EventEmitter {
       this.metricsTracker.clearPersistedMetrics();
       this.metricsTracker.resetMetrics();
     } catch (error) {
-      logger.error('Failed to clear mode metrics:', error);
+      console.error('Failed to clear mode metrics:', error);
     }
   }
   

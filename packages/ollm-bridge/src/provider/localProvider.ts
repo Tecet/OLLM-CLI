@@ -217,22 +217,9 @@ export class LocalProvider implements ProviderAdapter {
         optionsPayload[key] = value;
       }
     }
-    // Ollama options handling
-    // We pass all options directly, but map specific keys if needed
     if (typeof optionsPayload.gpu_layers === 'number') {
-      // Legacy support: map gpu_layers to num_gpu if needed, 
-      // but newer Ollama versions often prefer num_gpu
-      optionsPayload.num_gpu = optionsPayload.gpu_layers;
-      // Some versions might still look for num_gpu_layers or similar,
-      // but keeping both or the standard one is safer.
-      // Let's set both standard keys to be safe.
-      optionsPayload.num_gpu = optionsPayload.gpu_layers;
+      optionsPayload.num_gpu_layers = optionsPayload.gpu_layers;
       delete optionsPayload.gpu_layers;
-    }
-    
-    // Explicitly handle num_gpu if passed directly in options
-    if (typeof mergedOptions.num_gpu === 'number') {
-        optionsPayload.num_gpu = mergedOptions.num_gpu;
     }
     const defaultFinishEvent: ProviderEvent = {
       type: 'finish',

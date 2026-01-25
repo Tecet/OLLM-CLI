@@ -11,10 +11,6 @@ import React, { useEffect, useState } from 'react';
 import { Box, Text } from 'ink';
 import { codeToHtml, bundledLanguages } from 'shiki';
 
-import { createLogger } from '../../../../../core/src/utils/logger.js';
-
-const logger = createLogger('SyntaxViewer');
-
 /**
  * Props for SyntaxViewer component
  */
@@ -191,7 +187,7 @@ export const SyntaxViewer: React.FC<SyntaxViewerProps> = ({
         setHighlightedContent(text);
       } catch (err) {
         // If highlighting fails, fall back to plain text
-        logger.error('Syntax highlighting error:', err);
+        console.error('Syntax highlighting error:', err);
         setError(err instanceof Error ? err.message : 'Unknown error');
         setHighlightedContent(content);
       } finally {

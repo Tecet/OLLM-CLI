@@ -8,12 +8,8 @@
 import { promises as fs } from 'fs';
 import { join } from 'path';
 
-import { createLogger } from '../utils/logger.js';
-
 import type { ModeType } from './ContextAnalyzer.js';
 import type { Message } from '../provider/types.js';
-
-const logger = createLogger('modeSnapshotManager');
 
 /**
  * Mode-specific findings from specialized modes
@@ -452,7 +448,7 @@ ${currentPlan.map(p => `    ${this.escapeXml(p)}`).join('\n')}
       await fs.writeFile(filePath, JSON.stringify(snapshot, null, 2), 'utf-8');
     } catch (error) {
       // Log error but don't throw - disk persistence is optional
-      logger.error('Failed to persist snapshot:', error);
+      console.error('Failed to persist snapshot:', error);
     }
   }
 }

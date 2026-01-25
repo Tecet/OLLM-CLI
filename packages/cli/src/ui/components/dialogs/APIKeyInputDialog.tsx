@@ -8,11 +8,7 @@
 import React, { useState, useCallback } from 'react';
 import { Box, Text, useInput } from 'ink';
 
-import { createLogger } from '../../../../../core/src/utils/logger.js';
-
 import type { MCPMarketplaceServer } from '../../../services/mcpMarketplace.js';
-
-const logger = createLogger('APIKeyInputDialog');
 
 export interface APIKeyInputDialogProps {
   /** Server being installed */
@@ -131,7 +127,7 @@ export function APIKeyInputDialog({ server, onInstall, onCancel }: APIKeyInputDi
         if (field.getKeyUrl) {
           // In a real implementation, this would open the browser
           // For now, just show the URL
-          logger.info(`Open browser: ${field.getKeyUrl}`);
+          console.log(`Open browser: ${field.getKeyUrl}`);
         }
       }
     }

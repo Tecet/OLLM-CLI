@@ -10,7 +10,6 @@ import { EventEmitter } from 'events';
 import {
   MemoryLevel
 } from './types.js';
-import { createLogger } from '../utils/logger.js';
 
 import type {
   MemoryGuard,
@@ -21,8 +20,6 @@ import type {
   ConversationContext,
   MemoryGuardConfig
 } from './types.js';
-
-const logger = createLogger('memoryGuard');
 
 /**
  * Default memory guard configuration
@@ -150,7 +147,7 @@ export class MemoryGuardImpl extends EventEmitter implements MemoryGuard {
         try {
           await cb();
         } catch (error) {
-          logger.error(`Error in memory guard threshold callback for ${level}:`, error);
+          console.error(`Error in memory guard threshold callback for ${level}:`, error);
         }
       }
     }
@@ -180,7 +177,7 @@ export class MemoryGuardImpl extends EventEmitter implements MemoryGuard {
               this.emit('compressed', { level: MemoryLevel.WARNING, result: compressed });
             }
           } catch (err) {
-            logger.error('Compression failed during memory warning handling:', err);
+            console.error('Compression failed during memory warning handling:', err);
           }
         }
         break;
@@ -251,7 +248,7 @@ export class MemoryGuardImpl extends EventEmitter implements MemoryGuard {
         newSize
       });
     } catch (error) {
-      logger.error('Failed to reduce context size:', error);
+      console.error('Failed to reduce context size:', error);
       this.emit('context-resize-failed', {
         level: MemoryLevel.CRITICAL,
         error: error instanceof Error ? error.message : String(error)
@@ -286,7 +283,7 @@ export class MemoryGuardImpl extends EventEmitter implements MemoryGuard {
             actions.push('Skipped snapshot (no user messages)');
           }
         } catch (error) {
-          logger.error('Failed to create emergency snapshot:', error);
+          console.error('Failed to create emergency snapshot:', error);
           actions.push('Failed to create snapshot');
         }
       }
@@ -324,7 +321,7 @@ export class MemoryGuardImpl extends EventEmitter implements MemoryGuard {
       });
 
     } catch (error) {
-      logger.error('Emergency actions failed:', error);
+      console.error('Emergency actions failed:', error);
       this.emit('emergency-failed', { error });
     }
   }

@@ -24,13 +24,10 @@ import { PolicyEngine } from '../policy/policyEngine.js';
 import { modelDatabase } from '../routing/modelDatabase.js';
 import { ModelRouter } from '../routing/modelRouter.js';
 import { ToolRegistry, registerBuiltInTools } from '../tools/index.js';
-import { createLogger } from '../utils/logger.js';
 
 import type { ApprovalCallback } from '../hooks/trustedHooks.js';
 import type { PolicyConfig } from '../policy/policyRules.js';
 import type { ProviderAdapter } from '../provider/types.js';
-
-const logger = createLogger('serviceContainer');
 
 /**
  * Configuration for model management
@@ -220,7 +217,7 @@ export class ServiceContainer {
       
       // Load memories on initialization
       this._memoryService.load().catch(err => {
-        logger.error('Failed to load memories:', err);
+        console.error('Failed to load memories:', err);
       });
     }
     return this._memoryService;
@@ -243,7 +240,7 @@ export class ServiceContainer {
       
       // Load templates on initialization
       this._templateService.loadTemplates().catch(err => {
-        logger.error('Failed to load templates:', err);
+        console.error('Failed to load templates:', err);
       });
     }
     return this._templateService;

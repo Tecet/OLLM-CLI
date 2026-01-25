@@ -15,9 +15,6 @@ import { simpleGit, SimpleGit, StatusResult } from 'simple-git';
 
 import { handleError } from './ErrorHandler.js';
 import { GitStatus } from './types.js';
-import { createLogger } from '../../../../../core/src/utils/logger.js';
-
-const logger = createLogger('GitStatusService');
 
 
 /**
@@ -125,7 +122,7 @@ export class GitStatusService {
       });
       
       if (!this.silent) {
-        logger.error(`Failed to get git status for ${repoPath}:`, errorInfo.message);
+        console.error(`Failed to get git status for ${repoPath}:`, errorInfo.message);
       }
       
       return new Map();

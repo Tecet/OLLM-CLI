@@ -11,9 +11,6 @@
 import { createHash } from 'crypto';
 
 import { sanitizeErrorMessage } from './errorSanitization.js';
-import { createLogger } from '../utils/logger.js';
-
-const logger = createLogger('loopDetectionService');
 
 export interface LoopPattern {
   type: 'repeated-tool' | 'repeated-output' | 'turn-limit';
@@ -211,7 +208,7 @@ export class LoopDetectionService {
       } catch (error) {
         // Silently catch callback errors to prevent one bad callback from affecting others
         const errorMessage = error instanceof Error ? error.message : String(error);
-        logger.error('Error in loop detection callback:', sanitizeErrorMessage(errorMessage));
+        console.error('Error in loop detection callback:', sanitizeErrorMessage(errorMessage));
       }
     }
   }

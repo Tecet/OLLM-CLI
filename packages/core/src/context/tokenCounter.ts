@@ -1,4 +1,3 @@
-import { createLogger } from '../utils/logger.js';
 /**
  * Token Counter Service
  * 
@@ -10,8 +9,6 @@ import { createLogger } from '../utils/logger.js';
 
 import type { TokenCounter, TokenCountCache, Message } from './types.js';
 import type { ProviderAdapter } from '../provider/types.js';
-
-const logger = createLogger('tokenCounter');
 
 /**
  * Default tool call overhead in tokens
@@ -90,7 +87,7 @@ export class TokenCounterService implements TokenCounter {
         return Math.round(count * this.modelMultiplier);
       } catch (error) {
         // Fall through to estimation on error
-        logger.warn('Provider token counting failed, using fallback estimation:', error);
+        console.warn('Provider token counting failed, using fallback estimation:', error);
       }
     }
 

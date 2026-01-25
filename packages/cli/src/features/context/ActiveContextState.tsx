@@ -3,12 +3,9 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { ModeType, Role, MessagePart, MODE_METADATA } from '@ollm/ollm-cli-core';
 
 import { useContextManager } from './ContextManagerContext.js';
-import { createLogger } from '../../../../core/src/utils/logger.js';
 import { useHooks } from '../../ui/contexts/HooksContext.js';
 import { useMCP } from '../../ui/contexts/MCPContext.js';
 import { useTools } from '../../ui/contexts/ToolsContext.js';
-
-const logger = createLogger('ActiveContextState');
 
 interface ActiveContextState {
   activeSkills: string[];
@@ -236,7 +233,7 @@ export const ActiveContextProvider: React.FC<{ children: ReactNode }> = ({ child
             }));
           }
       } catch (err) {
-          logger.warn('Failed to get context for analysis:', err);
+          console.warn('Failed to get context for analysis:', err);
       }
 
       const contextAnalyzer = modeManager?.getContextAnalyzer();

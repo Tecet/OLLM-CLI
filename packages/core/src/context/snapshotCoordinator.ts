@@ -1,5 +1,3 @@
-import { createLogger } from '../utils/logger.js';
-
 /**
  * SnapshotCoordinator
  *
@@ -14,8 +12,6 @@ import type {
   SnapshotStorage,
   ContextPool,
 } from './types.js';
-
-const logger = createLogger('snapshotCoordinator');
 
 type EmitFn = (event: string, payload?: unknown) => void;
 
@@ -89,7 +85,7 @@ export class SnapshotCoordinator {
     try {
       return await this.snapshotStorage.load(snapshotId);
     } catch (error) {
-      logger.error(`Failed to load snapshot ${snapshotId}:`, error);
+      console.error(`Failed to load snapshot ${snapshotId}:`, error);
       return null;
     }
   }

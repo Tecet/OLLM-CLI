@@ -1,5 +1,3 @@
-import { createLogger } from '../utils/logger.js';
-
 /**
  * CheckpointManager
  *
@@ -15,8 +13,6 @@ import type {
   TaskDefinition,
   TokenCounter,
 } from './types.js';
-
-const logger = createLogger('checkpointManager');
 
 type EmitFn = (event: string, payload?: unknown) => void;
 
@@ -201,7 +197,7 @@ export class CheckpointManager {
     const COMPACT_AGE = 6;
     const totalCompressions = context.metadata.compressionHistory.length;
 
-    logger.info('[ContextManager] compressOldCheckpoints:', {
+    console.log('[ContextManager] compressOldCheckpoints:', {
       totalCompressions,
       checkpointCount: context.checkpoints.length
     });
@@ -218,7 +214,7 @@ export class CheckpointManager {
         age = checkpointIndex >= 0 ? totalCompressions - checkpointIndex : totalCompressions;
       }
 
-      logger.info('[ContextManager] Checkpoint age:', {
+      console.log('[ContextManager] Checkpoint age:', {
         checkpointId: checkpoint.id,
         level: checkpoint.level,
         age,
@@ -227,7 +223,7 @@ export class CheckpointManager {
       });
 
       if (age >= COMPACT_AGE && checkpoint.level !== 1) {
-        logger.info('[ContextManager] Compressing checkpoint to COMPACT:', checkpoint.id);
+        console.log('[ContextManager] Compressing checkpoint to COMPACT:', checkpoint.id);
         checkpoint.level = 1;
         checkpoint.compressedAt = new Date();
         checkpoint.compressionCount++;
@@ -238,7 +234,7 @@ export class CheckpointManager {
         const newTokens = await this.tokenCounter.countTokens(checkpoint.summary.content);
         checkpoint.currentTokens = newTokens;
       } else if (age >= MODERATE_AGE && checkpoint.level === 3) {
-        logger.info('[ContextManager] Compressing checkpoint to MODERATE:', checkpoint.id);
+        console.log('[ContextManager] Compressing checkpoint to MODERATE:', checkpoint.id);
         checkpoint.level = 2;
         checkpoint.compressedAt = new Date();
         checkpoint.compressionCount++;

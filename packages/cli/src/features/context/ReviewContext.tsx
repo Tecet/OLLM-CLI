@@ -1,9 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 
-import { createLogger } from '../../../../core/src/utils/logger.js';
-
-const logger = createLogger('ReviewContext');
-
 /**
  * Review status
  */
@@ -100,7 +96,7 @@ export function ReviewProvider({
         // Update status and remove from list
         setReviews((prev) => prev.filter((r) => r.id !== id));
       } catch (error) {
-        logger.error('Error approving review:', error);
+        console.error('Error approving review:', error);
         throw error;
       }
     },
@@ -123,7 +119,7 @@ export function ReviewProvider({
         // Update status and remove from list
         setReviews((prev) => prev.filter((r) => r.id !== id));
       } catch (error) {
-        logger.error('Error rejecting review:', error);
+        console.error('Error rejecting review:', error);
         throw error;
       }
     },
@@ -144,7 +140,7 @@ export function ReviewProvider({
       // Remove all pending reviews
       setReviews((prev) => prev.filter((r) => r.status !== 'pending'));
     } catch (error) {
-      logger.error('Error approving all reviews:', error);
+      console.error('Error approving all reviews:', error);
       throw error;
     }
   }, [reviews, onApprove]);
@@ -163,7 +159,7 @@ export function ReviewProvider({
       // Remove all pending reviews
       setReviews((prev) => prev.filter((r) => r.status !== 'pending'));
     } catch (error) {
-      logger.error('Error rejecting all reviews:', error);
+      console.error('Error rejecting all reviews:', error);
       throw error;
     }
   }, [reviews, onReject]);

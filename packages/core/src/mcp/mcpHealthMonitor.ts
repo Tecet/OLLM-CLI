@@ -1,4 +1,3 @@
-import { createLogger } from '../utils/logger.js';
 /**
  * MCP Health Monitor
  * 
@@ -6,8 +5,6 @@ import { createLogger } from '../utils/logger.js';
  */
 
 import type { MCPClient, MCPServerConfig, MCPServerStatusType } from './types.js';
-
-const logger = createLogger('mcpHealthMonitor');
 
 /**
  * Connection phase for tracking server connection lifecycle
@@ -644,7 +641,7 @@ export class MCPHealthMonitor {
         listener(event);
       } catch (error) {
         // Ignore listener errors
-        logger.error('Error in health monitor event listener:', error);
+        console.error('Error in health monitor event listener:', error);
       }
     }
   }

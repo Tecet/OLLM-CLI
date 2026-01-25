@@ -17,11 +17,8 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { Box, Text } from 'ink';
 
 import { Dialog } from './Dialog.js';
-import { createLogger } from '../../../../../core/src/utils/logger.js';
 import { useMCP } from '../../contexts/MCPContext.js';
 import { Button, ButtonGroup } from '../forms/Button.js';
-
-const logger = createLogger('ServerLogsViewer');
 
 export interface ServerLogsViewerProps {
   /** Server name to view logs for */
@@ -182,7 +179,7 @@ export function ServerLogsViewer({
       const logLines = await getServerLogs(serverName, 100);
       setLogs(logLines);
     } catch (error) {
-      logger.error(`Failed to load logs for ${serverName}:`, error);
+      console.error(`Failed to load logs for ${serverName}:`, error);
       setLogs([]);
     } finally {
       setIsLoading(false);
@@ -223,14 +220,14 @@ export function ServerLogsViewer({
       const logText = filteredLogs.map(entry => entry.raw).join('\n');
       
       // Simulate clipboard copy (would use clipboardy or similar in production)
-      logger.info('Copying logs to clipboard:', logText);
+      console.log('Copying logs to clipboard:', logText);
       
       // In a terminal environment, we might write to a temp file
       // or use platform-specific clipboard commands
       
       await new Promise(resolve => setTimeout(resolve, 500));
     } catch (error) {
-      logger.error('Failed to copy logs:', error);
+      console.error('Failed to copy logs:', error);
     } finally {
       setIsCopying(false);
     }
@@ -247,7 +244,7 @@ export function ServerLogsViewer({
         await loadLogs();
       }
     } catch (error) {
-      logger.error('Failed to clear logs:', error);
+      console.error('Failed to clear logs:', error);
     } finally {
       setIsClearing(false);
     }

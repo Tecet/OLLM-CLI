@@ -19,15 +19,12 @@ import { Box, Text, useInput } from 'ink';
 
 import { Dialog, markEscHandled } from './Dialog.js';
 import { InstallServerDialog } from './InstallServerDialog.js';
-import { createLogger } from '../../../../../core/src/utils/logger.js';
 import { useMCP } from '../../contexts/MCPContext.js';
 import { Button } from '../forms/Button.js';
 import { LoadingSpinner } from '../mcp/LoadingSpinner.js';
 
 import type { MCPMarketplaceServer } from '../../../services/mcpMarketplace.js';
 import type { MCPServerConfig } from '@ollm/ollm-cli-core/mcp/types.js';
-
-const logger = createLogger('MarketplaceDialog');
 
 export interface MarketplaceDialogProps {
   /** Callback when dialog should close */
@@ -240,7 +237,7 @@ export function MarketplaceDialog({ onClose }: MarketplaceDialogProps) {
       setInstallDialogServer(null);
     } catch (err) {
       // Error is handled by InstallServerDialog
-      logger.error('Installation failed:', err);
+      console.error('Installation failed:', err);
     }
   }, [installServer]);
 

@@ -20,7 +20,6 @@ import ignoreFactory from 'ignore';
 import picomatch from 'picomatch';
 
 import { sanitizeErrorMessage } from './errorSanitization.js';
-import { createLogger } from '../utils/logger.js';
 
 import type {
   FileEntry,
@@ -29,8 +28,6 @@ import type {
   FileChangeEvent,
 } from './types.js';
 import type { Ignore } from 'ignore';
-
-const logger = createLogger('fileDiscoveryService');
 
 /**
  * Configuration options for FileDiscoveryService
@@ -186,7 +183,7 @@ export class FileDiscoveryService {
         if (!stats.isDirectory()) {
           // Only log error if not in a test environment
           if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
-            logger.error(`Cannot watch ${sanitizeErrorMessage(root)}: not a directory`);
+            console.error(`Cannot watch ${sanitizeErrorMessage(root)}: not a directory`);
           }
           return;
         }
@@ -230,13 +227,13 @@ export class FileDiscoveryService {
         // Handle watcher errors
         watcher.on('error', (error) => {
           const errorMessage = error instanceof Error ? error.message : String(error);
-          logger.error(`File watcher error for ${sanitizeErrorMessage(root)}:`, sanitizeErrorMessage(errorMessage));
+          console.error(`File watcher error for ${sanitizeErrorMessage(root)}:`, sanitizeErrorMessage(errorMessage));
         });
       } catch (error) {
         // Only log error if not in a test environment
         if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
           const errorMessage = error instanceof Error ? error.message : String(error);
-          logger.error(`Failed to start file watcher for ${sanitizeErrorMessage(root)}:`, sanitizeErrorMessage(errorMessage));
+          console.error(`Failed to start file watcher for ${sanitizeErrorMessage(root)}:`, sanitizeErrorMessage(errorMessage));
         }
       }
     })();

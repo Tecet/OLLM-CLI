@@ -1,5 +1,3 @@
-import { mcpConfigService } from './mcpConfigService.js';
-import { createLogger } from '../../../core/src/utils/logger.js';
 /**
  * MCP Marketplace Service
  * 
@@ -9,10 +7,9 @@ import { createLogger } from '../../../core/src/utils/logger.js';
  * Connects to the official MCP Registry at registry.modelcontextprotocol.io
  */
 
+import { mcpConfigService } from './mcpConfigService.js';
 
 import type { MCPServerConfig } from '@ollm/ollm-cli-core/mcp/types.js';
-
-const logger = createLogger('mcpMarketplace');
 
 /**
  * MCP marketplace server information
@@ -178,7 +175,7 @@ export class MCPMarketplace {
         }
       }
     } catch (error) {
-      logger.warn('Failed to search registry, falling back to local search:', error);
+      console.warn('Failed to search registry, falling back to local search:', error);
     }
 
     // Fallback to local filtering
@@ -221,7 +218,7 @@ export class MCPMarketplace {
       const data: RegistryResponse = await response.json();
       
       if (!data.servers || !Array.isArray(data.servers)) {
-        logger.warn('Unexpected registry API response format:', data);
+        console.warn('Unexpected registry API response format:', data);
         throw new Error('Unexpected API response format');
       }
       
@@ -245,10 +242,10 @@ export class MCPMarketplace {
       this.cache = transformedServers;
       this.cacheExpiry = Date.now() + this.CACHE_TTL;
 
-      logger.info(`Loaded ${transformedServers.length} servers from MCP Registry`);
+      console.log(`Loaded ${transformedServers.length} servers from MCP Registry`);
       return transformedServers;
     } catch (error) {
-      logger.warn('Failed to fetch from MCP Registry, using local registry:', error);
+      console.warn('Failed to fetch from MCP Registry, using local registry:', error);
       
       // Fallback to local registry
       const localServers = this.getLocalRegistry();
@@ -275,12 +272,12 @@ export class MCPMarketplace {
     const cachedServer = servers.find((s) => s.id === serverId);
     
     if (cachedServer) {
-      logger.info(`Found server ${serverId} in cache`);
+      console.log(`Found server ${serverId} in cache`);
       return cachedServer;
     }
 
-    logger.info(`Server ${serverId} not in cache, trying API...`);
-    logger.info(`Available server IDs in cache:`, servers.map(s => s.id).slice(0, 10));
+    console.log(`Server ${serverId} not in cache, trying API...`);
+    console.log(`Available server IDs in cache:`, servers.map(s => s.id).slice(0, 10));
 
     // If not in cache, try to fetch from registry
     try {
@@ -295,13 +292,13 @@ export class MCPMarketplace {
       if (response.ok) {
         const wrapper: RegistryServerWrapper = await response.json();
         const transformed = this.transformRegistryServer(wrapper);
-        logger.info(`Fetched server from API:`, transformed.id);
+        console.log(`Fetched server from API:`, transformed.id);
         return transformed;
       } else {
-        logger.warn(`API returned ${response.status} for ${serverId}`);
+        console.warn(`API returned ${response.status} for ${serverId}`);
       }
     } catch (error) {
-      logger.warn(`Failed to fetch server ${serverId} from registry:`, error);
+      console.warn(`Failed to fetch server ${serverId} from registry:`, error);
     }
 
     // Server not found anywhere

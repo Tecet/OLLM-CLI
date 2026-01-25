@@ -12,15 +12,12 @@ import { readFile } from 'fs/promises';
 import { useState, useEffect, useMemo } from 'react';
 import { Box, Text, useInput, measureElement } from 'ink';
 
-import { createLogger } from '../../../../../core/src/utils/logger.js';
 import { Theme } from '../../../config/types.js';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { useServices } from '../../../features/context/ServiceContext.js';
 import { useFileFocus, FileTreeService, FocusSystem, SyntaxViewer } from '../file-explorer/index.js';
 
 import type { FileNode } from '../file-explorer/types.js';
-
-const logger = createLogger('WorkspacePanel');
 
 export interface WorkspacePanelProps {
   theme: Theme;
@@ -109,7 +106,7 @@ export function WorkspacePanel({ theme, hasFocus }: WorkspacePanelProps) {
         rebuildFlattenedList(tree);
         setIsLoading(false);
       } catch (error) {
-        logger.error('Failed to build file tree:', error);
+        console.error('Failed to build file tree:', error);
         setIsLoading(false);
       }
     };
@@ -170,7 +167,7 @@ export function WorkspacePanel({ theme, hasFocus }: WorkspacePanelProps) {
               actualNode.expanded = true;
               rebuildFlattenedList(fileTree);
             }).catch(err => {
-              logger.error('Failed to expand directory:', err);
+              console.error('Failed to expand directory:', err);
             });
           }
         }
@@ -184,7 +181,7 @@ export function WorkspacePanel({ theme, hasFocus }: WorkspacePanelProps) {
           });
           focusManager.openModal('syntax-viewer');  // Register with focus manager
         }).catch(err => {
-          logger.error('Failed to read file:', err);
+          console.error('Failed to read file:', err);
         });
       }
     } else if (key.rightArrow && !key.ctrl && !key.meta) {
@@ -200,7 +197,7 @@ export function WorkspacePanel({ theme, hasFocus }: WorkspacePanelProps) {
             // Rebuild the flattened list to show the expanded children
             rebuildFlattenedList(fileTree);
           }).catch(err => {
-            logger.error('Failed to expand directory:', err);
+            console.error('Failed to expand directory:', err);
           });
         }
       }
@@ -233,7 +230,7 @@ export function WorkspacePanel({ theme, hasFocus }: WorkspacePanelProps) {
             // Add to the global FileFocusContext
             fileFocusContext.addFocusedFile(focusedFile);
           }).catch(err => {
-            logger.error('Failed to focus file:', err);
+            console.error('Failed to focus file:', err);
           });
         }
       }

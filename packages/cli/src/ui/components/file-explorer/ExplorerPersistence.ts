@@ -14,9 +14,6 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import { handleError } from './ErrorHandler.js';
-import { createLogger } from '../../../../../core/src/utils/logger.js';
-
-const logger = createLogger('ExplorerPersistence');
 
 /**
  * Explorer state that gets persisted to disk
@@ -133,7 +130,7 @@ export class ExplorerPersistence {
       // Validate state structure
       if (!this.isValidState(rawState)) {
         if (!this.silent) {
-          logger.warn('Corrupted explorer state file detected. Resetting to default state.');
+          console.warn('Corrupted explorer state file detected. Resetting to default state.');
         }
         return { ...DEFAULT_STATE };
       }
@@ -161,7 +158,7 @@ export class ExplorerPersistence {
           stateFilePath: this.stateFilePath,
         });
         
-        logger.warn(`Failed to load explorer state: ${errorInfo.message}. Using default state.`);
+        console.warn(`Failed to load explorer state: ${errorInfo.message}. Using default state.`);
       }
       return { ...DEFAULT_STATE };
     }

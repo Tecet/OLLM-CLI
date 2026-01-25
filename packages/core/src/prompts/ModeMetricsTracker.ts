@@ -8,12 +8,8 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync, unlinkSync } from '
 import { homedir } from 'os';
 import { join } from 'path';
 
-import { createLogger } from '../utils/logger.js';
-
 import type { ModeType } from './ContextAnalyzer.js';
 import type { ModeTransition } from './PromptModeManager.js';
-
-const logger = createLogger('ModeMetricsTracker');
 
 /**
  * Time spent in a mode during a session
@@ -804,7 +800,7 @@ export class ModeMetricsTracker {
       const serialized = this.serializeMetrics();
       writeFileSync(metricsPath, JSON.stringify(serialized, null, 2), 'utf-8');
     } catch (error) {
-      logger.error('Failed to save mode metrics to disk:', error);
+      console.error('Failed to save mode metrics to disk:', error);
     }
   }
   
@@ -829,7 +825,7 @@ export class ModeMetricsTracker {
       this.deserializeMetrics(serialized);
       return true;
     } catch (error) {
-      logger.error('Failed to load mode metrics from disk:', error);
+      console.error('Failed to load mode metrics from disk:', error);
       return false;
     }
   }
@@ -847,7 +843,7 @@ export class ModeMetricsTracker {
         unlinkSync(metricsPath);
       }
     } catch (error) {
-      logger.error('Failed to clear persisted metrics:', error);
+      console.error('Failed to clear persisted metrics:', error);
     }
   }
 }

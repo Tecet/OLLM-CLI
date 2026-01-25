@@ -2,13 +2,9 @@ import React from 'react';
 import { Box, Text } from 'ink';
 
 import { ModeConfidenceDisplay } from './ModeConfidenceDisplay.js';
-import { createLogger } from '../../../../../core/src/utils/logger.js';
 import { useActiveContext } from '../../../features/context/ActiveContextState.js';
 import { useContextManager } from '../../../features/context/ContextManagerContext.js';
 import { useUI } from '../../../features/context/UIContext.js';
-
-// Logger
-const logger = createLogger('ContextSection');
 
 // Helper to format tier display
 function _formatTierDisplay(tier: string): string {
@@ -24,7 +20,7 @@ function _formatTierDisplay(tier: string): string {
     '4': '32K',
     '5': '64K+'
   };
-
+  
   return tierRanges[tierNum] || tier;
 }
 
@@ -50,9 +46,9 @@ export function ContextSection() {
   } = useActiveContext();
 
   // Debug logging
-  logger.info('[ContextSection] RENDER - effectivePromptTier:', contextState.effectivePromptTier);
-  logger.info('[ContextSection] RENDER - actualContextTier:', contextState.actualContextTier);
-  logger.info('[ContextSection] RENDER - currentMode:', currentMode);
+  console.log('[ContextSection] RENDER - effectivePromptTier:', contextState.effectivePromptTier);
+  console.log('[ContextSection] RENDER - actualContextTier:', contextState.actualContextTier);
+  console.log('[ContextSection] RENDER - currentMode:', currentMode);
 
   return (
     <Box flexDirection="column" alignItems="flex-start">

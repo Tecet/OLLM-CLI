@@ -9,7 +9,6 @@ import { EventEmitter } from 'events';
 
 import { sanitizeErrorMessage } from './errorSanitization.js';
 import { STATE_SNAPSHOT_PROMPT } from '../prompts/templates/stateSnapshot.js';
-import { createLogger } from '../utils/logger.js';
 
 import type {
   SessionMessage,
@@ -18,8 +17,6 @@ import type {
 } from './types.js';
 import type { TokenCounter } from '../context/types.js';
 import type { ProviderAdapter } from '../provider/types.js';
-
-const logger = createLogger('chatCompressionService');
 
 /**
  * Chat Compression Service
@@ -298,7 +295,7 @@ export class ChatCompressionService extends EventEmitter {
       } catch (error) {
         // Fall back to placeholder if LLM summarization fails
         const errorMessage = error instanceof Error ? error.message : String(error);
-        logger.warn('LLM summarization failed, using placeholder:', sanitizeErrorMessage(errorMessage));
+        console.warn('LLM summarization failed, using placeholder:', sanitizeErrorMessage(errorMessage));
         summaryText = this.createSummaryPlaceholder(messagesToSummarize);
       }
     } else {
@@ -386,7 +383,7 @@ export class ChatCompressionService extends EventEmitter {
       } catch (error) {
         // Fall back to placeholder if LLM summarization fails
         const errorMessage = error instanceof Error ? error.message : String(error);
-        logger.warn('LLM summarization failed in hybrid strategy, using placeholder:', sanitizeErrorMessage(errorMessage));
+        console.warn('LLM summarization failed in hybrid strategy, using placeholder:', sanitizeErrorMessage(errorMessage));
         summaryText = this.createSummaryPlaceholder(middleMessages);
       }
     } else {
@@ -555,7 +552,7 @@ Summary:`;
         const closeTag = `</${tag}>`;
         
         if (!xml.includes(openTag) || !xml.includes(closeTag)) {
-          logger.warn(`XML validation failed: Missing tag ${tag}`);
+          console.warn(`XML validation failed: Missing tag ${tag}`);
           return false;
         }
 
@@ -564,14 +561,14 @@ Summary:`;
         const closeIndex = xml.indexOf(closeTag);
         
         if (closeIndex <= openIndex) {
-          logger.warn(`XML validation failed: Invalid tag order for ${tag}`);
+          console.warn(`XML validation failed: Invalid tag order for ${tag}`);
           return false;
         }
       }
 
       return true;
     } catch (error) {
-      logger.warn('XML validation error:', error);
+      console.warn('XML validation error:', error);
       return false;
     }
   }
@@ -617,7 +614,7 @@ Summary:`;
 
       return indentedLines.join('\n');
     } catch (error) {
-      logger.warn('XML formatting error:', error);
+      console.warn('XML formatting error:', error);
       return xml; // Return original if formatting fails
     }
   }

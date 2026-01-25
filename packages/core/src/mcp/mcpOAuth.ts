@@ -9,10 +9,6 @@ import { exec } from 'child_process';
 import { createServer, type Server } from 'http';
 import { parse as parseUrl } from 'url';
 
-import { createLogger } from '../utils/logger.js';
-
-const logger = createLogger('mcpOAuth');
-
 /**
  * OAuth configuration for an MCP server
  */
@@ -151,7 +147,7 @@ export class MCPOAuthProvider {
         // Check if we have config
         const config = this.configs.get(serverName);
         if (!config) {
-          logger.warn(`Cannot auto-refresh token for ${serverName}: No config registered`);
+          console.warn(`Cannot auto-refresh token for ${serverName}: No config registered`);
           return undefined;
         }
 
@@ -362,7 +358,7 @@ export class MCPOAuthProvider {
         });
       } catch (error) {
         // Ignore revocation errors, still clean up locally
-        logger.warn(`Failed to revoke token with provider: ${error}`);
+        console.warn(`Failed to revoke token with provider: ${error}`);
       }
     }
 
@@ -490,9 +486,9 @@ export class MCPOAuthProvider {
       }, 5 * 60 * 1000); // 5 minute timeout
 
       server.listen(port, () => {
-        logger.info(`OAuth callback server listening on http://localhost:${port}`);
-        logger.info(`Opening browser for authentication...`);
-        logger.info(`Authorization URL: ${authUrl}`);
+        console.log(`OAuth callback server listening on http://localhost:${port}`);
+        console.log(`Opening browser for authentication...`);
+        console.log(`Authorization URL: ${authUrl}`);
         
         // Open browser (platform-specific)
         this.openBrowser(authUrl);
@@ -639,8 +635,8 @@ export class MCPOAuthProvider {
 
     exec(command, (error: Error | null) => {
       if (error) {
-        logger.error('Failed to open browser:', error);
-        logger.info('Please open this URL manually:', url);
+        console.error('Failed to open browser:', error);
+        console.log('Please open this URL manually:', url);
       }
     });
   }
@@ -812,7 +808,7 @@ export async function createTokenStorage(fallbackFile: string): Promise<TokenSto
     return new KeytarTokenStorage();
   } catch {
     // Fall back to file storage
-    logger.warn('Keytar not available, using file-based token storage (less secure)');
+    console.warn('Keytar not available, using file-based token storage (less secure)');
     return new FileTokenStorage(fallbackFile);
   }
 }

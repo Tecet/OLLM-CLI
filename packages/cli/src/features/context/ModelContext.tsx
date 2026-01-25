@@ -14,14 +14,11 @@ import { calculateContextSizing } from './contextSizing.js';
 import { useOptionalGPU } from './GPUContext.js';
 import { deriveGPUPlacementHints } from './gpuHints.js';
 import { setLastGPUPlacementHints } from './gpuHintStore.js';
-import { createLogger } from '../../../../core/src/utils/logger.js';
 import { SettingsService } from '../../config/settingsService.js';
 import { useUICallbacks } from '../../ui/contexts/UICallbacksContext.js';
 import { profileManager } from '../profiles/ProfileManager.js';
 
 import type { ProviderAdapter, Message as ProviderMessage, ToolCall, ToolSchema, ProviderMetrics } from '@ollm/core';
-
-const logger = createLogger('ModelContext');
 
 /**
  * Model context value
@@ -461,7 +458,7 @@ export function ModelProvider({
         if (previousModel && provider.unloadModel) {
           provider.unloadModel(previousModel).catch((error: unknown) => {
             const message = error instanceof Error ? error.message : String(error);
-            logger.warn(`Failed to unload model "${previousModel}": ${message}`);
+            console.warn(`Failed to unload model "${previousModel}": ${message}`);
           });
         }
         
@@ -495,7 +492,7 @@ export function ModelProvider({
       if (previousModel && provider.unloadModel) {
         provider.unloadModel(previousModel).catch((error: unknown) => {
           const message = error instanceof Error ? error.message : String(error);
-          logger.warn(`Failed to unload model "${previousModel}": ${message}`);
+          console.warn(`Failed to unload model "${previousModel}": ${message}`);
         });
       }
       
@@ -710,7 +707,7 @@ export function ModelProvider({
       contextActions.updateConfig({ snapshots: nextSnapshots });
       lastAutoThresholdRef.current = ratio;
     } catch (error) {
-      logger.warn('[ModelContext] Failed to sync snapshot threshold', error);
+      console.warn('[ModelContext] Failed to sync snapshot threshold', error);
     }
   }, [contextActions]);
 
@@ -779,14 +776,14 @@ export function ModelProvider({
 
       syncAutoThreshold(ollamaContextSize, allowed);
 
-      logger.info(
+      console.log(
         `[Context Cap] User selected: ${allowed}, Sending to Ollama: ${ollamaContextSize} (${Math.round(contextSizing.ratio * 100)}%)`
       );
 
       // DEBUG removed - was causing ESM require error
 
       if (gpuHints) {
-        logger.debug('[ModelContext] Derived GPU placement hints:', gpuHints);
+        console.debug('[ModelContext] Derived GPU placement hints:', gpuHints);
       }
 
       // Stream the response
@@ -806,7 +803,7 @@ export function ModelProvider({
         },
       });
 
-      logger.info(`[ModelContext] Sending to Ollama - num_ctx: ${ollamaContextSize}, temperature: ${temperatureOverride ?? temperature}`);
+      console.log(`[ModelContext] Sending to Ollama - num_ctx: ${ollamaContextSize}, temperature: ${temperatureOverride ?? temperature}`);
 
       for await (const event of stream) {
         if (abortController.signal.aborted) {

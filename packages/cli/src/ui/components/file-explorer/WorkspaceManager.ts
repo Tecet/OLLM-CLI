@@ -14,9 +14,6 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import { WorkspaceConfig, ProjectConfig } from './types.js';
-import { createLogger } from '../../../../../core/src/utils/logger.js';
-
-const logger = createLogger('WorkspaceManager');
 
 /**
  * WorkspaceManager handles loading and managing workspace configurations
@@ -79,7 +76,7 @@ export class WorkspaceManager {
       // Validate required project fields
       if (!project.name || !project.path) {
         if (!this.silent) {
-          logger.warn(`Skipping project with missing name or path: ${JSON.stringify(project)}`);
+          console.warn(`Skipping project with missing name or path: ${JSON.stringify(project)}`);
         }
         continue;
       }
@@ -92,7 +89,7 @@ export class WorkspaceManager {
       // Check if project path exists
       if (!fs.existsSync(projectPath)) {
         if (!this.silent) {
-          logger.warn(`Skipping project "${project.name}" with invalid path: ${projectPath}`);
+          console.warn(`Skipping project "${project.name}" with invalid path: ${projectPath}`);
         }
         continue;
       }
@@ -100,7 +97,7 @@ export class WorkspaceManager {
       // Check if project path is a directory
       if (!fs.statSync(projectPath).isDirectory()) {
         if (!this.silent) {
-          logger.warn(`Skipping project "${project.name}" - path is not a directory: ${projectPath}`);
+          console.warn(`Skipping project "${project.name}" - path is not a directory: ${projectPath}`);
         }
         continue;
       }

@@ -12,7 +12,6 @@ import { join, resolve, sep } from 'path';
 import { ManifestParser } from './manifestParser.js';
 import { ExtensionSettingsManager, type ResolvedExtensionSetting } from './settingsIntegration.js';
 import { SkillRegistry } from './skillRegistry.js';
-import { createLogger } from '../utils/logger.js';
 
 import type { Extension, ExtensionManifest, MCPServerConfig } from './types.js';
 import type { HookRegistry } from '../hooks/hookRegistry.js';
@@ -20,8 +19,6 @@ import type { Hook, HookEvent } from '../hooks/types.js';
 import type { MCPToolWrapper } from '../mcp/mcpToolWrapper.js';
 import type { MCPClient } from '../mcp/types.js';
 import type { ToolRegistry } from '../tools/tool-registry.js';
-
-const logger = createLogger('extensionManager');
 
 const isTestEnv = process.env.NODE_ENV === 'test' || !!process.env.VITEST;
 
@@ -100,7 +97,7 @@ export class ExtensionManager {
     // Check if extensions are enabled
     if (this.config.enabled === false) {
       if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
-        logger.info('Extensions are disabled in configuration');
+        console.log('Extensions are disabled in configuration');
       }
       return [];
     }
@@ -116,7 +113,7 @@ export class ExtensionManager {
         // Only log error if not in a test environment
         if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
           const errorMessage = error instanceof Error ? error.message : String(error);
-          logger.error(`Failed to load extensions from directory '${directory}': ${errorMessage}`);
+          console.error(`Failed to load extensions from directory '${directory}': ${errorMessage}`);
         }
       }
     }
@@ -173,14 +170,14 @@ export class ExtensionManager {
             extensions.push(extension);
 
             if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
-              logger.info(`Loaded extension: ${extension.name} v${extension.version}`);
+              console.log(`Loaded extension: ${extension.name} v${extension.version}`);
             }
           } catch (error) {
             // Log error for this extension but continue with others
             // Only log error if not in a test environment
             if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
               const errorMessage = error instanceof Error ? error.message : String(error);
-              logger.error(
+              console.error(
                 `Failed to load extension from '${extensionPath}': ${errorMessage}`
               );
             }
@@ -362,7 +359,7 @@ export class ExtensionManager {
           const serverStatus = this.mcpClient.getServerStatus(fullServerName);
           
           if (serverStatus.status === 'connected' || serverStatus.status === 'starting') {
-            if (!isTestEnv) logger.info(`MCP server '${fullServerName}' is already running, skipping start`);
+            if (!isTestEnv) console.log(`MCP server '${fullServerName}' is already running, skipping start`);
             
             // Get tools from the already-running server
             const tools = await this.mcpClient.getTools(fullServerName);
@@ -373,9 +370,9 @@ export class ExtensionManager {
               this.toolRegistry.register(wrappedTool);
             }
             
-             if (!isTestEnv) logger.info(`MCP server '${fullServerName}' reused with ${tools.length} tools`);
+             if (!isTestEnv) console.log(`MCP server '${fullServerName}' reused with ${tools.length} tools`);
           } else if (serverStatus.status === 'error') {
-            if (!isTestEnv) logger.info(`MCP server '${fullServerName}' is in error state, restarting...`);
+            if (!isTestEnv) console.log(`MCP server '${fullServerName}' is in error state, restarting...`);
             
             // Stop the errored server
             await this.mcpClient.stopServer(fullServerName);
@@ -394,7 +391,7 @@ export class ExtensionManager {
               const wrappedTool = this.mcpToolWrapper.wrapTool(fullServerName, mcpTool);
               this.toolRegistry.register(wrappedTool);
             }
-             if (!isTestEnv) logger.info(`MCP server '${fullServerName}' restarted with ${tools.length} tools`);
+             if (!isTestEnv) console.log(`MCP server '${fullServerName}' restarted with ${tools.length} tools`);
           } else {
             // Server not running, start it
             await this.mcpClient.startServer(fullServerName, configWithEnv);
@@ -408,7 +405,7 @@ export class ExtensionManager {
               this.toolRegistry.register(wrappedTool);
             }
             
-            if (!isTestEnv) logger.info(`Started MCP server '${fullServerName}' with ${tools.length} tools`);
+            if (!isTestEnv) console.log(`Started MCP server '${fullServerName}' with ${tools.length} tools`);
           }
 
         } catch (error) {
@@ -416,7 +413,7 @@ export class ExtensionManager {
           // Only log error if not in a test environment
           if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
             const errorMessage = error instanceof Error ? error.message : String(error);
-            logger.error(
+            console.error(
               `Failed to start MCP server '${serverName}' for extension '${name}': ${errorMessage}`
             );
           }
@@ -431,14 +428,14 @@ export class ExtensionManager {
     if (this.skillRegistry && extension.skills.length > 0) {
       this.skillRegistry.registerSkills(name, extension.skills);
       if (!isTestEnv) {
-        logger.info(`Registered ${extension.skills.length} skills for extension '${name}'`);
+        console.log(`Registered ${extension.skills.length} skills for extension '${name}'`);
       }
     }
 
     // Mark as enabled
     extension.enabled = true;
 
-    if (!isTestEnv) logger.info(`Enabled extension: ${name}`);
+    if (!isTestEnv) console.log(`Enabled extension: ${name}`);
   }
 
   /**
@@ -478,7 +475,7 @@ export class ExtensionManager {
           if (status.status !== 'disconnected') {
             // Stop the MCP server
             await this.mcpClient.stopServer(serverName);
-            if (!isTestEnv) logger.info(`Stopped MCP server '${serverName}'`);
+            if (!isTestEnv) console.log(`Stopped MCP server '${serverName}'`);
           }
 
           // Remove tools from registry (always clean up, even if server was stopped)
@@ -494,7 +491,7 @@ export class ExtensionManager {
           // Only log error if not in a test environment
           if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
             const errorMessage = error instanceof Error ? error.message : String(error);
-            logger.error(
+            console.error(
               `Failed to stop MCP server '${serverName}' for extension '${name}': ${errorMessage}`
             );
           }
@@ -508,13 +505,13 @@ export class ExtensionManager {
     // Unregister skills from skill registry
     if (this.skillRegistry) {
       this.skillRegistry.unregisterExtensionSkills(name);
-      if (!isTestEnv) logger.info(`Unregistered skills for extension '${name}'`);
+      if (!isTestEnv) console.log(`Unregistered skills for extension '${name}'`);
     }
 
     // Mark as disabled
     extension.enabled = false;
 
-    if (!isTestEnv) logger.info(`Disabled extension: ${name}`);
+    if (!isTestEnv) console.log(`Disabled extension: ${name}`);
   }
 
   /**
@@ -553,7 +550,7 @@ export class ExtensionManager {
       await this.enableExtension(name);
     }
 
-    if (!isTestEnv) logger.info(`Reloaded extension: ${name}`);
+    if (!isTestEnv) console.log(`Reloaded extension: ${name}`);
   }
 
   /**

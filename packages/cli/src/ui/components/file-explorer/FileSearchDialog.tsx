@@ -13,12 +13,8 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { Box, Text, useInput } from 'ink';
 import TextInput from 'ink-text-input';
 
-import { createLogger } from '../../../../../core/src/utils/logger.js';
-
 import type { ToolRegistry } from '@ollm/ollm-cli-core/tools/tool-registry.js';
 import type { ToolInvocation } from '@ollm/ollm-cli-core/tools/types.js';
-
-const logger = createLogger('FileSearchDialog');
 
 /**
  * Search result from grep tool
@@ -94,7 +90,7 @@ export function FileSearchDialog({
     try {
       const grepTool = toolRegistry.get('grep');
       if (!grepTool || !grepTool.createInvocation) {
-        logger.error('grep tool not available');
+        console.error('grep tool not available');
         setIsSearching(false);
         return;
       }
@@ -122,7 +118,7 @@ export function FileSearchDialog({
       setResults(parsedResults);
       setSelectedIndex(0);
     } catch (error) {
-      logger.error('Search error:', error);
+      console.error('Search error:', error);
     } finally {
       setIsSearching(false);
     }
