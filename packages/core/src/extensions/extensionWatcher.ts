@@ -7,7 +7,10 @@
 
 import { watch, type FSWatcher } from 'fs';
 
+import { createLogger } from '../utils/logger.js';
 import type { ExtensionManager } from './extensionManager.js';
+
+const logger = createLogger('extensionWatcher');
 
 /**
  * File change event
@@ -77,9 +80,7 @@ export class ExtensionWatcher {
     }
 
     this.enabled = true;
-    import { createLogger } from '../utils/logger';
-    const logger = createLogger('extensionWatcher');
-
+    
     logger.info(`Extension watcher started (watching ${extensions.length} extensions)`);
   }
 
@@ -145,16 +146,13 @@ export class ExtensionWatcher {
 
       // Handle watcher errors
       watcher.on('error', (error) => {
-        console.error(`Watcher error for extension '${name}':`, error);
+        logger.error(`Watcher error for extension '${name}':`, { error: error instanceof Error ? error.message : String(error) });
       });
 
       this.watchers.set(name, watcher);
       logger.info(`Started watching extension: ${name}`);
     } catch (error) {
-      console.error(
-        `Failed to watch extension '${name}':`,
-        error instanceof Error ? error.message : String(error)
-      );
+      logger.error(`Failed to watch extension '${name}':`, { error: error instanceof Error ? error.message : String(error) });
     }
   }
 
@@ -180,7 +178,7 @@ export class ExtensionWatcher {
     watcher.close();
     this.watchers.delete(name);
 
-    console.log(`Stopped watching extension: ${name}`);
+    logger.info(`Stopped watching extension: ${name}`);
   }
 
   /**
@@ -219,18 +217,13 @@ export class ExtensionWatcher {
     const timer = setTimeout(async () => {
       this.debounceTimers.delete(name);
 
-      console.log(
-        `File ${eventType} detected in extension '${name}': ${filename}`
-      );
+      logger.info(`File ${eventType} detected in extension '${name}': ${filename}`);
 
       try {
         // Reload the extension
         await this.reloadExtension(name);
       } catch (error) {
-        console.error(
-          `Failed to reload extension '${name}':`,
-          error instanceof Error ? error.message : String(error)
-        );
+        logger.error(`Failed to reload extension '${name}':`, { error: error instanceof Error ? error.message : String(error) });
       }
     }, this.config.debounceDelay);
 

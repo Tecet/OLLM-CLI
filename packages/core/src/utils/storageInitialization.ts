@@ -4,8 +4,11 @@
  * Handles storage initialization tasks including migration and directory setup.
  */
 
+import { createLogger } from './logger.js';
 import { ensureStorageDirectories, logAllStorageLocations } from './pathValidation.js';
 import { runMigrationIfNeeded } from './storageMigration.js';
+
+const logger = createLogger('storageInitialization');
 
 /**
  * Initialize storage system
@@ -17,8 +20,6 @@ import { runMigrationIfNeeded } from './storageMigration.js';
  * 3. Ensure all storage directories exist
  */
 export async function initializeStorage(): Promise<void> {
-  import { createLogger } from './logger';
-  const logger = createLogger('storageInitialization');
 
   logger.info('[Storage] Initializing storage system...');
   
@@ -35,16 +36,16 @@ export async function initializeStorage(): Promise<void> {
         logger.info(`[Storage] Sessions migrated: ${migrationResult.sessionsMigrated}`);
         logger.info(`[Storage] Snapshots migrated: ${migrationResult.snapshotsMigrated}`);
       } else {
-        console.warn('[Storage] Migration had errors:');
+        logger.warn('[Storage] Migration had errors:');
         for (const error of migrationResult.errors) {
-          console.warn(`[Storage]   - ${error}`);
+          logger.warn(`[Storage]   - ${error}`);
         }
       }
     } else {
       logger.info('[Storage] No migration needed');
     }
   } catch (error) {
-    console.error('[Storage] Migration failed:', error);
+    logger.error('[Storage] Migration failed:', { error: error instanceof Error ? error.message : String(error) });
     // Don't throw - allow app to continue even if migration fails
   }
   
@@ -53,7 +54,7 @@ export async function initializeStorage(): Promise<void> {
     await ensureStorageDirectories();
     logger.info('[Storage] All storage directories verified');
   } catch (error) {
-    console.error('[Storage] Failed to create storage directories:', error);
+    logger.error('[Storage] Failed to create storage directories:', { error: error instanceof Error ? error.message : String(error) });
     throw error; // This is critical - can't continue without storage
   }
   
@@ -71,8 +72,8 @@ export async function initializeStorageSafe(): Promise<boolean> {
     await initializeStorage();
     return true;
   } catch (error) {
-    console.error('[Storage] Storage initialization failed:', error);
-    console.error('[Storage] Application may not function correctly');
+    logger.error('[Storage] Storage initialization failed:', { error: error instanceof Error ? error.message : String(error) });
+    logger.error('[Storage] Application may not function correctly');
     return false;
   }
 }

@@ -6,10 +6,13 @@
  */
 
 import { MessageBus, type EventListener } from './messageBus.js';
+import { createLogger } from '../utils/logger.js';
 
 import type { HookRegistry } from './hookRegistry.js';
 import type { HookRunner } from './hookRunner.js';
 import type { HookEvent, Hook, HookInput } from './types.js';
+
+const logger = createLogger('hookEventHandler');
 
 /**
  * Options for hook event handler
@@ -107,9 +110,6 @@ export class HookEventHandler {
     }
 
     if (this.options.logging) {
-      import { createLogger } from '../utils/logger';
-      const logger = createLogger('hookEventHandler');
-
       logger.info('HookEventHandler started and listening for events');
     }
   }
@@ -177,7 +177,7 @@ export class HookEventHandler {
         return await this.executeHooksSequential(hooks, input);
       }
     } catch (error) {
-      console.error(`Error handling event '${event}':`, error);
+      logger.error(`Error handling event '${event}':`, { error: error instanceof Error ? error.message : String(error) });
       return {
         event,
         hooksExecuted: 0,

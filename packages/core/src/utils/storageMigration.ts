@@ -20,6 +20,10 @@ import * as fs from 'fs/promises';
 import * as os from 'os';
 import * as path from 'path';
 
+import { createLogger } from './logger.js';
+
+const logger = createLogger('storageMigration');
+
 /**
  * Migration result
  */
@@ -85,9 +89,6 @@ export async function migrateStorage(): Promise<MigrationResult> {
     return result;
   }
 
-  import { createLogger } from './logger';
-  const logger = createLogger('storageMigration');
-
   logger.info('[Migration] Starting storage migration...');
   logger.info(`[Migration] Old location: ${oldLocation}`);
   logger.info(`[Migration] New sessions location: ${newSessionsLocation}`);
@@ -115,7 +116,7 @@ export async function migrateStorage(): Promise<MigrationResult> {
         } catch (error) {
           const errorMsg = `Failed to migrate session ${entry.name}: ${error instanceof Error ? error.message : String(error)}`;
           result.errors.push(errorMsg);
-          console.error(`[Migration] ${errorMsg}`);
+          logger.error(`[Migration] ${errorMsg}`);
         }
       } else if (entry.isDirectory()) {
         // Snapshot directory - move to new snapshots location
@@ -137,7 +138,7 @@ export async function migrateStorage(): Promise<MigrationResult> {
         } catch (error) {
           const errorMsg = `Failed to migrate snapshots for ${entry.name}: ${error instanceof Error ? error.message : String(error)}`;
           result.errors.push(errorMsg);
-          console.error(`[Migration] ${errorMsg}`);
+          logger.error(`[Migration] ${errorMsg}`);
         }
       }
     }
@@ -150,7 +151,7 @@ export async function migrateStorage(): Promise<MigrationResult> {
       } catch (error) {
         const errorMsg = `Failed to remove old location: ${error instanceof Error ? error.message : String(error)}`;
         result.errors.push(errorMsg);
-        console.warn(`[Migration] ${errorMsg}`);
+        logger.warn(`[Migration] ${errorMsg}`);
       }
     }
 
@@ -159,14 +160,14 @@ export async function migrateStorage(): Promise<MigrationResult> {
     logger.info(`[Migration] Snapshots migrated: ${result.snapshotsMigrated}`);
 
     if (result.errors.length > 0) {
-      console.warn(`[Migration] Errors encountered: ${result.errors.length}`);
+      logger.warn(`[Migration] Errors encountered: ${result.errors.length}`);
       result.success = false;
     }
   } catch (error) {
     result.success = false;
     const errorMsg = `Migration failed: ${error instanceof Error ? error.message : String(error)}`;
     result.errors.push(errorMsg);
-    console.error(`[Migration] ${errorMsg}`);
+    logger.error(`[Migration] ${errorMsg}`);
   }
 
   return result;
