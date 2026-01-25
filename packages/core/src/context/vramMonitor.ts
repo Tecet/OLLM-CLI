@@ -128,7 +128,9 @@ export class DefaultVRAMMonitor extends EventEmitter implements VRAMMonitor {
         }
       } catch (error) {
         // Log error but don't stop monitoring
-        logger.error('VRAM monitoring error:', error);
+        logger.error('VRAM monitoring error:', {
+          error: error instanceof Error ? error.message : String(error)
+        });
       }
     }, intervalMs);
   }
@@ -171,7 +173,9 @@ export class DefaultVRAMMonitor extends EventEmitter implements VRAMMonitor {
         return { total, used, available, modelLoaded };
       }
     } catch (error) {
-      logger.warn('Failed to query NVIDIA GPU memory, falling back to system RAM:', error);
+      logger.warn('Failed to query NVIDIA GPU memory, falling back to system RAM:', {
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
 
     // Fallback to system RAM
@@ -201,7 +205,9 @@ export class DefaultVRAMMonitor extends EventEmitter implements VRAMMonitor {
         return { total, used, available, modelLoaded };
       }
     } catch (error) {
-      logger.warn('Failed to query AMD GPU memory, falling back to system RAM:', error);
+      logger.warn('Failed to query AMD GPU memory, falling back to system RAM:', {
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
 
     // Fallback to system RAM
@@ -239,7 +245,9 @@ export class DefaultVRAMMonitor extends EventEmitter implements VRAMMonitor {
         return { total, used, available, modelLoaded };
       }
     } catch (error) {
-      logger.warn('Failed to query Apple Silicon memory, falling back to system RAM:', error);
+      logger.warn('Failed to query Apple Silicon memory, falling back to system RAM:', {
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
 
     // Fallback to system RAM
@@ -294,7 +302,9 @@ export class DefaultVRAMMonitor extends EventEmitter implements VRAMMonitor {
 
       return { total, used, available, modelLoaded };
     } catch (error) {
-      logger.warn('Failed to query Windows GPU memory, falling back to system RAM:', error);
+      logger.warn('Failed to query Windows GPU memory, falling back to system RAM:', {
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
 
     // Fallback to system RAM

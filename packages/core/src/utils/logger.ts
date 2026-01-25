@@ -1,6 +1,3 @@
-import { createLogger } from './logger.js';
-
-const logger = createLogger('logger');
 /**
  * Logger utility for OLLM CLI
  * Provides structured logging with configurable log levels
@@ -11,10 +8,10 @@ import * as path from 'path';
 import * as os from 'os';
 
 export interface Logger {
-  debug(message: string, meta?: Record<string, unknown>): void;
-  info(message: string, meta?: Record<string, unknown>): void;
-  warn(message: string, meta?: Record<string, unknown>): void;
-  error(message: string, meta?: Record<string, unknown>): void;
+  debug(message: string, ...meta: unknown[]): void;
+  info(message: string, ...meta: unknown[]): void;
+  warn(message: string, ...meta: unknown[]): void;
+  error(message: string, ...meta: unknown[]): void;
 }
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
@@ -36,9 +33,11 @@ export function createLogger(name: string): Logger {
   };
   const currentLevel = levels[logLevel] ?? 1;
   
-  const formatMessage = (level: string, message: string, meta?: Record<string, unknown>): string => {
+  const formatMessage = (level: string, message: string, meta: unknown[]): string => {
     const timestamp = new Date().toISOString();
-    const metaStr = meta ? ` ${JSON.stringify(meta)}` : '';
+    const metaStr = (meta && meta.length) ? ` ${meta.map(m => {
+      try { return typeof m === 'string' ? m : JSON.stringify(m); } catch { return String(m); }
+    }).join(' ')}` : '';
     return `[${timestamp}] [${level.toUpperCase()}] [${name}] ${message}${metaStr}`;
   };
   
@@ -62,32 +61,32 @@ export function createLogger(name: string): Logger {
   };
 
   return {
-    debug: (message: string, meta?: Record<string, unknown>) => {
+    debug: (message: string, ...meta: unknown[]) => {
       const msg = formatMessage('debug', message, meta);
       logToFile(msg);
       if (currentLevel <= 0) {
-        logger.debug(msg);
+        console.debug(msg);
       }
     },
-    info: (message: string, meta?: Record<string, unknown>) => {
+    info: (message: string, ...meta: unknown[]) => {
       const msg = formatMessage('info', message, meta);
       logToFile(msg);
       if (currentLevel <= 1) {
-        logger.info(msg);
+        console.info(msg);
       }
     },
-    warn: (message: string, meta?: Record<string, unknown>) => {
+    warn: (message: string, ...meta: unknown[]) => {
       const msg = formatMessage('warn', message, meta);
       logToFile(msg);
       if (currentLevel <= 2) {
-        logger.warn(msg);
+        console.warn(msg);
       }
     },
-    error: (message: string, meta?: Record<string, unknown>) => {
+    error: (message: string, ...meta: unknown[]) => {
       const msg = formatMessage('error', message, meta);
       logToFile(msg);
       if (currentLevel <= 3) {
-        logger.error(msg);
+        console.error(msg);
       }
     },
   };

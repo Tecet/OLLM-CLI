@@ -1,5 +1,7 @@
 import process from 'node:process';
 
+const logger = createLogger('stdio');
+
 import { coreEvents } from './events.js';
 
 // Capture the original stdout and stderr write methods before any monkey patching occurs.
