@@ -208,8 +208,8 @@ export class LocalProvider implements ProviderAdapter {
     const gpuHints = await this.getGPUPlacementHints(request.options?.num_ctx);
     const generationOptions = request.options ?? {};
     const mergedOptions = {
-      ...generationOptions,
       ...(gpuHints ?? {}),
+      ...generationOptions,
     } as Record<string, unknown>;
     const optionsPayload: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(mergedOptions)) {

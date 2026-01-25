@@ -49,7 +49,7 @@ export function deriveGPUPlacementHints(
   }
 
   return {
-    num_gpu: 1,
+    num_gpu: gpuLayers,
     gpu_layers: gpuLayers,
   };
 }

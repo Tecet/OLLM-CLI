@@ -324,10 +324,15 @@ export class CompressionCoordinator {
 
         const checkpointMessages = context.checkpoints.map(cp => cp.summary);
 
-        context.messages = [
-          ...systemMessages,
+        const historyMessages = [
           ...checkpointMessages,
           ...compressed.preserved
+        ];
+        historyMessages.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+
+        context.messages = [
+          ...systemMessages,
+          ...historyMessages
         ];
 
         const newTokenCount = this.tokenCounter.countConversationTokens(
@@ -441,11 +446,16 @@ export class CompressionCoordinator {
     context.checkpoints.push(checkpoint);
 
     const checkpointMessages = context.checkpoints.map(cp => cp.summary);
+    const historyMessages = [
+      ...checkpointMessages,
+      ...recentMessages
+    ];
+    historyMessages.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+
     context.messages = [
       ...systemMessages,
       ...neverCompressedMessages,
-      ...checkpointMessages,
-      ...recentMessages
+      ...historyMessages
     ];
 
     await this.checkpointManager.compressOldCheckpoints();
@@ -465,11 +475,17 @@ export class CompressionCoordinator {
 
         const rebuiltNeverCompressed = this.checkpointManager.reconstructNeverCompressed(preserved);
         const rebuiltCheckpointMessages = context.checkpoints.map(cp => cp.summary);
+        
+        const historyMessages = [
+          ...rebuiltCheckpointMessages,
+          ...recentMessages
+        ];
+        historyMessages.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+
         context.messages = [
           ...systemMessages,
           ...rebuiltNeverCompressed,
-          ...rebuiltCheckpointMessages,
-          ...recentMessages
+          ...historyMessages
         ];
       }
     }
@@ -573,11 +589,16 @@ export class CompressionCoordinator {
     const neverCompressedMessages = this.checkpointManager.reconstructNeverCompressed(preserved);
     const checkpointMessages = context.checkpoints.map(cp => cp.summary);
 
+    const historyMessages = [
+      ...checkpointMessages,
+      ...compressed.preserved
+    ];
+    historyMessages.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+
     context.messages = [
       ...systemMessages,
       ...neverCompressedMessages,
-      ...checkpointMessages,
-      ...compressed.preserved
+      ...historyMessages
     ];
 
     const newTokenCount = this.tokenCounter.countConversationTokens(context.messages);
@@ -669,7 +690,7 @@ export class CompressionCoordinator {
         summary: {
           id: `summary-merged-tier4-${Date.now()}`,
           role: 'system',
-          content: `[Merged ${toMerge.length} checkpoints]\n${mergedContent.substring(0, 500)}...`,
+          content: `[Merged ${toMerge.length} checkpoints]\n${mergedContent.substring(0, 2000)}...`,
           timestamp: new Date()
         },
         createdAt: toMerge[0].createdAt,
@@ -690,11 +711,16 @@ export class CompressionCoordinator {
     const neverCompressedMessages = this.checkpointManager.reconstructNeverCompressed(preserved);
     const checkpointMessages = context.checkpoints.map(cp => cp.summary);
 
+    const historyMessages = [
+      ...checkpointMessages,
+      ...compressed.preserved
+    ];
+    historyMessages.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+
     context.messages = [
       ...systemMessages,
       ...neverCompressedMessages,
-      ...checkpointMessages,
-      ...compressed.preserved
+      ...historyMessages
     ];
 
     const newTokenCount = this.tokenCounter.countConversationTokens(context.messages);
@@ -789,7 +815,7 @@ export class CompressionCoordinator {
         summary: {
           id: `summary-merged-tier5-${Date.now()}`,
           role: 'system',
-          content: `[Merged ${toMerge.length} checkpoints - Ultra tier]\n${mergedContent.substring(0, 800)}...`,
+          content: `[Merged ${toMerge.length} checkpoints - Ultra tier]\n${mergedContent.substring(0, 4000)}...`,
           timestamp: new Date()
         },
         createdAt: toMerge[0].createdAt,
@@ -810,11 +836,16 @@ export class CompressionCoordinator {
     const neverCompressedMessages = this.checkpointManager.reconstructNeverCompressed(preserved);
     const checkpointMessages = context.checkpoints.map(cp => cp.summary);
 
+    const historyMessages = [
+      ...checkpointMessages,
+      ...compressed.preserved
+    ];
+    historyMessages.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+
     context.messages = [
       ...systemMessages,
       ...neverCompressedMessages,
-      ...checkpointMessages,
-      ...compressed.preserved
+      ...historyMessages
     ];
 
     const newTokenCount = this.tokenCounter.countConversationTokens(context.messages);

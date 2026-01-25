@@ -96,7 +96,7 @@ export class CheckpointManager {
    */
   reconstructNeverCompressed(sections: NeverCompressedSection[]): Message[] {
     return sections.map(section => ({
-      id: `never-compressed-${section.type}-${section.timestamp?.getTime() || Date.now()}`,
+      id: `never-compressed-${section.type}-${section.timestamp?.getTime() || Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
       role: 'system' as const,
       content: `[${section.type}]\n${section.content}`,
       timestamp: section.timestamp || new Date()
@@ -139,7 +139,7 @@ export class CheckpointManager {
         id: `merged-summary-${Date.now()}`,
         role: 'system' as const,
         content: `[MERGED CHECKPOINT]\n${allSummaries}`,
-        timestamp: new Date()
+        timestamp: oldCheckpoints[oldCheckpoints.length - 1]?.summary.timestamp || new Date()
       },
       createdAt: oldCheckpoints[0]?.createdAt || targetCheckpoint.createdAt,
       compressedAt: new Date(),

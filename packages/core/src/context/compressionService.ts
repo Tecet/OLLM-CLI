@@ -507,11 +507,16 @@ export class CompressionService implements ICompressionService {
       summaryText = this.createSummaryPlaceholder(messagesToSummarize);
     }
 
+    // Use timestamp of the last summarized message to preserve chronological order
+    const lastSummarizedTimestamp = messagesToSummarize.length > 0 
+        ? messagesToSummarize[messagesToSummarize.length - 1].timestamp 
+        : new Date();
+
     const summary: Message = {
       id: `summary-${Date.now()}`,
       role: 'system',
       content: summaryText,
-      timestamp: new Date(),
+      timestamp: lastSummarizedTimestamp,
     };
 
     // Reassemble: System Prompt + All User Messages + Preserved Recent Assistant/Tool
@@ -672,12 +677,17 @@ export class CompressionService implements ICompressionService {
 
     const truncatedCount = olderMessages.length - middleMessages.length;
     const summaryWithTruncation = `${summaryText}\n\n[${truncatedCount} older messages truncated]`;
+    
+    // Use timestamp of the last summarized message to preserve chronological order
+    const lastSummarizedTimestamp = middleMessages.length > 0 
+        ? middleMessages[middleMessages.length - 1].timestamp 
+        : new Date();
 
     const summary: Message = {
       id: `summary-${Date.now()}`,
       role: 'system',
       content: summaryWithTruncation,
-      timestamp: new Date(),
+      timestamp: lastSummarizedTimestamp,
     };
 
     // Reassemble: System Prompt + All User Messages + Preserved Recent

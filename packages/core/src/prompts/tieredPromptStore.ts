@@ -9,7 +9,7 @@ const TIER_KEY_BY_CONTEXT: Record<ContextTier, string> = {
   [ContextTier.TIER_2_BASIC]: 'tier2',
   [ContextTier.TIER_3_STANDARD]: 'tier3',
   [ContextTier.TIER_4_PREMIUM]: 'tier4',
-  [ContextTier.TIER_5_ULTRA]: 'tier4',
+  [ContextTier.TIER_5_ULTRA]: 'tier5',
 };
 
 const MODES: OperationalMode[] = [
@@ -35,7 +35,7 @@ export class TieredPromptStore {
 
   load(): void {
     for (const mode of MODES) {
-      for (const tierKey of ['tier1', 'tier2', 'tier3', 'tier4']) {
+      for (const tierKey of ['tier1', 'tier2', 'tier3', 'tier4', 'tier5']) {
         const filePath = path.join(this.baseDir, mode, `${tierKey}.txt`);
         try {
           const content = fs.readFileSync(filePath, 'utf8').trim();

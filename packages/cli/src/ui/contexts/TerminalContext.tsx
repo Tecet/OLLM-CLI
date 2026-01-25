@@ -75,11 +75,21 @@ export function TerminalProvider({ children }: { children: React.ReactNode }) {
             const startIndex = Math.max(0, viewportY);
             const serialized = serializeTerminalRange(xterm, startIndex, xterm.rows);
 
-            // Emit lightweight debug info to help diagnose missing input artefacts
+            // Emit detailed debug info to help diagnose missing input artefacts
             try {
               const lastLine = serialized[serialized.length - 1] || [];
+              const firstLine = serialized[0] || [];
               const lastText = lastLine.map(t => t.text).join('');
-              logger.debug('PTY data chunk length=%d, viewportY=%d, totalLines=%d, startIndex=%d, lastLineLen=%d', data.length, viewportY, totalLines, startIndex, lastText.length);
+              const firstText = firstLine.map(t => t.text).join('');
+              const cursorX = (buffer as any).cursorX ?? (xterm as any).cols - 1;
+              const cursorY = (buffer as any).baseY + ((buffer as any).cursorY ?? 0);
+              const baseY = (buffer as any).baseY ?? 0;
+              const viewportYraw = (buffer as any).viewportY ?? startIndex;
+              logger.debug('PTY data len=%d, cols=%d, viewportY=%d, baseY=%d, cursor=(%d,%d), totalLines=%d, startIndex=%d, firstLen=%d, lastLen=%d',
+                data.length, xterm.cols, viewportYraw, baseY, cursorX, cursorY, totalLines, startIndex, firstText.length, lastText.length
+              );
+              logger.debug('firstLinePreview=%s', firstText.slice(0, 80));
+              logger.debug('lastLinePreview=%s', lastText.slice(0, 160));
             } catch (_e) {
               // ignore logging errors
             }
@@ -137,6 +147,13 @@ export function TerminalProvider({ children }: { children: React.ReactNode }) {
 
   const sendRawInput = useCallback((char: string) => {
     if (ptyProcessRef.current && isRunning) {
+      try {
+        // Log raw input for debug: ensure full passthrough from user input to PTY
+        const codes = Array.from(char).map(c => c.charCodeAt(0)).join(',');
+        logger.debug('sendRawInput: len=%d, text=%s, codes=%s', char.length, char.replace(/\n/g,'\\n').replace(/\r/g,'\\r'), codes);
+      } catch (_e) {
+        // ignore logging issues
+      }
       ptyProcessRef.current.write(char);
     }
   }, [isRunning]);

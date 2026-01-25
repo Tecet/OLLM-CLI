@@ -303,11 +303,10 @@ export const testPromptCommand: Command = {
       const toolNote = modelSupportsTools
         ? ''
         : 'Note: This model does not support function calling. Do not attempt to use tools or make tool calls.';
-      if (!modelSupportsTools) {
+      
+      if (!modelSupportsTools && !systemPrompt.includes('Note: This model does not support function calling')) {
         systemPrompt += `\n\n${toolNote}`;
       }
-      const rulesOnly = stripSection(stripSection(systemPrompt, expectedTierPrompt), toolNote);
-      systemPrompt = [expectedTierPrompt, rulesOnly, toolNote].filter(Boolean).join('\n\n');
       const profile = profileManager.findProfile(modelId);
       const thinkingEnabled = profile?.thinking_enabled ?? false;
       const structuredContent = buildStructuredContent({

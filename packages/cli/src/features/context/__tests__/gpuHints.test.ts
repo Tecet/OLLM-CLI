@@ -42,12 +42,12 @@ describe('deriveGPUPlacementHints', () => {
   it('calculates hints limited by context', () => {
     const info = makeGpuInfo();
     const hints = deriveGPUPlacementHints(info, 8192);
-    expect(hints).toEqual({ num_gpu: 1, gpu_layers: 16 });
+    expect(hints).toEqual({ num_gpu: 16, gpu_layers: 16 });
   });
 
   it('clamps layers by max and context size', () => {
     const info = makeGpuInfo({ vramFree: 32 * GB });
     const hints = deriveGPUPlacementHints(info, 65536);
-    expect(hints).toEqual({ num_gpu: 1, gpu_layers: 96 });
+    expect(hints).toEqual({ num_gpu: 96, gpu_layers: 96 });
   });
 });
