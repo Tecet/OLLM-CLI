@@ -107,7 +107,10 @@ export class HookEventHandler {
     }
 
     if (this.options.logging) {
-      console.log('HookEventHandler started and listening for events');
+      import { createLogger } from '../utils/logger';
+      const logger = createLogger('hookEventHandler');
+
+      logger.info('HookEventHandler started and listening for events');
     }
   }
 
@@ -125,7 +128,7 @@ export class HookEventHandler {
     this.listenerIds.clear();
 
     if (this.options.logging) {
-      console.log('HookEventHandler stopped');
+      logger.info('HookEventHandler stopped');
     }
   }
 
@@ -156,7 +159,7 @@ export class HookEventHandler {
     }
 
     if (this.options.logging) {
-      console.log(`Executing ${hooks.length} hook(s) for event '${event}'`);
+      logger.debug(`Executing ${hooks.length} hook(s) for event '${event}'`);
     }
 
     // Prepare hook input
@@ -187,7 +190,7 @@ export class HookEventHandler {
     } finally {
       const duration = Date.now() - startTime;
       if (this.options.logging) {
-        console.log(`Event '${event}' handling completed in ${duration}ms`);
+        logger.debug(`Event '${event}' handling completed in ${duration}ms`);
       }
     }
   }

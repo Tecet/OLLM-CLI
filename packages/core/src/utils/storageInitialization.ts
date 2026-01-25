@@ -17,7 +17,10 @@ import { runMigrationIfNeeded } from './storageMigration.js';
  * 3. Ensure all storage directories exist
  */
 export async function initializeStorage(): Promise<void> {
-  console.log('[Storage] Initializing storage system...');
+  import { createLogger } from './logger';
+  const logger = createLogger('storageInitialization');
+
+  logger.info('[Storage] Initializing storage system...');
   
   // Log storage locations for debugging
   logAllStorageLocations();
@@ -28,9 +31,9 @@ export async function initializeStorage(): Promise<void> {
     
     if (migrationResult) {
       if (migrationResult.success) {
-        console.log('[Storage] Migration completed successfully');
-        console.log(`[Storage] Sessions migrated: ${migrationResult.sessionsMigrated}`);
-        console.log(`[Storage] Snapshots migrated: ${migrationResult.snapshotsMigrated}`);
+        logger.info('[Storage] Migration completed successfully');
+        logger.info(`[Storage] Sessions migrated: ${migrationResult.sessionsMigrated}`);
+        logger.info(`[Storage] Snapshots migrated: ${migrationResult.snapshotsMigrated}`);
       } else {
         console.warn('[Storage] Migration had errors:');
         for (const error of migrationResult.errors) {
@@ -38,7 +41,7 @@ export async function initializeStorage(): Promise<void> {
         }
       }
     } else {
-      console.log('[Storage] No migration needed');
+      logger.info('[Storage] No migration needed');
     }
   } catch (error) {
     console.error('[Storage] Migration failed:', error);
@@ -48,13 +51,13 @@ export async function initializeStorage(): Promise<void> {
   // Ensure all storage directories exist
   try {
     await ensureStorageDirectories();
-    console.log('[Storage] All storage directories verified');
+    logger.info('[Storage] All storage directories verified');
   } catch (error) {
     console.error('[Storage] Failed to create storage directories:', error);
     throw error; // This is critical - can't continue without storage
   }
   
-  console.log('[Storage] Storage initialization complete');
+  logger.info('[Storage] Storage initialization complete');
 }
 
 /**

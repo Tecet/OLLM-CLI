@@ -77,7 +77,10 @@ export class ExtensionWatcher {
     }
 
     this.enabled = true;
-    console.log(`Extension watcher started (watching ${extensions.length} extensions)`);
+    import { createLogger } from '../utils/logger';
+    const logger = createLogger('extensionWatcher');
+
+    logger.info(`Extension watcher started (watching ${extensions.length} extensions)`);
   }
 
   /**
@@ -97,12 +100,12 @@ export class ExtensionWatcher {
     // Close all watchers
     for (const [name, watcher] of this.watchers.entries()) {
       watcher.close();
-      console.log(`Stopped watching extension: ${name}`);
+      logger.info(`Stopped watching extension: ${name}`);
     }
     this.watchers.clear();
 
     this.enabled = false;
-    console.log('Extension watcher stopped');
+    logger.info('Extension watcher stopped');
   }
 
   /**
@@ -146,7 +149,7 @@ export class ExtensionWatcher {
       });
 
       this.watchers.set(name, watcher);
-      console.log(`Started watching extension: ${name}`);
+      logger.info(`Started watching extension: ${name}`);
     } catch (error) {
       console.error(
         `Failed to watch extension '${name}':`,
@@ -240,13 +243,13 @@ export class ExtensionWatcher {
    * @param name - Extension name
    */
   private async reloadExtension(name: string): Promise<void> {
-    console.log(`Reloading extension: ${name}`);
+    logger.info(`Reloading extension: ${name}`);
 
     try {
       // Use extension manager to reload
       await this.extensionManager.reloadExtension(name);
 
-      console.log(`Successfully reloaded extension: ${name}`);
+      logger.info(`Successfully reloaded extension: ${name}`);
     } catch (error) {
       throw new Error(
         `Failed to reload extension: ${error instanceof Error ? error.message : String(error)}`

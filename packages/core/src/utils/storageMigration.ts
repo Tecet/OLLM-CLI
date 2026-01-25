@@ -85,10 +85,13 @@ export async function migrateStorage(): Promise<MigrationResult> {
     return result;
   }
 
-  console.log('[Migration] Starting storage migration...');
-  console.log(`[Migration] Old location: ${oldLocation}`);
-  console.log(`[Migration] New sessions location: ${newSessionsLocation}`);
-  console.log(`[Migration] New snapshots location: ${newSnapshotsLocation}`);
+  import { createLogger } from './logger';
+  const logger = createLogger('storageMigration');
+
+  logger.info('[Migration] Starting storage migration...');
+  logger.info(`[Migration] Old location: ${oldLocation}`);
+  logger.info(`[Migration] New sessions location: ${newSessionsLocation}`);
+  logger.info(`[Migration] New snapshots location: ${newSnapshotsLocation}`);
 
   try {
     // Create new directories
@@ -108,7 +111,7 @@ export async function migrateStorage(): Promise<MigrationResult> {
           const newPath = path.join(newSessionsLocation, entry.name);
           await fs.copyFile(oldPath, newPath);
           result.sessionsMigrated++;
-          console.log(`[Migration] Migrated session: ${entry.name}`);
+          logger.info(`[Migration] Migrated session: ${entry.name}`);
         } catch (error) {
           const errorMsg = `Failed to migrate session ${entry.name}: ${error instanceof Error ? error.message : String(error)}`;
           result.errors.push(errorMsg);
@@ -130,7 +133,7 @@ export async function migrateStorage(): Promise<MigrationResult> {
             // Ignore if snapshots directory doesn't exist
           }
           
-          console.log(`[Migration] Migrated snapshots for session: ${entry.name}`);
+          logger.info(`[Migration] Migrated snapshots for session: ${entry.name}`);
         } catch (error) {
           const errorMsg = `Failed to migrate snapshots for ${entry.name}: ${error instanceof Error ? error.message : String(error)}`;
           result.errors.push(errorMsg);
@@ -143,7 +146,7 @@ export async function migrateStorage(): Promise<MigrationResult> {
     if (result.errors.length === 0) {
       try {
         await fs.rm(oldLocation, { recursive: true, force: true });
-        console.log('[Migration] Removed old location');
+        logger.info('[Migration] Removed old location');
       } catch (error) {
         const errorMsg = `Failed to remove old location: ${error instanceof Error ? error.message : String(error)}`;
         result.errors.push(errorMsg);
@@ -151,9 +154,9 @@ export async function migrateStorage(): Promise<MigrationResult> {
       }
     }
 
-    console.log('[Migration] Migration completed successfully');
-    console.log(`[Migration] Sessions migrated: ${result.sessionsMigrated}`);
-    console.log(`[Migration] Snapshots migrated: ${result.snapshotsMigrated}`);
+    logger.info('[Migration] Migration completed successfully');
+    logger.info(`[Migration] Sessions migrated: ${result.sessionsMigrated}`);
+    logger.info(`[Migration] Snapshots migrated: ${result.snapshotsMigrated}`);
 
     if (result.errors.length > 0) {
       console.warn(`[Migration] Errors encountered: ${result.errors.length}`);
