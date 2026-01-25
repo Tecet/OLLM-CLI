@@ -2,7 +2,6 @@ import React from 'react';
 import { Box, Text, BoxProps, useInput, useStdout } from 'ink';
 
 import { ActivePromptInfo } from './ActivePromptInfo.js';
-import { Clock } from './Clock.js';
 import { ContextSection } from './ContextSection.js';
 import { DotIndicator } from './DotIndicator.js';
 import { HeaderBar } from './HeaderBar.js';
@@ -105,9 +104,7 @@ export function SidePanel({ visible, connection, model, gpu, theme, row1Height, 
               theme={theme}
             />
           </Box>
-          <Box flexShrink={0} marginLeft={1}>
-            <Clock borderColor={theme.border.primary} />
-          </Box>
+          {/* Clock removed from side panel header - moved to left top header */}
         </Box>
       </Box>
 

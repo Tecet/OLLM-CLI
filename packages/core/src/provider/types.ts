@@ -57,6 +57,10 @@ export interface GenerationOptions {
   repeatPenalty?: number;
   seed?: number;
   num_ctx?: number;
+  /** Hint for how many GPUs to use (Ollama placement guidance) */
+  num_gpu?: number;
+  /** Hint for how many layers to keep on GPU (Ollama placement guidance) */
+  gpu_layers?: number;
 }
 
 /**

@@ -199,6 +199,10 @@ export {
   HotSwapService,
 } from './context/index.js';
 
+export {
+  deriveGPUPlacementHints,
+} from './context/gpuHints.js';
+
 export type {
   VRAMInfo,
   VRAMMonitor,
@@ -229,6 +233,7 @@ export type {
   TokenCounter as ContextTokenCounter,
   TokenCountCache,
   KVQuantization,
+  GPUPlacementHints,
 } from './context/index.js';
 
 // Service types

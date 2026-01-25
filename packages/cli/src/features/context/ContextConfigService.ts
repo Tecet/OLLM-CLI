@@ -21,7 +21,7 @@ const DEFAULT_CONFIG: ContextConfig = {
     standard: {
       name: 'Standard (High VRAM)',
       contextWindow: 4096,
-      compressionThreshold: 0.6,
+      compressionThreshold: 0.68,
       retentionRatio: 0.3,
       strategy: 'summarize',
       summaryPrompt: 'Summarize the following conversation history, retaining key details and context for future reference.'

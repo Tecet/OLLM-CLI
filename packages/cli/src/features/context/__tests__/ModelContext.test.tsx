@@ -22,6 +22,14 @@ describe('ModelContext - Tool Support Detection', () => {
       expect(profile).toBeUndefined();
     });
 
+    it('should provide fallback metadata for unknown installs', () => {
+      const entry = profileManager.getModelEntry('custom-model:latest');
+      expect(entry).toBeDefined();
+      expect(entry.max_context_window).toBeGreaterThanOrEqual(entry.default_context ?? 1);
+      expect(entry.context_profiles?.length).toBeGreaterThan(0);
+      expect(entry.context_profiles?.[0].ollama_context_size).toBeDefined();
+    });
+
     it('should load user models', () => {
       const userModels = profileManager.getUserModels();
       expect(Array.isArray(userModels)).toBe(true);

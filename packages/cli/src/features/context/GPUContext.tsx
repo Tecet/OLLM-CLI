@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 
 import { createGPUMonitor, type GPUInfo, type GPUMonitor } from '@ollm/core';
+import { setLastGPUInfo } from './gpuHintStore.js';
 
 export interface GPUContextValue {
   /** Current GPU information, null if not yet loaded */
@@ -49,6 +50,7 @@ export function GPUProvider({
     try {
       const newInfo = await monitor.getInfo();
       setInfo(newInfo);
+      setLastGPUInfo(newInfo);
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err));
       setError(error);
@@ -70,6 +72,7 @@ export function GPUProvider({
     monitor.onUpdate((newInfo) => {
       setInfo(newInfo);
       setError(null);
+      setLastGPUInfo(newInfo);
     });
 
     monitor.startPolling(pollingInterval);
@@ -96,4 +99,8 @@ export function useGPU(): GPUContextValue {
     throw new Error('useGPU must be used within a GPUProvider');
   }
   return context;
+}
+
+export function useOptionalGPU(): GPUContextValue | null {
+  return useContext(GPUContext) ?? null;
 }

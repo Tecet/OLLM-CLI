@@ -58,7 +58,7 @@ const DEFAULT_CONFIG: ContextConfig = {
   kvQuantization: 'q8_0',
   compression: {
     enabled: true,
-    threshold: 0.95,
+    threshold: 0.68, // ~80% of the Ollama cap (85% of user context) per spec
     strategy: 'hybrid',
     preserveRecent: 4096,
     summaryMaxTokens: 1024
@@ -143,6 +143,7 @@ export class ConversationContextManager extends EventEmitter implements ContextM
   private AUTO_SUMMARY_COOLDOWN_MS: number = 60000; // EMERGENCY FIX #3: Increased from 5000 to 60000 (60 seconds)
   private lastSnapshotTokens: number = 0;
   private messagesSinceLastSnapshot: number = 0;
+  private midStreamGuardActive: boolean = false;
 
   constructor(
     sessionId: string,
@@ -2095,6 +2096,7 @@ export class ConversationContextManager extends EventEmitter implements ContextM
       this.contextPool.setCurrentTokens(this.currentContext.tokenCount + this.inflightTokens);
       // Re-check thresholds with inflight included
       this.snapshotManager.checkThresholds(this.currentContext.tokenCount + this.inflightTokens, this.currentContext.maxTokens);
+      this.ensureMidStreamGuard();
     } catch (e) {
       console.error('[ContextManager] reportInflightTokens failed', e);
     }
@@ -2108,6 +2110,39 @@ export class ConversationContextManager extends EventEmitter implements ContextM
     } catch (e) {
       console.error('[ContextManager] clearInflightTokens failed', e);
     }
+  }
+
+  private getUsageFraction(includeInflight = false): number {
+    const totalTokens = this.currentContext.maxTokens || 1;
+    const currentTokens = this.currentContext.tokenCount + (includeInflight ? this.inflightTokens : 0);
+    return Math.min(1, Math.max(0, currentTokens / totalTokens));
+  }
+
+  private ensureMidStreamGuard(): void {
+    if (!this.config.compression.enabled) {
+      return;
+    }
+
+    const fraction = this.getUsageFraction(true);
+    if (fraction < this.config.compression.threshold) {
+      return;
+    }
+
+    if (this.midStreamGuardActive || this.autoSummaryRunning) {
+      return;
+    }
+
+    this.midStreamGuardActive = true;
+    const guardPromise = this.compress()
+      .catch((error) => {
+        console.error('[ContextManager] mid-stream guard compression failed', error);
+      })
+      .finally(() => {
+        this.midStreamGuardActive = false;
+      });
+
+    // Prevent unhandled rejection in case caller ignores promise
+    void guardPromise;
   }
 
   /**

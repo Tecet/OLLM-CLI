@@ -3,7 +3,8 @@
  * Implements the ProviderAdapter interface to connect to a local server.
  */
 
-import { createLogger } from '@ollm/core';
+import { createLogger, createVRAMMonitor } from '@ollm/core';
+import { deriveGPUPlacementHints, type GPUPlacementHints } from '@ollm/core/context/gpuHints.js';
 
 import type {
   ProviderAdapter,
@@ -134,8 +135,28 @@ function formatHttpError(status: number, statusText: string, details: string): s
  */
 export class LocalProvider implements ProviderAdapter {
   readonly name = 'local';
+  private readonly vramMonitor = createVRAMMonitor();
 
   constructor(private config: LocalProviderConfig) {}
+
+  private async getGPUPlacementHints(numCtx?: number): Promise<GPUPlacementHints | undefined> {
+    if (!numCtx || numCtx <= 0) {
+      return undefined;
+    }
+
+    try {
+      const vramInfo = await this.vramMonitor.getInfo();
+      const source = {
+        vramFree: vramInfo.available,
+        available: vramInfo.available,
+      };
+      return deriveGPUPlacementHints(source, numCtx);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      logger.debug('Failed to derive GPU placement hints', { error: message });
+      return undefined;
+    }
+  }
 
   /**
    * Stream chat completion from the local Ollama server.
@@ -174,6 +195,12 @@ export class LocalProvider implements ProviderAdapter {
    */
   async *chatStream(request: ProviderRequest): AsyncIterable<ProviderEvent> {
     const url = `${this.config.baseUrl}/api/chat`;
+    const gpuHints = await this.getGPUPlacementHints(request.options?.num_ctx);
+    const generationOptions = request.options ?? {};
+    const optionsPayload = {
+      ...generationOptions,
+      ...(gpuHints ?? {}),
+    };
     const defaultFinishEvent: ProviderEvent = {
       type: 'finish',
       reason: 'stop',
@@ -192,7 +219,7 @@ export class LocalProvider implements ProviderAdapter {
       model: request.model,
       messages: this.mapMessages(request.messages, request.systemPrompt),
       tools: request.tools ? this.mapTools(request.tools) : undefined,
-      options: request.options, // Pass options (temperature, num_ctx, etc.) to Ollama
+      options: optionsPayload, // Pass options (temperature, num_ctx, etc.) to Ollama
       stream: true,
       think: request.think, // Pass thinking parameter to Ollama
     };

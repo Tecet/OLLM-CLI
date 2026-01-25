@@ -32,6 +32,7 @@ import { SidePanel } from './components/layout/SidePanel.js';
 import { GPUInfo } from './components/layout/StatusBar.js';
 import { SystemBar } from './components/layout/SystemBar.js';
 import { TabBar, tabs } from './components/layout/TabBar.js';
+import { Clock } from './components/layout/Clock.js';
 import { BugReportTab } from './components/tabs/BugReportTab.js';
 import { ChatTab } from './components/tabs/ChatTab.js';
 import { DocsTab } from './components/tabs/DocsTab.js';
@@ -893,8 +894,12 @@ ${toolSupport}
             overflow="hidden"
             flexWrap="nowrap"
           >
-            {/* Clock moved to side panel header */}
+            {/* Left: Clock (separate container) */}
+            <Box flexShrink={0} marginLeft={1} marginRight={1} alignItems="center">
+              <Clock borderColor={uiState.theme.border.primary} />
+            </Box>
 
+            {/* Center: Navigation TabBar (separate container) */}
             <Box flexGrow={1} flexDirection="row" justifyContent="center">
               <Box borderStyle={uiState.theme.border.style as BoxProps['borderStyle']} borderColor={focusManager.isFocused('nav-bar') ? uiState.theme.border.active : uiState.theme.border.primary}>
                 <TabBar
@@ -1064,16 +1069,16 @@ export function App({ config }: AppProps) {
     vramBuffer: config.context.vramBuffer,
     compression: {
       enabled: config.context.compressionEnabled,
-      threshold: config.context.compressionThreshold,
+      threshold: config.context.compressionThreshold ?? 0.68,
       strategy: 'truncate' as const, // Default strategy
       preserveRecent: 4096, // Default recent tokens to preserve
       summaryMaxTokens: 1024, // Default summary max size
     },
     snapshots: {
-      enabled: config.context.snapshotsEnabled,
-      maxCount: config.context.maxSnapshots,
+      enabled: config.context.snapshotsEnabled ?? true,
+      maxCount: config.context.maxSnapshots ?? 5,
       autoCreate: true, // Default auto-create enabled
-      autoThreshold: 0.8, // Default threshold for auto-creation
+      autoThreshold: 0.85, // Default threshold for auto-creation
     },
   } : undefined;
   

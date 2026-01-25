@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import * as fc from 'fast-check';
+import { Console as NodeConsole } from 'console';
 
 // Allow overriding runs via env var for CI or local experimentation
 const runs = parseInt(process.env.FAST_CHECK_RUNS || '20', 10);
@@ -15,6 +16,10 @@ if (!process.env.VERBOSE_TESTS) {
   console.info = () => {};
   console.debug = () => {};
   console.warn = () => {};
+}
+
+if (!console.Console) {
+  (console as { Console?: typeof NodeConsole }).Console = NodeConsole;
 }
  
 // Note: we avoid attempting to override `fc.assert` because some fast-check

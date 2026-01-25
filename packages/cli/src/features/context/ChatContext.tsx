@@ -12,6 +12,8 @@ import { useUI } from './UIContext.js';
 import { useFocusedFilesInjection } from './useFocusedFilesInjection.js';
 import { commandRegistry } from '../../commands/index.js';
 import { SettingsService } from '../../config/settingsService.js';
+import { validateManualContext } from './contextSizing.js';
+import { profileManager } from '../profiles/ProfileManager.js';
 
 import type { ToolCall as CoreToolCall, ContextMessage, ProviderMetrics, ToolSchema } from '@ollm/core';
 
@@ -416,6 +418,16 @@ export function ChatProvider({
           addMessage({
             role: 'system',
             content: 'Invalid context size. Enter a positive integer, or type "cancel" to abort.',
+            excludeFromContext: true
+          });
+          return;
+        }
+        const modelEntry = profileManager.getModelEntry(request.modelId);
+        const validation = validateManualContext(modelEntry, value);
+        if (!validation.valid) {
+          addMessage({
+            role: 'system',
+            content: validation.message ?? 'Context size exceeds the allowable maximum.',
             excludeFromContext: true
           });
           return;

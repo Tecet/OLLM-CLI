@@ -18,6 +18,9 @@ export * from './vramMonitor.js';
 // Export token counter
 export * from './tokenCounter.js';
 
+// Export GPU hint helpers
+export * from './gpuHints.js';
+
 // Export context pool
 export * from './contextPool.js';
 

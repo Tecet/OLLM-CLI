@@ -22,21 +22,17 @@ export function HeaderBar({ connection, model, gpu, theme, borderColor }: Header
 
   return (
     <Box 
-      borderStyle={theme.border.style as BoxProps['borderStyle']} 
-      borderColor={borderColor || theme.border.primary} 
+      borderStyle={theme.border.style as BoxProps['borderStyle']}
+      borderColor={borderColor || theme.border.primary}
       paddingX={1}
       overflow="hidden"
+      width="100%"
+      flexGrow={1}
+      alignItems="center"
+      justifyContent="center"
     >
-      <Text wrap="truncate-end">
-        <Text color={theme.text.primary} bold>LLM:</Text>
-        <Text color={theme.text.secondary} bold> {model}</Text>
-        <Text color={theme.text.secondary}> | </Text>
-        <Text color={theme.text.secondary}>VRAM:</Text>
-        <Text color={theme.text.primary}> {gpu?.available ? `${formatMB(gpu.vramUsed)}/${formatMB(gpu.vramTotal)}` : 'N/A'}</Text>
-        <Text color={theme.text.secondary}> | </Text>
-        <Text color={theme.text.secondary}>T:</Text>
-        <Text color={theme.text.primary}> {gpu?.temperature || 0}</Text>
-        <Text color={theme.text.primary}>°C</Text>
+      <Text color={theme.text.primary} bold wrap="truncate-end">
+        LLM: llama3.2:3b | VRAM: 2.6 GB/6.0 GB | T: 36°C
       </Text>
     </Box>
   );

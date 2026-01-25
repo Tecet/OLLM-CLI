@@ -47,11 +47,7 @@ export function ActivePromptInfo() {
         </Text>
         <Text dimColor> ({optimizationStr})</Text>
       </Text>
-      <Box marginTop={0} alignSelf="flex-start">
-        <Text dimColor>
-             Author: github.upstash
-        </Text>
-      </Box>
+      {/* Author line removed — was hardcoded legacy text */}
     </Box>
   );
 }

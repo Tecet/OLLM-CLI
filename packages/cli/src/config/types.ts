@@ -309,6 +309,8 @@ export interface UserModelEntry {
   context_profiles?: ContextProfile[];
   default_context?: number;
   manual_context?: number;
+  max_context_window?: number;
+  quantization?: string;
 }
 
 export interface ContextBehaviorProfile {

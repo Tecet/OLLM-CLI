@@ -11,8 +11,14 @@ import { createContext, useContext, useState, useCallback, useEffect, useRef, ty
 
 import { SettingsService } from '../../config/settingsService.js';
 import { useUICallbacks } from '../../ui/contexts/UICallbacksContext.js';
+import { useContextManager } from './ContextManagerContext.js';
+import { calculateContextSizing } from './contextSizing.js';
 import { profileManager } from '../profiles/ProfileManager.js';
+import { useOptionalGPU } from './GPUContext.js';
+import { deriveGPUPlacementHints } from './gpuHints.js';
+import { setLastGPUPlacementHints } from './gpuHintStore.js';
 
+import type { UserModelEntry } from '../../config/types.js';
 import type { ProviderAdapter, Message as ProviderMessage, ToolCall, ToolSchema, ProviderMetrics } from '@ollm/core';
 
 /**
@@ -102,6 +108,9 @@ export function ModelProvider({
   const warmupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const warmupAttemptsRef = useRef<Map<string, number>>(new Map());
   const warmupStartRef = useRef<number | null>(null);
+  const { actions: contextActions } = useContextManager();
+  const gpuContext = useOptionalGPU();
+  const lastAutoThresholdRef = useRef<number | null>(null);
   
   // Simplified tool support override tracking (2 levels: user_confirmed vs session)
   interface ToolSupportOverride {
@@ -675,8 +684,33 @@ export function ModelProvider({
     warmupStartRef.current = null;
     
     // Add system message
-    addSystemMessage('Warmup skipped by user.');
-  }, [addSystemMessage]);
+      addSystemMessage('Warmup skipped by user.');
+    }, [addSystemMessage]);
+
+  const syncAutoThreshold = useCallback((ollamaSize: number, selectedContextSize: number) => {
+    if (!contextActions || selectedContextSize <= 0 || ollamaSize <= 0) {
+      return;
+    }
+
+    const ratio = Math.min(1, Math.max(0.01, ollamaSize / selectedContextSize));
+    const previousRatio = lastAutoThresholdRef.current;
+    if (previousRatio !== null && Math.abs(previousRatio - ratio) < 0.001) {
+      return; // No meaningful change
+    }
+
+    try {
+      const currentConfig = contextActions.getConfig();
+      const currentSnapshots = currentConfig?.snapshots;
+      if (!currentSnapshots) {
+        return;
+      }
+      const nextSnapshots = { ...currentSnapshots, autoThreshold: ratio };
+      contextActions.updateConfig({ snapshots: nextSnapshots });
+      lastAutoThresholdRef.current = ratio;
+    } catch (error) {
+      console.warn('[ModelContext] Failed to sync snapshot threshold', error);
+    }
+  }, [contextActions]);
 
   const sendToLLM = useCallback(async (
     messages: Array<{ 
@@ -713,6 +747,7 @@ export function ModelProvider({
 
       // Get model-specific timeout from profile if not provided
       const profile = profileManager.findProfile(currentModel);
+      const modelEntry = profileManager.getModelEntry(currentModel);
       const requestTimeout = timeout ?? profile?.warmup_timeout ?? 30000;
       
       // Check if model supports thinking
@@ -721,26 +756,33 @@ export function ModelProvider({
       // Get user settings for context size and temperature
       const settingsService = SettingsService.getInstance();
       const settings = settingsService.getSettings();
-      const userContextSize = settings.llm?.contextSize ?? 4096;
+      const requestedContextSize = settings.llm?.contextSize ?? modelEntry.default_context ?? 4096;
       const temperature = settings.llm?.temperature ?? 0.1;
 
-      // Get ollama_context_size from profile (85% cap strategy)
-      // This is the actual size we send to Ollama to trigger natural stops
-      // Default to 85% of user's selected size (New in v2.1)
-      let ollamaContextSize = Math.floor(userContextSize * 0.85); 
-      
-      if (profile?.context_profiles) {
-        // Find the matching context profile for user's selected size
-        const matchingProfile = profile.context_profiles.find(p => p.size === userContextSize);
-        if (matchingProfile && matchingProfile.ollama_context_size) {
-          ollamaContextSize = matchingProfile.ollama_context_size;
-          console.log(`[Context Cap] Used profile override: ${ollamaContextSize}`);
-        }
+      const contextSizing = calculateContextSizing(requestedContextSize, modelEntry);
+      const { allowed, ollamaContextSize } = contextSizing;
+
+      const gpuHints = deriveGPUPlacementHints(
+        gpuContext?.info ?? null,
+        ollamaContextSize
+      );
+      setLastGPUPlacementHints(gpuHints);
+
+      if (allowed !== requestedContextSize) {
+        settingsService.setContextSize(allowed);
       }
 
-      console.log(`[Context Cap] User selected: ${userContextSize}, Sending to Ollama: ${ollamaContextSize} (${Math.round((ollamaContextSize / userContextSize) * 100)}%)`);
+      syncAutoThreshold(ollamaContextSize, allowed);
+
+      console.log(
+        `[Context Cap] User selected: ${allowed}, Sending to Ollama: ${ollamaContextSize} (${Math.round(contextSizing.ratio * 100)}%)`
+      );
 
       // DEBUG removed - was causing ESM require error
+
+      if (gpuHints) {
+        console.debug('[ModelContext] Derived GPU placement hints:', gpuHints);
+      }
 
       // Stream the response
       const stream = provider.chatStream({
@@ -754,6 +796,7 @@ export function ModelProvider({
         options: {
           num_ctx: ollamaContextSize, // Use 85% capped size for natural stops
           temperature: temperatureOverride ?? temperature,
+          ...(gpuHints ?? {}),
         },
       });
 

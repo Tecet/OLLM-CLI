@@ -53,7 +53,7 @@ export const profilesData: ProfilesData = {
       "standard": {
         "name": "Standard (High VRAM)",
         "contextWindow": 4096,
-        "compressionThreshold": 0.7,
+        "compressionThreshold": 0.68,
         "retentionRatio": 0.3,
         "strategy": "summarize",
         "summaryPrompt": "Concisely summarize the conversation history above that is about to be archived. Focus on the user's technical goals, constraints, and any important code details or decisions made. Ignore the instruction to summarize this text."

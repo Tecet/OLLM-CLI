@@ -5,7 +5,7 @@
  */
 
 import * as fc from 'fast-check';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 import { createContextManager, ConversationContextManager } from '../contextManager.js';
 
@@ -300,6 +300,12 @@ describe('ContextManager', () => {
       expect(usage.percentage).toBeLessThanOrEqual(100);
     });
 
+    it('sets the safe compression and snapshot thresholds by default', () => {
+      const manager = createContextManager('test-session', modelInfo);
+      expect(manager.config.compression.threshold).toBeCloseTo(0.68);
+      expect(manager.config.snapshots.autoThreshold).toBeCloseTo(0.85);
+    });
+
     it('should set system prompt', () => {
       const manager = createContextManager('test-session', modelInfo);
 
@@ -367,7 +373,7 @@ const context = (manager as ConversationContextManager).getContext();
       expect(config.targetSize).toBe(16384);
     });
 
-    it('should emit events when message is added', async () => {
+  it('should emit events when message is added', async () => {
       const manager = createContextManager('test-session', modelInfo);
 
       const eventPromise = new Promise<{ message: Message; usage: any }>((resolve) => {
@@ -386,8 +392,38 @@ const context = (manager as ConversationContextManager).getContext();
       await manager.addMessage(message);
 
       const { message: emittedMessage, usage } = await eventPromise;
-      expect(emittedMessage.id).toBe('msg-1');
-      expect(usage).toBeDefined();
+    expect(emittedMessage.id).toBe('msg-1');
+    expect(usage).toBeDefined();
+  });
+
+  describe('Mid-stream guard', () => {
+    let manager: ReturnType<typeof createContextManager>;
+    let compressSpy: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
+      manager = createContextManager('test-session', modelInfo, {
+        compression: { threshold: 0.6, enabled: true, strategy: 'hybrid', preserveRecent: 1024, summaryMaxTokens: 512 },
+      });
+      compressSpy = vi.spyOn(manager, 'compress').mockResolvedValue(undefined);
+      (manager as any).currentContext.tokenCount = 50;
+      (manager as any).currentContext.maxTokens = 200;
+    });
+
+    afterEach(() => {
+      compressSpy.mockRestore();
+    });
+
+    it('triggers compression when inflight usage crosses the threshold', async () => {
+      manager.reportInflightTokens(80);
+      await Promise.resolve();
+      expect(compressSpy).toHaveBeenCalled();
+    });
+
+    it('does not trigger compression when usage stays below threshold', async () => {
+      manager.reportInflightTokens(10);
+      await Promise.resolve();
+      expect(compressSpy).not.toHaveBeenCalled();
     });
   });
+});
 });

@@ -1,0 +1,147 @@
+{
+  "timestamp": "2026-01-25T01:55:51.440Z",
+  "snapshotId": "2e54a7d6-33a3-4e57-a116-40c09290d8e0",
+  "contextMessages": {
+    "total": 22,
+    "byRole": {
+      "user": 0,
+      "assistant": 1,
+      "system": 21,
+      "tool": 0
+    },
+    "details": [
+      {
+        "role": "system",
+        "id": "system-1769306045694",
+        "contentLength": 2353,
+        "preview": "You are a coding assistant focused on practical solutions.\n\nCore Behavior:\n- Write clean, working co"
+      },
+      {
+        "role": "system",
+        "id": "rollover-summary-1769306121040",
+        "contentLength": 412,
+        "preview": "[Previous conversation summary - 6 messages]\nuser: hi...\nassistant: Hello there! How can I help you "
+      },
+      {
+        "role": "system",
+        "id": "rollover-summary-1769306123365",
+        "contentLength": 45,
+        "preview": "[Previous conversation summary - 2 messages]\n"
+      },
+      {
+        "role": "system",
+        "id": "rollover-summary-1769306125123",
+        "contentLength": 45,
+        "preview": "[Previous conversation summary - 3 messages]\n"
+      },
+      {
+        "role": "system",
+        "id": "rollover-summary-1769306126398",
+        "contentLength": 45,
+        "preview": "[Previous conversation summary - 4 messages]\n"
+      },
+      {
+        "role": "system",
+        "id": "rollover-summary-1769306127313",
+        "contentLength": 45,
+        "preview": "[Previous conversation summary - 5 messages]\n"
+      },
+      {
+        "role": "system",
+        "id": "rollover-summary-1769306127791",
+        "contentLength": 45,
+        "preview": "[Previous conversation summary - 6 messages]\n"
+      },
+      {
+        "role": "system",
+        "id": "rollover-summary-1769306130669",
+        "contentLength": 45,
+        "preview": "[Previous conversation summary - 7 messages]\n"
+      },
+      {
+        "role": "system",
+        "id": "rollover-summary-1769306130965",
+        "contentLength": 45,
+        "preview": "[Previous conversation summary - 8 messages]\n"
+      },
+      {
+        "role": "system",
+        "id": "rollover-summary-1769306133763",
+        "contentLength": 45,
+        "preview": "[Previous conversation summary - 9 messages]\n"
+      },
+      {
+        "role": "system",
+        "id": "rollover-summary-1769306134273",
+        "contentLength": 46,
+        "preview": "[Previous conversation summary - 10 messages]\n"
+      },
+      {
+        "role": "system",
+        "id": "rollover-summary-1769306137375",
+        "contentLength": 46,
+        "preview": "[Previous conversation summary - 10 messages]\n"
+      },
+      {
+        "role": "system",
+        "id": "rollover-summary-1769306137800",
+        "contentLength": 46,
+        "preview": "[Previous conversation summary - 10 messages]\n"
+      },
+      {
+        "role": "system",
+        "id": "rollover-summary-1769306138772",
+        "contentLength": 46,
+        "preview": "[Previous conversation summary - 10 messages]\n"
+      },
+      {
+        "role": "system",
+        "id": "rollover-summary-1769306140166",
+        "contentLength": 46,
+        "preview": "[Previous conversation summary - 10 messages]\n"
+      },
+      {
+        "role": "system",
+        "id": "rollover-summary-1769306141062",
+        "contentLength": 46,
+        "preview": "[Previous conversation summary - 10 messages]\n"
+      },
+      {
+        "role": "system",
+        "id": "rollover-summary-1769306141229",
+        "contentLength": 46,
+        "preview": "[Previous conversation summary - 10 messages]\n"
+      },
+      {
+        "role": "system",
+        "id": "rollover-summary-1769306145017",
+        "contentLength": 46,
+        "preview": "[Previous conversation summary - 10 messages]\n"
+      },
+      {
+        "role": "system",
+        "id": "rollover-summary-1769306148192",
+        "contentLength": 46,
+        "preview": "[Previous conversation summary - 10 messages]\n"
+      },
+      {
+        "role": "system",
+        "id": "rollover-summary-1769306148659",
+        "contentLength": 46,
+        "preview": "[Previous conversation summary - 10 messages]\n"
+      },
+      {
+        "role": "system",
+        "id": "rollover-summary-1769306150954",
+        "contentLength": 46,
+        "preview": "[Previous conversation summary - 10 messages]\n"
+      },
+      {
+        "role": "assistant",
+        "id": "msg-1769306151440-1o0hpn3ds",
+        "contentLength": 8191,
+        "preview": "Okay, this is a *massive* undertaking! I will generate a detailed academic paper as requested, inclu"
+      }
+    ]
+  }
+}

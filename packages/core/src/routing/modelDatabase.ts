@@ -5,6 +5,7 @@
 // Export singleton instance
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
+import { homedir, tmpdir } from 'os';
 
 // @ts-expect-error - picomatch doesn't have type definitions
 import picomatch from 'picomatch';
@@ -44,6 +45,13 @@ const DEFAULT_MODEL_ENTRY: Omit<ModelEntry, 'pattern' | 'family'> = {
  * The single-source-of-truth is `packages/cli/src/config/LLM_profiles.json`.
  */
 const MODEL_DATABASE: ModelEntry[] = [];
+const LLM_MODELS_FILENAME = 'LLM_models.json';
+const VITEST_OLLM_PREFIX = 'ollm-vitest';
+
+interface LLMModelsStore {
+  models?: Array<Record<string, unknown>>;
+  user_models?: Array<Record<string, unknown>>;
+}
 
 export class ModelDatabase {
   private entries: ModelEntry[];
@@ -210,7 +218,80 @@ function tryLoadRawProfiles(): Record<string, any> | null {
   } catch (_e) { void _e; return null; }
 }
 
+function getRuntimeLLMModelsPath(): string {
+  const base = process.env.VITEST
+    ? join(tmpdir(), `${VITEST_OLLM_PREFIX}-${process.pid}`)
+    : homedir();
+  return join(base, '.ollm', LLM_MODELS_FILENAME);
+}
+
+function buildModelEntryFromProfile(profile: Record<string, any>): ModelEntry {
+  const id = String(profile.id || profile.name || 'unknown');
+  const contextProfiles: Array<Record<string, unknown>> = Array.isArray(profile.context_profiles)
+    ? profile.context_profiles
+    : [];
+  const maxContextWindow = Number(
+    profile.max_context_window ??
+    profile.context_window ??
+    (contextProfiles.length > 0
+      ? Math.max(...contextProfiles.map(cp => Number((cp as Record<string, any>).size ?? 0)))
+      : 0)
+  ) || 4096;
+
+  const capabilitiesSource = profile.capabilities ?? {
+    toolCalling: Boolean(profile.tool_support),
+    vision: (Array.isArray(profile.abilities) && profile.abilities.some((a: string) => /visual|vision|multimodal/i.test(a))) || false,
+    streaming: profile.streaming ?? true,
+    reasoning: Boolean(profile.thinking_enabled) || (Array.isArray(profile.abilities) && profile.abilities.some((a: string) => /reasoning|think/i.test(a))),
+  };
+
+  const profiles = contextProfiles.length > 0
+    ? contextProfiles.map(cp => String((cp as Record<string, unknown>).size_label ?? (cp as Record<string, unknown>).size ?? 'general'))
+    : ['general'];
+
+  return {
+    pattern: id,
+    family: id,
+    contextWindow: maxContextWindow,
+    capabilities: {
+      toolCalling: Boolean(capabilitiesSource.toolCalling),
+      vision: Boolean(capabilitiesSource.vision),
+      streaming: Boolean(capabilitiesSource.streaming),
+      reasoning: Boolean(capabilitiesSource.reasoning),
+    },
+    profiles,
+  };
+}
+
+function tryLoadRuntimeLLMModels(): { entries: ModelEntry[]; raw: Record<string, any> } | null {
+  try {
+    const path = getRuntimeLLMModelsPath();
+    if (!existsSync(path)) return null;
+    const content = readFileSync(path, 'utf-8');
+    const parsed = JSON.parse(content) as LLMModelsStore;
+    if (!Array.isArray(parsed.models) || parsed.models.length === 0) return null;
+
+    const entries: ModelEntry[] = [];
+    const rawMap: Record<string, any> = {};
+
+    for (const model of parsed.models) {
+      const entry = buildModelEntryFromProfile(model);
+      entries.push(entry);
+      const key = String(model.id || model.name || entry.pattern || 'unknown');
+      rawMap[key] = model;
+    }
+
+    return { entries, raw: rawMap };
+  } catch (_error) {
+    return null;
+  }
+}
+
 // Prefer a generated TypeScript DB if present (faster startup, no runtime JSON parsing)
+const runtimeStore = tryLoadRuntimeLLMModels();
+const runtimeEntries = runtimeStore?.entries ?? null;
+const runtimeRawProfiles = runtimeStore?.raw ?? null;
+
 let GENERATED_ENTRIES: ModelEntry[] | null = null;
 let GENERATED_RAW_PROFILES: Record<string, any> | null = null;
 try {
@@ -227,22 +308,20 @@ try {
     } else {
       GENERATED_RAW_PROFILES = {};
       for (const m of (GENERATED_ENTRIES ?? [])) {
-        const id = (m.pattern || '').endsWith('*') ? (m.pattern || '').slice(0, -1) : (m.pattern || '');
+        const id = (m.pattern || '').endsWith('*')
+          ? (m.pattern || '').slice(0, -1)
+          : (m.pattern || '');
         GENERATED_RAW_PROFILES[id] = m as any;
       }
     }
   }
-} catch (_e) { void _e; 
-  // No generated file present; fall back to runtime JSON loader
-  GENERATED_ENTRIES = tryLoadProfilesFromCli();
-  GENERATED_RAW_PROFILES = tryLoadRawProfiles();
-}
+} catch (_e) { void _e; }
 
-// Expose a RAW_PROFILES alias used by existing methods for backwards-compatibility
-const RAW_PROFILES = GENERATED_RAW_PROFILES ?? tryLoadRawProfiles();
+const FALLBACK_ENTRIES = runtimeEntries ?? GENERATED_ENTRIES ?? tryLoadProfilesFromCli() ?? MODEL_DATABASE;
+const RAW_PROFILES = runtimeRawProfiles ?? GENERATED_RAW_PROFILES ?? tryLoadRawProfiles();
 
-// Export a ModelDatabase that prefers generated profiles (if present) otherwise runtime JSON
-export const modelDatabase = new ModelDatabase(GENERATED_ENTRIES ?? MODEL_DATABASE);
+// Export a ModelDatabase that prefers runtime overrides, then generated profiles, otherwise fallback data
+export const modelDatabase = new ModelDatabase(FALLBACK_ENTRIES);
 
 // Attach raw profiles map for external inspection (if needed)
-(modelDatabase as any)._rawProfiles = GENERATED_RAW_PROFILES ?? {};
+(modelDatabase as any)._rawProfiles = RAW_PROFILES ?? {};

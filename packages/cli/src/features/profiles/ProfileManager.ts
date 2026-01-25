@@ -7,6 +7,11 @@ import profilesData from '../../config/LLM_profiles.json' with { type: 'json' };
 
 import type { LLMProfile, ContextSettings, ContextBehaviorProfile, ContextProfile, UserModelEntry, ProfilesData } from '../../config/types.js';
 
+interface LLMModelsStore {
+  models: LLMProfile[];
+  user_models: UserModelEntry[];
+}
+
 const profiles = profilesData as ProfilesData;
 
 // Default Ollama base URL
@@ -16,6 +21,8 @@ export class ProfileManager {
   private profiles: LLMProfile[];
   private contextSettings: ContextSettings;
   private userModels: UserModelEntry[];
+  private llmModelsPath: string;
+  private llmModelsData: LLMModelsStore;
   private userModelsPath: string;
 
   constructor() {
@@ -29,9 +36,13 @@ export class ProfileManager {
       : homedir();
     const configDir = join(homeDir, '.ollm');
     this.userModelsPath = join(configDir, 'user_models.json');
+    this.llmModelsPath = join(configDir, 'LLM_models.json');
     
     this.ensureConfigExists(configDir);
+    this.ensureLLMModelsFile();
+    this.llmModelsData = this.loadLLMModelsStore();
     this.profiles = this.loadProfiles();
+    this.applyStoreProfiles(this.llmModelsData.models);
     this.loadUserModels();
     
     // Auto-refresh on startup (async, non-blocking)
@@ -103,49 +114,55 @@ export class ProfileManager {
 
   private loadProfiles(): LLMProfile[] {
       const raw = profiles.models || [];
-
       // Normalize entries: support migration and coercion
-      const normalized = raw.map((m: any) => {
-        const entry = { ...m } as any;
+      return raw.map((m: any) => this.normalizeRawProfile(m));
+  }
 
-        // Support old key `context_window` -> `max_context_window`
-        if (entry.context_window && !entry.max_context_window) {
-          entry.max_context_window = entry.context_window;
+  private normalizeRawProfile(raw: any): LLMProfile {
+    const entry = { ...raw } as any;
+
+    if (entry.context_window && !entry.max_context_window) {
+      entry.max_context_window = entry.context_window;
+    }
+
+    if (!Array.isArray(entry.context_profiles)) {
+      entry.context_profiles = [];
+    }
+
+    for (const cp of entry.context_profiles) {
+      if (cp.vram_estimate_gb == null && typeof cp.vram_estimate === 'string') {
+        const match = cp.vram_estimate.match(/([0-9]+(?:\.[0-9]+)?)\s*GB/i);
+        if (match) {
+          cp.vram_estimate_gb = Number(match[1]);
+        } else {
+          const matchMb = cp.vram_estimate.match(/([0-9]+(?:\.[0-9]+)?)\s*MB/i);
+          if (matchMb) cp.vram_estimate_gb = Number(matchMb[1]) / 1024;
         }
+      }
+    }
 
-        // Ensure context_profiles exist
-        if (!Array.isArray(entry.context_profiles)) {
-          entry.context_profiles = [];
-        }
+    if (!entry.capabilities) {
+      entry.capabilities = {
+        toolCalling: Boolean(entry.tool_support),
+        vision: Array.isArray(entry.abilities) && entry.abilities.some((a: string) => /visual|vision|multimodal/i.test(a)),
+        streaming: entry.streaming ?? true,
+        reasoning: Boolean(entry.thinking_enabled) || (Array.isArray(entry.abilities) && entry.abilities.some((a: string) => /reasoning|think/i.test(a)))
+      };
+    }
 
-        // Coerce vram_estimate strings to numeric GB field
-        for (const cp of entry.context_profiles) {
-          if (cp.vram_estimate_gb == null && typeof cp.vram_estimate === 'string') {
-            const match = cp.vram_estimate.match(/([0-9]+(?:\.[0-9]+)?)\s*GB/i);
-            if (match) {
-              cp.vram_estimate_gb = Number(match[1]);
-            } else {
-              // Fallback: try MB
-              const matchMb = cp.vram_estimate.match(/([0-9]+(?:\.[0-9]+)?)\s*MB/i);
-              if (matchMb) cp.vram_estimate_gb = Number(matchMb[1]) / 1024;
-            }
-          }
-        }
+    return entry as LLMProfile;
+  }
 
-        // Add capabilities object if missing
-        if (!entry.capabilities) {
-          entry.capabilities = {
-            toolCalling: Boolean(entry.tool_support),
-            vision: Array.isArray(entry.abilities) && entry.abilities.some((a: string) => /visual|vision|multimodal/i.test(a)),
-            streaming: entry.streaming ?? true,
-            reasoning: Boolean(entry.thinking_enabled) || (Array.isArray(entry.abilities) && entry.abilities.some((a: string) => /reasoning|think/i.test(a)))
-          };
-        }
+  private applyStoreProfiles(models?: LLMProfile[]): void {
+    const entries = Array.isArray(models) && models.length > 0
+      ? models
+      : this.llmModelsData?.models ?? [];
 
-        return entry as LLMProfile;
-      });
+    if (entries.length === 0) {
+      return;
+    }
 
-      return normalized as LLMProfile[];
+    this.profiles = entries.map(model => this.normalizeRawProfile(model));
   }
 
   private loadUserModels(): void {
@@ -155,14 +172,8 @@ export class ProfileManager {
           }
           const content = readFileSync(this.userModelsPath, 'utf-8');
           const data = JSON.parse(content);
-          if (Array.isArray(data.user_models)) {
-              // Migration: Add default values for new fields if missing
-              this.userModels = data.user_models.map((model: UserModelEntry) => ({
-                  ...model,
-                  // Preserve existing tool_support_source and tool_support_confirmed_at
-                  // No defaults needed - these are optional fields
-              }));
-          }
+          const models = Array.isArray(data.user_models) ? data.user_models : [];
+          this.setUserModels(models);
       } catch (error) {
           console.warn('Failed to load user models list:', error);
       }
@@ -189,38 +200,41 @@ export class ProfileManager {
   }
 
   public setUserModels(models: UserModelEntry[]): void {
-    this.userModels = models;
+    const normalized = models.map(model => this.normalizeUserModelEntry(model));
+    this.userModels = normalized;
     this.saveUserModels(this.userModels);
+    this.syncLLMModelsFile();
   }
 
   private buildFallbackContextProfiles(sizeBytes?: number): { profiles: ContextProfile[]; defaultContext: number } {
-    const fallback = profiles.fallback_model;
-    const defaultSizes: number[] = Array.isArray(fallback?.context_sizes)
-      ? fallback.context_sizes
-      : [2048, 4096, 8192, 16384, 32768];
-    let sizes = defaultSizes;
+    const fallback = this.getFallbackProfile();
+    if (!fallback) {
+      return {
+        profiles: [],
+        defaultContext: 4096,
+      };
+    }
+
+    const baseProfiles = fallback.context_profiles ?? [];
+    let filtered = baseProfiles;
 
     if (typeof sizeBytes === 'number' && sizeBytes > 0) {
       const sizeGB = sizeBytes / (1024 * 1024 * 1024);
       if (sizeGB < 3) {
-        sizes = defaultSizes.filter(size => size <= 8192);
+        filtered = baseProfiles.filter(profile => profile.size <= 8192);
       } else if (sizeGB < 8) {
-        sizes = defaultSizes.filter(size => size >= 4096 && size <= 16384);
+        filtered = baseProfiles.filter(profile => profile.size >= 4096 && profile.size <= 16384);
       } else {
-        sizes = defaultSizes.filter(size => size >= 8192);
+        filtered = baseProfiles.filter(profile => profile.size >= 8192);
       }
-      if (sizes.length === 0) {
-        sizes = defaultSizes;
+      if (filtered.length === 0) {
+        filtered = baseProfiles;
       }
     }
 
     return {
-      profiles: sizes.map(size => ({
-        size,
-        size_label: size >= 1024 ? `${size / 1024}k` : `${size}`,
-        vram_estimate: '',
-      })),
-      defaultContext: fallback?.default_context ?? sizes[0] ?? 4096,
+      profiles: filtered.map(profile => ({ ...profile })),
+      defaultContext: fallback.default_context ?? filtered[0]?.size ?? fallback.max_context_window ?? 4096,
     };
   }
 
@@ -268,8 +282,7 @@ export class ProfileManager {
       } satisfies UserModelEntry;
     });
 
-    this.userModels = nextModels;
-    this.saveUserModels(this.userModels);
+    this.setUserModels(nextModels);
   }
 
   public getManualContext(modelId: string): number | undefined {
@@ -283,6 +296,7 @@ export class ProfileManager {
       entry.manual_context = value;
     }
     this.saveUserModels(this.userModels);
+    this.syncLLMModelsFile();
   }
 
   public getCombinedModels(): Array<{ id: string; name: string; profile?: LLMProfile }> {
@@ -310,23 +324,218 @@ export class ProfileManager {
     return this.profiles.find(p => p.id === id);
   }
 
+  private getFallbackProfile(): LLMProfile | undefined {
+    return this.findProfile('llama3.2:3b') ?? this.profiles[0];
+  }
+
+  private normalizeContextProfiles(
+    source: ContextProfile[] | undefined,
+    reference?: ContextProfile[]
+  ): ContextProfile[] {
+    const fallbackProfiles = source && source.length > 0
+      ? source
+      : reference && reference.length > 0
+        ? reference
+        : this.getFallbackProfile()?.context_profiles ?? [];
+    const referenceProfiles = reference ?? this.getFallbackProfile()?.context_profiles ?? [];
+
+    return fallbackProfiles.map(profile => {
+      const ref = referenceProfiles.find(p => p.size === profile.size)
+        ?? this.getFallbackProfile()?.context_profiles?.find(p => p.size === profile.size);
+      const sizeLabel = profile.size_label ?? ref?.size_label;
+      const vramEstimate = profile.vram_estimate ?? ref?.vram_estimate ?? '';
+      const vramEstimateGb = profile.vram_estimate_gb ?? ref?.vram_estimate_gb;
+      const ollamaContextSize = profile.ollama_context_size
+        ?? ref?.ollama_context_size
+        ?? Math.max(1, Math.floor(profile.size * 0.85));
+
+      return {
+        size: profile.size,
+        size_label: sizeLabel,
+        vram_estimate: vramEstimate,
+        vram_estimate_gb: vramEstimateGb,
+        ollama_context_size: ollamaContextSize,
+      };
+    });
+  }
+
+  private normalizeUserModelEntry(entry: UserModelEntry): UserModelEntry {
+    const profile = this.findProfile(entry.id) ?? this.getFallbackProfile();
+    const baseProfiles = entry.context_profiles && entry.context_profiles.length > 0
+      ? entry.context_profiles
+      : profile?.context_profiles ?? this.getFallbackProfile()?.context_profiles ?? [];
+    const normalizedProfiles = this.normalizeContextProfiles(baseProfiles, profile?.context_profiles);
+    const defaultContext = entry.default_context ?? profile?.default_context ?? normalizedProfiles[0]?.size ?? 4096;
+    const maxContextWindow = entry.max_context_window ?? profile?.max_context_window ?? profile?.context_window ?? defaultContext;
+    const quantization = entry.quantization ?? profile?.quantization ?? 'auto';
+
+    return {
+      ...entry,
+      name: entry.name ?? profile?.name ?? entry.id,
+      description: entry.description ?? profile?.description ?? 'No metadata available.',
+      abilities: entry.abilities ?? profile?.abilities ?? [],
+      context_profiles: normalizedProfiles,
+      default_context: defaultContext,
+      max_context_window: maxContextWindow,
+      quantization,
+      source: entry.source ?? 'ollama',
+      last_seen: entry.last_seen ?? new Date().toISOString(),
+    };
+  }
+
+  private cloneProfileForLLMStore(profile: LLMProfile): LLMProfile {
+    const contextProfiles = (profile.context_profiles ?? []).map(cp => ({
+      ...cp,
+      ollama_context_size: cp.ollama_context_size ?? Math.max(1, Math.floor(cp.size * 0.85)),
+    }));
+
+    return {
+      ...profile,
+      max_context_window: profile.max_context_window ?? profile.context_window ?? 0,
+      context_profiles: contextProfiles,
+      quantization: profile.quantization ?? 'auto',
+    };
+  }
+
+  private cloneUserModelForStore(model: UserModelEntry): UserModelEntry {
+    return {
+      ...model,
+      context_profiles: model.context_profiles,
+    };
+  }
+
+  private buildDefaultLLMModelsStore(): LLMModelsStore {
+    const entries = (profiles.models || []).map(raw => this.normalizeRawProfile(raw));
+    return {
+      models: entries.map(profile => this.cloneProfileForLLMStore(profile)),
+      user_models: [],
+    };
+  }
+
+  private ensureLLMModelsFile(): void {
+    if (existsSync(this.llmModelsPath)) {
+      return;
+    }
+
+    const store = this.buildDefaultLLMModelsStore();
+    try {
+      writeFileSync(this.llmModelsPath, JSON.stringify(store, null, 2), 'utf-8');
+    } catch (error) {
+      console.warn('Failed to create LLM models store:', error);
+    }
+  }
+
+  private loadLLMModelsStore(): LLMModelsStore {
+    if (!existsSync(this.llmModelsPath)) {
+      return this.buildDefaultLLMModelsStore();
+    }
+
+    try {
+      const content = readFileSync(this.llmModelsPath, 'utf-8');
+      const parsed = JSON.parse(content) as Partial<LLMModelsStore>;
+      return this.normalizeLLMModelsStore(parsed);
+    } catch (error) {
+      console.warn('Failed to load LLM models store:', error);
+      return this.buildDefaultLLMModelsStore();
+    }
+  }
+
+  private normalizeLLMModelsStore(store: Partial<LLMModelsStore>): LLMModelsStore {
+    const fallbackProfiles = (profiles.models || []).map(raw => this.normalizeRawProfile(raw));
+    const baseModels = Array.isArray(store.models) && store.models.length > 0
+      ? store.models
+      : fallbackProfiles;
+    const models = baseModels.map(model => this.cloneProfileForLLMStore(model));
+    const userModels = Array.isArray(store.user_models)
+      ? store.user_models.map(model => this.normalizeUserModelEntry(model))
+      : [];
+
+    return { models, user_models: userModels };
+  }
+
+  private syncLLMModelsFile(): void {
+    const store: LLMModelsStore = {
+      models: this.profiles.map(profile => this.cloneProfileForLLMStore(profile)),
+      user_models: this.userModels.map(model => this.cloneUserModelForStore(model)),
+    };
+
+    try {
+      writeFileSync(this.llmModelsPath, JSON.stringify(store, null, 2), 'utf-8');
+      this.llmModelsData = store;
+      this.applyStoreProfiles(store.models);
+    } catch (error) {
+      console.warn('Failed to sync LLM models store:', error);
+    }
+  }
+
+  private normalizeSearchKey(value: string): string {
+    return value.toLowerCase().replace(/[^a-z0-9]/g, '');
+  }
+
+  private findUserModel(modelName: string): UserModelEntry | undefined {
+    const search = this.normalizeSearchKey(modelName);
+    return this.userModels.find(model => {
+      if (this.normalizeSearchKey(model.id) === search) return true;
+      if (model.name && this.normalizeSearchKey(model.name) === search) return true;
+      return false;
+    });
+  }
+
+  public getModelEntry(modelId: string): UserModelEntry {
+    const userEntry = this.findUserModel(modelId);
+    if (userEntry) {
+      return userEntry;
+    }
+
+    const profile = this.findProfile(modelId);
+    return this.createUserModelEntryFromProfile(profile ?? this.getFallbackProfile());
+  }
+
+  private createUserModelEntryFromProfile(profile?: LLMProfile): UserModelEntry {
+    const fallbackProfile = profile ?? {
+      id: 'llama3.2:3b',
+      name: 'Llama 3.2 3B',
+      description: 'Fallback LLM entry',
+      abilities: [],
+      context_profiles: [],
+      default_context: 4096,
+      max_context_window: 4096,
+      quantization: 'auto',
+      tool_support: false,
+      source: 'profile',
+    } as LLMProfile;
+
+    return this.normalizeUserModelEntry({
+      id: fallbackProfile.id,
+      name: fallbackProfile.name,
+      description: fallbackProfile.description,
+      abilities: fallbackProfile.abilities,
+      tool_support: fallbackProfile.tool_support,
+      context_profiles: fallbackProfile.context_profiles ?? [],
+      default_context: fallbackProfile.default_context ?? 4096,
+      max_context_window: fallbackProfile.max_context_window ?? fallbackProfile.context_window ?? fallbackProfile.default_context ?? 4096,
+      quantization: fallbackProfile.quantization ?? 'auto',
+      source: 'profile',
+      last_seen: new Date().toISOString(),
+    });
+  }
+
   /**
    * Fuzzy find a profile by model name (e.g. matching "llama3.2" to "llama3.2:3b")
    */
   public findProfile(modelName: string): LLMProfile | undefined {
-    const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
-    const search = normalize(modelName);
+    const search = this.normalizeSearchKey(modelName);
     
     // Exact ID match
     let match = this.profiles.find(p => p.id === modelName);
     if (match) return match;
 
     // ID contains search
-    match = this.profiles.find(p => normalize(p.id).includes(search));
+    match = this.profiles.find(p => this.normalizeSearchKey(p.id).includes(search));
     if (match) return match;
 
     // Name contains search
-    match = this.profiles.find(p => normalize(p.name).includes(search));
+    match = this.profiles.find(p => this.normalizeSearchKey(p.name).includes(search));
     return match;
   }
 }
