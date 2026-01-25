@@ -38,3 +38,9 @@ test-session-*/
 
 # OLLM runtime data and memory
 .ollm/
+
+# Generated artifacts and maps
+**/*.js.map
+.test-snapshots/
+vitest-reports/
+.tmp-eslint.json
