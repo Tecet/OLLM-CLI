@@ -9,8 +9,8 @@ import { Jimp, ResizeStrategy } from 'jimp';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Assets now live adjacent to the component inside the CLI package.
-// packages/cli/src/components/lama -> lama_sprite
+// In the bundled dist, lama_sprite is at dist/lama_sprite
+// The bundled cli.js is at dist/cli.js, so we go up one level
 const ASSETS_PATH = path.resolve(__dirname, 'lama_sprite');
 
 type Direction = 'left' | 'right';
