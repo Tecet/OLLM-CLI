@@ -10,14 +10,8 @@ import React, { createContext, useContext, useEffect, useRef, useState, useCallb
 import { Terminal } from '@xterm/headless';
 import * as pty from 'node-pty';
 
-// import { serializeTerminalRange } from '../../utils/terminalSerializer.js';
-// import type { AnsiOutput } from '../../utils/terminalSerializer.js';
-
-// Temporary stub for AnsiOutput
-interface AnsiOutput {
-  text: string;
-  ansi: string;
-}
+import { serializeTerminalRange } from '../utils/terminalSerializer.js';
+import type { AnsiOutput } from '../utils/terminalSerializer.js';
 
 interface Terminal2ContextValue {
   output: AnsiOutput;
