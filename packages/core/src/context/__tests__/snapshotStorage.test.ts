@@ -78,6 +78,8 @@ describe('SnapshotStorage', () => {
         timestamp: new Date('2024-01-15T10:30:00Z'),
         tokenCount: 5000,
         summary: 'Test snapshot summary',
+        userMessages: [],
+        archivedUserMessages: [],
         messages: [
           {
             id: 'msg-1',
@@ -95,7 +97,10 @@ describe('SnapshotStorage', () => {
         metadata: {
           model: 'llama3.1:8b',
           contextSize: 8192,
-          compressionRatio: 0.8
+          compressionRatio: 0.8,
+          totalUserMessages: 1,
+          totalGoalsCompleted: 0,
+          totalCheckpoints: 0
         }
       };
 
@@ -123,6 +128,8 @@ describe('SnapshotStorage', () => {
         timestamp: new Date('2024-01-15T10:00:00Z'),
         tokenCount: 1000,
         summary: 'First snapshot',
+        userMessages: [],
+        archivedUserMessages: [],
         messages: [
           {
             id: 'msg-1',
@@ -134,7 +141,10 @@ describe('SnapshotStorage', () => {
         metadata: {
           model: 'llama3.1:8b',
           contextSize: 8192,
-          compressionRatio: 1.0
+          compressionRatio: 1.0,
+          totalUserMessages: 1,
+          totalGoalsCompleted: 0,
+          totalCheckpoints: 0
         }
       };
 
@@ -168,6 +178,8 @@ describe('SnapshotStorage', () => {
         timestamp: new Date(),
         tokenCount: 1000,
         summary: 'To be deleted',
+        userMessages: [],
+        archivedUserMessages: [],
         messages: [
           {
             id: 'msg-1',
@@ -179,7 +191,10 @@ describe('SnapshotStorage', () => {
         metadata: {
           model: 'llama3.1:8b',
           contextSize: 8192,
-          compressionRatio: 1.0
+          compressionRatio: 1.0,
+          totalUserMessages: 1,
+          totalGoalsCompleted: 0,
+          totalCheckpoints: 0
         }
       };
 
@@ -203,6 +218,8 @@ describe('SnapshotStorage', () => {
         timestamp: new Date(),
         tokenCount: 1000,
         summary: 'Exists test',
+        userMessages: [],
+        archivedUserMessages: [],
         messages: [
           {
             id: 'msg-1',
@@ -214,7 +231,10 @@ describe('SnapshotStorage', () => {
         metadata: {
           model: 'llama3.1:8b',
           contextSize: 8192,
-          compressionRatio: 1.0
+          compressionRatio: 1.0,
+          totalUserMessages: 1,
+          totalGoalsCompleted: 0,
+          totalCheckpoints: 0
         }
       };
 
@@ -235,6 +255,8 @@ describe('SnapshotStorage', () => {
         timestamp: new Date(),
         tokenCount: 1000,
         summary: 'Verify test',
+        userMessages: [],
+        archivedUserMessages: [],
         messages: [
           {
             id: 'msg-1',
@@ -246,7 +268,10 @@ describe('SnapshotStorage', () => {
         metadata: {
           model: 'llama3.1:8b',
           contextSize: 8192,
-          compressionRatio: 1.0
+          compressionRatio: 1.0,
+          totalUserMessages: 1,
+          totalGoalsCompleted: 0,
+          totalCheckpoints: 0
         }
       };
 
