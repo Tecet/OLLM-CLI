@@ -56,6 +56,12 @@ async function build() {
     await mkdir(assetsTarget, { recursive: true });
     await cp(assetsSource, assetsTarget, { recursive: true });
 
+    // Copy prompt templates from core package for runtime usage
+    const templatesSource = join(__dirname, '..', 'packages', 'core', 'src', 'prompts', 'templates');
+    const templatesTarget = join(__dirname, '..', 'packages', 'cli', 'dist', 'templates');
+    await mkdir(templatesTarget, { recursive: true });
+    await cp(templatesSource, templatesTarget, { recursive: true });
+
     console.log('✓ Build completed successfully');
     console.log(`  Output: ${config.outfile}`);
   } catch (error) {
