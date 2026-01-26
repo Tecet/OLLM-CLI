@@ -53,7 +53,7 @@
 
 ## TASK 1: Simplify Tier Selection Logic
 
-**Priority:** 🔥 CRITICAL | **Effort:** 6-8h | **Status:** ⏳ Not Started
+**Priority:** 🔥 CRITICAL | **Effort:** 6-8h | **Status:** ⏳ In Progress
 
 **Documentation (READ FIRST):**
 - `.dev/docs/devs/knowledgeDB/dev_ContextManagement.md`
@@ -66,14 +66,50 @@
 **Files:** `packages/core/src/context/contextManager.ts`, `promptOrchestrator.ts`, tests
 
 **Progress:**
-- [ ] Docs read
-- [ ] Repo scanned
+- [x] Docs read
+- [x] Repo scanned
+- [x] Plan created (see below)
 - [ ] Plan approved
-- [ ] Backup created
-- [ ] Tests baseline
+- [x] Backup created (git branch + baseline tests pass: 406/406)
 - [ ] Code changed
 - [ ] Tests pass
 - [ ] Committed
+
+**Implementation Plan:**
+
+**Files to modify:**
+1. `packages/core/src/context/contextManager.ts` - Remove 3 tier variables, add 1
+2. `packages/core/src/context/__tests__/contextManager.test.ts` - Update tests
+
+**Changes:**
+
+**Step 1: Remove hardwareCapabilityTier (line 444)**
+- Remove field declaration
+- Remove from start() method (line 267)
+- Remove from all emit() calls (lines 158, 302, 320, 337, 668, 672)
+- Remove from console.log (line 268)
+
+**Step 2: Remove getEffectivePromptTier() method (line 540)**
+- Delete entire method
+- Replace all calls with direct use of selectedTier
+
+**Step 3: Rename actualContextTier to selectedTier (line 446)**
+- Rename field declaration
+- Update all references (52 occurrences)
+- Update in emit() calls
+- Update in console.log statements
+
+**Step 4: Simplify tier logic**
+- Remove "effective prompt tier" concept
+- Prompt tier = selectedTier (always)
+- Update comments to reflect simplified design
+
+**Expected behavior after changes:**
+- Single `selectedTier` variable tracks context tier
+- Tier is determined by context size (user selection or auto-sizing)
+- Prompt tier always equals selectedTier
+- No hardware capability tier tracking
+- Cleaner, simpler code
 
 ---
 

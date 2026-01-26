@@ -125,24 +125,23 @@ export class ConversationContextManager extends EventEmitter implements ContextM
         this.currentContext.maxTokens = newSize;
         this.currentContext.metadata.contextSize = newSize;
         
-        // Update actual context tier based on new size
+        // Update selected tier based on new size
         const newTierConfig = this.detectContextTier();
-        const previousActualTier = this.actualContextTier;
-        this.actualContextTier = newTierConfig.tier;
+        const previousTier = this.selectedTier;
+        this.selectedTier = newTierConfig.tier;
         this.currentTier = newTierConfig.tier;
         this.tierConfig = newTierConfig;
         
         // Emit resize event with tier information
         this.emit('context-resized', { 
           newSize,
-          previousActualTier,
-          newActualTier: this.actualContextTier,
-          effectivePromptTier: this.getEffectivePromptTier(),
+          previousTier,
+          newTier: this.selectedTier,
           promptTierStable: !this.config.autoSize
         });
         
-        // Update prompt if the effective tier changed (auto-sizing can shift context tiers)
-        if (previousActualTier !== this.actualContextTier) {
+        // Update prompt if the tier changed (auto-sizing can shift context tiers)
+        if (previousTier !== this.selectedTier) {
           this.updateSystemPrompt();
         }
       }
@@ -256,11 +255,6 @@ export class ConversationContextManager extends EventEmitter implements ContextM
     const vramInfo = await this.vramMonitor.getInfo();
     this.contextPool.updateVRAMInfo(vramInfo);
     
-    // Detect hardware capability tier (for prompt selection)
-    // This is locked at startup and won't change during the session
-    this.hardwareCapabilityTier = await this.detectHardwareCapabilityTier();
-    console.log('[ContextManager] Hardware capability tier:', this.hardwareCapabilityTier);
-    
     if (this.config.autoSize) {
       const maxPossibleContext = this.contextPool.calculateOptimalSize(
         vramInfo,
@@ -274,46 +268,40 @@ export class ConversationContextManager extends EventEmitter implements ContextM
       this.currentContext.maxTokens = this.contextPool.currentSize;
       this.currentContext.metadata.contextSize = this.contextPool.currentSize;
       
-      // Detect actual context tier after resize
+      // Detect selected tier after resize
       const newTierConfig = this.detectContextTier();
       this.currentTier = newTierConfig.tier;
       this.tierConfig = newTierConfig;
-      this.actualContextTier = newTierConfig.tier;
+      this.selectedTier = newTierConfig.tier;
       
-      // With auto-sizing, prompt tier follows actual context size
-      console.log('[ContextManager] Auto-sizing enabled - prompt tier follows actual context size');
-      console.log('[ContextManager] Actual context tier:', this.actualContextTier);
-      console.log('[ContextManager] Effective prompt tier:', this.getEffectivePromptTier());
+      // With auto-sizing, prompt tier follows context size
+      console.log('[ContextManager] Auto-sizing enabled - prompt tier follows context size');
+      console.log('[ContextManager] Selected tier:', this.selectedTier);
       
       this.emit('tier-changed', { 
         tier: this.currentTier, 
         config: this.tierConfig,
-        actualContextTier: this.actualContextTier,
-        hardwareCapabilityTier: this.hardwareCapabilityTier,
-        effectivePromptTier: this.getEffectivePromptTier(),
+        selectedTier: this.selectedTier,
         promptTierLocked: false
       });
     } else {
-      // Even without autoSize, detect the actual context tier
+      // Manual sizing - detect the selected tier based on configured size
       const tierConfig = this.detectContextTier();
-      this.actualContextTier = tierConfig.tier;
+      this.selectedTier = tierConfig.tier;
       this.currentTier = tierConfig.tier;
       this.tierConfig = tierConfig;
       
-      console.log('[ContextManager] Manual context sizing - using actual context tier');
-      console.log('[ContextManager] Actual context tier:', this.actualContextTier);
-      console.log('[ContextManager] Effective prompt tier:', this.getEffectivePromptTier());
+      console.log('[ContextManager] Manual context sizing - using selected tier');
+      console.log('[ContextManager] Selected tier:', this.selectedTier);
     }
     
-    // Apply initial system prompt based on effective tier (hardware capability) and mode
+    // Apply initial system prompt based on selected tier and mode
     // This prompt will remain stable throughout the session when auto-sizing is enabled
     this.updateSystemPrompt();
     
     this.isStarted = true;
     this.emit('started', {
-      actualContextTier: this.actualContextTier,
-      hardwareCapabilityTier: this.hardwareCapabilityTier,
-      effectivePromptTier: this.getEffectivePromptTier(),
+      selectedTier: this.selectedTier,
       autoSizeEnabled: this.config.autoSize,
       promptTierLocked: false
     });
@@ -371,26 +359,20 @@ export class ConversationContextManager extends EventEmitter implements ContextM
         }
         
         // Detect new tier based on current context size
-        const oldTier = this.actualContextTier;
-        const oldEffectiveTier = this.getEffectivePromptTier();
+        const oldTier = this.selectedTier;
         const newTierConfig = this.detectContextTier();
-        this.actualContextTier = newTierConfig.tier;
+        this.selectedTier = newTierConfig.tier;
         this.currentTier = newTierConfig.tier;
         this.tierConfig = newTierConfig;
         
-        // Get new effective tier (will be different in manual mode)
-        const newEffectiveTier = this.getEffectivePromptTier();
-        
-        // Emit tier-changed event if tier actually changed OR if effective tier changed
-        if (oldTier !== this.actualContextTier || oldEffectiveTier !== newEffectiveTier) {
-          console.log(`[ContextManager] Tier changed: actual ${oldTier} → ${this.actualContextTier}, effective ${oldEffectiveTier} → ${newEffectiveTier}`);
+        // Emit tier-changed event if tier actually changed
+        if (oldTier !== this.selectedTier) {
+          console.log(`[ContextManager] Tier changed: ${oldTier} → ${this.selectedTier}`);
           
           this.emit('tier-changed', {
             tier: this.currentTier,
             config: this.tierConfig,
-            actualContextTier: this.actualContextTier,
-            hardwareCapabilityTier: this.hardwareCapabilityTier,
-            effectivePromptTier: newEffectiveTier,
+            selectedTier: this.selectedTier,
             promptTierLocked: this.config.autoSize
           });
           
@@ -398,7 +380,7 @@ export class ConversationContextManager extends EventEmitter implements ContextM
           this.updateSystemPrompt();
           
           this.emit('system-prompt-updated', {
-            tier: newEffectiveTier,
+            tier: this.selectedTier,
             mode: this.currentMode,
             prompt: this.getSystemPrompt()
           });
@@ -440,10 +422,9 @@ export class ConversationContextManager extends EventEmitter implements ContextM
   private currentMode: OperationalMode = OperationalMode.ASSISTANT;
   private modeProfile: import('./types.js').ModeProfile = MODE_PROFILES[OperationalMode.ASSISTANT];
   
-  // Hardware capability tier (based on VRAM) - determines prompt quality
-  private hardwareCapabilityTier: ContextTier = ContextTier.TIER_3_STANDARD;
-  // Actual context tier (based on user selection) - determines context window size
-  private actualContextTier: ContextTier = ContextTier.TIER_3_STANDARD;
+  // Selected tier (based on context size) - single source of truth for tier label
+  // Used for both context window sizing and prompt selection
+  private selectedTier: ContextTier = ContextTier.TIER_3_STANDARD;
 
   private getTierForSize(size: number): ContextTier {
     const tiers: Array<{ size: number; tier: ContextTier }> = [
@@ -505,43 +486,6 @@ export class ConversationContextManager extends EventEmitter implements ContextM
   }
 
   /**
-   * Detect hardware capability tier based on what context size the hardware can actually support
-   * This uses the existing contextPool calculation which accounts for:
-   * - Model size (already loaded in VRAM)
-   * - Available VRAM (after model is loaded)
-   * - KV cache quantization
-   * - Safety buffer
-   */
-  private async detectHardwareCapabilityTier(): Promise<ContextTier> {
-    try {
-      const vramInfo = await this.vramMonitor.getInfo();
-      
-      // Use the existing contextPool logic to calculate what context size is actually possible
-      const maxPossibleContext = this.contextPool.calculateOptimalSize(
-        vramInfo,
-        this.modelInfo
-      );
-      
-      console.log('[ContextManager] Hardware can support context size:', maxPossibleContext);
-      
-      // Map the possible context size to a tier
-      return this.getTierForSize(maxPossibleContext);
-    } catch (error) {
-      console.warn('[ContextManager] Failed to detect hardware capability, defaulting to Tier 3', error);
-      // Default to Tier 3 if detection fails
-      return ContextTier.TIER_3_STANDARD;
-    }
-  }
-
-  /**
-   * Get the effective tier for prompt selection
-   * Prompt tier follows the actual context size for both auto and manual sizing.
-   */
-  private getEffectivePromptTier(): ContextTier {
-    return this.actualContextTier;
-  }
-
-  /**
    * Set operational mode
    */
   public setMode(mode: OperationalMode): void {
@@ -568,39 +512,34 @@ export class ConversationContextManager extends EventEmitter implements ContextM
 
   /**
    * Get system prompt for current tier and mode
-   * Uses effective prompt tier (actual context size)
+   * Uses selected tier (based on context size)
    */
   private getSystemPromptForTierAndMode(): string {
-    const tier = this.getEffectivePromptTier();
-    return this.promptOrchestrator.getSystemPromptForTierAndMode(this.currentMode, tier);
+    return this.promptOrchestrator.getSystemPromptForTierAndMode(this.currentMode, this.selectedTier);
   }
 
   /**
    * Get system prompt token budget for current tier and mode
-   * Uses effective prompt tier (actual context size)
+   * Uses selected tier (based on context size)
    */
   private getSystemPromptTokenBudget(): number {
-    const tier = this.getEffectivePromptTier();
-    return this.promptOrchestrator.getSystemPromptTokenBudget(tier);
+    return this.promptOrchestrator.getSystemPromptTokenBudget(this.selectedTier);
   }
 
   /**
    * Update system prompt based on current tier and mode
    */
   private updateSystemPrompt(): void {
-    const tier = this.getEffectivePromptTier();
     const { message, tokenBudget } = this.promptOrchestrator.updateSystemPrompt({
       mode: this.currentMode,
-      tier,
+      tier: this.selectedTier,
       activeSkills: this.activeSkills,
       currentContext: this.currentContext,
       contextPool: this.contextPool,
     });
 
     this.emit('system-prompt-updated', {
-      tier,
-      actualContextTier: this.actualContextTier,
-      hardwareCapabilityTier: this.hardwareCapabilityTier,
+      tier: this.selectedTier,
       mode: this.currentMode,
       tokenBudget,
       content: message.content
@@ -745,8 +684,7 @@ export class ConversationContextManager extends EventEmitter implements ContextM
     
     // Log prompt details for verification
     console.log('[ContextManager] Setting system prompt:');
-    console.log(`  - Effective Prompt Tier: ${this.getEffectivePromptTier()}`);
-    console.log(`  - Actual Context Tier: ${this.actualContextTier}`);
+    console.log(`  - Selected Tier: ${this.selectedTier}`);
     console.log(`  - Current Mode: ${this.currentMode}`);
     console.log(`  - Auto-sizing: ${this.config.autoSize ? 'enabled (prompt follows context size)' : 'disabled (manual context size)'}`);
     console.log(`  - Prompt length: ${content.length} chars, ${systemPrompt.tokenCount} tokens`);
