@@ -1,49 +1,36 @@
-import fs from 'fs';
-import path from 'path';
-
-export interface DocFile {
-  title: string;
-  fileName: string;
-  path: string;
-}
-
-export interface DocFolder {
-  name: string;
-  path: string;
-  documents: DocFile[];
-}
+#!/usr/bin/env node
 
 /**
- * Document Service
- * Discovers and loads documentation files from the docs directory
+ * Test script to verify documentation discovery
+ * Run with: node scripts/test-docs-discovery.js
  */
-export class DocumentService {
-  private basePath: string;
 
-  constructor(basePath: string = 'docs') {
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Simple DocumentService implementation for testing
+class DocumentService {
+  constructor(basePath = 'docs') {
     this.basePath = basePath;
   }
 
-  /**
-   * Discover all documentation files organized by folder
-   */
-  discoverDocuments(): DocFolder[] {
-    const folders: DocFolder[] = [];
+  discoverDocuments() {
+    const folders = [];
 
     try {
-      // Check if base path exists
       if (!fs.existsSync(this.basePath)) {
         console.warn(`Documentation path not found: ${this.basePath}`);
         return folders;
       }
 
-      // Read all entries in the base path
       const entries = fs.readdirSync(this.basePath, { withFileTypes: true });
 
-      // Process each directory
       for (const entry of entries) {
         if (entry.isDirectory()) {
-          // Skip hidden folders and special folders
           if (entry.name.startsWith('.')) {
             continue;
           }
@@ -61,7 +48,6 @@ export class DocumentService {
         }
       }
 
-      // Also scan root level files
       const rootDocs = this.scanFolder(this.basePath, true);
       if (rootDocs.length > 0) {
         folders.unshift({
@@ -71,7 +57,6 @@ export class DocumentService {
         });
       }
 
-      // Sort folders in a logical order
       const folderOrder = [
         'Getting Started',
         'Context',
@@ -88,16 +73,13 @@ export class DocumentService {
         const indexA = folderOrder.indexOf(a.name);
         const indexB = folderOrder.indexOf(b.name);
         
-        // If both are in the order list, sort by their position
         if (indexA !== -1 && indexB !== -1) {
           return indexA - indexB;
         }
         
-        // If only one is in the order list, it comes first
         if (indexA !== -1) return -1;
         if (indexB !== -1) return 1;
         
-        // Otherwise, sort alphabetically
         return a.name.localeCompare(b.name);
       });
 
@@ -108,17 +90,13 @@ export class DocumentService {
     }
   }
 
-  /**
-   * Scan a folder for markdown files
-   */
-  private scanFolder(folderPath: string, _rootOnly: boolean = false): DocFile[] {
-    const documents: DocFile[] = [];
+  scanFolder(folderPath, _rootOnly = false) {
+    const documents = [];
 
     try {
       const entries = fs.readdirSync(folderPath, { withFileTypes: true });
 
       for (const entry of entries) {
-        // Only process files (not subdirectories)
         if (entry.isFile() && entry.name.endsWith('.md')) {
           const filePath = path.join(folderPath, entry.name);
           
@@ -130,7 +108,6 @@ export class DocumentService {
         }
       }
 
-      // Sort documents alphabetically by title
       documents.sort((a, b) => a.title.localeCompare(b.title));
 
       return documents;
@@ -140,38 +117,12 @@ export class DocumentService {
     }
   }
 
-  /**
-   * Load document content from file
-   */
-  async loadDocument(filePath: string): Promise<string> {
-    try {
-      const content = await fs.promises.readFile(filePath, 'utf-8');
-      return content;
-    } catch (error) {
-      console.error(`Error loading document ${filePath}:`, error);
-      return `Error loading document: ${error}`;
-    }
-  }
-
-  /**
-   * Format folder name for display
-   */
-  private formatFolderName(folderName: string): string {
-    // Handle special cases
-    if (folderName === 'UI&Settings') {
-      return 'UI & Settings';
-    }
-    if (folderName === 'LLM Models') {
-      return 'LLM Models';
-    }
-    if (folderName === 'Prompts System') {
-      return 'Prompts System';
-    }
-    if (folderName === 'DevelopmentRoadmap') {
-      return 'Development Roadmap';
-    }
+  formatFolderName(folderName) {
+    if (folderName === 'UI&Settings') return 'UI & Settings';
+    if (folderName === 'LLM Models') return 'LLM Models';
+    if (folderName === 'Prompts System') return 'Prompts System';
+    if (folderName === 'DevelopmentRoadmap') return 'Development Roadmap';
     
-    // Convert kebab-case or snake_case to Title Case
     return folderName
       .replace(/[-_]/g, ' ')
       .split(' ')
@@ -179,31 +130,15 @@ export class DocumentService {
       .join(' ');
   }
 
-  /**
-   * Format document title from filename
-   */
-  private formatDocTitle(fileName: string): string {
-    // Remove .md extension
+  formatDocTitle(fileName) {
     const nameWithoutExt = fileName.replace(/\.md$/, '');
     
-    // Handle special cases
-    const specialCases: Record<string, string> = {
+    const specialCases = {
       'README': 'Overview',
       'Index': 'Index',
       'LLM_Index': 'LLM Index',
       'LLM_ModelsList': 'Models List',
       'LLM_MemorySystem': 'Memory System',
-      'LLM_ModelCompatibility': 'Model Compatibility',
-      'LLM_ModelsArchitecture': 'Models Architecture',
-      'LLM_ModelsCommands': 'Models Commands',
-      'LLM_ModelsConfiguration': 'Models Configuration',
-      'LLM_GettingStarted': 'Getting Started',
-      'MCP_Architecture': 'MCP Architecture',
-      'MCP_Commands': 'MCP Commands',
-      'MCP_GettingStarted': 'MCP Getting Started',
-      'MCP_Integration': 'MCP Integration',
-      'MCP_Index': 'MCP Index',
-      'MCP_Marketplace': 'MCP Marketplace',
       'UIGuide': 'UI Guide',
       'ColorASCII': 'Color ASCII',
       'Keybinds': 'Keyboard Shortcuts',
@@ -222,10 +157,9 @@ export class DocumentService {
       return specialCases[nameWithoutExt];
     }
     
-    // Convert kebab-case, snake_case, or PascalCase to Title Case
     return nameWithoutExt
-      .replace(/([A-Z])/g, ' $1') // Add space before capital letters
-      .replace(/[-_]/g, ' ') // Replace dashes and underscores with spaces
+      .replace(/([A-Z])/g, ' $1')
+      .replace(/[-_]/g, ' ')
       .trim()
       .split(' ')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
@@ -233,5 +167,23 @@ export class DocumentService {
   }
 }
 
-// Singleton instance
-export const documentService = new DocumentService();
+// Run the test
+console.log('🔍 Testing Documentation Discovery\n');
+console.log('=' .repeat(60));
+
+const docService = new DocumentService();
+const folders = docService.discoverDocuments();
+
+console.log(`\n✅ Found ${folders.length} documentation sections:\n`);
+
+folders.forEach((folder, idx) => {
+  console.log(`${idx + 1}. 📁 ${folder.name} (${folder.documents.length} documents)`);
+  folder.documents.forEach((doc, docIdx) => {
+    console.log(`   ${docIdx + 1}. 📄 ${doc.title}`);
+  });
+  console.log('');
+});
+
+const totalDocs = folders.reduce((sum, folder) => sum + folder.documents.length, 0);
+console.log('=' .repeat(60));
+console.log(`\n📊 Total: ${folders.length} sections, ${totalDocs} documents\n`);

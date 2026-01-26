@@ -34,6 +34,8 @@ temp/
 test-session-*/
 
 # Development documentation and debugging
+.archive
+.legacy
 
 
 # OLLM runtime data and memory

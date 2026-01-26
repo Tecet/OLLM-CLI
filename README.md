@@ -2,9 +2,10 @@
 
 > A local-first command-line interface for open-source LLMs with intelligent context management, tools, hooks, and MCP integration.
 
-![License (https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-![Node Version (https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen.svg)](https://nodejs.org/)
-![TypeScript (https://img.shields.io/badge/TypeScript-5.9-blue.svg)](https://www.typescriptlang.org/)
+![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)
+![Node Version](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen.svg)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue.svg)
+![npm](https://img.shields.io/badge/npm-@tecet%2Follm-red.svg)
 
 OLLM CLI brings the power of open-source large language models to your terminal with a focus on local-first operation, intelligent resource management, and extensibility. Built with TypeScript and React, it provides a modern terminal UI while maintaining compatibility with automation workflows.
 
@@ -19,7 +20,7 @@ OLLM CLI brings the power of open-source large language models to your terminal 
 - **Tool execution preview** with diff visualization for file changes
 
 ### 🧠 Smart Context Management
-- **Adaptive context sizing** based on available VRAM
+- **Fixed context sizing** based on available VRAM (determined at startup)
 - **Automatic compression** when approaching context limits
 - **Snapshot and rollover** support for long conversations
 - **Real-time monitoring** of token usage and memory consumption
@@ -51,101 +52,73 @@ OLLM CLI brings the power of open-source large language models to your terminal 
 
 ## 🚀 Quick Start
 
-### Prerequisites
-
-Before installing OLLM CLI, ensure you have:
-
-- **Node.js 20 or higher** (Download (https://nodejs.org/))
-- **Ollama** running locally (Install Ollama (https://ollama.com/))
-- **4GB+ VRAM recommended** (CPU-only mode available but slower)
-
 ### Installation
 
-```bash
-# Clone the repository
-git clone https://github.com/ollm/ollm-cli.git
-cd ollm-cli
-
-# Install dependencies
-npm install
-
-# Build the CLI
-npm run build
-
-# Run OLLM CLI
-npm start
-```
-
-### Basic Usage
+Install OLLM CLI globally using npm:
 
 ```bash
-# Interactive mode with full TUI
+# Install from npm
+npm install -g @tecet/ollm
+
+# The interactive installer will guide you through:
+# 1. Installing Ollama (if needed)
+# 2. Downloading a starter model
+# 3. Setting up configuration
+
+# Start using OLLM CLI
 ollm
-
-# One-shot prompt (non-interactive)
-ollm -p "Explain async/await in JavaScript"
-
-# Select a specific model
-ollm --model llama3.1:8b
-
-# Use a different provider endpoint
-ollm --host http://localhost:11434
-
-# JSON output for automation
-ollm -p "List 5 programming languages" --output json
 ```
 
----
+**That's it!** The installer handles everything automatically.
 
-## 📖 Usage Examples
+For detailed installation instructions, see the **[Installation Guide](docs/Installation.md)**.
 
-### Example 1: Interactive Chat with Context Management
+### First Steps
 
 ```bash
 # Start interactive mode
 ollm
 
-# Inside the TUI, use slash commands:
-/model use llama3.1:8b
-/context auto
-/context size 16384
+# Or try a quick question
+ollm -p "Explain async/await in JavaScript"
 
-# Chat with the model
-> Explain how React hooks work
+# Select a specific model
+ollm --model llama3.1:8b
 
-# Check context usage
-/context
-
-# Create a snapshot before a long operation
-/context snapshot
+# Get help
+ollm --help
 ```
 
-### Example 2: File Operations with Tool Confirmation
+### Learn More
 
-```bash
-# Start with a prompt that requires file operations
-ollm -p "Read package.json and summarize the dependencies"
+- **[Introduction](docs/Introduction.md)** - What is OLLM CLI and why use it?
+- **[Quick Start Guide](docs/Quickstart.md)** - Get up and running in 5 minutes
+- **[Complete Documentation](docs/README.md)** - Full documentation (57 guides)
 
-# The tool system will:
-# 1. Show you what file will be read
-# 2. Ask for confirmation (in ASK mode)
-# 3. Execute and show results
-# 4. Continue the conversation
-```
+---
 
-### Example 3: Automation with JSON Output
+## 📖 Documentation
 
-```bash
-# Get structured output for scripting
-ollm -p "List the top 3 JavaScript frameworks" --output json
+### Getting Started
+- **[Introduction](docs/Introduction.md)** - What is OLLM CLI? (friendly, non-technical)
+- **[Installation](docs/Installation.md)** - Complete installation guide
+- **[Quick Start](docs/Quickstart.md)** - Get started in 5 minutes
+- **[Troubleshooting](docs/Troubleshooting.md)** - Common issues and solutions
 
-# Output:
-# {
-#   "response": "1. React\n2. Vue.js\n3. Angular",
-#   "model": "llama3.1:8b",
-#   "tokens": 156
-# }
-```
+### Core Features
+- **[User Interface](docs/UI&Settings/README.md)** - Interface, commands, themes, and settings
+- **[Context Management](docs/Context/README.md)** - Context sizing, compression, and VRAM
+- **[Model Management](docs/LLM%20Models/README.md)** - Models, providers, and configuration
+- **[Tools System](docs/Tools/README.md)** - Tool execution and management
+- **[Hooks System](docs/Hooks/README.md)** - Event-driven automation
+- **[MCP Integration](docs/MCP/README.md)** - Model Context Protocol
+- **[Prompts System](docs/Prompts%20System/README.md)** - System prompts and templates
+
+### Development
+- **[Development Roadmap](docs/DevelopmentRoadmap/README.md)** - Future plans and releases
+- **[Complete Index](docs/Index.md)** - All 57 documentation files organized by topic
+
+**Total Documentation:** 57 comprehensive guides covering every aspect of OLLM CLI
 
 ---
 
@@ -170,167 +143,79 @@ ollm -p "List the top 3 JavaScript frameworks" --output json
 
 ---
 
-## 📚 Documentation
+## 🎯 Key Concepts
 
-### Core Documentation
-- **[Configuration Guide](docs/configuration.md)** - Complete settings reference
-- **[Troubleshooting](docs/troubleshooting.md)** - Common issues and solutions
+### Context Management
 
-### Feature Documentation
-- **[MCP Integration](docs/MCP/)** - Model Context Protocol integration
-- **[Context Management](docs/Context/)** - Intelligent context and VRAM management
-- **[Model Management](docs/Models/)** - Model routing, profiles, and templates
-- **[Model Compatibility](docs/Models/model-compatibility.md)** - Tested models and compatibility matrix
+OLLM CLI uses **fixed context sizing** determined at startup based on your available VRAM:
 
-### Development Documentation
-- **[Development Setup](#development-setup)** - Contributing guide
-- Project Structure (docs/structure.md) - Codebase organization
-- Tech Stack (docs/tech.md) - Dependencies and tools
+- **Minimal** (2K tokens) - Very small models or limited VRAM
+- **Basic** (4K tokens) - Small models, basic conversations
+- **Standard** (8K tokens) - Most common use case
+- **Premium** (16K tokens) - Larger models, complex tasks
+- **Ultra** (32K+ tokens) - High-end hardware, long conversations
 
-### Roadmap & Future Features
-- **[Development Roadmap](docs/Development-Roadmap/)** - Complete roadmap documentation
-- **[Roadmap Overview](docs/Development-Roadmap/roadmap.md)** - Completed and planned features
-- **[Future Features](docs/Development-Roadmap/future-features.md)** - Quick reference for planned features
-- **[Visual Roadmap](docs/Development-Roadmap/road_map_visual.md)** - Timeline and dependencies
+Context is **fixed for the session** and automatically compressed when approaching limits.
 
----
+### Tool System
 
-## 🎯 Context Management
+The AI can use tools to help you:
+- **File Tools** - Read, write, edit files
+- **Web Tools** - Search internet, fetch pages
+- **Shell Tool** - Run commands
+- **Memory Tools** - Remember facts across sessions
+- **MCP Tools** - Connect to external services
 
-OLLM CLI features intelligent context management that adapts to your hardware:
+### Approval Modes
 
-### Slash Commands
-
-```bash
-# Check context status
-/context
-
-# Set context size manually
-/context size 16384
-
-# Enable auto-sizing based on VRAM
-/context auto
-
-# Create a snapshot before long operations
-/context snapshot
-
-# Restore from snapshot
-/context restore <id>
-```
-
-### How It Works
-
-1. **VRAM Monitoring**: Continuously monitors GPU memory usage
-2. **Adaptive Sizing**: Adjusts context window based on available resources
-3. **Compression**: Automatically compresses old messages when approaching limits
-4. **Snapshots**: Save conversation state for rollover or recovery
+Control how tools are executed:
+- **ASK** - Confirm each tool use (default, safest)
+- **AUTO** - Auto-approve safe tools, ask for risky ones
+- **YOLO** - Auto-approve everything (use with caution!)
 
 ---
 
-## 🔧 Commands
+## 🔧 Common Commands
 
 ### CLI Flags
 
-| Flag | Description | Example |
-|------|-------------|---------|
-| `-p, --prompt <text>` | One-shot prompt (non-interactive) | `ollm -p "Hello"` |
-| `--model <name>` | Select specific model | `ollm --model llama3.1:8b` |
-| `--provider <name>` | Select provider (ollama, openai) | `ollm --provider ollama` |
-| `--host <url>` | Set provider endpoint | `ollm --host http://localhost:11434` |
-| `--list-models` | List available models | `ollm --list-models` |
-| `--pull-model <name>` | Download a model | `ollm --pull-model llama3.1:8b` |
-| `--output <format>` | Output format (text, json, stream-json) | `ollm --output json` |
-| `--debug` | Enable debug logging | `ollm --debug` |
-| `--version` | Show version | `ollm --version` |
-| `--help` | Show help | `ollm --help` |
+```bash
+# Interactive mode
+ollm
+
+# One-shot prompt
+ollm -p "Explain async/await"
+
+# Select model
+ollm --model llama3.1:8b
+
+# List models
+ollm --list-models
+
+# JSON output
+ollm -p "List 5 languages" --output json
+
+# Debug mode
+ollm --debug
+
+# Show version
+ollm --version
+```
 
 ### Interactive Slash Commands
 
-| Command | Description |
-|---------|-------------|
-| `/model list` | List available models |
-| `/model use <name>` | Switch to a different model |
-| `/context` | Show context status and usage |
-| `/context size <n>` | Set context size in tokens |
-| `/context auto` | Enable automatic context sizing |
-| `/session list` | List saved sessions |
-| `/session resume <id>` | Resume a previous session |
-| `/extensions list` | List installed extensions |
-| `/help` | Show available commands |
-| `/exit` | Exit the application |
-
----
-
-## ⚙️ Configuration
-
-OLLM CLI loads settings from multiple sources with the following precedence:
-
-1. **CLI flags** (highest priority)
-2. **Environment variables**
-3. **Workspace settings** (`.ollm/settings.yaml`)
-4. **User settings** (`~/.ollm/settings.yaml`)
-5. **System defaults** (lowest priority)
-
-### Configuration File Example
-
-Create `~/.ollm/settings.yaml` or `.ollm/settings.yaml`:
-
-```yaml
-# Provider configuration
-provider: ollama
-providerConfig:
-  ollama:
-    host: http://localhost:11434
-    timeout: 300000
-
-# Model settings
-model:
-  name: llama3.1:8b
-  options:
-    temperature: 0.2
-    num_ctx: 16384
-    top_p: 0.9
-
-# Context management
-context:
-  autoSize: true
-  vramBuffer: 512
-  kvQuantization: q8_0
-  compression:
-    enabled: true
-    threshold: 0.8
-    strategy: sliding-window
-
-# Tool policy
-tools:
-  policy: ask  # ask, auto, yolo
-  timeout: 30000
-
-# UI preferences
-ui:
-  theme: dark
-  syntaxHighlight: true
-```
-
-### Environment Variables
-
 ```bash
-# Provider settings
-export OLLM_PROVIDER=ollama
-export OLLM_HOST=http://localhost:11434
-
-# Model settings
-export OLLM_MODEL=llama3.1:8b
-export OLLM_CONTEXT_SIZE=16384
-
-# Context optimization
-export OLLM_KV_CACHE_TYPE=q8_0
-export OLLM_AUTO_SIZE=true
-
-# Logging
-export OLLM_LOG_LEVEL=info  # debug, info, warn, error
-export OLLM_DEBUG=false
+/model list              # List available models
+/model use <name>        # Switch model
+/context                 # Show context status
+/theme list              # List themes
+/theme use <name>        # Switch theme
+/session list            # List sessions
+/help                    # Show help
+/exit                    # Exit
 ```
+
+See **[Commands Reference](docs/UI&Settings/Commands.md)** for complete list.
 
 ---
 
@@ -371,122 +256,121 @@ ollm-cli/
 
 ---
 
-## 🛠️ Development Setup
+## 🛠️ Development
 
-### Prerequisites for Development
+### For Contributors
 
-- Node.js 20+ and npm
-- Git
-- A code editor (VS Code recommended)
-- Ollama installed and running
-
-### Setup Steps
+Want to contribute to OLLM CLI? Here's how to get started:
 
 ```bash
-# 1. Clone the repository
-git clone https://github.com/ollm/ollm-cli.git
-cd ollm-cli
+# Clone the repository
+git clone https://github.com/tecet/ollm.git
+cd ollm
 
-# 2. Install dependencies
+# Install dependencies
 npm install
 
-# 3. Build all packages
+# Build all packages
 npm run build
 
-# 4. Run tests
+# Run tests
 npm test
 
-# 5. Lint code
-npm run lint
-
-# 6. Format code
-npm run format
-
-# 7. Run the CLI in development
+# Start development
 npm start
 ```
 
 ### Development Commands
 
 ```bash
-# Build all packages
-npm run build
-
-# Run tests with coverage
-npm test
-
-# Run tests in watch mode
-npm test -- --watch
-
-# Lint all code
-npm run lint
-
-# Fix linting issues
-npm run lint -- --fix
-
-# Format all code
-npm run format
-
-# Check formatting
-npm run format -- --check
+npm run build          # Build all packages
+npm test               # Run tests
+npm run lint           # Lint code
+npm run format         # Format code
+npm start              # Run CLI
 ```
 
-### Project Scripts
+### Project Structure
 
-| Script | Description |
-|--------|-------------|
-| `npm run build` | Build all packages with esbuild |
-| `npm run dev` | Development mode (not yet implemented) |
-| `npm start` | Run the built CLI |
-| `npm test` | Run all tests with Vitest |
-| `npm run lint` | Lint code with ESLint |
-| `npm run format` | Format code with Prettier |
-
-### Testing
-
-OLLM CLI uses Vitest for testing with property-based testing via fast-check:
-
-```bash
-# Run all tests
-npm test
-
-# Run tests with coverage
-npm test -- --coverage
-
-# Run specific test file
-npm test -- packages/core/src/context/vramMonitor.test.ts
-
-# Run tests in watch mode
-npm test -- --watch
 ```
+ollm-cli/
+├── packages/
+│   ├── cli/              # CLI entry and UI
+│   ├── core/             # Core runtime
+│   ├── ollm-bridge/      # Provider adapters
+│   └── test-utils/       # Test utilities
+├── docs/                 # Documentation (57 files)
+├── scripts/              # Build scripts
+└── package.json          # Root workspace
+```
+
+See **[Project Structure](.kiro/steering/structure.md)** for detailed architecture.
 
 ---
 
 ## 🗺️ Roadmap
 
-OLLM CLI is under active development. We have a clear roadmap for future features:
+OLLM CLI is under active development with a clear roadmap for future features.
 
-### ✅ Completed (v0.1.0)
+### ✅ Completed (v0.1.0 - Alpha)
 - Interactive TUI with React + Ink
 - Context management with VRAM monitoring
 - Tool system with policy engine
 - Session recording and compression
 - Hook system for automation
 - MCP integration
+- Comprehensive documentation (57 guides)
 - Testing infrastructure
 
-### 🔮 Planned Future Features
+### 🔮 Planned Features (v0.2.0 - v0.9.0)
 
-All future features are clearly marked as **"Planned for future development"** in the documentation. These stages are not yet scheduled and will be prioritized based on community feedback and resource availability:
+**v0.2.0 - Enhanced Context Management**
+- Advanced context pool management
+- Multi-tier context strategies
+- Improved VRAM optimization
 
-- **🦑 Kraken Integration** - External LLM providers (OpenAI, Anthropic, Google AI) with cost tracking and auto-escalation
-- **🛠️ Developer Productivity** - Git integration, @-mentions for context loading, and diff review workflows
-- **🖥️ Cross-Platform Support** - Enhanced Windows, macOS, and Linux compatibility with platform-specific optimizations
-- **🔌 Multi-Provider Support** - vLLM and OpenAI-compatible backends for expanded deployment options
-- **📁 File Upload System** - Share images, code, and documents with the LLM through multiple upload methods
-- **🧠 Intelligence Layer** - Semantic codebase search, structured output, sandboxed code execution, and vision support
+**v0.3.0 - Advanced Compression**
+- Multiple compression strategies
+- Semantic compression
+- Context checkpointing
 
-**📋 [View Full Roadmap](docs/Development-Roadmap/)** - Detailed specifications, timelines, and contribution opportunities for each planned stage.
+**v0.4.0 - Reasoning Models**
+- Extended reasoning support
+- Reasoning capture and display
+- Specialized reasoning modes
+
+**v0.5.0 - Session Management**
+- Enhanced session persistence
+- Session templates
+- Collaborative sessions
+
+**v0.6.0 - Multi-Provider Support**
+- OpenAI, Anthropic, Google AI
+- Cost tracking and budgets
+- Auto-escalation between providers
+
+**v0.7.0 - Developer Productivity**
+- Git integration
+- @-mentions for context
+- Diff review workflows
+
+**v0.8.0 - Intelligence Layer**
+- Semantic codebase search (RAG)
+- Structured output
+- Code execution sandbox
+- Vision support
+
+**v0.9.0 - Cross-Platform Polish**
+- Platform-specific optimizations
+- Enhanced Windows support
+- Improved terminal compatibility
+
+**v1.0.0+ - Beta and Beyond**
+- Production-ready release
+- Enterprise features
+- Plugin marketplace
+
+See **[Development Roadmap](docs/DevelopmentRoadmap/Roadmap.md)** for detailed specifications.
 
 ---
 
@@ -562,8 +446,8 @@ We welcome contributions! Here's how you can help:
 
 ```bash
 # 1. Fork and clone
-git clone https://github.com/ollm/ollm-cli.git
-cd ollm-cli
+git clone https://github.com/tecet/ollm.git
+cd ollm
 
 # 2. Create a feature branch
 git checkout -b feature/my-feature
@@ -593,19 +477,19 @@ git push origin feature/my-feature
 
 OLLM CLI is built on the shoulders of giants:
 
-- **Ollama (https://ollama.com/)** - Local LLM runtime
-- **React (https://react.dev/)** & **Ink (https://github.com/vadimdemedes/ink)** - Terminal UI
-- **Vitest (https://vitest.dev/)** - Testing framework
-- **fast-check (https://fast-check.dev/)** - Property-based testing
-- All our contributors (https://github.com/ollm/ollm-cli/graphs/contributors)
+- **[Ollama](https://ollama.com/)** - Local LLM runtime
+- **[React](https://react.dev/)** & **[Ink](https://github.com/vadimdemedes/ink)** - Terminal UI
+- **[Vitest](https://vitest.dev/)** - Testing framework
+- **[fast-check](https://fast-check.dev/)** - Property-based testing
+- All our **[contributors](https://github.com/tecet/ollm/graphs/contributors)**
 
 ---
 
 ## 📞 Support
 
-- **Documentation**: [docs/](docs/)
-- **Issues**: GitHub Issues (https://github.com/ollm/ollm-cli/issues)
-- **Discussions**: GitHub Discussions (https://github.com/ollm/ollm-cli/discussions)
+- **Documentation**: [docs/README.md](docs/README.md)
+- **Issues**: [GitHub Issues](https://github.com/tecet/ollm/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/tecet/ollm/discussions)
 
 ---
 
@@ -613,6 +497,6 @@ OLLM CLI is built on the shoulders of giants:
 
 **[⬆ Back to Top](#ollm-cli)**
 
-Made with ❤️ by the OLLM CLI team
+Made with ❤️ by **[tecet](https://github.com/tecet)**
 
 </div>
