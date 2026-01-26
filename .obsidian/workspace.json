@@ -185,6 +185,9 @@
   },
   "active": "96f17f0c11000dcf",
   "lastOpenFiles": [
+    "dev/backlog/alphafix",
+    "dev/backlog/REFACTORING-SUMMARY.md",
+    "dev/backlog/report.md",
     "packages/cli/dist/templates/user/tier5.txt",
     "packages/cli/dist/templates/user/tier4.txt",
     "packages/cli/dist/templates/user/tier3.txt",
@@ -195,7 +198,6 @@
     "packages/core/src/prompts/templates/user/tier3.txt",
     "packages/core/src/prompts/templates/user/tier2.txt",
     "packages/core/src/prompts/templates/user/tier1.txt",
-    "context-before-filter.log",
     "packages/cli/src/ui/components/animations/lama/lama_sprite/right/llama-r6.png",
     "packages/cli/src/ui/components/animations/lama/lama_sprite/right/llama-r5.png",
     "packages/cli/src/ui/components/animations/lama/lama_sprite/right/llama-r4.png",
