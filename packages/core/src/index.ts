@@ -155,6 +155,8 @@ export {
   type GPUInfo,
   type GPUVendor,
   ReasoningParser,
+  ServiceContainer,
+  createServiceContainer,
 } from './services/index.js';
 
 // Utilities

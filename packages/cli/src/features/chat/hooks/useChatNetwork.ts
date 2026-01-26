@@ -27,8 +27,8 @@ import {
 import type { Message, MenuState } from '../types.js';
 import type { 
   ToolSchema,
+  ServiceContainer,
 } from '@ollm/core';
-import type { ServiceContainer } from '@ollm/core/services/serviceContainer.js';
 
 export interface UseChatNetworkProps {
   // Dependencies
