@@ -34,21 +34,17 @@ export class TieredPromptStore {
   }
 
   load(): void {
-    console.log(`[TieredPromptStore] Loading templates from: ${this.baseDir}`);
     for (const mode of MODES) {
       for (const tierKey of ['tier1', 'tier2', 'tier3', 'tier4', 'tier5']) {
         const filePath = path.join(this.baseDir, mode, `${tierKey}.txt`);
         try {
           const content = fs.readFileSync(filePath, 'utf8').trim();
           this.templates.set(this.makeKey(mode, tierKey), content);
-          console.log(`[TieredPromptStore] Loaded: ${mode}:${tierKey} (${content.length} chars)`);
         } catch (error) {
           console.warn(`[TieredPromptStore] Missing prompt template: ${filePath}`);
-          console.warn(`[TieredPromptStore] Error:`, error);
         }
       }
     }
-    console.log(`[TieredPromptStore] Loaded ${this.templates.size} templates`);
   }
 
   get(mode: OperationalMode, tier: ContextTier): string | undefined {

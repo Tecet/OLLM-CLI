@@ -3,9 +3,7 @@ import { createContextManager } from '../contextManager.js';
 import { ContextTier, OperationalMode } from '../types.js';
 
 const store = new TieredPromptStore();
-process.stdout.write('[TEST] About to load store...\n');
 store.load();
-process.stdout.write(`[TEST] Store loaded, templates count: ${(store as any).templates.size}\n`);
 
 const getTierForSize = (size: number): ContextTier => {
   if (size < 8192) return ContextTier.TIER_1_MINIMAL;
@@ -27,8 +25,6 @@ describe('Prompt routing - tier × mode', () => {
     const prompt = manager.getSystemPrompt();
     expect(prompt).toBeTruthy();
     const expected = store.get(OperationalMode.ASSISTANT, ContextTier.TIER_1_MINIMAL);
-    process.stdout.write(`[TEST] Expected value type: ${typeof expected}, value: "${expected?.substring(0, 50)}..."\n`);
-    process.stdout.write(`[TEST] Prompt contains expected: ${prompt.includes(expected || '')}\n`);
     expect(expected).toBeTruthy();
     expect(prompt).toContain(expected as string);
   });
