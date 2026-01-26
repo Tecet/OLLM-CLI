@@ -53,7 +53,7 @@
 
 ## TASK 1: Simplify Tier Selection Logic
 
-**Priority:** 🔥 CRITICAL | **Effort:** 6-8h | **Status:** ⏳ In Progress
+**Priority:** 🔥 CRITICAL | **Effort:** 6-8h | **Status:** ✅ COMPLETED
 
 **Documentation (READ FIRST):**
 - `.dev/docs/devs/knowledgeDB/dev_ContextManagement.md`
@@ -68,48 +68,26 @@
 **Progress:**
 - [x] Docs read
 - [x] Repo scanned
-- [x] Plan created (see below)
-- [ ] Plan approved
+- [x] Plan created and approved
 - [x] Backup created (git branch + baseline tests pass: 406/406)
-- [ ] Code changed
-- [ ] Tests pass
-- [ ] Committed
+- [x] Code changed (8 replacements in contextManager.ts)
+- [x] Tests pass (406/406 - all passing)
+- [x] Committed (commit 8bed46c)
 
-**Implementation Plan:**
+**Changes Made:**
+1. Removed `hardwareCapabilityTier` field and detection logic
+2. Removed `getEffectivePromptTier()` method (redundant wrapper)
+3. Renamed `actualContextTier` → `selectedTier` (clearer naming)
+4. Updated all emit() calls to use `selectedTier`
+5. Simplified console logs
+6. Updated comments to reflect simplified design
 
-**Files to modify:**
-1. `packages/core/src/context/contextManager.ts` - Remove 3 tier variables, add 1
-2. `packages/core/src/context/__tests__/contextManager.test.ts` - Update tests
-
-**Changes:**
-
-**Step 1: Remove hardwareCapabilityTier (line 444)**
-- Remove field declaration
-- Remove from start() method (line 267)
-- Remove from all emit() calls (lines 158, 302, 320, 337, 668, 672)
-- Remove from console.log (line 268)
-
-**Step 2: Remove getEffectivePromptTier() method (line 540)**
-- Delete entire method
-- Replace all calls with direct use of selectedTier
-
-**Step 3: Rename actualContextTier to selectedTier (line 446)**
-- Rename field declaration
-- Update all references (52 occurrences)
-- Update in emit() calls
-- Update in console.log statements
-
-**Step 4: Simplify tier logic**
-- Remove "effective prompt tier" concept
-- Prompt tier = selectedTier (always)
-- Update comments to reflect simplified design
-
-**Expected behavior after changes:**
-- Single `selectedTier` variable tracks context tier
+**Result:**
+- Single `selectedTier` variable is now the source of truth
 - Tier is determined by context size (user selection or auto-sizing)
 - Prompt tier always equals selectedTier
-- No hardware capability tier tracking
-- Cleaner, simpler code
+- Cleaner, more maintainable code
+- All tests passing (406/406)
 
 ---
 
