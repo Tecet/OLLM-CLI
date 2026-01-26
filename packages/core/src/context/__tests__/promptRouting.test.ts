@@ -1,3 +1,5 @@
+import { describe, test, expect } from 'vitest';
+
 import { TieredPromptStore } from '../../prompts/tieredPromptStore.js';
 import { createContextManager } from '../contextManager.js';
 import { ContextTier, OperationalMode } from '../types.js';

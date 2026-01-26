@@ -15,7 +15,6 @@ import {
 } from '@ollm/core';
 
 import { commandRegistry } from '../../../commands/index.js';
-import { SettingsService } from '../../../config/settingsService.js';
 import { validateManualContext } from '../../context/contextSizing.js';
 import { profileManager } from '../../profiles/ProfileManager.js';
 import { 
@@ -25,11 +24,8 @@ import {
   stripSection 
 } from '../utils/promptUtils.js';
 
-import type { Message, ToolCall, MenuState } from '../types.js';
+import type { Message, MenuState } from '../types.js';
 import type { 
-  ToolCall as CoreToolCall, 
-  ContextMessage, 
-  ProviderMetrics, 
   ToolSchema,
   ServiceContainer,
 } from '@ollm/core';
@@ -37,8 +33,8 @@ import type {
 export interface UseChatNetworkProps {
   // Dependencies
   contextActions: any;
-  sendToLLM: any;
-  cancelRequest: () => void;
+  _sendToLLM: any;
+  _cancelRequest: () => void;
   provider: any;
   currentModel: string;
   modelSupportsTools: (model: string) => boolean;
@@ -77,15 +73,15 @@ export interface UseChatNetworkReturn {
 export function useChatNetwork(props: UseChatNetworkProps): UseChatNetworkReturn {
   const {
     contextActions,
-    sendToLLM,
-    cancelRequest,
+    _sendToLLM,
+    _cancelRequest,
     provider,
     currentModel,
     modelSupportsTools,
     serviceContainer,
     injectFocusedFilesIntoPrompt,
     addMessage,
-    updateMessage,
+    _updateMessage,
     setStreaming,
     setWaitingForResponse,
     setInputMode,
@@ -93,22 +89,22 @@ export function useChatNetwork(props: UseChatNetworkProps): UseChatNetworkReturn
     clearChat,
     setLaunchScreenVisible,
     recordSessionMessage,
-    compressionOccurred,
-    compressionRetryCount,
+    _compressionOccurred,
+    _compressionRetryCount,
     waitingForResume,
-    resetCompressionFlags,
+    _resetCompressionFlags,
     setWaitingForResume,
   } = props;
 
   // Refs for tracking state across async operations
-  const assistantMessageIdRef = useRef<string | null>(null);
+  const _assistantMessageIdRef = useRef<string | null>(null);
   const manualContextRequestRef = useRef<{ 
     modelId: string; 
     onComplete: (value: number) => void | Promise<void> 
   } | null>(null);
   const lastUserMessageRef = useRef<string | null>(null);
-  const inflightTokenAccumulatorRef = useRef(0);
-  const inflightFlushTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const _inflightTokenAccumulatorRef = useRef(0);
+  const _inflightFlushTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   /**
    * Request manual context size input from user
@@ -302,7 +298,7 @@ export function useChatNetwork(props: UseChatNetworkProps): UseChatNetworkReturn
       // Check tool support (model capability check)
       const supportsTools = modelSupportsTools(currentModel);
       
-      let toolSchemas: ToolSchema[] | undefined;
+      let _toolSchemas: ToolSchema[] | undefined;
       
       if (supportsTools) {
         // Get central tool registry from service container
@@ -333,13 +329,13 @@ export function useChatNetwork(props: UseChatNetworkProps): UseChatNetworkReturn
           
           if (modeManager) {
             const currentMode = modeManager.getCurrentMode();
-            toolSchemas = toolRegistry.getFunctionSchemasForMode(currentMode, modeManager);
+            _toolSchemas = toolRegistry.getFunctionSchemasForMode(currentMode, modeManager);
           } else {
             // If modeManager is not initialized yet, default to NO tools
-            toolSchemas = [];
+            _toolSchemas = [];
           }
         } else {
-          toolSchemas = [];
+          _toolSchemas = [];
         }
       }
 
@@ -380,11 +376,12 @@ export function useChatNetwork(props: UseChatNetworkProps): UseChatNetworkReturn
         expanded: true,
       });
       const currentAssistantMsgId = assistantMsg.id;
-      assistantMessageIdRef.current = currentAssistantMsgId;
+      _assistantMessageIdRef.current = currentAssistantMsgId;
 
       // Continue in next part...
       // (Agent loop implementation continues in the actual file)
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [/* dependencies */]
   );
 

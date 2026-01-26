@@ -20,7 +20,7 @@ and this project adheres to Semantic Versioning (https://semver.org/spec/v2.0.0.
 - Removed features
 
 ### Fixed
-- Bug fixes
+- Fixed TypeScript type errors in `promptRouting.test.ts` by adding explicit Vitest imports
 
 ### Security
 - Security fixes

@@ -8,7 +8,6 @@ import React, { memo, useCallback, useEffect, useMemo } from 'react';
 import { Box, Text, useInput, BoxProps } from 'ink';
 
 import { InputBox } from './InputBox.js';
-import { createLogger } from '../../../../../core/src/utils/logger.js';
 import { useChat, Message } from '../../../features/context/ChatContext.js';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { useKeybinds } from '../../../features/context/KeybindsContext.js';

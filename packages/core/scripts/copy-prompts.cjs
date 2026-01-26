@@ -5,7 +5,9 @@
  * TypeScript compiler doesn't copy non-.ts files, so we need this script
  */
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const fs = require('fs');
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const path = require('path');
 
 function copyDir(src, dest) {

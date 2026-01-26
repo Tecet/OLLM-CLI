@@ -106,16 +106,16 @@ ollm --help
 - **[Troubleshooting](docs/Troubleshooting.md)** - Common issues and solutions
 
 ### Core Features
-- **[User Interface](docs/UI&Settings/README.md)** - Interface, commands, themes, and settings
-- **[Context Management](docs/Context/README.md)** - Context sizing, compression, and VRAM
-- **[Model Management](docs/LLM%20Models/README.md)** - Models, providers, and configuration
-- **[Tools System](docs/Tools/README.md)** - Tool execution and management
-- **[Hooks System](docs/Hooks/README.md)** - Event-driven automation
-- **[MCP Integration](docs/MCP/README.md)** - Model Context Protocol
-- **[Prompts System](docs/Prompts%20System/README.md)** - System prompts and templates
+- **[User Interface & Settings](docs/UI&Settings/README.md)** - Interface, commands, themes, keybinds, and configuration
+- **[Context Management](docs/Context/README.md)** - Context sizing, compression, checkpoints, and VRAM monitoring
+- **[Model Management](docs/LLM%20Models/README.md)** - Models, providers, compatibility, and memory system
+- **[Tools System](docs/Tools/README.md)** - Tool execution, architecture, and manifest reference
+- **[Hooks System](docs/Hooks/README.md)** - Event-driven automation, protocol, and visual guide
+- **[MCP Integration](docs/MCP/README.md)** - Model Context Protocol, marketplace, and commands
+- **[Prompts System](docs/Prompts%20System/README.md)** - System prompts, templates, and routing
 
 ### Development
-- **[Development Roadmap](docs/DevelopmentRoadmap/README.md)** - Future plans and releases
+- **[Development Roadmap](docs/DevelopmentRoadmap/README.md)** - Future plans and version releases (v0.2.0-v0.9.0)
 - **[Complete Index](docs/Index.md)** - All 57 documentation files organized by topic
 
 **Total Documentation:** 57 comprehensive guides covering every aspect of OLLM CLI

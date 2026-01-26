@@ -40,7 +40,7 @@ export class TieredPromptStore {
         try {
           const content = fs.readFileSync(filePath, 'utf8').trim();
           this.templates.set(this.makeKey(mode, tierKey), content);
-        } catch (error) {
+        } catch (_error) {
           console.warn(`[TieredPromptStore] Missing prompt template: ${filePath}`);
         }
       }

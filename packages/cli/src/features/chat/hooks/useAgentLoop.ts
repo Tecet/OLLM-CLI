@@ -5,13 +5,13 @@
 
 import fs from 'fs';
 
-import type { Message, ToolCall } from '../types.js';
+import type { Message } from '../types.js';
 import type { ToolCall as CoreToolCall, ContextMessage, ProviderMetrics } from '@ollm/core';
 
 export interface AgentLoopContext {
   // LLM communication
   sendToLLM: any;
-  cancelRequest: () => void;
+  _cancelRequest: () => void;
   
   // State
   currentModel: string;
@@ -36,7 +36,7 @@ export interface AgentLoopContext {
   // Refs
   inflightTokenAccumulatorRef: React.MutableRefObject<number>;
   inflightFlushTimerRef: React.MutableRefObject<NodeJS.Timeout | null>;
-  lastUserMessageRef: React.MutableRefObject<string | null>;
+  _lastUserMessageRef: React.MutableRefObject<string | null>;
 }
 
 /**
@@ -48,7 +48,7 @@ export async function executeAgentLoop(
 ): Promise<void> {
   const {
     sendToLLM,
-    cancelRequest,
+    _cancelRequest,
     currentModel,
     systemPrompt,
     toolSchemas,
@@ -61,7 +61,7 @@ export async function executeAgentLoop(
     resetCompressionFlags,
     inflightTokenAccumulatorRef,
     inflightFlushTimerRef,
-    lastUserMessageRef,
+    _lastUserMessageRef,
   } = context;
 
   const maxTurns = 5;
