@@ -25,6 +25,7 @@ import type { ProviderAdapter } from '@ollm/ollm-cli-core/provider/types.js';
  */
 export interface ServiceContextValue {
   container: ServiceContainer;
+  mcpClient: DefaultMCPClient | null;
 }
 
 const ServiceContext = createContext<ServiceContextValue | undefined>(undefined);
@@ -49,6 +50,9 @@ export function ServiceProvider({
 }: ServiceProviderProps) {
   // Get dialog functions for hook approval
   const { showHookApproval } = useDialog();
+  
+  // Store MCP client in state so it can be shared with MCPContext
+  const [mcpClient, setMcpClient] = React.useState<DefaultMCPClient | null>(null);
   
   // Create service container
   const container = useMemo(() => {
@@ -93,37 +97,40 @@ export function ServiceProvider({
       userHome: homedir(),
     });
   }, [provider, config, workspacePath, showHookApproval]);
-  
+
   // Initialize ToolRegistry with SettingsService integration
   useEffect(() => {
     const settingsService = SettingsService.getInstance();
     const toolRegistry = new ToolRegistry(settingsService);
-    
+
     // Register built-in tools
     const userHome = homedir();
     const memoryPath = `${userHome}/.ollm/memory.json`;
     const todosPath = `${userHome}/.ollm/todos.json`;
     registerBuiltInTools(toolRegistry, { memoryPath, todosPath });
-    
+
     // Set the configured registry in the container
     container.setToolRegistry(toolRegistry);
-    
+
     // Initialize MCP integration (CLI layer responsibility)
     // Create MCP client with configuration
-    const mcpClient = new DefaultMCPClient({
+    const mcpClientInstance = new DefaultMCPClient({
       enabled: true,
       connectionTimeout: 30000,
-      servers: {}, // Servers will be loaded from extensions
+      servers: {}, // Servers will be loaded by MCPContext from user config
     });
-    
+
+    // Store MCP client so it can be shared with MCPContext
+    setMcpClient(mcpClientInstance);
+
     // Create MCP tool wrapper
-    const mcpToolWrapper = new DefaultMCPToolWrapper(mcpClient);
-    
+    const mcpToolWrapper = new DefaultMCPToolWrapper(mcpClientInstance);
+
     // Wire MCP dependencies into ExtensionManager
     const extensionManager = container.getExtensionManager();
-    extensionManager.setMCPClient(mcpClient);
+    extensionManager.setMCPClient(mcpClientInstance);
     extensionManager.setMCPToolWrapper(mcpToolWrapper);
-    
+
     console.log('✅ MCP integration initialized: MCPClient and MCPToolWrapper wired into ExtensionManager');
   }, [container]);
   
@@ -143,6 +150,7 @@ export function ServiceProvider({
   
   const value: ServiceContextValue = {
     container,
+    mcpClient,
   };
   
   return (

@@ -661,6 +661,15 @@ export class ExtensionManager {
   }
 
   /**
+   * Get MCP client
+   * 
+   * @returns MCP client instance or undefined if not set
+   */
+  getMCPClient(): MCPClient | undefined {
+    return this.mcpClient;
+  }
+
+  /**
    * Set MCP tool wrapper (for CLI layer injection)
    * 
    * @param mcpToolWrapper - MCP tool wrapper instance

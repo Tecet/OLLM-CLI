@@ -15,7 +15,6 @@ import path from 'path';
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode, useMemo } from 'react';
 
 import { DefaultMCPToolWrapper } from '@ollm/ollm-cli-core/mcp/index.js';
-import { DefaultMCPClient } from '@ollm/ollm-cli-core/mcp/mcpClient.js';
 import { MCPHealthMonitor } from '@ollm/ollm-cli-core/mcp/mcpHealthMonitor.js';
 import { MCPOAuthProvider, FileTokenStorage } from '@ollm/ollm-cli-core/mcp/mcpOAuth.js';
 import { ToolRouter, type ToolRoutingConfig, DEFAULT_TOOL_ROUTING_CONFIG } from '@ollm/ollm-cli-core/tools/index.js';
@@ -240,11 +239,14 @@ export function MCPProvider({
   // Try to get services from ServiceContext. Tests may not provide a ServiceProvider,
   // so fall back to a minimal no-op tool registry to avoid throwing in test environments.
   let container: unknown;
+  let sharedMcpClient: any = null;
   try {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    container = useServices().container;
+    const services = useServices();
+    container = services.container;
+    sharedMcpClient = services.mcpClient;
   } catch {
     container = undefined;
+    sharedMcpClient = null;
   }
 
   // Narrowly-typed tool registry with a runtime guard
@@ -277,8 +279,15 @@ export function MCPProvider({
   }, [customOAuthProvider]);
 
   // Initialize services
-  // Pass the shared oauthProvider to the client so it shares token storage
-  const mcpClient = useMemo(() => customClient || new DefaultMCPClient(undefined, oauthProvider), [customClient, oauthProvider]);
+  // Use the shared MCP client from ServiceContext if available
+  // This ensures both ServiceContext (for extensions) and MCPContext (for user config)
+  // use the same MCP client instance, preventing conflicts
+  const mcpClient = useMemo(() => {
+    if (customClient) return customClient; // Test override
+    if (sharedMcpClient) return sharedMcpClient; // Use shared client from ServiceContext
+    return new (require('@ollm/ollm-cli-core/mcp/mcpClient.js').DefaultMCPClient)(undefined, oauthProvider); // Fallback for tests
+  }, [customClient, sharedMcpClient, oauthProvider]);
+  
   const healthMonitor = useMemo(() => customHealthMonitor || new MCPHealthMonitor(mcpClient), [customHealthMonitor, mcpClient]);
 
   // Initialize tool router
