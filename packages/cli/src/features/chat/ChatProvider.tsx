@@ -107,15 +107,15 @@ export function ChatProvider({
   // Initialize network/LLM communication
   const chatNetwork = useChatNetwork({
     contextActions,
-    sendToLLM,
-    cancelRequest,
+    _sendToLLM: sendToLLM,
+    _cancelRequest: cancelRequest,
     provider,
     currentModel,
     modelSupportsTools,
     serviceContainer,
     injectFocusedFilesIntoPrompt,
     addMessage: chatState.addMessage,
-    updateMessage: chatState.updateMessage,
+    _updateMessage: chatState.updateMessage,
     setStreaming: chatState.setStreaming,
     setWaitingForResponse: chatState.setWaitingForResponse,
     setInputMode: chatState.setInputMode,
@@ -123,10 +123,10 @@ export function ChatProvider({
     clearChat,
     setLaunchScreenVisible,
     recordSessionMessage: sessionRecording.recordSessionMessage,
-    compressionOccurred: contextEvents.compressionOccurred,
-    compressionRetryCount: contextEvents.compressionRetryCount,
+    _compressionOccurred: contextEvents.compressionOccurred,
+    _compressionRetryCount: contextEvents.compressionRetryCount,
     waitingForResume: contextEvents.waitingForResume,
-    resetCompressionFlags: contextEvents.resetCompressionFlags,
+    _resetCompressionFlags: contextEvents.resetCompressionFlags,
     setWaitingForResume: contextEvents.setWaitingForResume,
   });
 

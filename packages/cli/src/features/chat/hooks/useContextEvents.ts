@@ -96,9 +96,7 @@ export function useContextEvents({
       
       // Auto-clear after 5 seconds if summarization is slow
       setTimeout(() => {
-        setStatusMessage(current => 
-          current === 'Summarizing conversation history...' ? undefined : current
-        );
+        setStatusMessage(undefined);
       }, 5000);
     };
 

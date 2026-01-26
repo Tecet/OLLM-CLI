@@ -27,8 +27,8 @@ import {
 import type { Message, MenuState } from '../types.js';
 import type { 
   ToolSchema,
-  ServiceContainer,
 } from '@ollm/core';
+import type { ServiceContainer } from '@ollm/core/services/serviceContainer.js';
 
 export interface UseChatNetworkProps {
   // Dependencies
@@ -43,7 +43,7 @@ export interface UseChatNetworkProps {
   
   // State management
   addMessage: (message: Omit<Message, 'id' | 'timestamp'>) => Message;
-  updateMessage: (id: string, updates: Partial<Message>) => void;
+  _updateMessage: (id: string, updates: Partial<Message>) => void;
   setStreaming: (streaming: boolean) => void;
   setWaitingForResponse: (waiting: boolean) => void;
   setInputMode: React.Dispatch<React.SetStateAction<'text' | 'menu'>>;
@@ -55,10 +55,10 @@ export interface UseChatNetworkProps {
   recordSessionMessage: (role: 'user' | 'assistant', text: string) => Promise<void>;
   
   // Context events
-  compressionOccurred: boolean;
-  compressionRetryCount: number;
+  _compressionOccurred: boolean;
+  _compressionRetryCount: number;
   waitingForResume: boolean;
-  resetCompressionFlags: () => void;
+  _resetCompressionFlags: () => void;
   setWaitingForResume: (waiting: boolean) => void;
 }
 
