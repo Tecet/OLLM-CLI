@@ -37,6 +37,7 @@ import {
   createSnapshotManager,
   createSnapshotStorage,
   SnapshotManager as PromptsSnapshotManager,
+  ContextTier,
 } from '@ollm/core';
 
 import { SettingsService } from '../../config/settingsService.js';
@@ -53,7 +54,6 @@ import type {
   ModeType,
   ModeTransition,
   SnapshotManager as CoreSnapshotManager,
-  ContextTier
 } from '@ollm/core';
 
 // Global reference for CLI commands
@@ -176,7 +176,7 @@ export function ContextManagerProvider({
   const [error, setError] = useState<string | null>(null);
   const [currentMode, setCurrentMode] = useState<ModeType>('assistant');
   const [autoSwitchEnabled, setAutoSwitchEnabled] = useState(true);
-  const [currentTier, setCurrentTier] = useState<ContextTier>(3); // Default to Tier 3
+  const [currentTier, setCurrentTier] = useState<ContextTier>(ContextTier.TIER_3_STANDARD);
   const [autoSizeEnabled, setAutoSizeEnabled] = useState(config?.autoSize ?? true);
 
   // Refs
