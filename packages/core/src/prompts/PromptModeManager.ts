@@ -98,8 +98,8 @@ export class PromptModeManager extends EventEmitter {
   private animator: ModeTransitionAnimator;
   
   // Timing configuration
-  private readonly minDuration = 15000;  // 15 seconds (reduced from 30s for better responsiveness)
-  private readonly cooldownPeriod = 10000;  // 10 seconds
+  private readonly minDuration = 60000;  // 60 seconds (increased from 15s to prevent rapid switching)
+  private readonly cooldownPeriod = 30000;  // 30 seconds (increased from 10s)
   
   constructor(
     private contextAnalyzer: ContextAnalyzer,
@@ -124,7 +124,7 @@ export class PromptModeManager extends EventEmitter {
     this.state = {
       currentMode: 'assistant',
       previousMode: null,
-      autoSwitchEnabled: true,
+      autoSwitchEnabled: false,  // DISABLED: Prevent mid-response mode switching
       lastSwitchTime: new Date(),
       modeEntryTime: new Date(),
       activeSkills: []
