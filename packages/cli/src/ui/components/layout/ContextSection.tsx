@@ -9,6 +9,7 @@ import { useUI } from '../../../features/context/UIContext.js';
 // Helper to format tier display
 function _formatTierDisplay(tier: string): string {
   // Extract tier number from "Tier X" format
+  if (!tier || typeof tier !== 'string') return 'Unknown';
   const match = tier.match(/Tier (\d+)/);
   if (!match) return tier;
   
@@ -46,8 +47,7 @@ export function ContextSection() {
   } = useActiveContext();
 
   // Debug logging
-  console.log('[ContextSection] RENDER - effectivePromptTier:', contextState.effectivePromptTier);
-  console.log('[ContextSection] RENDER - actualContextTier:', contextState.actualContextTier);
+  console.log('[ContextSection] RENDER - currentTier:', contextState.currentTier);
   console.log('[ContextSection] RENDER - currentMode:', currentMode);
 
   return (
