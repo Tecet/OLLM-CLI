@@ -168,8 +168,8 @@ export function ContextManagerProvider({
 }: ContextManagerProviderProps) {
   // State
   const [usage, setUsage] = useState<ContextUsage>(DEFAULT_USAGE);
-  const [vram, setVRAM] = useState<VRAMInfo | null>(null);
-  const [memoryLevel, setMemoryLevel] = useState<MemoryLevel>(MemoryLevel.NORMAL);
+  const [vram, _setVRAM] = useState<VRAMInfo | null>(null);
+  const [memoryLevel, _setMemoryLevel] = useState<MemoryLevel>(MemoryLevel.NORMAL);
   const [active, setActive] = useState(false);
   const [compressing, setCompressing] = useState(false);
   const [snapshots, setSnapshots] = useState<ContextSnapshot[]>([]);

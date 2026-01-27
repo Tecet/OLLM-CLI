@@ -484,7 +484,7 @@ export function ChatProvider({
       try {
         const typedData = data as { percentage?: number; message?: string };
         const percentage = typedData?.percentage || 70;
-        const message = typedData?.message || 'Context is filling up';
+        const _message = typedData?.message || 'Context is filling up';
         
         // Show warning message
         setStatusMessage(`⚠️ Context at ${Math.round(percentage)}% - compression will trigger soon`);

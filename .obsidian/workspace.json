@@ -185,6 +185,7 @@
   },
   "active": "96f17f0c11000dcf",
   "lastOpenFiles": [
+    "lint-output.txt",
     "app-debug.log",
     "packages/cli/src/ui/old_App.tsx",
     "packages/cli/src/features/context/old_contextSizing.ts",
@@ -195,7 +196,6 @@
     "packages/core/dist/context/old_contextPool.js.map",
     "packages/core/src/context/old_contextPool.ts",
     "packages/core/dist/context/old_contextManager.d.ts",
-    "packages/core/dist/context/old_contextManager.d.ts.map",
     "dev/backlog/REFACTORING-SUMMARY.md",
     "dev/backlog/report.md",
     "packages/cli/src/ui/components/animations/lama/lama_sprite/right/llama-r6.png",

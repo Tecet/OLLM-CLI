@@ -106,7 +106,7 @@ export function ModelProvider({
   const warmupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const warmupAttemptsRef = useRef<Map<string, number>>(new Map());
   const warmupStartRef = useRef<number | null>(null);
-  const { actions: contextActions } = useContextManager();
+  const { actions: _contextActions } = useContextManager();
   const { state: contextManagerState } = useContextManager();
   const gpuContext = useOptionalGPU();
   
