@@ -415,16 +415,34 @@ const context = (manager as ConversationContextManager).getContext();
       compressSpy.mockRestore();
     });
 
-    it('triggers compression when inflight usage crosses the threshold', async () => {
+    it('does NOT trigger compression during streaming (waits for addMessage)', async () => {
+      // Mid-stream compression is disabled to prevent cutting off messages
+      // Compression only happens AFTER the full message is added
       manager.reportInflightTokens(80);
       await Promise.resolve();
-      expect(compressSpy).toHaveBeenCalled();
+      expect(compressSpy).not.toHaveBeenCalled();
     });
 
     it('does not trigger compression when usage stays below threshold', async () => {
       manager.reportInflightTokens(10);
       await Promise.resolve();
       expect(compressSpy).not.toHaveBeenCalled();
+    });
+    
+    it('emits emergency event if stream exceeds Ollama limit', async () => {
+      const emergencySpy = vi.fn();
+      manager.on('stream-overflow-emergency', emergencySpy);
+      
+      // Simulate stream exceeding limit (should never happen with Ollama)
+      manager.reportInflightTokens(200); // 50 + 200 = 250 > 200 (maxTokens)
+      
+      expect(emergencySpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          totalTokens: 250,
+          ollamaLimit: 200,
+          overage: 50
+        })
+      );
     });
   });
 });

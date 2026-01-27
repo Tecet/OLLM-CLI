@@ -48,7 +48,6 @@ export class MessageStore {
   private inflightTokens = 0;
   private lastSnapshotTokens = 0;
   private messagesSinceLastSnapshot = 0;
-  private midStreamGuardActive = false;
 
   constructor(options: MessageStoreOptions) {
     this.config = options.config;
@@ -191,14 +190,41 @@ export class MessageStore {
 
   /**
    * Track streaming tokens so thresholds can react mid-generation.
+   * 
+   * STRATEGY: Trust Ollama to stop at num_ctx limit, compress AFTER message completes.
+   * SAFETY: Emergency brake if stream exceeds limit (prevents runaway streams).
    */
   reportInflightTokens(delta: number): void {
     try {
       const context = this.getContext();
       this.inflightTokens = Math.max(0, this.inflightTokens + delta);
-      this.contextPool.setCurrentTokens(context.tokenCount + this.inflightTokens);
-      this.snapshotManager.checkThresholds(context.tokenCount + this.inflightTokens, context.maxTokens);
-      this.ensureMidStreamGuard();
+      const totalTokens = context.tokenCount + this.inflightTokens;
+      
+      this.contextPool.setCurrentTokens(totalTokens);
+      this.snapshotManager.checkThresholds(totalTokens, context.maxTokens);
+      
+      // EMERGENCY BRAKE: If streaming exceeds Ollama limit, emit warning
+      // This should NEVER happen (Ollama stops at num_ctx), but protects against bugs
+      const ollamaLimit = context.maxTokens; // This is the Ollama size (85%)
+      if (totalTokens > ollamaLimit) {
+        const overage = totalTokens - ollamaLimit;
+        console.error('[ContextManager] EMERGENCY: Stream exceeded Ollama limit!', {
+          totalTokens,
+          ollamaLimit,
+          overage,
+          message: 'This indicates a bug - Ollama should stop at num_ctx'
+        });
+        
+        // Emit emergency event for UI to display
+        this.emit('stream-overflow-emergency', {
+          totalTokens,
+          ollamaLimit,
+          overage
+        });
+      }
+      
+      // NO mid-stream compression - we compress AFTER addMessage() completes
+      // This ensures we capture the full message before compressing
     } catch (e) {
       console.error('[ContextManager] reportInflightTokens failed', e);
     }
@@ -247,34 +273,5 @@ export class MessageStore {
     const totalTokens = context.maxTokens || 1;
     const currentTokens = context.tokenCount + (includeInflight ? this.inflightTokens : 0);
     return Math.min(1, Math.max(0, currentTokens / totalTokens));
-  }
-
-  /**
-   * Guard mid-stream overflow by triggering a compression once.
-   */
-  private ensureMidStreamGuard(): void {
-    if (!this.config.compression.enabled) {
-      return;
-    }
-
-    const fraction = this.getUsageFraction(true);
-    if (fraction < this.config.compression.threshold) {
-      return;
-    }
-
-    if (this.midStreamGuardActive || this.isAutoSummaryRunning()) {
-      return;
-    }
-
-    this.midStreamGuardActive = true;
-    const guardPromise = this.compress()
-      .catch((error) => {
-        console.error('[ContextManager] mid-stream guard compression failed', error);
-      })
-      .finally(() => {
-        this.midStreamGuardActive = false;
-      });
-
-    void guardPromise;
   }
 }
