@@ -848,13 +848,29 @@ context.maxTokens = profile.ollama_context_size;  // Not user selection
 
 **Problem:** Compression doesn't account for checkpoint space in budget → rapid re-compression
 
+**Known Issues to Fix:**
+1. **contextDefaults.ts** - Confusing compression threshold (0.68 = "80% of 85%")
+2. **contextPool.ts** - Percentage calculated against user size instead of Ollama size
+3. Compression doesn't account for checkpoint space in budget
+4. No checkpoint aging/cleanup
+
 **Fix:** 
 1. Track checkpoints
 2. Calculate available budget = ollama_size - system - checkpoints
 3. Trigger at 80% of AVAILABLE (not total)
 4. Implement checkpoint aging
+5. Fix contextPool percentage calculation (use currentSize not userContextSize)
+6. Clean up contextDefaults.ts threshold and comments
 
-**Files:** `contextManager.ts`, `compressionCoordinator.ts`, `compressionService.ts`, `checkpointManager.ts`, `types.ts`, tests
+**Files:** 
+- `contextManager.ts`
+- `compressionCoordinator.ts`
+- `compressionService.ts`
+- `checkpointManager.ts`
+- `contextPool.ts` (percentage calculation bug)
+- `contextDefaults.ts` (confusing threshold)
+- `types.ts`
+- tests
 
 **Progress:**
 - [ ] Docs read (both files)
@@ -863,6 +879,10 @@ context.maxTokens = profile.ollama_context_size;  // Not user selection
 - [ ] Plan approved
 - [ ] Backup created
 - [ ] Tests baseline
+- [ ] Fix contextPool percentage calculation
+- [ ] Tests pass
+- [ ] Fix contextDefaults.ts threshold
+- [ ] Tests pass
 - [ ] Checkpoint tracking added
 - [ ] Tests pass
 - [ ] Compression trigger updated

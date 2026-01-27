@@ -462,21 +462,50 @@ export class ConversationContextManager extends EventEmitter implements ContextM
       const profiles = this.modelInfo.contextProfiles;
       const maxWindow = this.modelInfo.contextLimit;
       
+      // Sort profiles by size (ascending)
+      const sortedProfiles = [...profiles].sort((a, b) => a.size - b.size);
+      
       // Find the profile that matches or exceeds the requested size
-      const matchingProfile = profiles.find(p => p.size >= size);
+      const matchingProfile = sortedProfiles.find(p => p.size >= size);
       if (matchingProfile) {
         const profileSize = matchingProfile.size;
         
-        // Map size to tier based on model's capabilities
-        if (profileSize >= 65536 && maxWindow >= 65536) return ContextTier.TIER_5_ULTRA;
-        if (profileSize >= 32768 && maxWindow >= 32768) return ContextTier.TIER_4_PREMIUM;
-        if (profileSize >= 16384) return ContextTier.TIER_3_STANDARD;
-        if (profileSize >= 8192) return ContextTier.TIER_2_BASIC;
-        return ContextTier.TIER_1_MINIMAL;
+        // Determine tier based on profile index and model capabilities
+        // Use actual profile sizes, not hardcoded thresholds
+        const profileIndex = sortedProfiles.indexOf(matchingProfile);
+        const totalProfiles = sortedProfiles.length;
+        
+        // Map profile position to tier (distribute evenly across available tiers)
+        if (totalProfiles === 1) {
+          return ContextTier.TIER_3_STANDARD; // Single profile = standard tier
+        } else if (totalProfiles === 2) {
+          return profileIndex === 0 ? ContextTier.TIER_2_BASIC : ContextTier.TIER_3_STANDARD;
+        } else if (totalProfiles === 3) {
+          const tierMap = [ContextTier.TIER_2_BASIC, ContextTier.TIER_3_STANDARD, ContextTier.TIER_4_PREMIUM];
+          return tierMap[profileIndex] || ContextTier.TIER_3_STANDARD;
+        } else if (totalProfiles === 4) {
+          const tierMap = [ContextTier.TIER_1_MINIMAL, ContextTier.TIER_2_BASIC, ContextTier.TIER_3_STANDARD, ContextTier.TIER_4_PREMIUM];
+          return tierMap[profileIndex] || ContextTier.TIER_3_STANDARD;
+        } else {
+          // 5+ profiles: map to all 5 tiers
+          const tierMap = [ContextTier.TIER_1_MINIMAL, ContextTier.TIER_2_BASIC, ContextTier.TIER_3_STANDARD, ContextTier.TIER_4_PREMIUM, ContextTier.TIER_5_ULTRA];
+          const tierIndex = Math.min(Math.floor((profileIndex / totalProfiles) * 5), 4);
+          return tierMap[tierIndex];
+        }
       }
     }
     
-    // Fallback to hardcoded tiers if no profiles available
+    // CRITICAL ERROR: Fallback should NEVER be hit in production!
+    // This indicates a bug in the CLI layer (ProfileManager/App.tsx)
+    // The CLI should ALWAYS provide contextProfiles via ModelInfo
+    console.error('[ContextManager] CRITICAL: Using hardcoded tier fallback!');
+    console.error(`  Model: ${this.modelInfo.id || 'unknown'}`);
+    console.error(`  Context profiles provided: ${this.modelInfo.contextProfiles ? 'YES' : 'NO'}`);
+    console.error(`  Profile count: ${this.modelInfo.contextProfiles?.length || 0}`);
+    console.error('  This indicates a bug in ProfileManager or App.tsx');
+    console.error('  FIX: Ensure ProfileManager provides contextProfiles for all models');
+    
+    // Fallback to hardcoded tiers (safety mechanism only)
     const tiers: Array<{ size: number; tier: ContextTier }> = [
       { size: 4096, tier: ContextTier.TIER_1_MINIMAL },
       { size: 8192, tier: ContextTier.TIER_2_BASIC },
@@ -524,8 +553,17 @@ export class ConversationContextManager extends EventEmitter implements ContextM
       }
     }
     
-    // Fallback: calculate 85% if no profile available
-    // This maintains backward compatibility
+    // CRITICAL ERROR: Fallback should NEVER be hit in production!
+    // This indicates a bug in the CLI layer (ProfileManager/App.tsx)
+    console.error('[ContextManager] CRITICAL: Using 85% calculation fallback!');
+    console.error(`  Model: ${this.modelInfo.id || 'unknown'}`);
+    console.error(`  User size: ${userSize}`);
+    console.error(`  Context profiles provided: ${this.modelInfo.contextProfiles ? 'YES' : 'NO'}`);
+    console.error(`  Profile count: ${this.modelInfo.contextProfiles?.length || 0}`);
+    console.error('  This indicates a bug in ProfileManager or App.tsx');
+    console.error('  FIX: Ensure ProfileManager provides contextProfiles with ollama_context_size');
+    
+    // Fallback: calculate 85% if no profile available (safety mechanism only)
     return Math.floor(userSize * 0.85);
   }
 
@@ -534,30 +572,61 @@ export class ConversationContextManager extends EventEmitter implements ContextM
     if (this.modelInfo.contextProfiles && this.modelInfo.contextProfiles.length > 0) {
       const profiles = this.modelInfo.contextProfiles;
       
-      // Map tier to target size
-      const tierSizes: Record<ContextTier, number> = {
-        [ContextTier.TIER_1_MINIMAL]: 4096,
-        [ContextTier.TIER_2_BASIC]: 8192,
-        [ContextTier.TIER_3_STANDARD]: 16384,
-        [ContextTier.TIER_4_PREMIUM]: 32768,
-        [ContextTier.TIER_5_ULTRA]: 65536
-      };
+      // Sort profiles by size (ascending)
+      const sortedProfiles = [...profiles].sort((a, b) => a.size - b.size);
+      const totalProfiles = sortedProfiles.length;
       
-      const targetSize = tierSizes[tier];
+      // Map tier to profile index (distribute evenly)
+      let targetIndex: number;
       
-      // Find closest profile that meets or exceeds target
-      const matchingProfile = profiles.find(p => p.size >= targetSize);
-      if (matchingProfile) {
-        return matchingProfile.size;
+      if (totalProfiles === 1) {
+        targetIndex = 0; // Only one profile available
+      } else if (totalProfiles === 2) {
+        targetIndex = tier === ContextTier.TIER_1_MINIMAL || tier === ContextTier.TIER_2_BASIC ? 0 : 1;
+      } else if (totalProfiles === 3) {
+        const tierIndexMap: Record<ContextTier, number> = {
+          [ContextTier.TIER_1_MINIMAL]: 0,
+          [ContextTier.TIER_2_BASIC]: 0,
+          [ContextTier.TIER_3_STANDARD]: 1,
+          [ContextTier.TIER_4_PREMIUM]: 2,
+          [ContextTier.TIER_5_ULTRA]: 2
+        };
+        targetIndex = tierIndexMap[tier];
+      } else if (totalProfiles === 4) {
+        const tierIndexMap: Record<ContextTier, number> = {
+          [ContextTier.TIER_1_MINIMAL]: 0,
+          [ContextTier.TIER_2_BASIC]: 1,
+          [ContextTier.TIER_3_STANDARD]: 2,
+          [ContextTier.TIER_4_PREMIUM]: 3,
+          [ContextTier.TIER_5_ULTRA]: 3
+        };
+        targetIndex = tierIndexMap[tier];
+      } else {
+        // 5+ profiles: map each tier to a profile
+        const tierIndexMap: Record<ContextTier, number> = {
+          [ContextTier.TIER_1_MINIMAL]: 0,
+          [ContextTier.TIER_2_BASIC]: Math.floor(totalProfiles * 0.25),
+          [ContextTier.TIER_3_STANDARD]: Math.floor(totalProfiles * 0.5),
+          [ContextTier.TIER_4_PREMIUM]: Math.floor(totalProfiles * 0.75),
+          [ContextTier.TIER_5_ULTRA]: totalProfiles - 1
+        };
+        targetIndex = tierIndexMap[tier];
       }
       
-      // If no profile meets target, return largest available
-      if (profiles.length > 0) {
-        return profiles[profiles.length - 1].size;
-      }
+      return sortedProfiles[targetIndex].size;
     }
     
-    // Fallback to hardcoded sizes if no profiles available
+    // CRITICAL ERROR: Fallback should NEVER be hit in production!
+    // This indicates a bug in the CLI layer (ProfileManager/App.tsx)
+    console.error('[ContextManager] CRITICAL: Using hardcoded size fallback!');
+    console.error(`  Model: ${this.modelInfo.id || 'unknown'}`);
+    console.error(`  Tier: ${tier}`);
+    console.error(`  Context profiles provided: ${this.modelInfo.contextProfiles ? 'YES' : 'NO'}`);
+    console.error(`  Profile count: ${this.modelInfo.contextProfiles?.length || 0}`);
+    console.error('  This indicates a bug in ProfileManager or App.tsx');
+    console.error('  FIX: Ensure ProfileManager provides contextProfiles for all models');
+    
+    // Fallback to hardcoded sizes (safety mechanism only)
     const sizes: Record<ContextTier, number> = {
       [ContextTier.TIER_1_MINIMAL]: 4096,
       [ContextTier.TIER_2_BASIC]: 8192,
@@ -628,22 +697,6 @@ export class ConversationContextManager extends EventEmitter implements ContextM
   }
 
   /**
-   * Get system prompt for current tier and mode
-   * Uses selected tier (based on context size)
-   */
-  private getSystemPromptForTierAndMode(): string {
-    return this.promptOrchestrator.getSystemPromptForTierAndMode(this.currentMode, this.selectedTier);
-  }
-
-  /**
-   * Get system prompt token budget for current tier and mode
-   * Uses selected tier (based on context size)
-   */
-  private getSystemPromptTokenBudget(): number {
-    return this.promptOrchestrator.getSystemPromptTokenBudget(this.selectedTier);
-  }
-
-  /**
    * Update system prompt based on current tier and mode
    */
   private updateSystemPrompt(): void {
@@ -661,17 +714,6 @@ export class ConversationContextManager extends EventEmitter implements ContextM
       tokenBudget,
       content: message.content
     });
-  }
-
-  /**
-   * Handle tier or mode change
-   */
-  private onTierOrModeChange(): void {
-    this.updateSystemPrompt();
-    
-    // Recalculate available tokens
-    const usage = this.getUsage();
-    this.emit('context-recalculated', { usage });
   }
 
   /**
@@ -806,12 +848,6 @@ export class ConversationContextManager extends EventEmitter implements ContextM
     console.log(`  - Auto-sizing: ${this.config.autoSize ? 'enabled (prompt follows context size)' : 'disabled (manual context size)'}`);
     console.log(`  - Prompt length: ${content.length} chars, ${systemPrompt.tokenCount} tokens`);
     console.log(`  - Prompt preview: ${content.substring(0, 200)}...`);
-    
-    // Track prompts if it's a registered prompt
-    if (content) {
-        // This is a simplified tracking, ideally we check against a registry
-        // but for now we just emit that system prompt changed
-    }
     
     // Remove old system prompt if exists
     this.currentContext.messages = this.currentContext.messages.filter(
