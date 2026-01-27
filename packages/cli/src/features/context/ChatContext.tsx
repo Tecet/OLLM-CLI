@@ -500,25 +500,6 @@ export function ChatProvider({
       }
     };
 
-    const handleSessionSaved = (data: unknown) => {
-      try {
-        const typedData = data as { turnNumber?: number };
-        const turnNumber = typedData?.turnNumber || 0;
-        
-        // Show brief confirmation
-        setStatusMessage(`💾 Session saved (turn ${turnNumber}) - rollback available`);
-        
-        // Auto-clear after 3 seconds
-        setTimeout(() => {
-          setStatusMessage(current => 
-            current?.includes('Session saved') ? undefined : current
-          );
-        }, 3000);
-      } catch (_e) {
-        // ignore
-      }
-    };
-
     contextActions.on?.('memory-warning', handleMemoryWarning);
     contextActions.on?.('compressed', handleCompressed);
     contextActions.on?.('summarizing', handleSummarizing);
@@ -536,6 +517,26 @@ export function ChatProvider({
     };
   }, [contextActions, contextManagerState.usage, addMessage]);
 
+  // Handle session saved events from message bus
+  const handleSessionSaved = useCallback((data: unknown) => {
+    try {
+      const typedData = data as { turnNumber?: number };
+      const turnNumber = typedData?.turnNumber || 0;
+      
+      // Show brief confirmation
+      setStatusMessage(`💾 Session saved (turn ${turnNumber}) - rollback available`);
+      
+      // Auto-clear after 3 seconds
+      setTimeout(() => {
+        setStatusMessage(current => 
+          current?.includes('Session saved') ? undefined : current
+        );
+      }, 3000);
+    } catch (_e) {
+      // ignore
+    }
+  }, []);
+
   useEffect(() => {
 
     if (serviceContainer) {
@@ -549,17 +550,17 @@ export function ChatProvider({
           handleSessionSaved(data);
         };
         
-        messageBus.on('session_saved', handleSessionSavedEvent);
+        const listenerId = messageBus.on('session_saved', handleSessionSavedEvent);
         
         return () => {
-          messageBus.off('session_saved', handleSessionSavedEvent);
+          messageBus.off(listenerId);
         };
       }
     }
     
     // Note: __ollmAddSystemMessage and __ollmClearContext are now registered
     // by AllCallbacksBridge component for better separation of concerns
-  }, [serviceContainer, setCurrentModel]);
+  }, [serviceContainer, setCurrentModel, handleSessionSaved]);
 
   useEffect(() => {
     if (setTheme) {
