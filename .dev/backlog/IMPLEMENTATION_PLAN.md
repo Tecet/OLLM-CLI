@@ -17,10 +17,20 @@
 - ✅ Snapshot search, cleanup, statistics
 - ✅ Tests (9 new tests, all passing)
 
-**Phase 1: Pre-Send Validation** - ⏳ NEXT
-- Validate prompt before sending to Ollama
-- Prevent context overflow
-- Emergency compression if needed
+**Phase 1: Pre-Send Validation** - ✅ COMPLETE (100%)
+- ✅ Added `validateAndBuildPrompt()` method to contextManager.ts
+- ✅ Calculate total prompt size (system + checkpoints + messages + new message)
+- ✅ Compare against Ollama limit (85% pre-calculated)
+- ✅ Trigger emergency compression at 95% threshold
+- ✅ Trigger emergency rollover at 100% threshold
+- ✅ Integrated validation into chatClient.ts before sending
+- ✅ Added validation tests (8 new tests, all passing)
+- ✅ All 461 tests passing
+
+**Phase 2: Blocking Mechanism** - ⏳ NEXT
+- Block user input during checkpoint creation
+- Show progress indicator
+- Give LLM time to summarize
 
 ---
 

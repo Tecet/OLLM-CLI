@@ -310,6 +310,55 @@ Is this correct? (y/n)`;
       { role: 'user', parts: [{ type: 'text', text: processedPrompt }] },
     ];
 
+    // ============================================================================
+    // PRE-SEND VALIDATION (Phase 1)
+    // ============================================================================
+    // Validate prompt before adding to context to prevent overflow
+    if (this.contextMgmtManager) {
+      try {
+        const userMessage: Message = {
+          id: `user-${Date.now()}`,
+          role: 'user',
+          content: processedPrompt,
+          timestamp: new Date()
+        };
+        
+        const validation = await this.contextMgmtManager.validateAndBuildPrompt(userMessage);
+        
+        // Emit warnings to user
+        for (const warning of validation.warnings) {
+          if (!isTestEnv) console.log(`[ChatClient] ${warning}`);
+        }
+        
+        // If validation failed, emit error and stop
+        if (!validation.valid) {
+          yield {
+            type: 'error',
+            error: new Error(
+              `Context validation failed: ${validation.warnings.join('; ')}`
+            )
+          };
+          return;
+        }
+        
+        // If emergency action was taken, emit event
+        if (validation.emergencyAction) {
+          yield {
+            type: 'text',
+            value: `\n[System: ${validation.emergencyAction === 'rollover' ? 'Emergency rollover' : 'Emergency compression'} triggered due to context limit]\n\n`
+          };
+        }
+      } catch (error) {
+        // Validation error - emit and stop
+        const err = error as Error;
+        yield {
+          type: 'error',
+          error: new Error(`Context validation error: ${err.message}`)
+        };
+        return;
+      }
+    }
+
     // Add user message to context management system if available
     if (this.contextMgmtManager) {
       try {

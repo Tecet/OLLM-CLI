@@ -964,6 +964,15 @@ export interface ContextManager {
   emit(event: string, data?: unknown): boolean;
   /** Get current messages in context */
   getMessages(): Promise<Message[]>;
+  /** Validate and build prompt before sending to Ollama (Phase 1: Pre-Send Validation) */
+  validateAndBuildPrompt(newMessage?: Message): Promise<{
+    valid: boolean;
+    prompt: Message[];
+    totalTokens: number;
+    ollamaLimit: number;
+    warnings: string[];
+    emergencyAction?: 'compression' | 'rollover';
+  }>;
   /** Report in-flight (streaming) token delta to the manager (can be positive or negative) */
   reportInflightTokens(delta: number): void;
   /** Clear any in-flight token accounting (call on generation finish) */

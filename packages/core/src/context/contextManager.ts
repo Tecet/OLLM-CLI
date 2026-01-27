@@ -946,6 +946,213 @@ export class ConversationContextManager extends EventEmitter implements ContextM
   }
 
   /**
+   * Validate and build prompt before sending to Ollama
+   * 
+   * This is the critical safety gate that prevents context overflow.
+   * It checks if the total prompt (system + checkpoints + messages) will exceed
+   * Ollama's limit, and triggers emergency actions if needed.
+   * 
+   * Phase 1: Pre-Send Validation
+   * 
+   * @param newMessage - Optional new message to add (for validation before adding)
+   * @returns Validation result with prompt and any warnings
+   */
+  async validateAndBuildPrompt(newMessage?: Message): Promise<{
+    valid: boolean;
+    prompt: Message[];
+    totalTokens: number;
+    ollamaLimit: number;
+    warnings: string[];
+    emergencyAction?: 'compression' | 'rollover';
+  }> {
+    const warnings: string[] = [];
+    let emergencyAction: 'compression' | 'rollover' | undefined;
+    
+    // Get current budget
+    const budget = this.getBudget();
+    const ollamaLimit = budget.totalOllamaSize;
+    
+    // Calculate tokens for new message if provided
+    let newMessageTokens = 0;
+    if (newMessage) {
+      newMessageTokens = this.tokenCounter.countTokensCached(
+        newMessage.id,
+        newMessage.content
+      );
+    }
+    
+    // Calculate total tokens that will be sent to Ollama
+    const totalTokens = budget.systemPromptTokens + 
+                       budget.checkpointTokens + 
+                       budget.conversationTokens + 
+                       newMessageTokens;
+    
+    // Calculate usage percentage
+    const usagePercentage = (totalTokens / ollamaLimit) * 100;
+    
+    // Check thresholds and trigger emergency actions
+    if (usagePercentage >= 100) {
+      // EMERGENCY ROLLOVER (100%+)
+      warnings.push(
+        `CRITICAL: Context at ${usagePercentage.toFixed(1)}% (${totalTokens}/${ollamaLimit} tokens)`,
+        'Triggering emergency rollover - creating snapshot and resetting context'
+      );
+      emergencyAction = 'rollover';
+      
+      // Trigger emergency rollover
+      try {
+        // Create final snapshot before rollover
+        const snapshot = await this.createSnapshot();
+        if (!isTestEnv) {
+          console.log('[ContextManager] Emergency snapshot created:', snapshot.id);
+        }
+        
+        // Keep only: System prompt + Last 10 user messages + Ultra-compact summary
+        const recentMessages = this.currentContext.messages
+          .filter(m => m.role === 'user')
+          .slice(-10);
+        
+        // Create ultra-compact summary (400 tokens max)
+        const summaryContent = `[EMERGENCY ROLLOVER - Context exceeded limit]
+Snapshot ID: ${snapshot.id}
+Previous conversation: ${this.currentContext.messages.length} messages
+Checkpoints: ${this.currentContext.checkpoints?.length || 0}
+Total tokens before rollover: ${totalTokens}
+
+Key context preserved in snapshot. Continuing conversation with fresh context.`;
+        
+        const summaryMessage: Message = {
+          id: `rollover-summary-${Date.now()}`,
+          role: 'system',
+          content: summaryContent,
+          timestamp: new Date(),
+          tokenCount: this.tokenCounter.countTokensCached(
+            `rollover-summary-${Date.now()}`,
+            summaryContent
+          )
+        };
+        
+        // Reset context
+        this.currentContext.messages = [
+          this.currentContext.systemPrompt,
+          summaryMessage,
+          ...recentMessages
+        ];
+        this.currentContext.checkpoints = [];
+        this.currentContext.tokenCount = this.tokenCounter.countConversationTokens(
+          this.currentContext.messages
+        );
+        
+        // Update context pool
+        this.contextPool.setCurrentTokens(this.currentContext.tokenCount);
+        
+        // Emit rollover event
+        this.emit('emergency-rollover', {
+          snapshotId: snapshot.id,
+          previousTokens: totalTokens,
+          newTokens: this.currentContext.tokenCount,
+          messagesKept: recentMessages.length
+        });
+        
+        if (!isTestEnv) {
+          console.log('[ContextManager] Emergency rollover complete');
+          console.log(`  Previous tokens: ${totalTokens}`);
+          console.log(`  New tokens: ${this.currentContext.tokenCount}`);
+          console.log(`  Messages kept: ${recentMessages.length}`);
+        }
+      } catch (error) {
+        warnings.push(`Emergency rollover failed: ${(error as Error).message}`);
+        return {
+          valid: false,
+          prompt: [],
+          totalTokens,
+          ollamaLimit,
+          warnings,
+          emergencyAction
+        };
+      }
+    } else if (usagePercentage >= 95) {
+      // EMERGENCY COMPRESSION (95%+)
+      warnings.push(
+        `WARNING: Context at ${usagePercentage.toFixed(1)}% (${totalTokens}/${ollamaLimit} tokens)`,
+        'Triggering emergency compression'
+      );
+      emergencyAction = 'compression';
+      
+      // Trigger emergency compression
+      try {
+        await this.compress();
+        
+        // Recalculate budget after compression
+        const newBudget = this.getBudget();
+        const newTotal = newBudget.systemPromptTokens + 
+                        newBudget.checkpointTokens + 
+                        newBudget.conversationTokens + 
+                        newMessageTokens;
+        
+        if (!isTestEnv) {
+          console.log('[ContextManager] Emergency compression complete');
+          console.log(`  Previous tokens: ${totalTokens}`);
+          console.log(`  New tokens: ${newTotal}`);
+          console.log(`  Saved: ${totalTokens - newTotal} tokens`);
+        }
+        
+        // Check if compression was enough
+        if (newTotal >= ollamaLimit) {
+          warnings.push(
+            'Emergency compression insufficient - context still at limit',
+            'Consider creating a snapshot or clearing context'
+          );
+          return {
+            valid: false,
+            prompt: [],
+            totalTokens: newTotal,
+            ollamaLimit,
+            warnings,
+            emergencyAction
+          };
+        }
+      } catch (error) {
+        warnings.push(`Emergency compression failed: ${(error as Error).message}`);
+        return {
+          valid: false,
+          prompt: [],
+          totalTokens,
+          ollamaLimit,
+          warnings,
+          emergencyAction
+        };
+      }
+    } else if (usagePercentage >= 80) {
+      // NORMAL COMPRESSION TRIGGER (80%+)
+      warnings.push(
+        `INFO: Context at ${usagePercentage.toFixed(1)}% (${totalTokens}/${ollamaLimit} tokens)`,
+        'Normal compression will be triggered after this message'
+      );
+    } else if (usagePercentage >= 70) {
+      // INFORMATIONAL WARNING (70%+)
+      warnings.push(
+        `INFO: Context at ${usagePercentage.toFixed(1)}% (${totalTokens}/${ollamaLimit} tokens)`
+      );
+    }
+    
+    // Build prompt (all messages in context)
+    const prompt = [...this.currentContext.messages];
+    if (newMessage) {
+      prompt.push(newMessage);
+    }
+    
+    return {
+      valid: true,
+      prompt,
+      totalTokens,
+      ollamaLimit,
+      warnings,
+      emergencyAction
+    };
+  }
+
+  /**
    * Get current checkpoints
    */
   getCheckpoints(): import('./types.js').CompressionCheckpoint[] {
