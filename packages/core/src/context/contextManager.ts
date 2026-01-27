@@ -222,19 +222,23 @@ export class ConversationContextManager extends EventEmitter implements ContextM
       // Update context pool with new VRAM info
       this.contextPool.updateVRAMInfo(vramInfo);
       
-      // If auto-size is enabled, recalculate optimal size
-      if (this.config.autoSize) {
-        const maxPossibleContext = this.contextPool.calculateOptimalSize(
-          vramInfo,
-          this.modelInfo
-        );
-        const recommendedSize = this.getRecommendedAutoSize(maxPossibleContext);
-        
-        if (recommendedSize !== this.contextPool.currentSize) {
-          await this.contextPool.resize(recommendedSize);
-          this.contextPool.updateConfig({ targetContextSize: recommendedSize });
-        }
-      }
+      // Show warning - context size stays FIXED for session
+      // Do NOT resize mid-conversation as it breaks session stability
+      const usagePercent = Math.round((vramInfo.usedMemory / vramInfo.totalMemory) * 100);
+      
+      console.warn('[ContextManager] ⚠️ Low memory detected');
+      console.warn(`  VRAM Usage: ${vramInfo.usedMemory}MB / ${vramInfo.totalMemory}MB (${usagePercent}%)`);
+      console.warn(`  Current context size: ${this.contextPool.currentSize} tokens`);
+      console.warn('  Your current context size may cause performance issues.');
+      console.warn('  Consider restarting with a smaller context size.');
+      
+      // Emit warning event for UI to display
+      this.emit('low-memory-warning', {
+        vramInfo,
+        currentContextSize: this.contextPool.currentSize,
+        usagePercent,
+        message: 'Low memory detected. Consider restarting with smaller context size.'
+      });
     });
     
     this.contextModules.registerHandlers(this.config);
