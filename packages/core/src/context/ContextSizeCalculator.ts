@@ -196,3 +196,80 @@ export function isValidContextSize(
   // Must match one of the available profiles
   return contextProfiles.some(p => p.size === size);
 }
+
+/**
+ * Calculate bytes per token for KV cache based on model parameters and quantization
+ * 
+ * Formula: 2 (K+V) × layers × hidden_dim × bytes_per_value
+ * 
+ * For typical transformer models:
+ * - 7B model: ~32 layers, 4096 hidden
+ * - 13B model: ~40 layers, 5120 hidden
+ * - 70B model: ~80 layers, 8192 hidden
+ * 
+ * Simplified approximation: (params_in_billions * 37,500) * bytes_per_value
+ */
+export function calculateBytesPerToken(
+  modelParams: number,
+  quantization: 'f16' | 'q8_0' | 'q4_0'
+): number {
+  // Bytes per value based on quantization type
+  const bytesPerValue: Record<string, number> = {
+    'f16': 2,    // 2 bytes per value
+    'q8_0': 1,   // 1 byte per value
+    'q4_0': 0.5  // 0.5 bytes per value
+  };
+
+  const bytes = bytesPerValue[quantization] || 1;
+  return modelParams * 37500 * bytes;
+}
+
+/**
+ * Calculate optimal context size based on available VRAM
+ * 
+ * @param availableVRAM - Available VRAM in bytes
+ * @param reserveBuffer - Safety buffer in bytes (e.g., 512MB)
+ * @param modelParams - Model parameters in billions
+ * @param quantization - KV cache quantization type
+ * @param modelContextLimit - Model's maximum context window
+ * @param minSize - Minimum allowed context size
+ * @param maxSize - Maximum allowed context size
+ * @returns Optimal context size in tokens
+ */
+export function calculateOptimalContextSize(
+  availableVRAM: number,
+  reserveBuffer: number,
+  modelParams: number,
+  quantization: 'f16' | 'q8_0' | 'q4_0',
+  modelContextLimit: number,
+  minSize: number = 2048,
+  maxSize: number = 131072
+): number {
+  // Calculate usable VRAM
+  const usableVRAM = availableVRAM - reserveBuffer;
+
+  // Ensure we have positive usable VRAM
+  if (usableVRAM <= 0) {
+    return minSize;
+  }
+
+  // Calculate bytes per token
+  const bytesPerToken = calculateBytesPerToken(modelParams, quantization);
+
+  // Calculate optimal size
+  const optimalSize = Math.floor(usableVRAM / bytesPerToken);
+
+  // Clamp to min/max and model limit
+  return Math.max(minSize, Math.min(optimalSize, modelContextLimit, maxSize));
+}
+
+/**
+ * Clamp size to min/max bounds
+ */
+export function clampContextSize(
+  size: number,
+  minSize: number = 2048,
+  maxSize: number = 131072
+): number {
+  return Math.max(minSize, Math.min(size, maxSize));
+}

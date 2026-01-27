@@ -1,8 +1,18 @@
 /**
- * Context Pool Service
+ * Context Pool - Stateful Context Coordinator
  * 
- * Manages dynamic context sizing based on available VRAM, quantization types,
- * and user configuration. Coordinates with provider for context resizing.
+ * Manages context state and coordinates resize operations.
+ * All calculations delegated to ContextSizeCalculator.
+ * 
+ * Responsibilities:
+ * - Track current size, tokens, VRAM info
+ * - Track active requests
+ * - Coordinate resize operations with provider
+ * - Return usage statistics
+ * 
+ * Does NOT:
+ * - Calculate sizes (ContextSizeCalculator does this)
+ * - Make decisions about when to resize (ContextManager does this)
  */
 
 import type {
@@ -10,9 +20,12 @@ import type {
   ContextPoolConfig,
   ContextUsage,
   VRAMInfo,
-  ModelInfo,
-  KVQuantization
+  ModelInfo
 } from './types.js';
+import { 
+  clampContextSize,
+  calculateOptimalContextSize
+} from './ContextSizeCalculator.js';
 
 /**
  * Default context pool configuration
@@ -31,49 +44,47 @@ const DEFAULT_CONFIG: ContextPoolConfig = {
  */
 export class ContextPoolImpl implements ContextPool {
   public config: ContextPoolConfig;
-  public currentSize: number; // Ollama context size (85% of user's selection)
-  public userContextSize: number; // User's selected size (for UI display and tier detection)
+  
+  // State tracking (public as required by interface)
+  public currentSize: number; // Ollama context size (85% pre-calculated)
+  public userContextSize: number; // User's selected size (for UI display)
+  
+  // Private state
   private currentTokens: number = 0;
   private vramInfo: VRAMInfo | null = null;
-  private resizeCallback?: (newSize: number) => Promise<void>;
   private activeRequests: number = 0;
-  private resizePending: boolean = false;
+  
+  // Coordination
+  private resizeCallback?: (newSize: number) => Promise<void>;
 
   constructor(
     config: Partial<ContextPoolConfig> = {},
     resizeCallback?: (newSize: number) => Promise<void>
   ) {
     this.config = { ...DEFAULT_CONFIG, ...config };
-    // IMPORTANT: currentSize is Ollama size (85%), userContextSize is what user selected
-    this.currentSize = this.config.targetContextSize; // This is already the Ollama size from config
-    this.userContextSize = this.config.targetContextSize; // Initialize to same value
+    this.currentSize = this.config.targetContextSize;
+    this.userContextSize = this.config.targetContextSize;
     this.resizeCallback = resizeCallback;
   }
 
   /**
-   * Track active request start
+   * Track active request lifecycle
    */
   beginRequest(): void {
     this.activeRequests++;
   }
 
-  /**
-   * Track active request end
-   */
   endRequest(): void {
     this.activeRequests = Math.max(0, this.activeRequests - 1);
   }
 
-  /**
-   * Check if there are active requests
-   */
   hasActiveRequests(): boolean {
     return this.activeRequests > 0;
   }
 
   /**
    * Calculate optimal context size based on available VRAM
-   * Formula: floor((availableVRAM - safetyBuffer) / bytesPerToken)
+   * Delegates to ContextSizeCalculator for pure calculation
    */
   calculateOptimalSize(vramInfo: VRAMInfo, modelInfo: ModelInfo): number {
     // Store VRAM info for usage calculations
@@ -81,97 +92,27 @@ export class ContextPoolImpl implements ContextPool {
 
     // If auto-sizing is disabled, use target size
     if (!this.config.autoSize) {
-      console.log('[ContextPool] Auto-size disabled, using target:', this.config.targetContextSize);
-      return this.clampSize(this.config.targetContextSize);
+      return clampContextSize(
+        this.config.targetContextSize,
+        this.config.minContextSize,
+        this.config.maxContextSize
+      );
     }
 
-    // Calculate bytes per token based on quantization
-    const bytesPerToken = this.getBytesPerToken(
+    // Delegate to ContextSizeCalculator for pure calculation
+    return calculateOptimalContextSize(
+      vramInfo.available,
+      this.config.reserveBuffer,
       modelInfo.parameters,
-      this.config.kvCacheQuantization
-    );
-
-    // Calculate usable VRAM
-    const usableVRAM = vramInfo.available - this.config.reserveBuffer;
-
-    console.log('[ContextPool] VRAM Calculation:', {
-      totalVRAM: vramInfo.total,
-      usedVRAM: vramInfo.used,
-      availableVRAM: vramInfo.available,
-      reserveBuffer: this.config.reserveBuffer,
-      usableVRAM: usableVRAM,
-      modelParams: modelInfo.parameters,
-      bytesPerToken: bytesPerToken,
-      calculatedTokens: Math.floor(usableVRAM / bytesPerToken)
-    });
-
-    // Ensure we have positive usable VRAM
-    if (usableVRAM <= 0) {
-      console.warn('[ContextPool] No usable VRAM, using minimum:', this.config.minContextSize);
-      return this.config.minContextSize;
-    }
-
-    // Calculate optimal size
-    const optimalSize = Math.floor(usableVRAM / bytesPerToken);
-
-    // Clamp to min/max and model limit
-    const finalSize = this.clampSize(Math.min(optimalSize, modelInfo.contextLimit));
-    console.log('[ContextPool] Final context size:', finalSize);
-    
-    return finalSize;
-  }
-
-  /**
-   * Calculate bytes per token for KV cache
-   * Formula: 2 (K+V) × layers × hidden_dim × bytes_per_value
-   * 
-   * For a 7B model:
-   * - ~32 layers
-   * - ~4096 hidden_dim
-   * - 2 components (K and V)
-   * - bytes_per_value depends on quantization
-   * 
-   * Approximate: layers * hidden_dim * 2 * bytes_per_value
-   * For 7B: 32 * 4096 * 2 * bytes = 262,144 * bytes
-   * 
-   * Simplified formula based on model size:
-   * - 7B model: ~32 layers, 4096 hidden
-   * - 13B model: ~40 layers, 5120 hidden
-   * - 70B model: ~80 layers, 8192 hidden
-   * 
-   * Rough approximation: (params_in_billions * 37,500) * bytes_per_value
-   */
-  private getBytesPerToken(
-    modelParams: number,
-    quantization: KVQuantization
-  ): number {
-    // Bytes per value based on quantization type
-    const bytesPerValue: Record<KVQuantization, number> = {
-      'f16': 2,    // 2 bytes per value
-      'q8_0': 1,   // 1 byte per value
-      'q4_0': 0.5  // 0.5 bytes per value
-    };
-
-    // KV cache has 2 components (K and V)
-    // Approximate formula: (params_in_billions * 37,500) * bytes_per_value
-    // This gives roughly the right order of magnitude for typical transformer models
-    const bytes = bytesPerValue[quantization];
-    return modelParams * 37500 * bytes;
-  }
-
-  /**
-   * Clamp size to configured min/max bounds
-   */
-  private clampSize(size: number): number {
-    return Math.max(
+      this.config.kvCacheQuantization,
+      modelInfo.contextLimit,
       this.config.minContextSize,
-      Math.min(size, this.config.maxContextSize)
+      this.config.maxContextSize
     );
   }
 
   /**
    * Resize context to new size
-   * Coordinates with provider and preserves existing data
    * Waits for active requests to complete before resizing
    * 
    * @param newSize - The Ollama context size (85% pre-calculated)
@@ -179,28 +120,28 @@ export class ContextPoolImpl implements ContextPool {
    */
   async resize(newSize: number, userSize?: number): Promise<void> {
     // Clamp to valid range
-    const clampedSize = this.clampSize(newSize);
+    const clampedSize = clampContextSize(
+      newSize,
+      this.config.minContextSize,
+      this.config.maxContextSize
+    );
 
     // No-op if size hasn't changed
     if (clampedSize === this.currentSize) {
       return;
     }
 
-    // Mark resize as pending
-    this.resizePending = true;
-
     // Wait for active requests to complete (with timeout)
     const maxWaitTime = 30000; // 30 seconds
     const startTime = Date.now();
     
     while (this.hasActiveRequests() && (Date.now() - startTime) < maxWaitTime) {
-      // Wait 100ms before checking again
       await new Promise(resolve => setTimeout(resolve, 100));
     }
 
     // If still have active requests after timeout, log warning but proceed
     if (this.hasActiveRequests()) {
-      console.warn(`Context resize proceeding with ${this.activeRequests} active requests still in flight`);
+      console.warn(`[ContextPool] Resize proceeding with ${this.activeRequests} active requests`);
     }
 
     // Call resize callback if provided (coordinates with provider)
@@ -208,26 +149,23 @@ export class ContextPoolImpl implements ContextPool {
       await this.resizeCallback(clampedSize);
     }
 
-    // Update current size (Ollama size)
+    // Update sizes
     this.currentSize = clampedSize;
-    
-    // Update user-facing size if provided, otherwise assume same as Ollama size
-    if (userSize !== undefined) {
-      this.userContextSize = userSize;
-    } else {
-      this.userContextSize = clampedSize;
-    }
-    
-    this.resizePending = false;
+    this.userContextSize = userSize !== undefined ? userSize : clampedSize;
+  }
+
+  /**
+   * Get current Ollama context size (actual limit sent to Ollama)
+   */
+  getCurrentSize(): number {
+    return this.currentSize;
   }
 
   /**
    * Get current usage statistics
    */
   getUsage(): ContextUsage {
-    // IMPORTANT: Calculate percentage against currentSize (Ollama limit), not userContextSize
-    // currentSize is the actual limit sent to Ollama (85% pre-calculated)
-    // This ensures compression triggers at the right time
+    // Calculate percentage against currentSize (Ollama limit)
     const percentage = this.currentSize > 0
       ? (this.currentTokens / this.currentSize) * 100
       : 0;
@@ -242,54 +180,31 @@ export class ContextPoolImpl implements ContextPool {
   }
 
   /**
-   * Get current Ollama context size (actual limit sent to Ollama)
-   * This is the 85% pre-calculated value, not the user's selection
-   */
-  getCurrentSize(): number {
-    return this.currentSize;
-  }
-
-  /**
-   * Update configuration
-   */
-  updateConfig(config: Partial<ContextPoolConfig>): void {
-    this.config = { ...this.config, ...config };
-
-    // If target size changed, this is the Ollama size (85% pre-calculated)
-    // IMPORTANT: Do NOT overwrite userContextSize here - it should be set explicitly
-    // via setUserContextSize() or resize() with userSize parameter
-    if (config.targetContextSize !== undefined) {
-      // targetContextSize is the Ollama size (85%)
-      this.currentSize = this.clampSize(config.targetContextSize);
-      // Do NOT set userContextSize here - it's managed separately
-    }
-
-    // If target size changed and auto-size is off, resize to target
-    if (config.targetContextSize !== undefined && !this.config.autoSize) {
-      this.currentSize = this.clampSize(config.targetContextSize);
-    }
-  }
-  
-  /**
-   * Set user-facing context size (for UI display and tier detection)
-   * This should be called by contextManager when it knows the user's selected size
-   */
-  setUserContextSize(size: number): void {
-    this.userContextSize = size;
-  }
-
-  /**
-   * Update current token count (for usage tracking)
+   * Update state
    */
   setCurrentTokens(tokens: number): void {
     this.currentTokens = Math.max(0, tokens);
   }
 
-  /**
-   * Update VRAM info (for usage tracking)
-   */
+  setUserContextSize(size: number): void {
+    this.userContextSize = size;
+  }
+
   updateVRAMInfo(vramInfo: VRAMInfo): void {
     this.vramInfo = vramInfo;
+  }
+
+  updateConfig(config: Partial<ContextPoolConfig>): void {
+    this.config = { ...this.config, ...config };
+
+    // If target size changed and auto-size is off, update current size
+    if (config.targetContextSize !== undefined && !this.config.autoSize) {
+      this.currentSize = clampContextSize(
+        config.targetContextSize,
+        this.config.minContextSize,
+        this.config.maxContextSize
+      );
+    }
   }
 }
 
