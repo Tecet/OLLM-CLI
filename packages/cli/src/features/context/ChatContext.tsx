@@ -659,15 +659,6 @@ Focus your thinking on the user's actual question, not on these instructions.`;
         // Prepare history from authoritative context manager
         const currentContext = await contextActions.getContext();
         
-        // DEBUG: Write context to file before filtering
-        try {
-          fs.appendFileSync('context-before-filter.log', `\n[${new Date().toISOString()}] Turn ${turnCount}\n`);
-          fs.appendFileSync('context-before-filter.log', `Total messages: ${currentContext.length}\n`);
-          currentContext.forEach((m: ContextMessage, i: number) => {
-            fs.appendFileSync('context-before-filter.log', `  [${i}] ${m.role} (id: ${m.id}): ${m.content?.substring(0, 100)}...\n`);
-          });
-        } catch (_e) { /* ignore */ }
-        
         // Exclude system messages from the payload; system prompt is sent separately.
         const history = currentContext
           .filter((m: ContextMessage) => m.role !== 'system')
