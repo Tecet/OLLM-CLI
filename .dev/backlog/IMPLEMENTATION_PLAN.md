@@ -1,8 +1,18 @@
 # Sessions, Compression & Input Preprocessing - Implementation Plan
 
 **Created:** January 27, 2026  
-**Status:** Ready for Implementation  
+**Status:** 🚧 Phase 0 In Progress (20% complete)  
 **Estimated Timeline:** 13-21 days (or 2 hours if we're optimistic 😄)
+
+## Current Progress
+
+**Phase 0: Input Preprocessing** - 🚧 IN PROGRESS
+- ✅ Service created (`inputPreprocessor.ts`)
+- ✅ Types defined
+- 🚧 ChatClient integration (next)
+- ⏳ UI clarification flow
+- ⏳ Intent snapshot storage
+- ⏳ Tests
 
 ---
 
