@@ -315,6 +315,27 @@ Is this correct? (y/n)`;
     // ============================================================================
     // Validate prompt before adding to context to prevent overflow
     if (this.contextMgmtManager) {
+      // Phase 2: Wait for any in-progress summarization to complete
+      if (this.contextMgmtManager.isSummarizationInProgress()) {
+        if (!isTestEnv) console.log('[ChatClient] Waiting for checkpoint creation to complete...');
+        
+        yield {
+          type: 'text',
+          value: '\n[System: Creating checkpoint, please wait...]\n\n'
+        };
+        
+        try {
+          await this.contextMgmtManager.waitForSummarization();
+          
+          yield {
+            type: 'text',
+            value: '[System: Checkpoint complete, continuing...]\n\n'
+          };
+        } catch (error) {
+          if (!isTestEnv) console.error('[ChatClient] Summarization wait failed:', error);
+        }
+      }
+      
       try {
         const userMessage: Message = {
           id: `user-${Date.now()}`,

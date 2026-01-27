@@ -89,6 +89,10 @@ export class ConversationContextManager extends EventEmitter implements ContextM
   public listSnapshots: () => Promise<ContextSnapshot[]>;
   public getSnapshot: (snapshotId: string) => Promise<ContextSnapshot | null>;
   public compress: () => Promise<void>;
+  
+  // Phase 2: Blocking Mechanism
+  public isSummarizationInProgress: () => boolean;
+  public waitForSummarization: (timeoutMs?: number) => Promise<void>;
 
   constructor(
     sessionId: string,
@@ -214,6 +218,11 @@ export class ConversationContextManager extends EventEmitter implements ContextM
     this.listSnapshots = snapshotCoordinator.listSnapshots.bind(snapshotCoordinator);
     this.getSnapshot = snapshotCoordinator.getSnapshot.bind(snapshotCoordinator);
     this.compress = compressionCoordinator.compress.bind(compressionCoordinator);
+    
+    // Phase 2: Expose blocking mechanism methods
+    this.isSummarizationInProgress = compressionCoordinator.isSummarizationInProgress.bind(compressionCoordinator);
+    this.waitForSummarization = compressionCoordinator.waitForSummarization.bind(compressionCoordinator);
+    
     this.messageStore.setCompress(() => this.compress());
     
     // Set up event coordination

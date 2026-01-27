@@ -54,6 +54,11 @@ export class CompressionCoordinator {
   private autoSummaryRunning = false;
   private lastAutoSummaryAt: number | null = null;
   private readonly autoSummaryCooldownMs = 60000;
+  
+  // Phase 2: Blocking Mechanism
+  private summarizationInProgress = false;
+  private summarizationLock: Promise<void> | null = null;
+  private readonly summarizationTimeoutMs = 30000; // 30 seconds max
 
   constructor(options: CompressionCoordinatorOptions) {
     this.config = options.config;
@@ -72,6 +77,39 @@ export class CompressionCoordinator {
 
   isAutoSummaryRunning(): boolean {
     return this.autoSummaryRunning;
+  }
+  
+  /**
+   * Check if summarization is currently in progress (Phase 2: Blocking Mechanism)
+   */
+  isSummarizationInProgress(): boolean {
+    return this.summarizationInProgress;
+  }
+  
+  /**
+   * Wait for any in-progress summarization to complete (Phase 2: Blocking Mechanism)
+   * @param timeoutMs - Optional timeout in milliseconds (default: 30000)
+   * @returns Promise that resolves when summarization completes or times out
+   */
+  async waitForSummarization(timeoutMs?: number): Promise<void> {
+    if (!this.summarizationInProgress || !this.summarizationLock) {
+      return;
+    }
+    
+    const timeout = timeoutMs ?? this.summarizationTimeoutMs;
+    
+    // Create a timeout promise
+    const timeoutPromise = new Promise<void>((resolve) => {
+      setTimeout(() => {
+        if (!this.isTestEnv) {
+          console.warn('[CompressionCoordinator] Summarization timeout reached');
+        }
+        resolve();
+      }, timeout);
+    });
+    
+    // Race between summarization completion and timeout
+    await Promise.race([this.summarizationLock, timeoutPromise]);
   }
 
   /**
@@ -209,6 +247,7 @@ export class CompressionCoordinator {
 
   /**
    * Auto-threshold handler for snapshot + summarize flow.
+   * Phase 2: Blocks user input during checkpoint creation
    */
   async handleAutoThreshold(): Promise<void> {
     const now = Date.now();
@@ -221,146 +260,173 @@ export class CompressionCoordinator {
       return;
     }
 
+    // Phase 2: Set blocking flags and emit block event
     this.autoSummaryRunning = true;
+    this.summarizationInProgress = true;
     this.lastAutoSummaryAt = now;
-
-    const context = this.getContext();
-    console.log('[ContextManager] autoThreshold reached, starting snapshot and summarization checks', { usage: this.getUsage() });
-    this.emit('summarizing', { usage: this.getUsage() });
-
-    const hasUserMessages = context.messages.some(
-      m => m.role === 'user'
-    );
-    if (!hasUserMessages) {
-      console.log('[ContextManager] No user messages, skipping snapshot/compression');
-      this.autoSummaryRunning = false;
-      return;
-    }
-
-    const checkpointIds = new Set((context.checkpoints || []).map(cp => cp.summary.id));
-    const compressibleMessages = context.messages.filter(m =>
-      m.role !== 'system' &&
-      !checkpointIds.has(m.id)
-    );
-
-    const MIN_MESSAGES_TO_COMPRESS = 10;
-    if (compressibleMessages.length < MIN_MESSAGES_TO_COMPRESS) {
-      console.log('[ContextManager] Not enough compressible messages, skipping compression', {
-        compressible: compressibleMessages.length,
-        minimum: MIN_MESSAGES_TO_COMPRESS,
-        total: context.messages.length,
-        checkpoints: context.checkpoints?.length || 0
-      });
-      this.autoSummaryRunning = false;
-      return;
-    }
-
-    let snapshot = null as Awaited<ReturnType<SnapshotManager['createSnapshot']>> | null;
-    try {
-      snapshot = await this.snapshotManager.createSnapshot(context);
-      this.emit('auto-snapshot-created', snapshot);
-      console.log('[ContextManager] auto-snapshot-created', { id: snapshot.id, tokenCount: snapshot.tokenCount });
-    } catch (error) {
-      console.error('[ContextManager] snapshot creation failed', error);
-      this.emit('snapshot-error', error);
-    }
+    
+    // Emit block-user-input event
+    this.emit('block-user-input', {
+      reason: 'checkpoint-creation',
+      estimatedDuration: 'Creating checkpoint...'
+    });
+    
+    // Create lock promise
+    let resolveLock: (() => void) | null = null;
+    this.summarizationLock = new Promise<void>((resolve) => {
+      resolveLock = resolve;
+    });
 
     try {
-      const strategy: import('./types.js').CompressionStrategy = {
-        type: 'summarize',
-        preserveRecent: this.config.compression.preserveRecent,
-        summaryMaxTokens: this.config.compression.summaryMaxTokens
-      };
+      const context = this.getContext();
+      console.log('[ContextManager] autoThreshold reached, starting snapshot and summarization checks', { usage: this.getUsage() });
+      this.emit('summarizing', { usage: this.getUsage() });
 
-      console.log('[ContextManager] invoking compressionService.compress', { strategy });
-      const compressed = await this.compressionService.compress(
-        context.messages,
-        strategy
+      const hasUserMessages = context.messages.some(
+        m => m.role === 'user'
       );
-      console.log('[ContextManager] compressionService.compress completed', { originalTokens: compressed.originalTokens, compressedTokens: compressed.compressedTokens, status: compressed.status });
-
-      if (compressed.status === 'inflated') {
-        console.log('[ContextManager] Compression skipped - no messages to compress', { status: compressed.status });
-        this.emit('compression-skipped', { reason: compressed.status });
+      if (!hasUserMessages) {
+        console.log('[ContextManager] No user messages, skipping snapshot/compression');
         return;
       }
 
-      if (compressed && compressed.summary) {
-        const systemMessages = context.messages.filter(
-          m => m.role === 'system'
-        );
+      const checkpointIds = new Set((context.checkpoints || []).map(cp => cp.summary.id));
+      const compressibleMessages = context.messages.filter(m =>
+        m.role !== 'system' &&
+        !checkpointIds.has(m.id)
+      );
 
-        const checkpoint: import('./types.js').CompressionCheckpoint = {
-          id: `checkpoint-${Date.now()}`,
-          level: 3,
-          range: `Messages 1-${context.messages.length - compressed.preserved.length}`,
-          summary: compressed.summary,
-          createdAt: new Date(),
-          originalTokens: compressed.originalTokens,
-          currentTokens: compressed.compressedTokens,
-          compressionCount: 1,
-          keyDecisions: compressed.checkpoint?.keyDecisions,
-          filesModified: compressed.checkpoint?.filesModified,
-          nextSteps: compressed.checkpoint?.nextSteps
+      const MIN_MESSAGES_TO_COMPRESS = 10;
+      if (compressibleMessages.length < MIN_MESSAGES_TO_COMPRESS) {
+        console.log('[ContextManager] Not enough compressible messages, skipping compression', {
+          compressible: compressibleMessages.length,
+          minimum: MIN_MESSAGES_TO_COMPRESS,
+          total: context.messages.length,
+          checkpoints: context.checkpoints?.length || 0
+        });
+        return;
+      }
+
+      let snapshot = null as Awaited<ReturnType<SnapshotManager['createSnapshot']>> | null;
+      try {
+        snapshot = await this.snapshotManager.createSnapshot(context);
+        this.emit('auto-snapshot-created', snapshot);
+        console.log('[ContextManager] auto-snapshot-created', { id: snapshot.id, tokenCount: snapshot.tokenCount });
+      } catch (error) {
+        console.error('[ContextManager] snapshot creation failed', error);
+        this.emit('snapshot-error', error);
+      }
+
+      try {
+        const strategy: import('./types.js').CompressionStrategy = {
+          type: 'summarize',
+          preserveRecent: this.config.compression.preserveRecent,
+          summaryMaxTokens: this.config.compression.summaryMaxTokens
         };
 
-        if (!context.checkpoints) {
-          context.checkpoints = [];
-        }
-
-        context.checkpoints.push(checkpoint);
-
-        const MAX_CHECKPOINTS = 10;
-        if (context.checkpoints.length > MAX_CHECKPOINTS) {
-          const removed = context.checkpoints.length - MAX_CHECKPOINTS;
-          context.checkpoints = context.checkpoints.slice(-MAX_CHECKPOINTS);
-          console.log('[ContextManager] Checkpoint limit reached, removed oldest checkpoints', {
-            removed,
-            remaining: context.checkpoints.length
-          });
-        }
-
-        await this.checkpointManager.compressOldCheckpoints();
-
-        const checkpointMessages = context.checkpoints.map(cp => cp.summary);
-
-        context.messages = [
-          ...systemMessages,
-          ...checkpointMessages,
-          ...compressed.preserved
-        ];
-
-        const newTokenCount = this.tokenCounter.countConversationTokens(
-          context.messages
+        console.log('[ContextManager] invoking compressionService.compress', { strategy });
+        const compressed = await this.compressionService.compress(
+          context.messages,
+          strategy
         );
-        context.tokenCount = newTokenCount;
-        this.contextPool.setCurrentTokens(newTokenCount);
+        console.log('[ContextManager] compressionService.compress completed', { originalTokens: compressed.originalTokens, compressedTokens: compressed.compressedTokens, status: compressed.status });
 
-        context.metadata.compressionHistory.push({
-          timestamp: new Date(),
-          strategy: 'summarize',
-          originalTokens: compressed.originalTokens,
-          compressedTokens: compressed.compressedTokens,
-          ratio: compressed.compressionRatio
-        });
+        if (compressed.status === 'inflated') {
+          console.log('[ContextManager] Compression skipped - no messages to compress', { status: compressed.status });
+          this.emit('compression-skipped', { reason: compressed.status });
+          return;
+        }
 
-        this.emit('auto-summary-created', {
-          summary: compressed.summary,
-          checkpoint,
-          snapshot: snapshot || null,
-          originalTokens: compressed.originalTokens,
-          compressedTokens: compressed.compressedTokens,
-          ratio: compressed.compressionRatio
-        });
-      } else {
-        console.warn('[ContextManager] compression returned no summary');
-        this.emit('auto-summary-failed', { reason: 'no-summary' });
+        if (compressed && compressed.summary) {
+          const systemMessages = context.messages.filter(
+            m => m.role === 'system'
+          );
+
+          const checkpoint: import('./types.js').CompressionCheckpoint = {
+            id: `checkpoint-${Date.now()}`,
+            level: 3,
+            range: `Messages 1-${context.messages.length - compressed.preserved.length}`,
+            summary: compressed.summary,
+            createdAt: new Date(),
+            originalTokens: compressed.originalTokens,
+            currentTokens: compressed.compressedTokens,
+            compressionCount: 1,
+            keyDecisions: compressed.checkpoint?.keyDecisions,
+            filesModified: compressed.checkpoint?.filesModified,
+            nextSteps: compressed.checkpoint?.nextSteps
+          };
+
+          if (!context.checkpoints) {
+            context.checkpoints = [];
+          }
+
+          context.checkpoints.push(checkpoint);
+
+          const MAX_CHECKPOINTS = 10;
+          if (context.checkpoints.length > MAX_CHECKPOINTS) {
+            const removed = context.checkpoints.length - MAX_CHECKPOINTS;
+            context.checkpoints = context.checkpoints.slice(-MAX_CHECKPOINTS);
+            console.log('[ContextManager] Checkpoint limit reached, removed oldest checkpoints', {
+              removed,
+              remaining: context.checkpoints.length
+            });
+          }
+
+          await this.checkpointManager.compressOldCheckpoints();
+
+          const checkpointMessages = context.checkpoints.map(cp => cp.summary);
+
+          context.messages = [
+            ...systemMessages,
+            ...checkpointMessages,
+            ...compressed.preserved
+          ];
+
+          const newTokenCount = this.tokenCounter.countConversationTokens(
+            context.messages
+          );
+          context.tokenCount = newTokenCount;
+          this.contextPool.setCurrentTokens(newTokenCount);
+
+          context.metadata.compressionHistory.push({
+            timestamp: new Date(),
+            strategy: 'summarize',
+            originalTokens: compressed.originalTokens,
+            compressedTokens: compressed.compressedTokens,
+            ratio: compressed.compressionRatio
+          });
+
+          this.emit('auto-summary-created', {
+            summary: compressed.summary,
+            checkpoint,
+            snapshot: snapshot || null,
+            originalTokens: compressed.originalTokens,
+            compressedTokens: compressed.compressedTokens,
+            ratio: compressed.compressionRatio
+          });
+        } else {
+          console.warn('[ContextManager] compression returned no summary');
+          this.emit('auto-summary-failed', { reason: 'no-summary' });
+        }
+      } catch (error) {
+        console.error('[ContextManager] auto-summary failed', error);
+        this.emit('auto-summary-failed', { error });
       }
-    } catch (error) {
-      console.error('[ContextManager] auto-summary failed', error);
-      this.emit('auto-summary-failed', { error });
     } finally {
+      // Phase 2: Clear blocking flags and emit unblock event
       this.autoSummaryRunning = false;
+      this.summarizationInProgress = false;
+      
+      // Resolve lock
+      if (resolveLock) {
+        resolveLock();
+      }
+      this.summarizationLock = null;
+      
+      // Emit unblock-user-input event
+      this.emit('unblock-user-input', {
+        reason: 'checkpoint-complete'
+      });
     }
   }
 

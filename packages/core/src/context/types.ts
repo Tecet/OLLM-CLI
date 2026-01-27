@@ -973,6 +973,10 @@ export interface ContextManager {
     warnings: string[];
     emergencyAction?: 'compression' | 'rollover';
   }>;
+  /** Check if summarization is currently in progress (Phase 2: Blocking Mechanism) */
+  isSummarizationInProgress(): boolean;
+  /** Wait for any in-progress summarization to complete (Phase 2: Blocking Mechanism) */
+  waitForSummarization(timeoutMs?: number): Promise<void>;
   /** Report in-flight (streaming) token delta to the manager (can be positive or negative) */
   reportInflightTokens(delta: number): void;
   /** Clear any in-flight token accounting (call on generation finish) */
