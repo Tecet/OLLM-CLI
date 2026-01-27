@@ -29,10 +29,12 @@ describe('ContextManager', () => {
     /**
      * Feature: stage-04b-context-management, Property 30: Target Size Configuration
      * 
-     * For any configured targetSize value, the Context Manager should use the Ollama
-     * context size (85% pre-calculated) as the actual maxTokens.
+     * For any configured targetSize value, the Context Manager should:
+     * 1. Store the user-facing size in config.targetSize
+     * 2. Use Ollama size (85%) internally for actual limits
+     * 3. Return user-facing size in usage.maxTokens for UI display
      * 
-     * Validates: Requirements 8.1
+     * Validates: Requirements 8.1, Bug Fix #1
      */
     it('should use configured targetSize as preferred context size', () => {
       fc.assert(
@@ -54,18 +56,22 @@ describe('ContextManager', () => {
             // Verify the config has the target size (user-facing)
             expect(manager.config.targetSize).toBe(targetSize);
 
-            // Get the context pool's current size (should be Ollama size - 85%)
+            // Get usage - should return user-facing size for UI display
             const usage = manager.getUsage();
             
-            // The context pool should use the Ollama size (85% of target)
-            // Since we don't have context profiles in the test, it falls back to 85% calculation
+            // The usage.maxTokens should be the user-facing size (for UI display)
+            // This was changed in Bug Fix #1 to show correct denominator in UI
             const clampedSize = Math.max(
               config.minSize || 2048,
               Math.min(targetSize, config.maxSize || 131072)
             );
-            const expectedOllamaSize = Math.floor(clampedSize * 0.85);
             
-            expect(usage.maxTokens).toBe(expectedOllamaSize);
+            // usage.maxTokens should be user-facing size, not Ollama size
+            expect(usage.maxTokens).toBe(clampedSize);
+            
+            // Verify internal Ollama size is 85% (via contextPool.currentSize)
+            const expectedOllamaSize = Math.floor(clampedSize * 0.85);
+            expect(manager['contextPool'].currentSize).toBe(expectedOllamaSize);
           }
         ),
         { numRuns: 100 }

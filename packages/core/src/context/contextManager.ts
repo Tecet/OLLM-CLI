@@ -322,6 +322,7 @@ export class ConversationContextManager extends EventEmitter implements ContextM
         tier: this.currentTier, 
         config: this.tierConfig,
         selectedTier: this.selectedTier,
+        effectivePromptTier: this.selectedTier, // For UI display
         promptTierLocked: false
       });
     } else {
@@ -453,6 +454,7 @@ export class ConversationContextManager extends EventEmitter implements ContextM
                 tier: this.currentTier,
                 config: this.tierConfig,
                 selectedTier: this.selectedTier,
+                effectivePromptTier: this.selectedTier, // For UI display
                 promptTierLocked: false
               });
               
@@ -495,6 +497,7 @@ export class ConversationContextManager extends EventEmitter implements ContextM
             tier: this.currentTier,
             config: this.tierConfig,
             selectedTier: this.selectedTier,
+            effectivePromptTier: this.selectedTier, // For UI display
             promptTierLocked: this.config.autoSize
           });
           
