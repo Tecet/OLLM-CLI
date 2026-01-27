@@ -460,7 +460,7 @@ export class ConversationContextManager extends EventEmitter implements ContextM
    */
   private logProfileFallbackError(context: string, additionalInfo?: Record<string, any>): void {
     console.error(`[ContextManager] CRITICAL: Using ${context} fallback!`);
-    console.error(`  Model: ${this.modelInfo.id || 'unknown'}`);
+    console.error(`  Model: ${this.modelInfo.modelId || 'unknown'}`);
     console.error(`  Context profiles provided: ${this.modelInfo.contextProfiles ? 'YES' : 'NO'}`);
     console.error(`  Profile count: ${this.modelInfo.contextProfiles?.length || 0}`);
     
