@@ -277,7 +277,7 @@ Type \`/help\` for more commands.`,
 
           {/* Row 2: Main Content */}
           <Box height={row2Height} borderStyle={uiState.theme.border.style as BoxProps['borderStyle']} borderColor={chatHistoryFocused ? uiState.theme.border.active : uiState.theme.border.primary}>
-            {uiState.activeTab === 'chat' && <ChatTab height={row2Height} showBorder={false} showWindowSwitcher={true} metricsConfig={{ enabled: config.ui?.metrics?.enabled !== false, compactMode: config.ui?.metrics?.compactMode || false, showPromptTokens: config.ui?.metrics?.showPromptTokens !== false, showTTFT: config.ui?.metrics?.showTTFT !== false, showInStatusBar: config.ui?.metrics?.showInStatusBar !== false }} reasoningConfig={{ enabled: false, maxVisibleLines: 8, autoCollapseOnComplete: false }} columnWidth={leftWidth} />}
+            {uiState.activeTab === 'chat' && <ChatTab height={row2Height} showBorder={false} showWindowSwitcher={true} metricsConfig={{ enabled: config.ui?.metrics?.enabled !== false, compactMode: config.ui?.metrics?.compactMode || false, showPromptTokens: config.ui?.metrics?.showPromptTokens !== false, showTTFT: config.ui?.metrics?.showTTFT !== false, showInStatusBar: config.ui?.metrics?.showInStatusBar !== false }} reasoningConfig={{ enabled: true, maxVisibleLines: 8, autoCollapseOnComplete: false }} columnWidth={leftWidth} />}
             {uiState.activeTab === 'tools' && <ToolsTab width={leftWidth} />}
             {uiState.activeTab === 'hooks' && <HooksTab windowWidth={leftWidth} />}
             {uiState.activeTab === 'mcp' && <MCPTab windowWidth={leftWidth} />}

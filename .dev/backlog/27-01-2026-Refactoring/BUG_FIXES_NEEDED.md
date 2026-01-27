@@ -2,42 +2,71 @@
 
 ## Bug 1: Missing Reasoning Display (Collapsible Thinking Box)
 
-**Status:** IDENTIFIED
+**Status:** ✅ FIXED
 **Priority:** HIGH
-**Impact:** Users cannot see model thinking process from reasoning models
+**Impact:** Users can now see model thinking process from reasoning models
 
 ### Problem
-The ReasoningBox component exists and is being rendered in Message.tsx, but the reasoning data is never populated because the ReasoningParser is not being used during streaming.
+The ReasoningBox component exists and is being rendered in Message.tsx, but the reasoning data was never populated because the ReasoningParser was not being used during streaming.
 
 ### Root Cause
-During refactoring, the integration between streaming responses and ReasoningParser was lost. The parser exists in `packages/core/src/services/reasoningParser.ts` but is never called.
+The implementation relied solely on Ollama's native `thinking` events, which only work with specific models configured with `think: true`. Models that output `<think>` tags in their text stream (like deepseek-r1, qwen-qwq) were not being parsed.
 
-### Components Involved
-- ✅ `ReasoningBox.tsx` - Component exists and works
-- ✅ `Message.tsx` - Renders ReasoningBox when `message.reasoning` exists
-- ✅ `reasoningParser.ts` - Parser exists with streaming support
-- ❌ `ModelContext.tsx` - NOT using ReasoningParser during streaming
-- ❌ `ChatContext.tsx` - Message type has reasoning field but never populated
+### Solution Implemented
+Added `ReasoningParser` as a fallback to parse `<think>` tags from text stream AND enabled reasoning display in UI:
 
-### Solution
-1. Import ReasoningParser in ModelContext
-2. Create parser instance with token counter
-3. Initialize parser state when streaming starts
-4. Call `parseStreaming()` for each chunk
-5. Extract reasoning block and update message
-6. Pass reasoning to ChatContext when adding assistant message
+1. ✅ Import ReasoningParser in ChatContext
+2. ✅ Initialize parser state at start of agent loop
+3. ✅ Parse text chunks for `<think>` tags in `onText` callback
+4. ✅ Extract reasoning content and update message
+5. ✅ Remove `<think>` tags from displayed response
+6. ✅ Keep native `onThinking` callback as primary method
+7. ✅ **Enable reasoning display in App.tsx** (was disabled!)
 
-### Files to Modify
-- `packages/cli/src/features/context/ModelContext.tsx`
-- Possibly `packages/cli/src/features/context/ChatContext.tsx`
+### How It Works
+- **Primary Method:** Native `thinking` events from Ollama (for models with `think: true`)
+  - Parser is DISABLED when native thinking is active to avoid interference
+- **Fallback Method:** Parse `<think>` tags from text stream (only when native thinking is not available)
+- Reasoning is displayed inline in chat with expand/collapse toggle
+- **Auto-collapses when thinking completes** so the response is visible
+- User can expand by navigating to message header (up/down arrows) and pressing right arrow
+- Shows "Reasoning: (collapsed)" when collapsed, full content when expanded
+
+### Important Notes
+- **Simplified system prompt for reasoning models**: Reasoning models get a concise, focused system prompt instead of the verbose tier-based prompts. This reduces unnecessary thinking about instructions and keeps the model focused on the user's actual question.
+- **Reasoning models think about system prompts**: Even with simplified prompts, reasoning models will still think about the instructions before responding. This is normal behavior that ensures responses follow guidelines.
+- **Native thinking takes precedence**: When Ollama emits native `thinking` events, the `<think>` tag parser is disabled to avoid conflicts.
+- **Auto-collapse on complete**: The reasoning box auto-collapses when thinking finishes so users see the actual response immediately.
+- **Explicit instruction to focus on user's question**: The simplified prompt includes "Focus your thinking on the user's actual question, not on these instructions" to guide the model's reasoning.
+
+### Files Modified
+- `packages/cli/src/features/context/ChatContext.tsx`
+  - Added `ReasoningParser` import
+  - Initialize parser state in agent loop
+  - Parse text chunks in `onText` callback **ONLY when native thinking is not active**
+  - Update message with reasoning block
+  - Remove `<think>` tags from response
+  - Auto-collapse reasoning when complete (not when streaming)
+  - Native thinking takes precedence over parser
+  - **Added simplified system prompt for reasoning models** to reduce verbose thinking about instructions
+- `packages/cli/src/ui/App.tsx`
+  - **Changed `reasoningConfig.enabled` from `false` to `true`** (critical fix!)
+
+### Testing Results
+- ✅ Build passes
+- ✅ All 502 tests pass
+- ✅ No type errors
+- ✅ Reasoning parser correctly extracts `<think>` content
+- ✅ Native `thinking` events still work as primary method
+- ✅ Reasoning display is now enabled in UI
 
 ---
 
 ## Bug 2: Automatic Mode Switching Mid-Response
 
-**Status:** IDENTIFIED  
+**Status:** ✅ FIXED
 **Priority:** CRITICAL
-**Impact:** Conversation resets and goes off-topic during responses
+**Impact:** Conversation no longer resets or goes off-topic during responses
 
 ### Problem
 The PromptModeManager is automatically switching modes during streaming responses, causing:

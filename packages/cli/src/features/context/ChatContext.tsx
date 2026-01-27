@@ -13,6 +13,7 @@ import {
   PromptsSnapshotManager as _PromptsSnapshotManager,
   TieredPromptStore,
 } from '@ollm/core';
+import { ReasoningParser } from '@ollm/ollm-cli-core/services/reasoningParser.js';
 
 import { useContextManager } from './ContextManagerContext.js';
 import { validateManualContext } from './contextSizing.js';
@@ -809,14 +810,35 @@ export function ChatProvider({
         toOperationalMode(coreMode),
         effectiveTier
       );
-      if (!supportsTools) {
-        systemPrompt += '\n\nNote: This model does not support function calling. Do not attempt to use tools or make tool calls.';
+      
+      // Check if this is a reasoning model
+      const modelProfile = profileManager.findProfile(currentModel);
+      const isReasoningModel = modelProfile?.thinking_enabled === true;
+      
+      // For reasoning models, use a more concise system prompt
+      // They will reason about the instructions anyway, so keep it brief
+      if (isReasoningModel) {
+        systemPrompt = `You are a helpful AI assistant for developers. You help with coding, debugging, and technical questions.
+
+Key guidelines:
+- Provide accurate, clear information
+- Explain concepts simply and directly
+- Use code examples when helpful
+- Follow project conventions when working with code
+- Ask for clarification if the request is unclear
+
+Focus your thinking on the user's actual question, not on these instructions.`;
+      } else {
+        // Non-reasoning models get the full detailed prompt
+        if (!supportsTools) {
+          systemPrompt += '\n\nNote: This model does not support function calling. Do not attempt to use tools or make tool calls.';
+        }
+        const toolNote = supportsTools
+          ? ''
+          : 'Note: This model does not support function calling. Do not attempt to use tools or make tool calls.';
+        const rulesOnly = stripSection(stripSection(systemPrompt, tierPrompt), toolNote);
+        systemPrompt = [tierPrompt, rulesOnly, toolNote].filter(Boolean).join('\n\n');
       }
-      const toolNote = supportsTools
-        ? ''
-        : 'Note: This model does not support function calling. Do not attempt to use tools or make tool calls.';
-      const rulesOnly = stripSection(stripSection(systemPrompt, tierPrompt), toolNote);
-      systemPrompt = [tierPrompt, rulesOnly, toolNote].filter(Boolean).join('\n\n');
 
       // Inject focused files into system prompt
       systemPrompt = injectFocusedFilesIntoPrompt(systemPrompt);
@@ -888,6 +910,10 @@ export function ChatProvider({
         let toolCallReceived: CoreToolCall | null = null;
         let assistantContent = '';
         let thinkingContent = ''; // Track thinking content from Ollama
+        
+        // Initialize reasoning parser for fallback <think> tag parsing
+        const reasoningParser = new ReasoningParser();
+        const parserState = reasoningParser.createInitialState();
 
         // DEBUG: Log exact request being sent to LLM
         console.log('=== LLM REQUEST DEBUG ===');
@@ -925,7 +951,41 @@ export function ChatProvider({
             // onText
             (text: string) => {
               const targetId = currentAssistantMsgId;
-              assistantContent += text;
+              
+              // Only parse for <think> tags if we're NOT receiving native thinking events
+              // Native thinking takes precedence
+              if (!thinkingContent) {
+                // Parse text for <think> tags as fallback when native thinking isn't available
+                const newParserState = reasoningParser.parseStreaming(text, parserState);
+                Object.assign(parserState, newParserState);
+                
+                // If we have thinking content from parsing, update reasoning
+                if (parserState.thinkContent) {
+                  setMessages((prev) =>
+                    prev.map((msg) => {
+                      if (msg.id !== targetId) return msg;
+                      
+                      return {
+                        ...msg,
+                        reasoning: {
+                          content: parserState.thinkContent,
+                          tokenCount: Math.ceil(parserState.thinkContent.length / 4),
+                          duration: 0,
+                          complete: !parserState.inThinkBlock,
+                        },
+                        expanded: true, // Keep expanded while streaming
+                      };
+                    })
+                  );
+                }
+                
+                // Use response content (with <think> tags removed) instead of raw text
+                assistantContent = parserState.responseContent;
+              } else {
+                // Native thinking is active, use raw text as-is
+                assistantContent += text;
+              }
+              
               // Estimate tokens for this chunk and batch-report as in-flight
               try {
                 if (contextActions && contextActions.reportInflightTokens) {
@@ -952,7 +1012,7 @@ export function ChatProvider({
                 // ignore estimation/report errors
               }
               
-              // Update message with content
+              // Update message with content (reasoning already updated above if present)
               setMessages((prev) =>
                 prev.map((msg) => {
                   if (msg.id !== targetId) return msg;
@@ -1003,7 +1063,7 @@ export function ChatProvider({
                        complete: true,
                        duration: metrics.evalDuration > 0 ? metrics.evalDuration / 1e9 : 0,
                      };
-                     // Auto-collapse reasoning when complete
+                     // Auto-collapse reasoning when complete so response is visible
                      updates.expanded = false;
                    }
                    
@@ -1037,12 +1097,13 @@ export function ChatProvider({
             (toolCall: CoreToolCall) => {
                toolCallReceived = toolCall;
             },
-            // onThinking - Handle Ollama native thinking
+            // onThinking - Handle Ollama native thinking (primary method)
             (thinking: string) => {
               const targetId = currentAssistantMsgId;
               thinkingContent += thinking;
               
-              // Update message with thinking content
+              // Update message with thinking content from native events
+              // This takes precedence over parsed <think> tags
               setMessages((prev) =>
                 prev.map((msg) => {
                   if (msg.id !== targetId) return msg;
@@ -1051,10 +1112,11 @@ export function ChatProvider({
                     ...msg,
                     reasoning: {
                       content: thinkingContent,
-                      tokenCount: thinkingContent.split(/\s+/).length,
+                      tokenCount: Math.ceil(thinkingContent.length / 4),
                       duration: 0, // Will be updated on complete
                       complete: false,
-                    }
+                    },
+                    expanded: true, // Keep expanded while streaming
                   };
                 })
               );
@@ -1099,9 +1161,25 @@ export function ChatProvider({
           // ALWAYS add assistant turn to context manager if it produced content OR tool calls
           if (assistantContent || toolCallReceived) {
               const tc = toolCallReceived as CoreToolCall | null;
+              
+              // Check if we should include thinking in context (experimental feature)
+              const settingsService = SettingsService.getInstance();
+              const settings = settingsService.getSettings();
+              const includeThinkingInContext = settings.llm?.includeThinkingInContext ?? false;
+              
+              // Build content: response + optional thinking summary
+              let contextContent = assistantContent;
+              if (includeThinkingInContext && thinkingContent) {
+                // Add a brief summary of the thinking process to context
+                const thinkingSummary = thinkingContent.length > 200 
+                  ? `[Reasoning: ${thinkingContent.substring(0, 200)}...]`
+                  : `[Reasoning: ${thinkingContent}]`;
+                contextContent = `${thinkingSummary}\n\n${assistantContent}`;
+              }
+              
               await contextActions.addMessage({
                   role: 'assistant',
-                  content: assistantContent,
+                  content: contextContent,
                   toolCalls: tc ? [{
                       id: tc.id,
                       name: tc.name,
