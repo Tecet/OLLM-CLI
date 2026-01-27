@@ -18,7 +18,6 @@ function formatMB(bytes: number): string {
 }
 
 export function HeaderBar({ connection, model, gpu, theme, borderColor }: HeaderBarProps) {
-  const _providerName = connection.provider; // Correctly get provider name from connection prop
   const vramText = gpu && gpu.vramTotal
     ? `${formatMB(gpu.vramUsed ?? 0)}/${formatMB(gpu.vramTotal)}`
     : 'N/A';
@@ -26,6 +25,8 @@ export function HeaderBar({ connection, model, gpu, theme, borderColor }: Header
   const tempText = gpu && typeof gpu.temperature === 'number'
     ? `${Math.round(gpu.temperature)}°C`
     : 'N/A';
+    
+  const gpuVendor = gpu?.vendor || 'Unknown';
 
   return (
     <Box 
@@ -39,7 +40,7 @@ export function HeaderBar({ connection, model, gpu, theme, borderColor }: Header
       justifyContent="center"
     >
       <Text color={theme.text.primary} bold wrap="truncate-end">
-        {`LLM: ${model || 'none'} | VRAM: ${vramText} | T: ${tempText}`}
+        {`LLM: ${model || 'none'} | GPU: ${gpuVendor} | VRAM: ${vramText} | T: ${tempText}`}
       </Text>
     </Box>
   );

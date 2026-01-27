@@ -100,6 +100,10 @@ function AppContent({ config }: AppContentProps) {
   const { currentModel, setCurrentModel } = useModel();
   const { info: gpuInfo } = useGPU();
   const focusManager = useFocusManager();
+  
+  // Focus states
+  const navBarFocused = focusManager.isFocused('nav-bar');
+  const chatHistoryFocused = focusManager.isFocused('chat-history');
 
   // Context menu hook
   const { openContextMenu } = useContextMenu({
@@ -250,71 +254,73 @@ Type \`/help\` for more commands.`,
 
   // Main UI
   const leftWidth = uiState.sidePanelVisible ? leftColumnWidth - 1 : terminalWidth - 1;
+  const rightPanelFullHeight = row1Height + row2Height + row3Height + row4Height;
 
   return (
     <Box flexDirection="column" width={terminalWidth} height={terminalHeight}>
-      {/* Row 1: Navigation */}
-      <Box width={terminalWidth} height={row1Height} flexDirection="row">
-        <Box width={leftWidth} borderStyle={uiState.theme.border.style as BoxProps['borderStyle']} borderColor={uiState.theme.border.primary}>
-          <TabBar 
-            activeTab={uiState.activeTab} 
-            onTabChange={setActiveTab}
-            notifications={new Map()}
-            theme={uiState.theme}
-            noBorder
-          />
-        </Box>
-        {uiState.sidePanelVisible && (
-          <Box width={rightColumnWidth} borderStyle={uiState.theme.border.style as BoxProps['borderStyle']} borderColor={uiState.theme.border.primary} justifyContent="space-between" paddingX={1}>
-            <Text color={uiState.theme.text.primary}>Status</Text>
+      <Box width={terminalWidth} height={terminalHeight} flexDirection="row">
+        {/* Left Column: All 4 rows */}
+        <Box width={leftWidth} flexDirection="column">
+          {/* Row 1: Navigation */}
+          <Box height={row1Height} flexDirection="row">
             <Clock borderColor={uiState.theme.border.primary} />
+            <Box flexGrow={1} borderStyle={uiState.theme.border.style as BoxProps['borderStyle']} borderColor={navBarFocused ? uiState.theme.border.active : uiState.theme.border.primary}>
+              <TabBar 
+                activeTab={uiState.activeTab} 
+                onTabChange={setActiveTab}
+                notifications={new Map()}
+                theme={uiState.theme}
+                noBorder
+              />
+            </Box>
           </Box>
-        )}
-      </Box>
 
-      {/* Row 2: Main Content */}
-      <Box width={terminalWidth} height={row2Height} flexDirection="row">
-        <Box width={leftWidth} borderStyle={uiState.theme.border.style as BoxProps['borderStyle']} borderColor={uiState.theme.border.primary}>
-          {uiState.activeTab === 'chat' && <ChatTab height={row2Height} showBorder={false} showWindowSwitcher={true} metricsConfig={{ enabled: false, compactMode: false, showPromptTokens: false, showTTFT: false, showInStatusBar: false }} reasoningConfig={{ enabled: false, maxVisibleLines: 8, autoCollapseOnComplete: false }} columnWidth={leftWidth} />}
-          {uiState.activeTab === 'tools' && <ToolsTab width={leftWidth} />}
-          {uiState.activeTab === 'hooks' && <HooksTab windowWidth={leftWidth} />}
-          {uiState.activeTab === 'mcp' && <MCPTab windowWidth={leftWidth} />}
-          {uiState.activeTab === 'settings' && <SettingsTab width={leftWidth} />}
-          {uiState.activeTab === 'docs' && <DocsTab height={row2Height} width={leftWidth} />}
-          {uiState.activeTab === 'search' && <SearchTab width={leftWidth} />}
-          {uiState.activeTab === 'github' && <GitHubTab width={leftWidth} />}
-          {uiState.activeTab === 'bug-report' && <BugReportTab width={leftWidth} />}
+          {/* Row 2: Main Content */}
+          <Box height={row2Height} borderStyle={uiState.theme.border.style as BoxProps['borderStyle']} borderColor={chatHistoryFocused ? uiState.theme.border.active : uiState.theme.border.primary}>
+            {uiState.activeTab === 'chat' && <ChatTab height={row2Height} showBorder={false} showWindowSwitcher={true} metricsConfig={{ enabled: false, compactMode: false, showPromptTokens: false, showTTFT: false, showInStatusBar: false }} reasoningConfig={{ enabled: false, maxVisibleLines: 8, autoCollapseOnComplete: false }} columnWidth={leftWidth} />}
+            {uiState.activeTab === 'tools' && <ToolsTab width={leftWidth} />}
+            {uiState.activeTab === 'hooks' && <HooksTab windowWidth={leftWidth} />}
+            {uiState.activeTab === 'mcp' && <MCPTab windowWidth={leftWidth} />}
+            {uiState.activeTab === 'settings' && <SettingsTab width={leftWidth} />}
+            {uiState.activeTab === 'docs' && <DocsTab height={row2Height} width={leftWidth} />}
+            {uiState.activeTab === 'search' && <SearchTab width={leftWidth} />}
+            {uiState.activeTab === 'github' && <GitHubTab width={leftWidth} />}
+            {uiState.activeTab === 'bug-report' && <BugReportTab width={leftWidth} />}
+          </Box>
+
+          {/* Row 3: System Bar */}
+          <Box height={row3Height}>
+            <SystemBar height={row3Height} showBorder={false} />
+          </Box>
+
+          {/* Row 4: Input Area */}
+          <Box height={row4Height}>
+            <ChatInputArea height={row4Height} showBorder={true} />
+          </Box>
         </Box>
+
+        {/* Right Column: Full height side panel */}
         {uiState.sidePanelVisible && (
-          <Box width={rightColumnWidth}>
+          <Box width={rightColumnWidth} flexDirection="column">
+            {/* Row 1: Status Bar */}
+            <Box height={row1Height} borderStyle={uiState.theme.border.style as BoxProps['borderStyle']} borderColor={uiState.theme.border.primary} paddingX={1} alignItems="center" justifyContent="center">
+              <Text color={uiState.theme.text.primary} bold>
+                LLM: {currentModel || 'none'} | GPU: {gpuInfo?.vendor || 'Unknown'} | VRAM: {gpuInfo ? `${(gpuInfo.vramUsed / (1024 * 1024 * 1024)).toFixed(1)} GB/${(gpuInfo.vramTotal / (1024 * 1024 * 1024)).toFixed(1)} GB` : 'N/A'} | T: {gpuInfo?.temperature ? `${gpuInfo.temperature}°C` : 'N/A'}
+              </Text>
+            </Box>
+
+            {/* Rows 2-4: Side Panel (full height with context at bottom) */}
             <SidePanel 
               visible={uiState.sidePanelVisible}
               connection={{ status: 'connected', provider: config.provider.default }}
               model={currentModel || 'model'}
               gpu={gpuInfo as unknown as GPUInfo | null}
               theme={uiState.theme}
-              row1Height={row1Height}
+              height={row2Height + row3Height + row4Height}
               width={rightColumnWidth}
             />
           </Box>
         )}
-      </Box>
-
-      {/* Row 3: System Bar */}
-      <Box width={terminalWidth} height={row3Height} flexDirection="row">
-        <Box width={leftWidth} borderStyle={uiState.theme.border.style as BoxProps['borderStyle']} borderColor={uiState.theme.border.primary}>
-          <SystemBar height={row3Height} showBorder={false} />
-        </Box>
-        {uiState.sidePanelVisible && (
-          <Box width={rightColumnWidth} borderStyle={uiState.theme.border.style as BoxProps['borderStyle']} borderColor={uiState.theme.border.primary} paddingX={1}>
-            <Text color={uiState.theme.text.primary}>GPU: {gpuInfo ? `${gpuInfo.vendor}` : 'N/A'}</Text>
-          </Box>
-        )}
-      </Box>
-
-      {/* Row 4: Input Area */}
-      <Box width={terminalWidth} height={row4Height}>
-        <ChatInputArea height={row4Height} showBorder={true} />
       </Box>
 
       {/* Dialogs */}

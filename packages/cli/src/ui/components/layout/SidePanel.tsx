@@ -23,15 +23,14 @@ export interface SidePanelProps {
   model: string;
   gpu: GPUInfo | null;
   theme: Theme;
-  row1Height?: number;
+  height: number;
   width?: number;
 }
 
-export function SidePanel({ visible, connection, model, gpu, theme, row1Height, width }: SidePanelProps) {
+export function SidePanel({ visible, connection, model, gpu, theme, height, width }: SidePanelProps) {
   const { isFocused } = useFocusManager();
   const { contextUsage } = useChat();
   const { activeKeybinds } = useKeybinds();
-  const { stdout } = useStdout();
   
   const contextFocused = isFocused('context-panel');
   const fileTreeFocused = isFocused('side-file-tree');
@@ -71,13 +70,9 @@ export function SidePanel({ visible, connection, model, gpu, theme, row1Height, 
     return null;
   }
 
-  const totalHeight = (stdout?.rows || 24) - 1;
-  const resolvedRow1Height = row1Height || 3;
-  const rightPanelRow2Height = 10;
-  const rightPanelRow4Height = 3;
-  const rightPanelRow3Height = Math.max(6, totalHeight - resolvedRow1Height - rightPanelRow2Height - rightPanelRow4Height);
-
-  const rightPanelWidth = Math.max(20, width || Math.floor((stdout?.columns || 80) * 0.3));
+  const contextSectionHeight = 3;
+  const activePromptHeight = 10;
+  const contentHeight = height - contextSectionHeight - activePromptHeight;
 
   const rightPanelIndex = activeRightPanel === 'tools'
     ? 0
@@ -88,27 +83,12 @@ export function SidePanel({ visible, connection, model, gpu, theme, row1Height, 
     : 3;
 
   return (
-    <Box flexDirection="column" flexGrow={1} width="100%">
-      {/* Row 1: HeaderBar - matching left side Row 1 height */}
-      <Box flexShrink={0} height={row1Height} alignItems="center" width="100%">
-        <Box width="100%" flexDirection="row" alignItems="center" justifyContent="space-between">
-          <Box flexGrow={1}>
-            <HeaderBar
-              connection={connection}
-              model={model}
-              gpu={gpu}
-              theme={theme}
-            />
-          </Box>
-          {/* Clock removed from side panel header - moved to left top header */}
-        </Box>
-      </Box>
-
-      {/* Row 2: File Tree (Moved to top) + Active Prompt Info */}
+    <Box flexDirection="column" width="100%" height={height}>
+      {/* Active Prompt Info - At the top */}
       <Box 
-        height={10}
+        height={activePromptHeight}
         borderStyle={theme.border.style as BoxProps['borderStyle']} 
-        borderColor={fileTreeFocused ? theme.text.secondary : theme.border.primary}
+        borderColor={fileTreeFocused ? theme.border.active : theme.border.primary}
         overflow="hidden"
         flexShrink={0}
         width="100%"
@@ -117,27 +97,28 @@ export function SidePanel({ visible, connection, model, gpu, theme, row1Height, 
         <ActivePromptInfo />
       </Box>
 
-      {/* Row 3: Context / Workspace Swappable Area */}
+      {/* Main Content Area - Takes remaining space */}
       <Box 
         flexGrow={1}
         borderStyle={theme.border.style as BoxProps['borderStyle']} 
-        borderColor={contextFocused ? theme.text.secondary : theme.border.primary}
+        borderColor={contextFocused ? theme.border.active : theme.border.primary}
         flexDirection="column"
         overflow="hidden"
         width="100%"
       >
-        {/* Visual Dot Indicators & Tools Label */}
-           <Box flexDirection="row" alignItems="center" width="100%" paddingX={0} paddingTop={0}>
-            <Box flexGrow={1} justifyContent="center">
-              <Text color={theme.text.accent} bold>{headerLabel}</Text>
-            </Box>
-            <DotIndicator 
-              total={4} 
-              active={rightPanelIndex} 
-              theme={theme} 
-            />
+        {/* Header with Dot Indicators & Label */}
+        <Box flexDirection="row" alignItems="center" width="100%" paddingX={1} paddingTop={0}>
+          <Box flexGrow={1} justifyContent="center">
+            <Text color={theme.text.accent} bold>{headerLabel}</Text>
+          </Box>
+          <DotIndicator 
+            total={4} 
+            active={rightPanelIndex} 
+            theme={theme} 
+          />
         </Box>
 
+        {/* Content based on active panel */}
         {activeRightPanel === 'tools' && <ContextSection />}
         {activeRightPanel === 'workspace' && (
           <WorkspacePanel 
@@ -148,18 +129,18 @@ export function SidePanel({ visible, connection, model, gpu, theme, row1Height, 
           />
         )}
         {activeRightPanel === 'llm-chat' && (
-          <RightPanelLLMChat height={rightPanelRow3Height - 3} width={rightPanelWidth} />
+          <RightPanelLLMChat height={contentHeight - 3} width={width || 20} />
         )}
         {activeRightPanel === 'terminal2' && (
-          <Terminal2 height={rightPanelRow3Height - 3} />
+          <Terminal2 height={contentHeight - 3} />
         )}
       </Box>
 
-      {/* Row 4: Functions -> Context Usage Display (3 lines) */}
+      {/* Context Section - Sticky at bottom */}
       <Box 
-        height={3} 
+        height={contextSectionHeight} 
         borderStyle={theme.border.style as BoxProps['borderStyle']} 
-        borderColor={functionsFocused ? theme.text.secondary : theme.border.primary}
+        borderColor={functionsFocused ? theme.border.active : theme.border.primary}
         flexShrink={0}
         overflow="hidden"
         width="100%"
@@ -170,10 +151,6 @@ export function SidePanel({ visible, connection, model, gpu, theme, row1Height, 
         <Box flexDirection="row" alignItems="center">
           <Text color={theme.text.secondary}>Context: </Text>
           <Text color={theme.text.accent} bold>{contextText}</Text>
-        </Box>
-
-        <Box flexDirection="row" alignItems="center">
-          {/* Right column intentionally left empty (confidence removed) */}
         </Box>
       </Box>
     </Box>

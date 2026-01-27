@@ -61,14 +61,14 @@ export function SystemBar({ height }: SystemBarProps) {
   }
 
   return (
-    <Box height={height} width="100%" flexDirection="row" alignItems="center" justifyContent="space-between">
+    <Box height={height} width="100%" flexDirection="row">
       <Box
-        height={height}
         flexGrow={1}
-        borderStyle={undefined}
+        borderStyle={theme.border.style as BoxProps['borderStyle']}
         borderColor={theme.border.primary}
         paddingX={1}
         alignItems="center"
+        justifyContent="flex-start"
       >
         <Text color={theme.text.accent} bold>OLLM:</Text>
         <Text> </Text>
@@ -77,12 +77,11 @@ export function SystemBar({ height }: SystemBarProps) {
         </Text>
       </Box>
       <Box
-        height={height}
-        flexShrink={0}
-        borderStyle={uiState.theme.border.style as BoxProps['borderStyle']}
+        borderStyle={theme.border.style as BoxProps['borderStyle']}
         borderColor={theme.border.primary}
         paddingX={1}
         alignItems="center"
+        justifyContent="center"
       >
         <InputRoutingIndicator activeDestination={activeDestination} theme={theme} compact />
       </Box>
