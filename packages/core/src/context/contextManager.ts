@@ -18,6 +18,7 @@ import * as ContextSizeCalculator from './ContextSizeCalculator.js';
 import { DEFAULT_CONTEXT_CONFIG } from './contextDefaults.js';
 import { createContextModules } from './contextModules.js';
 import { createContextPool } from './contextPool.js';
+import { PromptOrchestrator } from './promptOrchestrator.js';
 import { createTokenCounter } from './tokenCounter.js';
 import { 
   ContextTier,
@@ -62,6 +63,7 @@ export class ConversationContextManager extends EventEmitter implements ContextM
   private memoryGuard: MemoryGuard;
   private messageStore: MessageStore;
   private contextModules: ContextModules;
+  private promptOrchestrator: PromptOrchestrator;
   
   private currentContext: ConversationContext;
   private modelInfo: ModelInfo;
@@ -106,6 +108,7 @@ export class ConversationContextManager extends EventEmitter implements ContextM
     // Initialize services
     this.vramMonitor = services?.vramMonitor || createVRAMMonitor();
     this.tokenCounter = services?.tokenCounter || createTokenCounter();
+    this.promptOrchestrator = new PromptOrchestrator({ tokenCounter: this.tokenCounter });
     
     // Create context pool
     this.contextPool = services?.contextPool || createContextPool(
@@ -279,6 +282,16 @@ export class ConversationContextManager extends EventEmitter implements ContextM
       this.currentTier = ContextSizeCalculator.determineTier(this.config.targetSize);
     }
     
+    // Apply initial system prompt based on tier and mode
+    this.promptOrchestrator.updateSystemPrompt({
+      mode: this.currentMode,
+      tier: this.currentTier,
+      activeSkills: this.activeSkills,
+      currentContext: this.currentContext,
+      contextPool: this.contextPool,
+      emit: this.emit.bind(this)
+    });
+    
     this.isStarted = true;
     this.emit('started', {
       tier: this.currentTier,
@@ -382,6 +395,16 @@ export class ConversationContextManager extends EventEmitter implements ContextM
   public setMode(mode: OperationalMode): void {
     const previousMode = this.currentMode;
     this.currentMode = mode;
+    
+    // Update system prompt for new mode
+    this.promptOrchestrator.updateSystemPrompt({
+      mode: this.currentMode,
+      tier: this.currentTier,
+      activeSkills: this.activeSkills,
+      currentContext: this.currentContext,
+      contextPool: this.contextPool,
+      emit: this.emit.bind(this)
+    });
     
     this.emit('mode-changed', { 
       previousMode,
