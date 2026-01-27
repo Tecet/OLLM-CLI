@@ -15,6 +15,11 @@
  * - Make decisions about when to resize (ContextManager does this)
  */
 
+import { 
+  clampContextSize,
+  calculateOptimalContextSize
+} from './ContextSizeCalculator.js';
+
 import type {
   ContextPool,
   ContextPoolConfig,
@@ -22,10 +27,6 @@ import type {
   VRAMInfo,
   ModelInfo
 } from './types.js';
-import { 
-  clampContextSize,
-  calculateOptimalContextSize
-} from './ContextSizeCalculator.js';
 
 /**
  * Default context pool configuration

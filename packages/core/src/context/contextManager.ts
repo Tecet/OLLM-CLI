@@ -14,10 +14,10 @@
 
 import { EventEmitter } from 'events';
 
-import * as ContextSizeCalculator from './ContextSizeCalculator.js';
 import { DEFAULT_CONTEXT_CONFIG } from './contextDefaults.js';
 import { createContextModules } from './contextModules.js';
 import { createContextPool } from './contextPool.js';
+import * as ContextSizeCalculator from './ContextSizeCalculator.js';
 import { PromptOrchestrator } from './promptOrchestrator.js';
 import { createTokenCounter } from './tokenCounter.js';
 import { 

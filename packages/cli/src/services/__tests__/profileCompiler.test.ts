@@ -7,10 +7,11 @@
  * - ProfileCompiler is the ONLY component that reads master DB
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { existsSync, readFileSync, writeFileSync, mkdirSync, rmSync } from 'fs';
-import { join } from 'path';
 import { tmpdir } from 'os';
+import { join } from 'path';
+
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 import { ProfileCompiler, getProfileCompiler, compileUserProfiles } from '../profileCompiler.js';
 

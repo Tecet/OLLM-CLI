@@ -7,8 +7,8 @@ import { Turn, type TurnEvent, type ToolRegistry, type ChatOptions } from './tur
 import { getMessageBus } from '../hooks/messageBus.js';
 import { ModelDatabase, modelDatabase } from '../routing/modelDatabase.js';
 import { mergeServicesConfig } from '../services/config.js';
-import { LoopDetectionService } from '../services/loopDetectionService.js';
 import { InputPreprocessor } from '../services/inputPreprocessor.js';
+import { LoopDetectionService } from '../services/loopDetectionService.js';
 
 import type { ContextManager as ContextMgmtManager } from '../context/types.js';
 import type { ProviderRegistry } from '../provider/registry.js';
@@ -187,7 +187,7 @@ export class ChatClient {
     // ============================================================================
     // Extract clean intent from noisy user messages to save tokens
     let processedPrompt = prompt;
-    let originalPrompt = prompt;
+    const originalPrompt = prompt;
     
     if (this.inputPreprocessor) {
       try {

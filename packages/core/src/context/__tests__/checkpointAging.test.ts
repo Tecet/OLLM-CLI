@@ -4,7 +4,9 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+
 import { CheckpointManager } from '../checkpointManager.js';
+
 import type {
   ConversationContext,
   CompressionCheckpoint,

@@ -52,7 +52,6 @@ import { ToolsProvider } from './contexts/ToolsContext.js';
 import { WindowProvider } from './contexts/WindowContext.js';
 import { useGlobalKeyboardShortcuts } from './hooks/useGlobalKeyboardShortcuts.js';
 import { useMouse, MouseProvider } from './hooks/useMouse.js';
-import { profileManager } from '../features/profiles/ProfileManager.js';
 import { ActiveContextProvider } from '../features/context/ActiveContextState.js';
 import { ChatProvider, useChat } from '../features/context/ChatContext.js';
 import { ContextManagerProvider, useContextManager } from '../features/context/ContextManagerContext.js';
@@ -66,6 +65,7 @@ import { SettingsProvider } from '../features/context/SettingsContext.js';
 import { createWelcomeMessage, createCompactWelcomeMessage } from '../features/context/SystemMessages.js';
 import { UIProvider, useUI } from '../features/context/UIContext.js';
 import { UserPromptProvider } from '../features/context/UserPromptContext.js';
+import { profileManager } from '../features/profiles/ProfileManager.js';
 
 import type { Config } from '../config/types.js';
 import type { ProviderAdapter } from '@ollm/core';

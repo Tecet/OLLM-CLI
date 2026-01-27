@@ -3,8 +3,11 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { InputPreprocessor } from '../inputPreprocessor.js';
+
 import { MockProvider } from '@ollm/test-utils';
+
+import { InputPreprocessor } from '../inputPreprocessor.js';
+
 import type { TokenCounter } from '../../context/types.js';
 
 describe('InputPreprocessor', () => {

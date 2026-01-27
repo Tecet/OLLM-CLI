@@ -381,7 +381,7 @@ function AppContent({ config }: AppContentProps) {
             }
 
             // Note: Removed VRAM display and safety checks - core validates all sizes
-            let label = `${sizeStr}`;
+            const label = `${sizeStr}`;
 
             sizeOptions.push({
               id: `size-${val}`,

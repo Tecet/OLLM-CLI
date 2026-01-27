@@ -9,10 +9,11 @@
  * CRITICAL: Test 3 MUST FAIL if user file is not created properly
  */
 
-import { describe, it, expect, beforeAll } from 'vitest';
 import { existsSync, readFileSync } from 'fs';
-import { join } from 'path';
 import { homedir, tmpdir } from 'os';
+import { join } from 'path';
+
+import { describe, it, expect, beforeAll } from 'vitest';
 
 import { compileUserProfiles } from '../../../services/profileCompiler.js';
 import { ProfileManager } from '../ProfileManager.js';

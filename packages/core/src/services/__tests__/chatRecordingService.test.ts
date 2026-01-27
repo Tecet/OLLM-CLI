@@ -3,13 +3,15 @@
  * Verifies session recording, auto-save, and data persistence
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdir, rm, readFile } from 'node:fs/promises';
-import { join } from 'node:path';
-import { tmpdir } from 'node:os';
 import { randomUUID } from 'node:crypto';
+import { mkdir, rm, readFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 import { ChatRecordingService } from '../chatRecordingService.js';
+
 import type { SessionMessage, SessionToolCall } from '../types.js';
 
 describe('ChatRecordingService', () => {

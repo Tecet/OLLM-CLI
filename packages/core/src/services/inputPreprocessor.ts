@@ -18,9 +18,9 @@
  * - Intent snapshots for memory
  */
 
-import type { ProviderAdapter } from '../provider/types.js';
-import type { TokenCounter } from '../context/types.js';
 import type { IntentSnapshotStorage } from './intentSnapshotStorage.js';
+import type { TokenCounter } from '../context/types.js';
+import type { ProviderAdapter } from '../provider/types.js';
 
 /**
  * Extracted intent from user message

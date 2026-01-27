@@ -7,6 +7,7 @@
  */
 
 import { ContextTier } from './types.js';
+
 import type { ContextProfile } from './types.js';
 
 export interface TierOption {

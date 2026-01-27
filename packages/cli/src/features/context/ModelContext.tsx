@@ -10,7 +10,6 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from 'react';
 
 import { useContextManager } from './ContextManagerContext.js';
-import { calculateContextSizing } from './contextSizing.js';
 import { useOptionalGPU } from './GPUContext.js';
 import { deriveGPUPlacementHints } from './gpuHints.js';
 import { setLastGPUPlacementHints } from './gpuHintStore.js';
@@ -108,8 +107,8 @@ export function ModelProvider({
   const warmupAttemptsRef = useRef<Map<string, number>>(new Map());
   const warmupStartRef = useRef<number | null>(null);
   const { actions: contextActions } = useContextManager();
+  const { state: contextManagerState } = useContextManager();
   const gpuContext = useOptionalGPU();
-  const lastAutoThresholdRef = useRef<number | null>(null);
   
   // Simplified tool support override tracking (2 levels: user_confirmed vs session)
   interface ToolSupportOverride {
@@ -686,31 +685,6 @@ export function ModelProvider({
       addSystemMessage('Warmup skipped by user.');
     }, [addSystemMessage]);
 
-  const syncAutoThreshold = useCallback((ollamaSize: number, selectedContextSize: number) => {
-    if (!contextActions || selectedContextSize <= 0 || ollamaSize <= 0) {
-      return;
-    }
-
-    const ratio = Math.min(1, Math.max(0.01, ollamaSize / selectedContextSize));
-    const previousRatio = lastAutoThresholdRef.current;
-    if (previousRatio !== null && Math.abs(previousRatio - ratio) < 0.001) {
-      return; // No meaningful change
-    }
-
-    try {
-      const currentConfig = contextActions.getConfig();
-      const currentSnapshots = currentConfig?.snapshots;
-      if (!currentSnapshots) {
-        return;
-      }
-      const nextSnapshots = { ...currentSnapshots, autoThreshold: ratio };
-      contextActions.updateConfig({ snapshots: nextSnapshots });
-      lastAutoThresholdRef.current = ratio;
-    } catch (error) {
-      console.warn('[ModelContext] Failed to sync snapshot threshold', error);
-    }
-  }, [contextActions]);
-
   const sendToLLM = useCallback(async (
     messages: Array<{ 
       role: 'user' | 'assistant' | 'system' | 'tool'; 
@@ -758,13 +732,14 @@ export function ModelProvider({
       const temperature = settings.llm?.temperature ?? 0.1;
       const forcedNumGpu = settings.llm?.forceNumGpu;
 
-      // Get current tier from context manager
-      const contextState = contextActions.getState();
-      const currentTier = contextState.currentTier;
+      // Get current tier from context manager state
+      const currentTier = contextManagerState.currentTier;
       
       // Find the matching profile for the current tier
+      // Tiers are: TIER_1_MINIMAL = 0, TIER_2_COMPACT = 1, TIER_3_STANDARD = 2, TIER_4_EXTENDED = 3, TIER_5_MAXIMUM = 4
       const profiles = modelEntry.context_profiles ?? [];
-      const matchingProfile = profiles.find(p => p.tier === currentTier);
+      const tierIndex = currentTier; // Tier enum values are 0-4
+      const matchingProfile = profiles[tierIndex]; // Profiles are ordered by tier
       
       // Get the context size and ollama_context_size from the matching profile
       const userContextSize = matchingProfile?.size ?? modelEntry.default_context ?? 4096;
@@ -873,7 +848,7 @@ export function ModelProvider({
     } finally {
       abortControllerRef.current = null;
     }
-  }, [provider, currentModel, cancelRequest, modelLoading, modelSupportsTools, isTimeoutError, isToolUnsupportedError, clearWarmupStatus, handleToolError, saveToolSupport, gpuContext?.info, contextActions]);
+  }, [provider, currentModel, cancelRequest, modelLoading, modelSupportsTools, isTimeoutError, isToolUnsupportedError, clearWarmupStatus, handleToolError, saveToolSupport, gpuContext?.info, contextManagerState]);
 
   const value: ModelContextValue = {
     currentModel,

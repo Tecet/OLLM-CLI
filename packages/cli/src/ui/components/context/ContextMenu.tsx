@@ -13,8 +13,10 @@
  */
 
 import { useCallback } from 'react';
-import { profileManager } from '../../../features/profiles/ProfileManager.js';
+
 import { CONTEXT_OPTIONS } from '../../../features/context/SystemMessages.js';
+import { profileManager } from '../../../features/profiles/ProfileManager.js';
+
 import type { MenuOption, Message } from '../../../features/context/ChatContext.js';
 
 export interface ContextMenuOptions {
