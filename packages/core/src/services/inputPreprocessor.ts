@@ -18,7 +18,7 @@
  * - Intent snapshots for memory
  */
 
-import type { Message, ProviderAdapter } from '../provider/types.js';
+import type { ProviderAdapter } from '../provider/types.js';
 import type { TokenCounter } from '../context/types.js';
 
 /**
@@ -180,19 +180,21 @@ Respond in JSON format:
   ]
 }`;
 
-    const messages: Message[] = [
-      { role: 'system', parts: [{ type: 'text', text: systemPrompt }] },
-      { role: 'user', parts: [{ type: 'text', text: userPrompt }] },
-    ];
-
     // Call LLM to extract intent
     let responseText = '';
-    for await (const chunk of this.provider.chat(messages, {
-      temperature: 0.3, // Low temperature for consistent extraction
-      maxTokens: 1000,
+    for await (const event of this.provider.chatStream({
+      model: 'default', // Will use default model from provider
+      messages: [
+        { role: 'system', parts: [{ type: 'text', text: systemPrompt }] },
+        { role: 'user', parts: [{ type: 'text', text: userPrompt }] },
+      ],
+      options: {
+        temperature: 0.3, // Low temperature for consistent extraction
+        maxTokens: 1000,
+      },
     })) {
-      if (chunk.type === 'text') {
-        responseText += chunk.text;
+      if (event.type === 'text') {
+        responseText += event.value;
       }
     }
 
@@ -243,19 +245,21 @@ Respond in JSON format:
   "estimatedEffort": "Optional effort estimate"
 }`;
 
-    const messages: Message[] = [
-      { role: 'system', parts: [{ type: 'text', text: systemPrompt }] },
-      { role: 'user', parts: [{ type: 'text', text: userPrompt }] },
-    ];
-
     // Call LLM to propose goal
     let responseText = '';
-    for await (const chunk of this.provider.chat(messages, {
-      temperature: 0.5, // Slightly higher for creative planning
-      maxTokens: 500,
+    for await (const event of this.provider.chatStream({
+      model: 'default', // Will use default model from provider
+      messages: [
+        { role: 'system', parts: [{ type: 'text', text: systemPrompt }] },
+        { role: 'user', parts: [{ type: 'text', text: userPrompt }] },
+      ],
+      options: {
+        temperature: 0.5, // Slightly higher for creative planning
+        maxTokens: 500,
+      },
     })) {
-      if (chunk.type === 'text') {
-        responseText += chunk.text;
+      if (event.type === 'text') {
+        responseText += event.value;
       }
     }
 

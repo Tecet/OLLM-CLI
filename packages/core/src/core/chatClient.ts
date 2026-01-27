@@ -8,6 +8,7 @@ import { getMessageBus } from '../hooks/messageBus.js';
 import { ModelDatabase, modelDatabase } from '../routing/modelDatabase.js';
 import { mergeServicesConfig } from '../services/config.js';
 import { LoopDetectionService } from '../services/loopDetectionService.js';
+import { InputPreprocessor } from '../services/inputPreprocessor.js';
 
 import type { ContextManager as ContextMgmtManager } from '../context/types.js';
 import type { ProviderRegistry } from '../provider/registry.js';
@@ -30,6 +31,7 @@ export interface ChatConfig {
   loopDetectionService?: LoopDetectionService;
   contextManager?: ServicesContextManager;
   contextMgmtManager?: ContextMgmtManager;
+  inputPreprocessor?: InputPreprocessor;
   servicesConfig?: Partial<ServicesConfig>;
   tokenLimit?: number; // Token limit override (if not specified, uses Model Database)
   modelDatabase?: ModelDatabase; // Model Database instance (optional, uses singleton by default)
@@ -45,7 +47,11 @@ export type ChatEvent =
   | { type: 'turn_complete'; turnNumber: number }
   | { type: 'finish'; reason: string }
   | { type: 'error'; error: Error }
-  | { type: 'loop_detected'; pattern: { type: string; details: string; count: number } };
+  | { type: 'loop_detected'; pattern: { type: string; details: string; count: number } }
+  | { type: 'preprocessing_triggered'; originalTokens: number; cleanTokens: number }
+  | { type: 'intent_extracted'; intent: string; keyPoints: string[]; tokenSavings: number }
+  | { type: 'clarification_needed'; question: string }
+  | { type: 'goal_proposed'; goal: string; milestones: string[] };
 
 /**
  * Main chat client for managing conversations.
@@ -57,6 +63,7 @@ export class ChatClient {
   private loopDetectionService?: LoopDetectionService;
   private contextManager?: ServicesContextManager;
   private contextMgmtManager?: ContextMgmtManager;
+  private inputPreprocessor?: InputPreprocessor;
   private servicesConfig: Required<ServicesConfig>;
   private modelDatabase: ModelDatabase;
 
@@ -71,6 +78,7 @@ export class ChatClient {
     this.compressionService = config.compressionService;
     this.contextManager = config.contextManager;
     this.contextMgmtManager = config.contextMgmtManager;
+    this.inputPreprocessor = config.inputPreprocessor;
     this.servicesConfig = mergeServicesConfig(config.servicesConfig);
     this.modelDatabase = config.modelDatabase ?? modelDatabase;
     
@@ -174,9 +182,100 @@ export class ChatClient {
       }
     }
 
-    // Initialize conversation with user message
+    // ============================================================================
+    // INPUT PREPROCESSING (Phase 0)
+    // ============================================================================
+    // Extract clean intent from noisy user messages to save tokens
+    let processedPrompt = prompt;
+    let originalPrompt = prompt;
+    
+    if (this.inputPreprocessor) {
+      try {
+        const result = await this.inputPreprocessor.preprocess(prompt);
+        
+        if (result.triggered) {
+          // Emit preprocessing event
+          yield {
+            type: 'preprocessing_triggered',
+            originalTokens: result.originalTokens,
+            cleanTokens: result.cleanTokens,
+          };
+          
+          // Emit intent extraction event
+          if (result.extracted) {
+            yield {
+              type: 'intent_extracted',
+              intent: result.extracted.intent,
+              keyPoints: result.extracted.keyPoints,
+              tokenSavings: result.extracted.tokenSavings,
+            };
+            
+            // Emit clarification question
+            const clarificationQuestion = `🤔 Let me clarify what you want:
+
+Intent: ${result.extracted.intent}
+
+Key points:
+${result.extracted.keyPoints.map((p, i) => `  ${i + 1}. ${p}`).join('\n')}
+
+${result.extracted.attachments.length > 0 ? `\nAttachments:\n${result.extracted.attachments.map(a => `  - ${a.type}: ${a.summary}`).join('\n')}\n` : ''}
+Is this correct? (y/n)`;
+            
+            yield {
+              type: 'clarification_needed',
+              question: clarificationQuestion,
+            };
+            
+            // TODO: Wait for user confirmation (requires UI integration)
+            // For now, we'll use the clean message automatically
+            processedPrompt = result.cleanMessage;
+            
+            // Store original in session for RAG
+            if (sessionId && this.recordingService) {
+              try {
+                await this.recordingService.recordMessage(sessionId, {
+                  role: 'user',
+                  parts: [{ type: 'text', text: `[ORIGINAL MESSAGE]\n${originalPrompt}` }],
+                  timestamp: new Date().toISOString(),
+                });
+              } catch (error) {
+                if (!isTestEnv) console.error('Failed to record original message:', error);
+              }
+            }
+            
+            // Propose goal if enabled
+            if (this.inputPreprocessor.getConfig().autoPropose) {
+              try {
+                const proposedGoal = await this.inputPreprocessor.proposeGoal(result.extracted);
+                
+                yield {
+                  type: 'goal_proposed',
+                  goal: proposedGoal.goal,
+                  milestones: proposedGoal.milestones,
+                };
+                
+                // TODO: Wait for user confirmation and create goal in context manager
+                // For now, we'll log it
+                if (!isTestEnv) {
+                  console.log('[InputPreprocessor] Proposed goal:', proposedGoal.goal);
+                  console.log('[InputPreprocessor] Milestones:', proposedGoal.milestones);
+                }
+              } catch (error) {
+                // Goal proposal is optional, don't fail if it errors
+                if (!isTestEnv) console.error('Failed to propose goal:', error);
+              }
+            }
+          }
+        }
+      } catch (error) {
+        // Preprocessing is optional, don't fail if it errors
+        if (!isTestEnv) console.error('Input preprocessing failed:', error);
+      }
+    }
+
+    // Initialize conversation with processed message
     const messages: Message[] = [
-      { role: 'user', parts: [{ type: 'text', text: prompt }] },
+      { role: 'user', parts: [{ type: 'text', text: processedPrompt }] },
     ];
 
     // Add user message to context management system if available
@@ -185,7 +284,7 @@ export class ChatClient {
         await this.contextMgmtManager.addMessage({
           id: `user-${Date.now()}`,
           role: 'user',
-          content: prompt,
+          content: processedPrompt, // Use processed prompt
           timestamp: new Date()
         });
       } catch (error) {
@@ -199,12 +298,12 @@ export class ChatClient {
       }
     }
 
-    // Record initial user message (Requirement 1.1)
+    // Record processed user message (Requirement 1.1)
     if (sessionId && this.recordingService) {
       try {
         await this.recordingService.recordMessage(sessionId, {
           role: 'user',
-          parts: [{ type: 'text', text: prompt }],
+          parts: [{ type: 'text', text: processedPrompt }], // Use processed prompt
           timestamp: new Date().toISOString(),
         });
       } catch (error) {
