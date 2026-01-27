@@ -185,6 +185,8 @@
   },
   "active": "96f17f0c11000dcf",
   "lastOpenFiles": [
+    "packages/cli/src/features/context/utils/promptUtils.ts",
+    "packages/cli/src/features/context/utils",
     "packages/cli/src/features/context/types/chatTypes.ts",
     "packages/cli/src/features/context/types",
     "packages/cli/src/ui/components/layout/HeaderBar.tsx.bak",
@@ -194,8 +196,6 @@
     "packages/cli/src/ui/old_App.tsx",
     "packages/cli/src/features/context/old_contextSizing.ts",
     "packages/cli/src/features/context/old_ContextManagerContext.tsx",
-    "packages/core/dist/context/old_contextPool.d.ts",
-    "packages/core/dist/context/old_contextPool.d.ts.map",
     "dev/backlog/REFACTORING-SUMMARY.md",
     "dev/backlog/report.md",
     "packages/cli/src/ui/components/animations/lama/lama_sprite/right/llama-r6.png",
