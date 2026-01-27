@@ -15,6 +15,7 @@ import path from 'path';
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode, useMemo } from 'react';
 
 import { DefaultMCPToolWrapper } from '@ollm/ollm-cli-core/mcp/index.js';
+import { DefaultMCPClient } from '@ollm/ollm-cli-core/mcp/mcpClient.js';
 import { MCPHealthMonitor } from '@ollm/ollm-cli-core/mcp/mcpHealthMonitor.js';
 import { MCPOAuthProvider, FileTokenStorage } from '@ollm/ollm-cli-core/mcp/mcpOAuth.js';
 import { ToolRouter, type ToolRoutingConfig, DEFAULT_TOOL_ROUTING_CONFIG } from '@ollm/ollm-cli-core/tools/index.js';
@@ -285,7 +286,7 @@ export function MCPProvider({
   const mcpClient = useMemo(() => {
     if (customClient) return customClient; // Test override
     if (sharedMcpClient) return sharedMcpClient; // Use shared client from ServiceContext
-    return new (require('@ollm/ollm-cli-core/mcp/mcpClient.js').DefaultMCPClient)(undefined, oauthProvider); // Fallback for tests
+    return new DefaultMCPClient(undefined, oauthProvider); // Fallback for tests
   }, [customClient, sharedMcpClient, oauthProvider]);
   
   const healthMonitor = useMemo(() => customHealthMonitor || new MCPHealthMonitor(mcpClient), [customHealthMonitor, mcpClient]);
