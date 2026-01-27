@@ -337,7 +337,8 @@ Is this correct? (y/n)`;
       }
       
       try {
-        const userMessage: Message = {
+        // Create a context-compatible message for validation
+        const userMessage: import('../context/types.js').Message = {
           id: `user-${Date.now()}`,
           role: 'user',
           content: processedPrompt,

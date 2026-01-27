@@ -272,7 +272,7 @@ export class CompressionCoordinator {
     });
     
     // Create lock promise
-    let resolveLock: (() => void) | null = null;
+    let resolveLock: (() => void) | undefined;
     this.summarizationLock = new Promise<void>((resolve) => {
       resolveLock = resolve;
     });
