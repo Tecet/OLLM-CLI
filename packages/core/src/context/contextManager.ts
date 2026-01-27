@@ -454,6 +454,26 @@ export class ConversationContextManager extends EventEmitter implements ContextM
   // Used for both context window sizing and prompt selection
   private selectedTier: ContextTier = ContextTier.TIER_3_STANDARD;
 
+  /**
+   * Log critical error when profile fallback is used
+   * This indicates a bug in the CLI layer (ProfileManager/App.tsx)
+   */
+  private logProfileFallbackError(context: string, additionalInfo?: Record<string, any>): void {
+    console.error(`[ContextManager] CRITICAL: Using ${context} fallback!`);
+    console.error(`  Model: ${this.modelInfo.id || 'unknown'}`);
+    console.error(`  Context profiles provided: ${this.modelInfo.contextProfiles ? 'YES' : 'NO'}`);
+    console.error(`  Profile count: ${this.modelInfo.contextProfiles?.length || 0}`);
+    
+    if (additionalInfo) {
+      Object.entries(additionalInfo).forEach(([key, value]) => {
+        console.error(`  ${key}: ${value}`);
+      });
+    }
+    
+    console.error('  This indicates a bug in ProfileManager or App.tsx');
+    console.error('  FIX: Ensure ProfileManager provides contextProfiles for all models');
+  }
+
   private getTierForSize(size: number): ContextTier {
     // IMPORTANT: Tier detection uses user-facing size, not Ollama size
     // The 85% cap is internal and shouldn't degrade tier capabilities
@@ -496,14 +516,7 @@ export class ConversationContextManager extends EventEmitter implements ContextM
     }
     
     // CRITICAL ERROR: Fallback should NEVER be hit in production!
-    // This indicates a bug in the CLI layer (ProfileManager/App.tsx)
-    // The CLI should ALWAYS provide contextProfiles via ModelInfo
-    console.error('[ContextManager] CRITICAL: Using hardcoded tier fallback!');
-    console.error(`  Model: ${this.modelInfo.id || 'unknown'}`);
-    console.error(`  Context profiles provided: ${this.modelInfo.contextProfiles ? 'YES' : 'NO'}`);
-    console.error(`  Profile count: ${this.modelInfo.contextProfiles?.length || 0}`);
-    console.error('  This indicates a bug in ProfileManager or App.tsx');
-    console.error('  FIX: Ensure ProfileManager provides contextProfiles for all models');
+    this.logProfileFallbackError('hardcoded tier');
     
     // Fallback to hardcoded tiers (safety mechanism only)
     const tiers: Array<{ size: number; tier: ContextTier }> = [
@@ -554,14 +567,7 @@ export class ConversationContextManager extends EventEmitter implements ContextM
     }
     
     // CRITICAL ERROR: Fallback should NEVER be hit in production!
-    // This indicates a bug in the CLI layer (ProfileManager/App.tsx)
-    console.error('[ContextManager] CRITICAL: Using 85% calculation fallback!');
-    console.error(`  Model: ${this.modelInfo.id || 'unknown'}`);
-    console.error(`  User size: ${userSize}`);
-    console.error(`  Context profiles provided: ${this.modelInfo.contextProfiles ? 'YES' : 'NO'}`);
-    console.error(`  Profile count: ${this.modelInfo.contextProfiles?.length || 0}`);
-    console.error('  This indicates a bug in ProfileManager or App.tsx');
-    console.error('  FIX: Ensure ProfileManager provides contextProfiles with ollama_context_size');
+    this.logProfileFallbackError('85% calculation', { 'User size': userSize });
     
     // Fallback: calculate 85% if no profile available (safety mechanism only)
     return Math.floor(userSize * 0.85);
@@ -617,14 +623,7 @@ export class ConversationContextManager extends EventEmitter implements ContextM
     }
     
     // CRITICAL ERROR: Fallback should NEVER be hit in production!
-    // This indicates a bug in the CLI layer (ProfileManager/App.tsx)
-    console.error('[ContextManager] CRITICAL: Using hardcoded size fallback!');
-    console.error(`  Model: ${this.modelInfo.id || 'unknown'}`);
-    console.error(`  Tier: ${tier}`);
-    console.error(`  Context profiles provided: ${this.modelInfo.contextProfiles ? 'YES' : 'NO'}`);
-    console.error(`  Profile count: ${this.modelInfo.contextProfiles?.length || 0}`);
-    console.error('  This indicates a bug in ProfileManager or App.tsx');
-    console.error('  FIX: Ensure ProfileManager provides contextProfiles for all models');
+    this.logProfileFallbackError('hardcoded size', { 'Tier': tier });
     
     // Fallback to hardcoded sizes (safety mechanism only)
     const sizes: Record<ContextTier, number> = {

@@ -703,51 +703,71 @@ Your edits will be preserved on future startups.
 
 ## TASK 2B-2: Fix Hardcoded Context Sizes (Use User Profile)
 
-**Priority:** 🔥 CRITICAL | **Effort:** 1 day | **Status:** ⏳ In Progress
+**Priority:** 🔥 CRITICAL | **Effort:** 1 day | **Status:** ✅ COMPLETED
 
-**Audit Document:** `.dev/backlog/task-2b-audit-hardcoded-context-sizes.md`
+**Audit Document:** `.dev/backlog/task-2b-audit-hardcoded-context-sizes.md` (can be deleted)
 
 **Problem:** Context sizes are hardcoded in contextManager.ts instead of loaded from user's profile
 
 **Depends On:** Task 2B-1 (user profile file must exist first) - ✅ COMPLETED
 
-**Current Behavior (WRONG):**
-```typescript
-// Hardcoded in contextManager.ts (lines 433-461)
-private getTierForSize(size: number): ContextTier {
-  const tiers = [
-    { size: 4096, tier: TIER_1 },    // ❌ HARDCODED
-    { size: 8192, tier: TIER_2 },    // ❌ HARDCODED
-    { size: 16384, tier: TIER_3 },   // ❌ HARDCODED
-    { size: 32768, tier: TIER_4 },   // ❌ HARDCODED
-    { size: 65536, tier: TIER_5 }    // ❌ HARDCODED
-  ];
-}
-```
+**Changes Made:**
+1. Extended `ModelInfo` type to include `contextProfiles` with `size`, `ollama_context_size`, `vram_estimate_gb`
+2. Updated `getTierForSize()` to use dynamic profile-based tier mapping (no hardcoded thresholds)
+3. Updated `getTierTargetSize()` to use dynamic profile-based size selection (no hardcoded sizes)
+4. Added `getOllamaContextSize()` method to convert user size to Ollama size (85%)
+5. Constructor converts all sizes (target, min, max) to Ollama sizes before passing to contextPool
+6. `updateConfig()` converts sizes to Ollama sizes
+7. `context.maxTokens` set to Ollama size (actual limit sent to Ollama)
+8. **CRITICAL FIX:** `detectContextTier()` uses `config.targetSize` (user size) for tier detection
+9. Updated App.tsx to pass context profiles from ProfileManager
+10. Added CRITICAL error logging for fallback usage (indicates CLI bug)
+11. Removed unused methods and dead code
+12. Tier mapping now adapts to model's available profiles (1-5+ profiles)
 
-**Expected Behavior (CORRECT):**
-```typescript
-// Load from user's profile
-const profile = profileManager.getModelEntry(modelId);
-const contextProfiles = profile.context_profiles;
+**Progress:**
+- [x] Task 2B-1 complete (UNBLOCKED)
+- [x] Docs read
+- [x] Repo scanned
+- [x] Plan created
+- [x] Backup created (git commit)
+- [x] Tests baseline (443/443 passing)
+- [x] ProfileManager dependency added (via ModelInfo)
+- [x] Tests pass (443/443)
+- [x] getTierForSize() replaced (uses profiles with dynamic mapping)
+- [x] Tests pass (443/443)
+- [x] getTierTargetSize() replaced (uses profiles with dynamic mapping)
+- [x] Tests pass (443/443)
+- [x] ollama_context_size usage implemented
+- [x] Tests pass (443/443)
+- [x] Removed hardcoded thresholds from profile-based logic
+- [x] Tests pass (443/443)
+- [x] Cleanup: removed unused methods and dead code
+- [x] Tests pass (443/443)
+- [x] Committed (commits: fda6a4f, 95f7fc2, f59399a)
 
-// Use model-specific sizes
-const tier = this.getTierForSize(size, contextProfiles);
+**Result:**
+- ContextManager uses model profiles for all tier detection
+- No hardcoded context sizes in profile-based logic
+- Tier mapping adapts to model's available profiles
+- Pre-calculated 85% values used (ollama_context_size)
+- Tier detection uses user-facing size (not degraded by 85% cap)
+- Compression triggers at percentage of Ollama size (actual limit)
+- Clear error logging when fallback is used (indicates CLI bug)
+- All tests passing (443/443)
 
-// Use pre-calculated 85% value
-context.maxTokens = profile.ollama_context_size;  // Not user selection
-```
+**Success Criteria:**
+- ✅ ContextManager uses ProfileManager (via ModelInfo)
+- ✅ Context sizes come from model profiles
+- ✅ Pre-calculated 85% values used
+- ✅ Tier mapping based on model capabilities
+- ✅ No hardcoded thresholds in profile-based logic
+- ✅ Fallback to hardcoded values if profile missing (with error logging)
+- ✅ All tests passing (443/443)
 
-**Implementation Plan:**
-
-**Step 1: Add ProfileManager Dependency (2-3h)**
-- Import ProfileManager in contextManager.ts
-- Add to constructor parameters (optional with fallback)
-- Store modelId and load model entry
-- Make optional to avoid breaking existing code
-
-**Step 2: Replace getTierForSize() (2-3h)**
-- Use model's context_profiles instead of hardcoded array
+**Dependencies:**
+- ✅ Task 2B-1 complete (user file compilation) - COMPLETED
+- Must complete before Task 4 (compression needs accurate sizing)
 - Map sizes to tiers based on model's max_context_window
 - Fallback to hardcoded values if profile not available
 
