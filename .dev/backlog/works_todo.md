@@ -772,14 +772,14 @@ context.maxTokens = profile.ollama_context_size;  // Not user selection
 - [x] Docs read
 - [x] Repo scanned
 - [x] Plan created
-- [ ] Backup created
-- [ ] Tests baseline
-- [ ] ProfileManager dependency added
-- [ ] Tests pass
-- [ ] getTierForSize() replaced
-- [ ] Tests pass
-- [ ] getTierTargetSize() replaced
-- [ ] Tests pass
+- [x] Backup created (git commit)
+- [x] Tests baseline (443/443 passing)
+- [x] ProfileManager dependency added (via ModelInfo)
+- [x] Tests pass (443/443)
+- [x] getTierForSize() replaced (uses profiles with fallback)
+- [x] Tests pass (443/443)
+- [x] getTierTargetSize() replaced (uses profiles with fallback)
+- [x] Tests pass (443/443)
 - [ ] ollama_context_size usage implemented
 - [ ] Tests pass
 - [ ] Integration testing

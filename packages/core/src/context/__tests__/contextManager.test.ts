@@ -29,8 +29,8 @@ describe('ContextManager', () => {
     /**
      * Feature: stage-04b-context-management, Property 30: Target Size Configuration
      * 
-     * For any configured targetSize value, the Context Manager should use that value
-     * as the preferred context size.
+     * For any configured targetSize value, the Context Manager should use the Ollama
+     * context size (85% pre-calculated) as the actual maxTokens.
      * 
      * Validates: Requirements 8.1
      */
@@ -51,19 +51,21 @@ describe('ContextManager', () => {
               config
             );
 
-            // Verify the config has the target size
+            // Verify the config has the target size (user-facing)
             expect(manager.config.targetSize).toBe(targetSize);
 
-            // Get the context pool's current size (should match target when autoSize is off)
+            // Get the context pool's current size (should be Ollama size - 85%)
             const usage = manager.getUsage();
             
-            // The context pool should use the target size (clamped to min/max)
-            const expectedSize = Math.max(
+            // The context pool should use the Ollama size (85% of target)
+            // Since we don't have context profiles in the test, it falls back to 85% calculation
+            const clampedSize = Math.max(
               config.minSize || 2048,
               Math.min(targetSize, config.maxSize || 131072)
             );
+            const expectedOllamaSize = Math.floor(clampedSize * 0.85);
             
-            expect(usage.maxTokens).toBe(expectedSize);
+            expect(usage.maxTokens).toBe(expectedOllamaSize);
           }
         ),
         { numRuns: 100 }

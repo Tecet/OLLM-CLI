@@ -102,8 +102,13 @@ export class ConversationContextManager extends EventEmitter implements ContextM
     super();
     
     this.sessionId = sessionId;
-    this.modelInfo = modelInfo;
+    this.modelInfo = modelInfo;  // Set modelInfo FIRST
     this.config = { ...DEFAULT_CONTEXT_CONFIG, ...config };
+    
+    // Calculate Ollama context size from user's target size
+    // This uses pre-calculated 85% values from model profiles
+    // IMPORTANT: This must be called AFTER this.modelInfo is set
+    const ollamaContextSize = this.getOllamaContextSize(this.config.targetSize);
     
     // Initialize services (use provided or create new)
     this.vramMonitor = services?.vramMonitor || createVRAMMonitor();
@@ -111,17 +116,19 @@ export class ConversationContextManager extends EventEmitter implements ContextM
     this.promptOrchestrator = new PromptOrchestrator({ tokenCounter: this.tokenCounter });
     
     // Create context pool with resize callback
+    // IMPORTANT: targetContextSize is the Ollama size (85%), not user's selection
     this.contextPool = services?.contextPool || createContextPool(
       {
-        minContextSize: this.config.minSize,
-        maxContextSize: this.config.maxSize,
-        targetContextSize: this.config.targetSize,
+        minContextSize: this.getOllamaContextSize(this.config.minSize),
+        maxContextSize: this.getOllamaContextSize(this.config.maxSize),
+        targetContextSize: ollamaContextSize,
         reserveBuffer: this.config.vramBuffer,
         kvCacheQuantization: this.config.kvQuantization,
         autoSize: this.config.autoSize
       },
       async (newSize: number) => {
         // Resize callback - update current context max tokens
+        // newSize is already the Ollama size (85%)
         this.currentContext.maxTokens = newSize;
         this.currentContext.metadata.contextSize = newSize;
         
@@ -346,10 +353,24 @@ export class ConversationContextManager extends EventEmitter implements ContextM
         config.autoSize !== undefined ||
         config.vramBuffer !== undefined ||
         config.kvQuantization !== undefined) {
+      
+      // Convert user sizes to Ollama sizes (85% pre-calculated)
+      const ollamaTargetSize = config.targetSize !== undefined 
+        ? this.getOllamaContextSize(config.targetSize)
+        : this.getOllamaContextSize(this.config.targetSize);
+      
+      const ollamaMinSize = config.minSize !== undefined
+        ? this.getOllamaContextSize(config.minSize)
+        : this.getOllamaContextSize(this.config.minSize);
+      
+      const ollamaMaxSize = config.maxSize !== undefined
+        ? this.getOllamaContextSize(config.maxSize)
+        : this.getOllamaContextSize(this.config.maxSize);
+      
       this.contextPool.updateConfig({
-        targetContextSize: this.config.targetSize,
-        minContextSize: this.config.minSize,
-        maxContextSize: this.config.maxSize,
+        targetContextSize: ollamaTargetSize,
+        minContextSize: ollamaMinSize,
+        maxContextSize: ollamaMaxSize,
         autoSize: this.config.autoSize,
         reserveBuffer: this.config.vramBuffer,
         kvCacheQuantization: this.config.kvQuantization
@@ -360,8 +381,9 @@ export class ConversationContextManager extends EventEmitter implements ContextM
           (wasAutoSize && isNowManual)) {
         
         // Update context max tokens if size changed
+        // Use Ollama size (85%), not user's selection
         if (config.targetSize !== undefined) {
-          this.currentContext.maxTokens = config.targetSize;
+          this.currentContext.maxTokens = this.getOllamaContextSize(config.targetSize);
         }
         
         // Detect new tier based on current context size
@@ -433,6 +455,8 @@ export class ConversationContextManager extends EventEmitter implements ContextM
   private selectedTier: ContextTier = ContextTier.TIER_3_STANDARD;
 
   private getTierForSize(size: number): ContextTier {
+    // IMPORTANT: Tier detection uses user-facing size, not Ollama size
+    // The 85% cap is internal and shouldn't degrade tier capabilities
     // Use model-specific context profiles if available
     if (this.modelInfo.contextProfiles && this.modelInfo.contextProfiles.length > 0) {
       const profiles = this.modelInfo.contextProfiles;
@@ -468,6 +492,41 @@ export class ConversationContextManager extends EventEmitter implements ContextM
       }
     }
     return selected;
+  }
+
+  /**
+   * Get Ollama context size (85% pre-calculated) for a given user-facing size
+   * Returns the ollama_context_size from the profile, or calculates 85% as fallback
+   */
+  private getOllamaContextSize(userSize: number): number {
+    // Use model-specific context profiles if available
+    if (this.modelInfo.contextProfiles && this.modelInfo.contextProfiles.length > 0) {
+      const profiles = this.modelInfo.contextProfiles;
+      
+      // Find exact match first
+      const exactMatch = profiles.find(p => p.size === userSize);
+      if (exactMatch && exactMatch.ollama_context_size) {
+        return exactMatch.ollama_context_size;
+      }
+      
+      // Find closest profile that meets or exceeds user size
+      const matchingProfile = profiles.find(p => p.size >= userSize);
+      if (matchingProfile && matchingProfile.ollama_context_size) {
+        return matchingProfile.ollama_context_size;
+      }
+      
+      // If no profile meets size, use largest available
+      if (profiles.length > 0) {
+        const largestProfile = profiles[profiles.length - 1];
+        if (largestProfile.ollama_context_size) {
+          return largestProfile.ollama_context_size;
+        }
+      }
+    }
+    
+    // Fallback: calculate 85% if no profile available
+    // This maintains backward compatibility
+    return Math.floor(userSize * 0.85);
   }
 
   private getTierTargetSize(tier: ContextTier): number {
@@ -533,10 +592,14 @@ export class ConversationContextManager extends EventEmitter implements ContextM
 
   /**
    * Detect context tier based on max tokens (actual context window)
+   * IMPORTANT: Uses user-facing size for tier detection, not Ollama size
+   * This ensures tier capabilities don't degrade due to 85% internal cap
    */
   private detectContextTier(): import('./types.js').TierConfig {
-    const maxTokens = this.currentContext.maxTokens;
-    return TIER_CONFIGS[this.getTierForSize(maxTokens)];
+    // Use user-facing size for tier detection
+    // The 85% cap is internal and shouldn't affect tier selection
+    const userSize = this.config.targetSize;
+    return TIER_CONFIGS[this.getTierForSize(userSize)];
   }
 
   /**
