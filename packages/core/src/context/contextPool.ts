@@ -32,7 +32,7 @@ const DEFAULT_CONFIG: ContextPoolConfig = {
 export class ContextPoolImpl implements ContextPool {
   public config: ContextPoolConfig;
   public currentSize: number; // Ollama context size (85% of user's selection)
-  public userContextSize: number; // User's selected size (for UI display)
+  public userContextSize: number; // User's selected size (for UI display and tier detection)
   private currentTokens: number = 0;
   private vramInfo: VRAMInfo | null = null;
   private resizeCallback?: (newSize: number) => Promise<void>;
@@ -44,7 +44,8 @@ export class ContextPoolImpl implements ContextPool {
     resizeCallback?: (newSize: number) => Promise<void>
   ) {
     this.config = { ...DEFAULT_CONFIG, ...config };
-    this.currentSize = this.config.targetContextSize;
+    // IMPORTANT: currentSize is Ollama size (85%), userContextSize is what user selected
+    this.currentSize = this.config.targetContextSize; // This is already the Ollama size from config
     this.userContextSize = this.config.targetContextSize; // Initialize to same value
     this.resizeCallback = resizeCallback;
   }
@@ -172,8 +173,11 @@ export class ContextPoolImpl implements ContextPool {
    * Resize context to new size
    * Coordinates with provider and preserves existing data
    * Waits for active requests to complete before resizing
+   * 
+   * @param newSize - The Ollama context size (85% pre-calculated)
+   * @param userSize - Optional user-facing size for UI display
    */
-  async resize(newSize: number): Promise<void> {
+  async resize(newSize: number, userSize?: number): Promise<void> {
     // Clamp to valid range
     const clampedSize = this.clampSize(newSize);
 
@@ -204,8 +208,16 @@ export class ContextPoolImpl implements ContextPool {
       await this.resizeCallback(clampedSize);
     }
 
-    // Update current size
+    // Update current size (Ollama size)
     this.currentSize = clampedSize;
+    
+    // Update user-facing size if provided, otherwise assume same as Ollama size
+    if (userSize !== undefined) {
+      this.userContextSize = userSize;
+    } else {
+      this.userContextSize = clampedSize;
+    }
+    
     this.resizePending = false;
   }
 
@@ -243,8 +255,12 @@ export class ContextPoolImpl implements ContextPool {
   updateConfig(config: Partial<ContextPoolConfig>): void {
     this.config = { ...this.config, ...config };
 
-    // If target size changed, update user context size for UI display
+    // If target size changed, this is the Ollama size (85% pre-calculated)
+    // We need to track the user-facing size separately for UI display
     if (config.targetContextSize !== undefined) {
+      // targetContextSize is the Ollama size (85%)
+      // For now, we'll use it for both until we get the user size from contextManager
+      this.currentSize = this.clampSize(config.targetContextSize);
       this.userContextSize = config.targetContextSize;
     }
 
@@ -252,6 +268,14 @@ export class ContextPoolImpl implements ContextPool {
     if (config.targetContextSize !== undefined && !this.config.autoSize) {
       this.currentSize = this.clampSize(config.targetContextSize);
     }
+  }
+  
+  /**
+   * Set user-facing context size (for UI display and tier detection)
+   * This should be called by contextManager when it knows the user's selected size
+   */
+  setUserContextSize(size: number): void {
+    this.userContextSize = size;
   }
 
   /**

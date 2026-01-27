@@ -138,6 +138,7 @@ export class ConversationContextManager extends EventEmitter implements ContextM
         this.currentContext.metadata.contextSize = newSize;
         
         // Update selected tier based on new size
+        // IMPORTANT: Use user-facing size for tier detection, not Ollama size
         const newTierConfig = this.detectContextTier();
         const previousTier = this.selectedTier;
         this.selectedTier = newTierConfig.tier;
@@ -158,6 +159,9 @@ export class ConversationContextManager extends EventEmitter implements ContextM
         }
       }
     );
+    
+    // Set user-facing context size for UI display and tier detection
+    this.contextPool.setUserContextSize(this.config.targetSize);
     
     // Initialize current context
     this.currentContext = {
@@ -285,14 +289,24 @@ export class ConversationContextManager extends EventEmitter implements ContextM
         this.modelInfo
       );
       const recommendedSize = this.getRecommendedAutoSize(maxPossibleContext);
-      await this.contextPool.resize(recommendedSize);
+      
+      // Calculate user-facing size from recommended Ollama size
+      // We need to reverse the 85% calculation to get the user-facing size
+      const userFacingSize = this.getUserSizeFromOllama(recommendedSize);
+      
+      // Update config with user-facing size
+      this.config.targetSize = userFacingSize;
+      
+      // Resize with both Ollama and user-facing sizes
+      await this.contextPool.resize(recommendedSize, userFacingSize);
       this.contextPool.updateConfig({ targetContextSize: recommendedSize });
+      this.contextPool.setUserContextSize(userFacingSize);
       
       // Update current context
       this.currentContext.maxTokens = this.contextPool.currentSize;
       this.currentContext.metadata.contextSize = this.contextPool.currentSize;
       
-      // Detect selected tier after resize
+      // Detect selected tier after resize (uses user-facing size)
       const newTierConfig = this.detectContextTier();
       this.currentTier = newTierConfig.tier;
       this.tierConfig = newTierConfig;
@@ -301,6 +315,8 @@ export class ConversationContextManager extends EventEmitter implements ContextM
       // With auto-sizing, prompt tier follows context size
       console.log('[ContextManager] Auto-sizing enabled - prompt tier follows context size');
       console.log('[ContextManager] Selected tier:', this.selectedTier);
+      console.log('[ContextManager] User-facing size:', userFacingSize);
+      console.log('[ContextManager] Ollama size:', recommendedSize);
       
       this.emit('tier-changed', { 
         tier: this.currentTier, 
@@ -353,9 +369,10 @@ export class ConversationContextManager extends EventEmitter implements ContextM
     const oldConfig = { ...this.config };
     this.config = { ...this.config, ...config };
     
-    // Track if we're transitioning from auto to manual mode
+    // Track transitions
     const wasAutoSize = oldConfig.autoSize;
     const isNowManual = config.autoSize === false;
+    const isNowAuto = config.autoSize === true && !wasAutoSize;
     
     // Update context pool config
     if (config.targetSize !== undefined ||
@@ -386,6 +403,72 @@ export class ConversationContextManager extends EventEmitter implements ContextM
         reserveBuffer: this.config.vramBuffer,
         kvCacheQuantization: this.config.kvQuantization
       });
+      
+      // Update user-facing size in context pool
+      if (config.targetSize !== undefined) {
+        this.contextPool.setUserContextSize(config.targetSize);
+      }
+      
+      // Handle manual → auto transition
+      if (isNowAuto) {
+        console.log('[ContextManager] Switching from manual to auto-sizing');
+        
+        // Recalculate optimal size based on current VRAM
+        (async () => {
+          try {
+            const vramInfo = await this.vramMonitor.getInfo();
+            const maxPossibleContext = this.contextPool.calculateOptimalSize(
+              vramInfo,
+              this.modelInfo
+            );
+            const recommendedSize = this.getRecommendedAutoSize(maxPossibleContext);
+            const userFacingSize = this.getUserSizeFromOllama(recommendedSize);
+            
+            // Update config with new size
+            this.config.targetSize = userFacingSize;
+            
+            // Resize context
+            await this.contextPool.resize(recommendedSize, userFacingSize);
+            this.contextPool.setUserContextSize(userFacingSize);
+            
+            // Update current context
+            this.currentContext.maxTokens = this.contextPool.currentSize;
+            this.currentContext.metadata.contextSize = this.contextPool.currentSize;
+            
+            // Detect new tier
+            const newTierConfig = this.detectContextTier();
+            const oldTier = this.selectedTier;
+            this.selectedTier = newTierConfig.tier;
+            this.currentTier = newTierConfig.tier;
+            this.tierConfig = newTierConfig;
+            
+            console.log('[ContextManager] Auto-sizing calculated:');
+            console.log(`  User-facing size: ${userFacingSize}`);
+            console.log(`  Ollama size: ${recommendedSize}`);
+            console.log(`  Tier: ${this.selectedTier}`);
+            
+            // Emit events
+            if (oldTier !== this.selectedTier) {
+              this.emit('tier-changed', {
+                tier: this.currentTier,
+                config: this.tierConfig,
+                selectedTier: this.selectedTier,
+                promptTierLocked: false
+              });
+              
+              this.updateSystemPrompt();
+              
+              this.emit('system-prompt-updated', {
+                tier: this.selectedTier,
+                mode: this.currentMode,
+                prompt: this.getSystemPrompt()
+              });
+            }
+          } catch (error) {
+            console.error('[ContextManager] Failed to recalculate auto-size:', error);
+          }
+        })();
+      }
       
       // If target size changed OR switching from auto to manual, update tier
       if ((config.targetSize !== undefined && config.targetSize !== oldConfig.targetSize) ||
@@ -643,6 +726,37 @@ export class ConversationContextManager extends EventEmitter implements ContextM
     
     // Fallback: calculate 85% if no profile available (safety mechanism only)
     return Math.floor(userSize * 0.85);
+  }
+  
+  /**
+   * Get user-facing size from Ollama context size (reverse of getOllamaContextSize)
+   * This is needed when auto-sizing calculates an Ollama size and we need the user-facing equivalent
+   */
+  private getUserSizeFromOllama(ollamaSize: number): number {
+    // Use model-specific context profiles if available
+    if (this.modelInfo.contextProfiles && this.modelInfo.contextProfiles.length > 0) {
+      const profiles = this.modelInfo.contextProfiles;
+      
+      // Find profile with matching ollama_context_size
+      const matchingProfile = profiles.find(p => p.ollama_context_size === ollamaSize);
+      if (matchingProfile) {
+        return matchingProfile.size;
+      }
+      
+      // Find closest profile
+      const closestProfile = profiles.reduce((closest, current) => {
+        const currentDiff = Math.abs((current.ollama_context_size || 0) - ollamaSize);
+        const closestDiff = Math.abs((closest.ollama_context_size || 0) - ollamaSize);
+        return currentDiff < closestDiff ? current : closest;
+      });
+      
+      if (closestProfile) {
+        return closestProfile.size;
+      }
+    }
+    
+    // Fallback: reverse the 85% calculation
+    return Math.floor(ollamaSize / 0.85);
   }
 
   private getTierTargetSize(tier: ContextTier): number {

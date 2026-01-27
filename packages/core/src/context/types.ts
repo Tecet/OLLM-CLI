@@ -201,18 +201,22 @@ export interface ModelInfo {
 export interface ContextPool {
   /** Current configuration */
   config: ContextPoolConfig;
-  /** Current context size in tokens */
+  /** Current context size in tokens (Ollama size - 85%) */
   currentSize: number;
+  /** User-facing context size (for UI display and tier detection) */
+  userContextSize: number;
   /** Calculate optimal context size based on available VRAM */
   calculateOptimalSize(vramInfo: VRAMInfo, modelInfo: ModelInfo): number;
   /** Resize context (may require model reload) */
-  resize(newSize: number): Promise<void>;
+  resize(newSize: number, userSize?: number): Promise<void>;
   /** Get current usage statistics */
   getUsage(): ContextUsage;
   /** Get current Ollama context size (actual limit) */
   getCurrentSize(): number;
   /** Update configuration */
   updateConfig(config: Partial<ContextPoolConfig>): void;
+  /** Set user-facing context size (for UI display and tier detection) */
+  setUserContextSize(size: number): void;
   /** Set current token count */
   setCurrentTokens(tokens: number): void;
   /** Update VRAM information */
