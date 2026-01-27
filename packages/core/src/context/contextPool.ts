@@ -213,8 +213,11 @@ export class ContextPoolImpl implements ContextPool {
    * Get current usage statistics
    */
   getUsage(): ContextUsage {
-    const percentage = this.userContextSize > 0
-      ? (this.currentTokens / this.userContextSize) * 100
+    // IMPORTANT: Calculate percentage against currentSize (Ollama limit), not userContextSize
+    // currentSize is the actual limit sent to Ollama (85% pre-calculated)
+    // This ensures compression triggers at the right time
+    const percentage = this.currentSize > 0
+      ? (this.currentTokens / this.currentSize) * 100
       : 0;
 
     return {

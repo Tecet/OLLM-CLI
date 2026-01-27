@@ -304,7 +304,7 @@ describe('ContextManager', () => {
 
     it('sets the safe compression and snapshot thresholds by default', () => {
       const manager = createContextManager('test-session', modelInfo);
-      expect(manager.config.compression.threshold).toBeCloseTo(0.68);
+      expect(manager.config.compression.threshold).toBeCloseTo(0.80);
       expect(manager.config.snapshots.autoThreshold).toBeCloseTo(0.85);
     });
 

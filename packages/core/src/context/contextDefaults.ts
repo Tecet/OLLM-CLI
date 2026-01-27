@@ -14,7 +14,7 @@ export const DEFAULT_CONTEXT_CONFIG: ContextConfig = {
   kvQuantization: 'q8_0',
   compression: {
     enabled: true,
-    threshold: 0.68, // ~80% of the Ollama cap (85% of user context) per spec
+    threshold: 0.80, // Trigger at 80% of available context budget
     strategy: 'hybrid',
     preserveRecent: 4096,
     summaryMaxTokens: 1024
@@ -23,6 +23,6 @@ export const DEFAULT_CONTEXT_CONFIG: ContextConfig = {
     enabled: true,
     maxCount: 5,
     autoCreate: true,
-    autoThreshold: 0.85 // Aligned with Ollama's 85% context limit
+    autoThreshold: 0.85 // Create snapshot at 85% usage
   }
 };
