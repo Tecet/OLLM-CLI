@@ -161,6 +161,18 @@ export class MessageStore {
       if (this.config.compression.enabled) {
         const usage = this.getUsage();
         const usageFraction = usage.percentage / 100;
+        
+        // Warn user when context is getting full (70-75% range)
+        if (usageFraction >= 0.70 && usageFraction < 0.75) {
+          this.emit('context-warning-low', {
+            percentage: usage.percentage,
+            currentTokens: usage.currentTokens,
+            maxTokens: usage.maxTokens,
+            message: 'Context is filling up - compression will trigger soon'
+          });
+        }
+        
+        // Trigger compression at threshold
         if (usageFraction >= this.config.compression.threshold) {
           await this.compress();
         }

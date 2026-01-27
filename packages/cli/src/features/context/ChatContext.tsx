@@ -472,9 +472,48 @@ export function ChatProvider({
         const message = typeof err === 'string' ? err : ((err && typeof err === 'object' && 'message' in err) ? String((err as { message?: unknown }).message) : JSON.stringify(err));
         addMessage({
           role: 'system',
-          content: `Summarization failed: ${message}`,
+          content: `❌ Task failed successfully: ${message}`,
           excludeFromContext: true,
         });
+      } catch (_e) {
+        // ignore
+      }
+    };
+
+    const handleContextWarningLow = (data: unknown) => {
+      try {
+        const typedData = data as { percentage?: number; message?: string };
+        const percentage = typedData?.percentage || 70;
+        const message = typedData?.message || 'Context is filling up';
+        
+        // Show warning message
+        setStatusMessage(`⚠️ Context at ${Math.round(percentage)}% - compression will trigger soon`);
+        
+        // Auto-clear after 10 seconds
+        setTimeout(() => {
+          setStatusMessage(current => 
+            current?.includes('Context at') ? undefined : current
+          );
+        }, 10000);
+      } catch (_e) {
+        // ignore
+      }
+    };
+
+    const handleSessionSaved = (data: unknown) => {
+      try {
+        const typedData = data as { turnNumber?: number };
+        const turnNumber = typedData?.turnNumber || 0;
+        
+        // Show brief confirmation
+        setStatusMessage(`💾 Session saved (turn ${turnNumber}) - rollback available`);
+        
+        // Auto-clear after 3 seconds
+        setTimeout(() => {
+          setStatusMessage(current => 
+            current?.includes('Session saved') ? undefined : current
+          );
+        }, 3000);
       } catch (_e) {
         // ignore
       }
@@ -485,6 +524,7 @@ export function ChatProvider({
     contextActions.on?.('summarizing', handleSummarizing);
     contextActions.on?.('auto-summary-created', handleAutoSummary);
     contextActions.on?.('auto-summary-failed', handleAutoSummaryFailed);
+    contextActions.on?.('context-warning-low', handleContextWarningLow);
 
     return () => {
       contextActions.off?.('memory-warning', handleMemoryWarning);
@@ -492,6 +532,7 @@ export function ChatProvider({
       contextActions.off?.('summarizing', handleSummarizing);
       contextActions.off?.('auto-summary-created', handleAutoSummary);
       contextActions.off?.('auto-summary-failed', handleAutoSummaryFailed);
+      contextActions.off?.('context-warning-low', handleContextWarningLow);
     };
   }, [contextActions, contextManagerState.usage, addMessage]);
 
@@ -500,6 +541,20 @@ export function ChatProvider({
     if (serviceContainer) {
       commandRegistry.setServiceContainer(serviceContainer);
       globalThis.__ollmModelSwitchCallback = setCurrentModel;
+      
+      // Listen to messageBus events
+      const messageBus = serviceContainer.getHookService()?.getMessageBus();
+      if (messageBus) {
+        const handleSessionSavedEvent = (data: unknown) => {
+          handleSessionSaved(data);
+        };
+        
+        messageBus.on('session_saved', handleSessionSavedEvent);
+        
+        return () => {
+          messageBus.off('session_saved', handleSessionSavedEvent);
+        };
+      }
     }
     
     // Note: __ollmAddSystemMessage and __ollmClearContext are now registered

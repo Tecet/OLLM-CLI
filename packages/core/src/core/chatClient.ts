@@ -477,6 +477,14 @@ export class ChatClient {
             })),
             timestamp: new Date().toISOString(),
           });
+          
+          // Emit session-saved event for UI (rollback precursor)
+          this.messageBus.emit('session_saved', {
+            sessionId,
+            turnNumber,
+            messageCount: messages.length,
+            timestamp: new Date().toISOString()
+          });
         } catch (error) {
           // Log error but continue (Requirement 10.1)
           if (!isTestEnv) console.error('Failed to record assistant message:', error);

@@ -860,7 +860,7 @@ Your edits will be preserved on future startups.
 
 ## TASK 4: Fix Compression System (Dynamic Budget)
 
-**Priority:** 🔥 CRITICAL | **Effort:** 2-3 days | **Status:** ⏳ Not Started
+**Priority:** 🔥 CRITICAL | **Effort:** 2-3 days | **Status:** ⏳ In Progress
 
 **Documentation (READ FIRST):**
 - `.dev/docs/devs/knowledgeDB/dev_ContextCompression.md` (COMPLETE - read all)
@@ -868,40 +868,61 @@ Your edits will be preserved on future startups.
 
 **Problem:** Compression doesn't account for checkpoint space in budget → rapid re-compression
 
-**Known Issues to Fix:**
-1. **contextDefaults.ts** - Confusing compression threshold (0.68 = "80% of 85%")
-2. **contextPool.ts** - Percentage calculated against user size instead of Ollama size
-3. Compression doesn't account for checkpoint space in budget
-4. No checkpoint aging/cleanup
+**Known Issues:**
+1. ✅ **FIXED:** contextDefaults.ts - threshold changed from 0.68 to 0.80 (commit b709085)
+2. ✅ **FIXED:** contextPool.ts - percentage now uses currentSize not userContextSize (commit b709085)
+3. ✅ **FIXED:** Mid-stream compression removed - no message truncation (commit 383c008)
+4. ⏳ **TODO:** Dynamic budget tracking - account for checkpoint space
+5. ⏳ **TODO:** Checkpoint aging - compress old checkpoints further
 
-**Fix:** 
-1. Track checkpoints
-2. Calculate available budget = ollama_size - system - checkpoints
-3. Trigger at 80% of AVAILABLE (not total)
-4. Implement checkpoint aging
-5. Fix contextPool percentage calculation (use currentSize not userContextSize)
-6. Clean up contextDefaults.ts threshold and comments
+**Architecture (SIMPLE & ROBUST):**
+```
+Primary: Trust Ollama ✅
+- Ollama stops at num_ctx (85% pre-calculated)
+- We compress AFTER message completes
+- No mid-stream compression
+- No message truncation
+
+Safety: Emergency Brake 🚨
+- Warn if stream exceeds limit
+- Should never happen
+- Protects against bugs
+```
+
+**Remaining Work:**
+1. ⏳ Implement dynamic budget tracking in compressionCoordinator.ts
+2. ⏳ Implement checkpoint aging in checkpointManager.ts
+3. ⏳ Update compression trigger to use available budget
 
 **Files:** 
-- `contextManager.ts`
-- `compressionCoordinator.ts`
-- `compressionService.ts`
-- `checkpointManager.ts`
-- `contextPool.ts` (percentage calculation bug)
-- `contextDefaults.ts` (confusing threshold)
+- ✅ `contextPool.ts` (FIXED - percentage calculation)
+- ✅ `contextDefaults.ts` (FIXED - threshold 0.80)
+- ✅ `messageStore.ts` (FIXED - no mid-stream compression)
+- ⏳ `compressionCoordinator.ts` (TODO - dynamic budget)
+- ⏳ `checkpointManager.ts` (TODO - checkpoint aging)
 - `types.ts`
 - tests
 
 **Progress:**
-- [ ] Docs read (both files)
-- [ ] Repo scanned
-- [ ] Current code understood
-- [ ] Plan approved
-- [ ] Backup created
-- [ ] Tests baseline
-- [ ] Fix contextPool percentage calculation
+- [x] Docs read (both files)
+- [x] Repo scanned
+- [x] Current code understood
+- [x] Plan approved
+- [x] Backup created (git commits)
+- [x] Tests baseline (444/444 passing)
+- [x] Fix contextPool percentage calculation (commit b709085)
+- [x] Tests pass (443/443)
+- [x] Fix contextDefaults threshold (commit b709085)
+- [x] Tests pass (443/443)
+- [x] Fix mid-stream compression (commit 383c008)
+- [x] Tests pass (444/444)
+- [x] Documentation updated (commit ba8a14e)
+- [ ] Implement dynamic budget tracking
 - [ ] Tests pass
-- [ ] Fix contextDefaults.ts threshold
+- [ ] Implement checkpoint aging
+- [ ] Tests pass
+- [ ] Integration test passed
+- [ ] Committed.ts threshold
 - [ ] Tests pass
 - [ ] Checkpoint tracking added
 - [ ] Tests pass
