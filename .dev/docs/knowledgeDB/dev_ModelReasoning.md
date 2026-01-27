@@ -543,13 +543,43 @@ interface ModelProfile {
 
 ### Issue 4: Reasoning Box Behavior Fixed
 
-**Status:** ✅ FIXED  
+**Status:** ✅ FIXED (January 27, 2026)  
 **Impact:** LOW  
-**Description:** Reasoning box was always collapsed, hiding thinking process.
+**Description:** Reasoning box was always collapsed, hiding thinking process during streaming.
 
-**Solution:** Set `expanded: true` on message creation, `false` on completion.
+**Solution:** 
+- Set `expanded: true` on message creation (shows reasoning as it streams)
+- Set `expanded: false` on completion (auto-collapse to save space)
+- User can manually toggle at any time
 
-**Reference:** `.dev/docs/devs/audits-bugtracker/ContextManagement/W3-W4-LLM-audit/other/reasoning-box-behavior-fix.md`
+**Implementation:**
+```typescript
+// During streaming
+const assistantMsg = addMessage({
+  role: 'assistant',
+  content: '',
+  reasoning: {
+    content: '',
+    complete: false,
+  },
+  expanded: true,  // ✅ Show reasoning as it streams
+});
+
+// On completion
+if (msg.reasoning) {
+  updates.reasoning = {
+    ...msg.reasoning,
+    complete: true,
+  };
+  updates.expanded = false;  // ✅ Auto-collapse
+}
+```
+
+**Files Modified:**
+- `packages/cli/src/features/context/ChatContext.tsx`
+- `packages/cli/src/features/context/handlers/agentLoopHandler.ts`
+
+**See:** ChatContext refactoring work (January 27, 2026)
 
 ---
 

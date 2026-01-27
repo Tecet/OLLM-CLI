@@ -460,44 +460,22 @@ Return to LLM
 - `packages/core/src/mcp/mcpToolWrapper.ts` - MCP tool wrapper
 - `packages/core/src/mcp/mcpClient.ts` - MCP client
 
----
-
-## Troubleshooting
+### Troubleshooting
 
 ### Tools Not Available to LLM
 
 **Symptom:** LLM doesn't use tools, only provides advice
 
-**ROOT CAUSE:** Tools are not being passed to the provider in the chat request.
+**Status:** ✅ RESOLVED (January 27, 2026)
 
-**Location:** `packages/core/src/core/chatClient.ts` line ~370
+**Solution:** Tools are now properly passed to the provider in chat requests via the refactored ChatContext system.
 
-**Current Code (BROKEN):**
-```typescript
-const turnOptions: ChatOptions = {
-  ...options,
-  systemPrompt: systemPromptWithContext,
-  // ❌ Missing: tools from ToolRegistry
-};
-```
+**Implementation:**
+- Tools registered in ToolRegistry
+- Passed through ChatContext to provider
+- Available to LLM in all chat requests
 
-**Fix:**
-```typescript
-// Get all registered tools
-const tools = this.toolRegistry.getAllTools().map(tool => ({
-  name: tool.name,
-  description: tool.description,
-  parameters: tool.inputSchema
-}));
-
-const turnOptions: ChatOptions = {
-  ...options,
-  systemPrompt: systemPromptWithContext,
-  tools: tools,  // ✅ Add tools here
-};
-```
-
-**See:** `works_todo.md` Task #10 for complete fix details
+**See:** ChatContext refactoring work (January 27, 2026) for complete implementation details
 
 ### Tool Execution Fails
 
