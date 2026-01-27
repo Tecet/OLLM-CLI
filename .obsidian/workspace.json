@@ -185,6 +185,8 @@
   },
   "active": "96f17f0c11000dcf",
   "lastOpenFiles": [
+    "packages/cli/src/ui/components/layout/HeaderBar.tsx.bak",
+    "packages/cli/src/ui/components/layout/HeaderBar.tsx",
     "lint-output.txt",
     "app-debug.log",
     "packages/cli/src/ui/old_App.tsx",
@@ -194,8 +196,6 @@
     "packages/core/dist/context/old_contextPool.d.ts.map",
     "packages/core/dist/context/old_contextPool.js",
     "packages/core/dist/context/old_contextPool.js.map",
-    "packages/core/src/context/old_contextPool.ts",
-    "packages/core/dist/context/old_contextManager.d.ts",
     "dev/backlog/REFACTORING-SUMMARY.md",
     "dev/backlog/report.md",
     "packages/cli/src/ui/components/animations/lama/lama_sprite/right/llama-r6.png",

@@ -127,7 +127,7 @@ export class MessageStore {
     }
 
     context.messages.push(message);
-    const previousTokenCount = context.tokenCount;
+    const _previousTokenCount = context.tokenCount;
     context.tokenCount += tokenCount;
     this.contextPool.setCurrentTokens(context.tokenCount);
     
@@ -342,7 +342,7 @@ export class MessageStore {
   /**
    * Compute context usage ratio, optionally including streaming tokens.
    */
-  private getUsageFraction(includeInflight = false): number {
+  private _getUsageFraction(includeInflight = false): number {
     const context = this.getContext();
     const totalTokens = context.maxTokens || 1;
     const currentTokens = context.tokenCount + (includeInflight ? this.inflightTokens : 0);

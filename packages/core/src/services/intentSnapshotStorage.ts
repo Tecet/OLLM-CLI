@@ -30,7 +30,7 @@ export class IntentSnapshotStorage {
   private async ensureDirectory(): Promise<void> {
     try {
       await fs.mkdir(this.basePath, { recursive: true });
-    } catch (error) {
+    } catch (_error) {
       // Directory might already exist, ignore
     }
   }
@@ -62,7 +62,7 @@ export class IntentSnapshotStorage {
       const filePath = this.getSnapshotPath(snapshotId);
       const data = await fs.readFile(filePath, 'utf-8');
       return JSON.parse(data) as IntentSnapshot;
-    } catch (error) {
+    } catch (_error) {
       // Snapshot not found
       return null;
     }
@@ -91,7 +91,7 @@ export class IntentSnapshotStorage {
       return snapshots.sort((a, b) => 
         new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
       );
-    } catch (error) {
+    } catch (_error) {
       return [];
     }
   }
@@ -103,7 +103,7 @@ export class IntentSnapshotStorage {
     try {
       const filePath = this.getSnapshotPath(snapshotId);
       await fs.unlink(filePath);
-    } catch (error) {
+    } catch (_error) {
       // Snapshot not found, ignore
     }
   }
@@ -142,14 +142,12 @@ export class IntentSnapshotStorage {
     }
     
     const toDelete = allSnapshots.slice(keepCount);
-    let deletedCount = 0;
     
     for (const snapshot of toDelete) {
       await this.delete(snapshot.id);
-      deletedCount++;
     }
     
-    return deletedCount;
+    return toDelete.length;
   }
 
   /**
@@ -179,7 +177,7 @@ export class IntentSnapshotStorage {
         const filePath = this.getSnapshotPath(snapshot.id);
         const stats = await fs.stat(filePath);
         totalSize += stats.size;
-      } catch (error) {
+      } catch (_error) {
         // Ignore errors
       }
     }

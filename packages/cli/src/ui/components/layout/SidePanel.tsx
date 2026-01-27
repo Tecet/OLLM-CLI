@@ -1,11 +1,9 @@
 import React from 'react';
-import { Box, Text, BoxProps, useInput, useStdout } from 'ink';
+import { Box, Text, BoxProps, useInput } from 'ink';
 
 import { ActivePromptInfo } from './ActivePromptInfo.js';
 import { ContextSection } from './ContextSection.js';
 import { DotIndicator } from './DotIndicator.js';
-import { HeaderBar } from './HeaderBar.js';
-import { ConnectionStatus, GPUInfo } from './StatusBar.js';
 import { WorkspacePanel } from './WorkspacePanel.js';
 import { Theme } from '../../../config/types.js';
 import { useChat } from '../../../features/context/ChatContext.js';
@@ -19,15 +17,12 @@ import { Terminal2 } from '../Terminal2.js';
 
 export interface SidePanelProps {
   visible: boolean;
-  connection: ConnectionStatus;
-  model: string;
-  gpu: GPUInfo | null;
   theme: Theme;
   height: number;
   width?: number;
 }
 
-export function SidePanel({ visible, connection, model, gpu, theme, height, width }: SidePanelProps) {
+export function SidePanel({ visible, theme, height, width }: SidePanelProps) {
   const { isFocused } = useFocusManager();
   const { contextUsage } = useChat();
   const { activeKeybinds } = useKeybinds();

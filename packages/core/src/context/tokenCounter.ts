@@ -37,7 +37,7 @@ export class TokenCounterMetrics {
     this.largestMessage = Math.max(this.largestMessage, tokens);
   }
 
-  recordRecalculation(messageCount: number, totalTokens: number): void {
+  recordRecalculation(_messageCount: number, _totalTokens: number): void {
     this.recalculations++;
   }
 
@@ -117,7 +117,7 @@ export class TokenCounterService implements TokenCounter {
   private modelMultiplier: number;
   private toolCallOverhead: number;
   private metrics: TokenCounterMetrics;
-  private isDevelopment: boolean;
+  private _isDevelopment: boolean;
 
   constructor(config: TokenCounterConfig = {}) {
     this.cache = new SimpleTokenCountCache();
@@ -125,7 +125,7 @@ export class TokenCounterService implements TokenCounter {
     this.modelMultiplier = config.modelMultiplier ?? 1.0;
     this.toolCallOverhead = config.toolCallOverhead ?? TOOL_CALL_OVERHEAD;
     this.metrics = new TokenCounterMetrics();
-    this.isDevelopment = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test';
+    this._isDevelopment = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test';
   }
 
   /**

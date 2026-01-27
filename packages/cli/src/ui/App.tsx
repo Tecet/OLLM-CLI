@@ -14,7 +14,7 @@
  */
 
 import { useCallback, useEffect, useRef, useMemo } from 'react';
-import { Box, Text, useStdout, BoxProps } from 'ink';
+import { Box, useStdout, BoxProps } from 'ink';
 
 import { SettingsService } from '../config/settingsService.js';
 import { defaultDarkTheme } from '../config/styles.js';
@@ -29,6 +29,7 @@ import {
 import { LaunchScreen } from './components/launch/LaunchScreen.js';
 import { ChatInputArea } from './components/layout/ChatInputArea.js';
 import { Clock } from './components/layout/Clock.js';
+import { HeaderBar } from './components/layout/HeaderBar.js';
 import { SidePanel } from './components/layout/SidePanel.js';
 import { GPUInfo } from './components/layout/StatusBar.js';
 import { SystemBar } from './components/layout/SystemBar.js';
@@ -254,7 +255,6 @@ Type \`/help\` for more commands.`,
 
   // Main UI
   const leftWidth = uiState.sidePanelVisible ? leftColumnWidth - 1 : terminalWidth - 1;
-  const rightPanelFullHeight = row1Height + row2Height + row3Height + row4Height;
 
   return (
     <Box flexDirection="column" width={terminalWidth} height={terminalHeight}>
@@ -302,19 +302,20 @@ Type \`/help\` for more commands.`,
         {/* Right Column: Full height side panel */}
         {uiState.sidePanelVisible && (
           <Box width={rightColumnWidth} flexDirection="column">
-            {/* Row 1: Status Bar */}
-            <Box height={row1Height} borderStyle={uiState.theme.border.style as BoxProps['borderStyle']} borderColor={uiState.theme.border.primary} paddingX={1} alignItems="center" justifyContent="center">
-              <Text color={uiState.theme.text.primary} bold>
-                LLM: {currentModel || 'none'} | GPU: {gpuInfo?.vendor || 'Unknown'} | VRAM: {gpuInfo ? `${(gpuInfo.vramUsed / (1024 * 1024 * 1024)).toFixed(1)} GB/${(gpuInfo.vramTotal / (1024 * 1024 * 1024)).toFixed(1)} GB` : 'N/A'} | T: {gpuInfo?.temperature ? `${gpuInfo.temperature}°C` : 'N/A'}
-              </Text>
-            </Box>
+            {/* Row 1: Status Bar with HeaderBar component */}
+            <HeaderBar
+              connection={{ 
+                status: currentModel ? 'connected' : 'disconnected', 
+                provider: config.provider.default || 'ollama' 
+              }}
+              model={currentModel || 'none'}
+              gpu={gpuInfo as unknown as GPUInfo | null}
+              theme={uiState.theme}
+            />
 
             {/* Rows 2-4: Side Panel (full height with context at bottom) */}
             <SidePanel 
               visible={uiState.sidePanelVisible}
-              connection={{ status: 'connected', provider: config.provider.default }}
-              model={currentModel || 'model'}
-              gpu={gpuInfo as unknown as GPUInfo | null}
               theme={uiState.theme}
               height={row2Height + row3Height + row4Height}
               width={rightColumnWidth}
@@ -441,6 +442,7 @@ export function App({ config }: AppProps) {
   const provider = (() => {
     let LocalProviderClass: { new (opts: { baseUrl: string; timeout?: number }): ProviderAdapter } | null = null;
     try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const mod = require('@ollm/ollm-bridge/provider/localProvider.js') as { LocalProvider: { new (opts: { baseUrl: string; timeout?: number }): ProviderAdapter } } | { new (opts: { baseUrl: string; timeout?: number }): ProviderAdapter };
       LocalProviderClass = (mod as Record<string, unknown>).LocalProvider as { new (opts: { baseUrl: string; timeout?: number }): ProviderAdapter } || mod;
     } catch (err) {
@@ -471,6 +473,7 @@ export function App({ config }: AppProps) {
   const initialThemeName = SettingsService.getInstance().getTheme() || config.ui.theme || 'default-dark';
   let initialTheme = defaultDarkTheme;
   try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { builtInThemes } = require('../config/styles.js') as { builtInThemes: Record<string, unknown> };
     if (builtInThemes[initialThemeName]) {
       initialTheme = builtInThemes[initialThemeName] as typeof defaultDarkTheme;

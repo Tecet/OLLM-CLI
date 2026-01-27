@@ -74,7 +74,7 @@ export function clampContextSize(requested: number, entry: UserModelEntry): numb
 export function calculateContextSizing(
   requested: number,
   entry: UserModelEntry,
-  contextCapRatio: number = 0.85
+  _contextCapRatio: number = 0.85
 ): ContextSizingResult {
   const max = getMaxContextWindow(entry);
   const allowed = clampContextSize(requested, entry);
