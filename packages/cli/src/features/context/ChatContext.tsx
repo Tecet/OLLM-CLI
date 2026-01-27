@@ -575,8 +575,8 @@ export function ChatProvider({
         }
       }
 
-      // Get system prompt and add tool support note if needed
-      let systemPrompt = contextActions.getSystemPrompt();
+      // Build system prompt using utility function
+      const basePrompt = contextActions.getSystemPrompt();
       const usageForTier = contextActions.getUsage();
       const coreManager = contextActions.getManager?.();
       const coreMode = coreManager?.getMode?.() ?? contextActions.getCurrentMode?.() ?? 'assistant';
@@ -586,37 +586,15 @@ export function ChatProvider({
         effectiveTier
       );
       
-      // Check if this is a reasoning model
       const modelProfile = profileManager.findProfile(currentModel);
-      const isReasoningModel = modelProfile?.thinking_enabled === true;
       
-      // For reasoning models, use a more concise system prompt
-      // They will reason about the instructions anyway, so keep it brief
-      if (isReasoningModel) {
-        systemPrompt = `You are a helpful AI assistant for developers. You help with coding, debugging, and technical questions.
-
-Key guidelines:
-- Provide accurate, clear information
-- Explain concepts simply and directly
-- Use code examples when helpful
-- Follow project conventions when working with code
-- Ask for clarification if the request is unclear
-
-Focus your thinking on the user's actual question, not on these instructions.`;
-      } else {
-        // Non-reasoning models get the full detailed prompt
-        if (!supportsTools) {
-          systemPrompt += '\n\nNote: This model does not support function calling. Do not attempt to use tools or make tool calls.';
-        }
-        const toolNote = supportsTools
-          ? ''
-          : 'Note: This model does not support function calling. Do not attempt to use tools or make tool calls.';
-        const rulesOnly = stripSection(stripSection(systemPrompt, tierPrompt), toolNote);
-        systemPrompt = [tierPrompt, rulesOnly, toolNote].filter(Boolean).join('\n\n');
-      }
-
-      // Inject focused files into system prompt
-      systemPrompt = injectFocusedFilesIntoPrompt(systemPrompt);
+      const systemPrompt = buildSystemPrompt({
+        basePrompt,
+        tierPrompt,
+        modelProfile,
+        supportsTools,
+        injectFocusedFiles: injectFocusedFilesIntoPrompt,
+      });
 
       // 1. Initial user message addition to context manager
       if (contextActions) {
@@ -1224,10 +1202,8 @@ Focus your thinking on the user's actual question, not on these instructions.`;
   const [scrollOffset, setScrollOffset] = useState(0);
 
   // Reset scroll when messages change (new message usually means scroll to bottom)
-  // BUT: user might be reading old history. We only reset if we were at 0? 
-  // Standard behavior: auto-scroll to bottom if at bottom.
-  // For now to match previous behavior: reset to 0 on new message IF we are not in deep history?
-  // Let's keep it simple: Reset to 0 (bottom) when new user message sent.
+    // Standard behavior: auto-scroll to bottom if at bottom.
+ 
   useEffect(() => {
       // If we are streaming (assistant typing), we want to stay at 0.
       if (streaming) setScrollOffset(0);

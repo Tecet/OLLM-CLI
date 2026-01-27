@@ -185,6 +185,7 @@
   },
   "active": "96f17f0c11000dcf",
   "lastOpenFiles": [
+    "packages/cli/src/features/context/utils/systemPromptBuilder.ts",
     "packages/cli/src/features/context/utils/promptUtils.ts",
     "packages/cli/src/features/context/utils",
     "packages/cli/src/features/context/types/chatTypes.ts",
@@ -195,7 +196,6 @@
     "app-debug.log",
     "packages/cli/src/ui/old_App.tsx",
     "packages/cli/src/features/context/old_contextSizing.ts",
-    "packages/cli/src/features/context/old_ContextManagerContext.tsx",
     "dev/backlog/REFACTORING-SUMMARY.md",
     "dev/backlog/report.md",
     "packages/cli/src/ui/components/animations/lama/lama_sprite/right/llama-r6.png",
