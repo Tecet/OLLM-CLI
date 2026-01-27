@@ -28,17 +28,18 @@ The following issues have been identified:
    - Fixed: Compression only after `addMessage()` completes (commit 383c008)
    - Result: No message truncation, simple & robust architecture
 
-4. ⏳ **TODO: Dynamic budget tracking** - Compression doesn't account for checkpoint space
-   - Current: Triggers at 80% of total context
-   - Should: Trigger at 80% of available budget (total - system - checkpoints)
-   - Impact: Rapid re-compression after first compression
+4. ✅ **FIXED: Dynamic budget tracking** - Compression didn't account for checkpoint space
+   - Was: Triggered at 80% of total context
+   - Fixed: Triggers at 80% of available budget (total - system - checkpoints) (commit 2f4afbc)
+   - Result: No rapid re-compression after first compression
 
-5. ⏳ **TODO: Checkpoint aging** - No aging/cleanup of old checkpoints
-   - Current: Checkpoints stay at same compression level
-   - Should: Age and compress further over time (60%, 70%, 80%)
-   - Impact: Checkpoints consume too much space
+5. ✅ **VERIFIED: Checkpoint aging** - Checkpoints age and compress over time
+   - Implementation: `checkpointManager.compressOldCheckpoints()`
+   - Level 3 (detailed) → Level 2 (moderate) → Level 1 (compact)
+   - Age thresholds: MODERATE_AGE = 3, COMPACT_AGE = 6
+   - Status: Working correctly, called after each compression
 
-**Status:** Issues 1-3 fixed. Issues 4-5 documented in `.dev/backlog/works_todo.md` Task 4
+**Status:** All issues resolved! Task 4 complete.
 
 ---
 
