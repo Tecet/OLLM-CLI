@@ -28,7 +28,7 @@ export interface BuildSystemPromptOptions {
   tierPrompt: string;
   
   /** Model profile for reasoning detection */
-  modelProfile: LLMProfile | null;
+  modelProfile: LLMProfile | undefined;
   
   /** Whether the model supports tools */
   supportsTools: boolean;

@@ -16,8 +16,8 @@ import {
   resolveTierForSize,
   toOperationalMode,
   loadTierPromptWithFallback,
-  stripSection,
 } from './utils/promptUtils.js';
+import { buildSystemPrompt } from './utils/systemPromptBuilder.js';
 
 import { useContextManager } from './ContextManagerContext.js';
 import { validateManualContext } from './contextSizing.js';
