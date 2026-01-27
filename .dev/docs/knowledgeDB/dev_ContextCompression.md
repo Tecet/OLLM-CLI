@@ -4,10 +4,11 @@
 **Status:** Source of Truth (with known issues - see below)
 
 **Related Documents:**
-- `dev_ContextManagement.md` - Context sizing, tiers, VRAM
+- `dev_ContextManagement.md` - Context sizing and VRAM management
 - `dev_PromptSystem.md` - Prompt structure, tiers, modes
 - `dev_ModelDB.md` - Model database schema and access patterns
 - `dev_ModelManagement.md` - Model size detection for reliability
+- `dev_SessionsSnapChat.md` - Sessions, snapshots, and chat history
 
 ---
 

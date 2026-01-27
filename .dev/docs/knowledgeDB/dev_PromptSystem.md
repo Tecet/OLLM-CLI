@@ -7,6 +7,7 @@
 - `dev_ContextManagement.md` - Context sizing, tiers, VRAM
 - `dev_ContextCompression.md` - Compression, checkpoints, snapshots
 - `dev_ModelDB.md` - Model database schema and access patterns
+- `dev_SessionsSnapChat.md` - Sessions, snapshots, and chat history
 
 ---
 

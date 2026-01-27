@@ -8,6 +8,7 @@
 - `dev_ContextManagement.md` - Context sizing and VRAM management
 - `dev_ContextCompression.md` - Compression triggers and budget calculation
 - `dev_PromptSystem.md` - System prompt token accounting
+- `dev_SessionsSnapChat.md` - Sessions, snapshots, and chat history
 - `.dev/backlog/token-counting-audit.md` - Detailed audit findings
 
 ---
