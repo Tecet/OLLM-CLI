@@ -254,6 +254,22 @@ Is this correct? (y/n)`;
                   milestones: proposedGoal.milestones,
                 };
                 
+                // Create intent snapshot with proposed goal
+                try {
+                  const snapshot = await this.inputPreprocessor.createSnapshot(
+                    originalPrompt,
+                    result.extracted,
+                    proposedGoal,
+                    true // Auto-confirmed for now (TODO: wait for user confirmation)
+                  );
+                  
+                  if (!isTestEnv) {
+                    console.log('[InputPreprocessor] Intent snapshot created:', snapshot.id);
+                  }
+                } catch (error) {
+                  if (!isTestEnv) console.error('Failed to create intent snapshot:', error);
+                }
+                
                 // TODO: Wait for user confirmation and create goal in context manager
                 // For now, we'll log it
                 if (!isTestEnv) {
@@ -263,6 +279,22 @@ Is this correct? (y/n)`;
               } catch (error) {
                 // Goal proposal is optional, don't fail if it errors
                 if (!isTestEnv) console.error('Failed to propose goal:', error);
+              }
+            } else {
+              // Create intent snapshot without goal
+              try {
+                const snapshot = await this.inputPreprocessor.createSnapshot(
+                  originalPrompt,
+                  result.extracted,
+                  undefined,
+                  true // Auto-confirmed for now
+                );
+                
+                if (!isTestEnv) {
+                  console.log('[InputPreprocessor] Intent snapshot created:', snapshot.id);
+                }
+              } catch (error) {
+                if (!isTestEnv) console.error('Failed to create intent snapshot:', error);
               }
             }
           }

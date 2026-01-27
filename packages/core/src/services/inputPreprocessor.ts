@@ -20,6 +20,7 @@
 
 import type { ProviderAdapter } from '../provider/types.js';
 import type { TokenCounter } from '../context/types.js';
+import type { IntentSnapshotStorage } from './intentSnapshotStorage.js';
 
 /**
  * Extracted intent from user message
@@ -129,7 +130,8 @@ export class InputPreprocessor {
   constructor(
     private provider: ProviderAdapter,
     private tokenCounter: TokenCounter,
-    private config: InputPreprocessorConfig = DEFAULT_PREPROCESSOR_CONFIG
+    private config: InputPreprocessorConfig = DEFAULT_PREPROCESSOR_CONFIG,
+    private snapshotStorage?: IntentSnapshotStorage
   ) {}
 
   /**
@@ -275,13 +277,13 @@ Respond in JSON format:
   /**
    * Create intent snapshot
    */
-  createSnapshot(
+  async createSnapshot(
     original: string,
     extracted: ExtractedIntent,
     proposedGoal?: ProposedGoal,
     confirmed: boolean = false
-  ): IntentSnapshot {
-    return {
+  ): Promise<IntentSnapshot> {
+    const snapshot: IntentSnapshot = {
       id: `intent-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       timestamp: new Date(),
       original,
@@ -289,6 +291,18 @@ Respond in JSON format:
       proposedGoal,
       confirmed,
     };
+
+    // Save to storage if available
+    if (this.snapshotStorage && this.config.storeSnapshots) {
+      try {
+        await this.snapshotStorage.save(snapshot);
+      } catch (error) {
+        // Log error but don't fail
+        console.error('[InputPreprocessor] Failed to save snapshot:', error);
+      }
+    }
+
+    return snapshot;
   }
 
   /**
