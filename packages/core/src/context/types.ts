@@ -361,12 +361,13 @@ export interface TierConfig {
   strategy: 'rollover' | 'smart' | 'progressive' | 'structured';
   /** Maximum checkpoints to maintain */
   maxCheckpoints: number;
-  /** Target utilization percentage (0.7 = 70%) */
-  utilizationTarget: number;
 }
 
 /**
  * Tier configurations for all tiers
+ * 
+ * Note: The 85% context utilization is pre-calculated in LLM_profiles.json.
+ * Compression triggers at 75-80% of available budget (calculated dynamically).
  */
 export const TIER_CONFIGS: Record<ContextTier, TierConfig> = {
   [ContextTier.TIER_1_MINIMAL]: {
@@ -374,40 +375,35 @@ export const TIER_CONFIGS: Record<ContextTier, TierConfig> = {
     minTokens: 2048,
     maxTokens: 4096,
     strategy: 'rollover',
-    maxCheckpoints: 0,
-    utilizationTarget: 0.90
+    maxCheckpoints: 0
   },
   [ContextTier.TIER_2_BASIC]: {
     tier: ContextTier.TIER_2_BASIC,
     minTokens: 4097,
     maxTokens: 8192,
     strategy: 'smart',
-    maxCheckpoints: 1,
-    utilizationTarget: 0.80
+    maxCheckpoints: 1
   },
   [ContextTier.TIER_3_STANDARD]: {
     tier: ContextTier.TIER_3_STANDARD,
     minTokens: 8193,
     maxTokens: 16384,
     strategy: 'progressive',
-    maxCheckpoints: 5,
-    utilizationTarget: 0.70
+    maxCheckpoints: 5
   },
   [ContextTier.TIER_4_PREMIUM]: {
     tier: ContextTier.TIER_4_PREMIUM,
     minTokens: 16385,
     maxTokens: 32768,
     strategy: 'structured',
-    maxCheckpoints: 10,
-    utilizationTarget: 0.70
+    maxCheckpoints: 10
   },
   [ContextTier.TIER_5_ULTRA]: {
     tier: ContextTier.TIER_5_ULTRA,
     minTokens: 65536,
     maxTokens: 131072,
     strategy: 'structured',
-    maxCheckpoints: 15,
-    utilizationTarget: 0.65
+    maxCheckpoints: 15
   }
 };
 
