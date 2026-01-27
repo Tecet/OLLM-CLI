@@ -127,6 +127,91 @@
 
 ---
 
+## TASK 2B: Fix Hardcoded Context Sizes (Use ProfileManager)
+
+**Priority:** 🔥 CRITICAL | **Effort:** 1-2 days | **Status:** ⏳ Not Started
+
+**Audit Document:** `.dev/backlog/task-2b-audit-hardcoded-context-sizes.md`
+
+**Problem:** Context sizes are hardcoded in contextManager.ts instead of loaded from user's model profiles
+
+**Root Cause:** ContextManager doesn't use ProfileManager - uses hardcoded values instead
+
+**Impact:**
+- Users can't have model-specific context sizes
+- System ignores pre-calculated 85% values from LLM_profiles.json
+- Hardcoded values don't match actual model capabilities
+- Breaks single-source-of-truth architecture
+
+**Fix:** Inject ProfileManager into ContextManager and use model profiles
+
+**Files:** 
+- `packages/core/src/context/contextManager.ts` (lines 433-461)
+- `packages/core/src/context/contextModules.ts`
+- `packages/cli/src/features/profiles/ProfileManager.ts`
+
+**Progress:**
+- [x] Audit complete (see audit document)
+- [x] Root cause identified
+- [x] Solution designed
+- [ ] Plan approved
+- [ ] Backup created
+- [ ] Tests baseline
+- [ ] Code changed
+- [ ] Tests pass
+- [ ] Committed
+
+**Implementation Steps:**
+
+**Step 1: Add ProfileManager Dependency (2-3h)**
+- Import ProfileManager in contextManager.ts
+- Add to constructor parameters
+- Store modelId and load model entry
+- Make optional with fallback to hardcoded values
+
+**Step 2: Replace getTierForSize() (2-3h)**
+- Use model's context_profiles instead of hardcoded array
+- Map sizes to tiers based on model's max_context_window
+- Handle models with different capabilities (32K vs 128K)
+
+**Step 3: Replace getTierTargetSize() (1-2h)**
+- Use model's context_profiles to find target size
+- Return closest available profile for tier
+- Respect model's maximum context window
+
+**Step 4: Use ollama_context_size (1-2h)**
+- Replace user selection with pre-calculated 85% value
+- Use profile.ollama_context_size instead of profile.size
+- Update all context size assignments
+
+**Step 5: Testing (4-6h)**
+- Unit tests with different models
+- Integration tests for full flow
+- Manual testing with real models
+- Verify fallback works when ProfileManager not available
+
+**Expected Behavior After Fix:**
+```typescript
+// User selects 16K context
+const userSelection = 16384;
+
+// System loads model profile
+const profile = profileManager.getModelEntry('qwen2.5:7b')
+  .context_profiles.find(p => p.size === 16384);
+
+// Uses pre-calculated 85% value
+context.maxTokens = profile.ollama_context_size;  // 13926, not 16384
+
+// Tier determined by model capabilities
+const tier = getTierForSize(13926);  // Based on model's profiles, not hardcoded
+```
+
+**Dependencies:**
+- Must complete after Task 1, 2, 3 (context foundation)
+- Should complete before Task 4 (compression needs accurate sizing)
+
+---
+
 ## TASK 3: Fix Auto-Sizing Warning
 
 **Priority:** 🔥 CRITICAL | **Effort:** 2-4h | **Status:** ✅ COMPLETED
