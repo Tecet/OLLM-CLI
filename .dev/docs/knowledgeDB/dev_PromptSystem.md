@@ -1,11 +1,12 @@
 # Prompt System
 
-**Last Updated:** January 26, 2026  
+**Last Updated:** January 27, 2026  
 **Status:** Source of Truth
 
 **Related Documents:**
 - `dev_ContextManagement.md` - Context sizing, tiers, VRAM
 - `dev_ContextCompression.md` - Compression, checkpoints, snapshots
+- `dev_ModelDB.md` - Model database schema and access patterns
 
 ---
 
@@ -459,19 +460,23 @@ Replace in context
 
 ### Current Implementation (v0.1.0)
 
-**Rule:** Prompt tier ALWAYS follows actual context size
+**Rule:** Prompt tier ALWAYS follows selected context size
 
 ```typescript
 // packages/core/src/context/contextManager.ts
-private getEffectivePromptTier(): ContextTier {
-  return this.actualContextTier;  // Always uses actual context tier
+// Simplified in Task 1: Single selectedTier variable
+private selectedTier: ContextTier;  // Source of truth for tier
+
+// Prompt tier always equals selectedTier
+getPromptTier(): ContextTier {
+  return this.selectedTier;
 }
 ```
 
 **Behavior:**
 - Auto-sizing enabled: Prompt tier changes as context size changes
 - Manual sizing: Prompt tier matches user-selected context size
-- Hardware capability tier is tracked but NOT used for prompt selection
+- Single tier variable (selectedTier) is source of truth
 
 **Example:**
 ```

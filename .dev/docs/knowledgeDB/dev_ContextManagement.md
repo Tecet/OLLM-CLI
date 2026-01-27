@@ -1,11 +1,13 @@
 # Context Management System
 
-**Last Updated:** January 26, 2026  
+**Last Updated:** January 27, 2026  
 **Status:** Source of Truth
 
 **Related Documents:**
 - `dev_ContextCompression.md` - Compression, checkpoints, snapshots
 - `dev_PromptSystem.md` - Prompt structure, tiers, modes
+- `dev_ModelDB.md` - Model database schema and access patterns
+- `dev_ModelCompiler.md` - User profile compilation system
 
 ---
 

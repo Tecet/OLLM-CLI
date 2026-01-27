@@ -1,11 +1,13 @@
 # Provider System
 
-**Last Updated:** January 26, 2026  
+**Last Updated:** January 27, 2026  
 **Status:** Source of Truth
 
 **Related Documents:**
 - `dev_ContextManagement.md` - Context sizing, VRAM monitoring
 - `dev_ModelManagement.md` - Model profiles, detection
+- `dev_ModelDB.md` - Model database schema and access patterns
+- `dev_ModelCompiler.md` - User profile compilation system
 - `.kiro/specs/v0.6.0 Release Kraken` - Codex, Claude, Gemini providers
 - `.kiro/specs/v0.9.0 vLLM-LMS Providers` - Open source providers
 

@@ -1,11 +1,14 @@
 # Model Management System
 
-**Last Updated:** January 26, 2026  
+**Last Updated:** January 27, 2026  
 **Status:** Source of Truth
 
 **Related Documents:**
+- `dev_ModelDB.md` - Model database schema and access patterns
+- `dev_ModelCompiler.md` - Model profile compilation system
 - `dev_ContextManagement.md` - Context sizing, tiers, VRAM
 - `dev_ProviderSystem.md` - Provider adapters and integration
+- `dev_ContextCompression.md` - Model size impact on compression reliability
 
 ---
 
@@ -21,21 +24,38 @@ The Model Management System handles model discovery, metadata enrichment, tool s
 
 ### Model Data Sources
 
+**See `dev_ModelCompiler.md` for detailed compilation system documentation.**
+
 ```
-Shipped Profiles (LLM_profiles.json)
+Master Database (LLM_profiles.json)
   ├─ Source of truth for model metadata
-  ├─ Versioned with CLI releases
+  ├─ Edited only by developers
+  ├─ READ ONLY by ProfileCompiler
   └─ Contains: id, name, description, abilities, tool_support, context_profiles
+  ↓
+ProfileCompiler (on app startup)
+  ├─ Queries Ollama for installed models
+  ├─ Matches with master database
+  ├─ Applies "user-unknown-model" template for unknown models
+  └─ Writes to user file
+  ↓
+User File (~/.ollm/LLM_profiles.json)
+  ├─ Contains ONLY installed models
+  ├─ READ by entire app (ProfileManager, ModelDatabase, etc.)
+  ├─ User can manually edit
+  └─ Rebuilt on each app startup
   ↓
 User Installed Models (user_models.json)
   ├─ Tracks installed models from provider
-  ├─ Enriched with metadata from profiles
+  ├─ Enriched with metadata from user file
   ├─ User overrides preserved
   └─ Updated by /model list command
   ↓
 Model Selection Menu
   └─ Shows only models from user_models.json
 ```
+
+**Key Principle:** Master database is READ ONLY by ProfileCompiler. All other components read from user file. This enables future database migration by changing only the ProfileCompiler.
 
 ---
 
@@ -391,8 +411,12 @@ const reliabilityScore = modelFactor * compressionPenalty * contextConfidence;
 
 ## File Locations
 
+**Profile Compilation (see `dev_ModelCompiler.md`):**
+- `packages/cli/src/config/LLM_profiles.json` - Master database (READ ONLY by ProfileCompiler)
+- `~/.ollm/LLM_profiles.json` - User file (READ by entire app)
+- `packages/cli/src/services/profileCompiler.ts` - Compilation logic
+
 **Profile Management:**
-- `packages/cli/src/config/LLM_profiles.json` - Shipped model profiles
 - `~/.ollm/user_models.json` - User installed models
 
 **Model Management:**
@@ -410,4 +434,4 @@ const reliabilityScore = modelFactor * compressionPenalty * contextConfidence;
 
 ---
 
-**Note:** This document focuses on model management. For context sizing logic, see `dev_ContextManagement.md`. For provider integration, see `dev_ProviderSystem.md`.
+**Note:** This document focuses on model management. For model profile compilation, see `dev_ModelCompiler.md`. For context sizing logic, see `dev_ContextManagement.md`. For provider integration, see `dev_ProviderSystem.md`.

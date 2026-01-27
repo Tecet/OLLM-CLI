@@ -5,11 +5,13 @@ import { join } from 'path';
 import { refreshModelDatabase } from '@ollm/core';
 
 import { defaultContextBehavior } from '../../config/defaults.js';
-import profilesData from '../../config/LLM_profiles.json' with { type: 'json' };
+import { compileUserProfiles } from '../../services/profileCompiler.js';
 
 import type { LLMProfile, ContextSettings, ContextBehaviorProfile, ContextProfile, UserModelEntry, ProfilesData } from '../../config/types.js';
 
-const profiles = profilesData as ProfilesData;
+// NOTE: ProfileManager now reads from USER file (~/.ollm/LLM_profiles.json)
+// NOT from app config (packages/cli/src/config/LLM_profiles.json)
+// The ProfileCompiler is the ONLY component that reads from app config
 
 // Default Ollama base URL
 const OLLAMA_BASE_URL = process.env.OLLAMA_HOST || 'http://localhost:11434';
@@ -19,18 +21,20 @@ export class ProfileManager {
   private contextSettings: ContextSettings;
   private userModels: UserModelEntry[];
   private userModelsPath: string;
+  private userProfilesPath: string;
 
   constructor() {
     this.contextSettings = defaultContextBehavior;
     this.userModels = [];
     
-    // Strategy: Use ~/.ollm/user_models.json
+    // Strategy: Use ~/.ollm/user_models.json and ~/.ollm/LLM_profiles.json
     // During tests (Vitest) prefer an isolated temp home directory to avoid global state
     const homeDir = process.env.VITEST
       ? join(tmpdir(), `ollm-vitest-${process.pid}`)
       : homedir();
     const configDir = join(homeDir, '.ollm');
     this.userModelsPath = join(configDir, 'user_models.json');
+    this.userProfilesPath = join(configDir, 'LLM_profiles.json');
     
     this.ensureConfigExists(configDir);
     this.profiles = this.loadProfiles();
@@ -57,6 +61,15 @@ export class ProfileManager {
       } catch (error) {
           console.warn('Failed to initialize models config:', error);
       }
+  }
+
+  /**
+   * Reload profiles from user file.
+   * Useful after compiling user profiles or when profiles have been updated externally.
+   */
+  public reloadProfiles(): void {
+    this.profiles = this.loadProfiles();
+    this.loadUserModels();
   }
 
   /**
@@ -104,9 +117,37 @@ export class ProfileManager {
   }
 
   private loadProfiles(): LLMProfile[] {
-      const raw = profiles.models || [];
+    try {
+      // Read from USER file (~/.ollm/LLM_profiles.json)
+      // NOT from app config (packages/cli/src/config/LLM_profiles.json)
+      if (!existsSync(this.userProfilesPath)) {
+        // First run: compile user profiles synchronously
+        if (process.env.OLLM_LOG_LEVEL === 'debug') {
+          console.log('[ProfileManager] User profiles not found, compiling...');
+        }
+        // Note: compileUserProfiles is async, but we need sync here
+        // We'll trigger compilation and return empty array for now
+        // The profiles will be available on next startup
+        compileUserProfiles().catch(err => {
+          if (process.env.OLLM_LOG_LEVEL === 'debug') {
+            console.warn('[ProfileManager] Failed to compile user profiles:', err);
+          }
+        });
+        return [];
+      }
+      
+      const raw = readFileSync(this.userProfilesPath, 'utf-8');
+      const data = JSON.parse(raw) as ProfilesData;
+      const models = data.models || [];
+      
       // Normalize entries: support migration and coercion
-      return raw.map((m: any) => this.normalizeRawProfile(m));
+      return models.map((m: any) => this.normalizeRawProfile(m));
+    } catch (error) {
+      if (process.env.OLLM_LOG_LEVEL === 'debug') {
+        console.warn('[ProfileManager] Failed to load user profiles:', error);
+      }
+      return [];
+    }
   }
 
   private normalizeRawProfile(raw: any): LLMProfile {
@@ -241,7 +282,7 @@ export class ProfileManager {
         toolSupport = previous.tool_support ?? false;
       } else {
         // Use profile data, then previous value, then fallback
-        toolSupport = profile?.tool_support ?? previous?.tool_support ?? profiles.fallback_model?.tool_support ?? false;
+        toolSupport = profile?.tool_support ?? previous?.tool_support ?? false;
       }
 
       return {
@@ -249,7 +290,7 @@ export class ProfileManager {
         name: profile?.name || model.name,
         source: 'ollama',
         last_seen: nowIso,
-        description: profile?.description ?? previous?.description ?? profiles.fallback_model?.description ?? 'No metadata available.',
+        description: profile?.description ?? previous?.description ?? 'No metadata available.',
         abilities: profile?.abilities ?? previous?.abilities ?? [],
         tool_support: toolSupport,
         // Preserve tool support metadata from previous entry

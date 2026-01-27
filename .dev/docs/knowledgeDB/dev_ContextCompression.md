@@ -1,11 +1,13 @@
 # Context Compression and Checkpoint System
 
-**Last Updated:** January 26, 2026  
+**Last Updated:** January 27, 2026  
 **Status:** Source of Truth
 
 **Related Documents:**
 - `dev_ContextManagement.md` - Context sizing, tiers, VRAM
 - `dev_PromptSystem.md` - Prompt structure, tiers, modes
+- `dev_ModelDB.md` - Model database schema and access patterns
+- `dev_ModelManagement.md` - Model size detection for reliability
 
 ---
 

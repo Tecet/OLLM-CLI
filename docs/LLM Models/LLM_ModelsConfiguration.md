@@ -10,6 +10,11 @@ This document covers all configuration options for the Model Management system, 
 
 1. [Configuration Files](#configuration-files)
 2. [Model Management](#model-management)
+   - [Unknown Model Handling](#unknown-model-handling)
+   - [Cache Settings](#cache-settings)
+   - [Keep-Alive Settings](#keep-alive-settings)
+   - [Auto-Pull Settings](#auto-pull-settings)
+   - [Tool Configuration](#tool-configuration)
 3. [Model Routing](#model-routing)
 4. [Memory System](#memory-system)
 5. [Template System](#template-system)
@@ -127,6 +132,155 @@ routing:
 ---
 
 ## Model Management
+
+### Unknown Model Handling
+
+**Overview:** When you install a model that isn't in OLLM's database, the system automatically creates a profile using the "user-unknown-model" template. This allows you to use any model with Ollama, even if it's not officially supported.
+
+**How It Works:**
+
+1. **Automatic Detection:** On startup, OLLM queries Ollama for installed models
+2. **Database Matching:** Each model is matched against the master database
+3. **Template Application:** Unknown models receive default settings based on Llama 3.2 3B
+4. **User Customization:** You can manually edit the generated profile
+
+**User Profile Location:**
+
+- **Windows:** `C:\Users\{username}\.ollm\LLM_profiles.json`
+- **Linux/Mac:** `~/.ollm/LLM_profiles.json`
+
+**Example Unknown Model Entry:**
+
+```json
+{
+  "id": "custom-model:latest",
+  "name": "Unknown Model (custom-model:latest)",
+  "creator": "User",
+  "parameters": "Based on Llama 3.2 3B",
+  "quantization": "Based on Llama 3.2 3B (4-bit estimated)",
+  "description": "Unknown model \"custom-model:latest\". Please edit your settings at ~/.ollm/LLM_profiles.json",
+  "abilities": ["Unknown"],
+  "tool_support": false,
+  "ollama_url": "Unknown",
+  "max_context_window": 131072,
+  "context_profiles": [
+    {
+      "size": 4096,
+      "size_label": "4k",
+      "vram_estimate": "2.5 GB",
+      "ollama_context_size": 2867,
+      "vram_estimate_gb": 2.5
+    }
+    // ... more context profiles
+  ],
+  "default_context": 4096
+}
+```
+
+**Customizing Unknown Models:**
+
+1. **Locate the file:**
+   ```bash
+   # Windows
+   notepad %USERPROFILE%\.ollm\LLM_profiles.json
+   
+   # Linux/Mac
+   nano ~/.ollm/LLM_profiles.json
+   ```
+
+2. **Find your model:** Search for the model ID (e.g., "custom-model:latest")
+
+3. **Update fields:**
+   ```json
+   {
+     "id": "custom-model:latest",
+     "name": "My Custom Model 7B",           // ← Update display name
+     "creator": "Custom Creator",            // ← Update creator
+     "parameters": "7B",                     // ← Update parameter count
+     "quantization": "4-bit",                // ← Update quantization
+     "description": "My custom fine-tuned model",
+     "abilities": ["Coding", "Math"],        // ← Update capabilities
+     "tool_support": true,                   // ← Enable if model supports tools
+     "ollama_url": "https://...",            // ← Add documentation link
+     "context_profiles": [
+       {
+         "size": 4096,
+         "vram_estimate": "5.5 GB",          // ← Adjust VRAM estimates
+         "ollama_context_size": 3482,
+         "vram_estimate_gb": 5.5
+       }
+       // ... adjust other profiles
+     ]
+   }
+   ```
+
+4. **Save and restart:** Your changes persist across app restarts
+
+**Important Notes:**
+
+- **Preservation:** Your edits are preserved when the profile is recompiled
+- **Context Sizes:** The `ollama_context_size` values are pre-calculated at 85% of the `size` value
+- **VRAM Estimates:** Adjust based on your actual GPU memory usage
+- **Tool Support:** Only enable if your model supports function calling
+- **Default Template:** Based on Llama 3.2 3B (3.2B parameters, 4-bit quantization)
+
+**Common Customizations:**
+
+**For Larger Models (13B+):**
+```json
+{
+  "parameters": "13B",
+  "context_profiles": [
+    {
+      "size": 4096,
+      "vram_estimate": "8.5 GB",
+      "vram_estimate_gb": 8.5
+    }
+  ]
+}
+```
+
+**For Code-Specialized Models:**
+```json
+{
+  "abilities": ["Coding", "Debugging", "Code Review"],
+  "tool_support": true
+}
+```
+
+**For Reasoning Models:**
+```json
+{
+  "abilities": ["Reasoning", "Math", "Logic"],
+  "thinking_enabled": true,
+  "reasoning_buffer": "Variable",
+  "warmup_timeout": 120000
+}
+```
+
+**Troubleshooting:**
+
+**Model Not Detected:**
+- Ensure Ollama is running: `curl http://localhost:11434/api/tags`
+- Check model is installed: `ollama list`
+- Restart OLLM to trigger recompilation
+
+**Wrong VRAM Estimates:**
+- Monitor actual usage with `nvidia-smi` (NVIDIA) or `rocm-smi` (AMD)
+- Update `vram_estimate_gb` values in your profile
+- Consider reducing context size if running out of memory
+
+**Tool Support Not Working:**
+- Verify model actually supports function calling
+- Check Ollama model documentation
+- Test with simple tool call before enabling
+
+**See Also:**
+- [Model Compiler System](../../.dev/docs/knowledgeDB/dev_ModelCompiler.md) - Technical details
+- [Model Database](../../.dev/docs/knowledgeDB/dev_ModelDB.md) - Database schema
+- [Model Management](../../.dev/docs/knowledgeDB/dev_ModelManagement.md) - Model selection
+
+---
 
 ### Cache Settings
 
@@ -852,6 +1006,7 @@ routing:
 
 ## See Also
 
+### User Documentation
 - [Getting Started](3%20projects/OLLM%20CLI/LLM%20Models/getting-started.md) - Quick start guide
 - [Commands Reference](Models_commands.md) - CLI commands
 - [Architecture](Models_architecture.md) - System design
@@ -860,8 +1015,13 @@ routing:
 - [Template Guide](3%20projects/OLLM%20CLI/LLM%20Models/templates/user-guide.md) - Templates
 - [Profile Guide](3%20projects/OLLM%20CLI/LLM%20Models/profiles/user-guide.md) - Project profiles
 
+### Developer Documentation
+- [Model Compiler System](../../.dev/docs/knowledgeDB/dev_ModelCompiler.md) - Profile compilation system
+- [Model Database](../../.dev/docs/knowledgeDB/dev_ModelDB.md) - Database schema and access patterns
+- [Model Management](../../.dev/docs/knowledgeDB/dev_ModelManagement.md) - Model selection and profiles
+
 ---
 
-**Document Version:** 1.0  
-**Last Updated:** 2026-01-16  
+**Document Version:** 1.1  
+**Last Updated:** 2026-01-27  
 **Status:** Complete

@@ -160,9 +160,15 @@ export class ModelDatabase {
   }
 }
 
-function tryLoadProfilesFromCli(): ModelEntry[] | null {
+function tryLoadProfilesFromUser(): ModelEntry[] | null {
   try {
-    const p = join(process.cwd(), 'packages', 'cli', 'src', 'config', 'LLM_profiles.json');
+    // Read from USER file (~/.ollm/LLM_profiles.json)
+    // NOT from app config (packages/cli/src/config/LLM_profiles.json)
+    const homeDir = process.env.VITEST
+      ? join(tmpdir(), `${VITEST_OLLM_PREFIX}-${process.pid}`)
+      : homedir();
+    const p = join(homeDir, '.ollm', 'LLM_profiles.json');
+    
     if (!existsSync(p)) return null;
     const raw = readFileSync(p, 'utf-8');
     const json = JSON.parse(raw) as { models?: Array<any> };
@@ -204,7 +210,13 @@ function tryLoadProfilesFromCli(): ModelEntry[] | null {
 // Load raw profiles map (id -> profile object) for direct sourcing of fields
 function tryLoadRawProfiles(): Record<string, any> | null {
   try {
-    const p = join(process.cwd(), 'packages', 'cli', 'src', 'config', 'LLM_profiles.json');
+    // Read from USER file (~/.ollm/LLM_profiles.json)
+    // NOT from app config (packages/cli/src/config/LLM_profiles.json)
+    const homeDir = process.env.VITEST
+      ? join(tmpdir(), `${VITEST_OLLM_PREFIX}-${process.pid}`)
+      : homedir();
+    const p = join(homeDir, '.ollm', 'LLM_profiles.json');
+    
     if (!existsSync(p)) return null;
     const raw = readFileSync(p, 'utf-8');
     const json = JSON.parse(raw) as { models?: Array<any> };
@@ -315,7 +327,7 @@ try {
 
 function resolveModelStore(): { entries: ModelEntry[]; rawProfiles: Record<string, any> | null } {
   const runtimeStore = tryLoadRuntimeLLMModels();
-  const entries = runtimeStore?.entries ?? GENERATED_ENTRIES ?? tryLoadProfilesFromCli() ?? MODEL_DATABASE;
+  const entries = runtimeStore?.entries ?? GENERATED_ENTRIES ?? tryLoadProfilesFromUser() ?? MODEL_DATABASE;
   const rawProfiles = runtimeStore?.raw ?? GENERATED_RAW_PROFILES ?? tryLoadRawProfiles();
   return { entries, rawProfiles: rawProfiles ?? null };
 }

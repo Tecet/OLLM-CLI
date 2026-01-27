@@ -2,13 +2,21 @@
  * Tests for ModelContext - Tool Support Detection
  */
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeAll } from 'vitest';
 
+import { compileUserProfiles } from '../../../services/profileCompiler.js';
 import { profileManager } from '../../profiles/ProfileManager.js';
 
 describe('ModelContext - Tool Support Detection', () => {
   // Note: Tests no longer need to manage global callbacks
   // UICallbacksProvider handles callback registration in tests
+
+  // Ensure user profiles are compiled before tests run
+  beforeAll(async () => {
+    await compileUserProfiles();
+    // Reload ProfileManager to pick up compiled profiles
+    profileManager.reloadProfiles();
+  });
 
   describe('ProfileManager integration', () => {
     it('should find profile for known models', () => {

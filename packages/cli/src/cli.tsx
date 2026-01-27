@@ -266,6 +266,18 @@ try {
     throw error;
   }
 
+// Compile user profiles on startup (FIRST THING after config)
+// This ensures ~/.ollm/LLM_profiles.json exists and is up-to-date
+try {
+  const { compileUserProfiles } = await import('./services/profileCompiler.js');
+  await compileUserProfiles();
+} catch (error) {
+  // Non-fatal - app can continue with existing profiles
+  if (process.env.OLLM_LOG_LEVEL === 'debug') {
+    console.warn('Failed to compile user profiles:', error);
+  }
+}
+
 // TODO: Implement model management commands
   if (argv.listModels) {
     console.log('Model management not yet implemented');

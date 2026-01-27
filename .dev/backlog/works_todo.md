@@ -129,7 +129,7 @@
 
 ## TASK 2B-1: Build User-Specific LLM_profiles.json
 
-**Priority:** 🔥 CRITICAL | **Effort:** 1-2 days | **Status:** ⏳ Not Started
+**Priority:** 🔥 CRITICAL | **Effort:** 1-2 days | **Status:** ⏳ In Progress
 
 **Audit Document:** `.dev/backlog/task-2b-audit-hardcoded-context-sizes.md`
 
@@ -403,6 +403,301 @@ async function onModelListChanged() {
 **Dependencies:**
 - Must complete BEFORE Task 2B-2 (hardcoded values)
 - Blocks Task 2B-2 (needs user file to exist)
+
+---
+
+## TASK 2C: Unknown Model Fallback System
+
+**Priority:** 🔥 CRITICAL | **Effort:** 4-6h | **Status:** ⏳ Not Started (Blocked by 2B-1)
+
+**Problem:** When user installs models not in our master DB, system has no metadata for them
+
+**Goal:** Create fallback system for unknown models:
+1. Add "unknown-model" template to master DB (based on llama3.2:3b)
+2. ProfileCompiler detects unknown models from Ollama
+3. Creates user entries with "unknown-model" defaults
+4. User can manually edit ~/.ollm/LLM_profiles.json to customize
+
+**Architecture:**
+
+```
+User installs "custom-model:latest" (not in master DB)
+  ↓
+ProfileCompiler detects it from Ollama
+  ↓
+Looks up "unknown-model" template in master DB
+  ↓
+Creates entry in user file:
+{
+  "id": "custom-model:latest",
+  "name": "custom-model:latest",
+  "source": "unknown",
+  "description": "Unknown model - edit this file to customize",
+  ...copy all fields from "unknown-model" template...
+}
+  ↓
+User can manually edit ~/.ollm/LLM_profiles.json
+  ↓
+Next startup: ProfileCompiler preserves user edits
+```
+
+**Implementation Steps:**
+
+**Step 1: Add "unknown-model" Template to Master DB (1-2h)**
+
+Add to `packages/cli/src/config/LLM_profiles.json`:
+
+```json
+{
+  "version": "0.1.0",
+  "models": [
+    {
+      "id": "unknown-model",
+      "name": "Unknown Model (Template)",
+      "creator": "Unknown",
+      "parameters": "Unknown",
+      "quantization": "auto",
+      "description": "Fallback template for unknown models. Based on llama3.2:3b defaults. Users can manually edit ~/.ollm/LLM_profiles.json to customize.",
+      "abilities": ["General Purpose"],
+      "tool_support": false,
+      "ollama_url": "",
+      "max_context_window": 131072,
+      "default_context": 4096,
+      "context_profiles": [
+        {
+          "size": 4096,
+          "size_label": "4k",
+          "ollama_context_size": 3482,
+          "vram_estimate": "2.0 GB",
+          "vram_estimate_gb": 2.0
+        },
+        {
+          "size": 8192,
+          "size_label": "8k",
+          "ollama_context_size": 6963,
+          "vram_estimate": "2.5 GB",
+          "vram_estimate_gb": 2.5
+        },
+        {
+          "size": 16384,
+          "size_label": "16k",
+          "ollama_context_size": 13926,
+          "vram_estimate": "3.0 GB",
+          "vram_estimate_gb": 3.0
+        },
+        {
+          "size": 32768,
+          "size_label": "32k",
+          "ollama_context_size": 27853,
+          "vram_estimate": "4.0 GB",
+          "vram_estimate_gb": 4.0
+        }
+      ],
+      "capabilities": {
+        "toolCalling": false,
+        "vision": false,
+        "streaming": true,
+        "reasoning": false
+      }
+    },
+    ...existing models...
+  ]
+}
+```
+
+**Step 2: Update ProfileCompiler to Use Unknown Model Template (2-3h)**
+
+Update `packages/cli/src/services/profileCompiler.ts`:
+
+```typescript
+private matchModels(installedModelIds: string[], masterDb: ProfilesData): LLMProfile[] {
+  const matched: LLMProfile[] = [];
+  
+  // Find unknown-model template
+  const unknownTemplate = masterDb.models?.find(m => m.id === 'unknown-model');
+  
+  for (const modelId of installedModelIds) {
+    // Skip the template itself
+    if (modelId === 'unknown-model') continue;
+    
+    // Find in master database
+    const masterEntry = masterDb.models?.find(m => m.id === modelId);
+    
+    if (masterEntry) {
+      // Known model - copy entire entry
+      matched.push({ ...masterEntry });
+    } else {
+      // Unknown model - use template
+      if (unknownTemplate) {
+        matched.push({
+          ...unknownTemplate,
+          id: modelId,
+          name: modelId,
+          source: 'unknown',
+          description: `Unknown model "${modelId}". Edit ~/.ollm/LLM_profiles.json to customize metadata.`
+        });
+        
+        if (process.env.OLLM_LOG_LEVEL === 'debug') {
+          console.warn(`[ProfileCompiler] Unknown model "${modelId}" - using fallback template`);
+        }
+      } else {
+        // No template available - log error
+        console.error(`[ProfileCompiler] No template for unknown model "${modelId}"`);
+      }
+    }
+  }
+  
+  return matched;
+}
+```
+
+**Step 3: Update Tests (1-2h)**
+
+Add tests to `packages/cli/src/services/__tests__/profileCompiler.test.ts`:
+
+```typescript
+describe('Unknown Model Handling', () => {
+  it('should have unknown-model template in master DB', () => {
+    const masterDbPath = join(process.cwd(), 'packages', 'cli', 'src', 'config', 'LLM_profiles.json');
+    const raw = readFileSync(masterDbPath, 'utf-8');
+    const data = JSON.parse(raw);
+    
+    const template = data.models.find(m => m.id === 'unknown-model');
+    expect(template).toBeDefined();
+    expect(template.context_profiles.length).toBeGreaterThan(0);
+  });
+
+  it('should use template for unknown models', async () => {
+    // Mock Ollama with unknown model
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ 
+        models: [
+          { name: 'custom-model:latest' }
+        ] 
+      })
+    });
+
+    const compiler = new ProfileCompiler();
+    await compiler.compileUserProfiles();
+    
+    const userPath = compiler.getUserProfilePath();
+    const raw = readFileSync(userPath, 'utf-8');
+    const data = JSON.parse(raw);
+    
+    // Should have created entry for unknown model
+    const unknown = data.models.find(m => m.id === 'custom-model:latest');
+    expect(unknown).toBeDefined();
+    expect(unknown.source).toBe('unknown');
+    expect(unknown.context_profiles.length).toBeGreaterThan(0);
+  });
+
+  it('should preserve user edits to unknown models', async () => {
+    // First compilation with unknown model
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ 
+        models: [{ name: 'custom-model:latest' }] 
+      })
+    });
+
+    const compiler = new ProfileCompiler();
+    await compiler.compileUserProfiles();
+    
+    // User edits the file
+    const userPath = compiler.getUserProfilePath();
+    const raw = readFileSync(userPath, 'utf-8');
+    const data = JSON.parse(raw);
+    
+    const unknown = data.models.find(m => m.id === 'custom-model:latest');
+    unknown.description = 'My custom model with 13B parameters';
+    unknown.parameters = '13B';
+    writeFileSync(userPath, JSON.stringify(data, null, 2));
+    
+    // Second compilation
+    await compiler.compileUserProfiles();
+    
+    // User edits should be preserved
+    const raw2 = readFileSync(userPath, 'utf-8');
+    const data2 = JSON.parse(raw2);
+    const unknown2 = data2.models.find(m => m.id === 'custom-model:latest');
+    
+    expect(unknown2.description).toBe('My custom model with 13B parameters');
+    expect(unknown2.parameters).toBe('13B');
+  });
+});
+```
+
+**Step 4: Update ModelContext Test (30min)**
+
+Fix the failing test in `packages/cli/src/features/context/__tests__/ModelContext.test.tsx`:
+
+```typescript
+it('should provide fallback metadata for unknown installs', () => {
+  const entry = profileManager.getModelEntry('custom-model:latest');
+  expect(entry).toBeDefined();
+  expect(entry.max_context_window).toBeGreaterThanOrEqual(entry.default_context ?? 1);
+  expect(entry.context_profiles?.length).toBeGreaterThan(0);
+  expect(entry.context_profiles?.[0].ollama_context_size).toBeDefined();
+});
+```
+
+**Step 5: Documentation (30min)**
+
+Add user documentation:
+
+```markdown
+# Unknown Models
+
+When you install a model that isn't in our database, OLLM CLI creates a fallback entry based on llama3.2:3b defaults.
+
+## Customizing Unknown Models
+
+1. Install your custom model with Ollama
+2. Start OLLM CLI (it will detect the unknown model)
+3. Edit `~/.ollm/LLM_profiles.json`
+4. Find your model entry (marked with `"source": "unknown"`)
+5. Update the metadata:
+   - `name`: Display name
+   - `description`: Model description
+   - `parameters`: Model size (e.g., "13B")
+   - `tool_support`: true/false
+   - `context_profiles`: Adjust VRAM estimates
+6. Save the file
+7. Restart OLLM CLI
+
+Your edits will be preserved on future startups.
+```
+
+**Progress:**
+- [ ] Docs read
+- [ ] Repo scanned
+- [ ] Plan approved
+- [ ] Backup created
+- [ ] Tests baseline
+- [ ] Unknown-model template added to master DB
+- [ ] Tests pass
+- [ ] ProfileCompiler updated to use template
+- [ ] Tests pass
+- [ ] Unknown model tests added
+- [ ] Tests pass
+- [ ] ModelContext test fixed
+- [ ] Tests pass
+- [ ] Documentation added
+- [ ] Manual testing
+- [ ] Committed
+
+**Success Criteria:**
+- ✅ "unknown-model" template exists in master DB
+- ✅ ProfileCompiler detects unknown models
+- ✅ Creates user entries with template defaults
+- ✅ User can manually edit ~/.ollm/LLM_profiles.json
+- ✅ User edits are preserved on recompilation
+- ✅ All tests passing (445/445)
+
+**Dependencies:**
+- Must complete AFTER Task 2B-1 (user file compilation)
+- Blocks ModelContext test from passing
 
 ---
 

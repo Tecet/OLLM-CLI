@@ -224,10 +224,12 @@ export class ConversationContextManager extends EventEmitter implements ContextM
       
       // Show warning - context size stays FIXED for session
       // Do NOT resize mid-conversation as it breaks session stability
-      const usagePercent = Math.round((vramInfo.usedMemory / vramInfo.totalMemory) * 100);
+      const usagePercent = Math.round((vramInfo.used / vramInfo.total) * 100);
+      const usedMB = Math.round(vramInfo.used / (1024 * 1024));
+      const totalMB = Math.round(vramInfo.total / (1024 * 1024));
       
       console.warn('[ContextManager] ⚠️ Low memory detected');
-      console.warn(`  VRAM Usage: ${vramInfo.usedMemory}MB / ${vramInfo.totalMemory}MB (${usagePercent}%)`);
+      console.warn(`  VRAM Usage: ${usedMB}MB / ${totalMB}MB (${usagePercent}%)`);
       console.warn(`  Current context size: ${this.contextPool.currentSize} tokens`);
       console.warn('  Your current context size may cause performance issues.');
       console.warn('  Consider restarting with a smaller context size.');

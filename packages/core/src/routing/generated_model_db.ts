@@ -4,6 +4,25 @@ import type { ModelEntry } from './modelDatabase.js';
 
 export const GENERATED_MODEL_DB: ModelEntry[] = [
   {
+    "pattern": "user-unknown-model",
+    "family": "user-unknown-model",
+    "contextWindow": 131072,
+    "capabilities": {
+      "toolCalling": false,
+      "vision": false,
+      "streaming": true,
+      "reasoning": false
+    },
+    "profiles": [
+      "4k",
+      "8k",
+      "16k",
+      "32k",
+      "64k",
+      "128k"
+    ]
+  },
+  {
     "pattern": "qwen2.5:7b",
     "family": "qwen2.5:7b",
     "contextWindow": 131072,
@@ -196,6 +215,65 @@ export const GENERATED_MODEL_DB: ModelEntry[] = [
 ] as any;
 
 export const GENERATED_RAW_PROFILES = {
+  "user-unknown-model": {
+    "id": "user-unknown-model",
+    "name": "Unknown Model",
+    "creator": "User",
+    "parameters": "Based on Llama 3.2 3B",
+    "quantization": "Based on Llama 3.2 3B (4-bit estimated)",
+    "description": "Unknown model - please edit your settings at ~/.ollm/LLM_profiles.json (Windows: C:\\Users\\{username}\\.ollm\\LLM_profiles.json)",
+    "abilities": [
+      "Unknown"
+    ],
+    "tool_support": false,
+    "ollama_url": "https://github.com/Tecet/OLLM/tree/main/docs",
+    "max_context_window": 131072,
+    "context_profiles": [
+      {
+        "size": 4096,
+        "size_label": "4k",
+        "vram_estimate": "2.5 GB",
+        "ollama_context_size": 2867,
+        "vram_estimate_gb": 2.5
+      },
+      {
+        "size": 8192,
+        "size_label": "8k",
+        "vram_estimate": "2.9 GB",
+        "ollama_context_size": 5734,
+        "vram_estimate_gb": 2.9
+      },
+      {
+        "size": 16384,
+        "size_label": "16k",
+        "vram_estimate": "3.7 GB",
+        "ollama_context_size": 11468,
+        "vram_estimate_gb": 3.7
+      },
+      {
+        "size": 32768,
+        "size_label": "32k",
+        "vram_estimate": "5.2 GB",
+        "ollama_context_size": 22937,
+        "vram_estimate_gb": 5.2
+      },
+      {
+        "size": 65536,
+        "size_label": "64k",
+        "vram_estimate": "8.2 GB",
+        "ollama_context_size": 45875,
+        "vram_estimate_gb": 8.2
+      },
+      {
+        "size": 131072,
+        "size_label": "128k",
+        "vram_estimate": "14.2 GB",
+        "ollama_context_size": 91750,
+        "vram_estimate_gb": 14.2
+      }
+    ],
+    "default_context": 4096
+  },
   "qwen2.5:7b": {
     "id": "qwen2.5:7b",
     "name": "Qwen2.5 7B",
