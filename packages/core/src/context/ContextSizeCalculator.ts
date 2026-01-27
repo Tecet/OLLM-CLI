@@ -2,16 +2,20 @@
  * ContextSizeCalculator
  * 
  * ONE file that does ALL context size calculations.
- * No side effects, pure functions, testable.
+ * Uses model profiles from LLM_profiles.json (via ~/.ollm/LLM_profiles.json)
+ * No hardcoded values, no side effects, pure functions, testable.
  */
 
 import { ContextTier } from './types.js';
+import type { ContextProfile } from './types.js';
 
 export interface TierOption {
   tier: ContextTier;
-  size: number;
+  size: number; // UI display size (e.g., 4096)
+  ollamaSize: number; // Actual size sent to Ollama (~85% of size)
   label: string;
   description: string;
+  vramRequired: number; // GB
 }
 
 export interface AvailableTiers {
@@ -20,96 +24,175 @@ export interface AvailableTiers {
   options: TierOption[];
 }
 
-export interface ModelRequirements {
-  modelContextSize: number;
-  modelName: string;
+/**
+ * Map context size to tier enum
+ */
+function sizeToTier(size: number): ContextTier {
+  if (size <= 4096) return ContextTier.TIER_1_MINIMAL;
+  if (size <= 8192) return ContextTier.TIER_2_BASIC;
+  if (size <= 16384) return ContextTier.TIER_3_STANDARD;
+  if (size <= 32768) return ContextTier.TIER_4_PREMIUM;
+  return ContextTier.TIER_5_ULTRA;
 }
 
 /**
- * Calculate available context tiers based on VRAM and model requirements
+ * Calculate available context tiers based on VRAM and model's context profiles
+ * 
+ * @param availableVRAM - Available VRAM in GB
+ * @param contextProfiles - Model's context profiles from LLM_profiles.json
+ * @param maxContextWindow - Model's maximum context window
  */
 export function calculateAvailableTiers(
   availableVRAM: number,
-  modelRequirements: ModelRequirements
+  contextProfiles: ContextProfile[],
+  maxContextWindow: number
 ): AvailableTiers {
-  const { modelContextSize } = modelRequirements;
-
-  // Define all possible tiers
-  const allTiers: TierOption[] = [
-    { tier: ContextTier.TIER_1_MINIMAL, size: 2048, label: 'Tier 1 (2K)', description: 'Minimal context' },
-    { tier: ContextTier.TIER_2_BASIC, size: 4096, label: 'Tier 2 (4K)', description: 'Basic context' },
-    { tier: ContextTier.TIER_3_STANDARD, size: 8192, label: 'Tier 3 (8K)', description: 'Standard context' },
-    { tier: ContextTier.TIER_4_PREMIUM, size: 16384, label: 'Tier 4 (16K)', description: 'Extended context' },
-    { tier: ContextTier.TIER_5_ULTRA, size: 32768, label: 'Tier 5 (32K)', description: 'Maximum context' },
-  ];
-
-  // Filter tiers based on model's max context size
-  const modelSupportedTiers = allTiers.filter(t => t.size <= modelContextSize);
-
-  if (modelSupportedTiers.length === 0) {
-    // Model doesn't support even tier 1, return tier 1 anyway
+  if (!contextProfiles || contextProfiles.length === 0) {
+    // Fallback if no profiles (shouldn't happen)
+    const fallbackTier: TierOption = {
+      tier: ContextTier.TIER_2_BASIC,
+      size: 8192,
+      ollamaSize: Math.floor(8192 * 0.85),
+      label: '8K',
+      description: 'Standard context',
+      vramRequired: 4.0
+    };
     return {
-      minTier: ContextTier.TIER_1_MINIMAL,
-      maxTier: ContextTier.TIER_1_MINIMAL,
-      options: [allTiers[0]]
+      minTier: ContextTier.TIER_2_BASIC,
+      maxTier: ContextTier.TIER_2_BASIC,
+      options: [fallbackTier]
     };
   }
 
-  // Calculate VRAM-based max tier (rough estimation)
-  // This is simplified - real calculation would be more complex
-  const vramBasedMaxSize = Math.floor(availableVRAM * 1024); // Convert GB to rough token estimate
-  const vramSupportedTiers = modelSupportedTiers.filter(t => t.size <= vramBasedMaxSize);
+  // Filter profiles that fit in available VRAM
+  const availableProfiles = contextProfiles.filter(profile => {
+    const vramRequired = profile.vram_estimate_gb || 0;
+    return vramRequired <= availableVRAM && profile.size <= maxContextWindow;
+  });
 
-  const availableOptions = vramSupportedTiers.length > 0 ? vramSupportedTiers : [modelSupportedTiers[0]];
+  if (availableProfiles.length === 0) {
+    // No profiles fit, use smallest one
+    const smallest = contextProfiles[0];
+    const tier: TierOption = {
+      tier: sizeToTier(smallest.size),
+      size: smallest.size,
+      ollamaSize: smallest.ollama_context_size || Math.floor(smallest.size * 0.85),
+      label: smallest.size_label || `${smallest.size}`,
+      description: `${smallest.vram_estimate || 'Unknown VRAM'}`,
+      vramRequired: smallest.vram_estimate_gb || 0
+    };
+    return {
+      minTier: tier.tier,
+      maxTier: tier.tier,
+      options: [tier]
+    };
+  }
+
+  // Convert profiles to tier options
+  const options: TierOption[] = availableProfiles.map(profile => ({
+    tier: sizeToTier(profile.size),
+    size: profile.size,
+    ollamaSize: profile.ollama_context_size || Math.floor(profile.size * 0.85),
+    label: profile.size_label || `${profile.size}`,
+    description: `${profile.vram_estimate || 'Unknown VRAM'}`,
+    vramRequired: profile.vram_estimate_gb || 0
+  }));
 
   return {
-    minTier: availableOptions[0].tier,
-    maxTier: availableOptions[availableOptions.length - 1].tier,
-    options: availableOptions
+    minTier: options[0].tier,
+    maxTier: options[options.length - 1].tier,
+    options
   };
 }
+
 
 /**
  * Determine which tier a given context size belongs to
  */
 export function determineTier(contextSize: number): ContextTier {
-  if (contextSize <= 2048) return ContextTier.TIER_1_MINIMAL;
-  if (contextSize <= 4096) return ContextTier.TIER_2_BASIC;
-  if (contextSize <= 8192) return ContextTier.TIER_3_STANDARD;
-  if (contextSize <= 16384) return ContextTier.TIER_4_PREMIUM;
+  if (contextSize <= 4096) return ContextTier.TIER_1_MINIMAL;
+  if (contextSize <= 8192) return ContextTier.TIER_2_BASIC;
+  if (contextSize <= 16384) return ContextTier.TIER_3_STANDARD;
+  if (contextSize <= 32768) return ContextTier.TIER_4_PREMIUM;
   return ContextTier.TIER_5_ULTRA;
 }
 
 /**
- * Get the context size for a specific tier
+ * Get the Ollama context size for a given user-facing size from profiles
+ * Returns the pre-calculated ollama_context_size (~85%)
  */
-export function getTierSize(tier: ContextTier): number {
-  const sizes: Record<ContextTier, number> = {
-    [ContextTier.TIER_1_MINIMAL]: 2048,
-    [ContextTier.TIER_2_BASIC]: 4096,
-    [ContextTier.TIER_3_STANDARD]: 8192,
-    [ContextTier.TIER_4_PREMIUM]: 16384,
-    [ContextTier.TIER_5_ULTRA]: 32768
-  };
-  return sizes[tier] || 8192; // Default to tier 3
+export function getOllamaContextSize(
+  userSize: number,
+  contextProfiles: ContextProfile[]
+): number {
+  if (!contextProfiles || contextProfiles.length === 0) {
+    // Fallback: calculate 85%
+    return Math.floor(userSize * 0.85);
+  }
+
+  // Find exact match first
+  const exactMatch = contextProfiles.find(p => p.size === userSize);
+  if (exactMatch && exactMatch.ollama_context_size) {
+    return exactMatch.ollama_context_size;
+  }
+
+  // Find closest profile that meets or exceeds user size
+  const matchingProfile = contextProfiles.find(p => p.size >= userSize);
+  if (matchingProfile && matchingProfile.ollama_context_size) {
+    return matchingProfile.ollama_context_size;
+  }
+
+  // Use largest profile as fallback
+  if (contextProfiles.length > 0) {
+    const largestProfile = contextProfiles[contextProfiles.length - 1];
+    if (largestProfile.ollama_context_size) {
+      return largestProfile.ollama_context_size;
+    }
+  }
+
+  // Final fallback: calculate 85%
+  return Math.floor(userSize * 0.85);
 }
 
 /**
- * Validate if a context size is valid for the given constraints
+ * Get user-facing size from Ollama context size
+ */
+export function getUserSizeFromOllama(
+  ollamaSize: number,
+  contextProfiles: ContextProfile[]
+): number {
+  if (!contextProfiles || contextProfiles.length === 0) {
+    // Fallback: reverse 85% calculation
+    return Math.floor(ollamaSize / 0.85);
+  }
+
+  // Find profile with matching ollama_context_size
+  const matchingProfile = contextProfiles.find(p => p.ollama_context_size === ollamaSize);
+  if (matchingProfile) {
+    return matchingProfile.size;
+  }
+
+  // Find closest profile
+  const closestProfile = contextProfiles.reduce((closest, current) => {
+    const currentDiff = Math.abs((current.ollama_context_size || 0) - ollamaSize);
+    const closestDiff = Math.abs((closest.ollama_context_size || 0) - ollamaSize);
+    return currentDiff < closestDiff ? current : closest;
+  });
+
+  return closestProfile.size;
+}
+
+/**
+ * Validate if a context size is valid for the given model
  */
 export function isValidContextSize(
   size: number,
-  modelRequirements: ModelRequirements,
-  availableVRAM: number
+  contextProfiles: ContextProfile[],
+  maxContextWindow: number
 ): boolean {
-  const { modelContextSize } = modelRequirements;
-  
-  // Must be within model's limits
-  if (size > modelContextSize) return false;
-  
-  // Must be within VRAM limits (rough check)
-  const vramBasedMaxSize = Math.floor(availableVRAM * 1024);
-  if (size > vramBasedMaxSize) return false;
-  
-  return true;
+  // Must be within model's max context
+  if (size > maxContextWindow) return false;
+
+  // Must match one of the available profiles
+  return contextProfiles.some(p => p.size === size);
 }
