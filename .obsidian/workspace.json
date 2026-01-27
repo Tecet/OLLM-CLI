@@ -185,6 +185,7 @@
   },
   "active": "96f17f0c11000dcf",
   "lastOpenFiles": [
+    "packages/cli/src/features/context/old_contextSizing.ts",
     "packages/cli/src/features/context/old_ContextManagerContext.tsx",
     "packages/core/dist/context/old_contextPool.d.ts",
     "packages/core/dist/context/old_contextPool.d.ts.map",
@@ -195,7 +196,6 @@
     "packages/core/dist/context/old_contextManager.d.ts.map",
     "packages/core/dist/context/old_contextManager.js",
     "packages/core/dist/context/old_contextManager.js.map",
-    "packages/core/src/context/contextManager.ts",
     "dev/backlog/REFACTORING-SUMMARY.md",
     "dev/backlog/report.md",
     "packages/cli/src/ui/components/animations/lama/lama_sprite/right/llama-r6.png",
