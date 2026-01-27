@@ -15,7 +15,7 @@
  * - Store state (just pure functions)
  */
 
-import * as ContextSizeCalculator from '@ollm/core/context/ContextSizeCalculator';
+import * as ContextSizeCalculator from '@ollm/ollm-cli-core/context/ContextSizeCalculator.js';
 
 import type { ContextProfile, UserModelEntry } from '../../config/types.js';
 

@@ -227,35 +227,42 @@ describe('validateAndBuildPrompt', () => {
   it('should emit warnings at different thresholds', async () => {
     const getBudgetSpy = vi.spyOn(contextManager, 'getBudget');
     
-    // Test 70% threshold
+    // Test 80% threshold (INFO warning)
+    // totalTokens = systemPromptTokens + checkpointTokens + conversationTokens
+    // usagePercentage = (totalTokens / ollamaLimit) * 100
+    // For 80%: totalTokens should be 0.80 * 6963 = 5570
+    // So conversationTokens = 5570 - 100 - 0 = 5470
     getBudgetSpy.mockReturnValue({
       totalOllamaSize: 6963,
       systemPromptTokens: 100,
       checkpointTokens: 0,
       availableBudget: 6863,
-      conversationTokens: 4800, // 70%
-      budgetPercentage: 70
-    });
-
-    let result = await contextManager.validateAndBuildPrompt();
-    // At 70%, should have INFO warning
-    expect(result.warnings.length).toBeGreaterThan(0);
-    expect(result.warnings.some(w => w.includes('INFO'))).toBe(true);
-
-    // Test 80% threshold
-    getBudgetSpy.mockReturnValue({
-      totalOllamaSize: 6963,
-      systemPromptTokens: 100,
-      checkpointTokens: 0,
-      availableBudget: 6863,
-      conversationTokens: 5490, // 80%
+      conversationTokens: 5471, // 80.01% to ensure we cross threshold
       budgetPercentage: 80
     });
 
-    result = await contextManager.validateAndBuildPrompt();
-    // At 80%, should have INFO warning about compression
+    let result = await contextManager.validateAndBuildPrompt();
+    // At 80%, should have INFO warning
     expect(result.warnings.length).toBeGreaterThan(0);
-    expect(result.warnings.some(w => w.includes('INFO') || w.includes('compression'))).toBe(true);
+    expect(result.warnings.some(w => w.includes('INFO'))).toBe(true);
+
+    // Test 95% threshold (WARNING + emergency compression)
+    // For 95%: totalTokens should be 0.95 * 6963 = 6615
+    // So conversationTokens = 6615 - 100 - 0 = 6515
+    getBudgetSpy.mockReturnValue({
+      totalOllamaSize: 6963,
+      systemPromptTokens: 100,
+      checkpointTokens: 0,
+      availableBudget: 6863,
+      conversationTokens: 6516, // 95.01% to ensure we cross threshold
+      budgetPercentage: 95
+    });
+
+    result = await contextManager.validateAndBuildPrompt();
+    // At 95%, should have WARNING and trigger compression
+    expect(result.warnings.length).toBeGreaterThan(0);
+    expect(result.warnings.some(w => w.includes('WARNING'))).toBe(true);
+    expect(result.emergencyAction).toBe('compression');
     
     getBudgetSpy.mockRestore();
   });
