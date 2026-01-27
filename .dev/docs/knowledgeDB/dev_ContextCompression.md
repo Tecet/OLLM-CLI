@@ -4,11 +4,12 @@
 **Status:** Source of Truth (with known issues - see below)
 
 **Related Documents:**
-- `dev_ContextManagement.md` - Context sizing and VRAM management
-- `dev_PromptSystem.md` - Prompt structure, tiers, modes
-- `dev_ModelDB.md` - Model database schema and access patterns
-- `dev_ModelManagement.md` - Model size detection for reliability
-- `dev_CheckpointRollover.md` - Checkpoint strategy, sessions, snapshots, and chat history
+- [Context Management](./dev_ContextManagement.md) - Context sizing and VRAM management
+- [Prompt System](./dev_PromptSystem.md) - Prompt structure, tiers, modes
+- [Model Management](./dev_ModelManagement.md) - Model size detection for reliability
+- [Context Checkpoint Rollover](./dev_ContextCheckpointRollover.md) - Checkpoint strategy, sessions, snapshots
+- [Context Checkpoint Aging](./dev_ContextCheckpointAging.md) - Progressive compression
+- [Context Tokeniser](./dev_ContextTokeniser.md) - Token counting system
 
 ---
 

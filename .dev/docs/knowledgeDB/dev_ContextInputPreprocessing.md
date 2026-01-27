@@ -4,9 +4,11 @@
 **Status:** Design Document (Implementation Pending)
 
 **Related Documents:**
-- `dev_CheckpointRollover.md` - Sessions, snapshots, and chat history
-- `dev_ContextCompression.md` - Compression system
-- `dev_ContextManagement.md` - Context management
+- [Context Checkpoint Rollover](./dev_ContextCheckpointRollover.md) - Sessions, snapshots, and chat history
+- [Context Compression](./dev_ContextCompression.md) - Compression system
+- [Context Management](./dev_ContextManagement.md) - Context management
+- [Context Pre-Send Validation](./dev_ContextPreSendValidation.md) - Overflow prevention
+- [Session Storage](./dev_SessionStorage.md) - Session persistence
 
 ---
 

@@ -1,6 +1,6 @@
 # Developer Documentation Index
 
-**Last Updated:** January 26, 2026  
+**Last Updated:** January 27, 2026  
 **Location:** `.dev/docs/knowledgeDB/`
 
 ---
@@ -18,11 +18,21 @@ This index provides quick access to all developer knowledge base documents. Each
 ### Context & Memory
 - [Context Management](./knowledgeDB/dev_ContextManagement.md) - Sizing, tiers, VRAM
 - [Context Compression](./knowledgeDB/dev_ContextCompression.md) - Checkpoints, snapshots
+- [Context Pre-Send Validation](./knowledgeDB/dev_ContextPreSendValidation.md) - Overflow prevention
+- [Context Tokeniser](./knowledgeDB/dev_ContextTokeniser.md) - Token counting system
+- [Context Snapshots](./knowledgeDB/dev_ContextSnapshots.md) - Two snapshot systems
+- [Context Checkpoint Aging](./knowledgeDB/dev_ContextCheckpointAging.md) - Progressive compression
+- [Context Checkpoint Rollover](./knowledgeDB/dev_ContextCheckpointRollover.md) - Emergency rollover
+- [Context Input Preprocessing](./knowledgeDB/dev_ContextInputPreprocessing.md) - Intent extraction
+
+### Sessions
+- [Session Storage](./knowledgeDB/dev_SessionStorage.md) - Session recording
 
 ### Prompts & Models
 - [Prompt System](./knowledgeDB/dev_PromptSystem.md) - Tiers, modes, templates
 - [Model Management](./knowledgeDB/dev_ModelManagement.md) - Profiles, detection
-- [Reasoning Models](./knowledgeDB/dev_ReasoningModels.md) - DeepSeek R1, QwQ
+- [Model Reasoning](./knowledgeDB/dev_ModelReasoning.md) - DeepSeek R1, QwQ
+- [Model Compiler](./knowledgeDB/dev_ModelCompiler.md) - Profile compilation
 
 ### Providers & Integration
 - [Provider System](./knowledgeDB/dev_ProviderSystem.md) - Ollama, future providers
@@ -33,14 +43,15 @@ This index provides quick access to all developer knowledge base documents. Each
 - [Hook System](./knowledgeDB/dev_HookSystem.md) - Events, automation
 
 ### User Interface
-- [UI Front](./knowledgeDB/dev_UI_Front.md) - Layout, message rendering
+- [UI Frontend](./knowledgeDB/dev_UI_Front.md) - Layout, message rendering
 - [UI Menu Windows](./knowledgeDB/dev_UI_MenuWindows.md) - Dialogs, notifications
-- [Terminal](./knowledgeDB/dev_Terminal.md) - PTY, ANSI rendering
+- [UI Themes](./knowledgeDB/dev_UI_Themes.md) - Color schemes
+- [UI Color ASCII](./knowledgeDB/dev_UI_ColorASCII.md) - Color and ASCII art
 
-### Commands & Input
+### Commands & System
 - [Slash Commands](./knowledgeDB/dev_SlashCommands.md) - 50+ commands
 - [Keybinds](./knowledgeDB/dev_Keybinds.md) - 70+ shortcuts
-- [Themes](./knowledgeDB/dev_Themes.md) - 6 color schemes
+- [Terminal](./knowledgeDB/dev_Terminal.md) - PTY, ANSI rendering
 
 ### Distribution
 - [npm Package](./knowledgeDB/dev_npm_package.md) - Packaging, installer
@@ -84,6 +95,102 @@ This index provides quick access to all developer knowledge base documents. Each
 
 ---
 
+#### [dev_ContextPreSendValidation.md](./knowledgeDB/dev_ContextPreSendValidation.md)
+**Pre-send validation to prevent context overflow (Phase 1)**
+
+- 4-tier threshold system (70%, 80%, 95%, 100%)
+- Emergency compression at 95%
+- Emergency rollover at 100%
+- Token budget calculation
+- Validation before sending to Ollama
+- Clear user warnings
+
+**Key Logic:** Calculate total tokens → Check thresholds → Trigger emergency actions → Validate → Send
+
+---
+
+#### [dev_ContextTokeniser.md](./knowledgeDB/dev_ContextTokeniser.md)
+**Token counting system with caching and validation**
+
+- Fallback estimation (text.length / 4)
+- Model multipliers (GPT, Llama, Code)
+- Cache management
+- Validation checks
+- Metrics tracking
+- Performance monitoring
+
+**Key Logic:** Check cache → Calculate if miss → Validate → Cache → Return count
+
+---
+
+#### [dev_ContextSnapshots.md](./knowledgeDB/dev_ContextSnapshots.md)
+**Two distinct snapshot systems (Phase 5)**
+
+- Context Snapshots (recovery & rollback)
+- Mode Snapshots (mode transitions)
+- Different storage locations
+- Different lifecycles
+- No conflicts between systems
+
+**Key Logic:** Context: Full conversation → Persistent | Mode: Last 5 messages → Temporary
+
+---
+
+#### [dev_ContextCheckpointAging.md](./knowledgeDB/dev_ContextCheckpointAging.md)
+**Progressive checkpoint compression (Phase 6)**
+
+- 3-level aging (Level 3 → 2 → 1)
+- Merge threshold per tier
+- 50% space reduction
+- Key decisions preserved
+- Token count updates
+
+**Key Logic:** Age checkpoints → Merge oldest → Preserve key info → Update tokens
+
+---
+
+#### [dev_ContextCheckpointRollover.md](./knowledgeDB/dev_ContextCheckpointRollover.md)
+**Emergency rollover strategy**
+
+- Snapshot creation before rollover
+- Keep last 10 user messages
+- Ultra-compact summary (400 tokens)
+- Clear all checkpoints
+- Reset context
+
+**Key Logic:** Create snapshot → Keep recent → Compact summary → Clear → Reset
+
+---
+
+## Input & Session Management
+
+#### [dev_ContextInputPreprocessing.md](./knowledgeDB/dev_ContextInputPreprocessing.md)
+**Intent extraction from noisy user messages (Phase 0)**
+
+- 30x token savings
+- Typo correction
+- Intent extraction
+- Goal proposal with milestones
+- Intent snapshots
+- Dual storage (clean + original)
+
+**Key Logic:** Raw message → Extract intent → Fix typos → Propose goal → Store both
+
+---
+
+#### [dev_SessionStorage.md](./knowledgeDB/dev_SessionStorage.md)
+**Session recording and auto-save (Phase 4)**
+
+- Auto-save enabled by default
+- Atomic writes with fsync
+- Full history preservation
+- Graceful interruption handling
+- No data loss
+
+**Key Logic:** Message/tool call → Record → Atomic write → fsync → Persist
+
+---
+
 ## Prompt & Mode System
 
 #### [dev_PromptSystem.md](./knowledgeDB/dev_PromptSystem.md)
@@ -116,7 +223,7 @@ This index provides quick access to all developer knowledge base documents. Each
 
 ---
 
-#### [dev_ReasoningModels.md](./knowledgeDB/dev_ReasoningModels.md)
+#### [dev_ModelReasoning.md](./knowledgeDB/dev_ModelReasoning.md)
 **Reasoning model support (DeepSeek R1, QwQ) - Partially Implemented**
 
 - Ollama API integration (think parameter)
@@ -129,6 +236,18 @@ This index provides quick access to all developer knowledge base documents. Each
   - Reasoning-specific compression
 
 **Status:** ⚠️ Basic implementation complete, advanced features post-alpha (3-4 weeks)
+
+---
+
+#### [dev_ModelCompiler.md](./knowledgeDB/dev_ModelCompiler.md)
+**Model profile compilation and tier detection**
+
+- Profile compilation from LLM_profiles.json
+- Dynamic tier detection
+- Model capability detection
+- Profile caching
+
+**Key Logic:** Load profiles → Detect capabilities → Compile → Cache
 
 ---
 
@@ -272,7 +391,7 @@ This index provides quick access to all developer knowledge base documents. Each
 
 ---
 
-#### [dev_Themes.md](./knowledgeDB/dev_Themes.md)
+#### [dev_UI_Themes.md](./knowledgeDB/dev_UI_Themes.md)
 **Complete theme system with 6 built-in color schemes**
 
 - 6 built-in themes:
@@ -290,6 +409,18 @@ This index provides quick access to all developer knowledge base documents. Each
 - Usage patterns in components
 
 **Key Logic:** Load from settings → ThemeManager → Apply to UIContext → Render with theme colors
+
+---
+
+#### [dev_UI_ColorASCII.md](./knowledgeDB/dev_UI_ColorASCII.md)
+**Color and ASCII art system**
+
+- Color palette management
+- ASCII art rendering
+- ANSI escape codes
+- Terminal color support
+
+**Key Logic:** Color codes → ANSI escape → Terminal render
 
 ---
 
@@ -367,19 +498,35 @@ Each dev_ file includes:
 
 ## Statistics
 
-**Total Documents:** 16  
-**Core Systems:** 10  
-**UI Documentation:** 3  
-**Commands & Input:** 3  
+**Total Documents:** 24  
+**Core Systems:** 13 (Context: 7, Input/Session: 2, Models: 3, Providers: 1)  
+**UI Documentation:** 4  
+**Commands & System:** 3  
+**Tools & Hooks:** 2  
 **Distribution:** 1  
 
 **Implementation Status:**
-- ✅ Fully Implemented: 12
-- ⚠️ Partially Implemented: 2 (Reasoning Models, npm Package)
+- ✅ Fully Implemented: 20
+- ⚠️ Partially Implemented: 2 (Model Reasoning, npm Package)
 - ❌ Planned: 1 (npm Package - post-alpha)
+
+**Recent Work (Phases 0-6):**
+- See [SESSIONS_WORK_COMPLETE.md](./SESSIONS_WORK_COMPLETE.md) for comprehensive summary
 
 ---
 
 **Index Maintained By:** Development Team  
-**Last Review:** January 26, 2026  
+**Last Review:** January 27, 2026  
 **Next Review:** After alpha release
+
+---
+
+## Naming Convention
+
+**Format:** `dev_CategoryTopic.md` (NO underscore between words in topic)
+
+**Examples:**
+- ✅ `dev_ContextManagement.md` (correct)
+- ✅ `dev_SessionStorage.md` (correct)
+- ❌ `dev_Context_Management.md` (incorrect - underscore between words)
+- ❌ `dev_Session_Storage.md` (incorrect - underscore between words)
