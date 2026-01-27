@@ -260,7 +260,8 @@ export interface ContextProfile {
   vram_estimate?: string;
   /** Coerced numeric VRAM estimate in GB (preferred) */
   vram_estimate_gb?: number;
-  ollama_context_size?: number; // 85% cap for natural stops (optional, calculated if not provided)
+  /** Pre-calculated Ollama context size (85% of size) - required for core compatibility */
+  ollama_context_size: number;
 }
 
 export interface LLMProfile {

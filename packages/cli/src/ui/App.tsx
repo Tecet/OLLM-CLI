@@ -349,69 +349,15 @@ function AppContent({ config }: AppContentProps) {
     return createWelcomeMessage(modelName, currentContextSize, profile, effectiveGPUInfo);
   }, [currentModel, gpuInfo, contextState.usage.maxTokens]);
 
-  function getVramGBFromOption(opt: any): number {
-    if (!opt) return 0;
-    if (typeof opt.vram_estimate_gb === 'number') return opt.vram_estimate_gb;
-    if (typeof opt.vramEstimate_gb === 'number') return opt.vramEstimate_gb;
-    const candidate = (opt.vram_estimate || (opt as any).vramEstimate || '').toString();
-    const match = candidate.match(/([0-9]+(?:\.[0-9]+)?)/);
-    if (match) return Number(match[1]);
-    return 0;
-  }
-
-  function getVramDisplayFromOption(opt: any): string {
-    if (!opt) return '';
-    if (typeof opt.vram_estimate_gb === 'number') return `${opt.vram_estimate_gb.toFixed(1)} GB`;
-    if (typeof opt.vramEstimate_gb === 'number') return `${opt.vramEstimate_gb.toFixed(1)} GB`;
-    if (opt.vram_estimate) return opt.vram_estimate;
-    if ((opt as any).vramEstimate) return (opt as any).vramEstimate;
-    return '';
-  }
+  // Note: Removed getVramGBFromOption() and getVramDisplayFromOption() - 
+  // VRAM validation now handled by core contextManager
 
   const openModelContextMenu = useCallback((messageId?: string) => {
     const menuMessageId = messageId;
     const modelName = currentModel || 'Unknown Model';
     const profile = profileManager.findProfile(modelName);
-    const settings = SettingsService.getInstance().getSettings();
-    const persistedHW = settings.hardware;
 
-    // Logic:
-    // 1. prefer live gpuInfo.vramTotal (Bytes) converted to GB
-    // 2. fallback to persistedHW.totalVRAM (GB)
-    // 3. fallback to default (0)
-    let effectiveTotalVRAM_GB = 0;
-
-    if (gpuInfo) {
-      if (typeof gpuInfo.vramTotal === 'number' && gpuInfo.vramTotal > 0) {
-        effectiveTotalVRAM_GB = gpuInfo.vramTotal / (1024 * 1024 * 1024);
-      }
-    }
-
-    // Fallback to persisted if live detection failed to find a value
-    if (effectiveTotalVRAM_GB === 0) {
-      if (persistedHW?.totalVRAM) {
-        effectiveTotalVRAM_GB = persistedHW.totalVRAM;
-      } else if (persistedHW?.gpuCount) {
-        effectiveTotalVRAM_GB = 24; // Default fallback
-      }
-    }
-
-    const SAFETY_BUFFER_GB = effectiveTotalVRAM_GB > 0 ? Math.max(1.5, effectiveTotalVRAM_GB * 0.1) : 0;
-    const availableForContextGB = effectiveTotalVRAM_GB > 0 ? (effectiveTotalVRAM_GB - SAFETY_BUFFER_GB) : 0;
-
-    // Calculate max safe context for "Auto" logic (80% rule)
-    const targetVRAM = effectiveTotalVRAM_GB * 0.8;
-
-    let maxSafeSize = 4096;
-    const manager = contextActions.getManager();
-    if (manager && provider && profile) { 
-      for (const opt of profile.context_profiles) {
-        const vramNum = getVramGBFromOption(opt);
-        if (!isNaN(vramNum) && vramNum <= targetVRAM) {
-          maxSafeSize = opt.size;
-        }
-      }
-    }
+    // Note: Removed VRAM calculations - core handles all VRAM-based decisions
 
     // Define main menu options
     const mainMenuOptions: MenuOption[] = [
@@ -422,21 +368,8 @@ function AppContent({ config }: AppContentProps) {
           const optionsToUse = profile ? profile.context_profiles : CONTEXT_OPTIONS;
           const sizeOptions: MenuOption[] = [];
 
-          sizeOptions.push({
-            id: 'size-auto',
-            label: 'Auto (Dynamic based on VRAM)',
-            action: async () => {
-              const targetSize = maxSafeSize;
-              await contextActions.resize(targetSize);
-              SettingsService.getInstance().setContextSize(targetSize); // Persist
-              addMessage({
-                role: 'system',
-                content: `Context size automatically set to **${targetSize}** tokens based on available VRAM (${effectiveTotalVRAM_GB.toFixed(1)} GB).`,
-                excludeFromContext: true
-              });
-              activateMenu(mainMenuOptions, menuMessageId); // Return to main menu
-            }
-          });
+          // Note: Removed "Auto" option - app always starts with auto-sizing
+          // Users can manually select specific sizes during the session
           
           optionsToUse.forEach(opt => {
             const val = 'size' in opt ? (opt as {size: number}).size : (opt as {value: number}).value;
@@ -447,33 +380,8 @@ function AppContent({ config }: AppContentProps) {
               sizeStr = val >= 1024 ? `${val / 1024}k` : `${val}`;
             }
 
-            let vramStr = '';
-            vramStr = getVramDisplayFromOption(opt);
-            if (vramStr) vramStr = ` - ${vramStr}`;
-
-            const vramEst = getVramDisplayFromOption(opt) || '';
-
-            // Check if this option exceeds VRAM limits
-            let isUnsafe = false;
-            if (vramEst) {
-              const vramNum = parseFloat(vramEst.replace(' GB', ''));
-              // Allow 50% overhead for CPU offloading (Ollama can handle this with system RAM)
-              // The VRAM estimates in profiles are already conservative, so we can be more generous
-              const vramLimitWithOffload = availableForContextGB * 1.5;
-              if (!isNaN(vramNum) && vramNum > vramLimitWithOffload) {
-                isUnsafe = true;
-              }
-            }
-
-            // Skip unsafe options - don't add them to the menu
-            if (isUnsafe) {
-              return;
-            }
-
-            let label = `${sizeStr}${vramStr}`;
-            if (val === maxSafeSize) {
-              label += ' (Recommended)';
-            }
+            // Note: Removed VRAM display and safety checks - core validates all sizes
+            let label = `${sizeStr}`;
 
             sizeOptions.push({
               id: `size-${val}`,
@@ -481,7 +389,7 @@ function AppContent({ config }: AppContentProps) {
               value: val,
               action: async () => {
                 await contextActions.resize(val);
-                SettingsService.getInstance().setContextSize(val); // Persist
+                // Note: Context size no longer persisted - always auto-size on restart
                 
                 addMessage({
                   role: 'system',
@@ -506,7 +414,7 @@ function AppContent({ config }: AppContentProps) {
               requestManualContextInput(modelName, async (value) => {
                 profileManager.setManualContext(modelName, value);
                 await contextActions.resize(value);
-                SettingsService.getInstance().setContextSize(value);
+                // Note: Context size no longer persisted - always auto-size on restart
                 addMessage({
                   role: 'system',
                   content: `Manual context size set to **${value}** tokens.`,
@@ -590,8 +498,7 @@ ${toolSupport}
               if (cardTotal === 0 && persistedHW) {
                 cardTotal = persistedHW.totalVRAM || (persistedHW.gpuCount ? 24 : 0);
               }
-              const safetyBuffer = cardTotal > 0 ? Math.max(1.5, cardTotal * 0.1) : 0;
-              const availableForCtx = cardTotal > 0 ? (cardTotal - safetyBuffer) : 0;
+              // Note: Removed VRAM calculations - core handles all VRAM-based decisions
 
               safeSizeForModel = entry.default_context || safeSizeForModel;
 
@@ -601,7 +508,7 @@ ${toolSupport}
                 label: 'Auto (Dynamic)',
                 action: async () => {
                   await contextActions.resize(safeSizeForModel);
-                  SettingsService.getInstance().setContextSize(safeSizeForModel); // Persist
+                  // Note: Context size no longer persisted - always auto-size on restart
                   addMessage({
                     role: 'system',
                     content: `Selected **${modelLabel}** with Auto context (**${safeSizeForModel}** tokens).`,
@@ -622,7 +529,7 @@ ${toolSupport}
                   label: `User Context (${manualSizeStr})`,
                   action: async () => {
                     await contextActions.resize(manualContext);
-                    SettingsService.getInstance().setContextSize(manualContext);
+                    // Note: Context size no longer persisted - always auto-size on restart
                     addMessage({
                       role: 'system',
                       content: `Selected **${modelLabel}** with **${manualSizeStr}** context.`,
@@ -638,30 +545,11 @@ ${toolSupport}
                 const optIsProfile = 'size' in opt;
                 const optSize = optIsProfile ? opt.size : (opt as ContextSizeOption).value;
                 const optLabel = optIsProfile ? opt.size_label : (opt as ContextSizeOption).label;
-                  const optVram = optIsProfile ? getVramDisplayFromOption(opt) : getVramDisplayFromOption(opt as any);
 
                 const sizeStr = optLabel || (optSize >= 1024 ? `${optSize / 1024}k` : `${optSize}`);
-                const vramEstimate = optVram || '';
-                const vramStr = vramEstimate ? ` - ${vramEstimate}` : '';
+                // Note: Removed VRAM display and safety checks - core validates all sizes
 
-                // Check if this option exceeds VRAM limits
-                let isUnsafe = false;
-                if (vramEstimate) {
-                  const vramNum = parseFloat(vramEstimate.replace(' GB', ''));
-                  // Allow 50% overhead for CPU offloading (Ollama can handle this with system RAM)
-                  // The VRAM estimates in profiles are already conservative, so we can be more generous
-                  const vramLimitWithOffload = availableForCtx * 1.5;
-                  if (!isNaN(vramNum) && vramNum > vramLimitWithOffload) {
-                    isUnsafe = true;
-                  }
-                }
-
-                // Skip unsafe options - don't add them to the menu
-                if (isUnsafe) {
-                  return;
-                }
-
-                let label = `${sizeStr}${vramStr}`;
+                let label = `${sizeStr}`;
                 if (optSize === safeSizeForModel) {
                   label += ' (Recommended)';
                 }
@@ -671,7 +559,7 @@ ${toolSupport}
                   label: label,
                   action: async () => {
                     await contextActions.resize(optSize);
-                    SettingsService.getInstance().setContextSize(optSize); // Persist
+                    // Note: Context size no longer persisted - always auto-size on restart
                     addMessage({
                       role: 'system',
                       content: `Selected **${modelLabel}** with **${sizeStr}** context.`,
@@ -695,7 +583,7 @@ ${toolSupport}
                   requestManualContextInput(entry.id, async (value) => {
                     profileManager.setManualContext(entry.id, value);
                     await contextActions.resize(value);
-                    SettingsService.getInstance().setContextSize(value);
+                    // Note: Context size no longer persisted - always auto-size on restart
                     addMessage({
                       role: 'system',
                       content: `Manual context size set to **${value}** tokens.`,
@@ -1111,7 +999,8 @@ export function App({ config }: AppProps) {
   // Load persisted model preference
   const settings = SettingsService.getInstance().getSettings();
   const persistedModel = settings.llm?.model;
-  const persistedContextSize = settings.llm?.contextSize;
+  // Don't persist context size - always use auto-sizing on startup
+  const persistedContextSize = undefined;
   const initialModel = persistedModel || config.model.default;
 
   // Extract UI settings from config
@@ -1137,7 +1026,11 @@ export function App({ config }: AppProps) {
   const modelInfo = {
     parameters: extractModelSize(initialModel),
     contextLimit: persistedContextSize || config.context?.maxSize || 8192,
-    contextProfiles: modelEntry.context_profiles || [],
+    contextProfiles: (modelEntry.context_profiles || []).map(profile => ({
+      ...profile,
+      // Ensure ollama_context_size is always present (calculate if missing)
+      ollama_context_size: profile.ollama_context_size ?? Math.floor(profile.size * 0.85)
+    })),
     modelId: initialModel,
   };
   

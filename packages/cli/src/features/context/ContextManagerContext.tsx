@@ -474,8 +474,18 @@ export function ContextManagerProvider({
           
           if (tierData.effectivePromptTier !== undefined) {
             const newEffective = tierToString(tierData.effectivePromptTier);
-            console.log('[UI] Setting effectivePromptTier to:', newEffective);
+            
+            // Log to file for debugging
+            const fs = require('fs');
+            fs.appendFileSync('context-debug.log', `[${new Date().toISOString()}] [UI] effectivePromptTier event received\n`);
+            fs.appendFileSync('context-debug.log', `[${new Date().toISOString()}] [UI] Raw value: ${tierData.effectivePromptTier}\n`);
+            fs.appendFileSync('context-debug.log', `[${new Date().toISOString()}] [UI] After tierToString: ${newEffective}\n`);
+            fs.appendFileSync('context-debug.log', `[${new Date().toISOString()}] [UI] Previous value: ${effectivePromptTierRef.current}\n\n`);
+            
             setEffectivePromptTier(newEffective);
+          } else {
+            const fs = require('fs');
+            fs.appendFileSync('context-debug.log', `[${new Date().toISOString()}] [UI] effectivePromptTier NOT in event data\n\n`);
           }
           if (tierData.actualContextTier !== undefined) {
             const newActual = tierToString(tierData.actualContextTier);
@@ -491,10 +501,12 @@ export function ContextManagerProvider({
         };
         
         manager.on('tier-changed', tierChangeCallback);
-        manager.on('started', tierChangeCallback); // Also listen to started event for initial tier
+        // Note: 'started' event also contains tier info, but we only need tier-changed
+        // to avoid duplicate callbacks
         
         // Start the context manager (this will emit 'started' event which we now catch)
         await manager.start();
+        console.log('[ContextManagerContext] Manager started, setting active=true');
         setActive(true);
         // Listen for summarization/compression lifecycle events to update UI state
         manager.on('summarizing', () => {
@@ -775,8 +787,7 @@ export function ContextManagerProvider({
     // Update local state to reflect manual mode
     setAutoSizeEnabled(false);
     
-    // Persist settings
-    SettingsService.getInstance().setContextSize(size);
+    // Note: Context size no longer persisted - always auto-size on restart
 
     const newUsage = managerRef.current.getUsage();
     setUsage(newUsage);
@@ -988,15 +999,23 @@ export function ContextManagerProvider({
     getModeHistoryAction,
   ]);
   
-  // Update global reference
+  // Update global reference immediately when actions change AND manager is initialized
+  // This ensures commands can access the manager as soon as it's ready
   useEffect(() => {
-    if (active) {
+    console.log('[ContextManagerContext] useEffect triggered - managerRef.current:', !!managerRef.current, 'active:', active);
+    // Only set global manager if the actual manager is initialized
+    if (managerRef.current && active) {
       globalContextManager = actions;
+      console.log('[ContextManagerContext] ✅ Global manager set');
+    } else {
+      console.log('[ContextManagerContext] ❌ Global manager NOT set - waiting for initialization');
     }
     return () => {
-      globalContextManager = null;
+      // Don't clear global manager in cleanup - it causes race conditions during re-initialization
+      // The next initialization will overwrite it anyway
+      console.log('[ContextManagerContext] Cleanup - keeping global manager for now');
     };
-  }, [active, actions]);
+  }, [actions, active]);
   
   return (
     <ContextManagerContext.Provider value={{ state, actions }}>

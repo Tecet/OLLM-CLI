@@ -284,23 +284,61 @@ export class ConversationContextManager extends EventEmitter implements ContextM
     this.contextPool.updateVRAMInfo(vramInfo);
     
     if (this.config.autoSize) {
+      // Log auto-sizing flow (skip during tests)
+      if (!isTestEnv) {
+        const fs = require('fs');
+        const path = require('path');
+        const logPath = path.join(process.cwd(), 'context-debug.log');
+        console.log('[ContextManager] Auto-sizing enabled, logging to:', logPath);
+        fs.appendFileSync(logPath, `\n[${new Date().toISOString()}] === AUTO-SIZING START ===\n`);
+      }
+      
       const maxPossibleContext = this.contextPool.calculateOptimalSize(
         vramInfo,
         this.modelInfo
       );
+      
+      if (!isTestEnv) {
+        const fs = require('fs');
+        const path = require('path');
+        const logPath = path.join(process.cwd(), 'context-debug.log');
+        fs.appendFileSync(logPath, `[${new Date().toISOString()}] Max possible Ollama context: ${maxPossibleContext}\n`);
+      }
+      
       const recommendedSize = this.getRecommendedAutoSize(maxPossibleContext);
+      
+      if (!isTestEnv) {
+        const fs = require('fs');
+        const path = require('path');
+        const logPath = path.join(process.cwd(), 'context-debug.log');
+        fs.appendFileSync(logPath, `[${new Date().toISOString()}] Recommended Ollama size: ${recommendedSize}\n`);
+      }
       
       // Calculate user-facing size from recommended Ollama size
       // We need to reverse the 85% calculation to get the user-facing size
       const userFacingSize = this.getUserSizeFromOllama(recommendedSize);
       
+      if (!isTestEnv) {
+        const fs = require('fs');
+        const path = require('path');
+        const logPath = path.join(process.cwd(), 'context-debug.log');
+        fs.appendFileSync(logPath, `[${new Date().toISOString()}] User-facing size: ${userFacingSize}\n`);
+      }
+      
       // Update config with user-facing size
       this.config.targetSize = userFacingSize;
+      
+      if (!isTestEnv) {
+        const fs = require('fs');
+        const path = require('path');
+        const logPath = path.join(process.cwd(), 'context-debug.log');
+        fs.appendFileSync(logPath, `[${new Date().toISOString()}] Updated config.targetSize to: ${this.config.targetSize}\n`);
+      }
       
       // Resize with both Ollama and user-facing sizes
       await this.contextPool.resize(recommendedSize, userFacingSize);
       this.contextPool.updateConfig({ targetContextSize: recommendedSize });
-      this.contextPool.setUserContextSize(userFacingSize);
+      // Note: userContextSize is already set by resize() call above
       
       // Update current context
       this.currentContext.maxTokens = this.contextPool.currentSize;
@@ -312,11 +350,13 @@ export class ConversationContextManager extends EventEmitter implements ContextM
       this.tierConfig = newTierConfig;
       this.selectedTier = newTierConfig.tier;
       
-      // With auto-sizing, prompt tier follows context size
-      console.log('[ContextManager] Auto-sizing enabled - prompt tier follows context size');
-      console.log('[ContextManager] Selected tier:', this.selectedTier);
-      console.log('[ContextManager] User-facing size:', userFacingSize);
-      console.log('[ContextManager] Ollama size:', recommendedSize);
+      if (!isTestEnv) {
+        const fs = require('fs');
+        const path = require('path');
+        const logPath = path.join(process.cwd(), 'context-debug.log');
+        fs.appendFileSync(logPath, `[${new Date().toISOString()}] Selected tier: ${this.selectedTier}\n`);
+        fs.appendFileSync(logPath, `[${new Date().toISOString()}] === AUTO-SIZING END ===\n\n`);
+      }
       
       this.emit('tier-changed', { 
         tier: this.currentTier, 
@@ -869,7 +909,20 @@ export class ConversationContextManager extends EventEmitter implements ContextM
     // Use user-facing size for tier detection
     // The 85% cap is internal and shouldn't affect tier selection
     const userSize = this.config.targetSize;
-    return TIER_CONFIGS[this.getTierForSize(userSize)];
+    const tier = this.getTierForSize(userSize);
+    const tierConfig = TIER_CONFIGS[tier];
+    
+    // Log to file for debugging (skip during tests to avoid spam)
+    if (!isTestEnv) {
+      const fs = require('fs');
+      const path = require('path');
+      const logPath = path.join(process.cwd(), 'context-debug.log');
+      fs.appendFileSync(logPath, `[${new Date().toISOString()}] detectContextTier: userSize = ${userSize}\n`);
+      fs.appendFileSync(logPath, `[${new Date().toISOString()}] detectContextTier: detected tier = ${tier}\n`);
+      fs.appendFileSync(logPath, `[${new Date().toISOString()}] detectContextTier: tierConfig.tier = ${tierConfig.tier}\n`);
+    }
+    
+    return tierConfig;
   }
 
   /**

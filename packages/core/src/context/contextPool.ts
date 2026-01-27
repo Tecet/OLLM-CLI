@@ -256,12 +256,12 @@ export class ContextPoolImpl implements ContextPool {
     this.config = { ...this.config, ...config };
 
     // If target size changed, this is the Ollama size (85% pre-calculated)
-    // We need to track the user-facing size separately for UI display
+    // IMPORTANT: Do NOT overwrite userContextSize here - it should be set explicitly
+    // via setUserContextSize() or resize() with userSize parameter
     if (config.targetContextSize !== undefined) {
       // targetContextSize is the Ollama size (85%)
-      // For now, we'll use it for both until we get the user size from contextManager
       this.currentSize = this.clampSize(config.targetContextSize);
-      this.userContextSize = config.targetContextSize;
+      // Do NOT set userContextSize here - it's managed separately
     }
 
     // If target size changed and auto-size is off, resize to target
