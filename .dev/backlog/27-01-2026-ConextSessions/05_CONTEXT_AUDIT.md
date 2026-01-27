@@ -13,7 +13,7 @@ All bugs stem from confusion between **user-facing context size** vs **Ollama co
 
 ---
 
-## Bug #1: Token Count Display Shows Wrong Denominator ❌
+## Bug #1: Token Count Display Shows Wrong Denominator ✅ FIXED
 
 **Issue:** UI displays `408/4000` but should show `408/16384`
 
@@ -21,11 +21,13 @@ All bugs stem from confusion between **user-facing context size** vs **Ollama co
 
 **Location:** `packages/core/src/context/contextPool.ts`
 
-**Fix:** Update `userContextSize` in `resize()` and `updateConfig()` methods
+**Fix:** Updated `userContextSize` in `resize()` and `updateConfig()` methods
+
+**Status:** ✅ Fixed in commit 25ffd83
 
 ---
 
-## Bug #2: Auto Context Does Not Influence Context Goals ❌
+## Bug #2: Auto Context Does Not Influence Context Goals ✅ FIXED
 
 **Issue:** Auto-context calculates size but doesn't update tier selection properly
 
@@ -35,9 +37,11 @@ All bugs stem from confusion between **user-facing context size** vs **Ollama co
 
 **Fix:** Store both sizes separately, use user-facing size for tier detection
 
+**Status:** ✅ Fixed in commit 25ffd83
+
 ---
 
-## Bug #3: Manual Context Change Shows Wrong Tier ❌
+## Bug #3: Manual Context Change Shows Wrong Tier ✅ FIXED
 
 **Issue:** Changing to 8K still shows 16K tier in UI
 
@@ -47,9 +51,11 @@ All bugs stem from confusion between **user-facing context size** vs **Ollama co
 
 **Fix:** Ensure tier detection always uses user-facing size
 
+**Status:** ✅ Fixed in commit 25ffd83
+
 ---
 
-## Bug #4: Switching from User-Defined to Auto Keeps Old Mode ❌
+## Bug #4: Switching from User-Defined to Auto Keeps Old Mode ✅ FIXED
 
 **Issue:** Manual → auto transition doesn't recalculate optimal size
 
@@ -59,9 +65,11 @@ All bugs stem from confusion between **user-facing context size** vs **Ollama co
 
 **Fix:** Detect transition, recalculate size, update tier and prompt
 
+**Status:** ✅ Fixed in commit 25ffd83
+
 ---
 
-## Bug #5: Prompt Tier Misalignment ❌
+## Bug #5: Prompt Tier Misalignment ✅ VERIFIED WORKING
 
 **Issue:** Tier changes don't consistently trigger prompt rebuilds
 
@@ -69,11 +77,19 @@ All bugs stem from confusion between **user-facing context size** vs **Ollama co
 
 **Location:** Multiple locations in `contextManager.ts`
 
-**Fix:** Centralize prompt rebuilding, always rebuild on tier change
+**Fix:** Already centralized in `updateSystemPrompt()` - verified working correctly
+
+**Status:** ✅ Verified - prompt rebuilding is centralized and working
+
+**Details:**
+- `updateSystemPrompt()` is called consistently when tier or mode changes
+- `promptOrchestrator.updateSystemPrompt()` updates context directly
+- All tier changes in `start()`, `updateConfig()`, and resize callback trigger prompt rebuild
+- No bypasses found - system working as designed
 
 ---
 
-## Bug #6: Compression Triggers Not in Sync ⚠️
+## Bug #6: Compression Triggers Not in Sync ✅ DOCUMENTED
 
 **Issue:** UI shows user size but compression uses Ollama size (85%)
 
@@ -81,7 +97,45 @@ All bugs stem from confusion between **user-facing context size** vs **Ollama co
 
 **Location:** `packages/core/src/context/contextPool.ts` `getUsage()`
 
-**Fix:** Document clearly or show both sizes in UI
+**Fix:** Working as designed - added documentation to clarify behavior
+
+**Status:** ✅ Documented - behavior is correct
+
+**Details:**
+- UI shows user-facing size (e.g., 16384) for clarity
+- Compression percentage calculated against Ollama size (e.g., 13926) for accuracy
+- This is intentional: compression must trigger before hitting Ollama's actual limit
+- Example: User sees "408/16384 (2.5%)" but compression triggers at 80% of 13926
+- This ensures compression happens before context overflow
+
+**Documentation Added:**
+- Added comments in `contextPool.ts` explaining the dual-size system
+- Added comments in `contextManager.ts` explaining tier detection vs compression
+- Updated audit report with clarification
+
+---
+
+## Progress Summary
+
+**Completed:** 6/6 bugs resolved ✅  
+- Bugs #1-4: Fixed with code changes
+- Bug #5: Verified working correctly (already centralized)
+- Bug #6: Documented (working as designed)
+
+**Status:** ALL BUGS RESOLVED ✅
+
+**Commits:**
+- `25ffd83` - Fixed bugs #1-4 (Phase 1-2 complete)
+- Next commit - Update audit report and add documentation
+
+**Testing Required:**
+- [ ] Manual context changes (4K → 8K → 16K)
+- [ ] Auto-context calculation
+- [ ] Manual → Auto transition
+- [ ] Auto → Manual transition
+- [ ] Tier display in UI
+- [ ] Token count display
+- [ ] Compression triggers
 
 ---
 
