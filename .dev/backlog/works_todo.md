@@ -917,12 +917,28 @@ Safety: Emergency Brake 🚨
 - [x] Fix mid-stream compression (commit 383c008)
 - [x] Tests pass (444/444)
 - [x] Documentation updated (commit ba8a14e)
+- [x] UI messages implemented (commit eefb8b7)
+  - ⚠️ Context warning at 70-75%
+  - 💾 Session saved confirmation
+  - ❌ "Task failed successfully" for errors
+- [x] All tests passing (444/444)
 - [ ] Implement dynamic budget tracking
 - [ ] Tests pass
 - [ ] Implement checkpoint aging
 - [ ] Tests pass
 - [ ] Integration test passed
-- [ ] Committed.ts threshold
+- [ ] Committed
+
+**Completed So Far (Task 4):**
+1. ✅ Fixed contextPool percentage calculation (uses Ollama limit, not user size)
+2. ✅ Fixed contextDefaults threshold (0.80 with clear comment)
+3. ✅ Removed mid-stream compression (prevents message truncation)
+4. ✅ Updated documentation (simple & robust architecture)
+5. ✅ Added UI messages (warnings, confirmations, session saved)
+
+**Remaining Work:**
+1. ⏳ Dynamic budget tracking (account for checkpoint space in compression trigger)
+2. ⏳ Checkpoint aging (compress old checkpoints further over time).ts threshold
 - [ ] Tests pass
 - [ ] Checkpoint tracking added
 - [ ] Tests pass
