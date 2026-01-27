@@ -1,24 +1,45 @@
-# Task 2B Audit: Hardcoded Context Sizes
+# Task 2B Audit: Hardcoded Context Sizes & Missing User Profile Compilation
 
 **Date:** January 27, 2026  
 **Auditor:** AI Assistant  
-**Issue:** Hardcoded context size values in contextManager.ts should come from LLM_profiles.json
+**Issues:** 
+1. System doesn't build user-specific LLM_profiles.json (PRIORITY 1)
+2. Hardcoded context size values in contextManager.ts (PRIORITY 2)
 
 ---
 
 ## Executive Summary
 
-**CRITICAL ISSUE:** Context size mappings are hardcoded in `contextManager.ts` instead of being loaded from the user's model profiles. This violates the single-source-of-truth principle and prevents per-model context size customization.
+**TWO CRITICAL ISSUES FOUND:**
+
+### Issue 1: Missing User Profile Compilation (PRIORITY 1)
+System doesn't build user-specific `LLM_profiles.json` on user machine. Must be fixed FIRST.
+
+**Current:** Reads from app config `packages/cli/src/config/LLM_profiles.json`  
+**Expected:** Reads from user location `C:\Users\{user_name}\.ollm\LLM_profiles.json`
+
+**Impact:** CRITICAL
+- System uses master database with ALL models (not just user's)
+- No user-specific profile file created
+- Can't track user's installed models
+- Can't preserve user overrides
+
+### Issue 2: Hardcoded Context Sizes (PRIORITY 2)
+Context size mappings are hardcoded instead of loaded from user profile. Must be fixed AFTER Issue 1.
+
+**Current:** Hardcoded values in `contextManager.ts`  
+**Expected:** Load from user's `LLM_profiles.json`
 
 **Impact:** HIGH
 - Users cannot have model-specific context sizes
-- System ignores pre-calculated 85% values from LLM_profiles.json
+- System ignores pre-calculated 85% values
 - Hardcoded values don't match actual model capabilities
-- Breaks the intended architecture
 
 ---
 
-## Current Architecture (WRONG)
+## Issue 1: Missing User Profile Compilation
+
+### Current Architecture (WRONG)
 
 ### Hardcoded Values Location
 

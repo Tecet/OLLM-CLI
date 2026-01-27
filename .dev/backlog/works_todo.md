@@ -127,39 +127,321 @@
 
 ---
 
-## TASK 2B: Fix Hardcoded Context Sizes (Use ProfileManager)
+## TASK 2B-1: Build User-Specific LLM_profiles.json
 
 **Priority:** 🔥 CRITICAL | **Effort:** 1-2 days | **Status:** ⏳ Not Started
 
 **Audit Document:** `.dev/backlog/task-2b-audit-hardcoded-context-sizes.md`
 
-**Problem:** Context sizes are hardcoded in contextManager.ts instead of loaded from user's model profiles
+**Problem:** System doesn't build user-specific LLM_profiles.json on user machine
 
-**Root Cause:** ContextManager doesn't use ProfileManager - uses hardcoded values instead
+**Architecture Goal:**
+- Master DB (`packages/cli/src/config/LLM_profiles.json`) = READ ONLY by compiler
+- User file (`~/.ollm/LLM_profiles.json`) = READ by entire app
+- Future: Replace master DB with proper database, only change compiler
 
-**Impact:**
-- Users can't have model-specific context sizes
-- System ignores pre-calculated 85% values from LLM_profiles.json
-- Hardcoded values don't match actual model capabilities
-- Breaks single-source-of-truth architecture
+**Current References to Master DB (MUST FIX):**
+1. ✅ `packages/cli/src/features/profiles/ProfileManager.ts:8` - Direct import
+2. ✅ `packages/core/src/routing/modelDatabase.ts:165` - tryLoadProfilesFromCli()
+3. ✅ `packages/core/src/routing/modelDatabase.ts:207` - tryLoadRawProfiles()
+4. ℹ️ `packages/core/src/context/types.ts:369` - Comment only (OK)
+5. ℹ️ `packages/cli/src/config/types.ts:288` - Comment only (OK)
 
-**Fix:** Inject ProfileManager into ContextManager and use model profiles
+**Current Behavior (WRONG):**
+- System reads from app config: `packages/cli/src/config/LLM_profiles.json`
+- Contains ALL models (not just user's installed models)
+- No user-specific file created
+- Multiple parts of system access master DB directly
 
-**Files:** 
-- `packages/core/src/context/contextManager.ts` (lines 433-461)
-- `packages/core/src/context/contextModules.ts`
-- `packages/cli/src/features/profiles/ProfileManager.ts`
+**Expected Behavior (CORRECT):**
+- Compiler reads master DB: `packages/cli/src/config/LLM_profiles.json`
+- Compiler builds user file: `~/.ollm/LLM_profiles.json`
+- **ALL other parts** read from user file ONLY
+- User file contains ONLY installed models
+- Rebuilt on each app start
+
+**Build Process:**
+```
+1. App starts
+   ↓
+2. ProfileCompiler reads MASTER DB (packages/cli/src/config/LLM_profiles.json)
+   ↓
+3. Query Ollama: GET /api/tags (list installed models)
+   ↓
+4. Match installed models with master DB
+   ↓
+5. Compile user file: ~/.ollm/LLM_profiles.json (ONLY installed models)
+   ↓
+6. Add/remove models based on Ollama
+   ↓
+7. Preserve user overrides (if any)
+   ↓
+8. ALL other parts read from ~/.ollm/LLM_profiles.json
+```
+
+**File Location:**
+- Windows: `C:\Users\{user_name}\.ollm\LLM_profiles.json`
+- Linux/Mac: `~/.ollm/LLM_profiles.json`
+
+**File Structure (User File):**
+```json
+{
+  "version": "0.1.0",
+  "last_updated": "2026-01-27T10:00:00Z",
+  "source": "compiled from installed models",
+  "models": [
+    {
+      "id": "qwen2.5:7b",
+      "name": "Qwen2.5 7B",
+      "creator": "Alibaba Cloud",
+      "parameters": "7.6B",
+      "quantization": "4-bit (estimated)",
+      "description": "A comprehensive 7B parameter model...",
+      "abilities": ["General Purpose", "Coding", "Math", "Multilingual"],
+      "tool_support": true,
+      "ollama_url": "https://ollama.com/library/qwen2.5",
+      "max_context_window": 131072,
+      "default_context": 4096,
+      "context_profiles": [
+        {
+          "size": 4096,
+          "size_label": "4k",
+          "ollama_context_size": 3482,
+          "vram_estimate": "5.5 GB",
+          "vram_estimate_gb": 5.5
+        },
+        {
+          "size": 8192,
+          "size_label": "8k",
+          "ollama_context_size": 6963,
+          "vram_estimate": "6.0 GB",
+          "vram_estimate_gb": 6.0
+        }
+      ]
+    }
+  ]
+}
+```
+
+**Implementation Steps:**
+
+**Step 1: Create ProfileCompiler Service (4-5h)**
+```typescript
+// packages/cli/src/services/profileCompiler.ts
+class ProfileCompiler {
+  private masterDbPath: string;  // packages/cli/src/config/LLM_profiles.json
+  private userProfilePath: string;  // ~/.ollm/LLM_profiles.json
+  
+  async compileUserProfiles(): Promise<void> {
+    // 1. Load MASTER database (ONLY place that reads from app config)
+    const masterDb = await this.loadMasterDatabase();
+    
+    // 2. Query Ollama for installed models
+    const installedModels = await this.getInstalledModels();
+    
+    // 3. Match and compile (copy ALL metadata from master)
+    const userProfiles = this.matchModels(installedModels, masterDb);
+    
+    // 4. Load existing user file (preserve overrides)
+    const existingProfiles = await this.loadUserProfiles();
+    
+    // 5. Merge (preserve user overrides, update from master)
+    const merged = this.mergeProfiles(userProfiles, existingProfiles);
+    
+    // 6. Save to user location
+    await this.saveUserProfiles(merged);
+  }
+  
+  private async loadMasterDatabase(): Promise<any> {
+    // ONLY place that reads from packages/cli/src/config/LLM_profiles.json
+    const path = join(process.cwd(), 'packages', 'cli', 'src', 'config', 'LLM_profiles.json');
+    const raw = readFileSync(path, 'utf-8');
+    return JSON.parse(raw);
+  }
+  
+  private async getInstalledModels(): Promise<string[]> {
+    // Query Ollama: GET /api/tags
+    const response = await fetch('http://localhost:11434/api/tags');
+    const data = await response.json();
+    return data.models.map(m => m.name);
+  }
+  
+  private matchModels(installed: string[], masterDb: any): any[] {
+    // Match installed models with master database
+    // Copy ALL metadata (not just context profiles)
+    return installed
+      .map(modelId => {
+        const masterEntry = masterDb.models.find(m => m.id === modelId);
+        if (masterEntry) {
+          // Copy entire entry (all metadata)
+          return { ...masterEntry };
+        }
+        return null;
+      })
+      .filter(Boolean);
+  }
+  
+  private mergeProfiles(newProfiles: any[], existing: any[]): any[] {
+    // Preserve user overrides while updating from master
+    // User overrides: custom context sizes, VRAM estimates, etc.
+  }
+}
+```
+
+**Step 2: Update ProfileManager to Read from User File (3-4h)**
+```typescript
+// packages/cli/src/features/profiles/ProfileManager.ts
+
+// OLD (WRONG):
+import profilesData from '../../config/LLM_profiles.json' with { type: 'json' };
+
+// NEW (CORRECT):
+constructor() {
+  // Read from USER location ONLY
+  const userProfilePath = join(homedir(), '.ollm', 'LLM_profiles.json');
+  
+  if (existsSync(userProfilePath)) {
+    this.profiles = this.loadFromFile(userProfilePath);
+  } else {
+    // First run: trigger compilation
+    await this.compileUserProfiles();
+    this.profiles = this.loadFromFile(userProfilePath);
+  }
+}
+```
+
+**Step 3: Update modelDatabase.ts to Read from User File (2-3h)**
+```typescript
+// packages/core/src/routing/modelDatabase.ts
+
+// OLD (WRONG):
+function tryLoadProfilesFromCli(): ModelEntry[] | null {
+  const p = join(process.cwd(), 'packages', 'cli', 'src', 'config', 'LLM_profiles.json');
+  // ...
+}
+
+// NEW (CORRECT):
+function tryLoadProfilesFromUser(): ModelEntry[] | null {
+  const userHome = process.env.VITEST 
+    ? join(tmpdir(), `ollm-vitest-${process.pid}`)
+    : homedir();
+  const p = join(userHome, '.ollm', 'LLM_profiles.json');
+  
+  if (!existsSync(p)) return null;
+  const raw = readFileSync(p, 'utf-8');
+  // ...
+}
+```
+
+**Step 4: Integrate into App Startup (1-2h)**
+```typescript
+// packages/cli/src/cli.tsx or startup logic
+async function initializeApp() {
+  // Compile user profiles on startup (FIRST THING)
+  const compiler = new ProfileCompiler();
+  await compiler.compileUserProfiles();
+  
+  // Now ProfileManager loads from ~/.ollm/LLM_profiles.json
+  const profileManager = new ProfileManager();
+  
+  // ... continue startup
+}
+```
+
+**Step 5: Handle Model Changes (1-2h)**
+```typescript
+// When user installs/removes models
+async function onModelListChanged() {
+  // Re-compile user profiles
+  await profileCompiler.compileUserProfiles();
+  
+  // Reload ProfileManager
+  profileManager.reload();
+}
+```
+
+**Step 6: Testing (4-5h)**
+- Test first run (no user file exists)
+- Test subsequent runs (file exists)
+- Test model installation (add to file)
+- Test model removal (remove from file)
+- Test user overrides (preserved)
+- Test fallback (Ollama not available)
+- Verify NO code reads from master DB except compiler
 
 **Progress:**
-- [x] Audit complete (see audit document)
-- [x] Root cause identified
-- [x] Solution designed
+- [ ] Docs read
+- [ ] Repo scanned
+- [ ] All references to master DB identified
 - [ ] Plan approved
 - [ ] Backup created
 - [ ] Tests baseline
-- [ ] Code changed
+- [ ] ProfileCompiler created
 - [ ] Tests pass
+- [ ] ProfileManager updated (read from user file)
+- [ ] Tests pass
+- [ ] modelDatabase.ts updated (read from user file)
+- [ ] Tests pass
+- [ ] Startup integration
+- [ ] Tests pass
+- [ ] Model change handling
+- [ ] Tests pass
+- [ ] Verify ONLY compiler reads master DB
+- [ ] Manual testing
 - [ ] Committed
+
+**Success Criteria:**
+- ✅ User file created on first run
+- ✅ User file updated on each startup
+- ✅ Contains ONLY installed models
+- ✅ Preserves user overrides
+- ✅ ALL metadata copied from master
+- ✅ ONLY ProfileCompiler reads master DB
+- ✅ ALL other code reads user file
+- ✅ Future DB migration = change compiler only
+
+**Dependencies:**
+- Must complete BEFORE Task 2B-2 (hardcoded values)
+- Blocks Task 2B-2 (needs user file to exist)
+
+---
+
+## TASK 2B-2: Fix Hardcoded Context Sizes (Use User Profile)
+
+**Priority:** 🔥 CRITICAL | **Effort:** 1 day | **Status:** ⏳ Not Started (Blocked by 2B-1)
+
+**Audit Document:** `.dev/backlog/task-2b-audit-hardcoded-context-sizes.md`
+
+**Problem:** Context sizes are hardcoded in contextManager.ts instead of loaded from user's profile
+
+**Depends On:** Task 2B-1 (user profile file must exist first)
+
+**Current Behavior (WRONG):**
+```typescript
+// Hardcoded in contextManager.ts (lines 433-461)
+private getTierForSize(size: number): ContextTier {
+  const tiers = [
+    { size: 4096, tier: TIER_1 },    // ❌ HARDCODED
+    { size: 8192, tier: TIER_2 },    // ❌ HARDCODED
+    { size: 16384, tier: TIER_3 },   // ❌ HARDCODED
+    { size: 32768, tier: TIER_4 },   // ❌ HARDCODED
+    { size: 65536, tier: TIER_5 }    // ❌ HARDCODED
+  ];
+}
+```
+
+**Expected Behavior (CORRECT):**
+```typescript
+// Load from user's profile
+const profile = profileManager.getModelEntry(modelId);
+const contextProfiles = profile.context_profiles;
+
+// Use model-specific sizes
+const tier = this.getTierForSize(size, contextProfiles);
+
+// Use pre-calculated 85% value
+context.maxTokens = profile.ollama_context_size;  // Not user selection
+```
 
 **Implementation Steps:**
 
@@ -167,46 +449,38 @@
 - Import ProfileManager in contextManager.ts
 - Add to constructor parameters
 - Store modelId and load model entry
-- Make optional with fallback to hardcoded values
+- Make optional with fallback
 
 **Step 2: Replace getTierForSize() (2-3h)**
 - Use model's context_profiles instead of hardcoded array
 - Map sizes to tiers based on model's max_context_window
-- Handle models with different capabilities (32K vs 128K)
 
 **Step 3: Replace getTierTargetSize() (1-2h)**
 - Use model's context_profiles to find target size
 - Return closest available profile for tier
-- Respect model's maximum context window
 
 **Step 4: Use ollama_context_size (1-2h)**
 - Replace user selection with pre-calculated 85% value
 - Use profile.ollama_context_size instead of profile.size
-- Update all context size assignments
 
 **Step 5: Testing (4-6h)**
 - Unit tests with different models
 - Integration tests for full flow
 - Manual testing with real models
-- Verify fallback works when ProfileManager not available
 
-**Expected Behavior After Fix:**
-```typescript
-// User selects 16K context
-const userSelection = 16384;
-
-// System loads model profile
-const profile = profileManager.getModelEntry('qwen2.5:7b')
-  .context_profiles.find(p => p.size === 16384);
-
-// Uses pre-calculated 85% value
-context.maxTokens = profile.ollama_context_size;  // 13926, not 16384
-
-// Tier determined by model capabilities
-const tier = getTierForSize(13926);  // Based on model's profiles, not hardcoded
-```
+**Progress:**
+- [ ] Task 2B-1 complete (BLOCKER)
+- [ ] Docs read
+- [ ] Repo scanned
+- [ ] Plan approved
+- [ ] Backup created
+- [ ] Tests baseline
+- [ ] Code changed
+- [ ] Tests pass
+- [ ] Committed
 
 **Dependencies:**
+- **BLOCKED BY:** Task 2B-1 (user profile file must exist)
 - Must complete after Task 1, 2, 3 (context foundation)
 - Should complete before Task 4 (compression needs accurate sizing)
 
