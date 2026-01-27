@@ -272,7 +272,7 @@ export function ContextManagerProvider({
   const [currentTier, setCurrentTier] = useState<string>('Tier 3');
   const [effectivePromptTier, setEffectivePromptTier] = useState<string>('Tier 3');
   const [actualContextTier, setActualContextTier] = useState<string>('Tier 3');
-  const [autoSizeEnabled, setAutoSizeEnabled] = useState(true);
+  const [autoSizeEnabled, setAutoSizeEnabled] = useState(config?.autoSize ?? true); // Initialize from config
   const [forceUpdateCounter, setForceUpdateCounter] = useState(0);
 
   // Refs to hold latest tier values for callbacks (avoids stale-closure issues)
@@ -512,6 +512,14 @@ export function ContextManagerProvider({
         manager.on('compressed', () => {
           setCompressing(false);
           setUsage(manager.getUsage());
+        });
+        
+        // Listen for config updates to sync autoSizeEnabled state
+        manager.on('config-updated', (updatedConfig) => {
+          const cfg = updatedConfig as ContextConfig;
+          if (cfg.autoSize !== undefined) {
+            setAutoSizeEnabled(cfg.autoSize);
+          }
         });
         
         // Get initial usage

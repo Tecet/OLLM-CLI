@@ -840,11 +840,24 @@ export class ConversationContextManager extends EventEmitter implements ContextM
     return order[index - 1];
   }
 
-  private getRecommendedAutoSize(maxPossibleContext: number): number {
-    const maxTier = this.getTierForSize(maxPossibleContext);
+  private getRecommendedAutoSize(maxPossibleOllamaContext: number): number {
+    // Convert Ollama size to user-facing size for tier detection
+    const maxPossibleUserSize = this.getUserSizeFromOllama(maxPossibleOllamaContext);
+    
+    // Get tier for the maximum possible user-facing size
+    const maxTier = this.getTierForSize(maxPossibleUserSize);
+    
+    // Recommend one tier lower for safety
     const recommendedTier = this.getLowerTier(maxTier);
-    const recommendedSize = this.getTierTargetSize(recommendedTier);
-    return Math.min(recommendedSize, maxPossibleContext);
+    
+    // Get the user-facing target size for recommended tier
+    const recommendedUserSize = this.getTierTargetSize(recommendedTier);
+    
+    // Convert back to Ollama size for actual allocation
+    const recommendedOllamaSize = this.getOllamaContextSize(recommendedUserSize);
+    
+    // Return the smaller of recommended or maximum possible (both in Ollama sizes)
+    return Math.min(recommendedOllamaSize, maxPossibleOllamaContext);
   }
 
   /**

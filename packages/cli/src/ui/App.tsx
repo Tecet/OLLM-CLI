@@ -1146,7 +1146,8 @@ export function App({ config }: AppProps) {
     targetSize: persistedContextSize || config.context.targetSize,
     minSize: config.context.minSize,
     maxSize: config.context.maxSize,
-    autoSize: false, // Disable auto-size - let user control context size
+    // Auto-size by default if no persisted context size, otherwise use manual mode
+    autoSize: !persistedContextSize,
     vramBuffer: config.context.vramBuffer,
     compression: {
       enabled: config.context.compressionEnabled,
