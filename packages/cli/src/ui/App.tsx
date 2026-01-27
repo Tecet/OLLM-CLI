@@ -1133,9 +1133,12 @@ export function App({ config }: AppProps) {
   };
 
   // Model info for context sizing (from config or defaults)
+  const modelEntry = profileManager.getModelEntry(initialModel);
   const modelInfo = {
     parameters: extractModelSize(initialModel),
     contextLimit: persistedContextSize || config.context?.maxSize || 8192,
+    contextProfiles: modelEntry.context_profiles || [],
+    modelId: initialModel,
   };
   
   // Context manager configuration - maps CLI config to core config format

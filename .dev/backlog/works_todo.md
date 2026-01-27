@@ -703,13 +703,13 @@ Your edits will be preserved on future startups.
 
 ## TASK 2B-2: Fix Hardcoded Context Sizes (Use User Profile)
 
-**Priority:** 🔥 CRITICAL | **Effort:** 1 day | **Status:** ⏳ Not Started (Blocked by 2B-1)
+**Priority:** 🔥 CRITICAL | **Effort:** 1 day | **Status:** ⏳ In Progress
 
 **Audit Document:** `.dev/backlog/task-2b-audit-hardcoded-context-sizes.md`
 
 **Problem:** Context sizes are hardcoded in contextManager.ts instead of loaded from user's profile
 
-**Depends On:** Task 2B-1 (user profile file must exist first)
+**Depends On:** Task 2B-1 (user profile file must exist first) - ✅ COMPLETED
 
 **Current Behavior (WRONG):**
 ```typescript
@@ -738,46 +738,65 @@ const tier = this.getTierForSize(size, contextProfiles);
 context.maxTokens = profile.ollama_context_size;  // Not user selection
 ```
 
-**Implementation Steps:**
+**Implementation Plan:**
 
 **Step 1: Add ProfileManager Dependency (2-3h)**
 - Import ProfileManager in contextManager.ts
-- Add to constructor parameters
+- Add to constructor parameters (optional with fallback)
 - Store modelId and load model entry
-- Make optional with fallback
+- Make optional to avoid breaking existing code
 
 **Step 2: Replace getTierForSize() (2-3h)**
 - Use model's context_profiles instead of hardcoded array
 - Map sizes to tiers based on model's max_context_window
+- Fallback to hardcoded values if profile not available
 
 **Step 3: Replace getTierTargetSize() (1-2h)**
 - Use model's context_profiles to find target size
 - Return closest available profile for tier
+- Fallback to hardcoded values if profile not available
 
 **Step 4: Use ollama_context_size (1-2h)**
 - Replace user selection with pre-calculated 85% value
 - Use profile.ollama_context_size instead of profile.size
+- Update all references to context size
 
 **Step 5: Testing (4-6h)**
 - Unit tests with different models
 - Integration tests for full flow
 - Manual testing with real models
+- Verify fallback behavior
 
 **Progress:**
-- [ ] Task 2B-1 complete (BLOCKER)
-- [ ] Docs read
-- [ ] Repo scanned
-- [ ] Plan approved
+- [x] Task 2B-1 complete (UNBLOCKED)
+- [x] Docs read
+- [x] Repo scanned
+- [x] Plan created
 - [ ] Backup created
 - [ ] Tests baseline
-- [ ] Code changed
+- [ ] ProfileManager dependency added
 - [ ] Tests pass
+- [ ] getTierForSize() replaced
+- [ ] Tests pass
+- [ ] getTierTargetSize() replaced
+- [ ] Tests pass
+- [ ] ollama_context_size usage implemented
+- [ ] Tests pass
+- [ ] Integration testing
+- [ ] Manual testing
 - [ ] Committed
 
+**Success Criteria:**
+- ✅ ContextManager uses ProfileManager
+- ✅ Context sizes come from model profiles
+- ✅ Pre-calculated 85% values used
+- ✅ Tier mapping based on model capabilities
+- ✅ Fallback to hardcoded values if profile missing
+- ✅ All tests passing (443/443)
+
 **Dependencies:**
-- **BLOCKED BY:** Task 2B-1 (user profile file must exist)
-- Must complete after Task 1, 2, 3 (context foundation)
-- Should complete before Task 4 (compression needs accurate sizing)
+- ✅ Task 2B-1 complete (user file compilation) - COMPLETED
+- Must complete before Task 4 (compression needs accurate sizing)
 
 ---
 

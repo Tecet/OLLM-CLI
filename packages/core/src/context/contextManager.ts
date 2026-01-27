@@ -433,6 +433,26 @@ export class ConversationContextManager extends EventEmitter implements ContextM
   private selectedTier: ContextTier = ContextTier.TIER_3_STANDARD;
 
   private getTierForSize(size: number): ContextTier {
+    // Use model-specific context profiles if available
+    if (this.modelInfo.contextProfiles && this.modelInfo.contextProfiles.length > 0) {
+      const profiles = this.modelInfo.contextProfiles;
+      const maxWindow = this.modelInfo.contextLimit;
+      
+      // Find the profile that matches or exceeds the requested size
+      const matchingProfile = profiles.find(p => p.size >= size);
+      if (matchingProfile) {
+        const profileSize = matchingProfile.size;
+        
+        // Map size to tier based on model's capabilities
+        if (profileSize >= 65536 && maxWindow >= 65536) return ContextTier.TIER_5_ULTRA;
+        if (profileSize >= 32768 && maxWindow >= 32768) return ContextTier.TIER_4_PREMIUM;
+        if (profileSize >= 16384) return ContextTier.TIER_3_STANDARD;
+        if (profileSize >= 8192) return ContextTier.TIER_2_BASIC;
+        return ContextTier.TIER_1_MINIMAL;
+      }
+    }
+    
+    // Fallback to hardcoded tiers if no profiles available
     const tiers: Array<{ size: number; tier: ContextTier }> = [
       { size: 4096, tier: ContextTier.TIER_1_MINIMAL },
       { size: 8192, tier: ContextTier.TIER_2_BASIC },
@@ -451,6 +471,34 @@ export class ConversationContextManager extends EventEmitter implements ContextM
   }
 
   private getTierTargetSize(tier: ContextTier): number {
+    // Use model-specific context profiles if available
+    if (this.modelInfo.contextProfiles && this.modelInfo.contextProfiles.length > 0) {
+      const profiles = this.modelInfo.contextProfiles;
+      
+      // Map tier to target size
+      const tierSizes: Record<ContextTier, number> = {
+        [ContextTier.TIER_1_MINIMAL]: 4096,
+        [ContextTier.TIER_2_BASIC]: 8192,
+        [ContextTier.TIER_3_STANDARD]: 16384,
+        [ContextTier.TIER_4_PREMIUM]: 32768,
+        [ContextTier.TIER_5_ULTRA]: 65536
+      };
+      
+      const targetSize = tierSizes[tier];
+      
+      // Find closest profile that meets or exceeds target
+      const matchingProfile = profiles.find(p => p.size >= targetSize);
+      if (matchingProfile) {
+        return matchingProfile.size;
+      }
+      
+      // If no profile meets target, return largest available
+      if (profiles.length > 0) {
+        return profiles[profiles.length - 1].size;
+      }
+    }
+    
+    // Fallback to hardcoded sizes if no profiles available
     const sizes: Record<ContextTier, number> = {
       [ContextTier.TIER_1_MINIMAL]: 4096,
       [ContextTier.TIER_2_BASIC]: 8192,

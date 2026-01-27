@@ -135,6 +135,22 @@ export interface ContextUsage {
 }
 
 /**
+ * Context profile for a specific context size
+ */
+export interface ContextProfile {
+  /** User-facing context size */
+  size: number;
+  /** Display label (e.g., "4k", "8k") */
+  size_label?: string;
+  /** Pre-calculated Ollama context size (85% of size) */
+  ollama_context_size: number;
+  /** VRAM estimate in GB */
+  vram_estimate_gb?: number;
+  /** VRAM estimate string (e.g., "5.5 GB") */
+  vram_estimate?: string;
+}
+
+/**
  * Model information for context calculations
  */
 export interface ModelInfo {
@@ -142,6 +158,10 @@ export interface ModelInfo {
   parameters: number;
   /** Maximum context tokens supported */
   contextLimit: number;
+  /** Optional: Model-specific context profiles (from LLM_profiles.json) */
+  contextProfiles?: ContextProfile[];
+  /** Optional: Model ID for profile lookup */
+  modelId?: string;
 }
 
 /**
