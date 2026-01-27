@@ -1,13 +1,36 @@
 # Context Compression and Checkpoint System
 
 **Last Updated:** January 27, 2026  
-**Status:** Source of Truth
+**Status:** Source of Truth (with known issues - see below)
 
 **Related Documents:**
 - `dev_ContextManagement.md` - Context sizing, tiers, VRAM
 - `dev_PromptSystem.md` - Prompt structure, tiers, modes
 - `dev_ModelDB.md` - Model database schema and access patterns
 - `dev_ModelManagement.md` - Model size detection for reliability
+
+---
+
+## ⚠️ Known Issues (To Be Fixed in Task 4)
+
+The following issues have been identified and will be fixed in Task 4:
+
+1. **contextDefaults.ts** - Confusing compression threshold (0.68 = "80% of 85%")
+   - Current: `threshold: 0.68` with misleading comment
+   - Issue: Threshold is relative to user size, not Ollama size
+   - Fix: Update threshold and clarify comments
+
+2. **contextPool.ts** - Percentage calculated against wrong base
+   - Current: `percentage = currentTokens / userContextSize * 100`
+   - Issue: Should use `currentSize` (Ollama limit), not `userContextSize`
+   - Fix: Change to `percentage = currentTokens / currentSize * 100`
+
+3. **Compression trigger** - Uses wrong percentage base
+   - Current: Triggers at 68% of user's selection
+   - Should: Trigger at 80% of Ollama's limit
+   - Impact: Compression triggers at wrong time
+
+**Status:** Documented in `.dev/backlog/works_todo.md` Task 4
 
 ---
 

@@ -57,20 +57,51 @@ Context tiers are **labels** that represent different context window sizes. They
 
 ### Tier Definitions
 
-| Tier | Context Size | Ollama Size (85%) | Use Case |
-|------|--------------|-------------------|----------|
-| Tier 1 (Minimal) | 2K, 4K | 1700, 3400 | Quick tasks, minimal context |
-| Tier 2 (Basic) | 8K | 6800 | Standard conversations |
-| Tier 3 (Standard) | 16K | 13600 | Complex tasks, code review |
-| Tier 4 (Premium) | 32K | 27200 | Large codebases, long conversations |
-| Tier 5 (Ultra) | 64K, 128K | 54400, 108800 | Maximum context, research tasks |
+Tiers are now **dynamically mapped** based on the model's available context profiles. The system no longer uses hardcoded size thresholds.
+
+**Example with 4 profiles:**
+
+| Tier | Profile Index | Use Case |
+|------|---------------|----------|
+| Tier 1 (Minimal) | Profile 0 | Quick tasks, minimal context |
+| Tier 2 (Basic) | Profile 1 | Standard conversations |
+| Tier 3 (Standard) | Profile 2 | Complex tasks, code review |
+| Tier 4 (Premium) | Profile 3 | Large codebases, long conversations |
+| Tier 5 (Ultra) | Profile 3 | Maximum context (same as Tier 4 if only 4 profiles) |
+
+**Example with 5+ profiles:**
+
+| Tier | Profile Index | Calculation |
+|------|---------------|-------------|
+| Tier 1 (Minimal) | 0 | First profile |
+| Tier 2 (Basic) | 25% position | Math.floor(totalProfiles * 0.25) |
+| Tier 3 (Standard) | 50% position | Math.floor(totalProfiles * 0.5) |
+| Tier 4 (Premium) | 75% position | Math.floor(totalProfiles * 0.75) |
+| Tier 5 (Ultra) | Last profile | totalProfiles - 1 |
 
 **Key Points:**
 - Tiers are **labels only** - they don't make decisions
 - Context size drives everything
-- Each tier has specific context sizes (not ranges)
+- Tier mapping adapts to model's available profiles (1-5+ profiles)
+- No hardcoded size thresholds (4096, 8192, 16384, etc.)
 - Tiers are used for prompt selection (see `dev_PromptSystem.md`)
 - The 85% values are **pre-calculated by devs** in `LLM_profiles.json`
+
+### Tier Detection Logic
+
+```typescript
+// OLD (WRONG - hardcoded thresholds):
+if (size >= 65536) return TIER_5_ULTRA;
+if (size >= 32768) return TIER_4_PREMIUM;
+if (size >= 16384) return TIER_3_STANDARD;
+// ...
+
+// NEW (CORRECT - profile-based):
+const profiles = modelInfo.contextProfiles.sort((a, b) => a.size - b.size);
+const matchingProfile = profiles.find(p => p.size >= size);
+const profileIndex = profiles.indexOf(matchingProfile);
+// Map profileIndex to tier based on total profile count
+```
 
 ---
 
@@ -130,9 +161,10 @@ Ollama (stops at ollamaContextSize)
   "models": [{
     "id": "llama3.2:3b",
     "context_profiles": [{
-      "size": 4096,                    // User sees this
-      "ollama_context_size": 3482,     // We send this to Ollama (85%)
-      "size_label": "4k"
+      "size": 4096,                    // User sees this (for tier detection)
+      "ollama_context_size": 3482,     // We send this to Ollama valuse set by devs
+      "size_label": "4k",
+      "vram_estimate_gb": 2.0          // VRAM estimate
     }]
   }]
 }
@@ -143,6 +175,12 @@ Ollama (stops at ollamaContextSize)
 - Empirically tested values
 - No runtime calculation = no bugs
 - Single source of truth
+
+**Critical Architecture:**
+- **Tier detection** uses `size` field (user-facing value)
+- **Ollama limit** uses `ollama_context_size` field (85% pre-calculated)
+- **Compression triggers** use percentage of `ollama_context_size`
+- The 85% cap is internal and should NOT degrade tier capabilities
 
 ---
 
@@ -468,6 +506,31 @@ provider.chat({ options: { num_ctx: ollamaContextSize } });
 ```typescript
 const trigger = userContextSize * 0.75;  // Wrong - uses user selection
 const trigger = context.maxTokens * 0.75;  // Correct - uses ollama limit
+```
+
+### ❌ Hardcoding tier thresholds
+```typescript
+// Wrong - hardcoded thresholds
+if (size >= 16384) return TIER_3_STANDARD;
+if (size >= 8192) return TIER_2_BASIC;
+
+// Correct - profile-based mapping
+const profiles = modelInfo.contextProfiles.sort((a, b) => a.size - b.size);
+const matchingProfile = profiles.find(p => p.size >= size);
+const profileIndex = profiles.indexOf(matchingProfile);
+// Map profileIndex to tier based on total profile count
+```
+
+### ❌ Using hardcoded sizes for tier targets
+```typescript
+// Wrong - hardcoded sizes
+const tierSizes = { TIER_1: 4096, TIER_2: 8192, TIER_3: 16384 };
+return tierSizes[tier];
+
+// Correct - profile-based selection
+const sortedProfiles = [...profiles].sort((a, b) => a.size - b.size);
+const targetIndex = calculateIndexForTier(tier, sortedProfiles.length);
+return sortedProfiles[targetIndex].size;
 ```
 
 ---
