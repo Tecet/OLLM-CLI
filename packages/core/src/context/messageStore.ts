@@ -82,6 +82,16 @@ export class MessageStore {
     } catch (_e) {
       // ignore logging errors
     }
+    
+    // ✅ VALIDATION: Ensure token count is valid
+    if (tokenCount < 0) {
+      console.error('[MessageStore] INVALID: Negative token count!', {
+        messageId: message.id,
+        tokenCount,
+        contentLength: message.content.length
+      });
+      throw new Error(`Invalid token count for message ${message.id}: ${tokenCount}`);
+    }
 
     if (!this.memoryGuard.canAllocate(tokenCount)) {
       await this.memoryGuard.checkMemoryLevelAndAct();
@@ -114,8 +124,35 @@ export class MessageStore {
     }
 
     context.messages.push(message);
+    const previousTokenCount = context.tokenCount;
     context.tokenCount += tokenCount;
     this.contextPool.setCurrentTokens(context.tokenCount);
+    
+    // ✅ ASSERTION: Verify token count consistency (development only)
+    if (this.isDevelopmentMode() && message.role === 'assistant') {
+      const calculatedTotal = this.tokenCounter.countConversationTokens(context.messages);
+      const drift = Math.abs(calculatedTotal - context.tokenCount);
+      
+      if (drift > 10) {
+        console.warn('[MessageStore] TOKEN DRIFT DETECTED!', {
+          tracked: context.tokenCount,
+          calculated: calculatedTotal,
+          drift,
+          messageCount: context.messages.length,
+          lastMessageTokens: tokenCount
+        });
+      }
+    }
+    
+    // ⚠️ WARNING: Check if exceeding limit
+    if (context.tokenCount > context.maxTokens) {
+      console.warn('[MessageStore] OVERFLOW: Token count exceeds limit!', {
+        current: context.tokenCount,
+        max: context.maxTokens,
+        overage: context.tokenCount - context.maxTokens,
+        percentage: Math.round((context.tokenCount / context.maxTokens) * 100)
+      });
+    }
 
     if (message.role === 'user') {
       // Snapshot heuristics for user turns (usage-based and turn-based).
@@ -159,21 +196,32 @@ export class MessageStore {
       );
 
       if (this.config.compression.enabled) {
-        const usage = this.getUsage();
-        const usageFraction = usage.percentage / 100;
+        // Get dynamic budget information
+        const budget = this.getBudget();
+        const budgetFraction = budget.budgetPercentage / 100;
         
-        // Warn user when context is getting full (70-75% range)
-        if (usageFraction >= 0.70 && usageFraction < 0.75) {
+        // Warn user when available budget is getting full (70-75% range)
+        if (budgetFraction >= 0.70 && budgetFraction < 0.75) {
           this.emit('context-warning-low', {
-            percentage: usage.percentage,
-            currentTokens: usage.currentTokens,
-            maxTokens: usage.maxTokens,
-            message: 'Context is filling up - compression will trigger soon'
+            percentage: budget.budgetPercentage,
+            currentTokens: budget.conversationTokens,
+            availableBudget: budget.availableBudget,
+            checkpointTokens: budget.checkpointTokens,
+            message: 'Available budget is filling up - compression will trigger soon'
           });
         }
         
-        // Trigger compression at threshold
-        if (usageFraction >= this.config.compression.threshold) {
+        // Trigger compression at threshold (80% of AVAILABLE BUDGET, not total)
+        // This accounts for space used by system prompt and checkpoints
+        if (budgetFraction >= this.config.compression.threshold) {
+          console.log('[ContextManager] Compression triggered by budget threshold', {
+            budgetPercentage: budget.budgetPercentage.toFixed(1) + '%',
+            conversationTokens: budget.conversationTokens,
+            availableBudget: budget.availableBudget,
+            checkpointTokens: budget.checkpointTokens,
+            systemPromptTokens: budget.systemPromptTokens,
+            totalOllamaSize: budget.totalOllamaSize
+          });
           await this.compress();
         }
       }
@@ -275,6 +323,13 @@ export class MessageStore {
   resetSnapshotTracking(): void {
     this.lastSnapshotTokens = 0;
     this.messagesSinceLastSnapshot = 0;
+  }
+  
+  /**
+   * Check if running in development mode
+   */
+  private isDevelopmentMode(): boolean {
+    return process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test';
   }
 
   /**

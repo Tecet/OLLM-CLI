@@ -132,6 +132,8 @@ export class PromptOrchestrator {
     currentContext.messages.unshift(systemPrompt);
     currentContext.systemPrompt = systemPrompt;
 
+    // Recalculate total tokens (system prompt changed, so full recalc needed)
+    // This includes the new system prompt + all existing messages
     currentContext.tokenCount = this.tokenCounter.countConversationTokens(
       currentContext.messages
     );

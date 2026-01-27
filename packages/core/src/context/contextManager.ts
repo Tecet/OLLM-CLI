@@ -436,6 +436,60 @@ export class ConversationContextManager extends EventEmitter implements ContextM
   }
 
   /**
+   * Get dynamic budget information for compression
+   * 
+   * Available budget = Ollama limit - system prompt - checkpoints
+   * This is the space available for new conversation before compression triggers.
+   */
+  getBudget(): ContextBudget {
+    const context = this.getContext();
+    const ollamaSize = this.contextPool.getCurrentSize(); // Actual Ollama limit (85% pre-calculated)
+    
+    // Calculate system prompt tokens
+    const systemPromptTokens = context.messages
+      .filter(m => m.role === 'system')
+      .reduce((sum, m) => sum + (m.tokenCount || 0), 0);
+    
+    // Calculate checkpoint tokens
+    const checkpointTokens = (context.checkpoints || [])
+      .reduce((sum, cp) => sum + cp.currentTokens, 0);
+    
+    // Calculate available budget
+    const availableBudget = Math.max(0, ollamaSize - systemPromptTokens - checkpointTokens);
+    
+    // Calculate current conversation tokens (excluding system + checkpoints)
+    const conversationTokens = context.tokenCount - systemPromptTokens - checkpointTokens;
+    
+    // Calculate budget percentage
+    const budgetPercentage = availableBudget > 0
+      ? Math.min(100, Math.max(0, (conversationTokens / availableBudget) * 100))
+      : 100;
+    
+    return {
+      totalOllamaSize: ollamaSize,
+      systemPromptTokens,
+      checkpointTokens,
+      availableBudget,
+      conversationTokens,
+      budgetPercentage
+    };
+  }
+
+  /**
+   * Get token counting metrics
+   */
+  getTokenMetrics() {
+    return this.tokenCounter.getMetrics();
+  }
+
+  /**
+   * Reset token counting metrics
+   */
+  resetTokenMetrics(): void {
+    this.tokenCounter.resetMetrics();
+  }
+
+  /**
    * Add message to context
    */
   async addMessage(message: Message): Promise<void> {

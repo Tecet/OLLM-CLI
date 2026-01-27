@@ -17,6 +17,60 @@ import type { ProviderAdapter } from '../provider/types.js';
 const TOOL_CALL_OVERHEAD = 50;
 
 /**
+ * Metrics for token counting performance and behavior
+ */
+export class TokenCounterMetrics {
+  private cacheHits = 0;
+  private cacheMisses = 0;
+  private recalculations = 0;
+  private totalTokensCounted = 0;
+  private largestMessage = 0;
+  private startTime = Date.now();
+
+  recordCacheHit(): void {
+    this.cacheHits++;
+  }
+
+  recordCacheMiss(tokens: number): void {
+    this.cacheMisses++;
+    this.totalTokensCounted += tokens;
+    this.largestMessage = Math.max(this.largestMessage, tokens);
+  }
+
+  recordRecalculation(messageCount: number, totalTokens: number): void {
+    this.recalculations++;
+  }
+
+  getStats() {
+    const total = this.cacheHits + this.cacheMisses;
+    const hitRate = total > 0 ? (this.cacheHits / total * 100).toFixed(1) : '0.0';
+    const uptime = Math.round((Date.now() - this.startTime) / 1000);
+
+    return {
+      cacheHitRate: `${hitRate}%`,
+      cacheHits: this.cacheHits,
+      cacheMisses: this.cacheMisses,
+      recalculations: this.recalculations,
+      totalTokensCounted: this.totalTokensCounted,
+      largestMessage: this.largestMessage,
+      avgTokensPerMessage: this.cacheMisses > 0 
+        ? Math.round(this.totalTokensCounted / this.cacheMisses)
+        : 0,
+      uptimeSeconds: uptime
+    };
+  }
+
+  reset(): void {
+    this.cacheHits = 0;
+    this.cacheMisses = 0;
+    this.recalculations = 0;
+    this.totalTokensCounted = 0;
+    this.largestMessage = 0;
+    this.startTime = Date.now();
+  }
+}
+
+/**
  * Simple in-memory cache for token counts
  */
 class SimpleTokenCountCache implements TokenCountCache {
@@ -62,12 +116,16 @@ export class TokenCounterService implements TokenCounter {
   private provider?: ProviderAdapter;
   private modelMultiplier: number;
   private toolCallOverhead: number;
+  private metrics: TokenCounterMetrics;
+  private isDevelopment: boolean;
 
   constructor(config: TokenCounterConfig = {}) {
     this.cache = new SimpleTokenCountCache();
     this.provider = config.provider;
     this.modelMultiplier = config.modelMultiplier ?? 1.0;
     this.toolCallOverhead = config.toolCallOverhead ?? TOOL_CALL_OVERHEAD;
+    this.metrics = new TokenCounterMetrics();
+    this.isDevelopment = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test';
   }
 
   /**
@@ -93,11 +151,8 @@ export class TokenCounterService implements TokenCounter {
 
     // Fallback estimation: Math.ceil(text.length / 4)
     // This approximates ~0.75 words per token
-    const estimated = Math.ceil(text.length / 4);
-    
-    // Apply multiplier: multiply first, then round
-    // This ensures consistent behavior with the formula
-    return Math.round(estimated * this.modelMultiplier);
+    // Apply multiplier in single operation to avoid double rounding
+    return Math.ceil((text.length / 4) * this.modelMultiplier);
   }
 
   /**
@@ -109,17 +164,30 @@ export class TokenCounterService implements TokenCounter {
     // Check cache first
     const cached = this.cache.get(messageId);
     if (cached !== undefined) {
+      this.metrics.recordCacheHit();
       return cached;
     }
 
     // Calculate synchronously using fallback estimation
-    const count = Math.ceil(text.length / 4);
-    const adjusted = Math.round(count * this.modelMultiplier);
+    // Single rounding operation for accuracy
+    const count = Math.ceil((text.length / 4) * this.modelMultiplier);
+    
+    // ✅ VALIDATION: Ensure token count is valid
+    if (count < 0) {
+      console.error('[TokenCounter] INVALID: Negative token count!', {
+        messageId,
+        count,
+        textLength: text.length,
+        multiplier: this.modelMultiplier
+      });
+      throw new Error(`Invalid token count: ${count}`);
+    }
     
     // Cache the result
-    this.cache.set(messageId, adjusted);
+    this.cache.set(messageId, count);
+    this.metrics.recordCacheMiss(count);
     
-    return adjusted;
+    return count;
   }
 
   /**
@@ -144,8 +212,35 @@ export class TokenCounterService implements TokenCounter {
 
     // Add tool call overhead
     total += toolCallCount * this.toolCallOverhead;
+    
+    // 📊 METRICS: Track recalculation
+    this.metrics.recordRecalculation(messages.length, total);
+    
+    // ✅ VALIDATION: Ensure total is valid
+    if (total < 0) {
+      console.error('[TokenCounter] INVALID: Negative conversation total!', {
+        messageCount: messages.length,
+        total,
+        toolCallCount
+      });
+      throw new Error(`Invalid conversation token count: ${total}`);
+    }
 
     return total;
+  }
+
+  /**
+   * Get token counting metrics
+   */
+  getMetrics() {
+    return this.metrics.getStats();
+  }
+
+  /**
+   * Reset metrics
+   */
+  resetMetrics(): void {
+    this.metrics.reset();
   }
 
   /**

@@ -143,7 +143,7 @@ describe('Token Counter - Property-Based Tests', () => {
    * Validates: Requirements 2.6
    * 
    * For any configured per-model token adjustment multiplier, the token count
-   * should be multiplied by that factor and rounded.
+   * should be multiplied by that factor using single rounding operation.
    */
   it('Property 6: Model multipliers - token count scaled by multiplier', () => {
     fc.assert(
@@ -151,10 +151,10 @@ describe('Token Counter - Property-Based Tests', () => {
         const counter = new TokenCounterService({ modelMultiplier: multiplier });
 
         const count = await counter.countTokens(text);
-        const baseCount = Math.ceil(text.length / 4);
-        const expected = Math.round(baseCount * multiplier);
+        // Single rounding operation: Math.ceil((length / 4) * multiplier)
+        const expected = Math.ceil((text.length / 4) * multiplier);
 
-        // Property: Count should be base count multiplied by multiplier, then rounded
+        // Property: Count should use single rounding operation
         return count === expected;
       }),
       { numRuns: 100 }
@@ -217,9 +217,10 @@ describe('Token Counter - Unit Tests', () => {
     const multiplier = 1.5;
     const counterWithMultiplier = new TokenCounterService({ modelMultiplier: multiplier });
 
-    const text = 'Test'; // 4 characters = 1 token base
+    const text = 'Test'; // 4 characters
     const count = await counterWithMultiplier.countTokens(text);
-    const expected = Math.round(Math.ceil(4 / 4) * multiplier);
+    // Single rounding: Math.ceil((4 / 4) * 1.5) = Math.ceil(1.5) = 2
+    const expected = Math.ceil((4 / 4) * multiplier);
 
     expect(count).toBe(expected);
   });

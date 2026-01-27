@@ -230,6 +230,14 @@ export class ContextPoolImpl implements ContextPool {
   }
 
   /**
+   * Get current Ollama context size (actual limit sent to Ollama)
+   * This is the 85% pre-calculated value, not the user's selection
+   */
+  getCurrentSize(): number {
+    return this.currentSize;
+  }
+
+  /**
    * Update configuration
    */
   updateConfig(config: Partial<ContextPoolConfig>): void {

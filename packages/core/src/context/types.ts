@@ -89,6 +89,19 @@ export interface TokenCounter {
   countConversationTokens(messages: Message[]): number;
   /** Clear cache */
   clearCache(): void;
+  /** Get token counting metrics */
+  getMetrics(): {
+    cacheHitRate: string;
+    cacheHits: number;
+    cacheMisses: number;
+    recalculations: number;
+    totalTokensCounted: number;
+    largestMessage: number;
+    avgTokensPerMessage: number;
+    uptimeSeconds: number;
+  };
+  /** Reset metrics */
+  resetMetrics(): void;
 }
 
 // ============================================================================
@@ -135,6 +148,24 @@ export interface ContextUsage {
 }
 
 /**
+ * Dynamic budget information for compression
+ */
+export interface ContextBudget {
+  /** Total Ollama context size (85% pre-calculated) */
+  totalOllamaSize: number;
+  /** System prompt tokens (fixed) */
+  systemPromptTokens: number;
+  /** Checkpoint tokens (grows with each compression) */
+  checkpointTokens: number;
+  /** Available budget for new conversation */
+  availableBudget: number;
+  /** Current conversation tokens (excluding system + checkpoints) */
+  conversationTokens: number;
+  /** Usage percentage of available budget (0-100) */
+  budgetPercentage: number;
+}
+
+/**
  * Context profile for a specific context size
  */
 export interface ContextProfile {
@@ -178,6 +209,8 @@ export interface ContextPool {
   resize(newSize: number): Promise<void>;
   /** Get current usage statistics */
   getUsage(): ContextUsage;
+  /** Get current Ollama context size (actual limit) */
+  getCurrentSize(): number;
   /** Update configuration */
   updateConfig(config: Partial<ContextPoolConfig>): void;
   /** Set current token count */
@@ -899,6 +932,8 @@ export interface ContextManager {
   updateConfig(config: Partial<ContextConfig>): void;
   /** Get current context usage */
   getUsage(): ContextUsage;
+  /** Get dynamic budget information */
+  getBudget(): ContextBudget;
   /** Add message to context */
   addMessage(message: Message): Promise<void>;
   /** Create manual snapshot */

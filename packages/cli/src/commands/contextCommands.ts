@@ -95,6 +95,7 @@ export const contextCommand: Command = {
         case 'stats': {
            const usage = manager.getUsage();
            const config = manager.getConfig();
+           const tokenMetrics = manager.getTokenMetrics();
            
            const statsMsg = 
              `Context Statistics:\n` +
@@ -103,7 +104,17 @@ export const contextCommand: Command = {
              `VRAM: ${(usage.vramUsed / 1024 / 1024).toFixed(0)}MB / ${(usage.vramTotal / 1024 / 1024).toFixed(0)}MB\n` +
              `Target Size: ${config.targetSize}\n` +
              `Auto-Size: ${config.autoSize ? 'Enabled' : 'Disabled'}\n` +
-             `Strategy: ${config.compression.strategy}`;
+             `Strategy: ${config.compression.strategy}\n\n` +
+             `Token Counting Metrics:\n` +
+             `----------------------\n` +
+             `Cache Hit Rate: ${tokenMetrics.cacheHitRate}\n` +
+             `Cache Hits: ${tokenMetrics.cacheHits}\n` +
+             `Cache Misses: ${tokenMetrics.cacheMisses}\n` +
+             `Recalculations: ${tokenMetrics.recalculations}\n` +
+             `Total Tokens Counted: ${tokenMetrics.totalTokensCounted.toLocaleString()}\n` +
+             `Largest Message: ${tokenMetrics.largestMessage} tokens\n` +
+             `Avg Tokens/Message: ${tokenMetrics.avgTokensPerMessage}\n` +
+             `Uptime: ${tokenMetrics.uptimeSeconds}s`;
 
            return { success: true, message: statsMsg };
         }
