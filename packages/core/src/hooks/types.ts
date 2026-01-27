@@ -28,6 +28,7 @@
 export type HookEvent =
   | 'session_start'        // When a new session begins
   | 'session_end'          // When a session ends
+  | 'session_saved'        // When a session is saved (rollback precursor)
   | 'before_agent'         // Before agent processes user input
   | 'after_agent'          // After agent generates response
   | 'before_model'         // Before calling the LLM

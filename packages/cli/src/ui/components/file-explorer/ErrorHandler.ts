@@ -217,6 +217,12 @@ function logError(error: unknown, context: ErrorContext, category: ErrorCategory
     return;
   }
 
+  // Suppress logging in test mode to avoid spam
+  const isTestEnv = process.env.NODE_ENV === 'test' || !!process.env.VITEST;
+  if (isTestEnv) {
+    return;
+  }
+
   // For now, just log to console
   // In production, this would send to a logging service
   console.error(`[FileExplorer] ${category}:`, {

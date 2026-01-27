@@ -20,6 +20,7 @@ interface MessageStoreOptions {
   config: ContextConfig;
   getContext: () => ConversationContext;
   getUsage: () => ContextUsage;
+  getBudget: () => import('./types.js').ContextBudget;
   tokenCounter: TokenCounter;
   contextPool: ContextPool;
   memoryGuard: MemoryGuard;
@@ -35,6 +36,7 @@ export class MessageStore {
   private readonly config: ContextConfig;
   private readonly getContext: () => ConversationContext;
   private readonly getUsage: () => ContextUsage;
+  private readonly getBudget: () => import('./types.js').ContextBudget;
   private readonly tokenCounter: TokenCounter;
   private readonly contextPool: ContextPool;
   private readonly memoryGuard: MemoryGuard;
@@ -53,6 +55,7 @@ export class MessageStore {
     this.config = options.config;
     this.getContext = options.getContext;
     this.getUsage = options.getUsage;
+    this.getBudget = options.getBudget;
     this.tokenCounter = options.tokenCounter;
     this.contextPool = options.contextPool;
     this.memoryGuard = options.memoryGuard;
@@ -196,7 +199,7 @@ export class MessageStore {
       );
 
       if (this.config.compression.enabled) {
-        // Get dynamic budget information
+        // Get dynamic budget information from context manager
         const budget = this.getBudget();
         const budgetFraction = budget.budgetPercentage / 100;
         
@@ -268,12 +271,16 @@ export class MessageStore {
       const ollamaLimit = context.maxTokens; // This is the Ollama size (85%)
       if (totalTokens > ollamaLimit) {
         const overage = totalTokens - ollamaLimit;
-        console.error('[ContextManager] EMERGENCY: Stream exceeded Ollama limit!', {
-          totalTokens,
-          ollamaLimit,
-          overage,
-          message: 'This indicates a bug - Ollama should stop at num_ctx'
-        });
+        
+        // Only log in non-test mode (tests intentionally trigger this)
+        if (!this.isTestEnv) {
+          console.error('[ContextManager] EMERGENCY: Stream exceeded Ollama limit!', {
+            totalTokens,
+            ollamaLimit,
+            overage,
+            message: 'This indicates a bug - Ollama should stop at num_ctx'
+          });
+        }
         
         // Emit emergency event for UI to display
         this.emit('stream-overflow-emergency', {

@@ -8,7 +8,7 @@
 - `dev_PromptSystem.md` - Prompt structure, tiers, modes
 - `dev_ModelDB.md` - Model database schema and access patterns
 - `dev_ModelManagement.md` - Model size detection for reliability
-- `dev_SessionsSnapChat.md` - Sessions, snapshots, and chat history
+- `dev_CheckpointRollover.md` - Checkpoint strategy, sessions, snapshots, and chat history
 
 ---
 

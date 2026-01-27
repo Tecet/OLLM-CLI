@@ -31,6 +31,7 @@ import type {
   ContextManager,
   ContextConfig,
   ContextUsage,
+  ContextBudget,
   Message,
   ContextSnapshot,
   ConversationContext,
@@ -191,6 +192,7 @@ export class ConversationContextManager extends EventEmitter implements ContextM
         this.currentContext = context;
       },
       getUsage: () => this.getUsage(),
+      getBudget: () => this.getBudget(),
       getTierConfig: () => this.tierConfig,
       getModeProfile: () => this.modeProfile,
       emit: this.emit.bind(this),
@@ -511,8 +513,15 @@ export class ConversationContextManager extends EventEmitter implements ContextM
   /**
    * Log critical error when profile fallback is used
    * This indicates a bug in the CLI layer (ProfileManager/App.tsx)
+   * 
+   * Silenced in test mode to avoid spam - tests intentionally use minimal setup
    */
   private logProfileFallbackError(context: string, additionalInfo?: Record<string, any>): void {
+    // Silence in test mode - tests intentionally don't provide contextProfiles
+    if (isTestEnv) {
+      return;
+    }
+    
     console.error(`[ContextManager] CRITICAL: Using ${context} fallback!`);
     console.error(`  Model: ${this.modelInfo.modelId || 'unknown'}`);
     console.error(`  Context profiles provided: ${this.modelInfo.contextProfiles ? 'YES' : 'NO'}`);

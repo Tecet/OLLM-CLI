@@ -57,6 +57,7 @@ interface ContextModuleOptions {
   getContext: () => ConversationContext;
   setContext: (context: ConversationContext) => void;
   getUsage: () => ContextUsage;
+  getBudget: () => import('./types.js').ContextBudget;
   getTierConfig: () => { tier: ContextTier; strategy: string; maxCheckpoints: number };
   getModeProfile: () => ModeProfile;
   emit: EmitFn;
@@ -120,6 +121,7 @@ export function createContextModules(options: ContextModuleOptions): ContextModu
     config: options.config,
     getContext: options.getContext,
     getUsage: options.getUsage,
+    getBudget: options.getBudget,
     tokenCounter: options.tokenCounter,
     contextPool: options.contextPool,
     memoryGuard,

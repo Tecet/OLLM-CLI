@@ -8,7 +8,7 @@
 - `dev_PromptSystem.md` - Prompt structure, tiers, modes
 - `dev_ModelDB.md` - Model database schema and access patterns
 - `dev_ModelCompiler.md` - User profile compilation system
-- `dev_SessionsSnapChat.md` - Sessions, snapshots, and chat history
+- `dev_CheckpointRollover.md` - Checkpoint strategy, sessions, snapshots, and chat history
 
 ---
 
