@@ -755,13 +755,20 @@ export function ModelProvider({
       // Get user settings for context size and temperature
       const settingsService = SettingsService.getInstance();
       const settings = settingsService.getSettings();
-      const requestedContextSize = settings.llm?.contextSize ?? modelEntry.default_context ?? 4096;
       const temperature = settings.llm?.temperature ?? 0.1;
-      const contextCapRatio = settings.llm?.contextCapRatio ?? 0.85;
       const forcedNumGpu = settings.llm?.forceNumGpu;
 
-      const contextSizing = calculateContextSizing(requestedContextSize, modelEntry, contextCapRatio);
-      const { allowed, ollamaContextSize } = contextSizing;
+      // Get current tier from context manager
+      const contextState = contextActions.getState();
+      const currentTier = contextState.currentTier;
+      
+      // Find the matching profile for the current tier
+      const profiles = modelEntry.context_profiles ?? [];
+      const matchingProfile = profiles.find(p => p.tier === currentTier);
+      
+      // Get the context size and ollama_context_size from the matching profile
+      const userContextSize = matchingProfile?.size ?? modelEntry.default_context ?? 4096;
+      const ollamaContextSize = matchingProfile?.ollama_context_size ?? Math.floor(userContextSize * 0.85);
 
       const gpuHints = deriveGPUPlacementHints(
         gpuContext?.info ?? null,
@@ -770,17 +777,9 @@ export function ModelProvider({
       setLastGPUPlacementHints(gpuHints);
       const effectiveNumGpu = Number.isFinite(forcedNumGpu) ? forcedNumGpu : gpuHints?.num_gpu;
 
-      if (allowed !== requestedContextSize) {
-        settingsService.setContextSize(allowed);
-      }
-
-      syncAutoThreshold(ollamaContextSize, allowed);
-
       console.log(
-        `[Context Cap] User selected: ${allowed}, Sending to Ollama: ${ollamaContextSize} (${Math.round(contextSizing.ratio * 100)}%)`
+        `[Context] Tier: ${currentTier}, User size: ${userContextSize}, Ollama size: ${ollamaContextSize}`
       );
-
-      // DEBUG removed - was causing ESM require error
 
       if (gpuHints) {
         console.debug('[ModelContext] Derived GPU placement hints:', gpuHints);
@@ -796,14 +795,14 @@ export function ModelProvider({
         timeout: requestTimeout,
         think: thinkingEnabled, // Enable thinking for supported models
         options: {
-          num_ctx: ollamaContextSize, // Use 85% capped size for natural stops
+          num_ctx: ollamaContextSize, // Use tier-specific ollama_context_size
           temperature: temperatureOverride ?? temperature,
           ...(gpuHints ?? {}),
           num_gpu: effectiveNumGpu,
         },
       });
 
-      console.log(`[ModelContext] Sending to Ollama - num_ctx: ${ollamaContextSize}, temperature: ${temperatureOverride ?? temperature}`);
+      console.log(`[ModelContext] Sending to Ollama - tier: ${currentTier}, num_ctx: ${ollamaContextSize}, temperature: ${temperatureOverride ?? temperature}`);
 
       for await (const event of stream) {
         if (abortController.signal.aborted) {
@@ -874,7 +873,7 @@ export function ModelProvider({
     } finally {
       abortControllerRef.current = null;
     }
-  }, [provider, currentModel, cancelRequest, modelLoading, modelSupportsTools, isTimeoutError, isToolUnsupportedError, clearWarmupStatus, handleToolError, saveToolSupport, gpuContext?.info, syncAutoThreshold]);
+  }, [provider, currentModel, cancelRequest, modelLoading, modelSupportsTools, isTimeoutError, isToolUnsupportedError, clearWarmupStatus, handleToolError, saveToolSupport, gpuContext?.info, contextActions]);
 
   const value: ModelContextValue = {
     currentModel,
