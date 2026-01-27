@@ -203,6 +203,9 @@ export {
   HotSwapService,
 } from './context/index.js';
 
+// Context Size Calculator (pure calculation functions)
+export * as ContextSizeCalculator from './context/ContextSizeCalculator.js';
+
 export {
   deriveGPUPlacementHints,
 } from './context/gpuHints.js';
