@@ -13,24 +13,32 @@
 
 ## ⚠️ Known Issues (To Be Fixed in Task 4)
 
-The following issues have been identified and will be fixed in Task 4:
+The following issues have been identified:
 
-1. **contextDefaults.ts** - Confusing compression threshold (0.68 = "80% of 85%")
-   - Current: `threshold: 0.68` with misleading comment
-   - Issue: Threshold is relative to user size, not Ollama size
-   - Fix: Update threshold and clarify comments
+1. ✅ **FIXED: contextDefaults.ts** - Confusing compression threshold
+   - Was: `threshold: 0.68` with misleading comment
+   - Fixed: `threshold: 0.80` with clear comment (commit b709085)
 
-2. **contextPool.ts** - Percentage calculated against wrong base
-   - Current: `percentage = currentTokens / userContextSize * 100`
-   - Issue: Should use `currentSize` (Ollama limit), not `userContextSize`
-   - Fix: Change to `percentage = currentTokens / currentSize * 100`
+2. ✅ **FIXED: contextPool.ts** - Percentage calculated against wrong base
+   - Was: `percentage = currentTokens / userContextSize * 100`
+   - Fixed: `percentage = currentTokens / currentSize * 100` (commit b709085)
 
-3. **Compression trigger** - Uses wrong percentage base
-   - Current: Triggers at 68% of user's selection
-   - Should: Trigger at 80% of Ollama's limit
-   - Impact: Compression triggers at wrong time
+3. ✅ **FIXED: Mid-stream compression** - Could truncate messages
+   - Was: Compression triggered during streaming
+   - Fixed: Compression only after `addMessage()` completes (commit 383c008)
+   - Result: No message truncation, simple & robust architecture
 
-**Status:** Documented in `.dev/backlog/works_todo.md` Task 4
+4. ⏳ **TODO: Dynamic budget tracking** - Compression doesn't account for checkpoint space
+   - Current: Triggers at 80% of total context
+   - Should: Trigger at 80% of available budget (total - system - checkpoints)
+   - Impact: Rapid re-compression after first compression
+
+5. ⏳ **TODO: Checkpoint aging** - No aging/cleanup of old checkpoints
+   - Current: Checkpoints stay at same compression level
+   - Should: Age and compress further over time (60%, 70%, 80%)
+   - Impact: Checkpoints consume too much space
+
+**Status:** Issues 1-3 fixed. Issues 4-5 documented in `.dev/backlog/works_todo.md` Task 4
 
 ---
 
@@ -140,24 +148,86 @@ After 3rd Compression:
 
 ## Compression Trigger
 
-Compression is triggered at **80% of available context budget**.
+Compression is triggered at **80% of Ollama context limit** AFTER the full message is added.
+
+### Trigger Strategy (SIMPLE & ROBUST)
+
+**Primary: Trust Ollama** ✅
+- Ollama stops streaming at `num_ctx` limit (85% pre-calculated from user's selection)
+- Full message is captured and added to context via `addMessage()`
+- Compression triggers AFTER message is complete (not during streaming)
+- Simple, reliable, no race conditions, no message truncation
+
+**Safety: Emergency Brake** 🚨
+- If streaming exceeds Ollama limit → emit warning event
+- Should NEVER happen (indicates bug in Ollama or our code)
+- Protects against runaway streams
 
 ### Trigger Calculation
 
 ```typescript
-// Calculate available budget (excludes system + checkpoints)
-const systemTokens = countTokens(systemPrompt);
-const checkpointTokens = checkpoints.reduce((sum, cp) => sum + cp.tokens, 0);
-const availableBudget = context.maxTokens - systemTokens - checkpointTokens;
+// Compression triggers AFTER message is added (not during streaming)
+async addMessage(message: Message): Promise<void> {
+  // 1. Add full message to context
+  context.messages.push(message);
+  context.tokenCount += message.tokenCount;
+  
+  // 2. Check if compression needed (AFTER message is complete)
+  if (message.role === 'assistant') {
+    const usage = this.getUsage();
+    const usageFraction = usage.percentage / 100;
+    
+    // Trigger at 80% of Ollama limit (not user's selection)
+    if (usageFraction >= 0.80) {
+      await this.compress();
+    }
+  }
+}
 
-// Trigger compression at 80% of AVAILABLE budget
-const compressionTrigger = availableBudget * 0.80;
+// During streaming: NO compression, only tracking
+reportInflightTokens(delta: number): void {
+  this.inflightTokens += delta;
+  const totalTokens = context.tokenCount + this.inflightTokens;
+  
+  // Emergency brake: warn if exceeds Ollama limit
+  if (totalTokens > context.maxTokens) {
+    console.error('EMERGENCY: Stream exceeded Ollama limit!');
+    this.emit('stream-overflow-emergency', { totalTokens, ollamaLimit: context.maxTokens });
+  }
+  
+  // NO compression during streaming - prevents message truncation
+}
 ```
 
 **Why 80%?**
-- Leaves 20% buffer for final messages
+- Leaves 20% buffer (1393 tokens for 8K context)
 - Prevents race condition with Ollama's limit
 - Allows time for compression to complete
+- Compression happens AFTER message is saved (no truncation)
+
+### Flow Example (8K Context)
+
+```
+User selects: 8192 tokens (UI display)
+Ollama receives: 6963 tokens (85% pre-calculated, sent as num_ctx)
+
+Streaming phase:
+├─ Ollama streams tokens
+├─ We track inflight tokens (for UI display only)
+├─ NO compression during streaming ✅
+└─ Ollama stops at 6963 tokens (naturally, enforced by num_ctx)
+
+After streaming completes:
+├─ Full message added via addMessage()
+├─ Current: 5570 tokens
+├─ Check: 5570 / 6963 = 80% → Trigger compression
+├─ Compress old messages into checkpoint
+├─ Free up space for new conversation
+└─ Continue conversation
+
+Emergency brake (should never trigger):
+└─ If stream exceeds 6963 → emit 'stream-overflow-emergency' event
+```
 
 ---
 
