@@ -263,7 +263,7 @@ export function ModelProvider({
       // Find the matching profile for the current tier
       // Tiers are: TIER_1_MINIMAL = 0, TIER_2_COMPACT = 1, TIER_3_STANDARD = 2, TIER_4_EXTENDED = 3, TIER_5_MAXIMUM = 4
       const profiles = modelEntry.context_profiles ?? [];
-      const tierIndex = currentTier; // Tier enum values are 0-4
+      const tierIndex = Number(currentTier); // Tier enum values are 0-4
       const matchingProfile = profiles[tierIndex]; // Profiles are ordered by tier
       
       // Get the context size and ollama_context_size from the matching profile
