@@ -67,19 +67,6 @@ export function ContextSection() {
 
       <Box flexDirection="column" paddingX={1} alignItems="flex-start">
         <Box flexDirection="column" marginBottom={1} alignSelf="flex-start">
-          <Text color={uiState.theme.status.success} bold>
-            Active Skills:
-          </Text>
-          <Box marginLeft={1} alignSelf="flex-start">
-            {activeSkills.length === 0 ? (
-              <Text dimColor>None</Text>
-            ) : (
-              <Text color={uiState.theme.text.primary}>{activeSkills.join(', ')}</Text>
-            )}
-          </Box>
-        </Box>
-
-        <Box flexDirection="column" marginBottom={1} alignSelf="flex-start">
           <Text color={uiState.theme.text.accent} bold>
             MCP Servers:
           </Text>

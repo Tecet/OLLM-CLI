@@ -5,6 +5,7 @@
  * - Build context size menu options
  * - Build model selection menu options
  * - Handle menu navigation
+ * - Filter context sizes by model capabilities and VRAM
  *
  * Does NOT:
  * - Calculate context sizes (core does this)
@@ -31,6 +32,7 @@ export interface ContextMenuOptions {
     resize: (size: number) => Promise<void>;
   };
   setCurrentModel: (model: string) => void;
+  availableVRAM?: number; // Total VRAM capacity in GB (not free VRAM - models will be swapped)
 }
 
 export interface ContextSizeOption {
@@ -49,19 +51,103 @@ export function useContextMenu(options: ContextMenuOptions) {
     requestManualContextInput,
     contextActions,
     setCurrentModel,
+    availableVRAM = 8, // Default to 8GB if not provided (total VRAM, not free)
   } = options;
+
+  /**
+   * Filter context sizes based on model capabilities and total VRAM
+   * Uses total VRAM because old model will be unloaded when switching
+   */
+  const filterContextSizes = useCallback(
+    (
+      contextProfiles: Array<
+        | { size: number; size_label?: string; vram_estimate_gb?: number }
+        | { value: number; label: string }
+      >,
+      modelProfile: any
+    ) => {
+      const maxContextWindow = modelProfile?.max_context_window || 131072;
+      const vramLimit = availableVRAM * 1.3; // Allow 30% overhead for CPU offloading
+
+      return contextProfiles.filter((profile) => {
+        // Get size from either format
+        const size = 'size' in profile ? profile.size : profile.value;
+
+        // Filter by model's max context window
+        if (size > maxContextWindow) {
+          return false;
+        }
+
+        // Filter by VRAM requirements (only if vram_estimate_gb exists)
+        if ('vram_estimate_gb' in profile && profile.vram_estimate_gb) {
+          if (profile.vram_estimate_gb > vramLimit) {
+            return false;
+          }
+        }
+
+        return true;
+      });
+    },
+    [availableVRAM]
+  );
 
   /**
    * Build context size submenu
    */
   const buildContextSizeMenu = useCallback(
-    (mainMenuOptions: MenuOption[], menuMessageId?: string): MenuOption[] => {
+    (
+      mainMenuOptions: MenuOption[],
+      menuMessageId?: string,
+      returnToModelSelection?: boolean
+    ): MenuOption[] => {
       const modelName = currentModel || 'Unknown Model';
       const profile = profileManager.findProfile(modelName);
       const optionsToUse = profile ? profile.context_profiles : CONTEXT_OPTIONS;
+
+      // Filter context sizes
+      const filteredOptions = filterContextSizes(optionsToUse, profile);
+
+      // Check if no options available
+      if (filteredOptions.length === 0) {
+        const minContext = optionsToUse[0];
+        const minVRAM =
+          minContext && 'vram_estimate_gb' in minContext
+            ? (minContext as any).vram_estimate_gb
+            : 2.5;
+
+        addMessage({
+          role: 'system',
+          content: `⚠️ **Insufficient VRAM for this model**\n\nMinimum requirements:\n- 4k context: ${minVRAM} GB VRAM\n\nYour total VRAM: ${availableVRAM.toFixed(1)} GB\n\nPlease select a different model or upgrade your hardware.`,
+          excludeFromContext: true,
+        });
+
+        // Return to model selection or main menu
+        const backOptions: MenuOption[] = [
+          {
+            id: 'opt-back',
+            label: 'Back',
+            action: () => {
+              if (returnToModelSelection) {
+                const modelOptions = buildModelSelectionMenu(mainMenuOptions, menuMessageId);
+                activateMenu(modelOptions, menuMessageId);
+              } else {
+                activateMenu(mainMenuOptions, menuMessageId);
+              }
+            },
+          },
+          {
+            id: 'opt-exit',
+            label: 'Exit to Chat',
+            action: async () => {},
+          },
+        ];
+
+        return backOptions;
+      }
+
       const sizeOptions: MenuOption[] = [];
 
-      optionsToUse.forEach((opt) => {
+      filteredOptions.forEach((opt) => {
         const val =
           'size' in opt ? (opt as { size: number }).size : (opt as { value: number }).value;
         const sizeStr =
@@ -71,9 +157,14 @@ export function useContextMenu(options: ContextMenuOptions) {
               ? `${val / 1024}k`
               : `${val}`;
 
+        // Add VRAM estimate to label (only if available)
+        const vramEstimate =
+          'vram_estimate_gb' in opt ? (opt as any).vram_estimate_gb : undefined;
+        const label = vramEstimate ? `${sizeStr} (${vramEstimate.toFixed(1)} GB)` : sizeStr;
+
         sizeOptions.push({
           id: `size-${val}`,
-          label: sizeStr,
+          label,
           value: val,
           action: async () => {
             await contextActions.resize(val);
@@ -114,7 +205,14 @@ export function useContextMenu(options: ContextMenuOptions) {
       sizeOptions.push({
         id: 'opt-back',
         label: 'Back',
-        action: () => activateMenu(mainMenuOptions, menuMessageId),
+        action: () => {
+          if (returnToModelSelection) {
+            const modelOptions = buildModelSelectionMenu(mainMenuOptions, menuMessageId);
+            activateMenu(modelOptions, menuMessageId);
+          } else {
+            activateMenu(mainMenuOptions, menuMessageId);
+          }
+        },
       });
 
       sizeOptions.push({
@@ -125,11 +223,21 @@ export function useContextMenu(options: ContextMenuOptions) {
 
       return sizeOptions;
     },
-    [currentModel, addMessage, activateMenu, requestManualContextInput, contextActions]
+    [
+      currentModel,
+      addMessage,
+      activateMenu,
+      requestManualContextInput,
+      contextActions,
+      availableVRAM,
+      filterContextSizes,
+    ]
   );
 
   /**
    * Build model selection submenu
+   * After selecting a model, automatically show context size selection
+   * Model is NOT loaded until context size is selected
    */
   const buildModelSelectionMenu = useCallback(
     (mainMenuOptions: MenuOption[], menuMessageId?: string): MenuOption[] => {
@@ -157,13 +265,21 @@ export function useContextMenu(options: ContextMenuOptions) {
           id: `model-${entry.id}`,
           label: modelLabel,
           action: async () => {
-            setCurrentModel(entry.id);
+            // DON'T call setCurrentModel yet - wait for context size selection
             addMessage({
               role: 'system',
-              content: `Switched to model **${modelLabel}**.`,
+              content: `Selected model **${modelLabel}**.\n\nPlease select a context size:`,
               excludeFromContext: true,
             });
-            activateMenu(mainMenuOptions, menuMessageId);
+
+            // Show context size selection with the selected model ID
+            const sizeOptions = buildContextSizeMenuForModel(
+              entry.id,
+              modelLabel,
+              mainMenuOptions,
+              menuMessageId
+            );
+            activateMenu(sizeOptions, menuMessageId);
           },
         };
       });
@@ -183,7 +299,161 @@ export function useContextMenu(options: ContextMenuOptions) {
 
       return modelOptions;
     },
-    [addMessage, activateMenu, setCurrentModel]
+    [addMessage, activateMenu]
+  );
+
+  /**
+   * Build context size menu for a specific model
+   * This is called after model selection, before loading the model
+   */
+  const buildContextSizeMenuForModel = useCallback(
+    (
+      modelId: string,
+      modelLabel: string,
+      mainMenuOptions: MenuOption[],
+      menuMessageId?: string
+    ): MenuOption[] => {
+      const profile = profileManager.findProfile(modelId);
+      const optionsToUse = profile ? profile.context_profiles : CONTEXT_OPTIONS;
+
+      // Filter context sizes
+      const filteredOptions = filterContextSizes(optionsToUse, profile);
+
+      // Check if no options available
+      if (filteredOptions.length === 0) {
+        const minContext = optionsToUse[0];
+        const minVRAM =
+          minContext && 'vram_estimate_gb' in minContext
+            ? (minContext as any).vram_estimate_gb
+            : 2.5;
+
+        addMessage({
+          role: 'system',
+          content: `⚠️ **Insufficient VRAM for this model**\n\nMinimum requirements:\n- 4k context: ${minVRAM} GB VRAM\n\nYour total VRAM: ${availableVRAM.toFixed(1)} GB\n\nPlease select a different model or upgrade your hardware.`,
+          excludeFromContext: true,
+        });
+
+        // Return to model selection
+        const backOptions: MenuOption[] = [
+          {
+            id: 'opt-back',
+            label: 'Back',
+            action: () => {
+              const modelOptions = buildModelSelectionMenu(mainMenuOptions, menuMessageId);
+              activateMenu(modelOptions, menuMessageId);
+            },
+          },
+          {
+            id: 'opt-exit',
+            label: 'Exit to Chat',
+            action: async () => {},
+          },
+        ];
+
+        return backOptions;
+      }
+
+      const sizeOptions: MenuOption[] = [];
+
+      filteredOptions.forEach((opt) => {
+        const val =
+          'size' in opt ? (opt as { size: number }).size : (opt as { value: number }).value;
+        const sizeStr =
+          'size_label' in opt && opt.size_label
+            ? opt.size_label
+            : val >= 1024
+              ? `${val / 1024}k`
+              : `${val}`;
+
+        // Add VRAM estimate to label (only if available)
+        const vramEstimate =
+          'vram_estimate_gb' in opt ? (opt as any).vram_estimate_gb : undefined;
+        const label = vramEstimate ? `${sizeStr} (${vramEstimate.toFixed(1)} GB)` : sizeStr;
+
+        sizeOptions.push({
+          id: `size-${val}`,
+          label,
+          value: val,
+          action: async () => {
+            // Check if VRAM usage is above 80% threshold
+            const vramUsagePercent = vramEstimate ? (vramEstimate / availableVRAM) * 100 : 0;
+            const isHighVRAMUsage = vramUsagePercent > 80;
+
+            // NOW set the model and resize context
+            // This will trigger model loading/warmup
+            setCurrentModel(modelId);
+            await contextActions.resize(val);
+
+            // Build message with optional warning
+            let message = `Switched to **${modelLabel}** with **${sizeStr}** context (${val} tokens).`;
+
+            if (isHighVRAMUsage && vramEstimate) {
+              message += `\n\n⚠️ **Performance Warning**: VRAM usage is high (${vramUsagePercent.toFixed(0)}% - ${vramEstimate.toFixed(1)} GB / ${availableVRAM.toFixed(1)} GB). Model may be partially offloaded to CPU, reducing performance.`;
+            }
+
+            addMessage({
+              role: 'system',
+              content: message,
+              excludeFromContext: true,
+            });
+            activateMenu(mainMenuOptions, menuMessageId);
+          },
+        });
+      });
+
+      // Manual input option
+      sizeOptions.push({
+        id: 'size-manual',
+        label: 'Manual...',
+        action: async () => {
+          addMessage({
+            role: 'system',
+            content: 'Enter a manual context size in tokens. Type "cancel" to abort.',
+            excludeFromContext: true,
+          });
+          requestManualContextInput(modelId, async (value) => {
+            profileManager.setManualContext(modelId, value);
+            // NOW set the model and resize context
+            setCurrentModel(modelId);
+            await contextActions.resize(value);
+            addMessage({
+              role: 'system',
+              content: `Switched to **${modelLabel}** with manual context size **${value}** tokens.`,
+              excludeFromContext: true,
+            });
+            activateMenu(mainMenuOptions, menuMessageId);
+          });
+        },
+      });
+
+      // Navigation options
+      sizeOptions.push({
+        id: 'opt-back',
+        label: 'Back',
+        action: () => {
+          const modelOptions = buildModelSelectionMenu(mainMenuOptions, menuMessageId);
+          activateMenu(modelOptions, menuMessageId);
+        },
+      });
+
+      sizeOptions.push({
+        id: 'opt-exit',
+        label: 'Exit to Chat',
+        action: async () => {},
+      });
+
+      return sizeOptions;
+    },
+    [
+      addMessage,
+      activateMenu,
+      requestManualContextInput,
+      contextActions,
+      availableVRAM,
+      filterContextSizes,
+      setCurrentModel,
+      buildModelSelectionMenu,
+    ]
   );
 
   /**
@@ -240,3 +510,4 @@ export function useContextMenu(options: ContextMenuOptions) {
     buildModelSelectionMenu,
   };
 }
+

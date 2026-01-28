@@ -1,7 +1,8 @@
-﻿import React, { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { Box, Text, BoxProps } from 'ink';
 
 import { useChat } from '../../../features/context/ChatContext.js';
+import { useContextManager } from '../../../features/context/ContextManagerContext.js';
 import { useModel } from '../../../features/context/ModelContext.js';
 import { useUI } from '../../../features/context/UIContext.js';
 import { useInputRouting } from '../../contexts/InputRoutingContext.js';
@@ -14,7 +15,7 @@ export interface SystemBarProps {
 
 /**
  * SystemBar (Row 3)
- * Displays "Agent Thinking" status and "Context Tokens" usage.
+ * Displays "OLLM: Status", "Context Tokens", and "Input Routing" in 3 separate boxes.
  */
 export function SystemBar({ height }: SystemBarProps) {
   const { state: chatState } = useChat();
@@ -22,6 +23,7 @@ export function SystemBar({ height }: SystemBarProps) {
   const { state: uiState } = useUI();
   const { theme } = uiState;
   const { activeDestination } = useInputRouting();
+  const { state: contextState } = useContextManager();
 
   const { streaming, waitingForResponse } = chatState;
 
@@ -60,8 +62,13 @@ export function SystemBar({ height }: SystemBarProps) {
     displayStatus = 'LLM Chat';
   }
 
+  // Get context usage
+  const contextUsed = contextState.usage.currentTokens || 0;
+  const contextLimit = contextState.usage.maxTokens || 8192;
+
   return (
-    <Box height={height} width="100%" flexDirection="row">
+    <Box height={height} width="100%" flexDirection="row" gap={1}>
+      {/* Left: OLLM Status */}
       <Box
         flexGrow={1}
         borderStyle={theme.border.style as BoxProps['borderStyle']}
@@ -76,6 +83,22 @@ export function SystemBar({ height }: SystemBarProps) {
         <Text> </Text>
         <Text color={isTerminalMode ? 'cyan' : theme.text.primary}>{displayStatus}</Text>
       </Box>
+
+      {/* Middle: Context Usage */}
+      <Box
+        borderStyle={theme.border.style as BoxProps['borderStyle']}
+        borderColor={theme.border.primary}
+        paddingX={1}
+        alignItems="center"
+        justifyContent="center"
+      >
+        <Text color={theme.text.secondary}>Context: </Text>
+        <Text color={theme.text.accent}>{contextUsed}</Text>
+        <Text color={theme.text.secondary}>/</Text>
+        <Text color={theme.text.primary}>{contextLimit}</Text>
+      </Box>
+
+      {/* Right: Input Routing */}
       <Box
         borderStyle={theme.border.style as BoxProps['borderStyle']}
         borderColor={theme.border.primary}

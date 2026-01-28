@@ -15,11 +15,11 @@ import { Box, Text, useInput, measureElement } from 'ink';
 import { Theme } from '../../../config/types.js';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { useServices } from '../../../features/context/ServiceContext.js';
+import { useUI } from '../../../features/context/UIContext.js';
 import {
   useFileFocus,
   FileTreeService,
   FocusSystem,
-  SyntaxViewer,
 } from '../file-explorer/index.js';
 
 import type { FileNode } from '../file-explorer/types.js';
@@ -35,19 +35,13 @@ export function WorkspacePanel({ theme, hasFocus }: WorkspacePanelProps) {
   const fileFocusContext = useFileFocus();
   const { container } = useServices();
   const focusManager = useFocusManager();
+  const { openFileViewer } = useUI();
   const [fileTree, setFileTree] = useState<FileNode | null>(null);
   const [flattenedFiles, setFlattenedFiles] = useState<FileNode[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [scrollOffset, setScrollOffset] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [containerHeight, setContainerHeight] = useState(30); // Default height
-
-  // Syntax viewer state
-  const [viewerState, setViewerState] = useState<{
-    isOpen: boolean;
-    filePath: string;
-    content: string;
-  } | null>(null);
 
   // Initialize file explorer services
   const [fileTreeService] = useState(() => new FileTreeService());
@@ -132,13 +126,6 @@ export function WorkspacePanel({ theme, hasFocus }: WorkspacePanelProps) {
     (input, key) => {
       if (!hasFocus) return;
 
-      // ESC closes viewer if open
-      if (viewerState?.isOpen && key.escape) {
-        setViewerState(null);
-        focusManager.closeModal(); // Return focus to parent
-        return;
-      }
-
       const visibleHeight = panelHeights.middle - 1; // Subtract header line
 
       // Allow navigation even when viewer is open
@@ -197,15 +184,10 @@ export function WorkspacePanel({ theme, hasFocus }: WorkspacePanelProps) {
             }
           }
         } else if (selectedFile.type === 'file') {
-          // Open file in syntax viewer
+          // Open file in main panel viewer
           readFile(selectedFile.path, 'utf-8')
             .then((content) => {
-              setViewerState({
-                isOpen: true,
-                filePath: selectedFile.path,
-                content,
-              });
-              focusManager.openModal('syntax-viewer'); // Register with focus manager
+              openFileViewer(selectedFile.path, content);
             })
             .catch((err) => {
               console.error('Failed to read file:', err);
@@ -333,38 +315,27 @@ export function WorkspacePanel({ theme, hasFocus }: WorkspacePanelProps) {
       <Box
         flexGrow={1}
         borderStyle="round"
-        borderColor={viewerState?.isOpen ? 'cyan' : 'yellow'}
+        borderColor="yellow"
         flexDirection="column"
         paddingX={1}
       >
-        {viewerState?.isOpen ? (
-          <Box flexDirection="column" height="100%">
-            <Text color="cyan" bold>
-              📄 Syntax Viewer
-            </Text>
-            <Box marginTop={1} flexDirection="column" overflow="hidden">
-              <SyntaxViewer filePath={viewerState.filePath} content={viewerState.content} />
-            </Box>
-          </Box>
+        <Text color="yellow" bold>
+          📂 Workspace Files ({flattenedFiles.length} items)
+        </Text>
+        {isLoading ? (
+          <Text color="yellow">Loading file tree...</Text>
+        ) : flattenedFiles.length === 0 ? (
+          <Text dimColor>No files found</Text>
         ) : (
-          <>
-            <Text color="yellow" bold>
-              📂 Workspace Files ({flattenedFiles.length} items)
-            </Text>
-            {isLoading ? (
-              <Text color="yellow">Loading file tree...</Text>
-            ) : flattenedFiles.length === 0 ? (
-              <Text dimColor>No files found</Text>
-            ) : (
-              <Box flexDirection="column">
-                {visibleFiles.map((file, index) => {
-                  const actualIndex = scrollOffset + index;
-                  const isSelected = actualIndex === selectedIndex;
-                  const indent = '  '.repeat((file as any).depth || 0);
-                  const isDir = file.type === 'directory';
-                  const icon = isDir ? (file.expanded ? '📂' : '📁') : '📄';
-                  const focusIndicator = hasFocus && isSelected ? '→ ' : '  ';
-                  const isFocusedFile = fileFocusContext.isFocused(file.path);
+          <Box flexDirection="column">
+            {visibleFiles.map((file, index) => {
+              const actualIndex = scrollOffset + index;
+              const isSelected = actualIndex === selectedIndex;
+              const indent = '  '.repeat((file as any).depth || 0);
+              const isDir = file.type === 'directory';
+              const icon = isDir ? (file.expanded ? '📂' : '📁') : '📄';
+              const focusIndicator = hasFocus && isSelected ? '→ ' : '  ';
+              const isFocusedFile = fileFocusContext.isFocused(file.path);
 
                   return (
                     <Text
@@ -381,8 +352,6 @@ export function WorkspacePanel({ theme, hasFocus }: WorkspacePanelProps) {
                 })}
               </Box>
             )}
-          </>
-        )}
       </Box>
 
       {/* Bottom Panel (Red): Keybinds Legend */}
@@ -397,16 +366,10 @@ export function WorkspacePanel({ theme, hasFocus }: WorkspacePanelProps) {
         <Text color="red" bold>
           ⌨️ Keybinds
         </Text>
-        {viewerState?.isOpen ? (
-          <Text dimColor>
-            <Text color="cyan">↑↓</Text> Navigate <Text color="cyan">ESC</Text> Close Viewer
-          </Text>
-        ) : (
-          <Text dimColor>
-            <Text color="cyan">↑↓</Text> Navigate <Text color="cyan">←→</Text> Collapse/Expand{' '}
-            <Text color="cyan">Enter</Text> View <Text color="cyan">F</Text> Focus
-          </Text>
-        )}
+        <Text dimColor>
+          <Text color="cyan">↑↓</Text> Navigate <Text color="cyan">←→</Text> Collapse/Expand{' '}
+          <Text color="cyan">Enter</Text> View <Text color="cyan">F</Text> Focus
+        </Text>
       </Box>
     </Box>
   );

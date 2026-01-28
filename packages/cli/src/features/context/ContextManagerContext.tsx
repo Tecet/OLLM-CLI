@@ -187,7 +187,7 @@ export function ContextManagerProvider({
   const [snapshots, setSnapshots] = useState<ContextSnapshot[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [currentMode, setCurrentMode] = useState<ModeType>('assistant');
-  const [autoSwitchEnabled, setAutoSwitchEnabled] = useState(true);
+  const [autoSwitchEnabled, setAutoSwitchEnabled] = useState(false); // Disabled by default
   const [currentTier, setCurrentTier] = useState<ContextTier>(ContextTier.TIER_3_STANDARD);
   const [autoSizeEnabled, setAutoSizeEnabled] = useState(config?.autoSize ?? true);
 
@@ -357,7 +357,7 @@ export function ContextManagerProvider({
         // Start in assistant mode
         const settingsService = SettingsService.getInstance();
         const startMode = 'assistant';
-        const savedAutoSwitch = settingsService.getAutoSwitch();
+        const savedAutoSwitch = false; // Force auto-switch OFF
 
         modeManager.forceMode(startMode as ModeType);
         modeManager.setAutoSwitch(savedAutoSwitch);

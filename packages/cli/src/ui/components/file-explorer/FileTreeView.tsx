@@ -25,9 +25,9 @@ import { HelpPanel } from './HelpPanel.js';
 import { LoadingIndicator } from './LoadingIndicator.js';
 import { QuickActionsMenu, type QuickAction } from './QuickActionsMenu.js';
 import { QuickOpenDialog } from './QuickOpenDialog.js';
-import { SyntaxViewer } from './SyntaxViewer.js';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { useKeybinds } from '../../../features/context/KeybindsContext.js';
+import { useUI } from '../../../features/context/UIContext.js';
 import { isKey } from '../../utils/keyUtils.js';
 
 import type { FileNode, GitStatus } from './types.js';
@@ -189,6 +189,7 @@ export function FileTreeView({
   const { isFocused, addFocusedFile, removeFocusedFile } = useFileFocus();
   const { activeKeybinds } = useKeybinds();
   const focusManager = useFocusManager();
+  const { openFileViewer, closeFileViewer } = useUI();
 
   // Status message state for user feedback
   const [statusMessage, setStatusMessage] = useState<string>('');
@@ -200,13 +201,6 @@ export function FileTreeView({
   // Loading state for long operations
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState<string>('Loading...');
-
-  // Viewer modal state
-  const [viewerState, setViewerState] = useState<{
-    isOpen: boolean;
-    filePath: string;
-    content: string;
-  } | null>(null);
 
   // Quick actions menu state
   const [menuOpen, setMenuOpen] = useState(false);
@@ -279,13 +273,9 @@ export function FileTreeView({
         // Expand to the file path
         await expandToPath(result.path);
 
-        // Open the file in viewer
+        // Open the file in viewer (left panel)
         const content = await readFile(result.path, 'utf-8');
-        setViewerState({
-          isOpen: true,
-          filePath: result.path,
-          content,
-        });
+        openFileViewer(result.path, content);
 
         showStatus(`Opened: ${result.path}:${result.line}`);
       } catch (error) {
@@ -293,7 +283,7 @@ export function FileTreeView({
         showStatus(`Error opening file: ${errorMsg}`);
       }
     },
-    [expandToPath, showStatus]
+    [expandToPath, showStatus, openFileViewer]
   );
 
   /**
@@ -367,14 +357,8 @@ export function FileTreeView({
 
       const content = await readFile(filePath, 'utf-8');
 
-      setViewerState({
-        isOpen: true,
-        filePath,
-        content,
-      });
-
-      // Register modal with focus manager
-      focusManager.openModal('syntax-viewer');
+      // Open in left panel via UI context
+      openFileViewer(filePath, content);
 
       setStatusMessage('');
     } catch (error) {
@@ -383,16 +367,14 @@ export function FileTreeView({
     } finally {
       setIsLoading(false);
     }
-  }, [getSelectedNode, showStatus, setIsLoading, focusManager]);
+  }, [getSelectedNode, showStatus, setIsLoading, openFileViewer]);
 
   /**
    * Close the syntax viewer modal
    */
   const closeViewer = useCallback(() => {
-    setViewerState(null);
-    // Return focus to parent (file-tree)
-    focusManager.closeModal();
-  }, [focusManager]);
+    closeFileViewer();
+  }, [closeFileViewer]);
 
   /**
    * Open file in external editor
@@ -617,13 +599,6 @@ export function FileTreeView({
         return;
       }
 
-      if (viewerState?.isOpen) {
-        if (isKey(input, key, activeKeybinds.chat.cancel)) {
-          closeViewer(); // Will call focusManager.closeModal()
-        }
-        return;
-      }
-
       if (quickOpenState) {
         // Quick open dialog handles its own input
         return;
@@ -682,7 +657,9 @@ export function FileTreeView({
         if (selectedNode && selectedNode.type === 'directory' && !selectedNode.expanded) {
           (async () => {
             try {
+              // First load the children
               await fileTreeService.expandDirectory(selectedNode, excludePatterns);
+              // Then mark as expanded in context
               expandDirectory(selectedNode.path);
             } catch (_err) {
               showStatus('Error expanding directory');
@@ -710,7 +687,9 @@ export function FileTreeView({
         if (selectedNode && selectedNode.type === 'directory' && !selectedNode.expanded) {
           (async () => {
             try {
+              // First load the children
               await fileTreeService.expandDirectory(selectedNode, excludePatterns);
+              // Then mark as expanded in context
               expandDirectory(selectedNode.path);
             } catch (_err) {
               showStatus('Error expanding directory');
@@ -733,14 +712,14 @@ export function FileTreeView({
             collapseDirectory(selectedNode.path);
             fileTreeService.collapseDirectory(selectedNode);
           } else {
-            // Expand directory - do this synchronously to prevent double-toggle
-            expandDirectory(selectedNode.path);
+            // Expand directory asynchronously
             (async () => {
               try {
+                // First load the children
                 await fileTreeService.expandDirectory(selectedNode, excludePatterns);
+                // Then mark as expanded in context
+                expandDirectory(selectedNode.path);
               } catch (_err) {
-                // If expansion fails, collapse it back
-                collapseDirectory(selectedNode.path);
                 showStatus('Error expanding directory');
               }
             })();
@@ -765,7 +744,6 @@ export function FileTreeView({
     },
     [
       helpPanelOpen,
-      viewerState,
       quickOpenState,
       searchDialogOpen,
       menuOpen,
@@ -821,7 +799,7 @@ export function FileTreeView({
       scrollOffset: treeState.scrollOffset,
       windowSize: treeState.windowSize,
     });
-  }, [treeState.root, treeState.scrollOffset, treeState.windowSize, fileTreeService]);
+  }, [treeState.root, treeState.scrollOffset, treeState.windowSize, treeState.expandedPaths, fileTreeService]);
 
   // Update visible window in state when it changes
   useEffect(() => {
@@ -889,26 +867,7 @@ export function FileTreeView({
         />
       )}
 
-      {viewerState?.isOpen && (
-        <Box
-          flexDirection="column"
-          borderStyle="double"
-          borderColor="cyan"
-          padding={1}
-          flexGrow={1}
-        >
-          <Box marginBottom={1}>
-            <Text color="cyan" bold>
-              Syntax Viewer
-            </Text>
-            <Text color="gray"> (Press Esc to close)</Text>
-          </Box>
-
-          <SyntaxViewer filePath={viewerState.filePath} content={viewerState.content} />
-        </Box>
-      )}
-
-      {!viewerState?.isOpen && !helpPanelOpen && (
+      {!helpPanelOpen && (
         <>
           <LoadingIndicator isLoading={isLoading} message={loadingMessage} />
 

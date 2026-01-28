@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Text } from 'ink';
 
+import { useContextManager } from '../../../features/context/ContextManagerContext.js';
 import { useWindow } from '../../contexts/WindowContext.js';
 import { rightPanelHeaderLabel } from '../../utils/windowDisplayLabels.js';
 
@@ -22,13 +23,29 @@ interface ModeConfidenceDisplayProps {
   theme: Theme;
 }
 
-// Time and confidence bar helpers removed; time display was requested to be removed.
+// Helper to format tier display
+function formatTierDisplay(tier: string): string {
+  if (!tier || typeof tier !== 'string') return 'Unknown';
+  const match = tier.match(/Tier (\d+)/);
+  if (!match) return tier;
 
-/**
- * Mode Confidence Display Component
- *
- * Shows current mode confidence and suggested alternative modes
- */
+  const tierNum = match[1];
+  const tierRanges: Record<string, string> = {
+    '1': '2-4K',
+    '2': '8K',
+    '3': '16K',
+    '4': '32K',
+    '5': '64K+',
+  };
+
+  return tierRanges[tierNum] || tier;
+}
+
+// Helper to capitalize mode name
+function formatModeName(mode: string): string {
+  return mode.charAt(0).toUpperCase() + mode.slice(1);
+}
+
 export function ModeConfidenceDisplay({
   currentMode,
   currentModeIcon,
@@ -39,10 +56,15 @@ export function ModeConfidenceDisplay({
   theme,
 }: ModeConfidenceDisplayProps) {
   const { activeWindow } = useWindow();
+  const { state: contextState } = useContextManager();
 
   const label = rightPanelHeaderLabel(activeWindow)
     ? `${rightPanelHeaderLabel(activeWindow)}:`
     : '';
+
+  const modeStr = formatModeName(currentMode);
+  const tierStr = formatTierDisplay(contextState.currentTier);
+  const optimizationStr = contextState.autoSizeEnabled ? 'Auto' : 'User-optimized';
 
   return (
     <Box flexDirection="column" paddingX={1} alignItems="flex-start">
@@ -58,6 +80,18 @@ export function ModeConfidenceDisplay({
             {currentMode ? currentMode.charAt(0).toUpperCase() + currentMode.slice(1) : 'Unknown'}
           </Text>
         </Box>
+
+        {/* Active Prompt Info - moved here from top */}
+        <Box marginTop={1} alignSelf="flex-start">
+          <Text color={theme.status.info} bold>
+            Active Prompt:{' '}
+          </Text>
+          <Text color={theme.text.primary}>
+            {modeStr} {tierStr}
+          </Text>
+          <Text dimColor> ({optimizationStr})</Text>
+        </Box>
+
         <Box marginTop={2} alignSelf="flex-start">
           {label ? (
             <>
@@ -82,27 +116,17 @@ export function ModeConfidenceDisplay({
             Suggested Modes
           </Text>
           <Box flexDirection="column" marginTop={1} alignItems="flex-start">
-            {suggestedModes.map((suggested, index) => (
-              <Box
-                key={suggested.mode}
-                flexDirection="column"
-                marginBottom={index < suggestedModes.length - 1 ? 1 : 0}
-              >
-                <Box alignSelf="flex-start">
-                  <Text dimColor>├─</Text>
-                  <Text> </Text>
-                  <Text>
-                    {suggested.icon}{' '}
-                    {suggested.mode.charAt(0).toUpperCase() + suggested.mode.slice(1)}
-                  </Text>
-                  <Text dimColor>(</Text>
-                  <Text> </Text>
-                  <Text color={theme.text.accent}>{(suggested.confidence * 100).toFixed(0)}%</Text>
-                  <Text dimColor>)</Text>
-                </Box>
-                <Box marginLeft={3} alignSelf="flex-start">
-                  <Text dimColor>"{suggested.reason}"</Text>
-                </Box>
+            {suggestedModes.map((suggested) => (
+              <Box key={suggested.mode} flexDirection="row" alignSelf="flex-start">
+                <Text dimColor>├─</Text>
+                <Text> </Text>
+                <Text>
+                  {suggested.icon}{' '}
+                  {suggested.mode.charAt(0).toUpperCase() + suggested.mode.slice(1)}
+                </Text>
+                <Text dimColor>:</Text>
+                <Text> </Text>
+                <Text color={theme.text.accent}>{(suggested.confidence * 100).toFixed(0)}%</Text>
               </Box>
             ))}
           </Box>

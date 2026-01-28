@@ -30,6 +30,11 @@ export interface UIState {
   theme: Theme;
   keybinds: Keybinds;
   notifications: Notification[];
+  fileViewer: {
+    isOpen: boolean;
+    filePath: string | null;
+    content: string | null;
+  };
 }
 
 export interface UIContextValue {
@@ -40,6 +45,8 @@ export interface UIContextValue {
   setTheme: (theme: Theme) => void;
   addNotification: (tab: TabType, type: Notification['type']) => void;
   clearNotifications: (tab: TabType) => void;
+  openFileViewer: (filePath: string, content: string) => void;
+  closeFileViewer: () => void;
 }
 
 const UIContext = createContext<UIContextValue | undefined>(undefined);
@@ -65,6 +72,15 @@ export function UIProvider({
   const [theme, setTheme] = useState<Theme>(initialTheme);
   const [keybinds] = useState<Keybinds>(initialKeybinds);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [fileViewer, setFileViewer] = useState<{
+    isOpen: boolean;
+    filePath: string | null;
+    content: string | null;
+  }>({
+    isOpen: false,
+    filePath: null,
+    content: null,
+  });
 
   const toggleSidePanel = useCallback(() => {
     setSidePanelVisible((prev) => !prev);
@@ -94,6 +110,22 @@ export function UIProvider({
     setNotifications((prev) => prev.filter((n) => n.tab !== tab));
   }, []);
 
+  const openFileViewer = useCallback((filePath: string, content: string) => {
+    setFileViewer({
+      isOpen: true,
+      filePath,
+      content,
+    });
+  }, []);
+
+  const closeFileViewer = useCallback(() => {
+    setFileViewer({
+      isOpen: false,
+      filePath: null,
+      content: null,
+    });
+  }, []);
+
   const value: UIContextValue = {
     state: {
       activeTab,
@@ -102,6 +134,7 @@ export function UIProvider({
       theme,
       keybinds,
       notifications,
+      fileViewer,
     },
     setActiveTab,
     toggleSidePanel,
@@ -109,6 +142,8 @@ export function UIProvider({
     setTheme,
     addNotification,
     clearNotifications,
+    openFileViewer,
+    closeFileViewer,
   };
 
   return <UIContext.Provider value={value}>{children}</UIContext.Provider>;

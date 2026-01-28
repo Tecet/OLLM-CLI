@@ -1,0 +1,50 @@
+/**
+ * FilesTabWrapper - Wrapper that creates services and providers for FilesTab
+ *
+ * This component creates the necessary services and wraps FilesTab with FileTreeProvider.
+ * Used in App.tsx to avoid prop drilling.
+ */
+
+import React, { useMemo } from 'react';
+
+import {
+  FileTreeService,
+  FocusSystem,
+  EditorIntegration,
+  FileOperations,
+  FileTreeProvider,
+} from '../file-explorer/index.js';
+import { FilesTab } from './FilesTab.js';
+
+export interface FilesTabWrapperProps {
+  width?: number;
+}
+
+export function FilesTabWrapper({ width }: FilesTabWrapperProps) {
+  // Create services once
+  const services = useMemo(() => {
+    const fileTreeService = new FileTreeService();
+    const focusSystem = new FocusSystem();
+    const editorIntegration = new EditorIntegration();
+    const fileOperations = new FileOperations(process.cwd());
+
+    return {
+      fileTreeService,
+      focusSystem,
+      editorIntegration,
+      fileOperations,
+    };
+  }, []);
+
+  return (
+    <FileTreeProvider>
+      <FilesTab
+        width={width}
+        fileTreeService={services.fileTreeService}
+        focusSystem={services.focusSystem}
+        editorIntegration={services.editorIntegration}
+        fileOperations={services.fileOperations}
+      />
+    </FileTreeProvider>
+  );
+}

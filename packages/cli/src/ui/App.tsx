@@ -28,12 +28,13 @@ import { ChatInputArea } from './components/layout/ChatInputArea.js';
 import { Clock } from './components/layout/Clock.js';
 import { HeaderBar } from './components/layout/HeaderBar.js';
 import { SidePanel } from './components/layout/SidePanel.js';
-import { GPUInfo } from './components/layout/StatusBar.js';
 import { SystemBar } from './components/layout/SystemBar.js';
 import { TabBar } from './components/layout/TabBar.js';
 import { BugReportTab } from './components/tabs/BugReportTab.js';
 import { ChatTab } from './components/tabs/ChatTab.js';
 import { DocsTab } from './components/tabs/DocsTab.js';
+import { FilesTabWrapper } from './components/tabs/FilesTabWrapper.js';
+import { FileViewerTab } from './components/tabs/FileViewerTab.js';
 import { GitHubTab } from './components/tabs/GitHubTab.js';
 import { HooksTab } from './components/tabs/HooksTab.js';
 import { MCPTab } from './components/tabs/MCPTab.js';
@@ -117,6 +118,7 @@ function AppContent({ config }: AppContentProps) {
     requestManualContextInput,
     contextActions,
     setCurrentModel,
+    availableVRAM: gpuInfo?.vramTotal ? gpuInfo.vramTotal / (1024 * 1024 * 1024) : 8, // Convert bytes to GB, use TOTAL VRAM not available
   });
 
   // Welcome message tracking
@@ -289,34 +291,42 @@ Type \`/help\` for more commands.`,
               chatHistoryFocused ? uiState.theme.border.active : uiState.theme.border.primary
             }
           >
-            {uiState.activeTab === 'chat' && (
-              <ChatTab
-                height={row2Height}
-                showBorder={false}
-                showWindowSwitcher={true}
-                metricsConfig={{
-                  enabled: config.ui?.metrics?.enabled !== false,
-                  compactMode: config.ui?.metrics?.compactMode || false,
-                  showPromptTokens: config.ui?.metrics?.showPromptTokens !== false,
-                  showTTFT: config.ui?.metrics?.showTTFT !== false,
-                  showInStatusBar: config.ui?.metrics?.showInStatusBar !== false,
-                }}
-                reasoningConfig={{
-                  enabled: true,
-                  maxVisibleLines: 8,
-                  autoCollapseOnComplete: false,
-                }}
-                columnWidth={leftWidth}
-              />
+            {/* Show file viewer if a file is open, otherwise show the active tab */}
+            {uiState.fileViewer.isOpen ? (
+              <FileViewerTab width={leftWidth} height={row2Height} />
+            ) : (
+              <>
+                {uiState.activeTab === 'chat' && (
+                  <ChatTab
+                    height={row2Height}
+                    showBorder={false}
+                    showWindowSwitcher={true}
+                    metricsConfig={{
+                      enabled: config.ui?.metrics?.enabled !== false,
+                      compactMode: config.ui?.metrics?.compactMode || false,
+                      showPromptTokens: config.ui?.metrics?.showPromptTokens !== false,
+                      showTTFT: config.ui?.metrics?.showTTFT !== false,
+                      showInStatusBar: config.ui?.metrics?.showInStatusBar !== false,
+                    }}
+                    reasoningConfig={{
+                      enabled: true,
+                      maxVisibleLines: 8,
+                      autoCollapseOnComplete: false,
+                    }}
+                    columnWidth={leftWidth}
+                  />
+                )}
+                {uiState.activeTab === 'tools' && <ToolsTab width={leftWidth} />}
+                {uiState.activeTab === 'files' && <FilesTabWrapper width={leftWidth} />}
+                {uiState.activeTab === 'hooks' && <HooksTab windowWidth={leftWidth} />}
+                {uiState.activeTab === 'mcp' && <MCPTab windowWidth={leftWidth} />}
+                {uiState.activeTab === 'settings' && <SettingsTab width={leftWidth} />}
+                {uiState.activeTab === 'docs' && <DocsTab height={row2Height} width={leftWidth} />}
+                {uiState.activeTab === 'search' && <SearchTab width={leftWidth} />}
+                {uiState.activeTab === 'github' && <GitHubTab width={leftWidth} />}
+                {uiState.activeTab === 'bug-report' && <BugReportTab width={leftWidth} />}
+              </>
             )}
-            {uiState.activeTab === 'tools' && <ToolsTab width={leftWidth} />}
-            {uiState.activeTab === 'hooks' && <HooksTab windowWidth={leftWidth} />}
-            {uiState.activeTab === 'mcp' && <MCPTab windowWidth={leftWidth} />}
-            {uiState.activeTab === 'settings' && <SettingsTab width={leftWidth} />}
-            {uiState.activeTab === 'docs' && <DocsTab height={row2Height} width={leftWidth} />}
-            {uiState.activeTab === 'search' && <SearchTab width={leftWidth} />}
-            {uiState.activeTab === 'github' && <GitHubTab width={leftWidth} />}
-            {uiState.activeTab === 'bug-report' && <BugReportTab width={leftWidth} />}
           </Box>
 
           {/* Row 3: System Bar */}
@@ -333,14 +343,9 @@ Type \`/help\` for more commands.`,
         {/* Right Column: Full height side panel */}
         {uiState.sidePanelVisible && (
           <Box width={rightColumnWidth} flexDirection="column">
-            {/* Row 1: Status Bar with HeaderBar component */}
+            {/* Row 1: Header Bar (GPU + VRAM only) */}
             <HeaderBar
-              connection={{
-                status: currentModel ? 'connected' : 'disconnected',
-                provider: config.provider.default || 'ollama',
-              }}
-              model={currentModel || 'none'}
-              gpu={gpuInfo as unknown as GPUInfo | null}
+              gpu={gpuInfo as unknown as { model?: string; vendor?: string; vramTotal?: number; vramUsed?: number; temperature?: number; count?: number } | null}
               theme={uiState.theme}
             />
 

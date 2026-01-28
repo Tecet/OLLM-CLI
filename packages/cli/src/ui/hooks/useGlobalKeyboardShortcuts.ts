@@ -52,7 +52,7 @@ interface UseGlobalKeyboardShortcutsOptions {
  */
 export function useGlobalKeyboardShortcuts(options: UseGlobalKeyboardShortcutsOptions = {}) {
   const { activeKeybinds } = useKeybinds();
-  const { setActiveTab, toggleSidePanel } = useUI();
+  const { setActiveTab, toggleSidePanel, state: uiState, closeFileViewer } = useUI();
   const { clearChat, cancelGeneration, state: chatState } = useChat();
   const focusManager = useFocusManager();
   const { activeDestination, setActiveDestination } = useInputRouting();
@@ -77,8 +77,10 @@ export function useGlobalKeyboardShortcuts(options: UseGlobalKeyboardShortcutsOp
    *
    * ESC always performs hierarchical navigation (moving up one level).
    * If generation is in progress, it also cancels the generation as a side effect.
+   * If file viewer is open, it closes the viewer and returns to chat.
    *
    * Navigation flow:
+   * - File Viewer Open → Close viewer, return to Chat
    * - Level 3 (Modal) → Level 2 (Parent)
    * - Level 2 (Tab Content) → Level 1 (Navbar-Chat)
    * - Level 1 (Navbar-Chat) → User Input
@@ -89,9 +91,26 @@ export function useGlobalKeyboardShortcuts(options: UseGlobalKeyboardShortcutsOp
       cancelGeneration();
     }
 
+    // Check if file viewer is open and close it
+    if (uiState.fileViewer.isOpen) {
+      closeFileViewer();
+      setActiveTab('chat');
+      focusManager.setFocus('nav-bar');
+      focusManager.setMode('browse');
+      return;
+    }
+
     // Primary action: Always perform hierarchical navigation
     focusManager.exitOneLevel();
-  }, [chatState.streaming, chatState.waitingForResponse, cancelGeneration, focusManager]);
+  }, [
+    chatState.streaming,
+    chatState.waitingForResponse,
+    cancelGeneration,
+    uiState.fileViewer.isOpen,
+    closeFileViewer,
+    setActiveTab,
+    focusManager,
+  ]);
 
   // Register global keyboard shortcuts
   useInput(

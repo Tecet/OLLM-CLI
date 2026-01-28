@@ -60,7 +60,13 @@ export function FilesTab({
             rootPath: process.cwd(),
             // excludePatterns: ['node_modules', '.git', 'dist', 'coverage']
           });
-          // console.log('File tree built, setting root:', rootNode);
+          
+          // Immediately expand the root to show files and folders
+          await fileTreeService.expandDirectory(rootNode, ['node_modules', '.git', 'dist', 'coverage']);
+          expandDirectory(rootNode.path);
+          
+          // Set root AFTER expansion so the context has the updated tree with children
+          // console.log('File tree built and expanded, setting root:', rootNode);
           setRoot(rootNode);
         } catch (error) {
           console.error('Failed to initialize file tree:', error);
@@ -68,7 +74,7 @@ export function FilesTab({
       };
       initTree();
     }
-  }, [treeState.root, fileTreeService, setRoot]);
+  }, [treeState.root, fileTreeService, setRoot, expandDirectory]);
 
   // When the file-tree receives focus, ensure the root is expanded and
   // the first folder (if any) is selected so keyboard navigation works

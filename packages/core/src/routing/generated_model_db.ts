@@ -23,8 +23,8 @@ export const GENERATED_MODEL_DB: ModelEntry[] = [
     ]
   },
   {
-    "pattern": "qwen2.5:7b",
-    "family": "qwen2.5:7b",
+    "pattern": "codegeex4:9b",
+    "family": "codegeex4:9b",
     "contextWindow": 131072,
     "capabilities": {
       "toolCalling": true,
@@ -42,46 +42,55 @@ export const GENERATED_MODEL_DB: ModelEntry[] = [
     ]
   },
   {
-    "pattern": "deepseek-r1:7b",
-    "family": "deepseek-r1:7b",
-    "contextWindow": 131072,
+    "pattern": "codegemma:2b",
+    "family": "codegemma:2b",
+    "contextWindow": 8192,
     "capabilities": {
       "toolCalling": false,
       "vision": false,
       "streaming": true,
-      "reasoning": true
+      "reasoning": false
+    },
+    "profiles": [
+      "4k",
+      "8k"
+    ]
+  },
+  {
+    "pattern": "codegemma:7b",
+    "family": "codegemma:7b",
+    "contextWindow": 8192,
+    "capabilities": {
+      "toolCalling": false,
+      "vision": false,
+      "streaming": true,
+      "reasoning": false
+    },
+    "profiles": [
+      "4k",
+      "8k"
+    ]
+  },
+  {
+    "pattern": "codestral:22b",
+    "family": "codestral:22b",
+    "contextWindow": 32768,
+    "capabilities": {
+      "toolCalling": true,
+      "vision": false,
+      "streaming": true,
+      "reasoning": false
     },
     "profiles": [
       "4k",
       "8k",
       "16k",
-      "32k",
-      "64k",
-      "128k"
+      "32k"
     ]
   },
   {
-    "pattern": "phi3:3.8b",
-    "family": "phi3:3.8b",
-    "contextWindow": 131072,
-    "capabilities": {
-      "toolCalling": false,
-      "vision": false,
-      "streaming": true,
-      "reasoning": true
-    },
-    "profiles": [
-      "4k",
-      "8k",
-      "16k",
-      "32k",
-      "64k",
-      "128k"
-    ]
-  },
-  {
-    "pattern": "llama3.2:3b",
-    "family": "llama3.2:3b",
+    "pattern": "command-r7b:7b",
+    "family": "command-r7b:7b",
     "contextWindow": 131072,
     "capabilities": {
       "toolCalling": true,
@@ -99,14 +108,14 @@ export const GENERATED_MODEL_DB: ModelEntry[] = [
     ]
   },
   {
-    "pattern": "qwen3:4b",
-    "family": "qwen3:4b",
+    "pattern": "deepseek-coder-v2:16b",
+    "family": "deepseek-coder-v2:16b",
     "contextWindow": 131072,
     "capabilities": {
       "toolCalling": true,
       "vision": false,
       "streaming": true,
-      "reasoning": true
+      "reasoning": false
     },
     "profiles": [
       "4k",
@@ -137,50 +146,12 @@ export const GENERATED_MODEL_DB: ModelEntry[] = [
     ]
   },
   {
-    "pattern": "gemma3:4b",
-    "family": "gemma3:4b",
-    "contextWindow": 131072,
-    "capabilities": {
-      "toolCalling": true,
-      "vision": false,
-      "streaming": true,
-      "reasoning": true
-    },
-    "profiles": [
-      "4k",
-      "8k",
-      "16k",
-      "32k",
-      "64k",
-      "128k"
-    ]
-  },
-  {
-    "pattern": "gemma3:1b",
-    "family": "gemma3:1b",
+    "pattern": "deepseek-r1:7b",
+    "family": "deepseek-r1:7b",
     "contextWindow": 131072,
     "capabilities": {
       "toolCalling": false,
       "vision": false,
-      "streaming": true,
-      "reasoning": false
-    },
-    "profiles": [
-      "4k",
-      "8k",
-      "16k",
-      "32k",
-      "64k",
-      "128k"
-    ]
-  },
-  {
-    "pattern": "qwen3-vl:8b",
-    "family": "qwen3-vl:8b",
-    "contextWindow": 131072,
-    "capabilities": {
-      "toolCalling": true,
-      "vision": true,
       "streaming": true,
       "reasoning": true
     },
@@ -200,6 +171,477 @@ export const GENERATED_MODEL_DB: ModelEntry[] = [
     "capabilities": {
       "toolCalling": false,
       "vision": false,
+      "streaming": true,
+      "reasoning": true
+    },
+    "profiles": [
+      "4k",
+      "8k",
+      "16k",
+      "32k",
+      "64k",
+      "128k"
+    ]
+  },
+  {
+    "pattern": "dolphin3:8b",
+    "family": "dolphin3:8b",
+    "contextWindow": 32768,
+    "capabilities": {
+      "toolCalling": true,
+      "vision": false,
+      "streaming": true,
+      "reasoning": false
+    },
+    "profiles": [
+      "4k",
+      "8k",
+      "16k",
+      "32k"
+    ]
+  },
+  {
+    "pattern": "gemma3:1b",
+    "family": "gemma3:1b",
+    "contextWindow": 131072,
+    "capabilities": {
+      "toolCalling": true,
+      "vision": false,
+      "streaming": true,
+      "reasoning": false
+    },
+    "profiles": [
+      "4k",
+      "8k",
+      "16k",
+      "32k",
+      "64k",
+      "128k"
+    ]
+  },
+  {
+    "pattern": "gemma3:4b",
+    "family": "gemma3:4b",
+    "contextWindow": 131072,
+    "capabilities": {
+      "toolCalling": true,
+      "vision": false,
+      "streaming": true,
+      "reasoning": true
+    },
+    "profiles": [
+      "4k",
+      "8k",
+      "16k",
+      "32k",
+      "64k",
+      "128k"
+    ]
+  },
+  {
+    "pattern": "gemma3n:e2b",
+    "family": "gemma3n:e2b",
+    "contextWindow": 131072,
+    "capabilities": {
+      "toolCalling": true,
+      "vision": false,
+      "streaming": true,
+      "reasoning": false
+    },
+    "profiles": [
+      "4k",
+      "8k",
+      "16k",
+      "32k",
+      "64k",
+      "128k"
+    ]
+  },
+  {
+    "pattern": "gemma3n:latest",
+    "family": "gemma3n:latest",
+    "contextWindow": 131072,
+    "capabilities": {
+      "toolCalling": true,
+      "vision": false,
+      "streaming": true,
+      "reasoning": false
+    },
+    "profiles": [
+      "4k",
+      "8k",
+      "16k",
+      "32k",
+      "64k",
+      "128k"
+    ]
+  },
+  {
+    "pattern": "gpt-oss:20b",
+    "family": "gpt-oss:20b",
+    "contextWindow": 131072,
+    "capabilities": {
+      "toolCalling": true,
+      "vision": false,
+      "streaming": true,
+      "reasoning": false
+    },
+    "profiles": [
+      "4k",
+      "8k",
+      "16k",
+      "32k",
+      "64k",
+      "128k"
+    ]
+  },
+  {
+    "pattern": "granite-code:3b",
+    "family": "granite-code:3b",
+    "contextWindow": 4096,
+    "capabilities": {
+      "toolCalling": false,
+      "vision": false,
+      "streaming": true,
+      "reasoning": false
+    },
+    "profiles": [
+      "4k"
+    ]
+  },
+  {
+    "pattern": "granite-code:8b",
+    "family": "granite-code:8b",
+    "contextWindow": 4096,
+    "capabilities": {
+      "toolCalling": false,
+      "vision": false,
+      "streaming": true,
+      "reasoning": false
+    },
+    "profiles": [
+      "4k"
+    ]
+  },
+  {
+    "pattern": "granite3.3:8b",
+    "family": "granite3.3:8b",
+    "contextWindow": 131072,
+    "capabilities": {
+      "toolCalling": true,
+      "vision": false,
+      "streaming": true,
+      "reasoning": true
+    },
+    "profiles": [
+      "4k",
+      "8k",
+      "16k",
+      "32k",
+      "64k",
+      "128k"
+    ]
+  },
+  {
+    "pattern": "granite4:latest",
+    "family": "granite4:latest",
+    "contextWindow": 131072,
+    "capabilities": {
+      "toolCalling": true,
+      "vision": false,
+      "streaming": true,
+      "reasoning": false
+    },
+    "profiles": [
+      "4k",
+      "8k",
+      "16k",
+      "32k",
+      "64k",
+      "128k"
+    ]
+  },
+  {
+    "pattern": "llama3:latest",
+    "family": "llama3:latest",
+    "contextWindow": 8192,
+    "capabilities": {
+      "toolCalling": true,
+      "vision": false,
+      "streaming": true,
+      "reasoning": false
+    },
+    "profiles": [
+      "4k",
+      "8k"
+    ]
+  },
+  {
+    "pattern": "llama3.2:3b",
+    "family": "llama3.2:3b",
+    "contextWindow": 131072,
+    "capabilities": {
+      "toolCalling": true,
+      "vision": false,
+      "streaming": true,
+      "reasoning": false
+    },
+    "profiles": [
+      "4k",
+      "8k",
+      "16k",
+      "32k",
+      "64k",
+      "128k"
+    ]
+  },
+  {
+    "pattern": "magicoder:latest",
+    "family": "magicoder:latest",
+    "contextWindow": 16384,
+    "capabilities": {
+      "toolCalling": false,
+      "vision": false,
+      "streaming": true,
+      "reasoning": false
+    },
+    "profiles": [
+      "4k",
+      "8k",
+      "16k"
+    ]
+  },
+  {
+    "pattern": "ministral-3:3b",
+    "family": "ministral-3:3b",
+    "contextWindow": 131072,
+    "capabilities": {
+      "toolCalling": true,
+      "vision": false,
+      "streaming": true,
+      "reasoning": false
+    },
+    "profiles": [
+      "4k",
+      "8k",
+      "16k",
+      "32k",
+      "64k",
+      "128k"
+    ]
+  },
+  {
+    "pattern": "ministral-3:8b",
+    "family": "ministral-3:8b",
+    "contextWindow": 131072,
+    "capabilities": {
+      "toolCalling": true,
+      "vision": false,
+      "streaming": true,
+      "reasoning": false
+    },
+    "profiles": [
+      "4k",
+      "8k",
+      "16k",
+      "32k",
+      "64k",
+      "128k"
+    ]
+  },
+  {
+    "pattern": "opencoder:8b",
+    "family": "opencoder:8b",
+    "contextWindow": 8192,
+    "capabilities": {
+      "toolCalling": false,
+      "vision": false,
+      "streaming": true,
+      "reasoning": false
+    },
+    "profiles": [
+      "4k",
+      "8k"
+    ]
+  },
+  {
+    "pattern": "phi3:3.8b",
+    "family": "phi3:3.8b",
+    "contextWindow": 131072,
+    "capabilities": {
+      "toolCalling": true,
+      "vision": false,
+      "streaming": true,
+      "reasoning": true
+    },
+    "profiles": [
+      "4k",
+      "8k",
+      "16k",
+      "32k",
+      "64k",
+      "128k"
+    ]
+  },
+  {
+    "pattern": "phi4-mini-reasoning:latest",
+    "family": "phi4-mini-reasoning:latest",
+    "contextWindow": 131072,
+    "capabilities": {
+      "toolCalling": false,
+      "vision": false,
+      "streaming": true,
+      "reasoning": true
+    },
+    "profiles": [
+      "4k",
+      "8k",
+      "16k",
+      "32k",
+      "64k",
+      "128k"
+    ]
+  },
+  {
+    "pattern": "qwen2.5:7b",
+    "family": "qwen2.5:7b",
+    "contextWindow": 131072,
+    "capabilities": {
+      "toolCalling": true,
+      "vision": false,
+      "streaming": true,
+      "reasoning": false
+    },
+    "profiles": [
+      "4k",
+      "8k",
+      "16k",
+      "32k",
+      "64k",
+      "128k"
+    ]
+  },
+  {
+    "pattern": "qwen2.5-coder:3b",
+    "family": "qwen2.5-coder:3b",
+    "contextWindow": 131072,
+    "capabilities": {
+      "toolCalling": true,
+      "vision": false,
+      "streaming": true,
+      "reasoning": false
+    },
+    "profiles": [
+      "4k",
+      "8k",
+      "16k",
+      "32k",
+      "64k",
+      "128k"
+    ]
+  },
+  {
+    "pattern": "qwen2.5-coder:7b",
+    "family": "qwen2.5-coder:7b",
+    "contextWindow": 131072,
+    "capabilities": {
+      "toolCalling": true,
+      "vision": false,
+      "streaming": true,
+      "reasoning": false
+    },
+    "profiles": [
+      "4k",
+      "8k",
+      "16k",
+      "32k",
+      "64k",
+      "128k"
+    ]
+  },
+  {
+    "pattern": "qwen3:4b",
+    "family": "qwen3:4b",
+    "contextWindow": 262144,
+    "capabilities": {
+      "toolCalling": true,
+      "vision": false,
+      "streaming": true,
+      "reasoning": true
+    },
+    "profiles": [
+      "4k",
+      "8k",
+      "16k",
+      "32k",
+      "64k",
+      "128k"
+    ]
+  },
+  {
+    "pattern": "qwen3:8b",
+    "family": "qwen3:8b",
+    "contextWindow": 262144,
+    "capabilities": {
+      "toolCalling": true,
+      "vision": false,
+      "streaming": true,
+      "reasoning": true
+    },
+    "profiles": [
+      "4k",
+      "8k",
+      "16k",
+      "32k",
+      "64k",
+      "128k"
+    ]
+  },
+  {
+    "pattern": "qwen3-coder:30b",
+    "family": "qwen3-coder:30b",
+    "contextWindow": 131072,
+    "capabilities": {
+      "toolCalling": true,
+      "vision": false,
+      "streaming": true,
+      "reasoning": false
+    },
+    "profiles": [
+      "4k",
+      "8k",
+      "16k",
+      "32k",
+      "64k",
+      "128k"
+    ]
+  },
+  {
+    "pattern": "qwen3-vl:4b",
+    "family": "qwen3-vl:4b",
+    "contextWindow": 131072,
+    "capabilities": {
+      "toolCalling": true,
+      "vision": true,
+      "streaming": true,
+      "reasoning": false
+    },
+    "profiles": [
+      "4k",
+      "8k",
+      "16k",
+      "32k",
+      "64k",
+      "128k"
+    ]
+  },
+  {
+    "pattern": "qwen3-vl:8b",
+    "family": "qwen3-vl:8b",
+    "contextWindow": 131072,
+    "capabilities": {
+      "toolCalling": true,
+      "vision": true,
       "streaming": true,
       "reasoning": true
     },
@@ -274,75 +716,317 @@ export const GENERATED_RAW_PROFILES = {
     ],
     "default_context": 4096
   },
-  "qwen2.5:7b": {
-    "id": "qwen2.5:7b",
-    "name": "Qwen2.5 7B",
-    "creator": "Alibaba Cloud",
-    "parameters": "7.6B",
-    "quantization": "4-bit (estimated)",
-    "description": "A comprehensive 7B parameter model from the Qwen2.5 series, offering a balance of performance and efficiency.",
+  "codegeex4:9b": {
+    "id": "codegeex4:9b",
+    "name": "CodeGeeX4 9B",
+    "creator": "Zhipu AI",
+    "parameters": "9B",
+    "quantization": "Q4_0",
+    "size": "5.5 GB",
+    "description": "Multilingual code generation model with high inference speed.",
     "abilities": [
-      "General Purpose",
       "Coding",
-      "Math",
       "Multilingual"
     ],
     "tool_support": true,
-    "ollama_url": "https://ollama.com/library/qwen2.5",
+    "reasoning": false,
+    "ollama_url": "https://ollama.com/library/codegeex4",
     "max_context_window": 131072,
     "context_profiles": [
       {
         "size": 4096,
         "size_label": "4k",
-        "vram_estimate": "5.5 GB",
+        "vram_estimate": "7.5 GB",
         "ollama_context_size": 3482,
-        "vram_estimate_gb": 5.5
+        "vram_estimate_gb": 7.5
       },
       {
         "size": 8192,
         "size_label": "8k",
-        "vram_estimate": "6.0 GB",
+        "vram_estimate": "8.1 GB",
         "ollama_context_size": 6963,
-        "vram_estimate_gb": 6
+        "vram_estimate_gb": 8.1
       },
       {
         "size": 16384,
         "size_label": "16k",
-        "vram_estimate": "7.0 GB",
+        "vram_estimate": "9.2 GB",
         "ollama_context_size": 13926,
-        "vram_estimate_gb": 7
+        "vram_estimate_gb": 9.2
       },
       {
         "size": 32768,
         "size_label": "32k",
-        "vram_estimate": "9.0 GB",
+        "vram_estimate": "11.5 GB",
         "ollama_context_size": 27853,
-        "vram_estimate_gb": 9
+        "vram_estimate_gb": 11.5
       },
       {
         "size": 65536,
         "size_label": "64k",
-        "vram_estimate": "13.5 GB",
+        "vram_estimate": "15.8 GB",
         "ollama_context_size": 55706,
-        "vram_estimate_gb": 13.5
+        "vram_estimate_gb": 15.8
       },
       {
         "size": 131072,
         "size_label": "128k",
-        "vram_estimate": "22.5 GB",
+        "vram_estimate": "24.5 GB",
         "ollama_context_size": 111411,
-        "vram_estimate_gb": 22.5
+        "vram_estimate_gb": 24.5
       }
     ],
     "default_context": 4096
   },
-  "deepseek-r1:7b": {
-    "id": "deepseek-r1:7b",
-    "name": "DeepSeek R1 7B",
-    "creator": "DeepSeek",
+  "codegemma:2b": {
+    "id": "codegemma:2b",
+    "name": "CodeGemma 2B",
+    "creator": "Google DeepMind",
+    "parameters": "2B",
+    "quantization": "Q4_K_M",
+    "size": "1.6 GB",
+    "description": "Lightweight code completion model for on-device use.",
+    "abilities": [
+      "Coding",
+      "Code Completion"
+    ],
+    "tool_support": false,
+    "reasoning": false,
+    "ollama_url": "https://ollama.com/library/codegemma",
+    "max_context_window": 8192,
+    "context_profiles": [
+      {
+        "size": 4096,
+        "size_label": "4k",
+        "vram_estimate": "3.0 GB",
+        "ollama_context_size": 3482,
+        "vram_estimate_gb": 3
+      },
+      {
+        "size": 8192,
+        "size_label": "8k",
+        "vram_estimate": "3.4 GB",
+        "ollama_context_size": 6963,
+        "vram_estimate_gb": 3.4
+      }
+    ],
+    "default_context": 4096
+  },
+  "codegemma:7b": {
+    "id": "codegemma:7b",
+    "name": "CodeGemma 7B",
+    "creator": "Google DeepMind",
     "parameters": "7B",
-    "quantization": "4-bit (estimated)",
-    "description": "A distilled reasoning model based on Qwen2.5-Math-7B, optimized for complex logical tasks.",
+    "quantization": "Q4_K_M",
+    "size": "5.0 GB",
+    "description": "Specialized code generation and completion model.",
+    "abilities": [
+      "Coding",
+      "Code Generation"
+    ],
+    "tool_support": false,
+    "reasoning": false,
+    "ollama_url": "https://ollama.com/library/codegemma",
+    "max_context_window": 8192,
+    "context_profiles": [
+      {
+        "size": 4096,
+        "size_label": "4k",
+        "vram_estimate": "7.0 GB",
+        "ollama_context_size": 3482,
+        "vram_estimate_gb": 7
+      },
+      {
+        "size": 8192,
+        "size_label": "8k",
+        "vram_estimate": "8.5 GB",
+        "ollama_context_size": 6963,
+        "vram_estimate_gb": 8.5
+      }
+    ],
+    "default_context": 4096
+  },
+  "codestral:22b": {
+    "id": "codestral:22b",
+    "name": "Codestral 22B",
+    "creator": "Mistral AI",
+    "parameters": "22B",
+    "quantization": "Q4_0",
+    "size": "12 GB",
+    "description": "Mistral's model optimized for intermediate code generation tasks.",
+    "abilities": [
+      "Coding",
+      "Code Generation"
+    ],
+    "tool_support": true,
+    "reasoning": false,
+    "ollama_url": "https://ollama.com/library/codestral",
+    "max_context_window": 32768,
+    "context_profiles": [
+      {
+        "size": 4096,
+        "size_label": "4k",
+        "vram_estimate": "14.5 GB",
+        "ollama_context_size": 3482,
+        "vram_estimate_gb": 14.5
+      },
+      {
+        "size": 8192,
+        "size_label": "8k",
+        "vram_estimate": "15.6 GB",
+        "ollama_context_size": 6963,
+        "vram_estimate_gb": 15.6
+      },
+      {
+        "size": 16384,
+        "size_label": "16k",
+        "vram_estimate": "17.8 GB",
+        "ollama_context_size": 13926,
+        "vram_estimate_gb": 17.8
+      },
+      {
+        "size": 32768,
+        "size_label": "32k",
+        "vram_estimate": "22.0 GB",
+        "ollama_context_size": 27853,
+        "vram_estimate_gb": 22
+      }
+    ],
+    "default_context": 4096
+  },
+  "command-r7b:7b": {
+    "id": "command-r7b:7b",
+    "name": "Command R7B 7B",
+    "creator": "Cohere",
+    "parameters": "7B",
+    "quantization": "Q4_K_M",
+    "size": "5.1 GB",
+    "description": "Optimized for RAG and tool use, excellent instruction following.",
+    "abilities": [
+      "General Purpose",
+      "RAG",
+      "Tool Use"
+    ],
+    "tool_support": true,
+    "reasoning": false,
+    "ollama_url": "https://ollama.com/library/command-r7b",
+    "max_context_window": 131072,
+    "context_profiles": [
+      {
+        "size": 4096,
+        "size_label": "4k",
+        "vram_estimate": "7.0 GB",
+        "ollama_context_size": 3482,
+        "vram_estimate_gb": 7
+      },
+      {
+        "size": 8192,
+        "size_label": "8k",
+        "vram_estimate": "7.6 GB",
+        "ollama_context_size": 6963,
+        "vram_estimate_gb": 7.6
+      },
+      {
+        "size": 16384,
+        "size_label": "16k",
+        "vram_estimate": "8.8 GB",
+        "ollama_context_size": 13926,
+        "vram_estimate_gb": 8.8
+      },
+      {
+        "size": 32768,
+        "size_label": "32k",
+        "vram_estimate": "11.0 GB",
+        "ollama_context_size": 27853,
+        "vram_estimate_gb": 11
+      },
+      {
+        "size": 65536,
+        "size_label": "64k",
+        "vram_estimate": "15.5 GB",
+        "ollama_context_size": 55706,
+        "vram_estimate_gb": 15.5
+      },
+      {
+        "size": 131072,
+        "size_label": "128k",
+        "vram_estimate": "24.5 GB",
+        "ollama_context_size": 111411,
+        "vram_estimate_gb": 24.5
+      }
+    ],
+    "default_context": 4096
+  },
+  "deepseek-coder-v2:16b": {
+    "id": "deepseek-coder-v2:16b",
+    "name": "DeepSeek Coder V2 16B",
+    "creator": "DeepSeek",
+    "parameters": "16B",
+    "quantization": "Q4_K_M",
+    "size": "8.9 GB",
+    "description": "Mixture-of-Experts (MoE) model for advanced coding tasks.",
+    "abilities": [
+      "Coding",
+      "MoE Architecture"
+    ],
+    "tool_support": true,
+    "reasoning": false,
+    "ollama_url": "https://ollama.com/library/deepseek-coder-v2",
+    "max_context_window": 131072,
+    "context_profiles": [
+      {
+        "size": 4096,
+        "size_label": "4k",
+        "vram_estimate": "11.2 GB",
+        "ollama_context_size": 3482,
+        "vram_estimate_gb": 11.2
+      },
+      {
+        "size": 8192,
+        "size_label": "8k",
+        "vram_estimate": "11.5 GB",
+        "ollama_context_size": 6963,
+        "vram_estimate_gb": 11.5
+      },
+      {
+        "size": 16384,
+        "size_label": "16k",
+        "vram_estimate": "12.0 GB",
+        "ollama_context_size": 13926,
+        "vram_estimate_gb": 12
+      },
+      {
+        "size": 32768,
+        "size_label": "32k",
+        "vram_estimate": "13.1 GB",
+        "ollama_context_size": 27853,
+        "vram_estimate_gb": 13.1
+      },
+      {
+        "size": 65536,
+        "size_label": "64k",
+        "vram_estimate": "15.2 GB",
+        "ollama_context_size": 55706,
+        "vram_estimate_gb": 15.2
+      },
+      {
+        "size": 131072,
+        "size_label": "128k",
+        "vram_estimate": "19.5 GB",
+        "ollama_context_size": 111411,
+        "vram_estimate_gb": 19.5
+      }
+    ],
+    "default_context": 4096
+  },
+  "deepseek-r1:1.5b": {
+    "id": "deepseek-r1:1.5b",
+    "name": "DeepSeek R1 1.5B",
+    "creator": "DeepSeek",
+    "parameters": "1.5B",
+    "quantization": "Q4_K_M",
+    "size": "1.1 GB",
+    "description": "Distilled reasoning model, highly efficient for logic puzzles.",
     "abilities": [
       "Reasoning",
       "Math",
@@ -358,6 +1042,825 @@ export const GENERATED_RAW_PROFILES = {
       {
         "size": 4096,
         "size_label": "4k",
+        "vram_estimate": "2.5 GB",
+        "ollama_context_size": 3482,
+        "vram_estimate_gb": 2.5
+      },
+      {
+        "size": 8192,
+        "size_label": "8k",
+        "vram_estimate": "2.8 GB",
+        "ollama_context_size": 6963,
+        "vram_estimate_gb": 2.8
+      },
+      {
+        "size": 16384,
+        "size_label": "16k",
+        "vram_estimate": "3.2 GB",
+        "ollama_context_size": 13926,
+        "vram_estimate_gb": 3.2
+      },
+      {
+        "size": 32768,
+        "size_label": "32k",
+        "vram_estimate": "4.1 GB",
+        "ollama_context_size": 27853,
+        "vram_estimate_gb": 4.1
+      },
+      {
+        "size": 65536,
+        "size_label": "64k",
+        "vram_estimate": "6.0 GB",
+        "ollama_context_size": 55706,
+        "vram_estimate_gb": 6
+      },
+      {
+        "size": 131072,
+        "size_label": "128k",
+        "vram_estimate": "9.8 GB",
+        "ollama_context_size": 111411,
+        "vram_estimate_gb": 9.8
+      }
+    ],
+    "default_context": 4096
+  },
+  "deepseek-r1:7b": {
+    "id": "deepseek-r1:7b",
+    "name": "DeepSeek R1 7B",
+    "creator": "DeepSeek",
+    "parameters": "7B",
+    "quantization": "Q4_K_M",
+    "size": "4.7 GB",
+    "description": "Distilled reasoning model based on Qwen 2.5, excels in math/logic.",
+    "abilities": [
+      "Reasoning",
+      "Math",
+      "Logic"
+    ],
+    "tool_support": false,
+    "thinking_enabled": true,
+    "reasoning_buffer": "Variable",
+    "warmup_timeout": 120000,
+    "ollama_url": "https://ollama.com/library/deepseek-r1",
+    "max_context_window": 131072,
+    "context_profiles": [
+      {
+        "size": 4096,
+        "size_label": "4k",
+        "vram_estimate": "6.5 GB",
+        "ollama_context_size": 3482,
+        "vram_estimate_gb": 6.5
+      },
+      {
+        "size": 8192,
+        "size_label": "8k",
+        "vram_estimate": "7.2 GB",
+        "ollama_context_size": 6963,
+        "vram_estimate_gb": 7.2
+      },
+      {
+        "size": 16384,
+        "size_label": "16k",
+        "vram_estimate": "8.4 GB",
+        "ollama_context_size": 13926,
+        "vram_estimate_gb": 8.4
+      },
+      {
+        "size": 32768,
+        "size_label": "32k",
+        "vram_estimate": "10.8 GB",
+        "ollama_context_size": 27853,
+        "vram_estimate_gb": 10.8
+      },
+      {
+        "size": 65536,
+        "size_label": "64k",
+        "vram_estimate": "15.5 GB",
+        "ollama_context_size": 55706,
+        "vram_estimate_gb": 15.5
+      },
+      {
+        "size": 131072,
+        "size_label": "128k",
+        "vram_estimate": "24.5 GB",
+        "ollama_context_size": 111411,
+        "vram_estimate_gb": 24.5
+      }
+    ],
+    "default_context": 4096
+  },
+  "deepseek-r1:8b": {
+    "id": "deepseek-r1:8b",
+    "name": "DeepSeek R1 8B",
+    "creator": "DeepSeek",
+    "parameters": "8B",
+    "quantization": "Q4_K_M",
+    "size": "5.2 GB",
+    "description": "Distilled reasoning model based on Llama 3, balanced for logic.",
+    "abilities": [
+      "Reasoning",
+      "Math",
+      "Logic"
+    ],
+    "tool_support": false,
+    "thinking_enabled": true,
+    "reasoning_buffer": "Variable",
+    "warmup_timeout": 120000,
+    "ollama_url": "https://ollama.com/library/deepseek-r1",
+    "max_context_window": 131072,
+    "context_profiles": [
+      {
+        "size": 4096,
+        "size_label": "4k",
+        "vram_estimate": "7.0 GB",
+        "ollama_context_size": 3482,
+        "vram_estimate_gb": 7
+      },
+      {
+        "size": 8192,
+        "size_label": "8k",
+        "vram_estimate": "7.8 GB",
+        "ollama_context_size": 6963,
+        "vram_estimate_gb": 7.8
+      },
+      {
+        "size": 16384,
+        "size_label": "16k",
+        "vram_estimate": "9.0 GB",
+        "ollama_context_size": 13926,
+        "vram_estimate_gb": 9
+      },
+      {
+        "size": 32768,
+        "size_label": "32k",
+        "vram_estimate": "11.5 GB",
+        "ollama_context_size": 27853,
+        "vram_estimate_gb": 11.5
+      },
+      {
+        "size": 65536,
+        "size_label": "64k",
+        "vram_estimate": "16.2 GB",
+        "ollama_context_size": 55706,
+        "vram_estimate_gb": 16.2
+      },
+      {
+        "size": 131072,
+        "size_label": "128k",
+        "vram_estimate": "25.0 GB",
+        "ollama_context_size": 111411,
+        "vram_estimate_gb": 25
+      }
+    ],
+    "default_context": 4096
+  },
+  "dolphin3:8b": {
+    "id": "dolphin3:8b",
+    "name": "Dolphin3 8B",
+    "creator": "Cognitive Computations",
+    "parameters": "8B",
+    "quantization": "Q4_K_M",
+    "size": "4.9 GB",
+    "description": "Uncensored/compliant model optimized for general conversation/coding.",
+    "abilities": [
+      "General Purpose",
+      "Coding",
+      "Uncensored"
+    ],
+    "tool_support": true,
+    "reasoning": false,
+    "ollama_url": "https://ollama.com/library/dolphin3",
+    "max_context_window": 32768,
+    "context_profiles": [
+      {
+        "size": 4096,
+        "size_label": "4k",
+        "vram_estimate": "7.0 GB",
+        "ollama_context_size": 3482,
+        "vram_estimate_gb": 7
+      },
+      {
+        "size": 8192,
+        "size_label": "8k",
+        "vram_estimate": "7.7 GB",
+        "ollama_context_size": 6963,
+        "vram_estimate_gb": 7.7
+      },
+      {
+        "size": 16384,
+        "size_label": "16k",
+        "vram_estimate": "8.9 GB",
+        "ollama_context_size": 13926,
+        "vram_estimate_gb": 8.9
+      },
+      {
+        "size": 32768,
+        "size_label": "32k",
+        "vram_estimate": "11.2 GB",
+        "ollama_context_size": 27853,
+        "vram_estimate_gb": 11.2
+      }
+    ],
+    "default_context": 4096
+  },
+  "gemma3:1b": {
+    "id": "gemma3:1b",
+    "name": "Gemma 3 1B",
+    "creator": "Google DeepMind",
+    "parameters": "1B",
+    "quantization": "Q4_K_M",
+    "size": "815 MB",
+    "description": "Ultra-compact text model from Google, high efficiency.",
+    "abilities": [
+      "General Purpose",
+      "Fast Inference"
+    ],
+    "tool_support": true,
+    "reasoning": false,
+    "ollama_url": "https://ollama.com/library/gemma3",
+    "max_context_window": 131072,
+    "context_profiles": [
+      {
+        "size": 4096,
+        "size_label": "4k",
+        "vram_estimate": "2.0 GB",
+        "ollama_context_size": 3482,
+        "vram_estimate_gb": 2
+      },
+      {
+        "size": 8192,
+        "size_label": "8k",
+        "vram_estimate": "2.4 GB",
+        "ollama_context_size": 6963,
+        "vram_estimate_gb": 2.4
+      },
+      {
+        "size": 16384,
+        "size_label": "16k",
+        "vram_estimate": "3.2 GB",
+        "ollama_context_size": 13926,
+        "vram_estimate_gb": 3.2
+      },
+      {
+        "size": 32768,
+        "size_label": "32k",
+        "vram_estimate": "4.8 GB",
+        "ollama_context_size": 27853,
+        "vram_estimate_gb": 4.8
+      },
+      {
+        "size": 65536,
+        "size_label": "64k",
+        "vram_estimate": "8.0 GB",
+        "ollama_context_size": 55706,
+        "vram_estimate_gb": 8
+      },
+      {
+        "size": 131072,
+        "size_label": "128k",
+        "vram_estimate": "14.2 GB",
+        "ollama_context_size": 111411,
+        "vram_estimate_gb": 14.2
+      }
+    ],
+    "default_context": 4096
+  },
+  "gemma3:4b": {
+    "id": "gemma3:4b",
+    "name": "Gemma 3 4B",
+    "creator": "Google DeepMind",
+    "parameters": "4B",
+    "quantization": "Q4_K_M",
+    "size": "3.3 GB",
+    "description": "Balanced Google model with strong general purpose capabilities.",
+    "abilities": [
+      "General Purpose",
+      "Reasoning"
+    ],
+    "tool_support": true,
+    "reasoning": false,
+    "ollama_url": "https://ollama.com/library/gemma3",
+    "max_context_window": 131072,
+    "context_profiles": [
+      {
+        "size": 4096,
+        "size_label": "4k",
+        "vram_estimate": "5.0 GB",
+        "ollama_context_size": 3482,
+        "vram_estimate_gb": 5
+      },
+      {
+        "size": 8192,
+        "size_label": "8k",
+        "vram_estimate": "5.8 GB",
+        "ollama_context_size": 6963,
+        "vram_estimate_gb": 5.8
+      },
+      {
+        "size": 16384,
+        "size_label": "16k",
+        "vram_estimate": "7.5 GB",
+        "ollama_context_size": 13926,
+        "vram_estimate_gb": 7.5
+      },
+      {
+        "size": 32768,
+        "size_label": "32k",
+        "vram_estimate": "10.5 GB",
+        "ollama_context_size": 27853,
+        "vram_estimate_gb": 10.5
+      },
+      {
+        "size": 65536,
+        "size_label": "64k",
+        "vram_estimate": "16.5 GB",
+        "ollama_context_size": 55706,
+        "vram_estimate_gb": 16.5
+      },
+      {
+        "size": 131072,
+        "size_label": "128k",
+        "vram_estimate": "28.5 GB",
+        "ollama_context_size": 111411,
+        "vram_estimate_gb": 28.5
+      }
+    ],
+    "default_context": 4096
+  },
+  "gemma3n:e2b": {
+    "id": "gemma3n:e2b",
+    "name": "Gemma 3 Nano E2B",
+    "creator": "Google DeepMind",
+    "parameters": "E2B",
+    "quantization": "Q4_K_M",
+    "size": "5.6 GB",
+    "description": "Nano/Experimental variant of Gemma 3.",
+    "abilities": [
+      "General Purpose",
+      "Experimental"
+    ],
+    "tool_support": true,
+    "reasoning": false,
+    "ollama_url": "https://ollama.com/library/gemma3",
+    "max_context_window": 131072,
+    "context_profiles": [
+      {
+        "size": 4096,
+        "size_label": "4k",
+        "vram_estimate": "7.5 GB",
+        "ollama_context_size": 3482,
+        "vram_estimate_gb": 7.5
+      },
+      {
+        "size": 8192,
+        "size_label": "8k",
+        "vram_estimate": "8.5 GB",
+        "ollama_context_size": 6963,
+        "vram_estimate_gb": 8.5
+      },
+      {
+        "size": 16384,
+        "size_label": "16k",
+        "vram_estimate": "10.5 GB",
+        "ollama_context_size": 13926,
+        "vram_estimate_gb": 10.5
+      },
+      {
+        "size": 32768,
+        "size_label": "32k",
+        "vram_estimate": "14.5 GB",
+        "ollama_context_size": 27853,
+        "vram_estimate_gb": 14.5
+      },
+      {
+        "size": 65536,
+        "size_label": "64k",
+        "vram_estimate": "22.5 GB",
+        "ollama_context_size": 55706,
+        "vram_estimate_gb": 22.5
+      },
+      {
+        "size": 131072,
+        "size_label": "128k",
+        "vram_estimate": "38.5 GB",
+        "ollama_context_size": 111411,
+        "vram_estimate_gb": 38.5
+      }
+    ],
+    "default_context": 4096
+  },
+  "gemma3n:latest": {
+    "id": "gemma3n:latest",
+    "name": "Gemma 3 Nano Latest",
+    "creator": "Google DeepMind",
+    "parameters": "Latest",
+    "quantization": "Q4_K_M",
+    "size": "7.5 GB",
+    "description": "Latest standard variant of the Gemma 3 Nano/Next series.",
+    "abilities": [
+      "General Purpose"
+    ],
+    "tool_support": true,
+    "reasoning": false,
+    "ollama_url": "https://ollama.com/library/gemma3",
+    "max_context_window": 131072,
+    "context_profiles": [
+      {
+        "size": 4096,
+        "size_label": "4k",
+        "vram_estimate": "9.5 GB",
+        "ollama_context_size": 3482,
+        "vram_estimate_gb": 9.5
+      },
+      {
+        "size": 8192,
+        "size_label": "8k",
+        "vram_estimate": "10.8 GB",
+        "ollama_context_size": 6963,
+        "vram_estimate_gb": 10.8
+      },
+      {
+        "size": 16384,
+        "size_label": "16k",
+        "vram_estimate": "13.5 GB",
+        "ollama_context_size": 13926,
+        "vram_estimate_gb": 13.5
+      },
+      {
+        "size": 32768,
+        "size_label": "32k",
+        "vram_estimate": "18.5 GB",
+        "ollama_context_size": 27853,
+        "vram_estimate_gb": 18.5
+      },
+      {
+        "size": 65536,
+        "size_label": "64k",
+        "vram_estimate": "28.5 GB",
+        "ollama_context_size": 55706,
+        "vram_estimate_gb": 28.5
+      },
+      {
+        "size": 131072,
+        "size_label": "128k",
+        "vram_estimate": "48.0 GB",
+        "ollama_context_size": 111411,
+        "vram_estimate_gb": 48
+      }
+    ],
+    "default_context": 4096
+  },
+  "gpt-oss:20b": {
+    "id": "gpt-oss:20b",
+    "name": "GPT-OSS 20B",
+    "creator": "OpenAI (Hypothetical/Mirror)",
+    "parameters": "20B",
+    "quantization": "Q4_0",
+    "size": "13 GB",
+    "description": "Open-weight model by OpenAI (hypothetical/leaked) for general tasks.",
+    "abilities": [
+      "General Purpose"
+    ],
+    "tool_support": true,
+    "reasoning": false,
+    "ollama_url": "https://ollama.com/library/gpt-oss",
+    "max_context_window": 131072,
+    "context_profiles": [
+      {
+        "size": 4096,
+        "size_label": "4k",
+        "vram_estimate": "16.5 GB",
+        "ollama_context_size": 3482,
+        "vram_estimate_gb": 16.5
+      },
+      {
+        "size": 8192,
+        "size_label": "8k",
+        "vram_estimate": "17.5 GB",
+        "ollama_context_size": 6963,
+        "vram_estimate_gb": 17.5
+      },
+      {
+        "size": 16384,
+        "size_label": "16k",
+        "vram_estimate": "19.5 GB",
+        "ollama_context_size": 13926,
+        "vram_estimate_gb": 19.5
+      },
+      {
+        "size": 32768,
+        "size_label": "32k",
+        "vram_estimate": "23.5 GB",
+        "ollama_context_size": 27853,
+        "vram_estimate_gb": 23.5
+      },
+      {
+        "size": 65536,
+        "size_label": "64k",
+        "vram_estimate": "31.5 GB",
+        "ollama_context_size": 55706,
+        "vram_estimate_gb": 31.5
+      },
+      {
+        "size": 131072,
+        "size_label": "128k",
+        "vram_estimate": "47.5 GB",
+        "ollama_context_size": 111411,
+        "vram_estimate_gb": 47.5
+      }
+    ],
+    "default_context": 4096
+  },
+  "granite-code:3b": {
+    "id": "granite-code:3b",
+    "name": "Granite Code 3B",
+    "creator": "IBM",
+    "parameters": "3B",
+    "quantization": "Q4_K_M",
+    "size": "2.0 GB",
+    "description": "IBM enterprise coding model, very fast.",
+    "abilities": [
+      "Coding"
+    ],
+    "tool_support": false,
+    "reasoning": false,
+    "ollama_url": "https://ollama.com/library/granite-code",
+    "max_context_window": 4096,
+    "context_profiles": [
+      {
+        "size": 4096,
+        "size_label": "4k",
+        "vram_estimate": "3.5 GB",
+        "ollama_context_size": 3482,
+        "vram_estimate_gb": 3.5
+      }
+    ],
+    "default_context": 4096
+  },
+  "granite-code:8b": {
+    "id": "granite-code:8b",
+    "name": "Granite Code 8B",
+    "creator": "IBM",
+    "parameters": "8B",
+    "quantization": "Q4_K_M",
+    "size": "4.6 GB",
+    "description": "IBM enterprise coding model, robust for Python/Java/JS.",
+    "abilities": [
+      "Coding"
+    ],
+    "tool_support": false,
+    "reasoning": false,
+    "ollama_url": "https://ollama.com/library/granite-code",
+    "max_context_window": 4096,
+    "context_profiles": [
+      {
+        "size": 4096,
+        "size_label": "4k",
+        "vram_estimate": "6.5 GB",
+        "ollama_context_size": 3482,
+        "vram_estimate_gb": 6.5
+      }
+    ],
+    "default_context": 4096
+  },
+  "granite3.3:8b": {
+    "id": "granite3.3:8b",
+    "name": "Granite 3.3 8B",
+    "creator": "IBM",
+    "parameters": "8B",
+    "quantization": "Q4_K_M",
+    "size": "4.9 GB",
+    "description": "Updated IBM model with improved reasoning and instruction following.",
+    "abilities": [
+      "General Purpose",
+      "Reasoning"
+    ],
+    "tool_support": true,
+    "reasoning": false,
+    "ollama_url": "https://ollama.com/library/granite3.3",
+    "max_context_window": 131072,
+    "context_profiles": [
+      {
+        "size": 4096,
+        "size_label": "4k",
+        "vram_estimate": "7.0 GB",
+        "ollama_context_size": 3482,
+        "vram_estimate_gb": 7
+      },
+      {
+        "size": 8192,
+        "size_label": "8k",
+        "vram_estimate": "7.7 GB",
+        "ollama_context_size": 6963,
+        "vram_estimate_gb": 7.7
+      },
+      {
+        "size": 16384,
+        "size_label": "16k",
+        "vram_estimate": "8.9 GB",
+        "ollama_context_size": 13926,
+        "vram_estimate_gb": 8.9
+      },
+      {
+        "size": 32768,
+        "size_label": "32k",
+        "vram_estimate": "11.2 GB",
+        "ollama_context_size": 27853,
+        "vram_estimate_gb": 11.2
+      },
+      {
+        "size": 65536,
+        "size_label": "64k",
+        "vram_estimate": "15.8 GB",
+        "ollama_context_size": 55706,
+        "vram_estimate_gb": 15.8
+      },
+      {
+        "size": 131072,
+        "size_label": "128k",
+        "vram_estimate": "24.8 GB",
+        "ollama_context_size": 111411,
+        "vram_estimate_gb": 24.8
+      }
+    ],
+    "default_context": 4096
+  },
+  "granite4:latest": {
+    "id": "granite4:latest",
+    "name": "Granite 4 Latest",
+    "creator": "IBM",
+    "parameters": "Latest",
+    "quantization": "Q4_K_M",
+    "size": "2.1 GB",
+    "description": "Next-gen IBM model, hybrid Mamba architecture for speed.",
+    "abilities": [
+      "General Purpose",
+      "Fast Inference"
+    ],
+    "tool_support": true,
+    "reasoning": false,
+    "ollama_url": "https://ollama.com/library/granite4",
+    "max_context_window": 131072,
+    "context_profiles": [
+      {
+        "size": 4096,
+        "size_label": "4k",
+        "vram_estimate": "4.0 GB",
+        "ollama_context_size": 3482,
+        "vram_estimate_gb": 4
+      },
+      {
+        "size": 8192,
+        "size_label": "8k",
+        "vram_estimate": "4.5 GB",
+        "ollama_context_size": 6963,
+        "vram_estimate_gb": 4.5
+      },
+      {
+        "size": 16384,
+        "size_label": "16k",
+        "vram_estimate": "5.5 GB",
+        "ollama_context_size": 13926,
+        "vram_estimate_gb": 5.5
+      },
+      {
+        "size": 32768,
+        "size_label": "32k",
+        "vram_estimate": "7.5 GB",
+        "ollama_context_size": 27853,
+        "vram_estimate_gb": 7.5
+      },
+      {
+        "size": 65536,
+        "size_label": "64k",
+        "vram_estimate": "11.5 GB",
+        "ollama_context_size": 55706,
+        "vram_estimate_gb": 11.5
+      },
+      {
+        "size": 131072,
+        "size_label": "128k",
+        "vram_estimate": "19.5 GB",
+        "ollama_context_size": 111411,
+        "vram_estimate_gb": 19.5
+      }
+    ],
+    "default_context": 4096
+  },
+  "llama3:latest": {
+    "id": "llama3:latest",
+    "name": "Llama 3 Latest",
+    "creator": "Meta",
+    "parameters": "8B",
+    "quantization": "Q4_K_M",
+    "size": "4.7 GB",
+    "description": "Meta's 8B standard model (robust generalist).",
+    "abilities": [
+      "General Purpose"
+    ],
+    "tool_support": true,
+    "reasoning": false,
+    "ollama_url": "https://ollama.com/library/llama3",
+    "max_context_window": 8192,
+    "context_profiles": [
+      {
+        "size": 4096,
+        "size_label": "4k",
+        "vram_estimate": "6.5 GB",
+        "ollama_context_size": 3482,
+        "vram_estimate_gb": 6.5
+      },
+      {
+        "size": 8192,
+        "size_label": "8k",
+        "vram_estimate": "7.2 GB",
+        "ollama_context_size": 6963,
+        "vram_estimate_gb": 7.2
+      }
+    ],
+    "default_context": 4096
+  },
+  "llama3.2:3b": {
+    "id": "llama3.2:3b",
+    "name": "Llama 3.2 3B",
+    "creator": "Meta",
+    "parameters": "3B",
+    "quantization": "Q4_K_M",
+    "size": "2.0 GB",
+    "description": "Lightweight Llama optimized for edge devices.",
+    "abilities": [
+      "General Purpose",
+      "Edge Optimized"
+    ],
+    "tool_support": true,
+    "reasoning": false,
+    "ollama_url": "https://ollama.com/library/llama3.2",
+    "max_context_window": 131072,
+    "context_profiles": [
+      {
+        "size": 4096,
+        "size_label": "4k",
+        "vram_estimate": "3.5 GB",
+        "ollama_context_size": 3482,
+        "vram_estimate_gb": 3.5
+      },
+      {
+        "size": 8192,
+        "size_label": "8k",
+        "vram_estimate": "3.9 GB",
+        "ollama_context_size": 6963,
+        "vram_estimate_gb": 3.9
+      },
+      {
+        "size": 16384,
+        "size_label": "16k",
+        "vram_estimate": "4.6 GB",
+        "ollama_context_size": 13926,
+        "vram_estimate_gb": 4.6
+      },
+      {
+        "size": 32768,
+        "size_label": "32k",
+        "vram_estimate": "6.0 GB",
+        "ollama_context_size": 27853,
+        "vram_estimate_gb": 6
+      },
+      {
+        "size": 65536,
+        "size_label": "64k",
+        "vram_estimate": "8.8 GB",
+        "ollama_context_size": 55706,
+        "vram_estimate_gb": 8.8
+      },
+      {
+        "size": 131072,
+        "size_label": "128k",
+        "vram_estimate": "14.5 GB",
+        "ollama_context_size": 111411,
+        "vram_estimate_gb": 14.5
+      }
+    ],
+    "default_context": 4096
+  },
+  "magicoder:latest": {
+    "id": "magicoder:latest",
+    "name": "Magicoder Latest",
+    "creator": "ise-uiuc (OSS-Instruct Team)",
+    "parameters": "Latest",
+    "quantization": "Q4_K_M",
+    "size": "3.8 GB",
+    "description": "Code model trained on synthetic data (OSS-Instruct).",
+    "abilities": [
+      "Coding"
+    ],
+    "tool_support": false,
+    "reasoning": false,
+    "ollama_url": "https://ollama.com/library/magicoder",
+    "max_context_window": 16384,
+    "context_profiles": [
+      {
+        "size": 4096,
+        "size_label": "4k",
         "vram_estimate": "5.5 GB",
         "ollama_context_size": 3482,
         "vram_estimate_gb": 5.5
@@ -372,9 +1875,50 @@ export const GENERATED_RAW_PROFILES = {
       {
         "size": 16384,
         "size_label": "16k",
-        "vram_estimate": "7.0 GB",
+        "vram_estimate": "7.1 GB",
         "ollama_context_size": 13926,
-        "vram_estimate_gb": 7
+        "vram_estimate_gb": 7.1
+      }
+    ],
+    "default_context": 4096
+  },
+  "ministral-3:3b": {
+    "id": "ministral-3:3b",
+    "name": "Ministral 3 3B",
+    "creator": "Mistral AI",
+    "parameters": "3B",
+    "quantization": "Q4_K_M",
+    "size": "3.0 GB",
+    "description": "Mistral's edge model with high intelligence-to-size ratio.",
+    "abilities": [
+      "General Purpose",
+      "Edge Optimized"
+    ],
+    "tool_support": true,
+    "reasoning": false,
+    "ollama_url": "https://ollama.com/library/ministral-3",
+    "max_context_window": 131072,
+    "context_profiles": [
+      {
+        "size": 4096,
+        "size_label": "4k",
+        "vram_estimate": "5.0 GB",
+        "ollama_context_size": 3482,
+        "vram_estimate_gb": 5
+      },
+      {
+        "size": 8192,
+        "size_label": "8k",
+        "vram_estimate": "5.6 GB",
+        "ollama_context_size": 6963,
+        "vram_estimate_gb": 5.6
+      },
+      {
+        "size": 16384,
+        "size_label": "16k",
+        "vram_estimate": "6.8 GB",
+        "ollama_context_size": 13926,
+        "vram_estimate_gb": 6.8
       },
       {
         "size": 32768,
@@ -400,498 +1944,722 @@ export const GENERATED_RAW_PROFILES = {
     ],
     "default_context": 4096
   },
-  "phi3:3.8b": {
-    "id": "phi3:3.8b",
-    "name": "Phi-3 Mini",
-    "creator": "Microsoft",
-    "parameters": "3.8B",
-    "quantization": "4-bit (estimated)",
-    "description": "A lightweight, high-performance model suitable for mobile and edge deployments.",
+  "ministral-3:8b": {
+    "id": "ministral-3:8b",
+    "name": "Ministral 3 8B",
+    "creator": "Mistral AI",
+    "parameters": "8B",
+    "quantization": "Q4_K_M",
+    "size": "6.0 GB",
+    "description": "Larger edge model from Mistral, strong instruction following.",
     "abilities": [
-      "Reasoning",
-      "Coding",
-      "Mobile Optimized"
+      "General Purpose",
+      "Instruction Following"
+    ],
+    "tool_support": true,
+    "reasoning": false,
+    "ollama_url": "https://ollama.com/library/ministral-3",
+    "max_context_window": 131072,
+    "context_profiles": [
+      {
+        "size": 4096,
+        "size_label": "4k",
+        "vram_estimate": "8.0 GB",
+        "ollama_context_size": 3482,
+        "vram_estimate_gb": 8
+      },
+      {
+        "size": 8192,
+        "size_label": "8k",
+        "vram_estimate": "8.8 GB",
+        "ollama_context_size": 6963,
+        "vram_estimate_gb": 8.8
+      },
+      {
+        "size": 16384,
+        "size_label": "16k",
+        "vram_estimate": "10.5 GB",
+        "ollama_context_size": 13926,
+        "vram_estimate_gb": 10.5
+      },
+      {
+        "size": 32768,
+        "size_label": "32k",
+        "vram_estimate": "13.6 GB",
+        "ollama_context_size": 27853,
+        "vram_estimate_gb": 13.6
+      },
+      {
+        "size": 65536,
+        "size_label": "64k",
+        "vram_estimate": "20.0 GB",
+        "ollama_context_size": 55706,
+        "vram_estimate_gb": 20
+      },
+      {
+        "size": 131072,
+        "size_label": "128k",
+        "vram_estimate": "32.5 GB",
+        "ollama_context_size": 111411,
+        "vram_estimate_gb": 32.5
+      }
+    ],
+    "default_context": 4096
+  },
+  "opencoder:8b": {
+    "id": "opencoder:8b",
+    "name": "OpenCoder 8B",
+    "creator": "OpenCoder Team / INF",
+    "parameters": "8B",
+    "quantization": "Q4_K_M",
+    "size": "4.7 GB",
+    "description": "Fully open-source coding model with transparent dataset.",
+    "abilities": [
+      "Coding"
     ],
     "tool_support": false,
+    "reasoning": false,
+    "ollama_url": "https://ollama.com/library/opencoder",
+    "max_context_window": 8192,
+    "context_profiles": [
+      {
+        "size": 4096,
+        "size_label": "4k",
+        "vram_estimate": "6.5 GB",
+        "ollama_context_size": 3482,
+        "vram_estimate_gb": 6.5
+      },
+      {
+        "size": 8192,
+        "size_label": "8k",
+        "vram_estimate": "7.2 GB",
+        "ollama_context_size": 6963,
+        "vram_estimate_gb": 7.2
+      }
+    ],
+    "default_context": 4096
+  },
+  "phi3:3.8b": {
+    "id": "phi3:3.8b",
+    "name": "Phi-3 Mini 3.8B",
+    "creator": "Microsoft",
+    "parameters": "3.8B",
+    "quantization": "Q4_K_M",
+    "size": "2.2 GB",
+    "description": "Microsoft's highly capable small model (Mini).",
+    "abilities": [
+      "Reasoning",
+      "Coding"
+    ],
+    "tool_support": true,
+    "reasoning": false,
     "ollama_url": "https://ollama.com/library/phi3",
     "max_context_window": 131072,
     "context_profiles": [
       {
         "size": 4096,
         "size_label": "4k",
-        "vram_estimate": "2.8 GB",
+        "vram_estimate": "4.0 GB",
         "ollama_context_size": 3482,
-        "vram_estimate_gb": 2.8
+        "vram_estimate_gb": 4
       },
       {
         "size": 8192,
         "size_label": "8k",
-        "vram_estimate": "3.2 GB",
+        "vram_estimate": "4.5 GB",
         "ollama_context_size": 6963,
-        "vram_estimate_gb": 3.2
+        "vram_estimate_gb": 4.5
       },
       {
         "size": 16384,
         "size_label": "16k",
-        "vram_estimate": "4.0 GB",
+        "vram_estimate": "5.5 GB",
         "ollama_context_size": 13926,
-        "vram_estimate_gb": 4
+        "vram_estimate_gb": 5.5
       },
       {
         "size": 32768,
         "size_label": "32k",
-        "vram_estimate": "5.5 GB",
+        "vram_estimate": "7.5 GB",
         "ollama_context_size": 27853,
-        "vram_estimate_gb": 5.5
+        "vram_estimate_gb": 7.5
       },
       {
         "size": 65536,
         "size_label": "64k",
-        "vram_estimate": "8.5 GB",
+        "vram_estimate": "11.5 GB",
         "ollama_context_size": 55706,
-        "vram_estimate_gb": 8.5
+        "vram_estimate_gb": 11.5
       },
       {
         "size": 131072,
         "size_label": "128k",
-        "vram_estimate": "14.5 GB",
+        "vram_estimate": "19.5 GB",
         "ollama_context_size": 111411,
-        "vram_estimate_gb": 14.5
+        "vram_estimate_gb": 19.5
       }
     ],
     "default_context": 4096
   },
-  "llama3.2:3b": {
-    "id": "llama3.2:3b",
-    "name": "Llama 3.2 3B",
-    "creator": "Meta",
-    "parameters": "3.2B",
-    "quantization": "4-bit (estimated)",
-    "description": "A highly efficient 3B model from the Llama 3.2 family, designed for edge devices.",
+  "phi4-mini-reasoning:latest": {
+    "id": "phi4-mini-reasoning:latest",
+    "name": "Phi-4 Mini Reasoning",
+    "creator": "Microsoft",
+    "parameters": "Latest",
+    "quantization": "Q4_K_M",
+    "size": "3.2 GB",
+    "description": "Microsoft model specialized in math and logical reasoning steps.",
     "abilities": [
-      "General Purpose",
-      "Fast Inference",
-      "Edge Optimized"
+      "Reasoning",
+      "Math",
+      "Logic"
     ],
-    "tool_support": true,
-    "ollama_url": "https://ollama.com/library/llama3.2",
+    "tool_support": false,
+    "thinking_enabled": true,
+    "ollama_url": "https://ollama.com/library/phi4",
     "max_context_window": 131072,
     "context_profiles": [
       {
         "size": 4096,
         "size_label": "4k",
-        "vram_estimate": "2.5 GB",
-        "ollama_context_size": 2867,
-        "vram_estimate_gb": 2.5
+        "vram_estimate": "5.0 GB",
+        "ollama_context_size": 3482,
+        "vram_estimate_gb": 5
       },
       {
         "size": 8192,
         "size_label": "8k",
-        "vram_estimate": "2.9 GB",
-        "ollama_context_size": 5734,
-        "vram_estimate_gb": 2.9
+        "vram_estimate": "5.6 GB",
+        "ollama_context_size": 6963,
+        "vram_estimate_gb": 5.6
       },
       {
         "size": 16384,
         "size_label": "16k",
-        "vram_estimate": "3.7 GB",
-        "ollama_context_size": 11468,
-        "vram_estimate_gb": 3.7
+        "vram_estimate": "6.8 GB",
+        "ollama_context_size": 13926,
+        "vram_estimate_gb": 6.8
       },
       {
         "size": 32768,
         "size_label": "32k",
-        "vram_estimate": "5.2 GB",
-        "ollama_context_size": 22937,
-        "vram_estimate_gb": 5.2
+        "vram_estimate": "9.2 GB",
+        "ollama_context_size": 27853,
+        "vram_estimate_gb": 9.2
       },
       {
         "size": 65536,
         "size_label": "64k",
-        "vram_estimate": "8.2 GB",
-        "ollama_context_size": 45875,
-        "vram_estimate_gb": 8.2
+        "vram_estimate": "13.8 GB",
+        "ollama_context_size": 55706,
+        "vram_estimate_gb": 13.8
       },
       {
         "size": 131072,
         "size_label": "128k",
-        "vram_estimate": "14.2 GB",
-        "ollama_context_size": 91750,
-        "vram_estimate_gb": 14.2
+        "vram_estimate": "23.0 GB",
+        "ollama_context_size": 111411,
+        "vram_estimate_gb": 23
+      }
+    ],
+    "default_context": 4096
+  },
+  "qwen2.5:7b": {
+    "id": "qwen2.5:7b",
+    "name": "Qwen 2.5 7B",
+    "creator": "Alibaba Cloud",
+    "parameters": "7B",
+    "quantization": "Q4_K_M",
+    "size": "4.7 GB",
+    "description": "Alibaba's strong generalist, beats Llama 3.1 8B in benchmarks.",
+    "abilities": [
+      "General Purpose",
+      "Coding",
+      "Math",
+      "Multilingual"
+    ],
+    "tool_support": true,
+    "reasoning": false,
+    "ollama_url": "https://ollama.com/library/qwen2.5",
+    "max_context_window": 131072,
+    "context_profiles": [
+      {
+        "size": 4096,
+        "size_label": "4k",
+        "vram_estimate": "6.5 GB",
+        "ollama_context_size": 3482,
+        "vram_estimate_gb": 6.5
+      },
+      {
+        "size": 8192,
+        "size_label": "8k",
+        "vram_estimate": "7.2 GB",
+        "ollama_context_size": 6963,
+        "vram_estimate_gb": 7.2
+      },
+      {
+        "size": 16384,
+        "size_label": "16k",
+        "vram_estimate": "8.4 GB",
+        "ollama_context_size": 13926,
+        "vram_estimate_gb": 8.4
+      },
+      {
+        "size": 32768,
+        "size_label": "32k",
+        "vram_estimate": "10.8 GB",
+        "ollama_context_size": 27853,
+        "vram_estimate_gb": 10.8
+      },
+      {
+        "size": 65536,
+        "size_label": "64k",
+        "vram_estimate": "15.5 GB",
+        "ollama_context_size": 55706,
+        "vram_estimate_gb": 15.5
+      },
+      {
+        "size": 131072,
+        "size_label": "128k",
+        "vram_estimate": "24.5 GB",
+        "ollama_context_size": 111411,
+        "vram_estimate_gb": 24.5
+      }
+    ],
+    "default_context": 4096
+  },
+  "qwen2.5-coder:3b": {
+    "id": "qwen2.5-coder:3b",
+    "name": "Qwen 2.5 Coder 3B",
+    "creator": "Alibaba Cloud",
+    "parameters": "3B",
+    "quantization": "Q4_K_M",
+    "size": "1.9 GB",
+    "description": "Small but potent coding assistant.",
+    "abilities": [
+      "Coding"
+    ],
+    "tool_support": true,
+    "reasoning": false,
+    "ollama_url": "https://ollama.com/library/qwen2.5-coder",
+    "max_context_window": 131072,
+    "context_profiles": [
+      {
+        "size": 4096,
+        "size_label": "4k",
+        "vram_estimate": "3.5 GB",
+        "ollama_context_size": 3482,
+        "vram_estimate_gb": 3.5
+      },
+      {
+        "size": 8192,
+        "size_label": "8k",
+        "vram_estimate": "4.0 GB",
+        "ollama_context_size": 6963,
+        "vram_estimate_gb": 4
+      },
+      {
+        "size": 16384,
+        "size_label": "16k",
+        "vram_estimate": "4.8 GB",
+        "ollama_context_size": 13926,
+        "vram_estimate_gb": 4.8
+      },
+      {
+        "size": 32768,
+        "size_label": "32k",
+        "vram_estimate": "6.5 GB",
+        "ollama_context_size": 27853,
+        "vram_estimate_gb": 6.5
+      },
+      {
+        "size": 65536,
+        "size_label": "64k",
+        "vram_estimate": "9.8 GB",
+        "ollama_context_size": 55706,
+        "vram_estimate_gb": 9.8
+      },
+      {
+        "size": 131072,
+        "size_label": "128k",
+        "vram_estimate": "16.5 GB",
+        "ollama_context_size": 111411,
+        "vram_estimate_gb": 16.5
+      }
+    ],
+    "default_context": 4096
+  },
+  "qwen2.5-coder:7b": {
+    "id": "qwen2.5-coder:7b",
+    "name": "Qwen 2.5 Coder 7B",
+    "creator": "Alibaba Cloud",
+    "parameters": "7B",
+    "quantization": "Q4_K_M",
+    "size": "4.7 GB",
+    "description": "SOTA coding model in the 7B class.",
+    "abilities": [
+      "Coding"
+    ],
+    "tool_support": true,
+    "reasoning": false,
+    "ollama_url": "https://ollama.com/library/qwen2.5-coder",
+    "max_context_window": 131072,
+    "context_profiles": [
+      {
+        "size": 4096,
+        "size_label": "4k",
+        "vram_estimate": "6.5 GB",
+        "ollama_context_size": 3482,
+        "vram_estimate_gb": 6.5
+      },
+      {
+        "size": 8192,
+        "size_label": "8k",
+        "vram_estimate": "7.2 GB",
+        "ollama_context_size": 6963,
+        "vram_estimate_gb": 7.2
+      },
+      {
+        "size": 16384,
+        "size_label": "16k",
+        "vram_estimate": "8.4 GB",
+        "ollama_context_size": 13926,
+        "vram_estimate_gb": 8.4
+      },
+      {
+        "size": 32768,
+        "size_label": "32k",
+        "vram_estimate": "10.8 GB",
+        "ollama_context_size": 27853,
+        "vram_estimate_gb": 10.8
+      },
+      {
+        "size": 65536,
+        "size_label": "64k",
+        "vram_estimate": "15.5 GB",
+        "ollama_context_size": 55706,
+        "vram_estimate_gb": 15.5
+      },
+      {
+        "size": 131072,
+        "size_label": "128k",
+        "vram_estimate": "24.5 GB",
+        "ollama_context_size": 111411,
+        "vram_estimate_gb": 24.5
       }
     ],
     "default_context": 4096
   },
   "qwen3:4b": {
     "id": "qwen3:4b",
-    "name": "Qwen3 4B",
+    "name": "Qwen 3 4B",
     "creator": "Alibaba Cloud",
     "parameters": "4B",
-    "quantization": "4-bit (estimated)",
-    "description": "Next-generation compact model from the Qwen series, delivering superior performance for its size.",
+    "quantization": "Q4_K_M",
+    "size": "2.5 GB",
+    "description": "Next-gen Qwen generalist, high efficiency.",
     "abilities": [
       "General Purpose",
       "Coding",
-      "Advanced Reasoning"
+      "Reasoning"
+    ],
+    "tool_support": true,
+    "reasoning": false,
+    "ollama_url": "https://ollama.com/library/qwen3",
+    "max_context_window": 262144,
+    "context_profiles": [
+      {
+        "size": 4096,
+        "size_label": "4k",
+        "vram_estimate": "4.5 GB",
+        "ollama_context_size": 3482,
+        "vram_estimate_gb": 4.5
+      },
+      {
+        "size": 8192,
+        "size_label": "8k",
+        "vram_estimate": "5.0 GB",
+        "ollama_context_size": 6963,
+        "vram_estimate_gb": 5
+      },
+      {
+        "size": 16384,
+        "size_label": "16k",
+        "vram_estimate": "6.0 GB",
+        "ollama_context_size": 13926,
+        "vram_estimate_gb": 6
+      },
+      {
+        "size": 32768,
+        "size_label": "32k",
+        "vram_estimate": "8.0 GB",
+        "ollama_context_size": 27853,
+        "vram_estimate_gb": 8
+      },
+      {
+        "size": 65536,
+        "size_label": "64k",
+        "vram_estimate": "12.0 GB",
+        "ollama_context_size": 55706,
+        "vram_estimate_gb": 12
+      },
+      {
+        "size": 131072,
+        "size_label": "128k",
+        "vram_estimate": "20.0 GB",
+        "ollama_context_size": 111411,
+        "vram_estimate_gb": 20
+      }
+    ],
+    "default_context": 4096
+  },
+  "qwen3:8b": {
+    "id": "qwen3:8b",
+    "name": "Qwen 3 8B",
+    "creator": "Alibaba Cloud",
+    "parameters": "8B",
+    "quantization": "Q4_K_M",
+    "size": "5.2 GB",
+    "description": "Next-gen Qwen generalist 8B, high reasoning capability.",
+    "abilities": [
+      "General Purpose",
+      "Coding",
+      "Reasoning"
     ],
     "tool_support": true,
     "thinking_enabled": true,
     "ollama_url": "https://ollama.com/library/qwen3",
-    "max_context_window": 131072,
+    "max_context_window": 262144,
     "context_profiles": [
       {
         "size": 4096,
         "size_label": "4k",
-        "vram_estimate": "3.0 GB",
+        "vram_estimate": "7.5 GB",
         "ollama_context_size": 3482,
-        "vram_estimate_gb": 3
+        "vram_estimate_gb": 7.5
       },
       {
         "size": 8192,
         "size_label": "8k",
-        "vram_estimate": "3.5 GB",
+        "vram_estimate": "8.2 GB",
         "ollama_context_size": 6963,
-        "vram_estimate_gb": 3.5
+        "vram_estimate_gb": 8.2
       },
       {
         "size": 16384,
         "size_label": "16k",
-        "vram_estimate": "4.5 GB",
-        "ollama_context_size": 13926,
-        "vram_estimate_gb": 4.5
-      },
-      {
-        "size": 32768,
-        "size_label": "32k",
-        "vram_estimate": "6.0 GB",
-        "ollama_context_size": 27853,
-        "vram_estimate_gb": 6
-      },
-      {
-        "size": 65536,
-        "size_label": "64k",
         "vram_estimate": "9.5 GB",
-        "ollama_context_size": 55706,
+        "ollama_context_size": 13926,
         "vram_estimate_gb": 9.5
       },
       {
-        "size": 131072,
-        "size_label": "128k",
-        "vram_estimate": "16.0 GB",
-        "ollama_context_size": 111411,
-        "vram_estimate_gb": 16
-      }
-    ],
-    "default_context": 4096
-  },
-  "deepseek-r1:1.5b": {
-    "id": "deepseek-r1:1.5b",
-    "name": "DeepSeek R1 1.5B",
-    "creator": "DeepSeek",
-    "parameters": "1.5B",
-    "quantization": "4-bit (estimated)",
-    "description": "Ultra-lightweight distilled reasoning model, perfect for extremely low-resource environments.",
-    "abilities": [
-      "Reasoning",
-      "Math",
-      "Efficiency"
-    ],
-    "tool_support": false,
-    "thinking_enabled": true,
-    "reasoning_buffer": "Variable",
-    "warmup_timeout": 120000,
-    "ollama_url": "https://ollama.com/library/deepseek-r1",
-    "max_context_window": 131072,
-    "context_profiles": [
-      {
-        "size": 4096,
-        "size_label": "4k",
-        "vram_estimate": "1.5 GB",
-        "ollama_context_size": 3482,
-        "vram_estimate_gb": 1.5
-      },
-      {
-        "size": 8192,
-        "size_label": "8k",
-        "vram_estimate": "1.8 GB",
-        "ollama_context_size": 6963,
-        "vram_estimate_gb": 1.8
-      },
-      {
-        "size": 16384,
-        "size_label": "16k",
-        "vram_estimate": "2.4 GB",
-        "ollama_context_size": 13926,
-        "vram_estimate_gb": 2.4
-      },
-      {
         "size": 32768,
         "size_label": "32k",
-        "vram_estimate": "3.5 GB",
+        "vram_estimate": "12.0 GB",
         "ollama_context_size": 27853,
-        "vram_estimate_gb": 3.5
+        "vram_estimate_gb": 12
       },
       {
         "size": 65536,
         "size_label": "64k",
-        "vram_estimate": "5.8 GB",
+        "vram_estimate": "17.0 GB",
         "ollama_context_size": 55706,
-        "vram_estimate_gb": 5.8
+        "vram_estimate_gb": 17
       },
       {
         "size": 131072,
         "size_label": "128k",
-        "vram_estimate": "10.0 GB",
+        "vram_estimate": "27.0 GB",
         "ollama_context_size": 111411,
-        "vram_estimate_gb": 10
+        "vram_estimate_gb": 27
       }
     ],
     "default_context": 4096
   },
-  "gemma3:4b": {
-    "id": "gemma3:4b",
-    "name": "Gemma 3 4B",
-    "creator": "Google",
-    "parameters": "4B",
-    "quantization": "4-bit (estimated)",
-    "description": "Google's latest open model, optimized for efficiency and performance on consumer hardware.",
+  "qwen3-coder:30b": {
+    "id": "qwen3-coder:30b",
+    "name": "Qwen 3 Coder 30B",
+    "creator": "Alibaba Cloud",
+    "parameters": "30B",
+    "quantization": "Q4_0",
+    "size": "18 GB",
+    "description": "Heavyweight coding model, expert level generation.",
     "abilities": [
-      "General Purpose",
-      "Knowledge Retrieval",
-      "Reasoning"
+      "Coding"
     ],
     "tool_support": true,
-    "ollama_url": "https://ollama.com/library/gemma3",
+    "reasoning": false,
+    "ollama_url": "https://ollama.com/library/qwen3-coder",
     "max_context_window": 131072,
     "context_profiles": [
       {
         "size": 4096,
         "size_label": "4k",
-        "vram_estimate": "3.8 GB",
+        "vram_estimate": "20.5 GB",
         "ollama_context_size": 3482,
-        "vram_estimate_gb": 3.8
+        "vram_estimate_gb": 20.5
       },
       {
         "size": 8192,
         "size_label": "8k",
-        "vram_estimate": "4.3 GB",
+        "vram_estimate": "22.0 GB",
         "ollama_context_size": 6963,
-        "vram_estimate_gb": 4.3
+        "vram_estimate_gb": 22
       },
       {
         "size": 16384,
         "size_label": "16k",
-        "vram_estimate": "5.3 GB",
+        "vram_estimate": "24.5 GB",
         "ollama_context_size": 13926,
-        "vram_estimate_gb": 5.3
+        "vram_estimate_gb": 24.5
       },
       {
         "size": 32768,
         "size_label": "32k",
-        "vram_estimate": "7.2 GB",
+        "vram_estimate": "29.5 GB",
         "ollama_context_size": 27853,
-        "vram_estimate_gb": 7.2
+        "vram_estimate_gb": 29.5
       },
       {
         "size": 65536,
         "size_label": "64k",
-        "vram_estimate": "11.0 GB",
+        "vram_estimate": "39.5 GB",
         "ollama_context_size": 55706,
-        "vram_estimate_gb": 11
+        "vram_estimate_gb": 39.5
       },
       {
         "size": 131072,
         "size_label": "128k",
-        "vram_estimate": "18.5 GB",
+        "vram_estimate": "59.5 GB",
         "ollama_context_size": 111411,
-        "vram_estimate_gb": 18.5
+        "vram_estimate_gb": 59.5
       }
     ],
     "default_context": 4096
   },
-  "gemma3:1b": {
-    "id": "gemma3:1b",
-    "name": "Gemma 3 1B",
-    "creator": "Google",
-    "parameters": "1B",
-    "quantization": "4-bit (estimated)",
-    "description": "Extremely compact variant of Gemma 3, ideal for simple tasks and rapid prototyping.",
+  "qwen3-vl:4b": {
+    "id": "qwen3-vl:4b",
+    "name": "Qwen 3 VL 4B",
+    "creator": "Alibaba Cloud",
+    "parameters": "4B",
+    "quantization": "Q4_K_M",
+    "size": "3.3 GB",
+    "description": "Vision-Language model, can analyze images/video inputs.",
     "abilities": [
-      "Fast Inference",
-      "Text Completion"
+      "Vision",
+      "Multimodal"
     ],
-    "tool_support": false,
-    "ollama_url": "https://ollama.com/library/gemma3",
+    "tool_support": true,
+    "reasoning": false,
+    "ollama_url": "https://ollama.com/library/qwen3-vl",
+    "max_context_window": 131072,
     "context_profiles": [
       {
         "size": 4096,
         "size_label": "4k",
-        "vram_estimate": "1.2 GB",
-        "ollama_context_size": 2867,
-        "vram_estimate_gb": 1.2
-      },
-      {
-        "size": 8192,
-        "size_label": "8k",
-        "vram_estimate": "1.5 GB",
-        "ollama_context_size": 5734,
-        "vram_estimate_gb": 1.5
-      },
-      {
-        "size": 16384,
-        "size_label": "16k",
-        "vram_estimate": "2.0 GB",
-        "ollama_context_size": 11468,
-        "vram_estimate_gb": 2
-      },
-      {
-        "size": 32768,
-        "size_label": "32k",
-        "vram_estimate": "3.0 GB",
-        "ollama_context_size": 22937,
-        "vram_estimate_gb": 3
-      },
-      {
-        "size": 65536,
-        "size_label": "64k",
         "vram_estimate": "5.0 GB",
-        "ollama_context_size": 45875,
+        "ollama_context_size": 3482,
         "vram_estimate_gb": 5
       },
       {
+        "size": 8192,
+        "size_label": "8k",
+        "vram_estimate": "5.5 GB",
+        "ollama_context_size": 6963,
+        "vram_estimate_gb": 5.5
+      },
+      {
+        "size": 16384,
+        "size_label": "16k",
+        "vram_estimate": "6.5 GB",
+        "ollama_context_size": 13926,
+        "vram_estimate_gb": 6.5
+      },
+      {
+        "size": 32768,
+        "size_label": "32k",
+        "vram_estimate": "8.5 GB",
+        "ollama_context_size": 27853,
+        "vram_estimate_gb": 8.5
+      },
+      {
+        "size": 65536,
+        "size_label": "64k",
+        "vram_estimate": "12.5 GB",
+        "ollama_context_size": 55706,
+        "vram_estimate_gb": 12.5
+      },
+      {
         "size": 131072,
         "size_label": "128k",
-        "vram_estimate": "9.0 GB",
-        "ollama_context_size": 91750,
-        "vram_estimate_gb": 9
+        "vram_estimate": "20.5 GB",
+        "ollama_context_size": 111411,
+        "vram_estimate_gb": 20.5
       }
     ],
-    "default_context": 4096,
-    "max_context_window": 131072
+    "default_context": 4096
   },
   "qwen3-vl:8b": {
     "id": "qwen3-vl:8b",
-    "name": "Qwen3-VL 8B",
+    "name": "Qwen 3 VL 8B",
     "creator": "Alibaba Cloud",
     "parameters": "8B",
-    "quantization": "4-bit (estimated)",
-    "description": "Vision-Language model from the Qwen3 series, capable of understanding and analyzing images.",
+    "quantization": "Q4_K_M",
+    "size": "6.1 GB",
+    "description": "Larger Vision-Language model for detailed visual reasoning.",
     "abilities": [
-      "Visual Recognition",
+      "Vision",
       "Multimodal",
       "Reasoning"
     ],
     "tool_support": true,
+    "reasoning": false,
     "ollama_url": "https://ollama.com/library/qwen3-vl",
+    "max_context_window": 131072,
     "context_profiles": [
       {
         "size": 4096,
         "size_label": "4k",
-        "vram_estimate": "6.5 GB",
-        "ollama_context_size": 3482,
-        "vram_estimate_gb": 6.5
-      },
-      {
-        "size": 8192,
-        "size_label": "8k",
-        "vram_estimate": "7.0 GB",
-        "ollama_context_size": 6963,
-        "vram_estimate_gb": 7
-      },
-      {
-        "size": 16384,
-        "size_label": "16k",
         "vram_estimate": "8.0 GB",
-        "ollama_context_size": 13926,
+        "ollama_context_size": 3482,
         "vram_estimate_gb": 8
       },
       {
-        "size": 32768,
-        "size_label": "32k",
-        "vram_estimate": "10.0 GB",
-        "ollama_context_size": 27853,
-        "vram_estimate_gb": 10
-      },
-      {
-        "size": 65536,
-        "size_label": "64k",
-        "vram_estimate": "15.0 GB",
-        "ollama_context_size": 55706,
-        "vram_estimate_gb": 15
-      },
-      {
-        "size": 131072,
-        "size_label": "128k",
-        "vram_estimate": "26.0 GB",
-        "ollama_context_size": 111411,
-        "vram_estimate_gb": 26
-      }
-    ],
-    "default_context": 4096,
-    "max_context_window": 131072
-  },
-  "deepseek-r1:8b": {
-    "id": "deepseek-r1:8b",
-    "name": "DeepSeek R1 8B",
-    "creator": "DeepSeek",
-    "parameters": "8B",
-    "quantization": "4-bit (estimated)",
-    "description": "Powerful reasoning model with enhanced capacity for complex problem solving.",
-    "abilities": [
-      "Advanced Reasoning",
-      "Coding",
-      "Math"
-    ],
-    "tool_support": false,
-    "thinking_enabled": true,
-    "reasoning_buffer": "Variable",
-    "warmup_timeout": 120000,
-    "ollama_url": "https://ollama.com/library/deepseek-r1",
-    "context_profiles": [
-      {
-        "size": 4096,
-        "size_label": "4k",
-        "vram_estimate": "6.0 GB",
-        "ollama_context_size": 3482,
-        "vram_estimate_gb": 6
-      },
-      {
         "size": 8192,
         "size_label": "8k",
-        "vram_estimate": "6.5 GB",
+        "vram_estimate": "8.7 GB",
         "ollama_context_size": 6963,
-        "vram_estimate_gb": 6.5
+        "vram_estimate_gb": 8.7
       },
       {
         "size": 16384,
         "size_label": "16k",
-        "vram_estimate": "7.5 GB",
+        "vram_estimate": "10.0 GB",
         "ollama_context_size": 13926,
-        "vram_estimate_gb": 7.5
+        "vram_estimate_gb": 10
       },
       {
         "size": 32768,
         "size_label": "32k",
-        "vram_estimate": "9.5 GB",
+        "vram_estimate": "12.5 GB",
         "ollama_context_size": 27853,
-        "vram_estimate_gb": 9.5
+        "vram_estimate_gb": 12.5
       },
       {
         "size": 65536,
         "size_label": "64k",
-        "vram_estimate": "14.5 GB",
+        "vram_estimate": "17.5 GB",
         "ollama_context_size": 55706,
-        "vram_estimate_gb": 14.5
+        "vram_estimate_gb": 17.5
       },
       {
         "size": 131072,
         "size_label": "128k",
-        "vram_estimate": "25.0 GB",
+        "vram_estimate": "27.5 GB",
         "ollama_context_size": 111411,
-        "vram_estimate_gb": 25
+        "vram_estimate_gb": 27.5
       }
     ],
-    "default_context": 4096,
-    "max_context_window": 131072
+    "default_context": 4096
   }
 } as any;

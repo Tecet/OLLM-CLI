@@ -4,11 +4,13 @@ import { Box, Text, BoxProps, useInput } from 'ink';
 import { ActivePromptInfo } from './ActivePromptInfo.js';
 import { ContextSection } from './ContextSection.js';
 import { DotIndicator } from './DotIndicator.js';
+import { KeybindsLegend } from './KeybindsLegend.js';
 import { WorkspacePanel } from './WorkspacePanel.js';
 import { Theme } from '../../../config/types.js';
 import { useChat } from '../../../features/context/ChatContext.js';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { useKeybinds } from '../../../features/context/KeybindsContext.js';
+import { useModel } from '../../../features/context/ModelContext.js';
 import { useWindow } from '../../contexts/WindowContext.js';
 import { isKey } from '../../utils/keyUtils.js';
 import { RightPanelLLMChat } from '../RightPanelLLMChat.js';
@@ -23,16 +25,12 @@ export interface SidePanelProps {
 
 export function SidePanel({ visible, theme, height, width }: SidePanelProps) {
   const { isFocused } = useFocusManager();
-  const { contextUsage } = useChat();
   const { activeKeybinds } = useKeybinds();
+  const { currentModel } = useModel();
 
   const contextFocused = isFocused('context-panel');
   const fileTreeFocused = isFocused('side-file-tree');
   const functionsFocused = isFocused('functions');
-
-  const contextText = contextUsage
-    ? `${contextUsage.currentTokens}/${contextUsage.maxTokens}`
-    : '0/0';
 
   const { activeRightPanel, switchRightPanel } = useWindow();
 
@@ -86,7 +84,7 @@ export function SidePanel({ visible, theme, height, width }: SidePanelProps) {
 
   return (
     <Box flexDirection="column" width="100%" height={height}>
-      {/* Active Prompt Info - At the top */}
+      {/* Top container - Keybinds Legend */}
       <Box
         height={activePromptHeight}
         borderStyle={theme.border.style as BoxProps['borderStyle']}
@@ -96,7 +94,7 @@ export function SidePanel({ visible, theme, height, width }: SidePanelProps) {
         width="100%"
         flexDirection="column"
       >
-        <ActivePromptInfo />
+        <KeybindsLegend theme={theme} />
       </Box>
 
       {/* Main Content Area - Takes remaining space */}
@@ -129,7 +127,7 @@ export function SidePanel({ visible, theme, height, width }: SidePanelProps) {
         {activeRightPanel === 'terminal2' && <Terminal2 height={contentHeight - 3} />}
       </Box>
 
-      {/* Context Section - Sticky at bottom */}
+      {/* Status Section - Sticky at bottom (Ollama + Model) */}
       <Box
         height={contextSectionHeight}
         borderStyle={theme.border.style as BoxProps['borderStyle']}
@@ -138,14 +136,16 @@ export function SidePanel({ visible, theme, height, width }: SidePanelProps) {
         overflow="hidden"
         width="100%"
         alignItems="center"
-        justifyContent="space-between"
+        justifyContent="flex-start"
         paddingX={1}
       >
         <Box flexDirection="row" alignItems="center">
-          <Text color={theme.text.secondary}>Context: </Text>
-          <Text color={theme.text.accent} bold>
-            {contextText}
-          </Text>
+          <Text color={currentModel ? 'green' : 'red'}>●</Text>
+          <Text> </Text>
+          <Text color={theme.text.primary}>ollama</Text>
+          <Text color={theme.text.secondary}> | </Text>
+          <Text color={theme.text.secondary}>LLM: </Text>
+          <Text color={theme.text.accent}>{currentModel || 'none'}</Text>
         </Box>
       </Box>
     </Box>

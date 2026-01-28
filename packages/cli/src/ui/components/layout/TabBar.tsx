@@ -16,14 +16,14 @@ export interface Tab {
 
 export const tabs: Tab[] = [
   { id: 'chat', label: 'Chat', icon: '💬', shortcut: 'Ctrl+1' },
-  { id: 'tools', label: 'Tools', icon: '🛠', shortcut: 'Ctrl+2' },
+  { id: 'tools', label: 'Tools', icon: '🛠️', shortcut: 'Ctrl+2' },
   { id: 'hooks', label: 'Hooks', icon: '🔗', shortcut: 'Ctrl+3' },
   { id: 'files', label: 'Files', icon: '📁', shortcut: 'Ctrl+4' },
   { id: 'search', label: 'Search', icon: '🔍', shortcut: 'Ctrl+5' },
   { id: 'docs', label: 'Docs', icon: '📚', shortcut: 'Ctrl+6' },
   { id: 'github', label: 'GitHub', icon: '🐙', shortcut: 'Ctrl+7' },
   { id: 'mcp', label: 'MCP', icon: '🔌', shortcut: 'Ctrl+8' },
-  { id: 'settings', label: 'Settings', icon: '⚙', shortcut: 'Ctrl+9' },
+  { id: 'settings', label: 'Settings', icon: '⚙️', shortcut: 'Ctrl+9' },
   { id: 'bug-report', label: 'Bug Report', icon: '🐛', shortcut: 'Ctrl+0' },
 ];
 
@@ -70,7 +70,8 @@ export function TabBar({
   return (
     <Box
       flexDirection="row"
-      justifyContent="flex-start"
+      justifyContent="center"
+      alignItems="center"
       paddingX={1}
       {...(!noBorder && {
         borderStyle: theme.border.style as BoxProps['borderStyle'],
@@ -89,7 +90,9 @@ export function TabBar({
         return (
           <Box key={tab.id} paddingLeft={index === 0 ? 0 : 1}>
             <Text color={textColor} bold={isActive}>
-              {tab.icon} {tab.label}
+              {tab.icon}
+              {' '}
+              {tab.label}
               {hasNotifications && <Text color={theme.text.accent}> ({notificationCount})</Text>}
             </Text>
           </Box>
