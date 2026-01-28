@@ -539,8 +539,22 @@ export function App({ config }: AppProps) {
   }
 
   const workspacePath = process.cwd();
-  const sessionId = `session-${Date.now()}`;
+  const [sessionId, setSessionId] = useState(() => `session-${Date.now()}`);
   const initialSidePanelVisible = config.ui.sidePanel !== false;
+
+  // Expose global function for ModelContext to call on model swap
+  useEffect(() => {
+    (globalThis as any).__ollmResetSession = (newModel: string) => {
+      const newSessionId = `session-${Date.now()}`;
+      console.log(`[App] Model changed to ${newModel}, creating new session: ${newSessionId}`);
+      setSessionId(newSessionId);
+      return newSessionId;
+    };
+
+    return () => {
+      delete (globalThis as any).__ollmResetSession;
+    };
+  }, []);
 
   return (
     <ErrorBoundary>
@@ -567,6 +581,7 @@ export function App({ config }: AppProps) {
                                     autoStart={config.ui.showGpuStats !== false}
                                   >
                                     <ContextManagerProvider
+                                      key={sessionId}
                                       sessionId={sessionId}
                                       modelInfo={modelInfo}
                                       modelId={initialModel}

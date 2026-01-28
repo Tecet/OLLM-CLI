@@ -164,6 +164,12 @@ export function ModelProvider({ children, provider, initialModel }: ModelProvide
 
           if (shouldClearContext) {
             clearContext();
+            
+            // Reset session ID (triggers new session creation)
+            if ((globalThis as any).__ollmResetSession) {
+              const newSessionId = (globalThis as any).__ollmResetSession(model);
+              console.log(`[ModelContext] New session created: ${newSessionId}`);
+            }
           }
 
           return;
@@ -198,6 +204,12 @@ export function ModelProvider({ children, provider, initialModel }: ModelProvide
 
         if (shouldClearContext2) {
           clearContext();
+          
+          // Reset session ID (triggers new session creation)
+          if ((globalThis as any).__ollmResetSession) {
+            const newSessionId = (globalThis as any).__ollmResetSession(model);
+            console.log(`[ModelContext] New session created: ${newSessionId}`);
+          }
         }
       }
     },
