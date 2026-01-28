@@ -1,4 +1,4 @@
-https://github.com/Tecet/OLLM-CLI/blob/task-1-simplify-tier-selection/welcome.png
+![Welcome Screen]([welcome.png](https://github.com/Tecet/OLLM-CLI/blob/task-1-simplify-tier-selection/welcome.png))
 
 
 # OLLM CLI
