@@ -13,8 +13,8 @@ export interface KeybindsLegendProps {
 export function KeybindsLegend({ theme, version = '0.1.0-alpha' }: KeybindsLegendProps) {
   return (
     <Box flexDirection="column" paddingX={2} paddingY={1}>
-      {/* Header with version */}
-      <Box marginBottom={1}>
+      {/* Header with version - centered */}
+      <Box marginBottom={1} justifyContent="center">
         <Text bold color={theme.text.accent}>
           OLLM CLI
         </Text>

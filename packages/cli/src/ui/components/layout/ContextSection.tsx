@@ -53,20 +53,18 @@ export function ContextSection() {
   return (
     <Box flexDirection="column" alignItems="flex-start">
       {/* Mode Confidence Display */}
-      <Box marginBottom={1}>
-        <ModeConfidenceDisplay
-          currentMode={currentMode}
-          currentModeIcon={modeIcon}
-          currentModeColor={modeColor}
-          currentModeConfidence={currentModeConfidence}
-          suggestedModes={suggestedModes}
-          allowedTools={allowedTools}
-          theme={uiState.theme}
-        />
-      </Box>
+      <ModeConfidenceDisplay
+        currentMode={currentMode}
+        currentModeIcon={modeIcon}
+        currentModeColor={modeColor}
+        currentModeConfidence={currentModeConfidence}
+        suggestedModes={suggestedModes}
+        allowedTools={allowedTools}
+        theme={uiState.theme}
+      />
 
       <Box flexDirection="column" paddingX={1} alignItems="flex-start">
-        <Box flexDirection="column" marginBottom={1} alignSelf="flex-start">
+        <Box flexDirection="column" alignSelf="flex-start">
           <Text color={uiState.theme.text.accent} bold>
             MCP Servers:
           </Text>
@@ -78,6 +76,9 @@ export function ContextSection() {
             )}
           </Box>
         </Box>
+
+        {/* Empty line */}
+        <Box height={1} />
 
         <Box flexDirection="column" alignSelf="flex-start">
           <Text color={uiState.theme.status.info} bold>

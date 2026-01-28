@@ -68,8 +68,8 @@ export function ModeConfidenceDisplay({
 
   return (
     <Box flexDirection="column" paddingX={1} alignItems="flex-start">
-      {/* 1. Current Mode Identity with padding */}
-      <Box flexDirection="column" marginBottom={1}>
+      {/* Mode and Active Prompt */}
+      <Box flexDirection="column">
         <Box marginTop={2} alignSelf="flex-start">
           <Text bold color={theme.status.info}>
             Mode:
@@ -81,8 +81,7 @@ export function ModeConfidenceDisplay({
           </Text>
         </Box>
 
-        {/* Active Prompt Info - moved here from top */}
-        <Box marginTop={1} alignSelf="flex-start">
+        <Box alignSelf="flex-start">
           <Text color={theme.status.info} bold>
             Active Prompt:{' '}
           </Text>
@@ -91,31 +90,18 @@ export function ModeConfidenceDisplay({
           </Text>
           <Text dimColor> ({optimizationStr})</Text>
         </Box>
-
-        <Box marginTop={2} alignSelf="flex-start">
-          {label ? (
-            <>
-              <Text dimColor>{label}</Text>
-              <Text> </Text>
-            </>
-          ) : null}
-          {allowedTools.length === 0 ? (
-            <Text dimColor>None</Text>
-          ) : allowedTools.includes('*') ? (
-            <Text color={theme.status.success}>All</Text>
-          ) : (
-            <Text dimColor>({allowedTools.length})</Text>
-          )}
-        </Box>
       </Box>
 
-      {/* 3. Suggested Modes with padding */}
+      {/* Empty lines */}
+      <Box height={2} />
+
+      {/* Suggested Modes */}
       {suggestedModes.length > 0 && (
-        <Box flexDirection="column" marginTop={0}>
+        <Box flexDirection="column">
           <Text bold color={theme.status.info}>
             Suggested Modes
           </Text>
-          <Box flexDirection="column" marginTop={1} alignItems="flex-start">
+          <Box flexDirection="column" alignItems="flex-start">
             {suggestedModes.map((suggested) => (
               <Box key={suggested.mode} flexDirection="row" alignSelf="flex-start">
                 <Text dimColor>├─</Text>
@@ -132,6 +118,24 @@ export function ModeConfidenceDisplay({
           </Box>
         </Box>
       )}
+
+      {/* Empty line */}
+      <Box height={1} />
+
+      {/* Tools */}
+      <Box alignSelf="flex-start">
+        <Text dimColor>Tools: </Text>
+        {allowedTools.length === 0 ? (
+          <Text dimColor>None</Text>
+        ) : allowedTools.includes('*') ? (
+          <Text color={theme.status.success}>All</Text>
+        ) : (
+          <Text dimColor>{allowedTools.length}</Text>
+        )}
+      </Box>
+
+      {/* Empty line */}
+      <Box height={1} />
     </Box>
   );
 }
