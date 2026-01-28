@@ -39,9 +39,10 @@ export const newCommand: Command = {
   handler: async (): Promise<CommandResult> => {
     // This command requires confirmation from the UI
     // The actual implementation will be handled by the UI layer
+    // It will trigger both clear-chat AND new-session actions
     return {
       success: true,
-      action: 'clear-chat',
+      action: 'new-session', // Changed from 'clear-chat' to 'new-session'
       message: 'Starting new session. Current context will be cleared.',
     };
   },

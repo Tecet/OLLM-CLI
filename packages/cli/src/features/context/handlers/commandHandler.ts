@@ -39,7 +39,7 @@ export interface CommandHandlerDependencies {
 export interface CommandResult {
   success: boolean;
   message?: string;
-  action?: 'show-launch-screen' | 'clear-chat' | 'exit' | string;
+  action?: 'show-launch-screen' | 'clear-chat' | 'new-session' | 'exit' | string;
 }
 
 /**
@@ -68,6 +68,18 @@ export async function handleCommand(
 
     if (result.action === 'clear-chat') {
       clearChat();
+    }
+
+    if (result.action === 'new-session') {
+      // Create new session by resetting session ID
+      if ((globalThis as any).__ollmResetSession) {
+        const newSessionId = (globalThis as any).__ollmResetSession(currentModel);
+        console.log(`[CommandHandler] New session created via /new command: ${newSessionId}`);
+      } else {
+        // Fallback to just clearing chat if __ollmResetSession not available
+        console.warn('[CommandHandler] __ollmResetSession not available, falling back to clearChat');
+        clearChat();
+      }
     }
 
     if (result.action === 'exit') {

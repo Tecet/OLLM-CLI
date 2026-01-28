@@ -167,6 +167,11 @@ export function useContextMenu(options: ContextMenuOptions) {
           label,
           value: val,
           action: async () => {
+            // Store selected context size in App state
+            if ((globalThis as any).__ollmSetContextSize) {
+              (globalThis as any).__ollmSetContextSize(val);
+            }
+            
             await contextActions.resize(val);
             addMessage({
               role: 'system',
@@ -190,6 +195,12 @@ export function useContextMenu(options: ContextMenuOptions) {
           });
           requestManualContextInput(modelName, async (value) => {
             profileManager.setManualContext(modelName, value);
+            
+            // Store selected context size in App state
+            if ((globalThis as any).__ollmSetContextSize) {
+              (globalThis as any).__ollmSetContextSize(value);
+            }
+            
             await contextActions.resize(value);
             addMessage({
               role: 'system',
@@ -379,6 +390,11 @@ export function useContextMenu(options: ContextMenuOptions) {
             const vramUsagePercent = vramEstimate ? (vramEstimate / availableVRAM) * 100 : 0;
             const isHighVRAMUsage = vramUsagePercent > 80;
 
+            // Store selected context size in App state BEFORE setting model
+            if ((globalThis as any).__ollmSetContextSize) {
+              (globalThis as any).__ollmSetContextSize(val);
+            }
+
             // NOW set the model and resize context
             // This will trigger model loading/warmup
             setCurrentModel(modelId);
@@ -413,6 +429,12 @@ export function useContextMenu(options: ContextMenuOptions) {
           });
           requestManualContextInput(modelId, async (value) => {
             profileManager.setManualContext(modelId, value);
+            
+            // Store selected context size in App state BEFORE setting model
+            if ((globalThis as any).__ollmSetContextSize) {
+              (globalThis as any).__ollmSetContextSize(value);
+            }
+            
             // NOW set the model and resize context
             setCurrentModel(modelId);
             await contextActions.resize(value);

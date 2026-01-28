@@ -155,11 +155,8 @@ export function ModelProvider({ children, provider, initialModel }: ModelProvide
           }
 
           // Reset session ID (triggers new session creation with NEW model)
-          const settingsService = SettingsService.getInstance();
-          const settings = settingsService.getSettings();
-          const shouldClearContext = settings.llm?.clearContextOnModelSwitch ?? true;
-
-          if (shouldClearContext && (globalThis as any).__ollmResetSession) {
+          // Always create new session on model swap to prevent context contamination
+          if ((globalThis as any).__ollmResetSession) {
             const newSessionId = (globalThis as any).__ollmResetSession(model);
             console.log(`[ModelContext] New session created: ${newSessionId}`);
           }
@@ -191,11 +188,8 @@ export function ModelProvider({ children, provider, initialModel }: ModelProvide
         }
 
         // Reset session ID (triggers new session creation with NEW model)
-        const settingsService = SettingsService.getInstance();
-        const settings = settingsService.getSettings();
-        const shouldClearContext2 = settings.llm?.clearContextOnModelSwitch ?? true;
-
-        if (shouldClearContext2 && (globalThis as any).__ollmResetSession) {
+        // Always create new session on model swap to prevent context contamination
+        if ((globalThis as any).__ollmResetSession) {
           const newSessionId = (globalThis as any).__ollmResetSession(model);
           console.log(`[ModelContext] New session created: ${newSessionId}`);
         }

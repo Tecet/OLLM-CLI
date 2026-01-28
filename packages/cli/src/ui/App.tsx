@@ -449,6 +449,7 @@ export function App({ config }: AppProps) {
   const workspacePath = process.cwd();
   const [sessionId, setSessionId] = useState(() => `session-${Date.now()}`);
   const [currentAppModel, setCurrentAppModel] = useState(initialModel);
+  const [selectedContextSize, setSelectedContextSize] = useState<number | null>(null);
   const initialSidePanelVisible = config.ui.sidePanel !== false;
 
   // Expose global function for ModelContext to call on model swap
@@ -463,6 +464,18 @@ export function App({ config }: AppProps) {
 
     return () => {
       delete (globalThis as any).__ollmResetSession;
+    };
+  }, []);
+
+  // Expose global function for ContextMenu to call when user selects context size
+  useEffect(() => {
+    (globalThis as any).__ollmSetContextSize = (size: number) => {
+      console.log(`[App] User selected context size: ${size}`);
+      setSelectedContextSize(size);
+    };
+
+    return () => {
+      delete (globalThis as any).__ollmSetContextSize;
     };
   }, []);
 
@@ -481,10 +494,10 @@ export function App({ config }: AppProps) {
   // Context manager configuration
   const contextConfig = config.context
     ? {
-        targetSize: config.context.targetSize,
+        targetSize: selectedContextSize ?? config.context.targetSize,
         minSize: config.context.minSize,
         maxSize: config.context.maxSize,
-        autoSize: config.context.autoSize,
+        autoSize: selectedContextSize === null ? config.context.autoSize : false, // Disable auto when user selects size
         vramBuffer: config.context.vramBuffer,
         compression: {
           enabled: config.context.compressionEnabled,

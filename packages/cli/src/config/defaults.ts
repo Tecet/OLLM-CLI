@@ -84,6 +84,17 @@ export const defaultConfig: Config = {
     temperature: 0.1, // Changed from 0.3 - Better for coding (deterministic)
     maxTokens: 4096,
   },
+  context: {
+    targetSize: 4096,
+    minSize: 2048,
+    maxSize: 131072,
+    autoSize: false, // DISABLED - user must manually select context size
+    vramBuffer: 512 * 1024 * 1024, // 512MB
+    compressionEnabled: true,
+    compressionThreshold: 0.68,
+    snapshotsEnabled: true,
+    maxSnapshots: 5,
+  },
   ui: {
     layout: 'hybrid',
     sidePanel: true,
