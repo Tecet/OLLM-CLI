@@ -223,6 +223,7 @@ export function useContextMenu(options: ContextMenuOptions) {
 
       return sizeOptions;
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       currentModel,
       addMessage,
@@ -231,7 +232,7 @@ export function useContextMenu(options: ContextMenuOptions) {
       contextActions,
       availableVRAM,
       filterContextSizes,
-      buildModelSelectionMenu,
+      // buildModelSelectionMenu - omitted to avoid circular dependency
     ]
   );
 
@@ -300,7 +301,12 @@ export function useContextMenu(options: ContextMenuOptions) {
 
       return modelOptions;
     },
-    [addMessage, activateMenu, buildContextSizeMenuForModel]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      addMessage,
+      activateMenu,
+      // buildContextSizeMenuForModel - omitted to avoid circular dependency
+    ]
   );
 
   /**
