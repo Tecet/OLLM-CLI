@@ -9,6 +9,7 @@ import {
 } from '@ollm/core';
 
 import { useContextManager } from './ContextManagerContext.js';
+import { getSessionManager } from './SessionManager.js';
 import { validateManualContext } from './contextSizing.js';
 import { runAgentLoop } from './handlers/agentLoopHandler.js';
 import { handleCommand } from './handlers/commandHandler.js';
@@ -208,6 +209,25 @@ export function ChatProvider({
     contextActions,
     contextManagerState,
   ]);
+
+  // Listen for session changes from SessionManager
+  useEffect(() => {
+    try {
+      const sessionManager = getSessionManager();
+      const cleanup = sessionManager.onSessionChange((sessionId, model, sessionPath) => {
+        // Add system message about new session
+        addMessage({
+          role: 'system',
+          content: `🆕 New session started: **${sessionId}**\n\nSession folder: \`${sessionPath}\`\n\nModel: **${model}**`,
+          excludeFromContext: true,
+        });
+      });
+
+      return cleanup;
+    } catch (error) {
+      console.warn('[ChatContext] SessionManager not initialized yet:', error);
+    }
+  }, [addMessage]);
 
   useEffect(() => {
     if (setTheme) {

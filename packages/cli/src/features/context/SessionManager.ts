@@ -5,7 +5,10 @@
  * Keeps session logic separate from UI components.
  */
 
-type SessionChangeCallback = (sessionId: string, model: string) => void;
+import * as path from 'path';
+import * as os from 'os';
+
+type SessionChangeCallback = (sessionId: string, model: string, sessionPath: string) => void;
 
 class SessionManager {
   private currentSessionId: string;
@@ -32,12 +35,24 @@ class SessionManager {
   }
 
   /**
+   * Get the session folder path
+   * @param sessionId - Optional session ID (defaults to current)
+   * @returns Full path to the session folder
+   */
+  getSessionPath(sessionId?: string): string {
+    const sid = sessionId || this.currentSessionId;
+    return path.join(os.homedir(), '.ollm', 'sessions', sid);
+  }
+
+  /**
    * Create a new session for a model swap
    * @param newModel - The new model being switched to
    * @returns The new session ID
    */
   createNewSession(newModel: string): string {
     const newSessionId = `session-${Date.now()}`;
+    const sessionPath = this.getSessionPath(newSessionId);
+    
     console.log(`[SessionManager] Model changed: ${this.currentModel} → ${newModel}, new session: ${newSessionId}`);
     
     this.currentSessionId = newSessionId;
@@ -46,7 +61,7 @@ class SessionManager {
     // Notify all callbacks
     this.callbacks.forEach(callback => {
       try {
-        callback(newSessionId, newModel);
+        callback(newSessionId, newModel, sessionPath);
       } catch (error) {
         console.error('[SessionManager] Callback error:', error);
       }

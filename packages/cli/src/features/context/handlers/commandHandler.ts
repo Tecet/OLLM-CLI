@@ -73,11 +73,13 @@ export async function handleCommand(
     if (result.action === 'new-session') {
       // Create new session WITHOUT clearing messages
       // Messages are preserved in ChatContext, only ContextManager resets
-      if ((globalThis as any).__ollmResetSession) {
-        const newSessionId = (globalThis as any).__ollmResetSession(currentModel);
+      try {
+        const { getSessionManager } = await import('../SessionManager.js');
+        const sessionManager = getSessionManager();
+        const newSessionId = sessionManager.createNewSession(currentModel);
         console.log(`[CommandHandler] New session created via /new: ${newSessionId}`);
-      } else {
-        console.warn('[CommandHandler] __ollmResetSession not available');
+      } catch (error) {
+        console.warn('[CommandHandler] Failed to create new session:', error);
       }
     }
 
