@@ -5,6 +5,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
 import { DuckDuckGoSearchProvider } from '../duckduckgo-search.js';
 
 // Mock fetch globally
@@ -332,10 +333,13 @@ describe('DuckDuckGoSearchProvider', () => {
       
       await provider.search('test query', 5);
       
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[DuckDuckGo]'),
-        expect.anything()
+      // Verify logging occurred (at least one call with [DuckDuckGo] prefix)
+      expect(consoleSpy).toHaveBeenCalled();
+      const calls = consoleSpy.mock.calls;
+      const hasDuckDuckGoLog = calls.some(call => 
+        call[0] && typeof call[0] === 'string' && call[0].includes('[DuckDuckGo]')
       );
+      expect(hasDuckDuckGoLog).toBe(true);
       
       consoleSpy.mockRestore();
     });

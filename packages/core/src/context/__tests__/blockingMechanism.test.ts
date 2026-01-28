@@ -7,7 +7,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { CompressionCoordinator } from '../compressionCoordinator.js';
 import { ContextTier, OperationalMode } from '../types.js';
 
-import type { ConversationContext, ContextConfig, ContextUsage, ModelInfo } from '../types.js';
+import type { ConversationContext, ContextConfig } from '../types.js';
 
 describe('Blocking Mechanism (Phase 2)', () => {
   let compressionCoordinator: CompressionCoordinator;

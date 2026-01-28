@@ -1,56 +1,41 @@
-import React, { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 
 import {
-  ContextTier,
   HotSwapTool,
   MemoryDumpTool,
   MODE_METADATA,
-  OperationalMode,
   PromptRegistry,
   PromptsSnapshotManager as _PromptsSnapshotManager,
 } from '@ollm/core';
-import { ReasoningParser } from '@ollm/ollm-cli-core/services/reasoningParser.js';
 
-// Import extracted utilities
+import { useContextManager } from './ContextManagerContext.js';
+import { validateManualContext } from './contextSizing.js';
+import { runAgentLoop } from './handlers/agentLoopHandler.js';
+import { handleCommand } from './handlers/commandHandler.js';
+import {
+  createContextEventHandlers,
+  registerContextEventHandlers,
+} from './handlers/contextEventHandlers.js';
+import { useModel } from './ModelContext.js';
+import { useServices } from './ServiceContext.js';
+import { useUI } from './UIContext.js';
+import { useFocusedFilesInjection } from './useFocusedFilesInjection.js';
 import {
   resolveTierForSize,
   toOperationalMode,
   loadTierPromptWithFallback,
 } from './utils/promptUtils.js';
 import { buildSystemPrompt } from './utils/systemPromptBuilder.js';
-
-// Import extracted handlers
-import {
-  createContextEventHandlers,
-  registerContextEventHandlers,
-} from './handlers/contextEventHandlers.js';
-import { handleCommand } from './handlers/commandHandler.js';
-import { runAgentLoop } from './handlers/agentLoopHandler.js';
-
-import { useContextManager } from './ContextManagerContext.js';
-import { validateManualContext } from './contextSizing.js';
-import { useModel } from './ModelContext.js';
-import { useServices } from './ServiceContext.js';
-import { useUI } from './UIContext.js';
-import { useFocusedFilesInjection } from './useFocusedFilesInjection.js';
 import { commandRegistry } from '../../commands/index.js';
-import { SettingsService } from '../../config/settingsService.js';
 import { profileManager } from '../profiles/ProfileManager.js';
 
-// Import extracted types
 import type {
-  ToolCall,
-  ReasoningBlock,
-  InferenceMetrics,
   Message,
-  ChatState,
-  MenuOption,
   MenuState,
   ChatContextValue,
   ChatProviderProps,
 } from './types/chatTypes.js';
-
-import type { ToolCall as CoreToolCall, ContextMessage, ProviderMetrics, ToolSchema } from '@ollm/core';
+import type { ToolSchema } from '@ollm/core';
 
 declare global {
   var __ollmModelSwitchCallback: ((model: string) => void) | undefined;
@@ -450,7 +435,7 @@ export function ChatProvider({
         content: '',
         expanded: true, // Start expanded to show reasoning as it streams
       });
-      let currentAssistantMsgId = assistantMsg.id;
+      const currentAssistantMsgId = assistantMsg.id;
       assistantMessageIdRef.current = currentAssistantMsgId;
 
       // Run agent loop

@@ -18,7 +18,7 @@ import { ProfileCompiler, getProfileCompiler, compileUserProfiles } from '../pro
 describe('ProfileCompiler', () => {
   let testHomeDir: string;
   let testConfigDir: string;
-  let testUserProfilePath: string;
+  let _testUserProfilePath: string;
   let originalEnv: NodeJS.ProcessEnv;
 
   beforeEach(() => {
@@ -28,7 +28,7 @@ describe('ProfileCompiler', () => {
     // Create isolated test environment
     testHomeDir = join(tmpdir(), `ollm-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
     testConfigDir = join(testHomeDir, '.ollm');
-    testUserProfilePath = join(testConfigDir, 'LLM_profiles.json');
+    _testUserProfilePath = join(testConfigDir, 'LLM_profiles.json');
     
     // Set VITEST env to use test directory
     process.env.VITEST = 'true';

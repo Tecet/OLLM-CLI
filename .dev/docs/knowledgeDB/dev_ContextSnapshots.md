@@ -10,13 +10,26 @@
 
 Phase 5 clarifies the two distinct snapshot systems in OLLM CLI. These systems serve different purposes and do NOT conflict with each other. They work together to provide comprehensive conversation state management.
 
+**Architecture:** The snapshot system uses a **4-layer architecture** for separation of concerns:
+
+1. **Storage Layer** (`snapshotStorage.ts`) - File I/O, serialization, cleanup
+2. **Management Layer** (`snapshotManager.ts`) - Business logic, lifecycle, validation
+3. **Coordination Layer** (`snapshotCoordinator.ts`) - Integration with context system
+4. **Intent Layer** (`intentSnapshotStorage.ts`) - Mode transitions, hot swaps
+
+This layering ensures clean separation between storage operations, business logic, system integration, and specialized use cases.
+
 ---
 
 ## The Two Snapshot Systems
 
 ### System 1: Context Snapshot Manager (Recovery & Rollback)
 
-**Location:** `packages/core/src/context/snapshotManager.ts`
+**Locations:**
+- Storage: `packages/core/src/context/snapshotStorage.ts` (541 lines)
+- Management: `packages/core/src/context/snapshotManager.ts` (615 lines)
+- Coordination: `packages/core/src/context/snapshotCoordinator.ts` (88 lines)
+- Intent: `packages/core/src/services/intentSnapshotStorage.ts` (184 lines)
 
 **Purpose:** Conversation recovery and rollback
 
@@ -138,6 +151,41 @@ interface ModeTransitionSnapshot {
 - ✅ Fast transitions (minimal data)
 - ✅ In-memory cache for quick access
 - ✅ Automatic pruning (1 hour TTL)
+
+---
+
+## Architecture Layers
+
+### Layer 1: Storage (snapshotStorage.ts)
+**Responsibility:** File I/O and serialization
+- Save/load snapshots to disk
+- List snapshots by session
+- Delete snapshots
+- Handle file system errors
+- Backward compatibility with old formats
+
+### Layer 2: Management (snapshotManager.ts)
+**Responsibility:** Business logic and lifecycle
+- Create snapshots from context
+- Restore snapshots to context
+- Validate snapshot data
+- Manage snapshot metadata
+- Threshold callbacks
+- Rolling cleanup
+
+### Layer 3: Coordination (snapshotCoordinator.ts)
+**Responsibility:** Integration with context system
+- Coordinate snapshot creation with context manager
+- Handle context state transitions
+- Manage snapshot triggers
+- Integrate with compression system
+
+### Layer 4: Intent (intentSnapshotStorage.ts)
+**Responsibility:** Specialized use cases
+- Mode transition snapshots
+- Hot swap state preservation
+- Lightweight state transfer
+- In-memory caching
 
 ---
 

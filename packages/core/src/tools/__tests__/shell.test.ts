@@ -2,10 +2,12 @@
  * Shell Tool Tests
  */
 
+import { EventEmitter } from 'node:events';
+
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+
 import { ShellTool } from '../shell.js';
 import { MockMessageBus, createMockAbortSignal, createToolContext } from './test-helpers.js';
-import { EventEmitter } from 'node:events';
 
 // Mock child_process with spawn
 vi.mock('node:child_process', () => ({

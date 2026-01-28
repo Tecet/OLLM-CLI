@@ -3,6 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+
 import { WebFetchTool } from '../web-fetch.js';
 import { MockMessageBus, createMockAbortSignal, createToolContext } from './test-helpers.js';
 

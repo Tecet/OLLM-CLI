@@ -11,9 +11,10 @@
  * - Session save confirmations
  */
 
-import type { ContextMessage } from '@ollm/core';
 import { SettingsService } from '../../../config/settingsService.js';
+
 import type { Message } from '../types/chatTypes.js';
+import type { ContextMessage } from '@ollm/core';
 
 /**
  * Dependencies required by event handlers

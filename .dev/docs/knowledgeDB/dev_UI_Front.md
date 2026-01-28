@@ -214,6 +214,15 @@ The OLLM CLI UI is a terminal-based interface built with React + Ink. The layout
 
 **Key Insight:** Component-level state in `Message.tsx` or child components does NOT affect rendering. The actual rendering happens in the `buildChatLines()` utility function.
 
+**Recommended Refactoring (Optional):**
+- Extract custom hooks from `ModelContext.tsx` (883 lines)
+- Create `useModelManagement.ts` for model operations
+- Create `useProviderManagement.ts` for provider operations
+- Create `useStreamHandling.ts` for streaming logic
+- Reduce `ModelContext.tsx` to ~400-500 lines
+
+**Reference:** `.dev/backlog/28-01-2026-SessionsContext/UI_CONTEXT_ANALYSIS.md`
+
 ---
 
 ### Collapsible Content System

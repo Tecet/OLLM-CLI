@@ -82,10 +82,10 @@ export class DuckDuckGoSearchProvider implements SearchProvider {
         const titleMatch = /<h2[^>]*class="[^"]*result__title[^"]*"[^>]*>[\s\S]*?<a[^>]*href="([^"]*)"[^>]*>([^<]*)<\/a>/i.exec(block);
         
         // Extract snippet - try multiple patterns
-        let snippetMatch = /<a[^>]*class="[^"]*result__snippet[^"]*"[^>]*>([^<]*)<\/a>/i.exec(block);
+        let snippetMatch = /<a[^>]*class="[^"]*result__snippet[^"]*"[^>]*>([\s\S]*?)<\/a>/i.exec(block);
         if (!snippetMatch) {
           // Try alternative: look for any text content after the title
-          snippetMatch = /<\/h2>[\s\S]*?<[^>]*>([^<]{20,})<\//i.exec(block);
+          snippetMatch = /<\/h2>[\s\S]*?<[^>]*>([\s\S]{20,}?)<\//i.exec(block);
         }
 
         if (titleMatch) {
@@ -93,8 +93,8 @@ export class DuckDuckGoSearchProvider implements SearchProvider {
           const title = this.decodeHtml(titleMatch[2].trim());
           const snippet = snippetMatch ? this.decodeHtml(snippetMatch[1].trim()) : '';
 
-          // Only add if we have a valid URL
-          if (url && url.startsWith('http')) {
+          // Filter out DuckDuckGo internal URLs
+          if (url && url.startsWith('http') && !url.includes('duckduckgo.com')) {
             results.push({
               title: title || 'No title',
               url,
@@ -173,7 +173,7 @@ export class DuckDuckGoSearchProvider implements SearchProvider {
       }
 
       return url;
-    } catch (error) {
+    } catch (_error) {
       return url;
     }
   }

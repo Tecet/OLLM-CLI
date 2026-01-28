@@ -13,7 +13,9 @@
  */
 
 import { ReasoningParser } from '@ollm/ollm-cli-core/services/reasoningParser.js';
+
 import { SettingsService } from '../../../config/settingsService.js';
+
 import type { Message, ToolCall } from '../types/chatTypes.js';
 import type {
   ContextMessage,

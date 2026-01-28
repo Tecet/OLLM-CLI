@@ -5,7 +5,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 import { ConversationContextManager } from '../contextManager.js';
-import { ContextTier, OperationalMode } from '../types.js';
 
 import type { Message, ModelInfo } from '../types.js';
 
@@ -106,7 +105,7 @@ describe('validateAndBuildPrompt', () => {
 
   it('should trigger emergency compression when usage is high', async () => {
     // Mock compress method
-    const compressSpy = vi.spyOn(contextManager, 'compress').mockResolvedValue();
+    const _compressSpy = vi.spyOn(contextManager, 'compress').mockResolvedValue();
     
     // Mock getBudget to return high usage (96%)
     vi.spyOn(contextManager, 'getBudget').mockReturnValue({

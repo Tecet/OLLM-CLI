@@ -180,7 +180,7 @@ describe('ProfileManager Integration Tests', () => {
       // ProfileManager should ONLY read from user file
       // NOT from packages/cli/src/config/LLM_profiles.json
       
-      const manager = new ProfileManager();
+      const _manager = new ProfileManager();
       
       // If ProfileManager reads from master DB, it violates architecture
       // The only component that should read master DB is ProfileCompiler

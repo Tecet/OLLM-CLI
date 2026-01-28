@@ -9,7 +9,6 @@
 
 import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from 'react';
 
-import { ReasoningParser } from '@ollm/ollm-cli-core/services/reasoningParser.js';
 import { useContextManager } from './ContextManagerContext.js';
 import { useOptionalGPU } from './GPUContext.js';
 import { deriveGPUPlacementHints } from './gpuHints.js';

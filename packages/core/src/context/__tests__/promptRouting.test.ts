@@ -89,7 +89,7 @@ describe('Prompt routing - tier × mode', () => {
         manager.setMode(mode);
 
         const prompt = manager.getSystemPrompt();
-        const tier = getTierForSize(tierCase.size);
+        const _tier = getTierForSize(tierCase.size);
         
         // Just verify that we got a prompt and it's not empty
         // The exact content may vary but should be substantial

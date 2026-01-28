@@ -5,7 +5,9 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
 import { WebSearchTool, WebSearchInvocation, type SearchProvider, type SearchResult } from '../web-search.js';
+
 import type { ToolContext } from '../types.js';
 
 // Mock search provider for testing

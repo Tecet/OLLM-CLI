@@ -70,32 +70,139 @@ Ollama enforces a fixed context limit (e.g., 6800 tokens for 8K selection). As c
 
 ## Architecture
 
-### Core Components
+### Three-File Compression System
 
-1. **Compression Coordinator** (`compressionCoordinator.ts`)
-   - Orchestrates compression strategies
-   - Manages checkpoint aging
-   - Handles context rollover
-   - Calculates dynamic budget
+The compression system is built with **clear separation of concerns** across three files:
 
-2. **Compression Service** (`compressionService.ts`)
-   - Calls LLM for summarization
-   - Generates compressed summaries
-   - Handles compression failures
+#### 1. **compressionService.ts** (920 lines) - Core Compression Engine
+**Purpose:** Pure compression logic and LLM summarization
 
-3. **Checkpoint Manager** (`checkpointManager.ts`)
+**Responsibilities:**
+- Implements 3 compression strategies (truncate, summarize, hybrid)
+- LLM-based summarization with recursive/rolling logic
+- Fractional preservation (30% of total tokens)
+- Inflation guard (prevents compression from increasing tokens)
+- Token counting with TokenCounter integration
+
+**Key Features:**
+- **Recursive Summarization:** Merges previous summaries with new content
+- **User Message Preservation:** NEVER compresses user messages
+- **System Prompt Preservation:** Always keeps first system message
+- **Structured Summaries:** "🎯 Active Goals" + "📜 History Archive"
+
+**Interface:**
+```typescript
+class CompressionService implements ICompressionService {
+  async compress(messages: Message[], strategy: CompressionStrategy): Promise<CompressedContext>
+  estimateCompression(messages: Message[]): CompressionEstimate
+  shouldCompress(tokenCount: number, threshold: number): boolean
+}
+```
+
+#### 2. **compressionCoordinator.ts** (830 lines) - Orchestration Layer
+**Purpose:** Coordinates compression strategies across 5 context tiers
+
+**Responsibilities:**
+- Tier-based compression dispatch (Tier 1-5)
+- Auto-threshold handling with cooldown
+- Snapshot integration
+- Memory guard integration
+- Checkpoint management coordination
+- User input blocking during compression
+
+**Tier Strategies:**
+1. **Tier 1 (Rollover):** Ultra-compact summary, snapshot creation
+2. **Tier 2 (Smart):** Single detailed checkpoint, critical info extraction
+3. **Tier 3 (Progressive):** Hierarchical checkpoints, checkpoint merging
+4. **Tier 4 (Structured):** Broader summaries, 1500 token budget
+5. **Tier 5 (Ultra):** Maximal detail, 2000 token budget
+
+**Key Features:**
+- **Blocking Mechanism:** Prevents user input during checkpoint creation
+- **Cooldown System:** 60-second cooldown between auto-compressions
+- **Checkpoint Limits:** Enforces max checkpoints per tier
+- **Never-Compressed Preservation:** Preserves critical messages
+
+**Interface:**
+```typescript
+class CompressionCoordinator {
+  async compress(): Promise<void>
+  async handleAutoThreshold(): Promise<void>
+  isAutoSummaryRunning(): boolean
+  isSummarizationInProgress(): boolean
+  async waitForSummarization(timeoutMs?: number): Promise<void>
+}
+```
+
+#### 3. **chatCompressionService.ts** (559 lines) - Session-Based Compression
+**Purpose:** Session-specific compression for chat history
+
+**Responsibilities:**
+- Compresses `SessionMessage[]` (different type from Message)
+- Supports truncate, summarize, hybrid strategies
+- XML snapshot generation using STATE_SNAPSHOT_PROMPT
+- Session metadata updates (compressionCount)
+- Event emission for compression lifecycle
+
+**Key Differences from compressionService.ts:**
+- Works with `SessionMessage` type (has `parts[]` structure)
+- Generates XML snapshots (not used by compressionService)
+- Updates session metadata
+- Emits events via EventEmitter
+- Simpler token budgeting (50% recent, 30% summary)
+
+**Interface:**
+```typescript
+class ChatCompressionService extends EventEmitter {
+  async compress(messages: SessionMessage[], options: CompressionOptions): Promise<CompressionResult>
+  async shouldCompress(messages: SessionMessage[], tokenLimit: number, threshold: number): Promise<boolean>
+  async generateXMLSnapshot(messages: SessionMessage[]): Promise<string>
+}
+```
+
+### Architecture Diagram
+
+```
+┌─────────────────────────────────────────┐
+│ compressionCoordinator.ts (830 lines)   │  ← Orchestration Layer
+│ - Tier-based dispatch                   │
+│ - Auto-threshold handling               │
+│ - Checkpoint coordination               │
+│ - Memory guard integration              │
+└─────────────────────────────────────────┘
+              ↓
+┌─────────────────────────────────────────┐
+│ compressionService.ts (920 lines)       │  ← Core Engine
+│ - Truncate/Summarize/Hybrid strategies  │
+│ - LLM summarization                     │
+│ - Recursive compression                 │
+│ - Inflation guard                       │
+└─────────────────────────────────────────┘
+
+┌─────────────────────────────────────────┐
+│ chatCompressionService.ts (559 lines)   │  ← Session Layer
+│ - Session message compression           │
+│ - XML snapshot generation               │
+│ - Event emission                        │
+│ - Metadata updates                      │
+└─────────────────────────────────────────┘
+```
+
+### Supporting Components
+
+4. **Checkpoint Manager** (`checkpointManager.ts`)
    - Stores and retrieves checkpoints
    - Ages checkpoints over time
    - Merges old checkpoints
    - Preserves never-compressed content
 
-4. **Snapshot Manager** (`snapshotManager.ts`)
+5. **Snapshot Manager** (`snapshotManager.ts`)
    - Creates full conversation snapshots
    - Saves to disk for recovery
    - Restores previous states
    - Lists available snapshots
 
-5. **Message Store** (`messageStore.ts`)
+6. **Message Store** (`messageStore.ts`)
    - Tracks token usage
    - Triggers compression at thresholds
    - Manages message history

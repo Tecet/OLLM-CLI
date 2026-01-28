@@ -17,8 +17,9 @@
  * - ChatContext should only add CLI-specific things (focused files)
  */
 
-import type { LLMProfile } from '../../../config/types.js';
 import { stripSection } from './promptUtils.js';
+
+import type { LLMProfile } from '../../../config/types.js';
 
 export interface BuildSystemPromptOptions {
   /** Base system prompt from context manager */

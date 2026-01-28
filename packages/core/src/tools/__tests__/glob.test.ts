@@ -2,10 +2,11 @@
  * Glob Tool Tests
  */
 
+import { glob } from 'glob';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+
 import { GlobTool } from '../glob.js';
 import { MockMessageBus, createMockAbortSignal, createToolContext } from './test-helpers.js';
-import { glob } from 'glob';
 
 // Mock glob
 vi.mock('glob', () => ({

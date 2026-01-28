@@ -30,7 +30,31 @@ The Context Management System determines context window sizes, monitors VRAM, an
 
 ## Architecture
 
-### Core Components
+### Core Components - 3-Layer Architecture
+
+The context management system uses a **3-layer architecture** for clean separation of concerns:
+
+1. **Orchestration Layer** (`contextManager.ts`, 639 lines)
+   - Main coordination of all context services
+   - Manages conversation state
+   - Owns system prompt
+   - Integrates compression, snapshots, and discovery
+
+2. **UI Integration Layer** (`ContextManagerContext.tsx`, 684 lines)
+   - React context provider for UI
+   - State management for React components
+   - Event handling and user interactions
+   - Bridge between UI and core logic
+
+3. **Resource Management Layer** (`contextPool.ts`, 194 lines)
+   - Dynamic context sizing
+   - VRAM-based optimization
+   - Context resizing logic
+   - Resource allocation
+
+This layering ensures clean separation between core logic, UI integration, and resource management.
+
+### Supporting Services
 
 1. **Context Manager** (`contextManager.ts`)
    - Main orchestration layer
@@ -546,18 +570,19 @@ return sortedProfiles[targetIndex].size;
 
 ## File Locations
 
-| File | Purpose |
-|------|---------|
-| `packages/core/src/context/contextManager.ts` | Main orchestration |
-| `packages/core/src/context/vramMonitor.ts` | VRAM monitoring |
-| `packages/core/src/context/tokenCounter.ts` | Token counting |
-| `packages/core/src/context/contextPool.ts` | Dynamic sizing |
-| `packages/core/src/context/memoryGuard.ts` | Memory safety |
-| `packages/core/src/context/types.ts` | Type definitions |
-| `packages/cli/src/config/LLM_profiles.json` | Pre-calculated 85% values |
-| `packages/cli/src/features/context/contextSizing.ts` | calculateContextSizing() |
-| `packages/cli/src/features/context/ModelContext.tsx` | Interactive mode |
-| `packages/cli/src/nonInteractive.ts` | CLI mode |
+| File | Purpose | Lines |
+|------|---------|-------|
+| `packages/core/src/context/contextManager.ts` | Main orchestration | 639 |
+| `packages/cli/src/ui/contexts/ContextManagerContext.tsx` | UI integration | 684 |
+| `packages/core/src/context/contextPool.ts` | Resource management | 194 |
+| `packages/core/src/context/vramMonitor.ts` | VRAM monitoring | - |
+| `packages/core/src/context/tokenCounter.ts` | Token counting | - |
+| `packages/core/src/context/memoryGuard.ts` | Memory safety | - |
+| `packages/core/src/context/types.ts` | Type definitions | - |
+| `packages/cli/src/config/LLM_profiles.json` | Pre-calculated 85% values | - |
+| `packages/cli/src/features/context/contextSizing.ts` | calculateContextSizing() | - |
+| `packages/cli/src/features/context/ModelContext.tsx` | Interactive mode | - |
+| `packages/cli/src/nonInteractive.ts` | CLI mode | - |
 
 ---
 

@@ -2,11 +2,13 @@
  * Grep Tool Tests
  */
 
+import * as fs from 'node:fs/promises';
+
+import { glob } from 'glob';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+
 import { GrepTool } from '../grep.js';
 import { MockMessageBus, createMockAbortSignal, createToolContext } from './test-helpers.js';
-import * as fs from 'node:fs/promises';
-import { glob } from 'glob';
 
 // Mock dependencies
 vi.mock('node:fs/promises');
