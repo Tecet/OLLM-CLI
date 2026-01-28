@@ -1075,6 +1075,82 @@ Continue conversation with updated goal
 
 ---
 
+## Checkpoint Utilities
+
+**Added:** January 28, 2026  
+**File:** `packages/core/src/context/checkpointUtils.ts`
+
+A comprehensive utility library for working with compression checkpoints. These utilities simplify common checkpoint operations and improve code reusability.
+
+### Available Utilities (16 functions)
+
+#### Finding Checkpoints
+- `findCheckpointById(checkpoints, id)` - Find checkpoint by ID
+- `findCheckpointsAfter(checkpoints, timestamp)` - Find checkpoints after timestamp
+- `findCheckpointsBefore(checkpoints, timestamp)` - Find checkpoints before timestamp
+
+#### Sorting Checkpoints
+- `sortCheckpointsByAge(checkpoints)` - Sort oldest first
+- `sortCheckpointsByAgeDesc(checkpoints)` - Sort newest first
+- `filterCheckpointsByLevel(checkpoints, level)` - Filter by compression level
+
+#### Getting Subsets
+- `getRecentCheckpoints(checkpoints, count)` - Get N most recent
+- `getOldestCheckpoints(checkpoints, count)` - Get N oldest
+
+#### Validation
+- `validateCheckpoint(checkpoint)` - Validate checkpoint structure
+
+#### Extraction
+- `extractCheckpointSummaries(checkpoints)` - Extract summary messages
+
+#### Calculations
+- `calculateTotalCheckpointTokens(checkpoints)` - Calculate total current tokens
+- `calculateTotalOriginalTokens(checkpoints)` - Calculate total original tokens
+
+#### Management
+- `splitCheckpointsByAge(checkpoints, keepRecent)` - Split into old/recent
+- `exceedsMaxCheckpoints(checkpoints, maxCount)` - Check if exceeds limit
+- `getCheckpointsForMerging(checkpoints, maxCount)` - Identify checkpoints to merge
+
+### Usage Examples
+
+```typescript
+import {
+  getRecentCheckpoints,
+  calculateTotalCheckpointTokens,
+  getCheckpointsForMerging,
+  extractCheckpointSummaries
+} from './checkpointUtils.js';
+
+// Get 5 most recent checkpoints
+const recent = getRecentCheckpoints(context.checkpoints, 5);
+
+// Calculate total tokens used by checkpoints
+const totalTokens = calculateTotalCheckpointTokens(context.checkpoints);
+
+// Check if we need to merge old checkpoints
+const { toMerge, toKeep } = getCheckpointsForMerging(context.checkpoints, 10);
+if (toMerge.length > 0) {
+  const merged = mergeCheckpoints(toMerge);
+  context.checkpoints = [merged, ...toKeep];
+}
+
+// Extract summaries for context reconstruction
+const summaries = extractCheckpointSummaries(context.checkpoints);
+context.messages = [...systemMessages, ...summaries, ...recentMessages];
+```
+
+### Benefits
+
+- **Reusability:** Common operations centralized
+- **Type Safety:** Full TypeScript support
+- **Testability:** Each utility independently tested (44 tests)
+- **Documentation:** Comprehensive JSDoc comments
+- **Maintainability:** Clear, focused functions
+
+---
+
 ## File Locations
 
 | File | Purpose |
@@ -1082,6 +1158,7 @@ Continue conversation with updated goal
 | `packages/core/src/context/compressionCoordinator.ts` | Orchestrates compression |
 | `packages/core/src/context/compressionService.ts` | LLM summarization |
 | `packages/core/src/context/checkpointManager.ts` | Checkpoint management |
+| `packages/core/src/context/checkpointUtils.ts` | **Checkpoint utilities** |
 | `packages/core/src/context/snapshotManager.ts` | Snapshot operations |
 | `packages/core/src/context/messageStore.ts` | Tracks usage, triggers compression |
 | `packages/core/src/context/goalManager.ts` | Goal management |

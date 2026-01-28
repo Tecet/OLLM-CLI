@@ -643,6 +643,92 @@ The systems work together to provide comprehensive conversation state management
 
 ---
 
+## Snapshot Utilities
+
+**Added:** January 28, 2026  
+**File:** `packages/core/src/context/snapshotUtils.ts`
+
+A comprehensive utility library for working with context snapshots. These utilities simplify common snapshot operations and improve code reusability.
+
+### Available Utilities (20 functions)
+
+#### Finding Snapshots
+- `findSnapshotById(snapshots, id)` - Find snapshot by ID
+- `findSnapshotsBySession(snapshots, sessionId)` - Find snapshots for session
+- `findSnapshotsAfter(snapshots, timestamp)` - Find snapshots after timestamp
+- `findSnapshotsBefore(snapshots, timestamp)` - Find snapshots before timestamp
+
+#### Sorting Snapshots
+- `sortSnapshotsByAge(snapshots)` - Sort oldest first
+- `sortSnapshotsByAgeDesc(snapshots)` - Sort newest first
+
+#### Getting Subsets
+- `getRecentSnapshots(snapshots, count)` - Get N most recent
+- `getOldestSnapshots(snapshots, count)` - Get N oldest
+
+#### Validation
+- `validateSnapshotMetadata(snapshot)` - Validate metadata structure
+- `validateContextSnapshot(snapshot)` - Validate full snapshot
+
+#### Calculations
+- `calculateTotalSnapshotSize(snapshots)` - Calculate total tokens
+- `calculateTotalSnapshotFileSize(snapshots)` - Calculate total file size
+
+#### Grouping and Filtering
+- `groupSnapshotsBySession(snapshots)` - Group by session ID
+- `filterSnapshotsAboveThreshold(snapshots, threshold)` - Filter large snapshots
+- `filterSnapshotsBelowThreshold(snapshots, threshold)` - Filter small snapshots
+
+#### Cleanup
+- `getSnapshotsForCleanup(snapshots, maxCount)` - Identify snapshots to delete
+- `exceedsMaxSnapshots(snapshots, maxCount)` - Check if exceeds limit
+
+#### Message Extraction
+- `extractUserMessages(snapshot)` - Extract user messages
+- `extractNonUserMessages(snapshot)` - Extract non-user messages
+
+### Usage Examples
+
+```typescript
+import {
+  getRecentSnapshots,
+  findSnapshotsBySession,
+  getSnapshotsForCleanup,
+  calculateTotalSnapshotSize,
+  extractUserMessages
+} from './snapshotUtils.js';
+
+// Get 10 most recent snapshots
+const recent = getRecentSnapshots(allSnapshots, 10);
+
+// Find all snapshots for a session
+const sessionSnapshots = findSnapshotsBySession(allSnapshots, 'session-123');
+
+// Cleanup old snapshots
+const { toKeep, toDelete } = getSnapshotsForCleanup(allSnapshots, 100);
+for (const snapshot of toDelete) {
+  await storage.delete(snapshot.id);
+}
+
+// Calculate total storage used
+const totalTokens = calculateTotalSnapshotSize(allSnapshots);
+console.log(`Snapshots use ${totalTokens} tokens`);
+
+// Extract user messages from snapshot
+const userMessages = extractUserMessages(snapshot);
+```
+
+### Benefits
+
+- **Reusability:** Common operations centralized
+- **Type Safety:** Full TypeScript support
+- **Testability:** Each utility independently tested (42 tests)
+- **Documentation:** Comprehensive JSDoc comments
+- **Maintainability:** Clear, focused functions
+- **Backward Compatibility:** Handles both old and new snapshot formats
+
+---
+
 **Phase 5 Status:** ✅ COMPLETE  
 **Total Tests:** 502/502 ✅ (no new tests - documentation only)  
 **Completion Date:** January 27, 2026  
