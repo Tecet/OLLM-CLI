@@ -10,11 +10,11 @@
 import React, { useCallback } from 'react';
 import { Box, Text, useInput } from 'ink';
 
-import { SyntaxViewer } from '../file-explorer/SyntaxViewer.js';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { useKeybinds } from '../../../features/context/KeybindsContext.js';
 import { useUI } from '../../../features/context/UIContext.js';
 import { isKey } from '../../utils/keyUtils.js';
+import { SyntaxViewer } from '../file-explorer/SyntaxViewer.js';
 
 export interface FileViewerTabProps {
   /** Width of the tab container */

@@ -1,4 +1,5 @@
 // ASCII art with colors from original image
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const WELCOME_ASCII_LINES = [
   { segments: [
     { text: '                                                                                ' },

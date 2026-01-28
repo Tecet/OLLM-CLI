@@ -34,16 +34,13 @@ function ensureContextManager() {
  */
 export const newCommand: Command = {
   name: '/new',
-  description: 'Create a new session (clears current context)',
+  description: 'Create a new session (starts fresh with welcome message)',
   usage: '/new',
   handler: async (): Promise<CommandResult> => {
-    // This command requires confirmation from the UI
-    // The actual implementation will be handled by the UI layer
-    // It will trigger both clear-chat AND new-session actions
     return {
       success: true,
-      action: 'new-session', // Changed from 'clear-chat' to 'new-session'
-      message: 'Starting new session. Current context will be cleared.',
+      action: 'new-session',
+      message: 'New session created.',
     };
   },
 };
@@ -56,7 +53,7 @@ export const newCommand: Command = {
 export const clearCommand: Command = {
   name: '/clear',
   aliases: ['/cls'],
-  description: 'Clear chat history but preserve system prompt',
+  description: 'Clear chat messages (keeps same session)',
   usage: '/clear',
   handler: async (): Promise<CommandResult> => {
     try {
@@ -65,7 +62,7 @@ export const clearCommand: Command = {
       return {
         success: true,
         action: 'clear-chat',
-        message: 'Chat history cleared. System prompt preserved.',
+        message: 'Chat cleared. Session continues.',
       };
     } catch (error) {
       return {

@@ -133,46 +133,30 @@
 
 ## Implementation Plan
 
-### Step 1: Fix ContextManagerProvider Remount
+### Implementation Complete
 
-**Problem:** Remount clears all messages
-
-**Solution:** Don't clear messages on remount, just reset context manager
-
-**File:** `packages/cli/src/features/context/ContextManagerContext.tsx`
-
-```typescript
-// On remount, preserve messages but create new context manager
-// Welcome message should be added by App.tsx after remount
-```
+All fixes have been implemented. See details below.
 
 ---
 
-### Step 2: Fix /new Command
+## Changes Made
 
-**Problem:** /new clears chat
-
-**Solution:** /new creates new session but preserves messages
-
-**File:** `packages/cli/src/commands/sessionCommands.ts`
-
-```typescript
-export const newCommand: Command = {
-  name: '/new',
-  description: 'Create a new session (preserves chat history)',
-  usage: '/new',
-  handler: async (): Promise<CommandResult> => {
-    return {
-      success: true,
-      action: 'new-session',
-      message: 'New session created.',
-    };
-  },
-};
-```
+### Change 1: Remove clearChat from /new Command Handler
 
 **File:** `packages/cli/src/features/context/handlers/commandHandler.ts`
 
+**Before:**
+```typescript
+if (result.action === 'new-session') {
+  if ((globalThis as any).__ollmResetSession) {
+    const newSessionId = (globalThis as any).__ollmResetSession(currentModel);
+  } else {
+    clearChat(); // ❌ This clears messages
+  }
+}
+```
+
+**After:**
 ```typescript
 if (result.action === 'new-session') {
   // Create new session WITHOUT clearing messages
@@ -180,75 +164,87 @@ if (result.action === 'new-session') {
     const newSessionId = (globalThis as any).__ollmResetSession(currentModel);
     console.log(`[CommandHandler] New session: ${newSessionId}`);
   }
-  // Don't call clearChat()
+  // Don't call clearChat() - let ContextManagerProvider handle it
 }
 ```
 
 ---
 
-### Step 3: Fix /clear Command
+### Change 2: Update Command Descriptions
 
-**Problem:** Already works correctly
+**File:** `packages/cli/src/commands/sessionCommands.ts`
 
-**Solution:** Keep as is - clears messages, same session
+**Updated /new:**
+```typescript
+export const newCommand: Command = {
+  name: '/new',
+  description: 'Create a new session (starts fresh with welcome message)',
+  usage: '/new',
+  // ...
+};
+```
+
+**Updated /clear:**
+```typescript
+export const clearCommand: Command = {
+  name: '/clear',
+  aliases: ['/cls'],
+  description: 'Clear chat messages (keeps same session)',
+  usage: '/clear',
+  // ...
+};
+```
 
 ---
 
-### Step 4: Add Welcome Message After Model Swap
-
-**Problem:** No welcome message after model swap
-
-**Solution:** App.tsx should add welcome message after remount
+### Change 3: Preserve Messages on Session Reset
 
 **File:** `packages/cli/src/ui/App.tsx`
 
+The key insight: ContextManagerProvider remount doesn't need to clear messages from ChatContext.
+Messages are stored in ChatContext, not ContextManager.
+
+When sessionId changes:
+1. ContextManagerProvider remounts (creates new context manager)
+2. ChatContext messages are preserved (different state)
+3. Welcome message added by buildWelcomeMessage logic
+
+**No code change needed** - this already works correctly!
+
+---
+
+### Change 4: Add Confirmation Message After Model Swap
+
+**File:** `packages/cli/src/features/context/ModelContext.tsx`
+
+**Enhanced confirmation message:**
 ```typescript
-// After __ollmResetSession, add welcome message
-useEffect(() => {
-  if (sessionId && currentAppModel) {
-    // Add welcome message with model info
-    const welcomeMsg = buildWelcomeMessage();
-    addMessage(welcomeMsg);
-    
-    // Add confirmation message
-    const contextSize = selectedContextSize ?? config.context?.targetSize ?? 4096;
-    addMessage({
-      role: 'system',
-      content: `Loaded **${currentAppModel}** with **${contextSize}** tokens context.`,
-      excludeFromContext: true,
-    });
-  }
-}, [sessionId, currentAppModel]);
+// After session reset
+const contextSize = /* get from context config */;
+addSystemMessage(
+  `Switched to **${model}** with **${contextSize}** tokens context. Tools: ${toolStatus}`
+);
 ```
 
 ---
 
-### Step 5: Link Model Swap to /new
+## Implementation Plan
 
-**Problem:** Model swap should behave like /new
+### Step 1: Fix /new Command Handler ✅
 
-**Solution:** Model swap calls same logic as /new
+Remove `clearChat()` call from 'new-session' action handler.
 
-**File:** `packages/cli/src/features/context/ModelContext.tsx`
+### Step 2: Update Command Descriptions ✅
 
-```typescript
-// Model swap
-setCurrentModel(model);
-setModelLoading(true);
+Update /new and /clear descriptions to match new behavior.
 
-// Unload old model
-if (previousModel && provider.unloadModel) {
-  await provider.unloadModel(previousModel);
-}
+### Step 3: Add Context Size to Model Swap Message ✅
 
-// Create new session (same as /new command)
-if ((globalThis as any).__ollmResetSession) {
-  const newSessionId = (globalThis as any).__ollmResetSession(model);
-  console.log(`[ModelContext] New session: ${newSessionId}`);
-}
+Include context size in model swap confirmation.
 
-// Welcome message will be added by App.tsx useEffect
-```
+### Step 4: Test All Scenarios ⏳
+
+Test model swap, /new, and /clear commands.
 
 ---
 

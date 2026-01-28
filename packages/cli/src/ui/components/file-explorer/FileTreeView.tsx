@@ -179,7 +179,7 @@ export function FileTreeView({
     state: treeState,
     setVisibleWindow,
     setCursorPosition,
-    setScrollOffset,
+    setScrollOffset: _setScrollOffset,
     expandDirectory,
     collapseDirectory,
     getSelectedNode,
@@ -372,7 +372,7 @@ export function FileTreeView({
   /**
    * Close the syntax viewer modal
    */
-  const closeViewer = useCallback(() => {
+  const _closeViewer = useCallback(() => {
     closeFileViewer();
   }, [closeFileViewer]);
 
@@ -733,7 +733,6 @@ export function FileTreeView({
       quickOpenState,
       searchDialogOpen,
       menuOpen,
-      closeViewer,
       debouncedAction,
       moveDown,
       moveUp,
@@ -783,7 +782,7 @@ export function FileTreeView({
 
     // Get all visible nodes without windowing - just flatten the tree
     return fileTreeService.getFlattenedTree(treeState.root);
-  }, [treeState.root, treeState.expandedPaths, fileTreeService]);
+  }, [treeState.root, fileTreeService]);
 
   // Update visible window in state when it changes
   useEffect(() => {

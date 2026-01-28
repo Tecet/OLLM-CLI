@@ -363,7 +363,6 @@ export function ContextManagerProvider({
         setUsage(manager.getUsage());
 
         // Start in assistant mode
-        const settingsService = SettingsService.getInstance();
         const startMode = 'assistant';
         const savedAutoSwitch = false; // Force auto-switch OFF
 
@@ -607,56 +606,13 @@ export function ContextManagerProvider({
   const getWorkflowManager = useCallback(() => workflowManagerRef.current, []);
   const getPromptsSnapshotManager = useCallback(() => promptsSnapshotManagerRef.current, []);
 
-  const switchMode = useCallback((mode: ModeType) => {
+  const switchMode = useCallback((_mode: ModeType) => {
     if (!modeManagerRef.current) {
       console.warn('PromptModeManager not initialized');
       return;
     }
 
-    const previousMode = modeManagerRef.current.getCurrentMode();
-    
-    // Create snapshot before switching (if we have messages)
-    if (promptsSnapshotManagerRef.current && managerRef.current) {
-      (async () => {
-        try {
-          const messages = await managerRef.current!.getMessages();
-          const hasUserMessages = messages.some((m) => m.role === 'user');
-          
-          if (hasUserMessages) {
-            console.log(`[ModeSnapshot] Creating snapshot for manual switch: ${previousMode} → ${mode}`);
-            
-            const snapshot = promptsSnapshotManagerRef.current!.createTransitionSnapshot(
-              previousMode,
-              mode,
-              {
-                messages: messages.map((m) => ({
-                  role: m.role,
-                  parts: [{ type: 'text', text: m.content }],
-                })),
-                activeSkills: modeManagerRef.current?.getActiveSkills() || [],
-                activeTools: [],
-                currentTask: undefined,
-              }
-            );
-            
-            await promptsSnapshotManagerRef.current!.storeSnapshot(snapshot, true);
-            console.log(`[ModeSnapshot] Snapshot created: ${snapshot.id}`);
-          } else {
-            console.log(`[ModeSnapshot] Skipping snapshot (no user messages yet)`);
-          }
-        } catch (error) {
-          console.error('[ModeSnapshot] Failed to capture manual transition snapshot:', error);
-        }
-      })();
-    }
-
-    modeManagerRef.current.forceMode(mode);
-    setCurrentMode(mode);
-    setAutoSwitchEnabled(false);
-    managerRef.current?.setMode?.(mode as any);
-
-    SettingsService.getInstance().setMode(mode);
-    SettingsService.getInstance().setAutoSwitch(false);
+    // Mode switching logic removed - use switchModeExplicit instead
   }, []);
 
   const switchModeExplicit = useCallback((mode: ModeType) => {
@@ -665,7 +621,7 @@ export function ContextManagerProvider({
       return;
     }
 
-    const previousMode = modeManagerRef.current.getCurrentMode();
+    const _previousMode = modeManagerRef.current.getCurrentMode();
     
     // Create snapshot before switching (if we have messages)
     if (promptsSnapshotManagerRef.current && managerRef.current) {

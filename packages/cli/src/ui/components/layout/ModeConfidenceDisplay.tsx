@@ -58,7 +58,7 @@ export function ModeConfidenceDisplay({
   const { activeWindow } = useWindow();
   const { state: contextState } = useContextManager();
 
-  const label = rightPanelHeaderLabel(activeWindow)
+  const _label = rightPanelHeaderLabel(activeWindow)
     ? `${rightPanelHeaderLabel(activeWindow)}:`
     : '';
 

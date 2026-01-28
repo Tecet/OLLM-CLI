@@ -4,7 +4,7 @@
 export interface CommandResult {
   success: boolean;
   message?: string;
-  action?: 'show-launch-screen' | 'clear-chat' | 'save-session' | 'exit';
+  action?: 'show-launch-screen' | 'clear-chat' | 'new-session' | 'save-session' | 'exit';
   data?: unknown;
 }
 

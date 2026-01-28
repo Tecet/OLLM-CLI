@@ -7,6 +7,7 @@
 
 import React, { useMemo } from 'react';
 
+import { FilesTab } from './FilesTab.js';
 import {
   FileTreeService,
   FocusSystem,
@@ -14,7 +15,6 @@ import {
   FileOperations,
   FileTreeProvider,
 } from '../file-explorer/index.js';
-import { FilesTab } from './FilesTab.js';
 
 export interface FilesTabWrapperProps {
   width?: number;

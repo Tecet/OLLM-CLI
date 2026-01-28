@@ -34,7 +34,7 @@ export interface WorkspacePanelProps {
 export function WorkspacePanel({ theme, hasFocus }: WorkspacePanelProps) {
   const fileFocusContext = useFileFocus();
   const { container } = useServices();
-  const focusManager = useFocusManager();
+  const _focusManager = useFocusManager();
   const { openFileViewer } = useUI();
   const [fileTree, setFileTree] = useState<FileNode | null>(null);
   const [flattenedFiles, setFlattenedFiles] = useState<FileNode[]>([]);

@@ -1,13 +1,11 @@
 import React from 'react';
 import { Box, Text, BoxProps, useInput } from 'ink';
 
-import { ActivePromptInfo } from './ActivePromptInfo.js';
 import { ContextSection } from './ContextSection.js';
 import { DotIndicator } from './DotIndicator.js';
 import { KeybindsLegend } from './KeybindsLegend.js';
 import { WorkspacePanel } from './WorkspacePanel.js';
 import { Theme } from '../../../config/types.js';
-import { useChat } from '../../../features/context/ChatContext.js';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { useKeybinds } from '../../../features/context/KeybindsContext.js';
 import { useModel } from '../../../features/context/ModelContext.js';

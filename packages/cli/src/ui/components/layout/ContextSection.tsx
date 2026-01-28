@@ -34,7 +34,7 @@ export function ContextSection() {
   const { state: uiState } = useUI();
   const { state: contextState } = useContextManager();
   const {
-    activeSkills,
+    activeSkills: _activeSkills,
     activeHooks,
     activeMcpServers,
     currentMode,

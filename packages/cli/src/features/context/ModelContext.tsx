@@ -92,7 +92,7 @@ export interface ModelProviderProps {
  */
 export function ModelProvider({ children, provider, initialModel }: ModelProviderProps) {
   // Get UI callbacks from context
-  const { promptUser, addSystemMessage, clearContext } = useUICallbacks();
+  const { promptUser, addSystemMessage } = useUICallbacks();
 
   const [currentModel, setCurrentModel] = useState(initialModel);
   const [modelLoading, setModelLoading] = useState(false);
@@ -163,7 +163,11 @@ export function ModelProvider({ children, provider, initialModel }: ModelProvide
 
           // Add system message showing model swap and tool support
           const toolStatus = toolSupport ? 'Enabled' : 'Disabled';
-          addSystemMessage(`Switched to ${model}. Tools: ${toolStatus}`);
+          const contextSize = contextManagerState.usage.maxTokens;
+          const contextSizeK = contextSize >= 1024 ? `${contextSize / 1024}k` : `${contextSize}`;
+          addSystemMessage(
+            `Switched to **${model}** with **${contextSizeK}** context (${contextSize} tokens). Tools: ${toolStatus}`
+          );
 
           return;
         }
@@ -196,10 +200,14 @@ export function ModelProvider({ children, provider, initialModel }: ModelProvide
 
         // Add system message showing model swap and tool support
         const toolStatus = toolSupport ? 'Enabled' : 'Disabled';
-        addSystemMessage(`Switched to ${model}. Tools: ${toolStatus}`);
+        const contextSize = contextManagerState.usage.maxTokens;
+        const contextSizeK = contextSize >= 1024 ? `${contextSize / 1024}k` : `${contextSize}`;
+        addSystemMessage(
+          `Switched to **${model}** with **${contextSizeK}** context (${contextSize} tokens). Tools: ${toolStatus}`
+        );
       }
     },
-    [currentModel, provider, handleUnknownModel, saveToolSupport, addSystemMessage]
+    [currentModel, provider, handleUnknownModel, saveToolSupport, addSystemMessage, contextManagerState.usage.maxTokens]
   );
 
   const cancelRequest = useCallback(() => {

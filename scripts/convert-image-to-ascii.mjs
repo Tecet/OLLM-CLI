@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
-import { readFileSync, writeFileSync } from 'fs';
+import { writeFileSync } from 'fs';
+
 import { Jimp } from 'jimp';
 
 const ASCII_CHARS = ['@', '#', 'S', '%', '?', '*', '+', ';', ':', ',', '.', ' '];
@@ -81,7 +82,7 @@ async function convertImageToColoredAscii(imagePath, width = 80) {
 
 // Generate TypeScript code for colored ASCII
 function generateColoredAsciiCode(data) {
-  const { asciiArt, colorData, width, height } = data;
+  const { asciiArt, colorData } = data;
   
   // Analyze colors to find dominant ones
   const colorMap = new Map();
