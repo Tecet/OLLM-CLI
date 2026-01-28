@@ -49,7 +49,7 @@ export class WebSearchTool implements DeclarativeTool<WebSearchParams, ToolResul
   displayName = 'Search the Web';
   schema: ToolSchema = {
     name: 'web_search',
-    description: 'Search the web for information',
+    description: 'Search the web for information. Use this to find URLs and information about any topic. Returns search results with titles, URLs, and descriptions. This is your PRIMARY tool for finding information on the internet.',
     parameters: {
       type: 'object',
       properties: {
@@ -134,11 +134,15 @@ export class WebSearchInvocation implements ToolInvocation<WebSearchParams, Tool
       // Perform the search
       const results = await this.searchProvider.search(this.params.query, numResults);
 
+      console.log(`[WebSearchTool] Search for "${this.params.query}" returned ${results.length} results`);
+
       // Ensure we don't return more than numResults
       const limitedResults = results.slice(0, numResults);
 
       // Format results for display
       const formatted = this.formatResults(limitedResults);
+
+      console.log(`[WebSearchTool] Formatted output length: ${formatted.length} chars`);
 
       if (updateOutput) {
         updateOutput(formatted);
@@ -163,8 +167,15 @@ export class WebSearchInvocation implements ToolInvocation<WebSearchParams, Tool
       return 'No results found.';
     }
 
-    return results
-      .map((r, i) => `${i + 1}. ${r.title}\n   ${r.url}\n   ${r.snippet}`)
+    const formatted = results
+      .map((r, i) => {
+        const snippet = r.snippet && r.snippet !== 'No description available' 
+          ? r.snippet 
+          : 'Visit the URL for more information';
+        return `${i + 1}. ${r.title}\n   URL: ${r.url}\n   ${snippet}`;
+      })
       .join('\n\n');
+    
+    return `Search Results (from DuckDuckGo):\n\n${formatted}\n\n✓ These are real search results. Share the URLs and titles above with the user.`;
   }
 }

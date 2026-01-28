@@ -113,7 +113,14 @@ export class LsInvocation implements ToolInvocation<LsParams, ToolResult> {
     try {
       // Check if aborted
       if (signal.aborted) {
-        throw new Error('Operation cancelled');
+        return {
+          llmContent: '',
+          returnDisplay: '',
+          error: {
+            message: 'Directory listing cancelled',
+            type: 'CancelledError',
+          },
+        };
       }
 
       // Load .gitignore patterns
@@ -136,12 +143,30 @@ export class LsInvocation implements ToolInvocation<LsParams, ToolResult> {
         returnDisplay: `Listed ${entries.length} entr${entries.length === 1 ? 'y' : 'ies'}`,
       };
     } catch (error) {
+      const err = error as NodeJS.ErrnoException;
+      let errorType = 'LsError';
+      let errorMessage = err.message;
+
+      // Provide specific error types for common cases
+      if (err.code === 'ENOENT') {
+        errorType = 'DirectoryNotFoundError';
+        errorMessage = `Directory not found: ${this.params.path}`;
+      } else if (err.code === 'EACCES' || err.code === 'EPERM') {
+        errorType = 'PermissionError';
+        errorMessage = `Permission denied: ${this.params.path}`;
+      } else if (err.code === 'ENOTDIR') {
+        errorType = 'NotADirectoryError';
+        errorMessage = `Not a directory: ${this.params.path}`;
+      } else if (errorMessage.includes('cancelled')) {
+        errorType = 'CancelledError';
+      }
+
       return {
         llmContent: '',
         returnDisplay: '',
         error: {
-          message: (error as Error).message,
-          type: 'LsError',
+          message: errorMessage,
+          type: errorType,
         },
       };
     }
@@ -157,7 +182,7 @@ export class LsInvocation implements ToolInvocation<LsParams, ToolResult> {
   ): Promise<string[]> {
     // Check if aborted
     if (signal.aborted) {
-      throw new Error('Operation cancelled');
+      throw new Error('Directory listing cancelled');
     }
 
     const entries: string[] = [];

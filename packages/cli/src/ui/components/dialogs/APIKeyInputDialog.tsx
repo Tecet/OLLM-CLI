@@ -217,7 +217,10 @@ export function APIKeyInputDialog({ server, onInstall, onCancel }: APIKeyInputDi
               width="100%"
             >
               <Text>
-                {field.value ? '•'.repeat(Math.min(field.value.length, 40)) : ''}
+                {isCurrentlyEditing 
+                  ? field.value || '' // Show actual text when editing
+                  : field.value ? '•'.repeat(Math.min(field.value.length, 40)) : '(empty)' // Show bullets when not editing
+                }
                 {isCurrentlyEditing && <Text color="cyan">_</Text>}
               </Text>
             </Box>
@@ -270,20 +273,20 @@ export function APIKeyInputDialog({ server, onInstall, onCancel }: APIKeyInputDi
         </Box>
       )}
 
-      {/* Action buttons */}
-      <Box justifyContent="space-around" marginTop={1}>
+      {/* Action buttons - Vertical layout */}
+      <Box flexDirection="column" marginTop={1}>
         <Text
           bold={selectedFieldIndex === skipButtonIndex && !isInstalling}
           color={selectedFieldIndex === skipButtonIndex ? 'yellow' : 'gray'}
         >
-          {selectedFieldIndex === skipButtonIndex ? '▶ ' : '  '}[S] Skip
+          {selectedFieldIndex === skipButtonIndex ? '▶ ' : '  '}[S] Skip API Keys (Install without keys)
         </Text>
 
         <Text
           bold={selectedFieldIndex === installButtonIndex && !isInstalling}
           color={selectedFieldIndex === installButtonIndex ? 'yellow' : 'green'}
         >
-          {selectedFieldIndex === installButtonIndex ? '▶ ' : '  '}[I] Install
+          {selectedFieldIndex === installButtonIndex ? '▶ ' : '  '}[I] Install with API Keys
         </Text>
       </Box>
 

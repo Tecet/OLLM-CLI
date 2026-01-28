@@ -72,6 +72,7 @@ The foundation of OLLM CLI has been successfully implemented:
 
 
 # PLANED DEVELOPMENT ROADMAP
+*Planed release Feburary / March 2026
 
 ## v0.3.0 The Hooks, Extensions, and MCP
 
@@ -103,7 +104,7 @@ RAG Vector DB Functionality
 
 
 # v0.5.0  Release Kraken !
-*Planed release end of February 2026*
+*Planed release end of March 2026*
 
 When local models hit their limits on complex tasks, "Release Kraken" lets you seamlessly escalate to cloud powerhouses. With a single /kraken command, you can invoke Gemini CLI, Claude Code, or Codex CLI directly from O.L.L.M. It also supports API providers like OpenAI and Anthropic. The system handles context transfer, tracks costs, and returns control to your local model when done.
 
@@ -137,7 +138,7 @@ Cross platform development prep works
   
 
 # v0.5.0  GitHub Integration
-*Planed release end of March - mid April 2026*
+*Planed release end of  April 2026*
 
 
 The Developer Productivity Tools system adds three high-impact features that enable Aider-like developer workflows: Git integration for version control operations, @-mentions for explicit context loading, and diff review mode for interactive change approval. These features work together to provide developers with fine-grained control over context, changes, and version history while maintaining the conversational interface of OLLM CLI.
@@ -170,7 +171,7 @@ The Developer Productivity Tools system adds three high-impact features that ena
 
 
 # Beta 0.6.0 - 0.9.0
-Planed release March - April 2026
+Planed release TBC
 
 
 Cross-Platform Support 🖥️  
@@ -186,17 +187,3 @@ Consistent behavior across all major operating systems.
 - Terminal capability detection
 - Path normalization
 
-
-- ## v0.6.0 - 
-
-## v0.7.0 -
-
-## v0.8.0 -
-
-## v0.9.0 -
-
-
-
-OLLM CLI v 1.0.0
-
-Planed Release - 2nd Quarter 2026

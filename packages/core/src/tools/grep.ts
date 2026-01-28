@@ -123,7 +123,14 @@ export class GrepInvocation implements ToolInvocation<GrepParams, ToolResult> {
     try {
       // Check if aborted
       if (signal.aborted) {
-        throw new Error('Operation cancelled');
+        return {
+          llmContent: '',
+          returnDisplay: '',
+          error: {
+            message: 'Search cancelled',
+            type: 'CancelledError',
+          },
+        };
       }
 
       const cwd = this.params.directory ?? process.cwd();
@@ -142,7 +149,14 @@ export class GrepInvocation implements ToolInvocation<GrepParams, ToolResult> {
 
       // Check if aborted after finding files
       if (signal.aborted) {
-        throw new Error('Operation cancelled');
+        return {
+          llmContent: '',
+          returnDisplay: '',
+          error: {
+            message: 'Search cancelled',
+            type: 'CancelledError',
+          },
+        };
       }
 
       // Filter out gitignored files
@@ -180,7 +194,14 @@ export class GrepInvocation implements ToolInvocation<GrepParams, ToolResult> {
 
         // Check if aborted during search
         if (signal.aborted) {
-          throw new Error('Operation cancelled');
+          return {
+            llmContent: '',
+            returnDisplay: '',
+            error: {
+              message: 'Search cancelled',
+              type: 'CancelledError',
+            },
+          };
         }
 
         const filePath = path.join(cwd, file);
@@ -214,12 +235,13 @@ export class GrepInvocation implements ToolInvocation<GrepParams, ToolResult> {
         returnDisplay: `Found ${count} match${count === 1 ? '' : 'es'}`,
       };
     } catch (error) {
+      const errorMessage = (error as Error).message;
       return {
         llmContent: '',
         returnDisplay: '',
         error: {
-          message: (error as Error).message,
-          type: 'GrepError',
+          message: errorMessage,
+          type: errorMessage.includes('cancelled') ? 'CancelledError' : 'GrepError',
         },
       };
     }

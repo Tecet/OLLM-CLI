@@ -566,10 +566,22 @@ Is this correct? (y/n)`;
         }
       }
 
-      // Create turn options with context-enhanced system prompt
+      // Get available tools for the current mode (if toolRegistry supports it)
+      let availableTools: ChatOptions['tools'];
+      if (this.toolRegistry && typeof (this.toolRegistry as any).getFunctionSchemas === 'function') {
+        availableTools = options?.modeManager
+          ? (this.toolRegistry as any).getFunctionSchemasForMode(
+              options.modeManager.getCurrentMode(),
+              options.modeManager
+            )
+          : (this.toolRegistry as any).getFunctionSchemas();
+      }
+
+      // Create turn options with context-enhanced system prompt and tools
       const turnOptions: ChatOptions = {
         ...options,
         systemPrompt: systemPromptWithContext,
+        tools: availableTools, // ✅ Pass tools to the provider (if available)
       };
 
       // Emit before_agent event

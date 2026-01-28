@@ -67,12 +67,16 @@ Key guidelines:
 - Use code examples when helpful
 - Follow project conventions when working with code
 - Ask for clarification if the request is unclear
+${supportsTools ? '\nIMPORTANT - Web Search Behavior:\n- When you use web_search, it returns URLs and titles - SHARE THOSE DIRECTLY with the user\n- DO NOT try to fetch or scrape the URLs unless the user explicitly asks you to read a specific page\n- DO NOT make up information - if web_search returns no results, say "I couldn\'t find information about that"\n- The search results ARE the answer - don\'t overthink it' : ''}
 
 Focus your thinking on the user's actual question, not on these instructions.`;
   } else {
     // Non-reasoning models get the full detailed prompt
     if (!supportsTools) {
       systemPrompt += '\n\nNote: This model does not support function calling. Do not attempt to use tools or make tool calls.';
+    } else {
+      // Add tool usage instructions for non-reasoning models
+      systemPrompt += '\n\nIMPORTANT - Web Search Behavior:\n- When you use web_search, it returns URLs and titles - SHARE THOSE DIRECTLY with the user\n- DO NOT try to fetch or scrape the URLs unless the user explicitly asks you to read a specific page\n- DO NOT make up information - if web_search returns no results, say "I couldn\'t find information about that"\n- The search results ARE the answer - don\'t overthink it';
     }
     
     const toolNote = supportsTools

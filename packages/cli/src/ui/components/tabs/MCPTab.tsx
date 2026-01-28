@@ -42,12 +42,12 @@ export interface MCPTabProps {
 /**
  * Detail view navigation items for server details
  */
-type ServerDetailNavItem = 'exit' | 'tools' | 'enable' | 'disable' | 'delete';
+type ServerDetailNavItem = 'exit' | 'tools' | 'editKeys' | 'enable' | 'disable' | 'delete';
 
 /**
  * View mode for server details
  */
-type ServerDetailView = 'details' | 'tools';
+type ServerDetailView = 'details' | 'tools' | 'editKeys';
 
 /**
  * Tools view navigation items
@@ -89,6 +89,13 @@ function ServerDetailsContent({ server, activeColumn, onToggle, onDelete, onRefr
     selection: 'no',
   });
   
+  // Edit keys state
+  const [editingKeyIndex, setEditingKeyIndex] = useState(0);
+  const [isEditingValue, setIsEditingValue] = useState(false);
+  const [keyValues, setKeyValues] = useState<Record<string, string>>(server.config.env || {});
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
+  const [saveError, setSaveError] = useState<string | null>(null);
+  
   // Initialize tool selections from server config
   useEffect(() => {
     const selections = new Map<string, boolean>();
@@ -98,6 +105,11 @@ function ServerDetailsContent({ server, activeColumn, onToggle, onDelete, onRefr
     });
     setToolSelections(selections);
   }, [server.toolsList, server.config.autoApprove]);
+  
+  // Initialize key values when server changes
+  useEffect(() => {
+    setKeyValues(server.config.env || {});
+  }, [server.config.env]);
   
   // Handle keyboard input when right column is active
   useInput((input, key) => {
@@ -207,6 +219,83 @@ function ServerDetailsContent({ server, activeColumn, onToggle, onDelete, onRefr
       return;
     }
     
+    // Handle edit keys view navigation
+    if (view === 'editKeys') {
+      const envKeys = Object.keys(server.config.env || {});
+      
+      if (saveStatus === 'success' || saveStatus === 'error') {
+        if (key.return || key.escape) {
+          setSaveStatus('idle');
+          setSaveError(null);
+          if (saveStatus === 'success') {
+            // Go back to details view after successful save
+            setView('details');
+            setNavItem('exit');
+            // Refresh to show updated config
+            onRefreshServers().catch(console.error);
+          }
+        }
+        return;
+      }
+      
+      if (isEditingValue) {
+        if (key.return) {
+          setIsEditingValue(false);
+        } else if (key.escape) {
+          // Cancel editing, revert to original value
+          setKeyValues(server.config.env || {});
+          setIsEditingValue(false);
+        } else if (key.backspace || key.delete) {
+          const currentKey = envKeys[editingKeyIndex];
+          setKeyValues(prev => ({
+            ...prev,
+            [currentKey]: (prev[currentKey] || '').slice(0, -1)
+          }));
+        } else if (input && !key.ctrl && !key.meta) {
+          const currentKey = envKeys[editingKeyIndex];
+          setKeyValues(prev => ({
+            ...prev,
+            [currentKey]: (prev[currentKey] || '') + input
+          }));
+        }
+      } else {
+        if (key.upArrow) {
+          setEditingKeyIndex(prev => Math.max(0, prev - 1));
+        } else if (key.downArrow) {
+          setEditingKeyIndex(prev => Math.min(envKeys.length, prev + 1)); // +1 for Save button
+        } else if (key.return) {
+          if (editingKeyIndex < envKeys.length) {
+            // Edit key value
+            setIsEditingValue(true);
+          } else {
+            // Save button pressed
+            setSaveStatus('saving');
+            
+            // Save to config
+            (async () => {
+              try {
+                const { mcpConfigService } = await import('../../../services/mcpConfigService.js');
+                const updatedConfig = {
+                  ...server.config,
+                  env: keyValues
+                };
+                await mcpConfigService.updateServerConfig(server.name, updatedConfig);
+                setSaveStatus('success');
+              } catch (err) {
+                setSaveStatus('error');
+                setSaveError(err instanceof Error ? err.message : 'Failed to save configuration');
+              }
+            })();
+          }
+        } else if (key.escape) {
+          // Go back to details view
+          setView('details');
+          setNavItem('exit');
+        }
+      }
+      return;
+    }
+    
     // Handle delete confirmation
     if (deleteState.status === 'confirm') {
       if (key.upArrow) {
@@ -262,6 +351,13 @@ function ServerDetailsContent({ server, activeColumn, onToggle, onDelete, onRefr
       if (navItem === 'delete') {
         setNavItem(server.config.disabled ? 'enable' : 'disable');
       } else if (navItem === 'enable' || navItem === 'disable') {
+        // Check if server has env vars (API keys)
+        if (server.config.env && Object.keys(server.config.env).length > 0) {
+          setNavItem('editKeys');
+        } else {
+          setNavItem('tools');
+        }
+      } else if (navItem === 'editKeys') {
         setNavItem('tools');
       } else if (navItem === 'tools') {
         setNavItem('exit');
@@ -270,6 +366,13 @@ function ServerDetailsContent({ server, activeColumn, onToggle, onDelete, onRefr
       if (navItem === 'exit') {
         setNavItem('tools');
       } else if (navItem === 'tools') {
+        // Check if server has env vars (API keys)
+        if (server.config.env && Object.keys(server.config.env).length > 0) {
+          setNavItem('editKeys');
+        } else {
+          setNavItem(server.config.disabled ? 'enable' : 'disable');
+        }
+      } else if (navItem === 'editKeys') {
         setNavItem(server.config.disabled ? 'enable' : 'disable');
       } else if (navItem === 'enable' || navItem === 'disable') {
         setNavItem('delete');
@@ -281,6 +384,9 @@ function ServerDetailsContent({ server, activeColumn, onToggle, onDelete, onRefr
         // Show tools view
         setView('tools');
         setToolsNavItem('exit');
+      } else if (navItem === 'editKeys') {
+        // Show edit keys view
+        setView('editKeys');
       } else if (navItem === 'enable' || navItem === 'disable') {
         // Toggle server enabled/disabled
         setToggleState({ status: 'toggling' });
@@ -396,6 +502,119 @@ function ServerDetailsContent({ server, activeColumn, onToggle, onDelete, onRefr
             Only auto-approve tools you trust completely.
           </Text>
         </Box>
+      </Box>
+    );
+  }
+  
+  // Render edit keys view
+  if (view === 'editKeys') {
+    const envKeys = Object.keys(server.config.env || {});
+    
+    return (
+      <Box flexDirection="column" height="100%" width="100%">
+        {/* Help Text */}
+        <Box flexShrink={0} justifyContent="flex-end">
+          <Text dimColor>
+            {isEditingValue 
+              ? 'Type to edit | Enter: Done | Esc: Cancel'
+              : '↑↓: Navigate | Enter: Edit/Save | Esc: Back'}
+          </Text>
+        </Box>
+        
+        {/* Exit Item */}
+        <Box flexShrink={0}>
+          <Text bold color="white">
+            ← Exit
+          </Text>
+        </Box>
+        
+        <Text> </Text>
+        
+        {/* Header */}
+        <Text bold color={uiState.theme.text.accent}>
+          Edit API Keys: {server.name}
+        </Text>
+        <Text> </Text>
+        
+        {saveStatus === 'idle' || saveStatus === 'saving' ? (
+          <>
+            {/* API Key Fields */}
+            {envKeys.map((key, index) => {
+              const isSelected = editingKeyIndex === index && !saveStatus;
+              const isCurrentlyEditing = isEditingValue && editingKeyIndex === index;
+              const value = keyValues[key] || '';
+              
+              return (
+                <Box key={key} flexDirection="column" marginBottom={1}>
+                  <Text bold color={isSelected ? uiState.theme.text.accent : 'white'}>
+                    {isSelected ? '▶ ' : '  '}{key}
+                  </Text>
+                  
+                  <Box
+                    borderStyle="single"
+                    borderColor={isSelected ? 'cyan' : 'gray'}
+                    paddingX={1}
+                    width="100%"
+                  >
+                    <Text>
+                      {value ? '•'.repeat(Math.min(value.length, 50)) : '(not set)'}
+                      {isCurrentlyEditing && <Text color="cyan">_</Text>}
+                    </Text>
+                  </Box>
+                </Box>
+              );
+            })}
+            
+            <Text> </Text>
+            
+            {/* Save Button */}
+            <Text 
+              bold 
+              color={editingKeyIndex === envKeys.length ? uiState.theme.text.accent : 'green'}
+            >
+              {editingKeyIndex === envKeys.length ? '▶ ' : '  '}[S] 💾 Save
+              {saveStatus === 'saving' && ' (Saving...)'}
+            </Text>
+            
+            <Text> </Text>
+            <Text> </Text>
+            
+            {/* Warning */}
+            <Box
+              borderStyle="single"
+              borderColor="yellow"
+              paddingX={1}
+            >
+              <Text color="yellow">
+                ⚠️  Keys are stored in plain text in ~/.ollm/settings/mcp.json
+              </Text>
+            </Box>
+          </>
+        ) : saveStatus === 'success' ? (
+          <>
+            <Text bold color="green">
+              ✓ API Keys Saved Successfully!
+            </Text>
+            <Text> </Text>
+            <Text dimColor>
+              Press Enter to continue
+            </Text>
+          </>
+        ) : (
+          <>
+            <Text bold color="red">
+              ✗ Failed to Save API Keys
+            </Text>
+            <Text> </Text>
+            <Text color={uiState.theme.status.error}>
+              {saveError}
+            </Text>
+            <Text> </Text>
+            <Text dimColor>
+              Press Enter to try again
+            </Text>
+          </>
+        )}
       </Box>
     );
   }
@@ -564,6 +783,11 @@ function ServerDetailsContent({ server, activeColumn, onToggle, onDelete, onRefr
               <Text bold color={navItem === 'tools' ? uiState.theme.text.accent : 'cyan'}>
                 {navItem === 'tools' ? '▶ ' : '  '}[T] Available Tools
               </Text>
+              {server.config.env && Object.keys(server.config.env).length > 0 && (
+                <Text bold color={navItem === 'editKeys' ? uiState.theme.text.accent : 'yellow'}>
+                  {navItem === 'editKeys' ? '▶ ' : '  '}[K] Edit API Keys
+                </Text>
+              )}
               {server.config.disabled ? (
                 <Text bold color={navItem === 'enable' ? uiState.theme.text.accent : 'green'}>
                   {navItem === 'enable' ? '▶ ' : '  '}[E] Enable Server

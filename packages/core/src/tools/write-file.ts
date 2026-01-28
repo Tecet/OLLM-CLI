@@ -131,7 +131,14 @@ export class WriteFileInvocation implements ToolInvocation<WriteFileParams, Tool
     try {
       // Check if aborted
       if (signal.aborted) {
-        throw new Error('Operation cancelled');
+        return {
+          llmContent: '',
+          returnDisplay: '',
+          error: {
+            message: 'Write operation cancelled',
+            type: 'CancelledError',
+          },
+        };
       }
 
       // Resolve the path
@@ -176,7 +183,14 @@ export class WriteFileInvocation implements ToolInvocation<WriteFileParams, Tool
 
       // Check if aborted before writing
       if (signal.aborted) {
-        throw new Error('Operation cancelled');
+        return {
+          llmContent: '',
+          returnDisplay: '',
+          error: {
+            message: 'Write operation cancelled',
+            type: 'CancelledError',
+          },
+        };
       }
 
       // Use atomic write operation
@@ -250,7 +264,7 @@ export class WriteFileInvocation implements ToolInvocation<WriteFileParams, Tool
         returnDisplay: '',
         error: {
           message: (error as Error).message,
-          type: 'FileWriteError',
+          type: (error as Error).message.includes('cancelled') ? 'CancelledError' : 'FileWriteError',
         },
       };
     }

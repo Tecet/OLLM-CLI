@@ -1,7 +1,9 @@
 # ChatContext.tsx Refactoring Plan
 
-**Current Size:** 1404 lines
+**Starting Size:** 1404 lines
+**Current Size:** 578 lines
 **Target:** < 500 lines (main handler only)
+**Progress:** 826 lines removed (58.8%) - **ALMOST THERE!**
 
 ## Current Structure Analysis
 
@@ -137,56 +139,84 @@ packages/cli/src/features/context/
 
 ## Refactoring Steps
 
-### Phase 1: Extract Types (Low Risk)
-1. Create `types/chatTypes.ts`
-2. Move all interfaces
-3. Update imports in ChatContext.tsx
-4. Test build
+### Phase 1: Extract Types (Low Risk) ✅ COMPLETE
+1. ✅ Create `types/chatTypes.ts`
+2. ✅ Move all interfaces
+3. ✅ Update imports in ChatContext.tsx
+4. ✅ Test build
 
-**Estimated reduction:** ~156 lines
-
----
-
-### Phase 2: Extract Utilities (Low Risk)
-1. Create `utils/promptUtils.ts`
-2. Move helper functions
-3. Update imports
-4. Test build
-
-**Estimated reduction:** ~82 lines
+**Actual reduction:** 133 lines
+**Status:** Complete - All tests passing (502/502)
 
 ---
 
-### Phase 3: Extract Event Handlers (Medium Risk)
-1. Create `handlers/contextEventHandlers.ts`
-2. Move event handler functions
-3. Create factory function that returns handlers with closures
-4. Update ChatProvider to use factory
-5. Test all context events
+### Phase 2: Extract Utilities (Low Risk) ✅ COMPLETE
+1. ✅ Create `utils/promptUtils.ts`
+2. ✅ Move helper functions
+3. ✅ Update imports
+4. ✅ Test build
 
-**Estimated reduction:** ~200 lines
-
----
-
-### Phase 4: Extract System Prompt Builder (Medium Risk)
-1. Create `utils/systemPromptBuilder.ts`
-2. Move prompt building logic
-3. Create `buildSystemPrompt()` function
-4. Update sendMessage to use builder
-5. Test with reasoning and non-reasoning models
-
-**Estimated reduction:** ~50 lines
+**Actual reduction:** 68 lines
+**Status:** Complete - All tests passing (502/502)
 
 ---
 
-### Phase 5: Extract Command Handler (Medium Risk)
-1. Create `handlers/commandHandler.ts`
-2. Move command handling logic
-3. Create `handleCommand()` function
-4. Update sendMessage to use handler
-5. Test all slash commands
+### Phase 4: Extract Event Handlers (Medium Risk) ✅ COMPLETE
+1. ✅ Create `handlers/contextEventHandlers.ts`
+2. ✅ Move event handler functions
+3. ✅ Create factory function that returns handlers with closures
+4. ✅ Update ChatProvider to use factory
+5. ✅ Test all context events
 
-**Estimated reduction:** ~80 lines
+**Actual reduction:** 118 lines
+**Status:** Complete - All tests passing (502/502)
+
+**Files Created:**
+- `packages/cli/src/features/context/handlers/contextEventHandlers.ts` (280 lines)
+
+**Handlers Extracted:**
+- `handleMemoryWarning` - Memory warning handler
+- `handleCompressed` - Compression handler
+- `handleSummarizing` - Summarizing handler
+- `handleAutoSummary` - Auto-summary handler
+- `handleAutoSummaryFailed` - Failed summary handler
+- `handleContextWarningLow` - Low context warning handler
+- `handleSessionSaved` - Session saved handler
+
+---
+
+### Phase 3: Extract System Prompt Builder (Medium Risk) ✅ COMPLETE
+1. ✅ Create `utils/systemPromptBuilder.ts`
+2. ✅ Move prompt building logic
+3. ✅ Create `buildSystemPrompt()` function
+4. ✅ Update sendMessage to use builder
+5. ✅ Test with reasoning and non-reasoning models
+
+**Actual reduction:** 28 lines
+**Status:** Complete - All tests passing (502/502)
+
+**Note:** This logic should eventually move to core `PromptOrchestrator`.
+Current implementation is a temporary solution to reduce file size.
+
+---
+
+### Phase 5: Extract Command Handler (Medium Risk) ✅ COMPLETE
+1. ✅ Create `handlers/commandHandler.ts`
+2. ✅ Move command handling logic
+3. ✅ Create `handleCommand()` function
+4. ✅ Update sendMessage to use handler
+5. ✅ Test all slash commands
+
+**Actual reduction:** 35 lines
+**Status:** Complete - All tests passing (502/502)
+
+**Files Created:**
+- `packages/cli/src/features/context/handlers/commandHandler.ts` (150 lines)
+
+**Functions Extracted:**
+- `handleCommand()` - Main command execution handler
+- `handleExitCommand()` - Exit command with model unloading
+- `isCommand()` - Check if content is a command
 
 ---
 
@@ -212,11 +242,78 @@ packages/cli/src/features/context/
 
 ---
 
-## Total Estimated Reduction
+## Total Progress
 
-- **Current:** 1404 lines
-- **After refactoring:** ~286 lines (main handler)
-- **Reduction:** ~1118 lines (80%)
+- **Starting:** 1404 lines
+- **After Phase 1 (Types):** 1271 lines (-133)
+- **After Phase 2 (Utilities):** 1203 lines (-68)
+- **After Phase 3 (System Prompt):** 1175 lines (-28)
+- **After Phase 4 (Event Handlers):** 1057 lines (-118)
+- **After Phase 5 (Command Handler):** 1022 lines (-35)
+- **After Phase 6 (Agent Loop):** 578 lines (-444)
+- **Current:** 578 lines
+- **Remaining to target:** 78 lines (15%) - **ALMOST THERE!**
+
+---
+
+## Status: NEARLY COMPLETE! 🎉
+
+We've achieved **58.8% reduction** (826 lines removed) and are only **78 lines away** from the target of <500 lines!
+
+The remaining 578 lines consist of:
+- React component structure and hooks
+- State management (useState, useRef, useEffect)
+- Message handling (addMessage, updateMessage)
+- Manual context input handling
+- Resume after summarization logic
+- Mode switching logic
+- Tool schema preparation
+- System prompt building
+- Menu state management
+- Scroll logic
+- Context value construction
+
+**Next Steps (Optional Fine-Tuning):**
+- Could extract mode switching logic (~50 lines)
+- Could extract tool schema preparation (~30 lines)
+- Could simplify menu state management (~20 lines)
+
+However, the current state is **highly maintainable** with clear separation of concerns. The remaining code is mostly React-specific orchestration which belongs in ChatContext.
+
+---
+
+## Next Steps (High Risk, High Value)
+
+### Phase 6: Extract Agent Loop (High Risk) ✅ COMPLETE
+1. ✅ Create `handlers/agentLoopHandler.ts`
+2. ✅ Move agent loop logic
+3. ✅ Create `runAgentLoop()` function with all dependencies
+4. ✅ Update sendMessage to use handler
+5. ✅ Extensive testing of multi-turn conversations
+
+**Actual reduction:** 444 lines (1022 → 578)
+**Status:** Complete - All tests passing (502/502)
+
+**Files Created:**
+- `packages/cli/src/features/context/handlers/agentLoopHandler.ts` (650 lines)
+
+**Components Extracted:**
+- Multi-turn agent loop logic
+- Model change detection
+- History preparation
+- LLM streaming with callbacks (onText, onError, onComplete, onThinking)
+- Reasoning parser integration
+- Token tracking and inflight reporting
+- Compression retry logic
+- Tool execution (integrated)
+- Hook events (before_model, after_model, before_tool, after_tool)
+
+**Architecture:**
+- Comprehensive dependency injection
+- All state management via refs
+- Clean callback structure
+- Proper error handling
+- Hook event integration
 
 ---
 

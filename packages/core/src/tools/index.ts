@@ -18,6 +18,7 @@ import {
 import { GrepTool } from './grep.js';
 import { LsTool } from './ls.js';
 import { MemoryTool } from './memory.js';
+import { DuckDuckGoSearchProvider } from './providers/duckduckgo-search.js';
 import { ReadFileTool } from './read-file.js';
 import { ReadManyFilesTool } from './read-many-files.js';
 import { ReadReasoningTool } from './read-reasoning.js';
@@ -137,7 +138,7 @@ export function registerBuiltInTools(registry: ToolRegistry, config?: BuiltInToo
 
   // Web tools
   registry.register(new WebFetchTool());
-  registry.register(new WebSearchTool());
+  registry.register(new WebSearchTool(new DuckDuckGoSearchProvider()));
 
   // Persistent storage tools
   registry.register(new MemoryTool(memoryPath));

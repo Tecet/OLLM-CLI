@@ -111,7 +111,14 @@ export class GlobInvocation implements ToolInvocation<GlobParams, ToolResult> {
     try {
       // Check if aborted
       if (signal.aborted) {
-        throw new Error('Operation cancelled');
+        return {
+          llmContent: '',
+          returnDisplay: '',
+          error: {
+            message: 'Glob search cancelled',
+            type: 'CancelledError',
+          },
+        };
       }
 
       const cwd = this.params.directory ?? process.cwd();
@@ -129,7 +136,14 @@ export class GlobInvocation implements ToolInvocation<GlobParams, ToolResult> {
 
       // Check if aborted after search
       if (signal.aborted) {
-        throw new Error('Operation cancelled');
+        return {
+          llmContent: '',
+          returnDisplay: '',
+          error: {
+            message: 'Glob search cancelled',
+            type: 'CancelledError',
+          },
+        };
       }
 
       // Filter out gitignored files
@@ -163,12 +177,13 @@ export class GlobInvocation implements ToolInvocation<GlobParams, ToolResult> {
         returnDisplay: displayMessage,
       };
     } catch (error) {
+      const errorMessage = (error as Error).message;
       return {
         llmContent: '',
         returnDisplay: '',
         error: {
-          message: (error as Error).message,
-          type: 'GlobError',
+          message: errorMessage,
+          type: errorMessage.includes('cancelled') ? 'CancelledError' : 'GlobError',
         },
       };
     }

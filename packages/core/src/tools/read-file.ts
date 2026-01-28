@@ -110,7 +110,14 @@ export class ReadFileInvocation implements ToolInvocation<ReadFileParams, ToolRe
     try {
       // Check if aborted
       if (signal.aborted) {
-        throw new Error('Operation cancelled');
+        return {
+          llmContent: '',
+          returnDisplay: '',
+          error: {
+            message: 'Read operation cancelled',
+            type: 'CancelledError',
+          },
+        };
       }
 
       // Resolve the path
@@ -146,7 +153,14 @@ export class ReadFileInvocation implements ToolInvocation<ReadFileParams, ToolRe
 
       // Check if aborted after reading
       if (signal.aborted) {
-        throw new Error('Operation cancelled');
+        return {
+          llmContent: '',
+          returnDisplay: '',
+          error: {
+            message: 'Read operation cancelled',
+            type: 'CancelledError',
+          },
+        };
       }
 
       // Apply line range if specified
@@ -230,7 +244,7 @@ export class ReadFileInvocation implements ToolInvocation<ReadFileParams, ToolRe
         returnDisplay: '',
         error: {
           message: (error as Error).message,
-          type: 'FileReadError',
+          type: (error as Error).message.includes('cancelled') ? 'CancelledError' : 'FileReadError',
         },
       };
     }

@@ -26,7 +26,7 @@ export class WebFetchTool implements DeclarativeTool<WebFetchParams, ToolResult>
   displayName = 'Fetch Web Content';
   schema: ToolSchema = {
     name: 'web_fetch',
-    description: 'Fetch content from a URL with optional CSS selector extraction',
+    description: 'Fetch and read content from a specific URL. ONLY use this when: 1) The user explicitly asks you to read/fetch a specific webpage, OR 2) You need detailed content from a URL. DO NOT use this after web_search - the search results already contain the information you need.',
     parameters: {
       type: 'object',
       properties: {

@@ -19,6 +19,13 @@ The Context Management System determines context window sizes, monitors VRAM, an
 
 **Core Responsibility:** Determine and maintain the context size that will be sent to Ollama.
 
+**Recent Refactoring (Jan 27, 2026):**
+- Consolidated duplicate calculations into ContextSizeCalculator
+- Simplified auto-sizing logic
+- Removed file logging
+- Fixed race conditions
+- Improved maintainability
+
 ---
 
 ## Architecture

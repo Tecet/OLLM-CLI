@@ -19,6 +19,14 @@ import {
 } from './utils/promptUtils.js';
 import { buildSystemPrompt } from './utils/systemPromptBuilder.js';
 
+// Import extracted handlers
+import {
+  createContextEventHandlers,
+  registerContextEventHandlers,
+} from './handlers/contextEventHandlers.js';
+import { handleCommand } from './handlers/commandHandler.js';
+import { runAgentLoop } from './handlers/agentLoopHandler.js';
+
 import { useContextManager } from './ContextManagerContext.js';
 import { validateManualContext } from './contextSizing.js';
 import { useModel } from './ModelContext.js';
@@ -159,162 +167,24 @@ export function ChatProvider({
   useEffect(() => {
     if (!contextActions) return;
 
-    const handleMemoryWarning = async (_data: unknown) => {
-      try {
-        const usage = contextActions.getUsage();
-        const cfg = contextActions.getConfig?.();
-        const threshold = cfg?.compression?.threshold ? Math.round(cfg.compression.threshold * 100) : Math.round((contextManagerState.usage.percentage || 0));
-        addMessage({
-          role: 'system',
-          content: `Warning: context usage at ${Math.round(usage.percentage)}%. Compression enabled at ${threshold}%`,
-          excludeFromContext: true,
-        });
-      } catch (_err) {
-        // ignore
-      }
-    };
+    // Create event handlers with dependencies
+    const handlers = createContextEventHandlers({
+      addMessage,
+      setStatusMessage,
+      contextActions,
+      contextManagerState,
+      compressionOccurredRef,
+      compressionRetryCountRef,
+      waitingForResumeRef,
+    });
 
-    const handleCompressed = async (_data: unknown) => {
-      try {
-        const msgs = await contextActions.getContext();
-        const summaryMsg = msgs.find((m: ContextMessage) => typeof m.id === 'string' && m.id.startsWith('summary-')) as ContextMessage | undefined;
-        const summaryText = summaryMsg ? summaryMsg.content : '[Conversation summary generated]';
-        // Mark that compression occurred so ongoing generation can retry/resume
-        compressionOccurredRef.current = true;
-        compressionRetryCountRef.current = 0;
+    // Register handlers and get cleanup function
+    const cleanup = registerContextEventHandlers(contextActions, handlers);
 
-        addMessage({
-          role: 'assistant',
-          content: `Context compressed: ${summaryText}`,
-          excludeFromContext: true,
-        });
-      } catch (_err) {
-        // ignore
-      }
-    };
-
-    const handleSummarizing = (_data: unknown) => {
-      // show immediate sticky status
-      setStatusMessage('Summarizing conversation history...');
-      
-      // Auto-clear after 5 seconds so it doesn't stay forever if summarization is slow
-      setTimeout(() => {
-        setStatusMessage(current => 
-          current === 'Summarizing conversation history...' ? undefined : current
-        );
-      }, 5000);
-    };
-
-    const handleAutoSummary = async (data: unknown) => {
-      try {
-        const typedData = data as { summary?: { content?: string } };
-        const summary = typedData?.summary;
-        const text = summary?.content || '[Conversation summary]';
-
-        // Clear sticky status
-        setStatusMessage(undefined);
-
-        // Add assistant-visible summary message (do not add it to core context again)
-        addMessage({
-          role: 'assistant',
-          content: text,
-          excludeFromContext: true,
-        });
-        // Mark that compression happened so ongoing generation can retry/resume
-        compressionOccurredRef.current = true;
-        compressionRetryCountRef.current = 0;
-        // Decide whether to auto-resume or ask based on settings
-        try {
-          const settings = SettingsService.getInstance().getSettings();
-          const resumePref = settings.llm?.resumeAfterSummary || 'ask';
-          if (resumePref === 'ask') {
-            waitingForResumeRef.current = true;
-            addMessage({ role: 'system', content: 'Summary complete. Type "continue" to resume generation or "stop" to abort.', excludeFromContext: true });
-          }
-        } catch (_e) {
-          // ignore
-        }
-      } catch (_err) {
-        // ignore
-      }
-    };
-
-    const handleAutoSummaryFailed = async (data: unknown) => {
-      // Clear sticky status
-      setStatusMessage(undefined);
-      try {
-        const typedData = data as { error?: unknown; reason?: unknown };
-        const err = typedData?.error || typedData?.reason || 'Summarization failed';
-        const message = typeof err === 'string' ? err : ((err && typeof err === 'object' && 'message' in err) ? String((err as { message?: unknown }).message) : JSON.stringify(err));
-        addMessage({
-          role: 'system',
-          content: `❌ Task failed successfully: ${message}`,
-          excludeFromContext: true,
-        });
-      } catch (_e) {
-        // ignore
-      }
-    };
-
-    const handleContextWarningLow = (data: unknown) => {
-      try {
-        const typedData = data as { percentage?: number; message?: string };
-        const percentage = typedData?.percentage || 70;
-        const _message = typedData?.message || 'Context is filling up';
-        
-        // Show warning message
-        setStatusMessage(`⚠️ Context at ${Math.round(percentage)}% - compression will trigger soon`);
-        
-        // Auto-clear after 10 seconds
-        setTimeout(() => {
-          setStatusMessage(current => 
-            current?.includes('Context at') ? undefined : current
-          );
-        }, 10000);
-      } catch (_e) {
-        // ignore
-      }
-    };
-
-    contextActions.on?.('memory-warning', handleMemoryWarning);
-    contextActions.on?.('compressed', handleCompressed);
-    contextActions.on?.('summarizing', handleSummarizing);
-    contextActions.on?.('auto-summary-created', handleAutoSummary);
-    contextActions.on?.('auto-summary-failed', handleAutoSummaryFailed);
-    contextActions.on?.('context-warning-low', handleContextWarningLow);
-
-    return () => {
-      contextActions.off?.('memory-warning', handleMemoryWarning);
-      contextActions.off?.('compressed', handleCompressed);
-      contextActions.off?.('summarizing', handleSummarizing);
-      contextActions.off?.('auto-summary-created', handleAutoSummary);
-      contextActions.off?.('auto-summary-failed', handleAutoSummaryFailed);
-      contextActions.off?.('context-warning-low', handleContextWarningLow);
-    };
+    return cleanup;
   }, [contextActions, contextManagerState.usage, addMessage]);
 
-  // Handle session saved events from message bus
-  const handleSessionSaved = useCallback((data: unknown) => {
-    try {
-      const typedData = data as { turnNumber?: number };
-      const turnNumber = typedData?.turnNumber || 0;
-      
-      // Show brief confirmation
-      setStatusMessage(`💾 Session saved (turn ${turnNumber}) - rollback available`);
-      
-      // Auto-clear after 3 seconds
-      setTimeout(() => {
-        setStatusMessage(current => 
-          current?.includes('Session saved') ? undefined : current
-        );
-      }, 3000);
-    } catch (_e) {
-      // ignore
-    }
-  }, []);
-
   useEffect(() => {
-
     if (serviceContainer) {
       commandRegistry.setServiceContainer(serviceContainer);
       globalThis.__ollmModelSwitchCallback = setCurrentModel;
@@ -322,11 +192,18 @@ export function ChatProvider({
       // Listen to messageBus events
       const messageBus = serviceContainer.getHookService()?.getMessageBus();
       if (messageBus) {
-        const handleSessionSavedEvent = (data: unknown) => {
-          handleSessionSaved(data);
-        };
+        // Create session saved handler
+        const handlers = createContextEventHandlers({
+          addMessage,
+          setStatusMessage,
+          contextActions,
+          contextManagerState,
+          compressionOccurredRef,
+          compressionRetryCountRef,
+          waitingForResumeRef,
+        });
         
-        const listenerId = messageBus.on('session_saved', handleSessionSavedEvent);
+        const listenerId = messageBus.on('session_saved', handlers.handleSessionSaved);
         
         return () => {
           messageBus.off(listenerId);
@@ -336,7 +213,7 @@ export function ChatProvider({
     
     // Note: __ollmAddSystemMessage and __ollmClearContext are now registered
     // by AllCallbacksBridge component for better separation of concerns
-  }, [serviceContainer, setCurrentModel, handleSessionSaved]);
+  }, [serviceContainer, setCurrentModel, addMessage, setStatusMessage, contextActions, contextManagerState]);
 
   useEffect(() => {
     if (setTheme) {
@@ -417,49 +294,13 @@ export function ChatProvider({
 
       // Check for commands
       if (commandRegistry.isCommand(content)) {
-        try {
-          const result = await commandRegistry.execute(content);
-          if (result.action === 'show-launch-screen') setLaunchScreenVisible(true);
-          if (result.action === 'clear-chat') {
-              clearChat();
-          }
-          if (result.action === 'exit') {
-            if (provider?.unloadModel && currentModel) {
-              try {
-                addMessage({
-                  role: 'system',
-                  content: `Unloading model "${currentModel}"...`,
-                  excludeFromContext: true
-                });
-                await provider.unloadModel(currentModel);
-                addMessage({
-                  role: 'system',
-                  content: `Model "${currentModel}" unloaded.`,
-                  excludeFromContext: true
-                });
-                await new Promise(resolve => setTimeout(resolve, 250));
-              } catch (error) {
-                addMessage({
-                  role: 'system',
-                  content: `Failed to unload model "${currentModel}": ${error instanceof Error ? error.message : String(error)}`,
-                  excludeFromContext: true
-                });
-              }
-            }
-            process.exit(0);
-          }
-          addMessage({
-            role: 'system',
-            content: result.message || (result.success ? 'Command executed successfully' : 'Command failed'),
-            excludeFromContext: true
-          });
-        } catch (error) {
-          addMessage({
-            role: 'system',
-            content: `Command error: ${error instanceof Error ? error.message : String(error)}`,
-            excludeFromContext: true
-          });
-        }
+        await handleCommand(content, {
+          addMessage,
+          setLaunchScreenVisible,
+          clearChat,
+          provider,
+          currentModel,
+        });
         return;
       }
       
@@ -565,9 +406,10 @@ export function ChatProvider({
             // Use combined filtering method (user prefs + mode permissions in single pass)
             toolSchemas = toolRegistry.getFunctionSchemasForMode(currentMode, modeManager);
           } else {
-            // CRITICAL FIX: If modeManager is not initialized yet (race condition),
-            // default to NO tools rather than exposing all tools unfiltered.
-            toolSchemas = [];
+            // FALLBACK: If modeManager is not initialized yet, use all tools without mode filtering
+            // This ensures tools are available even if mode manager isn't ready
+            console.warn('[ChatContext] modeManager not initialized, using all tools without mode filtering');
+            toolSchemas = toolRegistry.getFunctionSchemas();
           }
         } else {
           // Service container not ready, no tools available
@@ -611,486 +453,27 @@ export function ChatProvider({
       let currentAssistantMsgId = assistantMsg.id;
       assistantMessageIdRef.current = currentAssistantMsgId;
 
-      // Agent Loop
-      const maxTurns = 5;
-      let turnCount = 0;
-      let stopLoop = false;
-      
-      // Track initial model at start of agent loop (11.1)
-      const initialModel = currentModel;
-
-      while (turnCount < maxTurns && !stopLoop) {
-        turnCount++;
-        
-        // Detect model change mid-loop (11.2)
-        if (currentModel !== initialModel) {
-          // Add system message about transition (11.4)
-          addMessage({
-            role: 'system',
-            content: 'Model changed during conversation. Completing current turn...',
-            excludeFromContext: true
-          });
-          // Complete current turn if model changed (11.3)
-          stopLoop = true; // Complete this turn, stop after
-        }
-        
-        // Prepare history from authoritative context manager
-        const currentContext = await contextActions.getContext();
-        
-        // Exclude system messages from the payload; system prompt is sent separately.
-        const history = currentContext
-          .filter((m: ContextMessage) => m.role !== 'system')
-          .map((m: ContextMessage) => ({
-            role: m.role as 'user' | 'assistant' | 'system' | 'tool',
-            content: m.content || '',
-            toolCalls: m.toolCalls?.map(tc => ({
-              id: tc.id,
-              name: tc.name,
-              args: tc.args
-            })),
-            toolCallId: m.toolCallId
-          }));
-
-        let toolCallReceived: CoreToolCall | null = null;
-        let assistantContent = '';
-        let thinkingContent = ''; // Track thinking content from Ollama
-        
-        // Initialize reasoning parser for fallback <think> tag parsing
-        const reasoningParser = new ReasoningParser();
-        const parserState = reasoningParser.createInitialState();
-
-        // DEBUG: Log exact request being sent to LLM
-        console.log('=== LLM REQUEST DEBUG ===');
-        console.log('[DEBUG] System Prompt (first 500 chars):', systemPrompt?.substring(0, 500));
-        console.log('[DEBUG] History length:', history.length);
-        console.log('[DEBUG] History roles:', history.map((m: {role: string}) => m.role));
-        console.log('[DEBUG] Tools being sent:', toolSchemas?.map(t => t.name) || 'NONE');
-        console.log('=========================');
-
-        // Emit before_model hook event
-        if (serviceContainer) {
-          const hookService = serviceContainer.getHookService();
-          hookService.emitEvent('before_model', {
-            model: currentModel,
-            turn: turnCount,
-            historyLength: history.length,
-            toolsAvailable: toolSchemas?.length || 0,
-            timestamp: new Date().toISOString(),
-          });
-        }
-
-        // Calculate mode-specific temperature
-        const temperature = (() => {
-          const settingsService = SettingsService.getInstance();
-          const settings = settingsService.getSettings();
-          if (settings.llm?.modeLinkedTemperature !== false && modeManager) {
-             return modeManager.getPreferredTemperature(modeManager.getCurrentMode());
-          }
-          return undefined;
-        })();
-
-        try {
-          await sendToLLM(
-            history,
-            // onText
-            (text: string) => {
-              const targetId = currentAssistantMsgId;
-              
-              // Only parse for <think> tags if we're NOT receiving native thinking events
-              // Native thinking takes precedence
-              if (!thinkingContent) {
-                // Parse text for <think> tags as fallback when native thinking isn't available
-                const newParserState = reasoningParser.parseStreaming(text, parserState);
-                Object.assign(parserState, newParserState);
-                
-                // If we have thinking content from parsing, update reasoning
-                if (parserState.thinkContent) {
-                  setMessages((prev) =>
-                    prev.map((msg) => {
-                      if (msg.id !== targetId) return msg;
-                      
-                      return {
-                        ...msg,
-                        reasoning: {
-                          content: parserState.thinkContent,
-                          tokenCount: Math.ceil(parserState.thinkContent.length / 4),
-                          duration: 0,
-                          complete: !parserState.inThinkBlock,
-                        },
-                        expanded: true, // Keep expanded while streaming
-                      };
-                    })
-                  );
-                }
-                
-                // Use response content (with <think> tags removed) instead of raw text
-                assistantContent = parserState.responseContent;
-              } else {
-                // Native thinking is active, use raw text as-is
-                assistantContent += text;
-              }
-              
-              // Estimate tokens for this chunk and batch-report as in-flight
-              try {
-                if (contextActions && contextActions.reportInflightTokens) {
-                  const estimatedTokens = Math.max(1, Math.ceil(text.length / 4));
-                  inflightTokenAccumulatorRef.current += estimatedTokens;
-                  // schedule a flush if not already scheduled
-                  if (!inflightFlushTimerRef.current) {
-                    inflightFlushTimerRef.current = setTimeout(() => {
-                      try {
-                        const toReport = inflightTokenAccumulatorRef.current;
-                        inflightTokenAccumulatorRef.current = 0;
-                        inflightFlushTimerRef.current = null;
-                        if (toReport > 0) {
-                          contextActions.reportInflightTokens(toReport);
-                        }
-                      } catch (_e) {
-                          inflightTokenAccumulatorRef.current = 0;
-                          inflightFlushTimerRef.current = null;
-                        }
-                    }, 500);
-                  }
-                }
-              } catch (_e) {
-                // ignore estimation/report errors
-              }
-              
-              // Update message with content (reasoning already updated above if present)
-              setMessages((prev) =>
-                prev.map((msg) => {
-                  if (msg.id !== targetId) return msg;
-                  return { ...msg, content: assistantContent };
-                })
-              );
-            },
-            // onError
-            (error: string) => {
-              const targetId = currentAssistantMsgId;
-              setMessages((prev) =>
-                prev.map((msg) =>
-                  msg.id === targetId ? { ...msg, content: msg.content ? `${msg.content}\n\n**Error:** ${error}` : `Error: ${error}`, excludeFromContext: true } : msg
-                )
-              );
-              // Clear any inflight token accounting and cancel flush timer
-              try { 
-                if (inflightFlushTimerRef.current) { clearTimeout(inflightFlushTimerRef.current); inflightFlushTimerRef.current = null; inflightTokenAccumulatorRef.current = 0; }
-                contextActions?.clearInflightTokens(); 
-              } catch (_e) { /* ignore cleanup errors */ }
-              stopLoop = true;
-            },
-            // onComplete
-            (metrics?: ProviderMetrics, _finishReason?: 'stop' | 'length' | 'tool') => {
-              const targetId = currentAssistantMsgId;
-              if (metrics && assistantMessageIdRef.current === targetId) {
-                 setMessages(prev => prev.map(msg => {
-                   if (msg.id !== targetId) return msg;
-                   
-                   const updates: Partial<Message> = {
-                     metrics: {
-                        promptTokens: metrics.promptEvalCount,
-                        completionTokens: metrics.evalCount,
-                        totalDuration: metrics.totalDuration,
-                        promptDuration: metrics.promptEvalDuration,
-                        evalDuration: metrics.evalDuration,
-                        tokensPerSecond: metrics.evalDuration > 0 ? Math.round((metrics.evalCount / (metrics.evalDuration / 1e9)) * 100) / 100 : 0,
-                        timeToFirstToken: 0,
-                        totalSeconds: Math.round((metrics.totalDuration / 1e9) * 100) / 100,
-                        loadDuration: metrics.loadDuration
-                     }
-                   };
-                   
-                   // Mark reasoning as complete and calculate duration
-                   if (msg.reasoning) {
-                     updates.reasoning = {
-                       ...msg.reasoning,
-                       complete: true,
-                       duration: metrics.evalDuration > 0 ? metrics.evalDuration / 1e9 : 0,
-                     };
-                     // Auto-collapse reasoning when complete so response is visible
-                     updates.expanded = false;
-                   }
-                   
-                   return { ...msg, ...updates };
-                 }));
-              }
-              
-              // Emit after_model hook event
-              if (serviceContainer) {
-                const hookService = serviceContainer.getHookService();
-                hookService.emitEvent('after_model', {
-                  model: currentModel,
-                  turn: turnCount,
-                  metrics: metrics ? {
-                    promptTokens: metrics.promptEvalCount,
-                    completionTokens: metrics.evalCount,
-                    totalSeconds: metrics.totalDuration / 1e9,
-                  } : undefined,
-                  timestamp: new Date().toISOString(),
-                });
-              }
-              // Flush any pending inflight tokens and clear accounting now that generation completed
-              try { 
-                if (inflightFlushTimerRef.current) { clearTimeout(inflightFlushTimerRef.current); inflightFlushTimerRef.current = null; }
-                const pending = inflightTokenAccumulatorRef.current;
-                inflightTokenAccumulatorRef.current = 0;
-                if (pending > 0) { contextActions?.reportInflightTokens(pending); }
-                contextActions?.clearInflightTokens();
-              } catch (_e) { /* ignore */ }
-            },
-            (toolCall: CoreToolCall) => {
-               toolCallReceived = toolCall;
-            },
-            // onThinking - Handle Ollama native thinking (primary method)
-            (thinking: string) => {
-              const targetId = currentAssistantMsgId;
-              thinkingContent += thinking;
-              
-              // Update message with thinking content from native events
-              // This takes precedence over parsed <think> tags
-              setMessages((prev) =>
-                prev.map((msg) => {
-                  if (msg.id !== targetId) return msg;
-                  
-                  return {
-                    ...msg,
-                    reasoning: {
-                      content: thinkingContent,
-                      tokenCount: Math.ceil(thinkingContent.length / 4),
-                      duration: 0, // Will be updated on complete
-                      complete: false,
-                    },
-                    expanded: true, // Keep expanded while streaming
-                  };
-                })
-              );
-            },
-            toolSchemas,
-            systemPrompt,
-            120000, // timeout (ms)
-            temperature
-          );
-
-          // If compression occurred during generation, retry once using updated context
-          if (compressionOccurredRef.current && compressionRetryCountRef.current < 1) {
-            compressionRetryCountRef.current += 1;
-            compressionOccurredRef.current = false;
-            // Cancel any existing provider request and prepare to retry
-            try { cancelRequest(); } catch (_e) { /* ignore */ }
-
-            // Ensure the last user message is present in the context after compression
-            try {
-                const lastUser = lastUserMessageRef.current;
-              if (lastUser && contextActions) {
-                const ctx = await contextActions.getContext();
-                const lastUserInCtx = [...ctx].reverse().find((m: ContextMessage) => m.role === 'user')?.content;
-                if (lastUserInCtx !== lastUser) {
-                  await contextActions.addMessage({ role: 'user', content: lastUser });
-                }
-              }
-            } catch (_e) {
-              // ignore errors re-adding the user message
-            }
-
-            // Create a fresh assistant message for the retry
-            const retryAssistant = addMessage({ role: 'assistant', content: '', expanded: true });
-            currentAssistantMsgId = retryAssistant.id;
-            assistantMessageIdRef.current = currentAssistantMsgId;
-            assistantContent = '';
-            thinkingContent = '';
-            stopLoop = false; // continue loop to retry
-            continue; // go to next iteration and re-run sendToLLM with updated history
-          }
-
-          // ALWAYS add assistant turn to context manager if it produced content OR tool calls
-          if (assistantContent || toolCallReceived) {
-              const tc = toolCallReceived as CoreToolCall | null;
-              
-              // Check if we should include thinking in context (experimental feature)
-              const settingsService = SettingsService.getInstance();
-              const settings = settingsService.getSettings();
-              const includeThinkingInContext = settings.llm?.includeThinkingInContext ?? false;
-              
-              // Build content: response + optional thinking summary
-              let contextContent = assistantContent;
-              if (includeThinkingInContext && thinkingContent) {
-                // Add a brief summary of the thinking process to context
-                const thinkingSummary = thinkingContent.length > 200 
-                  ? `[Reasoning: ${thinkingContent.substring(0, 200)}...]`
-                  : `[Reasoning: ${thinkingContent}]`;
-                contextContent = `${thinkingSummary}\n\n${assistantContent}`;
-              }
-              
-              await contextActions.addMessage({
-                  role: 'assistant',
-                  content: contextContent,
-                  toolCalls: tc ? [{
-                      id: tc.id,
-                      name: tc.name,
-                      args: tc.args
-                  }] : undefined
-              });
-              if (assistantContent) {
-                await recordSessionMessage('assistant', assistantContent);
-              }
-              
-              // If we only have tool calls and no content, we can optionally hide the empty bubble in UI
-              // but for now we keep it for status visibility.
-          } else if (turnCount === 1) {
-              // If the very first turn produced nothing, something is wrong
-              console.warn('LLM produced empty response on first turn');
-          }
-
-          if (toolCallReceived) {
-              const tc = toolCallReceived as CoreToolCall;
-              
-              // Get tool registry from service container
-              const toolRegistry = serviceContainer?.getToolRegistry();
-              const tool = toolRegistry?.get(tc.name);
-              
-              // Update UI with tool call
-              const targetId = currentAssistantMsgId;
-              setMessages(prev => prev.map(msg => 
-                  msg.id === targetId ? {
-                      ...msg,
-                      toolCalls: [...(msg.toolCalls || []), {
-                          id: tc.id,
-                          name: tc.name,
-                          arguments: tc.args,
-                          status: 'pending'
-                      } as ToolCall]
-                  } : msg
-              ));
-
-              // Emit before_tool hook event
-              if (serviceContainer) {
-                const hookService = serviceContainer.getHookService();
-                hookService.emitEvent('before_tool', {
-                  toolName: tc.name,
-                  toolArgs: tc.args,
-                  turn: turnCount,
-                  timestamp: new Date().toISOString(),
-                });
-              }
-
-              // Verify tool permission before execution (prevents hallucinated calls)
-              // Check if tool was in the schema we sent to LLM
-              let toolAllowed = true;
-              if (toolSchemas) {
-                  toolAllowed = toolSchemas.some(s => s.name === tc.name);
-              }
-
-                            if (tool && toolAllowed) {
-                              try {
-                                const toolContext = {
-                                  messageBus: { requestConfirmation: async () => true },
-                                  policyEngine: { evaluate: () => 'allow' as const, getRiskLevel: () => 'low' as const }
-                                };
-              
-                                let result: { llmContent: string; returnDisplay: string };
-              
-                                const createInvocation = (tool as any)?.createInvocation; // Safely access optional method
-                                const executeDirect = (tool as any)?.execute; // Safely access old direct execute method
-              
-                                if (typeof createInvocation === 'function') {
-                                  const invocation = createInvocation.call(tool, tc.args, toolContext);
-                                  result = await invocation.execute(new AbortController().signal) as { llmContent: string; returnDisplay: string };
-                                } else if (typeof executeDirect === 'function') {
-                                  // Fallback to old pattern where execute is directly on the tool
-                                  result = await executeDirect.call(tool, tc.args, toolContext) as { llmContent: string; returnDisplay: string };
-                                } else {
-                                  throw new Error(`Tool ${tc.name} does not have a valid execute or createInvocation method.`);
-                                }
-              
-                                // Add tool result to context manager
-                                await contextActions.addMessage({
-                                  role: 'tool',
-                                  content: result.llmContent,
-                                  toolCallId: tc.id
-                                });
-              
-                                // Update UI with result
-                                const targetId = currentAssistantMsgId;
-                                setMessages(prev => prev.map(msg => 
-                                  msg.id === targetId ? {
-                                    ...msg,
-                                    toolCalls: msg.toolCalls?.map(item => 
-                                      item.id === tc.id ? { ...item, status: 'success', result: result.returnDisplay } : item
-                                    )
-                                  } : msg
-                                ));
-              
-                                // Emit after_tool hook event
-                                if (serviceContainer) {
-                                  const hookService = serviceContainer.getHookService();
-                                  hookService.emitEvent('after_tool', {
-                                    toolName: tc.name,
-                                    toolArgs: tc.args,
-                                    result: result.returnDisplay,
-                                    success: true,
-                                    turn: turnCount,
-                                    timestamp: new Date().toISOString(),
-                                  });
-                                }
-              
-                                if (tc.name === 'trigger_hot_swap') {
-                                  // Post-swap: start a fresh assistant message for the next turn
-                                  const swapMsg = addMessage({ role: 'assistant', content: '', expanded: true });
-                                  currentAssistantMsgId = swapMsg.id;
-                                  assistantMessageIdRef.current = currentAssistantMsgId;
-                                }
-                              } catch (toolExecError) {
-                                const errorMessage = toolExecError instanceof Error ? toolExecError.message : String(toolExecError);
-                                await contextActions.addMessage({
-                                  role: 'tool',
-                                  content: `Error executing tool ${tc.name}: ${errorMessage}`,
-                                  toolCallId: tc.id
-                                });
-              
-                                // Emit after_tool hook event for failed tool
-                                if (serviceContainer) {
-                                  const hookService = serviceContainer.getHookService();
-                                  hookService.emitEvent('after_tool', {
-                                    toolName: tc.name,
-                                    toolArgs: tc.args,
-                                    error: errorMessage,
-                                    success: false,
-                                    turn: turnCount,
-                                    timestamp: new Date().toISOString(),
-                                  });
-                                }
-                                stopLoop = true;
-                              }
-                            } else {                  await contextActions.addMessage({
-                      role: 'tool',
-                      content: `Error: Tool ${tc.name} not found or denied`,
-                      toolCallId: tc.id
-                  });
-                  
-                  // Emit after_tool hook event for failed tool
-                  if (serviceContainer) {
-                    const hookService = serviceContainer.getHookService();
-                    hookService.emitEvent('after_tool', {
-                      toolName: tc.name,
-                      toolArgs: tc.args,
-                      error: 'Tool not found or denied',
-                      success: false,
-                      turn: turnCount,
-                      timestamp: new Date().toISOString(),
-                    });
-                  }
-                  
-                  stopLoop = true;
-              }
-          } else {
-              // No tool call received this turn, we are finished with the agent loop
-              stopLoop = true;
-          }
-        } catch (turnErr) {
-            console.error('Agent Turn Error:', turnErr);
-            stopLoop = true;
-        }
-      }
+      // Run agent loop
+      const loopResult = await runAgentLoop({
+        addMessage,
+        setMessages,
+        contextActions,
+        sendToLLM,
+        cancelRequest,
+        currentModel,
+        provider,
+        serviceContainer,
+        toolSchemas,
+        systemPrompt,
+        recordSessionMessage,
+        assistantMessageIdRef,
+        compressionOccurredRef,
+        compressionRetryCountRef,
+        lastUserMessageRef,
+        inflightTokenAccumulatorRef,
+        inflightFlushTimerRef,
+        modeManager,
+      });
 
       setStreaming(false);
       setWaitingForResponse(false);
@@ -1102,12 +485,12 @@ export function ChatProvider({
         hookService.emitEvent('after_agent', {
           message: content,
           model: currentModel,
-          turns: turnCount,
+          turns: loopResult.turns,
           timestamp: new Date().toISOString(),
         });
       }
     },
-    [addMessage, sendToLLM, setLaunchScreenVisible, contextActions, provider, currentModel, clearChat, modelSupportsTools, serviceContainer, cancelRequest, injectFocusedFilesIntoPrompt, recordSessionMessage]
+    [addMessage, setMessages, sendToLLM, setLaunchScreenVisible, contextActions, provider, currentModel, clearChat, modelSupportsTools, serviceContainer, cancelRequest, injectFocusedFilesIntoPrompt, recordSessionMessage]
   );
 
   const cancelGeneration = useCallback(() => {
