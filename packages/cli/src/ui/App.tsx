@@ -446,16 +446,36 @@ export function App({ config }: AppProps) {
     return 7; // Default to 7B
   };
 
-  // Model info for context sizing
-  const modelEntry = initialModel ? profileManager.getModelEntry(initialModel) : null;
+  const workspacePath = process.cwd();
+  const [sessionId, setSessionId] = useState(() => `session-${Date.now()}`);
+  const [currentAppModel, setCurrentAppModel] = useState(initialModel);
+  const initialSidePanelVisible = config.ui.sidePanel !== false;
+
+  // Expose global function for ModelContext to call on model swap
+  useEffect(() => {
+    (globalThis as any).__ollmResetSession = (newModel: string) => {
+      const newSessionId = `session-${Date.now()}`;
+      console.log(`[App] Model changed to ${newModel}, creating new session: ${newSessionId}`);
+      setCurrentAppModel(newModel); // Update current model
+      setSessionId(newSessionId);
+      return newSessionId;
+    };
+
+    return () => {
+      delete (globalThis as any).__ollmResetSession;
+    };
+  }, []);
+
+  // Compute modelInfo dynamically based on current model
+  const modelEntry = currentAppModel ? profileManager.getModelEntry(currentAppModel) : null;
   const modelInfo = {
-    parameters: extractModelSize(initialModel),
+    parameters: extractModelSize(currentAppModel),
     contextLimit: config.context?.maxSize || 8192,
     contextProfiles: (modelEntry?.context_profiles || []).map((profile) => ({
       ...profile,
       ollama_context_size: profile.ollama_context_size ?? Math.floor(profile.size * 0.85),
     })),
-    modelId: initialModel || 'no-model',
+    modelId: currentAppModel || 'no-model',
   };
 
   // Context manager configuration
@@ -538,24 +558,6 @@ export function App({ config }: AppProps) {
     console.warn('Failed to load initial theme from built-ins, using default:', e);
   }
 
-  const workspacePath = process.cwd();
-  const [sessionId, setSessionId] = useState(() => `session-${Date.now()}`);
-  const initialSidePanelVisible = config.ui.sidePanel !== false;
-
-  // Expose global function for ModelContext to call on model swap
-  useEffect(() => {
-    (globalThis as any).__ollmResetSession = (newModel: string) => {
-      const newSessionId = `session-${Date.now()}`;
-      console.log(`[App] Model changed to ${newModel}, creating new session: ${newSessionId}`);
-      setSessionId(newSessionId);
-      return newSessionId;
-    };
-
-    return () => {
-      delete (globalThis as any).__ollmResetSession;
-    };
-  }, []);
-
   return (
     <ErrorBoundary>
       <MouseProvider>
@@ -584,13 +586,13 @@ export function App({ config }: AppProps) {
                                       key={sessionId}
                                       sessionId={sessionId}
                                       modelInfo={modelInfo}
-                                      modelId={initialModel}
+                                      modelId={currentAppModel}
                                       config={contextConfig}
                                       provider={provider}
                                     >
                                       <ModelProvider
                                         provider={provider}
-                                        initialModel={initialModel}
+                                        initialModel={currentAppModel}
                                       >
                                         <WorkspaceProvider>
                                           <FileFocusProvider>

@@ -268,8 +268,14 @@ export function ContextManagerProvider({
               try {
                 const messages = await managerRef.current!.getMessages();
                 const hasUserMessages = messages.some((m) => m.role === 'user');
-                if (!hasUserMessages) return;
+                
+                if (!hasUserMessages) {
+                  console.log(`[ModeSnapshot] Skipping auto-transition snapshot (no user messages yet)`);
+                  return;
+                }
 
+                console.log(`[ModeSnapshot] Creating snapshot for auto-transition: ${transition.from} → ${transition.to}`);
+                
                 const snapshot = promptsSnapshotMgr.createTransitionSnapshot(
                   transition.from,
                   transition.to,
@@ -283,7 +289,9 @@ export function ContextManagerProvider({
                     currentTask: undefined,
                   }
                 );
+                
                 await promptsSnapshotMgr.storeSnapshot(snapshot, true);
+                console.log(`[ModeSnapshot] Auto-transition snapshot created: ${snapshot.id}`);
               } catch (error) {
                 console.error('[ModeSnapshot] Failed to capture transition snapshot:', error);
               }
@@ -605,6 +613,43 @@ export function ContextManagerProvider({
       return;
     }
 
+    const previousMode = modeManagerRef.current.getCurrentMode();
+    
+    // Create snapshot before switching (if we have messages)
+    if (promptsSnapshotManagerRef.current && managerRef.current) {
+      (async () => {
+        try {
+          const messages = await managerRef.current!.getMessages();
+          const hasUserMessages = messages.some((m) => m.role === 'user');
+          
+          if (hasUserMessages) {
+            console.log(`[ModeSnapshot] Creating snapshot for manual switch: ${previousMode} → ${mode}`);
+            
+            const snapshot = promptsSnapshotManagerRef.current!.createTransitionSnapshot(
+              previousMode,
+              mode,
+              {
+                messages: messages.map((m) => ({
+                  role: m.role,
+                  parts: [{ type: 'text', text: m.content }],
+                })),
+                activeSkills: modeManagerRef.current?.getActiveSkills() || [],
+                activeTools: [],
+                currentTask: undefined,
+              }
+            );
+            
+            await promptsSnapshotManagerRef.current!.storeSnapshot(snapshot, true);
+            console.log(`[ModeSnapshot] Snapshot created: ${snapshot.id}`);
+          } else {
+            console.log(`[ModeSnapshot] Skipping snapshot (no user messages yet)`);
+          }
+        } catch (error) {
+          console.error('[ModeSnapshot] Failed to capture manual transition snapshot:', error);
+        }
+      })();
+    }
+
     modeManagerRef.current.forceMode(mode);
     setCurrentMode(mode);
     setAutoSwitchEnabled(false);
@@ -618,6 +663,43 @@ export function ContextManagerProvider({
     if (!modeManagerRef.current) {
       console.warn('PromptModeManager not initialized');
       return;
+    }
+
+    const previousMode = modeManagerRef.current.getCurrentMode();
+    
+    // Create snapshot before switching (if we have messages)
+    if (promptsSnapshotManagerRef.current && managerRef.current) {
+      (async () => {
+        try {
+          const messages = await managerRef.current!.getMessages();
+          const hasUserMessages = messages.some((m) => m.role === 'user');
+          
+          if (hasUserMessages) {
+            console.log(`[ModeSnapshot] Creating snapshot for explicit switch: ${previousMode} → ${mode}`);
+            
+            const snapshot = promptsSnapshotManagerRef.current!.createTransitionSnapshot(
+              previousMode,
+              mode,
+              {
+                messages: messages.map((m) => ({
+                  role: m.role,
+                  parts: [{ type: 'text', text: m.content }],
+                })),
+                activeSkills: modeManagerRef.current?.getActiveSkills() || [],
+                activeTools: [],
+                currentTask: undefined,
+              }
+            );
+            
+            await promptsSnapshotManagerRef.current!.storeSnapshot(snapshot, true);
+            console.log(`[ModeSnapshot] Snapshot created: ${snapshot.id}`);
+          } else {
+            console.log(`[ModeSnapshot] Skipping snapshot (no user messages yet)`);
+          }
+        } catch (error) {
+          console.error('[ModeSnapshot] Failed to capture explicit transition snapshot:', error);
+        }
+      })();
     }
 
     modeManagerRef.current.switchMode(mode, 'explicit', 1.0);

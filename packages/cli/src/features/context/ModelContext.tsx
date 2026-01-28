@@ -143,10 +143,7 @@ export function ModelProvider({ children, provider, initialModel }: ModelProvide
         if (!userModel && !profile) {
           const toolSupport = await handleUnknownModel(model);
 
-          // Add system message showing tool support status
-          const toolStatus = toolSupport ? 'Enabled' : 'Disabled';
-          addSystemMessage(`Switched to ${model}. Tools: ${toolStatus}`);
-
+          // Set current model FIRST
           setCurrentModel(model);
           setModelLoading(true);
 
@@ -157,20 +154,19 @@ export function ModelProvider({ children, provider, initialModel }: ModelProvide
             });
           }
 
-          // Clear context on model switch (optional, configurable)
+          // Reset session ID (triggers new session creation with NEW model)
           const settingsService = SettingsService.getInstance();
           const settings = settingsService.getSettings();
-          const shouldClearContext = settings.llm?.clearContextOnModelSwitch ?? true; // Default: true (backward compatible)
+          const shouldClearContext = settings.llm?.clearContextOnModelSwitch ?? true;
 
-          if (shouldClearContext) {
-            clearContext();
-            
-            // Reset session ID (triggers new session creation)
-            if ((globalThis as any).__ollmResetSession) {
-              const newSessionId = (globalThis as any).__ollmResetSession(model);
-              console.log(`[ModelContext] New session created: ${newSessionId}`);
-            }
+          if (shouldClearContext && (globalThis as any).__ollmResetSession) {
+            const newSessionId = (globalThis as any).__ollmResetSession(model);
+            console.log(`[ModelContext] New session created: ${newSessionId}`);
           }
+
+          // Add system message showing model swap and tool support
+          const toolStatus = toolSupport ? 'Enabled' : 'Disabled';
+          addSystemMessage(`Switched to ${model}. Tools: ${toolStatus}`);
 
           return;
         }
@@ -183,10 +179,7 @@ export function ModelProvider({ children, provider, initialModel }: ModelProvide
           await saveToolSupport(model, false, false);
         }
 
-        // Add system message showing tool support status
-        const toolStatus = toolSupport ? 'Enabled' : 'Disabled';
-        addSystemMessage(`Switched to ${model}. Tools: ${toolStatus}`);
-
+        // Set current model FIRST
         setCurrentModel(model);
         setModelLoading(true);
 
@@ -197,23 +190,22 @@ export function ModelProvider({ children, provider, initialModel }: ModelProvide
           });
         }
 
-        // Clear context on model switch (optional, configurable)
+        // Reset session ID (triggers new session creation with NEW model)
         const settingsService = SettingsService.getInstance();
         const settings = settingsService.getSettings();
-        const shouldClearContext2 = settings.llm?.clearContextOnModelSwitch ?? true; // Default: true (backward compatible)
+        const shouldClearContext2 = settings.llm?.clearContextOnModelSwitch ?? true;
 
-        if (shouldClearContext2) {
-          clearContext();
-          
-          // Reset session ID (triggers new session creation)
-          if ((globalThis as any).__ollmResetSession) {
-            const newSessionId = (globalThis as any).__ollmResetSession(model);
-            console.log(`[ModelContext] New session created: ${newSessionId}`);
-          }
+        if (shouldClearContext2 && (globalThis as any).__ollmResetSession) {
+          const newSessionId = (globalThis as any).__ollmResetSession(model);
+          console.log(`[ModelContext] New session created: ${newSessionId}`);
         }
+
+        // Add system message showing model swap and tool support
+        const toolStatus = toolSupport ? 'Enabled' : 'Disabled';
+        addSystemMessage(`Switched to ${model}. Tools: ${toolStatus}`);
       }
     },
-    [currentModel, provider, handleUnknownModel, saveToolSupport, addSystemMessage, clearContext]
+    [currentModel, provider, handleUnknownModel, saveToolSupport, addSystemMessage]
   );
 
   const cancelRequest = useCallback(() => {
