@@ -665,3 +665,48 @@ Impact: User has full control, default 4k context
 ---
 
 **Final Status:** All 9 tasks complete, ready for production testing
+
+
+---
+
+## TASK 10: Fix 2-Step Model Selection Context Size
+
+**STATUS:** ✅ COMPLETE
+
+**DETAILS:**
+- **Problem:** User selects model → selects 8k context → model loads with 4k context instead
+- **Root Cause:** Model swap created new session which initialized ContextManager with default config context size (4k), ignoring the user's selection
+- **Solution:**
+  - Added `setPendingContextSize()` and `getPendingContextSize()` methods to SessionManager
+  - ContextMenu stores selected context size in SessionManager BEFORE triggering model swap
+  - ContextManagerContext checks for pending context size on initialization
+  - Pending size overrides config default and disables auto-size
+  - Pending size is cleared after being used (one-time use)
+
+**FLOW:**
+1. User selects model (stored, NOT loaded yet)
+2. User selects context size (stored in SessionManager as pending)
+3. User confirms → model swap triggered
+4. ModelContext creates new session via SessionManager
+5. ContextManagerContext initializes and checks for pending context size
+6. If pending size exists, use it instead of config default
+7. Model loads with correct context size
+
+**COMMIT:** 172fa89
+
+**FILES:**
+- `packages/cli/src/features/context/SessionManager.ts` (added pending context methods)
+- `packages/cli/src/ui/components/context/ContextMenu.tsx` (stores pending size before swap)
+- `packages/cli/src/features/context/ContextManagerContext.tsx` (checks pending size on init)
+
+**NOTES:**
+- `/model` command opens ContextMenu, uses same 2-step flow ✅
+- `/model use <name>` bypasses menu, switches immediately with default context
+- Context size selection when NOT changing models still works (direct resize)
+
+**RESULT:** ✅ 2-step model selection now correctly applies selected context size
+
+---
+
+**Final Status:** All 10 tasks complete, all bugs fixed, ready for production testing
+**Date:** January 28, 2026
