@@ -188,8 +188,8 @@ export function validateSnapshotMetadata(snapshot: SnapshotMetadata): boolean {
     snapshot.id &&
     snapshot.sessionId &&
     snapshot.timestamp &&
-    snapshot.messageCount >= 0 &&
-    snapshot.tokenCount >= 0
+    snapshot.tokenCount >= 0 &&
+    snapshot.size >= 0
   );
 }
 
@@ -237,21 +237,21 @@ export function calculateTotalSnapshotSize(
 }
 
 /**
- * Calculate total message count across snapshots
+ * Calculate total file size across snapshots
  * 
  * @param snapshots - Array of snapshot metadata
- * @returns Total message count
+ * @returns Total size in bytes
  * 
  * @example
  * ```typescript
- * const total = calculateTotalMessageCount(snapshots);
- * console.log(`Snapshots contain ${total} messages`);
+ * const total = calculateTotalSnapshotFileSize(snapshots);
+ * console.log(`Snapshots use ${total} bytes`);
  * ```
  */
-export function calculateTotalMessageCount(
+export function calculateTotalSnapshotFileSize(
   snapshots: SnapshotMetadata[]
 ): number {
-  return snapshots.reduce((sum, s) => sum + s.messageCount, 0);
+  return snapshots.reduce((sum, s) => sum + s.size, 0);
 }
 
 /**

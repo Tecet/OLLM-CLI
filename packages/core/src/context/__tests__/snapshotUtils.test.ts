@@ -16,7 +16,7 @@ import {
   validateSnapshotMetadata,
   validateContextSnapshot,
   calculateTotalSnapshotSize,
-  calculateTotalMessageCount,
+  calculateTotalSnapshotFileSize,
   groupSnapshotsBySession,
   filterSnapshotsAboveThreshold,
   filterSnapshotsBelowThreshold,
@@ -32,23 +32,23 @@ describe('Snapshot Utilities', () => {
     id: string,
     sessionId: string,
     timestamp: Date,
-    messageCount: number,
-    tokenCount: number
+    tokenCount: number,
+    size: number
   ): SnapshotMetadata => ({
     id,
     sessionId,
     timestamp,
-    messageCount,
     tokenCount,
+    size,
     summary: `Summary for ${id}`,
   });
 
   const snapshots: SnapshotMetadata[] = [
-    createMetadata('snap-1', 'session-a', new Date('2026-01-01'), 10, 1000),
-    createMetadata('snap-2', 'session-a', new Date('2026-01-02'), 15, 1500),
-    createMetadata('snap-3', 'session-b', new Date('2026-01-03'), 20, 2000),
-    createMetadata('snap-4', 'session-b', new Date('2026-01-04'), 25, 2500),
-    createMetadata('snap-5', 'session-c', new Date('2026-01-05'), 30, 3000),
+    createMetadata('snap-1', 'session-a', new Date('2026-01-01'), 1000, 5000),
+    createMetadata('snap-2', 'session-a', new Date('2026-01-02'), 1500, 7500),
+    createMetadata('snap-3', 'session-b', new Date('2026-01-03'), 2000, 10000),
+    createMetadata('snap-4', 'session-b', new Date('2026-01-04'), 2500, 12500),
+    createMetadata('snap-5', 'session-c', new Date('2026-01-05'), 3000, 15000),
   ];
 
   describe('findSnapshotById', () => {
@@ -179,8 +179,8 @@ describe('Snapshot Utilities', () => {
       expect(result).toBe(false);
     });
 
-    it('should reject metadata with negative message count', () => {
-      const invalid = { ...snapshots[0], messageCount: -1 };
+    it('should reject metadata with negative size', () => {
+      const invalid = { ...snapshots[0], size: -1 };
       const result = validateSnapshotMetadata(invalid);
       expect(result).toBe(false);
     });
@@ -192,13 +192,17 @@ describe('Snapshot Utilities', () => {
       sessionId: 'session-a',
       timestamp: new Date(),
       tokenCount: 1000,
+      summary: 'Test summary',
       userMessages: [],
+      archivedUserMessages: [],
       messages: [],
       metadata: {
         model: 'test-model',
         contextSize: 4096,
         compressionRatio: 1.0,
         totalUserMessages: 0,
+        totalGoalsCompleted: 0,
+        totalCheckpoints: 0,
       },
     };
 
@@ -232,14 +236,14 @@ describe('Snapshot Utilities', () => {
     });
   });
 
-  describe('calculateTotalMessageCount', () => {
-    it('should calculate total message count', () => {
-      const result = calculateTotalMessageCount(snapshots);
-      expect(result).toBe(100); // 10 + 15 + 20 + 25 + 30
+  describe('calculateTotalSnapshotFileSize', () => {
+    it('should calculate total file size', () => {
+      const result = calculateTotalSnapshotFileSize(snapshots);
+      expect(result).toBe(50000); // 5000 + 7500 + 10000 + 12500 + 15000
     });
 
     it('should handle empty array', () => {
-      const result = calculateTotalMessageCount([]);
+      const result = calculateTotalSnapshotFileSize([]);
       expect(result).toBe(0);
     });
   });
@@ -302,6 +306,13 @@ describe('Snapshot Utilities', () => {
   });
 
   describe('extractUserMessages', () => {
+    const createUserMessage = (id: string): import('../types.js').UserMessage => ({
+      id,
+      role: 'user',
+      content: `Message ${id}`,
+      timestamp: new Date(),
+    });
+
     const createMessage = (id: string, role: 'user' | 'assistant' | 'system'): Message => ({
       id,
       role,
@@ -315,13 +326,17 @@ describe('Snapshot Utilities', () => {
         sessionId: 'session-a',
         timestamp: new Date(),
         tokenCount: 1000,
-        userMessages: [createMessage('msg-1', 'user'), createMessage('msg-2', 'user')],
+        summary: 'Test summary',
+        userMessages: [createUserMessage('msg-1'), createUserMessage('msg-2')],
+        archivedUserMessages: [],
         messages: [createMessage('msg-3', 'assistant')],
         metadata: {
           model: 'test-model',
           contextSize: 4096,
           compressionRatio: 1.0,
           totalUserMessages: 2,
+          totalGoalsCompleted: 0,
+          totalCheckpoints: 0,
         },
       };
 
@@ -336,7 +351,9 @@ describe('Snapshot Utilities', () => {
         sessionId: 'session-a',
         timestamp: new Date(),
         tokenCount: 1000,
+        summary: 'Test summary',
         userMessages: [],
+        archivedUserMessages: [],
         messages: [
           createMessage('msg-1', 'user'),
           createMessage('msg-2', 'assistant'),
@@ -347,6 +364,8 @@ describe('Snapshot Utilities', () => {
           contextSize: 4096,
           compressionRatio: 1.0,
           totalUserMessages: 2,
+          totalGoalsCompleted: 0,
+          totalCheckpoints: 0,
         },
       };
 
@@ -370,7 +389,9 @@ describe('Snapshot Utilities', () => {
         sessionId: 'session-a',
         timestamp: new Date(),
         tokenCount: 1000,
+        summary: 'Test summary',
         userMessages: [],
+        archivedUserMessages: [],
         messages: [
           createMessage('msg-1', 'user'),
           createMessage('msg-2', 'assistant'),
@@ -381,6 +402,8 @@ describe('Snapshot Utilities', () => {
           contextSize: 4096,
           compressionRatio: 1.0,
           totalUserMessages: 1,
+          totalGoalsCompleted: 0,
+          totalCheckpoints: 0,
         },
       };
 
