@@ -7,7 +7,7 @@
  * - Sends messages to the LLM and handles streaming responses
  */
 
-import { createContext, useContext, useState, useCallback, useRef, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useRef, type ReactNode } from 'react';
 
 import { useContextManager } from './ContextManagerContext.js';
 import { useOptionalGPU } from './GPUContext.js';

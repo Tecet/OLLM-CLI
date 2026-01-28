@@ -5,8 +5,8 @@
  * Keeps session logic separate from UI components.
  */
 
-import * as path from 'path';
 import * as os from 'os';
+import * as path from 'path';
 
 type SessionChangeCallback = (sessionId: string, model: string, sessionPath: string) => void;
 

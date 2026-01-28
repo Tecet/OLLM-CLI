@@ -231,6 +231,7 @@ export function useContextMenu(options: ContextMenuOptions) {
       contextActions,
       availableVRAM,
       filterContextSizes,
+      buildModelSelectionMenu,
     ]
   );
 
@@ -299,7 +300,7 @@ export function useContextMenu(options: ContextMenuOptions) {
 
       return modelOptions;
     },
-    [addMessage, activateMenu]
+    [addMessage, activateMenu, buildContextSizeMenuForModel]
   );
 
   /**
@@ -467,7 +468,6 @@ export function useContextMenu(options: ContextMenuOptions) {
       addMessage,
       activateMenu,
       requestManualContextInput,
-      contextActions,
       availableVRAM,
       filterContextSizes,
       setCurrentModel,

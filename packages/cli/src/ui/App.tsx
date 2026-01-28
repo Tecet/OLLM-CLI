@@ -18,10 +18,10 @@ import { Box, useStdout, BoxProps } from 'ink';
 
 import { SettingsService } from '../config/settingsService.js';
 import { defaultDarkTheme } from '../config/styles.js';
-import { initializeSessionManager } from '../features/context/SessionManager.js';
+import { AllCallbacksBridge } from './components/AllCallbacksBridge.js';
+import { initializeSessionManager, getSessionManager } from '../features/context/SessionManager.js';
 import { extractModelSize } from '../features/profiles/modelUtils.js';
 import { createProvider } from '../features/provider/providerFactory.js';
-import { AllCallbacksBridge } from './components/AllCallbacksBridge.js';
 import { useContextMenu } from './components/context/ContextMenu.js';
 import { DialogManager } from './components/dialogs/DialogManager.js';
 import { ErrorBoundary } from './components/ErrorBoundary.js';
@@ -498,10 +498,7 @@ export function App({ config }: AppProps) {
 
   // Initialize SessionManager and get initial session ID
   initializeSessionManager(initialModel);
-  const { getSessionManager: getSessionMgr } = require('../features/context/SessionManager.js') as {
-    getSessionManager: () => { getCurrentSessionId: () => string };
-  };
-  const sessionManager = getSessionMgr();
+  const sessionManager = getSessionManager();
   const initialSessionId = sessionManager.getCurrentSessionId();
 
   return (

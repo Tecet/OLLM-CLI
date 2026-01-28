@@ -9,7 +9,6 @@ import {
 } from '@ollm/core';
 
 import { useContextManager } from './ContextManagerContext.js';
-import { getSessionManager } from './SessionManager.js';
 import { validateManualContext } from './contextSizing.js';
 import { runAgentLoop } from './handlers/agentLoopHandler.js';
 import { handleCommand } from './handlers/commandHandler.js';
@@ -19,6 +18,7 @@ import {
 } from './handlers/contextEventHandlers.js';
 import { useModel } from './ModelContext.js';
 import { useServices } from './ServiceContext.js';
+import { getSessionManager } from './SessionManager.js';
 import { useUI } from './UIContext.js';
 import { useFocusedFilesInjection } from './useFocusedFilesInjection.js';
 import {
