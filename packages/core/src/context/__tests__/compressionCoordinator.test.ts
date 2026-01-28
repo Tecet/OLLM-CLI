@@ -14,7 +14,6 @@ import { CompressionCoordinator } from '../compressionCoordinator.js';
 import { MemoryLevel, ContextTier } from '../types.js';
 
 import type {
-  CheckpointManager,
   ContextConfig,
   ContextUsage,
   ConversationContext,
@@ -26,6 +25,7 @@ import type {
   SnapshotConfig,
   TokenCounter,
 } from '../types.js';
+import type { CheckpointManager } from '../checkpointManager.js';
 
 describe('CompressionCoordinator', () => {
   let coordinator: CompressionCoordinator;
@@ -48,6 +48,13 @@ describe('CompressionCoordinator', () => {
 
     // Mock config
     mockConfig = {
+      targetSize: 4096,
+      minSize: 2048,
+      maxSize: 8192,
+      autoSize: true,
+      tiers: [],
+      vramBuffer: 0.1,
+      kvQuantization: false,
       compression: {
         enabled: true,
         strategy: 'moderate',
@@ -59,19 +66,27 @@ describe('CompressionCoordinator', () => {
       },
       snapshot: {
         enabled: true,
-        maxSnapshots: 10,
-        autoSnapshotInterval: 300000,
       },
-    } as ContextConfig;
+      snapshots: {
+        enabled: true,
+        maxCount: 10,
+        autoCreate: true,
+        autoThreshold: 0.8,
+      },
+    } as any as ContextConfig;
 
     // Mock context
     mockGetContext = vi.fn(() => ({
+      sessionId: 'test-session',
       messages: [],
       userMessages: [],
       archivedUserMessages: [],
       tokenCount: 1000,
       summary: 'Test context',
-    }));
+      systemPrompt: null,
+      maxTokens: 4096,
+      metadata: {},
+    } as any as ConversationContext));
 
     // Mock usage
     mockGetUsage = vi.fn(() => ({
@@ -79,7 +94,11 @@ describe('CompressionCoordinator', () => {
       targetSize: 4096,
       maxSize: 8192,
       usagePercent: 0.25,
-    }));
+      maxTokens: 8192,
+      percentage: 0.25,
+      vramUsed: 0,
+      vramTotal: 0,
+    } as any as ContextUsage));
 
     // Mock tier config
     mockGetTierConfig = vi.fn(() => ({
@@ -90,11 +109,14 @@ describe('CompressionCoordinator', () => {
 
     // Mock mode profile
     mockGetModeProfile = vi.fn(() => ({
+      mode: 'default' as any,
       name: 'default',
       description: 'Default mode',
       contextSize: 4096,
       temperature: 0.7,
-    } as ModeProfile));
+      neverCompress: [],
+      compressionPriority: [],
+    } as any as ModeProfile));
 
     // Mock snapshot manager
     mockSnapshotManager = {
@@ -189,8 +211,7 @@ describe('CompressionCoordinator', () => {
     it('should register snapshot handlers when autoCreate is enabled', () => {
       const snapshotConfig: SnapshotConfig = {
         enabled: true,
-        maxSnapshots: 10,
-        autoSnapshotInterval: 300000,
+        maxCount: 10,
         autoCreate: true,
         autoThreshold: 0.8,
       };
@@ -209,8 +230,7 @@ describe('CompressionCoordinator', () => {
     it('should not register threshold handler when autoCreate is disabled', () => {
       const snapshotConfig: SnapshotConfig = {
         enabled: true,
-        maxSnapshots: 10,
-        autoSnapshotInterval: 300000,
+        maxCount: 10,
         autoCreate: false,
         autoThreshold: 0.8,
       };
@@ -355,21 +375,22 @@ describe('CompressionCoordinator', () => {
     it('should emit pre-overflow event when overflow handler is triggered', async () => {
       const snapshotConfig: SnapshotConfig = {
         enabled: true,
-        maxSnapshots: 10,
-        autoSnapshotInterval: 300000,
+        maxCount: 10,
+        autoCreate: true,
+        autoThreshold: 0.8,
       };
 
       // Capture the overflow callback
-      let overflowCallback: (() => Promise<void>) | null = null;
-      mockSnapshotManager.onBeforeOverflow = vi.fn((callback) => {
+      let overflowCallback: any = null;
+      mockSnapshotManager.onBeforeOverflow = vi.fn((callback: any) => {
         overflowCallback = callback;
-      });
+      }) as any;
 
       coordinator.registerSnapshotHandlers(snapshotConfig);
 
       // Trigger the overflow callback
       if (overflowCallback) {
-        await overflowCallback();
+        await (overflowCallback as () => Promise<void>)();
       }
 
       expect(emittedEvents.some(e => e.event === 'pre-overflow')).toBe(true);
@@ -422,8 +443,7 @@ describe('CompressionCoordinator', () => {
     it('should coordinate snapshot and compression systems', () => {
       const snapshotConfig: SnapshotConfig = {
         enabled: true,
-        maxSnapshots: 10,
-        autoSnapshotInterval: 300000,
+        maxCount: 10,
         autoCreate: true,
         autoThreshold: 0.8,
       };
