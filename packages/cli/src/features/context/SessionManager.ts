@@ -10,10 +10,11 @@ import * as os from 'os';
 
 type SessionChangeCallback = (sessionId: string, model: string, sessionPath: string) => void;
 
-class SessionManager {
+export class SessionManager {
   private currentSessionId: string;
   private currentModel: string;
   private callbacks: Set<SessionChangeCallback> = new Set();
+  private pendingContextSize: number | null = null;
 
   constructor(initialModel: string) {
     this.currentSessionId = `session-${Date.now()}`;
@@ -42,6 +43,26 @@ class SessionManager {
   getSessionPath(sessionId?: string): string {
     const sid = sessionId || this.currentSessionId;
     return path.join(os.homedir(), '.ollm', 'sessions', sid);
+  }
+
+  /**
+   * Set the pending context size for the next session
+   * This is used when changing models with a specific context size
+   * @param size - Context size in tokens
+   */
+  setPendingContextSize(size: number): void {
+    this.pendingContextSize = size;
+    console.log(`[SessionManager] Pending context size set to: ${size}`);
+  }
+
+  /**
+   * Get and clear the pending context size
+   * @returns The pending context size, or null if none set
+   */
+  getPendingContextSize(): number | null {
+    const size = this.pendingContextSize;
+    this.pendingContextSize = null;
+    return size;
   }
 
   /**

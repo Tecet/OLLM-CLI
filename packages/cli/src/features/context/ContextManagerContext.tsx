@@ -205,8 +205,27 @@ export function ContextManagerProvider({
   useEffect(() => {
     const initManager = async () => {
       try {
+        // Check for pending context size from SessionManager
+        let effectiveConfig = config;
+        try {
+          const { getSessionManager } = await import('./SessionManager.js');
+          const sessionManager = getSessionManager();
+          const pendingSize = sessionManager.getPendingContextSize();
+          
+          if (pendingSize !== null) {
+            console.log(`[ContextManagerContext] Using pending context size: ${pendingSize}`);
+            effectiveConfig = {
+              ...config,
+              targetSize: pendingSize,
+              autoSize: false, // Disable auto-size when user explicitly selects size
+            };
+          }
+        } catch (error) {
+          console.warn('[ContextManagerContext] Failed to check pending context size:', error);
+        }
+
         // Create context manager
-        const manager = createContextManager(sessionId, modelInfo, config);
+        const manager = createContextManager(sessionId, modelInfo, effectiveConfig);
         managerRef.current = manager;
 
         // Create mode manager

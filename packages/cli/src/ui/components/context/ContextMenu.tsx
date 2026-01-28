@@ -167,11 +167,6 @@ export function useContextMenu(options: ContextMenuOptions) {
           label,
           value: val,
           action: async () => {
-            // Store selected context size in App state
-            if ((globalThis as any).__ollmSetContextSize) {
-              (globalThis as any).__ollmSetContextSize(val);
-            }
-            
             await contextActions.resize(val);
             addMessage({
               role: 'system',
@@ -195,12 +190,6 @@ export function useContextMenu(options: ContextMenuOptions) {
           });
           requestManualContextInput(modelName, async (value) => {
             profileManager.setManualContext(modelName, value);
-            
-            // Store selected context size in App state
-            if ((globalThis as any).__ollmSetContextSize) {
-              (globalThis as any).__ollmSetContextSize(value);
-            }
-            
             await contextActions.resize(value);
             addMessage({
               role: 'system',
@@ -390,15 +379,19 @@ export function useContextMenu(options: ContextMenuOptions) {
             const vramUsagePercent = vramEstimate ? (vramEstimate / availableVRAM) * 100 : 0;
             const isHighVRAMUsage = vramUsagePercent > 80;
 
-            // Store selected context size in App state BEFORE setting model
-            if ((globalThis as any).__ollmSetContextSize) {
-              (globalThis as any).__ollmSetContextSize(val);
+            // Store the pending context size in SessionManager
+            // This will be used when the new session is created
+            try {
+              const { getSessionManager } = await import('../../../features/context/SessionManager.js');
+              const sessionManager = getSessionManager();
+              sessionManager.setPendingContextSize(val);
+            } catch (error) {
+              console.warn('[ContextMenu] Failed to set pending context size:', error);
             }
 
-            // NOW set the model and resize context
-            // This will trigger model loading/warmup
+            // Now swap to the new model
+            // This will create a new session and use the pending context size
             setCurrentModel(modelId);
-            await contextActions.resize(val);
 
             // Build message with optional warning
             let message = `Switched to **${modelLabel}** with **${sizeStr}** context (${val} tokens).`;
@@ -430,14 +423,18 @@ export function useContextMenu(options: ContextMenuOptions) {
           requestManualContextInput(modelId, async (value) => {
             profileManager.setManualContext(modelId, value);
             
-            // Store selected context size in App state BEFORE setting model
-            if ((globalThis as any).__ollmSetContextSize) {
-              (globalThis as any).__ollmSetContextSize(value);
+            // Store the pending context size in SessionManager
+            try {
+              const { getSessionManager } = await import('../../../features/context/SessionManager.js');
+              const sessionManager = getSessionManager();
+              sessionManager.setPendingContextSize(value);
+            } catch (error) {
+              console.warn('[ContextMenu] Failed to set pending context size:', error);
             }
             
-            // NOW set the model and resize context
+            // Now swap to the new model
             setCurrentModel(modelId);
-            await contextActions.resize(value);
+            
             addMessage({
               role: 'system',
               content: `Switched to **${modelLabel}** with manual context size **${value}** tokens.`,

@@ -621,3 +621,47 @@ Impact: User has full control, default 4k context
 **All Fixes Complete**  
 **Date:** January 28, 2026  
 **Status:** ✅ READY FOR PRODUCTION
+
+
+---
+
+## TASK 9: Fix Model Switching Still Clearing Chat
+
+**STATUS:** ✅ COMPLETE
+
+**DETAILS:**
+- **Problem:** Model switching was 2-step (select model → select context). When user selected context and hit enter, chat got cleared.
+- **Root Cause:** `key={sessionId}` on `ContextManagerProvider` forced remount, destroying ChatContext messages
+- **Solution:**
+  - Created `SessionManager` module for session management
+  - Moved session logic from App.tsx to ModelContext
+  - Removed `key={sessionId}` prop
+  - ContextManagerProvider listens to SessionManager without remounting
+  - Messages preserved in ChatContext during session changes
+  - Extracted business logic from App.tsx (modelUtils.ts, providerFactory.ts)
+  - App.tsx is now pure display component
+- **Session Notifications:**
+  - SessionManager includes session folder path in callbacks
+  - ChatContext adds system message on session change
+  - Message shows: session ID, folder path (clickable), model
+  - `/new` command uses SessionManager directly
+
+**COMMITS:**
+- f5db375: Moved session logic out of App.tsx
+- dc19597: Added session start notifications
+
+**FILES:**
+- `packages/cli/src/ui/App.tsx` (cleaned up)
+- `packages/cli/src/features/context/ContextManagerContext.tsx` (listens to SessionManager)
+- `packages/cli/src/features/context/ModelContext.tsx` (uses SessionManager)
+- `packages/cli/src/features/context/SessionManager.ts` (NEW)
+- `packages/cli/src/features/profiles/modelUtils.ts` (NEW)
+- `packages/cli/src/features/provider/providerFactory.ts` (NEW)
+- `packages/cli/src/features/context/ChatContext.tsx` (notifications)
+- `packages/cli/src/features/context/handlers/commandHandler.ts` (uses SessionManager)
+
+**RESULT:** ✅ Model swaps work, chat preserved, session notifications shown
+
+---
+
+**Final Status:** All 9 tasks complete, ready for production testing
