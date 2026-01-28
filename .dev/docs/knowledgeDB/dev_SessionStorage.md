@@ -1,6 +1,7 @@
-# Session Storage System - Phase 4 Complete
+# Session Storage System - Phase 4 Complete + Session Manager
 
 **Created:** January 27, 2026  
+**Updated:** January 28, 2026 (Session Manager Integration)  
 **Status:** ✅ COMPLETE  
 **Related:** Phase 0-3 (Input Preprocessing, Pre-Send Validation, Blocking, Emergency Triggers)
 
@@ -10,9 +11,33 @@
 
 Phase 4 verified and tested the session storage system to ensure full conversation history is persisted to disk. The `ChatRecordingService` handles all session recording with auto-save enabled by default.
 
+**January 28, 2026 Update:** Added `SessionManager` module to handle session ID generation and lifecycle management, separating session logic from UI components.
+
 ---
 
 ## Architecture
+
+### Session Management Flow (Updated)
+
+```
+Model Swap Request
+  ↓
+SessionManager.createNewSession(modelId)
+  ├─ Generate new session ID
+  ├─ Store current model
+  ├─ Check for pending context size
+  ├─ Notify callbacks (ContextManagerContext, ChatContext)
+  └─ Return session ID
+      ↓
+ContextManagerContext receives notification
+  ├─ Stop old manager
+  ├─ Get pending context size from SessionManager
+  ├─ Create new manager with pending size
+  └─ Initialize with new session ID
+      ↓
+ChatContext receives notification
+  └─ Add system message with session info
+```
 
 ### Session Storage Flow
 
@@ -38,10 +63,326 @@ ChatRecordingService.recordMessage()
 
 ```
 ~/.ollm/sessions/
-  ├─ <session-id-1>.json
-  ├─ <session-id-2>.json
-  └─ <session-id-3>.json
+  ├─ session-<timestamp-1>/
+  │   └─ session data files
+  ├─ session-<timestamp-2>/
+  │   └─ session data files
+  └─ session-<timestamp-3>/
+      └─ session data files
 ```
+
+**Note:** Session IDs are now timestamp-based (`session-${Date.now()}`) for better chronological ordering.
+
+---
+
+## SessionManager Module (NEW)
+
+### Purpose
+
+Centralized session lifecycle management, separating session logic from UI components (App.tsx).
+
+### Location
+
+`packages/cli/src/features/context/SessionManager.ts`
+
+### Key Features
+
+1. **Session ID Generation**
+   - Timestamp-based IDs for chronological ordering
+   - Unique per model swap
+
+2. **Pending Context Size**
+   - Stores user-selected context size before model swap
+   - Retrieved during ContextManager initialization
+   - One-time use (cleared after retrieval)
+
+3. **Session Change Callbacks**
+   - Notifies ContextManagerContext to reinitialize
+   - Notifies ChatContext to show session start message
+   - Provides session folder path for user reference
+
+### API
+
+```typescript
+export class SessionManager {
+  // Get current session ID
+  getCurrentSessionId(): string;
+
+  // Get current model
+  getCurrentModel(): string;
+
+  // Get session folder path
+  getSessionPath(sessionId?: string): string;
+
+  // Set pending context size for next session
+  setPendingContextSize(size: number): void;
+
+  // Get and clear pending context size
+  getPendingContextSize(): number | null;
+
+  // Create new session for model swap
+  createNewSession(newModel: string): string;
+
+  // Register callback for session changes
+  onSessionChange(callback: (sessionId, model, path) => void): () => void;
+}
+
+// Global singleton access
+export function initializeSessionManager(initialModel: string): void;
+export function getSessionManager(): SessionManager;
+export function resetSessionManager(): void;
+```
+
+### Usage Example
+
+```typescript
+// In ModelContext - when swapping models
+const sessionManager = getSessionManager();
+const newSessionId = sessionManager.createNewSession(newModel);
+// Callbacks automatically notify ContextManagerContext and ChatContext
+
+// In ContextMenu - when user selects context size
+const sessionManager = getSessionManager();
+sessionManager.setPendingContextSize(8192); // Store for next session
+setCurrentModel(modelId); // Trigger model swap
+
+// In ContextManagerContext - during initialization
+const sessionManager = getSessionManager();
+const pendingSize = sessionManager.getPendingContextSize();
+if (pendingSize !== null) {
+  // Use pending size instead of config default
+  effectiveConfig = { ...config, targetSize: pendingSize, autoSize: false };
+}
+```
+
+---
+
+## Integration Points
+
+### 1. App.tsx (Simplified)
+
+**Before:** Managed session state, model state, context size state, global functions  
+**After:** Pure display component, only initializes SessionManager
+
+```typescript
+// App.tsx - Initialization only
+initializeSessionManager(initialModel);
+const sessionManager = getSessionMgr();
+const initialSessionId = sessionManager.getCurrentSessionId();
+
+// Pass to ContextManagerProvider
+<ContextManagerProvider
+  sessionId={initialSessionId}
+  modelInfo={modelInfo}
+  modelId={initialModel}
+  config={contextConfig}
+  provider={provider}
+>
+```
+
+### 2. ModelContext (Session Creation)
+
+**Responsibility:** Trigger session creation on model swap
+
+```typescript
+// ModelContext.tsx - setModelAndLoading
+const sessionManager = getSessionManager();
+const newSessionId = sessionManager.createNewSession(model);
+console.log(`[ModelContext] New session created: ${newSessionId}`);
+```
+
+### 3. ContextManagerContext (Session Listening)
+
+**Responsibility:** Reinitialize on session change without remounting
+
+```typescript
+// ContextManagerContext.tsx - useEffect
+const sessionManager = getSessionManager();
+const cleanup = sessionManager.onSessionChange(async (newSessionId, newModel) => {
+  console.log(`[ContextManagerContext] Session change detected: ${newSessionId}`);
+  
+  // Stop old manager
+  if (managerRef.current) {
+    await managerRef.current.stop();
+  }
+  
+  // Reinitialize with new session
+  await initManager();
+});
+```
+
+### 4. ChatContext (Session Notifications)
+
+**Responsibility:** Show user-friendly session start messages
+
+```typescript
+// ChatContext.tsx - useEffect
+const sessionManager = getSessionManager();
+const cleanup = sessionManager.onSessionChange((sessionId, model, sessionPath) => {
+  addMessage({
+    role: 'system',
+    content: `🆕 New session started: **${sessionId}**\n\nSession folder: \`${sessionPath}\`\n\nModel: **${model}**`,
+    excludeFromContext: true,
+  });
+});
+```
+
+### 5. ContextMenu (2-Step Model Selection)
+
+**Responsibility:** Store pending context size before model swap
+
+```typescript
+// ContextMenu.tsx - buildContextSizeMenuForModel
+action: async () => {
+  // Store pending context size
+  const sessionManager = getSessionManager();
+  sessionManager.setPendingContextSize(val);
+  
+  // Trigger model swap (will use pending size)
+  setCurrentModel(modelId);
+}
+```
+
+### 6. Command Handler (/new command)
+
+**Responsibility:** Create new session via SessionManager
+
+```typescript
+// commandHandler.ts - /new command
+if (result.action === 'new-session') {
+  const { getSessionManager } = await import('../SessionManager.js');
+  const sessionManager = getSessionManager();
+  const newSessionId = sessionManager.createNewSession(currentModel);
+  console.log(`[CommandHandler] New session created via /new: ${newSessionId}`);
+}
+```
+
+---
+
+## Session Lifecycle (Updated)
+
+```
+1. APP INITIALIZATION
+   App.tsx → initializeSessionManager(initialModel)
+   ├─ Create SessionManager singleton
+   ├─ Generate initial session ID
+   └─ Pass to ContextManagerProvider
+
+2. MODEL SWAP (2-Step)
+   User selects model → User selects context size
+   ├─ ContextMenu stores pending size in SessionManager
+   ├─ ContextMenu calls setCurrentModel(modelId)
+   ├─ ModelContext calls SessionManager.createNewSession(modelId)
+   ├─ SessionManager notifies callbacks
+   ├─ ContextManagerContext reinitializes with pending size
+   └─ ChatContext shows session start message
+
+3. /NEW COMMAND
+   User types /new
+   ├─ CommandHandler calls SessionManager.createNewSession(currentModel)
+   ├─ SessionManager notifies callbacks
+   ├─ ContextManagerContext reinitializes
+   └─ ChatContext shows session start message
+
+4. RECORD MESSAGES
+   chatClient → recordingService.recordMessage()
+   ├─ Add to session.messages[]
+   ├─ Update lastActivity
+   ├─ Update cache
+   └─ Auto-save to disk
+
+5. SESSION END
+   chatClient.chat() completes
+   └─ Final saveSession() (redundant but safe)
+```
+
+---
+
+## Key Improvements (January 28, 2026)
+
+### 1. Separation of Concerns
+
+**Before:**
+- App.tsx managed session state, model state, context size state
+- Global functions (`__ollmResetSession`, `__ollmSetContextSize`)
+- Business logic mixed with UI
+
+**After:**
+- SessionManager handles all session logic
+- App.tsx is pure display component
+- Clean module boundaries
+
+### 2. Pending Context Size Mechanism
+
+**Problem:** User selects 8k context, but model loads with 4k (config default)
+
+**Solution:**
+- ContextMenu stores pending size in SessionManager
+- ContextManagerContext checks for pending size on init
+- Pending size overrides config default
+- One-time use (cleared after retrieval)
+
+**Flow:**
+```
+User selects 8k → setPendingContextSize(8192)
+  ↓
+Model swap triggered → createNewSession()
+  ↓
+ContextManager init → getPendingContextSize() returns 8192
+  ↓
+Use 8192 instead of config default (4096)
+  ↓
+Pending size cleared (null)
+```
+
+### 3. Session Change Notifications
+
+**Before:** Provider remount destroyed ChatContext messages
+
+**After:** 
+- SessionManager notifies listeners without remounting
+- ChatContext messages preserved
+- ContextManager reinitializes cleanly
+
+### 4. User-Friendly Session Messages
+
+**Before:** Silent session changes
+
+**After:**
+```
+🆕 New session started: **session-1769636018616**
+
+Session folder: `C:\Users\rad3k\.ollm\sessions\session-1769636018616`
+
+Model: **gemma3:4b**
+```
+
+Users can:
+- See when new sessions start
+- Know the session ID
+- Find the session folder
+- Confirm the model loaded
+
+---
+
+## Files Modified (January 28, 2026)
+
+### New Files
+
+- `packages/cli/src/features/context/SessionManager.ts` (NEW - session management)
+- `packages/cli/src/features/profiles/modelUtils.ts` (NEW - model utilities)
+- `packages/cli/src/features/provider/providerFactory.ts` (NEW - provider factory)
+
+### Modified Files
+
+- `packages/cli/src/ui/App.tsx` (CLEANED - removed business logic)
+- `packages/cli/src/features/context/ContextManagerContext.tsx` (UPDATED - session listening)
+- `packages/cli/src/features/context/ModelContext.tsx` (UPDATED - uses SessionManager)
+- `packages/cli/src/features/context/ChatContext.tsx` (UPDATED - session notifications)
+- `packages/cli/src/ui/components/context/ContextMenu.tsx` (UPDATED - pending context size)
+- `packages/cli/src/features/context/handlers/commandHandler.ts` (UPDATED - uses SessionManager)
+
+---
 
 ### Session File Format
 

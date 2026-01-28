@@ -1,6 +1,6 @@
 # Context Management System
 
-**Last Updated:** January 27, 2026  
+**Last Updated:** January 28, 2026  
 **Status:** Source of Truth
 
 **Related Documents:**
@@ -11,6 +11,7 @@
 - [Context Checkpoint Rollover](./dev_ContextCheckpointRollover.md) - Checkpoint strategy, sessions, snapshots
 - [Context Tokeniser](./dev_ContextTokeniser.md) - Token counting system
 - [Context Pre-Send Validation](./dev_ContextPreSendValidation.md) - Overflow prevention
+- [Session Storage](./dev_SessionStorage.md) - Session management, SessionManager module
 
 ---
 
@@ -20,13 +21,10 @@ The Context Management System determines context window sizes, monitors VRAM, an
 
 **Core Responsibility:** Determine and maintain the context size that will be sent to Ollama.
 
-**Recent Refactoring (Jan 27, 2026):**
+**Recent Updates:**
 
-- Consolidated duplicate calculations into ContextSizeCalculator
-- Simplified auto-sizing logic
-- Removed file logging
-- Fixed race conditions
-- Improved maintainability
+- **January 27, 2026:** Consolidated duplicate calculations, simplified auto-sizing, removed file logging
+- **January 28, 2026:** Integrated SessionManager, added pending context size support, improved session lifecycle
 
 ---
 
@@ -47,6 +45,8 @@ The context management system uses a **3-layer architecture** for clean separati
    - State management for React components
    - Event handling and user interactions
    - Bridge between UI and core logic
+   - **NEW:** Session change listening without remounting
+   - **NEW:** Pending context size support
 
 3. **Resource Management Layer** (`contextPool.ts`, 194 lines)
    - Dynamic context sizing
@@ -54,7 +54,13 @@ The context management system uses a **3-layer architecture** for clean separati
    - Context resizing logic
    - Resource allocation
 
-This layering ensures clean separation between core logic, UI integration, and resource management.
+4. **Session Management Layer** (`SessionManager.ts`, NEW)
+   - Session ID generation and lifecycle
+   - Pending context size storage
+   - Session change notifications
+   - Separation from UI components
+
+This layering ensures clean separation between core logic, UI integration, resource management, and session lifecycle.
 
 ### Supporting Services
 
@@ -64,25 +70,142 @@ This layering ensures clean separation between core logic, UI integration, and r
    - Manages conversation state
    - Owns system prompt
 
-2. **VRAM Monitor** (`vramMonitor.ts`)
+2. **Session Manager** (`SessionManager.ts`, NEW)
+   - Centralized session lifecycle management
+   - Generates unique session IDs
+   - Stores pending context size for model swaps
+   - Notifies listeners of session changes
+   - Provides session folder paths
+
+3. **VRAM Monitor** (`vramMonitor.ts`)
    - Tracks GPU memory availability
    - Detects low memory conditions
    - Platform-specific implementations (NVIDIA, AMD, Apple Silicon)
 
-3. **Token Counter** (`tokenCounter.ts`)
+4. **Token Counter** (`tokenCounter.ts`)
    - Measures context usage in tokens
    - Caches token counts for performance
    - Estimates tokens for messages
 
-4. **Context Pool** (`contextPool.ts`)
+5. **Context Pool** (`contextPool.ts`)
    - Manages dynamic context sizing
    - Calculates optimal context size based on VRAM
    - Handles context resizing
 
-5. **Memory Guard** (`memoryGuard.ts`)
+6. **Memory Guard** (`memoryGuard.ts`)
    - Prevents OOM errors
    - Emits warnings at memory thresholds
    - Triggers emergency actions
+
+---
+
+## Session Integration (NEW - January 28, 2026)
+
+### SessionManager Integration
+
+ContextManagerContext now integrates with SessionManager for clean session lifecycle management:
+
+```typescript
+// ContextManagerContext.tsx - Initialization
+useEffect(() => {
+  const initManager = async () => {
+    // Check for pending context size from SessionManager
+    let effectiveConfig = config;
+    try {
+      const { getSessionManager } = await import('./SessionManager.js');
+      const sessionManager = getSessionManager();
+      const pendingSize = sessionManager.getPendingContextSize();
+      
+      if (pendingSize !== null) {
+        console.log(`[ContextManagerContext] Using pending context size: ${pendingSize}`);
+        effectiveConfig = {
+          ...config,
+          targetSize: pendingSize,
+          autoSize: false, // Disable auto-size when user explicitly selects size
+        };
+      }
+    } catch (error) {
+      console.warn('[ContextManagerContext] Failed to check pending context size:', error);
+    }
+
+    // Create context manager with effective config
+    const manager = createContextManager(sessionId, modelInfo, effectiveConfig);
+    managerRef.current = manager;
+    
+    // ... rest of initialization
+  };
+
+  initManager();
+
+  // Listen for session changes from SessionManager
+  try {
+    const sessionManager = getSessionManager();
+    const cleanup = sessionManager.onSessionChange(async (newSessionId, newModel) => {
+      console.log(`[ContextManagerContext] Session change detected: ${newSessionId}`);
+      
+      // Stop old manager
+      if (managerRef.current) {
+        await managerRef.current.stop();
+      }
+      
+      // Reinitialize with new session
+      await initManager();
+    });
+    sessionChangeCleanupRef.current = cleanup;
+  } catch (error) {
+    console.warn('[ContextManagerContext] SessionManager not initialized yet:', error);
+  }
+
+  // Cleanup
+  return () => {
+    if (managerRef.current) {
+      managerRef.current.stop().catch(console.error);
+    }
+    if (sessionChangeCleanupRef.current) {
+      sessionChangeCleanupRef.current();
+    }
+  };
+}, [sessionId, modelInfo, config]);
+```
+
+### Key Benefits
+
+1. **No Provider Remounting**
+   - Session changes handled internally
+   - ChatContext messages preserved
+   - Smooth transitions
+
+2. **Pending Context Size**
+   - User-selected context size survives session reset
+   - Overrides config default
+   - One-time use (cleared after retrieval)
+
+3. **Clean Separation**
+   - Session logic in SessionManager
+   - Context logic in ContextManagerContext
+   - No business logic in App.tsx
+
+### Session Change Flow
+
+```
+User selects model + context size
+  ↓
+ContextMenu stores pending size in SessionManager
+  ↓
+ContextMenu triggers model swap
+  ↓
+ModelContext calls SessionManager.createNewSession()
+  ↓
+SessionManager notifies ContextManagerContext
+  ↓
+ContextManagerContext:
+  ├─ Stops old manager
+  ├─ Gets pending context size
+  ├─ Creates new manager with pending size
+  └─ Initializes with new session ID
+  ↓
+User sees: "Switched to model X with 8k context"
+```
 
 ---
 
