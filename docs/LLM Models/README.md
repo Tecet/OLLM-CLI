@@ -299,7 +299,7 @@ memory:
 - Verify file permissions
 - Check storage location: `~/.ollm/memory.json`
 
-**See:** [Troubleshooting Guide](../troubleshooting.md)
+**See:** [Troubleshooting Guide](../Troubleshooting.md)
 
 ---
 

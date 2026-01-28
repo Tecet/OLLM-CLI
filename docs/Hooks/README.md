@@ -282,7 +282,7 @@ hooks:
 - Use `askAgent` for file events
 - Check protocol documentation
 
-**See:** [Troubleshooting Guide](../troubleshooting.md)
+**See:** [Troubleshooting Guide](../Troubleshooting.md)
 
 ---
 

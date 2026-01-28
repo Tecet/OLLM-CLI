@@ -100,9 +100,14 @@ export function BugReportTab({ width }: BugReportTabProps) {
   );
 
   return (
-    <Box flexDirection="column" height="100%" width={width} position="relative">
+    <Box flexDirection="column" height="100%" width={width}>
       {/* Header */}
-      <Box flexDirection="column" paddingX={1} flexShrink={0}>
+      <Box
+        borderStyle="single"
+        borderColor={hasFocus ? uiState.theme.text.accent : uiState.theme.text.secondary}
+        paddingX={1}
+        flexShrink={0}
+      >
         <Box justifyContent="space-between" width="100%" overflow="hidden">
           <Box flexShrink={0}>
             <Text bold color={hasFocus ? uiState.theme.text.accent : uiState.theme.text.primary}>
@@ -115,7 +120,7 @@ export function BugReportTab({ width }: BugReportTabProps) {
               color={hasFocus ? uiState.theme.text.primary : uiState.theme.text.secondary}
             >
               {showConfirmation
-                ? '←→:Select Enter:Confirm Esc:Cancel'
+                ? '←→:Navigate Enter:Open 0/Esc:Exit'
                 : '↑↓:Navigate Enter:Open 0/Esc:Exit'}
             </Text>
           </Box>

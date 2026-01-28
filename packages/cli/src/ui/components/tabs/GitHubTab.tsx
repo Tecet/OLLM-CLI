@@ -41,43 +41,66 @@ export const GitHubTab: React.FC<{ width?: number }> = ({ width }) => {
   );
 
   return (
-    <Box
-      flexDirection="column"
-      padding={1}
-      width={width}
-      borderStyle={uiState.theme.border.style as import('ink').BoxProps['borderStyle']}
-      borderColor={hasFocus ? uiState.theme.border.active : uiState.theme.border.primary}
-    >
-      {/* Heading - centered with space above and below */}
-      <Box justifyContent="center" marginTop={1} marginBottom={1}>
-        <Text bold color={hasFocus ? uiState.theme.text.accent : 'yellow'}>
-          🚧 Coming Soon 🚧
-        </Text>
+    <Box flexDirection="column" height="100%" width={width}>
+      {/* Header */}
+      <Box
+        borderStyle="single"
+        borderColor={hasFocus ? uiState.theme.text.accent : uiState.theme.text.secondary}
+        paddingX={1}
+        flexShrink={0}
+      >
+        <Box justifyContent="space-between" width="100%" overflow="hidden">
+          <Box flexShrink={0}>
+            <Text bold color={hasFocus ? uiState.theme.text.accent : uiState.theme.text.primary}>
+              🚧 GitHub Integration
+            </Text>
+          </Box>
+          <Box flexShrink={1} marginLeft={1}>
+            <Text
+              wrap="truncate-end"
+              color={hasFocus ? uiState.theme.text.primary : uiState.theme.text.secondary}
+            >
+              Enter:Return 0/Esc:Exit
+            </Text>
+          </Box>
+        </Box>
       </Box>
 
-      {/* Description - with space below */}
-      <Box marginBottom={2} justifyContent="center">
-        <Text>GitHub integration will be available in a future release.</Text>
-      </Box>
+      {/* Content area */}
+      <Box
+        flexDirection="column"
+        flexGrow={1}
+        padding={2}
+        borderStyle={uiState.theme.border.style as import('ink').BoxProps['borderStyle']}
+        borderColor={hasFocus ? uiState.theme.border.active : uiState.theme.border.primary}
+      >
+        {/* Heading - centered with space above and below */}
+        <Box justifyContent="center" marginTop={1} marginBottom={1}>
+          <Text bold color={hasFocus ? uiState.theme.text.accent : 'yellow'}>
+            🚧 Coming Soon 🚧
+          </Text>
+        </Box>
 
-      <Box justifyContent="center" marginBottom={1}>
-        <Text dimColor>Press Esc or Enter to return to navigation</Text>
-      </Box>
+        {/* Description - with space below */}
+        <Box marginBottom={2} justifyContent="center">
+          <Text>GitHub integration will be available in a future release v0.7.0</Text>
+        </Box>
 
-      {/* Features Section Label - with space below */}
-      <Box flexDirection="column" marginBottom={1}>
-        <Text bold color={uiState.theme.text.primary}>
-          Planned Features:
-        </Text>
-      </Box>
+        {/* Features Section Label - with space below */}
+        <Box flexDirection="column" marginBottom={1}>
+          <Text bold color={uiState.theme.text.primary}>
+            Planned Features:
+          </Text>
+        </Box>
 
-      <PlannedFeaturesList />
+        <PlannedFeaturesList />
 
-      {/* Documentation Link - with space above */}
-      <Box marginTop={2}>
-        <Text dimColor>
-          For more information, see: .kiro/specs/stage-11-developer-productivity-future-dev/
-        </Text>
+        {/* Documentation Link - with space above */}
+        <Box marginTop={2}>
+          <Text dimColor>
+            For more information, see: https://github.com/Tecet/OLLM/tree/main/docs
+          </Text>
+        </Box>
       </Box>
     </Box>
   );

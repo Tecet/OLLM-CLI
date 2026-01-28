@@ -498,7 +498,7 @@ To create your own extension:
 /extensions reload
 ```
 
-**See:** [Troubleshooting Guide](../troubleshooting.md) for more help
+**See:** [Troubleshooting Guide](../Troubleshooting.md) for more help
 
 ---
 

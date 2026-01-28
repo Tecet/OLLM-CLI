@@ -531,10 +531,9 @@ Your input shapes the roadmap!
 
 ### Roadmap Documents
 
-- [Roadmap Overview](roadmap.md) - This document
-- [Future Development](future-development.md) - Detailed future plans
-- [Visual Roadmap](road_map_visual.md) - Timeline and diagrams
-- [Future Features](future-features.md) - Quick reference
+- [Roadmap Overview](Roadmap.md) - This document
+- [Planned Features](PlanedFeatures.md) - Detailed future plans
+- [Visual Roadmap](RoadmapVisual.md) - Timeline and diagrams
 
 ### Development Documents
 
@@ -545,9 +544,9 @@ Your input shapes the roadmap!
 ### User Documentation
 
 - [README](../../README.md) - Project overview
-- [Quick Start](../quickstart.md) - Getting started
-- [Configuration](../UserInterface/configuration.md) - Settings reference
-- [Troubleshooting](../troubleshooting.md) - Common issues
+- [Quick Start](../Quickstart.md) - Getting started
+- [Configuration](../UI&Settings/Configuration.md) - Settings reference
+- [Troubleshooting](../Troubleshooting.md) - Common issues
 
 ---
 

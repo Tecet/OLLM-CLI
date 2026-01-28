@@ -403,49 +403,48 @@ export function HooksTab({ windowSize = 30, windowWidth }: HooksTabProps) {
 
   return (
     <Box flexDirection="column" height="100%" width={windowWidth}>
-      {/* Header with improved visual hierarchy */}
-      <Box flexDirection="column" paddingX={1} paddingY={1} flexShrink={0}>
+      {/* Header */}
+      <Box
+        borderStyle="single"
+        borderColor={hasFocus ? uiState.theme.text.accent : uiState.theme.text.secondary}
+        paddingX={1}
+        flexShrink={0}
+      >
         <Box justifyContent="space-between" width="100%" overflow="hidden">
           <Box flexShrink={0}>
             <Text bold color={hasFocus ? uiState.theme.text.accent : uiState.theme.text.primary}>
               🎣 Hooks Configuration
             </Text>
           </Box>
-          <Box flexShrink={1} marginLeft={1} flexDirection="column">
+          <Box flexShrink={1} marginLeft={1}>
             <Text
-              wrap="wrap"
+              wrap="truncate-end"
               color={hasFocus ? uiState.theme.text.primary : uiState.theme.text.secondary}
-              dimColor={!hasFocus}
             >
-              ↑↓:Nav {ACTION_ICONS.toggle}Enter:Toggle {ACTION_ICONS.add}A:Add {ACTION_ICONS.edit}
-              E:Edit {ACTION_ICONS.delete}D:Del
-            </Text>
-            <Text
-              wrap="wrap"
-              color={hasFocus ? uiState.theme.text.primary : uiState.theme.text.secondary}
-              dimColor={!hasFocus}
-            >
-              {ACTION_ICONS.test}T:Test {ACTION_ICONS.exit}0/Esc:Exit
+              ↑↓:Nav Enter:Toggle A:Add E:Edit D:Del T:Test 0/Esc:Exit
             </Text>
           </Box>
         </Box>
+      </Box>
 
-        {/* Show corrupted hooks warning with enhanced styling */}
-        {hooksState.corruptedHooks.length > 0 && (
-          <Box marginTop={1} paddingX={1} borderStyle="round" borderColor="yellow">
+      {/* Show corrupted hooks warning */}
+      {hooksState.corruptedHooks.length > 0 && (
+        <Box paddingX={1} paddingY={1} flexShrink={0}>
+          <Box borderStyle="round" borderColor="yellow" paddingX={1}>
             <Text color="yellow" bold>
               ⚠️ {hooksState.corruptedHooks.length} corrupted hook(s) found
             </Text>
           </Box>
-        )}
-      </Box>
+        </Box>
+      )}
 
       {/* Two-column layout */}
       <Box flexGrow={1} overflow="hidden" width="100%">
-        {/* Left column: Hook list (30%) with enhanced styling */}
+        {/* Left column: Hook list (30%) */}
         <Box
           flexDirection="column"
           width={absoluteLeftWidth ?? '30%'}
+          height="100%"
           borderStyle="single"
           borderColor={hasFocus ? 'cyan' : uiState.theme.border.primary}
           paddingY={1}
@@ -562,10 +561,11 @@ export function HooksTab({ windowSize = 30, windowWidth }: HooksTabProps) {
           )}
         </Box>
 
-        {/* Right column: Hook details (70%) with enhanced styling */}
+        {/* Right column: Hook details (70%) */}
         <Box
           flexDirection="column"
           width={absoluteRightWidth ?? '70%'}
+          height="100%"
           borderStyle="single"
           borderColor={uiState.theme.border.primary}
           paddingX={2}

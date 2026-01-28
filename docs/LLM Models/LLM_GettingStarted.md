@@ -738,7 +738,7 @@ Some models don't support function calling. When you switch to such a model:
 
 ### Get Help
 
-- [Troubleshooting Guide](../troubleshooting.md)
+- [Troubleshooting Guide](../Troubleshooting.md)
 - GitHub Issues (https://github.com/ollm/ollm-cli/issues)
 - [Community Forum](#)
 

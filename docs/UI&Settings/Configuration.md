@@ -675,7 +675,7 @@ Tip - Check for missing or unmatched quotes
 
 ## Planned Future Configuration Options
 
-The following configuration options are **planned for future development** and are not yet available in the current version. These will be added as new features are implemented according to the roadmap (ROADMAP.md).
+The following configuration options are **planned for future development** and are not yet available in the current version. These will be added as new features are implemented according to the roadmap (../DevelopmentRoadmap/Roadmap.md).
 
 ### 🔮 Kraken Integration (Planned)
 
@@ -864,7 +864,7 @@ Advanced AI capabilities configuration:
 
 - **Not Yet Available**: These configuration options are documented for planning purposes and will be implemented in future releases
 - **Subject to Change**: Exact configuration structure may change during implementation based on technical requirements and user feedback
-- **Roadmap**: See the full roadmap (ROADMAP.md) for timeline and priority information
+- **Roadmap**: See the full roadmap (../DevelopmentRoadmap/Roadmap.md) for timeline and priority information
 - **Contributions Welcome**: If you're interested in implementing any of these features, please review the detailed specifications and open a discussion
 
 ---

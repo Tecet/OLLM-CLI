@@ -273,7 +273,7 @@ Discover and install MCP servers:
 - Check server version compatibility
 - Report issue to server maintainer
 
-**See:** [Troubleshooting Guide](../troubleshooting.md)
+**See:** [Troubleshooting Guide](../Troubleshooting.md)
 
 ---
 

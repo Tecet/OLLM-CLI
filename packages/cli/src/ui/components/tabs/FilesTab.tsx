@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Box, Text } from 'ink';
+import { Box, Text, BoxProps } from 'ink';
 
 import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { useUI } from '../../../features/context/UIContext.js';
@@ -16,6 +16,8 @@ import {
 export interface FilesTabProps {
   /** Width of the tab container */
   width?: number;
+  /** Height of the tab container */
+  height?: number;
 
   /** File Explorer Services */
   fileTreeService: FileTreeService;
@@ -27,12 +29,13 @@ export interface FilesTabProps {
 /**
  * FilesTab component
  *
- * Displays the File Explorer tree view.
+ * Displays the File Explorer tree view with a clean layout similar to SettingsTab.
  *
  * Requirements: 10.1, 10.2, 10.3, 10.4, 10.5
  */
 export function FilesTab({
   width,
+  height,
   fileTreeService,
   focusSystem,
   editorIntegration,
@@ -44,29 +47,23 @@ export function FilesTab({
     state: treeState,
     setRoot,
     expandDirectory,
-    setCursorPosition,
-    setScrollOffset,
   } = useFileTree();
 
-  const hasFocus = isFocused('file-tree'); // Use 'file-tree' focus ID
+  const hasFocus = isFocused('file-tree');
 
   // Initialize tree if not already loaded
   useEffect(() => {
     if (!treeState.root) {
       const initTree = async () => {
         try {
-          // console.log('Initializing file tree with root:', process.cwd());
           const rootNode = await fileTreeService.buildTree({
             rootPath: process.cwd(),
-            // excludePatterns: ['node_modules', '.git', 'dist', 'coverage']
           });
           
           // Immediately expand the root to show files and folders
           await fileTreeService.expandDirectory(rootNode, ['node_modules', '.git', 'dist', 'coverage']);
           expandDirectory(rootNode.path);
           
-          // Set root AFTER expansion so the context has the updated tree with children
-          // console.log('File tree built and expanded, setting root:', rootNode);
           setRoot(rootNode);
         } catch (error) {
           console.error('Failed to initialize file tree:', error);
@@ -76,70 +73,56 @@ export function FilesTab({
     }
   }, [treeState.root, fileTreeService, setRoot, expandDirectory]);
 
-  // When the file-tree receives focus, ensure the root is expanded and
-  // the first folder (if any) is selected so keyboard navigation works
-  useEffect(() => {
-    if (!hasFocus || !treeState.root) return;
-
-    const ensureRootOpen = async () => {
-      const root = treeState.root;
-      if (!root) return;
-      try {
-        // Mark root as expanded in context (instant)
-        expandDirectory(root.path);
-
-        // Load children (lazy-load) so visible nodes are populated
-        await fileTreeService.expandDirectory(root, ['node_modules', '.git', 'dist', 'coverage']);
-
-        // Reset scroll and position to show top of tree
-        setScrollOffset(0);
-
-        // If root has children, select the first child (index 1 in flattened list),
-        // otherwise select root (index 0)
-        const firstIndex = root.children && root.children.length > 0 ? 1 : 0;
-        setCursorPosition(firstIndex);
-      } catch (err) {
-        // Fail silently but log for debugging
-        console.error('Failed to open file tree on focus:', err);
-      }
-    };
-
-    ensureRootOpen();
-  }, [
-    hasFocus,
-    treeState.root,
-    expandDirectory,
-    fileTreeService,
-    setCursorPosition,
-    setScrollOffset,
-  ]);
-
   return (
-    <Box flexDirection="column" height="100%" width={width} padding={1}>
+    <Box flexDirection="column" height={height} width={width}>
+      {/* Header */}
       <Box
-        flexDirection="column"
-        borderStyle="single"
-        borderColor={hasFocus ? uiState.theme.border.active : uiState.theme.border.primary}
+        borderStyle={uiState.theme.border.style as BoxProps['borderStyle']}
+        borderColor={hasFocus ? uiState.theme.text.accent : uiState.theme.text.secondary}
         paddingX={1}
-        flexGrow={1}
+        flexShrink={0}
       >
-        <Box marginBottom={1}>
-          <Text bold color={uiState.theme.text.accent}>
-            File Explorer
-          </Text>
+        <Box justifyContent="space-between" width="100%" overflow="hidden">
+          <Box flexShrink={0}>
+            <Text bold color={hasFocus ? uiState.theme.text.accent : uiState.theme.text.primary}>
+              File Explorer
+            </Text>
+          </Box>
+          <Box flexShrink={1} marginLeft={1}>
+            <Text
+              wrap="truncate-end"
+              color={hasFocus ? uiState.theme.text.primary : uiState.theme.text.secondary}
+            >
+              ↑↓:Nav Enter:Open/Expand F:Focus V:View E:Edit A:Actions ?:Help
+            </Text>
+          </Box>
         </Box>
+      </Box>
 
-        <ErrorBoundary>
-          <FileTreeView
-            fileTreeService={fileTreeService}
-            focusSystem={focusSystem}
-            editorIntegration={editorIntegration}
-            fileOperations={fileOperations}
-            excludePatterns={['node_modules', '.git', 'dist', 'coverage']}
-            hasFocus={hasFocus}
-          />
-        </ErrorBoundary>
+      {/* Content area - grows to fill remaining space */}
+      <Box flexGrow={1} overflow="hidden" width="100%">
+        {/* File tree content - takes 100% of parent height */}
+        <Box
+          flexDirection="column"
+          height="100%"
+          borderStyle={uiState.theme.border.style as BoxProps['borderStyle']}
+          borderColor={hasFocus ? uiState.theme.border.active : uiState.theme.border.primary}
+          paddingX={1}
+          paddingY={1}
+        >
+          <ErrorBoundary>
+            <FileTreeView
+              fileTreeService={fileTreeService}
+              focusSystem={focusSystem}
+              editorIntegration={editorIntegration}
+              fileOperations={fileOperations}
+              excludePatterns={['node_modules', '.git', 'dist', 'coverage']}
+              hasFocus={hasFocus}
+            />
+          </ErrorBoundary>
+        </Box>
       </Box>
     </Box>
   );
 }
+

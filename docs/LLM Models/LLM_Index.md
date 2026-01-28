@@ -685,8 +685,8 @@ Complete API reference for the Project Profile Service.
 - [Main Documentation](../)
 - [Context Management](../Context/)
 - [MCP Integration](../MCP/)
-- [Configuration](../configuration.md)
-- [Troubleshooting](../troubleshooting.md)
+- [Configuration](../UI&Settings/Configuration.md)
+- [Troubleshooting](../Troubleshooting.md)
 
 ### Development Documentation
 

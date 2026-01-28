@@ -533,30 +533,16 @@ export function FileTreeView({
 
     if (treeState.cursorPosition < windowLength - 1) {
       setCursorPosition(treeState.cursorPosition + 1);
-      return;
     }
-
-    if (treeState.root) {
-      const totalVisible = fileTreeService.getTotalVisibleCount(treeState.root);
-      const canScroll = treeState.scrollOffset + windowLength < totalVisible;
-      if (canScroll) {
-        setScrollOffset(treeState.scrollOffset + 1);
-      }
-    }
-  }, [treeState, setCursorPosition, setScrollOffset, fileTreeService]);
+  }, [treeState, setCursorPosition]);
 
   const moveUp = useCallback(() => {
     if (treeState.visibleWindow.length === 0) return;
 
     if (treeState.cursorPosition > 0) {
       setCursorPosition(treeState.cursorPosition - 1);
-      return;
     }
-
-    if (treeState.scrollOffset > 0) {
-      setScrollOffset(treeState.scrollOffset - 1);
-    }
-  }, [treeState, setCursorPosition, setScrollOffset]);
+  }, [treeState, setCursorPosition]);
 
   /**
    * Handle LLM message for Follow Mode
@@ -795,11 +781,9 @@ export function FileTreeView({
       return [];
     }
 
-    return fileTreeService.getVisibleNodes(treeState.root, {
-      scrollOffset: treeState.scrollOffset,
-      windowSize: treeState.windowSize,
-    });
-  }, [treeState.root, treeState.scrollOffset, treeState.windowSize, treeState.expandedPaths, fileTreeService]);
+    // Get all visible nodes without windowing - just flatten the tree
+    return fileTreeService.getFlattenedTree(treeState.root);
+  }, [treeState.root, treeState.expandedPaths, fileTreeService]);
 
   // Update visible window in state when it changes
   useEffect(() => {
@@ -817,7 +801,7 @@ export function FileTreeView({
   const treeRootPath = treeState.root.path;
 
   return (
-    <Box flexDirection="column" height="100%">
+    <Box flexDirection="column" flexGrow={1}>
       {helpPanelOpen && (
         <HelpPanel isOpen={helpPanelOpen} onClose={() => setHelpPanelOpen(false)} />
       )}
@@ -871,7 +855,7 @@ export function FileTreeView({
         <>
           <LoadingIndicator isLoading={isLoading} message={loadingMessage} />
 
-          <Box flexDirection="column" flexGrow={1} overflow="hidden">
+          <Box flexDirection="column" flexGrow={1}>
             {Array.isArray(treeState.visibleWindow) &&
               treeState.visibleWindow.map((node, index) => {
                 if (!node || !node.path || !node.name) return null;
@@ -904,22 +888,22 @@ export function FileTreeView({
             {treeState.visibleWindow.length === 0 && <Text dimColor>No items found</Text>}
           </Box>
 
-          {statusMessage && (
-            <Box marginTop={1}>
-              <Text dimColor>{statusMessage}</Text>
+          {(statusMessage || treeState.followModeEnabled) && (
+            <Box flexDirection="column" marginTop={1}>
+              {statusMessage && (
+                <Box>
+                  <Text dimColor>{statusMessage}</Text>
+                </Box>
+              )}
+
+              {treeState.followModeEnabled && (
+                <Box>
+                  <Text color="cyan">Follow Mode: ON</Text>
+                  <Text dimColor> (Press F to toggle)</Text>
+                </Box>
+              )}
             </Box>
           )}
-
-          {treeState.followModeEnabled && (
-            <Box marginTop={statusMessage ? 0 : 1}>
-              <Text color="cyan">Follow Mode: ON</Text>
-              <Text dimColor> (Press F to toggle)</Text>
-            </Box>
-          )}
-
-          <Box marginTop={1}>
-            <Text dimColor></Text>
-          </Box>
         </>
       )}
     </Box>

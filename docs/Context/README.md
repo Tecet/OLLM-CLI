@@ -263,7 +263,7 @@ checkpoints:
 - Check checkpoint file permissions
 - Try creating new checkpoint: `/snapshot create test`
 
-**See:** [Troubleshooting Guide](../troubleshooting.md)
+**See:** [Troubleshooting Guide](../Troubleshooting.md)
 
 ---
 

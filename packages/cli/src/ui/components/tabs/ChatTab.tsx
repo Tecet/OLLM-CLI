@@ -246,7 +246,7 @@ function ChatTabComponent(props: ChatTabProps) {
 
       {/* Render active window content */}
       {activeWindow === 'chat' && (
-        <Box flexDirection="column" paddingX={1} flexGrow={1} flexShrink={1}>
+        <Box flexDirection="column" paddingX={1} flexGrow={1} flexShrink={1} overflow="hidden">
           <ChatHistory
             messages={chatState.messages}
             streaming={chatState.streaming}

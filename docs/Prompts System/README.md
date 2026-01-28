@@ -263,7 +263,7 @@ routing:
 - Use shorter templates
 - Disable unnecessary sections
 
-**See:** [Troubleshooting Guide](../troubleshooting.md)
+**See:** [Troubleshooting Guide](../Troubleshooting.md)
 
 ---
 

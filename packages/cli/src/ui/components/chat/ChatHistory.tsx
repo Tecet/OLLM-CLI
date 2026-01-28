@@ -92,31 +92,33 @@ export function ChatHistory({
   const bottomHint = canScrollDown ? scrollHintBottom : undefined;
 
   return (
-    <Box flexDirection="column" paddingX={1} paddingY={paddingY} width={width}>
+    <Box flexDirection="column" paddingX={1} paddingY={paddingY} width={width} overflow="hidden" height={resolvedMax + 2}>
       {/* Always reserve space for scroll indicator to prevent layout shift */}
-      <Box height={1} width="100%" justifyContent="flex-end">
+      <Box height={1} width="100%" justifyContent="flex-end" flexShrink={0}>
         <Text color={canScrollUp ? theme.text.secondary : undefined}>{topHint ? topHint : ''}</Text>
       </Box>
 
       {/* Render visible lines */}
-      {visibleLines.map((line, index) => {
-        const absoluteIndex = startIndex + index;
-        const isSelected = clampedSelectedIndex !== null && absoluteIndex === clampedSelectedIndex;
-        return (
-          <ChatLineItem
-            key={line.key}
-            line={line}
-            theme={theme}
-            isSelected={isSelected}
-            showCursor={showCursor}
-          />
-        );
-      })}
+      <Box flexDirection="column" overflow="hidden" flexGrow={1} flexShrink={0}>
+        {visibleLines.map((line, index) => {
+          const absoluteIndex = startIndex + index;
+          const isSelected = clampedSelectedIndex !== null && absoluteIndex === clampedSelectedIndex;
+          return (
+            <ChatLineItem
+              key={line.key}
+              line={line}
+              theme={theme}
+              isSelected={isSelected}
+              showCursor={showCursor}
+            />
+          );
+        })}
+      </Box>
 
       {/* Status indicator removed - now shown in StaticInputArea above input box */}
 
       {/* Always reserve space for scroll-down indicator */}
-      <Box height={1} width="100%" justifyContent="flex-end">
+      <Box height={1} width="100%" justifyContent="flex-end" flexShrink={0}>
         <Text color={canScrollDown ? theme.text.secondary : undefined}>
           {bottomHint ? bottomHint : ''}
         </Text>

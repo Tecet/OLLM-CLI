@@ -154,9 +154,11 @@ export function SearchTab({ width }: SearchTabProps) {
         <Box
           flexDirection="column"
           width={absoluteRightWidth ?? '70%'}
+          height="100%"
           borderStyle="single"
           borderColor={uiState.theme.border.primary}
-          padding={1}
+          paddingX={0}
+          paddingY={0}
           justifyContent="center"
           alignItems="center"
           flexShrink={0}
@@ -174,7 +176,7 @@ export function SearchTab({ width }: SearchTabProps) {
               </Text>
             </Box>
             <Text color={uiState.theme.text.secondary}>
-              Full semantic search functionality will be implemented in Stage 11.
+              Full semantic search functionality will be implemented in v0.6.0
             </Text>
             <Text color={uiState.theme.text.secondary}>This includes:</Text>
             <Text color={uiState.theme.text.secondary}>• Codebase indexing with embeddings</Text>
@@ -182,6 +184,11 @@ export function SearchTab({ width }: SearchTabProps) {
             <Text color={uiState.theme.text.secondary}>• Code snippet preview</Text>
             <Text color={uiState.theme.text.secondary}>• Add to context functionality</Text>
             <Text color={uiState.theme.text.secondary}>• File type filtering</Text>
+            <Box marginTop={1}>
+              <Text color={uiState.theme.text.secondary}>
+                For more information, see: https://github.com/Tecet/OLLM/tree/main/docs
+              </Text>
+            </Box>
           </Box>
         </Box>
       </Box>

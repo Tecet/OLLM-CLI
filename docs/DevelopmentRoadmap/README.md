@@ -18,7 +18,7 @@ This directory contains documentation about planned future development for OLLM 
 
 ## Documentation
 
-### [Roadmap Overview](roadmap.md)
+### [Roadmap Overview](Roadmap.md)
 
 **Main entry point and overview**
 
@@ -32,7 +32,7 @@ Quick overview of completed and planned features:
 **Topics:** Overview, Status, Quick Reference  
 **Audience:** All users, new contributors
 
-### [Future Development](future-development.md)
+### [Planned Features](PlanedFeatures.md)
 
 **Complete roadmap for planned features**
 
@@ -48,7 +48,7 @@ Detailed descriptions of all planned future development stages including:
 **Topics:** Future Features, Planned Development, Roadmap  
 **Audience:** All users, contributors, stakeholders
 
-### [Future Features Quick Reference](future-features.md)
+### [Planned Features Quick Reference](PlanedFeatures.md)
 
 **One-page quick reference guide**
 
@@ -62,7 +62,7 @@ Quick reference with:
 **Topics:** Quick Reference, Configuration Examples  
 **Audience:** Developers, system administrators
 
-### [Visual Roadmap](road_map_visual.md)
+### [Visual Roadmap](RoadmapVisual.md)
 
 **Visual representation with ASCII diagrams**
 
@@ -161,13 +161,12 @@ Have suggestions for the roadmap?
 
 ## Related Documentation
 
-- [Roadmap Overview](roadmap.md) - Main entry point
-- [Future Development](future-development.md) - Detailed roadmap
-- [Future Features](future-features.md) - Quick reference
-- [Visual Roadmap](road_map_visual.md) - Visual timeline and diagrams
+- [Roadmap Overview](Roadmap.md) - Main entry point
+- [Planned Features](PlanedFeatures.md) - Detailed roadmap
+- [Visual Roadmap](RoadmapVisual.md) - Visual timeline and diagrams
 - Development Plan (../../.dev/Development-Roadmap/ROADMAP.md) - Development tracking
 - [README](../../README.md) - Project overview
-- [Configuration](../configuration.md) - Settings reference
+- [Configuration](../UI&Settings/Configuration.md) - Settings reference
 
 ---
 

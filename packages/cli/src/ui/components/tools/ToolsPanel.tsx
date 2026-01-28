@@ -440,20 +440,12 @@ export function ToolsPanel({
   return (
     <Box flexDirection="column" height="100%" width={windowWidth}>
       {/* Header */}
-      <Box flexDirection="column" paddingX={1} flexShrink={0}>
-        {!modelSupportsTools && (
-          <Box
-            marginBottom={1}
-            paddingX={1}
-            borderStyle="round"
-            borderColor={uiState.theme.status.warning}
-          >
-            <Text color={uiState.theme.status.warning} bold>
-              ⚠ Model doesn't support tools. These settings will take effect when you switch to a
-              compatible model.
-            </Text>
-          </Box>
-        )}
+      <Box
+        borderStyle="single"
+        borderColor={hasFocus ? uiState.theme.text.accent : uiState.theme.text.secondary}
+        paddingX={1}
+        flexShrink={0}
+      >
         <Box justifyContent="space-between" width="100%" overflow="hidden">
           <Box flexShrink={0}>
             <Text bold color={hasFocus ? uiState.theme.text.accent : uiState.theme.text.primary}>
@@ -465,11 +457,27 @@ export function ToolsPanel({
               wrap="truncate-end"
               color={hasFocus ? uiState.theme.text.primary : uiState.theme.text.secondary}
             >
-              ↑↓:Nav Enter:Toggle 0/Esc:Exit{hasUnsavedChanges ? '*' : ''}
+              ↑↓:Nav Enter:Toggle 0/Esc:Exit{hasUnsavedChanges ? ' *' : ''}
             </Text>
           </Box>
         </Box>
       </Box>
+
+      {/* Warning banner if model doesn't support tools */}
+      {!modelSupportsTools && (
+        <Box paddingX={1} paddingY={1} flexShrink={0}>
+          <Box
+            paddingX={1}
+            borderStyle="round"
+            borderColor={uiState.theme.status.warning}
+          >
+            <Text color={uiState.theme.status.warning} bold>
+              ⚠ Model doesn't support tools. These settings will take effect when you switch to a
+              compatible model.
+            </Text>
+          </Box>
+        </Box>
+      )}
 
       {/* Two-column layout */}
       <Box flexGrow={1} overflow="hidden" width="100%" flexDirection="row">
@@ -477,6 +485,7 @@ export function ToolsPanel({
         <Box
           flexDirection="column"
           width={absoluteLeftWidth ?? '30%'}
+          height="100%"
           borderStyle="single"
           borderColor={hasFocus ? uiState.theme.border.active : uiState.theme.border.primary}
           paddingY={1}

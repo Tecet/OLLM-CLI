@@ -214,15 +214,15 @@ Detailed release notes and changelog for all OLLM CLI versions. Documents what w
 
 ### Alpha (Current & Planned)
 
-- **v0.1.0** - Current release
-- **v0.2.0** - Context enhancements
-- **v0.3.0** - Advanced compression
-- **v0.4.0** - Reasoning models
-- **v0.5.0** - Session management
-- **v0.6.0** - Multi-provider support
-- **v0.7.0** - Model management
-- **v0.8.0** - Advanced features
-- **v0.9.0** - Polish and optimization
+- **v0.1.0** - Foundation Release (Released)
+- **v0.2.0** - File Explorer & Enhanced MCP
+- **v0.3.0** - Advanced File Explorer & MCP Polish
+- **v0.4.0** - Code Editor
+- **v0.5.0** - Release Kraken
+- **v0.6.0** - RAG Integration
+- **v0.7.0** - GitHub Integration
+- **v0.8.0** - Cross-Platform Support
+- **v0.9.0** - vLLM & Open Source Providers
 
 ### Beta (Future)
 

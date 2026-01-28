@@ -37,6 +37,7 @@ import type { MCPMarketplaceServer } from '../../../services/mcpMarketplace.js';
 
 export interface MCPTabProps {
   windowWidth?: number;
+  height?: number;
 }
 
 /**
@@ -428,11 +429,6 @@ function ServerDetailsContent({
 
     return (
       <Box flexDirection="column" height="100%" width="100%">
-        {/* Help Text - Top Right */}
-        <Box flexShrink={0} justifyContent="flex-end">
-          <Text dimColor>↑↓: Navigate | Enter: Select | Esc: Back</Text>
-        </Box>
-
         {/* Exit Item */}
         <Box flexShrink={0}>
           <Text bold color={toolsNavItem === 'exit' ? uiState.theme.text.accent : 'white'}>
@@ -531,15 +527,6 @@ function ServerDetailsContent({
 
     return (
       <Box flexDirection="column" height="100%" width="100%">
-        {/* Help Text */}
-        <Box flexShrink={0} justifyContent="flex-end">
-          <Text dimColor>
-            {isEditingValue
-              ? 'Type to edit | Enter: Done | Esc: Cancel'
-              : '↑↓: Navigate | Enter: Edit/Save | Esc: Back'}
-          </Text>
-        </Box>
-
         {/* Exit Item */}
         <Box flexShrink={0}>
           <Text bold color="white">
@@ -632,11 +619,6 @@ function ServerDetailsContent({
   // Render details view
   return (
     <Box flexDirection="column" height="100%" width="100%">
-      {/* Help Text - Top Right */}
-      <Box flexShrink={0} justifyContent="flex-end">
-        <Text dimColor>↑↓: Navigate | Enter: Select | Esc: Back</Text>
-      </Box>
-
       {/* Exit Item */}
       <Box flexShrink={0}>
         <Text bold color={navItem === 'exit' ? uiState.theme.text.accent : 'white'}>
@@ -1486,7 +1468,7 @@ interface MenuItem {
  * Main tab component that orchestrates the MCP panel UI with two-column layout.
  * Handles keyboard navigation, dialog management, and server operations.
  */
-export function MCPTab({ windowWidth }: MCPTabProps) {
+export function MCPTab({ windowWidth, height }: MCPTabProps) {
   return (
     <ErrorBoundary
       fallback={(error) => (
@@ -1509,7 +1491,7 @@ export function MCPTab({ windowWidth }: MCPTabProps) {
         </Box>
       )}
     >
-      <MCPTabContent windowWidth={windowWidth} />
+      <MCPTabContent windowWidth={windowWidth} height={height} />
     </ErrorBoundary>
   );
 }
@@ -1517,15 +1499,18 @@ export function MCPTab({ windowWidth }: MCPTabProps) {
 /**
  * MCPTab Content Component (wrapped by error boundary)
  */
-function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
+function MCPTabContent({ windowWidth, height }: { windowWidth?: number; height?: number }) {
   const { state: uiState } = useUI();
   const { isFocused, isActive, exitToNavBar } = useFocusManager();
   const { stdout } = useStdout();
 
   // Calculate absolute widths if windowWidth is provided
+  // Account for borders: each column has 2 chars for borders (left + right)
+  // Total border width = 4 chars (2 per column), but they share the middle border
+  // So effectively we need to subtract 4 chars total
   const absoluteLeftWidth = windowWidth ? Math.floor(windowWidth * 0.3) : undefined;
   const absoluteRightWidth =
-    windowWidth && absoluteLeftWidth ? windowWidth - absoluteLeftWidth : undefined;
+    windowWidth && absoluteLeftWidth ? windowWidth - absoluteLeftWidth - 4 : undefined;
 
   const {
     state,
@@ -1912,9 +1897,14 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
   }
 
   return (
-    <Box flexDirection="column" height="100%">
-      {/* Header with focus indicator */}
-      <Box flexDirection="column" paddingX={1} paddingY={1} flexShrink={0}>
+    <Box flexDirection="column" height={height ?? "100%"} width={windowWidth}>
+      {/* Header */}
+      <Box
+        borderStyle="single"
+        borderColor={hasFocus ? uiState.theme.text.accent : uiState.theme.text.secondary}
+        paddingX={1}
+        flexShrink={0}
+      >
         <Box justifyContent="space-between" width="100%" overflow="hidden">
           <Box flexShrink={0}>
             <Text bold color={hasFocus ? uiState.theme.text.accent : uiState.theme.text.primary}>
@@ -1925,19 +1915,21 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
             <Text
               wrap="truncate-end"
               color={hasFocus ? uiState.theme.text.primary : uiState.theme.text.secondary}
-              dimColor={!hasFocus}
-            ></Text>
+            >
+              ↑↓:Nav ←→:Column Enter:Select 0/Esc:Exit
+            </Text>
           </Box>
         </Box>
       </Box>
 
       {/* Two-column layout - Hide when dialog is open to focus on dialog */}
       {dialogState.type === null && (
-        <Box flexGrow={1} overflow="hidden" flexDirection="row">
+        <Box flexGrow={1} overflow="hidden" flexDirection="row" width="100%">
           {/* Left Column: Menu (30%) */}
           <Box
             flexDirection="column"
             width={absoluteLeftWidth ?? '30%'}
+            height="100%"
             flexShrink={0}
             borderStyle="single"
             borderColor={
@@ -2149,91 +2141,105 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
           <Box
             flexDirection="column"
             width={absoluteRightWidth ?? '70%'}
+            height="100%"
+            borderStyle="single"
+            borderColor={
+              hasFocus && activeColumn === 'right'
+                ? uiState.theme.text.accent
+                : uiState.theme.border.primary
+            }
             flexShrink={0}
-            paddingX={2}
-            paddingY={2}
+            paddingX={1}
+            paddingY={1}
           >
-            {/* Top Right Navigation Hints */}
-            <Box flexShrink={0} justifyContent="flex-end" marginBottom={1}>
-              <Text dimColor>↑↓:Nav ←→:Column Enter:Select</Text>
+            {/* Pre-Alpha Warning - Always visible */}
+            <Box
+              flexShrink={0}
+              marginBottom={1}
+              borderStyle="round"
+              borderColor="yellow"
+              paddingX={1}
+            >
+              <Text color="yellow" bold>
+                ⚠️ MCP Servers are in pre-alpha stage - not fully implemented
+              </Text>
             </Box>
 
+            {/* Content area */}
             <Box flexDirection="column" flexGrow={1} overflow="hidden">
               {(!selectedItem || selectedItem?.type === 'exit') && (
                 <Box
                   flexDirection="column"
-                  paddingX={2}
-                  paddingY={1}
-                  alignItems="center"
                   width="100%"
+                  overflow="hidden"
                 >
                   <Text></Text>
                   <Text></Text>
                   <Text></Text>
                   <Text></Text>
 
-                  <Text bold color={uiState.theme.text.accent}>
-                    ═══════════════════════════════════════════════════════════════════
+                  <Text bold color={uiState.theme.text.accent} wrap="truncate-end">
+                    ═══════════════════════════════════════════════════════════
                   </Text>
                   <Text></Text>
                   <Text bold color={uiState.theme.text.accent}>
                     MCP Registry - Marketplace
                   </Text>
                   <Text></Text>
-                  <Text>The MCP registry provides MCP clients with a list of MCP servers.</Text>
+                  <Text wrap="wrap">The MCP registry provides MCP clients with a list of MCP servers.</Text>
                   <Text></Text>
                   <Text></Text>
                   <Text bold color={uiState.theme.text.accent}>
                     OLLM CLI use Official Open Source MCP Registry
                   </Text>
                   <Text></Text>
-                  <Text>MCP Registry: https://registry.modelcontextprotocol.io/</Text>
-                  <Text>
+                  <Text wrap="wrap">MCP Registry: https://registry.modelcontextprotocol.io/</Text>
+                  <Text wrap="wrap">
                     MCP Registry Documentation: https://registry.modelcontextprotocol.io/docs
                   </Text>
                   <Text></Text>
                   <Text></Text>
-                  <Text color={uiState.theme.text.secondary}>
-                    ───────────────────────────────────────────────────────────────────
+                  <Text color={uiState.theme.text.secondary} wrap="truncate-end">
+                    ───────────────────────────────────────────────────────────
                   </Text>
                   <Text></Text>
                   <Text bold>Documentation:</Text>
                   <Text></Text>
-                  <Text>
+                  <Text wrap="wrap">
                     📄 <Text color={uiState.theme.text.accent}>Public-facing docs</Text> - Published
                     on modelcontextprotocol.io
                   </Text>
                   <Text></Text>
-                  <Text>
+                  <Text wrap="wrap">
                     🏗️ <Text color={uiState.theme.text.accent}>Design documentation</Text> -
                     Architecture, vision, and roadmap
                   </Text>
                   <Text></Text>
-                  <Text>
+                  <Text wrap="wrap">
                     📖 <Text color={uiState.theme.text.accent}>Reference</Text> - Technical
                     specifications
                   </Text>
                   <Text></Text>
-                  <Text>
+                  <Text wrap="wrap">
                     🔧 <Text color={uiState.theme.text.accent}>Contributing guides</Text> - How to
                     contribute
                   </Text>
                   <Text></Text>
-                  <Text>
+                  <Text wrap="wrap">
                     🔒 <Text color={uiState.theme.text.accent}>Administration</Text> - Admin
                     operations
                   </Text>
                   <Text></Text>
-                  <Text color={uiState.theme.text.secondary}>
-                    ───────────────────────────────────────────────────────────────────
+                  <Text color={uiState.theme.text.secondary} wrap="truncate-end">
+                    ───────────────────────────────────────────────────────────
                   </Text>
                   <Text></Text>
-                  <Text color={uiState.theme.text.secondary} dimColor>
+                  <Text color={uiState.theme.text.secondary} dimColor wrap="wrap">
                     Press Enter to browse marketplace or ↑↓ to navigate
                   </Text>
                   <Text></Text>
-                  <Text bold color={uiState.theme.text.accent}>
-                    ═══════════════════════════════════════════════════════════════════
+                  <Text bold color={uiState.theme.text.accent} wrap="truncate-end">
+                    ═══════════════════════════════════════════════════════════
                   </Text>
                 </Box>
               )}
@@ -2283,27 +2289,26 @@ function MCPTabContent({ windowWidth }: { windowWidth?: number }) {
               )}
             </Box>
 
-            {/* Bottom Status Area */}
-            <Box
-              flexShrink={0}
-              marginTop={1}
-              height={3}
-              borderStyle="single"
-              borderColor={uiState.theme.border.primary}
-              paddingX={1}
-            >
-              {statusMessage ? (
-                <Text color={uiState.theme.text.primary}>{statusMessage}</Text>
-              ) : state.operationsInProgress.size > 0 ? (
-                <Text color={uiState.theme.text.secondary}>
-                  {Array.from(state.operationsInProgress.entries())
-                    .map(([name, op]) => `${name}: ${op}...`)
-                    .join(' | ')}
-                </Text>
-              ) : (
-                <Text dimColor> </Text>
-              )}
-            </Box>
+            {/* Bottom Status Area - Only show when there's content */}
+            {(statusMessage || state.operationsInProgress.size > 0) && (
+              <Box
+                flexShrink={0}
+                marginTop={1}
+                paddingX={1}
+                borderStyle="single"
+                borderColor={uiState.theme.border.primary}
+              >
+                {statusMessage ? (
+                  <Text color={uiState.theme.text.primary}>{statusMessage}</Text>
+                ) : (
+                  <Text color={uiState.theme.text.secondary}>
+                    {Array.from(state.operationsInProgress.entries())
+                      .map(([name, op]) => `${name}: ${op}...`)
+                      .join(' | ')}
+                  </Text>
+                )}
+              </Box>
+            )}
           </Box>
         </Box>
       )}

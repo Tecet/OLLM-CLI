@@ -48,8 +48,11 @@ export function deriveGPUPlacementHints(
     return undefined;
   }
 
+  // num_gpu in Ollama is the number of layers to load on GPU (not number of GPUs)
+  // Setting it to 999 forces all model layers to GPU
+  // We don't set gpu_layers as it can conflict with num_gpu
   return {
-    num_gpu: 1,
-    gpu_layers: gpuLayers,
+    num_gpu: 999,
+    gpu_layers: 0, // Not used, kept for compatibility
   };
 }

@@ -1131,9 +1131,8 @@ Report bugs or request features:
 ### Documentation
 
 - **README:** [Main documentation](3%20projects/OLLM%20CLI/Development-Roadmap/README.md)
-- **Configuration Reference:** [Configuration guide](./configuration.md)
-- **Architecture:** System design (./architecture.md)
-- **Roadmap:** Future features (./ROADMAP.md)
+- **Configuration Reference:** [Configuration guide](./UI&Settings/Configuration.md)
+- **Roadmap:** Future features (./DevelopmentRoadmap/Roadmap.md)
 
 ### Community Resources
 

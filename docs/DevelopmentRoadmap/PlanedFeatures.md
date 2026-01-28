@@ -9,8 +9,8 @@ This document provides a quick reference for planned features in OLLM CLI alpha 
 
 **For detailed information, see:**
 
-- [Development Roadmap](roadmap.md) - Complete roadmap overview
-- [Visual Roadmap](road_map_visual.md) - Visual timeline and dependency graphs
+- [Development Roadmap](Roadmap.md) - Complete roadmap overview
+- [Visual Roadmap](RoadmapVisual.md) - Visual timeline and dependency graphs
 - Version Specifications (`.kiro/specs/vX.X.X/`) - Detailed requirements and design documents
 
 ---
@@ -88,30 +88,7 @@ Edit files without leaving OLLM CLI.
 
 ---
 
-## v0.5.0: RAG Integration 🔍
-
-**Semantic Search & Codebase Understanding**
-
-Find relevant code with semantic search.
-
-**Key Features:**
-
-- Codebase indexing with embeddings
-- Semantic code search
-- Context-aware file discovery
-- Symbol and definition search
-- Documentation search
-- Vector database integration
-- Incremental indexing
-- Search result ranking
-
-**Use When:** Large codebases, finding relevant code, better LLM context
-
-**Spec:** `.kiro/specs/v0.5.0 RAG-integration/`
-
----
-
-## v0.6.0: Release Kraken 🦑
+## v0.5.0: Release Kraken 🦑
 
 **External LLM Provider Access**
 
@@ -144,7 +121,30 @@ Access powerful cloud models when local models need assistance.
 
 **Use When:** Complex reasoning, large context, specialized domains, local model limitations
 
-**Spec:** `.kiro/specs/v0.6.0 Release Kraken/`
+**Spec:** `.kiro/specs/v0.5.0 Release Kraken/`
+
+---
+
+## v0.6.0: RAG Integration 🔍
+
+**Semantic Search & Codebase Understanding**
+
+Find relevant code with semantic search.
+
+**Key Features:**
+
+- Codebase indexing with embeddings
+- Semantic code search
+- Context-aware file discovery
+- Symbol and definition search
+- Documentation search
+- Vector database integration
+- Incremental indexing
+- Search result ranking
+
+**Use When:** Large codebases, finding relevant code, better LLM context
+
+**Spec:** `.kiro/specs/v0.6.0 RAG-integration/`
 
 ---
 
@@ -277,19 +277,7 @@ editor:
     maxOpen: 10
 ```
 
-### v0.5.0: RAG Integration
-
-```yaml
-codebaseIndex:
-  enabled: true
-  autoIndex: true
-  extensions: ['.ts', '.js', '.py', '.java', '.go']
-  excludePatterns: ['node_modules', 'dist', '.git']
-  maxFileSize: 1048576 # 1MB
-  vectorDatabase: 'lancedb'
-```
-
-### v0.6.0: Kraken Integration
+### v0.5.0: Kraken Integration
 
 ```yaml
 kraken:
@@ -314,6 +302,18 @@ kraken:
       apiKey: ${OPENAI_API_KEY}
       model: gpt-4
       maxTokens: 8192
+```
+
+### v0.6.0: RAG Integration
+
+```yaml
+codebaseIndex:
+  enabled: true
+  autoIndex: true
+  extensions: ['.ts', '.js', '.py', '.java', '.go']
+  excludePatterns: ['node_modules', 'dist', '.git']
+  maxFileSize: 1048576 # 1MB
+  vectorDatabase: 'lancedb'
 ```
 
 ### v0.7.0: GitHub Integration
@@ -394,8 +394,8 @@ providers:
 
 - **v0.2.0:** File Explorer & Enhanced MCP
 - **v0.4.0:** Code Editor
-- **v0.5.0:** RAG Integration
-- **v0.6.0:** Release Kraken
+- **v0.5.0:** Release Kraken
+- **v0.6.0:** RAG Integration
 
 ### Medium Priority
 
@@ -431,15 +431,14 @@ Interested in implementing a planned feature?
    - Include tests and documentation
    - Respond to review feedback
 
-See [Development Roadmap](roadmap.md#contributing) for detailed contribution guidelines.
+See [Development Roadmap](Roadmap.md#contributing) for detailed contribution guidelines.
 
 ---
 
 ## Related Documentation
 
-- **[Roadmap Overview](roadmap.md)** - Main roadmap document
-- **[Visual Roadmap](road_map_visual.md)** - Timeline and diagrams
-- **[Future Development](future-development.md)** - Detailed feature plans
+- **[Roadmap Overview](Roadmap.md)** - Main roadmap document
+- **[Visual Roadmap](RoadmapVisual.md)** - Timeline and diagrams
 - **Version Specifications** - `.kiro/specs/vX.X.X/` directories
 
 ---

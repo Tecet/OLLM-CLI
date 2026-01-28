@@ -50,6 +50,7 @@ export const ReasoningBox: React.FC<ReasoningBoxProps> = ({
   },
 }) => {
   // Initialize internal expanded state based on completion status
+  // Start expanded when reasoning is incomplete, collapsed when complete
   const [internalExpanded, setInternalExpanded] = useState(() => !reasoning.complete);
   const [scrollOffset, setScrollOffset] = useState(0);
   const contentRef = useRef<string>(reasoning.content);
@@ -58,17 +59,22 @@ export const ReasoningBox: React.FC<ReasoningBoxProps> = ({
   // Use controlled or internal expanded state
   const isExpanded = controlledExpanded !== undefined ? controlledExpanded : internalExpanded;
 
-  // Handle toggle via controls (kept in sink for future use or parent control)
-
-  // Auto-collapse when reasoning completes
+  // Auto-collapse when reasoning completes (transition from incomplete to complete)
   useEffect(() => {
     if (autoCollapseOnComplete && !wasCompleteRef.current && reasoning.complete) {
-      if (controlledExpanded === undefined) {
-        setInternalExpanded(false);
-      } else if (_onToggle && isExpanded) {
-        // If controlled, call onToggle to collapse
-        _onToggle();
-      }
+      // Add a small delay (500ms) before collapsing to let users see completion
+      const collapseTimer = setTimeout(() => {
+        if (controlledExpanded === undefined) {
+          // Uncontrolled mode: update internal state
+          setInternalExpanded(false);
+        } else if (_onToggle && isExpanded) {
+          // Controlled mode: notify parent to collapse
+          _onToggle();
+        }
+      }, 500);
+
+      wasCompleteRef.current = reasoning.complete;
+      return () => clearTimeout(collapseTimer);
     }
     wasCompleteRef.current = reasoning.complete;
   }, [reasoning.complete, autoCollapseOnComplete, controlledExpanded, _onToggle, isExpanded]);
@@ -121,15 +127,21 @@ export const ReasoningBox: React.FC<ReasoningBoxProps> = ({
   }
 
   // Expanded state: show scrollable content
+  // Calculate total height: header (1) + marginBottom (1) + scroll indicators (2) + content (maxVisibleLines) + footer (2 if streaming)
+  const totalHeight = 1 + 1 + (canScrollUp ? 1 : 0) + maxVisibleLines + (canScrollDown ? 1 : 0) + (!reasoning.complete ? 2 : 0);
+  
   return (
     <Box
       flexDirection="column"
       borderStyle="round"
       borderColor={theme?.border?.active || '#4ec9b0'}
       paddingX={1}
+      height={totalHeight}
+      overflow="hidden"
+      flexShrink={0}
     >
       {/* Header */}
-      <Box justifyContent="space-between" marginBottom={1}>
+      <Box justifyContent="space-between" height={1} flexShrink={0}>
         <Text color={theme.text.accent}>🧠 Reasoning</Text>
         <Text color={theme.text.secondary} dimColor>
           [▼ Collapse]
@@ -137,10 +149,10 @@ export const ReasoningBox: React.FC<ReasoningBoxProps> = ({
       </Box>
 
       {/* Content area with scroll indicators */}
-      <Box flexDirection="column">
+      <Box flexDirection="column" overflow="hidden" flexShrink={0}>
         {/* Scroll up indicator */}
         {canScrollUp && (
-          <Box justifyContent="flex-end">
+          <Box justifyContent="flex-end" height={1} flexShrink={0}>
             <Text color={theme.text.secondary} dimColor>
               ↑
             </Text>
@@ -148,7 +160,7 @@ export const ReasoningBox: React.FC<ReasoningBoxProps> = ({
         )}
 
         {/* Visible content */}
-        <Box flexDirection="column" minHeight={maxVisibleLines}>
+        <Box flexDirection="column" height={maxVisibleLines} overflow="hidden" flexShrink={0}>
           {visibleLines.map((line: string, index: number) => (
             <Text key={scrollOffset + index} color={theme.text.primary} wrap="wrap">
               {line || ' '}
@@ -158,7 +170,7 @@ export const ReasoningBox: React.FC<ReasoningBoxProps> = ({
 
         {/* Scroll down indicator */}
         {canScrollDown && (
-          <Box justifyContent="flex-end">
+          <Box justifyContent="flex-end" height={1} flexShrink={0}>
             <Text color={theme.text.secondary} dimColor>
               ↓
             </Text>
@@ -168,7 +180,7 @@ export const ReasoningBox: React.FC<ReasoningBoxProps> = ({
 
       {/* Footer with status */}
       {!reasoning.complete && (
-        <Box marginTop={1}>
+        <Box height={2} flexShrink={0}>
           <Text color={theme.text.secondary} dimColor>
             Streaming...
           </Text>

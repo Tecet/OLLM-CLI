@@ -18,9 +18,10 @@ import { FilesTab } from './FilesTab.js';
 
 export interface FilesTabWrapperProps {
   width?: number;
+  height?: number;
 }
 
-export function FilesTabWrapper({ width }: FilesTabWrapperProps) {
+export function FilesTabWrapper({ width, height }: FilesTabWrapperProps) {
   // Create services once
   const services = useMemo(() => {
     const fileTreeService = new FileTreeService();
@@ -40,6 +41,7 @@ export function FilesTabWrapper({ width }: FilesTabWrapperProps) {
     <FileTreeProvider>
       <FilesTab
         width={width}
+        height={height}
         fileTreeService={services.fileTreeService}
         focusSystem={services.focusSystem}
         editorIntegration={services.editorIntegration}

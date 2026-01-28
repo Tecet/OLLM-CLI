@@ -33,12 +33,15 @@ export function Message({ message, theme, metricsConfig, reasoningConfig }: Mess
     return message.reasoning ? !message.reasoning.complete : true;
   });
 
-  // Auto-collapse when reasoning completes
+  // Auto-collapse when reasoning completes (with small delay to show completion)
   useEffect(() => {
-    if (message.reasoning?.complete) {
-      setReasoningExpanded(false);
+    if (message.reasoning?.complete && reasoningExpanded) {
+      const collapseTimer = setTimeout(() => {
+        setReasoningExpanded(false);
+      }, 500);
+      return () => clearTimeout(collapseTimer);
     }
-  }, [message.reasoning?.complete]);
+  }, [message.reasoning?.complete, reasoningExpanded]);
 
   const showMetrics = metricsConfig?.enabled !== false && message.metrics;
   const showReasoning = reasoningConfig?.enabled !== false && message.reasoning;

@@ -217,9 +217,13 @@ export class LocalProvider implements ProviderAdapter {
         optionsPayload[key] = value;
       }
     }
-    if (typeof optionsPayload.gpu_layers === 'number') {
-      optionsPayload.num_gpu_layers = optionsPayload.gpu_layers;
+    // Don't send gpu_layers or num_gpu_layers - only num_gpu should be used
+    // num_gpu set to 999 forces all layers to GPU
+    if ('gpu_layers' in optionsPayload) {
       delete optionsPayload.gpu_layers;
+    }
+    if ('num_gpu_layers' in optionsPayload) {
+      delete optionsPayload.num_gpu_layers;
     }
     const defaultFinishEvent: ProviderEvent = {
       type: 'finish',

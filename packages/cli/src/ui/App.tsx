@@ -13,7 +13,7 @@
  * - Build prompts (core does this)
  */
 
-import { useCallback, useEffect, useRef, useMemo } from 'react';
+import { useCallback, useEffect, useRef, useMemo, useState } from 'react';
 import { Box, useStdout, BoxProps } from 'ink';
 
 import { SettingsService } from '../config/settingsService.js';
@@ -293,7 +293,7 @@ Type \`/help\` for more commands.`,
           >
             {/* Show file viewer if a file is open, otherwise show the active tab */}
             {uiState.fileViewer.isOpen ? (
-              <FileViewerTab width={leftWidth} height={row2Height} />
+              <FileViewerTab width={leftWidth} height={row2Height - 2} />
             ) : (
               <>
                 {uiState.activeTab === 'chat' && (
@@ -317,11 +317,11 @@ Type \`/help\` for more commands.`,
                   />
                 )}
                 {uiState.activeTab === 'tools' && <ToolsTab width={leftWidth} />}
-                {uiState.activeTab === 'files' && <FilesTabWrapper width={leftWidth} />}
+                {uiState.activeTab === 'files' && <FilesTabWrapper width={leftWidth} height={row2Height - 2} />}
                 {uiState.activeTab === 'hooks' && <HooksTab windowWidth={leftWidth} />}
-                {uiState.activeTab === 'mcp' && <MCPTab windowWidth={leftWidth} />}
+                {uiState.activeTab === 'mcp' && <MCPTab windowWidth={leftWidth} height={row2Height - 2} />}
                 {uiState.activeTab === 'settings' && <SettingsTab width={leftWidth} />}
-                {uiState.activeTab === 'docs' && <DocsTab height={row2Height} width={leftWidth} />}
+                {uiState.activeTab === 'docs' && <DocsTab height={row2Height - 2} width={leftWidth} />}
                 {uiState.activeTab === 'search' && <SearchTab width={leftWidth} />}
                 {uiState.activeTab === 'github' && <GitHubTab width={leftWidth} />}
                 {uiState.activeTab === 'bug-report' && <BugReportTab width={leftWidth} />}
