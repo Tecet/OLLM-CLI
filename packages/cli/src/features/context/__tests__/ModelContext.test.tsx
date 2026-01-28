@@ -22,13 +22,13 @@ describe('ModelContext - Tool Support Detection', () => {
     it('should find profile for known models', () => {
       // Test that ProfileManager can find profiles
       const profile = profileManager.findProfile('llama3.2');
-      
+
       // If no profiles are loaded, skip this test
       if (!profile) {
         console.warn('No profiles loaded - skipping test. Run profile compilation first.');
         return;
       }
-      
+
       expect(profile).toBeDefined();
     });
 
@@ -41,7 +41,7 @@ describe('ModelContext - Tool Support Detection', () => {
       const entry = profileManager.getModelEntry('custom-model:latest');
       expect(entry).toBeDefined();
       expect(entry.max_context_window).toBeGreaterThanOrEqual(entry.default_context ?? 1);
-      
+
       // Only check context_profiles if they exist (they might not in test environment)
       if (entry.context_profiles && entry.context_profiles.length > 0) {
         expect(entry.context_profiles.length).toBeGreaterThan(0);
@@ -77,7 +77,7 @@ describe('ModelContext - Tool Support Detection', () => {
 
       // Verify it was saved
       const updated = profileManager.getUserModels();
-      const found = updated.find(m => m.id === 'test-model:latest');
+      const found = updated.find((m) => m.id === 'test-model:latest');
       expect(found).toBeDefined();
       expect(found?.tool_support_source).toBe('user_confirmed');
       expect(found?.tool_support_confirmed_at).toBeDefined();
@@ -92,7 +92,7 @@ describe('ModelContext - Tool Support Detection', () => {
       // UICallbacks are now provided via React Context
       // Components use useUICallbacks() hook instead of global callbacks
       // This test verifies the expected behavior
-      
+
       const mockCallback = vi.fn();
       const callbacks = {
         promptUser: vi.fn(),
@@ -127,10 +127,10 @@ describe('ModelContext - Tool Support Detection', () => {
   describe('Override precedence', () => {
     it('should respect precedence order: user_confirmed > auto_detected > runtime_error > profile', () => {
       const precedence = {
-        'user_confirmed': 4,
-        'auto_detected': 3,
-        'runtime_error': 2,
-        'profile': 1,
+        user_confirmed: 4,
+        auto_detected: 3,
+        runtime_error: 2,
+        profile: 1,
       };
 
       // user_confirmed should have highest precedence
@@ -151,11 +151,11 @@ describe('ModelContext - Tool Support Detection', () => {
     it('should default to tools disabled when no prompt callback is available', async () => {
       // With UICallbacks, default implementations are always available
       // They log warnings and return safe defaults
-      
+
       // Simulate unknown model detection
       // Note: We can't directly test handleUnknownModel since it's internal to ModelContext
       // This test verifies the expected behavior when using default callbacks
-      
+
       expect(true).toBe(true);
     });
 
@@ -225,8 +225,8 @@ describe('ModelContext - Tool Support Detection', () => {
 
       // Verify it was saved with correct metadata
       const updated = profileManager.getUserModels();
-      const found = updated.find(m => m.id === 'unknown-model:latest');
-      
+      const found = updated.find((m) => m.id === 'unknown-model:latest');
+
       expect(found).toBeDefined();
       expect(found?.tool_support).toBe(false);
       expect(found?.tool_support_source).toBe('user_confirmed');
@@ -258,13 +258,13 @@ describe('ModelContext - Tool Support Detection', () => {
     it('should detect tool support correctly when model supports tools', async () => {
       // This test verifies the expected behavior of auto-detection
       // The actual implementation will send a test request and check for errors
-      
+
       // Simulate successful auto-detection
       // In real implementation, this would:
       // 1. Send test request with minimal tool schema
       // 2. Check for tool errors in response
       // 3. Save result to user_models.json
-      
+
       expect(true).toBe(true);
     });
 
@@ -295,8 +295,8 @@ describe('ModelContext - Tool Support Detection', () => {
 
       // Verify it was saved with correct source
       const updated = profileManager.getUserModels();
-      const found = updated.find(m => m.id === 'auto-detected-model:latest');
-      
+      const found = updated.find((m) => m.id === 'auto-detected-model:latest');
+
       expect(found).toBeDefined();
       expect(found?.tool_support_source).toBe('auto_detected');
       expect(found?.tool_support_confirmed_at).toBeDefined();
@@ -310,7 +310,7 @@ describe('ModelContext - Tool Support Detection', () => {
 
       // Simulate auto-detect failure
       // Expected behavior: save with tool_support=false and source='auto_detected'
-      
+
       const userModels = profileManager.getUserModels();
       const testModel = {
         id: 'failed-detect-model:latest',
@@ -329,8 +329,8 @@ describe('ModelContext - Tool Support Detection', () => {
       profileManager.setUserModels([...userModels, testModel]);
 
       const updated = profileManager.getUserModels();
-      const found = updated.find(m => m.id === 'failed-detect-model:latest');
-      
+      const found = updated.find((m) => m.id === 'failed-detect-model:latest');
+
       expect(found?.tool_support).toBe(false);
       expect(found?.tool_support_source).toBe('auto_detected');
 
@@ -347,38 +347,36 @@ describe('ModelContext - Tool Support Detection', () => {
         'error: tool parameter invalid',
       ];
 
-      const nonToolErrorMessages = [
-        'connection timeout',
-        'model not found',
-        'invalid request',
-      ];
+      const nonToolErrorMessages = ['connection timeout', 'model not found', 'invalid request'];
 
       const isToolUnsupportedError = (message: string): boolean => {
         return /tools?|tool_calls?|unknown field/i.test(message);
       };
 
       // Should detect tool errors
-      toolErrorMessages.forEach(msg => {
+      toolErrorMessages.forEach((msg) => {
         expect(isToolUnsupportedError(msg)).toBe(true);
       });
 
       // Should not detect non-tool errors
-      nonToolErrorMessages.forEach(msg => {
+      nonToolErrorMessages.forEach((msg) => {
         expect(isToolUnsupportedError(msg)).toBe(false);
       });
     });
 
     it('should send minimal test tool schema during auto-detection', () => {
       // Verify the test tool schema structure
-      const testTools = [{
-        name: 'test_tool',
-        description: 'Test tool for capability detection',
-        parameters: {
-          type: 'object',
-          properties: {},
-          required: []
-        }
-      }];
+      const testTools = [
+        {
+          name: 'test_tool',
+          description: 'Test tool for capability detection',
+          parameters: {
+            type: 'object',
+            properties: {},
+            required: [],
+          },
+        },
+      ];
 
       expect(testTools).toHaveLength(1);
       expect(testTools[0].name).toBe('test_tool');
@@ -398,7 +396,7 @@ describe('ModelContext - Tool Support Detection', () => {
       expect(isToolUnsupportedError('unknown field: tools')).toBe(true);
       expect(isToolUnsupportedError('tool_calls not supported')).toBe(true);
       expect(isToolUnsupportedError('error with tool parameter')).toBe(true);
-      
+
       // Should not detect non-tool errors
       expect(isToolUnsupportedError('connection timeout')).toBe(false);
       expect(isToolUnsupportedError('model not found')).toBe(false);
@@ -412,7 +410,7 @@ describe('ModelContext - Tool Support Detection', () => {
           message: 'Tool support error: unknown field: tools',
           code: 'TOOL_UNSUPPORTED',
           httpStatus: 400,
-        }
+        },
       };
 
       expect(errorEvent.error.code).toBe('TOOL_UNSUPPORTED');
@@ -430,7 +428,7 @@ describe('ModelContext - Tool Support Detection', () => {
       };
 
       const modelName = 'test-model:latest';
-      
+
       // Simulate calling handleToolError with model name
       // The prompt should include the model name
       await callbacks.promptUser(
@@ -457,9 +455,7 @@ describe('ModelContext - Tool Support Detection', () => {
       const errorMessage = 'unknown field: tools';
 
       // System message should include model name
-      callbacks.addSystemMessage(
-        `Tool error detected for model "${modelName}": ${errorMessage}`
-      );
+      callbacks.addSystemMessage(`Tool error detected for model "${modelName}": ${errorMessage}`);
 
       expect(mockAddSystemMessage).toHaveBeenCalledWith(
         `Tool error detected for model "${modelName}": ${errorMessage}`
@@ -499,7 +495,7 @@ describe('ModelContext - Tool Support Detection', () => {
       const ERROR_PROMPT_DEBOUNCE_MS = 60000;
       const recentPrompts = new Map<string, number>();
       const modelName = 'test-model:latest';
-      
+
       // First error at time T
       const firstErrorTime = Date.now() - 61000; // 61 seconds ago
       recentPrompts.set(modelName, firstErrorTime);
@@ -525,16 +521,16 @@ describe('ModelContext - Tool Support Detection', () => {
 
     it('should skip prompting if user_confirmed override exists', () => {
       const precedence = {
-        'user_confirmed': 4,
-        'auto_detected': 3,
-        'runtime_error': 2,
-        'profile': 1,
+        user_confirmed: 4,
+        auto_detected: 3,
+        runtime_error: 2,
+        profile: 1,
       };
 
       // If model already has user_confirmed, runtime_error should not override
       const existingSource = 'user_confirmed';
       const newSource = 'runtime_error';
-      
+
       const shouldOverride = precedence[newSource] >= precedence[existingSource];
       expect(shouldOverride).toBe(false);
     });
@@ -550,7 +546,7 @@ describe('ModelContext - Tool Support Detection', () => {
       };
 
       // Simulate runtime tool error detection
-      
+
       // The handleToolError function would be called here
       // It should prompt the user with the correct message
       const result = await callbacks.promptUser(
@@ -586,8 +582,8 @@ describe('ModelContext - Tool Support Detection', () => {
 
       // Verify it was saved with user_confirmed source
       const updated = profileManager.getUserModels();
-      const found = updated.find(m => m.id === 'runtime-learned-model:latest');
-      
+      const found = updated.find((m) => m.id === 'runtime-learned-model:latest');
+
       expect(found).toBeDefined();
       expect(found?.tool_support).toBe(false);
       expect(found?.tool_support_source).toBe('user_confirmed');
@@ -614,7 +610,7 @@ describe('ModelContext - Tool Support Detection', () => {
       );
 
       expect(result).toBe('No');
-      
+
       // When user declines, the override should be set with source='runtime_error'
       // and NOT persisted to user_models.json
       // This is a session-only override
@@ -623,12 +619,12 @@ describe('ModelContext - Tool Support Detection', () => {
     it('should not override user_confirmed settings', () => {
       // If a model already has tool_support_source='user_confirmed',
       // runtime errors should not override it
-      
+
       const precedence = {
-        'user_confirmed': 4,
-        'auto_detected': 3,
-        'runtime_error': 2,
-        'profile': 1,
+        user_confirmed: 4,
+        auto_detected: 3,
+        runtime_error: 2,
+        profile: 1,
       };
 
       // user_confirmed should have higher precedence than runtime_error
@@ -638,7 +634,7 @@ describe('ModelContext - Tool Support Detection', () => {
     it('should handle missing prompt callback gracefully', async () => {
       // With UICallbacks, default implementations are always available
       // They log warnings and return safe defaults
-      
+
       const mockAddSystemMessage = vi.fn();
       const callbacks = {
         promptUser: vi.fn().mockResolvedValue('No'), // Safe default
@@ -649,7 +645,7 @@ describe('ModelContext - Tool Support Detection', () => {
 
       // Simulate tool error with default callback behavior
       // Expected behavior: set session-only override without prompting
-      
+
       expect(callbacks.promptUser).toBeDefined();
       expect(mockAddSystemMessage).toBeDefined();
     });
@@ -664,30 +660,36 @@ describe('ModelContext - Tool Support Detection', () => {
       };
 
       // Simulate various scenarios and verify system messages
-      
+
       // When tool error is detected
       callbacks.addSystemMessage('Tool error detected: unknown field: tools');
-      expect(mockAddSystemMessage).toHaveBeenCalledWith('Tool error detected: unknown field: tools');
+      expect(mockAddSystemMessage).toHaveBeenCalledWith(
+        'Tool error detected: unknown field: tools'
+      );
 
       // When user confirms save
       callbacks.addSystemMessage('Tool support disabled and saved to user_models.json.');
-      expect(mockAddSystemMessage).toHaveBeenCalledWith('Tool support disabled and saved to user_models.json.');
+      expect(mockAddSystemMessage).toHaveBeenCalledWith(
+        'Tool support disabled and saved to user_models.json.'
+      );
 
       // When user declines save
       callbacks.addSystemMessage('Tool support disabled for this session only.');
-      expect(mockAddSystemMessage).toHaveBeenCalledWith('Tool support disabled for this session only.');
+      expect(mockAddSystemMessage).toHaveBeenCalledWith(
+        'Tool support disabled for this session only.'
+      );
     });
 
     it('should not prompt multiple times for the same error', () => {
       // Runtime learning should debounce repeated errors
       // Once a model has been marked with runtime_error or user_confirmed,
       // subsequent errors should not trigger new prompts
-      
+
       const precedence = {
-        'user_confirmed': 4,
-        'auto_detected': 3,
-        'runtime_error': 2,
-        'profile': 1,
+        user_confirmed: 4,
+        auto_detected: 3,
+        runtime_error: 2,
+        profile: 1,
       };
 
       // If already marked as runtime_error, don't prompt again
@@ -707,7 +709,7 @@ describe('ModelContext - Tool Support Detection', () => {
         tool_support_confirmed_at: new Date().toISOString(),
         description: 'Test model',
         abilities: ['code', 'chat'],
-        context_profiles: [{ size: 4096, vram_estimate: '2GB' }],
+        context_profiles: [{ size: 4096, vram_estimate: '2GB', ollama_context_size: 3482 }],
         default_context: 4096,
         manual_context: 8192, // User override
       };
@@ -717,8 +719,8 @@ describe('ModelContext - Tool Support Detection', () => {
 
       // Now update tool_support
       const updated = profileManager.getUserModels();
-      const found = updated.find(m => m.id === 'model-with-overrides:latest');
-      
+      const found = updated.find((m) => m.id === 'model-with-overrides:latest');
+
       if (found) {
         found.tool_support = false;
         found.tool_support_source = 'user_confirmed';
@@ -728,8 +730,8 @@ describe('ModelContext - Tool Support Detection', () => {
 
       // Verify manual_context was preserved
       const final = profileManager.getUserModels();
-      const finalModel = final.find(m => m.id === 'model-with-overrides:latest');
-      
+      const finalModel = final.find((m) => m.id === 'model-with-overrides:latest');
+
       expect(finalModel?.manual_context).toBe(8192);
       expect(finalModel?.tool_support).toBe(false);
       expect(finalModel?.tool_support_source).toBe('user_confirmed');

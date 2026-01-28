@@ -1,6 +1,6 @@
 /**
  * Context Management System - Core Types and Interfaces
- * 
+ *
  * This module defines all interfaces and types for the context management system,
  * including VRAM monitoring, token counting, context pooling, snapshots, compression,
  * and memory safety.
@@ -32,7 +32,7 @@ export enum GPUType {
   AMD = 'amd',
   APPLE_SILICON = 'apple',
   WINDOWS = 'windows',
-  CPU_ONLY = 'cpu'
+  CPU_ONLY = 'cpu',
 }
 
 /**
@@ -401,7 +401,7 @@ export enum ContextTier {
   TIER_2_BASIC = '8K',
   TIER_3_STANDARD = '16K',
   TIER_4_PREMIUM = '32K',
-  TIER_5_ULTRA = '64K+'
+  TIER_5_ULTRA = '64K+',
 }
 
 /**
@@ -422,7 +422,7 @@ export interface TierConfig {
 
 /**
  * Tier configurations for all tiers
- * 
+ *
  * Note: The 85% context utilization is pre-calculated in LLM_profiles.json.
  * Compression triggers at 75-80% of available budget (calculated dynamically).
  */
@@ -432,36 +432,36 @@ export const TIER_CONFIGS: Record<ContextTier, TierConfig> = {
     minTokens: 2048,
     maxTokens: 4096,
     strategy: 'rollover',
-    maxCheckpoints: 0
+    maxCheckpoints: 0,
   },
   [ContextTier.TIER_2_BASIC]: {
     tier: ContextTier.TIER_2_BASIC,
     minTokens: 4097,
     maxTokens: 8192,
     strategy: 'smart',
-    maxCheckpoints: 1
+    maxCheckpoints: 1,
   },
   [ContextTier.TIER_3_STANDARD]: {
     tier: ContextTier.TIER_3_STANDARD,
     minTokens: 8193,
     maxTokens: 16384,
     strategy: 'progressive',
-    maxCheckpoints: 5
+    maxCheckpoints: 5,
   },
   [ContextTier.TIER_4_PREMIUM]: {
     tier: ContextTier.TIER_4_PREMIUM,
     minTokens: 16385,
     maxTokens: 32768,
     strategy: 'structured',
-    maxCheckpoints: 10
+    maxCheckpoints: 10,
   },
   [ContextTier.TIER_5_ULTRA]: {
     tier: ContextTier.TIER_5_ULTRA,
     minTokens: 65536,
     maxTokens: 131072,
     strategy: 'structured',
-    maxCheckpoints: 15
-  }
+    maxCheckpoints: 15,
+  },
 };
 
 // ============================================================================
@@ -475,7 +475,7 @@ export enum OperationalMode {
   DEVELOPER = 'developer',
   PLANNING = 'planning',
   ASSISTANT = 'assistant',
-  DEBUGGER = 'debugger'
+  DEBUGGER = 'debugger',
 }
 
 /**
@@ -499,22 +499,36 @@ export const MODE_PROFILES: Record<OperationalMode, ModeProfile> = {
   [OperationalMode.DEVELOPER]: {
     mode: OperationalMode.DEVELOPER,
     neverCompress: ['architecture_decisions', 'api_contracts', 'data_models'],
-    compressionPriority: ['discussion', 'exploration', 'dependencies', 'tests', 'file_structure', 'code_changes'],
+    compressionPriority: [
+      'discussion',
+      'exploration',
+      'dependencies',
+      'tests',
+      'file_structure',
+      'code_changes',
+    ],
     extractionRules: {
       architecture_decision: /(?:decided|chose|using|implementing)\s+(\w+)\s+(?:because|for|to)/i,
       file_change: /(?:created|modified|updated|changed)\s+([^\s]+\.\w+)/i,
-      api_definition: /(?:interface|class|function|endpoint)\s+(\w+)/i
-    }
+      api_definition: /(?:interface|class|function|endpoint)\s+(\w+)/i,
+    },
   },
   [OperationalMode.PLANNING]: {
     mode: OperationalMode.PLANNING,
     neverCompress: ['goals', 'requirements', 'constraints'],
-    compressionPriority: ['brainstorming', 'rejected_ideas', 'resources', 'timeline', 'dependencies', 'tasks'],
+    compressionPriority: [
+      'brainstorming',
+      'rejected_ideas',
+      'resources',
+      'timeline',
+      'dependencies',
+      'tasks',
+    ],
     extractionRules: {
       requirement: /(?:must|should|need to|required to)\s+(.+?)(?:\.|$)/i,
       task: /(?:task|step|action):\s*(.+?)(?:\.|$)/i,
-      milestone: /(?:milestone|deadline|due):\s*(.+?)(?:\.|$)/i
-    }
+      milestone: /(?:milestone|deadline|due):\s*(.+?)(?:\.|$)/i,
+    },
   },
   [OperationalMode.ASSISTANT]: {
     mode: OperationalMode.ASSISTANT,
@@ -522,19 +536,25 @@ export const MODE_PROFILES: Record<OperationalMode, ModeProfile> = {
     compressionPriority: ['small_talk', 'clarifications', 'examples', 'explanations', 'questions'],
     extractionRules: {
       preference: /(?:prefer|like|want|need)\s+(.+?)(?:\.|$)/i,
-      important: /(?:important|critical|must remember)\s+(.+?)(?:\.|$)/i
-    }
+      important: /(?:important|critical|must remember)\s+(.+?)(?:\.|$)/i,
+    },
   },
   [OperationalMode.DEBUGGER]: {
     mode: OperationalMode.DEBUGGER,
     neverCompress: ['error_messages', 'stack_traces', 'reproduction_steps'],
-    compressionPriority: ['discussion', 'successful_tests', 'environment', 'test_results', 'fixes_attempted'],
+    compressionPriority: [
+      'discussion',
+      'successful_tests',
+      'environment',
+      'test_results',
+      'fixes_attempted',
+    ],
     extractionRules: {
       error: /(?:error|exception|failed):\s*(.+?)(?:\n|$)/i,
       fix_attempt: /(?:tried|attempted|fixed)\s+(.+?)(?:\.|$)/i,
-      reproduction: /(?:reproduce|replicate|steps):\s*(.+?)(?:\.|$)/i
-    }
-  }
+      reproduction: /(?:reproduce|replicate|steps):\s*(.+?)(?:\.|$)/i,
+    },
+  },
 };
 
 // ============================================================================
@@ -674,10 +694,7 @@ export interface CompressionConfig {
  */
 export interface ICompressionService {
   /** Compress messages using specified strategy */
-  compress(
-    messages: Message[],
-    strategy: CompressionStrategy
-  ): Promise<CompressedContext>;
+  compress(messages: Message[], strategy: CompressionStrategy): Promise<CompressedContext>;
   /** Estimate compression without performing it */
   estimateCompression(messages: Message[]): CompressionEstimate;
   /** Check if compression is needed */
@@ -692,10 +709,10 @@ export interface ICompressionService {
  * Memory usage level
  */
 export enum MemoryLevel {
-  NORMAL = 'normal',      // < 80%
-  WARNING = 'warning',    // 80-90%
-  CRITICAL = 'critical',  // 90-95%
-  EMERGENCY = 'emergency' // > 95%
+  NORMAL = 'normal', // < 80%
+  WARNING = 'warning', // 80-90%
+  CRITICAL = 'critical', // 90-95%
+  EMERGENCY = 'emergency', // > 95%
 }
 
 /**
@@ -818,7 +835,7 @@ export enum CheckpointLevel {
   /** Medium compressed - moderate detail (5-9 compressions old) */
   MODERATE = 2,
   /** Least compressed - detailed checkpoint (1-4 compressions old) */
-  DETAILED = 3
+  DETAILED = 3,
 }
 
 /**
@@ -985,5 +1002,17 @@ export interface ContextManager {
   reportInflightTokens(delta: number): void;
   /** Clear any in-flight token accounting (call on generation finish) */
   clearInflightTokens(): void;
+  /** Get token counting metrics */
+  getTokenMetrics(): {
+    cacheHitRate: string;
+    cacheHits: number;
+    cacheMisses: number;
+    recalculations: number;
+    totalTokensCounted: number;
+    largestMessage: number;
+    avgTokensPerMessage: number;
+    uptimeSeconds: number;
+  };
+  /** Reset token counting metrics */
+  resetTokenMetrics(): void;
 }
-

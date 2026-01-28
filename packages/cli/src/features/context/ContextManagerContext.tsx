@@ -1,29 +1,29 @@
 /**
  * Context Manager Context - React Integration
- * 
+ *
  * Bridges the core ContextManager with React UI.
- * 
+ *
  * Responsibilities:
  * - Initialize and manage core ContextManager lifecycle
  * - Expose context state to React components
  * - Provide actions for UI interactions
  * - Listen to core events and update UI state
- * 
+ *
  * Does NOT:
  * - Calculate tiers (core does this)
  * - Build prompts (core does this)
  * - Manage VRAM (core does this)
  */
 
-import React, { 
-  createContext, 
-  useContext, 
-  useState, 
-  useEffect, 
-  useCallback, 
-  useRef, 
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
   useMemo,
-  type ReactNode 
+  type ReactNode,
 } from 'react';
 
 import {
@@ -114,13 +114,15 @@ export interface ContextManagerActions {
   switchModeExplicit: (mode: ModeType) => void;
   setAutoSwitch: (enabled: boolean) => void;
   getCurrentMode: () => ModeType;
-  restoreModeHistory: (history: Array<{
-    from: string;
-    to: string;
-    timestamp: string;
-    trigger: 'auto' | 'manual' | 'tool' | 'explicit';
-    confidence: number;
-  }>) => void;
+  restoreModeHistory: (
+    history: Array<{
+      from: string;
+      to: string;
+      timestamp: string;
+      trigger: 'auto' | 'manual' | 'tool' | 'explicit';
+      confidence: number;
+    }>
+  ) => void;
   getModeHistory: () => Array<{
     from: string;
     to: string;
@@ -128,6 +130,16 @@ export interface ContextManagerActions {
     trigger: 'auto' | 'manual' | 'tool' | 'explicit';
     confidence: number;
   }>;
+  getTokenMetrics: () => {
+    totalTokensCounted: number;
+    cacheHits: number;
+    cacheMisses: number;
+    cacheHitRate: string;
+    recalculations: number;
+    largestMessage: number;
+    avgTokensPerMessage: number;
+    uptimeSeconds: number;
+  };
 }
 
 export interface ContextManagerContextValue {
@@ -209,7 +221,7 @@ export function ContextManagerProvider({
           enabled: true,
           maxCount: 10,
           autoCreate: true,
-          autoThreshold: 0.8
+          autoThreshold: 0.8,
         });
         promptsSnapshotManagerRef.current = snapshotManager as unknown as PromptsSnapshotManager;
 
@@ -230,7 +242,9 @@ export function ContextManagerProvider({
         // Listen for mode changes
         const modeChangeCallback = (transition: ModeTransition) => {
           setCurrentMode(transition.to);
-          console.log(`Mode changed: ${transition.from} → ${transition.to} (${transition.trigger})`);
+          console.log(
+            `Mode changed: ${transition.from} → ${transition.to} (${transition.trigger})`
+          );
 
           // Persist to settings
           SettingsService.getInstance().setMode(transition.to);
@@ -244,7 +258,7 @@ export function ContextManagerProvider({
             to: transition.to,
             timestamp: transition.timestamp.toISOString(),
             trigger: transition.trigger,
-            confidence: transition.confidence
+            confidence: transition.confidence,
           });
 
           // Create transition snapshot if we have user messages
@@ -253,20 +267,20 @@ export function ContextManagerProvider({
             (async () => {
               try {
                 const messages = await managerRef.current!.getMessages();
-                const hasUserMessages = messages.some(m => m.role === 'user');
+                const hasUserMessages = messages.some((m) => m.role === 'user');
                 if (!hasUserMessages) return;
 
                 const snapshot = promptsSnapshotMgr.createTransitionSnapshot(
                   transition.from,
                   transition.to,
                   {
-                    messages: messages.map(m => ({
+                    messages: messages.map((m) => ({
                       role: m.role,
-                      parts: [{ type: 'text', text: m.content }]
+                      parts: [{ type: 'text', text: m.content }],
                     })),
                     activeSkills: modeManager.getActiveSkills(),
                     activeTools: [],
-                    currentTask: undefined
+                    currentTask: undefined,
                   }
                 );
                 await promptsSnapshotMgr.storeSnapshot(snapshot, true);
@@ -313,8 +327,11 @@ export function ContextManagerProvider({
         });
         manager.on('auto-summary-failed', (data) => {
           setCompressing(false);
-          const reason = (data && (data as { reason?: unknown }).reason) || 
-                        ((data && (data as { error?: unknown }).error) ? String((data as { error?: unknown }).error) : null);
+          const reason =
+            (data && (data as { reason?: unknown }).reason) ||
+            (data && (data as { error?: unknown }).error
+              ? String((data as { error?: unknown }).error)
+              : null);
           if (reason) setError(`Auto-summary failed: ${reason}`);
         });
         manager.on('compressed', () => {
@@ -387,28 +404,31 @@ export function ContextManagerProvider({
   }, [active]);
 
   // Actions
-  const addMessage = useCallback(async (message: Omit<ContextMessage, 'id' | 'timestamp' | 'tokenCount'>) => {
-    if (!managerRef.current) {
-      console.warn('ContextManager not initialized');
-      return;
-    }
+  const addMessage = useCallback(
+    async (message: Omit<ContextMessage, 'id' | 'timestamp' | 'tokenCount'>) => {
+      if (!managerRef.current) {
+        console.warn('ContextManager not initialized');
+        return;
+      }
 
-    try {
-      const fullMessage: ContextMessage = {
-        ...message,
-        id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        timestamp: new Date(),
-      };
+      try {
+        const fullMessage: ContextMessage = {
+          ...message,
+          id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          timestamp: new Date(),
+        };
 
-      await managerRef.current.addMessage(fullMessage);
-      setUsage(managerRef.current.getUsage());
-      setError(null);
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : String(err);
-      console.error('Failed to add message:', errorMsg);
-      setError(errorMsg);
-    }
-  }, []);
+        await managerRef.current.addMessage(fullMessage);
+        setUsage(managerRef.current.getUsage());
+        setError(null);
+      } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        console.error('Failed to add message:', errorMsg);
+        setError(errorMsg);
+      }
+    },
+    []
+  );
 
   const compress = useCallback(async () => {
     if (!managerRef.current) {
@@ -531,33 +551,36 @@ export function ContextManagerProvider({
     setUsage(newUsage);
   }, []);
 
-  const hotSwap = useCallback(async (newSkills?: string[]) => {
-    if (!managerRef.current) return;
-    if (!provider) {
-      console.warn('HotSwap unavailable: No provider connected');
-      return;
-    }
+  const hotSwap = useCallback(
+    async (newSkills?: string[]) => {
+      if (!managerRef.current) return;
+      if (!provider) {
+        console.warn('HotSwap unavailable: No provider connected');
+        return;
+      }
 
-    try {
-      const promptRegistry = new PromptRegistry();
-      const hotSwapService = new HotSwapService(
-        managerRef.current,
-        promptRegistry,
-        provider,
-        modelId,
-        modeManagerRef.current || undefined,
-        promptsSnapshotManagerRef.current || undefined
-      );
+      try {
+        const promptRegistry = new PromptRegistry();
+        const hotSwapService = new HotSwapService(
+          managerRef.current,
+          promptRegistry,
+          provider,
+          modelId,
+          modeManagerRef.current || undefined,
+          promptsSnapshotManagerRef.current || undefined
+        );
 
-      await hotSwapService.swap(newSkills);
-      setUsage(managerRef.current.getUsage());
-      setError(null);
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : String(err);
-      console.error('Failed to hot swap:', errorMsg);
-      setError(errorMsg);
-    }
-  }, [provider, modelId]);
+        await hotSwapService.swap(newSkills);
+        setUsage(managerRef.current.getUsage());
+        setError(null);
+      } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        console.error('Failed to hot swap:', errorMsg);
+        setError(errorMsg);
+      }
+    },
+    [provider, modelId]
+  );
 
   const on = useCallback((event: string, callback: (data: unknown) => void) => {
     if (managerRef.current) {
@@ -621,22 +644,27 @@ export function ContextManagerProvider({
     return modeManagerRef.current?.getCurrentMode() || 'assistant';
   }, []);
 
-  const restoreModeHistoryAction = useCallback((history: Array<{
-    from: string;
-    to: string;
-    timestamp: string;
-    trigger: 'auto' | 'manual' | 'tool' | 'explicit';
-    confidence: number;
-  }>) => {
-    if (!modeManagerRef.current) {
-      console.warn('PromptModeManager not initialized');
-      return;
-    }
+  const restoreModeHistoryAction = useCallback(
+    (
+      history: Array<{
+        from: string;
+        to: string;
+        timestamp: string;
+        trigger: 'auto' | 'manual' | 'tool' | 'explicit';
+        confidence: number;
+      }>
+    ) => {
+      if (!modeManagerRef.current) {
+        console.warn('PromptModeManager not initialized');
+        return;
+      }
 
-    modeManagerRef.current.restoreModeHistory(history);
-    const currentMode = modeManagerRef.current.getCurrentMode();
-    setCurrentMode(currentMode);
-  }, []);
+      modeManagerRef.current.restoreModeHistory(history);
+      const currentMode = modeManagerRef.current.getCurrentMode();
+      setCurrentMode(currentMode);
+    },
+    []
+  );
 
   const getModeHistoryAction = useCallback(() => {
     if (!modeManagerRef.current) {
@@ -666,65 +694,79 @@ export function ContextManagerProvider({
     autoSizeEnabled,
   };
 
-  const actions: ContextManagerActions = useMemo(() => ({
-    addMessage,
-    compress,
-    clear,
-    createSnapshot: createSnapshotAction,
-    restoreSnapshot,
-    refreshSnapshots,
-    updateConfig,
-    refreshVRAM,
-    getContext,
-    resize,
-    hotSwap,
-    getSystemPrompt,
-    on,
-    off,
-    getUsage: () => managerRef.current?.getUsage() || DEFAULT_USAGE,
-    getConfig: () => {
-      if (!managerRef.current) throw new Error("ContextManager not initialized");
-      return managerRef.current.config;
-    },
-    getManager: () => managerRef.current,
-    getModeManager,
-    getSnapshotManager,
-    getWorkflowManager,
-    getPromptsSnapshotManager,
-    switchMode,
-    switchModeExplicit,
-    setAutoSwitch: setAutoSwitchAction,
-    getCurrentMode: getCurrentModeAction,
-    restoreModeHistory: restoreModeHistoryAction,
-    getModeHistory: getModeHistoryAction,
-    reportInflightTokens: (delta: number) => managerRef.current?.reportInflightTokens(delta),
-    clearInflightTokens: () => managerRef.current?.clearInflightTokens(),
-  }), [
-    addMessage,
-    compress,
-    clear,
-    createSnapshotAction,
-    restoreSnapshot,
-    refreshSnapshots,
-    updateConfig,
-    refreshVRAM,
-    getContext,
-    resize,
-    hotSwap,
-    getSystemPrompt,
-    on,
-    off,
-    getModeManager,
-    getSnapshotManager,
-    getWorkflowManager,
-    getPromptsSnapshotManager,
-    switchMode,
-    switchModeExplicit,
-    setAutoSwitchAction,
-    getCurrentModeAction,
-    restoreModeHistoryAction,
-    getModeHistoryAction,
-  ]);
+  const actions: ContextManagerActions = useMemo(
+    () => ({
+      addMessage,
+      compress,
+      clear,
+      createSnapshot: createSnapshotAction,
+      restoreSnapshot,
+      refreshSnapshots,
+      updateConfig,
+      refreshVRAM,
+      getContext,
+      resize,
+      hotSwap,
+      getSystemPrompt,
+      on,
+      off,
+      getUsage: () => managerRef.current?.getUsage() || DEFAULT_USAGE,
+      getConfig: () => {
+        if (!managerRef.current) throw new Error('ContextManager not initialized');
+        return managerRef.current.config;
+      },
+      getManager: () => managerRef.current,
+      getModeManager,
+      getSnapshotManager,
+      getWorkflowManager,
+      getPromptsSnapshotManager,
+      switchMode,
+      switchModeExplicit,
+      setAutoSwitch: setAutoSwitchAction,
+      getCurrentMode: getCurrentModeAction,
+      restoreModeHistory: restoreModeHistoryAction,
+      getModeHistory: getModeHistoryAction,
+      reportInflightTokens: (delta: number) => managerRef.current?.reportInflightTokens(delta),
+      clearInflightTokens: () => managerRef.current?.clearInflightTokens(),
+      getTokenMetrics: () =>
+        managerRef.current?.getTokenMetrics() || {
+          totalTokensCounted: 0,
+          cacheHits: 0,
+          cacheMisses: 0,
+          cacheHitRate: '0%',
+          recalculations: 0,
+          largestMessage: 0,
+          avgTokensPerMessage: 0,
+          uptimeSeconds: 0,
+        },
+    }),
+    [
+      addMessage,
+      compress,
+      clear,
+      createSnapshotAction,
+      restoreSnapshot,
+      refreshSnapshots,
+      updateConfig,
+      refreshVRAM,
+      getContext,
+      resize,
+      hotSwap,
+      getSystemPrompt,
+      on,
+      off,
+      getModeManager,
+      getSnapshotManager,
+      getWorkflowManager,
+      getPromptsSnapshotManager,
+      switchMode,
+      switchModeExplicit,
+      setAutoSwitchAction,
+      getCurrentModeAction,
+      restoreModeHistoryAction,
+      getModeHistoryAction,
+    ]
+  );
 
   // Update global reference
   useEffect(() => {

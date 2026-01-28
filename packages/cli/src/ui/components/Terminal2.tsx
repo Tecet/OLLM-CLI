@@ -15,17 +15,7 @@ import { useWindow } from '../contexts/WindowContext.js';
 import { useTerminal2 } from '../hooks/useTerminal2.js';
 import { isKey } from '../utils/keyUtils.js';
 
-// import type { AnsiLine, AnsiToken } from '../../utils/terminalSerializer.js';
-
-// Temporary stubs
-interface AnsiToken {
-  text: string;
-  style?: any;
-}
-interface AnsiLine {
-  tokens: AnsiToken[];
-  raw: string;
-}
+import type { AnsiLine, AnsiToken } from '../utils/terminalSerializer.js';
 
 export interface Terminal2Props {
   height: number;
@@ -60,15 +50,18 @@ export function Terminal2({ height }: Terminal2Props) {
   const allLines = useMemo(() => output, [output]);
   const maxScroll = Math.max(0, allLines.length - visibleHeight);
 
-  useInput((input, key) => {
-    if (!hasFocus && !isTerminalInput) return;
+  useInput(
+    (input, key) => {
+      if (!hasFocus && !isTerminalInput) return;
 
-    if (isKey(input, key, activeKeybinds.terminal.scrollUp)) {
-      setScrollOffset(prev => Math.min(prev + 1, maxScroll));
-    } else if (isKey(input, key, activeKeybinds.terminal.scrollDown)) {
-      setScrollOffset(prev => Math.max(prev - 1, 0));
-    }
-  }, { isActive: activeRightPanel === 'terminal2' || isTerminalInput });
+      if (isKey(input, key, activeKeybinds.terminal.scrollUp)) {
+        setScrollOffset((prev) => Math.min(prev + 1, maxScroll));
+      } else if (isKey(input, key, activeKeybinds.terminal.scrollDown)) {
+        setScrollOffset((prev) => Math.max(prev - 1, 0));
+      }
+    },
+    { isActive: activeRightPanel === 'terminal2' || isTerminalInput }
+  );
 
   useEffect(() => {
     setScrollOffset(0);
@@ -82,7 +75,11 @@ export function Terminal2({ height }: Terminal2Props) {
 
   const renderLine = (line: AnsiLine, index: number) => {
     if (!line || !Array.isArray(line) || line.length === 0) {
-      return <Box key={index}><Text> </Text></Box>;
+      return (
+        <Box key={index}>
+          <Text> </Text>
+        </Box>
+      );
     }
 
     return (
@@ -118,16 +115,12 @@ export function Terminal2({ height }: Terminal2Props) {
       overflow="hidden"
       alignItems="flex-start"
     >
-      <Box
-        flexDirection="column"
-        width="100%"
-        height="100%"
-        overflow="hidden"
-        flexShrink={1}
-      >
+      <Box flexDirection="column" width="100%" height="100%" overflow="hidden" flexShrink={1}>
         {visibleLines.length === 0 ? (
           <Box marginTop={1}>
-            <Text dimColor>Terminal 2 ready. Type commands and press Enter. {isRunning ? '●' : '○'}</Text>
+            <Text dimColor>
+              Terminal 2 ready. Type commands and press Enter. {isRunning ? '●' : '○'}
+            </Text>
           </Box>
         ) : (
           visibleLines.map((line, index) => renderLine(line, index))
