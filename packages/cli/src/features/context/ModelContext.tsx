@@ -7,12 +7,13 @@
  * - Sends messages to the LLM and handles streaming responses
  */
 
-import { createContext, useContext, useState, useCallback, useRef, type ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useRef, useEffect, type ReactNode } from 'react';
 
 import { useContextManager } from './ContextManagerContext.js';
 import { useOptionalGPU } from './GPUContext.js';
 import { deriveGPUPlacementHints } from './gpuHints.js';
 import { setLastGPUPlacementHints } from './gpuHintStore.js';
+import { getSessionManager } from './SessionManager.js';
 import { SettingsService } from '../../config/settingsService.js';
 import { useUICallbacks } from '../../ui/contexts/UICallbacksContext.js';
 import { profileManager } from '../profiles/ProfileManager.js';
@@ -154,12 +155,10 @@ export function ModelProvider({ children, provider, initialModel }: ModelProvide
             });
           }
 
-          // Reset session ID (triggers new session creation with NEW model)
-          // Always create new session on model swap to prevent context contamination
-          if ((globalThis as any).__ollmResetSession) {
-            const newSessionId = (globalThis as any).__ollmResetSession(model);
-            console.log(`[ModelContext] New session created: ${newSessionId}`);
-          }
+          // Create new session using SessionManager
+          const sessionManager = getSessionManager();
+          const newSessionId = sessionManager.createNewSession(model);
+          console.log(`[ModelContext] New session created: ${newSessionId}`);
 
           // Add system message showing model swap and tool support
           const toolStatus = toolSupport ? 'Enabled' : 'Disabled';
@@ -191,12 +190,10 @@ export function ModelProvider({ children, provider, initialModel }: ModelProvide
           });
         }
 
-        // Reset session ID (triggers new session creation with NEW model)
-        // Always create new session on model swap to prevent context contamination
-        if ((globalThis as any).__ollmResetSession) {
-          const newSessionId = (globalThis as any).__ollmResetSession(model);
-          console.log(`[ModelContext] New session created: ${newSessionId}`);
-        }
+        // Create new session using SessionManager
+        const sessionManager = getSessionManager();
+        const newSessionId = sessionManager.createNewSession(model);
+        console.log(`[ModelContext] New session created: ${newSessionId}`);
 
         // Add system message showing model swap and tool support
         const toolStatus = toolSupport ? 'Enabled' : 'Disabled';

@@ -15,7 +15,7 @@
  * - Manage VRAM (core does this)
  */
 
-import React, {
+import {
   createContext,
   useContext,
   useState,
@@ -40,6 +40,7 @@ import {
   ContextTier,
 } from '@ollm/core';
 
+import { getSessionManager } from './SessionManager.js';
 import { SettingsService } from '../../config/settingsService.js';
 
 import type {
@@ -198,6 +199,7 @@ export function ContextManagerProvider({
   const workflowManagerRef = useRef<WorkflowManager | null>(null);
   const promptsSnapshotManagerRef = useRef<PromptsSnapshotManager | null>(null);
   const modeChangeCallbackRef = useRef<((transition: ModeTransition) => void) | null>(null);
+  const sessionChangeCleanupRef = useRef<(() => void) | null>(null);
 
   // Initialize context manager
   useEffect(() => {
@@ -382,6 +384,25 @@ export function ContextManagerProvider({
 
     initManager();
 
+    // Listen for session changes from SessionManager
+    try {
+      const sessionManager = getSessionManager();
+      const cleanup = sessionManager.onSessionChange(async (newSessionId, newModel) => {
+        console.log(`[ContextManagerContext] Session change detected: ${newSessionId} for model: ${newModel}`);
+        
+        // Stop old manager
+        if (managerRef.current) {
+          await managerRef.current.stop();
+        }
+        
+        // Reinitialize with new session
+        await initManager();
+      });
+      sessionChangeCleanupRef.current = cleanup;
+    } catch (error) {
+      console.warn('[ContextManagerContext] SessionManager not initialized yet:', error);
+    }
+
     // Cleanup
     return () => {
       if (managerRef.current) {
@@ -391,6 +412,10 @@ export function ContextManagerProvider({
       if (modeManagerRef.current && modeChangeCallbackRef.current) {
         modeManagerRef.current.offModeChange(modeChangeCallbackRef.current);
         modeManagerRef.current = null;
+      }
+      if (sessionChangeCleanupRef.current) {
+        sessionChangeCleanupRef.current();
+        sessionChangeCleanupRef.current = null;
       }
       modeChangeCallbackRef.current = null;
     };
@@ -621,7 +646,7 @@ export function ContextManagerProvider({
       return;
     }
 
-    const _previousMode = modeManagerRef.current.getCurrentMode();
+    const previousMode = modeManagerRef.current.getCurrentMode();
     
     // Create snapshot before switching (if we have messages)
     if (promptsSnapshotManagerRef.current && managerRef.current) {

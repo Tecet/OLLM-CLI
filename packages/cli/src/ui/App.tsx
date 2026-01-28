@@ -13,11 +13,14 @@
  * - Build prompts (core does this)
  */
 
-import { useCallback, useEffect, useRef, useMemo, useState } from 'react';
+import { useCallback, useEffect, useRef, useMemo } from 'react';
 import { Box, useStdout, BoxProps } from 'ink';
 
 import { SettingsService } from '../config/settingsService.js';
 import { defaultDarkTheme } from '../config/styles.js';
+import { initializeSessionManager } from '../features/context/SessionManager.js';
+import { extractModelSize } from '../features/profiles/modelUtils.js';
+import { createProvider } from '../features/provider/providerFactory.js';
 import { AllCallbacksBridge } from './components/AllCallbacksBridge.js';
 import { useContextMenu } from './components/context/ContextMenu.js';
 import { DialogManager } from './components/dialogs/DialogManager.js';
@@ -73,7 +76,6 @@ import { UserPromptProvider } from '../features/context/UserPromptContext.js';
 import { profileManager } from '../features/profiles/ProfileManager.js';
 
 import type { Config } from '../config/types.js';
-import type { ProviderAdapter } from '@ollm/core';
 
 interface AppContentProps {
   config: Config;
@@ -436,68 +438,28 @@ export function App({ config }: AppProps) {
     }
   }
 
-  // Extract model size from model name for VRAM calculations
-  const extractModelSize = (modelName: string): number => {
-    if (!modelName || modelName === '') return 7; // Default to 7B if no model name
-    const match = modelName.match(/(\d+\.?\d*)b/i);
-    if (match) {
-      return parseFloat(match[1]);
-    }
-    return 7; // Default to 7B
-  };
-
   const workspacePath = process.cwd();
-  const [sessionId, setSessionId] = useState(() => `session-${Date.now()}`);
-  const [currentAppModel, setCurrentAppModel] = useState(initialModel);
-  const [selectedContextSize, setSelectedContextSize] = useState<number | null>(null);
   const initialSidePanelVisible = config.ui.sidePanel !== false;
 
-  // Expose global function for ModelContext to call on model swap
-  useEffect(() => {
-    (globalThis as any).__ollmResetSession = (newModel: string) => {
-      const newSessionId = `session-${Date.now()}`;
-      console.log(`[App] Model changed to ${newModel}, creating new session: ${newSessionId}`);
-      setCurrentAppModel(newModel); // Update current model
-      setSessionId(newSessionId);
-      return newSessionId;
-    };
-
-    return () => {
-      delete (globalThis as any).__ollmResetSession;
-    };
-  }, []);
-
-  // Expose global function for ContextMenu to call when user selects context size
-  useEffect(() => {
-    (globalThis as any).__ollmSetContextSize = (size: number) => {
-      console.log(`[App] User selected context size: ${size}`);
-      setSelectedContextSize(size);
-    };
-
-    return () => {
-      delete (globalThis as any).__ollmSetContextSize;
-    };
-  }, []);
-
-  // Compute modelInfo dynamically based on current model
-  const modelEntry = currentAppModel ? profileManager.getModelEntry(currentAppModel) : null;
+  // Compute modelInfo dynamically based on initial model
+  const modelEntry = initialModel ? profileManager.getModelEntry(initialModel) : null;
   const modelInfo = {
-    parameters: extractModelSize(currentAppModel),
+    parameters: extractModelSize(initialModel),
     contextLimit: config.context?.maxSize || 8192,
     contextProfiles: (modelEntry?.context_profiles || []).map((profile) => ({
       ...profile,
       ollama_context_size: profile.ollama_context_size ?? Math.floor(profile.size * 0.85),
     })),
-    modelId: currentAppModel || 'no-model',
+    modelId: initialModel || 'no-model',
   };
 
   // Context manager configuration
   const contextConfig = config.context
     ? {
-        targetSize: selectedContextSize ?? config.context.targetSize,
+        targetSize: config.context.targetSize,
         minSize: config.context.minSize,
         maxSize: config.context.maxSize,
-        autoSize: selectedContextSize === null ? config.context.autoSize : false, // Disable auto when user selects size
+        autoSize: config.context.autoSize,
         vramBuffer: config.context.vramBuffer,
         compression: {
           enabled: config.context.compressionEnabled,
@@ -516,44 +478,7 @@ export function App({ config }: AppProps) {
     : undefined;
 
   // Create provider adapter
-  const provider = (() => {
-    let LocalProviderClass: {
-      new (opts: { baseUrl: string; timeout?: number }): ProviderAdapter;
-    } | null = null;
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const mod = require('@ollm/ollm-bridge/provider/localProvider.js') as
-        | { LocalProvider: { new (opts: { baseUrl: string; timeout?: number }): ProviderAdapter } }
-        | { new (opts: { baseUrl: string; timeout?: number }): ProviderAdapter };
-      LocalProviderClass =
-        ((mod as Record<string, unknown>).LocalProvider as {
-          new (opts: { baseUrl: string; timeout?: number }): ProviderAdapter;
-        }) || mod;
-    } catch (err) {
-      console.warn('Failed to load LocalProvider, using no-op provider:', err);
-      LocalProviderClass = class implements ProviderAdapter {
-        readonly name = 'no-op';
-        constructor(_opts: { baseUrl: string; timeout?: number }) {}
-        async *chatStream(
-          _req: unknown
-        ): AsyncIterable<{ type: 'error'; error: { message: string } }> {
-          yield { type: 'error', error: { message: 'Bridge not installed' } };
-        }
-      } as unknown as { new (opts: { baseUrl: string; timeout?: number }): ProviderAdapter };
-    }
-
-    const ollamaConfig = config.provider.ollama || {
-      host: 'http://localhost:11434',
-      timeout: 30000,
-    };
-
-    if (!LocalProviderClass) throw new Error('Failed to initialize LocalProvider');
-
-    return new LocalProviderClass({
-      baseUrl: ollamaConfig.host || 'http://localhost:11434',
-      timeout: ollamaConfig.timeout || 30000,
-    });
-  })();
+  const provider = createProvider(config.provider);
 
   // Load initial theme
   const initialThemeName =
@@ -570,6 +495,14 @@ export function App({ config }: AppProps) {
   } catch (e) {
     console.warn('Failed to load initial theme from built-ins, using default:', e);
   }
+
+  // Initialize SessionManager and get initial session ID
+  initializeSessionManager(initialModel);
+  const { getSessionManager: getSessionMgr } = require('../features/context/SessionManager.js') as {
+    getSessionManager: () => { getCurrentSessionId: () => string };
+  };
+  const sessionManager = getSessionMgr();
+  const initialSessionId = sessionManager.getCurrentSessionId();
 
   return (
     <ErrorBoundary>
@@ -596,16 +529,15 @@ export function App({ config }: AppProps) {
                                     autoStart={config.ui.showGpuStats !== false}
                                   >
                                     <ContextManagerProvider
-                                      key={sessionId}
-                                      sessionId={sessionId}
+                                      sessionId={initialSessionId}
                                       modelInfo={modelInfo}
-                                      modelId={currentAppModel}
+                                      modelId={initialModel}
                                       config={contextConfig}
                                       provider={provider}
                                     >
                                       <ModelProvider
                                         provider={provider}
-                                        initialModel={currentAppModel}
+                                        initialModel={initialModel}
                                       >
                                         <WorkspaceProvider>
                                           <FileFocusProvider>
