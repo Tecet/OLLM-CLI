@@ -40,9 +40,9 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions = {}) 
   // Set active context
   useEffect(() => {
     if (!enabled) return;
-    
+
     keyboardHandler.setContext(context || null);
-    
+
     return () => {
       keyboardHandler.setContext(null);
     };
@@ -68,9 +68,6 @@ export function useGlobalKeyboardShortcuts(shortcuts: KeyboardShortcut[]) {
 /**
  * Hook to register context-specific keyboard shortcuts
  */
-export function useContextKeyboardShortcuts(
-  context: string,
-  shortcuts: KeyboardShortcut[]
-) {
+export function useContextKeyboardShortcuts(context: string, shortcuts: KeyboardShortcut[]) {
   useKeyboardShortcuts({ shortcuts, context, enabled: true });
 }

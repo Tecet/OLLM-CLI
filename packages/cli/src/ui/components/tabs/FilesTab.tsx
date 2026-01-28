@@ -4,19 +4,19 @@ import { Box, Text } from 'ink';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { useUI } from '../../../features/context/UIContext.js';
 import { ErrorBoundary } from '../ErrorBoundary.js';
-import { 
-  FileTreeView, 
-  FileTreeService, 
-  FocusSystem, 
-  EditorIntegration, 
+import {
+  FileTreeView,
+  FileTreeService,
+  FocusSystem,
+  EditorIntegration,
   FileOperations,
-  useFileTree
+  useFileTree,
 } from '../file-explorer/index.js';
 
 export interface FilesTabProps {
   /** Width of the tab container */
   width?: number;
-  
+
   /** File Explorer Services */
   fileTreeService: FileTreeService;
   focusSystem: FocusSystem;
@@ -26,9 +26,9 @@ export interface FilesTabProps {
 
 /**
  * FilesTab component
- * 
+ *
  * Displays the File Explorer tree view.
- * 
+ *
  * Requirements: 10.1, 10.2, 10.3, 10.4, 10.5
  */
 export function FilesTab({
@@ -40,7 +40,13 @@ export function FilesTab({
 }: FilesTabProps) {
   const { state: uiState } = useUI();
   const { isFocused } = useFocusManager();
-  const { state: treeState, setRoot, expandDirectory, setCursorPosition, setScrollOffset } = useFileTree();
+  const {
+    state: treeState,
+    setRoot,
+    expandDirectory,
+    setCursorPosition,
+    setScrollOffset,
+  } = useFileTree();
 
   const hasFocus = isFocused('file-tree'); // Use 'file-tree' focus ID
 
@@ -84,7 +90,7 @@ export function FilesTab({
 
         // If root has children, select the first child (index 1 in flattened list),
         // otherwise select root (index 0)
-        const firstIndex = (root.children && root.children.length > 0) ? 1 : 0;
+        const firstIndex = root.children && root.children.length > 0 ? 1 : 0;
         setCursorPosition(firstIndex);
       } catch (err) {
         // Fail silently but log for debugging
@@ -93,7 +99,14 @@ export function FilesTab({
     };
 
     ensureRootOpen();
-  }, [hasFocus, treeState.root, expandDirectory, fileTreeService, setCursorPosition, setScrollOffset]);
+  }, [
+    hasFocus,
+    treeState.root,
+    expandDirectory,
+    fileTreeService,
+    setCursorPosition,
+    setScrollOffset,
+  ]);
 
   return (
     <Box flexDirection="column" height="100%" width={width} padding={1}>

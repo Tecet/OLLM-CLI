@@ -17,7 +17,7 @@ export interface DiscoveryResult {
 /**
  * Discovers and loads context from markdown files by traversing upwards
  * from the target path to the nearest trusted root.
- * 
+ *
  * @param targetPath - The path being accessed
  * @param trustedRoots - List of project roots that are safe to scan
  * @param alreadyLoadedPaths - Set of paths that have already been loaded to avoid duplicates
@@ -55,7 +55,7 @@ export async function loadJitContext(
     if (stats.isFile()) {
       currentDir = path.dirname(resolvedTarget);
     }
-    } catch (_error) {
+  } catch (_error) {
     // If path doesn't exist, we can't discover context
     return { files: [], instructions: '' };
   }
@@ -63,7 +63,7 @@ export async function loadJitContext(
   // Traverse from target directory up to the trusted root
   while (currentDir.startsWith(bestRoot)) {
     const contextFiles = await findContextFiles(currentDir);
-    
+
     for (const filePath of contextFiles) {
       if (!alreadyLoadedPaths.has(filePath)) {
         try {
@@ -83,7 +83,7 @@ export async function loadJitContext(
 
   // Concatenate instructions
   const instructions = files
-    .map(f => `### Context from ${path.relative(bestRoot!, f.path)}\n\n${f.content}`)
+    .map((f) => `### Context from ${path.relative(bestRoot!, f.path)}\n\n${f.content}`)
     .join('\n\n---\n\n');
 
   return { files, instructions };
@@ -96,12 +96,13 @@ async function findContextFiles(dir: string): Promise<string[]> {
   try {
     const entries = await fs.readdir(dir, { withFileTypes: true });
     return entries
-      .filter(entry => 
-        entry.isFile() && 
-        (entry.name.endsWith('.md') || entry.name.endsWith('.markdown')) &&
-        !entry.name.startsWith('.') // Skip hidden files
+      .filter(
+        (entry) =>
+          entry.isFile() &&
+          (entry.name.endsWith('.md') || entry.name.endsWith('.markdown')) &&
+          !entry.name.startsWith('.') // Skip hidden files
       )
-      .map(entry => path.join(dir, entry.name));
+      .map((entry) => path.join(dir, entry.name));
   } catch (_error) {
     return [];
   }

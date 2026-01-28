@@ -1,6 +1,6 @@
 /**
  * FocusSystem Tests
- * 
+ *
  * Tests for file focusing, unfocusing, and focus management
  */
 
@@ -19,7 +19,7 @@ describe('FocusSystem', () => {
 
   beforeEach(() => {
     focusSystem = new FocusSystem();
-    
+
     // Create temporary test directory and file
     testDir = join(tmpdir(), `focus-test-${Date.now()}`);
     mkdirSync(testDir, { recursive: true });

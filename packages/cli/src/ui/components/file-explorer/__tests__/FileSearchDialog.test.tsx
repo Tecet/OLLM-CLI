@@ -1,6 +1,6 @@
 /**
  * FileSearchDialog Tests
- * 
+ *
  * Tests for file content search dialog
  */
 

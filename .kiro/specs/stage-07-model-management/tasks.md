@@ -14,7 +14,7 @@ This implementation plan breaks down the Model Management and Routing system int
   - _Started: 2026-01-13 23:23_
   - _Completed: 2026-01-13 23:35_
   - _Duration: 12m_
- 
+
 - [x] 1.1 Write property tests for Model Database
   - **Property 13: Known model lookup**
   - **Property 14: Unknown model defaults**
@@ -311,23 +311,23 @@ This implementation plan breaks down the Model Management and Routing system int
   - _Credits: 14.77_
 
 - [x] 13.2 Add memory commands
-    - /memory list - Show all memories
-    - /memory add <key> <value> - Add memory
-    - /memory forget <key> - Remove memory
-    - /memory clear - Clear all memories
+  - /memory list - Show all memories
+  - /memory add <key> <value> - Add memory
+  - /memory forget <key> - Remove memory
+  - /memory clear - Clear all memories
 
 - [x] 13.3 Add template commands
-    - /template list - Show available templates
-    - /template use <name> [vars...] - Use a template
-    - /template create <name> - Create new template
+  - /template list - Show available templates
+  - /template use <name> [vars...] - Use a template
+  - /template create <name> - Create new template
 
 - [x] 13.4 Add comparison command
-    - /compare "<prompt>" <model1> <model2> [model3] - Compare models
+  - /compare "<prompt>" <model1> <model2> [model3] - Compare models
 
 - [x] 13.5 Add project commands
-    - /project detect - Auto-detect project type
-    - /project use <profile> - Select profile
-    - /project init - Initialize project config
+  - /project detect - Auto-detect project type
+  - /project use <profile> - Select profile
+  - /project init - Initialize project config
 
 - [x] 14. Add UI Components
   - [x] 14.1 Create ComparisonView component
@@ -341,9 +341,9 @@ This implementation plan breaks down the Model Management and Routing system int
   - _Credits: 7.46_
 
 - [x] 14.2 Update status bar
-    - Show currently loaded models
-    - Show active project profile
-    - _Requirements: 20.4_
+  - Show currently loaded models
+  - Show active project profile
+  - _Requirements: 20.4_
 
 - [x] 14.3 Write unit tests for UI components
   - Test ComparisonView rendering
@@ -362,11 +362,11 @@ This implementation plan breaks down the Model Management and Routing system int
   - _Credits: 12.4_
 
 - [x] 15.2 Add integration tests
-    - Test full model lifecycle (list, pull, use, delete)
-    - Test routing with real model database
-    - Test memory persistence across restarts
-    - Test template loading and execution
-    - Test project profile detection and application
+  - Test full model lifecycle (list, pull, use, delete)
+  - Test routing with real model database
+  - Test memory persistence across restarts
+  - Test template loading and execution
+  - Test project profile detection and application
   - _Started: 2026-01-14 06:40_
   - _Completed: 2026-01-14 07:23_
   - _Duration: 43m_
@@ -374,11 +374,11 @@ This implementation plan breaks down the Model Management and Routing system int
   - _Notes: Created 4 comprehensive integration test files with 54 tests total. Fixed constructor signature issues in MemoryService, ProjectProfileService, and TemplateService tests. All integration tests passing._
 
 - [x] 15.3 Update documentation
-    - Document model management commands
-    - Document memory system usage
-    - Document template creation and usage
-    - Document project profiles
-    - Document configuration options
+  - Document model management commands
+  - Document memory system usage
+  - Document template creation and usage
+  - Document project profiles
+  - Document configuration options
   - _Started: 2026-01-14 07:25_
   - _Completed: 2026-01-14 07:39_
   - _Duration: 14m_

@@ -1,9 +1,9 @@
 /**
  * WorkspaceContext - React context for workspace state management
- * 
+ *
  * Provides workspace configuration, active project selection, and navigation mode
  * (browse vs workspace) to all file explorer components.
- * 
+ *
  * Requirements: 1.4 (Active project selection and LLM context)
  */
 
@@ -77,7 +77,7 @@ export interface WorkspaceProviderProps {
 
 /**
  * WorkspaceProvider component
- * 
+ *
  * Provides workspace state and actions to child components.
  */
 export function WorkspaceProvider({ children, initialState }: WorkspaceProviderProps) {
@@ -92,7 +92,8 @@ export function WorkspaceProvider({ children, initialState }: WorkspaceProviderP
       config,
       mode: 'workspace',
       // Set active project to first project with llmAccess if available
-      activeProject: config.projects.find((p) => p.llmAccess)?.name || config.projects[0]?.name || null,
+      activeProject:
+        config.projects.find((p) => p.llmAccess)?.name || config.projects[0]?.name || null,
     }));
   }, []);
 
@@ -148,7 +149,7 @@ export function WorkspaceProvider({ children, initialState }: WorkspaceProviderP
 
 /**
  * Hook to access workspace context
- * 
+ *
  * @throws Error if used outside WorkspaceProvider
  */
 export function useWorkspace(): WorkspaceContextValue {

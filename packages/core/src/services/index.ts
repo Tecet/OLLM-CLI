@@ -48,10 +48,7 @@ export {
 } from './reasoningParser.js';
 
 // Export metrics collector
-export {
-  MetricsCollector,
-  type ProviderMetadata,
-} from './metricsCollector.js';
+export { MetricsCollector, type ProviderMetadata } from './metricsCollector.js';
 
 // Export model management service
 export {
@@ -84,11 +81,7 @@ export {
 } from './templateService.js';
 
 // Export comparison service
-export {
-  ComparisonService,
-  type ComparisonResult,
-  type ModelResult,
-} from './comparisonService.js';
+export { ComparisonService, type ComparisonResult, type ModelResult } from './comparisonService.js';
 
 // Export project profile service
 export {
@@ -99,10 +92,7 @@ export {
 } from './projectProfileService.js';
 
 // Export hook service
-export {
-  HookService,
-  type HookServiceConfig,
-} from './hookService.js';
+export { HookService, type HookServiceConfig } from './hookService.js';
 
 // Export service container
 export {

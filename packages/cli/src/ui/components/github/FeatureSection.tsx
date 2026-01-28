@@ -8,10 +8,10 @@ export interface FeatureSectionProps {
 
 /**
  * FeatureSection Component
- * 
+ *
  * Renders a single feature category with its items.
  * Part of the GitHub panel placeholder (Stage-06a).
- * 
+ *
  * @see .kiro/specs/stage-11-developer-productivity-future-dev/
  */
 export const FeatureSection: React.FC<FeatureSectionProps> = ({ title, items }) => {
@@ -21,7 +21,7 @@ export const FeatureSection: React.FC<FeatureSectionProps> = ({ title, items }) 
       <Box marginBottom={0}>
         <Text color="cyan">✓ {title}</Text>
       </Box>
-      
+
       {/* Feature Items */}
       <Box flexDirection="column" marginLeft={2}>
         {items.map((item, index) => (

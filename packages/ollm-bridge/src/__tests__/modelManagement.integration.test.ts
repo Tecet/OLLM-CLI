@@ -1,7 +1,7 @@
 /**
  * Integration tests for model management functionality.
  * Tests model listing, metadata parsing, download progress, deletion, and server availability handling.
- * 
+ *
  * Feature: stage-08-testing-qa
  * Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6, 9.7
  */
@@ -14,7 +14,8 @@ import {
   skipIfNoServer,
   getServerUrl,
   fixtureModels,
- MockProvider } from '@ollm/test-utils';
+  MockProvider,
+} from '@ollm/test-utils';
 
 import type { ModelInfo, PullProgress } from '@ollm/core';
 
@@ -366,42 +367,39 @@ describe('Model Management Integration Tests', () => {
 
     it('should emit progress events in order', async () => {
       await fc.assert(
-        fc.asyncProperty(
-          fc.string({ minLength: 1, maxLength: 50 }),
-          async (modelName) => {
-            const provider = new MockProvider({
-              eventDelay: 5,
-            });
+        fc.asyncProperty(fc.string({ minLength: 1, maxLength: 50 }), async (modelName) => {
+          const provider = new MockProvider({
+            eventDelay: 5,
+          });
 
-            const progressEvents: PullProgress[] = [];
-            const timestamps: number[] = [];
+          const progressEvents: PullProgress[] = [];
+          const timestamps: number[] = [];
 
-            await provider.pullModel(modelName, (progress) => {
-              progressEvents.push(progress);
-              timestamps.push(Date.now());
-            });
+          await provider.pullModel(modelName, (progress) => {
+            progressEvents.push(progress);
+            timestamps.push(Date.now());
+          });
 
-            // Verify timestamps are in order (events emitted sequentially)
-            for (let i = 1; i < timestamps.length; i++) {
-              expect(timestamps[i]).toBeGreaterThanOrEqual(timestamps[i - 1]);
-            }
+          // Verify timestamps are in order (events emitted sequentially)
+          for (let i = 1; i < timestamps.length; i++) {
+            expect(timestamps[i]).toBeGreaterThanOrEqual(timestamps[i - 1]);
+          }
 
-            // Verify progress values are monotonically increasing
-            for (let i = 1; i < progressEvents.length; i++) {
-              const prev = progressEvents[i - 1];
-              const curr = progressEvents[i];
+          // Verify progress values are monotonically increasing
+          for (let i = 1; i < progressEvents.length; i++) {
+            const prev = progressEvents[i - 1];
+            const curr = progressEvents[i];
 
-              if (
-                prev.completed !== undefined &&
-                prev.total !== undefined &&
-                curr.completed !== undefined &&
-                curr.total !== undefined
-              ) {
-                expect(curr.completed).toBeGreaterThanOrEqual(prev.completed);
-              }
+            if (
+              prev.completed !== undefined &&
+              prev.total !== undefined &&
+              curr.completed !== undefined &&
+              curr.total !== undefined
+            ) {
+              expect(curr.completed).toBeGreaterThanOrEqual(prev.completed);
             }
           }
-        ),
+        }),
         { numRuns: 10 } // Reduced from 100 for performance
       );
     });
@@ -490,20 +488,22 @@ describe('Model Management Integration Tests', () => {
       await fc.assert(
         fc.asyncProperty(
           // Generate random model list with unique names
-          fc.array(
-            fc.record({
-              name: fc.string({ minLength: 1, maxLength: 50 }),
-              sizeBytes: fc.integer({ min: 1e9, max: 100e9 }),
-              modifiedAt: fc.date().map((d) => d.toISOString()),
+          fc
+            .array(
+              fc.record({
+                name: fc.string({ minLength: 1, maxLength: 50 }),
+                sizeBytes: fc.integer({ min: 1e9, max: 100e9 }),
+                modifiedAt: fc.date().map((d) => d.toISOString()),
+              }),
+              { minLength: 2, maxLength: 10 }
+            )
+            .map((models) => {
+              // Ensure unique names by appending index
+              return models.map((model, idx) => ({
+                ...model,
+                name: `${model.name.trim() || 'model'}-${idx}`,
+              }));
             }),
-            { minLength: 2, maxLength: 10 }
-          ).map((models) => {
-            // Ensure unique names by appending index
-            return models.map((model, idx) => ({
-              ...model,
-              name: `${model.name.trim() || 'model'}-${idx}`,
-            }));
-          }),
           // Generate index of model to delete
           fc.integer({ min: 0, max: 9 }),
           async (mockModels, deleteIndex) => {
@@ -569,8 +569,7 @@ describe('Model Management Integration Tests', () => {
           async (mockModels, numToDelete) => {
             // Ensure unique model names to avoid ambiguity in deletion
             const uniqueModels = mockModels.filter(
-              (model, index, self) =>
-                index === self.findIndex((m) => m.name === model.name)
+              (model, index, self) => index === self.findIndex((m) => m.name === model.name)
             );
 
             // Skip if we don't have enough unique models
@@ -626,10 +625,7 @@ describe('Model Management Integration Tests', () => {
 
     it('should handle deletion of non-existent model gracefully', async () => {
       const provider = new MockProvider({
-        models: [
-          { name: 'model-1' },
-          { name: 'model-2' },
-        ],
+        models: [{ name: 'model-1' }, { name: 'model-2' }],
       });
 
       // Delete non-existent model should not throw
@@ -744,10 +740,7 @@ describe('Model Management Integration Tests', () => {
     });
 
     it('should delete model successfully', async () => {
-      let currentModels = [
-        { name: 'model-to-delete' },
-        { name: 'model-to-keep' },
-      ];
+      let currentModels = [{ name: 'model-to-delete' }, { name: 'model-to-keep' }];
 
       const provider = new MockProvider({
         models: currentModels,
@@ -783,11 +776,7 @@ describe('Model Management Integration Tests', () => {
 
     it('should handle concurrent model operations', async () => {
       const provider = new MockProvider({
-        models: [
-          { name: 'model-1' },
-          { name: 'model-2' },
-          { name: 'model-3' },
-        ],
+        models: [{ name: 'model-1' }, { name: 'model-2' }, { name: 'model-3' }],
         eventDelay: 5,
       });
 
@@ -807,12 +796,7 @@ describe('Model Management Integration Tests', () => {
     });
 
     it('should handle model operations with special characters', async () => {
-      const specialNames = [
-        'model:latest',
-        'namespace/model:tag',
-        'model-v1.0',
-        'model_test',
-      ];
+      const specialNames = ['model:latest', 'namespace/model:tag', 'model-v1.0', 'model_test'];
 
       for (const name of specialNames) {
         const provider = new MockProvider({
@@ -887,4 +871,3 @@ describe('Model Management Integration Tests', () => {
     });
   });
 });
-

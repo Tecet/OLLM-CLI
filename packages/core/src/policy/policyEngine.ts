@@ -66,14 +66,10 @@ export class PolicyEngine {
    * @param params Parameters passed to the tool
    * @returns The policy decision (allow, deny, or ask)
    */
-  evaluate(
-    toolName: string,
-    params: Record<string, unknown> = {}
-  ): PolicyDecision {
+  evaluate(toolName: string, params: Record<string, unknown> = {}): PolicyDecision {
     const result = this.evaluateWithDetails(toolName, params);
     return result.decision;
   }
-
 
   /**
    * Evaluate policy with full details
@@ -111,9 +107,7 @@ export class PolicyEngine {
    */
   getRiskLevel(toolName: string): RiskLevel {
     // Check for tool-specific rule with risk defined
-    const rule = this.config.rules.find(
-      (r) => r.tool === toolName && r.risk !== undefined
-    );
+    const rule = this.config.rules.find((r) => r.tool === toolName && r.risk !== undefined);
 
     if (rule?.risk) {
       return rule.risk;
@@ -223,7 +217,6 @@ export class PolicyEngine {
     return undefined;
   }
 
-
   /**
    * Evaluate all conditions for a rule
    *
@@ -241,9 +234,7 @@ export class PolicyEngine {
     }
 
     // All conditions must pass
-    return conditions.every((condition) =>
-      this.evaluateCondition(condition, params)
-    );
+    return conditions.every((condition) => this.evaluateCondition(condition, params));
   }
 
   /**
@@ -253,10 +244,7 @@ export class PolicyEngine {
    * @param params Parameters to check against
    * @returns True if the condition passes
    */
-  private evaluateCondition(
-    condition: PolicyCondition,
-    params: Record<string, unknown>
-  ): boolean {
+  private evaluateCondition(condition: PolicyCondition, params: Record<string, unknown>): boolean {
     const value = params[condition.param];
 
     // If the parameter doesn't exist, condition fails
@@ -288,9 +276,7 @@ export class PolicyEngine {
 
       case 'matches':
         try {
-          const pattern = Array.isArray(conditionValue)
-            ? conditionValue[0]
-            : conditionValue;
+          const pattern = Array.isArray(conditionValue) ? conditionValue[0] : conditionValue;
           return new RegExp(pattern).test(valueStr);
         } catch {
           // Invalid regex, condition fails
@@ -322,11 +308,7 @@ export class PolicyEngine {
     }
 
     // Write operations are medium risk
-    if (
-      toolName.startsWith('write') ||
-      toolName.startsWith('edit') ||
-      toolName === 'write_todos'
-    ) {
+    if (toolName.startsWith('write') || toolName.startsWith('edit') || toolName === 'write_todos') {
       return 'medium';
     }
 

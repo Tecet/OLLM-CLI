@@ -15,10 +15,10 @@ export interface ToolItemProps {
 
 /**
  * ToolItem component
- * 
+ *
  * Displays a single tool with its toggle, name, description, and risk level.
  * Highlights when selected for keyboard navigation.
- * 
+ *
  * Requirements: 23.3, 24.3
  */
 export function ToolItem({
@@ -28,19 +28,11 @@ export function ToolItem({
   theme,
   onToggle: _onToggle,
 }: ToolItemProps) {
-
   return (
-    <Box
-      flexDirection="column"
-      marginBottom={1}
-    >
+    <Box flexDirection="column" marginBottom={1}>
       {/* Tool name and toggle */}
       <Box gap={1}>
-        <ToolToggle
-          isEnabled={isEnabled}
-          isSelected={isSelected}
-          theme={theme}
-        />
+        <ToolToggle isEnabled={isEnabled} isSelected={isSelected} theme={theme} />
         <Text
           bold={isSelected}
           color={isSelected ? 'yellow' : theme.text.primary}
@@ -52,10 +44,7 @@ export function ToolItem({
 
       {/* Tool description */}
       <Box paddingLeft={3} marginTop={1}>
-        <Text
-          color={isSelected ? 'yellow' : theme.text.secondary}
-          dimColor={!isEnabled}
-        >
+        <Text color={isSelected ? 'yellow' : theme.text.secondary} dimColor={!isEnabled}>
           {tool.description}
         </Text>
       </Box>

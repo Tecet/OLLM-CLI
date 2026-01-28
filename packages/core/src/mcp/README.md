@@ -59,7 +59,10 @@ await client.startServer('github', {
 
 ```typescript
 const tools = await client.getTools('github');
-console.log('Available tools:', tools.map(t => t.name));
+console.log(
+  'Available tools:',
+  tools.map((t) => t.name)
+);
 ```
 
 ### Calling a Tool

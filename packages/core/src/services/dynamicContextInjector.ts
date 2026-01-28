@@ -1,6 +1,6 @@
 /**
  * DynamicContextInjector - Manages dynamic context injection into system prompts
- * 
+ *
  * Responsibilities:
  * - Add and remove context entries with unique keys
  * - Maintain priority-based ordering of context
@@ -40,16 +40,12 @@ export class DynamicContextInjector {
 
   /**
    * Add a context entry
-   * 
+   *
    * @param key - Unique identifier for the context entry
    * @param content - The context content to inject
    * @param options - Optional priority and source
    */
-  addContext(
-    key: string,
-    content: string,
-    options: AddContextOptions = {}
-  ): void {
+  addContext(key: string, content: string, options: AddContextOptions = {}): void {
     const priority = options.priority ?? DEFAULT_PRIORITY;
     const source = options.source ?? DEFAULT_SOURCE;
     const timestamp = new Date().toISOString();
@@ -67,7 +63,7 @@ export class DynamicContextInjector {
 
   /**
    * Remove a context entry by key
-   * 
+   *
    * @param key - The unique identifier of the context entry to remove
    */
   removeContext(key: string): void {
@@ -83,12 +79,12 @@ export class DynamicContextInjector {
 
   /**
    * Get all active context entries
-   * 
+   *
    * @returns Array of context entries sorted by priority (highest first)
    */
   getContext(): ContextEntry[] {
     const entries = Array.from(this.contexts.values());
-    
+
     // Sort by priority (descending), then by timestamp (ascending) as tiebreaker
     entries.sort((a, b) => {
       if (a.priority !== b.priority) {
@@ -103,7 +99,7 @@ export class DynamicContextInjector {
 
   /**
    * Generate system prompt additions from all active context
-   * 
+   *
    * @returns Formatted string to append to system prompt
    */
   getSystemPromptAdditions(): string {
@@ -114,7 +110,7 @@ export class DynamicContextInjector {
     }
 
     // Format each context entry as a markdown section
-    const sections = entries.map(entry => {
+    const sections = entries.map((entry) => {
       return `## Context: ${entry.key}\n\n${entry.content}`;
     });
 
@@ -123,7 +119,7 @@ export class DynamicContextInjector {
 
   /**
    * Check if a context entry exists
-   * 
+   *
    * @param key - The unique identifier to check
    * @returns True if the context entry exists
    */
@@ -133,13 +129,13 @@ export class DynamicContextInjector {
 
   /**
    * Get context entries by source
-   * 
+   *
    * @param source - The source to filter by
    * @returns Array of context entries from the specified source
    */
   getContextBySource(source: string): ContextEntry[] {
     const entries = Array.from(this.contexts.values());
-    return entries.filter(entry => entry.source === source);
+    return entries.filter((entry) => entry.source === source);
   }
 }
 

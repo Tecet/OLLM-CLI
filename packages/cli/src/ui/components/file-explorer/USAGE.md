@@ -26,7 +26,7 @@ The `FileExplorerComponent` is the main entry point for the File Explorer UI. It
 import { FileExplorerComponent } from './ui/components/file-explorer';
 
 // Browse current directory with default settings
-<FileExplorerComponent />
+<FileExplorerComponent />;
 ```
 
 ### Browse Specific Directory
@@ -51,10 +51,7 @@ import { FileExplorerComponent } from './ui/components/file-explorer';
 
 ```tsx
 // Restore previous state on mount
-<FileExplorerComponent
-  rootPath="/path/to/project"
-  restoreState={true}
-/>
+<FileExplorerComponent rootPath="/path/to/project" restoreState={true} />
 ```
 
 ### With Exclude Patterns
@@ -102,24 +99,25 @@ render(<App />);
 ## Props Reference
 
 ### Required Props
+
 None - all props are optional with sensible defaults.
 
 ### Optional Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `rootPath` | `string` | `process.cwd()` | Root directory to browse |
-| `workspacePath` | `string` | `undefined` | Path to `.ollm-workspace` file |
-| `autoLoadWorkspace` | `boolean` | `true` | Whether to automatically load workspace |
-| `restoreState` | `boolean` | `true` | Whether to restore persisted state on mount |
-| `excludePatterns` | `string[]` | `[]` | Glob patterns to exclude from tree |
-| `hasFocus` | `boolean` | `true` | Whether component has keyboard focus |
-| `toolRegistry` | `ToolRegistry` | `undefined` | Tool system integration (optional) |
-| `policyEngine` | `PolicyEngine` | `undefined` | Policy engine for confirmations (optional) |
-| `messageBus` | `MessageBus` | `undefined` | Message bus for hook events (optional) |
-| `onWorkspaceLoaded` | `(config: WorkspaceConfig) => void` | `undefined` | Callback when workspace loads |
-| `onStateRestored` | `() => void` | `undefined` | Callback when state is restored |
-| `onError` | `(error: Error) => void` | `undefined` | Callback when error occurs |
+| Prop                | Type                                | Default         | Description                                 |
+| ------------------- | ----------------------------------- | --------------- | ------------------------------------------- |
+| `rootPath`          | `string`                            | `process.cwd()` | Root directory to browse                    |
+| `workspacePath`     | `string`                            | `undefined`     | Path to `.ollm-workspace` file              |
+| `autoLoadWorkspace` | `boolean`                           | `true`          | Whether to automatically load workspace     |
+| `restoreState`      | `boolean`                           | `true`          | Whether to restore persisted state on mount |
+| `excludePatterns`   | `string[]`                          | `[]`            | Glob patterns to exclude from tree          |
+| `hasFocus`          | `boolean`                           | `true`          | Whether component has keyboard focus        |
+| `toolRegistry`      | `ToolRegistry`                      | `undefined`     | Tool system integration (optional)          |
+| `policyEngine`      | `PolicyEngine`                      | `undefined`     | Policy engine for confirmations (optional)  |
+| `messageBus`        | `MessageBus`                        | `undefined`     | Message bus for hook events (optional)      |
+| `onWorkspaceLoaded` | `(config: WorkspaceConfig) => void` | `undefined`     | Callback when workspace loads               |
+| `onStateRestored`   | `() => void`                        | `undefined`     | Callback when state is restored             |
+| `onError`           | `(error: Error) => void`            | `undefined`     | Callback when error occurs                  |
 
 ## Features
 
@@ -272,6 +270,7 @@ const deleteResult = await fileOps.deleteFile(
 ### 4. Focus System
 
 Files can be "focused" to pin them to the LLM context. Focused files:
+
 - Are marked with 📌 indicator
 - Have their content injected into LLM prompts
 - Are truncated at 8KB with warning
@@ -279,7 +278,7 @@ Files can be "focused" to pin them to the LLM context. Focused files:
 
 **Example: Focus System**
 
-```tsx
+````tsx
 import { FocusSystem } from './ui/components/file-explorer';
 
 const focusSystem = new FocusSystem();
@@ -300,12 +299,12 @@ const injectedPrompt = focusSystem.injectIntoPrompt(prompt);
 console.log(injectedPrompt);
 // Output:
 // ## Focused Files
-// 
+//
 // ### File: /path/to/file.ts
 // ```
 // [file content]
 // ```
-// 
+//
 // ## User Prompt
 // Explain this code
 
@@ -314,11 +313,12 @@ focusSystem.unfocusFile('/path/to/file.ts');
 
 // Clear all focused files
 focusSystem.clearAll();
-```
+````
 
 ### 5. State Persistence
 
 The component automatically saves and restores:
+
 - Expanded directories
 - Focused files
 - Quick Open history
@@ -374,6 +374,7 @@ followMode.disable();
 ## Keyboard Shortcuts
 
 ### Navigation
+
 - **j / Down**: Move cursor down
 - **k / Up**: Move cursor up
 - **h / Left**: Collapse directory
@@ -384,6 +385,7 @@ followMode.disable();
 - **Ctrl+U**: Scroll up half page
 
 ### File Operations
+
 - **f**: Toggle focus on file
 - **v**: View file
 - **e**: Edit file
@@ -395,17 +397,20 @@ followMode.disable();
 - **y**: Copy path
 
 ### Search & Navigation
+
 - **Ctrl+O**: Quick Open (fuzzy search)
 - **Ctrl+F**: Search in files
 - **/**: Search in tree
 - **?**: Show help panel
 
 ### Workspace
+
 - **Ctrl+P**: Switch project
 - **Ctrl+R**: Refresh tree
 - **F**: Toggle follow mode
 
 ### General
+
 - **Esc**: Close modal / Go back
 - **Enter**: Confirm / Activate
 - **Tab**: Next element
@@ -442,6 +447,7 @@ FileExplorerComponent
 The component instantiates and manages these services:
 
 ### WorkspaceManager
+
 Loads and manages workspace configuration from `.ollm-workspace` files.
 
 ```tsx
@@ -450,6 +456,7 @@ const config = workspaceManager.loadWorkspace('/path/to/.ollm-workspace');
 ```
 
 ### FileTreeService
+
 Builds and manages file tree structure with lazy loading.
 
 ```tsx
@@ -461,6 +468,7 @@ const tree = await fileTreeService.buildTree({
 ```
 
 ### FocusSystem
+
 Manages focused files for LLM context injection.
 
 ```tsx
@@ -469,6 +477,7 @@ const focusedFile = await focusSystem.focusFile('/path/to/file.ts');
 ```
 
 ### GitStatusService
+
 Queries git status for files (modified, untracked, etc.).
 
 ```tsx
@@ -477,6 +486,7 @@ const status = await gitStatusService.getFileStatus('/path/to/file.ts');
 ```
 
 ### EditorIntegration
+
 Spawns external editors for file editing.
 
 ```tsx
@@ -485,6 +495,7 @@ await editorIntegration.openInEditor('/path/to/file.ts');
 ```
 
 ### FileOperations
+
 Handles file CRUD operations with validation.
 
 ```tsx
@@ -493,6 +504,7 @@ const result = await fileOps.createFile('/path/to/newFile.ts', 'content');
 ```
 
 ### FollowModeService
+
 Detects LLM-referenced files and auto-expands tree.
 
 ```tsx
@@ -501,6 +513,7 @@ const files = followMode.detectFileReferences(llmResponse, workspaceRoot);
 ```
 
 ### ExplorerPersistence
+
 Saves/loads state to `.ollm/explorer-state.json`.
 
 ```tsx
@@ -509,6 +522,7 @@ persistence.saveState({ expandedDirectories: [...], focusedFiles: [...] });
 ```
 
 ### PathSanitizer
+
 Validates paths for security (prevents traversal attacks).
 
 ```tsx
@@ -519,7 +533,7 @@ const safePath = pathSanitizer.sanitize(userInput);
 ## Lifecycle
 
 1. **Mount**: Component initializes services
-2. **Initialization**: 
+2. **Initialization**:
    - Load workspace (if provided)
    - Restore persisted state (if enabled)
    - Build initial file tree
@@ -570,7 +584,7 @@ try {
     operation: 'createFile',
     filePath: '/path/to/file.ts',
   });
-  
+
   console.error(errorInfo.message);
   console.log('Recoverable:', errorInfo.recoverable);
   console.log('Suggestion:', getRecoverySuggestion(errorInfo.category));
@@ -580,24 +594,28 @@ try {
 ### Common Error Scenarios
 
 **Invalid workspace file**
+
 ```
 Error: Failed to load workspace
 Recovery: Continue in browse mode
 ```
 
 **Corrupted state file**
+
 ```
 Error: Failed to restore state
 Recovery: Use default state
 ```
 
 **Missing directory**
+
 ```
 Error: Directory not found
 Recovery: Display empty state
 ```
 
 **Permission denied**
+
 ```
 Error: Permission denied for operation
 Recovery: Show error message, suggest fix
@@ -614,10 +632,7 @@ import { FileExplorerComponent } from './ui/components/file-explorer';
 
 function SimpleBrowser() {
   return (
-    <FileExplorerComponent
-      rootPath={process.cwd()}
-      excludePatterns={['node_modules', '.git']}
-    />
+    <FileExplorerComponent rootPath={process.cwd()} excludePatterns={['node_modules', '.git']} />
   );
 }
 
@@ -633,7 +648,7 @@ import { FileExplorerComponent } from './ui/components/file-explorer';
 
 function WorkspaceBrowser() {
   const [status, setStatus] = useState('Initializing...');
-  
+
   return (
     <Box flexDirection="column">
       <Text>{status}</Text>
@@ -676,13 +691,8 @@ function CustomExcludeBrowser() {
     '.next',
     '.cache',
   ];
-  
-  return (
-    <FileExplorerComponent
-      rootPath="/path/to/project"
-      excludePatterns={excludePatterns}
-    />
-  );
+
+  return <FileExplorerComponent rootPath="/path/to/project" excludePatterns={excludePatterns} />;
 }
 
 render(<CustomExcludeBrowser />);
@@ -702,7 +712,7 @@ function IntegratedBrowser() {
   const toolRegistry = new ToolRegistry();
   const policyEngine = new PolicyEngine();
   const messageBus = new MessageBus();
-  
+
   return (
     <FileExplorerComponent
       rootPath="/path/to/project"
@@ -719,6 +729,7 @@ render(<IntegratedBrowser />);
 ## Testing
 
 The component includes comprehensive unit tests covering:
+
 - Initialization and lifecycle
 - Workspace loading
 - State restoration
@@ -747,22 +758,22 @@ import { FileExplorerComponent } from './FileExplorerComponent';
 describe('FileExplorerComponent', () => {
   it('should initialize successfully', async () => {
     const { lastFrame } = render(<FileExplorerComponent />);
-    
+
     await waitFor(() => {
       expect(lastFrame()).toContain('File Explorer');
     });
   });
-  
+
   it('should load workspace', async () => {
     const onWorkspaceLoaded = jest.fn();
-    
+
     render(
       <FileExplorerComponent
         workspacePath="/path/to/.ollm-workspace"
         onWorkspaceLoaded={onWorkspaceLoaded}
       />
     );
-    
+
     await waitFor(() => {
       expect(onWorkspaceLoaded).toHaveBeenCalled();
     });
@@ -773,6 +784,7 @@ describe('FileExplorerComponent', () => {
 ## Requirements
 
 This component satisfies the following requirements:
+
 - **1.1**: Workspace loading and project management
 - **12.2**: State restoration on startup
 - All sub-components are properly composed and wired together

@@ -1,6 +1,6 @@
 /**
  * DuckDuckGo Search Provider
- * 
+ *
  * Provides web search functionality using DuckDuckGo's HTML interface.
  * No API key required - free and unlimited (with reasonable use).
  */
@@ -13,20 +13,21 @@ import type { SearchProvider, SearchResult } from '../web-search.js';
  */
 export class DuckDuckGoSearchProvider implements SearchProvider {
   private readonly baseUrl = 'https://html.duckduckgo.com/html/';
-  private readonly userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+  private readonly userAgent =
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
   async search(query: string, numResults: number): Promise<SearchResult[]> {
     try {
       console.log(`[DuckDuckGo] Searching for: "${query}" (max ${numResults} results)`);
-      
+
       // Build search URL
       const url = `${this.baseUrl}?q=${encodeURIComponent(query)}`;
-      
+
       // Fetch search results
       const response = await fetch(url, {
         headers: {
           'User-Agent': this.userAgent,
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
           'Accept-Language': 'en-US,en;q=0.5',
         },
       });
@@ -38,16 +39,16 @@ export class DuckDuckGoSearchProvider implements SearchProvider {
 
       const html = await response.text();
       console.log(`[DuckDuckGo] Received HTML response (${html.length} bytes)`);
-      
+
       const results = this.parseResults(html, numResults);
       console.log(`[DuckDuckGo] Parsed ${results.length} results`);
-      
+
       if (results.length > 0) {
         console.log(`[DuckDuckGo] First result: ${results[0].title}`);
       } else {
         console.warn('[DuckDuckGo] No results found - HTML parsing may have failed');
       }
-      
+
       return results;
     } catch (error) {
       console.error('[DuckDuckGo] Search error:', error);
@@ -79,10 +80,15 @@ export class DuckDuckGoSearchProvider implements SearchProvider {
         const block = blockMatch[1];
 
         // Extract title and URL from h2.result__title > a
-        const titleMatch = /<h2[^>]*class="[^"]*result__title[^"]*"[^>]*>[\s\S]*?<a[^>]*href="([^"]*)"[^>]*>([^<]*)<\/a>/i.exec(block);
-        
+        const titleMatch =
+          /<h2[^>]*class="[^"]*result__title[^"]*"[^>]*>[\s\S]*?<a[^>]*href="([^"]*)"[^>]*>([^<]*)<\/a>/i.exec(
+            block
+          );
+
         // Extract snippet - try multiple patterns
-        let snippetMatch = /<a[^>]*class="[^"]*result__snippet[^"]*"[^>]*>([\s\S]*?)<\/a>/i.exec(block);
+        let snippetMatch = /<a[^>]*class="[^"]*result__snippet[^"]*"[^>]*>([\s\S]*?)<\/a>/i.exec(
+          block
+        );
         if (!snippetMatch) {
           // Try alternative: look for any text content after the title
           snippetMatch = /<\/h2>[\s\S]*?<[^>]*>([\s\S]{20,}?)<\//i.exec(block);

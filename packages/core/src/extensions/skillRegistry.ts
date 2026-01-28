@@ -1,6 +1,6 @@
 /**
  * Skill Registry
- * 
+ *
  * Manages registration and discovery of skills from extensions.
  * Skills are pre-defined prompts that users can invoke for common tasks.
  */
@@ -28,7 +28,7 @@ export class SkillRegistry {
    */
   registerSkill(extensionName: string, skill: Skill): void {
     const id = `${extensionName}.${skill.name}`;
-    
+
     const registeredSkill: RegisteredSkill = {
       ...skill,
       extensionName,
@@ -52,7 +52,7 @@ export class SkillRegistry {
    */
   unregisterExtensionSkills(extensionName: string): void {
     const toRemove: string[] = [];
-    
+
     for (const [id, skill] of this.skills.entries()) {
       if (skill.extensionName === extensionName) {
         toRemove.push(id);
@@ -109,9 +109,9 @@ export class SkillRegistry {
 
 /**
  * Substitute placeholders in a skill prompt
- * 
+ *
  * Placeholders use the format {{placeholder_name}}
- * 
+ *
  * @param prompt - Prompt template with placeholders
  * @param values - Values to substitute
  * @returns Rendered prompt with placeholders replaced
@@ -133,7 +133,7 @@ export function substitutePromptPlaceholders(
 
 /**
  * Extract placeholder names from a prompt template
- * 
+ *
  * @param prompt - Prompt template
  * @returns Array of unique placeholder names
  */

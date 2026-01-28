@@ -1,13 +1,13 @@
 /**
  * UninstallConfirmDialog - Confirmation dialog for uninstalling MCP servers
- * 
+ *
  * Features:
  * - Display server name and warning message
  * - Warn that action is permanent
  * - List what will be removed (config, OAuth tokens, logs)
  * - Confirm and Cancel buttons
  * - Prevent accidental uninstallation
- * 
+ *
  * Validates: Requirements 11.1-11.7
  */
 
@@ -32,7 +32,7 @@ export interface UninstallConfirmDialogProps {
 
 /**
  * UninstallConfirmDialog component
- * 
+ *
  * Provides a confirmation dialog for uninstalling MCP servers:
  * - Clear warning that action is permanent
  * - List of what will be removed
@@ -78,21 +78,23 @@ export function UninstallConfirmDialog({
       <Box flexDirection="column" paddingX={1}>
         {/* Warning Message */}
         <Box flexDirection="column" marginBottom={2}>
-          <Text bold color="red">⚠ Warning: This action is permanent!</Text>
-          <Text dimColor>
-            You are about to uninstall the following MCP server:
+          <Text bold color="red">
+            ⚠ Warning: This action is permanent!
           </Text>
+          <Text dimColor>You are about to uninstall the following MCP server:</Text>
         </Box>
 
         {/* Server Name */}
         <Box marginBottom={2} paddingX={2}>
-          <Text bold color="yellow">{serverName}</Text>
+          <Text bold color="yellow">
+            {serverName}
+          </Text>
         </Box>
 
         {/* What Will Be Removed */}
         <Box flexDirection="column" marginBottom={2}>
           <Text bold>The following will be removed:</Text>
-          
+
           <Box flexDirection="column" marginTop={1} marginLeft={2}>
             {/* Server Configuration */}
             <Box>
@@ -131,12 +133,7 @@ export function UninstallConfirmDialog({
         </Box>
 
         {/* Additional Warning */}
-        <Box
-          marginBottom={2}
-          borderStyle="single"
-          borderColor="yellow"
-          padding={1}
-        >
+        <Box marginBottom={2} borderStyle="single" borderColor="yellow" padding={1}>
           <Box flexDirection="column">
             <Text color="yellow">⚠ Important Notes:</Text>
             <Box marginTop={1} flexDirection="column">
@@ -181,9 +178,7 @@ export function UninstallConfirmDialog({
 
         {/* Help Text */}
         <Box marginTop={2}>
-          <Text dimColor>
-            💡 Tip: Press Esc to cancel or Enter to confirm uninstall
-          </Text>
+          <Text dimColor>💡 Tip: Press Esc to cancel or Enter to confirm uninstall</Text>
         </Box>
       </Box>
     </Dialog>

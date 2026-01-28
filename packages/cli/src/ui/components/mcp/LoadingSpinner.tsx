@@ -1,9 +1,9 @@
 /**
  * LoadingSpinner Component
- * 
+ *
  * Reusable loading spinner for MCP panel operations.
  * Uses the StreamingIndicator component for consistent animations.
- * 
+ *
  * Validates: NFR-7
  */
 
@@ -27,7 +27,7 @@ export interface LoadingSpinnerProps {
 
 /**
  * LoadingSpinner Component
- * 
+ *
  * Displays an animated spinner with an optional message.
  * Used for loading states throughout the MCP panel.
  */
@@ -38,13 +38,7 @@ export function LoadingSpinner({
   centered = true,
   padded = true,
 }: LoadingSpinnerProps) {
-  const content = (
-    <StreamingIndicator
-      text={message}
-      spinnerType={spinnerType}
-      color={color}
-    />
-  );
+  const content = <StreamingIndicator text={message} spinnerType={spinnerType} color={color} />;
 
   if (centered) {
     return (
@@ -59,9 +53,5 @@ export function LoadingSpinner({
     );
   }
 
-  return (
-    <Box padding={padded ? 1 : 0}>
-      {content}
-    </Box>
-  );
+  return <Box padding={padded ? 1 : 0}>{content}</Box>;
 }

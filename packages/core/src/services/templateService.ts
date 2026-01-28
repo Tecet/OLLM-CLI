@@ -77,8 +77,7 @@ export class TemplateService {
   private loaded: boolean = false;
 
   constructor(config: TemplateServiceConfig = {}) {
-    this.userTemplatesDir =
-      config.userTemplatesDir || join(homedir(), '.ollm', 'templates');
+    this.userTemplatesDir = config.userTemplatesDir || join(homedir(), '.ollm', 'templates');
     this.workspaceTemplatesDir =
       config.workspaceTemplatesDir || join(process.cwd(), '.ollm', 'templates');
     this.enabled = config.enabled ?? true;
@@ -203,7 +202,10 @@ export class TemplateService {
           throw new Error(`Variable ${variableRecord.name} default must be a string`);
         }
 
-        if (variableRecord.description !== undefined && typeof variableRecord.description !== 'string') {
+        if (
+          variableRecord.description !== undefined &&
+          typeof variableRecord.description !== 'string'
+        ) {
           throw new Error(`Variable ${variableRecord.name} description must be a string`);
         }
       }
@@ -251,10 +253,14 @@ export class TemplateService {
 
     // Validate required variables
     for (const varDef of template.variables) {
-      if (varDef.required && !Object.prototype.hasOwnProperty.call(variables, varDef.name) && !varDef.default) {
+      if (
+        varDef.required &&
+        !Object.prototype.hasOwnProperty.call(variables, varDef.name) &&
+        !varDef.default
+      ) {
         throw new Error(
           `Template '${name}' requires variable '${varDef.name}'. ` +
-          `Provide it with: /template use ${name} ${varDef.name}=<value>`
+            `Provide it with: /template use ${name} ${varDef.name}=<value>`
         );
       }
     }
@@ -265,7 +271,7 @@ export class TemplateService {
     // Replace variables with format {variable_name} or {variable_name:default_value}
     // Use a more robust approach that handles edge cases like variable names containing special chars
     const variablePattern = /\{([^{}]+)\}/g;
-    
+
     result = result.replace(variablePattern, (match, content) => {
       // Check if it's escaped
       if (match.startsWith('\\{')) {
@@ -295,9 +301,7 @@ export class TemplateService {
       }
 
       // Variable not found and no default
-      throw new Error(
-        `Variable '${varName}' not provided and has no default value`
-      );
+      throw new Error(`Variable '${varName}' not provided and has no default value`);
     });
 
     return result;
@@ -310,15 +314,15 @@ export class TemplateService {
     // Remove invalid filename characters including template syntax characters
     const invalidChars = /[<>:"|?*\\/{}]/g;
     let sanitized = name.replace(invalidChars, '_');
-    
+
     // Trim whitespace
     sanitized = sanitized.trim();
-    
+
     // Ensure not empty
     if (sanitized.length === 0) {
       throw new Error('Template name cannot be empty or contain only invalid characters');
     }
-    
+
     return sanitized;
   }
 
@@ -400,7 +404,7 @@ export class TemplateService {
       if (err.code === 'ENOENT') {
         throw new Error(
           `Template '${name}' exists in workspace directory and cannot be deleted. ` +
-          `Delete the file manually from ${this.workspaceTemplatesDir}`
+            `Delete the file manually from ${this.workspaceTemplatesDir}`
         );
       }
       const message = err.message || String(error);

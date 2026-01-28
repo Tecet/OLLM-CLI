@@ -77,7 +77,6 @@ export class MemoryTool implements DeclarativeTool<MemoryParams, ToolResult> {
   }
 }
 
-
 /**
  * Invocation instance for memory operations
  */
@@ -96,9 +95,7 @@ export class MemoryInvocation implements ToolInvocation<MemoryParams, ToolResult
     return [this.storePath];
   }
 
-  async shouldConfirmExecute(
-    _abortSignal: AbortSignal
-  ): Promise<false> {
+  async shouldConfirmExecute(_abortSignal: AbortSignal): Promise<false> {
     // Memory operations don't require confirmation
     return false;
   }
@@ -177,10 +174,7 @@ export class MemoryInvocation implements ToolInvocation<MemoryParams, ToolResult
     };
   }
 
-  private async handleSet(
-    store: Record<string, string>,
-    signal: AbortSignal
-  ): Promise<ToolResult> {
+  private async handleSet(store: Record<string, string>, signal: AbortSignal): Promise<ToolResult> {
     if (!this.params.key) {
       return {
         llmContent: '',

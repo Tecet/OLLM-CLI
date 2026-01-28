@@ -1,6 +1,6 @@
 /**
  * Intent Snapshot Storage Tests
- * 
+ *
  * Tests for intent snapshot storage including:
  * - Save and load operations
  * - Search functionality
@@ -137,9 +137,9 @@ describe('IntentSnapshotStorage', () => {
       const snapshots = await storage.list();
 
       expect(snapshots).toHaveLength(3);
-      expect(snapshots.map(s => s.id)).toContain('test-1');
-      expect(snapshots.map(s => s.id)).toContain('test-2');
-      expect(snapshots.map(s => s.id)).toContain('test-3');
+      expect(snapshots.map((s) => s.id)).toContain('test-1');
+      expect(snapshots.map((s) => s.id)).toContain('test-2');
+      expect(snapshots.map((s) => s.id)).toContain('test-3');
     });
 
     it('should return empty array when no snapshots exist', async () => {
@@ -149,9 +149,15 @@ describe('IntentSnapshotStorage', () => {
     });
 
     it('should sort snapshots by timestamp (newest first)', async () => {
-      await storage.save(createTestSnapshot('test-1', 'Intent 1', new Date('2024-01-15T10:00:00Z')));
-      await storage.save(createTestSnapshot('test-2', 'Intent 2', new Date('2024-01-15T12:00:00Z')));
-      await storage.save(createTestSnapshot('test-3', 'Intent 3', new Date('2024-01-15T11:00:00Z')));
+      await storage.save(
+        createTestSnapshot('test-1', 'Intent 1', new Date('2024-01-15T10:00:00Z'))
+      );
+      await storage.save(
+        createTestSnapshot('test-2', 'Intent 2', new Date('2024-01-15T12:00:00Z'))
+      );
+      await storage.save(
+        createTestSnapshot('test-3', 'Intent 3', new Date('2024-01-15T11:00:00Z'))
+      );
 
       const snapshots = await storage.list();
 
@@ -162,7 +168,7 @@ describe('IntentSnapshotStorage', () => {
 
     it('should skip corrupted snapshot files', async () => {
       await storage.save(createTestSnapshot('test-1', 'Intent 1'));
-      
+
       // Create corrupted file
       const corruptedPath = path.join(testDir, 'corrupted.json');
       await fs.writeFile(corruptedPath, 'invalid json {', 'utf-8');
@@ -259,7 +265,9 @@ describe('IntentSnapshotStorage', () => {
   describe('getRecent', () => {
     it('should return recent snapshots with default limit', async () => {
       for (let i = 0; i < 15; i++) {
-        await storage.save(createTestSnapshot(`test-${i}`, `Intent ${i}`, new Date(Date.now() + i * 1000)));
+        await storage.save(
+          createTestSnapshot(`test-${i}`, `Intent ${i}`, new Date(Date.now() + i * 1000))
+        );
       }
 
       const recent = await storage.getRecent();
@@ -269,7 +277,9 @@ describe('IntentSnapshotStorage', () => {
 
     it('should return recent snapshots with custom limit', async () => {
       for (let i = 0; i < 10; i++) {
-        await storage.save(createTestSnapshot(`test-${i}`, `Intent ${i}`, new Date(Date.now() + i * 1000)));
+        await storage.save(
+          createTestSnapshot(`test-${i}`, `Intent ${i}`, new Date(Date.now() + i * 1000))
+        );
       }
 
       const recent = await storage.getRecent(5);
@@ -278,9 +288,15 @@ describe('IntentSnapshotStorage', () => {
     });
 
     it('should return snapshots in newest-first order', async () => {
-      await storage.save(createTestSnapshot('test-1', 'Intent 1', new Date('2024-01-15T10:00:00Z')));
-      await storage.save(createTestSnapshot('test-2', 'Intent 2', new Date('2024-01-15T12:00:00Z')));
-      await storage.save(createTestSnapshot('test-3', 'Intent 3', new Date('2024-01-15T11:00:00Z')));
+      await storage.save(
+        createTestSnapshot('test-1', 'Intent 1', new Date('2024-01-15T10:00:00Z'))
+      );
+      await storage.save(
+        createTestSnapshot('test-2', 'Intent 2', new Date('2024-01-15T12:00:00Z'))
+      );
+      await storage.save(
+        createTestSnapshot('test-3', 'Intent 3', new Date('2024-01-15T11:00:00Z'))
+      );
 
       const recent = await storage.getRecent(3);
 
@@ -306,29 +322,37 @@ describe('IntentSnapshotStorage', () => {
   describe('cleanup', () => {
     it('should keep specified number of snapshots', async () => {
       for (let i = 0; i < 10; i++) {
-        await storage.save(createTestSnapshot(`test-${i}`, `Intent ${i}`, new Date(Date.now() + i * 1000)));
+        await storage.save(
+          createTestSnapshot(`test-${i}`, `Intent ${i}`, new Date(Date.now() + i * 1000))
+        );
       }
 
       const deleted = await storage.cleanup(5);
 
       expect(deleted).toBe(5);
-      
+
       const remaining = await storage.list();
       expect(remaining).toHaveLength(5);
     });
 
     it('should keep newest snapshots', async () => {
-      await storage.save(createTestSnapshot('test-1', 'Intent 1', new Date('2024-01-15T10:00:00Z')));
-      await storage.save(createTestSnapshot('test-2', 'Intent 2', new Date('2024-01-15T12:00:00Z')));
-      await storage.save(createTestSnapshot('test-3', 'Intent 3', new Date('2024-01-15T11:00:00Z')));
+      await storage.save(
+        createTestSnapshot('test-1', 'Intent 1', new Date('2024-01-15T10:00:00Z'))
+      );
+      await storage.save(
+        createTestSnapshot('test-2', 'Intent 2', new Date('2024-01-15T12:00:00Z'))
+      );
+      await storage.save(
+        createTestSnapshot('test-3', 'Intent 3', new Date('2024-01-15T11:00:00Z'))
+      );
 
       await storage.cleanup(2);
 
       const remaining = await storage.list();
       expect(remaining).toHaveLength(2);
-      expect(remaining.map(s => s.id)).toContain('test-2'); // Newest
-      expect(remaining.map(s => s.id)).toContain('test-3'); // Second newest
-      expect(remaining.map(s => s.id)).not.toContain('test-1'); // Oldest deleted
+      expect(remaining.map((s) => s.id)).toContain('test-2'); // Newest
+      expect(remaining.map((s) => s.id)).toContain('test-3'); // Second newest
+      expect(remaining.map((s) => s.id)).not.toContain('test-1'); // Oldest deleted
     });
 
     it('should not delete anything if count is below limit', async () => {
@@ -338,7 +362,7 @@ describe('IntentSnapshotStorage', () => {
       const deleted = await storage.cleanup(5);
 
       expect(deleted).toBe(0);
-      
+
       const remaining = await storage.list();
       expect(remaining).toHaveLength(2);
     });
@@ -351,7 +375,7 @@ describe('IntentSnapshotStorage', () => {
       const deleted = await storage.cleanup();
 
       expect(deleted).toBe(50);
-      
+
       const remaining = await storage.list();
       expect(remaining).toHaveLength(100);
     });

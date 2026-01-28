@@ -1,6 +1,6 @@
 /**
  * Snapshot Storage Tests
- * 
+ *
  * Tests for snapshot storage service including property-based tests
  * for JSON format, corruption detection, and recovery.
  */
@@ -40,7 +40,9 @@ describe('SnapshotStorage', () => {
   // ============================================================================
 
   // Generator for message role
-  const arbRole = fc.constantFrom('system', 'user', 'assistant', 'tool') as fc.Arbitrary<'system' | 'user' | 'assistant' | 'tool'>;
+  const arbRole = fc.constantFrom('system', 'user', 'assistant', 'tool') as fc.Arbitrary<
+    'system' | 'user' | 'assistant' | 'tool'
+  >;
 
   // Generator for message
   const arbMessage = fc.record({
@@ -48,7 +50,7 @@ describe('SnapshotStorage', () => {
     role: arbRole,
     content: fc.string({ minLength: 1, maxLength: 1000 }),
     timestamp: fc.date({ min: new Date('2020-01-01'), max: new Date('2030-01-01') }),
-    tokenCount: fc.option(fc.integer({ min: 1, max: 10000 }), { nil: undefined })
+    tokenCount: fc.option(fc.integer({ min: 1, max: 10000 }), { nil: undefined }),
   }) as fc.Arbitrary<Message>;
 
   // Generator for context snapshot
@@ -62,8 +64,8 @@ describe('SnapshotStorage', () => {
     metadata: fc.record({
       model: fc.constantFrom('llama3.1:8b', 'mistral:7b', 'codellama:13b'),
       contextSize: fc.integer({ min: 2048, max: 131072 }),
-      compressionRatio: fc.double({ min: 0.1, max: 1.0 })
-    })
+      compressionRatio: fc.double({ min: 0.1, max: 1.0 }),
+    }),
   }) as fc.Arbitrary<ContextSnapshot>;
 
   // ============================================================================
@@ -85,14 +87,14 @@ describe('SnapshotStorage', () => {
             id: 'msg-1',
             role: 'system',
             content: 'You are a helpful assistant',
-            timestamp: new Date('2024-01-15T10:00:00Z')
+            timestamp: new Date('2024-01-15T10:00:00Z'),
           },
           {
             id: 'msg-2',
             role: 'user',
             content: 'Hello',
-            timestamp: new Date('2024-01-15T10:15:00Z')
-          }
+            timestamp: new Date('2024-01-15T10:15:00Z'),
+          },
         ],
         metadata: {
           model: 'llama3.1:8b',
@@ -100,8 +102,8 @@ describe('SnapshotStorage', () => {
           compressionRatio: 0.8,
           totalUserMessages: 1,
           totalGoalsCompleted: 0,
-          totalCheckpoints: 0
-        }
+          totalCheckpoints: 0,
+        },
       };
 
       await storage.save(snapshot);
@@ -135,8 +137,8 @@ describe('SnapshotStorage', () => {
             id: 'msg-1',
             role: 'user',
             content: 'Test',
-            timestamp: new Date()
-          }
+            timestamp: new Date(),
+          },
         ],
         metadata: {
           model: 'llama3.1:8b',
@@ -144,15 +146,15 @@ describe('SnapshotStorage', () => {
           compressionRatio: 1.0,
           totalUserMessages: 1,
           totalGoalsCompleted: 0,
-          totalCheckpoints: 0
-        }
+          totalCheckpoints: 0,
+        },
       };
 
       const snapshot2: ContextSnapshot = {
         ...snapshot1,
         id: 'snap-2',
         timestamp: new Date('2024-01-15T11:00:00Z'),
-        summary: 'Second snapshot'
+        summary: 'Second snapshot',
       };
 
       await storage.save(snapshot1);
@@ -160,8 +162,8 @@ describe('SnapshotStorage', () => {
 
       const list = await storage.list('session-1');
       expect(list).toHaveLength(2);
-      expect(list.map(s => s.id)).toContain('snap-1');
-      expect(list.map(s => s.id)).toContain('snap-2');
+      expect(list.map((s) => s.id)).toContain('snap-1');
+      expect(list.map((s) => s.id)).toContain('snap-2');
     });
 
     it('should return empty list for session with no snapshots', async () => {
@@ -185,8 +187,8 @@ describe('SnapshotStorage', () => {
             id: 'msg-1',
             role: 'user',
             content: 'Test',
-            timestamp: new Date()
-          }
+            timestamp: new Date(),
+          },
         ],
         metadata: {
           model: 'llama3.1:8b',
@@ -194,8 +196,8 @@ describe('SnapshotStorage', () => {
           compressionRatio: 1.0,
           totalUserMessages: 1,
           totalGoalsCompleted: 0,
-          totalCheckpoints: 0
-        }
+          totalCheckpoints: 0,
+        },
       };
 
       await storage.save(snapshot);
@@ -225,8 +227,8 @@ describe('SnapshotStorage', () => {
             id: 'msg-1',
             role: 'user',
             content: 'Test',
-            timestamp: new Date()
-          }
+            timestamp: new Date(),
+          },
         ],
         metadata: {
           model: 'llama3.1:8b',
@@ -234,8 +236,8 @@ describe('SnapshotStorage', () => {
           compressionRatio: 1.0,
           totalUserMessages: 1,
           totalGoalsCompleted: 0,
-          totalCheckpoints: 0
-        }
+          totalCheckpoints: 0,
+        },
       };
 
       await storage.save(snapshot);
@@ -262,8 +264,8 @@ describe('SnapshotStorage', () => {
             id: 'msg-1',
             role: 'user',
             content: 'Test',
-            timestamp: new Date()
-          }
+            timestamp: new Date(),
+          },
         ],
         metadata: {
           model: 'llama3.1:8b',
@@ -271,8 +273,8 @@ describe('SnapshotStorage', () => {
           compressionRatio: 1.0,
           totalUserMessages: 1,
           totalGoalsCompleted: 0,
-          totalCheckpoints: 0
-        }
+          totalCheckpoints: 0,
+        },
       };
 
       await storage.save(snapshot);
@@ -302,7 +304,7 @@ describe('SnapshotStorage', () => {
      * Property 39: Snapshot JSON Format
      * Feature: stage-04b-context-management, Property 39: Snapshot JSON Format
      * Validates: Requirements 10.1
-     * 
+     *
      * For any saved snapshot, the file should be valid JSON with the expected structure
      */
     it('Property 39: saved snapshots should have valid JSON format', async () => {
@@ -345,7 +347,7 @@ describe('SnapshotStorage', () => {
      * Property 40: Corruption Detection
      * Feature: stage-04b-context-management, Property 40: Corruption Detection
      * Validates: Requirements 10.3
-     * 
+     *
      * For any corrupted snapshot file, loading should detect the corruption
      */
     it('Property 40: should detect corrupted snapshot files', async () => {
@@ -380,9 +382,9 @@ describe('SnapshotStorage', () => {
                     timestamp: new Date().toISOString(),
                     tokenCount: 1000,
                     summary: 'Test',
-                    size: corruptedContent.length
-                  }
-                ]
+                    size: corruptedContent.length,
+                  },
+                ],
               }),
               'utf-8'
             );
@@ -407,7 +409,7 @@ describe('SnapshotStorage', () => {
      * Property 41: Corrupted File Recovery
      * Feature: stage-04b-context-management, Property 41: Corrupted File Recovery
      * Validates: Requirements 10.6
-     * 
+     *
      * For any set of snapshots including corrupted files, the system should
      * skip corrupted files and successfully load valid snapshots
      */

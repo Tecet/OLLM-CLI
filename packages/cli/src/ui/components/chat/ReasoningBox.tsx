@@ -1,6 +1,6 @@
 /**
  * ReasoningBox Component
- * 
+ *
  * Displays reasoning/thinking content from reasoning models in a nested scrollable container.
  * Requirements: 16.2, 16.3, 16.4, 16.5, 16.6, 16.7, 25.2, 25.3
  */
@@ -24,7 +24,7 @@ export interface ReasoningBoxProps {
 
 /**
  * ReasoningBox displays thinking content from reasoning models
- * 
+ *
  * Features:
  * - Nested scrollable container with configurable visible height
  * - Expand/collapse toggle (click or Ctrl+R)
@@ -46,7 +46,7 @@ export const ReasoningBox: React.FC<ReasoningBoxProps> = ({
     role: { user: '#4ec9b0', assistant: '#ce9178', system: '#569cd6', tool: '#b5cea8' },
     status: { success: '#4ec9b0', warning: '#ce9178', error: '#f48771', info: '#569cd6' },
     border: { primary: '#555555', secondary: '#4ec9b0', active: '#4ec9b0' },
-    diff: { added: '#4ec9b0', removed: '#f48771' }
+    diff: { added: '#4ec9b0', removed: '#f48771' },
   },
 }) => {
   // Initialize internal expanded state based on completion status
@@ -88,7 +88,7 @@ export const ReasoningBox: React.FC<ReasoningBoxProps> = ({
   const lines = reasoning.content.split('\n');
   const totalLines = lines.length;
   const hasScroll = totalLines > maxVisibleLines;
-  
+
   // Get visible lines based on scroll offset
   const visibleLines = hasScroll
     ? lines.slice(scrollOffset, scrollOffset + maxVisibleLines)

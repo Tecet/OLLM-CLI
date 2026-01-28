@@ -1,6 +1,6 @@
 /**
  * Reasoning Trace Types
- * 
+ *
  * Support for reasoning models (DeepSeek-R1, QwQ, o1, etc.) that produce
  * internal thinking processes. These traces are preserved across context
  * rollovers so the model can review its past reasoning.
@@ -12,16 +12,16 @@
 export interface ReasoningTrace {
   /** Unique ID */
   id: string;
-  
+
   /** When this reasoning occurred */
   timestamp: Date;
-  
+
   /** What message this reasoning is for */
   messageId: string;
-  
+
   /** Full thinking process (from <think> tags) */
   thinking: string;
-  
+
   /** Context about what was being worked on */
   context: {
     /** Goal being worked on */
@@ -33,7 +33,7 @@ export interface ReasoningTrace {
     /** User message that prompted this */
     userMessageId?: string;
   };
-  
+
   /** Structured reasoning data (parsed from thinking) */
   structured?: {
     /** Alternative approaches considered */
@@ -47,7 +47,7 @@ export interface ReasoningTrace {
     /** Key insights discovered */
     keyInsights: string[];
   };
-  
+
   /** Metadata */
   metadata: {
     /** Model that produced this reasoning */
@@ -81,13 +81,13 @@ export interface ArchivedReasoningTrace {
 export interface ReasoningStorage {
   /** Recent reasoning traces (last 5, full detail) */
   recent: ReasoningTrace[];
-  
+
   /** Archived reasoning traces (summaries only) */
   archived: ArchivedReasoningTrace[];
-  
+
   /** Total reasoning traces in session */
   totalTraces: number;
-  
+
   /** Total thinking tokens used */
   totalThinkingTokens: number;
 }
@@ -98,13 +98,13 @@ export interface ReasoningStorage {
 export interface ReasoningConfig {
   /** Enable reasoning trace storage */
   enabled: boolean;
-  
+
   /** Keep last N reasoning traces in full (default: 5) */
   keepRecentTraces: number;
-  
+
   /** Maximum archived traces to keep (default: 20) */
   maxArchivedTraces: number;
-  
+
   /** Auto-extract structured data from thinking (default: true) */
   autoExtractStructured: boolean;
 }
@@ -116,5 +116,5 @@ export const DEFAULT_REASONING_CONFIG: ReasoningConfig = {
   enabled: true,
   keepRecentTraces: 5,
   maxArchivedTraces: 20,
-  autoExtractStructured: true
+  autoExtractStructured: true,
 };

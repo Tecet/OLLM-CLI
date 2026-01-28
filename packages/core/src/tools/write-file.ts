@@ -1,6 +1,6 @@
 /**
  * File writing tool implementation
- * 
+ *
  * Provides a tool for writing content to files with overwrite protection
  * and automatic parent directory creation.
  */
@@ -102,7 +102,10 @@ export class WriteFileInvocation implements ToolInvocation<WriteFileParams, Tool
       return false;
     }
 
-    const decision = this.policyEngine.evaluate('write_file', this.params as unknown as Record<string, unknown>);
+    const decision = this.policyEngine.evaluate(
+      'write_file',
+      this.params as unknown as Record<string, unknown>
+    );
 
     if (decision === 'allow') {
       return false;
@@ -198,9 +201,9 @@ export class WriteFileInvocation implements ToolInvocation<WriteFileParams, Tool
       try {
         if (!this.params.overwrite) {
           // Use 'wx' flag for atomic create-only operation
-          await fs.writeFile(resolvedPath, this.params.content, { 
+          await fs.writeFile(resolvedPath, this.params.content, {
             encoding: 'utf-8',
-            flag: 'wx' // Fail if file exists
+            flag: 'wx', // Fail if file exists
           });
         } else {
           // Check if file exists for message
@@ -264,7 +267,9 @@ export class WriteFileInvocation implements ToolInvocation<WriteFileParams, Tool
         returnDisplay: '',
         error: {
           message: (error as Error).message,
-          type: (error as Error).message.includes('cancelled') ? 'CancelledError' : 'FileWriteError',
+          type: (error as Error).message.includes('cancelled')
+            ? 'CancelledError'
+            : 'FileWriteError',
         },
       };
     }

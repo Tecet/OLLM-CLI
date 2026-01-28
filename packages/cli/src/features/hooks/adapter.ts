@@ -1,6 +1,6 @@
 /**
  * Adapter layer for converting between core Hook and UI Hook types
- * 
+ *
  * The core Hook system uses a command-based structure for execution,
  * while the UI uses a when/then structure for better user understanding.
  * This adapter bridges the two representations.
@@ -11,10 +11,10 @@ import type { Hook as CoreHook } from '@ollm/ollm-cli-core/hooks/types.js';
 
 /**
  * Convert a core Hook to a UI Hook
- * 
+ *
  * This function attempts to parse the command field to extract when/then structure.
  * If the command doesn't follow the expected format, it creates a best-effort UIHook.
- * 
+ *
  * @param coreHook - The core hook to convert
  * @param enabled - Whether the hook is enabled (from settings)
  * @returns A UI-friendly hook representation
@@ -22,7 +22,7 @@ import type { Hook as CoreHook } from '@ollm/ollm-cli-core/hooks/types.js';
 export function coreHookToUIHook(coreHook: CoreHook, enabled: boolean = false): UIHook {
   // Try to parse the command to extract when/then structure
   const parsed = parseHookCommand(coreHook.command, coreHook.args);
-  
+
   return {
     id: coreHook.id,
     name: coreHook.name,
@@ -46,17 +46,17 @@ export function coreHookToUIHook(coreHook: CoreHook, enabled: boolean = false): 
 
 /**
  * Convert a UI Hook to a core Hook
- * 
+ *
  * This function creates a command string that encodes the when/then structure
  * in a format that the core hook system can execute.
- * 
+ *
  * @param uiHook - The UI hook to convert
  * @returns A core hook representation
  */
 export function uiHookToCoreHook(uiHook: UIHook): CoreHook {
   // Build command string that encodes the when/then structure
   const command = buildHookCommand(uiHook);
-  
+
   return {
     id: uiHook.id,
     name: uiHook.name,
@@ -70,11 +70,11 @@ export function uiHookToCoreHook(uiHook: UIHook): CoreHook {
 
 /**
  * Parse a hook command to extract when/then structure
- * 
+ *
  * This is a best-effort parser that handles common command patterns.
  * For hooks created through the UI, the command will follow a known format.
  * For legacy hooks, we make reasonable assumptions.
- * 
+ *
  * @param command - The command string to parse
  * @param args - Optional command arguments
  * @returns Parsed hook structure
@@ -93,21 +93,21 @@ function parseHookCommand(
   let patterns: string[] | undefined;
   let actionType: UIHookActionType = 'runCommand';
   let actionValue: string = command;
-  
+
   // Try to parse structured command format: "event:action:value"
   // Example: "fileEdited:*.ts:askAgent:Review changes"
   const parts = command.split(':');
-  
+
   if (parts.length >= 3) {
     // Parse event type
     const eventPart = parts[0];
     if (isUIHookEventType(eventPart)) {
       eventType = eventPart;
     }
-    
+
     // Parse patterns (for file events)
     if (parts.length >= 4 && isFileEvent(eventType)) {
-      patterns = parts[1].split(',').map(p => p.trim());
+      patterns = parts[1].split(',').map((p) => p.trim());
       actionType = parts[2] as UIHookActionType;
       actionValue = parts.slice(3).join(':');
     } else {
@@ -115,7 +115,7 @@ function parseHookCommand(
       actionValue = parts.slice(2).join(':');
     }
   }
-  
+
   return {
     eventType,
     patterns,
@@ -126,33 +126,31 @@ function parseHookCommand(
 
 /**
  * Build a command string from a UI Hook
- * 
+ *
  * Creates a structured command format that can be parsed back into a UIHook.
  * Format: "eventType:patterns:actionType:actionValue"
- * 
+ *
  * @param uiHook - The UI hook to encode
  * @returns Command string
  */
 function buildHookCommand(uiHook: UIHook): string {
   const parts: string[] = [uiHook.when.type];
-  
+
   // Add patterns for file events
   if (uiHook.when.patterns && uiHook.when.patterns.length > 0) {
     parts.push(uiHook.when.patterns.join(','));
   }
-  
+
   // Add action type
   parts.push(uiHook.then.type);
-  
+
   // Add action value
-  const actionValue = uiHook.then.type === 'askAgent' 
-    ? uiHook.then.prompt 
-    : uiHook.then.command;
-  
+  const actionValue = uiHook.then.type === 'askAgent' ? uiHook.then.prompt : uiHook.then.command;
+
   if (actionValue) {
     parts.push(actionValue);
   }
-  
+
   return parts.join(':');
 }
 
@@ -179,52 +177,52 @@ function isFileEvent(eventType: UIHookEventType): boolean {
 
 /**
  * Validate that a UIHook has all required fields
- * 
+ *
  * @param hook - The hook to validate
  * @returns Array of validation error messages (empty if valid)
  */
 export function validateUIHook(hook: Partial<UIHook>): string[] {
   const errors: string[] = [];
-  
+
   if (!hook.name || hook.name.trim() === '') {
     errors.push('Hook name is required');
   }
-  
+
   if (!hook.when?.type) {
     errors.push('Hook event type is required');
   }
-  
+
   if (!hook.then?.type) {
     errors.push('Hook action type is required');
   }
-  
+
   // Validate file events have patterns
   if (hook.when?.type && isFileEvent(hook.when.type)) {
     if (!hook.when.patterns || hook.when.patterns.length === 0) {
       errors.push('File events require at least one file pattern');
     }
   }
-  
+
   // Validate askAgent has prompt
   if (hook.then?.type === 'askAgent') {
     if (!hook.then.prompt || hook.then.prompt.trim() === '') {
       errors.push('askAgent action requires a prompt');
     }
   }
-  
+
   // Validate runCommand has command
   if (hook.then?.type === 'runCommand') {
     if (!hook.then.command || hook.then.command.trim() === '') {
       errors.push('runCommand action requires a command');
     }
   }
-  
+
   return errors;
 }
 
 /**
  * Create a new UIHook with default values
- * 
+ *
  * @param overrides - Optional field overrides
  * @returns A new UIHook with defaults
  */
@@ -251,7 +249,7 @@ export function createDefaultUIHook(overrides?: Partial<UIHook>): UIHook {
 
 /**
  * Generate a unique hook ID
- * 
+ *
  * @returns A unique hook identifier
  */
 function generateHookId(): string {
@@ -260,7 +258,7 @@ function generateHookId(): string {
 
 /**
  * Convert form data to a UIHook
- * 
+ *
  * @param formData - Form data from the add/edit dialog
  * @returns A UIHook instance
  */
@@ -290,7 +288,7 @@ export function formDataToUIHook(formData: {
 
 /**
  * Convert a UIHook to form data
- * 
+ *
  * @param hook - The hook to convert
  * @returns Form data for editing
  */

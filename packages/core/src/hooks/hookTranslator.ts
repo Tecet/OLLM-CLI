@@ -1,6 +1,6 @@
 /**
  * HookTranslator converts between system data and hook protocol
- * 
+ *
  * Handles conversion of system events and data to the JSON format expected
  * by hooks, and parses hook output back into system format.
  */
@@ -13,7 +13,7 @@ import type { HookEvent, HookInput, HookOutput } from './types.js';
 export class HookTranslator {
   /**
    * Convert system data to hook input format
-   * 
+   *
    * @param event - The hook event type
    * @param data - Event-specific data
    * @returns Hook input in JSON-serializable format
@@ -21,7 +21,7 @@ export class HookTranslator {
   toHookInput(event: HookEvent, data: unknown): HookInput {
     // Ensure data is an object
     const eventData = this.normalizeData(data);
-    
+
     return {
       event,
       data: eventData,
@@ -30,7 +30,7 @@ export class HookTranslator {
 
   /**
    * Parse hook output from JSON string
-   * 
+   *
    * @param json - JSON string from hook stdout
    * @returns Parsed hook output
    * @throws Error if JSON is malformed or invalid
@@ -38,11 +38,11 @@ export class HookTranslator {
   parseHookOutput(json: string): HookOutput {
     try {
       const parsed = JSON.parse(json);
-      
+
       if (!this.validateOutput(parsed)) {
         throw new Error('Invalid hook output structure');
       }
-      
+
       return parsed as HookOutput;
     } catch (error) {
       if (error instanceof SyntaxError) {
@@ -54,7 +54,7 @@ export class HookTranslator {
 
   /**
    * Validate hook output structure
-   * 
+   *
    * @param output - Parsed output to validate
    * @returns true if output is valid
    */
@@ -72,7 +72,11 @@ export class HookTranslator {
     }
 
     // If systemMessage is present and not null, it must be a string
-    if ('systemMessage' in obj && obj.systemMessage !== null && typeof obj.systemMessage !== 'string') {
+    if (
+      'systemMessage' in obj &&
+      obj.systemMessage !== null &&
+      typeof obj.systemMessage !== 'string'
+    ) {
       return false;
     }
 
@@ -93,7 +97,7 @@ export class HookTranslator {
 
   /**
    * Normalize data to ensure it's a valid object
-   * 
+   *
    * @param data - Data to normalize
    * @returns Normalized data object
    */
@@ -114,7 +118,7 @@ export class HookTranslator {
 
   /**
    * Serialize hook input to JSON string
-   * 
+   *
    * @param input - Hook input to serialize
    * @returns JSON string
    */
@@ -124,7 +128,7 @@ export class HookTranslator {
 
   /**
    * Create hook input for specific event types with proper data structure
-   * 
+   *
    * @param event - The hook event type
    * @param data - Event-specific data
    * @returns Hook input with properly structured data
@@ -132,7 +136,7 @@ export class HookTranslator {
   createEventInput(event: HookEvent, data: Record<string, unknown>): HookInput {
     // Validate and structure data based on event type
     const structuredData = this.structureEventData(event, data);
-    
+
     return {
       event,
       data: structuredData,
@@ -141,12 +145,15 @@ export class HookTranslator {
 
   /**
    * Structure event data according to event type requirements
-   * 
+   *
    * @param event - The hook event type
    * @param data - Raw event data
    * @returns Structured event data
    */
-  private structureEventData(event: HookEvent, data: Record<string, unknown>): Record<string, unknown> {
+  private structureEventData(
+    event: HookEvent,
+    data: Record<string, unknown>
+  ): Record<string, unknown> {
     // Structure data based on event type requirements
     switch (event) {
       case 'session_start':
@@ -269,4 +276,3 @@ export class HookTranslator {
     };
   }
 }
-

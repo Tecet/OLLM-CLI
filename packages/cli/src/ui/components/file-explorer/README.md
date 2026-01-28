@@ -18,6 +18,7 @@ file-explorer/
 ## Core Types
 
 ### WorkspaceConfig
+
 Workspace configuration loaded from `.ollm-workspace` file.
 
 ```typescript
@@ -28,6 +29,7 @@ interface WorkspaceConfig {
 ```
 
 ### ProjectConfig
+
 Individual project configuration within a workspace.
 
 ```typescript
@@ -40,6 +42,7 @@ interface ProjectConfig {
 ```
 
 ### FileNode
+
 File tree node representing a file or directory.
 
 ```typescript
@@ -55,6 +58,7 @@ interface FileNode {
 ```
 
 ### GitStatus
+
 Git status indicator for files.
 
 ```typescript
@@ -62,6 +66,7 @@ type GitStatus = 'untracked' | 'modified' | 'ignored' | 'clean';
 ```
 
 ### FocusedFile
+
 Focused file with content for LLM context injection.
 
 ```typescript
@@ -74,6 +79,7 @@ interface FocusedFile {
 ```
 
 ### ImageMetadata
+
 Image metadata for vision support.
 
 ```typescript
@@ -102,11 +108,13 @@ import type {
 ## Testing
 
 Run all file explorer tests:
+
 ```bash
 npm test -- packages/cli/src/ui/components/file-explorer --run
 ```
 
 Run specific test suites:
+
 ```bash
 # Unit tests
 npm test -- packages/cli/src/ui/components/file-explorer/__tests__/unit --run
@@ -121,12 +129,14 @@ npm test -- packages/cli/src/ui/components/file-explorer/__tests__/integration -
 ## Requirements
 
 This component implements requirements from the File Explorer specification:
+
 - **Requirement 1.1**: Workspace file parsing
 - **Requirement 1.3**: Project metadata support
 
 ## Next Steps
 
 The following components will be implemented in subsequent tasks:
+
 - WorkspaceManager service (Task 2)
 - PathSanitizer service (Task 3)
 - React contexts for state management (Task 4)

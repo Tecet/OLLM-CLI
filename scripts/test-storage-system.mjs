@@ -1,15 +1,15 @@
 /**
  * Test Storage System
- * 
+ *
  * Tests the storage initialization, path validation, and migration utilities.
  */
 
-import { 
+import {
   getDefaultStorageLocations,
   logAllStorageLocations,
   validateStoragePath,
   needsMigration,
-  initializeStorage
+  initializeStorage,
 } from './packages/core/dist/index.js';
 
 console.log('='.repeat(80));

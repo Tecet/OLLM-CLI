@@ -1,10 +1,10 @@
 /**
  * QuickActionsMenu - Context menu for file operations
- * 
+ *
  * Displays a menu with common file operations: Open, Focus, Edit, Rename,
  * Delete, and Copy Path. The menu is triggered by keyboard shortcut (e.g., 'a')
  * and allows users to quickly perform actions on the selected file.
- * 
+ *
  * Requirements: 7.4
  */
 
@@ -18,13 +18,7 @@ import type { FileNode } from './types.js';
 /**
  * Available actions in the quick actions menu
  */
-export type QuickAction = 
-  | 'open'
-  | 'focus'
-  | 'edit'
-  | 'rename'
-  | 'delete'
-  | 'copyPath';
+export type QuickAction = 'open' | 'focus' | 'edit' | 'rename' | 'delete' | 'copyPath';
 
 /**
  * Menu option definition
@@ -56,18 +50,18 @@ export interface QuickActionsMenuProps {
 
 /**
  * Get menu options based on the selected node
- * 
+ *
  * Some options are only available for files (not directories):
  * - Open: Files only
  * - Focus: Files only
  * - Edit: Files only
- * 
+ *
  * All other options are available for both files and directories.
  */
 function getMenuOptions(selectedNode: FileNode | null): MenuOption[] {
   const isFile = selectedNode?.type === 'file';
   const isDirectory = selectedNode?.type === 'directory';
-  
+
   return [
     {
       action: 'open',
@@ -110,10 +104,10 @@ function getMenuOptions(selectedNode: FileNode | null): MenuOption[] {
 
 /**
  * QuickActionsMenu component
- * 
+ *
  * Displays a modal menu with file operation options. The menu can be
  * navigated with arrow keys or by pressing the shortcut key for each option.
- * 
+ *
  * Keyboard shortcuts:
  * - Up/Down: Navigate menu options
  * - Enter: Select current option
@@ -127,22 +121,25 @@ export function QuickActionsMenu({
   onClose,
 }: QuickActionsMenuProps) {
   const menuOptions = getMenuOptions(selectedNode);
-  const enabledOptions = menuOptions.filter(opt => opt.enabled);
-  
+  const enabledOptions = menuOptions.filter((opt) => opt.enabled);
+
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   /**
    * Handle action selection
    */
-  const handleSelect = useCallback((action: QuickAction) => {
-    onAction(action);
-    onClose();
-  }, [onAction, onClose]);
+  const handleSelect = useCallback(
+    (action: QuickAction) => {
+      onAction(action);
+      onClose();
+    },
+    [onAction, onClose]
+  );
 
   /**
    * Handle keyboard input
    */
-   
+
   const { activeKeybinds } = useKeybinds();
 
   useInput((input, key) => {
@@ -150,17 +147,19 @@ export function QuickActionsMenu({
 
     // Helper to check key against config
     const isKey = (cfgKey: string) => {
-        if (!cfgKey) return false;
-        const norm = (k: string) => k.toLowerCase().replace(/\s/g, '');
-        const inputKey = [
-            key.ctrl ? 'ctrl' : '',
-            key.meta ? 'meta' : '',
-            key.shift ? 'shift' : '',
-            input
-        ].filter(Boolean).join('+');
+      if (!cfgKey) return false;
+      const norm = (k: string) => k.toLowerCase().replace(/\s/g, '');
+      const inputKey = [
+        key.ctrl ? 'ctrl' : '',
+        key.meta ? 'meta' : '',
+        key.shift ? 'shift' : '',
+        input,
+      ]
+        .filter(Boolean)
+        .join('+');
 
-        // Handle special keys if needed, though here we mostly use chars
-        return norm(inputKey) === norm(cfgKey);
+      // Handle special keys if needed, though here we mostly use chars
+      return norm(inputKey) === norm(cfgKey);
     };
 
     // Close menu on Esc
@@ -171,16 +170,12 @@ export function QuickActionsMenu({
 
     // Navigate with arrow keys
     if (key.upArrow) {
-      setSelectedIndex(prev =>
-        prev > 0 ? prev - 1 : enabledOptions.length - 1
-      );
+      setSelectedIndex((prev) => (prev > 0 ? prev - 1 : enabledOptions.length - 1));
       return;
     }
 
     if (key.downArrow) {
-      setSelectedIndex(prev =>
-        prev < enabledOptions.length - 1 ? prev + 1 : 0
-      );
+      setSelectedIndex((prev) => (prev < enabledOptions.length - 1 ? prev + 1 : 0));
       return;
     }
 
@@ -200,8 +195,8 @@ export function QuickActionsMenu({
     // The new `isKey` helper checks for combined keys (ctrl+o, etc.).
     // We need to map the keybinds to the actions.
     const findAndHandleKeybind = (keybind: string | undefined, action: QuickAction) => {
-      if (isKey(keybind || menuOptions.find(opt => opt.action === action)?.key || '')) {
-        const option = enabledOptions.find(opt => opt.action === action);
+      if (isKey(keybind || menuOptions.find((opt) => opt.action === action)?.key || '')) {
+        const option = enabledOptions.find((opt) => opt.action === action);
         if (option) {
           handleSelect(option.action);
           return true;
@@ -226,12 +221,7 @@ export function QuickActionsMenu({
   // Don't render if no node is selected
   if (!selectedNode) {
     return (
-      <Box
-        flexDirection="column"
-        borderStyle="round"
-        borderColor="yellow"
-        padding={1}
-      >
+      <Box flexDirection="column" borderStyle="round" borderColor="yellow" padding={1}>
         <Text color="yellow">No file or folder selected</Text>
         <Text dimColor>Press Esc to close</Text>
       </Box>
@@ -239,13 +229,7 @@ export function QuickActionsMenu({
   }
 
   return (
-    <Box
-      flexDirection="column"
-      borderStyle="round"
-      borderColor="cyan"
-      padding={1}
-      minWidth={40}
-    >
+    <Box flexDirection="column" borderStyle="round" borderColor="cyan" padding={1} minWidth={40}>
       {/* Header */}
       <Box marginBottom={1}>
         <Text color="cyan" bold>
@@ -258,27 +242,25 @@ export function QuickActionsMenu({
       <Box flexDirection="column">
         {enabledOptions.map((option, index) => {
           const isSelected = index === selectedIndex;
-          
+
           return (
             <Box key={option.action} flexDirection="row">
               {/* Selection indicator */}
               <Text bold={isSelected} inverse={isSelected}>
                 {isSelected ? '>' : ' '}
               </Text>
-              
+
               <Text> </Text>
-              
+
               {/* Shortcut key */}
               <Text color="green" bold>
                 [{option.key}]
               </Text>
-              
+
               <Text> </Text>
-              
+
               {/* Option label */}
-              <Text bold={isSelected}>
-                {option.label}
-              </Text>
+              <Text bold={isSelected}>{option.label}</Text>
             </Box>
           );
         })}
@@ -286,9 +268,7 @@ export function QuickActionsMenu({
 
       {/* Footer */}
       <Box marginTop={1}>
-        <Text dimColor>
-          Use arrow keys or shortcuts • Enter to select • Esc to close
-        </Text>
+        <Text dimColor>Use arrow keys or shortcuts • Enter to select • Esc to close</Text>
       </Box>
     </Box>
   );

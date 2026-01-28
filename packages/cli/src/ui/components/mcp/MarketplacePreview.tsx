@@ -1,10 +1,10 @@
 /**
  * MarketplacePreview Component
- * 
+ *
  * Displays a preview of the top 3 popular servers from the MCP marketplace.
  * Shows server name, description, rating (★), install count, and OAuth requirements.
  * Includes a hint to press 'M' to open the full marketplace.
- * 
+ *
  * Validates: Requirements 3.1, 3.2, 3.3, 3.6
  */
 
@@ -82,7 +82,7 @@ const MarketplaceServerItem: React.FC<{ server: MCPMarketplaceServer }> = ({ ser
 
 /**
  * MarketplacePreview Component
- * 
+ *
  * Displays a preview of popular MCP servers from the marketplace.
  * Shows the top 3 servers with their details and a hint to open the full marketplace.
  */

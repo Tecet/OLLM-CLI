@@ -13,11 +13,11 @@ This implementation plan breaks down the cross-platform support feature into dis
   - Cache platform info for performance
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6_
 
-- [ ]* 1.1 Write property test for platform detection consistency
+- [ ]\* 1.1 Write property test for platform detection consistency
   - **Property 1: Platform detection consistency**
   - **Validates: Requirements 1.1, 1.6**
 
-- [ ]* 1.2 Write unit tests for platform-specific values
+- [ ]\* 1.2 Write unit tests for platform-specific values
   - Test shell, shellFlag, pythonCommand on current platform
   - Test boolean flags match os field
   - _Requirements: 1.2, 1.3, 1.4, 1.5_
@@ -30,19 +30,19 @@ This implementation plan breaks down the cross-platform support feature into dis
   - Implement resolvePath() to handle mixed separators
   - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
 
-- [ ]* 2.1 Write property test for display path normalization
+- [ ]\* 2.1 Write property test for display path normalization
   - **Property 8: Display paths use forward slashes**
   - **Validates: Requirements 6.1, 10.4**
 
-- [ ]* 2.2 Write property test for native path conversion
+- [ ]\* 2.2 Write property test for native path conversion
   - **Property 9: Native paths use platform separator**
   - **Validates: Requirements 6.2, 6.5**
 
-- [ ]* 2.3 Write property test for path joining with mixed separators
+- [ ]\* 2.3 Write property test for path joining with mixed separators
   - **Property 10: Path joining handles mixed separators**
   - **Validates: Requirements 6.4**
 
-- [ ]* 2.4 Write property test for absolute path validation
+- [ ]\* 2.4 Write property test for absolute path validation
   - **Property 17: Config paths are absolute**
   - **Validates: Requirements 2.1-2.7**
 
@@ -55,11 +55,11 @@ This implementation plan breaks down the cross-platform support feature into dis
   - Implement getLegacyConfigPath() for backward compatibility
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8_
 
-- [ ]* 3.1 Write property test for XDG environment variable override
+- [ ]\* 3.1 Write property test for XDG environment variable override
   - **Property 12: XDG environment variables override defaults**
   - **Validates: Requirements 2.5, 2.6, 2.7, 9.4, 9.5, 9.6**
 
-- [ ]* 3.2 Write unit tests for platform-specific config paths
+- [ ]\* 3.2 Write unit tests for platform-specific config paths
   - Test Windows APPDATA paths
   - Test macOS Library paths
   - Test Linux XDG paths with and without env vars
@@ -78,35 +78,35 @@ This implementation plan breaks down the cross-platform support feature into dis
   - Create icons object with Unicode and ASCII fallbacks
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9_
 
-- [ ]* 5.1 Write property test for NO_COLOR disabling color
+- [ ]\* 5.1 Write property test for NO_COLOR disabling color
   - **Property 2: NO_COLOR disables color**
   - **Validates: Requirements 3.2, 9.2**
 
-- [ ]* 5.2 Write property test for COLORTERM enabling true color
+- [ ]\* 5.2 Write property test for COLORTERM enabling true color
   - **Property 3: COLORTERM enables true color**
   - **Validates: Requirements 3.3**
 
-- [ ]* 5.3 Write property test for TERM 256color support
+- [ ]\* 5.3 Write property test for TERM 256color support
   - **Property 4: TERM 256color enables 256-color**
   - **Validates: Requirements 3.4**
 
-- [ ]* 5.4 Write property test for non-TTY disabling color
+- [ ]\* 5.4 Write property test for non-TTY disabling color
   - **Property 5: Non-TTY disables color**
   - **Validates: Requirements 3.1**
 
-- [ ]* 5.5 Write property test for FORCE_COLOR enabling color
+- [ ]\* 5.5 Write property test for FORCE_COLOR enabling color
   - **Property 13: FORCE_COLOR enables color**
   - **Validates: Requirements 9.3**
 
-- [ ]* 5.6 Write property test for Unicode fallback ASCII characters
+- [ ]\* 5.6 Write property test for Unicode fallback ASCII characters
   - **Property 6: Unicode fallback provides ASCII**
   - **Validates: Requirements 3.9, 8.2**
 
-- [ ]* 5.7 Write property test for color hierarchy consistency
+- [ ]\* 5.7 Write property test for color hierarchy consistency
   - **Property 16: Color hierarchy consistency**
   - **Validates: Requirements 3.3, 3.4**
 
-- [ ]* 5.8 Write unit tests for terminal capability detection
+- [ ]\* 5.8 Write unit tests for terminal capability detection
   - Test with various TERM values
   - Test Windows-specific environment variables
   - Test icon fallbacks
@@ -121,19 +121,19 @@ This implementation plan breaks down the cross-platform support feature into dis
   - Add error handling to never throw exceptions
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7_
 
-- [ ]* 6.1 Write property test for GPU monitoring never throwing
+- [ ]\* 6.1 Write property test for GPU monitoring never throwing
   - **Property 7: GPU monitoring never throws**
   - **Validates: Requirements 4.6, 4.7, 8.1**
 
-- [ ]* 6.2 Write property test for NVIDIA_SMI_PATH override
+- [ ]\* 6.2 Write property test for NVIDIA_SMI_PATH override
   - **Property 11: Environment variable override for GPU path**
   - **Validates: Requirements 4.2, 9.1**
 
-- [ ]* 6.3 Write property test for VRAM usage constraint
+- [ ]\* 6.3 Write property test for VRAM usage constraint
   - **Property 18: VRAM usage constraint**
   - **Validates: Requirements 4.1-4.5**
 
-- [ ]* 6.4 Write unit tests for platform-specific GPU monitoring
+- [ ]\* 6.4 Write unit tests for platform-specific GPU monitoring
   - Mock nvidia-smi output on Windows and Linux
   - Mock rocm-smi output on Linux
   - Test CPU fallback behavior
@@ -150,7 +150,7 @@ This implementation plan breaks down the cross-platform support feature into dis
   - Handle temporary file creation with platform-appropriate line endings
   - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
 
-- [ ]* 8.1 Write unit tests for shell executor platform behavior
+- [ ]\* 8.1 Write unit tests for shell executor platform behavior
   - Test correct shell and flags on current platform
   - Test correct Python command on current platform
   - Test temporary file creation
@@ -163,15 +163,15 @@ This implementation plan breaks down the cross-platform support feature into dis
   - Implement default values when environment variables are unset
   - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5_
 
-- [ ]* 9.1 Write property test for missing tools triggering fallback
+- [ ]\* 9.1 Write property test for missing tools triggering fallback
   - **Property 14: Missing tools trigger fallback**
   - **Validates: Requirements 8.4**
 
-- [ ]* 9.2 Write property test for undefined environment variables using defaults
+- [ ]\* 9.2 Write property test for undefined environment variables using defaults
   - **Property 15: Undefined environment variables use defaults**
   - **Validates: Requirements 8.5**
 
-- [ ]* 9.3 Write unit tests for graceful degradation
+- [ ]\* 9.3 Write unit tests for graceful degradation
   - Test GPU monitoring with missing tools
   - Test terminal capabilities with minimal environment
   - Test config paths with no environment variables
@@ -185,7 +185,7 @@ This implementation plan breaks down the cross-platform support feature into dis
   - Ensure consistent path display throughout the application
   - _Requirements: 10.1, 10.2, 10.3, 10.4_
 
-- [ ]* 10.1 Write integration tests for cross-platform behavior
+- [ ]\* 10.1 Write integration tests for cross-platform behavior
   - Test config loading on current platform
   - Test file operations with mixed path separators
   - Test UI rendering with terminal capabilities

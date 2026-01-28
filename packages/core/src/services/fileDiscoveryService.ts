@@ -1,6 +1,6 @@
 /**
  * FileDiscoveryService - Fast project file scanning with ignore pattern support
- * 
+ *
  * Responsibilities:
  * - Traverse directories asynchronously with depth limits
  * - Respect .ollmignore and .gitignore patterns
@@ -21,12 +21,7 @@ import picomatch from 'picomatch';
 
 import { sanitizeErrorMessage } from './errorSanitization.js';
 
-import type {
-  FileEntry,
-  DiscoveryOptions,
-  Disposable,
-  FileChangeEvent,
-} from './types.js';
+import type { FileEntry, DiscoveryOptions, Disposable, FileChangeEvent } from './types.js';
 import type { Ignore } from 'ignore';
 
 /**
@@ -93,10 +88,7 @@ export class FileDiscoveryService {
     const ig = this.ignoreCache.get(root);
 
     // Build fdir crawler with basic configuration
-    const crawler = new fdir()
-      .withFullPaths()
-      .withDirs()
-      .crawl(root);
+    const crawler = new fdir().withFullPaths().withDirs().crawl(root);
 
     // Get all paths
     const paths = (await crawler.withPromise()) as string[];
@@ -164,7 +156,7 @@ export class FileDiscoveryService {
 
   /**
    * Watch for file system changes
-   * 
+   *
    * Uses Node.js fs.watch to monitor file system changes in the specified directory.
    * The callback is invoked with the event type and file path when changes are detected.
    */
@@ -189,51 +181,53 @@ export class FileDiscoveryService {
         }
 
         // Create the watcher
-        watcher = fsSync.watch(
-          root,
-          { recursive: true },
-          (eventType, filename) => {
-            if (isDisposed || !filename) {
-              return;
-            }
-
-            // Convert Node.js event types to our FileChangeEvent types
-            let event: FileChangeEvent;
-            if (eventType === 'rename') {
-              // 'rename' can mean add or delete - we'll check if file exists
-              const fullPath = path.join(root, filename);
-              fs.access(fullPath)
-                .then(() => {
-                  // File exists, so it was added
-                  callback('add', fullPath);
-                })
-                .catch(() => {
-                  // File doesn't exist, so it was deleted
-                  callback('unlink', fullPath);
-                });
-              return;
-            } else if (eventType === 'change') {
-              event = 'change';
-            } else {
-              // Unknown event type, default to 'change'
-              event = 'change';
-            }
-
-            const fullPath = path.join(root, filename);
-            callback(event, fullPath);
+        watcher = fsSync.watch(root, { recursive: true }, (eventType, filename) => {
+          if (isDisposed || !filename) {
+            return;
           }
-        );
+
+          // Convert Node.js event types to our FileChangeEvent types
+          let event: FileChangeEvent;
+          if (eventType === 'rename') {
+            // 'rename' can mean add or delete - we'll check if file exists
+            const fullPath = path.join(root, filename);
+            fs.access(fullPath)
+              .then(() => {
+                // File exists, so it was added
+                callback('add', fullPath);
+              })
+              .catch(() => {
+                // File doesn't exist, so it was deleted
+                callback('unlink', fullPath);
+              });
+            return;
+          } else if (eventType === 'change') {
+            event = 'change';
+          } else {
+            // Unknown event type, default to 'change'
+            event = 'change';
+          }
+
+          const fullPath = path.join(root, filename);
+          callback(event, fullPath);
+        });
 
         // Handle watcher errors
         watcher.on('error', (error) => {
           const errorMessage = error instanceof Error ? error.message : String(error);
-          console.error(`File watcher error for ${sanitizeErrorMessage(root)}:`, sanitizeErrorMessage(errorMessage));
+          console.error(
+            `File watcher error for ${sanitizeErrorMessage(root)}:`,
+            sanitizeErrorMessage(errorMessage)
+          );
         });
       } catch (error) {
         // Only log error if not in a test environment
         if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
           const errorMessage = error instanceof Error ? error.message : String(error);
-          console.error(`Failed to start file watcher for ${sanitizeErrorMessage(root)}:`, sanitizeErrorMessage(errorMessage));
+          console.error(
+            `Failed to start file watcher for ${sanitizeErrorMessage(root)}:`,
+            sanitizeErrorMessage(errorMessage)
+          );
         }
       }
     })();

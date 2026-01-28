@@ -1,6 +1,6 @@
 /**
  * Prompt Utility Functions
- * 
+ *
  * Helper functions for prompt management and tier resolution.
  * Extracted from ChatContext.tsx for better organization.
  */
@@ -8,11 +8,7 @@
 import { existsSync, readFileSync } from 'fs';
 import path from 'path';
 
-import {
-  ContextTier,
-  OperationalMode,
-  TieredPromptStore,
-} from '@ollm/core';
+import { ContextTier, OperationalMode, TieredPromptStore } from '@ollm/core';
 
 const tieredPromptStore = new TieredPromptStore();
 tieredPromptStore.load();
@@ -75,8 +71,26 @@ export function loadTierPromptWithFallback(mode: OperationalMode, tier: ContextT
 
   const tierKey = tierToKey(tier);
   const candidates = [
-    path.join(process.cwd(), 'packages', 'core', 'dist', 'prompts', 'templates', mode, `${tierKey}.txt`),
-    path.join(process.cwd(), 'packages', 'core', 'src', 'prompts', 'templates', mode, `${tierKey}.txt`),
+    path.join(
+      process.cwd(),
+      'packages',
+      'core',
+      'dist',
+      'prompts',
+      'templates',
+      mode,
+      `${tierKey}.txt`
+    ),
+    path.join(
+      process.cwd(),
+      'packages',
+      'core',
+      'src',
+      'prompts',
+      'templates',
+      mode,
+      `${tierKey}.txt`
+    ),
   ];
 
   for (const candidate of candidates) {

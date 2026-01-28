@@ -14,17 +14,17 @@ export interface Options {
 export interface OptionsPanelProps {
   /** Current options */
   options: Options;
-  
+
   /** Callback when an option is changed */
   onChange: (key: keyof Options, value: unknown) => void;
-  
+
   /** Theme for styling */
   theme: Theme;
 }
 
 /**
  * OptionsPanel component
- * 
+ *
  * Displays and allows editing of runtime options.
  * Shows temperature, max tokens, and feature toggles.
  */

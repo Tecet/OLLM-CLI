@@ -1,12 +1,12 @@
 /**
  * ExplorerPersistence - Manages state persistence for File Explorer
- * 
+ *
  * Responsibilities:
  * - Save explorer state to .ollm/explorer-state.json
  * - Load explorer state from disk
  * - Handle corrupted state files gracefully
  * - Persist expanded directories, focused files, and Quick Open history
- * 
+ *
  * Requirements: 12.1, 12.2, 12.3, 12.5
  */
 
@@ -58,25 +58,25 @@ export class ExplorerPersistence {
 
   /**
    * Create a new ExplorerPersistence instance
-   * 
+   *
    * @param workspaceRoot - Root directory of the workspace
    * @param options - Configuration options
    */
   constructor(workspaceRoot: string, options?: ExplorerPersistenceOptions) {
-    this.stateFilePath = options?.stateFilePath ?? 
-      path.join(workspaceRoot, '.ollm', 'explorer-state.json');
+    this.stateFilePath =
+      options?.stateFilePath ?? path.join(workspaceRoot, '.ollm', 'explorer-state.json');
     this.silent = options?.silent ?? false;
   }
 
   /**
    * Save explorer state to disk
-   * 
+   *
    * Creates the .ollm directory if it doesn't exist.
    * Writes state as formatted JSON for readability.
-   * 
+   *
    * @param state - Explorer state to save
    * @throws Error if unable to write state file
-   * 
+   *
    * Requirement 12.1: Save expanded directory state
    * Requirement 12.2: Persist state across sessions
    * Requirement 12.3: Save focused files list
@@ -97,21 +97,21 @@ export class ExplorerPersistence {
         operation: 'saveState',
         stateFilePath: this.stateFilePath,
       });
-      
+
       throw new Error(`Failed to save explorer state: ${errorInfo.message}`);
     }
   }
 
   /**
    * Load explorer state from disk
-   * 
+   *
    * Returns default state if:
    * - State file doesn't exist
    * - State file is corrupted/invalid JSON
    * - State file is missing required fields
-   * 
+   *
    * @returns Loaded explorer state or default state
-   * 
+   *
    * Requirement 12.2: Restore expanded directories on startup
    * Requirement 12.3: Restore focused files list
    * Requirement 12.5: Handle corrupted configuration gracefully
@@ -137,18 +137,15 @@ export class ExplorerPersistence {
 
       // Return validated state with defaults for missing fields
       return {
-        expandedDirectories: Array.isArray(rawState.expandedDirectories) 
-          ? rawState.expandedDirectories 
+        expandedDirectories: Array.isArray(rawState.expandedDirectories)
+          ? rawState.expandedDirectories
           : [],
-        focusedFiles: Array.isArray(rawState.focusedFiles) 
-          ? rawState.focusedFiles 
-          : [],
-        quickOpenHistory: Array.isArray(rawState.quickOpenHistory) 
-          ? rawState.quickOpenHistory 
-          : [],
-        lastActiveProject: typeof rawState.lastActiveProject === 'string' || rawState.lastActiveProject === null
-          ? rawState.lastActiveProject 
-          : null,
+        focusedFiles: Array.isArray(rawState.focusedFiles) ? rawState.focusedFiles : [],
+        quickOpenHistory: Array.isArray(rawState.quickOpenHistory) ? rawState.quickOpenHistory : [],
+        lastActiveProject:
+          typeof rawState.lastActiveProject === 'string' || rawState.lastActiveProject === null
+            ? rawState.lastActiveProject
+            : null,
       };
     } catch (error) {
       // Handle JSON parse errors or file read errors
@@ -158,7 +155,7 @@ export class ExplorerPersistence {
           stateFilePath: this.stateFilePath,
           silent: this.silent,
         });
-        
+
         console.warn(`Failed to load explorer state: ${errorInfo.message}. Using default state.`);
       }
       return { ...DEFAULT_STATE };
@@ -167,7 +164,7 @@ export class ExplorerPersistence {
 
   /**
    * Validate that a raw state object has the correct structure
-   * 
+   *
    * @param state - Raw state object to validate
    * @returns True if state is valid
    */
@@ -189,7 +186,7 @@ export class ExplorerPersistence {
 
   /**
    * Clear all persisted state
-   * 
+   *
    * Deletes the state file if it exists.
    * Useful for testing or resetting to clean state.
    */
@@ -203,14 +200,14 @@ export class ExplorerPersistence {
         operation: 'clearState',
         stateFilePath: this.stateFilePath,
       });
-      
+
       throw new Error(`Failed to clear explorer state: ${errorInfo.message}`);
     }
   }
 
   /**
    * Check if a persisted state file exists
-   * 
+   *
    * @returns True if state file exists
    */
   hasPersistedState(): boolean {
@@ -219,7 +216,7 @@ export class ExplorerPersistence {
 
   /**
    * Get the path to the state file
-   * 
+   *
    * @returns Absolute path to state file
    */
   getStateFilePath(): string {

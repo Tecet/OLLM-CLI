@@ -1,6 +1,6 @@
 /**
  * Template Management Commands
- * 
+ *
  * Implements commands for managing prompt templates:
  * - /template list - Show available templates
  * - /template use <name> [vars...] - Use a template
@@ -13,13 +13,13 @@ import type { Command, CommandResult } from './types.js';
 
 /**
  * /template list - Show available templates
- * 
+ *
  * Requirements: 18.1
  */
 async function templateListHandler(service: TemplateService): Promise<CommandResult> {
   try {
     const templates = service.listTemplates();
-    
+
     if (templates.length === 0) {
       return {
         success: true,
@@ -27,16 +27,17 @@ async function templateListHandler(service: TemplateService): Promise<CommandRes
         data: { templates: [] },
       };
     }
-    
+
     // Format template list
-    const templateList = templates.map(template => {
-      const varCount = template.variableCount;
-      const varText = varCount === 0 ? 'no variables' : 
-                      varCount === 1 ? '1 variable' : 
-                      `${varCount} variables`;
-      return `  ${template.name} - ${template.description} (${varText})`;
-    }).join('\n');
-    
+    const templateList = templates
+      .map((template) => {
+        const varCount = template.variableCount;
+        const varText =
+          varCount === 0 ? 'no variables' : varCount === 1 ? '1 variable' : `${varCount} variables`;
+        return `  ${template.name} - ${template.description} (${varText})`;
+      })
+      .join('\n');
+
     return {
       success: true,
       message: `Available templates:\n\n${templateList}`,
@@ -52,10 +53,13 @@ async function templateListHandler(service: TemplateService): Promise<CommandRes
 
 /**
  * /template use <name> [vars...] - Use a template
- * 
+ *
  * Requirements: 18.2, 17.1, 17.2, 17.3
  */
-async function templateUseHandler(args: string[], service: TemplateService): Promise<CommandResult> {
+async function templateUseHandler(
+  args: string[],
+  service: TemplateService
+): Promise<CommandResult> {
   if (args.length === 0) {
     return {
       success: false,
@@ -75,7 +79,7 @@ async function templateUseHandler(args: string[], service: TemplateService): Pro
         message: `Template not found: ${templateName}`,
       };
     }
-    
+
     // Parse variable arguments (key=value format)
     const variables: Record<string, string> = {};
     for (const arg of variableArgs) {
@@ -89,10 +93,10 @@ async function templateUseHandler(args: string[], service: TemplateService): Pro
         };
       }
     }
-    
+
     // Apply template
     const result = service.applyTemplate(templateName, variables);
-    
+
     return {
       success: true,
       message: `Template applied:\n\n${result}`,
@@ -108,7 +112,7 @@ async function templateUseHandler(args: string[], service: TemplateService): Pro
 
 /**
  * /template create <name> - Create new template
- * 
+ *
  * Requirements: 18.3
  */
 async function templateCreateHandler(args: string[]): Promise<CommandResult> {
@@ -125,7 +129,8 @@ async function templateCreateHandler(args: string[]): Promise<CommandResult> {
   // In a full implementation, this would open an editor or prompt for template content
   return {
     success: true,
-    message: `To create a template named "${templateName}", create a YAML file at:\n\n` +
+    message:
+      `To create a template named "${templateName}", create a YAML file at:\n\n` +
       `  ~/.ollm/templates/${templateName}.yaml\n\n` +
       'Template format:\n' +
       '  name: template_name\n' +
@@ -141,7 +146,7 @@ async function templateCreateHandler(args: string[]): Promise<CommandResult> {
 
 /**
  * /template command - Main template command with subcommands
- * 
+ *
  * Requirements: 18.1, 18.2, 18.3
  */
 export const templateCommand: Command = {
@@ -152,7 +157,8 @@ export const templateCommand: Command = {
     if (args.length === 0) {
       return {
         success: false,
-        message: 'Usage: /template <list|use|create> [args]\n\n' +
+        message:
+          'Usage: /template <list|use|create> [args]\n\n' +
           'Subcommands:\n' +
           '  list                    - Show available templates\n' +
           '  use <name> [vars...]    - Use a template with variables\n' +
@@ -169,7 +175,7 @@ export const templateCommand: Command = {
       userTemplatesDir: undefined, // Will use default
       workspaceTemplatesDir: undefined, // Will use default
     });
-    
+
     // Load templates
     await service.loadTemplates();
 
@@ -183,8 +189,8 @@ export const templateCommand: Command = {
       default:
         return {
           success: false,
-          message: `Unknown subcommand: ${subcommand}\n\n` +
-            'Available subcommands: list, use, create',
+          message:
+            `Unknown subcommand: ${subcommand}\n\n` + 'Available subcommands: list, use, create',
         };
     }
   },
@@ -193,10 +199,7 @@ export const templateCommand: Command = {
 /**
  * All template-related commands
  */
-export const templateCommands: Command[] = [
-  templateCommand,
-];
-
+export const templateCommands: Command[] = [templateCommand];
 
 /**
  * Create template commands with service container dependency injection

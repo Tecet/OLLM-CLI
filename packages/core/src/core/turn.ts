@@ -3,10 +3,7 @@
  * A turn represents a single conversation cycle including model response and tool executions.
  */
 
-import { 
-  
-  DeclarativeTool as _DeclarativeTool,
-} from '../tools/types.js';
+import { DeclarativeTool as _DeclarativeTool } from '../tools/types.js';
 
 import type { ModeType } from '../prompts/ContextAnalyzer.js';
 import type { SnapshotManager } from '../prompts/modeSnapshotManager.js';
@@ -120,9 +117,11 @@ export class Turn {
           break;
         } else if (event.type === 'error') {
           // Requirement 10.1: Emit provider errors with details
-          yield { 
-            type: 'error', 
-            error: new Error(`Provider error: ${event.error.message}${event.error.code ? ` (${event.error.code})` : ''}`)
+          yield {
+            type: 'error',
+            error: new Error(
+              `Provider error: ${event.error.message}${event.error.code ? ` (${event.error.code})` : ''}`
+            ),
           };
           return;
         }
@@ -130,16 +129,16 @@ export class Turn {
     } catch (error) {
       // Requirement 10.5: Catch and emit unexpected errors without crashing
       const err = error as Error;
-      
+
       // Check if this is an abort error (Requirement 10.4)
       if (err.name === 'AbortError') {
         // Clean up on abort - don't emit error, just return
         return;
       }
-      
-      yield { 
-        type: 'error', 
-        error: new Error(`Stream error: ${err.message}`)
+
+      yield {
+        type: 'error',
+        error: new Error(`Stream error: ${err.message}`),
       };
       return;
     }
@@ -163,7 +162,7 @@ export class Turn {
       if (this.options?.abortSignal?.aborted) {
         return;
       }
-      
+
       yield* this.executeToolCalls();
     }
   }
@@ -176,18 +175,21 @@ export class Turn {
     // Task 8.2: Get current mode from ModeManager (for tool permission checking)
     const currentMode = this.modeManager?.getCurrentMode() ?? 'developer';
     this.modeBeforeToolExecution = currentMode;
-    
+
     // Execute tool calls in parallel (Requirement 10.2: Handle errors without terminating)
     const results = await Promise.allSettled(
       this.toolCallQueue.map(async (toolCall) => {
         // Task 8.3: Check if tool is allowed in current mode
         if (this.modeManager && this.modeBeforeToolExecution) {
-          const isAllowed = this.modeManager.isToolAllowed(toolCall.name, this.modeBeforeToolExecution);
-          
+          const isAllowed = this.modeManager.isToolAllowed(
+            toolCall.name,
+            this.modeBeforeToolExecution
+          );
+
           // Task 8.4: Return error if tool not allowed with helpful message
           if (!isAllowed) {
             const deniedTools = this.modeManager.getDeniedTools(this.modeBeforeToolExecution);
-            const isDenied = deniedTools.some(pattern => {
+            const isDenied = deniedTools.some((pattern) => {
               if (pattern === '*') return true;
               if (pattern.endsWith('*')) {
                 const prefix = pattern.slice(0, -1);
@@ -195,21 +197,22 @@ export class Turn {
               }
               return pattern === toolCall.name;
             });
-            
+
             if (isDenied) {
               return {
                 toolCall,
-                result: { 
-                  error: `Tool "${toolCall.name}" is not allowed in ${this.modeBeforeToolExecution} mode.\n` +
-                         `Current mode: ${this.modeBeforeToolExecution}\n` +
-                         `This tool requires developer mode or a specialized mode.\n` +
-                         `Suggestion: Switch to developer mode to use this tool.`
+                result: {
+                  error:
+                    `Tool "${toolCall.name}" is not allowed in ${this.modeBeforeToolExecution} mode.\n` +
+                    `Current mode: ${this.modeBeforeToolExecution}\n` +
+                    `This tool requires developer mode or a specialized mode.\n` +
+                    `Suggestion: Switch to developer mode to use this tool.`,
                 },
               };
             }
           }
         }
-        
+
         const tool = this.toolRegistry.get(toolCall.name);
         if (!tool) {
           return {
@@ -220,16 +223,21 @@ export class Turn {
 
         // Check for parsing errors propagated from provider (Output Healing)
         // This allows the LLM to self-correct malformed JSON
-        if (toolCall.args && typeof toolCall.args === 'object' && '__parsing_error__' in toolCall.args) {
-           const errDetails = toolCall.args as { message?: string; raw?: string };
-           return {
-             toolCall,
-             result: { 
-               error: `System Error: Invalid JSON in tool arguments. ${errDetails.message}\n` +
-                      `Please retry calling "${toolCall.name}" with valid JSON.\n` +
-                      `Received raw arguments: ${errDetails.raw}`
-             },
-           };
+        if (
+          toolCall.args &&
+          typeof toolCall.args === 'object' &&
+          '__parsing_error__' in toolCall.args
+        ) {
+          const errDetails = toolCall.args as { message?: string; raw?: string };
+          return {
+            toolCall,
+            result: {
+              error:
+                `System Error: Invalid JSON in tool arguments. ${errDetails.message}\n` +
+                `Please retry calling "${toolCall.name}" with valid JSON.\n` +
+                `Received raw arguments: ${errDetails.raw}`,
+            },
+          };
         }
 
         try {
@@ -260,10 +268,8 @@ export class Turn {
 
         // Add tool result to conversation history
         // Only stringify if result is not already a string
-        const resultText = typeof toolResult === 'string' 
-          ? toolResult 
-          : JSON.stringify(toolResult);
-        
+        const resultText = typeof toolResult === 'string' ? toolResult : JSON.stringify(toolResult);
+
         this.messages.push({
           role: 'tool',
           parts: [{ type: 'text', text: resultText }],
@@ -274,17 +280,15 @@ export class Turn {
         // This should rarely happen since we catch errors in the map function
         // But if it does, we still want to continue
         const err = result.reason as Error;
-        yield { 
-          type: 'error', 
-          error: new Error(`Unexpected tool execution error: ${err.message}`)
+        yield {
+          type: 'error',
+          error: new Error(`Unexpected tool execution error: ${err.message}`),
         };
       }
     }
-    
+
     // Tool execution complete - mode remains unchanged
   }
-
-
 
   /**
    * Build generation options from chat options.
@@ -295,14 +299,17 @@ export class Turn {
     }
 
     const opts: GenerationOptions = {};
-    
+
     // Determine temperature: options.temperature or mode-linked temperature
     if (this.options.temperature !== undefined) {
       opts.temperature = this.options.temperature;
     } else if (this.options.useModeLinkedTemperature && this.options.modeManager) {
       const currentMode = this.options.modeManager.getCurrentMode();
       opts.temperature = this.options.modeManager.getPreferredTemperature(currentMode);
-      if (!isTestEnv) console.log(`[Turn] Using mode-linked temperature: ${opts.temperature} for mode: ${currentMode}`);
+      if (!isTestEnv)
+        console.log(
+          `[Turn] Using mode-linked temperature: ${opts.temperature} for mode: ${currentMode}`
+        );
     }
 
     if (this.options.maxTokens !== undefined) {
@@ -337,18 +344,15 @@ export class Turn {
     }
 
     // Check if there's already a system message
-    const hasSystemMessage = this.messages.some(msg => msg.role === 'system');
-    
+    const hasSystemMessage = this.messages.some((msg) => msg.role === 'system');
+
     if (hasSystemMessage) {
       // If there's already a system message, append context to it
-      return this.messages.map(msg => {
+      return this.messages.map((msg) => {
         if (msg.role === 'system') {
           return {
             ...msg,
-            parts: [
-              ...msg.parts,
-              { type: 'text', text: this.options!.systemPrompt! }
-            ]
+            parts: [...msg.parts, { type: 'text', text: this.options!.systemPrompt! }],
           };
         }
         return msg;
@@ -358,9 +362,9 @@ export class Turn {
       return [
         {
           role: 'system',
-          parts: [{ type: 'text', text: this.options.systemPrompt }]
+          parts: [{ type: 'text', text: this.options.systemPrompt }],
         },
-        ...this.messages
+        ...this.messages,
       ];
     }
   }

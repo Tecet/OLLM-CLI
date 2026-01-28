@@ -3,6 +3,7 @@
 ## Quick Commands
 
 ### Using npm scripts (shorter):
+
 ```bash
 npm run task:start .kiro/specs/stage-XX/tasks.md <task-number>
 npm run task:complete .kiro/specs/stage-XX/tasks.md <task-number>
@@ -11,6 +12,7 @@ npm run task:status .kiro/specs/stage-XX/tasks.md
 ```
 
 ### Using node directly:
+
 ```bash
 node scripts/task-tracker.js start .kiro/specs/stage-XX/tasks.md <task-number>
 node scripts/task-tracker.js complete .kiro/specs/stage-XX/tasks.md <task-number>
@@ -21,6 +23,7 @@ node scripts/task-tracker.js status .kiro/specs/stage-XX/tasks.md
 ## Common Examples
 
 ### Stage 03 Tasks
+
 ```bash
 # Start task 1
 npm run task:start .kiro/specs/stage-03-tools-policy/tasks.md 1
@@ -49,12 +52,14 @@ npm run task:status .kiro/specs/stage-03-tools-policy/tasks.md
 ## What Gets Added
 
 ### When you start:
+
 ```markdown
 - [ ] 1. Task name
   - _Started: 2026-01-10 14:30_
 ```
 
 ### When you complete:
+
 ```markdown
 - [x] 1. Task name
   - _Started: 2026-01-10 14:30_

@@ -1,13 +1,13 @@
 /**
  * Checkbox - Checkbox component with label
- * 
+ *
  * Features:
  * - Checked/unchecked state
  * - Label display
  * - Disabled state
  * - Theme-aware styling
  * - Keyboard accessible
- * 
+ *
  * Validates: Requirements NFR-7, NFR-9
  */
 

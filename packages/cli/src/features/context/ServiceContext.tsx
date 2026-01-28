@@ -1,6 +1,6 @@
 /**
  * Service Context for React components
- * 
+ *
  * Provides access to the service container throughout the React component tree
  */
 
@@ -9,7 +9,10 @@ import { homedir } from 'os';
 import React, { createContext, useContext, ReactNode, useMemo, useEffect } from 'react';
 
 import { DefaultMCPClient, DefaultMCPToolWrapper } from '@ollm/ollm-cli-core/mcp/index.js';
-import { ServiceContainer, createServiceContainer } from '@ollm/ollm-cli-core/services/serviceContainer.js';
+import {
+  ServiceContainer,
+  createServiceContainer,
+} from '@ollm/ollm-cli-core/services/serviceContainer.js';
 import { ToolRegistry, registerBuiltInTools } from '@ollm/ollm-cli-core/tools/index.js';
 
 import { SettingsService } from '../../config/settingsService.js';
@@ -18,7 +21,6 @@ import { useDialog } from '../../ui/contexts/DialogContext.js';
 import type { Config } from '../../config/types.js';
 import type { Hook } from '@ollm/ollm-cli-core/hooks/types.js';
 import type { ProviderAdapter } from '@ollm/ollm-cli-core/provider/types.js';
-
 
 /**
  * Service context value
@@ -39,7 +41,7 @@ export interface ServiceProviderProps {
 
 /**
  * Service Provider component
- * 
+ *
  * Creates and manages the service container lifecycle
  */
 export function ServiceProvider({
@@ -50,10 +52,10 @@ export function ServiceProvider({
 }: ServiceProviderProps) {
   // Get dialog functions for hook approval
   const { showHookApproval } = useDialog();
-  
+
   // Store MCP client in state so it can be shared with MCPContext
   const [mcpClient, setMcpClient] = React.useState<DefaultMCPClient | null>(null);
-  
+
   // Create service container
   const container = useMemo(() => {
     // Convert CLI config to core config format
@@ -89,7 +91,7 @@ export function ServiceProvider({
         },
       },
     };
-    
+
     return createServiceContainer({
       provider,
       config: coreConfig,
@@ -131,33 +133,31 @@ export function ServiceProvider({
     extensionManager.setMCPClient(mcpClientInstance);
     extensionManager.setMCPToolWrapper(mcpToolWrapper);
 
-    console.log('✅ MCP integration initialized: MCPClient and MCPToolWrapper wired into ExtensionManager');
+    console.log(
+      '✅ MCP integration initialized: MCPClient and MCPToolWrapper wired into ExtensionManager'
+    );
   }, [container]);
-  
+
   // Initialize services on mount
   useEffect(() => {
-    container.initializeAll().catch(err => {
+    container.initializeAll().catch((err) => {
       console.error('Failed to initialize services:', err);
     });
-    
+
     // Cleanup on unmount
     return () => {
-      container.shutdown().catch(err => {
+      container.shutdown().catch((err) => {
         console.error('Failed to shutdown services:', err);
       });
     };
   }, [container]);
-  
+
   const value: ServiceContextValue = {
     container,
     mcpClient,
   };
-  
-  return (
-    <ServiceContext.Provider value={value}>
-      {children}
-    </ServiceContext.Provider>
-  );
+
+  return <ServiceContext.Provider value={value}>{children}</ServiceContext.Provider>;
 }
 
 /**

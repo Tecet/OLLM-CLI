@@ -30,14 +30,14 @@ function MyDialog({ onClose }: { onClose: () => void }) {
 
 ## Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `title` | `string` | Required | Dialog title displayed at the top |
-| `onClose` | `() => void` | Required | Callback when dialog should close (Esc key) |
-| `children` | `React.ReactNode` | Required | Dialog content |
-| `width` | `number` | `60` | Dialog width in characters |
-| `borderColor` | `string` | `theme.border.active` | Border color |
-| `titleColor` | `string` | `'yellow'` | Title text color |
+| Prop          | Type              | Default               | Description                                 |
+| ------------- | ----------------- | --------------------- | ------------------------------------------- |
+| `title`       | `string`          | Required              | Dialog title displayed at the top           |
+| `onClose`     | `() => void`      | Required              | Callback when dialog should close (Esc key) |
+| `children`    | `React.ReactNode` | Required              | Dialog content                              |
+| `width`       | `number`          | `60`                  | Dialog width in characters                  |
+| `borderColor` | `string`          | `theme.border.active` | Border color                                |
+| `titleColor`  | `string`          | `'yellow'`            | Title text color                            |
 
 ## Examples
 
@@ -47,7 +47,7 @@ function MyDialog({ onClose }: { onClose: () => void }) {
 <Dialog title="Confirmation" onClose={handleClose}>
   <Text>Are you sure you want to continue?</Text>
   <Box marginTop={1}>
-    <Text>[Y] Yes  [N] No</Text>
+    <Text>[Y] Yes [N] No</Text>
   </Box>
 </Dialog>
 ```
@@ -55,13 +55,7 @@ function MyDialog({ onClose }: { onClose: () => void }) {
 ### Custom Width and Colors
 
 ```tsx
-<Dialog 
-  title="Error" 
-  onClose={handleClose}
-  width={80}
-  borderColor="red"
-  titleColor="red"
->
+<Dialog title="Error" onClose={handleClose} width={80} borderColor="red" titleColor="red">
   <Text color="red">An error occurred!</Text>
   <Text>Please try again.</Text>
 </Dialog>
@@ -75,11 +69,11 @@ function MyDialog({ onClose }: { onClose: () => void }) {
     <FormField label="Server Name">
       <TextInput value={name} onChange={setName} />
     </FormField>
-    
+
     <FormField label="Port">
       <TextInput value={port} onChange={setPort} />
     </FormField>
-    
+
     <Box marginTop={1} gap={2}>
       <Button label="Save" onPress={handleSave} />
       <Button label="Cancel" onPress={handleClose} />
@@ -119,7 +113,7 @@ The Dialog component automatically handles the Esc key to close the dialog. If y
 ```tsx
 <Dialog title="My Dialog" onClose={handleClose}>
   <MyDialogContent />
-</Dialog>
+</Dialog>;
 
 function MyDialogContent() {
   useInput((input, key) => {
@@ -129,7 +123,7 @@ function MyDialogContent() {
       handleNo();
     }
   });
-  
+
   return <Text>Press Y or N</Text>;
 }
 ```
@@ -145,6 +139,7 @@ function MyDialogContent() {
 ## Testing
 
 The Dialog component includes comprehensive tests covering:
+
 - Rendering with title and content
 - Esc key handling
 - Custom width and colors
@@ -157,5 +152,6 @@ See `__tests__/Dialog.test.tsx` for examples.
 ## Requirements Validation
 
 This component validates the following requirements:
+
 - **12.14**: Esc closes dialogs/modals
 - **NFR-7**: Visual feedback for all user actions (consistent styling)

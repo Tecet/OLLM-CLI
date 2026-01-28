@@ -12,20 +12,20 @@ export interface Provider {
 export interface ProviderSelectorProps {
   /** Available providers */
   providers: Provider[];
-  
+
   /** Currently selected provider */
   selectedProvider: string;
-  
+
   /** Callback when a provider is selected */
   onSelect: (providerName: string) => void;
-  
+
   /** Theme for styling */
   theme: Theme;
 }
 
 /**
  * ProviderSelector component
- * 
+ *
  * Displays available providers and allows selection.
  * Shows provider name, host, and connection status.
  */
@@ -68,7 +68,7 @@ export function ProviderSelector({
       <Box flexDirection="column">
         {providers.map((provider) => {
           const isSelected = provider.name === selectedProvider;
-          
+
           return (
             <Box
               key={provider.name}

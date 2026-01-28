@@ -5,30 +5,35 @@ OLLM CLI is a local-first command-line interface for open-source LLMs. It provid
 ## Key Features
 
 ### Core Capabilities
+
 - Interactive TUI (React + Ink) and non-interactive execution modes
 - Streaming responses with real-time tool calls and confirmations
 - Provider-agnostic architecture supporting multiple LLM backends
 - Works offline when models are installed locally
 
 ### Tool System
+
 - Built-in tools: file operations, shell, web fetch, search, memory
 - Policy engine with ASK, AUTO, YOLO approval modes
 - Tool confirmation with diff preview for file edits
 - Output truncation and streaming for long-running tools
 
 ### Extensibility
+
 - Hook system for event-driven automation and safety gates
 - Extension system with manifest-based configuration
 - MCP (Model Context Protocol) integration for external tools
 - Skills system for task-specific instruction modules
 
 ### Session Management
+
 - Session recording and resume capability
 - Chat compression to manage context limits
 - Context snapshots for conversation rollover
 - Loop detection to prevent runaway tool calls
 
 ### Context Management
+
 - Dynamic context sizing based on available VRAM
 - Automatic VRAM monitoring for GPU memory optimization
 - Context snapshots for long conversation rollover
@@ -37,6 +42,7 @@ OLLM CLI is a local-first command-line interface for open-source LLMs. It provid
 - Real-time context usage display in status bar
 
 ### Model Management
+
 - List, pull, remove, and inspect models
 - Model routing profiles (fast, general, code, creative)
 - Dynamic context sizing based on available VRAM
@@ -44,6 +50,7 @@ OLLM CLI is a local-first command-line interface for open-source LLMs. It provid
 - Multi-provider support (Ollama, vLLM, OpenAI-compatible)
 
 ### Developer Productivity
+
 - Git integration (status, commit, diff, undo)
 - @-mentions for explicit context loading (@file, @symbol, @url)
 - Diff review mode with approve/reject workflow
@@ -51,6 +58,7 @@ OLLM CLI is a local-first command-line interface for open-source LLMs. It provid
 - Git status in system prompt and status bar
 
 ### Intelligence Layer
+
 - Codebase indexing with semantic search (RAG)
 - Structured output with JSON schema enforcement
 - Code execution sandbox for safe testing
@@ -70,29 +78,32 @@ OLLM CLI is a local-first command-line interface for open-source LLMs. It provid
 
 ## User Data Locations
 
-| Location | Purpose |
-|----------|---------|
-| `~/.ollm/` | User-level config and data |
-| `~/.ollm/config.yaml` | User settings |
-| `~/.ollm/session-data/` | Session history |
-| `~/.ollm/extensions/` | User extensions |
+| Location                  | Purpose                          |
+| ------------------------- | -------------------------------- |
+| `~/.ollm/`                | User-level config and data       |
+| `~/.ollm/config.yaml`     | User settings                    |
+| `~/.ollm/session-data/`   | Session history                  |
+| `~/.ollm/extensions/`     | User extensions                  |
 | `~/.ollm/codebase-index/` | Vector store for semantic search |
-| `~/.ollm/usage-data/` | Cost tracking database |
-| `~/.ollm/templates/` | Prompt templates |
-| `~/.ollm/snapshots/` | Context snapshots for rollover |
-| `.ollm/` | Workspace-level config |
-| `.ollm/config.yaml` | Project settings |
-| `.ollm/ollm.md` | Project context |
-| `.ollm/extensions/` | Project extensions |
-| `.ollm/codebase-index/` | Workspace-specific index |
+| `~/.ollm/usage-data/`     | Cost tracking database           |
+| `~/.ollm/templates/`      | Prompt templates                 |
+| `~/.ollm/snapshots/`      | Context snapshots for rollover   |
+| `.ollm/`                  | Workspace-level config           |
+| `.ollm/config.yaml`       | Project settings                 |
+| `.ollm/ollm.md`           | Project context                  |
+| `.ollm/extensions/`       | Project extensions               |
+| `.ollm/codebase-index/`   | Workspace-specific index         |
 
 ## CLI Modes
 
 ### Interactive Mode
+
 Full TUI with chat history, tool confirmations, and status bar.
 
 ### Non-Interactive Mode
+
 Single prompt execution with configurable output formats:
+
 - `text`: Plain text output
 - `json`: JSON object with response
 - `stream-json`: NDJSON stream of events

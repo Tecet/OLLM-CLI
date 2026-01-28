@@ -1,6 +1,6 @@
 /**
  * Review Management Commands
- * 
+ *
  * Implements commands for managing diff reviews:
  * - /review enable - Enable diff review mode
  * - /review disable - Disable diff review mode
@@ -11,7 +11,7 @@ import type { Command, CommandResult } from './types.js';
 
 /**
  * /review enable - Enable diff review mode
- * 
+ *
  * Requirements: 19.6
  */
 async function reviewEnableHandler(): Promise<CommandResult> {
@@ -24,7 +24,7 @@ async function reviewEnableHandler(): Promise<CommandResult> {
 
 /**
  * /review disable - Disable diff review mode
- * 
+ *
  * Requirements: 19.6
  */
 async function reviewDisableHandler(): Promise<CommandResult> {
@@ -37,7 +37,7 @@ async function reviewDisableHandler(): Promise<CommandResult> {
 
 /**
  * /review pending - Show pending reviews
- * 
+ *
  * Requirements: 19.6
  */
 async function reviewPendingHandler(): Promise<CommandResult> {
@@ -53,7 +53,7 @@ async function reviewPendingHandler(): Promise<CommandResult> {
 
 /**
  * /review command - Main review command with subcommands
- * 
+ *
  * Requirements: 19.6
  */
 export const reviewCommand: Command = {
@@ -64,7 +64,8 @@ export const reviewCommand: Command = {
     if (args.length === 0) {
       return {
         success: false,
-        message: 'Usage: /review <enable|disable|pending>\n\n' +
+        message:
+          'Usage: /review <enable|disable|pending>\n\n' +
           'Subcommands:\n' +
           '  enable         - Enable diff review mode\n' +
           '  disable        - Disable diff review mode\n' +
@@ -84,7 +85,8 @@ export const reviewCommand: Command = {
       default:
         return {
           success: false,
-          message: `Unknown subcommand: ${subcommand}\n\n` +
+          message:
+            `Unknown subcommand: ${subcommand}\n\n` +
             'Available subcommands: enable, disable, pending',
         };
     }
@@ -94,6 +96,4 @@ export const reviewCommand: Command = {
 /**
  * All review-related commands
  */
-export const reviewCommands: Command[] = [
-  reviewCommand,
-];
+export const reviewCommands: Command[] = [reviewCommand];

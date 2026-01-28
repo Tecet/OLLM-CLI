@@ -9,7 +9,7 @@ if (!fs.existsSync(legacyDir)) {
   process.exit(2);
 }
 
-const files = fs.readdirSync(legacyDir).filter(f => f.endsWith('.js'));
+const files = fs.readdirSync(legacyDir).filter((f) => f.endsWith('.js'));
 const importRe = /(?:from\s+|require\()\s*['"](\.\.\/[\w\-./@]+?)(?:['"])\)?/g;
 
 const referenced = new Set();
@@ -42,9 +42,9 @@ const tracked = gitFiles.split(/\r?\n/).filter(Boolean);
 
 const results = {};
 for (const name of referencedArr) {
-  const matches = tracked.filter(p => {
+  const matches = tracked.filter((p) => {
     const b = path.basename(p).toLowerCase();
-    return b === (name + '.ts') || b === (name + '.tsx') || b === (name + '.js') || b === (name + '.jsx');
+    return b === name + '.ts' || b === name + '.tsx' || b === name + '.js' || b === name + '.jsx';
   });
   results[name] = matches;
 }

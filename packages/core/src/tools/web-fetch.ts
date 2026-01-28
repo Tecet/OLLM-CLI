@@ -26,7 +26,8 @@ export class WebFetchTool implements DeclarativeTool<WebFetchParams, ToolResult>
   displayName = 'Fetch Web Content';
   schema: ToolSchema = {
     name: 'web_fetch',
-    description: 'Fetch and read content from a specific URL. ONLY use this when: 1) The user explicitly asks you to read/fetch a specific webpage, OR 2) You need detailed content from a URL. DO NOT use this after web_search - the search results already contain the information you need.',
+    description:
+      'Fetch and read content from a specific URL. ONLY use this when: 1) The user explicitly asks you to read/fetch a specific webpage, OR 2) You need detailed content from a URL. DO NOT use this after web_search - the search results already contain the information you need.',
     parameters: {
       type: 'object',
       properties: {
@@ -47,9 +48,7 @@ export class WebFetchTool implements DeclarativeTool<WebFetchParams, ToolResult>
   }
 }
 export class WebFetchInvocation implements ToolInvocation<WebFetchParams, ToolResult> {
-  constructor(
-    public params: WebFetchParams
-  ) {}
+  constructor(public params: WebFetchParams) {}
 
   getDescription(): string {
     const selectorPart = this.params.selector ? ` (selector: ${this.params.selector})` : '';
@@ -66,10 +65,7 @@ export class WebFetchInvocation implements ToolInvocation<WebFetchParams, ToolRe
     return false;
   }
 
-  async execute(
-    signal: AbortSignal,
-    updateOutput?: (output: string) => void
-  ): Promise<ToolResult> {
+  async execute(signal: AbortSignal, updateOutput?: (output: string) => void): Promise<ToolResult> {
     const timeout = this.params.timeout ?? 30000;
 
     try {
@@ -88,7 +84,10 @@ export class WebFetchInvocation implements ToolInvocation<WebFetchParams, ToolRe
         return {
           llmContent: '',
           returnDisplay: '',
-          error: { message: `Unsupported protocol: ${parsedUrl.protocol}`, type: 'UnsupportedProtocolError' },
+          error: {
+            message: `Unsupported protocol: ${parsedUrl.protocol}`,
+            type: 'UnsupportedProtocolError',
+          },
         };
       }
 
@@ -111,7 +110,10 @@ export class WebFetchInvocation implements ToolInvocation<WebFetchParams, ToolRe
           return {
             llmContent: '',
             returnDisplay: '',
-            error: { message: `HTTP ${response.status}: ${response.statusText}`, type: 'HttpError' },
+            error: {
+              message: `HTTP ${response.status}: ${response.statusText}`,
+              type: 'HttpError',
+            },
           };
         }
 

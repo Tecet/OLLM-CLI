@@ -26,12 +26,17 @@ export interface ToolCallProps {
  * ToolCall component displays tool execution information
  * with expand/collapse for long arguments
  */
-export function ToolCall({ toolCall, expanded: controlledExpanded, onToggle: _onToggle, theme }: ToolCallProps) {
+export function ToolCall({
+  toolCall,
+  expanded: controlledExpanded,
+  onToggle: _onToggle,
+  theme,
+}: ToolCallProps) {
   const [internalExpanded, _setInternalExpanded] = useState(false);
-  
+
   // Use controlled expanded state if provided, otherwise use internal state
   const expanded = controlledExpanded !== undefined ? controlledExpanded : internalExpanded;
-  
+
   // Format arguments as JSON string
   const argsString = JSON.stringify(toolCall.arguments, null, 2);
   const argsLength = argsString.length;
@@ -42,14 +47,20 @@ export function ToolCall({ toolCall, expanded: controlledExpanded, onToggle: _on
     toolCall.status === 'success'
       ? theme.status.success
       : toolCall.status === 'error'
-      ? theme.status.error
-      : theme.status.info;
+        ? theme.status.error
+        : theme.status.info;
 
   // Format duration if available
   const durationText = toolCall.duration ? ` (${(toolCall.duration / 1000).toFixed(2)}s)` : '';
 
   return (
-    <Box flexDirection="column" marginY={1} paddingLeft={2} borderStyle="single" borderColor={theme.text.secondary}>
+    <Box
+      flexDirection="column"
+      marginY={1}
+      paddingLeft={2}
+      borderStyle="single"
+      borderColor={theme.text.secondary}
+    >
       {/* Tool name and status */}
       <Box marginBottom={1}>
         <Text color={theme.text.accent} bold>
@@ -66,9 +77,7 @@ export function ToolCall({ toolCall, expanded: controlledExpanded, onToggle: _on
         </Text>
         {needsWrapping && !expanded ? (
           <Box>
-            <Text color={theme.text.primary}>
-              {argsString.substring(0, 80)}...
-            </Text>
+            <Text color={theme.text.primary}>{argsString.substring(0, 80)}...</Text>
             <Text color={theme.text.accent} dimColor>
               {' '}
               [Click to expand]

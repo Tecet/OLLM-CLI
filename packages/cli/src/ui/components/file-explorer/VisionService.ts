@@ -1,6 +1,6 @@
 /**
  * VisionService - Image processing and encoding for vision models
- * 
+ *
  * Responsibilities:
  * - Detect image dimensions
  * - Resize images exceeding 2048px
@@ -31,15 +31,15 @@ export class VisionService {
   async processImage(imagePath: string): Promise<ImageMetadata> {
     // Read the image file
     const imageBuffer: Buffer = await readFile(imagePath);
-    
+
     // Detect format and dimensions using sharp
     const metadata = await sharp(imageBuffer).metadata();
     const format = metadata.format || this.detectFormat(imagePath);
     const dimensions = {
       width: metadata.width || 800,
-      height: metadata.height || 600
+      height: metadata.height || 600,
     };
-    
+
     // Check if format is supported
     if (!this.supportedFormats.includes(format.toLowerCase())) {
       throw new Error(`Unsupported image format: ${format}`);
@@ -57,11 +57,17 @@ export class VisionService {
     const base64 = this.encodeBase64(finalBuffer);
 
     return {
-      width: resized ? this.calculateResizedDimension(dimensions.width, dimensions.height, this.maxDimension).width : dimensions.width,
-      height: resized ? this.calculateResizedDimension(dimensions.width, dimensions.height, this.maxDimension).height : dimensions.height,
+      width: resized
+        ? this.calculateResizedDimension(dimensions.width, dimensions.height, this.maxDimension)
+            .width
+        : dimensions.width,
+      height: resized
+        ? this.calculateResizedDimension(dimensions.width, dimensions.height, this.maxDimension)
+            .height
+        : dimensions.height,
       format,
       base64,
-      resized
+      resized,
     };
   }
 
@@ -72,7 +78,7 @@ export class VisionService {
     return await sharp(imagePath)
       .resize(maxDimension, maxDimension, {
         fit: 'inside',
-        withoutEnlargement: true
+        withoutEnlargement: true,
       })
       .toBuffer();
   }
@@ -95,16 +101,20 @@ export class VisionService {
   /**
    * Calculate resized dimensions maintaining aspect ratio
    */
-  private calculateResizedDimension(width: number, height: number, maxDimension: number): { width: number; height: number } {
+  private calculateResizedDimension(
+    width: number,
+    height: number,
+    maxDimension: number
+  ): { width: number; height: number } {
     if (width > height) {
       return {
         width: maxDimension,
-        height: Math.round((height / width) * maxDimension)
+        height: Math.round((height / width) * maxDimension),
       };
     } else {
       return {
         width: Math.round((width / height) * maxDimension),
-        height: maxDimension
+        height: maxDimension,
       };
     }
   }

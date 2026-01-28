@@ -1,6 +1,6 @@
 /**
  * Extension Watcher for hot-reload functionality
- * 
+ *
  * Watches extension directories for changes and triggers reload
  * without requiring CLI restart.
  */
@@ -43,21 +43,14 @@ export class ExtensionWatcher {
   private config: Required<WatcherConfig>;
   private enabled: boolean;
 
-  constructor(
-    extensionManager: ExtensionManager,
-    config: WatcherConfig = {}
-  ) {
+  constructor(extensionManager: ExtensionManager, config: WatcherConfig = {}) {
     this.extensionManager = extensionManager;
     this.watchers = new Map();
     this.debounceTimers = new Map();
     this.config = {
       debounceDelay: config.debounceDelay ?? 1000,
       recursive: config.recursive ?? true,
-      watchPatterns: config.watchPatterns ?? [
-        'manifest.json',
-        'hooks',
-        'mcp',
-      ],
+      watchPatterns: config.watchPatterns ?? ['manifest.json', 'hooks', 'mcp'],
     };
     this.enabled = false;
   }
@@ -107,7 +100,7 @@ export class ExtensionWatcher {
 
   /**
    * Watch a specific extension
-   * 
+   *
    * @param name - Extension name
    * @param path - Extension directory path
    */
@@ -157,7 +150,7 @@ export class ExtensionWatcher {
 
   /**
    * Stop watching a specific extension
-   * 
+   *
    * @param name - Extension name
    */
   unwatchExtension(name: string): void {
@@ -182,19 +175,17 @@ export class ExtensionWatcher {
 
   /**
    * Check if file should be watched based on patterns
-   * 
+   *
    * @param filename - File name or path
    * @returns True if file should be watched
    */
   private shouldWatch(filename: string): boolean {
-    return this.config.watchPatterns.some((pattern) =>
-      filename.includes(pattern)
-    );
+    return this.config.watchPatterns.some((pattern) => filename.includes(pattern));
   }
 
   /**
    * Handle file change event with debouncing
-   * 
+   *
    * @param name - Extension name
    * @param path - Extension path
    * @param eventType - Event type
@@ -216,9 +207,7 @@ export class ExtensionWatcher {
     const timer = setTimeout(async () => {
       this.debounceTimers.delete(name);
 
-      console.log(
-        `File ${eventType} detected in extension '${name}': ${filename}`
-      );
+      console.log(`File ${eventType} detected in extension '${name}': ${filename}`);
 
       try {
         // Reload the extension
@@ -236,7 +225,7 @@ export class ExtensionWatcher {
 
   /**
    * Reload an extension
-   * 
+   *
    * @param name - Extension name
    */
   private async reloadExtension(name: string): Promise<void> {
@@ -256,7 +245,7 @@ export class ExtensionWatcher {
 
   /**
    * Check if watcher is enabled
-   * 
+   *
    * @returns True if watcher is enabled
    */
   isEnabled(): boolean {
@@ -265,7 +254,7 @@ export class ExtensionWatcher {
 
   /**
    * Get list of watched extension names
-   * 
+   *
    * @returns Array of extension names being watched
    */
   getWatchedExtensions(): string[] {
@@ -274,7 +263,7 @@ export class ExtensionWatcher {
 
   /**
    * Update watcher configuration
-   * 
+   *
    * @param config - New configuration
    */
   updateConfig(config: Partial<WatcherConfig>): void {

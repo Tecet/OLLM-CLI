@@ -58,11 +58,13 @@ This document outlines our careful, methodical approach to implementing the impr
 #### TASK-001: Refactor ModelContext.tsx
 
 **Current State:**
+
 - File: `packages/cli/src/ui/contexts/ModelContext.tsx`
 - Size: 883 lines
 - Issues: Too many responsibilities, hard to test
 
 **Target State:**
+
 - Main file: ~400-500 lines
 - 3 new hook files: ~550 lines total
 - Clear separation of concerns
@@ -71,6 +73,7 @@ This document outlines our careful, methodical approach to implementing the impr
 **Step-by-Step Approach:**
 
 ##### Step 1: Backup Original File (5 minutes)
+
 ```bash
 # Create backup
 cp packages/cli/src/ui/contexts/ModelContext.tsx packages/cli/src/ui/contexts/ModelContext.tsx.backup
@@ -86,12 +89,14 @@ diff packages/cli/src/ui/contexts/ModelContext.tsx packages/cli/src/ui/contexts/
 ##### Step 2: Extract useModelManagement Hook (1.5-2 hours)
 
 **What to Extract:**
+
 - Model loading/unloading functions
 - Model listing functions
 - Model validation functions
 - Model metadata functions
 
 **Process:**
+
 1. Read ModelContext.tsx carefully
 2. Identify all model management code
 3. Create `packages/cli/src/ui/contexts/hooks/useModelManagement.ts`
@@ -104,23 +109,24 @@ diff packages/cli/src/ui/contexts/ModelContext.tsx packages/cli/src/ui/contexts/
 10. **COMMIT:** `refactor: Extract useModelManagement hook from ModelContext`
 
 **Expected File Structure:**
+
 ```typescript
 // packages/cli/src/ui/contexts/hooks/useModelManagement.ts
 export function useModelManagement() {
   // Model loading
   const loadModel = useCallback(...);
   const unloadModel = useCallback(...);
-  
+
   // Model listing
   const listModels = useCallback(...);
   const refreshModels = useCallback(...);
-  
+
   // Model validation
   const validateModel = useCallback(...);
-  
+
   // Model metadata
   const getModelMetadata = useCallback(...);
-  
+
   return {
     loadModel,
     unloadModel,
@@ -133,6 +139,7 @@ export function useModelManagement() {
 ```
 
 **Testing Checklist:**
+
 - [ ] All 615 tests pass
 - [ ] Lint passes (0 errors)
 - [ ] Can switch models in UI
@@ -145,12 +152,14 @@ export function useModelManagement() {
 ##### Step 3: Extract useProviderManagement Hook (1-1.5 hours)
 
 **What to Extract:**
+
 - Provider initialization
 - Provider switching
 - Provider health checks
 - Provider configuration
 
 **Process:**
+
 1. Identify all provider management code
 2. Create `packages/cli/src/ui/contexts/hooks/useProviderManagement.ts`
 3. Copy provider management code to new file
@@ -162,22 +171,23 @@ export function useModelManagement() {
 9. **COMMIT:** `refactor: Extract useProviderManagement hook from ModelContext`
 
 **Expected File Structure:**
+
 ```typescript
 // packages/cli/src/ui/contexts/hooks/useProviderManagement.ts
 export function useProviderManagement() {
   // Provider initialization
   const initProvider = useCallback(...);
-  
+
   // Provider switching
   const switchProvider = useCallback(...);
-  
+
   // Provider health
   const checkProviderHealth = useCallback(...);
-  
+
   // Provider config
   const getProviderConfig = useCallback(...);
   const updateProviderConfig = useCallback(...);
-  
+
   return {
     initProvider,
     switchProvider,
@@ -189,6 +199,7 @@ export function useProviderManagement() {
 ```
 
 **Testing Checklist:**
+
 - [ ] All 615 tests pass
 - [ ] Lint passes (0 errors)
 - [ ] Can switch providers
@@ -201,12 +212,14 @@ export function useProviderManagement() {
 ##### Step 4: Extract useStreamHandling Hook (1.5-2 hours)
 
 **What to Extract:**
+
 - Stream processing
 - Token counting
 - Error handling
 - Completion handling
 
 **Process:**
+
 1. Identify all stream handling code
 2. Create `packages/cli/src/ui/contexts/hooks/useStreamHandling.ts`
 3. Copy stream handling code to new file
@@ -218,23 +231,24 @@ export function useProviderManagement() {
 9. **COMMIT:** `refactor: Extract useStreamHandling hook from ModelContext`
 
 **Expected File Structure:**
+
 ```typescript
 // packages/cli/src/ui/contexts/hooks/useStreamHandling.ts
 export function useStreamHandling() {
   // Stream processing
   const processStream = useCallback(...);
   const handleStreamChunk = useCallback(...);
-  
+
   // Token counting
   const countTokens = useCallback(...);
   const updateTokenCount = useCallback(...);
-  
+
   // Error handling
   const handleStreamError = useCallback(...);
-  
+
   // Completion
   const handleStreamComplete = useCallback(...);
-  
+
   return {
     processStream,
     handleStreamChunk,
@@ -247,6 +261,7 @@ export function useStreamHandling() {
 ```
 
 **Testing Checklist:**
+
 - [ ] All 615 tests pass
 - [ ] Lint passes (0 errors)
 - [ ] Streaming responses work
@@ -260,6 +275,7 @@ export function useStreamHandling() {
 ##### Step 5: Final Cleanup and Verification (30 minutes)
 
 **Process:**
+
 1. Review ModelContext.tsx for any remaining cleanup
 2. Ensure all imports are correct
 3. Ensure all exports are correct
@@ -270,6 +286,7 @@ export function useStreamHandling() {
 8. **COMMIT:** `refactor: Final cleanup of ModelContext.tsx refactoring`
 
 **Final Verification Checklist:**
+
 - [ ] ModelContext.tsx is ~400-500 lines
 - [ ] All 3 hooks created and working
 - [ ] All 615 tests pass
@@ -283,6 +300,7 @@ export function useStreamHandling() {
 ##### Step 6: Remove Backup (5 minutes)
 
 **Process:**
+
 1. Verify everything works perfectly
 2. Remove backup file
 3. **COMMIT:** `cleanup: Remove ModelContext.tsx backup after successful refactoring`
@@ -303,6 +321,7 @@ export function useStreamHandling() {
 ##### Step 1: Create snapshotCoordinator.test.ts (1-1.5 hours)
 
 **Process:**
+
 1. Create `packages/core/src/context/__tests__/snapshotCoordinator.test.ts`
 2. Write tests for coordination logic
 3. Write tests for snapshot triggers
@@ -312,6 +331,7 @@ export function useStreamHandling() {
 7. **COMMIT:** `test: Add comprehensive tests for snapshotCoordinator`
 
 **Test Coverage:**
+
 - Coordination with context manager
 - Snapshot creation triggers
 - Snapshot restoration
@@ -323,6 +343,7 @@ export function useStreamHandling() {
 ##### Step 2: Create intentSnapshotStorage.test.ts (1-1.5 hours)
 
 **Process:**
+
 1. Create `packages/core/src/context/__tests__/intentSnapshotStorage.test.ts`
 2. Write tests for mode transition snapshots
 3. Write tests for hot swap state preservation
@@ -333,6 +354,7 @@ export function useStreamHandling() {
 8. **COMMIT:** `test: Add comprehensive tests for intentSnapshotStorage`
 
 **Test Coverage:**
+
 - Mode transition snapshots
 - Hot swap state preservation
 - Cache eviction (LRU)
@@ -348,6 +370,7 @@ export function useStreamHandling() {
 ##### Step 1: Create compressionCoordinator.test.ts (1.5-2 hours)
 
 **Process:**
+
 1. Create `packages/core/src/context/__tests__/compressionCoordinator.test.ts`
 2. Write tests for coordination logic
 3. Write tests for strategy selection
@@ -358,6 +381,7 @@ export function useStreamHandling() {
 8. **COMMIT:** `test: Add comprehensive tests for compressionCoordinator`
 
 **Test Coverage:**
+
 - Coordination logic
 - Strategy selection (aggressive, moderate, conservative)
 - Threshold triggers (75%, 80%, 85%)
@@ -369,6 +393,7 @@ export function useStreamHandling() {
 ##### Step 2: Create chatCompressionService.test.ts (1.5-2 hours)
 
 **Process:**
+
 1. Create `packages/cli/src/services/__tests__/chatCompressionService.test.ts`
 2. Write tests for message compression
 3. Write tests for checkpoint creation
@@ -379,6 +404,7 @@ export function useStreamHandling() {
 8. **COMMIT:** `test: Add comprehensive tests for chatCompressionService`
 
 **Test Coverage:**
+
 - Message compression
 - Checkpoint creation
 - Checkpoint rollback
@@ -400,6 +426,7 @@ export function useStreamHandling() {
 ##### Step 1: Create checkpointUtils.ts (1-2 hours)
 
 **Process:**
+
 1. Backup `compressionService.ts`
 2. Create `packages/core/src/context/checkpointUtils.ts`
 3. Extract utility functions:
@@ -421,6 +448,7 @@ export function useStreamHandling() {
 ##### Step 1: Create snapshotUtils.ts (1-2 hours)
 
 **Process:**
+
 1. Backup `snapshotManager.ts`
 2. Create `packages/core/src/context/snapshotUtils.ts`
 3. Extract utility functions:
@@ -442,6 +470,7 @@ export function useStreamHandling() {
 ##### Step 1: Add JSDoc to Compression Files (1 hour)
 
 **Process:**
+
 1. Add JSDoc to `compressionService.ts`
 2. Add JSDoc to `compressionCoordinator.ts`
 3. Add JSDoc to `chatCompressionService.ts`
@@ -453,6 +482,7 @@ export function useStreamHandling() {
 ##### Step 2: Add JSDoc to Snapshot Files (1 hour)
 
 **Process:**
+
 1. Add JSDoc to `snapshotManager.ts`
 2. Add JSDoc to `snapshotStorage.ts`
 3. Add JSDoc to `snapshotCoordinator.ts`
@@ -465,6 +495,7 @@ export function useStreamHandling() {
 ##### Step 3: Add JSDoc to Context Management Files (30 minutes)
 
 **Process:**
+
 1. Add JSDoc to `contextManager.ts`
 2. Add JSDoc to `ContextManagerContext.tsx`
 3. Add JSDoc to `contextPool.ts`
@@ -488,18 +519,21 @@ export function useStreamHandling() {
 ### Test Levels
 
 #### 1. Unit Tests
+
 - Test individual functions
 - Test edge cases
 - Test error handling
 - Fast execution
 
 #### 2. Integration Tests
+
 - Test component interactions
 - Test data flow
 - Test state management
 - Medium execution time
 
 #### 3. End-to-End Tests
+
 - Test full user workflows
 - Test UI interactions
 - Test real scenarios
@@ -508,6 +542,7 @@ export function useStreamHandling() {
 ### Test Execution
 
 **After Every Change:**
+
 ```bash
 # Run all tests
 npm test
@@ -520,6 +555,7 @@ npm run lint
 ```
 
 **Manual Testing Checklist:**
+
 - [ ] Start application
 - [ ] Switch models
 - [ ] Send messages
@@ -546,6 +582,7 @@ npm run lint
 ```
 
 **Types:**
+
 - `feat:` - New feature
 - `fix:` - Bug fix
 - `refactor:` - Code refactoring
@@ -557,6 +594,7 @@ npm run lint
 - `cleanup:` - Removing backups/cleanup
 
 **Examples:**
+
 ```
 refactor: Extract useModelManagement hook from ModelContext
 
@@ -574,6 +612,7 @@ Ref: TASK-001 Step 2
 ### Commit Frequency
 
 **Commit After:**
+
 - Each completed sub-step
 - Each successful test run
 - Each backup creation
@@ -581,6 +620,7 @@ Ref: TASK-001 Step 2
 - Each major milestone
 
 **Push to GitHub After:**
+
 - Each completed task
 - Each completed phase
 - End of work session
@@ -633,6 +673,7 @@ git commit -m "revert: Restore ModelContext.tsx from backup due to test failures
 ## Success Metrics
 
 ### Phase 1 Success
+
 - [ ] ModelContext.tsx reduced to ~400-500 lines
 - [ ] 3 new hook files created
 - [ ] All 615 tests passing
@@ -641,6 +682,7 @@ git commit -m "revert: Restore ModelContext.tsx from backup due to test failures
 - [ ] Code is more maintainable
 
 ### Phase 2 Success
+
 - [ ] 50+ new tests added
 - [ ] All new tests passing
 - [ ] 100% coverage for snapshot system
@@ -648,12 +690,14 @@ git commit -m "revert: Restore ModelContext.tsx from backup due to test failures
 - [ ] All 665+ tests passing
 
 ### Phase 3 Success
+
 - [ ] Utility functions extracted
 - [ ] JSDoc comments added
 - [ ] Code quality improved
 - [ ] All tests passing
 
 ### Phase 4 Success
+
 - [ ] Performance baseline established
 - [ ] Metrics collection working
 - [ ] Compression tuned
@@ -666,12 +710,14 @@ git commit -m "revert: Restore ModelContext.tsx from backup due to test failures
 ### Medium Risk: TASK-001 (ModelContext Refactoring)
 
 **Risks:**
+
 - Breaking UI functionality
 - Breaking model switching
 - Breaking streaming
 - Introducing regressions
 
 **Mitigation:**
+
 1. **Backup:** Create backup before ANY changes
 2. **Incremental:** Extract one hook at a time
 3. **Testing:** Test after each hook extraction
@@ -681,11 +727,13 @@ git commit -m "revert: Restore ModelContext.tsx from backup due to test failures
 ### Low Risk: All Other Tasks
 
 **Risks:**
+
 - Test failures
 - Lint errors
 - Minor issues
 
 **Mitigation:**
+
 1. **Additive:** Only adding code, not changing existing
 2. **Testing:** Test after each change
 3. **Review:** Code review before commit
@@ -696,18 +744,21 @@ git commit -m "revert: Restore ModelContext.tsx from backup due to test failures
 ## Timeline Estimates
 
 ### Optimistic (Everything Goes Smoothly)
+
 - Phase 1: 4 hours
 - Phase 2: 5 hours
 - Phase 3: 4 hours
 - **Total:** 13 hours (1.5 days)
 
 ### Realistic (Some Issues, Normal Pace)
+
 - Phase 1: 6 hours
 - Phase 2: 7 hours
 - Phase 3: 7 hours
 - **Total:** 20 hours (2.5 days)
 
 ### Pessimistic (Many Issues, Slow Pace)
+
 - Phase 1: 8 hours
 - Phase 2: 9 hours
 - Phase 3: 9 hours
@@ -722,12 +773,14 @@ git commit -m "revert: Restore ModelContext.tsx from backup due to test failures
 ### Progress Updates
 
 **After Each Task:**
+
 - Update BACKLOG.md with task status
 - Update PROGRESS_SUMMARY.md
 - Commit changes
 - Push to GitHub
 
 **After Each Phase:**
+
 - Create summary document
 - Update all documentation
 - Commit and push
@@ -736,6 +789,7 @@ git commit -m "revert: Restore ModelContext.tsx from backup due to test failures
 ### Issue Reporting
 
 **If Issues Found:**
+
 1. Document in IMPLEMENTATION_STRATEGY.md
 2. Create issue in GitHub (if applicable)
 3. Discuss with team
@@ -747,20 +801,24 @@ git commit -m "revert: Restore ModelContext.tsx from backup due to test failures
 ## Next Steps
 
 ### Immediate (Today)
+
 1. ✅ Read and understand this strategy
 2. ✅ Review BACKLOG.md
 3. ✅ Review analysis documents
 4. ⏳ Begin Phase 1, TASK-001, Step 1 (Backup)
 
 ### This Week
+
 1. Complete Phase 1 (TASK-001)
 2. Begin Phase 2 (TASK-002, TASK-003)
 
 ### Next Week
+
 1. Complete Phase 2
 2. Begin Phase 3 (TASK-004, TASK-005, TASK-006)
 
 ### Future
+
 1. Complete Phase 3
 2. Plan Phase 4
 3. Execute Phase 4 (post-v1.0)
@@ -770,6 +828,7 @@ git commit -m "revert: Restore ModelContext.tsx from backup due to test failures
 ## Conclusion
 
 This strategy ensures we:
+
 - ✅ Don't cut corners
 - ✅ Backup everything
 - ✅ Test thoroughly

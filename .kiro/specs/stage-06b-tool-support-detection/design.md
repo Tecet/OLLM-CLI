@@ -73,13 +73,19 @@
 **File:** `packages/cli/src/features/context/ModelContext.tsx`
 
 #### New State
+
 ```typescript
 // Enhanced override tracking
-const toolSupportOverridesRef = useRef<Map<string, {
-  supported: boolean;
-  source: 'profile' | 'runtime_error' | 'user_confirmed' | 'auto_detected';
-  timestamp: number;
-}>>(new Map());
+const toolSupportOverridesRef = useRef<
+  Map<
+    string,
+    {
+      supported: boolean;
+      source: 'profile' | 'runtime_error' | 'user_confirmed' | 'auto_detected';
+      timestamp: number;
+    }
+  >
+>(new Map());
 
 // Unknown model prompt state
 const [unknownModelPrompt, setUnknownModelPrompt] = useState<{
@@ -89,149 +95,160 @@ const [unknownModelPrompt, setUnknownModelPrompt] = useState<{
 ```
 
 #### Enhanced setCurrentModel
+
 ```typescript
-const setModelAndLoading = useCallback((model: string) => {
-  const changed = currentModel !== model;
-  if (changed) {
-    // 1. Check if model is in database
-    const userModels = profileManager.getUserModels();
-    const userModel = userModels.find(m => m.id === model);
-    const profile = profileManager.findProfile(model);
-    
-    // 2. Unknown model handling
-    if (!userModel && !profile) {
-      setUnknownModelPrompt({
-        modelId: model,
-        onComplete: async (supported) => {
-          if (supported === 'auto') {
-            await autoDetectToolSupport(model);
-          } else {
-            await saveToolSupport(model, supported);
-          }
-          setUnknownModelPrompt(null);
-        }
-      });
-      return; // Wait for user input
+const setModelAndLoading = useCallback(
+  (model: string) => {
+    const changed = currentModel !== model;
+    if (changed) {
+      // 1. Check if model is in database
+      const userModels = profileManager.getUserModels();
+      const userModel = userModels.find((m) => m.id === model);
+      const profile = profileManager.findProfile(model);
+
+      // 2. Unknown model handling
+      if (!userModel && !profile) {
+        setUnknownModelPrompt({
+          modelId: model,
+          onComplete: async (supported) => {
+            if (supported === 'auto') {
+              await autoDetectToolSupport(model);
+            } else {
+              await saveToolSupport(model, supported);
+            }
+            setUnknownModelPrompt(null);
+          },
+        });
+        return; // Wait for user input
+      }
+
+      // 3. Proactive override from metadata
+      const toolSupport = userModel?.tool_support ?? profile?.tool_support ?? false;
+      if (!toolSupport) {
+        toolSupportOverridesRef.current.set(model, {
+          supported: false,
+          source: 'profile',
+          timestamp: Date.now(),
+        });
+      }
+
+      // 4. Show system message
+      addSystemMessage(`Switched to ${model}. Tools: ${toolSupport ? 'Enabled' : 'Disabled'}`);
+
+      // 5. Proceed with model swap
+      setCurrentModel(model);
+      setModelLoading(true);
+      // ... rest of existing code
     }
-    
-    // 3. Proactive override from metadata
-    const toolSupport = userModel?.tool_support ?? profile?.tool_support ?? false;
-    if (!toolSupport) {
-      toolSupportOverridesRef.current.set(model, {
-        supported: false,
-        source: 'profile',
-        timestamp: Date.now()
-      });
-    }
-    
-    // 4. Show system message
-    addSystemMessage(
-      `Switched to ${model}. Tools: ${toolSupport ? 'Enabled' : 'Disabled'}`
-    );
-    
-    // 5. Proceed with model swap
-    setCurrentModel(model);
-    setModelLoading(true);
-    // ... rest of existing code
-  }
-}, [currentModel, provider]);
+  },
+  [currentModel, provider]
+);
 ```
 
 #### Auto-Detect Tool Support
+
 ```typescript
-const autoDetectToolSupport = useCallback(async (model: string) => {
-  addSystemMessage(`Auto-detecting tool support for ${model}...`);
-  
-  const testTools: ToolSchema[] = [{
-    name: 'test_tool',
-    description: 'Test tool for capability detection',
-    parameters: { type: 'object', properties: {} }
-  }];
-  
-  try {
-    const stream = provider.chatStream({
-      model,
-      messages: [{ role: 'user', parts: [{ type: 'text', text: 'test' }] }],
-      tools: testTools,
-      abortSignal: AbortSignal.timeout(5000)
-    });
-    
-    let hasError = false;
-    for await (const event of stream) {
-      if (event.type === 'error') {
-        hasError = isToolUnsupportedError(event.error.message || '');
-        break;
+const autoDetectToolSupport = useCallback(
+  async (model: string) => {
+    addSystemMessage(`Auto-detecting tool support for ${model}...`);
+
+    const testTools: ToolSchema[] = [
+      {
+        name: 'test_tool',
+        description: 'Test tool for capability detection',
+        parameters: { type: 'object', properties: {} },
+      },
+    ];
+
+    try {
+      const stream = provider.chatStream({
+        model,
+        messages: [{ role: 'user', parts: [{ type: 'text', text: 'test' }] }],
+        tools: testTools,
+        abortSignal: AbortSignal.timeout(5000),
+      });
+
+      let hasError = false;
+      for await (const event of stream) {
+        if (event.type === 'error') {
+          hasError = isToolUnsupportedError(event.error.message || '');
+          break;
+        }
       }
+
+      const supported = !hasError;
+      await saveToolSupport(model, supported, 'auto_detected');
+      addSystemMessage(`Tool support detected: ${supported ? 'Enabled' : 'Disabled'}`);
+    } catch (error) {
+      addSystemMessage('Auto-detect failed. Defaulting to tools disabled.');
+      await saveToolSupport(model, false, 'auto_detected');
     }
-    
-    const supported = !hasError;
-    await saveToolSupport(model, supported, 'auto_detected');
-    addSystemMessage(
-      `Tool support detected: ${supported ? 'Enabled' : 'Disabled'}`
-    );
-  } catch (error) {
-    addSystemMessage('Auto-detect failed. Defaulting to tools disabled.');
-    await saveToolSupport(model, false, 'auto_detected');
-  }
-}, [provider]);
+  },
+  [provider]
+);
 ```
 
 #### Save Tool Support
+
 ```typescript
-const saveToolSupport = useCallback(async (
-  model: string,
-  supported: boolean,
-  source: 'user_confirmed' | 'auto_detected' = 'user_confirmed'
-) => {
-  // Update runtime override
-  toolSupportOverridesRef.current.set(model, {
-    supported,
-    source,
-    timestamp: Date.now()
-  });
-  
-  // Update user_models.json
-  const userModels = profileManager.getUserModels();
-  const existing = userModels.find(m => m.id === model);
-  
-  if (existing) {
-    existing.tool_support = supported;
-    existing.tool_support_source = source;
-    existing.tool_support_confirmed_at = new Date().toISOString();
-  } else {
-    userModels.push({
-      id: model,
-      name: model,
-      source: 'ollama',
-      last_seen: new Date().toISOString(),
-      tool_support: supported,
-      tool_support_source: source,
-      tool_support_confirmed_at: new Date().toISOString(),
-      description: 'Custom model',
-      abilities: [],
-      context_profiles: [], // Will be filled by /model list
-      default_context: 4096
+const saveToolSupport = useCallback(
+  async (
+    model: string,
+    supported: boolean,
+    source: 'user_confirmed' | 'auto_detected' = 'user_confirmed'
+  ) => {
+    // Update runtime override
+    toolSupportOverridesRef.current.set(model, {
+      supported,
+      source,
+      timestamp: Date.now(),
     });
-  }
-  
-  profileManager.setUserModels(userModels);
-}, []);
+
+    // Update user_models.json
+    const userModels = profileManager.getUserModels();
+    const existing = userModels.find((m) => m.id === model);
+
+    if (existing) {
+      existing.tool_support = supported;
+      existing.tool_support_source = source;
+      existing.tool_support_confirmed_at = new Date().toISOString();
+    } else {
+      userModels.push({
+        id: model,
+        name: model,
+        source: 'ollama',
+        last_seen: new Date().toISOString(),
+        tool_support: supported,
+        tool_support_source: source,
+        tool_support_confirmed_at: new Date().toISOString(),
+        description: 'Custom model',
+        abilities: [],
+        context_profiles: [], // Will be filled by /model list
+        default_context: 4096,
+      });
+    }
+
+    profileManager.setUserModels(userModels);
+  },
+  []
+);
 ```
 
 #### Runtime Learning Handler
+
 ```typescript
 const handleToolError = useCallback(async (model: string, error: string) => {
   if (!isToolUnsupportedError(error)) return;
-  
+
   const override = toolSupportOverridesRef.current.get(model);
   if (override?.source === 'user_confirmed') return; // Don't override user choice
-  
+
   // Prompt user for confirmation
   const confirmed = await promptUser(
     `This model appears to not support tools. Update metadata? (y/n)`,
     ['y', 'n']
   );
-  
+
   if (confirmed === 'y') {
     await saveToolSupport(model, false, 'user_confirmed');
     addSystemMessage('Tool support disabled and saved.');
@@ -240,7 +257,7 @@ const handleToolError = useCallback(async (model: string, error: string) => {
     toolSupportOverridesRef.current.set(model, {
       supported: false,
       source: 'runtime_error',
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
     addSystemMessage('Tool support disabled for this session.');
   }
@@ -252,59 +269,65 @@ const handleToolError = useCallback(async (model: string, error: string) => {
 **File:** `packages/cli/src/features/context/ChatContext.tsx`
 
 #### Conditional Tool Registry
-```typescript
-const sendMessage = useCallback(async (content: string) => {
-  // ... existing command handling ...
-  
-  setWaitingForResponse(true);
-  setStreaming(true);
 
-  // Check tool support BEFORE creating registry
-  const supportsTools = modelSupportsTools(currentModel);
-  
-  let toolRegistry: ToolRegistry | undefined;
-  let toolSchemas: ToolSchema[] | undefined;
-  
-  if (supportsTools) {
-    toolRegistry = new ToolRegistry();
-    const promptRegistry = new PromptRegistry();
-    
-    const manager = contextActions.getManager();
-    if (manager && provider) {
-      toolRegistry.register(new HotSwapTool(manager, promptRegistry, provider, currentModel));
-      toolRegistry.register(new MemoryDumpTool());
-      const toolNames = toolRegistry.list().map(t => t.name);
-      manager.emit('active-tools-updated', toolNames);
+```typescript
+const sendMessage = useCallback(
+  async (content: string) => {
+    // ... existing command handling ...
+
+    setWaitingForResponse(true);
+    setStreaming(true);
+
+    // Check tool support BEFORE creating registry
+    const supportsTools = modelSupportsTools(currentModel);
+
+    let toolRegistry: ToolRegistry | undefined;
+    let toolSchemas: ToolSchema[] | undefined;
+
+    if (supportsTools) {
+      toolRegistry = new ToolRegistry();
+      const promptRegistry = new PromptRegistry();
+
+      const manager = contextActions.getManager();
+      if (manager && provider) {
+        toolRegistry.register(new HotSwapTool(manager, promptRegistry, provider, currentModel));
+        toolRegistry.register(new MemoryDumpTool());
+        const toolNames = toolRegistry.list().map((t) => t.name);
+        manager.emit('active-tools-updated', toolNames);
+      }
+
+      toolSchemas = toolRegistry.list().map((t) => t.schema);
     }
-    
-    toolSchemas = toolRegistry.list().map(t => t.schema);
-  }
-  
-  // Get system prompt with tool note if needed
-  let systemPrompt = contextActions.getSystemPrompt();
-  if (!supportsTools) {
-    systemPrompt += '\n\nNote: This model does not support function calling. ' +
-                    'Do not attempt to use tools or make tool calls.';
-  }
-  
-  // ... rest of agent loop with toolSchemas and toolRegistry ...
-}, [/* deps */]);
+
+    // Get system prompt with tool note if needed
+    let systemPrompt = contextActions.getSystemPrompt();
+    if (!supportsTools) {
+      systemPrompt +=
+        '\n\nNote: This model does not support function calling. ' +
+        'Do not attempt to use tools or make tool calls.';
+    }
+
+    // ... rest of agent loop with toolSchemas and toolRegistry ...
+  },
+  [
+    /* deps */
+  ]
+);
 ```
 
 #### Graceful Agent Loop Transition
+
 ```typescript
 // In agent loop
 while (turnCount < maxTurns && !stopLoop) {
   turnCount++;
-  
+
   // Check if model changed mid-loop
   if (currentModel !== initialModel) {
-    addSystemMessage(
-      'Model changed during conversation. Completing current turn...'
-    );
+    addSystemMessage('Model changed during conversation. Completing current turn...');
     stopLoop = true; // Complete this turn, stop after
   }
-  
+
   // ... rest of turn logic ...
 }
 ```
@@ -314,32 +337,33 @@ while (turnCount < maxTurns && !stopLoop) {
 **File:** `packages/cli/src/features/profiles/ProfileManager.ts`
 
 #### Startup Metadata Refresh
+
 ```typescript
 export class ProfileManager {
   constructor() {
     // ... existing initialization ...
-    
+
     // Auto-refresh on startup (async, non-blocking)
-    this.refreshMetadataAsync().catch(err => {
+    this.refreshMetadataAsync().catch((err) => {
       console.warn('Failed to refresh model metadata:', err);
     });
   }
-  
+
   private async refreshMetadataAsync(): Promise<void> {
     try {
       // Check if Ollama is available
       const response = await fetch(`${OLLAMA_BASE_URL}/api/tags`, {
-        signal: AbortSignal.timeout(2000)
+        signal: AbortSignal.timeout(2000),
       });
-      
+
       if (!response.ok) return;
-      
+
       const data = await response.json();
       const models = data.models.map((m: any) => ({
         name: m.name,
-        sizeBytes: m.size
+        sizeBytes: m.size,
       }));
-      
+
       // Update user models (preserves user overrides)
       this.updateUserModelsFromList(models);
     } catch (error) {
@@ -364,20 +388,20 @@ export function UserPromptProvider({ children }: { children: ReactNode }) {
     options: string[];
     resolve: (value: string) => void;
   } | null>(null);
-  
+
   const promptUser = useCallback((message: string, options: string[]) => {
     return new Promise<string>((resolve) => {
       setPrompt({ message, options, resolve });
     });
   }, []);
-  
+
   const handleResponse = useCallback((value: string) => {
     if (prompt) {
       prompt.resolve(value);
       setPrompt(null);
     }
   }, [prompt]);
-  
+
   return (
     <UserPromptContext.Provider value={{ promptUser }}>
       {children}
@@ -396,6 +420,7 @@ export function UserPromptProvider({ children }: { children: ReactNode }) {
 ## Data Flow
 
 ### Model Swap Flow
+
 ```
 User: /model use gemma3:1b
   ↓
@@ -419,6 +444,7 @@ Send to LLM without tools
 ```
 
 ### Unknown Model Flow
+
 ```
 User: /model use custom-model:latest
   ↓
@@ -442,6 +468,7 @@ Proceed with model swap
 ```
 
 ### Runtime Learning Flow
+
 ```
 User sends message
   ↓
@@ -467,6 +494,7 @@ Future sessions use saved metadata
 ## Error Handling
 
 ### Unknown Model Timeout
+
 ```typescript
 // If user doesn't respond to prompt within 30s
 setTimeout(() => {
@@ -479,6 +507,7 @@ setTimeout(() => {
 ```
 
 ### Auto-Detect Failure
+
 ```typescript
 // If auto-detect times out or errors
 catch (error) {
@@ -488,6 +517,7 @@ catch (error) {
 ```
 
 ### Corrupted user_models.json
+
 ```typescript
 // In ProfileManager.loadUserModels()
 try {
@@ -506,12 +536,14 @@ try {
 ## Testing Strategy
 
 ### Unit Tests
+
 - ModelContext.modelSupportsTools() with various scenarios
 - ProfileManager.findProfile() fuzzy matching
 - Tool support override logic
 - System prompt modification
 
 ### Integration Tests
+
 - Model swap from tool-capable to non-capable
 - Model swap from non-capable to tool-capable
 - Unknown model prompt flow
@@ -519,6 +551,7 @@ try {
 - Runtime learning flow
 
 ### Property-Based Tests
+
 - Tool filtering consistency across layers
 - Metadata persistence correctness
 - Override precedence rules
@@ -540,22 +573,23 @@ try {
 ## Correctness Properties
 
 **Validates: Requirements 1.1, 1.2, 1.3**
+
 ```typescript
 // Property: Tools never sent to non-supporting models
 fc.property(
   fc.record({
     model: fc.string(),
     toolSupport: fc.boolean(),
-    hasTools: fc.boolean()
+    hasTools: fc.boolean(),
   }),
   ({ model, toolSupport, hasTools }) => {
     // Setup
     setToolSupport(model, toolSupport);
     const tools = hasTools ? [testTool] : undefined;
-    
+
     // Act
     const filtered = filterTools(model, tools);
-    
+
     // Assert
     if (!toolSupport) {
       expect(filtered).toBeUndefined();
@@ -565,22 +599,18 @@ fc.property(
 ```
 
 **Validates: Requirements 2.1, 2.2, 2.3**
+
 ```typescript
 // Property: Unknown models always prompt or use safe default
-fc.property(
-  fc.string(),
-  (unknownModel) => {
-    // Setup: Model not in database
-    
-    // Act
-    const result = handleUnknownModel(unknownModel);
-    
-    // Assert: Either prompts user or defaults to false
-    expect(
-      result.prompted || result.toolSupport === false
-    ).toBe(true);
-  }
-);
+fc.property(fc.string(), (unknownModel) => {
+  // Setup: Model not in database
+
+  // Act
+  const result = handleUnknownModel(unknownModel);
+
+  // Assert: Either prompts user or defaults to false
+  expect(result.prompted || result.toolSupport === false).toBe(true);
+});
 ```
 
 ## Migration Plan
@@ -595,6 +625,7 @@ fc.property(
 ## Rollback Plan
 
 If issues arise:
+
 1. Disable startup refresh (config flag)
 2. Disable runtime learning (config flag)
 3. Revert to provider-level filtering only

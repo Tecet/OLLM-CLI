@@ -4,7 +4,14 @@ import path from 'path';
 import Ajv from 'ajv';
 
 const schemaPath = path.join(process.cwd(), 'scripts', 'LLM_profiles.schema.json');
-const profilesPath = path.join(process.cwd(), 'packages', 'cli', 'src', 'config', 'LLM_profiles.json');
+const profilesPath = path.join(
+  process.cwd(),
+  'packages',
+  'cli',
+  'src',
+  'config',
+  'LLM_profiles.json'
+);
 
 const schema = JSON.parse(fs.readFileSync(schemaPath, 'utf-8'));
 const profiles = JSON.parse(fs.readFileSync(profilesPath, 'utf-8'));

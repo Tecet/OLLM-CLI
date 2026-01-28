@@ -1,6 +1,6 @@
 /**
  * MCP Health Monitor
- * 
+ *
  * Monitors the health of MCP servers and automatically restarts failed servers.
  */
 
@@ -9,14 +9,14 @@ import type { MCPClient, MCPServerConfig, MCPServerStatusType } from './types.js
 /**
  * Connection phase for tracking server connection lifecycle
  */
-export type ConnectionPhase = 
-  | 'stopped'        // Server is disabled/stopped
-  | 'starting'       // Server process starting
-  | 'connecting'     // Waiting for initial connection
-  | 'health-check'   // Running health checks (1-3 attempts)
-  | 'connected'      // Fully connected and healthy
-  | 'unhealthy'      // Connected but health checks failed
-  | 'error';         // Connection failed
+export type ConnectionPhase =
+  | 'stopped' // Server is disabled/stopped
+  | 'starting' // Server process starting
+  | 'connecting' // Waiting for initial connection
+  | 'health-check' // Running health checks (1-3 attempts)
+  | 'connected' // Fully connected and healthy
+  | 'unhealthy' // Connected but health checks failed
+  | 'error'; // Connection failed
 
 /**
  * Health check result
@@ -85,7 +85,7 @@ interface ServerHealthState {
 /**
  * Health monitor event types
  */
-export type HealthMonitorEventType = 
+export type HealthMonitorEventType =
   | 'health-check'
   | 'phase-change'
   | 'server-unhealthy'
@@ -129,7 +129,7 @@ const DEFAULT_CONFIG: Required<HealthMonitorConfig> = {
 
 /**
  * MCP Health Monitor
- * 
+ *
  * Monitors MCP server health and automatically restarts failed servers.
  */
 export class MCPHealthMonitor {
@@ -178,11 +178,12 @@ export class MCPHealthMonitor {
     }
 
     this.checkCount++;
-    
+
     // Use fast interval for first N checks, then switch to normal interval
-    const interval = this.checkCount <= this.config.fastCheckCount
-      ? this.config.fastCheckInterval
-      : this.config.checkInterval;
+    const interval =
+      this.checkCount <= this.config.fastCheckCount
+        ? this.config.fastCheckInterval
+        : this.config.checkInterval;
 
     this.checkIntervalId = setTimeout(() => {
       void this.performHealthChecks();
@@ -237,10 +238,12 @@ export class MCPHealthMonitor {
   subscribeToHealthUpdates(callback: (health: HealthCheckResult) => void): () => void {
     const listener: HealthMonitorEventListener = (event) => {
       // Only emit health updates for relevant events
-      if (event.type === 'health-check' || 
-          event.type === 'phase-change' ||
-          event.type === 'server-unhealthy' || 
-          event.type === 'server-recovered') {
+      if (
+        event.type === 'health-check' ||
+        event.type === 'phase-change' ||
+        event.type === 'server-unhealthy' ||
+        event.type === 'server-recovered'
+      ) {
         const health = this.getServerHealth(event.serverName);
         if (health) {
           callback(health);
@@ -328,8 +331,8 @@ export class MCPHealthMonitor {
 
     // Get server info
     const servers = this.client.listServers();
-    const serverInfo = servers.find(s => s.name === serverName);
-    
+    const serverInfo = servers.find((s) => s.name === serverName);
+
     if (!serverInfo) {
       throw new Error(`Server '${serverName}' not found`);
     }
@@ -367,7 +370,7 @@ export class MCPHealthMonitor {
         } else if (server.status.status === 'error') {
           initialPhase = 'error';
         }
-        
+
         this.serverStates.set(server.name, {
           name: server.name,
           lastStatus: server.status.status,
@@ -396,8 +399,8 @@ export class MCPHealthMonitor {
     this.initializeServerStates();
 
     // Check all servers in parallel for better performance
-    const checks = Array.from(this.serverStates.entries()).map(
-      ([serverName, state]) => this.checkServerHealth(serverName, state)
+    const checks = Array.from(this.serverStates.entries()).map(([serverName, state]) =>
+      this.checkServerHealth(serverName, state)
     );
 
     // Wait for all checks to complete (or fail)
@@ -419,7 +422,7 @@ export class MCPHealthMonitor {
     // Update connection phase based on status
     const wasHealthy = state.lastStatus === 'connected';
     const isHealthy = status.status === 'connected';
-    
+
     // Phase transitions
     if (status.status === 'starting') {
       // Server is starting up
@@ -427,7 +430,11 @@ export class MCPHealthMonitor {
       state.healthCheckAttempts = 0;
     } else if (status.status === 'disconnected') {
       // Server disconnected
-      if (state.phase === 'starting' || state.phase === 'connected' || state.phase === 'health-check') {
+      if (
+        state.phase === 'starting' ||
+        state.phase === 'connected' ||
+        state.phase === 'health-check'
+      ) {
         // Was running, now disconnected - enter connecting phase
         this.updatePhase(serverName, 'connecting');
         state.healthCheckAttempts = 0;
@@ -443,7 +450,7 @@ export class MCPHealthMonitor {
       } else if (state.phase === 'health-check') {
         // In health check phase - increment attempts
         state.healthCheckAttempts++;
-        
+
         // After 3 successful checks, mark as fully connected
         if (state.healthCheckAttempts >= 3) {
           this.updatePhase(serverName, 'connected');
@@ -481,11 +488,13 @@ export class MCPHealthMonitor {
 
       // Only mark as unhealthy after 3 consecutive failures
       // Don't mark as unhealthy during initial connection phases
-      if (state.consecutiveFailures >= 3 && 
-          state.phase !== 'starting' && 
-          state.phase !== 'connecting' &&
-          state.phase !== 'health-check' &&
-          state.phase !== 'error') {
+      if (
+        state.consecutiveFailures >= 3 &&
+        state.phase !== 'starting' &&
+        state.phase !== 'connecting' &&
+        state.phase !== 'health-check' &&
+        state.phase !== 'error'
+      ) {
         this.updatePhase(serverName, 'unhealthy');
       }
 
@@ -509,9 +518,7 @@ export class MCPHealthMonitor {
           // Start the backoff window on first failure.
           state.lastRestartTime = now;
         }
-        const timeSinceLastRestart = state.lastRestartTime
-          ? now - state.lastRestartTime
-          : 0;
+        const timeSinceLastRestart = state.lastRestartTime ? now - state.lastRestartTime : 0;
 
         if (timeSinceLastRestart >= state.currentBackoffDelay) {
           state.restartAttempts++;
@@ -546,7 +553,7 @@ export class MCPHealthMonitor {
       state.consecutiveFailures = 0;
       state.restartAttempts = 0;
       state.currentBackoffDelay = this.config.initialBackoffDelay;
-      
+
       this.emitEvent({
         type: 'server-recovered',
         serverName,
@@ -582,7 +589,7 @@ export class MCPHealthMonitor {
         await this.client.stopServer(serverName);
 
         // Allow async listeners to flush before restarting.
-        await new Promise<void>(resolve => {
+        await new Promise<void>((resolve) => {
           queueMicrotask(() => resolve());
         });
 
@@ -613,7 +620,7 @@ export class MCPHealthMonitor {
           type: 'restart-failed',
           serverName,
           timestamp: Date.now(),
-          data: { 
+          data: {
             attempt: state.restartAttempts,
             error: errorMessage,
             nextBackoffDelay: state.currentBackoffDelay,

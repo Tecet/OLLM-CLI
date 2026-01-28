@@ -71,22 +71,22 @@ interface EditorState {
   fileName: string;
   isDirty: boolean;
   isReadOnly: boolean;
-  
+
   // Content
   buffer: EditorBuffer;
-  
+
   // Cursor and selection
   cursor: CursorPosition;
   selection: Selection | null;
-  
+
   // View state
   scrollOffset: number;
   viewportHeight: number;
   viewportWidth: number;
-  
+
   // History
   history: EditorHistory;
-  
+
   // UI state
   mode: EditorMode;
   statusMessage: string | null;
@@ -101,8 +101,8 @@ type EditorMode = 'edit' | 'view' | 'find' | 'goto';
 
 ```typescript
 interface CursorPosition {
-  line: number;    // 0-based line index
-  column: number;  // 0-based column index (character position)
+  line: number; // 0-based line index
+  column: number; // 0-based column index (character position)
 }
 ```
 
@@ -121,23 +121,23 @@ interface Selection {
 ```typescript
 class EditorBuffer {
   private lines: string[];
-  
+
   constructor(content: string) {
     this.lines = content.split('\n');
   }
-  
+
   // Read operations
   getLine(index: number): string;
   getLineCount(): number;
   getContent(): string;
   getRange(start: CursorPosition, end: CursorPosition): string;
-  
+
   // Write operations
   insertAt(position: CursorPosition, text: string): void;
   deleteAt(position: CursorPosition, count: number): void;
   deleteLine(index: number): void;
   replaceRange(start: CursorPosition, end: CursorPosition, text: string): void;
-  
+
   // Utility
   isValidPosition(position: CursorPosition): boolean;
   getLineLength(index: number): number;
@@ -159,7 +159,7 @@ class EditorHistory {
   private undoStack: EditorAction[];
   private redoStack: EditorAction[];
   private maxStackSize: number = 100;
-  
+
   push(action: EditorAction): void;
   undo(): EditorAction | null;
   redo(): EditorAction | null;
@@ -176,6 +176,7 @@ class EditorHistory {
 **Responsibility**: Manage text content as an array of lines
 
 **Key Methods**:
+
 - `insertAt(position, text)` - Insert text at position
 - `deleteAt(position, count)` - Delete characters
 - `replaceRange(start, end, text)` - Replace text range
@@ -183,6 +184,7 @@ class EditorHistory {
 - `getContent()` - Get full file content
 
 **Implementation Notes**:
+
 - Store content as array of strings (one per line)
 - Handle line breaks correctly (preserve CRLF vs LF)
 - Validate positions before operations
@@ -193,6 +195,7 @@ class EditorHistory {
 **Responsibility**: Track and move cursor position
 
 **Key Methods**:
+
 - `moveUp()`, `moveDown()`, `moveLeft()`, `moveRight()`
 - `moveToLineStart()`, `moveToLineEnd()`
 - `moveToFileStart()`, `moveToFileEnd()`
@@ -200,6 +203,7 @@ class EditorHistory {
 - `moveTo(position)` - Jump to specific position
 
 **Implementation Notes**:
+
 - Clamp cursor to valid positions
 - Handle empty lines correctly
 - Remember column when moving up/down
@@ -210,12 +214,14 @@ class EditorHistory {
 **Responsibility**: Manage undo/redo stack
 
 **Key Methods**:
+
 - `push(action)` - Add action to undo stack
 - `undo()` - Undo last action
 - `redo()` - Redo last undone action
 - `clear()` - Clear history
 
 **Implementation Notes**:
+
 - Limit stack size to 100 actions
 - Clear redo stack when new action is pushed
 - Group rapid typing into single undo action (debounce 500ms)
@@ -226,6 +232,7 @@ class EditorHistory {
 **Responsibility**: Handle text selection
 
 **Key Methods**:
+
 - `startSelection(position)` - Begin selection
 - `updateSelection(position)` - Update selection end
 - `clearSelection()` - Clear selection
@@ -233,6 +240,7 @@ class EditorHistory {
 - `hasSelection()` - Check if text is selected
 
 **Implementation Notes**:
+
 - Normalize selection (start always before end)
 - Handle multi-line selections
 - Update selection on cursor movement with Shift key
@@ -243,11 +251,13 @@ class EditorHistory {
 **Responsibility**: Handle copy/cut/paste operations
 
 **Key Methods**:
+
 - `copy(text)` - Copy text to clipboard
 - `cut(text)` - Cut text to clipboard
 - `paste()` - Get clipboard content
 
 **Implementation Notes**:
+
 - Use `clipboardy` package for cross-platform clipboard
 - Handle clipboard errors gracefully
 - Support multi-line clipboard content
@@ -258,6 +268,7 @@ class EditorHistory {
 **Responsibility**: Provide syntax highlighting with semantic colors and error indicators
 
 **Key Methods**:
+
 - `highlight(content, language)` - Highlight code with color scheme
 - `detectLanguage(filePath)` - Detect language from extension
 - `getSupportedLanguages()` - List supported languages
@@ -265,6 +276,7 @@ class EditorHistory {
 - `highlightErrors(diagnostics)` - Highlight TypeScript/lint errors
 
 **Implementation Notes**:
+
 - Reuse SyntaxViewer's shiki integration
 - Apply custom color scheme for terminal rendering
 - Debounce highlighting updates (500ms)
@@ -275,64 +287,68 @@ class EditorHistory {
 - Show error squiggles and messages inline
 
 **Color Scheme**:
+
 ```typescript
 interface SyntaxColorScheme {
-  strings: 'green';           // "text", 'text', `template`
-  comments: 'gray';           // // comment, /* comment */
-  numbers: 'yellow';          // 123, 3.14, 0xFF
-  parameters: 'yellow';       // function params, object properties
-  keywords: 'magenta';        // var, if, else, return, class, const
-  operators: 'cyan';          // +, -, &&, ||, ===, =>
-  functions: 'blue';          // function names, method calls
-  classes: 'red';             // class names, this keyword
-  types: 'cyan';              // TypeScript types, interfaces
-  errors: 'redBright';        // Error underlines
-  warnings: 'yellowBright';   // Warning underlines
-  default: 'white';           // default text
+  strings: 'green'; // "text", 'text', `template`
+  comments: 'gray'; // // comment, /* comment */
+  numbers: 'yellow'; // 123, 3.14, 0xFF
+  parameters: 'yellow'; // function params, object properties
+  keywords: 'magenta'; // var, if, else, return, class, const
+  operators: 'cyan'; // +, -, &&, ||, ===, =>
+  functions: 'blue'; // function names, method calls
+  classes: 'red'; // class names, this keyword
+  types: 'cyan'; // TypeScript types, interfaces
+  errors: 'redBright'; // Error underlines
+  warnings: 'yellowBright'; // Warning underlines
+  default: 'white'; // default text
 }
 ```
 
 **Syntax Highlighting Examples**:
+
 ```typescript
 // TypeScript example with colors
-const message: string = "Hello";  
+const message: string = 'Hello';
 // const=magenta, message=white, string=cyan, "Hello"=green
 
-function greet(name: string) {    
-// function=magenta, greet=blue, name=yellow, string=cyan
-  return `Hi ${name}`;            
+function greet(name: string) {
+  // function=magenta, greet=blue, name=yellow, string=cyan
+  return `Hi ${name}`;
   // return=magenta, `Hi ${name}`=green
 }
 
-class User {                      
-// class=magenta, User=red
-  constructor(public name: string) {} 
+class User {
+  // class=magenta, User=red
+  constructor(public name: string) {}
   // constructor=blue, public=magenta, name=yellow
 }
 
 // Error highlighting
-const x: number = "text";  // Error: Type 'string' not assignable to 'number'
+const x: number = 'text'; // Error: Type 'string' not assignable to 'number'
 //                ^^^^^^ (red underline)
 ```
 
 **Terminal Color Mapping**:
+
 ```typescript
 const TERMINAL_COLORS = {
-  green: '\x1b[32m',          // Strings
-  gray: '\x1b[90m',           // Comments
-  yellow: '\x1b[33m',         // Numbers, parameters
-  magenta: '\x1b[35m',        // Keywords (purple)
-  cyan: '\x1b[36m',           // Operators, types (light-blue)
-  blue: '\x1b[34m',           // Functions (dark-blue)
-  red: '\x1b[31m',            // Classes, this
-  redBright: '\x1b[91m',      // Errors
-  yellowBright: '\x1b[93m',   // Warnings
-  white: '\x1b[37m',          // Default
-  reset: '\x1b[0m',           // Reset
+  green: '\x1b[32m', // Strings
+  gray: '\x1b[90m', // Comments
+  yellow: '\x1b[33m', // Numbers, parameters
+  magenta: '\x1b[35m', // Keywords (purple)
+  cyan: '\x1b[36m', // Operators, types (light-blue)
+  blue: '\x1b[34m', // Functions (dark-blue)
+  red: '\x1b[31m', // Classes, this
+  redBright: '\x1b[91m', // Errors
+  yellowBright: '\x1b[93m', // Warnings
+  white: '\x1b[37m', // Default
+  reset: '\x1b[0m', // Reset
 };
 ```
 
 **Error Highlighting**:
+
 ```typescript
 interface EditorDiagnostic {
   line: number;
@@ -353,11 +369,13 @@ interface EditorDiagnostic {
 **Responsibility**: Format code with Prettier
 
 **Key Methods**:
+
 - `format(content, filePath)` - Format content
 - `canFormat(filePath)` - Check if file type is supported
 - `loadConfig(workspaceRoot)` - Load .prettierrc
 
 **Implementation Notes**:
+
 - Lazy load Prettier (optional dependency)
 - Detect .prettierrc in workspace
 - Use Prettier defaults if no config
@@ -369,12 +387,14 @@ interface EditorDiagnostic {
 **Responsibility**: Handle file operations
 
 **Key Methods**:
+
 - `save(filePath, content)` - Save file to disk
 - `createBackup(filePath)` - Create .bak file
 - `detectExternalChanges(filePath)` - Check if file changed externally
 - `reload(filePath)` - Reload file from disk
 
 **Implementation Notes**:
+
 - Use PathSanitizer for path validation
 - Create .bak backup on first save
 - Check file modification time before save
@@ -386,6 +406,7 @@ interface EditorDiagnostic {
 ### CodeEditor (Main Component)
 
 **Props**:
+
 ```typescript
 interface CodeEditorProps {
   initialFilePath?: string;
@@ -394,12 +415,14 @@ interface CodeEditorProps {
 ```
 
 **State**:
+
 - Manages EditorState
 - Handles keyboard input
 - Coordinates all services
 - Renders sub-components
 
 **Keyboard Handling**:
+
 ```typescript
 useInput((input, key) => {
   // Navigation
@@ -407,13 +430,13 @@ useInput((input, key) => {
   if (key.downArrow) moveCursorDown();
   if (key.leftArrow) moveCursorLeft();
   if (key.rightArrow) moveCursorRight();
-  
+
   // Editing
   if (key.backspace) deleteCharBefore();
   if (key.delete) deleteCharAt();
   if (key.return) insertNewLine();
   if (key.tab) insertTab();
-  
+
   // Commands
   if (input === 's' && key.ctrl) saveFile();
   if (input === 'q' && key.ctrl) closeEditor();
@@ -424,7 +447,7 @@ useInput((input, key) => {
   if (input === 'v' && key.ctrl) paste();
   if (input === 'f' && key.ctrl) openFind();
   if (input === 'g' && key.ctrl) openGoToLine();
-  
+
   // Regular text input
   if (!key.ctrl && !key.meta && input.length === 1) {
     insertChar(input);
@@ -435,6 +458,7 @@ useInput((input, key) => {
 ### EditorHeader
 
 **Props**:
+
 ```typescript
 interface EditorHeaderProps {
   fileName: string;
@@ -446,6 +470,7 @@ interface EditorHeaderProps {
 ```
 
 **Renders**:
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │ 📄 filename.ts [Modified] | Line 42/150 | Col 12            │
@@ -455,6 +480,7 @@ interface EditorHeaderProps {
 ### EditorContent
 
 **Props**:
+
 ```typescript
 interface EditorContentProps {
   buffer: EditorBuffer;
@@ -468,6 +494,7 @@ interface EditorContentProps {
 ```
 
 **Renders**:
+
 - Line numbers (left gutter)
 - File content (with syntax highlighting)
 - Cursor indicator (█)
@@ -477,6 +504,7 @@ interface EditorContentProps {
 ### EditorFooter
 
 **Props**:
+
 ```typescript
 interface EditorFooterProps {
   mode: EditorMode;
@@ -485,6 +513,7 @@ interface EditorFooterProps {
 ```
 
 **Renders**:
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │ Ctrl+S Save | Ctrl+Q Quit | Ctrl+Z Undo | Esc View         │
@@ -494,6 +523,7 @@ interface EditorFooterProps {
 ### FindDialog
 
 **Props**:
+
 ```typescript
 interface FindDialogProps {
   isOpen: boolean;
@@ -503,6 +533,7 @@ interface FindDialogProps {
 ```
 
 **Renders**:
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │ Find: [search term here]                                    │
@@ -513,6 +544,7 @@ interface FindDialogProps {
 ### GoToLineDialog
 
 **Props**:
+
 ```typescript
 interface GoToLineDialogProps {
   isOpen: boolean;
@@ -523,6 +555,7 @@ interface GoToLineDialogProps {
 ```
 
 **Renders**:
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │ Go to line: [42]                                            │
@@ -537,6 +570,7 @@ interface GoToLineDialogProps {
 **Location**: `packages/cli/src/ui/components/file-explorer/FileTreeView.tsx`
 
 **Changes**:
+
 ```typescript
 // Add keybinding to open in built-in editor
 if (input === 'e' && !key.ctrl) {
@@ -560,6 +594,7 @@ if (input === 'e' && key.ctrl) {
 **Location**: `packages/cli/src/ui/App.tsx`
 
 **Changes**:
+
 ```typescript
 // Replace "Editor - Coming Soon" placeholder with CodeEditor component
 {windowContext.isEditorActive && (
@@ -579,17 +614,18 @@ if (input === '3' && key.ctrl) {
 **Location**: `packages/cli/src/ui/components/code-editor/services/EditorFileOps.ts`
 
 **Changes**:
+
 ```typescript
 async function saveFile(filePath: string, content: string) {
   // Save to disk
   await fs.writeFile(filePath, content, 'utf-8');
-  
+
   // Update focused file if it's focused
   const fileFocusContext = useFileFocus();
   if (fileFocusContext.isFocused(filePath)) {
     await fileFocusContext.updateFocusedFile(filePath, content);
   }
-  
+
   // Mark as clean
   setIsDirty(false);
 }
@@ -600,6 +636,7 @@ async function saveFile(filePath: string, content: string) {
 **Location**: `packages/cli/src/ui/components/code-editor/services/EditorSyntax.ts`
 
 **Reuse**:
+
 ```typescript
 import { codeToHtml, bundledLanguages } from 'shiki';
 import { detectLanguage, isLanguageSupported } from '../../file-explorer/SyntaxViewer.js';
@@ -615,23 +652,23 @@ import { detectLanguage, isLanguageSupported } from '../../file-explorer/SyntaxV
 interface EditorContextValue {
   // Current editor state
   state: EditorState | null;
-  
+
   // File operations
   openFile: (filePath: string) => Promise<void>;
   closeFile: () => void;
   saveFile: () => Promise<void>;
   reloadFile: () => Promise<void>;
-  
+
   // Editing operations
   insertText: (text: string) => void;
   deleteText: (count: number) => void;
   undo: () => void;
   redo: () => void;
-  
+
   // Cursor operations
   moveCursor: (direction: CursorDirection) => void;
   setCursor: (position: CursorPosition) => void;
-  
+
   // Selection operations
   startSelection: () => void;
   updateSelection: () => void;
@@ -639,13 +676,13 @@ interface EditorContextValue {
   copy: () => void;
   cut: () => void;
   paste: () => void;
-  
+
   // Search operations
   find: (query: string) => void;
   findNext: () => void;
   findPrevious: () => void;
   goToLine: (line: number) => void;
-  
+
   // Formatting
   format: () => Promise<void>;
 }
@@ -654,21 +691,25 @@ interface EditorContextValue {
 ## Performance Optimizations
 
 ### 1. Virtual Scrolling
+
 - Only render visible lines (viewport height + buffer)
 - Update rendered lines on scroll
 - Reuse line components with React.memo
 
 ### 2. Debounced Operations
+
 - Syntax highlighting: 500ms debounce
 - Auto-save: 30s debounce
 - History grouping: 500ms debounce for rapid typing
 
 ### 3. Lazy Loading
+
 - Load Prettier only when needed
 - Load syntax highlighting only for visible lines
 - Defer clipboard operations until needed
 
 ### 4. Memory Management
+
 - Limit undo stack to 100 actions
 - Clear syntax highlighting cache for closed files
 - Release file handles after save
@@ -676,6 +717,7 @@ interface EditorContextValue {
 ## Error Handling
 
 ### File Operations
+
 ```typescript
 try {
   await saveFile(filePath, content);
@@ -687,13 +729,12 @@ try {
 ```
 
 ### External Changes
+
 ```typescript
 // Before save, check if file was modified externally
 const currentMtime = await getFileMtime(filePath);
 if (currentMtime > lastKnownMtime) {
-  const shouldOverwrite = await confirmDialog(
-    'File was modified externally. Overwrite?'
-  );
+  const shouldOverwrite = await confirmDialog('File was modified externally. Overwrite?');
   if (!shouldOverwrite) {
     return; // Cancel save
   }
@@ -701,13 +742,16 @@ if (currentMtime > lastKnownMtime) {
 ```
 
 ### Large Files
+
 ```typescript
 const fileSize = await getFileSize(filePath);
-if (fileSize > 1024 * 1024) { // 1MB
+if (fileSize > 1024 * 1024) {
+  // 1MB
   showError('File too large for built-in editor. Use external editor.');
   return;
 }
-if (fileSize > 512 * 1024) { // 512KB
+if (fileSize > 512 * 1024) {
+  // 512KB
   showWarning('Large file detected. Performance may be affected.');
 }
 ```
@@ -715,55 +759,60 @@ if (fileSize > 512 * 1024) { // 512KB
 ## Testing Strategy
 
 ### Unit Tests
+
 - EditorBuffer: Insert, delete, replace operations
 - EditorCursor: Movement, boundary conditions
 - EditorHistory: Undo/redo, stack limits
 - EditorSelection: Selection normalization, multi-line
 
 ### Integration Tests
+
 - File operations: Open, save, reload
 - Keyboard shortcuts: All keybindings work
 - Focus integration: Focused files update on save
 - Window switching: Editor integrates with window system
 
 ### Property-Based Tests
+
 ```typescript
 // Undo/redo round-trip
 fc.assert(
   fc.property(
-    fc.array(fc.record({
-      type: fc.constantFrom('insert', 'delete'),
-      position: fc.record({ line: fc.nat(100), column: fc.nat(80) }),
-      content: fc.string(),
-    })),
+    fc.array(
+      fc.record({
+        type: fc.constantFrom('insert', 'delete'),
+        position: fc.record({ line: fc.nat(100), column: fc.nat(80) }),
+        content: fc.string(),
+      })
+    ),
     (actions) => {
       const buffer = new EditorBuffer('');
       const history = new EditorHistory();
-      
+
       // Apply all actions
-      actions.forEach(action => {
+      actions.forEach((action) => {
         applyAction(buffer, action);
         history.push(action);
       });
-      
+
       const afterActions = buffer.getContent();
-      
+
       // Undo all
       for (let i = 0; i < actions.length; i++) {
         const action = history.undo();
         if (action) revertAction(buffer, action);
       }
-      
+
       const afterUndo = buffer.getContent();
-      
+
       // Redo all
       for (let i = 0; i < actions.length; i++) {
         const action = history.redo();
         if (action) applyAction(buffer, action);
       }
-      
+
       const afterRedo = buffer.getContent();
-      
+
       // Should be back to state after actions
       expect(afterRedo).toBe(afterActions);
     }
@@ -774,6 +823,7 @@ fc.assert(
 ## Security Considerations
 
 ### Path Validation
+
 ```typescript
 // Always validate paths with PathSanitizer
 if (!pathSanitizer.isPathSafe(filePath)) {
@@ -782,6 +832,7 @@ if (!pathSanitizer.isPathSafe(filePath)) {
 ```
 
 ### Backup Files
+
 ```typescript
 // Create backup before first save
 if (!backupExists(filePath)) {
@@ -790,6 +841,7 @@ if (!backupExists(filePath)) {
 ```
 
 ### File Permissions
+
 ```typescript
 // Check write permissions before editing
 const canWrite = await checkWritePermission(filePath);
@@ -802,22 +854,24 @@ if (!canWrite) {
 ## Configuration
 
 ### Editor Settings
+
 ```typescript
 interface EditorConfig {
-  tabSize: number;              // Default: 2
-  insertSpaces: boolean;        // Default: true
-  formatOnSave: boolean;        // Default: false
-  autoSave: boolean;            // Default: false
-  autoSaveDelay: number;        // Default: 30000 (30s)
-  maxFileSize: number;          // Default: 1048576 (1MB)
-  warnFileSize: number;         // Default: 524288 (512KB)
-  undoStackSize: number;        // Default: 100
-  syntaxHighlight: boolean;     // Default: true
-  showLineNumbers: boolean;     // Default: true
+  tabSize: number; // Default: 2
+  insertSpaces: boolean; // Default: true
+  formatOnSave: boolean; // Default: false
+  autoSave: boolean; // Default: false
+  autoSaveDelay: number; // Default: 30000 (30s)
+  maxFileSize: number; // Default: 1048576 (1MB)
+  warnFileSize: number; // Default: 524288 (512KB)
+  undoStackSize: number; // Default: 100
+  syntaxHighlight: boolean; // Default: true
+  showLineNumbers: boolean; // Default: true
 }
 ```
 
 ### Load from Config
+
 ```typescript
 // In packages/cli/src/config/types.ts
 interface Config {
@@ -829,6 +883,7 @@ interface Config {
 ## Future Enhancements
 
 ### Phase 4: Advanced Features (Future)
+
 - Multi-cursor editing
 - Regex find and replace
 - Code folding

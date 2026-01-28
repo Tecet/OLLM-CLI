@@ -1,9 +1,9 @@
 /**
  * Context Command Handler
- * 
+ *
  * Implements the /context command and its subcommands for managing
  * context size, snapshots, compression, and displaying status.
- * 
+ *
  * Commands:
  * - /context - Show status
  * - /context size <tokens> - Set target size
@@ -72,7 +72,7 @@ export interface ContextStatsData extends ContextStatusData {
 
 /**
  * Context Command Handler
- * 
+ *
  * Handles all /context commands and subcommands
  */
 export class ContextCommandHandler {
@@ -95,32 +95,32 @@ export class ContextCommandHandler {
     switch (subcommand) {
       case 'size':
         return await this.setSize(args.slice(1));
-      
+
       case 'auto':
         return await this.enableAutoSize();
-      
+
       case 'snapshot':
         return await this.createSnapshot();
-      
+
       case 'restore':
         return await this.restoreSnapshot(args.slice(1));
-      
+
       case 'list':
         return await this.listSnapshots();
-      
+
       case 'clear':
         return await this.clearContext();
-      
+
       case 'compress':
         return await this.compressContext();
-      
+
       case 'stats':
         return await this.showStats();
-      
+
       default:
         return {
           success: false,
-          message: `Unknown subcommand: ${subcommand}. Use /context, /context size, /context auto, /context snapshot, /context restore, /context list, /context clear, /context compress, or /context stats`
+          message: `Unknown subcommand: ${subcommand}. Use /context, /context size, /context auto, /context snapshot, /context restore, /context list, /context clear, /context compress, or /context stats`,
         };
     }
   }
@@ -139,24 +139,24 @@ export class ContextCommandHandler {
       tokens: {
         current: usage.currentTokens,
         max: usage.maxTokens,
-        percentage: usage.percentage
+        percentage: usage.percentage,
       },
       vram: {
         used: vramInfo.used,
         total: vramInfo.total,
-        percentage: (vramInfo.used / vramInfo.total) * 100
+        percentage: (vramInfo.used / vramInfo.total) * 100,
       },
       kvCache: {
         quantization: this.contextManager.config.kvQuantization,
-        size: vramInfo.modelLoaded
+        size: vramInfo.modelLoaded,
       },
       snapshots: {
-        count: snapshots.length
+        count: snapshots.length,
       },
       compression: {
         enabled: this.contextManager.config.compression.enabled,
-        threshold: this.contextManager.config.compression.threshold
-      }
+        threshold: this.contextManager.config.compression.threshold,
+      },
     };
 
     const message = this.formatStatus(statusData);
@@ -164,7 +164,7 @@ export class ContextCommandHandler {
     return {
       success: true,
       message,
-      data: statusData
+      data: statusData,
     };
   }
 
@@ -176,7 +176,7 @@ export class ContextCommandHandler {
     if (args.length === 0) {
       return {
         success: false,
-        message: 'Usage: /context size <tokens>'
+        message: 'Usage: /context size <tokens>',
       };
     }
 
@@ -185,7 +185,7 @@ export class ContextCommandHandler {
     if (isNaN(targetSize) || targetSize <= 0) {
       return {
         success: false,
-        message: 'Invalid token count. Must be a positive number.'
+        message: 'Invalid token count. Must be a positive number.',
       };
     }
 
@@ -193,26 +193,26 @@ export class ContextCommandHandler {
     if (targetSize < this.contextManager.config.minSize) {
       return {
         success: false,
-        message: `Target size ${targetSize} is below minimum ${this.contextManager.config.minSize}`
+        message: `Target size ${targetSize} is below minimum ${this.contextManager.config.minSize}`,
       };
     }
 
     if (targetSize > this.contextManager.config.maxSize) {
       return {
         success: false,
-        message: `Target size ${targetSize} exceeds maximum ${this.contextManager.config.maxSize}`
+        message: `Target size ${targetSize} exceeds maximum ${this.contextManager.config.maxSize}`,
       };
     }
 
     // Update configuration
     this.contextManager.updateConfig({
       targetSize,
-      autoSize: false // Disable auto-sizing when manually setting size
+      autoSize: false, // Disable auto-sizing when manually setting size
     });
 
     return {
       success: true,
-      message: `Context size set to ${targetSize} tokens. Auto-sizing disabled.`
+      message: `Context size set to ${targetSize} tokens. Auto-sizing disabled.`,
     };
   }
 
@@ -222,14 +222,14 @@ export class ContextCommandHandler {
    */
   private async enableAutoSize(): Promise<ContextCommandResult> {
     this.contextManager.updateConfig({
-      autoSize: true
+      autoSize: true,
     });
 
     const usage = this.contextManager.getUsage();
 
     return {
       success: true,
-      message: `Auto-sizing enabled. Context will adjust based on available VRAM. Current size: ${usage.maxTokens} tokens.`
+      message: `Auto-sizing enabled. Context will adjust based on available VRAM. Current size: ${usage.maxTokens} tokens.`,
     };
   }
 
@@ -244,12 +244,12 @@ export class ContextCommandHandler {
       return {
         success: true,
         message: `Snapshot created: ${snapshot.id}\nTokens: ${snapshot.tokenCount} | Messages: ${snapshot.messages.length}`,
-        data: snapshot
+        data: snapshot,
       };
     } catch (error) {
       return {
         success: false,
-        message: `Failed to create snapshot: ${error instanceof Error ? error.message : String(error)}`
+        message: `Failed to create snapshot: ${error instanceof Error ? error.message : String(error)}`,
       };
     }
   }
@@ -262,7 +262,7 @@ export class ContextCommandHandler {
     if (args.length === 0) {
       return {
         success: false,
-        message: 'Usage: /context restore <snapshot-id>'
+        message: 'Usage: /context restore <snapshot-id>',
       };
     }
 
@@ -275,12 +275,12 @@ export class ContextCommandHandler {
 
       return {
         success: true,
-        message: `Restored snapshot ${snapshotId}\nTokens: ${usage.currentTokens}`
+        message: `Restored snapshot ${snapshotId}\nTokens: ${usage.currentTokens}`,
       };
     } catch (error) {
       return {
         success: false,
-        message: `Failed to restore snapshot: ${error instanceof Error ? error.message : String(error)}`
+        message: `Failed to restore snapshot: ${error instanceof Error ? error.message : String(error)}`,
       };
     }
   }
@@ -297,7 +297,7 @@ export class ContextCommandHandler {
         return {
           success: true,
           message: 'No snapshots available.',
-          data: []
+          data: [],
         };
       }
 
@@ -306,12 +306,12 @@ export class ContextCommandHandler {
       return {
         success: true,
         message,
-        data: snapshots
+        data: snapshots,
       };
     } catch (error) {
       return {
         success: false,
-        message: `Failed to list snapshots: ${error instanceof Error ? error.message : String(error)}`
+        message: `Failed to list snapshots: ${error instanceof Error ? error.message : String(error)}`,
       };
     }
   }
@@ -326,12 +326,12 @@ export class ContextCommandHandler {
 
       return {
         success: true,
-        message: 'Context cleared. System prompt preserved.'
+        message: 'Context cleared. System prompt preserved.',
       };
     } catch (error) {
       return {
         success: false,
-        message: `Failed to clear context: ${error instanceof Error ? error.message : String(error)}`
+        message: `Failed to clear context: ${error instanceof Error ? error.message : String(error)}`,
       };
     }
   }
@@ -343,21 +343,21 @@ export class ContextCommandHandler {
   private async compressContext(): Promise<ContextCommandResult> {
     try {
       const beforeTokens = this.contextManager.getUsage().currentTokens;
-      
+
       await this.contextManager.compress();
-      
+
       const afterTokens = this.contextManager.getUsage().currentTokens;
       const reduction = beforeTokens - afterTokens;
       const percentage = ((reduction / beforeTokens) * 100).toFixed(1);
 
       return {
         success: true,
-        message: `Compressed: ${beforeTokens} → ${afterTokens} tokens (${percentage}% reduction)`
+        message: `Compressed: ${beforeTokens} → ${afterTokens} tokens (${percentage}% reduction)`,
       };
     } catch (error) {
       return {
         success: false,
-        message: `Failed to compress context: ${error instanceof Error ? error.message : String(error)}`
+        message: `Failed to compress context: ${error instanceof Error ? error.message : String(error)}`,
       };
     }
   }
@@ -370,7 +370,7 @@ export class ContextCommandHandler {
     const usage = this.contextManager.getUsage();
     const vramInfo = await this.getVRAMInfo();
     const snapshots = await this.contextManager.listSnapshots();
-    
+
     const sessionDuration = Date.now() - this.sessionStartTime.getTime();
 
     const statsData: ContextStatsData = {
@@ -378,36 +378,36 @@ export class ContextCommandHandler {
       tokens: {
         current: usage.currentTokens,
         max: usage.maxTokens,
-        percentage: usage.percentage
+        percentage: usage.percentage,
       },
       vram: {
         used: vramInfo.used,
         total: vramInfo.total,
-        percentage: (vramInfo.used / vramInfo.total) * 100
+        percentage: (vramInfo.used / vramInfo.total) * 100,
       },
       kvCache: {
         quantization: this.contextManager.config.kvQuantization,
-        size: vramInfo.modelLoaded
+        size: vramInfo.modelLoaded,
       },
       snapshots: {
-        count: snapshots.length
+        count: snapshots.length,
       },
       compression: {
         enabled: this.contextManager.config.compression.enabled,
-        threshold: this.contextManager.config.compression.threshold
+        threshold: this.contextManager.config.compression.threshold,
       },
       memory: {
         modelWeights: vramInfo.modelLoaded,
         kvCache: vramInfo.used - vramInfo.modelLoaded,
         totalVRAM: vramInfo.used,
-        safetyBuffer: this.contextManager.config.vramBuffer
+        safetyBuffer: this.contextManager.config.vramBuffer,
       },
       session: {
         duration: sessionDuration,
         messageCount: 0, // Not available without getContext
-        snapshotCount: snapshots.length
+        snapshotCount: snapshots.length,
       },
-      compressionHistory: [] // Not available without getContext
+      compressionHistory: [], // Not available without getContext
     };
 
     const message = this.formatStats(statsData);
@@ -415,7 +415,7 @@ export class ContextCommandHandler {
     return {
       success: true,
       message,
-      data: statsData
+      data: statsData,
     };
   }
 
@@ -430,7 +430,7 @@ export class ContextCommandHandler {
       `  VRAM: ${this.formatBytes(data.vram.used)} / ${this.formatBytes(data.vram.total)} (${data.vram.percentage.toFixed(1)}%)`,
       `  KV Cache: ${data.kvCache.quantization} (${this.formatBytes(data.kvCache.size)})`,
       `  Snapshots: ${data.snapshots.count} available`,
-      `  Auto-compress: ${data.compression.enabled ? `enabled at ${(data.compression.threshold * 100).toFixed(0)}%` : 'disabled'}`
+      `  Auto-compress: ${data.compression.enabled ? `enabled at ${(data.compression.threshold * 100).toFixed(0)}%` : 'disabled'}`,
     ];
 
     return lines.join('\n');
@@ -473,14 +473,14 @@ export class ContextCommandHandler {
       'Session:',
       `  Duration: ${this.formatDuration(data.session.duration)}`,
       `  Messages: ${data.session.messageCount}`,
-      `  Snapshots: ${data.session.snapshotCount}`
+      `  Snapshots: ${data.session.snapshotCount}`,
     ];
 
     if (data.compressionHistory.length > 0) {
       const lastCompression = data.compressionHistory[data.compressionHistory.length - 1];
       const timeAgo = this.formatTimeAgo(lastCompression.timestamp);
       const reduction = ((1 - lastCompression.ratio) * 100).toFixed(0);
-      
+
       lines.push(
         '',
         'Compression History:',

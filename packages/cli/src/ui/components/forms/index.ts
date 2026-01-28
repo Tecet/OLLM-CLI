@@ -1,12 +1,12 @@
 /**
  * Form Components - Shared form components for dialogs
- * 
+ *
  * Exports:
  * - FormField: Label + input wrapper with error display
  * - TextInput: Text input with validation and masking
  * - Checkbox: Checkbox with label
  * - Button: Button with press handler
- * 
+ *
  * Validates: Requirements NFR-7, NFR-9
  */
 

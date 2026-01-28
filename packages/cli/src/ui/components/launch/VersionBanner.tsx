@@ -48,9 +48,7 @@ export const VersionBanner: React.FC<VersionBannerProps> = ({ theme, modelInfo, 
         <Text bold color={theme.text.accent}>
           OLLM CLI
         </Text>
-        <Text color={theme.text.primary}>
-          Version {version}
-        </Text>
+        <Text color={theme.text.primary}>Version {version}</Text>
         <Text dimColor color={theme.text.primary}>
           Local-first LLM Interface
         </Text>
@@ -60,7 +58,10 @@ export const VersionBanner: React.FC<VersionBannerProps> = ({ theme, modelInfo, 
         <Box marginTop={1} flexDirection="column" alignItems="center">
           {modelInfo && (
             <Text color={theme.text.primary}>
-              Model: <Text bold color={theme.text.accent}>{modelInfo.name}</Text>
+              Model:{' '}
+              <Text bold color={theme.text.accent}>
+                {modelInfo.name}
+              </Text>
             </Text>
           )}
           {gpuInfo && (
@@ -70,7 +71,7 @@ export const VersionBanner: React.FC<VersionBannerProps> = ({ theme, modelInfo, 
           )}
         </Box>
       )}
-      
+
       <Box marginTop={1}>
         <Text color={theme.text.accent} dimColor>
           Press any key to start...

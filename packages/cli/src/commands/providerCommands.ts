@@ -1,6 +1,6 @@
 /**
  * Provider Management Commands
- * 
+ *
  * Implements commands for managing providers:
  * - /provider list - List available providers
  * - /provider use <name> - Switch to a different provider
@@ -10,7 +10,7 @@ import type { Command, CommandResult } from './types.js';
 
 /**
  * /provider list - List available providers
- * 
+ *
  * Requirements: 19.3
  */
 async function providerListHandler(): Promise<CommandResult> {
@@ -18,7 +18,8 @@ async function providerListHandler(): Promise<CommandResult> {
   // For now, return a placeholder with common providers
   return {
     success: true,
-    message: 'Available providers:\n\n' +
+    message:
+      'Available providers:\n\n' +
       '  ollama              - Local Ollama instance (default)\n' +
       '  vllm                - vLLM server\n' +
       '  openai-compatible   - OpenAI-compatible API',
@@ -30,7 +31,7 @@ async function providerListHandler(): Promise<CommandResult> {
 
 /**
  * /provider use <name> - Switch to a different provider
- * 
+ *
  * Requirements: 19.3
  */
 async function providerUseHandler(args: string[]): Promise<CommandResult> {
@@ -55,7 +56,7 @@ async function providerUseHandler(args: string[]): Promise<CommandResult> {
 
 /**
  * /provider command - Main provider command with subcommands
- * 
+ *
  * Requirements: 19.3
  */
 export const providerCommand: Command = {
@@ -66,7 +67,8 @@ export const providerCommand: Command = {
     if (args.length === 0) {
       return {
         success: false,
-        message: 'Usage: /provider <list|use> [args]\n\n' +
+        message:
+          'Usage: /provider <list|use> [args]\n\n' +
           'Subcommands:\n' +
           '  list           - List available providers\n' +
           '  use <name>     - Switch to a different provider',
@@ -84,8 +86,7 @@ export const providerCommand: Command = {
       default:
         return {
           success: false,
-          message: `Unknown subcommand: ${subcommand}\n\n` +
-            'Available subcommands: list, use',
+          message: `Unknown subcommand: ${subcommand}\n\n` + 'Available subcommands: list, use',
         };
     }
   },
@@ -94,6 +95,4 @@ export const providerCommand: Command = {
 /**
  * All provider-related commands
  */
-export const providerCommands: Command[] = [
-  providerCommand,
-];
+export const providerCommands: Command[] = [providerCommand];

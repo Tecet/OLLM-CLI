@@ -75,13 +75,13 @@ describe('Provider Adapter', () => {
     it('converts tool call messages to provider format');
     it('converts tool result messages to provider format');
   });
-  
+
   describe('Stream Event Parsing', () => {
     it('parses text delta events correctly');
     it('parses tool call events correctly');
     it('parses completion events correctly');
   });
-  
+
   describe('Error Handling', () => {
     it('handles network errors gracefully');
     it('handles malformed responses gracefully');
@@ -95,7 +95,7 @@ describe('Tool Schema Mapping', () => {
     it('accepts valid tool schemas');
     it('rejects invalid schemas with descriptive errors');
   });
-  
+
   describe('Parameter Conversion', () => {
     it('converts string parameters correctly');
     it('converts number parameters correctly');
@@ -103,7 +103,7 @@ describe('Tool Schema Mapping', () => {
     it('converts object parameters correctly');
     it('converts array parameters correctly');
   });
-  
+
   describe('Result Formatting', () => {
     it('formats tool results for the model');
     it('formats tool errors for the model');
@@ -118,12 +118,12 @@ describe('ReAct Parser', () => {
     it('extracts action sections correctly');
     it('extracts observation sections correctly');
   });
-  
+
   describe('JSON Extraction', () => {
     it('extracts valid JSON tool calls');
     it('handles malformed JSON gracefully');
   });
-  
+
   describe('Error Cases', () => {
     it('handles incomplete ReAct format gracefully');
     it('handles missing action sections gracefully');
@@ -138,7 +138,7 @@ describe('Token Estimator', () => {
     it('counts different message types correctly');
     it('counts tool calls correctly');
   });
-  
+
   describe('Limit Enforcement', () => {
     it('rejects messages exceeding context limits');
     it('accepts messages within context limits');
@@ -154,12 +154,12 @@ describe('Model Router', () => {
     it('selects code models for code profile');
     it('selects appropriate models for creative profile');
   });
-  
+
   describe('Fallback Logic', () => {
     it('uses fallback profile when primary has no matches');
     it('returns error when no suitable models exist');
   });
-  
+
   describe('Capability Matching', () => {
     it('excludes models without required capabilities');
   });
@@ -167,6 +167,7 @@ describe('Model Router', () => {
 ```
 
 **Implementation Notes**:
+
 - Use Vitest as test runner with globals enabled
 - Co-locate tests with source files using `.test.ts` suffix
 - Each test should be independent and isolated
@@ -220,18 +221,18 @@ const fixtures: TestFixtures = {
     return {
       role,
       content,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
   },
-  
+
   createTestToolCall(name, args) {
     return {
       id: `call_${Math.random().toString(36).substr(2, 9)}`,
       name,
-      arguments: args
+      arguments: args,
     };
   },
-  
+
   createTestModel(overrides = {}) {
     return {
       name: 'test-model:latest',
@@ -245,15 +246,15 @@ const fixtures: TestFixtures = {
       capabilities: {
         toolCalling: true,
         vision: false,
-        streaming: true
+        streaming: true,
       },
-      ...overrides
+      ...overrides,
     };
   },
-  
+
   createTestProvider() {
     return new MockProviderAdapter();
-  }
+  },
 };
 
 // Integration test structure
@@ -265,7 +266,7 @@ describe('Integration Tests', () => {
       console.log(`   Set OLLM_TEST_SERVER or start server at ${SERVER_URL}`);
     }
   });
-  
+
   afterEach(async () => {
     // Clean up test data
   });
@@ -273,6 +274,7 @@ describe('Integration Tests', () => {
 ```
 
 **Implementation Notes**:
+
 - Check server availability before running integration tests
 - Skip gracefully with clear message when server unavailable
 - Use environment variable `OLLM_TEST_SERVER` for custom server URL
@@ -288,50 +290,50 @@ describe('Integration Tests', () => {
 describe('Streaming Tests', () => {
   it('delivers text chunks incrementally', async () => {
     if (await skipIfNoServer()()) return;
-    
+
     const chunks: string[] = [];
     const stream = await provider.streamChat({
       model: 'llama3.1:8b',
-      messages: [{ role: 'user', content: 'Count to 5' }]
+      messages: [{ role: 'user', content: 'Count to 5' }],
     });
-    
+
     for await (const chunk of stream) {
       if (chunk.type === 'text') {
         chunks.push(chunk.content);
       }
     }
-    
+
     expect(chunks.length).toBeGreaterThan(1);
     expect(chunks.join('')).toContain('1');
   });
-  
+
   it('delivers tool calls as they are generated', async () => {
     if (await skipIfNoServer()()) return;
-    
+
     const toolCalls: ToolCall[] = [];
     const stream = await provider.streamChat({
       model: 'llama3.1:8b',
       messages: [{ role: 'user', content: 'What is the weather?' }],
-      tools: [weatherTool]
+      tools: [weatherTool],
     });
-    
+
     for await (const chunk of stream) {
       if (chunk.type === 'tool_call') {
         toolCalls.push(chunk.toolCall);
       }
     }
-    
+
     expect(toolCalls.length).toBeGreaterThan(0);
   });
-  
+
   it('handles errors during streaming gracefully', async () => {
     if (await skipIfNoServer()()) return;
-    
+
     const stream = await provider.streamChat({
       model: 'nonexistent-model',
-      messages: [{ role: 'user', content: 'Hello' }]
+      messages: [{ role: 'user', content: 'Hello' }],
     });
-    
+
     await expect(async () => {
       for await (const chunk of stream) {
         // Should throw error
@@ -342,6 +344,7 @@ describe('Streaming Tests', () => {
 ```
 
 **Implementation Notes**:
+
 - Test incremental delivery of text chunks
 - Verify complete response matches concatenated chunks
 - Test tool call streaming with real tools
@@ -355,7 +358,7 @@ describe('Streaming Tests', () => {
 describe('Tool Call Tests', () => {
   it('invokes tool with correct parameters', async () => {
     if (await skipIfNoServer()()) return;
-    
+
     const toolCalled = vi.fn();
     const tool = {
       name: 'get_weather',
@@ -363,50 +366,47 @@ describe('Tool Call Tests', () => {
       parameters: {
         type: 'object',
         properties: {
-          location: { type: 'string' }
+          location: { type: 'string' },
         },
-        required: ['location']
+        required: ['location'],
       },
-      execute: toolCalled
+      execute: toolCalled,
     };
-    
+
     await chatClient.sendMessage('What is the weather in Seattle?', {
-      tools: [tool]
+      tools: [tool],
     });
-    
-    expect(toolCalled).toHaveBeenCalledWith(
-      expect.objectContaining({ location: 'Seattle' })
-    );
+
+    expect(toolCalled).toHaveBeenCalledWith(expect.objectContaining({ location: 'Seattle' }));
   });
-  
+
   it('handles multiple tool calls in sequence', async () => {
     if (await skipIfNoServer()()) return;
-    
+
     const tools = [weatherTool, timeTool];
-    const response = await chatClient.sendMessage(
-      'What is the weather and time in Seattle?',
-      { tools }
-    );
-    
+    const response = await chatClient.sendMessage('What is the weather and time in Seattle?', {
+      tools,
+    });
+
     expect(response.toolCalls).toHaveLength(2);
   });
-  
+
   it('handles tool execution errors gracefully', async () => {
     if (await skipIfNoServer()()) return;
-    
+
     const failingTool = {
       name: 'failing_tool',
       description: 'A tool that fails',
       parameters: { type: 'object', properties: {} },
       execute: async () => {
         throw new Error('Tool execution failed');
-      }
+      },
     };
-    
+
     const response = await chatClient.sendMessage('Use the failing tool', {
-      tools: [failingTool]
+      tools: [failingTool],
     });
-    
+
     expect(response.error).toBeDefined();
     expect(response.error).toContain('Tool execution failed');
   });
@@ -414,6 +414,7 @@ describe('Tool Call Tests', () => {
 ```
 
 **Implementation Notes**:
+
 - Test single tool invocation with parameter validation
 - Test multiple tool calls in sequence
 - Verify tool results are correctly returned to model
@@ -427,46 +428,47 @@ describe('Tool Call Tests', () => {
 describe('Model Management Tests', () => {
   it('lists available models', async () => {
     if (await skipIfNoServer()()) return;
-    
+
     const models = await modelService.listModels();
-    
+
     expect(Array.isArray(models)).toBe(true);
     expect(models.length).toBeGreaterThan(0);
     expect(models[0]).toHaveProperty('name');
     expect(models[0]).toHaveProperty('size');
   });
-  
+
   it('emits progress events during download', async () => {
     if (await skipIfNoServer()()) return;
-    
+
     const progressEvents: ProgressEvent[] = [];
-    
+
     await modelService.pullModel('phi3:mini', (event) => {
       progressEvents.push(event);
     });
-    
+
     expect(progressEvents.length).toBeGreaterThan(0);
     expect(progressEvents[0].percentage).toBe(0);
     expect(progressEvents[progressEvents.length - 1].percentage).toBe(100);
   });
-  
+
   it('removes models successfully', async () => {
     if (await skipIfNoServer()()) return;
-    
+
     // First ensure model exists
     await modelService.pullModel('test-model:latest');
-    
+
     // Then delete it
     await modelService.deleteModel('test-model:latest');
-    
+
     // Verify it's gone
     const models = await modelService.listModels();
-    expect(models.find(m => m.name === 'test-model:latest')).toBeUndefined();
+    expect(models.find((m) => m.name === 'test-model:latest')).toBeUndefined();
   });
 });
 ```
 
 **Implementation Notes**:
+
 - Test model listing with real server
 - Verify model metadata is correctly parsed
 - Test model download with progress tracking
@@ -485,24 +487,24 @@ describe('UI Component Tests', () => {
       const messages = [
         { role: 'user', content: 'Hello', timestamp: new Date() }
       ];
-      
+
       const { lastFrame } = render(<ChatHistory messages={messages} />);
-      
+
       expect(lastFrame()).toContain('Hello');
       expect(lastFrame()).toContain('user');
     });
-    
+
     it('renders assistant messages correctly', () => {
       const messages = [
         { role: 'assistant', content: 'Hi there', timestamp: new Date() }
       ];
-      
+
       const { lastFrame } = render(<ChatHistory messages={messages} />);
-      
+
       expect(lastFrame()).toContain('Hi there');
       expect(lastFrame()).toContain('assistant');
     });
-    
+
     it('renders tool calls correctly', () => {
       const messages = [
         {
@@ -512,100 +514,100 @@ describe('UI Component Tests', () => {
           timestamp: new Date()
         }
       ];
-      
+
       const { lastFrame } = render(<ChatHistory messages={messages} />);
-      
+
       expect(lastFrame()).toContain('get_weather');
       expect(lastFrame()).toContain('Seattle');
     });
   });
-  
+
   describe('InputBox', () => {
     it('accepts text input', () => {
       const onSubmit = vi.fn();
       const { stdin, lastFrame } = render(<InputBox onSubmit={onSubmit} />);
-      
+
       stdin.write('Hello world');
-      
+
       expect(lastFrame()).toContain('Hello world');
     });
-    
+
     it('submits on Enter key', () => {
       const onSubmit = vi.fn();
       const { stdin } = render(<InputBox onSubmit={onSubmit} />);
-      
+
       stdin.write('Hello');
       stdin.write('\r'); // Enter key
-      
+
       expect(onSubmit).toHaveBeenCalledWith('Hello');
     });
   });
-  
+
   describe('StatusBar', () => {
     it('displays model information', () => {
       const { lastFrame } = render(
         <StatusBar model="llama3.1:8b" status="ready" />
       );
-      
+
       expect(lastFrame()).toContain('llama3.1:8b');
       expect(lastFrame()).toContain('ready');
     });
   });
-  
+
   describe('Tool Confirmation', () => {
     it('displays tool confirmation prompt', () => {
       const toolCall = {
         name: 'read_file',
         arguments: { path: 'test.txt' }
       };
-      
+
       const { lastFrame } = render(<ToolConfirmation toolCall={toolCall} />);
-      
+
       expect(lastFrame()).toContain('read_file');
       expect(lastFrame()).toContain('test.txt');
     });
-    
+
     it('executes tool on approval', () => {
       const onApprove = vi.fn();
       const toolCall = { name: 'read_file', arguments: { path: 'test.txt' } };
-      
+
       const { stdin } = render(
         <ToolConfirmation toolCall={toolCall} onApprove={onApprove} />
       );
-      
+
       stdin.write('y'); // Approve
-      
+
       expect(onApprove).toHaveBeenCalled();
     });
-    
+
     it('skips tool on rejection', () => {
       const onReject = vi.fn();
       const toolCall = { name: 'read_file', arguments: { path: 'test.txt' } };
-      
+
       const { stdin } = render(
         <ToolConfirmation toolCall={toolCall} onReject={onReject} />
       );
-      
+
       stdin.write('n'); // Reject
-      
+
       expect(onReject).toHaveBeenCalled();
     });
   });
-  
+
   describe('Streaming Display', () => {
     it('updates progressively as text streams', async () => {
       const { lastFrame, rerender } = render(<StreamingMessage content="" />);
-      
+
       rerender(<StreamingMessage content="Hello" />);
       expect(lastFrame()).toContain('Hello');
-      
+
       rerender(<StreamingMessage content="Hello world" />);
       expect(lastFrame()).toContain('Hello world');
     });
-    
+
     it('displays spinner during operations', () => {
       const { lastFrame } = render(<LoadingSpinner />);
-      
+
       expect(lastFrame()).toMatch(/[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]/); // Spinner characters
     });
   });
@@ -613,6 +615,7 @@ describe('UI Component Tests', () => {
 ```
 
 **Implementation Notes**:
+
 - Use ink-testing-library for React component testing
 - Test component rendering with various props
 - Test user interactions (keyboard input, commands)
@@ -646,7 +649,7 @@ enum TestResult {
   PASS = '✅ Pass',
   FAIL = '❌ Fail',
   PARTIAL = '⚠️  Partial',
-  NOT_TESTED = '⊘ Not Tested'
+  NOT_TESTED = '⊘ Not Tested',
 }
 
 // Test runner for compatibility matrix
@@ -663,12 +666,12 @@ async function testModelCompatibility(modelName: string): Promise<CompatibilityT
       context16k: await testContextSize(modelName, 16384),
       context32k: await testContextSize(modelName, 32768),
       context64k: await testContextSize(modelName, 65536),
-      context128k: await testContextSize(modelName, 131072)
+      context128k: await testContextSize(modelName, 131072),
     },
     knownIssues: [],
-    recommendations: ''
+    recommendations: '',
   };
-  
+
   return results;
 }
 
@@ -679,18 +682,18 @@ function generateCompatibilityMatrix(tests: CompatibilityTest[]): string {
   markdown += `- OLLM CLI Version: ${getVersion()}\n`;
   markdown += `- Test Date: ${new Date().toISOString().split('T')[0]}\n`;
   markdown += `- Server: Ollama ${getOllamaVersion()}\n\n`;
-  
+
   for (const test of tests) {
     markdown += `### ${test.model}\n`;
     markdown += `| Feature | Status | Notes |\n`;
     markdown += `|---------|--------|-------|\n`;
-    
+
     for (const [feature, result] of Object.entries(test.features)) {
       markdown += `| ${formatFeatureName(feature)} | ${result} | |\n`;
     }
-    
+
     markdown += `\n`;
-    
+
     if (test.knownIssues.length > 0) {
       markdown += `**Known Issues:**\n`;
       for (const issue of test.knownIssues) {
@@ -698,17 +701,18 @@ function generateCompatibilityMatrix(tests: CompatibilityTest[]): string {
       }
       markdown += `\n`;
     }
-    
+
     if (test.recommendations) {
       markdown += `**Recommendations:** ${test.recommendations}\n\n`;
     }
   }
-  
+
   return markdown;
 }
 ```
 
 **Implementation Notes**:
+
 - Test at least 3 representative models (general, code, small/fast)
 - Document pass/fail status for each capability
 - List known issues and workarounds
@@ -723,13 +727,13 @@ function generateCompatibilityMatrix(tests: CompatibilityTest[]): string {
 
 ```typescript
 interface TestConfig {
-  testTimeout: number;           // Default: 30000ms
-  hookTimeout: number;           // Default: 10000ms
+  testTimeout: number; // Default: 30000ms
+  hookTimeout: number; // Default: 10000ms
   coverage: {
     provider: 'v8';
-    reporter: string[];          // ['text', 'json', 'html']
-    exclude: string[];           // Paths to exclude
-    threshold: number;           // Minimum coverage percentage
+    reporter: string[]; // ['text', 'json', 'html']
+    exclude: string[]; // Paths to exclude
+    threshold: number; // Minimum coverage percentage
   };
   integrationTests: {
     serverUrl: string;
@@ -744,12 +748,12 @@ const defaultTestConfig: TestConfig = {
     provider: 'v8',
     reporter: ['text', 'json', 'html'],
     exclude: ['**/node_modules/**', '**/dist/**', '**/__tests__/**'],
-    threshold: 80
+    threshold: 80,
   },
   integrationTests: {
     serverUrl: process.env.OLLM_TEST_SERVER || 'http://localhost:11434',
-    skipWhenUnavailable: true
-  }
+    skipWhenUnavailable: true,
+  },
 };
 ```
 
@@ -810,7 +814,7 @@ enum TestResult {
   PASS = '✅ Pass',
   FAIL = '❌ Fail',
   PARTIAL = '⚠️  Partial',
-  NOT_TESTED = '⊘ Not Tested'
+  NOT_TESTED = '⊘ Not Tested',
 }
 
 interface CompatibilityMatrix {
@@ -831,12 +835,12 @@ interface TestExecutionResult {
   passedTests: number;
   failedTests: number;
   skippedTests: number;
-  duration: number;              // milliseconds
+  duration: number; // milliseconds
   coverage: {
-    lines: number;               // percentage
-    functions: number;           // percentage
-    branches: number;            // percentage
-    statements: number;          // percentage
+    lines: number; // percentage
+    functions: number; // percentage
+    branches: number; // percentage
+    statements: number; // percentage
   };
 }
 
@@ -850,198 +854,232 @@ interface TestFailure {
 }
 ```
 
-
 ## Correctness Properties
 
 A property is a characteristic or behavior that should hold true across all valid executions of a system—essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.
 
 ### Property 1: Message Format Conversion Completeness
-*For any* message (user, assistant, tool call, or tool result), converting it to provider format should produce a valid provider message with all required fields present and correctly populated.
+
+_For any_ message (user, assistant, tool call, or tool result), converting it to provider format should produce a valid provider message with all required fields present and correctly populated.
 **Validates: Requirements 1.1, 1.2, 1.3, 1.4**
 
 ### Property 2: Stream Event Parsing Correctness
-*For any* stream event (text delta, tool call, or completion), parsing it should correctly extract all event data without loss of information.
+
+_For any_ stream event (text delta, tool call, or completion), parsing it should correctly extract all event data without loss of information.
 **Validates: Requirements 1.5, 1.6, 1.7**
 
 ### Property 3: Valid Tool Schema Acceptance
-*For any* tool schema that conforms to the JSON Schema specification, the schema validator should accept it without errors.
+
+_For any_ tool schema that conforms to the JSON Schema specification, the schema validator should accept it without errors.
 **Validates: Requirements 2.1**
 
 ### Property 4: Invalid Tool Schema Rejection
-*For any* tool schema that violates the JSON Schema specification, the schema validator should reject it and return a descriptive error message.
+
+_For any_ tool schema that violates the JSON Schema specification, the schema validator should reject it and return a descriptive error message.
 **Validates: Requirements 2.2**
 
 ### Property 5: Parameter Type Conversion Preservation
-*For any* parameter value (string, number, object, or array), converting it to the target format should preserve the value and type information.
+
+_For any_ parameter value (string, number, object, or array), converting it to the target format should preserve the value and type information.
 **Validates: Requirements 2.3, 2.4, 2.6, 2.7**
 
 ### Property 6: Tool Result Formatting Consistency
-*For any* tool result or error, formatting it for the model should produce a consistent structure that the model can parse.
+
+_For any_ tool result or error, formatting it for the model should produce a consistent structure that the model can parse.
 **Validates: Requirements 2.8, 2.9**
 
 ### Property 7: ReAct Format Parsing Completeness
-*For any* valid ReAct format output, parsing it should correctly extract all sections (thought, action, observation) without loss.
+
+_For any_ valid ReAct format output, parsing it should correctly extract all sections (thought, action, observation) without loss.
 **Validates: Requirements 3.1, 3.2, 3.3, 3.4**
 
 ### Property 8: JSON Tool Call Extraction
-*For any* valid JSON tool call embedded in text, the extractor should correctly parse and extract the tool name and arguments.
+
+_For any_ valid JSON tool call embedded in text, the extractor should correctly parse and extract the tool name and arguments.
 **Validates: Requirements 3.5**
 
 ### Property 9: Token Estimation Accuracy
-*For any* message or message sequence, the estimated token count should be within 10% of the actual token count.
+
+_For any_ message or message sequence, the estimated token count should be within 10% of the actual token count.
 **Validates: Requirements 4.1, 4.2, 4.3**
 
 ### Property 10: Context Limit Enforcement
-*For any* message that exceeds the model's context window, the system should reject it; for any message within the limit, the system should accept it.
+
+_For any_ message that exceeds the model's context window, the system should reject it; for any message within the limit, the system should accept it.
 **Validates: Requirements 4.4, 4.5, 4.6**
 
 ### Property 11: Profile-Based Model Selection
-*For any* routing profile and list of available models, the router should select a model that matches the profile's requirements (minimum context, required capabilities, preferred families).
+
+_For any_ routing profile and list of available models, the router should select a model that matches the profile's requirements (minimum context, required capabilities, preferred families).
 **Validates: Requirements 5.1, 5.2, 5.3, 5.4**
 
 ### Property 12: Fallback Profile Usage
-*For any* routing profile with no matching models, if a fallback profile is specified, the router should attempt to use the fallback; if no fallback exists or no models match the fallback, the router should return an error.
+
+_For any_ routing profile with no matching models, if a fallback profile is specified, the router should attempt to use the fallback; if no fallback exists or no models match the fallback, the router should return an error.
 **Validates: Requirements 5.5, 5.6**
 
 ### Property 13: Capability-Based Filtering
-*For any* routing profile with required capabilities, the router should exclude all models that lack any of the required capabilities.
+
+_For any_ routing profile with required capabilities, the router should exclude all models that lack any of the required capabilities.
 **Validates: Requirements 5.7**
 
 ### Property 14: Integration Test Cleanup
-*For any* integration test execution, after the test completes, no test data or state should remain in the system.
+
+_For any_ integration test execution, after the test completes, no test data or state should remain in the system.
 **Validates: Requirements 6.6**
 
 ### Property 15: Streaming Chunk Concatenation
-*For any* streamed response, concatenating all text chunks in order should produce the complete response text.
+
+_For any_ streamed response, concatenating all text chunks in order should produce the complete response text.
 **Validates: Requirements 7.1, 7.2**
 
 ### Property 16: Tool Call Streaming Delivery
-*For any* tool call generated during streaming, the tool call should be delivered in the stream before the stream completes.
+
+_For any_ tool call generated during streaming, the tool call should be delivered in the stream before the stream completes.
 **Validates: Requirements 7.3, 7.4**
 
 ### Property 17: Tool Invocation Parameter Correctness
-*For any* tool call, the tool should be invoked with parameters that match the tool call's arguments.
+
+_For any_ tool call, the tool should be invoked with parameters that match the tool call's arguments.
 **Validates: Requirements 8.1**
 
 ### Property 18: Tool Result Return
-*For any* tool execution, the result should be correctly returned to the model in the expected format.
+
+_For any_ tool execution, the result should be correctly returned to the model in the expected format.
 **Validates: Requirements 8.2**
 
 ### Property 19: Sequential Tool Call Execution
-*For any* sequence of multiple tool calls, each tool should be executed in order and all results should be correctly associated with their respective calls.
+
+_For any_ sequence of multiple tool calls, each tool should be executed in order and all results should be correctly associated with their respective calls.
 **Validates: Requirements 8.3, 8.4**
 
 ### Property 20: Tool Error Message Formatting
-*For any* tool execution error, the error message should be formatted correctly for the model and the conversation should be able to continue.
+
+_For any_ tool execution error, the error message should be formatted correctly for the model and the conversation should be able to continue.
 **Validates: Requirements 8.6, 8.7**
 
 ### Property 21: Model Metadata Completeness
-*For any* model returned by the list operation, the model info should contain all required fields (name, size, family, modifiedAt, contextWindow, capabilities).
+
+_For any_ model returned by the list operation, the model info should contain all required fields (name, size, family, modifiedAt, contextWindow, capabilities).
 **Validates: Requirements 9.2**
 
 ### Property 22: Model Download Progress Events
-*For any* model download operation, progress events should be emitted with increasing percentage values from 0 to 100.
+
+_For any_ model download operation, progress events should be emitted with increasing percentage values from 0 to 100.
 **Validates: Requirements 9.4**
 
 ### Property 23: Model List Update After Deletion
-*For any* model deletion operation that completes successfully, the deleted model should no longer appear in subsequent model list queries.
+
+_For any_ model deletion operation that completes successfully, the deleted model should no longer appear in subsequent model list queries.
 **Validates: Requirements 9.6**
 
 ### Property 24: Message Display Completeness
-*For any* message (user, assistant, or tool call), rendering it in ChatHistory should display all essential information (role, content, tool details).
+
+_For any_ message (user, assistant, or tool call), rendering it in ChatHistory should display all essential information (role, content, tool details).
 **Validates: Requirements 10.1, 10.2, 10.3**
 
 ### Property 25: Input Field Value Display
-*For any* text input to the InputBox, the displayed value should match the current input value.
+
+_For any_ text input to the InputBox, the displayed value should match the current input value.
 **Validates: Requirements 10.4, 10.5**
 
 ### Property 26: Status Information Display
-*For any* model and status state, the StatusBar should display both the model information and status indicators.
+
+_For any_ model and status state, the StatusBar should display both the model information and status indicators.
 **Validates: Requirements 10.6, 10.7**
 
 ### Property 27: Tool Confirmation Behavior
-*For any* tool call requiring confirmation, displaying the confirmation should allow approval (which executes the tool) or rejection (which skips the tool).
+
+_For any_ tool call requiring confirmation, displaying the confirmation should allow approval (which executes the tool) or rejection (which skips the tool).
 **Validates: Requirements 11.7, 11.8, 11.9**
 
 ### Property 28: Incremental Text Rendering
-*For any* streaming text, the UI should display text progressively as chunks arrive, with each update adding to the previous content.
+
+_For any_ streaming text, the UI should display text progressively as chunks arrive, with each update adding to the previous content.
 **Validates: Requirements 12.1**
 
 ### Property 29: Progress Indicator Lifecycle
-*For any* long-running operation, progress indicators (spinners, progress bars) should appear when the operation starts, update during execution, and disappear when the operation completes.
+
+_For any_ long-running operation, progress indicators (spinners, progress bars) should appear when the operation starts, update during execution, and disappear when the operation completes.
 **Validates: Requirements 12.3, 12.4, 12.5**
 
 ### Property 30: Unit Test Execution Speed
-*For any* unit test, the execution time should be less than 100 milliseconds.
+
+_For any_ unit test, the execution time should be less than 100 milliseconds.
 **Validates: Requirements 15.1**
 
 ### Property 31: Test State Isolation
-*For any* test, the test should have independent state that is not affected by other tests running before or after it.
+
+_For any_ test, the test should have independent state that is not affected by other tests running before or after it.
 **Validates: Requirements 16.1**
 
 ### Property 32: Test Resource Cleanup
-*For any* test that creates resources (files, processes, mocks), all resources should be cleaned up after the test completes.
+
+_For any_ test that creates resources (files, processes, mocks), all resources should be cleaned up after the test completes.
 **Validates: Requirements 16.2, 16.3, 16.4**
 
 ### Property 33: Parallel Test Conflict Prevention
-*For any* set of tests running in parallel, no test should interfere with or conflict with any other test.
+
+_For any_ set of tests running in parallel, no test should interfere with or conflict with any other test.
 **Validates: Requirements 16.5**
 
 ### Property 34: Test Failure Information Completeness
-*For any* test failure, the error report should include the test name, location, expected value, actual value, stack trace, and relevant context.
+
+_For any_ test failure, the error report should include the test name, location, expected value, actual value, stack trace, and relevant context.
 **Validates: Requirements 17.1, 17.2, 17.3, 17.4**
 
 ### Property 35: Multiple Failure Reporting
-*For any* test run with multiple failures, all failures should be reported, not just the first one.
+
+_For any_ test run with multiple failures, all failures should be reported, not just the first one.
 **Validates: Requirements 17.5**
 
 ## Error Handling
 
 ### Unit Test Errors
 
-| Error | Cause | Recovery |
-|-------|-------|----------|
-| Test Timeout | Test exceeds time limit | Increase timeout, optimize test, check for infinite loops |
-| Assertion Failure | Expected value doesn't match actual | Review test logic, check implementation |
-| Mock Setup Error | Mock configuration invalid | Verify mock setup, check mock library usage |
-| Fixture Load Error | Test fixture missing or invalid | Verify fixture files exist, check fixture format |
-| Dependency Error | Required dependency not available | Install dependencies, check imports |
+| Error              | Cause                               | Recovery                                                  |
+| ------------------ | ----------------------------------- | --------------------------------------------------------- |
+| Test Timeout       | Test exceeds time limit             | Increase timeout, optimize test, check for infinite loops |
+| Assertion Failure  | Expected value doesn't match actual | Review test logic, check implementation                   |
+| Mock Setup Error   | Mock configuration invalid          | Verify mock setup, check mock library usage               |
+| Fixture Load Error | Test fixture missing or invalid     | Verify fixture files exist, check fixture format          |
+| Dependency Error   | Required dependency not available   | Install dependencies, check imports                       |
 
 ### Integration Test Errors
 
-| Error | Cause | Recovery |
-|-------|-------|----------|
-| Server Unavailable | LLM server not running | Start server, skip tests gracefully |
-| Network Timeout | Server not responding | Increase timeout, check network connectivity |
-| Model Not Found | Required model not installed | Pull model, skip test, use alternative model |
-| Authentication Error | Invalid credentials | Check API keys, verify server configuration |
-| Rate Limit | Too many requests | Add delays between tests, reduce test frequency |
+| Error                | Cause                        | Recovery                                        |
+| -------------------- | ---------------------------- | ----------------------------------------------- |
+| Server Unavailable   | LLM server not running       | Start server, skip tests gracefully             |
+| Network Timeout      | Server not responding        | Increase timeout, check network connectivity    |
+| Model Not Found      | Required model not installed | Pull model, skip test, use alternative model    |
+| Authentication Error | Invalid credentials          | Check API keys, verify server configuration     |
+| Rate Limit           | Too many requests            | Add delays between tests, reduce test frequency |
 
 ### UI Test Errors
 
-| Error | Cause | Recovery |
-|-------|-------|----------|
-| Render Error | Component fails to render | Check component props, verify React setup |
-| Input Simulation Error | Keyboard input not recognized | Verify ink-testing-library setup, check input format |
-| Assertion Error | UI output doesn't match expected | Review component logic, check rendering |
-| Timeout | Component doesn't update in time | Increase timeout, check async operations |
+| Error                  | Cause                            | Recovery                                             |
+| ---------------------- | -------------------------------- | ---------------------------------------------------- |
+| Render Error           | Component fails to render        | Check component props, verify React setup            |
+| Input Simulation Error | Keyboard input not recognized    | Verify ink-testing-library setup, check input format |
+| Assertion Error        | UI output doesn't match expected | Review component logic, check rendering              |
+| Timeout                | Component doesn't update in time | Increase timeout, check async operations             |
 
 ### Coverage Errors
 
-| Error | Cause | Recovery |
-|-------|-------|----------|
-| Coverage Below Threshold | Insufficient test coverage | Add tests for uncovered code, review coverage report |
-| Coverage Report Generation Failed | v8 coverage tool error | Check v8 installation, verify configuration |
-| Exclusion Pattern Error | Invalid glob pattern | Fix pattern syntax, verify paths |
+| Error                             | Cause                      | Recovery                                             |
+| --------------------------------- | -------------------------- | ---------------------------------------------------- |
+| Coverage Below Threshold          | Insufficient test coverage | Add tests for uncovered code, review coverage report |
+| Coverage Report Generation Failed | v8 coverage tool error     | Check v8 installation, verify configuration          |
+| Exclusion Pattern Error           | Invalid glob pattern       | Fix pattern syntax, verify paths                     |
 
 ### CI/CD Errors
 
-| Error | Cause | Recovery |
-|-------|-------|----------|
-| Build Failure | Tests fail in CI | Run tests locally, check CI environment |
-| Coverage Failure | Coverage below threshold in CI | Add tests, verify coverage locally first |
-| Timeout | Test suite exceeds time limit | Optimize slow tests, increase CI timeout |
-| Environment Error | CI environment misconfigured | Check CI configuration, verify dependencies |
+| Error             | Cause                          | Recovery                                    |
+| ----------------- | ------------------------------ | ------------------------------------------- |
+| Build Failure     | Tests fail in CI               | Run tests locally, check CI environment     |
+| Coverage Failure  | Coverage below threshold in CI | Add tests, verify coverage locally first    |
+| Timeout           | Test suite exceeds time limit  | Optimize slow tests, increase CI timeout    |
+| Environment Error | CI environment misconfigured   | Check CI configuration, verify dependencies |
 
 ## Testing Strategy
 
@@ -1050,6 +1088,7 @@ A property is a characteristic or behavior that should hold true across all vali
 Unit tests verify specific examples, edge cases, and error conditions for individual components. They should be fast (<100ms each), isolated, and focused on a single unit of functionality.
 
 **Provider Adapter Tests**:
+
 - Test message format conversion for all message types
 - Test stream event parsing for all event types
 - Test error handling for network errors, malformed responses, timeouts
@@ -1057,6 +1096,7 @@ Unit tests verify specific examples, edge cases, and error conditions for indivi
 - Verify all required fields are present in converted messages
 
 **Tool Schema Mapping Tests**:
+
 - Test schema validation accepts valid schemas
 - Test schema validation rejects invalid schemas with descriptive errors
 - Test parameter conversion for all supported types (string, number, boolean, object, array)
@@ -1064,6 +1104,7 @@ Unit tests verify specific examples, edge cases, and error conditions for indivi
 - Use fixture schemas for common tool patterns
 
 **ReAct Parser Tests**:
+
 - Test parsing of valid ReAct format outputs
 - Test extraction of thought, action, and observation sections
 - Test JSON extraction from action sections
@@ -1071,6 +1112,7 @@ Unit tests verify specific examples, edge cases, and error conditions for indivi
 - Use fixture ReAct outputs for common patterns
 
 **Token Estimator Tests**:
+
 - Test estimation accuracy within 10% for various message types
 - Test counting of tool calls and tool results
 - Test limit enforcement for messages exceeding context window
@@ -1078,6 +1120,7 @@ Unit tests verify specific examples, edge cases, and error conditions for indivi
 - Use fixture messages with known token counts
 
 **Model Router Tests**:
+
 - Test profile matching for fast, general, code, and creative profiles
 - Test fallback profile logic when primary profile has no matches
 - Test capability-based filtering excludes incompatible models
@@ -1089,12 +1132,14 @@ Unit tests verify specific examples, edge cases, and error conditions for indivi
 Property tests verify universal properties across all inputs using randomized test data. Each test should run a minimum of 100 iterations to ensure comprehensive coverage.
 
 **Test Configuration**:
+
 - Use `fast-check` library for TypeScript property-based testing
 - Minimum 100 iterations per property test
 - Each test references its design document property number
 - Tag format: `Feature: stage-08-testing-qa, Property N: <property text>`
 
 **Key Properties to Test**:
+
 - Property 1: Message conversion (generate random messages, verify conversion completeness)
 - Property 2: Event parsing (generate random events, verify parsing correctness)
 - Property 5: Parameter conversion (generate random parameters, verify preservation)
@@ -1107,32 +1152,33 @@ Property tests verify universal properties across all inputs using randomized te
 - Property 31: Test isolation (run tests in random order, verify independence)
 
 **Generators**:
+
 ```typescript
 // Example generators for property tests
 const arbMessage = fc.record({
   role: fc.constantFrom('user', 'assistant', 'system'),
   content: fc.string({ minLength: 1, maxLength: 1000 }),
-  timestamp: fc.date()
+  timestamp: fc.date(),
 });
 
 const arbToolCall = fc.record({
   id: fc.string({ minLength: 5, maxLength: 20 }),
   name: fc.string({ minLength: 1, maxLength: 50 }),
-  arguments: fc.dictionary(fc.string(), fc.anything())
+  arguments: fc.dictionary(fc.string(), fc.anything()),
 });
 
 const arbStreamEvent = fc.oneof(
   fc.record({
     type: fc.constant('text'),
-    content: fc.string({ minLength: 1, maxLength: 100 })
+    content: fc.string({ minLength: 1, maxLength: 100 }),
   }),
   fc.record({
     type: fc.constant('tool_call'),
-    toolCall: arbToolCall
+    toolCall: arbToolCall,
   }),
   fc.record({
     type: fc.constant('completion'),
-    reason: fc.constantFrom('stop', 'length', 'tool_calls')
+    reason: fc.constantFrom('stop', 'length', 'tool_calls'),
   })
 );
 
@@ -1147,18 +1193,17 @@ const arbModelInfo = fc.record({
   capabilities: fc.record({
     toolCalling: fc.boolean(),
     vision: fc.boolean(),
-    streaming: fc.boolean()
-  })
+    streaming: fc.boolean(),
+  }),
 });
 
 const arbRoutingProfile = fc.record({
   name: fc.constantFrom('fast', 'general', 'code', 'creative'),
   preferredFamilies: fc.array(fc.string(), { minLength: 1, maxLength: 5 }),
   minContextWindow: fc.integer({ min: 2048, max: 32768 }),
-  requiredCapabilities: fc.array(
-    fc.constantFrom('toolCalling', 'vision', 'streaming'),
-    { maxLength: 3 }
-  )
+  requiredCapabilities: fc.array(fc.constantFrom('toolCalling', 'vision', 'streaming'), {
+    maxLength: 3,
+  }),
 });
 ```
 
@@ -1167,6 +1212,7 @@ const arbRoutingProfile = fc.record({
 Integration tests verify interactions between components and with real LLM servers. They should handle server unavailability gracefully and clean up test data.
 
 **Streaming Tests**:
+
 - Test text chunk delivery is incremental
 - Test complete response equals concatenated chunks
 - Test tool calls are delivered during streaming
@@ -1175,6 +1221,7 @@ Integration tests verify interactions between components and with real LLM serve
 - Require real server, skip gracefully when unavailable
 
 **Tool Call Tests**:
+
 - Test single tool invocation with correct parameters
 - Test tool results are returned to model
 - Test multiple tool calls execute in sequence
@@ -1184,6 +1231,7 @@ Integration tests verify interactions between components and with real LLM serve
 - Require real server, skip gracefully when unavailable
 
 **Model Management Tests**:
+
 - Test list models returns available models with metadata
 - Test pull model emits progress events from 0% to 100%
 - Test delete model removes model from list
@@ -1195,6 +1243,7 @@ Integration tests verify interactions between components and with real LLM serve
 UI tests verify terminal interface rendering and user interactions using ink-testing-library.
 
 **Component Rendering Tests**:
+
 - Test ChatHistory displays user, assistant, and tool call messages
 - Test InputBox accepts text input and displays current value
 - Test StatusBar displays model information and status indicators
@@ -1202,6 +1251,7 @@ UI tests verify terminal interface rendering and user interactions using ink-tes
 - Test LoadingSpinner displays during operations
 
 **Interaction Tests**:
+
 - Test arrow keys navigate through history
 - Test Enter key submits input
 - Test Ctrl+C cancels operations
@@ -1210,6 +1260,7 @@ UI tests verify terminal interface rendering and user interactions using ink-tes
 - Test tool confirmation rejection skips tools
 
 **Streaming Tests**:
+
 - Test text appears progressively as it streams
 - Test progress indicators (spinners, progress bars) update during operations
 - Test indicators are removed when operations complete
@@ -1219,11 +1270,13 @@ UI tests verify terminal interface rendering and user interactions using ink-tes
 Compatibility matrix testing documents model behavior across different capabilities.
 
 **Test Models**:
+
 - General-purpose: llama3.1:8b or llama3.2:3b
 - Code-specialized: codellama:7b or deepseek-coder:6.7b
 - Small/fast: phi3:mini or gemma:2b
 
 **Test Capabilities**:
+
 - Basic chat: Send simple prompt, verify response
 - Streaming: Verify incremental delivery
 - Native tool calling: Test with tool-capable models
@@ -1231,6 +1284,7 @@ Compatibility matrix testing documents model behavior across different capabilit
 - Context sizes: Test 4K, 8K, 16K, 32K, 64K, 128K token contexts
 
 **Documentation**:
+
 - Pass/fail status for each capability
 - Known issues and workarounds
 - Model selection recommendations
@@ -1241,12 +1295,14 @@ Compatibility matrix testing documents model behavior across different capabilit
 Performance tests verify system efficiency and responsiveness.
 
 **Test Execution Speed**:
+
 - Unit tests: <100ms per test
 - Integration tests: <30 seconds total (when server available)
 - UI tests: <10 seconds total
 - Full test suite: <2 minutes total
 
 **Coverage Measurement**:
+
 - Measure coverage for all packages
 - Fail build if coverage <80%
 - Exclude node_modules, dist, test files from coverage

@@ -70,36 +70,33 @@ interface ContextModuleOptions {
  */
 export function createContextModules(options: ContextModuleOptions): ContextModules {
   const snapshotStorage = options.services?.snapshotStorage || createSnapshotStorage();
-  const snapshotManager = options.services?.snapshotManager || createSnapshotManager(
-    snapshotStorage,
-    options.config.snapshots
-  );
+  const snapshotManager =
+    options.services?.snapshotManager ||
+    createSnapshotManager(snapshotStorage, options.config.snapshots);
   snapshotManager.setSessionId(options.sessionId);
 
   const compressionService = options.services?.compressionService || new CompressionServiceImpl();
 
-  const memoryGuard = options.services?.memoryGuard || createMemoryGuard(
-    options.vramMonitor,
-    options.contextPool,
-    {
+  const memoryGuard =
+    options.services?.memoryGuard ||
+    createMemoryGuard(options.vramMonitor, options.contextPool, {
       safetyBuffer: options.config.vramBuffer,
       thresholds: {
         soft: 0.8,
         hard: 0.9,
-        critical: 0.95
-      }
-    }
-  );
+        critical: 0.95,
+      },
+    });
 
   memoryGuard.setServices({
     snapshot: snapshotManager,
-    compression: compressionService
+    compression: compressionService,
   });
 
   const checkpointManager = new CheckpointManager({
     getContext: options.getContext,
     tokenCounter: options.tokenCounter,
-    emit: options.emit
+    emit: options.emit,
   });
 
   const compressionCoordinator = new CompressionCoordinator({
@@ -114,7 +111,7 @@ export function createContextModules(options: ContextModuleOptions): ContextModu
     contextPool: options.contextPool,
     emit: options.emit,
     checkpointManager,
-    isTestEnv: options.isTestEnv
+    isTestEnv: options.isTestEnv,
   });
 
   const messageStore = new MessageStore({
@@ -130,7 +127,7 @@ export function createContextModules(options: ContextModuleOptions): ContextModu
     compress: () => compressionCoordinator.compress(),
     isAutoSummaryRunning: () => compressionCoordinator.isAutoSummaryRunning(),
     createSnapshot: () => Promise.resolve(),
-    isTestEnv: options.isTestEnv
+    isTestEnv: options.isTestEnv,
   });
 
   const snapshotCoordinator = new SnapshotCoordinator({
@@ -144,7 +141,7 @@ export function createContextModules(options: ContextModuleOptions): ContextModu
       messageStore.resetSnapshotTracking();
     },
     emit: options.emit,
-    sessionId: options.sessionId
+    sessionId: options.sessionId,
   });
 
   messageStore.setCreateSnapshot(() => snapshotCoordinator.createSnapshot());
@@ -165,6 +162,6 @@ export function createContextModules(options: ContextModuleOptions): ContextModu
     },
     updateConfig: (config) => {
       snapshotCoordinator.updateConfig(config.snapshots);
-    }
+    },
   };
 }

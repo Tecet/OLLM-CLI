@@ -8,12 +8,15 @@
 ## Completed Work
 
 ### Phase 4: Extract Event Handlers ✅
+
 **Lines Reduced:** 118 lines (1175 → 1057)
 
 **Files Created:**
+
 - `packages/cli/src/features/context/handlers/contextEventHandlers.ts` (280 lines)
 
 **Handlers Extracted:**
+
 1. `handleMemoryWarning` - Shows warning when context usage is high
 2. `handleCompressed` - Shows summary after compression completes
 3. `handleSummarizing` - Shows sticky status during summarization
@@ -23,12 +26,14 @@
 7. `handleSessionSaved` - Shows confirmation when session is saved
 
 **Architecture:**
+
 - Created factory function `createContextEventHandlers()` that accepts dependencies
 - Created `registerContextEventHandlers()` for clean registration/cleanup
 - All handlers use closures to access dependencies
 - Proper TypeScript typing for all dependencies
 
 **Testing:**
+
 - ✅ Build passes
 - ✅ All 502 tests pass
 - ✅ No TypeScript errors
@@ -36,12 +41,15 @@
 ---
 
 ### Phase 5: Extract Command Handler ✅
+
 **Lines Reduced:** 35 lines (1057 → 1022)
 
 **Files Created:**
+
 - `packages/cli/src/features/context/handlers/commandHandler.ts` (150 lines)
 
 **Functions Extracted:**
+
 1. `handleCommand()` - Main command execution handler
    - Executes command via registry
    - Handles special actions (show-launch-screen, clear-chat, exit)
@@ -57,12 +65,14 @@
    - Utility function for command detection
 
 **Architecture:**
+
 - Clean separation of command execution from chat logic
 - Proper dependency injection
 - Async/await for all operations
 - Comprehensive error handling
 
 **Testing:**
+
 - ✅ Build passes
 - ✅ All 502 tests pass
 - ✅ No TypeScript errors
@@ -72,6 +82,7 @@
 ## Overall Progress
 
 ### Line Count Reduction
+
 - **Starting Size:** 1404 lines
 - **After Session 1:** 1175 lines (229 lines removed)
 - **After Session 2:** 1022 lines (382 lines removed total)
@@ -79,6 +90,7 @@
 - **Remaining to target (<500):** 522 lines (51%)
 
 ### Phases Completed
+
 1. ✅ **Phase 1: Extract Types** (-133 lines)
 2. ✅ **Phase 2: Extract Utilities** (-68 lines)
 3. ✅ **Phase 3: Extract System Prompt Builder** (-28 lines)
@@ -86,6 +98,7 @@
 5. ✅ **Phase 5: Extract Command Handler** (-35 lines)
 
 ### Files Created
+
 ```
 packages/cli/src/features/context/
 ├── types/
@@ -105,9 +118,11 @@ packages/cli/src/features/context/
 ## Next Steps (High Risk, High Value)
 
 ### Phase 6: Extract Agent Loop (~400 lines)
+
 The massive agent loop is the biggest remaining chunk. This is the most complex refactoring.
 
 **What needs extraction:**
+
 - Multi-turn agent loop logic
 - Tool call handling
 - Compression retry logic
@@ -118,6 +133,7 @@ The massive agent loop is the biggest remaining chunk. This is the most complex 
 - Metrics collection
 
 **Challenges:**
+
 - Complex state management across turns
 - Multiple refs (compressionOccurredRef, inflightTokenAccumulatorRef, etc.)
 - Nested callbacks and closures
@@ -125,6 +141,7 @@ The massive agent loop is the biggest remaining chunk. This is the most complex 
 - Error handling and recovery
 
 **Strategy:**
+
 - Extract to `handlers/agentLoopHandler.ts`
 - Create `runAgentLoop()` function with comprehensive dependencies
 - Keep state management in ChatContext
@@ -136,9 +153,11 @@ The massive agent loop is the biggest remaining chunk. This is the most complex 
 ---
 
 ### Phase 7: Extract Tool Execution (~150 lines)
+
 Tool execution can be extracted after agent loop.
 
 **What needs extraction:**
+
 - Tool registry lookup
 - Tool permission verification
 - Tool invocation
@@ -147,6 +166,7 @@ Tool execution can be extracted after agent loop.
 - Hook events (before_tool, after_tool)
 
 **Strategy:**
+
 - Extract to `handlers/toolExecutionHandler.ts`
 - Create `executeToolCall()` function
 - Handle both new and legacy tool patterns
@@ -159,12 +179,14 @@ Tool execution can be extracted after agent loop.
 ## Architecture Improvements
 
 ### Separation of Concerns
+
 - **ChatContext.tsx** - Main orchestrator, state management, React integration
 - **types/** - Type definitions
 - **utils/** - Pure utility functions
 - **handlers/** - Business logic handlers with dependency injection
 
 ### Benefits Achieved
+
 1. **Maintainability** - Smaller, focused files
 2. **Testability** - Handlers can be tested independently
 3. **Reusability** - Handlers can be reused in other contexts
@@ -172,6 +194,7 @@ Tool execution can be extracted after agent loop.
 5. **Type Safety** - Comprehensive TypeScript typing
 
 ### Design Patterns Used
+
 1. **Factory Pattern** - `createContextEventHandlers()`
 2. **Dependency Injection** - All handlers accept dependencies
 3. **Single Responsibility** - Each handler has one clear purpose
@@ -182,13 +205,17 @@ Tool execution can be extracted after agent loop.
 ## Testing Results
 
 ### Build Status
+
 ✅ **All builds passing**
+
 - TypeScript compilation: Success
 - esbuild bundling: Success
 - No warnings or errors
 
 ### Test Status
+
 ✅ **All 502 tests passing**
+
 - Unit tests: Pass
 - Integration tests: Pass
 - Property-based tests: Pass
@@ -196,6 +223,7 @@ Tool execution can be extracted after agent loop.
 - No test timeouts
 
 ### Code Quality
+
 ✅ **No TypeScript errors**
 ✅ **No linting errors**
 ✅ **Proper type coverage**
@@ -206,17 +234,20 @@ Tool execution can be extracted after agent loop.
 ## Lessons Learned
 
 ### What Worked Well
+
 1. **Incremental extraction** - Small, testable chunks
 2. **Factory pattern** - Clean dependency injection
 3. **Comprehensive testing** - Caught issues early
 4. **Clear documentation** - Easy to understand changes
 
 ### Challenges Overcome
+
 1. **Type inference** - Fixed setStatusMessage type signature
 2. **Circular dependencies** - Used dynamic imports in command handler
 3. **Closure dependencies** - Proper dependency injection
 
 ### Best Practices
+
 1. **Test after each phase** - Ensures nothing breaks
 2. **Document as you go** - Easier to track progress
 3. **Keep commits small** - Easier to review and rollback
@@ -227,18 +258,21 @@ Tool execution can be extracted after agent loop.
 ## Recommendations for Next Session
 
 ### Phase 6 Preparation
+
 1. **Read agent loop carefully** - Understand all state dependencies
 2. **Identify all refs** - compressionOccurredRef, inflightTokenAccumulatorRef, etc.
 3. **Map all callbacks** - onText, onError, onComplete, onThinking, etc.
 4. **Plan state management** - What stays in ChatContext, what moves to handler
 
 ### Risk Mitigation
+
 1. **Create comprehensive tests** - Test agent loop independently
 2. **Keep original code** - Comment out instead of delete initially
 3. **Test incrementally** - Test after each small change
 4. **Have rollback plan** - Git commit before starting
 
 ### Success Criteria
+
 1. All 502 tests pass
 2. Build succeeds
 3. No TypeScript errors

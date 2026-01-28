@@ -25,11 +25,7 @@ export class CoreEventEmitter extends EventEmitter {
   /**
    * Broadcasts stdout/stderr output.
    */
-  emitOutput(
-    isStderr: boolean,
-    chunk: Uint8Array | string,
-    encoding?: BufferEncoding,
-  ): void {
+  emitOutput(isStderr: boolean, chunk: Uint8Array | string, encoding?: BufferEncoding): void {
     const payload: OutputPayload = { isStderr, chunk, encoding };
     this.emit(CoreEvent.Output, payload);
   }

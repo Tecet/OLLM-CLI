@@ -7,8 +7,9 @@
 ## Tasks
 
 > **Timestamp Format**: Each task can include `Started: YYYY-MM-DD HH:MM` and `Completed: YYYY-MM-DD HH:MM` to track actual time spent.
-> 
+>
 > **Tracking Commands:**
+>
 > ```bash
 > npm run task:start .kiro/specs/stage-XX-name/tasks.md <task-number>
 > npm run task:complete .kiro/specs/stage-XX-name/tasks.md <task-number>
@@ -48,14 +49,14 @@
 
 ## Task Breakdown Summary
 
-| Task | Description | Time Estimate | Kiro Credits |
-|------|-------------|---------------|--------------|
-| 1 | Task name | XX min | ~X |
-| 1.1 | Subtask name | XX min | ~X |
-| 1.2 | Another subtask | XX min | ~X |
-| 2 | Another task | XX min | ~X |
-| 3 | Checkpoint | XX min | ~X |
-| **Total** | **X tasks** | **~X hours** | **~XX** |
+| Task      | Description     | Time Estimate | Kiro Credits |
+| --------- | --------------- | ------------- | ------------ |
+| 1         | Task name       | XX min        | ~X           |
+| 1.1       | Subtask name    | XX min        | ~X           |
+| 1.2       | Another subtask | XX min        | ~X           |
+| 2         | Another task    | XX min        | ~X           |
+| 3         | Checkpoint      | XX min        | ~X           |
+| **Total** | **X tasks**     | **~X hours**  | **~XX**      |
 
 ## Notes
 
@@ -68,16 +69,19 @@
 ## Tracking Workflow
 
 1. **Before starting a task:**
+
    ```bash
    npm run task:start .kiro/specs/stage-XX-name/tasks.md <task-number>
    ```
 
 2. **After completing a task:**
+
    ```bash
    npm run task:complete .kiro/specs/stage-XX-name/tasks.md <task-number>
    ```
 
 3. **Check progress anytime:**
+
    ```bash
    npm run task:status .kiro/specs/stage-XX-name/tasks.md
    ```

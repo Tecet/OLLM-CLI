@@ -34,7 +34,7 @@ class DocumentService {
           if (entry.name.startsWith('.')) {
             continue;
           }
-          
+
           const folderPath = path.join(this.basePath, entry.name);
           const documents = this.scanFolder(folderPath);
 
@@ -72,14 +72,14 @@ class DocumentService {
       folders.sort((a, b) => {
         const indexA = folderOrder.indexOf(a.name);
         const indexB = folderOrder.indexOf(b.name);
-        
+
         if (indexA !== -1 && indexB !== -1) {
           return indexA - indexB;
         }
-        
+
         if (indexA !== -1) return -1;
         if (indexB !== -1) return 1;
-        
+
         return a.name.localeCompare(b.name);
       });
 
@@ -99,7 +99,7 @@ class DocumentService {
       for (const entry of entries) {
         if (entry.isFile() && entry.name.endsWith('.md')) {
           const filePath = path.join(folderPath, entry.name);
-          
+
           documents.push({
             title: this.formatDocTitle(entry.name),
             fileName: entry.name,
@@ -122,54 +122,54 @@ class DocumentService {
     if (folderName === 'LLM Models') return 'LLM Models';
     if (folderName === 'Prompts System') return 'Prompts System';
     if (folderName === 'DevelopmentRoadmap') return 'Development Roadmap';
-    
+
     return folderName
       .replace(/[-_]/g, ' ')
       .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
   }
 
   formatDocTitle(fileName) {
     const nameWithoutExt = fileName.replace(/\.md$/, '');
-    
+
     const specialCases = {
-      'README': 'Overview',
-      'Index': 'Index',
-      'LLM_Index': 'LLM Index',
-      'LLM_ModelsList': 'Models List',
-      'LLM_MemorySystem': 'Memory System',
-      'UIGuide': 'UI Guide',
-      'ColorASCII': 'Color ASCII',
-      'Keybinds': 'Keyboard Shortcuts',
-      'ContextArchitecture': 'Context Architecture',
-      'ContextCompression': 'Context Compression',
-      'ContextManagment': 'Context Management',
-      'CheckpointFlowDiagram': 'Checkpoint Flow',
-      'PromptsRouting': 'Prompts Routing',
-      'PromptsTemplates': 'Prompts Templates',
-      'SystemPrompts': 'System Prompts',
-      'RoadmapVisual': 'Visual Roadmap',
-      'PlanedFeatures': 'Planned Features',
+      README: 'Overview',
+      Index: 'Index',
+      LLM_Index: 'LLM Index',
+      LLM_ModelsList: 'Models List',
+      LLM_MemorySystem: 'Memory System',
+      UIGuide: 'UI Guide',
+      ColorASCII: 'Color ASCII',
+      Keybinds: 'Keyboard Shortcuts',
+      ContextArchitecture: 'Context Architecture',
+      ContextCompression: 'Context Compression',
+      ContextManagment: 'Context Management',
+      CheckpointFlowDiagram: 'Checkpoint Flow',
+      PromptsRouting: 'Prompts Routing',
+      PromptsTemplates: 'Prompts Templates',
+      SystemPrompts: 'System Prompts',
+      RoadmapVisual: 'Visual Roadmap',
+      PlanedFeatures: 'Planned Features',
     };
-    
+
     if (specialCases[nameWithoutExt]) {
       return specialCases[nameWithoutExt];
     }
-    
+
     return nameWithoutExt
       .replace(/([A-Z])/g, ' $1')
       .replace(/[-_]/g, ' ')
       .trim()
       .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
       .join(' ');
   }
 }
 
 // Run the test
 console.log('🔍 Testing Documentation Discovery\n');
-console.log('=' .repeat(60));
+console.log('='.repeat(60));
 
 const docService = new DocumentService();
 const folders = docService.discoverDocuments();
@@ -185,5 +185,5 @@ folders.forEach((folder, idx) => {
 });
 
 const totalDocs = folders.reduce((sum, folder) => sum + folder.documents.length, 0);
-console.log('=' .repeat(60));
+console.log('='.repeat(60));
 console.log(`\n📊 Total: ${folders.length} sections, ${totalDocs} documents\n`);

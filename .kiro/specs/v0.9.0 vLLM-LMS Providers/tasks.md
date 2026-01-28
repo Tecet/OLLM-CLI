@@ -11,7 +11,7 @@ This implementation adds support for vLLM and OpenAI-compatible LLM backends to 
   - Add `extraBody` field to GenerationOptions interface for provider-specific options
   - _Requirements: 5.1, 5.2, 5.3, 5.4_
 
-- [ ]* 1.1 Write unit tests for type definitions
+- [ ]\* 1.1 Write unit tests for type definitions
   - Test that streamingFormat accepts 'ndjson' and 'sse' values
   - Test that extraBody accepts arbitrary key-value pairs
   - _Requirements: 5.1, 5.2, 5.3, 5.4_
@@ -25,7 +25,7 @@ This implementation adds support for vLLM and OpenAI-compatible LLM backends to 
     - Skip malformed JSON lines gracefully
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6_
 
-  - [ ]* 2.2 Write unit tests for SSE parser
+  - [ ]\* 2.2 Write unit tests for SSE parser
     - Test empty stream returns no results
     - Test single data line is parsed correctly
     - Test multiple data lines are parsed in order
@@ -35,19 +35,19 @@ This implementation adds support for vLLM and OpenAI-compatible LLM backends to 
     - Test mixed valid/invalid lines are handled
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6_
 
-  - [ ]* 2.3 Write property test for SSE parser correctness
+  - [ ]\* 2.3 Write property test for SSE parser correctness
     - **Property 2: SSE Stream Parsing Correctness**
     - **Validates: Requirements 3.1, 3.2, 3.6**
 
-  - [ ]* 2.4 Write property test for SSE stream termination
+  - [ ]\* 2.4 Write property test for SSE stream termination
     - **Property 3: SSE Stream Termination**
     - **Validates: Requirements 3.3**
 
-  - [ ]* 2.5 Write property test for malformed JSON resilience
+  - [ ]\* 2.5 Write property test for malformed JSON resilience
     - **Property 4: SSE Malformed JSON Resilience**
     - **Validates: Requirements 3.4**
 
-  - [ ]* 2.6 Write property test for partial chunk buffering
+  - [ ]\* 2.6 Write property test for partial chunk buffering
     - **Property 5: SSE Partial Chunk Buffering**
     - **Validates: Requirements 3.5**
 
@@ -65,7 +65,7 @@ This implementation adds support for vLLM and OpenAI-compatible LLM backends to 
     - Handle authentication errors (401/403) with clear messages
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7_
 
-  - [ ]* 3.2 Write unit tests for VllmProvider
+  - [ ]\* 3.2 Write unit tests for VllmProvider
     - Test default base URL is http://localhost:8000
     - Test API key is included in Authorization header when configured
     - Test extraBody options are passed through to request
@@ -75,19 +75,19 @@ This implementation adds support for vLLM and OpenAI-compatible LLM backends to 
     - Test abort signal terminates stream gracefully
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7_
 
-  - [ ]* 3.3 Write property test for provider interface compliance
+  - [ ]\* 3.3 Write property test for provider interface compliance
     - **Property 1: Provider Interface Compliance**
     - **Validates: Requirements 1.1**
 
-  - [ ]* 3.4 Write property test for endpoint usage
+  - [ ]\* 3.4 Write property test for endpoint usage
     - **Property 6: OpenAI-Compatible Endpoint Usage**
     - **Validates: Requirements 1.3**
 
-  - [ ]* 3.5 Write property test for options passthrough
+  - [ ]\* 3.5 Write property test for options passthrough
     - **Property 7: Provider-Specific Options Passthrough**
     - **Validates: Requirements 1.5, 11.1, 11.2**
 
-  - [ ]* 3.6 Write property test for authenticated request headers
+  - [ ]\* 3.6 Write property test for authenticated request headers
     - **Property 8: Authenticated Request Headers**
     - **Validates: Requirements 1.6**
 
@@ -105,7 +105,7 @@ This implementation adds support for vLLM and OpenAI-compatible LLM backends to 
     - Return empty array on model listing errors
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9_
 
-  - [ ]* 4.2 Write unit tests for OpenAICompatibleProvider
+  - [ ]\* 4.2 Write unit tests for OpenAICompatibleProvider
     - Test default base URL is http://localhost:1234
     - Test LM Studio backend uses X-API-Key header
     - Test other backends use Authorization header
@@ -115,11 +115,11 @@ This implementation adds support for vLLM and OpenAI-compatible LLM backends to 
     - Test authentication errors yield clear messages
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9_
 
-  - [ ]* 4.3 Write property test for model listing error handling
+  - [ ]\* 4.3 Write property test for model listing error handling
     - **Property 9: Model Listing Error Handling**
     - **Validates: Requirements 2.5, 9.4**
 
-  - [ ]* 4.4 Write property test for backend-specific header adaptation
+  - [ ]\* 4.4 Write property test for backend-specific header adaptation
     - **Property 10: Backend-Specific Header Adaptation**
     - **Validates: Requirements 2.6**
 
@@ -132,7 +132,7 @@ This implementation adds support for vLLM and OpenAI-compatible LLM backends to 
     - Maintain backward compatibility with existing get() method
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
 
-  - [ ]* 5.2 Write unit tests for provider registry enhancements
+  - [ ]\* 5.2 Write unit tests for provider registry enhancements
     - Test alias registration and resolution
     - Test exact name resolution still works
     - Test unregistered names return undefined
@@ -140,15 +140,15 @@ This implementation adds support for vLLM and OpenAI-compatible LLM backends to 
     - Test common alias mappings (lmstudio, localai, kobold)
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
 
-  - [ ]* 5.3 Write property test for alias resolution
+  - [ ]\* 5.3 Write property test for alias resolution
     - **Property 11: Provider Registry Alias Resolution**
     - **Validates: Requirements 4.2**
 
-  - [ ]* 5.4 Write property test for not found behavior
+  - [ ]\* 5.4 Write property test for not found behavior
     - **Property 12: Provider Registry Not Found Behavior**
     - **Validates: Requirements 4.4**
 
-  - [ ]* 5.5 Write property test for backward compatibility
+  - [ ]\* 5.5 Write property test for backward compatibility
     - **Property 13: Provider Registry Backward Compatibility**
     - **Validates: Requirements 4.5, 12.5**
 
@@ -171,18 +171,18 @@ This implementation adds support for vLLM and OpenAI-compatible LLM backends to 
     - Support environment variable substitution syntax
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6_
 
-  - [ ]* 8.2 Write unit tests for configuration schema
+  - [ ]\* 8.2 Write unit tests for configuration schema
     - Test schema accepts valid vllm configurations
     - Test schema accepts valid openai-compatible configurations
     - Test schema validates backend enum values
     - Test schema supports environment variable references
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6_
 
-  - [ ]* 8.3 Write property test for schema validation
+  - [ ]\* 8.3 Write property test for schema validation
     - **Property 14: Configuration Schema Validation**
     - **Validates: Requirements 6.3, 6.4**
 
-  - [ ]* 8.4 Write property test for environment variable substitution
+  - [ ]\* 8.4 Write property test for environment variable substitution
     - **Property 15: Environment Variable Substitution**
     - **Validates: Requirements 6.6**
 
@@ -195,7 +195,7 @@ This implementation adds support for vLLM and OpenAI-compatible LLM backends to 
     - Implement precedence: env vars override config file values
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
 
-  - [ ]* 9.2 Write unit tests for environment variable support
+  - [ ]\* 9.2 Write unit tests for environment variable support
     - Test VLLM_HOST is recognized with correct default
     - Test VLLM_API_KEY is recognized
     - Test OPENAI_COMPATIBLE_HOST is recognized with correct default
@@ -203,7 +203,7 @@ This implementation adds support for vLLM and OpenAI-compatible LLM backends to 
     - Test environment variables override config file values
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
 
-  - [ ]* 9.3 Write property test for configuration precedence
+  - [ ]\* 9.3 Write property test for configuration precedence
     - **Property 16: Configuration Precedence**
     - **Validates: Requirements 7.5**
 
@@ -216,7 +216,7 @@ This implementation adds support for vLLM and OpenAI-compatible LLM backends to 
     - Default to 'local' provider when no provider is specified
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5_
 
-  - [ ]* 10.2 Write unit tests for CLI flags
+  - [ ]\* 10.2 Write unit tests for CLI flags
     - Test --provider flag is recognized
     - Test --host flag overrides base URL
     - Test --api-key flag provides credentials
@@ -224,7 +224,7 @@ This implementation adds support for vLLM and OpenAI-compatible LLM backends to 
     - Test default provider is 'local'
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5_
 
-  - [ ]* 10.3 Write property test for CLI flag precedence
+  - [ ]\* 10.3 Write property test for CLI flag precedence
     - **Property 17: CLI Flag Precedence**
     - **Validates: Requirements 8.4**
 
@@ -237,7 +237,7 @@ This implementation adds support for vLLM and OpenAI-compatible LLM backends to 
     - Gracefully disable unsupported features
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 10.5_
 
-  - [ ]* 11.2 Write unit tests for error handling
+  - [ ]\* 11.2 Write unit tests for error handling
     - Test network unreachable errors have descriptive messages
     - Test authentication errors indicate invalid credentials
     - Test unsupported operations return clear messages
@@ -245,23 +245,23 @@ This implementation adds support for vLLM and OpenAI-compatible LLM backends to 
     - Test graceful feature degradation
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 10.5_
 
-  - [ ]* 11.3 Write property test for network error messages
+  - [ ]\* 11.3 Write property test for network error messages
     - **Property 18: Network Error Messages**
     - **Validates: Requirements 9.1**
 
-  - [ ]* 11.4 Write property test for authentication error messages
+  - [ ]\* 11.4 Write property test for authentication error messages
     - **Property 19: Authentication Error Messages**
     - **Validates: Requirements 9.2**
 
-  - [ ]* 11.5 Write property test for unsupported operation messages
+  - [ ]\* 11.5 Write property test for unsupported operation messages
     - **Property 20: Unsupported Operation Messages**
     - **Validates: Requirements 9.3**
 
-  - [ ]* 11.6 Write property test for mid-stream error handling
+  - [ ]\* 11.6 Write property test for mid-stream error handling
     - **Property 21: Mid-Stream Error Handling**
     - **Validates: Requirements 9.5**
 
-  - [ ]* 11.7 Write property test for graceful feature degradation
+  - [ ]\* 11.7 Write property test for graceful feature degradation
     - **Property 23: Graceful Feature Degradation**
     - **Validates: Requirements 10.5**
 
@@ -272,14 +272,14 @@ This implementation adds support for vLLM and OpenAI-compatible LLM backends to 
     - Enable/disable features based on capabilities
     - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5_
 
-  - [ ]* 12.2 Write unit tests for capability detection
+  - [ ]\* 12.2 Write unit tests for capability detection
     - Test VllmProvider reports guided decoding support
     - Test LocalProvider reports model management support
     - Test OpenAICompatibleProvider reports limited capabilities
     - Test capability detection for tool calling
     - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5_
 
-  - [ ]* 12.3 Write property test for feature capability detection
+  - [ ]\* 12.3 Write property test for feature capability detection
     - **Property 22: Feature Capability Detection**
     - **Validates: Requirements 10.4**
 
@@ -294,33 +294,33 @@ This implementation adds support for vLLM and OpenAI-compatible LLM backends to 
     - Verify default provider behavior unchanged
     - _Requirements: 12.1, 12.2, 12.3, 12.4, 12.5_
 
-  - [ ]* 14.2 Write property test for backward compatibility
+  - [ ]\* 14.2 Write property test for backward compatibility
     - **Property 24: Backward Compatibility Preservation**
     - **Validates: Requirements 12.1, 12.2, 12.3, 12.4**
 
 - [ ] 15. Create integration tests with mock servers
-  - [ ]* 15.1 Create mock vLLM server for integration testing
+  - [ ]\* 15.1 Create mock vLLM server for integration testing
     - Mock server responds with SSE format
     - Supports /v1/chat/completions endpoint
     - Supports /v1/models endpoint
     - Requires Bearer token authentication
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.6_
 
-  - [ ]* 15.2 Create mock LM Studio server for integration testing
+  - [ ]\* 15.2 Create mock LM Studio server for integration testing
     - Mock server responds with SSE format
     - Supports /v1/chat/completions endpoint
     - Requires X-API-Key authentication
     - Model listing may fail (404)
     - _Requirements: 2.1, 2.2, 2.3, 2.7, 2.9_
 
-  - [ ]* 15.3 Create mock Ollama server for integration testing
+  - [ ]\* 15.3 Create mock Ollama server for integration testing
     - Mock server responds with NDJSON format
     - Supports /api/chat endpoint
     - No authentication required
     - Supports model management endpoints
     - _Requirements: 12.1, 12.2, 12.3, 12.4_
 
-  - [ ]* 15.4 Write integration tests for all provider types
+  - [ ]\* 15.4 Write integration tests for all provider types
     - Test successful chat streaming for each provider
     - Test authentication errors for each provider
     - Test network errors for each provider

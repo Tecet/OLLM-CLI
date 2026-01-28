@@ -14,23 +14,27 @@ Successfully completed a major refactoring of the context management system, con
 ## What Was Accomplished
 
 ### 1. Created Central Calculator (Phase 1)
+
 - **New file:** `ContextSizeCalculator.ts`
 - **Purpose:** Single source of truth for all context size calculations
 - **Functions:** 8 pure calculation functions
 - **Impact:** Eliminated duplicate logic across 5 files
 
 ### 2. Refactored Core Layer (Phases 2, 6, Bonus)
+
 - **contextManager.ts:** 1089 → 616 lines (-43%)
 - **contextPool.ts:** 260 → 180 lines (-30%)
 - **Files:** Rewritten from scratch, delegates to ContextSizeCalculator
 - **Impact:** Clean orchestration, no business logic in wrong places
 
 ### 3. Refactored CLI Layer (Phase 3)
+
 - **ContextManagerContext.tsx:** 1056 → 750 lines (-29%)
 - **contextSizing.ts:** 87 → 130 lines (delegates to core)
 - **Impact:** React bridge only, no duplicate calculations
 
 ### 4. Refactored UI Layer (Phases 4, 5)
+
 - **App.tsx:** 1186 → 438 lines (-63%)
 - **ContextMenu.tsx:** 0 → 210 lines (new component)
 - **Impact:** UI orchestration only, menu logic extracted
@@ -40,25 +44,28 @@ Successfully completed a major refactoring of the context management system, con
 ## Metrics
 
 ### Code Reduction
-| Metric | Value |
-|--------|-------|
-| Total lines before | 3,678 |
-| Total lines after | 2,324 |
-| Lines removed | 1,354 |
-| Percentage reduction | 37% |
-| New components | 1 |
+
+| Metric               | Value |
+| -------------------- | ----- |
+| Total lines before   | 3,678 |
+| Total lines after    | 2,324 |
+| Lines removed        | 1,354 |
+| Percentage reduction | 37%   |
+| New components       | 1     |
 
 ### Files Changed
-| File | Before | After | Change |
-|------|--------|-------|--------|
-| contextManager.ts | 1089 | 616 | -473 (-43%) |
-| ContextManagerContext.tsx | 1056 | 750 | -306 (-29%) |
-| contextPool.ts | 260 | 180 | -80 (-30%) |
-| contextSizing.ts | 87 | 130 | +43 |
-| App.tsx | 1186 | 438 | -748 (-63%) |
-| ContextMenu.tsx | 0 | 210 | +210 (new) |
+
+| File                      | Before | After | Change      |
+| ------------------------- | ------ | ----- | ----------- |
+| contextManager.ts         | 1089   | 616   | -473 (-43%) |
+| ContextManagerContext.tsx | 1056   | 750   | -306 (-29%) |
+| contextPool.ts            | 260    | 180   | -80 (-30%)  |
+| contextSizing.ts          | 87     | 130   | +43         |
+| App.tsx                   | 1186   | 438   | -748 (-63%) |
+| ContextMenu.tsx           | 0      | 210   | +210 (new)  |
 
 ### Quality Improvements
+
 - ✅ Zero duplicate calculations
 - ✅ Zero file logging
 - ✅ Zero hardcoded values
@@ -72,6 +79,7 @@ Successfully completed a major refactoring of the context management system, con
 ## Architecture Improvements
 
 ### Before: Scattered Logic ❌
+
 ```
 Problems:
 - Calculations duplicated in 5 files
@@ -83,6 +91,7 @@ Problems:
 ```
 
 ### After: Clean Architecture ✅
+
 ```
 Solutions:
 - All calculations in ContextSizeCalculator
@@ -98,13 +107,16 @@ Solutions:
 ## What Each Layer Now Does
 
 ### Core Layer (`packages/core/src/context/`)
+
 **ContextSizeCalculator.ts** (NEW)
+
 - ✅ All context size calculations
 - ✅ VRAM-based tier calculations
 - ✅ Ollama size conversions
 - ✅ Size validation and clamping
 
 **contextManager.ts** (Rewritten)
+
 - ✅ Orchestrates context operations
 - ✅ Delegates calculations to ContextSizeCalculator
 - ✅ Emits events for state changes
@@ -112,6 +124,7 @@ Solutions:
 - ❌ No file logging
 
 **contextPool.ts** (Rewritten)
+
 - ✅ Tracks context state
 - ✅ Coordinates resize operations
 - ✅ Delegates calculations to ContextSizeCalculator
@@ -119,7 +132,9 @@ Solutions:
 - ❌ No business logic
 
 ### CLI Layer (`packages/cli/src/features/context/`)
+
 **ContextManagerContext.tsx** (Rewritten)
+
 - ✅ React bridge to core
 - ✅ Manages React state
 - ✅ Provides context actions
@@ -128,13 +143,16 @@ Solutions:
 - ❌ No file logging
 
 **contextSizing.ts** (Rewritten)
+
 - ✅ CLI utilities
 - ✅ Delegates to ContextSizeCalculator
 - ❌ No duplicate calculations
 - ❌ No manual 85% conversion
 
 ### UI Layer (`packages/cli/src/ui/`)
+
 **App.tsx** (Rewritten)
+
 - ✅ UI orchestration
 - ✅ Layout management
 - ✅ Provider wiring
@@ -144,6 +162,7 @@ Solutions:
 - ❌ No calculations
 
 **ContextMenu.tsx** (NEW)
+
 - ✅ Menu building
 - ✅ Reusable hook
 - ✅ Testable in isolation
@@ -155,6 +174,7 @@ Solutions:
 ## Verification Checklist
 
 ### Build & Type Safety
+
 - [x] TypeScript compilation passes
 - [x] Zero type errors
 - [x] Zero build warnings
@@ -162,6 +182,7 @@ Solutions:
 - [x] esbuild bundle succeeds
 
 ### Code Quality
+
 - [x] No duplicate calculations
 - [x] No file logging
 - [x] No hardcoded values
@@ -170,6 +191,7 @@ Solutions:
 - [x] All public APIs preserved
 
 ### Architecture
+
 - [x] Core layer: business logic only
 - [x] CLI layer: React bridge only
 - [x] UI layer: display only
@@ -177,6 +199,7 @@ Solutions:
 - [x] Menu building: ContextMenu only
 
 ### Documentation
+
 - [x] README.md (refactoring plan)
 - [x] PROGRESS.md (tracking)
 - [x] CONTEXTMANAGER_COMPARISON.md
@@ -194,6 +217,7 @@ Solutions:
 The following functionality needs manual testing:
 
 ### Context Menu
+
 - [ ] Menu opens on launch screen dismiss
 - [ ] "Change Context Size" submenu displays
 - [ ] Context size selection works
@@ -203,6 +227,7 @@ The following functionality needs manual testing:
 - [ ] Menu navigation (Back/Exit) works
 
 ### Commands
+
 - [ ] `/model` command works
 - [ ] `/model list` shows models
 - [ ] `/model pull` downloads models
@@ -210,6 +235,7 @@ The following functionality needs manual testing:
 - [ ] Context size changes apply
 
 ### UI
+
 - [ ] Side panel displays correctly
 - [ ] Status bar shows context usage
 - [ ] GPU info displays
@@ -222,19 +248,22 @@ The following functionality needs manual testing:
 ## Risk Assessment
 
 ### Low Risk ✅
+
 - All public APIs preserved
 - Build passes with zero errors
 - Incremental changes with backups
 - Each phase tested before next
-- Clear rollback path (old_* files)
+- Clear rollback path (old\_\* files)
 
 ### Medium Risk ⚠️
+
 - Manual testing not yet complete
 - User workflows need verification
 - Edge cases may exist
 
 ### Mitigation
-- Keep old_* files until manual testing complete
+
+- Keep old\_\* files until manual testing complete
 - Test in development environment first
 - Monitor for issues in production
 - Easy rollback if needed
@@ -246,6 +275,7 @@ The following functionality needs manual testing:
 If issues are discovered:
 
 1. **Immediate rollback:**
+
    ```bash
    # Restore old files
    mv packages/core/src/context/old_contextManager.ts packages/core/src/context/contextManager.ts
@@ -253,11 +283,11 @@ If issues are discovered:
    mv packages/cli/src/features/context/old_ContextManagerContext.tsx packages/cli/src/features/context/ContextManagerContext.tsx
    mv packages/cli/src/features/context/old_contextSizing.ts packages/cli/src/features/context/contextSizing.ts
    mv packages/cli/src/ui/old_App.tsx packages/cli/src/ui/App.tsx
-   
+
    # Remove new files
    rm packages/core/src/context/ContextSizeCalculator.ts
    rm packages/cli/src/ui/components/context/ContextMenu.tsx
-   
+
    # Rebuild
    npm run build
    ```
@@ -276,6 +306,7 @@ If issues are discovered:
 ## Success Criteria
 
 ### ✅ Achieved
+
 - [x] All calculations consolidated
 - [x] No duplicate logic
 - [x] Clean separation of concerns
@@ -285,6 +316,7 @@ If issues are discovered:
 - [x] Documentation complete
 
 ### ⏳ Pending
+
 - [ ] Manual testing complete
 - [ ] User acceptance testing
 - [ ] Production deployment
@@ -308,7 +340,7 @@ If issues are discovered:
    - Fix any bugs found
 
 3. **Cleanup** (Priority: LOW)
-   - Remove old_* files after verification
+   - Remove old\_\* files after verification
    - Update main documentation
    - Close refactoring tickets
    - Celebrate! 🎉
@@ -318,18 +350,21 @@ If issues are discovered:
 ## Lessons Learned
 
 ### What Worked Well ✅
+
 1. **Consolidate first** - Creating ContextSizeCalculator first made everything easier
 2. **Rewrite from scratch** - Faster and cleaner than incremental changes
-3. **Backup everything** - old_* files provided safety net
+3. **Backup everything** - old\_\* files provided safety net
 4. **Test frequently** - Caught type errors early
 5. **Document as you go** - Comparison docs helped track progress
 
 ### What Could Be Improved 🔄
+
 1. **Manual testing earlier** - Should test each phase before moving on
 2. **Smaller phases** - Some phases were large (App.tsx)
 3. **More unit tests** - Would catch regressions faster
 
 ### Best Practices Established 📋
+
 1. **One job per file** - Single responsibility principle
 2. **Core → CLI → UI** - Refactor from inside out
 3. **Delegate, don't duplicate** - Use existing functions

@@ -1,6 +1,6 @@
 /**
  * Model Comparison Commands
- * 
+ *
  * Implements commands for comparing model outputs:
  * - /compare "<prompt>" <model1> <model2> [model3] - Compare models
  */
@@ -12,7 +12,7 @@ import type { ProviderAdapter } from '@ollm/core';
 
 /**
  * /compare "<prompt>" <model1> <model2> [model3] - Compare models
- * 
+ *
  * Requirements: 14.1, 14.2, 14.3, 14.4, 15.1, 15.2, 15.3
  */
 export const compareCommand: Command = {
@@ -23,7 +23,8 @@ export const compareCommand: Command = {
     if (args.length < 3) {
       return {
         success: false,
-        message: 'Usage: /compare "<prompt>" <model1> <model2> [model3...]\n\n' +
+        message:
+          'Usage: /compare "<prompt>" <model1> <model2> [model3...]\n\n' +
           'Example: /compare "Explain recursion" llama3.1:8b mistral:7b',
       };
     }
@@ -55,7 +56,7 @@ export const compareCommand: Command = {
 
       for (const modelResult of result.results) {
         resultLines.push(`--- ${modelResult.model} ---`);
-        
+
         if (modelResult.error) {
           resultLines.push(`Error: ${modelResult.error}`);
         } else {
@@ -64,7 +65,7 @@ export const compareCommand: Command = {
           resultLines.push(`Latency: ${modelResult.latencyMs}ms`);
           resultLines.push(`Speed: ${modelResult.tokensPerSecond.toFixed(2)} tokens/sec`);
         }
-        
+
         resultLines.push('');
       }
 
@@ -85,10 +86,7 @@ export const compareCommand: Command = {
 /**
  * All comparison-related commands
  */
-export const comparisonCommands: Command[] = [
-  compareCommand,
-];
-
+export const comparisonCommands: Command[] = [compareCommand];
 
 /**
  * Create comparison commands with service container dependency injection

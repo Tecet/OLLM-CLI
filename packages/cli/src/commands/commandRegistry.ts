@@ -30,7 +30,7 @@ import type { ServiceContainer } from '@ollm/ollm-cli-core/services/serviceConta
 
 /**
  * Command Registry
- * 
+ *
  * Manages registration and execution of slash commands
  */
 export class CommandRegistry {
@@ -43,25 +43,25 @@ export class CommandRegistry {
   constructor(serviceContainer?: ServiceContainer, setTheme?: (theme: Theme) => void) {
     this.serviceContainer = serviceContainer;
     this.setTheme = setTheme;
-    
+
     // Register built-in commands
     this.register(homeCommand);
-    
+
     // Register session commands
     for (const command of sessionCommands) {
       this.register(command);
     }
-    
+
     // Register snapshot commands
     for (const command of snapshotCommands) {
       this.register(command);
     }
-    
+
     // Register config commands
     for (const command of configCommands) {
       this.register(command);
     }
-    
+
     // Register service-dependent commands
     // If service container is provided, use factory functions
     // Otherwise, use default exports (which work without services)
@@ -72,86 +72,86 @@ export class CommandRegistry {
       for (const command of modelCommands) {
         this.register(command);
       }
-      
+
       for (const command of memoryCommands) {
         this.register(command);
       }
-      
+
       for (const command of templateCommands) {
         this.register(command);
       }
-      
+
       for (const command of comparisonCommands) {
         this.register(command);
       }
-      
+
       for (const command of projectCommands) {
         this.register(command);
       }
     }
-    
+
     // Register provider commands
     for (const command of providerCommands) {
       this.register(command);
     }
-    
+
     // Register git commands
     for (const command of gitCommands) {
       this.register(command);
     }
-    
+
     // Register review commands
     for (const command of reviewCommands) {
       this.register(command);
     }
-    
+
     // Register theme commands with setTheme callback
-    const themeCommandsToRegister = this.setTheme 
+    const themeCommandsToRegister = this.setTheme
       ? createThemeCommands(this.setTheme)
       : themeCommands;
     for (const command of themeCommandsToRegister) {
       this.register(command);
     }
-    
+
     // Register context commands
     for (const command of contextCommands) {
       this.register(command);
     }
-    
+
     // Register metrics commands
     for (const command of metricsCommands) {
       this.register(command);
     }
-    
+
     // Register reasoning commands
     for (const command of reasoningCommands) {
       this.register(command);
     }
-    
+
     // Register utility commands
     for (const command of utilityCommands) {
       this.register(command);
     }
-    
+
     // Register hook commands
     for (const command of hookCommands) {
       this.register(command);
     }
-    
+
     // Register mode commands
     for (const command of modeCommands) {
       this.register(command);
     }
-    
+
     // Register mode shortcuts
     for (const command of modeShortcuts) {
       this.register(command);
     }
-    
+
     // Register workflow command
     this.register(workflowCommand);
   }
-  
+
   /**
    * Register service-dependent commands
    */
@@ -160,40 +160,40 @@ export class CommandRegistry {
     for (const command of createModelCommands(serviceContainer)) {
       this.register(command);
     }
-    
+
     // Register memory commands
     for (const command of createMemoryCommands(serviceContainer)) {
       this.register(command);
     }
-    
+
     // Register template commands
     for (const command of createTemplateCommands(serviceContainer)) {
       this.register(command);
     }
-    
+
     // Register comparison commands
     for (const command of createComparisonCommands(serviceContainer)) {
       this.register(command);
     }
-    
+
     // Register project commands
     for (const command of createProjectCommands(serviceContainer)) {
       this.register(command);
     }
-    
+
     // Register extension commands
     const extensionManager = serviceContainer.getExtensionManager();
     const extensionRegistry = serviceContainer.getExtensionRegistry();
     for (const command of createExtensionCommands(extensionManager, extensionRegistry)) {
       this.register(command);
     }
-    
+
     // Register MCP OAuth commands
     const oauthProvider = serviceContainer.getMCPOAuthProvider();
     for (const command of createMCPOAuthCommands(oauthProvider)) {
       this.register(command);
     }
-    
+
     // Register MCP Health commands (if MCP client is available)
     if (this.mcpClient) {
       const healthMonitor = serviceContainer.getMCPHealthMonitor();
@@ -202,20 +202,20 @@ export class CommandRegistry {
       }
     }
   }
-  
+
   /**
    * Set the service container
    * This allows updating the service container after construction
    */
   setServiceContainer(serviceContainer: ServiceContainer): void {
     this.serviceContainer = serviceContainer;
-    
+
     // Clear existing service-dependent commands
     const serviceCommands = ['/model', '/memory', '/template', '/compare', '/project'];
     for (const cmd of serviceCommands) {
       this.commands.delete(cmd);
     }
-    
+
     // Register new commands with updated service container
     this.registerServiceCommands(serviceContainer);
   }
@@ -226,7 +226,7 @@ export class CommandRegistry {
    */
   setThemeCallback(setTheme: (theme: Theme) => void): void {
     this.setTheme = setTheme;
-    
+
     // Re-register theme commands with the new callback
     this.commands.delete('/theme');
     const themeCommandsToRegister = createThemeCommands(setTheme);
@@ -241,7 +241,7 @@ export class CommandRegistry {
    */
   setMCPClient(mcpClient: MCPClient): void {
     this.mcpClient = mcpClient;
-    
+
     // Re-register MCP health commands if service container is available
     if (this.serviceContainer) {
       // Remove existing MCP health commands
@@ -252,7 +252,7 @@ export class CommandRegistry {
       this.commands.delete('mcp health stop');
       this.commands.delete('mcp health status');
       this.commands.delete('mcp health help');
-      
+
       // Register new commands with MCP client
       const healthMonitor = this.serviceContainer.getMCPHealthMonitor();
       for (const command of createMCPHealthCommands(healthMonitor, mcpClient)) {
@@ -266,7 +266,7 @@ export class CommandRegistry {
    */
   register(command: Command): void {
     this.commands.set(command.name, command);
-    
+
     // Register aliases
     if (command.aliases) {
       for (const alias of command.aliases) {
@@ -282,18 +282,17 @@ export class CommandRegistry {
     const parts = input.trim().split(/\s+/).filter(Boolean);
     const commandName = parts[0] || '';
     const { name: resolvedName, args } = this.resolveCommand(parts);
-    
+
     // Find command
     const command = resolvedName ? this.commands.get(resolvedName) : undefined;
-    
+
     if (!command) {
       // Suggest similar commands
       const suggestionInput = this.normalizeSuggestionInput(parts);
       const suggestions = this.getSuggestions(suggestionInput);
-      const suggestionText = suggestions.length > 0
-        ? `\n\nDid you mean: ${suggestions.join(', ')}?`
-        : '';
-      
+      const suggestionText =
+        suggestions.length > 0 ? `\n\nDid you mean: ${suggestions.join(', ')}?` : '';
+
       return {
         success: false,
         message: `Unknown command: ${commandName}${suggestionText}`,
@@ -303,10 +302,16 @@ export class CommandRegistry {
     try {
       // Build a lightweight CommandContext from available services
       const ctx = {
-        extensionManager: this.serviceContainer ? this.serviceContainer.getExtensionManager() : undefined,
-        extensionRegistry: this.serviceContainer ? this.serviceContainer.getExtensionRegistry() : undefined,
+        extensionManager: this.serviceContainer
+          ? this.serviceContainer.getExtensionManager()
+          : undefined,
+        extensionRegistry: this.serviceContainer
+          ? this.serviceContainer.getExtensionRegistry()
+          : undefined,
         mcpClient: this.mcpClient,
-        hookRegistry: this.serviceContainer ? this.serviceContainer.getHookService().getRegistry() : undefined,
+        hookRegistry: this.serviceContainer
+          ? this.serviceContainer.getHookService().getRegistry()
+          : undefined,
       };
 
       const fn = command.handler ?? command.execute;
@@ -363,26 +368,26 @@ export class CommandRegistry {
 
   /**
    * Get command suggestions based on string similarity
-   * 
+   *
    * Requirements: 22.2
    */
   getSuggestions(input: string): string[] {
     const allCommands = Array.from(this.commands.keys());
     const allAliases = Array.from(this.aliases.keys());
     const allNames = [...allCommands, ...allAliases];
-    
+
     // Calculate Levenshtein distance for each command
-    const distances = allNames.map(name => ({
+    const distances = allNames.map((name) => ({
       name,
       distance: this.levenshteinDistance(input.toLowerCase(), name.toLowerCase()),
     }));
-    
+
     // Sort by distance and take top 3 with distance <= 3
     return distances
-      .filter(d => d.distance <= 3)
+      .filter((d) => d.distance <= 3)
       .sort((a, b) => a.distance - b.distance)
       .slice(0, 3)
-      .map(d => d.name);
+      .map((d) => d.name);
   }
 
   /**

@@ -81,7 +81,8 @@ const BUILT_IN_PROFILES: BuiltInProfile[] = [
       tools: {
         enabled: ['read-file', 'write-file', 'edit-file', 'glob', 'grep', 'ls'],
       },
-      systemPrompt: 'You are working in a TypeScript project. Focus on type safety and modern JavaScript/TypeScript best practices.',
+      systemPrompt:
+        'You are working in a TypeScript project. Focus on type safety and modern JavaScript/TypeScript best practices.',
     },
   },
   {
@@ -96,7 +97,8 @@ const BUILT_IN_PROFILES: BuiltInProfile[] = [
       tools: {
         enabled: ['read-file', 'write-file', 'edit-file', 'glob', 'grep', 'ls', 'shell'],
       },
-      systemPrompt: 'You are working in a Python project. Follow PEP 8 style guidelines and Python best practices.',
+      systemPrompt:
+        'You are working in a Python project. Follow PEP 8 style guidelines and Python best practices.',
     },
   },
   {
@@ -111,7 +113,8 @@ const BUILT_IN_PROFILES: BuiltInProfile[] = [
       tools: {
         enabled: ['read-file', 'write-file', 'edit-file', 'glob', 'grep', 'ls', 'shell'],
       },
-      systemPrompt: 'You are working in a Rust project. Emphasize memory safety, ownership, and zero-cost abstractions.',
+      systemPrompt:
+        'You are working in a Rust project. Emphasize memory safety, ownership, and zero-cost abstractions.',
     },
   },
   {
@@ -126,7 +129,8 @@ const BUILT_IN_PROFILES: BuiltInProfile[] = [
       tools: {
         enabled: ['read-file', 'write-file', 'edit-file', 'glob', 'grep', 'ls', 'shell'],
       },
-      systemPrompt: 'You are working in a Go project. Emphasize simplicity, concurrency, and idiomatic Go patterns.',
+      systemPrompt:
+        'You are working in a Go project. Emphasize simplicity, concurrency, and idiomatic Go patterns.',
     },
   },
   {
@@ -141,7 +145,8 @@ const BUILT_IN_PROFILES: BuiltInProfile[] = [
       tools: {
         enabled: ['read-file', 'write-file', 'edit-file', 'glob', 'grep'],
       },
-      systemPrompt: 'You are working on documentation. Focus on clarity, completeness, and user-friendly explanations.',
+      systemPrompt:
+        'You are working on documentation. Focus on clarity, completeness, and user-friendly explanations.',
     },
   },
 ];
@@ -330,11 +335,17 @@ export class ProjectProfileService {
         throw new Error('Profile tools must be an object');
       }
 
-      if ((profile.tools as { enabled?: unknown }).enabled !== undefined && !Array.isArray((profile.tools as { enabled?: unknown }).enabled)) {
+      if (
+        (profile.tools as { enabled?: unknown }).enabled !== undefined &&
+        !Array.isArray((profile.tools as { enabled?: unknown }).enabled)
+      ) {
         throw new Error('Profile tools.enabled must be an array');
       }
 
-      if ((profile.tools as { disabled?: unknown }).disabled !== undefined && !Array.isArray((profile.tools as { disabled?: unknown }).disabled)) {
+      if (
+        (profile.tools as { disabled?: unknown }).disabled !== undefined &&
+        !Array.isArray((profile.tools as { disabled?: unknown }).disabled)
+      ) {
         throw new Error('Profile tools.disabled must be an array');
       }
     }
@@ -344,8 +355,10 @@ export class ProjectProfileService {
         throw new Error('Profile routing must be an object');
       }
 
-      if ((profile.routing as { defaultProfile?: unknown }).defaultProfile !== undefined &&
-          typeof (profile.routing as { defaultProfile?: unknown }).defaultProfile !== 'string') {
+      if (
+        (profile.routing as { defaultProfile?: unknown }).defaultProfile !== undefined &&
+        typeof (profile.routing as { defaultProfile?: unknown }).defaultProfile !== 'string'
+      ) {
         throw new Error('Profile routing.defaultProfile must be a string');
       }
     }
@@ -355,7 +368,10 @@ export class ProjectProfileService {
    * Apply profile settings (to be implemented by caller)
    * This method returns the merged settings that should be applied
    */
-  applyProfile(profile: ProjectProfile, globalSettings: Partial<ProjectProfile> = {}): ProjectProfile {
+  applyProfile(
+    profile: ProjectProfile,
+    globalSettings: Partial<ProjectProfile> = {}
+  ): ProjectProfile {
     if (!this.enabled) {
       return globalSettings as ProjectProfile;
     }

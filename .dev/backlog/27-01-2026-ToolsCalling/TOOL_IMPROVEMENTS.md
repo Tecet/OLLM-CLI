@@ -7,6 +7,7 @@ Created comprehensive test suites for all core tools with 97 total tests. Curren
 ## Test Results by Tool
 
 ### ✅ Fully Passing (5 tools)
+
 1. **web-search** - 24/24 tests passing
 2. **web-fetch** - 15/15 tests passing (including timeout handling)
 3. **glob** - 11/11 tests passing
@@ -14,6 +15,7 @@ Created comprehensive test suites for all core tools with 97 total tests. Curren
 5. **shell** - 9/9 tests passing
 
 ### ⚠️ Partially Passing (3 tools)
+
 6. **read-file** - 7/10 tests passing (3 failures)
 7. **write-file** - 5/8 tests passing (3 failures)
 8. **ls** - 8/10 tests passing (2 failures)
@@ -21,6 +23,7 @@ Created comprehensive test suites for all core tools with 97 total tests. Curren
 ## Tool Improvements Made
 
 ### All Tools
+
 - Added `CancelledError` type for abort signal handling
 - Improved error handling with specific error types
 - Better error messages with actionable hints
@@ -28,43 +31,51 @@ Created comprehensive test suites for all core tools with 97 total tests. Curren
 ### Specific Improvements
 
 #### read-file.ts
+
 - Returns `CancelledError` when aborted
 - Specific error types: `FileNotFoundError`, `PermissionError`, `FileTooLargeError`, `IsDirectoryError`, `BinaryFileError`, `InvalidLineRangeError`
 
 #### write-file.ts
+
 - Returns `CancelledError` when aborted
 - Specific error types: `FileExistsError`, `PermissionError`, `IsDirectoryError`, `ContentTooLargeError`
 - Atomic write operations with 'wx' flag
 
 #### glob.ts
+
 - Returns `CancelledError` when aborted
 - Respects maxResults limit
 - Proper working directory handling
 
 #### grep.ts
+
 - Returns `CancelledError` when aborted
 - Case-sensitive search option
 - File pattern filtering
 
 #### ls.ts
+
 - Returns `CancelledError` when aborted
 - Specific error types: `DirectoryNotFoundError`, `PermissionError`, `NotADirectoryError`
 - Respects .gitignore patterns
 - Recursive directory listing
 
 #### shell.ts
+
 - Returns `CancelledError` when aborted
 - Specific error types: `TimeoutError`, `IdleTimeoutError`, `ShellExecutionError`
 - Streaming output support
 - Background execution mode
 
 #### web-fetch.ts
+
 - Returns `CancelledError` when aborted
 - Specific error types: `InvalidUrlError`, `UnsupportedProtocolError`, `HttpError`, `TimeoutError`
 - Content truncation with maxLength
 - CSS selector extraction
 
 #### web-search.ts
+
 - DuckDuckGo provider integration (no API key needed)
 - Returns real search results with URLs and titles
 - Anti-hallucination instructions in system prompt
@@ -76,6 +87,7 @@ Created comprehensive test suites for all core tools with 97 total tests. Curren
 The remaining 8 test failures are all related to file system mocking not being applied correctly in vitest. The tools are executing against the real file system instead of the mocked `fs` module.
 
 **Affected tests:**
+
 1. `read-file.test.ts` - "should read entire file" (reads actual file instead of mock)
 2. `read-file.test.ts` - "should read file with line range" (reads actual file)
 3. `read-file.test.ts` - "should handle permission denied" (no error from mock)
@@ -119,17 +131,17 @@ However, this requires changes to all tool implementations and the tool registry
 
 ## Test Coverage Summary
 
-| Tool | Tests | Passing | Failing | Coverage |
-|------|-------|---------|---------|----------|
-| web-search | 24 | 24 | 0 | 100% |
-| web-fetch | 15 | 15 | 0 | 100% |
-| glob | 11 | 11 | 0 | 100% |
-| grep | 10 | 10 | 0 | 100% |
-| shell | 9 | 9 | 0 | 100% |
-| read-file | 10 | 7 | 3 | 70% |
-| write-file | 8 | 5 | 3 | 63% |
-| ls | 10 | 8 | 2 | 80% |
-| **TOTAL** | **97** | **89** | **8** | **92%** |
+| Tool       | Tests  | Passing | Failing | Coverage |
+| ---------- | ------ | ------- | ------- | -------- |
+| web-search | 24     | 24      | 0       | 100%     |
+| web-fetch  | 15     | 15      | 0       | 100%     |
+| glob       | 11     | 11      | 0       | 100%     |
+| grep       | 10     | 10      | 0       | 100%     |
+| shell      | 9      | 9       | 0       | 100%     |
+| read-file  | 10     | 7       | 3       | 70%      |
+| write-file | 8      | 5       | 3       | 63%      |
+| ls         | 10     | 8       | 2       | 80%      |
+| **TOTAL**  | **97** | **89**  | **8**   | **92%**  |
 
 ## Next Steps
 
@@ -141,6 +153,7 @@ However, this requires changes to all tool implementations and the tool registry
 ## Files Modified
 
 ### Tool Implementations
+
 - `packages/core/src/tools/read-file.ts`
 - `packages/core/src/tools/write-file.ts`
 - `packages/core/src/tools/glob.ts`
@@ -151,6 +164,7 @@ However, this requires changes to all tool implementations and the tool registry
 - `packages/core/src/tools/web-search.ts`
 
 ### Test Files Created
+
 - `packages/core/src/tools/__tests__/web-search.test.ts`
 - `packages/core/src/tools/__tests__/web-fetch.test.ts`
 - `packages/core/src/tools/__tests__/read-file.test.ts`

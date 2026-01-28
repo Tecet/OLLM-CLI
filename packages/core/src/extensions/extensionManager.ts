@@ -1,6 +1,6 @@
 /**
  * ExtensionManager handles extension lifecycle
- * 
+ *
  * Discovers, loads, enables, and disables extensions from configured directories.
  * Manages extension state persistence and integrates with hook registry.
  */
@@ -87,10 +87,10 @@ export class ExtensionManager {
 
   /**
    * Load all extensions from configured directories
-   * 
+   *
    * Scans user and workspace extension directories, parses manifests,
    * and creates Extension objects. Invalid extensions are logged and skipped.
-   * 
+   *
    * @returns Array of loaded extensions
    */
   async loadExtensions(): Promise<Extension[]> {
@@ -123,13 +123,11 @@ export class ExtensionManager {
 
   /**
    * Load extensions from a specific directory
-   * 
+   *
    * @param directory - Directory path to scan
    * @returns Array of loaded extensions from this directory
    */
-  private async loadExtensionsFromDirectory(
-    directory: string
-  ): Promise<Extension[]> {
+  private async loadExtensionsFromDirectory(directory: string): Promise<Extension[]> {
     const extensions: Extension[] = [];
 
     try {
@@ -158,9 +156,7 @@ export class ExtensionManager {
 
           try {
             // Parse manifest
-            const manifest = await this.manifestParser.parseManifest(
-              manifestPath
-            );
+            const manifest = await this.manifestParser.parseManifest(manifestPath);
 
             // Create extension object
             const extension = this.createExtension(manifest, extensionPath);
@@ -177,9 +173,7 @@ export class ExtensionManager {
             // Only log error if not in a test environment
             if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
               const errorMessage = error instanceof Error ? error.message : String(error);
-              console.error(
-                `Failed to load extension from '${extensionPath}': ${errorMessage}`
-              );
+              console.error(`Failed to load extension from '${extensionPath}': ${errorMessage}`);
             }
           }
         } catch (_error) {
@@ -199,15 +193,12 @@ export class ExtensionManager {
 
   /**
    * Create an Extension object from a manifest
-   * 
+   *
    * @param manifest - Parsed extension manifest
    * @param path - Path to extension directory
    * @returns Extension object
    */
-  private createExtension(
-    manifest: ExtensionManifest,
-    path: string
-  ): Extension {
+  private createExtension(manifest: ExtensionManifest, path: string): Extension {
     // Convert hook configs to Hook objects
     const hooks: Hook[] = [];
     if (manifest.hooks) {
@@ -257,7 +248,7 @@ export class ExtensionManager {
 
   /**
    * Determine hook source based on extension path
-   * 
+   *
    * @param path - Extension directory path
    * @returns Hook source type
    */
@@ -282,7 +273,7 @@ export class ExtensionManager {
 
   /**
    * Get a specific extension by name
-   * 
+   *
    * @param name - Extension name
    * @returns Extension if found, undefined otherwise
    */
@@ -292,7 +283,7 @@ export class ExtensionManager {
 
   /**
    * Get all loaded extensions
-   * 
+   *
    * @returns Array of all extensions
    */
   getAllExtensions(): Extension[] {
@@ -301,10 +292,10 @@ export class ExtensionManager {
 
   /**
    * Enable an extension
-   * 
+   *
    * Registers hooks with hook registry, starts MCP servers,
    * registers MCP tools with tool registry, and marks extension as enabled.
-   * 
+   *
    * @param name - Extension name
    */
   async enableExtension(name: string): Promise<void> {
@@ -322,7 +313,7 @@ export class ExtensionManager {
       for (const [event, hookConfigs] of Object.entries(extension.manifest.hooks)) {
         for (const hookConfig of hookConfigs) {
           // Find the corresponding Hook object
-          const hook = extension.hooks.find(h => h.name === hookConfig.name);
+          const hook = extension.hooks.find((h) => h.name === hookConfig.name);
           if (hook) {
             this.hookRegistry.registerHook(event as HookEvent, hook);
           }
@@ -331,9 +322,14 @@ export class ExtensionManager {
     }
 
     // Start MCP servers and register tools
-    if (this.mcpClient && this.mcpToolWrapper && this.toolRegistry && extension.manifest.mcpServers) {
+    if (
+      this.mcpClient &&
+      this.mcpToolWrapper &&
+      this.toolRegistry &&
+      extension.manifest.mcpServers
+    ) {
       const serverNames: string[] = [];
-      
+
       for (const [serverName, serverConfig] of Object.entries(extension.manifest.mcpServers)) {
         try {
           // Create a unique server name with extension prefix
@@ -342,7 +338,7 @@ export class ExtensionManager {
 
           // Get extension environment variables for MCP server
           const extensionEnv = this.getExtensionEnvironment(name);
-          
+
           // Merge extension environment with server config env
           const mergedEnv = {
             ...extensionEnv,
@@ -357,57 +353,61 @@ export class ExtensionManager {
 
           // Check if server is already running
           const serverStatus = this.mcpClient.getServerStatus(fullServerName);
-          
+
           if (serverStatus.status === 'connected' || serverStatus.status === 'starting') {
-            if (!isTestEnv) console.log(`MCP server '${fullServerName}' is already running, skipping start`);
-            
+            if (!isTestEnv)
+              console.log(`MCP server '${fullServerName}' is already running, skipping start`);
+
             // Get tools from the already-running server
             const tools = await this.mcpClient.getTools(fullServerName);
-            
+
             // Wrap and register tools
             for (const mcpTool of tools) {
               const wrappedTool = this.mcpToolWrapper.wrapTool(fullServerName, mcpTool);
               this.toolRegistry.register(wrappedTool);
             }
-            
-             if (!isTestEnv) console.log(`MCP server '${fullServerName}' reused with ${tools.length} tools`);
+
+            if (!isTestEnv)
+              console.log(`MCP server '${fullServerName}' reused with ${tools.length} tools`);
           } else if (serverStatus.status === 'error') {
-            if (!isTestEnv) console.log(`MCP server '${fullServerName}' is in error state, restarting...`);
-            
+            if (!isTestEnv)
+              console.log(`MCP server '${fullServerName}' is in error state, restarting...`);
+
             // Stop the errored server
             await this.mcpClient.stopServer(fullServerName);
-            
+
             // Wait a moment for clean shutdown
-            await new Promise(resolve => setTimeout(resolve, 500));
-            
+            await new Promise((resolve) => setTimeout(resolve, 500));
+
             // Start fresh
             await this.mcpClient.startServer(fullServerName, configWithEnv);
-            
+
             // Get tools from the server
             const tools = await this.mcpClient.getTools(fullServerName);
-            
+
             // Wrap and register tools
             for (const mcpTool of tools) {
               const wrappedTool = this.mcpToolWrapper.wrapTool(fullServerName, mcpTool);
               this.toolRegistry.register(wrappedTool);
             }
-             if (!isTestEnv) console.log(`MCP server '${fullServerName}' restarted with ${tools.length} tools`);
+            if (!isTestEnv)
+              console.log(`MCP server '${fullServerName}' restarted with ${tools.length} tools`);
           } else {
             // Server not running, start it
             await this.mcpClient.startServer(fullServerName, configWithEnv);
-            
+
             // Get tools from the server
             const tools = await this.mcpClient.getTools(fullServerName);
-            
+
             // Wrap and register each tool
             for (const mcpTool of tools) {
               const wrappedTool = this.mcpToolWrapper.wrapTool(fullServerName, mcpTool);
               this.toolRegistry.register(wrappedTool);
             }
-            
-            if (!isTestEnv) console.log(`Started MCP server '${fullServerName}' with ${tools.length} tools`);
-          }
 
+            if (!isTestEnv)
+              console.log(`Started MCP server '${fullServerName}' with ${tools.length} tools`);
+          }
         } catch (error) {
           // Log error but don't fail the entire enable operation
           // Only log error if not in a test environment
@@ -440,10 +440,10 @@ export class ExtensionManager {
 
   /**
    * Disable an extension
-   * 
+   *
    * Unregisters hooks, stops MCP servers, removes MCP tools,
    * and marks extension as disabled.
-   * 
+   *
    * @param name - Extension name
    */
   async disableExtension(name: string): Promise<void> {
@@ -466,7 +466,7 @@ export class ExtensionManager {
     // Stop MCP servers and remove tools
     if (this.mcpClient && this.toolRegistry) {
       const serverNames = this.extensionMCPServers.get(name) || [];
-      
+
       for (const serverName of serverNames) {
         try {
           // Check server status before stopping
@@ -516,9 +516,9 @@ export class ExtensionManager {
 
   /**
    * Reload an extension
-   * 
+   *
    * Disables, reloads from disk, and re-enables the extension.
-   * 
+   *
    * @param name - Extension name
    */
   async reloadExtension(name: string): Promise<void> {
@@ -555,7 +555,7 @@ export class ExtensionManager {
 
   /**
    * Get resolved settings for an extension
-   * 
+   *
    * @param name - Extension name
    * @returns Resolved settings or undefined if extension not found
    */
@@ -565,7 +565,7 @@ export class ExtensionManager {
 
   /**
    * Get environment variables for an extension's hooks/MCP servers
-   * 
+   *
    * @param name - Extension name
    * @returns Environment variables object
    */
@@ -580,7 +580,7 @@ export class ExtensionManager {
 
   /**
    * Get configuration schema for all extensions
-   * 
+   *
    * @returns Configuration schema object
    */
   getExtensionsConfigSchema(): Record<string, unknown> {
@@ -601,7 +601,7 @@ export class ExtensionManager {
 
   /**
    * Get extension settings with sensitive values redacted (for logging)
-   * 
+   *
    * @param name - Extension name
    * @returns Settings object with sensitive values redacted
    */
@@ -628,7 +628,7 @@ export class ExtensionManager {
 
   /**
    * Get extension environment variables with sensitive values redacted (for logging)
-   * 
+   *
    * @param name - Extension name
    * @returns Environment variables with sensitive values redacted
    */
@@ -644,7 +644,7 @@ export class ExtensionManager {
 
   /**
    * Get the skill registry
-   * 
+   *
    * @returns Skill registry instance
    */
   getSkillRegistry(): SkillRegistry | undefined {
@@ -653,7 +653,7 @@ export class ExtensionManager {
 
   /**
    * Set MCP client (for CLI layer injection)
-   * 
+   *
    * @param mcpClient - MCP client instance
    */
   setMCPClient(mcpClient: MCPClient): void {
@@ -662,7 +662,7 @@ export class ExtensionManager {
 
   /**
    * Get MCP client
-   * 
+   *
    * @returns MCP client instance or undefined if not set
    */
   getMCPClient(): MCPClient | undefined {
@@ -671,7 +671,7 @@ export class ExtensionManager {
 
   /**
    * Set MCP tool wrapper (for CLI layer injection)
-   * 
+   *
    * @param mcpToolWrapper - MCP tool wrapper instance
    */
   setMCPToolWrapper(mcpToolWrapper: MCPToolWrapper): void {
@@ -680,7 +680,7 @@ export class ExtensionManager {
 
   /**
    * Get extension state for persistence
-   * 
+   *
    * @returns Array of extension states
    */
   getExtensionStates(): ExtensionState[] {
@@ -692,7 +692,7 @@ export class ExtensionManager {
 
   /**
    * Restore extension states from persistence
-   * 
+   *
    * @param states - Array of extension states to restore
    */
   async restoreExtensionStates(states: ExtensionState[]): Promise<void> {

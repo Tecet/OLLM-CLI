@@ -14,9 +14,9 @@ export { useContextEvents } from './hooks/useContextEvents.js';
 export { useChatNetwork } from './hooks/useChatNetwork.js';
 
 // Utils
-export { 
-  resolveTierForSize, 
-  toOperationalMode, 
-  loadTierPromptWithFallback, 
-  stripSection 
+export {
+  resolveTierForSize,
+  toOperationalMode,
+  loadTierPromptWithFallback,
+  stripSection,
 } from './utils/promptUtils.js';

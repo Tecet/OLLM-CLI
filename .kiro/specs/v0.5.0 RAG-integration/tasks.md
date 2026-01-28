@@ -7,6 +7,7 @@ This implementation plan breaks down the RAG Integration feature into discrete, 
 ## Current Status
 
 ✅ **Completed**:
+
 - Basic directory structure created (`packages/core/src/rag/`)
 - Core interfaces defined (RAGSystem.ts)
 - LanceDB setup and initialization (LanceDBSetup.ts)
@@ -14,6 +15,7 @@ This implementation plan breaks down the RAG Integration feature into discrete, 
 - Basic schema tests written
 
 ⏳ **Remaining**:
+
 - Install dependencies (`lancedb`, `@xenova/transformers`, `chokidar`)
 - Implement all core components (TextChunker, EmbeddingService, VectorStore, CodebaseIndex, RAGManager)
 - Write comprehensive tests (unit + property-based)
@@ -37,13 +39,11 @@ This implementation plan breaks down the RAG Integration feature into discrete, 
     - Handle edge cases (empty text, single line, very long lines)
     - Use approximate token counting (chars / 4) for performance
     - _Requirements: 1.7_
-  
   - [ ] 2.2 Write property test for chunk size and overlap
     - Create `packages/core/src/rag/__tests__/textChunker.property.test.ts`
     - **Property 4: Chunk Size and Overlap**
     - **Validates: Requirements 1.7**
     - Use fast-check with minimum 100 iterations
-  
   - [ ] 2.3 Write unit tests for chunker edge cases
     - Create `packages/core/src/rag/__tests__/textChunker.test.ts`
     - Test empty files, single-line files, files with no newlines
@@ -60,19 +60,16 @@ This implementation plan breaks down the RAG Integration feature into discrete, 
     - Add error handling with retry logic
     - Use Xenova/all-MiniLM-L6-v2 model (384 dimensions)
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6_
-  
   - [ ] 3.2 Write property test for embedding dimensions
     - Create `packages/core/src/rag/__tests__/embeddingService.property.test.ts`
     - **Property 9: Embedding Dimensions**
     - **Validates: Requirements 3.2**
     - Test with various text inputs (empty, short, long)
-  
   - [ ] 3.3 Write property test for embedding performance
     - Add to `packages/core/src/rag/__tests__/embeddingService.property.test.ts`
     - **Property 10: Embedding Performance**
     - **Validates: Requirements 3.3**
     - Ensure <100ms per chunk
-  
   - [ ] 3.4 Write unit tests for model loading and caching
     - Create `packages/core/src/rag/__tests__/embeddingService.test.ts`
     - Test first-time model download (may be slow)
@@ -90,31 +87,26 @@ This implementation plan breaks down the RAG Integration feature into discrete, 
     - Add checksum-based corruption detection
     - Use existing LanceDBSetup for initialization
     - _Requirements: 4.1, 4.2, 4.3, 4.6, 4.7, 9.3_
-  
   - [ ] 4.2 Write property test for persistence round-trip
     - Create `packages/core/src/rag/__tests__/vectorStore.property.test.ts`
     - **Property 11: Vector Store Persistence Round-Trip**
     - **Validates: Requirements 4.1, 4.5**
     - Test insert → shutdown → restart → query
-  
   - [ ] 4.3 Write property test for incremental update isolation
     - Add to `packages/core/src/rag/__tests__/vectorStore.property.test.ts`
     - **Property 12: Incremental Update Isolation**
     - **Validates: Requirements 4.3**
     - Ensure updates don't affect other records
-  
   - [ ] 4.4 Write property test for concurrent read safety
     - Add to `packages/core/src/rag/__tests__/vectorStore.property.test.ts`
     - **Property 13: Concurrent Read Safety**
     - **Validates: Requirements 4.6**
     - Test multiple simultaneous reads
-  
   - [ ] 4.5 Write property test for write atomicity
     - Add to `packages/core/src/rag/__tests__/vectorStore.property.test.ts`
     - **Property 14: Write Atomicity**
     - **Validates: Requirements 4.7**
     - Test interrupted writes
-  
   - [ ] 4.6 Write unit tests for corruption detection
     - Create `packages/core/src/rag/__tests__/vectorStore.test.ts`
     - Test checksum validation
@@ -136,38 +128,31 @@ This implementation plan breaks down the RAG Integration feature into discrete, 
     - Integrate VectorStore for persistence
     - Add progress event emission
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 8.4, 8.6_
-  
-  - [ ]* 6.2 Write property test for automatic workspace indexing
+  - [ ]\* 6.2 Write property test for automatic workspace indexing
     - Create `packages/core/src/rag/__tests__/codebaseIndex.property.test.ts`
     - **Property 1: Automatic Workspace Indexing**
     - **Validates: Requirements 1.1, 1.5**
-  
-  - [ ]* 6.3 Write property test for file system change propagation
+  - [ ]\* 6.3 Write property test for file system change propagation
     - Add to `packages/core/src/rag/__tests__/codebaseIndex.property.test.ts`
     - **Property 2: File System Change Propagation**
     - **Validates: Requirements 1.2, 1.3, 1.4**
-  
-  - [ ]* 6.4 Write property test for file size filtering
+  - [ ]\* 6.4 Write property test for file size filtering
     - Add to `packages/core/src/rag/__tests__/codebaseIndex.property.test.ts`
     - **Property 3: File Size Filtering**
     - **Validates: Requirements 1.6**
-  
-  - [ ]* 6.5 Write property test for rate limiting
+  - [ ]\* 6.5 Write property test for rate limiting
     - Add to `packages/core/src/rag/__tests__/codebaseIndex.property.test.ts`
     - **Property 26: Rate Limiting**
     - **Validates: Requirements 8.4**
-  
-  - [ ]* 6.6 Write property test for progress reporting
+  - [ ]\* 6.6 Write property test for progress reporting
     - Add to `packages/core/src/rag/__tests__/codebaseIndex.property.test.ts`
     - **Property 27: Progress Reporting**
     - **Validates: Requirements 8.6**
-  
-  - [ ]* 6.7 Write property test for error isolation
+  - [ ]\* 6.7 Write property test for error isolation
     - Add to `packages/core/src/rag/__tests__/codebaseIndex.property.test.ts`
     - **Property 28: Error Isolation**
     - **Validates: Requirements 9.1**
-  
-  - [ ]* 6.8 Write unit tests for indexing edge cases
+  - [ ]\* 6.8 Write unit tests for indexing edge cases
     - Create `packages/core/src/rag/__tests__/codebaseIndex.test.ts`
     - Test empty workspace
     - Test workspace with only excluded files
@@ -184,28 +169,23 @@ This implementation plan breaks down the RAG Integration feature into discrete, 
     - Implement result formatting with source attribution
     - Add performance monitoring
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6_
-  
-  - [ ]* 7.2 Write property test for search result correctness
+  - [ ]\* 7.2 Write property test for search result correctness
     - Add to `packages/core/src/rag/__tests__/codebaseIndex.property.test.ts`
     - **Property 5: Search Result Correctness**
     - **Validates: Requirements 2.1, 2.2, 2.6**
-  
-  - [ ]* 7.3 Write property test for search performance
+  - [ ]\* 7.3 Write property test for search performance
     - Add to `packages/core/src/rag/__tests__/codebaseIndex.property.test.ts`
     - **Property 6: Search Performance**
     - **Validates: Requirements 2.3**
-  
-  - [ ]* 7.4 Write property test for chunk merging
+  - [ ]\* 7.4 Write property test for chunk merging
     - Add to `packages/core/src/rag/__tests__/codebaseIndex.property.test.ts`
     - **Property 7: Chunk Merging**
     - **Validates: Requirements 2.4**
-  
-  - [ ]* 7.5 Write property test for search result completeness
+  - [ ]\* 7.5 Write property test for search result completeness
     - Add to `packages/core/src/rag/__tests__/codebaseIndex.property.test.ts`
     - **Property 8: Search Result Completeness**
     - **Validates: Requirements 2.5**
-  
-  - [ ]* 7.6 Write unit tests for search edge cases
+  - [ ]\* 7.6 Write unit tests for search edge cases
     - Add to `packages/core/src/rag/__tests__/codebaseIndex.test.ts`
     - Test empty index search
     - Test no results above threshold
@@ -226,33 +206,27 @@ This implementation plan breaks down the RAG Integration feature into discrete, 
     - Add manual clearing functionality
     - Use existing schemas from schemas.ts
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6_
-  
-  - [ ]* 9.2 Write property test for knowledge base isolation
+  - [ ]\* 9.2 Write property test for knowledge base isolation
     - Create `packages/core/src/rag/__tests__/knowledgeBase.property.test.ts`
     - **Property 15: Knowledge Base Isolation**
     - **Validates: Requirements 5.1**
-  
-  - [ ]* 9.3 Write property test for knowledge storage routing
+  - [ ]\* 9.3 Write property test for knowledge storage routing
     - Add to `packages/core/src/rag/__tests__/knowledgeBase.property.test.ts`
     - **Property 16: Knowledge Storage Routing**
     - **Validates: Requirements 5.2**
-  
-  - [ ]* 9.4 Write property test for knowledge search routing
+  - [ ]\* 9.4 Write property test for knowledge search routing
     - Add to `packages/core/src/rag/__tests__/knowledgeBase.property.test.ts`
     - **Property 17: Knowledge Search Routing**
     - **Validates: Requirements 5.3**
-  
-  - [ ]* 9.5 Write property test for knowledge metadata completeness
+  - [ ]\* 9.5 Write property test for knowledge metadata completeness
     - Add to `packages/core/src/rag/__tests__/knowledgeBase.property.test.ts`
     - **Property 18: Knowledge Metadata Completeness**
     - **Validates: Requirements 5.4**
-  
-  - [ ]* 9.6 Write property test for time range filtering
+  - [ ]\* 9.6 Write property test for time range filtering
     - Add to `packages/core/src/rag/__tests__/knowledgeBase.property.test.ts`
     - **Property 19: Time Range Filtering**
     - **Validates: Requirements 5.5**
-  
-  - [ ]* 9.7 Write unit tests for knowledge base operations
+  - [ ]\* 9.7 Write unit tests for knowledge base operations
     - Create `packages/core/src/rag/__tests__/knowledgeBase.test.ts`
     - Test clearing knowledge base
     - Test empty knowledge base queries
@@ -269,18 +243,15 @@ This implementation plan breaks down the RAG Integration feature into discrete, 
     - Add default configuration values
     - Implement descriptive error messages for invalid config
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7, 7.8_
-  
-  - [ ]* 10.2 Write property test for configuration application
+  - [ ]\* 10.2 Write property test for configuration application
     - Create `packages/core/src/rag/__tests__/config.property.test.ts`
     - **Property 24: Configuration Application**
     - **Validates: Requirements 7.2, 7.3, 7.4, 7.5, 7.6**
-  
-  - [ ]* 10.3 Write property test for configuration validation
+  - [ ]\* 10.3 Write property test for configuration validation
     - Add to `packages/core/src/rag/__tests__/config.property.test.ts`
     - **Property 25: Configuration Validation**
     - **Validates: Requirements 7.7, 7.8**
-  
-  - [ ]* 10.4 Write unit tests for configuration edge cases
+  - [ ]\* 10.4 Write unit tests for configuration edge cases
     - Create `packages/core/src/rag/__tests__/config.test.ts`
     - Test missing optional fields
     - Test invalid values for each field
@@ -302,38 +273,31 @@ This implementation plan breaks down the RAG Integration feature into discrete, 
     - Add error handling with retry logic
     - Coordinate CodebaseIndex, KnowledgeBase, EmbeddingService, VectorStore
     - _Requirements: 2.1, 2.2, 2.3, 5.2, 5.3, 5.6, 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 9.2_
-  
-  - [ ]* 11.2 Write property test for automatic context injection
+  - [ ]\* 11.2 Write property test for automatic context injection
     - Create `packages/core/src/rag/__tests__/ragManager.property.test.ts`
     - **Property 20: Automatic Context Injection**
     - **Validates: Requirements 6.1, 6.2**
-  
-  - [ ]* 11.3 Write property test for token limit compliance
+  - [ ]\* 11.3 Write property test for token limit compliance
     - Add to `packages/core/src/rag/__tests__/ragManager.property.test.ts`
     - **Property 21: Token Limit Compliance**
     - **Validates: Requirements 6.3**
-  
-  - [ ]* 11.4 Write property test for source attribution
+  - [ ]\* 11.4 Write property test for source attribution
     - Add to `packages/core/src/rag/__tests__/ragManager.property.test.ts`
     - **Property 22: Source Attribution**
     - **Validates: Requirements 6.4**
-  
-  - [ ]* 11.5 Write property test for recency prioritization
+  - [ ]\* 11.5 Write property test for recency prioritization
     - Add to `packages/core/src/rag/__tests__/ragManager.property.test.ts`
     - **Property 23: Recency Prioritization**
     - **Validates: Requirements 6.6**
-  
-  - [ ]* 11.6 Write property test for retry with exponential backoff
+  - [ ]\* 11.6 Write property test for retry with exponential backoff
     - Add to `packages/core/src/rag/__tests__/ragManager.property.test.ts`
     - **Property 29: Retry with Exponential Backoff**
     - **Validates: Requirements 9.2**
-  
-  - [ ]* 11.7 Write property test for data validation
+  - [ ]\* 11.7 Write property test for data validation
     - Add to `packages/core/src/rag/__tests__/ragManager.property.test.ts`
     - **Property 30: Data Validation**
     - **Validates: Requirements 9.6**
-  
-  - [ ]* 11.8 Write unit tests for RAG Manager operations
+  - [ ]\* 11.8 Write unit tests for RAG Manager operations
     - Create `packages/core/src/rag/__tests__/ragManager.test.ts`
     - Test initialization and shutdown
     - Test status reporting
@@ -353,8 +317,7 @@ This implementation plan breaks down the RAG Integration feature into discrete, 
     - Add RAG context to mode's system prompt
     - Handle cases where RAG is disabled
     - _Requirements: 10.1, 10.2, 10.3_
-  
-  - [ ]* 13.2 Write integration tests for mode activation with RAG
+  - [ ]\* 13.2 Write integration tests for mode activation with RAG
     - Create `packages/core/src/rag/__tests__/integration/modeManager.test.ts`
     - Test debugger mode with RAG context
     - Test security mode with RAG context
@@ -370,8 +333,7 @@ This implementation plan breaks down the RAG Integration feature into discrete, 
     - Modify Context Manager to reserve tokens for RAG
     - Add RAG context size tracking
     - _Requirements: 10.4_
-  
-  - [ ]* 14.2 Write integration tests for token budget management
+  - [ ]\* 14.2 Write integration tests for token budget management
     - Create `packages/core/src/rag/__tests__/integration/contextManager.test.ts`
     - Test RAG context respects token limits
     - Test RAG context with various budget sizes
@@ -385,8 +347,7 @@ This implementation plan breaks down the RAG Integration feature into discrete, 
     - Add settings validation for RAG section
     - Document all RAG configuration options
     - _Requirements: 10.5_
-  
-  - [ ]* 15.2 Write integration tests for settings loading
+  - [ ]\* 15.2 Write integration tests for settings loading
     - Create `packages/core/src/rag/__tests__/integration/settings.test.ts`
     - Test loading RAG configuration from settings
     - Test settings validation
@@ -404,8 +365,7 @@ This implementation plan breaks down the RAG Integration feature into discrete, 
     - Add `/rag rebuild` command to rebuild index
     - Add command help text and examples
     - _Requirements: All (user interface)_
-  
-  - [ ]* 16.2 Write integration tests for CLI commands
+  - [ ]\* 16.2 Write integration tests for CLI commands
     - Create `packages/cli/src/__tests__/commands/rag.test.ts`
     - Test each CLI command
     - Test command error handling
@@ -422,8 +382,7 @@ This implementation plan breaks down the RAG Integration feature into discrete, 
     - Add logging for all operations
     - Integrate with existing logging infrastructure
     - _Requirements: 8.1, 8.2_
-  
-  - [ ]* 17.2 Write unit tests for performance monitoring
+  - [ ]\* 17.2 Write unit tests for performance monitoring
     - Create `packages/core/src/rag/__tests__/metrics.test.ts`
     - Test metrics collection
     - Test logging output
@@ -431,7 +390,7 @@ This implementation plan breaks down the RAG Integration feature into discrete, 
     - _Requirements: 8.1, 8.2_
 
 - [ ] 18. Final integration testing
-  - [ ]* 18.1 Write end-to-end integration tests
+  - [ ]\* 18.1 Write end-to-end integration tests
     - Create `packages/core/src/rag/__tests__/integration/e2e.test.ts`
     - Test complete workflow: index → search → mode activation → context injection
     - Test file watching and incremental updates
@@ -439,8 +398,7 @@ This implementation plan breaks down the RAG Integration feature into discrete, 
     - Test concurrent operations (indexing + searching)
     - Test error recovery scenarios
     - _Requirements: All_
-  
-  - [ ]* 18.2 Write performance benchmark tests
+  - [ ]\* 18.2 Write performance benchmark tests
     - Create `packages/core/src/rag/__tests__/benchmarks/performance.test.ts`
     - Test initial indexing of 1000 files (<30 seconds)
     - Test search query performance (<500ms)
@@ -464,7 +422,6 @@ This implementation plan breaks down the RAG Integration feature into discrete, 
     - Add troubleshooting guide for common issues
     - Add FAQ section
     - _Requirements: All (documentation)_
-  
   - [ ] 20.2 Create developer documentation
     - Create `packages/core/src/rag/ARCHITECTURE.md`
     - Document architecture and design decisions

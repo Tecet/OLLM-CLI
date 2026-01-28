@@ -37,18 +37,18 @@ export interface ChatTabProps {
 
 /**
  * ChatTab component
- * 
+ *
  * Main chat interface with message history and input box.
  * This component manages multiple windows (Chat, Terminal, Editor) and displays
  * the active window based on WindowContext state.
- * 
+ *
  * Window Management:
  * - Chat: Default window showing message history
  * - Terminal: Interactive terminal for command execution
  * - Editor: Code editor for file editing
- * 
+ *
  * The WindowSwitcher component provides visual indication of the active window.
- * 
+ *
  * Performance Optimizations:
  * - Memoized with React.memo to prevent unnecessary re-renders
  * - Expensive computations (buildChatLines) are memoized with useMemo
@@ -59,13 +59,19 @@ function ChatTabComponent(props: ChatTabProps) {
   // Profile renders for performance monitoring
   profileRender('ChatTab', props);
   const { metricsConfig, reasoningConfig, columnWidth, height, showBorder = true } = props;
-  const { state: chatState, scrollOffset, selectedLineIndex, setSelectedLineIndex, updateMessage } = useChat(); 
+  const {
+    state: chatState,
+    scrollOffset,
+    selectedLineIndex,
+    setSelectedLineIndex,
+    updateMessage,
+  } = useChat();
   const { state: uiState } = useUI();
   const { stdout } = useStdout();
   const { isFocused, exitToNavBar } = useFocusManager();
   const { activeWindow, switchWindow } = useWindow();
   const { activeKeybinds } = useKeybinds();
-  
+
   const hasFocus = isFocused('chat-history');
 
   // Use provided config or defaults
@@ -88,39 +94,50 @@ function ChatTabComponent(props: ChatTabProps) {
 
   // Memoize expensive chat line building operation
   // This is one of the most expensive operations in the chat UI
-  const lines = useMemo(() => buildChatLines(
-    chatState.messages,
-    uiState.theme,
-    finalMetricsConfig,
-    finalReasoningConfig,
-    0,
-    layoutMetrics.contentWidth - 2,
-    2
-  ), [chatState.messages, uiState.theme, finalMetricsConfig, finalReasoningConfig, layoutMetrics.contentWidth]);
+  const lines = useMemo(
+    () =>
+      buildChatLines(
+        chatState.messages,
+        uiState.theme,
+        finalMetricsConfig,
+        finalReasoningConfig,
+        0,
+        layoutMetrics.contentWidth - 2,
+        2
+      ),
+    [
+      chatState.messages,
+      uiState.theme,
+      finalMetricsConfig,
+      finalReasoningConfig,
+      layoutMetrics.contentWidth,
+    ]
+  );
   const lastLineCountRef = useRef(0);
-  
+
   // Memoize selected line calculations to avoid recalculating on every render
   const selectedLineData = useMemo(() => {
     const clampedIndex = Math.min(Math.max(selectedLineIndex, 0), Math.max(0, lines.length - 1));
     const selectedLine = lines[clampedIndex];
     const selectedMessage = selectedLine?.messageId
-      ? chatState.messages.find(item => item.id === selectedLine.messageId)
+      ? chatState.messages.find((item) => item.id === selectedLine.messageId)
       : undefined;
-    
+
     const selectedHasToggle = Boolean(
       (selectedLine?.kind === 'header' &&
         selectedMessage &&
-        (selectedMessage.reasoning || selectedMessage.toolCalls?.some(tc => {
-          const hasArgs = tc.arguments && Object.keys(tc.arguments).length > 0;
-          return hasArgs || Boolean(tc.result);
-        }))) ||
+        (selectedMessage.reasoning ||
+          selectedMessage.toolCalls?.some((tc) => {
+            const hasArgs = tc.arguments && Object.keys(tc.arguments).length > 0;
+            return hasArgs || Boolean(tc.result);
+          }))) ||
       (selectedLine?.kind === 'diff-summary' &&
         selectedMessage &&
         messageHasLargeDiff(selectedMessage.content))
     );
-    
+
     const toggleHint = selectedHasToggle ? 'Left/Right to toggle details' : undefined;
-    
+
     return { selectedLine, selectedMessage, selectedHasToggle, toggleHint };
   }, [selectedLineIndex, lines, chatState.messages]);
 
@@ -143,133 +160,140 @@ function ChatTabComponent(props: ChatTabProps) {
 
   // Note: Scroll logic is now handled in ChatContext + App.tsx global shortcuts
   // This ensures scrolling works even when InputBox is focused.
-  useInput((input, key) => {
-    if (!hasFocus) return;
+  useInput(
+    (input, key) => {
+      if (!hasFocus) return;
 
-    const isWindowSwitchLeft = (key.ctrl && key.leftArrow) || isKey(input, key, activeKeybinds.layout.switchWindowLeft);
-    const isWindowSwitchRight = (key.ctrl && key.rightArrow) || isKey(input, key, activeKeybinds.layout.switchWindowRight);
+      const isWindowSwitchLeft =
+        (key.ctrl && key.leftArrow) || isKey(input, key, activeKeybinds.layout.switchWindowLeft);
+      const isWindowSwitchRight =
+        (key.ctrl && key.rightArrow) || isKey(input, key, activeKeybinds.layout.switchWindowRight);
 
-    if (isWindowSwitchLeft) {
-      switchWindow('prev');
-      return;
-    }
-    if (isWindowSwitchRight) {
-      switchWindow('next');
-      return;
-    }
+      if (isWindowSwitchLeft) {
+        switchWindow('prev');
+        return;
+      }
+      if (isWindowSwitchRight) {
+        switchWindow('next');
+        return;
+      }
 
-    if (key.upArrow) {
-      setSelectedLineIndex((prev: number) => Math.max(0, prev - 1));
-      return;
-    }
-    if (key.downArrow) {
-      setSelectedLineIndex((prev: number) => Math.min(Math.max(0, lines.length - 1), prev + 1));
-      return;
-    }
-    if ((key.rightArrow || key.leftArrow) && !key.ctrl && !key.meta) {
-      const { selectedLine: line, selectedMessage: message } = selectedLineData;
-      if (!line?.messageId || !message) return;
-      const isDiffSummaryLine = line.kind === 'diff-summary';
-      const hasExpandableDiff = isDiffSummaryLine && messageHasLargeDiff(message.content);
-      const hasExpandableReasoning = !isDiffSummaryLine && Boolean(message.reasoning);
-      const hasExpandableTools = !isDiffSummaryLine && Boolean(message.toolCalls?.some(tc => {
-        const hasArgs = tc.arguments && Object.keys(tc.arguments).length > 0;
-        return hasArgs || Boolean(tc.result);
-      }));
-      if (!hasExpandableDiff && !hasExpandableReasoning && !hasExpandableTools) return;
-      updateMessage(message.id, { expanded: key.rightArrow ? true : false });
-      return;
-    }
+      if (key.upArrow) {
+        setSelectedLineIndex((prev: number) => Math.max(0, prev - 1));
+        return;
+      }
+      if (key.downArrow) {
+        setSelectedLineIndex((prev: number) => Math.min(Math.max(0, lines.length - 1), prev + 1));
+        return;
+      }
+      if ((key.rightArrow || key.leftArrow) && !key.ctrl && !key.meta) {
+        const { selectedLine: line, selectedMessage: message } = selectedLineData;
+        if (!line?.messageId || !message) return;
+        const isDiffSummaryLine = line.kind === 'diff-summary';
+        const hasExpandableDiff = isDiffSummaryLine && messageHasLargeDiff(message.content);
+        const hasExpandableReasoning = !isDiffSummaryLine && Boolean(message.reasoning);
+        const hasExpandableTools =
+          !isDiffSummaryLine &&
+          Boolean(
+            message.toolCalls?.some((tc) => {
+              const hasArgs = tc.arguments && Object.keys(tc.arguments).length > 0;
+              return hasArgs || Boolean(tc.result);
+            })
+          );
+        if (!hasExpandableDiff && !hasExpandableReasoning && !hasExpandableTools) return;
+        updateMessage(message.id, { expanded: key.rightArrow ? true : false });
+        return;
+      }
 
-    // Allow ESC to bubble to global handler (unless in menu)
-    if (key.escape && !chatState.menuState.active && input !== '0') return;
+      // Allow ESC to bubble to global handler (unless in menu)
+      if (key.escape && !chatState.menuState.active && input !== '0') return;
 
-    if (input === '0') {
-      exitToNavBar();
-      return;
-    }
-  }, { isActive: hasFocus });
+      if (input === '0') {
+        exitToNavBar();
+        return;
+      }
+    },
+    { isActive: hasFocus }
+  );
 
   // Memoize window switcher to prevent unnecessary re-renders
   const windowSwitcher = useMemo(() => {
     if (!props.showWindowSwitcher) return null;
     return (
-      <Box width="100%" flexShrink={0} flexDirection="row" justifyContent="flex-end" paddingRight={1}>
+      <Box
+        width="100%"
+        flexShrink={0}
+        flexDirection="row"
+        justifyContent="flex-end"
+        paddingRight={1}
+      >
         <WindowSwitcher />
       </Box>
     );
   }, [props.showWindowSwitcher]);
 
   return (
-    <Box 
-      flexDirection="column" 
-      height={height} 
-      overflow="hidden" 
-      width="100%" 
+    <Box
+      flexDirection="column"
+      height={height}
+      overflow="hidden"
+      width="100%"
       borderStyle={showBorder ? (uiState.theme.border.style as BoxProps['borderStyle']) : undefined}
       borderColor={hasFocus ? uiState.theme.text.secondary : uiState.theme.border.primary}
     >
-        {/* Window Switcher - shows which window is active (Chat/Terminal/Editor) */}
-        {windowSwitcher}
-        
-        {/* Render active window content */}
-        {activeWindow === 'chat' && (
-          <Box 
-            flexDirection="column"
-            paddingX={1}
-            flexGrow={1}
-            flexShrink={1}
-          >
-            <ChatHistory
-              messages={chatState.messages}
-              streaming={chatState.streaming}
-              waitingForResponse={chatState.waitingForResponse}
-              scrollToBottom={true}
-              theme={uiState.theme}
-              scrollOffset={scrollOffset}
-              maxVisibleLines={layoutMetrics.maxVisibleLines}
-              paddingY={0}
-              metricsConfig={finalMetricsConfig}
-              reasoningConfig={finalReasoningConfig}
-              width={columnWidth ? columnWidth - 2 : 78} 
-              selectedLineIndex={selectedLineIndex}
-              lines={lines}
-              scrollHintTop={hasFocus ? "Keyboard Up to scroll" : undefined}
-              scrollHintBottom={hasFocus ? "Keyboard Down to scroll" : undefined}
-              toggleHint={selectedLineData.toggleHint}
-            />
-          </Box>
-        )}
-        
-        {/* Terminal Window */}
-        {activeWindow === 'terminal' && (
-          <Box flexGrow={1} width="100%">
-            <Terminal 
-              height={height - (props.showWindowSwitcher ? 3 : 2)} 
-            />
-          </Box>
-        )}
-        
-        {/* Editor Window */}
-        {activeWindow === 'editor' && (
-          <Box flexGrow={1} width="100%">
-            <EditorMockup 
-              width={columnWidth ? columnWidth - 2 : 78} 
-              height={height - (props.showWindowSwitcher ? 4 : 3)} 
-            />
-          </Box>
-        )}
+      {/* Window Switcher - shows which window is active (Chat/Terminal/Editor) */}
+      {windowSwitcher}
+
+      {/* Render active window content */}
+      {activeWindow === 'chat' && (
+        <Box flexDirection="column" paddingX={1} flexGrow={1} flexShrink={1}>
+          <ChatHistory
+            messages={chatState.messages}
+            streaming={chatState.streaming}
+            waitingForResponse={chatState.waitingForResponse}
+            scrollToBottom={true}
+            theme={uiState.theme}
+            scrollOffset={scrollOffset}
+            maxVisibleLines={layoutMetrics.maxVisibleLines}
+            paddingY={0}
+            metricsConfig={finalMetricsConfig}
+            reasoningConfig={finalReasoningConfig}
+            width={columnWidth ? columnWidth - 2 : 78}
+            selectedLineIndex={selectedLineIndex}
+            lines={lines}
+            scrollHintTop={hasFocus ? 'Keyboard Up to scroll' : undefined}
+            scrollHintBottom={hasFocus ? 'Keyboard Down to scroll' : undefined}
+            toggleHint={selectedLineData.toggleHint}
+          />
+        </Box>
+      )}
+
+      {/* Terminal Window */}
+      {activeWindow === 'terminal' && (
+        <Box flexGrow={1} width="100%">
+          <Terminal height={height - (props.showWindowSwitcher ? 3 : 2)} />
+        </Box>
+      )}
+
+      {/* Editor Window */}
+      {activeWindow === 'editor' && (
+        <Box flexGrow={1} width="100%">
+          <EditorMockup
+            width={columnWidth ? columnWidth - 2 : 78}
+            height={height - (props.showWindowSwitcher ? 4 : 3)}
+          />
+        </Box>
+      )}
     </Box>
   );
 }
 
-
 /**
  * Memoized ChatTab component
- * 
+ *
  * Only re-renders when props actually change, preventing unnecessary
  * re-renders when parent components update.
- * 
+ *
  * Custom comparison function ensures we only re-render when meaningful
  * props change (height, width, configs, etc.)
  */

@@ -7,13 +7,17 @@ This enhanced task tracking system integrates seamlessly with Kiro's built-in ta
 ## How It Works
 
 ### 1. Kiro's Built-in Task Management
+
 When you or the agent calls the `taskStatus` tool to start or complete a task:
+
 - **Kiro IDE automatically updates the checkbox** (`[ ]` → `[x]` or vice versa)
 - The markdown file is edited by Kiro
 - You don't manually check boxes - Kiro does it for you
 
 ### 2. Automatic Timestamp Sync
+
 After Kiro updates the task checkbox:
+
 - Hook detects the file was edited
 - Agent is prompted to run the sync command
 - Sync command adds appropriate timestamps:
@@ -22,6 +26,7 @@ After Kiro updates the task checkbox:
   - **Duration calculations** between start and completion
 
 ### 3. Credit Tracking
+
 Credits can be manually added after completing work on a task.
 
 ## Components
@@ -29,6 +34,7 @@ Credits can be manually added after completing work on a task.
 ### Scripts
 
 **`scripts/task-tracker.js`** - Core task tracking functionality
+
 - `start` - Manually start a task with timestamp
 - `complete` - Manually complete a task with timestamp and duration
 - `credits` - Add credits to a task
@@ -38,11 +44,13 @@ Credits can be manually added after completing work on a task.
 ### Hooks
 
 **`.kiro/hooks/task-timestamp-on-status-change.kiro.hook`**
+
 - Triggers on task file edits
 - Runs `sync` command to add timestamps automatically
 - Works alongside Kiro's built-in task management
 
 **`.kiro/hooks/task-tracker-auto.kiro.hook`**
+
 - Triggers after agent execution completes
 - Prompts to add credits based on execution log
 - Complements Kiro's native task tracking
@@ -123,15 +131,18 @@ npm run task:status .kiro/specs/stage-XX/tasks.md
 ## Troubleshooting
 
 ### Timestamps not being added automatically?
+
 - Check that `.kiro/hooks/task-timestamp-on-status-change.kiro.hook` is enabled
 - Verify the hook has `"enabled": true`
 - Try running sync manually: `npm run task:sync <task-file>`
 
 ### Duplicate timestamps?
+
 - The sync command is idempotent - it won't add duplicate timestamps
 - If you see duplicates, they were likely added manually
 
 ### Hook conflicts?
+
 - The new system is designed to complement, not replace, Kiro's built-in tools
 - Hooks trigger AFTER Kiro's task management completes
 - No conflicts should occur
@@ -139,6 +150,7 @@ npm run task:status .kiro/specs/stage-XX/tasks.md
 ## Migration from Old System
 
 If you were using the old hook system:
+
 1. The new hooks are already in place
 2. Run `npm run task:sync <task-file>` to add missing timestamps
 3. Continue using Kiro's built-in task links as normal

@@ -17,7 +17,7 @@ The application uses a 3-level hierarchical navigation system:
 ```
 Level 1: Top-Level Navigation
 ├── User Input (chat-input)
-├── Chat Window (chat-history) 
+├── Chat Window (chat-history)
 ├── Nav Bar (nav-bar)
 └── Side Panel (context-panel)
 
@@ -42,16 +42,19 @@ Level 3: Modals/Dialogs
 ### Navigation Keys
 
 #### Tab Key (Cycle Forward)
+
 ```
 User Input → Chat Window → Nav Bar → Side Panel → User Input
 ```
 
 #### Shift+Tab (Cycle Backward)
+
 ```
 User Input ← Chat Window ← Nav Bar ← Side Panel ← User Input
 ```
 
 #### ESC Key (Hierarchical Up)
+
 ```
 Level 3 (Modal) → ESC → Level 2 (Tab Content)
 Level 2 (Tab Content) → ESC → Level 1 (Nav Bar)
@@ -60,6 +63,7 @@ Level 1 (Nav Bar) → 2nd ESC → User Input
 ```
 
 #### Enter Key (Activate/Go Deeper)
+
 ```
 Nav Bar → Enter → Activate selected tab content
 Tab Content → Enter → Activate focused element
@@ -68,6 +72,7 @@ Tab Content → Enter → Activate focused element
 ### Focus IDs (Canonical List)
 
 **Level 1 Focus IDs:**
+
 - `chat-input` - User input area
 - `chat-history` - Main chat/window area (Chat, Terminal, Editor)
 - `nav-bar` - Top navigation bar
@@ -76,6 +81,7 @@ Tab Content → Enter → Activate focused element
 - `functions` - Functions panel
 
 **Level 2 Focus IDs (Tab-Specific):**
+
 - `file-tree` - File explorer tree view
 - `file-search` - File search dialog
 - `tools-list` - Tools tab list
@@ -87,6 +93,7 @@ Tab Content → Enter → Activate focused element
 - `settings-form` - Settings tab form
 
 **Level 3 Focus IDs (Modals):**
+
 - `confirmation-dialog` - Confirmation dialogs
 - `input-dialog` - Input dialogs
 - `menu-overlay` - Menu overlays
@@ -105,16 +112,17 @@ Tab Content → Enter → Activate focused element
 ### Documentation Standards
 
 #### JSDoc Comments
+
 All public functions must have JSDoc comments:
 
-```typescript
+````typescript
 /**
  * Switches to the next window in the container
- * 
+ *
  * @param containerId - The ID of the window container
  * @param direction - Direction to switch ('next' or 'prev')
  * @returns The new active window ID
- * 
+ *
  * @example
  * ```typescript
  * switchContainerWindow('main-window', 'next');
@@ -123,9 +131,10 @@ All public functions must have JSDoc comments:
 function switchContainerWindow(containerId: string, direction: 'next' | 'prev'): string {
   // Implementation
 }
-```
+````
 
 #### Inline Comments
+
 Complex logic must have explanatory comments:
 
 ```typescript
@@ -136,20 +145,21 @@ const contentHeight = height - indicatorHeight;
 ```
 
 #### Architecture Comments
+
 Major architectural decisions must be documented:
 
 ```typescript
 /**
  * Window Container Architecture
- * 
+ *
  * This component uses a unified container pattern to manage multiple windows
  * (Chat, Terminal, Editor) without z-index issues. The key design decisions:
- * 
+ *
  * 1. Single rendering path - no special cases or overlays
  * 2. Container-scoped state - each container manages its own windows
  * 3. Visual indicators - dots show active window
  * 4. Input routing - manual linking controls which window receives input
- * 
+ *
  * See: .kiro/specs/window-container-refactor/design.md
  */
 ```
@@ -157,6 +167,7 @@ Major architectural decisions must be documented:
 ### Naming Conventions
 
 #### Files
+
 - Components: `PascalCase.tsx` (e.g., `WindowContainer.tsx`)
 - Services: `camelCase.ts` (e.g., `contextManager.ts`)
 - Hooks: `useCamelCase.ts` (e.g., `useWindowContainer.ts`)
@@ -164,18 +175,21 @@ Major architectural decisions must be documented:
 - Tests: `*.test.ts` or `*.test.tsx`
 
 #### Functions
+
 - Components: `PascalCase` (e.g., `WindowContainer`)
 - Hooks: `useCamelCase` (e.g., `useWindowContainer`)
 - Utilities: `camelCase` (e.g., `switchContainerWindow`)
 - Event handlers: `handleCamelCase` (e.g., `handleWindowChange`)
 
 #### Variables
+
 - Constants: `UPPER_SNAKE_CASE` (e.g., `MAX_WINDOWS`)
 - Regular: `camelCase` (e.g., `activeWindowId`)
 - Private: `_camelCase` (e.g., `_internalState`)
 - Boolean: `isCamelCase` or `hasCamelCase` (e.g., `isActive`, `hasError`)
 
 #### Types/Interfaces
+
 - Interfaces: `PascalCase` (e.g., `WindowContainerProps`)
 - Types: `PascalCase` (e.g., `WindowType`)
 - Enums: `PascalCase` (e.g., `FocusLevel`)
@@ -220,12 +234,14 @@ import { WindowIndicator } from './WindowIndicator.js';
 ### 1. Window System Cleanup
 
 **Current Issues:**
+
 - Terminal/Editor use special cases in `renderActiveTab()`
 - WindowSwitcher duplicated in ChatTab
 - Inconsistent rendering paths
 - Z-index issues with navbar
 
 **Cleanup Strategy:**
+
 ```typescript
 // BEFORE (Legacy Pattern)
 const renderActiveTab = (height: number, width: number) => {
@@ -267,6 +283,7 @@ const renderActiveTab = (height: number, width: number) => {
 ```
 
 **Files to Clean:**
+
 - `packages/cli/src/ui/App.tsx` - Remove special cases
 - `packages/cli/src/ui/components/tabs/ChatTab.tsx` - Remove WindowSwitcher
 - `packages/cli/src/ui/components/WindowSwitcher.tsx` - Mark as deprecated
@@ -274,36 +291,47 @@ const renderActiveTab = (height: number, width: number) => {
 ### 2. Focus Management Cleanup
 
 **Current Issues:**
+
 - Duplicate focus logic across components
 - Unused focus IDs
 - Inconsistent focus detection
 - Missing focus documentation
 
 **Cleanup Strategy:**
+
 ```typescript
 // BEFORE (Duplicate Pattern)
 // In ChatTab.tsx
-useInput((input, key) => {
-  if (key.escape) {
-    focusManager.exitOneLevel();
-  }
-}, { isActive: hasFocus });
+useInput(
+  (input, key) => {
+    if (key.escape) {
+      focusManager.exitOneLevel();
+    }
+  },
+  { isActive: hasFocus }
+);
 
 // In ToolsTab.tsx
-useInput((input, key) => {
-  if (key.escape) {
-    focusManager.exitOneLevel();
-  }
-}, { isActive: hasFocus });
+useInput(
+  (input, key) => {
+    if (key.escape) {
+      focusManager.exitOneLevel();
+    }
+  },
+  { isActive: hasFocus }
+);
 
 // AFTER (Consolidated Pattern)
 // In shared hook: useTabNavigation.ts
 export function useTabNavigation(hasFocus: boolean) {
-  useInput((input, key) => {
-    if (key.escape) {
-      focusManager.exitOneLevel();
-    }
-  }, { isActive: hasFocus });
+  useInput(
+    (input, key) => {
+      if (key.escape) {
+        focusManager.exitOneLevel();
+      }
+    },
+    { isActive: hasFocus }
+  );
 }
 
 // In each tab
@@ -311,6 +339,7 @@ useTabNavigation(hasFocus);
 ```
 
 **Files to Clean:**
+
 - `packages/cli/src/features/context/FocusContext.tsx` - Remove unused focus IDs
 - All tab components - Consolidate focus logic
 - Create `packages/cli/src/ui/hooks/useTabNavigation.ts` - Shared hook
@@ -318,12 +347,14 @@ useTabNavigation(hasFocus);
 ### 3. Navigation System Cleanup
 
 **Current Issues:**
+
 - Keyboard shortcut handling scattered
 - Duplicate ESC handlers
 - Inconsistent navigation levels
 - Missing navigation documentation
 
 **Cleanup Strategy:**
+
 ```typescript
 // BEFORE (Scattered Pattern)
 // In App.tsx
@@ -335,40 +366,51 @@ useInput((input, key) => {
 
 // In ChatTab.tsx
 useInput((input, key) => {
-  if (key.escape) { /* handle */ }
+  if (key.escape) {
+    /* handle */
+  }
 });
 
 // In ToolsTab.tsx
 useInput((input, key) => {
-  if (key.escape) { /* handle */ }
+  if (key.escape) {
+    /* handle */
+  }
 });
 
 // AFTER (Consolidated Pattern)
 // In useGlobalKeyboardShortcuts.ts
 export function useGlobalKeyboardShortcuts() {
   const shortcuts = useKeybinds();
-  
-  useInput((input, key) => {
-    // Tab navigation
-    if (isKey(input, key, shortcuts.tabNavigation.tabChat)) handleTabSwitch('chat');
-    if (isKey(input, key, shortcuts.tabNavigation.tabTools)) handleTabSwitch('tools');
-    // ... all shortcuts in one place
-  }, { isActive: true });
+
+  useInput(
+    (input, key) => {
+      // Tab navigation
+      if (isKey(input, key, shortcuts.tabNavigation.tabChat)) handleTabSwitch('chat');
+      if (isKey(input, key, shortcuts.tabNavigation.tabTools)) handleTabSwitch('tools');
+      // ... all shortcuts in one place
+    },
+    { isActive: true }
+  );
 }
 
 // In useTabEscapeHandler.ts
 export function useTabEscapeHandler(hasFocus: boolean) {
   const focusManager = useFocusManager();
-  
-  useInput((input, key) => {
-    if (key.escape) {
-      focusManager.exitOneLevel();
-    }
-  }, { isActive: hasFocus });
+
+  useInput(
+    (input, key) => {
+      if (key.escape) {
+        focusManager.exitOneLevel();
+      }
+    },
+    { isActive: hasFocus }
+  );
 }
 ```
 
 **Files to Clean:**
+
 - `packages/cli/src/ui/App.tsx` - Extract keyboard shortcuts to hook
 - Create `packages/cli/src/ui/hooks/useGlobalKeyboardShortcuts.ts`
 - Create `packages/cli/src/ui/hooks/useTabEscapeHandler.ts`
@@ -377,19 +419,21 @@ export function useTabEscapeHandler(hasFocus: boolean) {
 ### 4. Context Management Cleanup
 
 **Current Issues:**
+
 - Unused compression strategies
 - Complex snapshot logic
 - Missing JSDoc comments
 - Unclear compression algorithm
 
 **Cleanup Strategy:**
+
 ```typescript
 // BEFORE (Unclear Pattern)
 export class CompressionService {
   compress(content: string) {
     // Complex logic with no comments
     const chunks = this.splitIntoChunks(content);
-    const compressed = chunks.map(c => this.compressChunk(c));
+    const compressed = chunks.map((c) => this.compressChunk(c));
     return compressed.join('');
   }
 }
@@ -398,27 +442,27 @@ export class CompressionService {
 export class CompressionService {
   /**
    * Compresses content using a sliding window algorithm
-   * 
+   *
    * Algorithm:
    * 1. Split content into semantic chunks (by message boundaries)
    * 2. Compress each chunk independently
    * 3. Preserve recent messages (last 10) without compression
    * 4. Summarize older messages using LLM
-   * 
+   *
    * @param content - The content to compress
    * @returns Compressed content with preserved structure
    */
   compress(content: string): string {
     // Split content into semantic chunks (by message boundaries)
     const chunks = this.splitIntoChunks(content);
-    
+
     // Compress each chunk independently
-    const compressed = chunks.map(chunk => this.compressChunk(chunk));
-    
+    const compressed = chunks.map((chunk) => this.compressChunk(chunk));
+
     // Join compressed chunks
     return compressed.join('');
   }
-  
+
   /**
    * Splits content into semantic chunks at message boundaries
    * This preserves message structure for better compression
@@ -430,6 +474,7 @@ export class CompressionService {
 ```
 
 **Files to Clean:**
+
 - `packages/core/src/context/compressionService.ts` - Add JSDoc and comments
 - `packages/core/src/context/snapshotManager.ts` - Document snapshot logic
 - `packages/core/src/context/contextManager.ts` - Add architecture comments
@@ -437,13 +482,15 @@ export class CompressionService {
 ### 5. Provider System Cleanup
 
 **Current Issues:**
+
 - Unused provider methods
 - Inconsistent error handling
 - Missing type documentation
 - Unclear provider lifecycle
 
 **Cleanup Strategy:**
-```typescript
+
+````typescript
 // BEFORE (Unclear Pattern)
 export interface ProviderAdapter {
   chatStream(request: ProviderRequest): AsyncIterable<ProviderEvent>;
@@ -454,16 +501,16 @@ export interface ProviderAdapter {
 // AFTER (Documented Pattern)
 /**
  * Provider Adapter Interface
- * 
+ *
  * Defines the contract for LLM provider implementations. All providers
  * must implement chatStream, while other methods are optional.
- * 
+ *
  * Lifecycle:
  * 1. Provider instantiated with config
  * 2. chatStream called for each request
  * 3. Events streamed back to caller
  * 4. Provider cleaned up on app exit
- * 
+ *
  * @example
  * ```typescript
  * const provider = new LocalProvider({ baseUrl: 'http://localhost:11434' });
@@ -475,31 +522,32 @@ export interface ProviderAdapter {
 export interface ProviderAdapter {
   /**
    * Streams chat responses from the LLM
-   * 
+   *
    * @param request - The chat request with messages and options
    * @returns Async iterable of provider events (text, tool_call, finish)
    * @throws {ProviderError} If the provider encounters an error
    */
   chatStream(request: ProviderRequest): AsyncIterable<ProviderEvent>;
-  
+
   /**
    * Counts tokens in the given text (optional)
-   * 
+   *
    * @param text - The text to count tokens for
    * @returns The number of tokens, or undefined if not supported
    */
   countTokens?(text: string): number;
-  
+
   /**
    * Lists available models (optional)
-   * 
+   *
    * @returns Array of model names, or undefined if not supported
    */
   listModels?(): Promise<string[]>;
 }
-```
+````
 
 **Files to Clean:**
+
 - `packages/core/src/provider/types.ts` - Add comprehensive JSDoc
 - `packages/ollm-bridge/src/provider/localProvider.ts` - Document lifecycle
 - Add `packages/core/src/provider/README.md` - Provider development guide
@@ -511,27 +559,11 @@ export interface ProviderAdapter {
 **Pattern**: When multiple components have similar logic, extract to shared hook
 
 **Example**:
+
 ```typescript
 // Before: Duplicated in ChatTab, ToolsTab, HooksTab
-useInput((input, key) => {
-  if (key.escape) {
-    if (dialogOpen) {
-      closeDialog();
-    } else {
-      focusManager.exitOneLevel();
-    }
-  }
-}, { isActive: hasFocus });
-
-// After: Shared hook
-export function useDialogEscape(
-  hasFocus: boolean,
-  dialogOpen: boolean,
-  closeDialog: () => void
-) {
-  const focusManager = useFocusManager();
-  
-  useInput((input, key) => {
+useInput(
+  (input, key) => {
     if (key.escape) {
       if (dialogOpen) {
         closeDialog();
@@ -539,7 +571,26 @@ export function useDialogEscape(
         focusManager.exitOneLevel();
       }
     }
-  }, { isActive: hasFocus });
+  },
+  { isActive: hasFocus }
+);
+
+// After: Shared hook
+export function useDialogEscape(hasFocus: boolean, dialogOpen: boolean, closeDialog: () => void) {
+  const focusManager = useFocusManager();
+
+  useInput(
+    (input, key) => {
+      if (key.escape) {
+        if (dialogOpen) {
+          closeDialog();
+        } else {
+          focusManager.exitOneLevel();
+        }
+      }
+    },
+    { isActive: hasFocus }
+  );
 }
 ```
 
@@ -548,6 +599,7 @@ export function useDialogEscape(
 **Pattern**: Use consistent error handling patterns across the codebase
 
 **Example**:
+
 ```typescript
 // Before: Inconsistent error handling
 try {
@@ -588,6 +640,7 @@ function handleFileError(error: unknown, operation: string, path: string) {
 **Pattern**: Use React.memo and useMemo for expensive operations
 
 **Example**:
+
 ```typescript
 // Before: Re-computes on every render
 function WindowContainer(props: WindowContainerProps) {
@@ -596,7 +649,7 @@ function WindowContainer(props: WindowContainerProps) {
     { id: 'terminal', label: 'Terminal', component: TerminalWindow },
     { id: 'editor', label: 'Editor', component: EditorWindow },
   ];
-  
+
   return <Box>{/* render */}</Box>;
 }
 
@@ -607,7 +660,7 @@ function WindowContainer(props: WindowContainerProps) {
     { id: 'terminal', label: 'Terminal', component: TerminalWindow },
     { id: 'editor', label: 'Editor', component: EditorWindow },
   ], []);
-  
+
   return <Box>{/* render */}</Box>;
 }
 
@@ -622,6 +675,7 @@ export const WindowContainer = React.memo(function WindowContainer(props) {
 **Pattern**: Extract complex conditionals to named functions
 
 **Example**:
+
 ```typescript
 // Before: Complex inline conditional
 if (
@@ -647,6 +701,7 @@ if (isMainWindowFocused()) {
 **Pattern**: Identify and remove unused code
 
 **Checklist**:
+
 - [ ] Search for unused exports (ESLint can help)
 - [ ] Remove commented-out code
 - [ ] Remove unused imports
@@ -655,6 +710,7 @@ if (isMainWindowFocused()) {
 - [ ] Remove unused types
 
 **Tools**:
+
 ```bash
 # Find unused exports
 npx ts-prune
@@ -682,10 +738,7 @@ const visibleItems = items.slice(scrollOffset, scrollOffset + visibleCount);
 For expensive operations triggered by user input:
 
 ```typescript
-const debouncedSearch = useMemo(
-  () => debounce((query: string) => performSearch(query), 300),
-  []
-);
+const debouncedSearch = useMemo(() => debounce((query: string) => performSearch(query), 300), []);
 ```
 
 ### Pattern 3: Lazy Loading
@@ -703,7 +756,7 @@ Prevent memory leaks:
 ```typescript
 useEffect(() => {
   const subscription = observable.subscribe(handler);
-  
+
   return () => {
     subscription.unsubscribe();
   };
@@ -724,7 +777,7 @@ describe('WindowContainer', () => {
         {...mockProps}
       />
     );
-    
+
     expect(getByText('Chat Content')).toBeInTheDocument();
     expect(queryByText('Terminal Content')).not.toBeInTheDocument();
   });
@@ -737,13 +790,13 @@ describe('WindowContainer', () => {
 describe('Window Switching', () => {
   it('should switch windows with Ctrl+Right', async () => {
     const { user } = renderApp();
-    
+
     // Start on chat window
     expect(screen.getByText('Chat')).toHaveClass('active');
-    
+
     // Press Ctrl+Right
     await user.keyboard('{Control>}{ArrowRight}{/Control}');
-    
+
     // Should switch to terminal
     expect(screen.getByText('Terminal')).toHaveClass('active');
   });
@@ -758,15 +811,12 @@ import fc from 'fast-check';
 describe('Context Compression', () => {
   it('should preserve message count', () => {
     fc.assert(
-      fc.property(
-        fc.array(fc.string(), { minLength: 1, maxLength: 100 }),
-        (messages) => {
-          const compressed = compressMessages(messages);
-          const decompressed = decompressMessages(compressed);
-          
-          expect(decompressed.length).toBe(messages.length);
-        }
-      )
+      fc.property(fc.array(fc.string(), { minLength: 1, maxLength: 100 }), (messages) => {
+        const compressed = compressMessages(messages);
+        const decompressed = decompressMessages(compressed);
+
+        expect(decompressed.length).toBe(messages.length);
+      })
     );
   });
 });
@@ -775,6 +825,7 @@ describe('Context Compression', () => {
 ## Success Metrics
 
 ### Code Quality Metrics
+
 - Test coverage > 80%
 - TypeScript strict mode compliance
 - Zero ESLint errors
@@ -782,6 +833,7 @@ describe('Context Compression', () => {
 - All public APIs documented
 
 ### Performance Metrics
+
 - UI operations < 100ms
 - Memory usage stable over time
 - No memory leaks
@@ -789,6 +841,7 @@ describe('Context Compression', () => {
 - Fast startup time
 
 ### Maintainability Metrics
+
 - Consistent naming conventions
 - Consistent file structure
 - Consistent error handling
@@ -798,24 +851,28 @@ describe('Context Compression', () => {
 ## Migration Path
 
 ### Phase 1: Audit (Week 1)
+
 1. Create audit documents for each module
 2. Identify cleanup opportunities
 3. Prioritize by severity
 4. Document findings
 
 ### Phase 2: Cleanup (Week 2)
+
 1. Remove dead code
 2. Consolidate duplicates
 3. Add documentation
 4. Update tests
 
 ### Phase 3: Optimize (Week 3)
+
 1. Profile performance
 2. Fix bottlenecks
 3. Eliminate memory leaks
 4. Measure improvements
 
 ### Phase 4: Polish (Week 4)
+
 1. Ensure consistency
 2. Fill test gaps
 3. Final review

@@ -60,7 +60,7 @@ This implementation plan creates the foundational monorepo structure for OLLM CL
     - _Requirements: 4.1, 4.3, 4.4_
   - [x] 4.2 Create `.prettierrc.json` and `.prettierignore`
     - Configure semi, singleQuote, tabWidth, trailingComma, printWidth
-    - Ignore dist/, node_modules/, coverage/, *.md in prettierignore
+    - Ignore dist/, node_modules/, coverage/, \*.md in prettierignore
     - _Requirements: 4.2, 4.4_
 
 - [x] 5. Implement base CLI entry point
@@ -88,11 +88,11 @@ This implementation plan creates the foundational monorepo structure for OLLM CL
 - [x] 6. Configure testing framework
   - [x] 6.1 Create `vitest.config.ts` at workspace root
     - Configure for TypeScript and React
-    - Set test file patterns: **/*.test.ts, **/*.test.tsx
+    - Set test file patterns: **/\*.test.ts, **/\*.test.tsx
     - Configure coverage if needed
     - _Requirements: 7.1, 7.2, 7.3_
   - [x] 6.2 Create placeholder test in packages/cli
-    - Create packages/cli/src/__tests__/cli.test.ts
+    - Create packages/cli/src/**tests**/cli.test.ts
     - Add a simple passing test to verify setup
     - _Requirements: 7.1_
 

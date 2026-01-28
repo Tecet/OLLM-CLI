@@ -1,9 +1,9 @@
 /**
  * ProgressIndicator Component
- * 
+ *
  * Progress indicator for long-running operations like install and restart.
  * Shows operation status with spinner and optional progress percentage.
- * 
+ *
  * Validates: NFR-7
  */
 
@@ -70,7 +70,7 @@ function getOperationIcon(operation: ProgressIndicatorProps['operation']): strin
 
 /**
  * ProgressIndicator Component
- * 
+ *
  * Displays progress for long-running operations with:
  * - Animated spinner
  * - Operation type and server name
@@ -98,9 +98,7 @@ export function ProgressIndicator({
             <Text color="red" bold>
               ✗ {operationText} Failed
             </Text>
-            {serverName && (
-              <Text color="red"> - {serverName}</Text>
-            )}
+            {serverName && <Text color="red"> - {serverName}</Text>}
           </Box>
           <Box marginTop={1}>
             <Text dimColor>{error}</Text>
@@ -114,14 +112,18 @@ export function ProgressIndicator({
   if (complete) {
     return (
       <FadeTransition show={true} duration={300}>
-        <Box flexDirection="column" borderStyle="round" borderColor="green" paddingX={2} paddingY={1}>
+        <Box
+          flexDirection="column"
+          borderStyle="round"
+          borderColor="green"
+          paddingX={2}
+          paddingY={1}
+        >
           <Box>
             <Text color="green" bold>
               ✓ {operationText} Complete
             </Text>
-            {serverName && (
-              <Text color="green"> - {serverName}</Text>
-            )}
+            {serverName && <Text color="green"> - {serverName}</Text>}
           </Box>
         </Box>
       </FadeTransition>
@@ -139,9 +141,7 @@ export function ProgressIndicator({
               {icon} {operationText}
             </Text>
           </Pulse>
-          {serverName && (
-            <Text color="cyan"> - {serverName}</Text>
-          )}
+          {serverName && <Text color="cyan"> - {serverName}</Text>}
         </Box>
 
         {/* Progress bar (if progress provided) */}
@@ -156,22 +156,14 @@ export function ProgressIndicator({
         {/* Current step */}
         {step && (
           <Box marginTop={1}>
-            <StreamingIndicator
-              text={step}
-              spinnerType="dots"
-              color="cyan"
-            />
+            <StreamingIndicator text={step} spinnerType="dots" color="cyan" />
           </Box>
         )}
 
         {/* Generic spinner if no step */}
         {!step && (
           <Box marginTop={1}>
-            <StreamingIndicator
-              text="Please wait..."
-              spinnerType="dots"
-              color="cyan"
-            />
+            <StreamingIndicator text="Please wait..." spinnerType="dots" color="cyan" />
           </Box>
         )}
       </Box>

@@ -1,6 +1,6 @@
 /**
  * Manifest parser for extension system
- * 
+ *
  * Parses and validates extension manifest.json files using JSON schema validation.
  */
 
@@ -123,7 +123,7 @@ export class ManifestParser {
 
   /**
    * Parse manifest from file path
-   * 
+   *
    * @param path - Path to manifest.json file
    * @returns Parsed and validated manifest
    * @throws Error if file cannot be read or manifest is invalid
@@ -136,9 +136,7 @@ export class ManifestParser {
       const manifest = JSON.parse(content);
 
       if (!this.validateManifest(manifest)) {
-        throw new Error(
-          `Invalid manifest at ${path}:\n${this.errors.join('\n')}`
-        );
+        throw new Error(`Invalid manifest at ${path}:\n${this.errors.join('\n')}`);
       }
 
       return manifest as ExtensionManifest;
@@ -152,7 +150,7 @@ export class ManifestParser {
 
   /**
    * Validate manifest structure against schema
-   * 
+   *
    * @param manifest - Manifest object to validate
    * @returns True if valid, false otherwise
    */
@@ -164,7 +162,8 @@ export class ManifestParser {
     if (!valid && this.validator.errors) {
       this.errors = this.validator.errors.map((error: ErrorObject) => {
         const fallbackPath = (error as ErrorObject & { dataPath?: string }).dataPath;
-        const path = (error as ErrorObject & { instancePath?: string }).instancePath || fallbackPath || 'root';
+        const path =
+          (error as ErrorObject & { instancePath?: string }).instancePath || fallbackPath || 'root';
         const message = error.message || 'validation failed';
         return `${path}: ${message}`;
       });
@@ -175,7 +174,7 @@ export class ManifestParser {
 
   /**
    * Get validation errors from last validation
-   * 
+   *
    * @returns Array of error messages
    */
   getErrors(): string[] {

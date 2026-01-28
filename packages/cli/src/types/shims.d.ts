@@ -6,7 +6,9 @@ declare module '@ollm/ollm-cli-core/hooks' {
   export type HookEvent = string;
   export type HookConfig = any;
   export type HookRegistry = any;
-  export interface HookDebugger { [key: string]: any }
+  export interface HookDebugger {
+    [key: string]: any;
+  }
   export function getHookDebugger(): HookDebugger;
   export function setHookDebugger(debuggerInstance: HookDebugger): void;
 }

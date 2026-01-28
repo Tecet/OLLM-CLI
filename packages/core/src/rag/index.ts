@@ -1,6 +1,6 @@
 /**
  * RAG (Retrieval-Augmented Generation) System
- * 
+ *
  * Exports all RAG-related interfaces, classes, and utilities.
  */
 
@@ -22,21 +22,13 @@ export type {
   KnowledgeResult,
   IndexStats,
   KnowledgeStats,
-  RAGStatus
+  RAGStatus,
 } from './RAGSystem.js';
 
 // LanceDB setup
-export {
-  LanceDBSetup,
-  createDefaultRAGConfig
-} from './LanceDBSetup.js';
+export { LanceDBSetup, createDefaultRAGConfig } from './LanceDBSetup.js';
 
-export type {
-  TableSchema,
-  SchemaField,
-  LanceDBConnection,
-  TableStats
-} from './LanceDBSetup.js';
+export type { TableSchema, SchemaField, LanceDBConnection, TableStats } from './LanceDBSetup.js';
 
 // Schemas
 export {
@@ -50,5 +42,5 @@ export {
   validateRecord,
   createCodebaseRecordId,
   parseCodebaseRecordId,
-  createKnowledgeRecordId
+  createKnowledgeRecordId,
 } from './schemas.js';

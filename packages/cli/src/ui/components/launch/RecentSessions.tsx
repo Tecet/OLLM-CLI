@@ -41,13 +41,11 @@ export const RecentSessions: React.FC<RecentSessionsProps> = ({ sessions, theme 
       <Text bold color={theme.text.accent}>
         Recent Sessions
       </Text>
-      
+
       <Box flexDirection="column" paddingLeft={2}>
         {sessions.slice(0, 5).map((session) => (
           <Box key={session.id} gap={2}>
-            <Text color={theme.text.primary}>
-              • {session.id.substring(0, 8)}
-            </Text>
+            <Text color={theme.text.primary}>• {session.id.substring(0, 8)}</Text>
             <Text dimColor color={theme.text.secondary}>
               {session.messageCount} messages
             </Text>
@@ -57,7 +55,7 @@ export const RecentSessions: React.FC<RecentSessionsProps> = ({ sessions, theme 
           </Box>
         ))}
       </Box>
-      
+
       <Box marginTop={1}>
         <Text dimColor color={theme.text.secondary}>
           Use <Text color={theme.text.accent}>/session resume &lt;id&gt;</Text> to continue

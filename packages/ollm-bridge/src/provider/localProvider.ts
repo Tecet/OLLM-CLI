@@ -34,13 +34,13 @@ export interface LocalProviderConfig {
  * Based on empirical testing with various models
  */
 const TOKEN_MULTIPLIERS: Record<string, number> = {
-  'llama': 0.25,      // ~4 chars per token
-  'mistral': 0.27,    // ~3.7 chars per token
-  'gemma': 0.26,      // ~3.8 chars per token
-  'qwen': 0.28,       // ~3.6 chars per token
-  'phi': 0.26,        // ~3.8 chars per token
-  'codellama': 0.25,  // ~4 chars per token
-  'default': 0.25,    // Conservative default
+  llama: 0.25, // ~4 chars per token
+  mistral: 0.27, // ~3.7 chars per token
+  gemma: 0.26, // ~3.8 chars per token
+  qwen: 0.28, // ~3.6 chars per token
+  phi: 0.26, // ~3.8 chars per token
+  codellama: 0.25, // ~4 chars per token
+  default: 0.25, // Conservative default
 };
 
 const logger = createLogger('LocalProvider');
@@ -57,7 +57,7 @@ function payloadHasTools(payload: { tools?: unknown }): boolean {
 /**
  * Check if error message indicates tool unsupported error
  * Uses multiple patterns to detect various Ollama error formats
- * 
+ *
  * @param errorText - Error message text from Ollama
  * @returns True if error indicates tools are not supported
  */
@@ -73,15 +73,15 @@ function isToolUnsupportedError(errorText: string): boolean {
     /tools?.*not available/i,
     /tools?.*disabled/i,
   ];
-  
-  const matched = patterns.some(pattern => pattern.test(errorText));
-  
+
+  const matched = patterns.some((pattern) => pattern.test(errorText));
+
   if (matched) {
-    logger.debug('Tool unsupported error detected', { 
-      errorText: errorText.substring(0, 100) 
+    logger.debug('Tool unsupported error detected', {
+      errorText: errorText.substring(0, 100),
     });
   }
-  
+
   return matched;
 }
 
@@ -101,7 +101,7 @@ function formatHttpError(status: number, statusText: string, details: string): s
 
 /**
  * Local provider adapter for Ollama-compatible servers.
- * 
+ *
  * This provider connects to a local Ollama server (or compatible API)
  * and implements the full ProviderAdapter interface with support for:
  * - Streaming chat completions
@@ -110,14 +110,14 @@ function formatHttpError(status: number, statusText: string, details: string): s
  * - Model management (list, pull, delete, show, unload)
  * - Thinking/reasoning mode
  * - Timeout and abort signal handling
- * 
+ *
  * Key Features:
  * - Automatic tool unsupported error detection and retry
  * - Healer pattern for malformed tool calls from small models
  * - Flexible token counting with multiple strategies
  * - Comprehensive tool schema validation
  * - Inactivity timeout that resets on each chunk
- * 
+ *
  * @example
  * ```typescript
  * const provider = new LocalProvider({
@@ -125,7 +125,7 @@ function formatHttpError(status: number, statusText: string, details: string): s
  *   timeout: 30000,
  *   tokenCountingMethod: 'tiktoken',
  * });
- * 
+ *
  * for await (const event of provider.chatStream(request)) {
  *   if (event.type === 'text') {
  *     console.log(event.value);
@@ -170,24 +170,24 @@ export class LocalProvider implements ProviderAdapter {
 
   /**
    * Stream chat completion from the local Ollama server.
-   * 
+   *
    * This method implements the core streaming functionality with:
    * - Automatic retry on tool unsupported errors (removes tools and retries)
    * - Inactivity timeout that resets on each chunk received
    * - Abort signal support for request cancellation
    * - NDJSON stream parsing with error recovery
    * - Healer pattern for malformed tool calls
-   * 
+   *
    * Error Handling:
    * - HTTP errors: Emits error event with status code
    * - Tool unsupported: Emits error event, then retries without tools
    * - Network errors: Emits error event
    * - Abort: Emits finish event and returns
    * - Malformed JSON: Logs warning and continues (doesn't break stream)
-   * 
+   *
    * @param request - The chat request with messages, tools, and options
    * @returns Async iterable of provider events
-   * 
+   *
    * @example
    * ```typescript
    * const request: ProviderRequest = {
@@ -197,7 +197,7 @@ export class LocalProvider implements ProviderAdapter {
    *   options: { temperature: 0.7, num_ctx: 8192 },
    *   timeout: 30000,
    * };
-   * 
+   *
    * for await (const event of provider.chatStream(request)) {
    *   console.log(event);
    * }
@@ -246,9 +246,9 @@ export class LocalProvider implements ProviderAdapter {
 
     // Log context window configuration for debugging
     if (request.options?.num_ctx) {
-      logger.debug('Sending context window configuration to Ollama', { 
+      logger.debug('Sending context window configuration to Ollama', {
         model: request.model,
-        num_ctx: request.options.num_ctx 
+        num_ctx: request.options.num_ctx,
       });
     }
 
@@ -260,15 +260,19 @@ export class LocalProvider implements ProviderAdapter {
     // Link incoming abort signal
     if (request.abortSignal) {
       if (request.abortSignal.aborted) {
-        yield { 
-          type: 'error', 
-          error: { message: 'Request aborted by user' } 
+        yield {
+          type: 'error',
+          error: { message: 'Request aborted by user' },
         };
         return;
       }
-      request.abortSignal.addEventListener('abort', () => {
-        controller.abort(request.abortSignal?.reason);
-      }, { once: true });
+      request.abortSignal.addEventListener(
+        'abort',
+        () => {
+          controller.abort(request.abortSignal?.reason);
+        },
+        { once: true }
+      );
     }
 
     // Set inactivity timeout - resets on each chunk received
@@ -279,7 +283,7 @@ export class LocalProvider implements ProviderAdapter {
         controller.abort(new Error(`Ollama request timed out after ${timeout}ms of inactivity`));
       }, timeout);
     };
-    
+
     // Start initial timeout
     resetTimeout();
 
@@ -297,24 +301,24 @@ export class LocalProvider implements ProviderAdapter {
 
       if (!response.ok) {
         let errorText = await response.text();
-        const looksLikeToolError = response.status === 400
-          && payloadHasTools(body)
-          && isToolUnsupportedError(errorText);
+        const looksLikeToolError =
+          response.status === 400 && payloadHasTools(body) && isToolUnsupportedError(errorText);
 
         if (looksLikeToolError) {
           // Emit detailed error event for tool error before retry
           const details = errorText.trim();
-          logger.info('Tool unsupported error, retrying without tools', { 
+          logger.info('Tool unsupported error, retrying without tools', {
             model: request.model,
-            error: details.substring(0, 200) 
+            error: details.substring(0, 200),
           });
-          
+
           yield {
             type: 'error',
             error: {
-              message: details.length > 0
-                ? `Tool support error: ${details}`
-                : 'Model does not support function calling',
+              message:
+                details.length > 0
+                  ? `Tool support error: ${details}`
+                  : 'Model does not support function calling',
               code: 'TOOL_UNSUPPORTED',
               httpStatus: response.status,
               originalError: details,
@@ -332,12 +336,12 @@ export class LocalProvider implements ProviderAdapter {
         if (!response.ok) {
           if (timeoutId) clearTimeout(timeoutId);
           const details = errorText.trim();
-          logger.error('HTTP error from Ollama', { 
-            status: response.status, 
+          logger.error('HTTP error from Ollama', {
+            status: response.status,
             statusText: response.statusText,
-            error: details.substring(0, 200) 
+            error: details.substring(0, 200),
           });
-          
+
           yield {
             type: 'error',
             error: {
@@ -423,7 +427,8 @@ export class LocalProvider implements ProviderAdapter {
           return;
         }
         const causeText = (error as Error & { cause?: unknown }).cause;
-        const causeMessage = causeText instanceof Error ? causeText.message : causeText ? String(causeText) : '';
+        const causeMessage =
+          causeText instanceof Error ? causeText.message : causeText ? String(causeText) : '';
         yield {
           type: 'error',
           error: {
@@ -438,13 +443,13 @@ export class LocalProvider implements ProviderAdapter {
 
   /**
    * Map internal messages to Ollama format.
-   * 
+   *
    * Converts the internal Message format to Ollama's expected format:
    * - Adds system prompt as first message if provided
    * - Concatenates message parts (text and image placeholders)
    * - Maps tool calls to Ollama's tool_calls format
    * - Preserves tool call IDs for tool responses
-   * 
+   *
    * @param messages - Internal message array
    * @param systemPrompt - Optional system prompt to prepend
    * @returns Array of Ollama-formatted messages
@@ -469,16 +474,16 @@ export class LocalProvider implements ProviderAdapter {
         content,
         ...(msg.name && { name: msg.name }),
         ...(msg.toolCalls && {
-          tool_calls: msg.toolCalls.map(tc => ({
+          tool_calls: msg.toolCalls.map((tc) => ({
             id: tc.id,
             type: 'function',
             function: {
               name: tc.name,
-              arguments: tc.args // Ollama expects an object, not a JSON string
-            }
-          }))
+              arguments: tc.args, // Ollama expects an object, not a JSON string
+            },
+          })),
         }),
-        ...(msg.toolCallId && { tool_call_id: msg.toolCallId })
+        ...(msg.toolCallId && { tool_call_id: msg.toolCallId }),
       });
     }
 
@@ -492,12 +497,16 @@ export class LocalProvider implements ProviderAdapter {
   private validateToolSchema(tool: ToolSchema): void {
     // Validate tool name
     if (!tool.name || typeof tool.name !== 'string') {
-      throw new Error('Tool schema validation failed: Tool name is required and must be a non-empty string');
+      throw new Error(
+        'Tool schema validation failed: Tool name is required and must be a non-empty string'
+      );
     }
 
     const trimmedName = tool.name.trim();
     if (trimmedName === '') {
-      throw new Error('Tool schema validation failed: Tool name cannot be empty or whitespace only');
+      throw new Error(
+        'Tool schema validation failed: Tool name cannot be empty or whitespace only'
+      );
     }
 
     // Relaxed validation: Allow dots and slashes for namespaced tools (e.g., "mcp.search", "github/issues")
@@ -505,7 +514,7 @@ export class LocalProvider implements ProviderAdapter {
     if (!/^[a-zA-Z_][a-zA-Z0-9_./-]*$/.test(tool.name)) {
       throw new Error(
         `Tool schema validation failed: Tool name "${tool.name}" is invalid. ` +
-        'Tool names must start with a letter or underscore and contain only letters, numbers, underscores, dashes, dots, or slashes'
+          'Tool names must start with a letter or underscore and contain only letters, numbers, underscores, dashes, dots, or slashes'
       );
     }
 
@@ -524,19 +533,21 @@ export class LocalProvider implements ProviderAdapter {
     const seen = new WeakSet();
     const checkCircular = (obj: unknown, path: string = 'root'): void => {
       if (obj === null || typeof obj !== 'object') return;
-      
+
       if (seen.has(obj)) {
         throw new Error(
           `Tool schema validation failed: Circular reference detected in ${context} at ${path}`
         );
       }
-      
+
       seen.add(obj);
-      
+
       if (Array.isArray(obj)) {
         obj.forEach((item, index) => checkCircular(item, `${path}[${index}]`));
       } else if (typeof obj === 'object' && obj !== null) {
-        Object.keys(obj).forEach(key => checkCircular((obj as Record<string, unknown>)[key], `${path}.${key}`));
+        Object.keys(obj).forEach((key) =>
+          checkCircular((obj as Record<string, unknown>)[key], `${path}.${key}`)
+        );
       }
     };
 
@@ -549,7 +560,7 @@ export class LocalProvider implements ProviderAdapter {
       if (typeof s.type !== 'string' || !validTypes.includes(s.type)) {
         throw new Error(
           `Tool schema validation failed: Invalid type "${s.type}" in ${context}. ` +
-          `Valid types are: ${validTypes.join(', ')}`
+            `Valid types are: ${validTypes.join(', ')}`
         );
       }
 
@@ -564,7 +575,9 @@ export class LocalProvider implements ProviderAdapter {
           }
 
           // Recursively validate nested properties
-          for (const [propName, propSchema] of Object.entries(s.properties as Record<string, unknown>)) {
+          for (const [propName, propSchema] of Object.entries(
+            s.properties as Record<string, unknown>
+          )) {
             this.validateJsonSchema(propSchema, `${context}.properties.${propName}`);
           }
         }
@@ -578,7 +591,9 @@ export class LocalProvider implements ProviderAdapter {
           }
           for (const req of s.required) {
             if (typeof req !== 'string') {
-              throw new Error(`Tool schema validation failed: "required" elements must be strings in ${context}`);
+              throw new Error(
+                `Tool schema validation failed: "required" elements must be strings in ${context}`
+              );
             }
           }
         }
@@ -603,7 +618,9 @@ export class LocalProvider implements ProviderAdapter {
         }
 
         // Recursively validate nested properties
-        for (const [propName, propSchema] of Object.entries(s.properties as Record<string, unknown>)) {
+        for (const [propName, propSchema] of Object.entries(
+          s.properties as Record<string, unknown>
+        )) {
           this.validateJsonSchema(propSchema, `${context}.properties.${propName}`);
         }
       }
@@ -617,7 +634,9 @@ export class LocalProvider implements ProviderAdapter {
         }
         for (const req of s.required) {
           if (typeof req !== 'string') {
-            throw new Error(`Tool schema validation failed: "required" elements must be strings in ${context}`);
+            throw new Error(
+              `Tool schema validation failed: "required" elements must be strings in ${context}`
+            );
           }
         }
       }
@@ -626,9 +645,7 @@ export class LocalProvider implements ProviderAdapter {
     // Validate enum if present
     if (s.enum !== undefined) {
       if (!Array.isArray(s.enum)) {
-        throw new Error(
-          `Tool schema validation failed: "enum" must be an array in ${context}`
-        );
+        throw new Error(`Tool schema validation failed: "enum" must be an array in ${context}`);
       }
 
       if (s.enum.length === 0) {
@@ -644,7 +661,7 @@ export class LocalProvider implements ProviderAdapter {
         if (s.minimum > s.maximum) {
           throw new Error(
             `Tool schema validation failed: Conflicting constraints in ${context} - ` +
-            `minimum (${s.minimum}) cannot be greater than maximum (${s.maximum})`
+              `minimum (${s.minimum}) cannot be greater than maximum (${s.maximum})`
           );
         }
       }
@@ -656,7 +673,7 @@ export class LocalProvider implements ProviderAdapter {
         if (s.minLength > s.maxLength) {
           throw new Error(
             `Tool schema validation failed: Conflicting constraints in ${context} - ` +
-            `minLength (${s.minLength}) cannot be greater than maxLength (${s.maxLength})`
+              `minLength (${s.minLength}) cannot be greater than maxLength (${s.maxLength})`
           );
         }
       }
@@ -668,7 +685,7 @@ export class LocalProvider implements ProviderAdapter {
         if (s.minItems > s.maxItems) {
           throw new Error(
             `Tool schema validation failed: Conflicting constraints in ${context} - ` +
-            `minItems (${s.minItems}) cannot be greater than maxItems (${s.maxItems})`
+              `minItems (${s.minItems}) cannot be greater than maxItems (${s.maxItems})`
           );
         }
       }
@@ -677,13 +694,13 @@ export class LocalProvider implements ProviderAdapter {
 
   /**
    * Map tool schemas to Ollama function calling format.
-   * 
+   *
    * Validates each tool schema before mapping to ensure:
    * - Tool names are valid (alphanumeric, underscore, dash, dot, slash)
    * - Parameters are valid JSON Schema
    * - No circular references in schemas
    * - Constraints are not conflicting
-   * 
+   *
    * @param tools - Array of tool schemas to map
    * @returns Array of Ollama-formatted function definitions
    * @throws {Error} If any tool schema is invalid
@@ -706,33 +723,33 @@ export class LocalProvider implements ProviderAdapter {
 
   /**
    * Map Ollama response chunks to provider events.
-   * 
+   *
    * This method handles several edge cases:
-   * 
+   *
    * 1. Thinking Mode: Ollama's native thinking support is mapped to
    *    thinking events for display to the user.
-   * 
+   *
    * 2. Healer Pattern: Some small models output tool calls as JSON strings
    *    in the content field instead of using tool_calls. We detect and
    *    convert these to proper tool_call events using conservative heuristics:
    *    - Must be valid JSON object
    *    - Must have 'name' field (string, no spaces, < 50 chars)
    *    - Must have 'parameters' or 'args' field
-   * 
+   *
    * 3. Tool Call Arguments: Ollama can send arguments as either a string
    *    (JSON) or an object. We normalize to object format and handle
    *    parsing errors gracefully.
-   * 
+   *
    * 4. Finish Reason: Maps Ollama's done_reason to standard finish reasons
    *    (stop, length, tool).
-   * 
+   *
    * @param chunk - Raw chunk from Ollama NDJSON stream
    * @yields ProviderEvent objects (text, thinking, tool_call, finish)
    */
   private *mapChunkToEvents(chunk: unknown): Iterable<ProviderEvent> {
     const c = chunk as Record<string, unknown>;
     const message = c.message as Record<string, unknown> | undefined;
-    
+
     // Handle thinking field (Ollama native thinking support)
     if (message?.thinking !== undefined) {
       const thinking = message.thinking as string;
@@ -740,72 +757,75 @@ export class LocalProvider implements ProviderAdapter {
         yield { type: 'thinking', value: thinking };
       }
     }
-    
+
     if (message?.content !== undefined) {
       const content = message.content as string;
-      
+
       // Healer: Detect if small model outputted tool call as a JSON string in content
       // This is a workaround for models that don't properly format tool calls
       // Made more conservative to reduce false positives
       if (content.trim().startsWith('{') && content.trim().endsWith('}')) {
-          try {
-              const possibleToolCall = JSON.parse(content.trim());
-              
-              // More conservative check: Must look like a function call structure
-              // Requires: name (string), and either parameters or args (present, any type)
-              // Also check that it's not just any JSON object (e.g., data response)
-              const hasName = typeof possibleToolCall.name === 'string' && possibleToolCall.name.length > 0;
-              const hasParams = possibleToolCall.parameters !== undefined || possibleToolCall.args !== undefined;
-              
-              // Additional heuristic: Check if name looks like a function name (not a sentence)
-              // Function names typically don't have spaces and are relatively short
-              const looksLikeFunction = hasName && 
-                                       !possibleToolCall.name.includes(' ') && 
-                                       possibleToolCall.name.length < 50;
-              
-              // Only treat as tool call if it has the right structure AND looks like a function
-              if (hasName && hasParams && looksLikeFunction) {
-                  // Handle parameters/args that might not be objects
-                  let args: Record<string, unknown>;
-                  const rawParams = possibleToolCall.parameters || possibleToolCall.args;
-                  
-                  if (typeof rawParams === 'object' && rawParams !== null) {
-                      args = rawParams as Record<string, unknown>;
-                  } else {
-                      // Wrap non-object values in an object to match ToolCall interface
-                      args = { value: rawParams };
-                  }
-                  
-                  yield {
-                      type: 'tool_call',
-                      value: {
-                          id: crypto.randomUUID(),
-                          name: possibleToolCall.name,
-                          args
-                      }
-                  };
-                  return; // Skip yielding as text
-              }
-          } catch {
-              // Not a valid tool call JSON, fall through to normal text
+        try {
+          const possibleToolCall = JSON.parse(content.trim());
+
+          // More conservative check: Must look like a function call structure
+          // Requires: name (string), and either parameters or args (present, any type)
+          // Also check that it's not just any JSON object (e.g., data response)
+          const hasName =
+            typeof possibleToolCall.name === 'string' && possibleToolCall.name.length > 0;
+          const hasParams =
+            possibleToolCall.parameters !== undefined || possibleToolCall.args !== undefined;
+
+          // Additional heuristic: Check if name looks like a function name (not a sentence)
+          // Function names typically don't have spaces and are relatively short
+          const looksLikeFunction =
+            hasName && !possibleToolCall.name.includes(' ') && possibleToolCall.name.length < 50;
+
+          // Only treat as tool call if it has the right structure AND looks like a function
+          if (hasName && hasParams && looksLikeFunction) {
+            // Handle parameters/args that might not be objects
+            let args: Record<string, unknown>;
+            const rawParams = possibleToolCall.parameters || possibleToolCall.args;
+
+            if (typeof rawParams === 'object' && rawParams !== null) {
+              args = rawParams as Record<string, unknown>;
+            } else {
+              // Wrap non-object values in an object to match ToolCall interface
+              args = { value: rawParams };
+            }
+
+            yield {
+              type: 'tool_call',
+              value: {
+                id: crypto.randomUUID(),
+                name: possibleToolCall.name,
+                args,
+              },
+            };
+            return; // Skip yielding as text
           }
+        } catch {
+          // Not a valid tool call JSON, fall through to normal text
+        }
       }
-      
+
       yield { type: 'text', value: content };
     }
 
-    const toolCalls = message?.tool_calls as Array<{
-      id?: string;
-      function: {
-        name: string;
-        arguments: unknown; // arguments can be string or object from Ollama
-      }
-    }> | undefined;
+    const toolCalls = message?.tool_calls as
+      | Array<{
+          id?: string;
+          function: {
+            name: string;
+            arguments: unknown; // arguments can be string or object from Ollama
+          };
+        }>
+      | undefined;
     if (toolCalls) {
       for (const toolCall of toolCalls) {
         let args: Record<string, unknown>;
         const rawArgs = toolCall.function.arguments;
-        
+
         if (typeof rawArgs === 'object' && rawArgs !== null) {
           args = rawArgs as Record<string, unknown>;
         } else {
@@ -814,9 +834,12 @@ export class LocalProvider implements ProviderAdapter {
             if (typeof rawArgs === 'string' && rawArgs.trim().length === 0) {
               args = {};
             } else {
-            const parsed = JSON.parse(stringArgs);
-            // Ensure args is always an object, even if JSON.parse returns a primitive
-            args = typeof parsed === 'object' && parsed !== null ? (parsed as Record<string, unknown>) : {};
+              const parsed = JSON.parse(stringArgs);
+              // Ensure args is always an object, even if JSON.parse returns a primitive
+              args =
+                typeof parsed === 'object' && parsed !== null
+                  ? (parsed as Record<string, unknown>)
+                  : {};
             }
           } catch (error) {
             // If JSON parsing fails, propagate the error so the system can heal it
@@ -824,7 +847,7 @@ export class LocalProvider implements ProviderAdapter {
             args = {
               __parsing_error__: true,
               message: err.message,
-              raw: rawArgs
+              raw: rawArgs,
             };
           }
         }
@@ -859,18 +882,18 @@ export class LocalProvider implements ProviderAdapter {
           promptEvalDuration: (c.prompt_eval_duration as number) || 0,
           evalCount: (c.eval_count as number) || 0,
           evalDuration: (c.eval_duration as number) || 0,
-        }
+        },
       };
     }
   }
 
   /**
    * Get token multiplier for a specific model family.
-   * 
+   *
    * Uses empirical testing data to determine the average characters per token
    * for different model families. Falls back to a conservative default if the
    * model family is not recognized.
-   * 
+   *
    * Multipliers:
    * - llama: 0.25 (~4 chars/token)
    * - mistral: 0.27 (~3.7 chars/token)
@@ -879,38 +902,38 @@ export class LocalProvider implements ProviderAdapter {
    * - phi: 0.26 (~3.8 chars/token)
    * - codellama: 0.25 (~4 chars/token)
    * - default: 0.25 (conservative)
-   * 
+   *
    * @param model - Model name to get multiplier for
    * @returns Token multiplier (chars per token)
    */
   private getTokenMultiplier(model: string): number {
     const modelLower = model.toLowerCase();
-    
+
     for (const [family, multiplier] of Object.entries(TOKEN_MULTIPLIERS)) {
       if (modelLower.includes(family)) {
-        logger.debug('Using token multiplier for model family', { 
-          model, 
-          family, 
-          multiplier 
+        logger.debug('Using token multiplier for model family', {
+          model,
+          family,
+          multiplier,
         });
         return multiplier;
       }
     }
-    
+
     logger.debug('Using default token multiplier', { model });
     return TOKEN_MULTIPLIERS.default;
   }
 
   /**
    * Count tokens using tiktoken library (accurate method).
-   * 
+   *
    * Uses the tiktoken library with cl100k_base encoding (used by GPT-3.5/4)
    * as a good approximation for most models. This method is more accurate
    * than character-based estimation but requires loading the tiktoken library.
-   * 
+   *
    * Falls back to multiplier method if tiktoken fails to load or encounters
    * an error during encoding.
-   * 
+   *
    * @param request - Provider request to count tokens for
    * @returns Token count
    */
@@ -918,16 +941,16 @@ export class LocalProvider implements ProviderAdapter {
     try {
       // Dynamic import to avoid loading tiktoken if not needed
       const { encoding_for_model } = await import('tiktoken');
-      
+
       // Use cl100k_base encoding (used by GPT-3.5/4, good approximation for most models)
       const encoding = encoding_for_model('gpt-3.5-turbo');
-      
+
       let totalTokens = 0;
-      
+
       if (request.systemPrompt) {
         totalTokens += encoding.encode(request.systemPrompt).length;
       }
-      
+
       for (const msg of request.messages) {
         for (const part of msg.parts) {
           if (part.type === 'text') {
@@ -935,18 +958,18 @@ export class LocalProvider implements ProviderAdapter {
           }
         }
       }
-      
+
       encoding.free(); // Clean up
-      
-      logger.debug('Token count (tiktoken)', { 
-        model: request.model, 
-        tokens: totalTokens 
+
+      logger.debug('Token count (tiktoken)', {
+        model: request.model,
+        tokens: totalTokens,
       });
-      
+
       return totalTokens;
     } catch (error) {
-      logger.warn('Tiktoken failed, falling back to multiplier method', { 
-        error: error instanceof Error ? error.message : String(error) 
+      logger.warn('Tiktoken failed, falling back to multiplier method', {
+        error: error instanceof Error ? error.message : String(error),
       });
       return this.countTokensWithMultiplier(request);
     }
@@ -954,23 +977,23 @@ export class LocalProvider implements ProviderAdapter {
 
   /**
    * Count tokens using character multiplier (fast fallback method).
-   * 
+   *
    * Estimates token count by multiplying character count by a model-specific
    * multiplier. This method is fast but less accurate than tiktoken.
-   * 
+   *
    * The multiplier is determined by the model family (llama, mistral, etc.)
    * and represents the average characters per token for that family.
-   * 
+   *
    * @param request - Provider request to count tokens for
    * @returns Estimated token count
    */
   private countTokensWithMultiplier(request: ProviderRequest): Promise<number> {
     let totalChars = 0;
-    
+
     if (request.systemPrompt) {
       totalChars += request.systemPrompt.length;
     }
-    
+
     for (const msg of request.messages) {
       for (const part of msg.parts) {
         if (part.type === 'text') {
@@ -978,36 +1001,36 @@ export class LocalProvider implements ProviderAdapter {
         }
       }
     }
-    
+
     const multiplier = this.getTokenMultiplier(request.model);
     const tokens = Math.ceil(totalChars * multiplier);
-    
-    logger.debug('Token count (multiplier)', { 
-      model: request.model, 
-      chars: totalChars, 
-      multiplier, 
-      tokens 
+
+    logger.debug('Token count (multiplier)', {
+      model: request.model,
+      chars: totalChars,
+      multiplier,
+      tokens,
     });
-    
+
     return Promise.resolve(tokens);
   }
 
   /**
    * Count tokens in a request using fallback estimation.
-   * 
+   *
    * Supports two token counting methods:
    * - 'tiktoken': Accurate counting using tiktoken library (default)
    * - 'multiplier': Fast character-based estimation
-   * 
+   *
    * The method can be configured via LocalProviderConfig.tokenCountingMethod.
    * Tiktoken method automatically falls back to multiplier if it fails.
-   * 
+   *
    * @param request - The chat request to count tokens for
    * @returns Estimated token count
    */
   async countTokens(request: ProviderRequest): Promise<number> {
     const method = this.config.tokenCountingMethod || 'tiktoken';
-    
+
     if (method === 'tiktoken') {
       return this.countTokensWithTiktoken(request);
     } else {
@@ -1017,10 +1040,10 @@ export class LocalProvider implements ProviderAdapter {
 
   /**
    * List available models from the local Ollama server.
-   * 
+   *
    * Fetches the list of models from the /api/tags endpoint and maps
    * them to the ModelInfo format.
-   * 
+   *
    * @returns Array of model information
    * @throws {Error} If the request fails
    */
@@ -1029,24 +1052,37 @@ export class LocalProvider implements ProviderAdapter {
     const response = await fetch(url);
     const data = await response.json();
 
-    return data.models.map((model: { name: string; size: number; modified_at: string; details: { format: string; family: string; families: string[]; parameter_size: string; quantization_level: string } }) => ({
-      name: model.name,
-      sizeBytes: model.size,
-      modifiedAt: model.modified_at,
-      details: model.details,
-    }));
+    return data.models.map(
+      (model: {
+        name: string;
+        size: number;
+        modified_at: string;
+        details: {
+          format: string;
+          family: string;
+          families: string[];
+          parameter_size: string;
+          quantization_level: string;
+        };
+      }) => ({
+        name: model.name,
+        sizeBytes: model.size,
+        modifiedAt: model.modified_at,
+        details: model.details,
+      })
+    );
   }
 
   /**
    * Pull/download a model from the Ollama registry.
-   * 
+   *
    * Downloads a model and streams progress updates via the onProgress callback.
    * The download is streamed as NDJSON with status and progress information.
-   * 
+   *
    * @param name - Model name to pull (e.g., 'llama3.2', 'mistral:7b')
    * @param onProgress - Optional callback for progress updates
    * @throws {Error} If the request fails
-   * 
+   *
    * @example
    * ```typescript
    * await provider.pullModel('llama3.2', (progress) => {
@@ -1054,10 +1090,7 @@ export class LocalProvider implements ProviderAdapter {
    * });
    * ```
    */
-  async pullModel(
-    name: string,
-    onProgress?: (progress: PullProgress) => void
-  ): Promise<void> {
+  async pullModel(name: string, onProgress?: (progress: PullProgress) => void): Promise<void> {
     const url = `${this.baseUrl}/api/pull`;
     const response = await fetch(url, {
       method: 'POST',
@@ -1098,10 +1131,10 @@ export class LocalProvider implements ProviderAdapter {
 
   /**
    * Delete a model from the local Ollama server.
-   * 
+   *
    * Permanently removes a model from local storage.
    * This operation cannot be undone.
-   * 
+   *
    * @param name - Model name to delete
    * @throws {Error} If the request fails
    */
@@ -1116,10 +1149,10 @@ export class LocalProvider implements ProviderAdapter {
 
   /**
    * Unload a model from memory (Ollama keep_alive=0).
-   * 
+   *
    * Frees memory by unloading a model that is currently loaded.
    * This is useful for managing memory on systems with limited resources.
-   * 
+   *
    * @param name - Model name to unload
    * @throws {Error} If the model cannot be unloaded
    */
@@ -1146,10 +1179,10 @@ export class LocalProvider implements ProviderAdapter {
 
   /**
    * Get detailed information about a model.
-   * 
+   *
    * Fetches comprehensive information about a specific model including
    * size, modification date, and model details (format, family, parameters).
-   * 
+   *
    * @param name - Model name to inspect
    * @returns Detailed model information
    * @throws {Error} If the request fails or model not found

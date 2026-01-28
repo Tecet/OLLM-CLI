@@ -1,6 +1,6 @@
 /**
  * FileExplorerComponent - Main container for File Explorer UI
- * 
+ *
  * This is the top-level component that composes all file explorer sub-components
  * and manages their lifecycle. It handles:
  * - Context provider composition (Workspace, FileTree)
@@ -8,7 +8,7 @@
  * - Workspace loading on mount
  * - State persistence restoration
  * - Component lifecycle management
- * 
+ *
  * Requirements: 1.1 (Workspace loading), 12.2 (State restoration)
  */
 
@@ -52,12 +52,12 @@ export interface FileExplorerComponentProps {
   hasFocus?: boolean;
   /** Visible window size for virtual scrolling */
   windowSize?: number;
-  
+
   /** Tool system integration (optional) */
   toolRegistry?: ToolRegistry;
   policyEngine?: PolicyEngine;
   messageBus?: MessageBus;
-  
+
   /** Callback when workspace is loaded */
   onWorkspaceLoaded?: (config: WorkspaceConfig) => void;
   /** Callback when state is restored */
@@ -82,23 +82,23 @@ interface InitializationState {
 
 /**
  * FileExplorerComponent - Main container component
- * 
+ *
  * This component serves as the entry point for the File Explorer UI.
  * It composes all sub-components and manages their lifecycle:
- * 
+ *
  * 1. **Context Providers**: Wraps the component tree with WorkspaceProvider
  *    and FileTreeProvider to provide shared state.
- * 
+ *
  * 2. **Service Instantiation**: Creates instances of all required services
  *    (WorkspaceManager, FileTreeService, FocusSystem, etc.) and passes them
  *    to child components.
- * 
+ *
  * 3. **Initialization**: On mount, loads workspace configuration (if provided)
  *    and restores persisted state from .ollm/explorer-state.json.
- * 
+ *
  * 4. **Layout**: Renders the file tree view and focused files panel in a
  *    side-by-side layout.
- * 
+ *
  * Usage:
  * ```tsx
  * <FileExplorerComponent
@@ -140,13 +140,13 @@ export function FileExplorerComponent({
     const pathSanitizer = new PathSanitizer();
     const gitStatusService = new GitStatusService();
     const fileTreeService = new FileTreeService();
-    const focusSystem = new FocusSystem(messageBus);  // Pass messageBus
+    const focusSystem = new FocusSystem(messageBus); // Pass messageBus
     const editorIntegration = new EditorIntegration();
     const fileOperations = new FileOperations(
       rootPath,
-      toolRegistry,   // Pass toolRegistry
-      policyEngine,   // Pass policyEngine
-      messageBus      // Pass messageBus
+      toolRegistry, // Pass toolRegistry
+      policyEngine, // Pass policyEngine
+      messageBus // Pass messageBus
     );
     const followModeService = new FollowModeService();
     const workspaceManager = new WorkspaceManager();
@@ -189,7 +189,7 @@ export function FileExplorerComponent({
 
   /**
    * Initialize the component
-   * 
+   *
    * Performs the following initialization steps:
    * 1. Load workspace configuration if provided
    * 2. Restore persisted state if enabled
@@ -211,11 +211,12 @@ export function FileExplorerComponent({
       if (workspacePath && autoLoadWorkspace) {
         try {
           loadedWorkspace = services.workspaceManager.loadWorkspace(workspacePath);
-          
+
           // Set active project to first project with llmAccess
-          const activeProject = loadedWorkspace.projects.find(p => p.llmAccess)?.name 
-            || loadedWorkspace.projects[0]?.name 
-            || null;
+          const activeProject =
+            loadedWorkspace.projects.find((p) => p.llmAccess)?.name ||
+            loadedWorkspace.projects[0]?.name ||
+            null;
 
           setWorkspaceState({
             config: loadedWorkspace,
@@ -235,7 +236,7 @@ export function FileExplorerComponent({
 
       // Step 2: Restore persisted state if enabled
       if (restoreState) {
-        setInitState(prev => ({
+        setInitState((prev) => ({
           ...prev,
           statusMessage: 'Restoring previous state...',
         }));
@@ -246,7 +247,7 @@ export function FileExplorerComponent({
           // Restore expanded directories
           if (persistedState.expandedDirectories.length > 0) {
             restoredExpandedPaths = new Set(persistedState.expandedDirectories);
-            setTreeState(prev => ({
+            setTreeState((prev) => ({
               ...prev,
               expandedPaths: new Set(persistedState.expandedDirectories),
             }));
@@ -268,11 +269,11 @@ export function FileExplorerComponent({
           // Restore active project if in workspace mode
           if (loadedWorkspace && persistedState.lastActiveProject) {
             const projectExists = loadedWorkspace.projects.some(
-              p => p.name === persistedState.lastActiveProject
+              (p) => p.name === persistedState.lastActiveProject
             );
-            
+
             if (projectExists) {
-              setWorkspaceState(prev => ({
+              setWorkspaceState((prev) => ({
                 ...prev,
                 activeProject: persistedState.lastActiveProject,
               }));
@@ -289,7 +290,7 @@ export function FileExplorerComponent({
       }
 
       // Step 3: Build initial file tree
-      setInitState(prev => ({
+      setInitState((prev) => ({
         ...prev,
         statusMessage: 'Building file tree...',
       }));
@@ -299,7 +300,7 @@ export function FileExplorerComponent({
         rootPath,
         excludePatterns: stableExcludePatterns,
       });
-      
+
       // If we've loaded a workspace, auto-expand directories so the
       // tree shows the full workspace structure by default. This will
       // recursively expand directories using the FileTreeService's
@@ -341,7 +342,7 @@ export function FileExplorerComponent({
         };
         collectDirs(rootNode);
 
-        setTreeState(prev => ({
+        setTreeState((prev) => ({
           ...prev,
           root: rootNode,
           expandedPaths: new Set(allDirs),
@@ -357,16 +358,16 @@ export function FileExplorerComponent({
         const nextExpanded = new Set(restoredExpandedPaths);
         nextExpanded.add(rootNode.path);
 
-        setTreeState(prev => ({
+        setTreeState((prev) => ({
           ...prev,
           root: rootNode,
           expandedPaths: nextExpanded,
         }));
       }
-      
+
       // Note: The FileTreeContext will be updated via initialState prop
       // when the provider mounts with the updated treeState
-      
+
       // Initialization complete
       setInitState({
         isInitializing: false,
@@ -376,7 +377,7 @@ export function FileExplorerComponent({
       });
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
-      
+
       setInitState({
         isInitializing: false,
         isInitialized: false,
@@ -493,21 +494,24 @@ function FileExplorerContent({
   const { setRoot } = useFileTree();
   const hasInitializedRef = useRef(false);
   const lastRootPathRef = useRef<string | null>(null);
-  
+
   // Initialize context with tree root once per root path
   useEffect(() => {
     const currentRootPath = treeState.root?.path || null;
-    
+
     // Only initialize if:
     // 1. We have a root
     // 2. Either we haven't initialized yet, OR the root path changed
-    if (treeState.root && (!hasInitializedRef.current || currentRootPath !== lastRootPathRef.current)) {
+    if (
+      treeState.root &&
+      (!hasInitializedRef.current || currentRootPath !== lastRootPathRef.current)
+    ) {
       hasInitializedRef.current = true;
       lastRootPathRef.current = currentRootPath;
       setRoot(treeState.root);
     }
   }, [treeState.root, setRoot]);
-  
+
   return (
     <Box flexDirection="column" height="100%">
       {/* Main content area with file tree */}

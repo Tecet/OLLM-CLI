@@ -1,6 +1,6 @@
 /**
  * FileSearchDialog - Search file contents using grep tool
- * 
+ *
  * Provides a dialog for searching file contents with:
  * - Pattern input (regex supported)
  * - Case sensitivity toggle
@@ -48,7 +48,7 @@ export interface FileSearchDialogProps {
 
 /**
  * FileSearchDialog component
- * 
+ *
  * Provides file content search functionality using the grep tool.
  */
 export function FileSearchDialog({
@@ -125,63 +125,60 @@ export function FileSearchDialog({
   }, [searchQuery, filePattern, caseSensitive, toolRegistry, rootPath]);
 
   // Handle keyboard input
-  useInput((input, key) => {
-    if (!visible) return;
+  useInput(
+    (input, key) => {
+      if (!visible) return;
 
-    // ESC to close
-    if (key.escape) {
-      onClose();
-      return;
-    }
+      // ESC to close
+      if (key.escape) {
+        onClose();
+        return;
+      }
 
-    // Handle different input modes
-    if (inputMode === 'query') {
-      if (key.return) {
-        // Enter to move to file pattern or search
-        if (filePattern) {
-          performSearch();
-        } else {
+      // Handle different input modes
+      if (inputMode === 'query') {
+        if (key.return) {
+          // Enter to move to file pattern or search
+          if (filePattern) {
+            performSearch();
+          } else {
+            setInputMode('pattern');
+          }
+        } else if (key.tab) {
           setInputMode('pattern');
         }
-      } else if (key.tab) {
-        setInputMode('pattern');
+      } else if (inputMode === 'pattern') {
+        if (key.return) {
+          performSearch();
+        } else if (key.tab) {
+          setInputMode('query');
+        }
+      } else if (inputMode === 'results') {
+        if (key.upArrow) {
+          setSelectedIndex((prev) => Math.max(0, prev - 1));
+        } else if (key.downArrow) {
+          setSelectedIndex((prev) => Math.min(results.length - 1, prev + 1));
+        } else if (key.return && results[selectedIndex]) {
+          onSelect(results[selectedIndex]);
+          onClose();
+        } else if (input === 'c' && key.ctrl) {
+          setCaseSensitive((prev) => !prev);
+        } else if (input === 'n' && key.ctrl) {
+          // New search
+          setInputMode('query');
+          setResults([]);
+        }
       }
-    } else if (inputMode === 'pattern') {
-      if (key.return) {
-        performSearch();
-      } else if (key.tab) {
-        setInputMode('query');
-      }
-    } else if (inputMode === 'results') {
-      if (key.upArrow) {
-        setSelectedIndex((prev) => Math.max(0, prev - 1));
-      } else if (key.downArrow) {
-        setSelectedIndex((prev) => Math.min(results.length - 1, prev + 1));
-      } else if (key.return && results[selectedIndex]) {
-        onSelect(results[selectedIndex]);
-        onClose();
-      } else if (input === 'c' && key.ctrl) {
-        setCaseSensitive((prev) => !prev);
-      } else if (input === 'n' && key.ctrl) {
-        // New search
-        setInputMode('query');
-        setResults([]);
-      }
-    }
-  }, { isActive: visible });
+    },
+    { isActive: visible }
+  );
 
   if (!visible) {
     return null;
   }
 
   return (
-    <Box
-      flexDirection="column"
-      borderStyle="round"
-      borderColor="cyan"
-      padding={1}
-      width="80%"
-    >
+    <Box flexDirection="column" borderStyle="round" borderColor="cyan" padding={1} width="80%">
       {/* Header */}
       <Box marginBottom={1}>
         <Text bold color="cyan">
@@ -192,9 +189,7 @@ export function FileSearchDialog({
       {/* Search Query Input */}
       <Box flexDirection="row" marginBottom={1}>
         <Box width={15}>
-          <Text color={inputMode === 'query' ? 'cyan' : 'gray'}>
-            Search:
-          </Text>
+          <Text color={inputMode === 'query' ? 'cyan' : 'gray'}>Search:</Text>
         </Box>
         <Box flexGrow={1}>
           {inputMode === 'query' ? (
@@ -212,9 +207,7 @@ export function FileSearchDialog({
       {/* File Pattern Input */}
       <Box flexDirection="row" marginBottom={1}>
         <Box width={15}>
-          <Text color={inputMode === 'pattern' ? 'cyan' : 'gray'}>
-            Files:
-          </Text>
+          <Text color={inputMode === 'pattern' ? 'cyan' : 'gray'}>Files:</Text>
         </Box>
         <Box flexGrow={1}>
           {inputMode === 'pattern' ? (
@@ -231,9 +224,7 @@ export function FileSearchDialog({
 
       {/* Options */}
       <Box flexDirection="row" marginBottom={1}>
-        <Text dimColor>
-          Case Sensitive: {caseSensitive ? '✓' : '✗'} (Ctrl+C to toggle)
-        </Text>
+        <Text dimColor>Case Sensitive: {caseSensitive ? '✓' : '✗'} (Ctrl+C to toggle)</Text>
       </Box>
 
       {/* Results */}
@@ -272,7 +263,8 @@ export function FileSearchDialog({
         <Text dimColor>
           {inputMode === 'query' && 'Tab: File pattern | Enter: Search | ESC: Close'}
           {inputMode === 'pattern' && 'Tab: Search query | Enter: Search | ESC: Close'}
-          {inputMode === 'results' && '↑↓: Navigate | Enter: Open | Ctrl+N: New search | ESC: Close'}
+          {inputMode === 'results' &&
+            '↑↓: Navigate | Enter: Open | Ctrl+N: New search | ESC: Close'}
         </Text>
       </Box>
     </Box>
@@ -281,7 +273,7 @@ export function FileSearchDialog({
 
 /**
  * Parse grep tool output into search results
- * 
+ *
  * Expected format: "path:line:content"
  */
 function parseGrepOutput(output: string): SearchResult[] {

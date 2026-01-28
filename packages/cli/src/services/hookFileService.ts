@@ -158,11 +158,7 @@ export class HookFileService {
 
     // Write to file
     try {
-      await fs.promises.writeFile(
-        filePath,
-        JSON.stringify(hookData, null, 2),
-        'utf-8'
-      );
+      await fs.promises.writeFile(filePath, JSON.stringify(hookData, null, 2), 'utf-8');
     } catch (error) {
       throw new Error(`Failed to save hook: ${error}`);
     }
@@ -210,11 +206,7 @@ export class HookFileService {
       }
 
       // Write updated hook
-      await fs.promises.writeFile(
-        filePath,
-        JSON.stringify(updated, null, 2),
-        'utf-8'
-      );
+      await fs.promises.writeFile(filePath, JSON.stringify(updated, null, 2), 'utf-8');
     } catch (error) {
       if (error instanceof Error) {
         throw error;

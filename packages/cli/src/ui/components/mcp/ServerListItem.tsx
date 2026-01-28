@@ -1,16 +1,16 @@
 /**
  * ServerListItem Component
- * 
+ *
  * Compact server list item for the left column of the two-column MCP panel layout.
  * Displays minimal information with focus on navigation and status at a glance.
- * 
+ *
  * Features:
  * - Expand/collapse icon (▼ expanded, > collapsed)
  * - Server name
  * - Health status icon with color coding
  * - Yellow highlighting when focused
  * - Minimal design - detailed information shown in right column
- * 
+ *
  * Validates: Requirements 1.1-1.5, NFR-7
  */
 
@@ -33,10 +33,14 @@ export interface ServerListItemProps {
  */
 function getHealthColor(health: string): string {
   switch (health) {
-    case 'healthy': return 'green';
-    case 'degraded': return 'yellow';
-    case 'unhealthy': return 'red';
-    default: return 'gray';
+    case 'healthy':
+      return 'green';
+    case 'degraded':
+      return 'yellow';
+    case 'unhealthy':
+      return 'red';
+    default:
+      return 'gray';
   }
 }
 
@@ -45,40 +49,45 @@ function getHealthColor(health: string): string {
  */
 function getStatusIcon(status: string): string {
   switch (status) {
-    case 'connected': return '●';
-    case 'disconnected': return '○';
-    case 'starting': return '⟳';
-    case 'error': return '✗';
-    default: return '○';
+    case 'connected':
+      return '●';
+    case 'disconnected':
+      return '○';
+    case 'starting':
+      return '⟳';
+    case 'error':
+      return '✗';
+    default:
+      return '○';
   }
 }
 
 /**
  * ServerListItem Component
- * 
+ *
  * Compact list item for the left column showing:
  * - Expand icon (▼ or >)
  * - Server name (yellow when focused)
  * - Health status icon (color-coded)
- * 
+ *
  * This component is intentionally minimal - detailed information
  * is displayed in the ServerDetails component in the right column.
  */
-export const ServerListItem: React.FC<ServerListItemProps> = ({
-  server,
-  focused,
-  expanded,
-}) => {
+export const ServerListItem: React.FC<ServerListItemProps> = ({ server, focused, expanded }) => {
   // Determine health status from server state
-  const healthStatus = server.status === 'connected' ? server.health :
-                      server.status === 'starting' ? 'connecting' :
-                      server.status === 'disconnected' ? 'stopped' :
-                      'unhealthy';
-  
+  const healthStatus =
+    server.status === 'connected'
+      ? server.health
+      : server.status === 'starting'
+        ? 'connecting'
+        : server.status === 'disconnected'
+          ? 'stopped'
+          : 'unhealthy';
+
   const healthColor = getHealthColor(healthStatus);
   const statusIcon = getStatusIcon(server.status);
   const expandIcon = expanded ? '▼' : '>';
-  
+
   return (
     <Box marginY={0}>
       <Text color={focused ? 'yellow' : undefined} bold={focused}>

@@ -17,7 +17,11 @@ const getTierForSize = (size: number): ContextTier => {
 
 describe('Prompt routing - tier × mode', () => {
   test('applies tier1-assistant when autoSize is false and targetSize=4096', async () => {
-    const manager = createContextManager('test-session', { parameters: 13, contextLimit: 4096 }, { autoSize: false, targetSize: 4096 });
+    const manager = createContextManager(
+      'test-session',
+      { parameters: 13, contextLimit: 4096 },
+      { autoSize: false, targetSize: 4096 }
+    );
     // start() will initialize tiers and apply prompt
     await manager.start();
 
@@ -38,19 +42,23 @@ describe('Prompt routing - tier × mode', () => {
       { size: 8192, name: 'tier2' },
       { size: 16384, name: 'tier3' },
       { size: 32768, name: 'tier4' },
-      { size: 65536, name: 'tier5' }
+      { size: 65536, name: 'tier5' },
     ];
 
     const modes = [
       OperationalMode.DEVELOPER,
       OperationalMode.PLANNING,
       OperationalMode.ASSISTANT,
-      OperationalMode.DEBUGGER
+      OperationalMode.DEBUGGER,
     ];
 
     for (const tier of tiers) {
       // create manager in manual mode so prompts follow target size
-      const manager = createContextManager('matrix-session', { parameters: 13, contextLimit: tier.size }, { autoSize: false, targetSize: tier.size });
+      const manager = createContextManager(
+        'matrix-session',
+        { parameters: 13, contextLimit: tier.size },
+        { autoSize: false, targetSize: tier.size }
+      );
       await manager.start();
 
       for (const mode of modes) {
@@ -71,18 +79,22 @@ describe('Prompt routing - tier × mode', () => {
       { size: 10000, key: 'tier2' },
       { size: 16000, key: 'tier3' },
       { size: 50000, key: 'tier4' },
-      { size: 100000, key: 'tier5' }
+      { size: 100000, key: 'tier5' },
     ];
 
     const modes = [
       OperationalMode.DEVELOPER,
       OperationalMode.PLANNING,
       OperationalMode.ASSISTANT,
-      OperationalMode.DEBUGGER
+      OperationalMode.DEBUGGER,
     ];
 
     for (const tierCase of tierCases) {
-      const manager = createContextManager('exhaustive-session', { parameters: 13, contextLimit: tierCase.size }, { autoSize: false, targetSize: tierCase.size });
+      const manager = createContextManager(
+        'exhaustive-session',
+        { parameters: 13, contextLimit: tierCase.size },
+        { autoSize: false, targetSize: tierCase.size }
+      );
       await manager.start();
 
       for (const mode of modes) {
@@ -90,12 +102,12 @@ describe('Prompt routing - tier × mode', () => {
 
         const prompt = manager.getSystemPrompt();
         const _tier = getTierForSize(tierCase.size);
-        
+
         // Just verify that we got a prompt and it's not empty
         // The exact content may vary but should be substantial
         expect(prompt).toBeTruthy();
         expect(prompt.length).toBeGreaterThan(100);
-        
+
         // Verify the prompt contains mode-specific or tier-specific content
         // by checking it's not just the default/fallback prompt
         expect(prompt).not.toBe('');

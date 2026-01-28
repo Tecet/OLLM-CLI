@@ -1,6 +1,6 @@
 /**
  * Grep tool implementation
- * 
+ *
  * Provides a tool for searching file contents with pattern matching,
  * case sensitivity control, and file pattern filtering.
  */
@@ -99,9 +99,7 @@ export class GrepTool implements DeclarativeTool<GrepParams, ToolResult> {
  * Invocation instance for grep search
  */
 export class GrepInvocation implements ToolInvocation<GrepParams, ToolResult> {
-  constructor(
-    public params: GrepParams
-  ) {}
+  constructor(public params: GrepParams) {}
 
   getDescription(): string {
     return `Search for "${this.params.pattern}"`;
@@ -205,7 +203,7 @@ export class GrepInvocation implements ToolInvocation<GrepParams, ToolResult> {
         }
 
         const filePath = path.join(cwd, file);
-        
+
         try {
           const content = await fs.readFile(filePath, 'utf-8');
           const lines = content.split('\n');

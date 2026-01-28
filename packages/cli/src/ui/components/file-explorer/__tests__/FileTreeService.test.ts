@@ -1,6 +1,6 @@
 /**
  * FileTreeService Tests
- * 
+ *
  * Tests for file tree building, directory expansion, and node management
  */
 
@@ -41,9 +41,7 @@ describe('FileTreeService', () => {
         maxDepth: 2,
       });
 
-      const hasNodeModules = tree.children?.some(
-        (child) => child.name === 'node_modules'
-      );
+      const hasNodeModules = tree.children?.some((child) => child.name === 'node_modules');
       expect(hasNodeModules).toBe(false);
     });
   });
@@ -52,7 +50,7 @@ describe('FileTreeService', () => {
     it('should expand a directory node', async () => {
       const rootPath = process.cwd();
       const tree = await service.buildTree({ rootPath, maxDepth: 1 });
-      
+
       const dirNode = tree.children?.find((child) => child.type === 'directory');
       if (dirNode) {
         await service.expandDirectory(dirNode, []);
@@ -66,7 +64,7 @@ describe('FileTreeService', () => {
     it('should collapse a directory node', async () => {
       const rootPath = process.cwd();
       const tree = await service.buildTree({ rootPath, maxDepth: 1 });
-      
+
       const dirNode = tree.children?.find((child) => child.type === 'directory');
       if (dirNode) {
         await service.expandDirectory(dirNode, []);
@@ -80,7 +78,7 @@ describe('FileTreeService', () => {
     it('should flatten tree to array of nodes', async () => {
       const rootPath = process.cwd();
       const tree = await service.buildTree({ rootPath, maxDepth: 1 });
-      
+
       const flattened = service.flattenTree(tree);
       expect(Array.isArray(flattened)).toBe(true);
       expect(flattened.length).toBeGreaterThan(0);
@@ -90,12 +88,12 @@ describe('FileTreeService', () => {
     it('should include expanded children', async () => {
       const rootPath = process.cwd();
       const tree = await service.buildTree({ rootPath, maxDepth: 1 });
-      
+
       const dirNode = tree.children?.find((child) => child.type === 'directory');
       if (dirNode) {
         await service.expandDirectory(dirNode, []);
         const flattened = service.flattenTree(tree);
-        
+
         const hasChildren = flattened.some(
           (node) => node.path.startsWith(dirNode.path) && node !== dirNode
         );
@@ -108,7 +106,7 @@ describe('FileTreeService', () => {
     it('should return visible window of nodes', async () => {
       const rootPath = process.cwd();
       const tree = await service.buildTree({ rootPath, maxDepth: 2 });
-      
+
       const visible = service.getVisibleNodes(tree, {
         scrollOffset: 0,
         windowSize: 10,
@@ -120,7 +118,7 @@ describe('FileTreeService', () => {
     it('should respect scroll offset', async () => {
       const rootPath = process.cwd();
       const tree = await service.buildTree({ rootPath, maxDepth: 2 });
-      
+
       const visible1 = service.getVisibleNodes(tree, {
         scrollOffset: 0,
         windowSize: 5,

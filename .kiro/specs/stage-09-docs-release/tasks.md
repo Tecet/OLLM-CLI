@@ -17,7 +17,7 @@ This implementation plan covers the creation of comprehensive user documentation
   - Add license and contributing sections
   - _Requirements: 1.1, 1.2, 1.3, 1.5, 1.6_
 
-- [ ]* 1.1 Write property test for README completeness
+- [ ]\* 1.1 Write property test for README completeness
   - **Property 1: README Completeness**
   - **Validates: Requirements 1.2, 1.3, 1.5, 1.6**
 
@@ -38,7 +38,7 @@ This implementation plan covers the creation of comprehensive user documentation
     - _Requirements: 2.2, 2.6_
 
   - [x] 2.3 Document all environment variables
-    - List all OLLM_ prefixed environment variables
+    - List all OLLM\_ prefixed environment variables
     - Include descriptions and default values
     - _Requirements: 2.3_
 
@@ -47,7 +47,7 @@ This implementation plan covers the creation of comprehensive user documentation
     - Create advanced configuration example with all major settings
     - _Requirements: 2.5_
 
-- [ ]* 2.5 Write property tests for configuration documentation
+- [ ]\* 2.5 Write property tests for configuration documentation
   - **Property 2: Configuration Documentation Completeness**
   - **Property 3: Configuration Reference Structure**
   - **Validates: Requirements 2.2, 2.3, 2.4, 2.5, 2.6**
@@ -87,7 +87,7 @@ This implementation plan covers the creation of comprehensive user documentation
     - Link to community resources (if applicable)
     - _Requirements: 3.5_
 
-- [ ]* 3.7 Write property test for troubleshooting guide completeness
+- [ ]\* 3.7 Write property test for troubleshooting guide completeness
   - **Property 4: Troubleshooting Guide Completeness**
   - **Validates: Requirements 3.2, 3.4, 3.5, 3.6**
 
@@ -102,7 +102,7 @@ This implementation plan covers the creation of comprehensive user documentation
     - Add author field
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
 
-  - [ ]* 4.2 Write property test for package metadata completeness
+  - [ ]\* 4.2 Write property test for package metadata completeness
     - **Property 6: Package Metadata Completeness**
     - **Validates: Requirements 5.1, 5.2, 5.3, 5.4, 5.5**
 
@@ -113,14 +113,14 @@ This implementation plan covers the creation of comprehensive user documentation
     - Add shebang (#!/usr/bin/env node) to CLI entry point
     - _Requirements: 4.4, 4.5_
 
-  - [ ]* 4.4 Write property tests for bundle completeness
+  - [ ]\* 4.4 Write property tests for bundle completeness
     - **Property 5: Bundle Dependency Completeness**
     - **Property 7: Package Files Inclusion**
     - **Validates: Requirements 4.4, 4.5, 5.6**
 
   - [x] 4.5 Test global installation locally
     - Run npm pack to create tarball
-    - Install tarball globally: npm install -g ./ollm-cli-*.tgz
+    - Install tarball globally: npm install -g ./ollm-cli-\*.tgz
     - Verify ollm command is available
     - Verify ollm --version works
     - Verify basic functionality with ollm -p "test"
@@ -134,7 +134,7 @@ This implementation plan covers the creation of comprehensive user documentation
     - Use os.EOL or platform-appropriate methods
     - _Requirements: 6.4, 6.5_
 
-  - [ ]* 5.2 Write property tests for platform compatibility
+  - [ ]\* 5.2 Write property tests for platform compatibility
     - **Property 8: Platform-Agnostic Path Handling**
     - **Property 9: Platform-Agnostic Line Endings**
     - **Property 10: Platform Detection**
@@ -160,7 +160,7 @@ This implementation plan covers the creation of comprehensive user documentation
     - Add git commit and tag creation
     - _Requirements: 7.5, 7.6_
 
-  - [ ]* 7.2 Write property tests for version management
+  - [ ]\* 7.2 Write property tests for version management
     - **Property 11: Semantic Version Format**
     - **Property 12: Version Synchronization**
     - **Validates: Requirements 7.1, 7.6**
@@ -179,7 +179,7 @@ This implementation plan covers the creation of comprehensive user documentation
     - Add version comparison links at bottom
     - _Requirements: 8.1, 8.2, 8.3, 8.4_
 
-  - [ ]* 8.2 Write property tests for CHANGELOG format
+  - [ ]\* 8.2 Write property tests for CHANGELOG format
     - **Property 13: CHANGELOG Format Compliance**
     - **Property 14: Breaking Change Documentation**
     - **Property 15: CHANGELOG Link References**
@@ -196,7 +196,7 @@ This implementation plan covers the creation of comprehensive user documentation
     - Add rollback procedures section
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5_
 
-  - [ ]* 9.2 Write property test for release checklist completeness
+  - [ ]\* 9.2 Write property test for release checklist completeness
     - **Property 16: Release Checklist Completeness**
     - **Validates: Requirements 9.2, 9.3, 9.4, 9.5**
 
@@ -209,7 +209,7 @@ This implementation plan covers the creation of comprehensive user documentation
     - Add contributors section
     - _Requirements: 10.1, 10.2, 10.4_
 
-  - [ ]* 9.4 Write property tests for release notes structure
+  - [ ]\* 9.4 Write property tests for release notes structure
     - **Property 17: Release Notes Structure**
     - **Property 18: Breaking Change Upgrade Instructions**
     - **Property 19: Security Fix Indication**
@@ -225,7 +225,7 @@ This implementation plan covers the creation of comprehensive user documentation
     - Implement error handling with non-zero exit codes
     - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5, 11.6_
 
-  - [ ]* 10.2 Write property test for verification error handling
+  - [ ]\* 10.2 Write property test for verification error handling
     - **Property 20: Verification Script Error Handling**
     - **Validates: Requirements 11.6**
 
@@ -252,7 +252,7 @@ This implementation plan covers the creation of comprehensive user documentation
     - Report broken links with source location
     - _Requirements: 12.5, 12.6_
 
-  - [ ]* 11.4 Write property tests for documentation validation
+  - [ ]\* 11.4 Write property tests for documentation validation
     - **Property 21: Code Example Syntax Validity**
     - **Property 22: Documentation Accuracy**
     - **Property 23: Link Validity**

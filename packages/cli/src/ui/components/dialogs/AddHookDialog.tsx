@@ -1,11 +1,11 @@
 /**
  * AddHookDialog - Dialog for creating new hooks
- * 
+ *
  * Features:
  * - Form fields for hook configuration
  * - Validation for required fields
  * - Save and cancel actions
- * 
+ *
  * Requirements: 3.1, 3.2, 3.3, 6.1
  */
 
@@ -71,9 +71,7 @@ export function AddHookDialog({ onSave: _onSave, onCancel: _onCancel }: AddHookD
           <Text color={uiState.theme.text.secondary} dimColor>
             {formData.name || '(enter name)'}
           </Text>
-          {errors.name && (
-            <Text color={uiState.theme.status.error}>{errors.name}</Text>
-          )}
+          {errors.name && <Text color={uiState.theme.status.error}>{errors.name}</Text>}
         </Box>
 
         {/* Command field */}
@@ -82,9 +80,7 @@ export function AddHookDialog({ onSave: _onSave, onCancel: _onCancel }: AddHookD
           <Text color={uiState.theme.text.secondary} dimColor>
             {formData.command || '(enter command)'}
           </Text>
-          {errors.command && (
-            <Text color={uiState.theme.status.error}>{errors.command}</Text>
-          )}
+          {errors.command && <Text color={uiState.theme.status.error}>{errors.command}</Text>}
         </Box>
 
         {/* Args field */}
@@ -98,16 +94,15 @@ export function AddHookDialog({ onSave: _onSave, onCancel: _onCancel }: AddHookD
 
       {/* Actions */}
       <Box marginTop={2} gap={2}>
-        <Text color={isSaving ? 'gray' : 'green'}>
-          {isSaving ? 'Saving...' : '[S] Save'}
-        </Text>
+        <Text color={isSaving ? 'gray' : 'green'}>{isSaving ? 'Saving...' : '[S] Save'}</Text>
         <Text color="red">[C] Cancel</Text>
       </Box>
 
       {/* Instructions */}
       <Box marginTop={1}>
         <Text color={uiState.theme.text.secondary} dimColor>
-          Note: This is a placeholder dialog. Full form editing will be implemented in a future update.
+          Note: This is a placeholder dialog. Full form editing will be implemented in a future
+          update.
         </Text>
       </Box>
     </Box>

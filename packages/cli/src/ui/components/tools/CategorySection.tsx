@@ -18,10 +18,10 @@ export interface CategorySectionProps {
 
 /**
  * CategorySection component
- * 
+ *
  * Displays a category header and its tools.
  * Highlights the selected tool when the category is active.
- * 
+ *
  * Requirements: 23.2, 25.3
  */
 export function CategorySection({
@@ -38,10 +38,10 @@ export function CategorySection({
   const categoryIcons: Record<ToolCategory, string> = {
     'file-operations': '📝',
     'file-discovery': '🔍',
-    'shell': '⚡',
-    'web': '🌐',
-    'memory': '💾',
-    'context': '🔄',
+    shell: '⚡',
+    web: '🌐',
+    memory: '💾',
+    context: '🔄',
   };
 
   const icon = categoryIcons[category] || '📦';
@@ -55,15 +55,10 @@ export function CategorySection({
         paddingX={1}
         marginBottom={1}
       >
-        <Text
-          bold
-          color={isSelected ? theme.text.accent : theme.text.primary}
-        >
+        <Text bold color={isSelected ? theme.text.accent : theme.text.primary}>
           {icon} {displayName}
         </Text>
-        <Text color={theme.text.secondary}>
-          {' '}({tools.length} tools)
-        </Text>
+        <Text color={theme.text.secondary}> ({tools.length} tools)</Text>
       </Box>
 
       {/* Tools list */}

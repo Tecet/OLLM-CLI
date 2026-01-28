@@ -1,6 +1,6 @@
 /**
  * GPU Detection Service
- * 
+ *
  * Detects GPU type on the system (NVIDIA, AMD, Apple Silicon, or CPU-only)
  * using command-line tools and system information.
  */
@@ -53,17 +53,17 @@ export class DefaultGPUDetector implements GPUDetector {
     }
 
     // Check for AMD GPU (Linux only - rocm-smi doesn't work on Windows)
-    if (systemPlatform === 'linux' && await this.hasAMD()) {
+    if (systemPlatform === 'linux' && (await this.hasAMD())) {
       return GPUType.AMD;
     }
 
     // Check for Apple Silicon (macOS only)
-    if (systemPlatform === 'darwin' && await this.hasAppleSilicon()) {
+    if (systemPlatform === 'darwin' && (await this.hasAppleSilicon())) {
       return GPUType.APPLE_SILICON;
     }
 
     // Check for Windows GPU via Performance Counters (any GPU vendor)
-    if (systemPlatform === 'win32' && await this.hasWindowsGPU()) {
+    if (systemPlatform === 'win32' && (await this.hasWindowsGPU())) {
       return GPUType.WINDOWS;
     }
 
@@ -78,7 +78,7 @@ export class DefaultGPUDetector implements GPUDetector {
     try {
       const { stdout } = await execAsync('nvidia-smi --version', {
         timeout: 5000,
-        windowsHide: true
+        windowsHide: true,
       });
       return stdout.includes('NVIDIA');
     } catch {
@@ -93,14 +93,14 @@ export class DefaultGPUDetector implements GPUDetector {
     try {
       // Try rocm-smi first
       await execAsync('rocm-smi --version', {
-        timeout: 5000
+        timeout: 5000,
       });
       return true;
     } catch {
       // Try alternative: check for AMD GPU in lspci
       try {
         const { stdout } = await execAsync('lspci | grep -i amd', {
-          timeout: 5000
+          timeout: 5000,
         });
         return stdout.toLowerCase().includes('vga') || stdout.toLowerCase().includes('display');
       } catch {
@@ -115,7 +115,7 @@ export class DefaultGPUDetector implements GPUDetector {
   private async hasAppleSilicon(): Promise<boolean> {
     try {
       const { stdout } = await execAsync('sysctl -n machdep.cpu.brand_string', {
-        timeout: 5000
+        timeout: 5000,
       });
       return stdout.includes('Apple');
     } catch {
@@ -154,4 +154,3 @@ export class DefaultGPUDetector implements GPUDetector {
 export function createGPUDetector(): GPUDetector {
   return new DefaultGPUDetector();
 }
-

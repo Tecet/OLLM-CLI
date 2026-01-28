@@ -1,9 +1,9 @@
 /**
  * useMCPNavigation - Navigation hook for MCP Panel UI
- * 
+ *
  * Manages keyboard navigation and focus state for the MCP panel following
  * the Browse Mode/Active Mode pattern.
- * 
+ *
  * Features:
  * - Exit item at position 0 with proper navigation
  * - Up/Down arrow navigation between Exit and servers
@@ -14,7 +14,7 @@
  * - Windowed rendering for performance with 20+ servers
  * - Auto-scroll to keep selected item visible
  * - Scroll indicators (top/bottom)
- * 
+ *
  * Validates: Requirements 12.1-12.15
  */
 
@@ -67,7 +67,7 @@ export interface MCPNavigationState {
   isActive: boolean;
   /** Whether there are unsaved changes */
   hasUnsavedChanges: boolean;
-  
+
   // Windowed rendering
   /** Visible servers in current window */
   visibleServers: Array<import('../contexts/MCPContext.js').ExtendedMCPServerStatus>;
@@ -75,7 +75,7 @@ export interface MCPNavigationState {
   showScrollUp: boolean;
   /** Show scroll down indicator */
   showScrollDown: boolean;
-  
+
   // Actions
   /** Handle keyboard input */
   handleKeyPress: (input: string, key: Key, actions: NavigationActions) => void;
@@ -92,27 +92,28 @@ export function useMCPNavigation(): MCPNavigationState {
   const { state } = useMCP();
   const { servers } = state;
   const { isFocused, exitOneLevel } = useFocusManager();
-  
+
   // Navigation state
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isOnExitItem, setIsOnExitItem] = useState(false);
   const [expandedServers, setExpandedServers] = useState<Set<string>>(new Set());
   const [scrollOffset, setScrollOffset] = useState(0);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  
+
   // Convert servers Map to array for indexing
   const serverList = useMemo(() => Array.from(servers.values()), [servers]);
-  
+
   // Check if panel is active
   const isActive = isFocused('mcp-panel');
-  
+
   // Windowed rendering configuration
-  const terminalHeight = typeof process !== 'undefined' && process.stdout?.rows ? process.stdout.rows : 24;
+  const terminalHeight =
+    typeof process !== 'undefined' && process.stdout?.rows ? process.stdout.rows : 24;
   const headerRows = 3; // Header + spacing
   const footerRows = 2; // Actions footer
   const availableRows = terminalHeight - headerRows - footerRows;
   const windowSize = Math.max(5, availableRows - 4); // Reserve space for scroll indicators
-  
+
   // Calculate visible window
   const totalItems = 1 + serverList.length; // Exit item + servers
   const _visibleStart = scrollOffset;
@@ -123,31 +124,34 @@ export function useMCPNavigation(): MCPNavigationState {
       Math.max(0, visibleEnd - 1)
     );
   }, [serverList, scrollOffset, visibleEnd]);
-  
+
   // Scroll indicators
   const showScrollUp = scrollOffset > 0;
   const showScrollDown = visibleEnd < totalItems;
-  
+
   /**
    * Adjust scroll offset to keep selected item visible
    */
-  const adjustScroll = useCallback((index: number) => {
-    const position = index + 1; // Account for Exit item at position 0
-    
-    if (position < scrollOffset) {
-      // Scroll up to show item
-      setScrollOffset(position);
-    } else if (position >= scrollOffset + windowSize) {
-      // Scroll down to show item
-      setScrollOffset(position - windowSize + 1);
-    }
-  }, [scrollOffset, windowSize]);
-  
+  const adjustScroll = useCallback(
+    (index: number) => {
+      const position = index + 1; // Account for Exit item at position 0
+
+      if (position < scrollOffset) {
+        // Scroll up to show item
+        setScrollOffset(position);
+      } else if (position >= scrollOffset + windowSize) {
+        // Scroll down to show item
+        setScrollOffset(position - windowSize + 1);
+      }
+    },
+    [scrollOffset, windowSize]
+  );
+
   /**
    * Toggle server expand/collapse
    */
   const toggleServer = useCallback((serverName: string) => {
-    setExpandedServers(prev => {
+    setExpandedServers((prev) => {
       const next = new Set(prev);
       if (next.has(serverName)) {
         next.delete(serverName);
@@ -157,7 +161,7 @@ export function useMCPNavigation(): MCPNavigationState {
       return next;
     });
   }, []);
-  
+
   /**
    * Save pending changes
    */
@@ -166,118 +170,121 @@ export function useMCPNavigation(): MCPNavigationState {
     // Just clear the flag
     setHasUnsavedChanges(false);
   }, []);
-  
+
   /**
    * Handle keyboard input in Active Mode
    */
-  const handleKeyPress = useCallback((input: string, key: Key, actions: NavigationActions) => {
-    // Exit to Browse Mode
-    if (key.escape || input === '0') {
-      if (hasUnsavedChanges) {
-        // Auto-save on exit
-        saveChanges();
-      }
-      exitOneLevel();
-      return;
-    }
-    
-    // Up/Down navigation
-    if (key.upArrow) {
-      if (isOnExitItem) {
-        // Already at top, no action
-        return;
-      }
-      
-      if (selectedIndex === 0) {
-        // Move to Exit item
-        setIsOnExitItem(true);
-        setSelectedIndex(-1);
-        setScrollOffset(0);
-      } else {
-        // Move to previous server
-        const newIndex = selectedIndex - 1;
-        setSelectedIndex(newIndex);
-        adjustScroll(newIndex);
-      }
-    } else if (key.downArrow) {
-      if (isOnExitItem) {
-        // Move from Exit to first server
-        setIsOnExitItem(false);
-        setSelectedIndex(0);
-        adjustScroll(0);
-      } else if (selectedIndex < serverList.length - 1) {
-        // Move to next server
-        const newIndex = selectedIndex + 1;
-        setSelectedIndex(newIndex);
-        adjustScroll(newIndex);
-      }
-      // Already at bottom, no action
-    }
-    
-    // Enter key actions
-    else if (key.return) {
-      if (isOnExitItem) {
-        // Exit on Enter from Exit item
+  const handleKeyPress = useCallback(
+    (input: string, key: Key, actions: NavigationActions) => {
+      // Exit to Browse Mode
+      if (key.escape || input === '0') {
         if (hasUnsavedChanges) {
+          // Auto-save on exit
           saveChanges();
         }
         exitOneLevel();
-      } else if (selectedIndex >= 0 && selectedIndex < serverList.length) {
-        // Toggle expand/collapse with Enter
-        const serverName = serverList[selectedIndex].name;
-        toggleServer(serverName);
+        return;
       }
-    }
-    
-    // Left/Right toggle enabled/disabled
-    else if (key.leftArrow || key.rightArrow) {
-      if (!isOnExitItem && selectedIndex >= 0 && selectedIndex < serverList.length) {
-        const serverName = serverList[selectedIndex].name;
-        actions.onToggle(serverName);
-        setHasUnsavedChanges(true);
+
+      // Up/Down navigation
+      if (key.upArrow) {
+        if (isOnExitItem) {
+          // Already at top, no action
+          return;
+        }
+
+        if (selectedIndex === 0) {
+          // Move to Exit item
+          setIsOnExitItem(true);
+          setSelectedIndex(-1);
+          setScrollOffset(0);
+        } else {
+          // Move to previous server
+          const newIndex = selectedIndex - 1;
+          setSelectedIndex(newIndex);
+          adjustScroll(newIndex);
+        }
+      } else if (key.downArrow) {
+        if (isOnExitItem) {
+          // Move from Exit to first server
+          setIsOnExitItem(false);
+          setSelectedIndex(0);
+          adjustScroll(0);
+        } else if (selectedIndex < serverList.length - 1) {
+          // Move to next server
+          const newIndex = selectedIndex + 1;
+          setSelectedIndex(newIndex);
+          adjustScroll(newIndex);
+        }
+        // Already at bottom, no action
       }
-    }
-    
-    // Action keys (only when not on Exit item)
-    else if (!isOnExitItem && selectedIndex >= 0 && selectedIndex < serverList.length) {
-      if (input === 'v' || input === 'V') {
-        actions.onViewTools();
-      } else if (input === 'c' || input === 'C') {
-        actions.onConfigure();
-      } else if (input === 'o' || input === 'O') {
-        actions.onOAuth();
-      } else if (input === 'r' || input === 'R') {
-        actions.onRestart();
-      } else if (input === 'l' || input === 'L') {
-        actions.onLogs();
-      } else if (input === 'm' || input === 'M') {
-        actions.onMarketplace();
-      } else if (input === 'h' || input === 'H') {
-        actions.onHealth();
-      } else if (input === 'i' || input === 'I') {
-        actions.onInstall();
-      } else if (input === 'u' || input === 'U') {
-        actions.onUninstall();
+
+      // Enter key actions
+      else if (key.return) {
+        if (isOnExitItem) {
+          // Exit on Enter from Exit item
+          if (hasUnsavedChanges) {
+            saveChanges();
+          }
+          exitOneLevel();
+        } else if (selectedIndex >= 0 && selectedIndex < serverList.length) {
+          // Toggle expand/collapse with Enter
+          const serverName = serverList[selectedIndex].name;
+          toggleServer(serverName);
+        }
       }
-    }
-  }, [
-    isOnExitItem,
-    selectedIndex,
-    serverList,
-    hasUnsavedChanges,
-    adjustScroll,
-    toggleServer,
-    saveChanges,
-    exitOneLevel,
-  ]);
-  
+
+      // Left/Right toggle enabled/disabled
+      else if (key.leftArrow || key.rightArrow) {
+        if (!isOnExitItem && selectedIndex >= 0 && selectedIndex < serverList.length) {
+          const serverName = serverList[selectedIndex].name;
+          actions.onToggle(serverName);
+          setHasUnsavedChanges(true);
+        }
+      }
+
+      // Action keys (only when not on Exit item)
+      else if (!isOnExitItem && selectedIndex >= 0 && selectedIndex < serverList.length) {
+        if (input === 'v' || input === 'V') {
+          actions.onViewTools();
+        } else if (input === 'c' || input === 'C') {
+          actions.onConfigure();
+        } else if (input === 'o' || input === 'O') {
+          actions.onOAuth();
+        } else if (input === 'r' || input === 'R') {
+          actions.onRestart();
+        } else if (input === 'l' || input === 'L') {
+          actions.onLogs();
+        } else if (input === 'm' || input === 'M') {
+          actions.onMarketplace();
+        } else if (input === 'h' || input === 'H') {
+          actions.onHealth();
+        } else if (input === 'i' || input === 'I') {
+          actions.onInstall();
+        } else if (input === 'u' || input === 'U') {
+          actions.onUninstall();
+        }
+      }
+    },
+    [
+      isOnExitItem,
+      selectedIndex,
+      serverList,
+      hasUnsavedChanges,
+      adjustScroll,
+      toggleServer,
+      saveChanges,
+      exitOneLevel,
+    ]
+  );
+
   // Auto-scroll when selected index changes
   useEffect(() => {
     if (!isOnExitItem && selectedIndex >= 0) {
       adjustScroll(selectedIndex);
     }
   }, [selectedIndex, isOnExitItem, adjustScroll]);
-  
+
   return {
     // State
     selectedIndex,
@@ -286,12 +293,12 @@ export function useMCPNavigation(): MCPNavigationState {
     scrollOffset,
     isActive,
     hasUnsavedChanges,
-    
+
     // Windowed rendering
     visibleServers,
     showScrollUp,
     showScrollDown,
-    
+
     // Actions
     handleKeyPress,
     toggleServer,

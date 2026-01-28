@@ -1,6 +1,6 @@
 /**
  * ServerItem Component
- * 
+ *
  * Displays an individual MCP server with:
  * - Server name, description, and enabled/disabled state
  * - Health status indicator
@@ -74,9 +74,7 @@ const ServerActions: React.FC<{ focused: boolean }> = ({ focused }) => {
 
   return (
     <Box marginTop={1}>
-      <Text dimColor>
-        [V] View Tools  [C] Configure  [R] Restart  [L] Logs  [U] Uninstall
-      </Text>
+      <Text dimColor>[V] View Tools [C] Configure [R] Restart [L] Logs [U] Uninstall</Text>
     </Box>
   );
 };
@@ -99,7 +97,7 @@ const Toggle: React.FC<{ enabled: boolean; focused: boolean }> = ({ enabled, foc
 
 /**
  * ServerItem Component
- * 
+ *
  * Main component that displays an MCP server with all its information and controls.
  * Supports expand/collapse functionality and focus highlighting.
  */
@@ -112,21 +110,23 @@ export const ServerItem: React.FC<ServerItemProps> = ({
 }) => {
   const isEnabled = !server.config.disabled;
   const expandIcon = expanded ? '▼' : '>';
-  
+
   // Map server status to health indicator status
-  const healthStatus = server.status === 'connected' ? server.health :
-                      server.status === 'starting' ? 'connecting' :
-                      server.status === 'disconnected' ? 'stopped' :
-                      'unhealthy';
+  const healthStatus =
+    server.status === 'connected'
+      ? server.health
+      : server.status === 'starting'
+        ? 'connecting'
+        : server.status === 'disconnected'
+          ? 'stopped'
+          : 'unhealthy';
 
   return (
     <Box flexDirection="column" marginY={1}>
       {/* Main server row */}
       <Box flexDirection="row" gap={1}>
         {/* Expand/collapse icon */}
-        <Text color={focused ? 'cyan' : undefined}>
-          {expandIcon}
-        </Text>
+        <Text color={focused ? 'cyan' : undefined}>{expandIcon}</Text>
 
         {/* Server name */}
         <Text bold color={focused ? 'cyan' : undefined}>

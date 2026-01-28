@@ -52,7 +52,8 @@ export const InputBox = React.memo(function InputBox({
 
   const handleNewline = useCallback(() => {
     if (!disabled) {
-      const newInput = localInput.slice(0, cursorPosition) + '\n' + localInput.slice(cursorPosition);
+      const newInput =
+        localInput.slice(0, cursorPosition) + '\n' + localInput.slice(cursorPosition);
       setLocalInput(newInput);
       onChange(newInput);
       setCursorPosition(cursorPosition + 1);
@@ -78,38 +79,41 @@ export const InputBox = React.memo(function InputBox({
       setHistoryIndex(historyIndex - 1);
     }
   }, [disabled, userMessages, historyIndex, onChange]);
-  
-    // Sanitize pasted/typed input to avoid control characters and extremely long unbroken lines
-    const sanitizeAndWrap = useCallback((s: string) => {
-      if (!s) return s;
-      let out = s;
-      // Remove zero-width spaces and carriage returns
-      out = out.replace(/\u200B/g, '').replace(/\r/g, '');
-      
-      // Strip SGR mouse sequences specifically (e.g. [<0;12;34M), even if missing ESC
-      // This is necessary because sometimes the ESC key is consumed/stripped before reaching here
-      // eslint-disable-next-line no-control-regex
-      out = out.replace(/(?:\x1B)?\[<[0-9;]+[mM]/g, '');
-      
-      // Strip standard ANSI escape CSI sequences like \x1B[...m
-      // eslint-disable-next-line no-control-regex
-      out = out.replace(/\x1B\[[0-9;]*[A-Za-z]/g, '');
-      
-      // Remove other non-printable control characters except tab (\t) and newline (\n)
-      // eslint-disable-next-line no-control-regex
-      out = out.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
-  
-      // Wrap very long unbroken lines to avoid layout break in the terminal
-      const wrapLen = 120;
-      out = out.split('\n').map(line => {
+
+  // Sanitize pasted/typed input to avoid control characters and extremely long unbroken lines
+  const sanitizeAndWrap = useCallback((s: string) => {
+    if (!s) return s;
+    let out = s;
+    // Remove zero-width spaces and carriage returns
+    out = out.replace(/\u200B/g, '').replace(/\r/g, '');
+
+    // Strip SGR mouse sequences specifically (e.g. [<0;12;34M), even if missing ESC
+    // This is necessary because sometimes the ESC key is consumed/stripped before reaching here
+    // eslint-disable-next-line no-control-regex
+    out = out.replace(/(?:\x1B)?\[<[0-9;]+[mM]/g, '');
+
+    // Strip standard ANSI escape CSI sequences like \x1B[...m
+    // eslint-disable-next-line no-control-regex
+    out = out.replace(/\x1B\[[0-9;]*[A-Za-z]/g, '');
+
+    // Remove other non-printable control characters except tab (\t) and newline (\n)
+    // eslint-disable-next-line no-control-regex
+    out = out.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+
+    // Wrap very long unbroken lines to avoid layout break in the terminal
+    const wrapLen = 120;
+    out = out
+      .split('\n')
+      .map((line) => {
         if (line.length <= wrapLen) return line;
         const parts: string[] = [];
         for (let i = 0; i < line.length; i += wrapLen) parts.push(line.slice(i, i + wrapLen));
         return parts.join('\n');
-      }).join('\n');
-  
-      return out;
-    }, []);
+      })
+      .join('\n');
+
+    return out;
+  }, []);
 
   useInput((input, key) => {
     if (disabled) return;
@@ -163,7 +167,8 @@ export const InputBox = React.memo(function InputBox({
     // Handle regular character input
     if (input && !key.ctrl && !key.meta) {
       const safeInput = sanitizeAndWrap(input);
-      const newInput = localInput.slice(0, cursorPosition) + safeInput + localInput.slice(cursorPosition);
+      const newInput =
+        localInput.slice(0, cursorPosition) + safeInput + localInput.slice(cursorPosition);
       setLocalInput(newInput);
       onChange(newInput);
       setCursorPosition(cursorPosition + safeInput.length);
@@ -177,14 +182,8 @@ export const InputBox = React.memo(function InputBox({
   const currentLineStart = localInput.slice(0, cursorPosition).lastIndexOf('\n') + 1;
   const cursorInLine = cursorPosition - currentLineStart;
 
-
   return (
-    <Box
-      flexDirection="column"
-      paddingX={1}
-      paddingY={0}
-      width="100%"
-    >
+    <Box flexDirection="column" paddingX={1} paddingY={0} width="100%">
       {/* History indicator - only show when editing history */}
       {historyIndex >= 0 && (
         <Box height={1}>
@@ -199,19 +198,27 @@ export const InputBox = React.memo(function InputBox({
       <Box flexDirection="column" flexGrow={1}>
         {disabled ? (
           <Box flexDirection="row">
-            <Text bold color={theme.text.accent}>{'> '}</Text>
-            <Text color={theme.text.secondary} dimColor>Waiting for response</Text>
+            <Text bold color={theme.text.accent}>
+              {'> '}
+            </Text>
+            <Text color={theme.text.secondary} dimColor>
+              Waiting for response
+            </Text>
           </Box>
         ) : localInput.trim().length === 0 ? (
           <Box flexDirection="row">
-            <Text bold color={theme.text.accent}>{'> '}</Text>
+            <Text bold color={theme.text.accent}>
+              {'> '}
+            </Text>
             <Text color={theme.text.secondary}>
               {placeholder || 'Type your message (Enter to send, Shift+Enter for newline)'}
             </Text>
           </Box>
         ) : localInput.length > 500 ? (
           <Box flexDirection="row">
-            <Text bold color={theme.text.accent}>{'> '}</Text>
+            <Text bold color={theme.text.accent}>
+              {'> '}
+            </Text>
             <Text color={theme.text.primary} italic>
               {`[Pasted Content: ${localInput.length} chars] `}
               <Text inverse>{''}</Text>
@@ -225,7 +232,11 @@ export const InputBox = React.memo(function InputBox({
             return (
               <Box key={index} flexDirection="row">
                 <Box width={2}>
-                  {index === 0 ? <Text bold color={theme.text.accent}>{'> '}</Text> : null}
+                  {index === 0 ? (
+                    <Text bold color={theme.text.accent}>
+                      {'> '}
+                    </Text>
+                  ) : null}
                 </Box>
                 <Text color={theme.text.primary}>
                   {isCurrentLine && cursorInLine <= line.length ? (

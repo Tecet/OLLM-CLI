@@ -1,14 +1,14 @@
 /**
  * Storage Migration Utility
- * 
+ *
  * Handles migration of session and snapshot data from old unified location
  * to new separated locations.
- * 
+ *
  * Old structure:
  *   ~/.ollm/session-data/
  *     ├── {sessionId}.json (sessions)
  *     └── {sessionId}/snapshots/ (snapshots)
- * 
+ *
  * New structure:
  *   ~/.ollm/sessions/
  *     └── {sessionId}.json
@@ -49,8 +49,14 @@ export async function needsMigration(): Promise<boolean> {
 
   // Check if new locations already have data
   try {
-    const sessionsExist = await fs.access(newSessionsLocation).then(() => true).catch(() => false);
-    const snapshotsExist = await fs.access(newSnapshotsLocation).then(() => true).catch(() => false);
+    const sessionsExist = await fs
+      .access(newSessionsLocation)
+      .then(() => true)
+      .catch(() => false);
+    const snapshotsExist = await fs
+      .access(newSnapshotsLocation)
+      .then(() => true)
+      .catch(() => false);
 
     // If new locations exist and have files, assume migration already done
     if (sessionsExist || snapshotsExist) {
@@ -119,17 +125,19 @@ export async function migrateStorage(): Promise<MigrationResult> {
         try {
           const newPath = path.join(newSnapshotsLocation, entry.name);
           await copyDirectory(oldPath, newPath);
-          
+
           // Count snapshots
           const snapshotsDir = path.join(newPath, 'snapshots');
           try {
             const snapshots = await fs.readdir(snapshotsDir);
-            const snapshotFiles = snapshots.filter(f => f.startsWith('snapshot-') && f.endsWith('.json'));
+            const snapshotFiles = snapshots.filter(
+              (f) => f.startsWith('snapshot-') && f.endsWith('.json')
+            );
             result.snapshotsMigrated += snapshotFiles.length;
           } catch {
             // Ignore if snapshots directory doesn't exist
           }
-          
+
           console.log(`[Migration] Migrated snapshots for session: ${entry.name}`);
         } catch (error) {
           const errorMsg = `Failed to migrate snapshots for ${entry.name}: ${error instanceof Error ? error.message : String(error)}`;
@@ -174,13 +182,13 @@ export async function migrateStorage(): Promise<MigrationResult> {
  */
 async function copyDirectory(src: string, dest: string): Promise<void> {
   await fs.mkdir(dest, { recursive: true });
-  
+
   const entries = await fs.readdir(src, { withFileTypes: true });
-  
+
   for (const entry of entries) {
     const srcPath = path.join(src, entry.name);
     const destPath = path.join(dest, entry.name);
-    
+
     if (entry.isDirectory()) {
       await copyDirectory(srcPath, destPath);
     } else {

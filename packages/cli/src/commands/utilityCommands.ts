@@ -1,6 +1,6 @@
 /**
  * Utility Commands
- * 
+ *
  * Implements utility commands:
  * - /help - Show help information
  * - /exit - Exit the CLI
@@ -186,7 +186,7 @@ function buildPromptPreviewMessage(input: {
 
 /**
  * /help - Show help information
- * 
+ *
  * Requirements: 19.12
  */
 export const helpCommand: Command = {
@@ -207,7 +207,8 @@ export const helpCommand: Command = {
     // Show general help
     return {
       success: true,
-      message: 'OLLM CLI - Available Commands:\n\n' +
+      message:
+        'OLLM CLI - Available Commands:\n\n' +
         'Session Management:\n' +
         '  /new              - Create new session\n' +
         '  /clear            - Clear chat history\n' +
@@ -246,7 +247,7 @@ export const helpCommand: Command = {
 
 /**
  * /exit - Exit the CLI
- * 
+ *
  * Requirements: 19.12
  */
 export const exitCommand: Command = {
@@ -281,14 +282,18 @@ export const testPromptCommand: Command = {
       const modelEntry = profileManager.getModelEntry(modelId);
       const requestedContextSize = settings.llm?.contextSize ?? modelEntry.default_context ?? 4096;
       const contextCapRatio = settings.llm?.contextCapRatio ?? 0.85;
-      const contextSizing = calculateContextSizing(requestedContextSize, modelEntry, contextCapRatio);
+      const contextSizing = calculateContextSizing(
+        requestedContextSize,
+        modelEntry,
+        contextCapRatio
+      );
       const temperature = settings.llm?.temperature ?? 0.1;
       const forcedNumGpu = settings.llm?.forceNumGpu;
       const history = contextMessages
         .filter((m: ContextMessage) => m.role !== 'system')
         .map((m: ContextMessage) => ({
           ...m,
-          content: m.content || ''
+          content: m.content || '',
         }));
       const lastGPUInfo = getLastGPUInfo();
       const gpuHints = deriveGPUPlacementHints(lastGPUInfo, contextSizing.ollamaContextSize);
@@ -305,8 +310,11 @@ export const testPromptCommand: Command = {
       const toolNote = modelSupportsTools
         ? ''
         : 'Note: This model does not support function calling. Do not attempt to use tools or make tool calls.';
-      
-      if (!modelSupportsTools && !systemPrompt.includes('Note: This model does not support function calling')) {
+
+      if (
+        !modelSupportsTools &&
+        !systemPrompt.includes('Note: This model does not support function calling')
+      ) {
         systemPrompt += `\n\n${toolNote}`;
       }
 
@@ -322,40 +330,42 @@ export const testPromptCommand: Command = {
         systemPrompt,
         tierPrompt: expectedTierPrompt,
         toolNote,
-        userMessages: history.filter(m => m.role === 'user').map(m => m.content || ''),
+        userMessages: history.filter((m) => m.role === 'user').map((m) => m.content || ''),
         toolNames: [],
       });
       const showPayload = args.includes('--full');
-      const payloadJson = JSON.stringify({
-        model: modelId,
-        messages: [
-          ...(systemPrompt
-            ? [{ role: 'system', content: systemPrompt }]
-            : []),
-          ...history.map(m => ({
-            role: m.role,
-            content: m.content,
-            tool_calls: m.toolCalls?.map(tc => ({
-              id: tc.id,
-              type: 'function',
-              function: {
-                name: tc.name,
-                arguments: tc.args
-              }
+      const payloadJson = JSON.stringify(
+        {
+          model: modelId,
+          messages: [
+            ...(systemPrompt ? [{ role: 'system', content: systemPrompt }] : []),
+            ...history.map((m) => ({
+              role: m.role,
+              content: m.content,
+              tool_calls: m.toolCalls?.map((tc) => ({
+                id: tc.id,
+                type: 'function',
+                function: {
+                  name: tc.name,
+                  arguments: tc.args,
+                },
+              })),
+              tool_call_id: m.toolCallId,
             })),
-            tool_call_id: m.toolCallId,
-          }))
-        ],
-        tools: [],
-        options: {
-          num_ctx: contextSizing.ollamaContextSize,
-          temperature: temperature,
-          num_gpu: effectiveNumGpu ?? null,
-          num_gpu_layers: gpuHints?.gpu_layers ?? null,
+          ],
+          tools: [],
+          options: {
+            num_ctx: contextSizing.ollamaContextSize,
+            temperature: temperature,
+            num_gpu: effectiveNumGpu ?? null,
+            num_gpu_layers: gpuHints?.gpu_layers ?? null,
+          },
+          stream: true,
+          think: thinkingEnabled,
         },
-        stream: true,
-        think: thinkingEnabled
-      }, null, 2);
+        null,
+        2
+      );
 
       const optionsText = [
         `Model: ${modelId}`,
@@ -373,7 +383,8 @@ export const testPromptCommand: Command = {
         systemHeader,
         systemPrompt,
         rules: structuredContent.rules.join('\n\n'),
-        mockUserMessage: 'Here is a short mock user message for testing prompt structure and output formatting.',
+        mockUserMessage:
+          'Here is a short mock user message for testing prompt structure and output formatting.',
         payloadJson,
         showPayload,
       });
@@ -396,11 +407,7 @@ export const testPromptCommand: Command = {
 
 /**
  * All utility commands
- * 
+ *
  * Note: /home is already implemented in homeCommand.ts
  */
-export const utilityCommands: Command[] = [
-  helpCommand,
-  exitCommand,
-  testPromptCommand,
-];
+export const utilityCommands: Command[] = [helpCommand, exitCommand, testPromptCommand];

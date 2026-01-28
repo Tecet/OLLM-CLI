@@ -1,6 +1,6 @@
 /**
  * ExplorerPersistence Tests
- * 
+ *
  * Tests for state persistence and restoration
  */
 

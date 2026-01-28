@@ -28,21 +28,25 @@
 ### Architecture Changes from Original Design
 
 **Simplified Navigation**:
+
 - Original: Complex windowed rendering with scroll indicators
 - Implemented: Simpler two-column layout with menu sections (Marketplace, Installed Servers)
 - Reason: Better UX, easier to implement, sufficient for current needs
 
 **Menu Structure**:
+
 - Original: Single scrollable server list
 - Implemented: Two sections - Marketplace (top) and Installed Servers (bottom)
 - Reason: Clearer separation of concerns, easier discovery
 
 **Health Monitoring**:
+
 - Original: Separate health monitor dialog
 - Implemented: Integrated into server details with countdown timer
 - Reason: More immediate feedback, less context switching
 
 **OAuth Flow**:
+
 - Original: Full interactive OAuth with browser opening
 - Implemented: Infrastructure ready, UI components created, needs end-to-end testing
 - Status: Partial implementation
@@ -125,27 +129,27 @@ interface MCPContextValue {
   marketplace: MCPMarketplaceServer[];
   loading: boolean;
   error: string | null;
-  
+
   // Server Management
   toggleServer: (serverName: string) => Promise<void>;
   restartServer: (serverName: string) => Promise<void>;
   installServer: (serverId: string, config: MCPServerConfig) => Promise<void>;
   uninstallServer: (serverName: string) => Promise<void>;
   configureServer: (serverName: string, config: MCPServerConfig) => Promise<void>;
-  
+
   // OAuth Management
   configureOAuth: (serverName: string, oauth: OAuthConfig) => Promise<void>;
   refreshOAuthToken: (serverName: string) => Promise<void>;
   revokeOAuthAccess: (serverName: string) => Promise<void>;
-  
+
   // Health & Monitoring
   getServerHealth: (serverName: string) => ServerHealth;
   getServerLogs: (serverName: string, lines?: number) => Promise<string[]>;
-  
+
   // Tool Management
   getServerTools: (serverName: string) => MCPTool[];
   setToolAutoApprove: (serverName: string, toolName: string, approve: boolean) => Promise<void>;
-  
+
   // Marketplace
   searchMarketplace: (query: string) => Promise<MCPMarketplaceServer[]>;
   refreshMarketplace: () => Promise<void>;
@@ -161,29 +165,29 @@ export const MCPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [marketplace, setMarketplace] = useState<MCPMarketplaceServer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   const mcpClient = useMemo(() => new MCPClient(), []);
   const healthMonitor = useMemo(() => new MCPHealthMonitor(mcpClient), [mcpClient]);
   const oauthManager = useMemo(() => new OAuthManager(), []);
   const marketplaceService = useMemo(() => new MCPMarketplace(), []);
-  
+
   // Load initial data
   useEffect(() => {
     loadServers();
     loadMarketplace();
-    
+
     // Subscribe to health updates
     const unsubscribe = healthMonitor.subscribeToHealthUpdates((health) => {
       updateServerHealth(health);
     });
-    
+
     return () => unsubscribe();
   }, []);
-  
+
   const toggleServer = async (serverName: string) => {
     const server = servers.get(serverName);
     if (!server) return;
-    
+
     const newConfig = {
       ...config,
       mcpServers: {
@@ -194,21 +198,21 @@ export const MCPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
       }
     };
-    
+
     await saveConfig(newConfig);
-    
+
     if (newConfig.mcpServers[serverName].disabled) {
       await mcpClient.stopServer(serverName);
     } else {
       await mcpClient.startServer(serverName);
     }
-    
+
     setConfig(newConfig);
     await loadServers();
   };
-  
+
   // ... other methods
-  
+
   return (
     <MCPContext.Provider value={{ /* ... */ }}>
       {children}
@@ -227,7 +231,7 @@ Main container for the MCP panel UI following Browse Mode/Active Mode pattern.
 export const MCPTab: React.FC = () => {
   const { servers, marketplace, loading, error } = useMCP();
   const { focusedPanel } = useFocusContext();
-  const { 
+  const {
     selectedIndex,
     isOnExitItem,
     expandedServers,
@@ -238,13 +242,13 @@ export const MCPTab: React.FC = () => {
     showScrollDown,
     handleKeyPress,
   } = useMCPNavigation();
-  
+
   const [dialogState, setDialogState] = useState<DialogState | null>(null);
-  
+
   // Only handle input when in Active Mode and no dialog is open
   useInput((input, key) => {
     if (!isActive || dialogState) return;
-    
+
     handleKeyPress(input, key, {
       onToggle: handleToggleServer,
       onConfigure: () => setDialogState({ type: 'configure', serverName: getSelectedServer() }),
@@ -258,15 +262,15 @@ export const MCPTab: React.FC = () => {
       onUninstall: handleUninstallServer
     });
   });
-  
+
   if (loading) return <LoadingSpinner message="Loading MCP servers..." />;
   if (error) return <ErrorMessage message={error} />;
-  
+
   const getSelectedServer = () => {
     if (isOnExitItem || selectedIndex < 0) return null;
     return Array.from(servers.values())[selectedIndex]?.name;
   };
-  
+
   return (
     <Box flexDirection="column" height="100%">
       {/* Header with focus indicator */}
@@ -276,14 +280,14 @@ export const MCPTab: React.FC = () => {
         </Text>
         <Box marginLeft="auto">
           <Text dimColor>
-            {isActive 
+            {isActive
               ? '↑↓:Nav Enter:Expand ←→:Toggle 0/Esc:Exit'
               : 'Press Enter to activate'
             }
           </Text>
         </Box>
       </Box>
-      
+
       <Box flexDirection="row" flexGrow={1}>
         {/* Left Column: Server List (30%) */}
         <Box flexDirection="column" width="30%" borderStyle="single" borderColor="gray">
@@ -294,7 +298,7 @@ export const MCPTab: React.FC = () => {
               <Text> </Text>
             </>
           )}
-          
+
           {/* Exit item */}
           <Box>
             <Text color={isOnExitItem ? 'yellow' : undefined} bold={isOnExitItem}>
@@ -303,12 +307,12 @@ export const MCPTab: React.FC = () => {
           </Box>
           <Text> </Text>
           <Text> </Text>
-          
+
           {/* Server list (windowed) */}
           {visibleServers.map((server, index) => {
             const actualIndex = scrollOffset > 0 ? scrollOffset - 1 + index : index;
             const isFocused = !isOnExitItem && selectedIndex === actualIndex;
-            
+
             return (
               <ServerListItem
                 key={server.name}
@@ -318,7 +322,7 @@ export const MCPTab: React.FC = () => {
               />
             );
           })}
-          
+
           {/* Scroll down indicator */}
           {showScrollDown && (
             <>
@@ -327,33 +331,33 @@ export const MCPTab: React.FC = () => {
             </>
           )}
         </Box>
-        
+
         {/* Right Column: Server Details (70%) */}
         <Box flexDirection="column" width="70%" borderStyle="single" borderColor="gray" padding={1}>
           {isOnExitItem ? (
             <Text dimColor>Select a server to view details</Text>
           ) : (
-            <ServerDetails 
+            <ServerDetails
               server={Array.from(servers.values())[selectedIndex]}
               expanded={expandedServers.has(Array.from(servers.values())[selectedIndex]?.name)}
             />
           )}
         </Box>
       </Box>
-      
+
       {/* Marketplace Preview (if not in active mode) */}
       {!isActive && (
-        <MarketplacePreview 
+        <MarketplacePreview
           servers={marketplace.slice(0, 3)}
         />
       )}
-      
+
       {/* Actions Footer */}
-      <MCPActions 
+      <MCPActions
         isActive={isActive}
         hasSelection={!isOnExitItem && selectedIndex >= 0}
       />
-      
+
       {/* Dialogs */}
       {dialogState && renderDialog(dialogState, setDialogState)}
     </Box>
@@ -371,7 +375,7 @@ const ServerListItem: React.FC<{
   const healthColor = getHealthColor(server.health);
   const statusIcon = getStatusIcon(server.status);
   const expandIcon = expanded ? '▼' : '>';
-  
+
   return (
     <Box marginY={1}>
       <Text color={focused ? 'yellow' : undefined} bold={focused}>
@@ -392,23 +396,23 @@ const ServerDetails: React.FC<{
   expanded: boolean;
 }> = ({ server, expanded }) => {
   if (!server) return null;
-  
+
   const healthColor = getHealthColor(server.health);
   const statusIcon = getStatusIcon(server.status);
   const toggleIndicator = server.config.disabled ? '○ Disabled' : '● Enabled';
-  
+
   return (
     <Box flexDirection="column">
       <Text bold color="yellow">{server.name}</Text>
       <Text dimColor>{server.description || 'No description available'}</Text>
-      
+
       <Box marginTop={1}>
         <Text>Status: </Text>
         <Text color={healthColor}>{statusIcon} {server.health}</Text>
         <Text> | </Text>
         <Text>{toggleIndicator}</Text>
       </Box>
-      
+
       {expanded && (
         <>
           <Box marginTop={1}>
@@ -416,13 +420,13 @@ const ServerDetails: React.FC<{
             <Text> | Resources: {server.resources || 0}</Text>
             {server.uptime > 0 && <Text> | Uptime: {formatUptime(server.uptime)}</Text>}
           </Box>
-          
+
           {server.config.oauth && (
             <Box marginTop={1}>
               <Text>OAuth: {getOAuthStatus(server)}</Text>
             </Box>
           )}
-          
+
           {server.error && (
             <Box marginTop={1}>
               <Text color={server.health === 'unhealthy' ? 'red' : 'yellow'}>
@@ -431,7 +435,7 @@ const ServerDetails: React.FC<{
               </Text>
             </Box>
           )}
-          
+
           <Box marginTop={1}>
             <Text dimColor>
               [V] View Tools  [C] Configure  [R] Restart  [L] Logs  [U] Uninstall
@@ -460,7 +464,7 @@ export const ServerItem: React.FC<{
 }> = ({ server, focused, expanded, onToggle, onExpand }) => {
   const healthColor = getHealthColor(server.health);
   const statusIcon = getStatusIcon(server.status);
-  
+
   return (
     <Box flexDirection="column" marginY={1}>
       <Box>
@@ -468,8 +472,8 @@ export const ServerItem: React.FC<{
           {expanded ? '▼' : '>'} {server.name}
         </Text>
         <Box marginLeft={2}>
-          <Toggle 
-            enabled={!server.config.disabled} 
+          <Toggle
+            enabled={!server.config.disabled}
             focused={focused}
             onChange={onToggle}
           />
@@ -478,11 +482,11 @@ export const ServerItem: React.FC<{
           <Text color={healthColor}>{statusIcon} {server.health}</Text>
         </Box>
       </Box>
-      
+
       <Box marginLeft={2}>
         <Text dimColor>{server.description}</Text>
       </Box>
-      
+
       {expanded && (
         <Box flexDirection="column" marginLeft={2} marginTop={1}>
           <ServerStats server={server} />
@@ -521,24 +525,24 @@ Manages keyboard navigation and focus state following the Browse Mode/Active Mod
 export const useMCPNavigation = () => {
   const { servers } = useMCP();
   const { focusedPanel, setActivePanel, exitActiveMode } = useFocusContext();
-  
+
   // Navigation state
   const [selectedIndex, setSelectedIndex] = useState(0); // Current selected item
   const [isOnExitItem, setIsOnExitItem] = useState(false); // Exit item at position 0
   const [expandedServers, setExpandedServers] = useState<Set<string>>(new Set());
   const [scrollOffset, setScrollOffset] = useState(0);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  
+
   const serverList = Array.from(servers.values());
   const isActive = focusedPanel === 'mcp-panel';
-  
+
   // Windowed rendering configuration
   const terminalHeight = process.stdout.rows || 24;
   const headerRows = 3; // Header + spacing
   const footerRows = 2; // Actions footer
   const availableRows = terminalHeight - headerRows - footerRows;
   const windowSize = Math.max(5, availableRows - 4); // Reserve space for scroll indicators
-  
+
   // Calculate visible window
   const totalItems = 1 + serverList.length; // Exit item + servers
   const visibleStart = scrollOffset;
@@ -547,11 +551,11 @@ export const useMCPNavigation = () => {
     Math.max(0, scrollOffset - 1), // Adjust for Exit item
     Math.max(0, visibleEnd - 1)
   );
-  
+
   // Scroll indicators
   const showScrollUp = scrollOffset > 0;
   const showScrollDown = visibleEnd < totalItems;
-  
+
   /**
    * Handle keyboard input in Active Mode
    */
@@ -565,14 +569,14 @@ export const useMCPNavigation = () => {
       exitActiveMode();
       return;
     }
-    
+
     // Up/Down navigation
     if (key.upArrow) {
       if (isOnExitItem) {
         // Already at top, no action
         return;
       }
-      
+
       if (selectedIndex === 0) {
         // Move to Exit item
         setIsOnExitItem(true);
@@ -596,7 +600,7 @@ export const useMCPNavigation = () => {
       }
       // Already at bottom, no action
     }
-    
+
     // Enter key actions
     else if (key.return) {
       if (isOnExitItem) {
@@ -608,7 +612,7 @@ export const useMCPNavigation = () => {
         toggleServer(serverName);
       }
     }
-    
+
     // Left/Right toggle enabled/disabled
     else if (key.leftArrow || key.rightArrow) {
       if (!isOnExitItem) {
@@ -617,7 +621,7 @@ export const useMCPNavigation = () => {
         setHasUnsavedChanges(true);
       }
     }
-    
+
     // Action keys (only when not on Exit item)
     else if (!isOnExitItem) {
       if (input === 'v') actions.onViewTools();
@@ -631,13 +635,13 @@ export const useMCPNavigation = () => {
       else if (input === 'u') actions.onUninstall();
     }
   };
-  
+
   /**
    * Adjust scroll offset to keep selected item visible
    */
   const adjustScroll = (index: number) => {
     const position = index + 1; // Account for Exit item at position 0
-    
+
     if (position < scrollOffset) {
       // Scroll up to show item
       setScrollOffset(position);
@@ -646,12 +650,12 @@ export const useMCPNavigation = () => {
       setScrollOffset(position - windowSize + 1);
     }
   };
-  
+
   /**
    * Toggle server expand/collapse
    */
   const toggleServer = (serverName: string) => {
-    setExpandedServers(prev => {
+    setExpandedServers((prev) => {
       const next = new Set(prev);
       if (next.has(serverName)) {
         next.delete(serverName);
@@ -661,7 +665,7 @@ export const useMCPNavigation = () => {
       return next;
     });
   };
-  
+
   /**
    * Save pending changes
    */
@@ -669,7 +673,7 @@ export const useMCPNavigation = () => {
     // Save any pending configuration changes
     setHasUnsavedChanges(false);
   };
-  
+
   return {
     // State
     selectedIndex,
@@ -678,12 +682,12 @@ export const useMCPNavigation = () => {
     scrollOffset,
     isActive,
     hasUnsavedChanges,
-    
+
     // Windowed rendering
     visibleServers,
     showScrollUp,
     showScrollDown,
-    
+
     // Actions
     handleKeyPress,
     toggleServer,
@@ -695,6 +699,7 @@ export const useMCPNavigation = () => {
 ## Navigation Modes
 
 ### Browse Mode
+
 - **Purpose**: Navigate between major UI areas (tabs, panels)
 - **Key**: `Tab` / `Shift+Tab` cycles through focusable areas
 - **Behavior**: High-level navigation, moving between different sections
@@ -702,10 +707,11 @@ export const useMCPNavigation = () => {
 - **MCP Tab**: Shows as "MCP" in navigation bar, accessible via `Ctrl+8`
 
 ### Active Mode
+
 - **Purpose**: Navigate within MCP panel content
 - **Key**: `Enter` to activate from Browse Mode, `Esc` or `0` to exit
 - **Behavior**: Internal navigation within server list
-- **Visual**: 
+- **Visual**:
   - Selected item highlighted in yellow
   - Panel header shows "▶" indicator
   - Exit item always at position 0
@@ -723,12 +729,14 @@ Browse Mode (Returns to nav-bar)
 ## Key Bindings
 
 ### Global (Browse Mode)
+
 - `Tab` - Cycle focus forward through UI areas
 - `Shift+Tab` - Cycle focus backward through UI areas
 - `Ctrl+8` - Jump directly to MCP tab
 - `Enter` - Activate MCP tab (switch to Active Mode)
 
 ### Active Mode (Within MCP Panel)
+
 - `Up/Down` - Navigate servers (Exit item → servers)
 - `Enter` - On Exit: exit to Browse Mode; On server: toggle enabled/disabled
 - `Space` - Expand/collapse server details
@@ -748,6 +756,7 @@ Browse Mode (Returns to nav-bar)
 ### Two-Column Design (30/70 Split)
 
 #### Left Column (30% width)
+
 - **Purpose**: Server list with status indicators
 - **Content**:
   - Exit item (position 0, always at top): "← Exit"
@@ -760,6 +769,7 @@ Browse Mode (Returns to nav-bar)
   - Expand/collapse indicators (▼ expanded, > collapsed)
 
 #### Right Column (70% width)
+
 - **Purpose**: Detailed information about selected server
 - **Content**:
   - Server name (bold, yellow when focused)
@@ -771,9 +781,10 @@ Browse Mode (Returns to nav-bar)
 - **Updates**: Dynamically updates as user navigates left column
 
 ### Exit Item
+
 - **Position**: Always at position 0 (top of menu)
 - **Label**: "← Exit"
-- **Behavior**: 
+- **Behavior**:
   - Selectable with Up/Down navigation
   - Pressing Enter triggers exit (same as Esc/0)
   - Highlighted in yellow when selected
@@ -781,6 +792,7 @@ Browse Mode (Returns to nav-bar)
 - **Spacing**: 2 empty lines below Exit item
 
 ### Scroll Indicators
+
 - **Position**: Sticky at top and bottom of left column
 - **Top**: "▲ Scroll up for more" (shown when scrollOffset > 0)
 - **Bottom**: "▼ Scroll down for more" (shown when more items below)
@@ -790,6 +802,7 @@ Browse Mode (Returns to nav-bar)
 ## Navigation Rules
 
 ### Server List Navigation
+
 1. **Up Arrow**:
    - From Exit item: No action (already at top)
    - From first server: Move to Exit item
@@ -816,6 +829,7 @@ Browse Mode (Returns to nav-bar)
    - Auto-save if `hasUnsavedChanges` is true
 
 ### Action Keys
+
 - Only active when a server is selected (not on Exit item)
 - Open dialogs or perform actions on selected server
 - Dialog interactions handled separately (own input handling)
@@ -823,18 +837,21 @@ Browse Mode (Returns to nav-bar)
 ## Visual Design Principles
 
 ### Highlighting
+
 - **Selected item**: Yellow text (bold)
 - **No borders**: Removed to prevent layout breaking
 - **Focus indicator**: "▶" prefix on panel header when active
 - **Health indicators**: Color-coded icons (● ⚠ ✗ ○ ⟳)
 
 ### Spacing
+
 - **Exit item**: 2 empty lines below
 - **Server items**: 1 empty line between items
 - **Scroll indicators**: 1 empty line between indicator and content
 - **No padding**: Between scroll indicators and container borders
 
 ### Colors
+
 - **Selected**: Yellow (`'yellow'`)
 - **Healthy**: Green (`'green'`)
 - **Degraded**: Yellow (`'yellow'`)
@@ -847,6 +864,7 @@ Browse Mode (Returns to nav-bar)
 ## Header Design
 
 ### Compact Layout
+
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │ ▶ MCP Servers    ↑↓:Nav Enter:Expand ←→:Toggle 0/Esc:Exit   │
@@ -860,6 +878,7 @@ Browse Mode (Returns to nav-bar)
 ## Implementation Notes
 
 ### State Management
+
 - `isOnExitItem`: Boolean flag tracking if Exit is selected
 - `selectedIndex`: Current server index (0-based, -1 when on Exit)
 - `expandedServers`: Set of expanded server names
@@ -867,6 +886,7 @@ Browse Mode (Returns to nav-bar)
 - `hasUnsavedChanges`: Flag for unsaved server state changes
 
 ### Windowed Rendering
+
 - **Window size**: Calculated from terminal height
 - **Total items**: Exit + all servers
 - **Position calculation**: Accounts for Exit item at position 0
@@ -874,6 +894,7 @@ Browse Mode (Returns to nav-bar)
 - **Performance**: Only renders visible slice of server list
 
 ### Focus Management
+
 - **FocusContext**: Manages global focus state
 - **Mode tracking**: `'browse'` or `'active'`
 - **Panel ID**: `'mcp-panel'` for MCP tab
@@ -895,7 +916,7 @@ export const ServerConfigDialog: React.FC<{
 }> = ({ serverName, onClose, onSave }) => {
   const { servers } = useMCP();
   const server = servers.get(serverName);
-  
+
   const [config, setConfig] = useState<MCPServerConfig>(server?.config || {
     command: '',
     args: [],
@@ -903,51 +924,51 @@ export const ServerConfigDialog: React.FC<{
     disabled: false,
     autoApprove: []
   });
-  
+
   const [envVars, setEnvVars] = useState<Array<{ key: string; value: string }>>(
     Object.entries(config.env || {}).map(([key, value]) => ({ key, value }))
   );
-  
+
   const handleSave = async () => {
     const envObj = envVars.reduce((acc, { key, value }) => {
       if (key) acc[key] = value;
       return acc;
     }, {} as Record<string, string>);
-    
+
     await onSave({
       ...config,
       env: envObj
     });
-    
+
     onClose();
   };
-  
+
   return (
     <Dialog title={`Configure Server: ${serverName}`} onClose={onClose}>
       <Box flexDirection="column" padding={1}>
         <FormField label="Command">
-          <TextInput 
+          <TextInput
             value={config.command}
             onChange={(value) => setConfig({ ...config, command: value })}
           />
         </FormField>
-        
+
         <FormField label="Arguments">
-          <TextInput 
+          <TextInput
             value={config.args?.join(' ') || ''}
             onChange={(value) => setConfig({ ...config, args: value.split(' ') })}
           />
         </FormField>
-        
+
         <FormField label="Environment Variables">
           {envVars.map((envVar, index) => (
             <Box key={index}>
-              <TextInput 
+              <TextInput
                 placeholder="KEY"
                 value={envVar.key}
                 onChange={(key) => updateEnvVar(index, { ...envVar, key })}
               />
-              <TextInput 
+              <TextInput
                 placeholder="value"
                 value={envVar.value}
                 onChange={(value) => updateEnvVar(index, { ...envVar, value })}
@@ -957,7 +978,7 @@ export const ServerConfigDialog: React.FC<{
           ))}
           <Button label="Add Variable" onPress={() => addEnvVar()} />
         </FormField>
-        
+
         <Box marginTop={1}>
           <Button label="Save" onPress={handleSave} />
           <Button label="Cancel" onPress={onClose} />
@@ -981,40 +1002,40 @@ export const OAuthConfigDialog: React.FC<{
   const { servers, configureOAuth, refreshOAuthToken, revokeOAuthAccess } = useMCP();
   const server = servers.get(serverName);
   const oauthManager = useOAuthManager();
-  
+
   const [oauthConfig, setOAuthConfig] = useState(server?.config.oauth || {
     provider: '',
     clientId: '',
     scopes: []
   });
-  
+
   const [oauthStatus, setOAuthStatus] = useState(
     oauthManager.getOAuthStatus(serverName)
   );
-  
+
   const handleAuthorize = async () => {
     const authUrl = await oauthManager.authorize(serverName);
     // Open browser or show URL to user
     openBrowser(authUrl);
   };
-  
+
   return (
     <Dialog title={`OAuth Configuration: ${serverName}`} onClose={onClose}>
       <Box flexDirection="column" padding={1}>
         <FormField label="Provider">
           <Text>{oauthConfig.provider}</Text>
         </FormField>
-        
+
         <FormField label="Client ID">
-          <TextInput 
+          <TextInput
             value={oauthConfig.clientId}
             onChange={(value) => setOAuthConfig({ ...oauthConfig, clientId: value })}
           />
         </FormField>
-        
+
         <FormField label="Scopes">
           {oauthConfig.scopes.map((scope, index) => (
-            <Checkbox 
+            <Checkbox
               key={scope}
               label={scope}
               checked={true}
@@ -1022,14 +1043,14 @@ export const OAuthConfigDialog: React.FC<{
             />
           ))}
         </FormField>
-        
+
         <Box marginTop={1}>
           <Text>Status: {oauthStatus.connected ? '● Connected' : '○ Not Connected'}</Text>
           {oauthStatus.expiresAt && (
             <Text>Token expires: {formatDate(oauthStatus.expiresAt)}</Text>
           )}
         </Box>
-        
+
         <Box marginTop={1}>
           <Button label="Save" onPress={() => configureOAuth(serverName, oauthConfig)} />
           <Button label="Authorize" onPress={handleAuthorize} />
@@ -1059,33 +1080,33 @@ export const InstallServerDialog: React.FC<{
     disabled: false,
     autoApprove: []
   });
-  
+
   const [autoApproveAll, setAutoApproveAll] = useState(false);
-  
+
   const handleInstall = async () => {
     await onInstall(server.id, config);
     onClose();
   };
-  
+
   return (
     <Dialog title="Install MCP Server" onClose={onClose}>
       <Box flexDirection="column" padding={1}>
         <Text bold>{server.name}</Text>
         <Text dimColor>{server.description}</Text>
         <Text>Rating: {'★'.repeat(Math.floor(server.rating))} ({server.installCount} installs)</Text>
-        
+
         <Box marginTop={1}>
           <Text bold>Requirements:</Text>
           {server.requirements.map(req => (
             <Text key={req}>• {req}</Text>
           ))}
         </Box>
-        
+
         <Box marginTop={1}>
           <Text bold>Configuration:</Text>
           {/* Dynamic form fields based on server requirements */}
           <FormField label="API Key">
-            <TextInput 
+            <TextInput
               value={config.env?.API_KEY || ''}
               onChange={(value) => setConfig({
                 ...config,
@@ -1095,15 +1116,15 @@ export const InstallServerDialog: React.FC<{
             />
           </FormField>
         </Box>
-        
+
         <Box marginTop={1}>
-          <Checkbox 
+          <Checkbox
             label="Auto-approve all tools"
             checked={autoApproveAll}
             onChange={setAutoApproveAll}
           />
         </Box>
-        
+
         <Box marginTop={1}>
           <Button label="Install" onPress={handleInstall} />
           <Button label="Cancel" onPress={onClose} />
@@ -1125,33 +1146,33 @@ export const ServerToolsViewer: React.FC<{
 }> = ({ serverName, onClose }) => {
   const { getServerTools, setToolAutoApprove } = useMCP();
   const tools = getServerTools(serverName);
-  
+
   const [toolStates, setToolStates] = useState<Map<string, boolean>>(
     new Map(tools.map(tool => [tool.name, tool.autoApproved]))
   );
-  
+
   const groupedTools = groupToolsByCategory(tools);
-  
+
   const handleToggleTool = (toolName: string) => {
     const newState = !toolStates.get(toolName);
     setToolStates(new Map(toolStates.set(toolName, newState)));
   };
-  
+
   const handleSave = async () => {
     for (const [toolName, approved] of toolStates) {
       await setToolAutoApprove(serverName, toolName, approved);
     }
     onClose();
   };
-  
+
   const selectAll = () => {
     setToolStates(new Map(tools.map(tool => [tool.name, true])));
   };
-  
+
   const selectNone = () => {
     setToolStates(new Map(tools.map(tool => [tool.name, false])));
   };
-  
+
   return (
     <Dialog title={`Tools: ${serverName} (${tools.length} tools)`} onClose={onClose}>
       <Box flexDirection="column" padding={1}>
@@ -1160,7 +1181,7 @@ export const ServerToolsViewer: React.FC<{
             <Text bold>▼ {category} ({categoryTools.length})</Text>
             {categoryTools.map(tool => (
               <Box key={tool.name} marginLeft={2}>
-                <Checkbox 
+                <Checkbox
                   label={tool.name}
                   checked={toolStates.get(tool.name) || false}
                   onChange={() => handleToggleTool(tool.name)}
@@ -1170,7 +1191,7 @@ export const ServerToolsViewer: React.FC<{
             ))}
           </Box>
         ))}
-        
+
         <Box marginTop={1}>
           <Button label="Select All" onPress={selectAll} />
           <Button label="Select None" onPress={selectNone} />
@@ -1194,18 +1215,18 @@ export const HealthMonitorDialog: React.FC<{
   const { servers, getServerHealth, restartServer } = useMCP();
   const [autoRestart, setAutoRestart] = useState(true);
   const [maxRestarts, setMaxRestarts] = useState(3);
-  
+
   const serverList = Array.from(servers.values());
   const healthyCount = serverList.filter(s => s.health === 'healthy').length;
   const overallStatus = healthyCount === serverList.length ? 'Healthy' : 'Degraded';
-  
+
   return (
     <Dialog title="MCP Health Monitor" onClose={onClose}>
       <Box flexDirection="column" padding={1}>
         <Text>
           Overall Status: {overallStatus} ({healthyCount}/{serverList.length} servers running)
         </Text>
-        
+
         <Box flexDirection="column" marginTop={1}>
           {serverList.map(server => {
             const health = getServerHealth(server.name);
@@ -1218,12 +1239,12 @@ export const HealthMonitorDialog: React.FC<{
                   </Text>
                   {server.uptime > 0 && <Text>Uptime: {formatUptime(server.uptime)}</Text>}
                 </Box>
-                
+
                 <Box marginLeft={2}>
                   <Text dimColor>Last check: {health.lastCheck}</Text>
                   <Text dimColor>Response time: {health.responseTime}ms</Text>
                 </Box>
-                
+
                 {server.health === 'degraded' && (
                   <Box marginLeft={2}>
                     <Text color="yellow">Warning: {server.lastError}</Text>
@@ -1231,7 +1252,7 @@ export const HealthMonitorDialog: React.FC<{
                     <Button label="View Logs" onPress={() => viewLogs(server.name)} />
                   </Box>
                 )}
-                
+
                 {server.status === 'stopped' && (
                   <Box marginLeft={2}>
                     <Text dimColor>Disabled by user</Text>
@@ -1242,21 +1263,21 @@ export const HealthMonitorDialog: React.FC<{
             );
           })}
         </Box>
-        
+
         <Box marginTop={1}>
-          <Checkbox 
+          <Checkbox
             label="Auto-restart"
             checked={autoRestart}
             onChange={setAutoRestart}
           />
           <Text>Max restarts: </Text>
-          <TextInput 
+          <TextInput
             value={String(maxRestarts)}
             onChange={(value) => setMaxRestarts(Number(value))}
           />
           <Text> per hour</Text>
         </Box>
-        
+
         <Box marginTop={1}>
           <Button label="Refresh" onPress={refreshHealth} />
           <Button label="Configure" onPress={openHealthConfig} />
@@ -1279,70 +1300,69 @@ export class MCPMarketplace {
   private cache: MCPMarketplaceServer[] = [];
   private cacheExpiry: number = 0;
   private readonly CACHE_TTL = 3600000; // 1 hour
-  
+
   async searchServers(query: string): Promise<MCPMarketplaceServer[]> {
     const servers = await this.getAllServers();
-    
+
     if (!query) return servers;
-    
+
     const lowerQuery = query.toLowerCase();
-    return servers.filter(server => 
-      server.name.toLowerCase().includes(lowerQuery) ||
-      server.description.toLowerCase().includes(lowerQuery)
+    return servers.filter(
+      (server) =>
+        server.name.toLowerCase().includes(lowerQuery) ||
+        server.description.toLowerCase().includes(lowerQuery)
     );
   }
-  
+
   async getAllServers(): Promise<MCPMarketplaceServer[]> {
     if (this.cache.length > 0 && Date.now() < this.cacheExpiry) {
       return this.cache;
     }
-    
+
     try {
       // Fetch from marketplace API or use local registry
       const response = await fetch('https://mcp-marketplace.example.com/api/servers');
       const servers = await response.json();
-      
+
       this.cache = servers;
       this.cacheExpiry = Date.now() + this.CACHE_TTL;
-      
+
       return servers;
     } catch (error) {
       // Fallback to cached data or local registry
       return this.getLocalRegistry();
     }
   }
-  
+
   async getServerDetails(serverId: string): Promise<MCPMarketplaceServer> {
     const servers = await this.getAllServers();
-    const server = servers.find(s => s.id === serverId);
-    
+    const server = servers.find((s) => s.id === serverId);
+
     if (!server) {
       throw new Error(`Server not found: ${serverId}`);
     }
-    
+
     return server;
   }
-  
+
   async installServer(serverId: string, config: MCPServerConfig): Promise<void> {
     const server = await this.getServerDetails(serverId);
-    
+
     // Add to MCP configuration
     const mcpConfig = await loadMCPConfig();
     mcpConfig.mcpServers[server.name] = config;
     await saveMCPConfig(mcpConfig);
-    
+
     // Start the server
     const mcpClient = new MCPClient();
     await mcpClient.startServer(server.name);
   }
-  
+
   async getPopularServers(): Promise<MCPMarketplaceServer[]> {
     const servers = await this.getAllServers();
-    return servers
-      .sort((a, b) => b.installCount - a.installCount)
-      .slice(0, 10);
+    return servers.sort((a, b) => b.installCount - a.installCount).slice(0, 10);
   }
-  
+
   private getLocalRegistry(): MCPMarketplaceServer[] {
     // Fallback local registry of popular servers
     return [
@@ -1355,7 +1375,7 @@ export class MCPMarketplace {
         requiresOAuth: false,
         requirements: ['Node.js 18+'],
         command: 'npx',
-        args: ['-y', '@modelcontextprotocol/server-filesystem']
+        args: ['-y', '@modelcontextprotocol/server-filesystem'],
       },
       // ... more servers
     ];
@@ -1374,7 +1394,7 @@ Add methods for UI integration:
 ```typescript
 export class MCPClient {
   // Existing methods...
-  
+
   getServerStatus(serverName: string): MCPServerStatus {
     const connection = this.connections.get(serverName);
     if (!connection) {
@@ -1385,10 +1405,10 @@ export class MCPClient {
         uptime: 0,
         tools: [],
         resources: [],
-        config: this.config.mcpServers[serverName]
+        config: this.config.mcpServers[serverName],
       };
     }
-    
+
     return {
       name: serverName,
       status: connection.status,
@@ -1397,41 +1417,41 @@ export class MCPClient {
       lastError: connection.lastError,
       tools: connection.tools,
       resources: connection.resources,
-      config: this.config.mcpServers[serverName]
+      config: this.config.mcpServers[serverName],
     };
   }
-  
+
   getAllServerStatuses(): Map<string, MCPServerStatus> {
     const statuses = new Map<string, MCPServerStatus>();
-    
+
     for (const serverName of Object.keys(this.config.mcpServers)) {
       statuses.set(serverName, this.getServerStatus(serverName));
     }
-    
+
     return statuses;
   }
-  
+
   async restartServer(serverName: string): Promise<void> {
     await this.stopServer(serverName);
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1s
+    await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait 1s
     await this.startServer(serverName);
   }
-  
+
   getServerTools(serverName: string): MCPTool[] {
     const connection = this.connections.get(serverName);
     if (!connection) return [];
-    
-    return connection.tools.map(tool => ({
+
+    return connection.tools.map((tool) => ({
       name: tool.name,
       description: tool.description,
       inputSchema: tool.inputSchema,
-      autoApproved: this.config.mcpServers[serverName].autoApprove?.includes(tool.name) || false
+      autoApproved: this.config.mcpServers[serverName].autoApprove?.includes(tool.name) || false,
     }));
   }
-  
+
   async getServerLogs(serverName: string, lines: number = 100): Promise<string[]> {
     const logPath = path.join(getLogsDir(), `${serverName}.log`);
-    
+
     try {
       const content = await fs.readFile(logPath, 'utf-8');
       const allLines = content.split('\n');
@@ -1451,75 +1471,75 @@ export class MCPClient {
 export class OAuthManager {
   private tokens: Map<string, OAuthToken> = new Map();
   private readonly TOKEN_FILE = path.join(getMCPDir(), 'oauth-tokens.json');
-  
+
   async configureOAuth(serverName: string, config: OAuthConfig): Promise<void> {
     // Update MCP config with OAuth settings
     const mcpConfig = await loadMCPConfig();
     mcpConfig.mcpServers[serverName].oauth = config;
     await saveMCPConfig(mcpConfig);
   }
-  
+
   async authorize(serverName: string): Promise<string> {
     const mcpConfig = await loadMCPConfig();
     const oauthConfig = mcpConfig.mcpServers[serverName].oauth;
-    
+
     if (!oauthConfig) {
       throw new Error(`OAuth not configured for ${serverName}`);
     }
-    
+
     // Generate authorization URL
     const authUrl = this.buildAuthUrl(oauthConfig);
-    
+
     // Start local server to receive callback
     await this.startCallbackServer(serverName);
-    
+
     return authUrl;
   }
-  
+
   async refreshToken(serverName: string): Promise<void> {
     const token = this.tokens.get(serverName);
-    
+
     if (!token || !token.refreshToken) {
       throw new Error(`No refresh token available for ${serverName}`);
     }
-    
+
     // Exchange refresh token for new access token
     const newToken = await this.exchangeRefreshToken(token.refreshToken);
-    
+
     this.tokens.set(serverName, newToken);
     await this.saveTokens();
   }
-  
+
   async revokeAccess(serverName: string): Promise<void> {
     const token = this.tokens.get(serverName);
-    
+
     if (token) {
       // Revoke token with provider
       await this.revokeTokenWithProvider(token);
-      
+
       // Remove from local storage
       this.tokens.delete(serverName);
       await this.saveTokens();
     }
   }
-  
+
   getOAuthStatus(serverName: string): OAuthStatus {
     const token = this.tokens.get(serverName);
-    
+
     if (!token) {
       return { connected: false };
     }
-    
+
     const expiresAt = new Date(token.expiresAt);
     const isExpired = expiresAt < new Date();
-    
+
     return {
       connected: !isExpired,
       expiresAt: token.expiresAt,
-      scopes: token.scopes
+      scopes: token.scopes,
     };
   }
-  
+
   private async saveTokens(): Promise<void> {
     const data = Object.fromEntries(this.tokens);
     await fs.writeFile(this.TOKEN_FILE, JSON.stringify(data, null, 2));
@@ -1617,15 +1637,18 @@ OAuthManager.authorize()
 ## Correctness Properties
 
 ### Property 1: Configuration Persistence
+
 **Validates: Requirements 2.3, 5.6**
 
 For all server configuration changes:
+
 - Changes must be written to mcp.json immediately
 - File must be valid JSON after write
 - Configuration must be readable on next load
 - No data loss on application restart
 
 **Test Strategy:**
+
 ```typescript
 fc.assert(
   fc.property(
@@ -1633,7 +1656,7 @@ fc.assert(
       command: fc.string(),
       args: fc.array(fc.string()),
       env: fc.dictionary(fc.string(), fc.string()),
-      disabled: fc.boolean()
+      disabled: fc.boolean(),
     }),
     async (config) => {
       await configureServer('test-server', config);
@@ -1645,83 +1668,87 @@ fc.assert(
 ```
 
 ### Property 2: Server State Consistency
+
 **Validates: Requirements 2.5, 9.3**
 
 For all server state transitions:
+
 - Server status must match configuration disabled flag
 - Enabled servers must be running or connecting
 - Disabled servers must be stopped
 - No zombie processes after disable
 
 **Test Strategy:**
+
 ```typescript
 fc.assert(
-  fc.property(
-    fc.boolean(),
-    async (shouldEnable) => {
-      await toggleServer('test-server', shouldEnable);
-      const status = getServerStatus('test-server');
-      
-      if (shouldEnable) {
-        expect(['running', 'connecting']).toContain(status.status);
-      } else {
-        expect(status.status).toBe('stopped');
-      }
+  fc.property(fc.boolean(), async (shouldEnable) => {
+    await toggleServer('test-server', shouldEnable);
+    const status = getServerStatus('test-server');
+
+    if (shouldEnable) {
+      expect(['running', 'connecting']).toContain(status.status);
+    } else {
+      expect(status.status).toBe('stopped');
     }
-  )
+  })
 );
 ```
 
 ### Property 3: OAuth Token Security
+
 **Validates: Requirements NFR-16, NFR-17, NFR-18**
 
 For all OAuth operations:
+
 - Tokens must never appear in plain text in UI
 - Tokens must be encrypted at rest
 - Token file must have restricted permissions
 - Revoked tokens must be deleted
 
 **Test Strategy:**
+
 ```typescript
 fc.assert(
-  fc.property(
-    fc.string(),
-    async (token) => {
-      await saveOAuthToken('test-server', token);
-      
-      // Token file must be encrypted
-      const fileContent = await fs.readFile(TOKEN_FILE, 'utf-8');
-      expect(fileContent).not.toContain(token);
-      
-      // UI must mask token
-      const status = getOAuthStatus('test-server');
-      expect(status.displayToken).toMatch(/\*+/);
-    }
-  )
+  fc.property(fc.string(), async (token) => {
+    await saveOAuthToken('test-server', token);
+
+    // Token file must be encrypted
+    const fileContent = await fs.readFile(TOKEN_FILE, 'utf-8');
+    expect(fileContent).not.toContain(token);
+
+    // UI must mask token
+    const status = getOAuthStatus('test-server');
+    expect(status.displayToken).toMatch(/\*+/);
+  })
 );
 ```
 
 ## Testing Strategy
 
 ### Unit Tests
+
 - MCPContext state management
 - Navigation hook logic
 - Dialog form validation
 - Service layer methods
 
 ### Integration Tests
+
 - Server enable/disable flow
 - Configuration save and load
 - OAuth authorization flow
 - Health monitoring updates
 
 ### UI Tests
+
 - Keyboard navigation
 - Dialog interactions
 - Visual feedback
 - Error handling
 
 ### Property-Based Tests
+
 - Configuration persistence (Property 1)
 - Server state consistency (Property 2)
 - OAuth token security (Property 3)

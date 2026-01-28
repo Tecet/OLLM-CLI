@@ -1,6 +1,6 @@
 /**
  * Centralized Error Classes
- * 
+ *
  * This module provides standardized error classes for the OLLM CLI.
  * All errors extend OllmError and include structured context.
  */
@@ -18,7 +18,7 @@ export class OllmError extends Error {
     this.name = this.constructor.name;
     Error.captureStackTrace(this, this.constructor);
   }
-  
+
   toJSON(): Record<string, unknown> {
     return {
       name: this.name,
@@ -79,25 +79,25 @@ export class ConfigError extends OllmError {
       snippet,
     });
   }
-  
+
   toString(): string {
     let result = `Configuration Error: ${this.message}`;
-    
+
     if (this.filePath) {
       result += `\n  File: ${this.filePath}`;
     }
-    
+
     if (this.line !== undefined) {
       result += `\n  Line: ${this.line}`;
       if (this.column !== undefined) {
         result += `, Column: ${this.column}`;
       }
     }
-    
+
     if (this.snippet) {
       result += `\n\n${this.snippet}`;
     }
-    
+
     return result;
   }
 }
@@ -320,18 +320,18 @@ export function createErrorContext(
     stack: getErrorStack(error),
     ...additionalContext,
   };
-  
+
   if (isOllmError(error)) {
     context.code = error.code;
     context.context = error.context;
   }
-  
+
   if (isNodeError(error)) {
     context.nodeErrorCode = error.code;
     context.errno = error.errno;
     context.syscall = error.syscall;
     context.path = error.path;
   }
-  
+
   return context;
 }

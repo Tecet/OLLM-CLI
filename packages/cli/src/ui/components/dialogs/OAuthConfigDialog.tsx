@@ -1,6 +1,6 @@
 /**
  * OAuthConfigDialog - Dialog for configuring OAuth authentication for MCP servers
- * 
+ *
  * Features:
  * - Display OAuth provider name (read-only)
  * - Client ID input field
@@ -11,7 +11,7 @@
  * - Refresh Token button (renews expired token)
  * - Revoke Access button (disconnects and removes token)
  * - Save and Close buttons
- * 
+ *
  * Validates: Requirements 6.1-6.9, NFR-17
  */
 
@@ -37,7 +37,10 @@ export interface OAuthConfigDialogProps {
 /**
  * Available OAuth scopes for common providers
  */
-const COMMON_SCOPES: Record<string, Array<{ value: string; label: string; description: string }>> = {
+const COMMON_SCOPES: Record<
+  string,
+  Array<{ value: string; label: string; description: string }>
+> = {
   github: [
     { value: 'repo', label: 'repo', description: 'Full control of private repositories' },
     { value: 'user', label: 'user', description: 'Read/write access to profile info' },
@@ -73,7 +76,7 @@ function isTokenExpired(expiresAt?: number): boolean {
 
 /**
  * OAuthConfigDialog component
- * 
+ *
  * Provides a comprehensive interface for configuring OAuth authentication:
  * - Provider information display
  * - Client ID configuration
@@ -81,10 +84,7 @@ function isTokenExpired(expiresAt?: number): boolean {
  * - Connection status monitoring
  * - Token management (authorize, refresh, revoke)
  */
-export function OAuthConfigDialog({
-  serverName,
-  onClose,
-}: OAuthConfigDialogProps) {
+export function OAuthConfigDialog({ serverName, onClose }: OAuthConfigDialogProps) {
   const { state, configureOAuth, refreshOAuthToken, revokeOAuthAccess } = useMCP();
   const server = state.servers.get(serverName);
 
@@ -111,13 +111,17 @@ export function OAuthConfigDialog({
   const [isAuthorizing, setIsAuthorizing] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isRevoking, setIsRevoking] = useState(false);
-  const [actionResult, setActionResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [actionResult, setActionResult] = useState<{ success: boolean; message: string } | null>(
+    null
+  );
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   // Determine provider from server name or description
-  const provider = server?.description?.toLowerCase().includes('github') ? 'github' :
-                   server?.description?.toLowerCase().includes('google') ? 'google' :
-                   'default';
+  const provider = server?.description?.toLowerCase().includes('github')
+    ? 'github'
+    : server?.description?.toLowerCase().includes('google')
+      ? 'google'
+      : 'default';
 
   // Get available scopes for this provider
   const availableScopes = COMMON_SCOPES[provider] || COMMON_SCOPES.default;
@@ -198,7 +202,7 @@ export function OAuthConfigDialog({
       // 6. Store token securely
 
       // For now, simulate the flow
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       setActionResult({
         success: true,
@@ -264,14 +268,14 @@ export function OAuthConfigDialog({
    * Update client ID
    */
   const handleClientIdChange = useCallback((value: string) => {
-    setOAuthConfig(prev => ({ ...prev, clientId: value }));
+    setOAuthConfig((prev) => ({ ...prev, clientId: value }));
   }, []);
 
   /**
    * Update selected scopes
    */
   const handleScopesChange = useCallback((selected: string[]) => {
-    setOAuthConfig(prev => ({ ...prev, scopes: selected }));
+    setOAuthConfig((prev) => ({ ...prev, scopes: selected }));
   }, []);
 
   // Clear action result after 5 seconds
@@ -285,25 +289,20 @@ export function OAuthConfigDialog({
   // Determine connection status
   const isConnected = oauthStatus?.connected ?? false;
   const isExpired = isTokenExpired(oauthStatus?.expiresAt);
-  const statusText = isConnected && !isExpired ? '● Connected' : 
-                     isConnected && isExpired ? '⚠ Token Expired' :
-                     '○ Not Connected';
-  const statusColor = isConnected && !isExpired ? 'green' :
-                      isConnected && isExpired ? 'yellow' :
-                      'gray';
+  const statusText =
+    isConnected && !isExpired
+      ? '● Connected'
+      : isConnected && isExpired
+        ? '⚠ Token Expired'
+        : '○ Not Connected';
+  const statusColor =
+    isConnected && !isExpired ? 'green' : isConnected && isExpired ? 'yellow' : 'gray';
 
   return (
-    <Dialog
-      title={`OAuth Configuration: ${serverName}`}
-      onClose={onClose}
-      width={80}
-    >
+    <Dialog title={`OAuth Configuration: ${serverName}`} onClose={onClose} width={80}>
       <Box flexDirection="column" paddingX={1}>
         {/* Provider (read-only) */}
-        <FormField
-          label="Provider"
-          helpText="OAuth provider detected from server configuration"
-        >
+        <FormField label="Provider" helpText="OAuth provider detected from server configuration">
           <Text>{provider.charAt(0).toUpperCase() + provider.slice(1)}</Text>
         </FormField>
 
@@ -347,9 +346,7 @@ export function OAuthConfigDialog({
           {oauthStatus?.expiresAt && (
             <Box marginTop={1}>
               <Text>Token expires: </Text>
-              <Text color={isExpired ? 'yellow' : 'gray'}>
-                {formatDate(oauthStatus.expiresAt)}
-              </Text>
+              <Text color={isExpired ? 'yellow' : 'gray'}>{formatDate(oauthStatus.expiresAt)}</Text>
             </Box>
           )}
 
@@ -425,9 +422,7 @@ export function OAuthConfigDialog({
           <Text dimColor>
             💡 Tip: Save your configuration before authorizing. The authorization
           </Text>
-          <Text dimColor>
-            process will open your browser to complete the OAuth flow.
-          </Text>
+          <Text dimColor>process will open your browser to complete the OAuth flow.</Text>
         </Box>
       </Box>
     </Dialog>

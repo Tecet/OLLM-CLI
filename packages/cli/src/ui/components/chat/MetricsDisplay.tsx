@@ -1,6 +1,6 @@
 /**
  * MetricsDisplay Component
- * 
+ *
  * Displays performance metrics for inference generations
  * Requirements: 15.1, 15.2, 15.3, 15.4, 15.5, 15.6, 15.7
  */
@@ -31,10 +31,10 @@ export interface MetricsDisplayProps {
 
 /**
  * Displays inference performance metrics
- * 
+ *
  * Full format:
  * ⚡ 42.3 t/s │ 📥 847 tokens │ 📤 156 tokens │ ⏱️ 3.68s │ TTFT: 0.12s
- * 
+ *
  * Compact format:
  * ⚡ 42.3 t/s │ 156 tokens │ 3.68s
  */
@@ -57,8 +57,7 @@ export const MetricsDisplay: React.FC<MetricsDisplayProps> = ({
     return (
       <Box>
         <Text color={theme.text.secondary}>
-          ⚡ {formatNumber(metrics.tokensPerSecond)} t/s │{' '}
-          {metrics.completionTokens} tokens │{' '}
+          ⚡ {formatNumber(metrics.tokensPerSecond)} t/s │ {metrics.completionTokens} tokens │{' '}
           {formatNumber(metrics.totalSeconds)}s
         </Text>
       </Box>
@@ -80,9 +79,7 @@ export const MetricsDisplay: React.FC<MetricsDisplayProps> = ({
 
   return (
     <Box>
-      <Text color={theme.text.secondary}>
-        {parts.join(' │ ')}
-      </Text>
+      <Text color={theme.text.secondary}>{parts.join(' │ ')}</Text>
     </Box>
   );
 };

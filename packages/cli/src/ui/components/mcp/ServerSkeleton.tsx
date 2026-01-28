@@ -1,9 +1,9 @@
 /**
  * ServerSkeleton Component
- * 
+ *
  * Skeleton screen for server items during loading.
  * Provides visual feedback while server data is being fetched.
- * 
+ *
  * Validates: NFR-7
  */
 
@@ -42,7 +42,7 @@ function SkeletonItem() {
 
 /**
  * ServerSkeleton Component
- * 
+ *
  * Displays skeleton placeholders for server items while loading.
  * Shows a shimmer effect to indicate loading state.
  */

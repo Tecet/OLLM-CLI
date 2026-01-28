@@ -27,7 +27,7 @@ This document tracks all packages, dependencies, and their versions used in the 
 ## Language & Runtime
 
 | Package        | Current Version | Latest Version | Status              | Notes                                      |
-|:---------------|:----------------|:---------------|:--------------------|:-------------------------------------------|
+| :------------- | :-------------- | :------------- | :------------------ | :----------------------------------------- |
 | **Node.js**    | 20.x            | 22.x LTS       | ⚠️ Update Available | Node 22 is current LTS, consider upgrading |
 | **TypeScript** | 5.9.3           | 5.9.3          | ✅ Up to Date       | Latest stable release (Dec 2025)           |
 | **npm**        | 10.x            | 11.6.0         | ⚠️ Update Available | npm 11 released Sept 2025                  |
@@ -42,21 +42,21 @@ This document tracks all packages, dependencies, and their versions used in the 
 
 Internal packages managed within the monorepo:
 
-| Package                 | Version | Location                  | Description                                  |
-|:------------------------|:--------|:--------------------------|:---------------------------------------------|
-| `@ollm/cli`             | 0.1.0   | `packages/cli`            | CLI entry point and UI components            |
-| `@ollm/ollm-cli-core`   | 0.1.0   | `packages/core`           | Core runtime and business logic              |
-| `@ollm/ollm-bridge`     | 0.1.0   | `packages/ollm-bridge`    | Provider adapters (Ollama, vLLM, OpenAI)     |
-| `@ollm/test-utils`      | 0.1.0   | `packages/test-utils`     | Shared test fixtures and helpers             |
+| Package               | Version | Location               | Description                              |
+| :-------------------- | :------ | :--------------------- | :--------------------------------------- |
+| `@ollm/cli`           | 0.1.0   | `packages/cli`         | CLI entry point and UI components        |
+| `@ollm/ollm-cli-core` | 0.1.0   | `packages/core`        | Core runtime and business logic          |
+| `@ollm/ollm-bridge`   | 0.1.0   | `packages/ollm-bridge` | Provider adapters (Ollama, vLLM, OpenAI) |
+| `@ollm/test-utils`    | 0.1.0   | `packages/test-utils`  | Shared test fixtures and helpers         |
 
 ---
 
 ## Build & Development Tools
 
-| Package      | Current Version | Latest Version | Status              | Notes                                                |
-|:-------------|:----------------|:---------------|:--------------------|:-----------------------------------------------------|
-| **esbuild**  | 0.19.12         | 0.24.2         | ⚠️ Major Update     | v0.24 released Jan 2025, breaking changes possible   |
-| **tsx**      | -               | 4.19.2         | ❌ Not Installed    | Consider adding for TS execution                     |
+| Package     | Current Version | Latest Version | Status           | Notes                                              |
+| :---------- | :-------------- | :------------- | :--------------- | :------------------------------------------------- |
+| **esbuild** | 0.19.12         | 0.24.2         | ⚠️ Major Update  | v0.24 released Jan 2025, breaking changes possible |
+| **tsx**     | -               | 4.19.2         | ❌ Not Installed | Consider adding for TS execution                   |
 
 **Build Configuration:** `scripts/build.js` (custom esbuild wrapper)
 
@@ -64,12 +64,12 @@ Internal packages managed within the monorepo:
 
 ## Testing Framework
 
-| Package                     | Current Version | Latest Version | Status              | Notes                                                    |
-|:----------------------------|:----------------|:---------------|:--------------------|:---------------------------------------------------------|
-| **vitest**                  | 1.6.1           | 3.2.4          | ⚠️ Major Update     | v3.2 is latest stable (June 2025), v4.0 in beta          |
-| **@vitest/coverage-v8**     | 1.6.1           | 3.2.4          | ⚠️ Major Update     | Should match vitest version                              |
-| **fast-check**              | 3.23.2          | 3.23.2         | ✅ Up to Date       | Property-based testing library                           |
-| **ink-testing-library**     | 4.0.0 (git)     | 4.0.0          | ✅ Up to Date       | Installed from GitHub repo                               |
+| Package                 | Current Version | Latest Version | Status          | Notes                                           |
+| :---------------------- | :-------------- | :------------- | :-------------- | :---------------------------------------------- |
+| **vitest**              | 1.6.1           | 3.2.4          | ⚠️ Major Update | v3.2 is latest stable (June 2025), v4.0 in beta |
+| **@vitest/coverage-v8** | 1.6.1           | 3.2.4          | ⚠️ Major Update | Should match vitest version                     |
+| **fast-check**          | 3.23.2          | 3.23.2         | ✅ Up to Date   | Property-based testing library                  |
+| **ink-testing-library** | 4.0.0 (git)     | 4.0.0          | ✅ Up to Date   | Installed from GitHub repo                      |
 
 **Test Configuration:** `vitest.config.ts`  
 **Coverage Target:** 80% threshold
@@ -78,15 +78,15 @@ Internal packages managed within the monorepo:
 
 ## Linting & Formatting
 
-| Package                         | Current Version | Latest Version | Status          | Notes                                        |
-|:--------------------------------|:----------------|:---------------|:----------------|:---------------------------------------------|
-| **eslint**                      | 9.39.2          | 9.39.2         | ✅ Up to Date   | ESLint 9 flat config (released Apr 2024)     |
-| **@eslint/js**                  | 9.39.2          | 9.39.2         | ✅ Up to Date   | Core ESLint rules                            |
-| **typescript-eslint**           | 8.52.0          | 8.44.0         | ✅ Up to Date   | TypeScript ESLint integration                |
-| **eslint-plugin-react**         | 7.37.5          | 7.37.5         | ✅ Up to Date   | React-specific linting rules                 |
-| **eslint-plugin-react-hooks**   | 7.0.1           | 7.0.1          | ✅ Up to Date   | React Hooks linting rules                    |
-| **prettier**                    | 3.7.4           | 3.7.4          | ✅ Up to Date   | Code formatter (latest Dec 2024)             |
-| **globals**                     | 17.0.0          | 17.0.0         | ✅ Up to Date   | Global identifiers for ESLint                |
+| Package                       | Current Version | Latest Version | Status        | Notes                                    |
+| :---------------------------- | :-------------- | :------------- | :------------ | :--------------------------------------- |
+| **eslint**                    | 9.39.2          | 9.39.2         | ✅ Up to Date | ESLint 9 flat config (released Apr 2024) |
+| **@eslint/js**                | 9.39.2          | 9.39.2         | ✅ Up to Date | Core ESLint rules                        |
+| **typescript-eslint**         | 8.52.0          | 8.44.0         | ✅ Up to Date | TypeScript ESLint integration            |
+| **eslint-plugin-react**       | 7.37.5          | 7.37.5         | ✅ Up to Date | React-specific linting rules             |
+| **eslint-plugin-react-hooks** | 7.0.1           | 7.0.1          | ✅ Up to Date | React Hooks linting rules                |
+| **prettier**                  | 3.7.4           | 3.7.4          | ✅ Up to Date | Code formatter (latest Dec 2024)         |
+| **globals**                   | 17.0.0          | 17.0.0         | ✅ Up to Date | Global identifiers for ESLint            |
 
 **ESLint Config:** `eslint.config.js` (flat config format)  
 **Prettier Config:** `.prettierrc.json`
@@ -95,12 +95,12 @@ Internal packages managed within the monorepo:
 
 ## UI Framework
 
-| Package                   | Current Version | Latest Version | Status        | Notes                                    |
-|:--------------------------|:----------------|:---------------|:--------------|:-----------------------------------------|
-| **react**                 | 19.2.3          | 19.2.3         | ✅ Up to Date | React 19 stable (Dec 2024)               |
-| **ink**                   | 6.6.0           | 6.6.0          | ✅ Up to Date | Terminal UI framework for React          |
-| **react-devtools-core**   | 6.1.5           | 6.1.5          | ✅ Up to Date | React DevTools integration               |
-| **@types/react**          | 19.2.8          | 19.2.8         | ✅ Up to Date | React type definitions                   |
+| Package                 | Current Version | Latest Version | Status        | Notes                           |
+| :---------------------- | :-------------- | :------------- | :------------ | :------------------------------ |
+| **react**               | 19.2.3          | 19.2.3         | ✅ Up to Date | React 19 stable (Dec 2024)      |
+| **ink**                 | 6.6.0           | 6.6.0          | ✅ Up to Date | Terminal UI framework for React |
+| **react-devtools-core** | 6.1.5           | 6.1.5          | ✅ Up to Date | React DevTools integration      |
+| **@types/react**        | 19.2.8          | 19.2.8         | ✅ Up to Date | React type definitions          |
 
 **UI Architecture:** React 19 + Ink 6 for terminal rendering
 
@@ -108,31 +108,31 @@ Internal packages managed within the monorepo:
 
 ## Core Dependencies
 
-| Package           | Current Version | Latest Version | Status        | Notes                            |
-|:------------------|:----------------|:---------------|:--------------|:---------------------------------|
-| **yargs**         | 17.7.2          | 17.7.2         | ✅ Up to Date | CLI argument parsing             |
-| **@types/yargs**  | 17.0.35         | 17.0.35        | ✅ Up to Date | Yargs type definitions           |
-| **yaml**          | 2.8.2           | 2.8.2          | ✅ Up to Date | YAML parsing for config files    |
+| Package          | Current Version | Latest Version | Status        | Notes                         |
+| :--------------- | :-------------- | :------------- | :------------ | :---------------------------- |
+| **yargs**        | 17.7.2          | 17.7.2         | ✅ Up to Date | CLI argument parsing          |
+| **@types/yargs** | 17.0.35         | 17.0.35        | ✅ Up to Date | Yargs type definitions        |
+| **yaml**         | 2.8.2           | 2.8.2          | ✅ Up to Date | YAML parsing for config files |
 
 ---
 
 ## File System & Pattern Matching
 
-| Package        | Current Version | Latest Version | Status        | Notes                                      |
-|:---------------|:----------------|:---------------|:--------------|:-------------------------------------------|
-| **glob**       | 13.0.0          | 13.0.0         | ✅ Up to Date | Glob pattern matching (latest Nov 2024)    |
-| **fdir**       | 6.5.0           | 6.5.0          | ✅ Up to Date | Fast directory traversal                   |
-| **ignore**     | 5.3.2           | 5.3.2          | ✅ Up to Date | .gitignore parsing                         |
-| **picomatch**  | 4.0.3           | 4.0.3          | ✅ Up to Date | Fast glob matcher                          |
+| Package       | Current Version | Latest Version | Status        | Notes                                   |
+| :------------ | :-------------- | :------------- | :------------ | :-------------------------------------- |
+| **glob**      | 13.0.0          | 13.0.0         | ✅ Up to Date | Glob pattern matching (latest Nov 2024) |
+| **fdir**      | 6.5.0           | 6.5.0          | ✅ Up to Date | Fast directory traversal                |
+| **ignore**    | 5.3.2           | 5.3.2          | ✅ Up to Date | .gitignore parsing                      |
+| **picomatch** | 4.0.3           | 4.0.3          | ✅ Up to Date | Fast glob matcher                       |
 
 ---
 
 ## Configuration & Validation
 
-| Package          | Current Version | Latest Version | Status        | Notes                        |
-|:-----------------|:----------------|:---------------|:--------------|:-----------------------------|
-| **ajv**          | 8.17.1          | 8.17.1         | ✅ Up to Date | JSON Schema validator        |
-| **ajv-formats**  | 2.1.1           | 2.1.1          | ✅ Up to Date | Format validators for AJV    |
+| Package         | Current Version | Latest Version | Status        | Notes                     |
+| :-------------- | :-------------- | :------------- | :------------ | :------------------------ |
+| **ajv**         | 8.17.1          | 8.17.1         | ✅ Up to Date | JSON Schema validator     |
+| **ajv-formats** | 2.1.1           | 2.1.1          | ✅ Up to Date | Format validators for AJV |
 
 **Schema Location:** `schemas/settings.schema.json`
 
@@ -140,21 +140,21 @@ Internal packages managed within the monorepo:
 
 ## Image Processing
 
-| Package              | Current Version | Latest Version | Status        | Notes                            |
-|:---------------------|:----------------|:---------------|:--------------|:---------------------------------|
-| **ink-image**        | 2.0.0           | 2.0.0          | ✅ Up to Date | Display images in Ink            |
-| **terminal-image**   | 4.2.0           | 4.2.0          | ✅ Up to Date | Render images in terminal        |
-| **jimp**             | 1.6.0           | 1.6.0          | ✅ Up to Date | JavaScript image manipulation    |
+| Package            | Current Version | Latest Version | Status        | Notes                         |
+| :----------------- | :-------------- | :------------- | :------------ | :---------------------------- |
+| **ink-image**      | 2.0.0           | 2.0.0          | ✅ Up to Date | Display images in Ink         |
+| **terminal-image** | 4.2.0           | 4.2.0          | ✅ Up to Date | Render images in terminal     |
+| **jimp**           | 1.6.0           | 1.6.0          | ✅ Up to Date | JavaScript image manipulation |
 
 ---
 
 ## Type Definitions
 
-| Package           | Current Version | Latest Version | Status              | Notes                            |
-|:------------------|:----------------|:---------------|:--------------------|:---------------------------------|
-| **@types/node**   | 20.19.27        | 22.x           | ⚠️ Update Available | Should match Node.js version     |
-| **@types/react**  | 19.2.8          | 19.2.8         | ✅ Up to Date       | React 19 types                   |
-| **@types/yargs**  | 17.0.35         | 17.0.35        | ✅ Up to Date       | Yargs types                      |
+| Package          | Current Version | Latest Version | Status              | Notes                        |
+| :--------------- | :-------------- | :------------- | :------------------ | :--------------------------- |
+| **@types/node**  | 20.19.27        | 22.x           | ⚠️ Update Available | Should match Node.js version |
+| **@types/react** | 19.2.8          | 19.2.8         | ✅ Up to Date       | React 19 types               |
+| **@types/yargs** | 17.0.35         | 17.0.35        | ✅ Up to Date       | Yargs types                  |
 
 ---
 
@@ -163,49 +163,60 @@ Internal packages managed within the monorepo:
 These dependencies are referenced in documentation but not yet installed:
 
 ### AI/ML Integration
+
 - `@modelcontextprotocol/sdk` - MCP integration
 - `@xenova/transformers` - Local embeddings for semantic search
 - `better-sqlite3` - Vector storage for codebase index
 
 ### Text Processing
+
 - `diff` - Text diffing for file edits
 - `marked` - Markdown parsing
 - `html-to-text` - HTML conversion
 - `js-yaml` - YAML parsing (already installed as `yaml`)
 
 ### Validation
+
 - `zod` - TypeScript-first schema validation
 
 ### Code Execution
+
 - `isolated-vm` - JavaScript sandbox
 - `vm2` - Alternative JavaScript sandbox
 
 ### Vision & Media
+
 - `sharp` - Image processing and resizing
 - `playwright` - Screenshot capture (optional)
 
 ### Terminal & Shell
+
 - `@xterm/headless` - Terminal emulation
 - `shell-quote` - Shell command parsing
 
 ### Git Integration
+
 - `simple-git` - Git operations
 
 ### Cross-Platform Support
+
 - `nvidia-smi` - NVIDIA GPU monitoring (Windows/Linux)
 - `rocm-smi` - AMD GPU monitoring (Linux)
 
 ### CLI Utilities
+
 - `prompts` - Interactive prompts
 - `clipboardy` - Clipboard access
 - `dotenv` - Environment variables
 
 ### UI Components
+
 - `ink-spinner` - Loading spinners
 - `highlight.js` - Syntax highlighting
 - `lowlight` - Lowlight adapter
 
 ### Testing
+
 - `msw` - Mock Service Worker
 - `mock-fs` - File system mocking
 - `memfs` - In-memory file system
@@ -217,16 +228,19 @@ These dependencies are referenced in documentation but not yet installed:
 ### Priority Levels
 
 **🔴 Critical (Update Immediately)**
+
 - Security vulnerabilities
 - Breaking bugs in current version
 - End-of-life versions
 
 **🟡 High Priority (Update Soon)**
+
 - Major version updates with new features
 - Performance improvements
 - Better TypeScript support
 
 **🟢 Low Priority (Update When Convenient)**
+
 - Minor version updates
 - Patch releases
 - Documentation improvements
@@ -256,19 +270,20 @@ These dependencies are referenced in documentation but not yet installed:
    - Ensure tests pass on current version
 
 2. **Update Steps:**
+
    ```bash
    # Check for outdated packages
    npm outdated
-   
+
    # Update specific package
    npm install <package>@latest --save-dev
-   
+
    # Update all packages (use with caution)
    npm update
-   
+
    # Verify installation
    npm list --depth=0
-   
+
    # Run tests
    npm test
    ```
@@ -284,7 +299,7 @@ These dependencies are referenced in documentation but not yet installed:
 ## Version History
 
 | Date       | Updated By | Changes                                      |
-|:-----------|:-----------|:---------------------------------------------|
+| :--------- | :--------- | :------------------------------------------- |
 | 2026-01-14 | System     | Initial dependency tracking document created |
 
 ---

@@ -1,6 +1,6 @@
 /**
  * MCP OAuth commands for authentication management
- * 
+ *
  * Provides commands for:
  * - Authenticating with OAuth-protected MCP servers
  * - Listing OAuth tokens
@@ -14,9 +14,7 @@ import type { MCPOAuthProvider } from '@ollm/ollm-cli-core/mcp/mcpOAuth.js';
 /**
  * Create MCP OAuth commands with dependency injection
  */
-export function createMCPOAuthCommands(
-  oauthProvider: MCPOAuthProvider
-): Command[] {
+export function createMCPOAuthCommands(oauthProvider: MCPOAuthProvider): Command[] {
   return [
     // Authenticate with an MCP server
     {

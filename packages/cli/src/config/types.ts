@@ -225,12 +225,12 @@ export interface Keybinds {
   tabDocs: string;
   tabGithub: string;
   tabSettings: string;
-  
+
   // Layout
   togglePanel: string;
   commandPalette: string;
   toggleDebug: string;
-  
+
   // Chat
   clearChat: string;
   saveSession: string;
@@ -238,11 +238,11 @@ export interface Keybinds {
   send: string;
   newline: string;
   editPrevious: string;
-  
+
   // Review
   approve: string;
   reject: string;
-  
+
   // Navigation
   scrollDown: string;
   scrollUp: string;

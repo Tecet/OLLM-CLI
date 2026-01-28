@@ -11,7 +11,7 @@ import type { Message, ModelInfo } from '../types.js';
 describe('validateAndBuildPrompt', () => {
   let contextManager: ConversationContextManager;
   const sessionId = 'test-session';
-  
+
   const modelInfo: ModelInfo = {
     modelId: 'test-model',
     parameters: 7000000000,
@@ -19,19 +19,15 @@ describe('validateAndBuildPrompt', () => {
     contextProfiles: [
       { size: 4096, ollama_context_size: 3481 },
       { size: 8192, ollama_context_size: 6963 },
-      { size: 16384, ollama_context_size: 13926 }
-    ]
+      { size: 16384, ollama_context_size: 13926 },
+    ],
   };
 
   beforeEach(() => {
-    contextManager = new ConversationContextManager(
-      sessionId,
-      modelInfo,
-      {
-        targetSize: 8192,
-        autoSize: false
-      }
-    );
+    contextManager = new ConversationContextManager(sessionId, modelInfo, {
+      targetSize: 8192,
+      autoSize: false,
+    });
   });
 
   it('should validate prompt successfully when under threshold', async () => {
@@ -40,7 +36,7 @@ describe('validateAndBuildPrompt', () => {
       id: 'test-1',
       role: 'user',
       content: 'Hello, world!',
-      timestamp: new Date()
+      timestamp: new Date(),
     };
 
     const result = await contextManager.validateAndBuildPrompt(message);
@@ -55,7 +51,7 @@ describe('validateAndBuildPrompt', () => {
       id: 'test-new',
       role: 'user',
       content: 'This is a new message',
-      timestamp: new Date()
+      timestamp: new Date(),
     };
 
     const result = await contextManager.validateAndBuildPrompt(newMessage);
@@ -75,10 +71,12 @@ describe('validateAndBuildPrompt', () => {
       id: 'test-1',
       role: 'user',
       content: 'Hello',
-      timestamp: new Date()
+      timestamp: new Date(),
     };
 
-    await expect(contextManager.validateAndBuildPrompt(message)).rejects.toThrow('Budget calculation failed');
+    await expect(contextManager.validateAndBuildPrompt(message)).rejects.toThrow(
+      'Budget calculation failed'
+    );
   });
 
   it('should calculate budget correctly', async () => {
@@ -88,7 +86,7 @@ describe('validateAndBuildPrompt', () => {
         id: `msg-${i}`,
         role: 'user',
         content: `Message ${i} with some content to make it longer`,
-        timestamp: new Date()
+        timestamp: new Date(),
       });
     }
 
@@ -96,7 +94,7 @@ describe('validateAndBuildPrompt', () => {
 
     expect(result.valid).toBe(true);
     expect(result.totalTokens).toBeGreaterThan(0);
-    
+
     // Budget should be calculated
     const budget = contextManager.getBudget();
     expect(budget.totalOllamaSize).toBe(6963);
@@ -106,7 +104,7 @@ describe('validateAndBuildPrompt', () => {
   it('should trigger emergency compression when usage is high', async () => {
     // Mock compress method
     const _compressSpy = vi.spyOn(contextManager, 'compress').mockResolvedValue();
-    
+
     // Mock getBudget to return high usage (96%)
     vi.spyOn(contextManager, 'getBudget').mockReturnValue({
       totalOllamaSize: 6963,
@@ -114,7 +112,7 @@ describe('validateAndBuildPrompt', () => {
       checkpointTokens: 0,
       availableBudget: 6863,
       conversationTokens: 6600, // 96% of available
-      budgetPercentage: 96
+      budgetPercentage: 96,
     });
 
     const result = await contextManager.validateAndBuildPrompt();
@@ -136,7 +134,7 @@ describe('validateAndBuildPrompt', () => {
           id: 'system-1',
           role: 'system',
           content: '',
-          timestamp: new Date()
+          timestamp: new Date(),
         },
         tokenCount: 0,
         maxTokens: 6963,
@@ -146,16 +144,16 @@ describe('validateAndBuildPrompt', () => {
         metadata: {
           model: 'test-model',
           contextSize: 6963,
-          compressionHistory: []
-        }
+          compressionHistory: [],
+        },
       },
       metadata: {
         reason: 'emergency',
         tokenCount: 0,
-        messageCount: 0
-      }
+        messageCount: 0,
+      },
     });
-    
+
     // Mock getBudget to return 100%+ usage
     vi.spyOn(contextManager, 'getBudget').mockReturnValue({
       totalOllamaSize: 6963,
@@ -163,7 +161,7 @@ describe('validateAndBuildPrompt', () => {
       checkpointTokens: 0,
       availableBudget: 6863,
       conversationTokens: 6900, // 100%+ of available
-      budgetPercentage: 100.5
+      budgetPercentage: 100.5,
     });
 
     const result = await contextManager.validateAndBuildPrompt();
@@ -186,7 +184,7 @@ describe('validateAndBuildPrompt', () => {
           id: 'system-1',
           role: 'system',
           content: '',
-          timestamp: new Date()
+          timestamp: new Date(),
         },
         tokenCount: 0,
         maxTokens: 6963,
@@ -196,16 +194,16 @@ describe('validateAndBuildPrompt', () => {
         metadata: {
           model: 'test-model',
           contextSize: 6963,
-          compressionHistory: []
-        }
+          compressionHistory: [],
+        },
       },
       metadata: {
         reason: 'emergency',
         tokenCount: 0,
-        messageCount: 0
-      }
+        messageCount: 0,
+      },
     });
-    
+
     // Mock getBudget to return 100%+ usage
     vi.spyOn(contextManager, 'getBudget').mockReturnValue({
       totalOllamaSize: 6963,
@@ -213,7 +211,7 @@ describe('validateAndBuildPrompt', () => {
       checkpointTokens: 0,
       availableBudget: 6863,
       conversationTokens: 6900,
-      budgetPercentage: 100.5
+      budgetPercentage: 100.5,
     });
 
     const result = await contextManager.validateAndBuildPrompt();
@@ -225,7 +223,7 @@ describe('validateAndBuildPrompt', () => {
 
   it('should emit warnings at different thresholds', async () => {
     const getBudgetSpy = vi.spyOn(contextManager, 'getBudget');
-    
+
     // Test 80% threshold (INFO warning)
     // totalTokens = systemPromptTokens + checkpointTokens + conversationTokens
     // usagePercentage = (totalTokens / ollamaLimit) * 100
@@ -237,13 +235,13 @@ describe('validateAndBuildPrompt', () => {
       checkpointTokens: 0,
       availableBudget: 6863,
       conversationTokens: 5471, // 80.01% to ensure we cross threshold
-      budgetPercentage: 80
+      budgetPercentage: 80,
     });
 
     let result = await contextManager.validateAndBuildPrompt();
     // At 80%, should have INFO warning
     expect(result.warnings.length).toBeGreaterThan(0);
-    expect(result.warnings.some(w => w.includes('INFO'))).toBe(true);
+    expect(result.warnings.some((w) => w.includes('INFO'))).toBe(true);
 
     // Test 95% threshold (WARNING + emergency compression)
     // For 95%: totalTokens should be 0.95 * 6963 = 6615
@@ -254,15 +252,15 @@ describe('validateAndBuildPrompt', () => {
       checkpointTokens: 0,
       availableBudget: 6863,
       conversationTokens: 6516, // 95.01% to ensure we cross threshold
-      budgetPercentage: 95
+      budgetPercentage: 95,
     });
 
     result = await contextManager.validateAndBuildPrompt();
     // At 95%, should have WARNING and trigger compression
     expect(result.warnings.length).toBeGreaterThan(0);
-    expect(result.warnings.some(w => w.includes('WARNING'))).toBe(true);
+    expect(result.warnings.some((w) => w.includes('WARNING'))).toBe(true);
     expect(result.emergencyAction).toBe('compression');
-    
+
     getBudgetSpy.mockRestore();
   });
 });

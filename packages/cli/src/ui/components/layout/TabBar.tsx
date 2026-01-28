@@ -34,32 +34,49 @@ export interface TabBarProps {
   theme: Theme;
 }
 
-export function TabBar({ activeTab, onTabChange, notifications, theme, noBorder }: TabBarProps & { noBorder?: boolean }) {
+export function TabBar({
+  activeTab,
+  onTabChange,
+  notifications,
+  theme,
+  noBorder,
+}: TabBarProps & { noBorder?: boolean }) {
   const { isFocused, activateContent, setFocus: _setFocus } = useFocusManager();
   const hasFocus = isFocused('nav-bar');
   const { activeKeybinds } = useKeybinds();
 
-  useInput((input, key) => {
-    if (!hasFocus) return;
+  useInput(
+    (input, key) => {
+      if (!hasFocus) return;
 
-    if (isKey(input, key, activeKeybinds.navigation.left)) {
-       const currentIndex = tabs.findIndex(t => t.id === activeTab);
-       const prevIndex = (currentIndex - 1 + tabs.length) % tabs.length;
-       onTabChange(tabs[prevIndex].id);
-    }
-    if (isKey(input, key, activeKeybinds.navigation.right)) {
-       const currentIndex = tabs.findIndex(t => t.id === activeTab);
-       const nextIndex = (currentIndex + 1) % tabs.length;
-       onTabChange(tabs[nextIndex].id);
-    }
-    if (isKey(input, key, activeKeybinds.navigation.select)) {
-       // Activate current tab content (switch to active mode)
-       activateContent(activeTab);
-    }
-  }, { isActive: hasFocus });
+      if (isKey(input, key, activeKeybinds.navigation.left)) {
+        const currentIndex = tabs.findIndex((t) => t.id === activeTab);
+        const prevIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+        onTabChange(tabs[prevIndex].id);
+      }
+      if (isKey(input, key, activeKeybinds.navigation.right)) {
+        const currentIndex = tabs.findIndex((t) => t.id === activeTab);
+        const nextIndex = (currentIndex + 1) % tabs.length;
+        onTabChange(tabs[nextIndex].id);
+      }
+      if (isKey(input, key, activeKeybinds.navigation.select)) {
+        // Activate current tab content (switch to active mode)
+        activateContent(activeTab);
+      }
+    },
+    { isActive: hasFocus }
+  );
 
   return (
-    <Box flexDirection="row" justifyContent="flex-start" paddingX={1} {...(!noBorder && { borderStyle: theme.border.style as BoxProps['borderStyle'], borderColor: hasFocus ? theme.border.active : theme.border.primary })}>
+    <Box
+      flexDirection="row"
+      justifyContent="flex-start"
+      paddingX={1}
+      {...(!noBorder && {
+        borderStyle: theme.border.style as BoxProps['borderStyle'],
+        borderColor: hasFocus ? theme.border.active : theme.border.primary,
+      })}
+    >
       {tabs.map((tab, index) => {
         const isActive = tab.id === activeTab;
         const notificationCount = notifications.get(tab.id) || 0;
@@ -71,14 +88,9 @@ export function TabBar({ activeTab, onTabChange, notifications, theme, noBorder 
         // Efficient spacing: Left padding only ensures separation and alignment without double gaps
         return (
           <Box key={tab.id} paddingLeft={index === 0 ? 0 : 1}>
-            <Text
-              color={textColor}
-              bold={isActive}
-            >
+            <Text color={textColor} bold={isActive}>
               {tab.icon} {tab.label}
-              {hasNotifications && (
-                <Text color={theme.text.accent}> ({notificationCount})</Text>
-              )}
+              {hasNotifications && <Text color={theme.text.accent}> ({notificationCount})</Text>}
             </Text>
           </Box>
         );

@@ -57,26 +57,26 @@ export class SettingsService {
   private constructor() {
     // Strategy: Use ~/.ollm/settings.json
     // This ensures persistence across updates and works for global installs
-    
+
     const homeDir = homedir();
     const configDir = join(homeDir, '.ollm');
     this.settingsPath = join(configDir, 'settings.json');
     console.log(`[SettingsService] Initializing with path: ${this.settingsPath}`);
-    
+
     // Default settings
-    this.settings = { 
-        ui: { theme: 'default' }, 
-        llm: { 
-            model: 'llama3.2:3b',
-            modeLinkedTemperature: true,
-            contextCapRatio: 0.85,
-            forceNumGpu: 999,
-            ollamaAutoStart: false,
-            ollamaHealthCheck: true
-        },
-        tools: {}
-    }; 
-    
+    this.settings = {
+      ui: { theme: 'default' },
+      llm: {
+        model: 'llama3.2:3b',
+        modeLinkedTemperature: true,
+        contextCapRatio: 0.85,
+        forceNumGpu: 999,
+        ollamaAutoStart: false,
+        ollamaHealthCheck: true,
+      },
+      tools: {},
+    };
+
     this.ensureConfigExists(configDir);
     this.loadSettings();
   }
@@ -94,20 +94,20 @@ export class SettingsService {
   }
 
   private ensureConfigExists(configDir: string): void {
-      try {
-          if (!existsSync(configDir)) {
-              console.log(`[SettingsService] Creating config directory: ${configDir}`);
-              mkdirSync(configDir, { recursive: true });
-          }
-          
-          // If file doesn't exist, save our defaults there immediately
-          if (!existsSync(this.settingsPath)) {
-              console.log(`[SettingsService] Creating default settings file: ${this.settingsPath}`);
-              this.saveSettings();
-          }
-      } catch (error) {
-          console.warn('Failed to initialize settings directory:', error);
+    try {
+      if (!existsSync(configDir)) {
+        console.log(`[SettingsService] Creating config directory: ${configDir}`);
+        mkdirSync(configDir, { recursive: true });
       }
+
+      // If file doesn't exist, save our defaults there immediately
+      if (!existsSync(this.settingsPath)) {
+        console.log(`[SettingsService] Creating default settings file: ${this.settingsPath}`);
+        this.saveSettings();
+      }
+    } catch (error) {
+      console.warn('Failed to initialize settings directory:', error);
+    }
   }
 
   private loadSettings(): void {
@@ -118,12 +118,12 @@ export class SettingsService {
         const loaded = JSON.parse(content);
         // Shallow merge defaults with loaded to ensure structure exists
         this.settings = {
-            ...this.settings,
-            ...loaded,
-            ui: { ...this.settings.ui, ...(loaded.ui || {}) },
-            llm: { ...this.settings.llm, ...(loaded.llm || {}) },
-            hardware: loaded.hardware,
-            tools: loaded.tools || {}
+          ...this.settings,
+          ...loaded,
+          ui: { ...this.settings.ui, ...(loaded.ui || {}) },
+          llm: { ...this.settings.llm, ...(loaded.llm || {}) },
+          hardware: loaded.hardware,
+          tools: loaded.tools || {},
         };
       }
     } catch (error) {
@@ -142,12 +142,12 @@ export class SettingsService {
   }
 
   private notifyListeners(): void {
-    this.listeners.forEach(listener => {
-        try {
-            listener();
-        } catch (error) {
-            console.error('[SettingsService] Error in listener:', error);
-        }
+    this.listeners.forEach((listener) => {
+      try {
+        listener();
+      } catch (error) {
+        console.error('[SettingsService] Error in listener:', error);
+      }
     });
   }
 
@@ -159,7 +159,7 @@ export class SettingsService {
   public addChangeListener(listener: () => void): () => void {
     this.listeners.push(listener);
     return () => {
-        this.listeners = this.listeners.filter(l => l !== listener);
+      this.listeners = this.listeners.filter((l) => l !== listener);
     };
   }
 
@@ -168,7 +168,7 @@ export class SettingsService {
    * @param listener Callback function to remove
    */
   public removeChangeListener(listener: () => void): void {
-      this.listeners = this.listeners.filter(l => l !== listener);
+    this.listeners = this.listeners.filter((l) => l !== listener);
   }
 
   /**
@@ -237,7 +237,7 @@ export class SettingsService {
   public setHardwareInfo(info: { gpuCount?: number; gpuName?: string; totalVRAM?: number }): void {
     this.settings.hardware = {
       ...this.settings.hardware,
-      ...info
+      ...info,
     };
     this.saveSettings();
   }
@@ -252,7 +252,7 @@ export class SettingsService {
 
   /**
    * Get the enabled state of a tool
-   * 
+   *
    * @param toolId The ID of the tool to check
    * @returns true if enabled (default), false if disabled
    */
@@ -266,7 +266,7 @@ export class SettingsService {
 
   /**
    * Set the enabled state of a tool
-   * 
+   *
    * @param toolId The ID of the tool to configure
    * @param enabled Whether the tool should be enabled
    */
@@ -280,7 +280,7 @@ export class SettingsService {
 
   /**
    * Get the current prompt mode
-   * 
+   *
    * @returns The current mode, or undefined if not set
    */
   public getMode(): string | undefined {
@@ -289,7 +289,7 @@ export class SettingsService {
 
   /**
    * Set the current prompt mode
-   * 
+   *
    * @param mode The mode to set
    */
   public setMode(mode: string): void {
@@ -302,7 +302,7 @@ export class SettingsService {
 
   /**
    * Get the auto-switch preference
-   * 
+   *
    * @returns true if auto-switch is enabled (default), false if disabled
    */
   public getAutoSwitch(): boolean {
@@ -312,7 +312,7 @@ export class SettingsService {
 
   /**
    * Set the auto-switch preference
-   * 
+   *
    * @param enabled Whether auto-switch should be enabled
    */
   public setAutoSwitch(enabled: boolean): void {
@@ -325,7 +325,7 @@ export class SettingsService {
 
   /**
    * Get all hook settings
-   * 
+   *
    * @returns Object containing enabled state for all hooks
    */
   public getHookSettings(): { enabled: Record<string, boolean> } {
@@ -334,7 +334,7 @@ export class SettingsService {
 
   /**
    * Set the enabled state of a hook
-   * 
+   *
    * @param hookId The ID of the hook to configure
    * @param enabled Whether the hook should be enabled
    */
@@ -348,7 +348,7 @@ export class SettingsService {
 
   /**
    * Remove a hook setting (cleanup when hook is deleted)
-   * 
+   *
    * @param hookId The ID of the hook to remove from settings
    */
   public removeHookSetting(hookId: string): void {
@@ -362,18 +362,18 @@ export class SettingsService {
    * Set tool routing configuration
    */
   public setToolRoutingConfig(config: UserSettings['llm']['toolRouting']): void {
-      if (!this.settings.llm) {
-          this.settings.llm = { model: 'llama3.2:3b' };
-      }
-      this.settings.llm.toolRouting = config;
-      this.saveSettings();
+    if (!this.settings.llm) {
+      this.settings.llm = { model: 'llama3.2:3b' };
+    }
+    this.settings.llm.toolRouting = config;
+    this.saveSettings();
   }
 
   /**
    * Get tool routing configuration
    */
   public getToolRoutingConfig(): UserSettings['llm']['toolRouting'] {
-      return this.settings.llm.toolRouting;
+    return this.settings.llm.toolRouting;
   }
 
   /**

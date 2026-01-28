@@ -1,12 +1,12 @@
 /**
  * EditHookDialog - Dialog for editing existing hooks
- * 
+ *
  * Features:
  * - Pre-populated form with existing hook data
  * - Form validation
  * - Built-in hook protection
  * - Save and cancel actions
- * 
+ *
  * Requirements: 3.4, 3.5, 6.1
  */
 
@@ -76,11 +76,11 @@ export function EditHookDialog({
   const _handleSave = async () => {
     // Validate form
     const validationErrors: Record<string, string> = {};
-    
+
     if (!formData.name || formData.name.trim() === '') {
       validationErrors.name = 'Name is required';
     }
-    
+
     if (!formData.command || formData.command.trim() === '') {
       validationErrors.command = 'Command is required';
     }
@@ -128,18 +128,14 @@ export function EditHookDialog({
         <Box flexDirection="column">
           <Text color={uiState.theme.text.primary}>Name:</Text>
           <Text color={uiState.theme.text.secondary}>{formData.name}</Text>
-          {errors.name && (
-            <Text color={uiState.theme.status.error}>{errors.name}</Text>
-          )}
+          {errors.name && <Text color={uiState.theme.status.error}>{errors.name}</Text>}
         </Box>
 
         {/* Command field */}
         <Box flexDirection="column">
           <Text color={uiState.theme.text.primary}>Command:</Text>
           <Text color={uiState.theme.text.secondary}>{formData.command}</Text>
-          {errors.command && (
-            <Text color={uiState.theme.status.error}>{errors.command}</Text>
-          )}
+          {errors.command && <Text color={uiState.theme.status.error}>{errors.command}</Text>}
         </Box>
 
         {/* Args field */}
@@ -161,16 +157,15 @@ export function EditHookDialog({
 
       {/* Actions */}
       <Box marginTop={2} gap={2}>
-        <Text color={isSaving ? 'gray' : 'green'}>
-          {isSaving ? 'Saving...' : '[S] Save'}
-        </Text>
+        <Text color={isSaving ? 'gray' : 'green'}>{isSaving ? 'Saving...' : '[S] Save'}</Text>
         <Text color="red">[C] Cancel</Text>
       </Box>
 
       {/* Instructions */}
       <Box marginTop={1}>
         <Text color={uiState.theme.text.secondary} dimColor>
-          Note: This is a placeholder dialog. Full form editing will be implemented in a future update.
+          Note: This is a placeholder dialog. Full form editing will be implemented in a future
+          update.
         </Text>
       </Box>
     </Box>

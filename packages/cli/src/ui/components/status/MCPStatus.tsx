@@ -1,6 +1,6 @@
 /**
  * MCP Status Component
- * 
+ *
  * Displays the health status of MCP servers
  */
 
@@ -64,7 +64,7 @@ function getStatusText(status: string): string {
 
 /**
  * MCP Status Component
- * 
+ *
  * Displays health status of MCP servers in the UI
  */
 export function MCPStatus({ servers, theme, compact = false }: MCPStatusProps) {
@@ -74,7 +74,7 @@ export function MCPStatus({ servers, theme, compact = false }: MCPStatusProps) {
   }
 
   // Count healthy and unhealthy servers
-  const healthyCount = servers.filter(s => s.healthy).length;
+  const healthyCount = servers.filter((s) => s.healthy).length;
   const unhealthyCount = servers.length - healthyCount;
 
   if (compact) {
@@ -82,9 +82,7 @@ export function MCPStatus({ servers, theme, compact = false }: MCPStatusProps) {
     return (
       <Box flexDirection="row" alignItems="center">
         <Text color={theme.text.secondary}>MCP: </Text>
-        {healthyCount > 0 && (
-          <Text color={theme.status.success}>{healthyCount}✓</Text>
-        )}
+        {healthyCount > 0 && <Text color={theme.status.success}>{healthyCount}✓</Text>}
         {unhealthyCount > 0 && (
           <>
             {healthyCount > 0 && <Text color={theme.text.secondary}> </Text>}

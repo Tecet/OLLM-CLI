@@ -10,7 +10,11 @@ interface InputRoutingIndicatorProps {
   compact?: boolean;
 }
 
-export function InputRoutingIndicator({ activeDestination, theme, compact = false }: InputRoutingIndicatorProps) {
+export function InputRoutingIndicator({
+  activeDestination,
+  theme,
+  compact = false,
+}: InputRoutingIndicatorProps) {
   const destinations: Array<{ id: InputDestination; label: string }> = [
     { id: 'llm', label: 'LLM' },
     { id: 'editor', label: 'E' },

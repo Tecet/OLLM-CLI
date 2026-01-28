@@ -1,9 +1,9 @@
 /**
  * ConfirmationDialog Component
- * 
+ *
  * Displays a modal confirmation dialog for destructive operations.
  * Used for delete operations and other actions that require user confirmation.
- * 
+ *
  * Requirements: 4.3, 10.3
  */
 
@@ -34,11 +34,11 @@ export interface ConfirmationDialogProps {
 
 /**
  * ConfirmationDialog component
- * 
+ *
  * Displays a modal dialog with a message and Yes/No buttons.
  * The user can navigate between buttons with arrow keys or Tab,
  * and select with Enter. Esc cancels the operation.
- * 
+ *
  * Keyboard shortcuts:
  * - Left/Right/Tab: Navigate between buttons
  * - Enter: Select current button
@@ -87,7 +87,7 @@ export function ConfirmationDialog({
 
     // Navigate between buttons
     if (key.leftArrow || key.rightArrow || key.tab) {
-      setSelectedButton(prev => prev === 0 ? 1 : 0);
+      setSelectedButton((prev) => (prev === 0 ? 1 : 0));
       return;
     }
 
@@ -146,11 +146,7 @@ export function ConfirmationDialog({
       {/* Buttons */}
       <Box justifyContent="center" gap={2}>
         {/* Cancel button */}
-        <Box
-          borderStyle="single"
-          borderColor={selectedButton === 0 ? 'cyan' : 'gray'}
-          paddingX={2}
-        >
+        <Box borderStyle="single" borderColor={selectedButton === 0 ? 'cyan' : 'gray'} paddingX={2}>
           <Text
             bold={selectedButton === 0}
             inverse={selectedButton === 0}
@@ -178,9 +174,7 @@ export function ConfirmationDialog({
 
       {/* Footer hint */}
       <Box marginTop={1}>
-        <Text dimColor>
-          Use arrow keys or Tab to navigate • Enter to select • Esc to cancel
-        </Text>
+        <Text dimColor>Use arrow keys or Tab to navigate • Enter to select • Esc to cancel</Text>
       </Box>
     </Box>
   );

@@ -7,20 +7,20 @@ import { DocEntry } from '../../services/docsService.js';
 export interface DocNavProps {
   /** Documentation entries */
   entries: DocEntry[];
-  
+
   /** Currently selected entry path */
   selectedPath: string | null;
-  
+
   /** Callback when an entry is selected */
   onSelect: (path: string) => void;
-  
+
   /** Theme for styling */
   theme: Theme;
 }
 
 /**
  * DocNav component
- * 
+ *
  * Navigation sidebar for documentation.
  * Shows list of available documents.
  * Highlights the currently selected document.
@@ -36,7 +36,7 @@ export function DocNav({ entries, selectedPath, onSelect: _onSelect, theme }: Do
 
       {entries.map((entry) => {
         const isSelected = entry.path === selectedPath;
-        
+
         return (
           <Box
             key={entry.path}
@@ -46,10 +46,7 @@ export function DocNav({ entries, selectedPath, onSelect: _onSelect, theme }: Do
             marginBottom={1}
           >
             <Box flexDirection="column">
-              <Text
-                color={isSelected ? theme.text.accent : theme.text.primary}
-                bold={isSelected}
-              >
+              <Text color={isSelected ? theme.text.accent : theme.text.primary} bold={isSelected}>
                 {isSelected ? '▶ ' : '  '}
                 {entry.title}
               </Text>

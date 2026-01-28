@@ -1,12 +1,12 @@
 /**
  * TestHookDialog - Dialog for testing hooks
- * 
+ *
  * Features:
  * - Simulates hook trigger event
  * - Displays test progress and results
  * - Shows success/failure indicators
  * - Close button
- * 
+ *
  * Requirements: 3.8, 3.9
  */
 
@@ -110,11 +110,7 @@ export function TestHookDialog({ hook, onClose: _onClose }: TestHookDialogProps)
           {/* Result status */}
           <Box marginBottom={1}>
             <Text
-              color={
-                result.success
-                  ? uiState.theme.status.success
-                  : uiState.theme.status.error
-              }
+              color={result.success ? uiState.theme.status.success : uiState.theme.status.error}
               bold
             >
               {result.success ? '✓' : '✗'} {result.message}
@@ -123,16 +119,12 @@ export function TestHookDialog({ hook, onClose: _onClose }: TestHookDialogProps)
 
           {/* Command executed */}
           <Box marginBottom={1}>
-            <Text color={uiState.theme.text.secondary}>
-              Command: {hook.command}
-            </Text>
+            <Text color={uiState.theme.text.secondary}>Command: {hook.command}</Text>
           </Box>
 
           {hook.args && hook.args.length > 0 && (
             <Box marginBottom={1}>
-              <Text color={uiState.theme.text.secondary}>
-                Arguments: {hook.args.join(' ')}
-              </Text>
+              <Text color={uiState.theme.text.secondary}>Arguments: {hook.args.join(' ')}</Text>
             </Box>
           )}
 

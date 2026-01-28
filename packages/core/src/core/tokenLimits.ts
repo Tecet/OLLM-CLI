@@ -45,7 +45,11 @@ export class TokenCounter {
     private config: TokenLimitConfig
   ) {
     // Validate warningThreshold
-    if (!Number.isFinite(config.warningThreshold) || config.warningThreshold < 0 || config.warningThreshold > 1) {
+    if (
+      !Number.isFinite(config.warningThreshold) ||
+      config.warningThreshold < 0 ||
+      config.warningThreshold > 1
+    ) {
       throw new Error(
         `Invalid warningThreshold: ${config.warningThreshold}. Must be a finite number between 0 and 1.`
       );
@@ -118,7 +122,7 @@ export class TokenCounter {
     // 2. Query Model Database for known models
     // 3. Fall back to safe default (4096)
     let limit: number;
-    
+
     if (this.config.modelLimits?.has(model)) {
       // Config override takes precedence
       limit = this.config.modelLimits.get(model)!;

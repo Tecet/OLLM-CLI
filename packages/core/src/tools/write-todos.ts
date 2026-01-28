@@ -103,7 +103,6 @@ export class WriteTodosTool implements DeclarativeTool<WriteTodosParams, ToolRes
   }
 }
 
-
 /**
  * Invocation instance for todo operations
  */
@@ -132,9 +131,7 @@ export class WriteTodosInvocation implements ToolInvocation<WriteTodosParams, To
     return [this.todosPath];
   }
 
-  async shouldConfirmExecute(
-    _abortSignal: AbortSignal
-  ): Promise<false> {
+  async shouldConfirmExecute(_abortSignal: AbortSignal): Promise<false> {
     // Todo operations don't require confirmation
     return false;
   }

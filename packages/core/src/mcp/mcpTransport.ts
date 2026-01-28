@@ -1,6 +1,6 @@
 /**
  * MCP Transport Implementation
- * 
+ *
  * This module provides transport implementations for communicating with MCP servers.
  * Supports stdio, SSE (Server-Sent Events), and HTTP transports.
  */
@@ -11,12 +11,11 @@ import { EventEmitter } from 'events';
 import { MCPTransport, MCPRequest, MCPResponse } from './types.js';
 import { createLogger } from '../utils/logger.js';
 
-
 const logger = createLogger('MCPTransport');
 
 /**
  * Base class for MCP transports
- * 
+ *
  * Provides common functionality for all transport implementations.
  */
 export abstract class BaseMCPTransport implements MCPTransport {
@@ -33,17 +32,20 @@ export abstract class BaseMCPTransport implements MCPTransport {
 
 /**
  * Stdio transport for MCP communication
- * 
+ *
  * Communicates with MCP servers via stdin/stdout.
  * This is the primary transport for local MCP servers.
  */
 export class StdioTransport extends BaseMCPTransport {
   private process?: ChildProcess;
   private requestId: number = 0;
-  private pendingRequests: Map<number, {
-    resolve: (response: MCPResponse) => void;
-    reject: (error: Error) => void;
-  }> = new Map();
+  private pendingRequests: Map<
+    number,
+    {
+      resolve: (response: MCPResponse) => void;
+      reject: (error: Error) => void;
+    }
+  > = new Map();
   private buffer: string = '';
   private outputSize: number = 0;
   private readonly MAX_OUTPUT_SIZE = 10 * 1024 * 1024; // 10MB
@@ -70,7 +72,11 @@ export class StdioTransport extends BaseMCPTransport {
         const isWindows = process.platform === 'win32';
         const isShellBuiltin = (cmd: string) => {
           if (!cmd) return false;
-          const name = cmd.split(/[\\/\\\\]/).pop()?.toLowerCase() || '';
+          const name =
+            cmd
+              .split(/[\\/\\\\]/)
+              .pop()
+              ?.toLowerCase() || '';
           const builtins = ['echo', 'dir', 'type', 'cls', 'copy', 'del', 'move', 'cd', 'set'];
           return builtins.includes(name);
         };
@@ -92,7 +98,7 @@ export class StdioTransport extends BaseMCPTransport {
         }
 
         let errorOccurred = false;
-        
+
         // Set timeout for readiness check
         const readinessTimeout = setTimeout(() => {
           if (!this.connected) {
@@ -116,30 +122,30 @@ export class StdioTransport extends BaseMCPTransport {
           };
 
           // Try to send initialize request
-            this.sendRequest(initRequest, 15000)
-              .then(() => {
-                clearTimeout(readinessTimeout);
-                this.connected = true;
-                resolve();
-              })
-              .catch((error) => {
-                // If initialize fails, still mark as connected but log warning
-                // Some MCP servers may not support initialize
-                logger.warn('MCP Server initialize failed, assuming ready', {
-                  command: this.command,
-                  error: error.message
-                });
-                clearTimeout(readinessTimeout);
-                this.connected = true;
-                resolve();
+          this.sendRequest(initRequest, 15000)
+            .then(() => {
+              clearTimeout(readinessTimeout);
+              this.connected = true;
+              resolve();
+            })
+            .catch((error) => {
+              // If initialize fails, still mark as connected but log warning
+              // Some MCP servers may not support initialize
+              logger.warn('MCP Server initialize failed, assuming ready', {
+                command: this.command,
+                error: error.message,
               });
+              clearTimeout(readinessTimeout);
+              this.connected = true;
+              resolve();
+            });
         };
 
         // Handle process errors
         this.process.on('error', (error: Error) => {
           logger.error('MCP Server process error', {
             command: this.command,
-            error: error.message || String(error)
+            error: error.message || String(error),
           });
           this.connected = false;
           errorOccurred = true;
@@ -151,19 +157,19 @@ export class StdioTransport extends BaseMCPTransport {
         this.process.stdout?.on('data', (data: Buffer) => {
           const chunk = data.toString();
           this.outputSize += chunk.length;
-          
+
           if (this.outputSize > this.MAX_OUTPUT_SIZE) {
             const sizeMB = (this.MAX_OUTPUT_SIZE / (1024 * 1024)).toFixed(1);
             const currentSizeMB = (this.outputSize / (1024 * 1024)).toFixed(1);
             const errorMsg = `MCP Server '${this.command}' exceeded output size limit: ${currentSizeMB}MB > ${sizeMB}MB. Consider implementing streaming or reducing output size.`;
-            
+
             logger.error('MCP Server exceeded output size limit', {
               command: this.command,
               currentSizeMB,
-              limitSizeMB: sizeMB
+              limitSizeMB: sizeMB,
             });
             this.connected = false;
-            
+
             // Kill the process gracefully first, then force if needed
             if (this.process) {
               this.process.kill('SIGTERM');
@@ -173,7 +179,7 @@ export class StdioTransport extends BaseMCPTransport {
                 }
               }, 1000);
             }
-            
+
             // Reject all pending requests with detailed error
             for (const [, { reject }] of this.pendingRequests) {
               reject(new Error(errorMsg));
@@ -181,7 +187,7 @@ export class StdioTransport extends BaseMCPTransport {
             this.pendingRequests.clear();
             return;
           }
-          
+
           this.handleData(data);
         });
 
@@ -190,7 +196,7 @@ export class StdioTransport extends BaseMCPTransport {
           const stderrOutput = data.toString().trim();
           logger.error('MCP Server stderr output', {
             command: this.command,
-            stderr: stderrOutput
+            stderr: stderrOutput,
           });
         });
 
@@ -199,7 +205,7 @@ export class StdioTransport extends BaseMCPTransport {
           logger.info('MCP Server exited', {
             command: this.command,
             code,
-            signal
+            signal,
           });
           this.connected = false;
 
@@ -220,7 +226,6 @@ export class StdioTransport extends BaseMCPTransport {
             checkReadiness();
           }
         }, 100);
-
       } catch (error) {
         reject(error);
       }
@@ -305,32 +310,32 @@ export class StdioTransport extends BaseMCPTransport {
 
       // Send request to server
       const requestStr = JSON.stringify(jsonRpcRequest) + '\n';
-      
-        try {
-          if (!this.process || !this.process.stdin) {
+
+      try {
+        if (!this.process || !this.process.stdin) {
+          clearTimeout(timeoutId);
+          this.pendingRequests.delete(id);
+          reject(new Error('Process stdin is not available'));
+          return;
+        }
+
+        // Ensure stdin is writable before attempting to write
+        const stdin: any = this.process.stdin;
+        if (typeof stdin.writable === 'boolean' && !stdin.writable) {
+          clearTimeout(timeoutId);
+          this.pendingRequests.delete(id);
+          reject(new Error('Process stdin is not writable'));
+          return;
+        }
+
+        this.process.stdin.write(requestStr, (error) => {
+          if (error) {
             clearTimeout(timeoutId);
             this.pendingRequests.delete(id);
-            reject(new Error('Process stdin is not available'));
-            return;
+            reject(error);
           }
-
-          // Ensure stdin is writable before attempting to write
-          const stdin: any = this.process.stdin;
-          if (typeof stdin.writable === 'boolean' && !stdin.writable) {
-            clearTimeout(timeoutId);
-            this.pendingRequests.delete(id);
-            reject(new Error('Process stdin is not writable'));
-            return;
-          }
-
-          this.process.stdin.write(requestStr, (error) => {
-            if (error) {
-              clearTimeout(timeoutId);
-              this.pendingRequests.delete(id);
-              reject(error);
-            }
-          });
-        } catch (error) {
+        });
+      } catch (error) {
         clearTimeout(timeoutId);
         this.pendingRequests.delete(id);
         reject(error instanceof Error ? error : new Error(String(error)));
@@ -371,7 +376,7 @@ export class StdioTransport extends BaseMCPTransport {
       if (typeof id !== 'number') {
         logger.error('MCP Server received message without valid ID', {
           command: this.command,
-          message: message.substring(0, 100)
+          message: message.substring(0, 100),
         });
         return;
       }
@@ -381,7 +386,7 @@ export class StdioTransport extends BaseMCPTransport {
       if (!pending) {
         logger.error('MCP Server received response for unknown request ID', {
           command: this.command,
-          id
+          id,
         });
         return;
       }
@@ -392,11 +397,13 @@ export class StdioTransport extends BaseMCPTransport {
       // Convert JSON-RPC response to MCPResponse
       const response: MCPResponse = {
         result: jsonRpcResponse.result,
-        error: jsonRpcResponse.error ? {
-          code: jsonRpcResponse.error.code || -1,
-          message: jsonRpcResponse.error.message || 'Unknown error',
-          data: jsonRpcResponse.error.data,
-        } : undefined,
+        error: jsonRpcResponse.error
+          ? {
+              code: jsonRpcResponse.error.code || -1,
+              message: jsonRpcResponse.error.message || 'Unknown error',
+              data: jsonRpcResponse.error.data,
+            }
+          : undefined,
       };
 
       // Resolve the promise
@@ -406,7 +413,7 @@ export class StdioTransport extends BaseMCPTransport {
       logger.debug('Failed to parse JSON-RPC message', {
         command: this.command,
         error: error instanceof Error ? error.message : String(error),
-        message: message.substring(0, 100)
+        message: message.substring(0, 100),
       });
     }
   }
@@ -414,23 +421,29 @@ export class StdioTransport extends BaseMCPTransport {
 
 /**
  * SSE (Server-Sent Events) transport for MCP communication
- * 
+ *
  * Communicates with MCP servers via HTTP SSE.
  * Supports bidirectional communication using SSE for server-to-client
  * and HTTP POST for client-to-server messages.
  */
 export class SSETransport extends BaseMCPTransport {
   private requestId: number = 0;
-  private pendingRequests: Map<number, {
-    resolve: (response: MCPResponse) => void;
-    reject: (error: Error) => void;
-  }> = new Map();
+  private pendingRequests: Map<
+    number,
+    {
+      resolve: (response: MCPResponse) => void;
+      reject: (error: Error) => void;
+    }
+  > = new Map();
   private eventSource?: EventEmitter;
   private abortController?: AbortController;
   private buffer: string = '';
   private accessToken?: string;
 
-  constructor(private url: string, accessToken?: string) {
+  constructor(
+    private url: string,
+    accessToken?: string
+  ) {
     super();
     this.accessToken = accessToken;
   }
@@ -451,9 +464,9 @@ export class SSETransport extends BaseMCPTransport {
     return new Promise((resolve, reject) => {
       try {
         this.abortController = new AbortController();
-        
+
         const headers: Record<string, string> = {
-          'Accept': 'text/event-stream',
+          Accept: 'text/event-stream',
           'Cache-Control': 'no-cache',
         };
 
@@ -461,7 +474,7 @@ export class SSETransport extends BaseMCPTransport {
         if (this.accessToken) {
           headers['Authorization'] = `Bearer ${this.accessToken}`;
         }
-        
+
         // Create SSE connection
         fetch(this.url, {
           method: 'GET',
@@ -487,7 +500,7 @@ export class SSETransport extends BaseMCPTransport {
             try {
               while (true) {
                 const { done, value } = await reader.read();
-                
+
                 if (done) {
                   this.connected = false;
                   // Reject all pending requests
@@ -505,7 +518,7 @@ export class SSETransport extends BaseMCPTransport {
               if (error instanceof Error && error.name !== 'AbortError') {
                 logger.error('SSE stream error', {
                   url: this.url,
-                  error: error.message
+                  error: error.message,
                 });
               }
               this.connected = false;
@@ -515,7 +528,7 @@ export class SSETransport extends BaseMCPTransport {
             if (error instanceof Error && error.name !== 'AbortError') {
               logger.error('SSE connection error', {
                 url: this.url,
-                error: error.message
+                error: error.message,
               });
               reject(error);
             }
@@ -568,7 +581,7 @@ export class SSETransport extends BaseMCPTransport {
 
       // Send request via HTTP POST
       const postUrl = this.url.replace(/\/sse$/, '/message');
-      
+
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
       };
@@ -577,7 +590,7 @@ export class SSETransport extends BaseMCPTransport {
       if (this.accessToken) {
         headers['Authorization'] = `Bearer ${this.accessToken}`;
       }
-      
+
       fetch(postUrl, {
         method: 'POST',
         headers,
@@ -625,7 +638,7 @@ export class SSETransport extends BaseMCPTransport {
     // Example:
     // event: message
     // data: {"jsonrpc":"2.0","id":1,"result":{...}}
-    
+
     const lines = event.split('\n');
     let eventType = 'message';
     let eventData = '';
@@ -656,7 +669,7 @@ export class SSETransport extends BaseMCPTransport {
       if (typeof id !== 'number') {
         logger.error('SSE received message without valid ID', {
           url: this.url,
-          message: message.substring(0, 100)
+          message: message.substring(0, 100),
         });
         return;
       }
@@ -666,7 +679,7 @@ export class SSETransport extends BaseMCPTransport {
       if (!pending) {
         logger.error('SSE received response for unknown request ID', {
           url: this.url,
-          id
+          id,
         });
         return;
       }
@@ -677,11 +690,13 @@ export class SSETransport extends BaseMCPTransport {
       // Convert JSON-RPC response to MCPResponse
       const response: MCPResponse = {
         result: jsonRpcResponse.result,
-        error: jsonRpcResponse.error ? {
-          code: jsonRpcResponse.error.code || -1,
-          message: jsonRpcResponse.error.message || 'Unknown error',
-          data: jsonRpcResponse.error.data,
-        } : undefined,
+        error: jsonRpcResponse.error
+          ? {
+              code: jsonRpcResponse.error.code || -1,
+              message: jsonRpcResponse.error.message || 'Unknown error',
+              data: jsonRpcResponse.error.data,
+            }
+          : undefined,
       };
 
       // Resolve the promise
@@ -690,7 +705,7 @@ export class SSETransport extends BaseMCPTransport {
       const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error('SSE failed to parse JSON-RPC message', {
         error: errorMessage,
-        message: message.substring(0, 100)
+        message: message.substring(0, 100),
       });
     }
   }
@@ -698,7 +713,7 @@ export class SSETransport extends BaseMCPTransport {
 
 /**
  * HTTP transport for MCP communication
- * 
+ *
  * Communicates with MCP servers via HTTP requests.
  * Uses standard HTTP POST for request/response communication.
  */
@@ -706,7 +721,10 @@ export class HTTPTransport extends BaseMCPTransport {
   private requestId: number = 0;
   private accessToken?: string;
 
-  constructor(private url: string, accessToken?: string) {
+  constructor(
+    private url: string,
+    accessToken?: string
+  ) {
     super();
     this.accessToken = accessToken;
   }
@@ -752,7 +770,9 @@ export class HTTPTransport extends BaseMCPTransport {
 
       this.connected = true;
     } catch (error) {
-      throw new Error(`Failed to connect to HTTP MCP server: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to connect to HTTP MCP server: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -817,11 +837,13 @@ export class HTTPTransport extends BaseMCPTransport {
         // Convert JSON-RPC response to MCPResponse
         const mcpResponse: MCPResponse = {
           result: jsonRpcResponse.result,
-          error: jsonRpcResponse.error ? {
-            code: jsonRpcResponse.error.code || -1,
-            message: jsonRpcResponse.error.message || 'Unknown error',
-            data: jsonRpcResponse.error.data,
-          } : undefined,
+          error: jsonRpcResponse.error
+            ? {
+                code: jsonRpcResponse.error.code || -1,
+                message: jsonRpcResponse.error.message || 'Unknown error',
+                data: jsonRpcResponse.error.data,
+              }
+            : undefined,
         };
 
         return mcpResponse;
@@ -833,7 +855,9 @@ export class HTTPTransport extends BaseMCPTransport {
         throw error;
       }
     } catch (error) {
-      throw new Error(`HTTP request failed: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `HTTP request failed: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 }

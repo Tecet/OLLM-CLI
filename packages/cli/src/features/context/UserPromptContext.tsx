@@ -1,6 +1,6 @@
 /**
  * UserPromptContext - Manages user prompts for interactive decisions
- * 
+ *
  * This context provides a Promise-based API for prompting users with questions
  * and collecting their responses. Used for tool support detection, model configuration,
  * and other interactive workflows.
@@ -42,8 +42,8 @@ export interface UserPromptState {
 export interface UserPromptContextValue {
   /** Current prompt state */
   state: UserPromptState;
-  
-  /** 
+
+  /**
    * Prompt the user with a question and options
    * Returns a promise that resolves with the selected option
    */
@@ -53,16 +53,16 @@ export interface UserPromptContextValue {
     timeout?: number,
     defaultOption?: string
   ) => Promise<string>;
-  
+
   /** Navigate to previous option */
   navigateUp: () => void;
-  
+
   /** Navigate to next option */
   navigateDown: () => void;
-  
+
   /** Select current option */
   selectOption: () => void;
-  
+
   /** Cancel current prompt */
   cancelPrompt: () => void;
 }
@@ -96,9 +96,7 @@ export function UserPromptProvider({ children }: UserPromptProviderProps) {
   });
 
   // Store pending promise resolver
-  const [pendingResolve, setPendingResolve] = useState<((value: string) => void) | null>(
-    null
-  );
+  const [pendingResolve, setPendingResolve] = useState<((value: string) => void) | null>(null);
 
   // Store timeout handle
   const [timeoutHandle, setTimeoutHandle] = useState<NodeJS.Timeout | null>(null);
@@ -132,10 +130,10 @@ export function UserPromptProvider({ children }: UserPromptProviderProps) {
         // Set up timeout if specified
         let handle: NodeJS.Timeout | null = null;
         let interval: NodeJS.Timeout | null = null;
-        
+
         if (timeout && timeout > 0) {
           const startTime = Date.now();
-          
+
           // Update elapsed time every 100ms
           interval = setInterval(() => {
             const elapsed = Date.now() - startTime;
@@ -148,13 +146,13 @@ export function UserPromptProvider({ children }: UserPromptProviderProps) {
 
           handle = setTimeout(() => {
             const option = defaultOption || options[0];
-            
+
             // Clear interval
             if (interval) {
               clearInterval(interval);
               setIntervalHandle(null);
             }
-            
+
             setState({ activePrompt: null, isVisible: false, selectedIndex: 0, elapsedTime: 0 });
             resolve(option);
             setPendingResolve(null);
@@ -268,9 +266,5 @@ export function UserPromptProvider({ children }: UserPromptProviderProps) {
     cancelPrompt,
   };
 
-  return (
-    <UserPromptContext.Provider value={value}>
-      {children}
-    </UserPromptContext.Provider>
-  );
+  return <UserPromptContext.Provider value={value}>{children}</UserPromptContext.Provider>;
 }

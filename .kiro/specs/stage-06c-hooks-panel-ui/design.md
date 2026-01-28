@@ -34,6 +34,7 @@
 ```
 
 **Navigation Flow:**
+
 ```
 Browse Mode (Tab cycling)
     ↓ Enter on Hooks tab
@@ -59,29 +60,29 @@ export function HooksPanel({ windowSize = 15 }: HooksPanelProps) {
   const { state: uiState } = useUI();
   const { isFocused, exitToNavBar } = useFocusManager();
   const { hooks, categories, enabledHooks, toggleHook } = useHooks();
-  
+
   const hasFocus = isFocused('hooks-panel');
-  
+
   // Navigation state
   const [selectedCategoryIndex, setSelectedCategoryIndex] = useState(0);
   const [selectedHookIndex, setSelectedHookIndex] = useState(0);
   const [scrollOffset, setScrollOffset] = useState(0);
   const [isOnExitItem, setIsOnExitItem] = useState(false);
-  
+
   // Windowed rendering
   const totalItems = useMemo(() => {
     return categories.reduce((sum, cat) => sum + cat.hooks.length + 1, 0) + 1;
   }, [categories]);
-  
+
   const visibleItems = useMemo(() => {
     // Calculate visible window (Exit + categories + hooks)
     // Filter to scrollOffset...scrollOffset+windowSize
   }, [categories, scrollOffset, windowSize]);
-  
+
   // Navigation handlers
   const handleNavigateUp = () => {
     if (isOnExitItem) return; // Already at top
-    
+
     if (selectedHookIndex > 0) {
       setSelectedHookIndex(prev => prev - 1);
     } else if (selectedCategoryIndex > 0) {
@@ -95,7 +96,7 @@ export function HooksPanel({ windowSize = 15 }: HooksPanelProps) {
       setScrollOffset(0);
     }
   };
-  
+
   const handleNavigateDown = () => {
     if (isOnExitItem) {
       // Move from Exit to first hook
@@ -104,7 +105,7 @@ export function HooksPanel({ windowSize = 15 }: HooksPanelProps) {
       setSelectedHookIndex(0);
       return;
     }
-    
+
     const currentCategory = categories[selectedCategoryIndex];
     if (selectedHookIndex < currentCategory.hooks.length - 1) {
       setSelectedHookIndex(prev => prev + 1);
@@ -114,24 +115,24 @@ export function HooksPanel({ windowSize = 15 }: HooksPanelProps) {
       setSelectedHookIndex(0);
     }
   };
-  
+
   const handleToggleCurrent = () => {
     if (isOnExitItem) {
       exitToNavBar();
       return;
     }
-    
+
     const currentCategory = categories[selectedCategoryIndex];
     const currentHook = currentCategory.hooks[selectedHookIndex];
     if (currentHook) {
       toggleHook(currentHook.id);
     }
   };
-  
+
   // Keyboard input
   useInput((input, key) => {
     if (!hasFocus) return;
-    
+
     if (key.upArrow) handleNavigateUp();
     else if (key.downArrow) handleNavigateDown();
     else if (key.leftArrow || key.rightArrow || key.return) handleToggleCurrent();
@@ -141,7 +142,7 @@ export function HooksPanel({ windowSize = 15 }: HooksPanelProps) {
     else if (input === 'd' || input === 'D') openDeleteDialog();
     else if (input === 't' || input === 'T') openTestDialog();
   }, { isActive: hasFocus });
-  
+
   return (
     <Box flexDirection="column" height="100%">
       {/* Header */}
@@ -155,14 +156,14 @@ export function HooksPanel({ windowSize = 15 }: HooksPanelProps) {
           </Text>
         </Box>
       </Box>
-      
+
       {/* Two-column layout */}
       <Box flexGrow={1} overflow="hidden">
         {/* Left column: Hook list (30%) */}
-        <Box 
-          flexDirection="column" 
-          width="30%" 
-          borderStyle="single" 
+        <Box
+          flexDirection="column"
+          width="30%"
+          borderStyle="single"
           borderColor={hasFocus ? uiState.theme.border.active : uiState.theme.border.primary}
         >
           {/* Scroll indicator at top */}
@@ -176,7 +177,7 @@ export function HooksPanel({ windowSize = 15 }: HooksPanelProps) {
               <Text> </Text>
             </>
           )}
-          
+
           {/* Scrollable content */}
           <Box flexDirection="column" flexGrow={1} paddingX={1}>
             {/* Exit item */}
@@ -190,7 +191,7 @@ export function HooksPanel({ windowSize = 15 }: HooksPanelProps) {
             </Box>
             <Text> </Text>
             <Text> </Text>
-            
+
             {/* Render visible items (categories + hooks) */}
             {visibleItems.map((item) => {
               if (item.type === 'category') {
@@ -204,11 +205,11 @@ export function HooksPanel({ windowSize = 15 }: HooksPanelProps) {
               } else {
                 // Hook item
                 const hook = item.hook;
-                const isSelected = hasFocus && 
-                  item.categoryIndex === selectedCategoryIndex && 
+                const isSelected = hasFocus &&
+                  item.categoryIndex === selectedCategoryIndex &&
                   item.hookIndex === selectedHookIndex;
                 const isEnabled = enabledHooks.has(hook.id);
-                
+
                 return (
                   <Box key={`hook-${hook.id}`} paddingLeft={2}>
                     <Box gap={1}>
@@ -228,7 +229,7 @@ export function HooksPanel({ windowSize = 15 }: HooksPanelProps) {
               }
             })}
           </Box>
-          
+
           {/* Scroll indicator at bottom */}
           {scrollOffset + windowSize < totalItems && (
             <>
@@ -241,14 +242,14 @@ export function HooksPanel({ windowSize = 15 }: HooksPanelProps) {
             </>
           )}
         </Box>
-        
+
         {/* Right column: Hook details (70%) */}
-        <Box 
-          flexDirection="column" 
-          width="70%" 
-          borderStyle="single" 
-          borderColor={uiState.theme.border.primary} 
-          paddingX={2} 
+        <Box
+          flexDirection="column"
+          width="70%"
+          borderStyle="single"
+          borderColor={uiState.theme.border.primary}
+          paddingX={2}
           paddingY={2}
         >
           {selectedHook ? (
@@ -299,6 +300,7 @@ export function HooksPanel({ windowSize = 15 }: HooksPanelProps) {
 ```
 
 **Category Icons:**
+
 ```typescript
 const getCategoryIcon = (category: HookCategory): string => {
   const icons: Record<string, string> = {
@@ -315,6 +317,7 @@ const getCategoryIcon = (category: HookCategory): string => {
 **File:** `packages/cli/src/ui/components/dialogs/HookDialogs.tsx`
 
 #### AddHookDialog
+
 ```typescript
 export const AddHookDialog: React.FC<{
   onSave: (hook: Omit<Hook, 'id'>) => Promise<void>;
@@ -328,20 +331,20 @@ export const AddHookDialog: React.FC<{
     actionType: 'askAgent',
     promptOrCommand: ''
   });
-  
+
   const [errors, setErrors] = useState<ValidationErrors>({});
-  
+
   const handleSave = async () => {
     const validationErrors = validateHookForm(formData);
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       return;
     }
-    
+
     await onSave(formDataToHook(formData));
     onCancel();
   };
-  
+
   return (
     <Box flexDirection="column" borderStyle="round" padding={1}>
       <Text bold>Add New Hook</Text>
@@ -363,9 +366,11 @@ export const AddHookDialog: React.FC<{
 ```
 
 #### EditHookDialog
+
 Similar to AddHookDialog but pre-populated with existing hook data.
 
 #### DeleteConfirmationDialog
+
 ```typescript
 export const DeleteConfirmationDialog: React.FC<{
   hook: Hook;
@@ -387,6 +392,7 @@ export const DeleteConfirmationDialog: React.FC<{
 ```
 
 #### TestHookDialog
+
 ```typescript
 export const TestHookDialog: React.FC<{
   hook: Hook;
@@ -394,7 +400,7 @@ export const TestHookDialog: React.FC<{
 }> = ({ hook, onClose }) => {
   const [result, setResult] = useState<HookTestResult | null>(null);
   const [testing, setTesting] = useState(false);
-  
+
   useEffect(() => {
     const runTest = async () => {
       setTesting(true);
@@ -404,7 +410,7 @@ export const TestHookDialog: React.FC<{
     };
     runTest();
   }, [hook]);
-  
+
   return (
     <Box flexDirection="column" borderStyle="round" padding={1}>
       <Text bold>Test Hook: {hook.name}</Text>
@@ -428,7 +434,6 @@ export const TestHookDialog: React.FC<{
 };
 ```
 
-
 ### 7. Navigation Hook
 
 **File:** `packages/cli/src/ui/hooks/useHookNavigation.ts`
@@ -440,46 +445,49 @@ export function useHookNavigation() {
   const { categories } = useHooks();
   const [focusedIndex, setFocusedIndex] = useState(0);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
-  
+
   const flattenedItems = useMemo(() => {
     const items: NavigationItem[] = [];
-    categories.forEach(category => {
+    categories.forEach((category) => {
       items.push({ type: 'category', id: category.name, category });
       if (expandedCategories.has(category.name)) {
-        category.hooks.forEach(hook => {
+        category.hooks.forEach((hook) => {
           items.push({ type: 'hook', id: hook.id, hook });
         });
       }
     });
     return items;
   }, [categories, expandedCategories]);
-  
-  const handleKeyPress = useCallback((key: string) => {
-    switch (key) {
-      case 'up':
-        setFocusedIndex(prev => Math.max(0, prev - 1));
-        break;
-      case 'down':
-        setFocusedIndex(prev => Math.min(flattenedItems.length - 1, prev + 1));
-        break;
-      case 'return':
-        const item = flattenedItems[focusedIndex];
-        if (item.type === 'category') {
-          toggleCategory(item.id);
-        }
-        break;
-      case 'left':
-      case 'right':
-        const hookItem = flattenedItems[focusedIndex];
-        if (hookItem.type === 'hook') {
-          toggleHook(hookItem.id);
-        }
-        break;
-    }
-  }, [focusedIndex, flattenedItems]);
-  
+
+  const handleKeyPress = useCallback(
+    (key: string) => {
+      switch (key) {
+        case 'up':
+          setFocusedIndex((prev) => Math.max(0, prev - 1));
+          break;
+        case 'down':
+          setFocusedIndex((prev) => Math.min(flattenedItems.length - 1, prev + 1));
+          break;
+        case 'return':
+          const item = flattenedItems[focusedIndex];
+          if (item.type === 'category') {
+            toggleCategory(item.id);
+          }
+          break;
+        case 'left':
+        case 'right':
+          const hookItem = flattenedItems[focusedIndex];
+          if (hookItem.type === 'hook') {
+            toggleHook(hookItem.id);
+          }
+          break;
+      }
+    },
+    [focusedIndex, flattenedItems]
+  );
+
   const toggleCategory = useCallback((categoryId: string) => {
-    setExpandedCategories(prev => {
+    setExpandedCategories((prev) => {
       const next = new Set(prev);
       if (next.has(categoryId)) {
         next.delete(categoryId);
@@ -489,13 +497,13 @@ export function useHookNavigation() {
       return next;
     });
   }, []);
-  
+
   return {
     focusedIndex,
     expandedCategories,
     handleKeyPress,
     toggleCategory,
-    getFocusedItem: () => flattenedItems[focusedIndex]
+    getFocusedItem: () => flattenedItems[focusedIndex],
   };
 }
 ```
@@ -503,6 +511,7 @@ export function useHookNavigation() {
 ## Data Flow
 
 ### Hook Loading Flow
+
 ```
 App Startup
   ↓
@@ -525,6 +534,7 @@ Render HooksTab
 ```
 
 ### Toggle Hook Flow
+
 ```
 User: Press Left/Right on hook
   ↓
@@ -544,6 +554,7 @@ Show system message: "Hook enabled/disabled"
 ```
 
 ### Add Hook Flow
+
 ```
 User: Press 'A' key
   ↓
@@ -575,6 +586,7 @@ Show system message: "Hook created"
 ```
 
 ### Edit Hook Flow
+
 ```
 User: Press 'E' key on hook
   ↓
@@ -608,6 +620,7 @@ Show system message: "Hook updated"
 ```
 
 ### Delete Hook Flow
+
 ```
 User: Press 'D' key on hook
   ↓
@@ -637,6 +650,7 @@ Show system message: "Hook deleted"
 ```
 
 ### Test Hook Flow
+
 ```
 User: Press 'T' key on hook
   ↓
@@ -659,7 +673,6 @@ User clicks Close
 Close dialog
 ```
 
-
 ## Service Layer
 
 ### HookFileService
@@ -672,15 +685,15 @@ Handles hook file I/O operations.
 export class HookFileService {
   private userHooksDir: string;
   private workspaceHooksDir: string;
-  
+
   constructor() {
     this.userHooksDir = path.join(os.homedir(), '.ollm', 'hooks');
     this.workspaceHooksDir = path.join(process.cwd(), '.ollm', 'hooks');
   }
-  
+
   async loadUserHooks(): Promise<Hook[]> {
     const hooks: Hook[] = [];
-    
+
     // Load from user directory
     if (fs.existsSync(this.userHooksDir)) {
       const files = fs.readdirSync(this.userHooksDir);
@@ -692,7 +705,7 @@ export class HookFileService {
         }
       }
     }
-    
+
     // Load from workspace directory
     if (fs.existsSync(this.workspaceHooksDir)) {
       const files = fs.readdirSync(this.workspaceHooksDir);
@@ -704,10 +717,10 @@ export class HookFileService {
         }
       }
     }
-    
+
     return hooks;
   }
-  
+
   private async loadHookFile(filePath: string): Promise<Hook | null> {
     try {
       const content = fs.readFileSync(filePath, 'utf-8');
@@ -722,45 +735,45 @@ export class HookFileService {
         id: path.basename(filePath, '.json'),
         source: filePath.includes('.ollm/hooks') ? 'user' : 'builtin',
         enabled: true, // Will be overridden by settings
-        trusted: false // Will be set by HookRegistry
+        trusted: false, // Will be set by HookRegistry
       };
     } catch (error) {
       console.error(`Failed to load hook file ${filePath}:`, error);
       return null;
     }
   }
-  
+
   async saveHook(hook: Hook): Promise<void> {
     const fileName = `${hook.id}.json`;
     const filePath = path.join(this.userHooksDir, fileName);
-    
+
     // Ensure directory exists
     if (!fs.existsSync(this.userHooksDir)) {
       fs.mkdirSync(this.userHooksDir, { recursive: true });
     }
-    
+
     const hookData = {
       name: hook.name,
       version: hook.version,
       description: hook.description,
       when: hook.when,
-      then: hook.then
+      then: hook.then,
     };
-    
+
     fs.writeFileSync(filePath, JSON.stringify(hookData, null, 2), 'utf-8');
   }
-  
+
   async updateHook(hookId: string, updates: Partial<Hook>): Promise<void> {
     const fileName = `${hookId}.json`;
     const filePath = path.join(this.userHooksDir, fileName);
-    
+
     if (!fs.existsSync(filePath)) {
       throw new Error(`Hook file not found: ${hookId}`);
     }
-    
+
     const content = fs.readFileSync(filePath, 'utf-8');
     const data = JSON.parse(content);
-    
+
     const updated = {
       ...data,
       ...updates,
@@ -768,57 +781,64 @@ export class HookFileService {
       id: undefined,
       source: undefined,
       enabled: undefined,
-      trusted: undefined
+      trusted: undefined,
     };
-    
+
     fs.writeFileSync(filePath, JSON.stringify(updated, null, 2), 'utf-8');
   }
-  
+
   async deleteHook(hookId: string): Promise<void> {
     const fileName = `${hookId}.json`;
     const filePath = path.join(this.userHooksDir, fileName);
-    
+
     if (!fs.existsSync(filePath)) {
       throw new Error(`Hook file not found: ${hookId}`);
     }
-    
+
     fs.unlinkSync(filePath);
   }
-  
+
   validateHook(data: any): { valid: boolean; errors: string[] } {
     const errors: string[] = [];
-    
+
     if (!data.name) errors.push('Missing required field: name');
     if (!data.version) errors.push('Missing required field: version');
     if (!data.when?.type) errors.push('Missing required field: when.type');
     if (!data.then?.type) errors.push('Missing required field: then.type');
-    
-    const validEventTypes = ['fileEdited', 'fileCreated', 'fileDeleted', 'userTriggered', 'promptSubmit', 'agentStop'];
+
+    const validEventTypes = [
+      'fileEdited',
+      'fileCreated',
+      'fileDeleted',
+      'userTriggered',
+      'promptSubmit',
+      'agentStop',
+    ];
     if (data.when?.type && !validEventTypes.includes(data.when.type)) {
       errors.push(`Invalid event type: ${data.when.type}`);
     }
-    
+
     const validActionTypes = ['askAgent', 'runCommand'];
     if (data.then?.type && !validActionTypes.includes(data.then.type)) {
       errors.push(`Invalid action type: ${data.then.type}`);
     }
-    
+
     if (data.then?.type === 'askAgent' && !data.then.prompt) {
       errors.push('askAgent action requires prompt field');
     }
-    
+
     if (data.then?.type === 'runCommand' && !data.then.command) {
       errors.push('runCommand action requires command field');
     }
-    
+
     const fileEventTypes = ['fileEdited', 'fileCreated', 'fileDeleted'];
     if (fileEventTypes.includes(data.when?.type) && !data.when.patterns?.length) {
       errors.push('File event types require patterns field');
     }
-    
+
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 }
@@ -835,10 +855,10 @@ Add methods for UI integration:
 ```typescript
 export class HookRegistry {
   // Existing methods...
-  
+
   getHooksByCategory(): Map<HookEventType, Hook[]> {
     const categories = new Map<HookEventType, Hook[]>();
-    
+
     for (const hook of this.hooks.values()) {
       const eventType = hook.when.type;
       if (!categories.has(eventType)) {
@@ -846,23 +866,23 @@ export class HookRegistry {
       }
       categories.get(eventType)!.push(hook);
     }
-    
+
     return categories;
   }
-  
+
   getUserHooks(): Hook[] {
-    return Array.from(this.hooks.values()).filter(h => h.source === 'user');
+    return Array.from(this.hooks.values()).filter((h) => h.source === 'user');
   }
-  
+
   getBuiltinHooks(): Hook[] {
-    return Array.from(this.hooks.values()).filter(h => h.source === 'builtin');
+    return Array.from(this.hooks.values()).filter((h) => h.source === 'builtin');
   }
-  
+
   isEditable(hookId: string): boolean {
     const hook = this.hooks.get(hookId);
     return hook?.source === 'user';
   }
-  
+
   isDeletable(hookId: string): boolean {
     return this.isEditable(hookId);
   }
@@ -878,11 +898,11 @@ Add hook-specific methods:
 ```typescript
 export class SettingsService {
   // Existing methods...
-  
+
   getHookSettings(): { enabled: Record<string, boolean> } {
     return this.settings.hooks || { enabled: {} };
   }
-  
+
   setHookEnabled(hookId: string, enabled: boolean): void {
     if (!this.settings.hooks) {
       this.settings.hooks = { enabled: {} };
@@ -890,14 +910,14 @@ export class SettingsService {
     this.settings.hooks.enabled[hookId] = enabled;
     this.saveSettings();
   }
-  
+
   removeHookSetting(hookId: string): void {
     if (this.settings.hooks?.enabled) {
       delete this.settings.hooks.enabled[hookId];
       this.saveSettings();
     }
   }
-  
+
   private saveSettings(): void {
     const settingsPath = path.join(os.homedir(), '.ollm', 'settings.json');
     fs.writeFileSync(settingsPath, JSON.stringify(this.settings, null, 2), 'utf-8');
@@ -916,14 +936,14 @@ const tabs = [
   { id: 'chat', label: 'Chat', component: ChatTab },
   { id: 'tools', label: 'Tools', component: ToolsTab },
   { id: 'hooks', label: 'Hooks', component: HooksTab }, // NEW
-  { id: 'settings', label: 'Settings', component: SettingsTab }
+  { id: 'settings', label: 'Settings', component: SettingsTab },
 ];
 ```
-
 
 ## Error Handling
 
 ### Corrupted Hook Files
+
 ```typescript
 // In HookFileService.loadHookFile()
 try {
@@ -944,6 +964,7 @@ try {
 ```
 
 ### File Write Errors
+
 ```typescript
 // In HooksContext.addHook()
 try {
@@ -957,11 +978,12 @@ try {
 ```
 
 ### Settings Persistence Errors
+
 ```typescript
 // In HooksContext.toggleHook()
 try {
   settingsService.setHookEnabled(hookId, !enabled);
-  setEnabledHooks(prev => {
+  setEnabledHooks((prev) => {
     const next = new Set(prev);
     if (enabled) next.delete(hookId);
     else next.add(hookId);
@@ -974,6 +996,7 @@ try {
 ```
 
 ### Hook Test Errors
+
 ```typescript
 // In TestHookDialog
 try {
@@ -983,7 +1006,7 @@ try {
   setResult({
     success: false,
     message: 'Test failed',
-    details: error.message
+    details: error.message,
   });
 }
 ```
@@ -991,6 +1014,7 @@ try {
 ## Performance Optimizations
 
 ### Windowed Rendering
+
 For large hook lists (> 20 hooks), use windowed rendering:
 
 ```typescript
@@ -1003,27 +1027,30 @@ const visibleHooks = useMemo(() => {
 ```
 
 ### Debounced File Operations
+
 ```typescript
 // In HooksContext
 const debouncedSave = useMemo(
-  () => debounce((hook: Hook) => {
-    hookFileService.saveHook(hook);
-  }, 500),
+  () =>
+    debounce((hook: Hook) => {
+      hookFileService.saveHook(hook);
+    }, 500),
   []
 );
 ```
 
 ### Memoized Category Computation
+
 ```typescript
 // In HooksContext
 const categories = useMemo(() => {
   const categoryMap = new Map<string, HookCategory>();
-  
+
   // Group by event type
   const fileEvents: Hook[] = [];
   const promptEvents: Hook[] = [];
   const userTriggered: Hook[] = [];
-  
+
   for (const hook of hooks) {
     switch (hook.when.type) {
       case 'fileEdited':
@@ -1040,11 +1067,21 @@ const categories = useMemo(() => {
         break;
     }
   }
-  
+
   return [
-    { name: 'File Events', eventTypes: ['fileEdited', 'fileCreated', 'fileDeleted'], hooks: fileEvents, expanded: true },
-    { name: 'Prompt Events', eventTypes: ['promptSubmit', 'agentStop'], hooks: promptEvents, expanded: true },
-    { name: 'User Triggered', eventTypes: ['userTriggered'], hooks: userTriggered, expanded: true }
+    {
+      name: 'File Events',
+      eventTypes: ['fileEdited', 'fileCreated', 'fileDeleted'],
+      hooks: fileEvents,
+      expanded: true,
+    },
+    {
+      name: 'Prompt Events',
+      eventTypes: ['promptSubmit', 'agentStop'],
+      hooks: promptEvents,
+      expanded: true,
+    },
+    { name: 'User Triggered', eventTypes: ['userTriggered'], hooks: userTriggered, expanded: true },
   ];
 }, [hooks]);
 ```
@@ -1063,34 +1100,34 @@ describe('HooksTab', () => {
     expect(getByText('Prompt Events')).toBeDefined();
     expect(getByText('User Triggered')).toBeDefined();
   });
-  
+
   it('should toggle hook enabled state', async () => {
     const { getByText } = render(<HooksTab />);
     const hook = getByText('lint-on-save');
-    
+
     // Simulate left/right arrow key
     fireEvent.keyPress(hook, { key: 'right' });
-    
+
     await waitFor(() => {
       expect(settingsService.setHookEnabled).toHaveBeenCalledWith('lint-on-save', true);
     });
   });
-  
+
   it('should open add hook dialog', () => {
     const { getByText } = render(<HooksTab />);
-    
+
     fireEvent.keyPress(document, { key: 'a' });
-    
+
     expect(getByText('Add New Hook')).toBeDefined();
   });
-  
+
   it('should validate hook form', async () => {
     const { getByText, getByLabelText } = render(<AddHookDialog />);
-    
+
     // Leave name empty
     fireEvent.change(getByLabelText('Name'), { target: { value: '' } });
     fireEvent.click(getByText('Save'));
-    
+
     await waitFor(() => {
       expect(getByText('Name is required')).toBeDefined();
     });
@@ -1104,30 +1141,30 @@ describe('HooksTab', () => {
 describe('Hooks Panel Integration', () => {
   it('should create and enable new hook', async () => {
     const { getByText, getByLabelText } = render(<App />);
-    
+
     // Navigate to Hooks tab
     fireEvent.keyPress(document, { key: 'tab' });
     fireEvent.keyPress(document, { key: 'tab' });
-    
+
     // Open add dialog
     fireEvent.keyPress(document, { key: 'a' });
-    
+
     // Fill form
     fireEvent.change(getByLabelText('Name'), { target: { value: 'test-hook' } });
     fireEvent.change(getByLabelText('Event Type'), { target: { value: 'fileEdited' } });
     fireEvent.change(getByLabelText('File Patterns'), { target: { value: '*.ts' } });
     fireEvent.change(getByLabelText('Action Type'), { target: { value: 'askAgent' } });
     fireEvent.change(getByLabelText('Prompt'), { target: { value: 'Test prompt' } });
-    
+
     // Save
     fireEvent.click(getByText('Save'));
-    
+
     // Verify hook appears in list
     await waitFor(() => {
       expect(getByText('test-hook')).toBeDefined();
       expect(getByText('[●] Enabled')).toBeDefined();
     });
-    
+
     // Verify file was created
     const hookPath = path.join(os.homedir(), '.ollm', 'hooks', 'test-hook.json');
     expect(fs.existsSync(hookPath)).toBe(true);
@@ -1138,21 +1175,22 @@ describe('Hooks Panel Integration', () => {
 ### Property-Based Tests
 
 **Validates: Requirements 2.1, 2.2, 2.3**
+
 ```typescript
 // Property: Toggle operations are idempotent
 fc.property(
   fc.record({
     hookId: fc.string(),
-    initialState: fc.boolean()
+    initialState: fc.boolean(),
   }),
   async ({ hookId, initialState }) => {
     // Setup
     settingsService.setHookEnabled(hookId, initialState);
-    
+
     // Act: Toggle twice
     await toggleHook(hookId);
     await toggleHook(hookId);
-    
+
     // Assert: Back to initial state
     const finalState = settingsService.getHookSettings().enabled[hookId];
     expect(finalState).toBe(initialState);
@@ -1161,6 +1199,7 @@ fc.property(
 ```
 
 **Validates: Requirements 3.3, 3.4**
+
 ```typescript
 // Property: Valid hooks always save successfully
 fc.property(
@@ -1168,17 +1207,17 @@ fc.property(
     name: fc.string({ minLength: 1 }),
     eventType: fc.constantFrom('fileEdited', 'promptSubmit', 'userTriggered'),
     actionType: fc.constantFrom('askAgent', 'runCommand'),
-    prompt: fc.string({ minLength: 1 })
+    prompt: fc.string({ minLength: 1 }),
   }),
   async (hookData) => {
     // Act
     const hook = createHookFromFormData(hookData);
     await hookFileService.saveHook(hook);
-    
+
     // Assert: File exists and is valid
     const hookPath = path.join(os.homedir(), '.ollm', 'hooks', `${hook.id}.json`);
     expect(fs.existsSync(hookPath)).toBe(true);
-    
+
     const loaded = await hookFileService.loadHookFile(hookPath);
     expect(loaded).toBeDefined();
     expect(loaded.name).toBe(hookData.name);
@@ -1189,6 +1228,7 @@ fc.property(
 ## Security Considerations
 
 ### Built-in Hook Protection
+
 ```typescript
 // In HooksContext.editHook()
 if (hook.source === 'builtin') {
@@ -1202,16 +1242,18 @@ if (hook.source === 'builtin') {
 ```
 
 ### Hook Validation
+
 ```typescript
 // Prevent code injection in hook commands
 const validateCommand = (command: string): boolean => {
   // Disallow dangerous patterns
   const dangerous = [';', '&&', '||', '|', '>', '<', '`', '$'];
-  return !dangerous.some(char => command.includes(char));
+  return !dangerous.some((char) => command.includes(char));
 };
 ```
 
 ### File Path Validation
+
 ```typescript
 // Prevent directory traversal
 const validateHookId = (hookId: string): boolean => {
@@ -1232,6 +1274,7 @@ const validateHookId = (hookId: string): boolean => {
 ## Rollback Plan
 
 If issues arise:
+
 1. Remove Hooks tab from TabBar
 2. Users can still manage hooks via JSON files
 3. Hook system continues to work (stage-05)

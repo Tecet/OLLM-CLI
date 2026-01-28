@@ -1,12 +1,12 @@
 /**
  * Tooltip Component
- * 
+ *
  * Displays contextual help information for form fields.
  * Shows detailed explanations for complex fields.
- * 
+ *
  * Note: Terminal support for tooltips is limited. This component
  * displays help text inline rather than as a hover tooltip.
- * 
+ *
  * Validates: NFR-9
  */
 
@@ -26,7 +26,7 @@ export interface TooltipProps {
 
 /**
  * Tooltip component
- * 
+ *
  * Displays help information inline with form fields.
  * Since terminal UIs don't support hover tooltips, this component
  * shows the help text directly.

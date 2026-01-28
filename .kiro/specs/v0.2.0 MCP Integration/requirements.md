@@ -10,6 +10,7 @@
 ## Problem Statement
 
 Users needed an interactive UI to manage MCP servers without manually editing JSON files. The implementation provides:
+
 - ✅ View all installed MCP servers with real-time status
 - ✅ Enable/disable servers with keyboard shortcuts
 - ✅ Browse and install servers from the MCP Registry marketplace
@@ -29,6 +30,7 @@ Users needed an interactive UI to manage MCP servers without manually editing JS
 ### What Was Implemented
 
 #### Data Layer & Services (✅ Complete)
+
 - **MCPClient Extensions**: Added `getAllServerStatuses()`, `restartServer()`, `getServerLogs()`, uptime tracking
 - **MCPHealthMonitor**: Real-time health monitoring with subscription support, background health checks every 30 seconds
 - **MCPOAuthProvider**: OAuth infrastructure with token storage, authorization flow support
@@ -37,6 +39,7 @@ Users needed an interactive UI to manage MCP servers without manually editing JS
 - **MCPContext**: Centralized state management with React context, real-time updates
 
 #### UI Components (✅ Complete)
+
 - **MCPTab**: Two-column layout (30% menu, 70% details) with keyboard navigation
 - **ServerDetails**: Comprehensive server information display with health indicators
 - **HealthIndicator**: Color-coded status icons (● healthy, ⚠ degraded, ✗ unhealthy, ○ stopped, ⟳ connecting)
@@ -45,12 +48,14 @@ Users needed an interactive UI to manage MCP servers without manually editing JS
 - **ErrorBoundary**: Graceful error handling with recovery options
 
 #### Navigation & Focus (✅ Complete)
+
 - **Browse Mode / Active Mode**: Integrated with FocusContext for consistent navigation
 - **Keyboard Shortcuts**: Full keyboard navigation (Up/Down, Left/Right, Enter, Esc)
 - **Two-Column Navigation**: Left column (menu), Right column (details)
 - **Exit Item**: Position 0 with "← Exit" label for returning to Browse Mode
 
 #### Dialogs (✅ Complete)
+
 - **ServerConfigDialog**: Edit server configuration, environment variables, auto-approve tools
 - **APIKeyInputDialog**: Secure API key input with masking
 - **UninstallConfirmDialog**: Confirmation for destructive actions
@@ -58,6 +63,7 @@ Users needed an interactive UI to manage MCP servers without manually editing JS
 - **ErrorBoundary**: Dialog-specific error handling
 
 #### Integration (✅ Complete)
+
 - **ServiceContainer Wiring**: All MCP dependencies properly injected
 - **ExtensionManager Integration**: MCP client and tool wrapper connected
 - **ToolRegistry Integration**: MCP tools registered and available to LLM
@@ -79,6 +85,7 @@ Based on the comprehensive MCP audit, the following critical issues were resolve
 ### What's Not Yet Implemented
 
 #### OAuth UI (Partial)
+
 - ✅ OAuth infrastructure (MCPOAuthProvider, token storage)
 - ✅ OAuth configuration dialog component
 - ⚠️ Interactive OAuth flow (browser opening, callback handling) - needs testing
@@ -86,6 +93,7 @@ Based on the comprehensive MCP audit, the following critical issues were resolve
 - ⚠️ Revoke access UI - needs implementation
 
 #### Advanced Features (Future)
+
 - ⚠️ Server templates and pre-configured setups
 - ⚠️ Batch operations (enable/disable multiple servers)
 - ⚠️ Server groups and categories
@@ -113,12 +121,14 @@ Based on the comprehensive MCP audit, the following critical issues were resolve
 ### Files Modified/Created
 
 **Core Package (`packages/core/src/`)**:
+
 - `mcp/mcpClient.ts` - Extended with UI methods
 - `mcp/mcpHealthMonitor.ts` - Added subscription support
 - `mcp/mcpOAuth.ts` - OAuth provider implementation
 - `extensions/extensionManager.ts` - Added MCP setter methods
 
 **CLI Package (`packages/cli/src/`)**:
+
 - `features/context/ServiceContext.tsx` - MCP wiring
 - `ui/contexts/MCPContext.tsx` - State management
 - `ui/components/tabs/MCPTab.tsx` - Main UI component
@@ -136,11 +146,13 @@ Based on the comprehensive MCP audit, the following critical issues were resolve
 ## User Stories
 
 ### US-1: View Installed Servers
+
 **As a** user  
 **I want** to see all installed MCP servers with their current status  
 **So that** I can understand which servers are available and their health
 
 **Acceptance Criteria:**
+
 - 1.1: All configured MCP servers are displayed in a list
 - 1.2: Each server shows: name, description, enabled/disabled state, health status
 - 1.3: Server details include: tool count, resource count, uptime
@@ -149,11 +161,13 @@ Based on the comprehensive MCP audit, the following critical issues were resolve
 - 1.6: Servers can be expanded/collapsed to show details
 
 ### US-2: Enable/Disable Servers
+
 **As a** user  
 **I want** to enable/disable MCP servers with keyboard shortcuts  
 **So that** I can quickly toggle servers without editing configuration files
 
 **Acceptance Criteria:**
+
 - 2.1: Enter key toggles server enabled/disabled state
 - 2.2: Visual toggle indicator shows current state (● enabled, ○ disabled)
 - 2.3: Changes persist to mcp.json configuration file immediately
@@ -162,11 +176,13 @@ Based on the comprehensive MCP audit, the following critical issues were resolve
 - 2.6: No page reload required
 
 ### US-3: Browse Marketplace
+
 **As a** user  
 **I want** to browse available MCP servers in the marketplace  
 **So that** I can discover and install new servers
 
 **Acceptance Criteria:**
+
 - 3.1: Press 'M' key to open marketplace browser
 - 3.2: Marketplace shows list of available servers
 - 3.3: Each server shows: name, description, rating, install count
@@ -176,11 +192,13 @@ Based on the comprehensive MCP audit, the following critical issues were resolve
 - 3.7: Can navigate marketplace with arrow keys
 
 ### US-4: Install Servers
+
 **As a** user  
 **I want** to install MCP servers from the marketplace  
 **So that** I can add new functionality without manual configuration
 
 **Acceptance Criteria:**
+
 - 4.1: Press Enter on marketplace server to open install dialog
 - 4.2: Install dialog shows: server name, description, requirements, rating
 - 4.3: Dialog prompts for required configuration (API keys, environment variables)
@@ -190,11 +208,13 @@ Based on the comprehensive MCP audit, the following critical issues were resolve
 - 4.7: New server appears in installed servers list immediately
 
 ### US-5: Configure Servers
+
 **As a** user  
 **I want** to configure MCP server settings  
 **So that** I can customize server behavior and credentials
 
 **Acceptance Criteria:**
+
 - 5.1: Press 'C' key on selected server to open configuration dialog
 - 5.2: Dialog shows: command, arguments, environment variables
 - 5.3: Can add/edit/remove environment variables
@@ -205,11 +225,13 @@ Based on the comprehensive MCP audit, the following critical issues were resolve
 - 5.8: Test connection button to verify configuration
 
 ### US-6: Configure OAuth
+
 **As a** user  
 **I want** to configure OAuth for servers requiring authentication  
 **So that** I can securely connect to external services
 
 **Acceptance Criteria:**
+
 - 6.1: Press 'O' key to open OAuth manager
 - 6.2: OAuth dialog shows: provider, client ID, scopes, connection status
 - 6.3: Can configure OAuth settings for selected server
@@ -221,11 +243,13 @@ Based on the comprehensive MCP audit, the following critical issues were resolve
 - 6.9: Visual indicator shows OAuth connection status
 
 ### US-7: Monitor Server Health
+
 **As a** user  
 **I want** to monitor MCP server health in real-time  
 **So that** I can identify and resolve issues quickly
 
 **Acceptance Criteria:**
+
 - 7.1: Press 'H' key to open health monitor
 - 7.2: Health monitor shows overall status summary
 - 7.3: Each server displays: health status, uptime, last check time, response time
@@ -236,11 +260,13 @@ Based on the comprehensive MCP audit, the following critical issues were resolve
 - 7.8: Health status updates automatically in background
 
 ### US-8: View Server Tools
+
 **As a** user  
 **I want** to view tools provided by each MCP server  
 **So that** I can understand server capabilities and configure auto-approval
 
 **Acceptance Criteria:**
+
 - 8.1: Press 'V' key on selected server to view tools
 - 8.2: Tools viewer shows all tools grouped by category
 - 8.3: Each tool displays: name, description, auto-approve status
@@ -250,11 +276,13 @@ Based on the comprehensive MCP audit, the following critical issues were resolve
 - 8.7: Tool count displayed in server details
 
 ### US-9: Restart Servers
+
 **As a** user  
 **I want** to restart failed or degraded servers  
 **So that** I can recover from errors without manual intervention
 
 **Acceptance Criteria:**
+
 - 9.1: Press 'R' key on selected server to restart
 - 9.2: Confirmation dialog for restart action
 - 9.3: Server stops and starts cleanly
@@ -264,11 +292,13 @@ Based on the comprehensive MCP audit, the following critical issues were resolve
 - 9.7: Auto-restart option for unhealthy servers
 
 ### US-10: View Server Logs
+
 **As a** user  
 **I want** to view server logs and diagnostics  
 **So that** I can troubleshoot issues and understand server behavior
 
 **Acceptance Criteria:**
+
 - 10.1: Press 'L' key on selected server to view logs
 - 10.2: Logs viewer shows recent log entries
 - 10.3: Can scroll through log history
@@ -279,11 +309,13 @@ Based on the comprehensive MCP audit, the following critical issues were resolve
 - 10.8: Logs stored in ~/.ollm/mcp/logs/
 
 ### US-11: Uninstall Servers
+
 **As a** user  
 **I want** to uninstall MCP servers I no longer need  
 **So that** I can keep my server list clean
 
 **Acceptance Criteria:**
+
 - 11.1: Press 'U' key on selected server to uninstall
 - 11.2: Confirmation dialog warns action is permanent
 - 11.3: Server is stopped before removal
@@ -293,11 +325,13 @@ Based on the comprehensive MCP audit, the following critical issues were resolve
 - 11.7: Server disappears from list immediately
 
 ### US-12: Keyboard Navigation
+
 **As a** user  
 **I want** to navigate the MCP panel with keyboard shortcuts  
 **So that** I can manage servers efficiently
 
 **Acceptance Criteria:**
+
 - 12.1: Up/Down arrows navigate between servers
 - 12.2: Enter toggles enabled/disabled
 - 12.3: Space expands/collapses server details
@@ -317,6 +351,7 @@ Based on the comprehensive MCP audit, the following critical issues were resolve
 ## Non-Functional Requirements
 
 ### Performance
+
 - NFR-1: Server list renders within 100ms
 - NFR-2: Health status updates every 5 seconds in background
 - NFR-3: Marketplace search results appear within 200ms
@@ -324,6 +359,7 @@ Based on the comprehensive MCP audit, the following critical issues were resolve
 - NFR-5: UI remains responsive during server operations
 
 ### Usability
+
 - NFR-6: All actions accessible via keyboard shortcuts
 - NFR-7: Visual feedback for all user actions
 - NFR-8: Error messages are clear and actionable
@@ -331,6 +367,7 @@ Based on the comprehensive MCP audit, the following critical issues were resolve
 - NFR-10: Consistent with existing UI patterns (Tools Panel, Hooks Panel)
 
 ### Reliability
+
 - NFR-11: Configuration changes persist immediately
 - NFR-12: No data loss on application crash
 - NFR-13: OAuth tokens stored securely and encrypted
@@ -338,6 +375,7 @@ Based on the comprehensive MCP audit, the following critical issues were resolve
 - NFR-15: Auto-restart prevents service disruption
 
 ### Security
+
 - NFR-16: Environment variables with secrets masked in UI
 - NFR-17: OAuth tokens never displayed in plain text
 - NFR-18: Secure token storage with encryption
@@ -345,6 +383,7 @@ Based on the comprehensive MCP audit, the following critical issues were resolve
 - NFR-20: Server commands validated to prevent injection
 
 ### Compatibility
+
 - NFR-21: Works with existing MCP configuration format
 - NFR-22: Supports both user and workspace level configs
 - NFR-23: Compatible with all MCP server types
@@ -354,6 +393,7 @@ Based on the comprehensive MCP audit, the following critical issues were resolve
 ## Data Storage
 
 ### MCP Configuration
+
 **Location:** `~/.ollm/settings/mcp.json` (user) or `.ollm/settings/mcp.json` (workspace)
 
 ```json
@@ -376,6 +416,7 @@ Based on the comprehensive MCP audit, the following critical issues were resolve
 ```
 
 ### OAuth Tokens
+
 **Location:** `~/.ollm/mcp/oauth-tokens.json`
 
 ```json
@@ -390,16 +431,19 @@ Based on the comprehensive MCP audit, the following critical issues were resolve
 ```
 
 ### Server Logs
+
 **Location:** `~/.ollm/mcp/logs/{server-name}.log`
 
 ## Dependencies
 
 ### Internal Dependencies
+
 - **stage-05-hooks-extensions-mcp:** MCP client and server management
 - **stage-08b-tool-support-detection:** Tool registry and detection
 - **stage-06-cli-ui:** Base UI components and navigation
 
 ### External Dependencies
+
 - **MCPClient:** Server connection and communication
 - **MCPHealthMonitor:** Health status monitoring
 - **OAuthManager:** OAuth flow and token management
@@ -409,6 +453,7 @@ Based on the comprehensive MCP audit, the following critical issues were resolve
 ## Out of Scope
 
 The following features are explicitly out of scope for this phase:
+
 - Server templates and pre-configured setups
 - Batch operations (enable/disable multiple servers)
 - Server groups and categories
@@ -433,14 +478,14 @@ The following features are explicitly out of scope for this phase:
 
 ## Risks and Mitigations
 
-| Risk | Impact | Probability | Mitigation |
-|------|--------|-------------|------------|
-| OAuth flow complexity | High | Medium | Use proven OAuth libraries, extensive testing |
-| Server restart failures | High | Medium | Implement retry logic, clear error messages |
-| Configuration corruption | High | Low | Validate before saving, backup on change |
-| Marketplace unavailable | Medium | Medium | Cache marketplace data, offline mode |
-| Health monitoring overhead | Medium | Low | Throttle checks, background processing |
-| UI performance with many servers | Medium | Low | Windowed rendering, lazy loading |
+| Risk                             | Impact | Probability | Mitigation                                    |
+| -------------------------------- | ------ | ----------- | --------------------------------------------- |
+| OAuth flow complexity            | High   | Medium      | Use proven OAuth libraries, extensive testing |
+| Server restart failures          | High   | Medium      | Implement retry logic, clear error messages   |
+| Configuration corruption         | High   | Low         | Validate before saving, backup on change      |
+| Marketplace unavailable          | Medium | Medium      | Cache marketplace data, offline mode          |
+| Health monitoring overhead       | Medium | Low         | Throttle checks, background processing        |
+| UI performance with many servers | Medium | Low         | Windowed rendering, lazy loading              |
 
 ## Related Documents
 

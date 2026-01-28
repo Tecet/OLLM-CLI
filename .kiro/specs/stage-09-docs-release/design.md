@@ -5,6 +5,7 @@
 This design outlines the documentation structure, content organization, and release process for OLLM CLI. The documentation system will provide comprehensive guides for users at all levels, from quick-start installation to advanced configuration. The release process will ensure consistent, high-quality releases with proper versioning, changelog maintenance, and cross-platform verification.
 
 The design focuses on three main areas:
+
 1. **User-facing documentation** - README, configuration reference, and troubleshooting guide
 2. **Package distribution** - npm packaging with proper metadata and cross-platform support
 3. **Release management** - versioning strategy, changelog maintenance, and release procedures
@@ -69,24 +70,31 @@ Verify (ollm --version)
 
 #### README.md Structure
 
-```markdown
+````markdown
 # OLLM CLI
+
 [Badge: npm version] [Badge: license] [Badge: node version]
 
 ## Features
+
 - Bullet list of key features with emojis
 
 ## Quick Start
+
 ### Prerequisites
+
 - Node.js 20+
 - Ollama or compatible provider
 
 ### Installation
+
 ```bash
 npm install -g ollm-cli
 ```
+````
 
 ### Basic Usage
+
 ```bash
 ollm                    # Interactive mode
 ollm -p "prompt"        # One-shot
@@ -94,17 +102,22 @@ ollm --model llama3.1   # Specific model
 ```
 
 ## Documentation
+
 - Links to detailed docs
 
 ## Configuration
+
 - Brief overview with link to full reference
 
 ## Development
+
 - Setup instructions for contributors
 
 ## License
+
 MIT
-```
+
+````
 
 #### Configuration Reference Structure
 
@@ -147,13 +160,15 @@ Complete list with OLLM_ prefix
 ```yaml
 model:
   name: llama3.1:8b
-```
+````
 
 ### Advanced Configuration
+
 ```yaml
 [Complete example with all major settings]
 ```
-```
+
+````
 
 #### Troubleshooting Guide Structure
 
@@ -203,13 +218,15 @@ Enable detailed logging:
 ```bash
 ollm --debug
 OLLM_LOG_LEVEL=debug ollm
-```
+````
 
 ## Getting Help
+
 - GitHub Issues: [link]
 - Documentation: [link]
 - Community: [link]
-```
+
+````
 
 #### Roadmap Document Structure
 
@@ -222,7 +239,7 @@ This document outlines the development roadmap for OLLM CLI, including completed
 
 ## Current Status
 
-**Latest Release:** v0.1.0  
+**Latest Release:** v0.1.0
 **Current Stage:** Stage 9 - Documentation and Release
 
 ## Completed Stages
@@ -244,7 +261,7 @@ Brief summary of completed stages including:
 
 ### 🔮 Stage 10: Kraken Integration (Planned)
 
-**Status:** Planned for future development  
+**Status:** Planned for future development
 **Description:** External LLM provider integration for accessing powerful cloud models
 
 **Key Features:**
@@ -259,7 +276,7 @@ Brief summary of completed stages including:
 
 ### 🔮 Stage 11: Developer Productivity Tools (Planned)
 
-**Status:** Planned for future development  
+**Status:** Planned for future development
 **Description:** Git integration, @-mentions, and diff review for Aider-like workflows
 
 **Key Features:**
@@ -273,7 +290,7 @@ Brief summary of completed stages including:
 
 ### 🔮 Stage 12: Cross-Platform Support (Planned)
 
-**Status:** Planned for future development  
+**Status:** Planned for future development
 **Description:** Comprehensive cross-platform compatibility for Windows, macOS, and Linux
 
 **Key Features:**
@@ -288,7 +305,7 @@ Brief summary of completed stages including:
 
 ### 🔮 Stage 13: Multi-Provider Support (Planned)
 
-**Status:** Planned for future development  
+**Status:** Planned for future development
 **Description:** vLLM and OpenAI-compatible provider adapters
 
 **Key Features:**
@@ -303,7 +320,7 @@ Brief summary of completed stages including:
 
 ### 🔮 Stage 14: File Upload System (Planned)
 
-**Status:** Planned for future development  
+**Status:** Planned for future development
 **Description:** File sharing with LLM through terminal interface
 
 **Key Features:**
@@ -318,7 +335,7 @@ Brief summary of completed stages including:
 
 ### 🔮 Stage 15: Intelligence Layer (Planned)
 
-**Status:** Planned for future development  
+**Status:** Planned for future development
 **Description:** Advanced AI capabilities for large codebases
 
 **Key Features:**
@@ -349,7 +366,7 @@ We welcome contributions to any planned feature! Please:
 ## Feedback
 
 Have suggestions for the roadmap? Please open an issue with the "roadmap" label to share your thoughts.
-```
+````
 
 ### Package Configuration
 
@@ -364,24 +381,11 @@ Have suggestions for the roadmap? Please open an issue with the "roadmap" label 
   "bin": {
     "ollm": "./dist/cli.js"
   },
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
-  ],
+  "files": ["dist", "README.md", "LICENSE"],
   "engines": {
     "node": ">=20.0.0"
   },
-  "keywords": [
-    "llm",
-    "cli",
-    "ollama",
-    "ai",
-    "local",
-    "mcp",
-    "tools",
-    "context-management"
-  ],
+  "keywords": ["llm", "cli", "ollama", "ai", "local", "mcp", "tools", "context-management"],
   "repository": {
     "type": "git",
     "url": "https://github.com/user/ollm-cli"
@@ -426,6 +430,7 @@ Have suggestions for the roadmap? Please open an issue with the "roadmap" label 
 # Release Checklist
 
 ## Pre-Release (Development)
+
 - [ ] All tests pass
 - [ ] Lint passes
 - [ ] Build succeeds
@@ -434,12 +439,14 @@ Have suggestions for the roadmap? Please open an issue with the "roadmap" label 
 - [ ] CHANGELOG.md updated
 
 ## Version Bump
+
 - [ ] Determine version type (major/minor/patch)
 - [ ] Run: npm version [major|minor|patch]
 - [ ] Verify version in package.json files
 - [ ] Verify CHANGELOG.md entry
 
 ## Build and Test
+
 - [ ] Clean build: npm run clean && npm run build
 - [ ] Run full test suite: npm test
 - [ ] Test global install locally: npm install -g .
@@ -449,11 +456,13 @@ Have suggestions for the roadmap? Please open an issue with the "roadmap" label 
 - [ ] Test on Windows (if available)
 
 ## Publish
+
 - [ ] Ensure logged into npm: npm whoami
 - [ ] Publish: npm publish
 - [ ] Verify on npm: npm info ollm-cli
 
 ## Post-Release
+
 - [ ] Create GitHub release with notes
 - [ ] Test global install: npm install -g ollm-cli
 - [ ] Verify version: ollm --version
@@ -462,6 +471,7 @@ Have suggestions for the roadmap? Please open an issue with the "roadmap" label 
 - [ ] Announce release (if applicable)
 
 ## Rollback (if needed)
+
 - [ ] Deprecate version: npm deprecate ollm-cli@X.X.X "reason"
 - [ ] Publish fixed version
 - [ ] Update GitHub release notes
@@ -482,26 +492,33 @@ and this project adheres to Semantic Versioning (https://semver.org/spec/v2.0.0.
 ## [Unreleased]
 
 ### Added
+
 - New features in development
 
 ### Changed
+
 - Changes to existing functionality
 
 ### Deprecated
+
 - Soon-to-be removed features
 
 ### Removed
+
 - Removed features
 
 ### Fixed
+
 - Bug fixes
 
 ### Security
+
 - Security fixes
 
 ## [0.1.0] - 2024-01-15
 
 ### Added
+
 - Initial release
 - Interactive TUI mode
 - Tool system with file, shell, and web tools
@@ -517,7 +534,7 @@ and this project adheres to Semantic Versioning (https://semver.org/spec/v2.0.0.
 
 ### Release Notes Template
 
-```markdown
+````markdown
 # Release v{VERSION}
 
 Released: {DATE}
@@ -554,6 +571,7 @@ Released: {DATE}
 ```bash
 npm install -g ollm-cli@{VERSION}
 ```
+````
 
 ## 🔄 Upgrade Instructions
 
@@ -562,7 +580,8 @@ npm install -g ollm-cli@{VERSION}
 ## 🙏 Contributors
 
 Thanks to all contributors for this release!
-```
+
+````
 
 ### Version Metadata
 
@@ -584,168 +603,168 @@ interface VersionInfo {
     migration: string;       // How to migrate
   }[];
 }
-```
+````
 
 ### Package Metadata
 
 ```typescript
 interface PackageInfo {
-  name: string;              // "ollm-cli"
-  version: string;           // Semantic version
-  description: string;       // Short description
+  name: string; // "ollm-cli"
+  version: string; // Semantic version
+  description: string; // Short description
   bin: Record<string, string>; // Command mappings
-  files: string[];           // Files to include
+  files: string[]; // Files to include
   engines: {
-    node: string;            // Node version requirement
+    node: string; // Node version requirement
   };
-  keywords: string[];        // Search keywords
+  keywords: string[]; // Search keywords
   repository: {
     type: string;
     url: string;
   };
-  license: string;           // "MIT"
+  license: string; // "MIT"
 }
 ```
 
 ## Correctness Properties
 
-*A property is a characteristic or behavior that should hold true across all valid executions of a system—essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
+_A property is a characteristic or behavior that should hold true across all valid executions of a system—essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees._
 
 ### Property 1: README Completeness
 
-*For any* README.md file in the repository root, it SHALL contain all required sections including project overview, features list, installation instructions, basic usage examples, links to detailed documentation, at least three code examples, and system requirements.
+_For any_ README.md file in the repository root, it SHALL contain all required sections including project overview, features list, installation instructions, basic usage examples, links to detailed documentation, at least three code examples, and system requirements.
 
 **Validates: Requirements 1.2, 1.3, 1.5, 1.6**
 
 ### Property 2: Configuration Documentation Completeness
 
-*For any* setting that exists in the codebase configuration schema, the configuration reference SHALL document that setting with its description, type, default value, and all methods of specification (CLI flag, environment variable, config file).
+_For any_ setting that exists in the codebase configuration schema, the configuration reference SHALL document that setting with its description, type, default value, and all methods of specification (CLI flag, environment variable, config file).
 
 **Validates: Requirements 2.2, 2.3, 2.6**
 
 ### Property 3: Configuration Reference Structure
 
-*For any* configuration reference document, it SHALL include documentation of all configuration file locations with precedence order and at least two complete example configurations.
+_For any_ configuration reference document, it SHALL include documentation of all configuration file locations with precedence order and at least two complete example configurations.
 
 **Validates: Requirements 2.4, 2.5**
 
 ### Property 4: Troubleshooting Guide Completeness
 
-*For any* troubleshooting guide, it SHALL document at least five common issues with symptoms and solutions, include debug mode instructions, provide help resources, and include code examples for configuration-related solutions.
+_For any_ troubleshooting guide, it SHALL document at least five common issues with symptoms and solutions, include debug mode instructions, provide help resources, and include code examples for configuration-related solutions.
 
 **Validates: Requirements 3.2, 3.4, 3.5, 3.6**
 
 ### Property 5: Bundle Dependency Completeness
 
-*For any* bundle created by the build process, it SHALL include all necessary dependencies and source maps for debugging.
+_For any_ bundle created by the build process, it SHALL include all necessary dependencies and source maps for debugging.
 
 **Validates: Requirements 4.4, 4.5**
 
 ### Property 6: Package Metadata Completeness
 
-*For any* package.json file in the CLI package, it SHALL include bin field mapping ollm command, files field, engines field with Node.js version, descriptive keywords array, repository URL, and license information.
+_For any_ package.json file in the CLI package, it SHALL include bin field mapping ollm command, files field, engines field with Node.js version, descriptive keywords array, repository URL, and license information.
 
 **Validates: Requirements 5.1, 5.2, 5.3, 5.4, 5.5**
 
 ### Property 7: Package Files Inclusion
 
-*For any* package created by npm pack, the tarball SHALL contain only the files specified in the package.json files field.
+_For any_ package created by npm pack, the tarball SHALL contain only the files specified in the package.json files field.
 
 **Validates: Requirements 5.6**
 
 ### Property 8: Platform-Agnostic Path Handling
 
-*For any* file path operation in the bundle, it SHALL use platform-agnostic path handling methods (e.g., path.join) rather than hardcoded separators.
+_For any_ file path operation in the bundle, it SHALL use platform-agnostic path handling methods (e.g., path.join) rather than hardcoded separators.
 
 **Validates: Requirements 6.4**
 
 ### Property 9: Platform-Agnostic Line Endings
 
-*For any* file write operation in the bundle, it SHALL use platform-appropriate line ending methods rather than hardcoded line endings.
+_For any_ file write operation in the bundle, it SHALL use platform-appropriate line ending methods rather than hardcoded line endings.
 
 **Validates: Requirements 6.5**
 
 ### Property 10: Platform Detection
 
-*For any* platform-specific behavior in the code, the system SHALL detect the platform using process.platform or equivalent and adapt behavior accordingly.
+_For any_ platform-specific behavior in the code, the system SHALL detect the platform using process.platform or equivalent and adapt behavior accordingly.
 
 **Validates: Requirements 6.6**
 
 ### Property 11: Semantic Version Format
 
-*For any* version string in package.json files, it SHALL match the semantic versioning pattern (MAJOR.MINOR.PATCH with optional pre-release and build metadata).
+_For any_ version string in package.json files, it SHALL match the semantic versioning pattern (MAJOR.MINOR.PATCH with optional pre-release and build metadata).
 
 **Validates: Requirements 7.1**
 
 ### Property 12: Version Synchronization
 
-*For any* version bump operation, all package.json files in the monorepo SHALL be updated to the same version number.
+_For any_ version bump operation, all package.json files in the monorepo SHALL be updated to the same version number.
 
 **Validates: Requirements 7.6**
 
 ### Property 13: CHANGELOG Format Compliance
 
-*For any* CHANGELOG.md file, it SHALL follow the Keep a Changelog format with version sections organized by version number and release date, including categories for Added, Changed, Deprecated, Removed, Fixed, and Security.
+_For any_ CHANGELOG.md file, it SHALL follow the Keep a Changelog format with version sections organized by version number and release date, including categories for Added, Changed, Deprecated, Removed, Fixed, and Security.
 
 **Validates: Requirements 8.2, 8.3, 8.4**
 
 ### Property 14: Breaking Change Documentation
 
-*For any* CHANGELOG entry marked as a breaking change or in the "Removed" category, the entry SHALL include upgrade instructions or migration guidance.
+_For any_ CHANGELOG entry marked as a breaking change or in the "Removed" category, the entry SHALL include upgrade instructions or migration guidance.
 
 **Validates: Requirements 8.5**
 
 ### Property 15: CHANGELOG Link References
 
-*For any* CHANGELOG entry, it SHOULD include links to relevant pull requests or issues using standard reference patterns (#123 or full URLs).
+_For any_ CHANGELOG entry, it SHOULD include links to relevant pull requests or issues using standard reference patterns (#123 or full URLs).
 
 **Validates: Requirements 8.6**
 
 ### Property 16: Release Checklist Completeness
 
-*For any* release checklist document, it SHALL include sections for pre-release verification, build/test/publish commands, post-release verification, and rollback procedures.
+_For any_ release checklist document, it SHALL include sections for pre-release verification, build/test/publish commands, post-release verification, and rollback procedures.
 
 **Validates: Requirements 9.2, 9.3, 9.4, 9.5**
 
 ### Property 17: Release Notes Structure
 
-*For any* release notes generated, they SHALL categorize changes into features, bug fixes, and breaking changes sections.
+_For any_ release notes generated, they SHALL categorize changes into features, bug fixes, and breaking changes sections.
 
 **Validates: Requirements 10.2**
 
 ### Property 18: Breaking Change Upgrade Instructions
 
-*For any* release notes containing breaking changes, they SHALL include upgrade instructions for users.
+_For any_ release notes containing breaking changes, they SHALL include upgrade instructions for users.
 
 **Validates: Requirements 10.4**
 
 ### Property 19: Security Fix Indication
 
-*For any* release notes containing security fixes, they SHALL clearly mark or categorize those fixes as security-related.
+_For any_ release notes containing security fixes, they SHALL clearly mark or categorize those fixes as security-related.
 
 **Validates: Requirements 10.6**
 
 ### Property 20: Verification Script Error Handling
 
-*For any* verification script, if a verification step fails, the script SHALL exit with a non-zero status code and report the specific failure.
+_For any_ verification script, if a verification step fails, the script SHALL exit with a non-zero status code and report the specific failure.
 
 **Validates: Requirements 11.6**
 
 ### Property 21: Code Example Syntax Validity
 
-*For any* code block in documentation files, the code SHALL be syntactically valid for its declared language.
+_For any_ code block in documentation files, the code SHALL be syntactically valid for its declared language.
 
 **Validates: Requirements 12.1**
 
 ### Property 22: Documentation Accuracy
 
-*For any* CLI flag or configuration option documented in the documentation, that flag or option SHALL exist in the actual codebase.
+_For any_ CLI flag or configuration option documented in the documentation, that flag or option SHALL exist in the actual codebase.
 
 **Validates: Requirements 12.2, 12.3**
 
 ### Property 23: Link Validity
 
-*For any* link in documentation files, if it's an internal link, the target file SHALL exist; if it's an external link, it SHOULD return a successful HTTP status code.
+_For any_ link in documentation files, if it's an internal link, the target file SHALL exist; if it's an external link, it SHOULD return a successful HTTP status code.
 
 **Validates: Requirements 12.5, 12.6**
 
@@ -754,16 +773,19 @@ interface PackageInfo {
 ### Documentation Errors
 
 **Missing Required Sections:**
+
 - Detection: Parse documentation structure and check for required headings
 - Handling: Report missing sections with specific names
 - Recovery: Provide template for missing sections
 
 **Invalid Code Examples:**
+
 - Detection: Extract code blocks and run syntax validation
 - Handling: Report file, line number, and syntax error
 - Recovery: Suggest corrections or mark as pseudocode
 
 **Broken Links:**
+
 - Detection: Parse markdown links and verify targets
 - Handling: Report broken link with source location
 - Recovery: Suggest alternative links or mark as external
@@ -771,16 +793,19 @@ interface PackageInfo {
 ### Package Errors
 
 **Missing Metadata:**
+
 - Detection: Validate package.json against required fields
 - Handling: Report missing fields with descriptions
 - Recovery: Provide default values or templates
 
 **Bundle Errors:**
+
 - Detection: Build process failures or missing dependencies
 - Handling: Report specific build errors
 - Recovery: Suggest dependency installation or build fixes
 
 **Installation Failures:**
+
 - Detection: npm install exits with non-zero code
 - Handling: Report installation error with logs
 - Recovery: Suggest common fixes (permissions, registry issues)
@@ -788,16 +813,19 @@ interface PackageInfo {
 ### Release Errors
 
 **Version Mismatch:**
+
 - Detection: Compare versions across package.json files
 - Handling: Report files with mismatched versions
 - Recovery: Run version sync script
 
 **Verification Failures:**
+
 - Detection: Post-release verification steps fail
 - Handling: Report specific verification failure
 - Recovery: Provide rollback instructions
 
 **Publish Errors:**
+
 - Detection: npm publish fails
 - Handling: Report publish error (auth, network, etc.)
 - Recovery: Suggest authentication or retry
@@ -809,23 +837,27 @@ interface PackageInfo {
 Unit tests will verify specific examples and edge cases:
 
 **Documentation Structure Tests:**
+
 - Test that README.md exists and contains required sections
 - Test that configuration.md exists and has proper structure
 - Test that troubleshooting.md exists with issue sections
 - Test that release-checklist.md exists with all required sections
 
 **Package Metadata Tests:**
+
 - Test package.json has all required fields
 - Test bin field points to correct executable
 - Test files field includes necessary files
 - Test engines field specifies correct Node version
 
 **Version Format Tests:**
+
 - Test version strings match semver pattern
 - Test version bump script updates all package.json files
 - Test CHANGELOG format matches Keep a Changelog spec
 
 **Link Validation Tests:**
+
 - Test internal links point to existing files
 - Test external links return 200 status (with caching)
 
@@ -834,46 +866,55 @@ Unit tests will verify specific examples and edge cases:
 Property-based tests will verify universal properties across all inputs using a minimum of 100 iterations per test:
 
 **Property Test 1: README Completeness**
+
 - Generate various README structures
 - Verify all required sections are present
 - Tag: **Feature: stage-09-docs-release, Property 1: README SHALL contain all required sections**
 
 **Property Test 2: Configuration Documentation Completeness**
+
 - Generate configuration schemas
 - Verify all settings are documented with required information
 - Tag: **Feature: stage-09-docs-release, Property 2: All settings SHALL be documented**
 
 **Property Test 3: Package Files Inclusion**
+
 - Generate various files field configurations
 - Run npm pack and verify tarball contents match
 - Tag: **Feature: stage-09-docs-release, Property 7: Package SHALL include only specified files**
 
 **Property Test 4: Platform-Agnostic Paths**
+
 - Generate various path operations
 - Verify no hardcoded path separators
 - Tag: **Feature: stage-09-docs-release, Property 8: Paths SHALL be platform-agnostic**
 
 **Property Test 5: Version Synchronization**
+
 - Generate version bump operations
 - Verify all package.json files updated to same version
 - Tag: **Feature: stage-09-docs-release, Property 12: All packages SHALL have same version**
 
 **Property Test 6: CHANGELOG Format**
+
 - Generate CHANGELOG entries
 - Verify format compliance with Keep a Changelog
 - Tag: **Feature: stage-09-docs-release, Property 13: CHANGELOG SHALL follow standard format**
 
 **Property Test 7: Code Example Validity**
+
 - Extract code blocks from documentation
 - Verify syntax validity for declared language
 - Tag: **Feature: stage-09-docs-release, Property 21: Code examples SHALL be syntactically valid**
 
 **Property Test 8: Documentation Accuracy**
+
 - Extract documented flags and options
 - Verify they exist in codebase
 - Tag: **Feature: stage-09-docs-release, Property 22: Documented options SHALL exist in code**
 
 **Property Test 9: Link Validity**
+
 - Extract all links from documentation
 - Verify internal links resolve and external links are reachable
 - Tag: **Feature: stage-09-docs-release, Property 23: Links SHALL be valid**
@@ -881,6 +922,7 @@ Property-based tests will verify universal properties across all inputs using a 
 ### Integration Tests
 
 **End-to-End Release Test:**
+
 - Run complete release process in test environment
 - Verify package publishes successfully
 - Verify global installation works
@@ -888,12 +930,14 @@ Property-based tests will verify universal properties across all inputs using a 
 - Verify version output is correct
 
 **Cross-Platform Tests:**
+
 - Test installation on macOS (if available)
 - Test installation on Linux (if available)
 - Test installation on Windows (if available)
 - Verify no platform-specific errors
 
 **Documentation Build Test:**
+
 - Generate documentation from templates
 - Verify all required files are created
 - Verify documentation is internally consistent
@@ -906,4 +950,3 @@ Property-based tests will verify universal properties across all inputs using a 
 - **ajv**: JSON schema validation for package.json
 - **semver**: Semantic version validation and comparison
 - **tar**: Inspect npm pack tarball contents
-

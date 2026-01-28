@@ -110,13 +110,11 @@ export class ModelManagementService {
     try {
       // Check if provider supports listing models
       if (!this.provider.listModels) {
-        throw new Error(
-          `Provider "${this.provider.name}" does not support listing models`
-        );
+        throw new Error(`Provider "${this.provider.name}" does not support listing models`);
       }
 
       const models = await this.provider.listModels();
-      
+
       // Update cache
       this.cache = {
         data: models,
@@ -134,7 +132,7 @@ export class ModelManagementService {
       if (error instanceof Error) {
         throw new Error(
           `Failed to list models: ${error.message}. ` +
-          `Ensure the provider is running and accessible.`
+            `Ensure the provider is running and accessible.`
         );
       }
       throw error;
@@ -151,9 +149,7 @@ export class ModelManagementService {
     try {
       // Check if provider supports pulling models
       if (!this.provider.pullModel) {
-        throw new Error(
-          `Provider "${this.provider.name}" does not support pulling models`
-        );
+        throw new Error(`Provider "${this.provider.name}" does not support pulling models`);
       }
 
       // Create abort controller for cancellation
@@ -168,9 +164,9 @@ export class ModelManagementService {
                 progress.completed && progress.total
                   ? (progress.completed / progress.total) * 100
                   : 0;
-              
+
               const transferRate = 0; // Ollama doesn't provide this
-              
+
               onProgress({
                 percentage,
                 transferRate,
@@ -206,7 +202,7 @@ export class ModelManagementService {
         }
         throw new Error(
           `Failed to pull model "${name}": ${error.message}. ` +
-          `Check the model name and network connection.`
+            `Check the model name and network connection.`
         );
       }
       throw error;
@@ -233,9 +229,7 @@ export class ModelManagementService {
     try {
       // Check if provider supports deleting models
       if (!this.provider.deleteModel) {
-        throw new Error(
-          `Provider "${this.provider.name}" does not support deleting models`
-        );
+        throw new Error(`Provider "${this.provider.name}" does not support deleting models`);
       }
 
       // Unload model first if it's loaded
@@ -251,7 +245,7 @@ export class ModelManagementService {
       if (error instanceof Error) {
         throw new Error(
           `Failed to delete model "${name}": ${error.message}. ` +
-          `Ensure the model exists and is not in use.`
+            `Ensure the model exists and is not in use.`
         );
       }
       throw error;
@@ -277,7 +271,7 @@ export class ModelManagementService {
       if (error instanceof Error) {
         throw new Error(
           `Failed to get information for model "${name}": ${error.message}. ` +
-          `Ensure the model exists.`
+            `Ensure the model exists.`
         );
       }
       throw error;
@@ -311,11 +305,11 @@ export class ModelManagementService {
 
   /**
    * Keep a model loaded in memory.
-   * 
+   *
    * NOTE: This is primarily a tracking mechanism. Ollama handles keep-alive automatically,
    * so no actual keep-alive requests are sent. This method simply marks the model as "loaded"
    * for tracking purposes.
-   * 
+   *
    * @param name Model name
    */
   async keepModelLoaded(name: string): Promise<void> {
@@ -325,23 +319,23 @@ export class ModelManagementService {
 
     // Mark model as loaded (for tracking only)
     this.loadedModels.set(name, new Date());
-    
+
     // Note: No actual keep-alive requests are sent to Ollama
     // Ollama manages model lifecycle automatically based on usage
   }
 
   /**
    * Unload a model from memory.
-   * 
+   *
    * NOTE: This is primarily a tracking mechanism. Ollama handles model unloading automatically,
    * so this method simply removes the model from our tracking.
-   * 
+   *
    * @param name Model name
    */
   async unloadModel(name: string): Promise<void> {
     // Remove from loaded models tracking
     this.loadedModels.delete(name);
-    
+
     // Note: No actual unload request is sent to Ollama
     // Ollama manages model lifecycle automatically
   }

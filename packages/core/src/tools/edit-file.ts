@@ -1,6 +1,6 @@
 /**
  * File editing tool implementation
- * 
+ *
  * Provides a tool for applying targeted edits to files with validation
  * for target uniqueness and existence.
  */
@@ -131,7 +131,10 @@ export class EditFileInvocation implements ToolInvocation<EditFileParams, ToolRe
       return false;
     }
 
-    const decision = this.policyEngine.evaluate('edit_file', this.params as unknown as Record<string, unknown>);
+    const decision = this.policyEngine.evaluate(
+      'edit_file',
+      this.params as unknown as Record<string, unknown>
+    );
 
     if (decision === 'allow') {
       return false;

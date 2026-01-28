@@ -136,6 +136,7 @@ ollm-cli/
 ## Package Responsibilities
 
 ### `packages/cli`
+
 - Command-line argument parsing
 - Terminal UI rendering (React + Ink)
 - User input handling
@@ -144,6 +145,7 @@ ollm-cli/
 - Slash command implementations
 
 ### `packages/core`
+
 - Provider-agnostic chat runtime
 - Tool registration and execution
 - Policy engine for tool confirmation
@@ -164,6 +166,7 @@ ollm-cli/
 - Diff review and approval workflow
 
 ### `packages/ollm-bridge`
+
 - Local provider adapter (Ollama - Tier 1)
 - vLLM provider adapter (Tier 2 - high performance)
 - OpenAI-compatible provider adapter (Tier 3 - universal)
@@ -173,28 +176,29 @@ ollm-cli/
 - Model management operations
 
 ### `packages/test-utils`
+
 - Shared test fixtures
 - Mock providers
 - Test helpers
 
 ## Key File Locations
 
-| File | Purpose |
-|------|---------|
-| `packages/core/src/provider/types.ts` | Core interfaces (Message, ProviderAdapter, etc.) |
-| `packages/core/src/tools/tool-registry.ts` | Tool registration and discovery |
-| `packages/core/src/policy/policyEngine.ts` | Tool confirmation logic |
-| `packages/core/src/hooks/hookRegistry.ts` | Hook registration and execution |
-| `packages/core/src/index/codebaseIndex.ts` | Codebase indexing and semantic search |
-| `packages/core/src/output/structuredOutput.ts` | JSON schema enforcement |
-| `packages/core/src/sandbox/codeExecutor.ts` | Code execution sandbox |
-| `packages/core/src/vision/visionService.ts` | Image analysis and vision support |
-| `packages/core/src/services/costTracker.ts` | Token usage and cost tracking |
-| `packages/core/src/services/gitService.ts` | Git operations and version control |
-| `packages/core/src/services/diffReviewer.ts` | Diff review and approval |
-| `packages/core/src/context/vramMonitor.ts` | VRAM monitoring and memory management |
-| `packages/core/src/context/contextPool.ts` | Dynamic context sizing |
-| `packages/ollm-bridge/src/provider/vllmProvider.ts` | vLLM provider adapter |
-| `packages/ollm-bridge/src/provider/openaiCompatibleProvider.ts` | OpenAI-compatible provider |
-| `packages/cli/src/ui/AppContainer.tsx` | Main UI container |
-| `schemas/settings.schema.json` | Configuration validation schema |
+| File                                                            | Purpose                                          |
+| --------------------------------------------------------------- | ------------------------------------------------ |
+| `packages/core/src/provider/types.ts`                           | Core interfaces (Message, ProviderAdapter, etc.) |
+| `packages/core/src/tools/tool-registry.ts`                      | Tool registration and discovery                  |
+| `packages/core/src/policy/policyEngine.ts`                      | Tool confirmation logic                          |
+| `packages/core/src/hooks/hookRegistry.ts`                       | Hook registration and execution                  |
+| `packages/core/src/index/codebaseIndex.ts`                      | Codebase indexing and semantic search            |
+| `packages/core/src/output/structuredOutput.ts`                  | JSON schema enforcement                          |
+| `packages/core/src/sandbox/codeExecutor.ts`                     | Code execution sandbox                           |
+| `packages/core/src/vision/visionService.ts`                     | Image analysis and vision support                |
+| `packages/core/src/services/costTracker.ts`                     | Token usage and cost tracking                    |
+| `packages/core/src/services/gitService.ts`                      | Git operations and version control               |
+| `packages/core/src/services/diffReviewer.ts`                    | Diff review and approval                         |
+| `packages/core/src/context/vramMonitor.ts`                      | VRAM monitoring and memory management            |
+| `packages/core/src/context/contextPool.ts`                      | Dynamic context sizing                           |
+| `packages/ollm-bridge/src/provider/vllmProvider.ts`             | vLLM provider adapter                            |
+| `packages/ollm-bridge/src/provider/openaiCompatibleProvider.ts` | OpenAI-compatible provider                       |
+| `packages/cli/src/ui/AppContainer.tsx`                          | Main UI container                                |
+| `schemas/settings.schema.json`                                  | Configuration validation schema                  |

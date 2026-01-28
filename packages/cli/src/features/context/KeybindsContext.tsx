@@ -25,7 +25,7 @@ export function useKeybinds() {
       defaultKeybinds: keybindsData,
       setUserBind: () => {},
       restoreDefault: () => {},
-      checkConflict: () => null
+      checkConflict: () => null,
     };
   }
   return context;
@@ -46,13 +46,13 @@ export function KeybindsProvider({ children }: KeybindsProviderProps) {
   }, [keybindsService]);
 
   const setUserBind = (category: string, id: string, key: string) => {
-    setActiveKeybinds(prev => {
+    setActiveKeybinds((prev) => {
       const newKeybinds = {
         ...prev,
         [category]: {
           ...((prev as any)[category] || {}),
-          [id]: key
-        }
+          [id]: key,
+        },
       };
       // Persist changes
       keybindsService.save(newKeybinds);
@@ -88,13 +88,15 @@ export function KeybindsProvider({ children }: KeybindsProviderProps) {
   };
 
   return (
-    <KeybindsContext.Provider value={{
-      activeKeybinds,
-      defaultKeybinds: keybindsData,
-      setUserBind,
-      restoreDefault,
-      checkConflict
-    }}>
+    <KeybindsContext.Provider
+      value={{
+        activeKeybinds,
+        defaultKeybinds: keybindsData,
+        setUserBind,
+        restoreDefault,
+        checkConflict,
+      }}
+    >
       {children}
     </KeybindsContext.Provider>
   );

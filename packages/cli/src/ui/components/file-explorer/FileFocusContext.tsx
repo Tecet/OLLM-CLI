@@ -1,13 +1,20 @@
 /**
  * FileFocusContext - React context for file focus management
- * 
+ *
  * Manages the list of focused files for LLM context injection. Focused files
  * are pinned to the context and their content is injected into prompts.
- * 
+ *
  * Requirements: 3.1 (Focus system for LLM context)
  */
 
-import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+  ReactNode,
+} from 'react';
 
 import { FocusedFile } from './types.js';
 
@@ -79,7 +86,7 @@ export interface FileFocusProviderProps {
 
 /**
  * FileFocusProvider component
- * 
+ *
  * Provides focus state and actions to child components.
  */
 export function FileFocusProvider({ children, initialState }: FileFocusProviderProps) {
@@ -87,9 +94,7 @@ export function FileFocusProvider({ children, initialState }: FileFocusProviderP
     ...defaultState,
     ...initialState,
     // Ensure focusedFiles is a Map even if initialState provides an object
-    focusedFiles: initialState?.focusedFiles instanceof Map 
-      ? initialState.focusedFiles 
-      : new Map(),
+    focusedFiles: initialState?.focusedFiles instanceof Map ? initialState.focusedFiles : new Map(),
   });
 
   // Sync global accessor for non-React context access (e.g., commands)
@@ -102,7 +107,7 @@ export function FileFocusProvider({ children, initialState }: FileFocusProviderP
     setState((prev) => {
       const newFocusedFiles = new Map(prev.focusedFiles);
       const existingFile = newFocusedFiles.get(file.path);
-      
+
       // Calculate new total size
       let newTotalSize = prev.totalSize;
       if (existingFile) {
@@ -112,9 +117,9 @@ export function FileFocusProvider({ children, initialState }: FileFocusProviderP
         // Add new file
         newTotalSize = newTotalSize + file.content.length;
       }
-      
+
       newFocusedFiles.set(file.path, file);
-      
+
       return {
         ...prev,
         focusedFiles: newFocusedFiles,
@@ -127,13 +132,13 @@ export function FileFocusProvider({ children, initialState }: FileFocusProviderP
     setState((prev) => {
       const newFocusedFiles = new Map(prev.focusedFiles);
       const file = newFocusedFiles.get(path);
-      
+
       if (!file) {
         return prev; // File not focused, no change
       }
-      
+
       newFocusedFiles.delete(path);
-      
+
       return {
         ...prev,
         focusedFiles: newFocusedFiles,
@@ -142,13 +147,19 @@ export function FileFocusProvider({ children, initialState }: FileFocusProviderP
     });
   }, []);
 
-  const isFocused = useCallback((path: string): boolean => {
-    return state.focusedFiles.has(path);
-  }, [state.focusedFiles]);
+  const isFocused = useCallback(
+    (path: string): boolean => {
+      return state.focusedFiles.has(path);
+    },
+    [state.focusedFiles]
+  );
 
-  const getFocusedFile = useCallback((path: string): FocusedFile | undefined => {
-    return state.focusedFiles.get(path);
-  }, [state.focusedFiles]);
+  const getFocusedFile = useCallback(
+    (path: string): FocusedFile | undefined => {
+      return state.focusedFiles.get(path);
+    },
+    [state.focusedFiles]
+  );
 
   const getAllFocusedFiles = useCallback((): FocusedFile[] => {
     return Array.from(state.focusedFiles.values());
@@ -181,7 +192,7 @@ export function FileFocusProvider({ children, initialState }: FileFocusProviderP
 
 /**
  * Hook to access file focus context
- * 
+ *
  * @throws Error if used outside FileFocusProvider
  */
 export function useFileFocus(): FileFocusContextValue {

@@ -1,6 +1,6 @@
 /**
  * API Key Input Dialog
- * 
+ *
  * Prompts users to enter API keys required by MCP servers during installation.
  * Provides links to get API keys from provider websites.
  */
@@ -41,24 +41,27 @@ function extractAPIKeyURL(description: string): string | null {
  */
 export function APIKeyInputDialog({ server, onInstall, onCancel }: APIKeyInputDialogProps) {
   // Build list of environment variables from server config
-  const envVarFields: EnvVarField[] = Object.entries(server.env || {}).map(([name, defaultValue]) => {
-    // Determine if required based on requirements list
-    const isRequired = server.requirements?.some(req => 
-      req.toLowerCase().includes('api key') || 
-      req.toLowerCase().includes(name.toLowerCase())
-    ) || false;
-    
-    // Try to extract API key URL from description
-    const apiKeyUrl = server.description ? extractAPIKeyURL(server.description) : null;
-    
-    return {
-      name,
-      value: defaultValue || '',
-      description: `${name} for ${server.name}`,
-      required: isRequired,
-      getKeyUrl: apiKeyUrl || server.homepage,
-    };
-  });
+  const envVarFields: EnvVarField[] = Object.entries(server.env || {}).map(
+    ([name, defaultValue]) => {
+      // Determine if required based on requirements list
+      const isRequired =
+        server.requirements?.some(
+          (req) =>
+            req.toLowerCase().includes('api key') || req.toLowerCase().includes(name.toLowerCase())
+        ) || false;
+
+      // Try to extract API key URL from description
+      const apiKeyUrl = server.description ? extractAPIKeyURL(server.description) : null;
+
+      return {
+        name,
+        value: defaultValue || '',
+        description: `${name} for ${server.name}`,
+        required: isRequired,
+        getKeyUrl: apiKeyUrl || server.homepage,
+      };
+    }
+  );
 
   const [fields, setFields] = useState<EnvVarField[]>(envVarFields);
   const [selectedFieldIndex, setSelectedFieldIndex] = useState(0);
@@ -86,14 +89,14 @@ export function APIKeyInputDialog({ server, onInstall, onCancel }: APIKeyInputDi
         setIsEditing(false);
       } else if (key.backspace || key.delete) {
         // Remove last character
-        setFields(prev => {
+        setFields((prev) => {
           const updated = [...prev];
           updated[selectedFieldIndex].value = updated[selectedFieldIndex].value.slice(0, -1);
           return updated;
         });
       } else if (input && !key.ctrl && !key.meta) {
         // Add character
-        setFields(prev => {
+        setFields((prev) => {
           const updated = [...prev];
           updated[selectedFieldIndex].value += input;
           return updated;
@@ -104,9 +107,9 @@ export function APIKeyInputDialog({ server, onInstall, onCancel }: APIKeyInputDi
 
     // Navigation mode
     if (key.upArrow) {
-      setSelectedFieldIndex(prev => Math.max(0, prev - 1));
+      setSelectedFieldIndex((prev) => Math.max(0, prev - 1));
     } else if (key.downArrow) {
-      setSelectedFieldIndex(prev => Math.min(totalItems - 1, prev + 1));
+      setSelectedFieldIndex((prev) => Math.min(totalItems - 1, prev + 1));
     } else if (key.return) {
       if (selectedFieldIndex < fields.length) {
         // Edit field
@@ -151,9 +154,9 @@ export function APIKeyInputDialog({ server, onInstall, onCancel }: APIKeyInputDi
    */
   const handleInstall = useCallback(async () => {
     // Validate required fields
-    const missingRequired = fields.filter(f => f.required && !f.value.trim());
+    const missingRequired = fields.filter((f) => f.required && !f.value.trim());
     if (missingRequired.length > 0) {
-      setError(`Required: ${missingRequired.map(f => f.name).join(', ')}`);
+      setError(`Required: ${missingRequired.map((f) => f.name).join(', ')}`);
       return;
     }
 
@@ -194,9 +197,7 @@ export function APIKeyInputDialog({ server, onInstall, onCancel }: APIKeyInputDi
 
       {/* Description */}
       <Box marginBottom={1}>
-        <Text wrap="wrap">
-          This server requires API keys to function properly.
-        </Text>
+        <Text wrap="wrap">This server requires API keys to function properly.</Text>
       </Box>
 
       {/* Environment variable fields */}
@@ -209,7 +210,7 @@ export function APIKeyInputDialog({ server, onInstall, onCancel }: APIKeyInputDi
             <Text bold color={field.required ? 'yellow' : 'white'}>
               {field.name} {field.required && '(Required)'}
             </Text>
-            
+
             <Box
               borderStyle="single"
               borderColor={isSelected ? 'cyan' : 'gray'}
@@ -217,9 +218,12 @@ export function APIKeyInputDialog({ server, onInstall, onCancel }: APIKeyInputDi
               width="100%"
             >
               <Text>
-                {isCurrentlyEditing 
-                  ? field.value || '' // Show actual text when editing
-                  : field.value ? '•'.repeat(Math.min(field.value.length, 40)) : '(empty)' // Show bullets when not editing
+                {
+                  isCurrentlyEditing
+                    ? field.value || '' // Show actual text when editing
+                    : field.value
+                      ? '•'.repeat(Math.min(field.value.length, 40))
+                      : '(empty)' // Show bullets when not editing
                 }
                 {isCurrentlyEditing && <Text color="cyan">_</Text>}
               </Text>
@@ -227,9 +231,7 @@ export function APIKeyInputDialog({ server, onInstall, onCancel }: APIKeyInputDi
 
             {field.getKeyUrl && (
               <Box marginTop={0}>
-                <Text dimColor>
-                  Get key: {field.getKeyUrl}
-                </Text>
+                <Text dimColor>Get key: {field.getKeyUrl}</Text>
               </Box>
             )}
           </Box>
@@ -239,31 +241,19 @@ export function APIKeyInputDialog({ server, onInstall, onCancel }: APIKeyInputDi
       {/* Links */}
       {server.repository && (
         <Box marginTop={1} marginBottom={1}>
-          <Text dimColor>
-            📦 GitHub: {server.repository}
-          </Text>
+          <Text dimColor>📦 GitHub: {server.repository}</Text>
         </Box>
       )}
 
       {server.homepage && server.homepage !== server.repository && (
         <Box marginBottom={1}>
-          <Text dimColor>
-            🌐 Homepage: {server.homepage}
-          </Text>
+          <Text dimColor>🌐 Homepage: {server.homepage}</Text>
         </Box>
       )}
 
       {/* Warning */}
-      <Box
-        borderStyle="single"
-        borderColor="yellow"
-        paddingX={1}
-        marginTop={1}
-        marginBottom={1}
-      >
-        <Text color="yellow">
-          ⚠️  Keys are stored in plain text in ~/.ollm/settings/mcp.json
-        </Text>
+      <Box borderStyle="single" borderColor="yellow" paddingX={1} marginTop={1} marginBottom={1}>
+        <Text color="yellow">⚠️ Keys are stored in plain text in ~/.ollm/settings/mcp.json</Text>
       </Box>
 
       {/* Error message */}
@@ -279,7 +269,8 @@ export function APIKeyInputDialog({ server, onInstall, onCancel }: APIKeyInputDi
           bold={selectedFieldIndex === skipButtonIndex && !isInstalling}
           color={selectedFieldIndex === skipButtonIndex ? 'yellow' : 'gray'}
         >
-          {selectedFieldIndex === skipButtonIndex ? '▶ ' : '  '}[S] Skip API Keys (Install without keys)
+          {selectedFieldIndex === skipButtonIndex ? '▶ ' : '  '}[S] Skip API Keys (Install without
+          keys)
         </Text>
 
         <Text
@@ -296,8 +287,8 @@ export function APIKeyInputDialog({ server, onInstall, onCancel }: APIKeyInputDi
           {isEditing
             ? 'Type to edit | Enter: Done | Esc: Cancel'
             : isInstalling
-            ? 'Installing...'
-            : '↑↓: Navigate | Enter: Edit/Select | G: Get Key | Esc: Cancel'}
+              ? 'Installing...'
+              : '↑↓: Navigate | Enter: Edit/Select | G: Get Key | Esc: Cancel'}
         </Text>
       </Box>
     </Box>

@@ -4,6 +4,7 @@
 **Status:** Source of Truth
 
 **Related Documents:**
+
 - `ContextCompression.md` - Detailed compression system documentation
 - `ContextManagement.md` - Context sizing and management
 - `ContextArchitecture.md` - Overall system architecture
@@ -28,6 +29,7 @@
 ```
 
 **Key Points:**
+
 - Context size is FIXED for the entire session
 - System prompt never compressed
 - User messages never compressed
@@ -62,13 +64,13 @@
 
 **Tier Characteristics:**
 
-| Tier | Context | Ollama (85%) | Checkpoints | Strategy |
-|------|---------|--------------|-------------|----------|
-| 1 | 2K, 4K | 1700, 3400 | 0 | Snapshot rollover |
-| 2 | 8K | 6800 | 1 | Single checkpoint |
-| 3 ⭐ | 16K | 13600 | 3 | Progressive aging |
-| 4 | 32K | 27200 | 10 | Structured preservation |
-| 5 | 64K, 128K | 54400, 108800 | 15 | Rich metadata |
+| Tier | Context   | Ollama (85%)  | Checkpoints | Strategy                |
+| ---- | --------- | ------------- | ----------- | ----------------------- |
+| 1    | 2K, 4K    | 1700, 3400    | 0           | Snapshot rollover       |
+| 2    | 8K        | 6800          | 1           | Single checkpoint       |
+| 3 ⭐ | 16K       | 13600         | 3           | Progressive aging       |
+| 4    | 32K       | 27200         | 10          | Structured preservation |
+| 5    | 64K, 128K | 54400, 108800 | 15          | Rich metadata           |
 
 ---
 
@@ -438,6 +440,7 @@ SUMMARIZE AGGRESSIVELY:
 ### Progressive Preservation
 
 **Without Progressive Checkpoints:**
+
 ```
 After 3 compressions:
 [System] + [Single Summary] + [Recent]
@@ -447,6 +450,7 @@ After 3 compressions:
 ```
 
 **With Progressive Checkpoints:**
+
 ```
 After 3 compressions:
 [System] + [CP1] + [CP2] + [CP3] + [Recent]
@@ -456,6 +460,7 @@ After 3 compressions:
 ```
 
 **Key Advantages:**
+
 - ✅ **No Information Loss**: All conversation history preserved
 - ✅ **Hierarchical Compression**: Recent = detailed, old = compact
 - ✅ **Automatic Aging**: Checkpoints compress as they age
@@ -473,7 +478,7 @@ After 3 compressions:
 └─────────────────────────────────────────────────────────────────┘
 
 Score Calculation:
-modelFactor = 
+modelFactor =
   70B+ models: 0.95
   30B models:  0.85
   13B models:  0.70
@@ -581,11 +586,11 @@ Full History (Disk):
 
 ```typescript
 interface CompressionConfig {
-  enabled: boolean;              // Enable compression
-  strategy: 'summarize';         // Always use LLM summarization
-  preserveRecent: number;        // Tokens to preserve (not compress)
-  summaryMaxTokens: number;      // Max tokens for summary
-  triggerThreshold: number;      // Trigger at % of available (0.80)
+  enabled: boolean; // Enable compression
+  strategy: 'summarize'; // Always use LLM summarization
+  preserveRecent: number; // Tokens to preserve (not compress)
+  summaryMaxTokens: number; // Max tokens for summary
+  triggerThreshold: number; // Trigger at % of available (0.80)
 }
 
 const DEFAULT_CONFIG = {
@@ -593,7 +598,7 @@ const DEFAULT_CONFIG = {
   strategy: 'summarize',
   preserveRecent: 2048,
   summaryMaxTokens: 1024,
-  triggerThreshold: 0.80,
+  triggerThreshold: 0.8,
 };
 ```
 

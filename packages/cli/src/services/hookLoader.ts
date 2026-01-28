@@ -1,6 +1,6 @@
 /**
  * Hook Loader Service
- * 
+ *
  * Loads hooks from JSON files and registers them in the HookRegistry.
  * This bridges the gap between the file-based UIHook format and the
  * runtime HookRegistry.
@@ -18,17 +18,17 @@ import type { HookEvent } from '@ollm/ollm-cli-core/hooks/types.js';
  * Map UI event types to core hook events
  */
 const UI_TO_CORE_EVENT_MAP: Record<string, HookEvent> = {
-  'fileEdited': 'before_tool',
-  'fileCreated': 'before_tool',
-  'fileDeleted': 'before_tool',
-  'userTriggered': 'notification',
-  'promptSubmit': 'before_agent',
-  'agentStop': 'after_agent',
+  fileEdited: 'before_tool',
+  fileCreated: 'before_tool',
+  fileDeleted: 'before_tool',
+  userTriggered: 'notification',
+  promptSubmit: 'before_agent',
+  agentStop: 'after_agent',
 };
 
 /**
  * Load hooks from JSON files and register them in the HookRegistry
- * 
+ *
  * @param registry - HookRegistry instance to register hooks in
  * @returns Number of hooks loaded
  */
@@ -68,7 +68,7 @@ export async function loadHooksFromFiles(registry: HookRegistry): Promise<number
 
 /**
  * Register a UIHook in the HookRegistry
- * 
+ *
  * @param registry - HookRegistry instance
  * @param uiHook - UIHook to register
  */
@@ -85,17 +85,16 @@ function registerUIHook(registry: HookRegistry, uiHook: UIHook): void {
 
 /**
  * Initialize hooks by loading from files and registering in registry
- * 
+ *
  * This should be called during application startup.
- * 
+ *
  * @param registry - Optional HookRegistry instance (creates new if not provided)
  * @returns HookRegistry with loaded hooks
  */
 export async function initializeHooks(registry?: HookRegistry): Promise<HookRegistry> {
   const hookRegistry = registry || new HookRegistry();
-  
+
   await loadHooksFromFiles(hookRegistry);
-  
+
   return hookRegistry;
 }
-

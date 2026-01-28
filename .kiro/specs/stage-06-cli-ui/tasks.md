@@ -578,7 +578,6 @@ This implementation plan breaks down the Stage 6 CLI and UI feature into discret
     - Tab for cycle focus
     - _Requirements: 20.1, 20.2, 20.3, 20.4, 20.5, 20.6, 20.7, 20.8, 20.9, 20.10, 20.11, 20.12, 20.13_
 
-
 - [x] 19. Implement error handling
   - [x] 19.1 Add configuration error handling
     - Display file path and line number for parse errors

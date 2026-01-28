@@ -34,7 +34,7 @@ async function processContent(p, logicalHeight, pixelWidth, pixelHeight, size) {
         cBot = intToRGBA(image.getPixelColor(x, y * 2 + 1));
       } else {
         const srcX = Math.floor(x * (origW / pixelWidth));
-        const srcY_Top = Math.floor((y * 2) * (origH / pixelHeight));
+        const srcY_Top = Math.floor(y * 2 * (origH / pixelHeight));
         const srcY_Bot = Math.floor((y * 2 + 1) * (origH / pixelHeight));
         cTop = intToRGBA(image.getPixelColor(srcX, srcY_Top));
         cBot = intToRGBA(image.getPixelColor(srcX, srcY_Bot));

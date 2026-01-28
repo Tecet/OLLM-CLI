@@ -13,6 +13,7 @@ Successfully integrated all MCP dialog components with the MCPTab component, ena
 ### 1. Updated Imports
 
 Added imports for all dialog components:
+
 - `ServerConfigDialog` - Server configuration management
 - `OAuthConfigDialog` - OAuth authentication setup
 - `ServerToolsViewer` - Tool management and auto-approve
@@ -30,6 +31,7 @@ Added imports for all dialog components:
 ### 3. Dialog Rendering Function
 
 Created `renderDialog()` function that:
+
 - Returns `null` when no dialog is active
 - Uses switch statement to render appropriate dialog based on `dialogState.type`
 - Passes required props to each dialog component
@@ -39,6 +41,7 @@ Created `renderDialog()` function that:
 ### 4. Dialog Action Handlers
 
 Connected keyboard shortcuts to dialog opening:
+
 - **M key** → Opens MarketplaceDialog
 - **H key** → Opens HealthMonitorDialog
 - **O key** → Opens OAuthConfigDialog (when server selected)
@@ -50,6 +53,7 @@ Connected keyboard shortcuts to dialog opening:
 ### 5. Dialog Callbacks
 
 Integrated MCPContext methods with dialog callbacks:
+
 - `configureServer()` - Called when ServerConfigDialog saves
 - `uninstallServer()` - Called when UninstallConfirmDialog confirms
 - OAuth methods accessed directly by OAuthConfigDialog via useMCP hook
@@ -67,36 +71,43 @@ Integrated MCPContext methods with dialog callbacks:
 ## Dialog Component Integration Details
 
 ### ServerConfigDialog
+
 - **Props:** `serverName`, `onClose`, `onSave`
 - **Callback:** Calls `configureServer()` with new config, then closes dialog
 - **Validation:** All dialog-related requirements 5.1-5.8
 
 ### OAuthConfigDialog
+
 - **Props:** `serverName`, `onClose`
 - **Callback:** Accesses OAuth methods directly via useMCP hook
 - **Validation:** All dialog-related requirements 6.1-6.9
 
 ### ServerToolsViewer
+
 - **Props:** `serverName`, `onClose`
 - **Callback:** Accesses tool management directly via useMCP hook
 - **Validation:** All dialog-related requirements 8.1-8.7
 
 ### HealthMonitorDialog
+
 - **Props:** `onClose`
 - **Callback:** Accesses health monitoring directly via useMCP hook
 - **Validation:** All dialog-related requirements 7.1-7.8
 
 ### ServerLogsViewer
+
 - **Props:** `serverName`, `onClose`
 - **Callback:** Accesses log methods directly via useMCP hook
 - **Validation:** All dialog-related requirements 10.1-10.8
 
 ### MarketplaceDialog
+
 - **Props:** `onClose`
 - **Callback:** Manages InstallServerDialog internally, no external callback needed
 - **Validation:** All dialog-related requirements 3.1-3.7
 
 ### UninstallConfirmDialog
+
 - **Props:** `serverName`, `onClose`, `onConfirm`
 - **Callback:** Calls `uninstallServer()` on confirmation, then closes dialog
 - **Validation:** All dialog-related requirements 11.1-11.7
@@ -104,6 +115,7 @@ Integrated MCPContext methods with dialog callbacks:
 ## Architecture Notes
 
 ### Dialog Lifecycle
+
 1. User presses keyboard shortcut (e.g., 'M' for marketplace)
 2. `handleKeyPress` callback sets `dialogState` with appropriate type and data
 3. `renderDialog()` renders the corresponding dialog component
@@ -112,12 +124,14 @@ Integrated MCPContext methods with dialog callbacks:
 6. `handleCloseDialog()` resets `dialogState` to `{ type: null }`
 
 ### Input Handling
+
 - MCPTab's `useInput` hook checks if dialog is open
 - If dialog is open, MCPTab doesn't handle input (except Esc to close)
 - Each dialog component has its own `useInput` hook for internal navigation
 - Esc key closes active dialog and returns to MCPTab navigation
 
 ### State Management
+
 - Dialog state is local to MCPTab component
 - Server data and operations accessed via MCPContext
 - Dialogs use `useMCP()` hook to access context directly
@@ -126,6 +140,7 @@ Integrated MCPContext methods with dialog callbacks:
 ## Testing Notes
 
 The existing MCPTab tests are failing due to a known issue with the MCPContext mock setup entering an error state immediately. This is documented in task 7.1 and is not related to the dialog integration. The tests expect:
+
 - Old placeholder dialog text ("Dialog: marketplace", "Dialog: health")
 - Component structure from Phase 2 (InstalledServersSection, MarketplacePreview)
 
@@ -140,7 +155,7 @@ The dialog integration itself is functionally complete and follows the design sp
 ✅ Dialog callbacks connected to MCPContext methods  
 ✅ Dialog close handling implemented  
 ✅ Code cleanup completed  
-✅ All dialog-related requirements validated  
+✅ All dialog-related requirements validated
 
 ## Next Steps
 

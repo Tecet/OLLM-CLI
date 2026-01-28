@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import type { SnapshotMetadata, ContextSnapshot, Message } from '../types.js';
+
 import {
   findSnapshotById,
   findSnapshotsBySession,
@@ -25,6 +25,8 @@ import {
   extractNonUserMessages,
   exceedsMaxSnapshots,
 } from '../snapshotUtils.js';
+
+import type { SnapshotMetadata, ContextSnapshot, Message } from '../types.js';
 
 describe('Snapshot Utilities', () => {
   // Helper to create test snapshot metadata
@@ -73,7 +75,7 @@ describe('Snapshot Utilities', () => {
     it('should find snapshots by session ID', () => {
       const result = findSnapshotsBySession(snapshots, 'session-a');
       expect(result).toHaveLength(2);
-      expect(result.map(s => s.id)).toEqual(['snap-1', 'snap-2']);
+      expect(result.map((s) => s.id)).toEqual(['snap-1', 'snap-2']);
     });
 
     it('should return empty array for non-existent session', () => {
@@ -91,7 +93,7 @@ describe('Snapshot Utilities', () => {
     it('should find snapshots after timestamp', () => {
       const result = findSnapshotsAfter(snapshots, new Date('2026-01-03'));
       expect(result).toHaveLength(2);
-      expect(result.map(s => s.id)).toEqual(['snap-4', 'snap-5']);
+      expect(result.map((s) => s.id)).toEqual(['snap-4', 'snap-5']);
     });
 
     it('should return empty array if none found', () => {
@@ -104,7 +106,7 @@ describe('Snapshot Utilities', () => {
     it('should find snapshots before timestamp', () => {
       const result = findSnapshotsBefore(snapshots, new Date('2026-01-03'));
       expect(result).toHaveLength(2);
-      expect(result.map(s => s.id)).toEqual(['snap-1', 'snap-2']);
+      expect(result.map((s) => s.id)).toEqual(['snap-1', 'snap-2']);
     });
 
     it('should return empty array if none found', () => {
@@ -117,7 +119,7 @@ describe('Snapshot Utilities', () => {
     it('should sort snapshots oldest first', () => {
       const unsorted = [snapshots[4], snapshots[1], snapshots[0]];
       const result = sortSnapshotsByAge(unsorted);
-      expect(result.map(s => s.id)).toEqual(['snap-1', 'snap-2', 'snap-5']);
+      expect(result.map((s) => s.id)).toEqual(['snap-1', 'snap-2', 'snap-5']);
     });
 
     it('should not mutate original array', () => {
@@ -131,7 +133,7 @@ describe('Snapshot Utilities', () => {
     it('should sort snapshots newest first', () => {
       const unsorted = [snapshots[0], snapshots[2], snapshots[4]];
       const result = sortSnapshotsByAgeDesc(unsorted);
-      expect(result.map(s => s.id)).toEqual(['snap-5', 'snap-3', 'snap-1']);
+      expect(result.map((s) => s.id)).toEqual(['snap-5', 'snap-3', 'snap-1']);
     });
 
     it('should not mutate original array', () => {
@@ -145,7 +147,7 @@ describe('Snapshot Utilities', () => {
     it('should get N most recent snapshots', () => {
       const result = getRecentSnapshots(snapshots, 3);
       expect(result).toHaveLength(3);
-      expect(result.map(s => s.id)).toEqual(['snap-5', 'snap-4', 'snap-3']);
+      expect(result.map((s) => s.id)).toEqual(['snap-5', 'snap-4', 'snap-3']);
     });
 
     it('should handle count larger than array', () => {
@@ -158,7 +160,7 @@ describe('Snapshot Utilities', () => {
     it('should get N oldest snapshots', () => {
       const result = getOldestSnapshots(snapshots, 3);
       expect(result).toHaveLength(3);
-      expect(result.map(s => s.id)).toEqual(['snap-1', 'snap-2', 'snap-3']);
+      expect(result.map((s) => s.id)).toEqual(['snap-1', 'snap-2', 'snap-3']);
     });
 
     it('should handle count larger than array', () => {
@@ -267,7 +269,7 @@ describe('Snapshot Utilities', () => {
     it('should filter snapshots above threshold', () => {
       const result = filterSnapshotsAboveThreshold(snapshots, 2000);
       expect(result).toHaveLength(2);
-      expect(result.map(s => s.id)).toEqual(['snap-4', 'snap-5']);
+      expect(result.map((s) => s.id)).toEqual(['snap-4', 'snap-5']);
     });
 
     it('should return empty array if none above threshold', () => {
@@ -280,7 +282,7 @@ describe('Snapshot Utilities', () => {
     it('should filter snapshots below threshold', () => {
       const result = filterSnapshotsBelowThreshold(snapshots, 2000);
       expect(result).toHaveLength(2);
-      expect(result.map(s => s.id)).toEqual(['snap-1', 'snap-2']);
+      expect(result.map((s) => s.id)).toEqual(['snap-1', 'snap-2']);
     });
 
     it('should return empty array if none below threshold', () => {
@@ -294,8 +296,8 @@ describe('Snapshot Utilities', () => {
       const result = getSnapshotsForCleanup(snapshots, 3);
       expect(result.toKeep).toHaveLength(3);
       expect(result.toDelete).toHaveLength(2);
-      expect(result.toKeep.map(s => s.id)).toEqual(['snap-5', 'snap-4', 'snap-3']);
-      expect(result.toDelete.map(s => s.id)).toEqual(['snap-2', 'snap-1']);
+      expect(result.toKeep.map((s) => s.id)).toEqual(['snap-5', 'snap-4', 'snap-3']);
+      expect(result.toDelete.map((s) => s.id)).toEqual(['snap-2', 'snap-1']);
     });
 
     it('should return empty toDelete when within limit', () => {
@@ -342,7 +344,7 @@ describe('Snapshot Utilities', () => {
 
       const result = extractUserMessages(snapshot);
       expect(result).toHaveLength(2);
-      expect(result.every(m => m.role === 'user')).toBe(true);
+      expect(result.every((m) => m.role === 'user')).toBe(true);
     });
 
     it('should fall back to filtering messages', () => {
@@ -371,7 +373,7 @@ describe('Snapshot Utilities', () => {
 
       const result = extractUserMessages(snapshot);
       expect(result).toHaveLength(2);
-      expect(result.every(m => m.role === 'user')).toBe(true);
+      expect(result.every((m) => m.role === 'user')).toBe(true);
     });
   });
 
@@ -409,7 +411,7 @@ describe('Snapshot Utilities', () => {
 
       const result = extractNonUserMessages(snapshot);
       expect(result).toHaveLength(2);
-      expect(result.every(m => m.role !== 'user')).toBe(true);
+      expect(result.every((m) => m.role !== 'user')).toBe(true);
     });
   });
 

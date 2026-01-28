@@ -1,6 +1,6 @@
 /**
  * MCPContext - Manages MCP server state and operations for the MCP Panel UI
- * 
+ *
  * Provides centralized state management for:
  * - Loading and managing MCP servers
  * - Server health monitoring with real-time updates
@@ -12,13 +12,25 @@
 import os from 'os';
 import path from 'path';
 
-import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode, useMemo } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+  ReactNode,
+  useMemo,
+} from 'react';
 
 import { DefaultMCPToolWrapper } from '@ollm/ollm-cli-core/mcp/index.js';
 import { DefaultMCPClient } from '@ollm/ollm-cli-core/mcp/mcpClient.js';
 import { MCPHealthMonitor } from '@ollm/ollm-cli-core/mcp/mcpHealthMonitor.js';
 import { MCPOAuthProvider, FileTokenStorage } from '@ollm/ollm-cli-core/mcp/mcpOAuth.js';
-import { ToolRouter, type ToolRoutingConfig, DEFAULT_TOOL_ROUTING_CONFIG } from '@ollm/ollm-cli-core/tools/index.js';
+import {
+  ToolRouter,
+  type ToolRoutingConfig,
+  DEFAULT_TOOL_ROUTING_CONFIG,
+} from '@ollm/ollm-cli-core/tools/index.js';
 
 import { createLogger } from '../../../../core/src/utils/logger.js';
 import { SettingsService } from '../../config/settingsService.js';
@@ -27,14 +39,12 @@ import { mcpConfigService, type MCPConfigFile } from '../../services/mcpConfigSe
 import { mcpMarketplace, type MCPMarketplaceServer } from '../../services/mcpMarketplace.js';
 import { parseError, retryWithBackoff, formatErrorMessage } from '../utils/errorHandling.js';
 
-
-
-import type { 
-  MCPClient, 
-  MCPServerConfig, 
+import type {
+  MCPClient,
+  MCPServerConfig,
   MCPServerStatus,
   MCPTool,
-  MCPOAuthConfig
+  MCPOAuthConfig,
 } from '@ollm/ollm-cli-core/mcp/types.js';
 
 const logger = createLogger('MCPContext');
@@ -74,7 +84,14 @@ export interface ExtendedMCPServerStatus extends MCPServerStatus {
   /** Health status */
   health: 'healthy' | 'degraded' | 'unhealthy';
   /** Connection phase */
-  phase?: 'stopped' | 'starting' | 'connecting' | 'health-check' | 'connected' | 'unhealthy' | 'error';
+  phase?:
+    | 'stopped'
+    | 'starting'
+    | 'connecting'
+    | 'health-check'
+    | 'connected'
+    | 'unhealthy'
+    | 'error';
   /** Tools provided by the server */
   toolsList: MCPTool[];
   /** OAuth connection status */
@@ -131,7 +148,7 @@ export interface SystemMessage {
 export interface MCPContextValue {
   /** Current state */
   state: MCPState;
-  
+
   // Server Management
   /** Toggle server enabled/disabled state */
   toggleServer: (serverName: string) => Promise<void>;
@@ -143,7 +160,7 @@ export interface MCPContextValue {
   uninstallServer: (serverName: string) => Promise<void>;
   /** Configure a server */
   configureServer: (serverName: string, config: MCPServerConfig) => Promise<void>;
-  
+
   // OAuth Management
   /** Configure OAuth for a server */
   configureOAuth: (serverName: string, oauth: MCPOAuthConfig) => Promise<void>;
@@ -151,11 +168,11 @@ export interface MCPContextValue {
   refreshOAuthToken: (serverName: string) => Promise<void>;
   /** Revoke OAuth access */
   revokeOAuthAccess: (serverName: string) => Promise<void>;
-  
+
   // Tool Management
   /** Get tools for a server */
   getServerTools: (serverName: string) => MCPTool[];
-  
+
   // Error Management
   /** Clear the current error state */
   clearError: () => void;
@@ -165,23 +182,23 @@ export interface MCPContextValue {
   emitSystemMessage: (type: SystemMessage['type'], message: string, dismissible?: boolean) => void;
   /** Subscribe to system messages */
   subscribeToSystemMessages: (callback: (messages: SystemMessage[]) => void) => () => void;
-  
+
   // Logs & Monitoring
   /** Get server logs */
   getServerLogs: (serverName: string, lines?: number) => Promise<string[]>;
   /** Clear server logs (optional) */
   clearServerLogs?: (serverName: string) => Promise<void>;
-  
+
   // Marketplace
   /** Search marketplace servers */
   searchMarketplace: (query: string) => Promise<MCPMarketplaceServer[]>;
   /** Refresh marketplace data */
   refreshMarketplace: () => Promise<void>;
-  
+
   // General
   /** Refresh all server data */
   refreshServers: () => Promise<void>;
-  
+
   /** Tool Router instance */
   toolRouter: ToolRouter;
 }
@@ -212,11 +229,11 @@ export interface MCPProviderProps {
 /**
  * Provider for MCP management
  */
-export function MCPProvider({ 
+export function MCPProvider({
   children,
   mcpClient: customClient,
   healthMonitor: customHealthMonitor,
-  oauthProvider: customOAuthProvider
+  oauthProvider: customOAuthProvider,
 }: MCPProviderProps) {
   const [state, setState] = useState<MCPState>({
     servers: new Map(),
@@ -229,11 +246,11 @@ export function MCPProvider({
 
   // Track registered tools to avoid state dependency in loadServers
   const lastRegisteredTools = React.useRef<Map<string, MCPTool[]>>(new Map());
-  
+
   // System messages state
   const [systemMessages, setSystemMessages] = useState<SystemMessage[]>([]);
   const systemMessageListeners = React.useRef<Set<(messages: SystemMessage[]) => void>>(new Set());
-  
+
   // Operation queue to prevent race conditions on rapid enable/disable
   const operationQueues = React.useRef<Map<string, Promise<void>>>(new Map());
 
@@ -251,8 +268,14 @@ export function MCPProvider({
   }
 
   // Narrowly-typed tool registry with a runtime guard
-  const isToolRegistry = (obj: unknown): obj is { register: (t: unknown) => void; unregister: (n: string) => void } => {
-    return Boolean(obj && typeof (obj as any).register === 'function' && typeof (obj as any).unregister === 'function');
+  const isToolRegistry = (
+    obj: unknown
+  ): obj is { register: (t: unknown) => void; unregister: (n: string) => void } => {
+    return Boolean(
+      obj &&
+      typeof (obj as any).register === 'function' &&
+      typeof (obj as any).unregister === 'function'
+    );
   };
 
   const toolRegistry = useMemo(() => {
@@ -288,8 +311,11 @@ export function MCPProvider({
     if (sharedMcpClient) return sharedMcpClient; // Use shared client from ServiceContext
     return new DefaultMCPClient(undefined, oauthProvider); // Fallback for tests
   }, [customClient, sharedMcpClient, oauthProvider]);
-  
-  const healthMonitor = useMemo(() => customHealthMonitor || new MCPHealthMonitor(mcpClient), [customHealthMonitor, mcpClient]);
+
+  const healthMonitor = useMemo(
+    () => customHealthMonitor || new MCPHealthMonitor(mcpClient),
+    [customHealthMonitor, mcpClient]
+  );
 
   // Initialize tool router
   const toolRouter = useMemo(() => {
@@ -307,9 +333,9 @@ export function MCPProvider({
         toolRouter.updateConfig(settings.llm.toolRouting as ToolRoutingConfig);
       }
     };
-    
+
     const unsubscribe = SettingsService.getInstance().addChangeListener(handleSettingsChange);
-    
+
     // Cleanup: remove listener on unmount
     return () => {
       if (typeof unsubscribe === 'function') {
@@ -322,119 +348,125 @@ export function MCPProvider({
    * Emit a system message
    * Defined early to avoid circular dependencies with other callbacks
    */
-  const emitSystemMessage = useCallback((
-    type: SystemMessage['type'],
-    message: string,
-    dismissible: boolean = true
-  ) => {
-    const newMessage: SystemMessage = {
-      id: `${Date.now()}-${Math.random()}`,
-      type,
-      message,
-      timestamp: Date.now(),
-      dismissible,
-    };
-    
-    setSystemMessages(prev => {
-      const updated = [...prev, newMessage];
-      // Notify all listeners with updated messages
-      systemMessageListeners.current.forEach(listener => {
-        listener(updated);
+  const emitSystemMessage = useCallback(
+    (type: SystemMessage['type'], message: string, dismissible: boolean = true) => {
+      const newMessage: SystemMessage = {
+        id: `${Date.now()}-${Math.random()}`,
+        type,
+        message,
+        timestamp: Date.now(),
+        dismissible,
+      };
+
+      setSystemMessages((prev) => {
+        const updated = [...prev, newMessage];
+        // Notify all listeners with updated messages
+        systemMessageListeners.current.forEach((listener) => {
+          listener(updated);
+        });
+        return updated;
       });
-      return updated;
-    });
-    
-    // Auto-dismiss success messages after 5 seconds
-    if (type === 'success') {
-      setTimeout(() => {
-        setSystemMessages(prev => prev.filter(m => m.id !== newMessage.id));
-      }, 5000);
-    }
-  }, []); // No dependencies needed - uses functional setState
-  
+
+      // Auto-dismiss success messages after 5 seconds
+      if (type === 'success') {
+        setTimeout(() => {
+          setSystemMessages((prev) => prev.filter((m) => m.id !== newMessage.id));
+        }, 5000);
+      }
+    },
+    []
+  ); // No dependencies needed - uses functional setState
+
   /**
    * Subscribe to system messages
    * Defined early to avoid circular dependencies with other callbacks
    */
-  const subscribeToSystemMessages = useCallback((
-    callback: (messages: SystemMessage[]) => void
-  ): (() => void) => {
-    systemMessageListeners.current.add(callback);
-    
-    // Return unsubscribe function
-    return () => {
-      systemMessageListeners.current.delete(callback);
-    };
-  }, []);
-  
+  const subscribeToSystemMessages = useCallback(
+    (callback: (messages: SystemMessage[]) => void): (() => void) => {
+      systemMessageListeners.current.add(callback);
+
+      // Return unsubscribe function
+      return () => {
+        systemMessageListeners.current.delete(callback);
+      };
+    },
+    []
+  );
+
   /**
    * Enqueue an operation for a server to prevent race conditions
    * Operations for the same server are serialized
    */
-  const enqueueServerOperation = useCallback(async <T,>(
-    serverName: string,
-    operation: () => Promise<T>
-  ): Promise<T> => {
-    // Get existing queue for this server
-    const existingQueue = operationQueues.current.get(serverName) || Promise.resolve();
-    
-    // Create new promise that waits for existing queue then runs operation
-    const newQueue = existingQueue
-      .then(() => operation())
-      .catch((error) => {
-        // Re-throw error but don't break the queue
-        throw error;
-      })
-      .finally(() => {
-        // Clean up if this is still the current queue
-        if (operationQueues.current.get(serverName) === newQueue) {
-          operationQueues.current.delete(serverName);
-        }
-      });
-    
-    // Store the new queue
-    operationQueues.current.set(serverName, newQueue as Promise<void>);
-    
-    // Wait for and return the result
-    return newQueue as Promise<T>;
-  }, []);
+  const enqueueServerOperation = useCallback(
+    async <T,>(serverName: string, operation: () => Promise<T>): Promise<T> => {
+      // Get existing queue for this server
+      const existingQueue = operationQueues.current.get(serverName) || Promise.resolve();
+
+      // Create new promise that waits for existing queue then runs operation
+      const newQueue = existingQueue
+        .then(() => operation())
+        .catch((error) => {
+          // Re-throw error but don't break the queue
+          throw error;
+        })
+        .finally(() => {
+          // Clean up if this is still the current queue
+          if (operationQueues.current.get(serverName) === newQueue) {
+            operationQueues.current.delete(serverName);
+          }
+        });
+
+      // Store the new queue
+      operationQueues.current.set(serverName, newQueue as Promise<void>);
+
+      // Wait for and return the result
+      return newQueue as Promise<T>;
+    },
+    []
+  );
 
   /*
    * Register tools for a server
    */
-  const registerServerTools = useCallback((serverName: string, tools: MCPTool[]) => {
-      tools.forEach(tool => {
+  const registerServerTools = useCallback(
+    (serverName: string, tools: MCPTool[]) => {
+      tools.forEach((tool) => {
         // Create wrapper instance
         const wrapperFactory = new DefaultMCPToolWrapper(mcpClient);
-        
+
         // Wrap the tool to get a DeclarativeTool compatible object
         const wrappedTool = wrapperFactory.wrapTool(serverName, tool);
-        
+
         // Override the name to include server prefix (if not already handled by wrapTool)
-        // DefaultMCPToolWrapper.wrapTool already prefixes with "${serverName}:", 
+        // DefaultMCPToolWrapper.wrapTool already prefixes with "${serverName}:",
         // but we want "${serverName}_" or just ensure it's unique.
         // Let's rely on wrapTool's prefixing or ensure consistency.
         // The previous code tried to use defineProperty on the *wrapper factory* which was wrong.
-        
+
         // internalSchema name is already set in wrapTool to "server:tool"
         // Let's enforce our naming convention if different
         // core/src/mcp/mcpToolWrapper.ts uses `${serverName}:${mcpTool.name}`
-        
+
         // We can just register the wrapped tool directly
         toolRegistry.register(wrappedTool);
       });
-  }, [mcpClient, toolRegistry]);
+    },
+    [mcpClient, toolRegistry]
+  );
 
   /**
    * Unregister tools for a server
    */
-  const unregisterServerTools = useCallback((serverName: string, tools: MCPTool[]) => {
-      tools.forEach(tool => {
+  const unregisterServerTools = useCallback(
+    (serverName: string, tools: MCPTool[]) => {
+      tools.forEach((tool) => {
         // Unregister using the same naming conversion as wrapTool
         // DefaultMCPToolWrapper uses colon separator
         toolRegistry.unregister(`${serverName}:${tool.name}`);
       });
-  }, [toolRegistry]);
+    },
+    [toolRegistry]
+  );
 
   /**
    * Load servers from configuration and client
@@ -443,14 +475,14 @@ export function MCPProvider({
     try {
       // Load configuration
       const config = await mcpConfigService.loadMCPConfig();
-      
+
       // Start servers that are configured but not yet started
       for (const [serverName, serverConfig] of Object.entries(config.mcpServers)) {
         // Skip disabled servers
         if ((serverConfig as ExtendedMCPServerConfig).disabled) {
           continue;
         }
-        
+
         // Check if server is already started (client may provide getServerStatus)
         let existingStatus: Record<string, unknown> | undefined;
         try {
@@ -472,7 +504,7 @@ export function MCPProvider({
           }
         }
       }
-      
+
       // Get server statuses from client (client may return a Promise)
       // `getAllServerStatuses` may return either a Promise or a raw Map; normalize with Promise.resolve
       const _serverStatuses = await Promise.resolve((mcpClient as any).getAllServerStatuses());
@@ -487,7 +519,9 @@ export function MCPProvider({
       const allServerNames = Array.from(new Set([...configServerNames, ...clientServerNames]));
 
       for (const serverName of allServerNames) {
-        const serverConfig = (config.mcpServers || {})[serverName] as ExtendedMCPServerConfig | undefined;
+        const serverConfig = (config.mcpServers || {})[serverName] as
+          | ExtendedMCPServerConfig
+          | undefined;
 
         // If this server is configured and explicitly disabled, skip starting it
         if (serverConfig?.disabled) {
@@ -518,31 +552,34 @@ export function MCPProvider({
           if (status.status === 'connected') {
             try {
               // Retry tool loading with exponential backoff
-              toolsList = await retryWithBackoff(async () => {
-                const getTools = (mcpClient as any).getTools;
-                if (typeof getTools === 'function') {
-                  try {
-                    const tools = await getTools.call(mcpClient, serverName);
-                    return tools || [];
-                  } catch (toolError: any) {
-                    // If the error indicates no tools are available (not an actual error),
-                    // return empty array instead of throwing
-                    const errorMsg = toolError?.message || String(toolError);
-                    if (
-                      errorMsg.includes('no tools') ||
-                      errorMsg.includes('tools/list') ||
-                      errorMsg.includes('not implemented') ||
-                      errorMsg.includes('Method not found')
-                    ) {
-                      // Server doesn't provide tools - this is valid
-                      return [];
+              toolsList = await retryWithBackoff(
+                async () => {
+                  const getTools = (mcpClient as any).getTools;
+                  if (typeof getTools === 'function') {
+                    try {
+                      const tools = await getTools.call(mcpClient, serverName);
+                      return tools || [];
+                    } catch (toolError: any) {
+                      // If the error indicates no tools are available (not an actual error),
+                      // return empty array instead of throwing
+                      const errorMsg = toolError?.message || String(toolError);
+                      if (
+                        errorMsg.includes('no tools') ||
+                        errorMsg.includes('tools/list') ||
+                        errorMsg.includes('not implemented') ||
+                        errorMsg.includes('Method not found')
+                      ) {
+                        // Server doesn't provide tools - this is valid
+                        return [];
+                      }
+                      // Real error - rethrow to trigger retry
+                      throw toolError;
                     }
-                    // Real error - rethrow to trigger retry
-                    throw toolError;
                   }
-                }
-                return [];
-              }, { maxAttempts: 3, initialDelay: 500 });
+                  return [];
+                },
+                { maxAttempts: 3, initialDelay: 500 }
+              );
               // Note: toolsList can be empty array - that's valid, not an error
             } catch (err) {
               logger.warn(`Failed to get tools for ${serverName} after retries:`, err);
@@ -556,7 +593,10 @@ export function MCPProvider({
                   !errorMsg.includes('Method not found') &&
                   !errorMsg.includes('tools/list')
                 ) {
-                  emitSystemMessage('info', `Tools not loaded for ${serverName}. This may be normal if the server doesn't provide tools. Check MCP server specification or logs if unexpected.`);
+                  emitSystemMessage(
+                    'info',
+                    `Tools not loaded for ${serverName}. This may be normal if the server doesn't provide tools. Check MCP server specification or logs if unexpected.`
+                  );
                 }
               }
             }
@@ -591,10 +631,13 @@ export function MCPProvider({
         // Determine health status. Prefer client-reported `health` when available,
         // otherwise infer from the connection `status`.
         const statusRecord: any = status;
-        const health = statusRecord?.health ??
-          (status.status === 'connected' ? 'healthy' :
-          status.status === 'error' ? 'unhealthy' :
-          'degraded');
+        const health =
+          statusRecord?.health ??
+          (status.status === 'connected'
+            ? 'healthy'
+            : status.status === 'error'
+              ? 'unhealthy'
+              : 'degraded');
 
         servers.set(serverName, {
           ...status,
@@ -604,8 +647,8 @@ export function MCPProvider({
           oauthStatus,
         });
       }
-      
-      setState(prev => ({
+
+      setState((prev) => ({
         ...prev,
         servers,
         config,
@@ -613,7 +656,7 @@ export function MCPProvider({
         error: null,
       }));
     } catch (error) {
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         isLoading: false,
         error: error instanceof Error ? error.message : 'Failed to load servers',
@@ -627,7 +670,7 @@ export function MCPProvider({
   const loadMarketplace = useCallback(async () => {
     try {
       const servers = await mcpMarketplace.getPopularServers(10);
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         marketplace: servers,
       }));
@@ -640,401 +683,458 @@ export function MCPProvider({
   /**
    * Toggle server enabled/disabled state
    */
-  const toggleServer = useCallback(async (serverName: string) => {
-    // Enqueue operation to prevent race conditions
-    return enqueueServerOperation(serverName, async () => {
-      // Get fresh server state synchronously from current state
-      const server = state.servers.get(serverName);
-      
-      if (!server) {
-        const errorMsg = `Server '${serverName}' not found`;
-        emitSystemMessage('error', errorMsg);
-        throw new Error(errorMsg);
-      }
+  const toggleServer = useCallback(
+    async (serverName: string) => {
+      // Enqueue operation to prevent race conditions
+      return enqueueServerOperation(serverName, async () => {
+        // Get fresh server state synchronously from current state
+        const server = state.servers.get(serverName);
 
-      const isCurrentlyDisabled = server.config.disabled || false;
-      const isActuallyRunning = server.status === 'connected';
-      
-      const newConfig = {
-        ...server.config,
-        disabled: !isCurrentlyDisabled,
-      };
-
-      // Optimistic UI update - show status change immediately for better UX
-      setState(prev => {
-        const servers = new Map(prev.servers);
-        const serverState = servers.get(serverName);
-        if (serverState) {
-          servers.set(serverName, {
-            ...serverState,
-            status: isCurrentlyDisabled ? 'starting' : 'disconnected',
-            phase: isCurrentlyDisabled ? 'starting' : 'stopped',
-            config: newConfig,
-          });
+        if (!server) {
+          const errorMsg = `Server '${serverName}' not found`;
+          emitSystemMessage('error', errorMsg);
+          throw new Error(errorMsg);
         }
-        return { ...prev, servers };
-      });
 
-      // Update configuration first
-      await mcpConfigService.updateServerConfig(serverName, newConfig as unknown as MCPServerConfig);
+        const isCurrentlyDisabled = server.config.disabled || false;
+        const isActuallyRunning = server.status === 'connected';
 
-      // Start or stop the server with retry logic
-      try {
-        await retryWithBackoff(async () => {
-          if (newConfig.disabled) {
-            // Disabling: stop the server if it's running
-            if (isActuallyRunning) {
-              // Explicitly unregister tools before stopping server
-              if (server.toolsList && server.toolsList.length > 0) {
-                unregisterServerTools(serverName, server.toolsList);
-                lastRegisteredTools.current.delete(serverName);
-              }
-              await mcpClient.stopServer(serverName);
-            }
-            // If not running, just update config (already done above)
-          } else {
-            // Enabling: start the server if it's not running
-            if (!isActuallyRunning) {
-              await mcpClient.startServer(serverName, newConfig);
-            }
-            // If already running, just update config (already done above)
+        const newConfig = {
+          ...server.config,
+          disabled: !isCurrentlyDisabled,
+        };
+
+        // Optimistic UI update - show status change immediately for better UX
+        setState((prev) => {
+          const servers = new Map(prev.servers);
+          const serverState = servers.get(serverName);
+          if (serverState) {
+            servers.set(serverName, {
+              ...serverState,
+              status: isCurrentlyDisabled ? 'starting' : 'disconnected',
+              phase: isCurrentlyDisabled ? 'starting' : 'stopped',
+              config: newConfig,
+            });
           }
-        }, { maxAttempts: 2 });
-        
-        // Emit success message
-        emitSystemMessage(
-          'success',
-          `${serverName} ${newConfig.disabled ? 'disabled' : 'enabled'} successfully`
+          return { ...prev, servers };
+        });
+
+        // Update configuration first
+        await mcpConfigService.updateServerConfig(
+          serverName,
+          newConfig as unknown as MCPServerConfig
         );
-      } catch (_startError) {
-        // If starting fails, revert the config change
-        await mcpConfigService.updateServerConfig(serverName, {
-          ...newConfig,
-          disabled: true,
-        } as unknown as MCPServerConfig);
-        
-        // Ensure tools are unregistered if start failed
-        if (server.toolsList) {
+
+        // Start or stop the server with retry logic
+        try {
+          await retryWithBackoff(
+            async () => {
+              if (newConfig.disabled) {
+                // Disabling: stop the server if it's running
+                if (isActuallyRunning) {
+                  // Explicitly unregister tools before stopping server
+                  if (server.toolsList && server.toolsList.length > 0) {
+                    unregisterServerTools(serverName, server.toolsList);
+                    lastRegisteredTools.current.delete(serverName);
+                  }
+                  await mcpClient.stopServer(serverName);
+                }
+                // If not running, just update config (already done above)
+              } else {
+                // Enabling: start the server if it's not running
+                if (!isActuallyRunning) {
+                  await mcpClient.startServer(serverName, newConfig);
+                }
+                // If already running, just update config (already done above)
+              }
+            },
+            { maxAttempts: 2 }
+          );
+
+          // Emit success message
+          emitSystemMessage(
+            'success',
+            `${serverName} ${newConfig.disabled ? 'disabled' : 'enabled'} successfully`
+          );
+        } catch (_startError) {
+          // If starting fails, revert the config change
+          await mcpConfigService.updateServerConfig(serverName, {
+            ...newConfig,
+            disabled: true,
+          } as unknown as MCPServerConfig);
+
+          // Ensure tools are unregistered if start failed
+          if (server.toolsList) {
             unregisterServerTools(serverName, server.toolsList);
             lastRegisteredTools.current.delete(serverName);
+          }
+
+          // Revert optimistic update on error
+          await loadServers();
+
+          // Emit error message with more context
+          const errorMsg = server.config.oauth?.enabled
+            ? `OAuth authentication failed for ${serverName}. Please check OAuth configuration.`
+            : `Failed to ${newConfig.disabled ? 'disable' : 'enable'} ${serverName}`;
+          emitSystemMessage('error', errorMsg);
+          throw new Error(errorMsg);
         }
 
-        // Revert optimistic update on error
+        // Reload servers to get actual state
         await loadServers();
-
-        // Emit error message with more context
-        const errorMsg = server.config.oauth?.enabled
-          ? `OAuth authentication failed for ${serverName}. Please check OAuth configuration.`
-          : `Failed to ${newConfig.disabled ? 'disable' : 'enable'} ${serverName}`;
-        emitSystemMessage('error', errorMsg);
-        throw new Error(errorMsg);
-      }
-
-      // Reload servers to get actual state
-      await loadServers();
-    });
-  }, [state.servers, mcpClient, loadServers, unregisterServerTools, emitSystemMessage, enqueueServerOperation]);
+      });
+    },
+    [
+      state.servers,
+      mcpClient,
+      loadServers,
+      unregisterServerTools,
+      emitSystemMessage,
+      enqueueServerOperation,
+    ]
+  );
 
   /**
    * Restart a server
    */
-  const restartServer = useCallback(async (serverName: string) => {
-    // Enqueue operation to prevent race conditions
-    return enqueueServerOperation(serverName, async () => {
-      try {
-        // Mark operation as in progress
-        setState(prev => ({
-          ...prev,
-          operationsInProgress: new Map(prev.operationsInProgress).set(serverName, 'restart'),
-        }));
+  const restartServer = useCallback(
+    async (serverName: string) => {
+      // Enqueue operation to prevent race conditions
+      return enqueueServerOperation(serverName, async () => {
+        try {
+          // Mark operation as in progress
+          setState((prev) => ({
+            ...prev,
+            operationsInProgress: new Map(prev.operationsInProgress).set(serverName, 'restart'),
+          }));
 
-        // Restart with retry logic
-        await retryWithBackoff(async () => {
-          await mcpClient.restartServer(serverName);
-        }, { maxAttempts: 3 });
+          // Restart with retry logic
+          await retryWithBackoff(
+            async () => {
+              await mcpClient.restartServer(serverName);
+            },
+            { maxAttempts: 3 }
+          );
 
-        await loadServers();
-        
-        // Emit success message
-        emitSystemMessage('success', `${serverName} restarted successfully`);
-      } catch (error) {
-        const parsedError = parseError(error);
-        const errorMsg = `Failed to restart ${serverName}: ${formatErrorMessage(parsedError)}`;
-        emitSystemMessage('error', errorMsg);
-        throw error;
-      } finally {
-        // Clear operation
-        setState(prev => {
-          const ops = new Map(prev.operationsInProgress);
-          ops.delete(serverName);
-          return { ...prev, operationsInProgress: ops };
-        });
-      }
-    });
-  }, [mcpClient, loadServers, emitSystemMessage, enqueueServerOperation]);
+          await loadServers();
+
+          // Emit success message
+          emitSystemMessage('success', `${serverName} restarted successfully`);
+        } catch (error) {
+          const parsedError = parseError(error);
+          const errorMsg = `Failed to restart ${serverName}: ${formatErrorMessage(parsedError)}`;
+          emitSystemMessage('error', errorMsg);
+          throw error;
+        } finally {
+          // Clear operation
+          setState((prev) => {
+            const ops = new Map(prev.operationsInProgress);
+            ops.delete(serverName);
+            return { ...prev, operationsInProgress: ops };
+          });
+        }
+      });
+    },
+    [mcpClient, loadServers, emitSystemMessage, enqueueServerOperation]
+  );
 
   /**
    * Install a server from marketplace
    */
-  const installServer = useCallback(async (serverId: string, config: Partial<MCPServerConfig>) => {
-    try {
-      await retryWithBackoff(async () => {
-        await mcpMarketplace.installServer(serverId, config);
-      }, { maxAttempts: 2 });
-      
-      // Get server details to start it
-      // Note: serverId can be either a string ID or a full server object
-      const serverDetails = typeof serverId === 'string'
-        ? await mcpMarketplace.getServerDetails(serverId)
-        : serverId;
-        
-      const fullConfig: MCPServerConfig = {
-        command: config.command || serverDetails.command,
-        args: config.args || serverDetails.args || [],
-        env: { ...serverDetails.env, ...config.env },
-        transport: config.transport || 'stdio',
-        timeout: config.timeout,
-        oauth: config.oauth,
-        url: config.url,
-        cwd: config.cwd,
-      };
-      
-      // Start the server with retry
-      await retryWithBackoff(async () => {
-        await mcpClient.startServer(serverDetails.name, fullConfig);
-      }, { maxAttempts: 2 });
-      
-      // Reload servers and marketplace
-      await loadServers();
-      await loadMarketplace();
-      
-      // Emit success message
-      emitSystemMessage('success', `${serverDetails.name} installed successfully`);
-    } catch (error) {
-      const parsedError = parseError(error);
-      const errorMsg = `Installation failed: ${formatErrorMessage(parsedError)}`;
-      emitSystemMessage('error', errorMsg);
-      throw error;
-    }
-  }, [mcpClient, loadServers, loadMarketplace, emitSystemMessage]);
+  const installServer = useCallback(
+    async (serverId: string, config: Partial<MCPServerConfig>) => {
+      try {
+        await retryWithBackoff(
+          async () => {
+            await mcpMarketplace.installServer(serverId, config);
+          },
+          { maxAttempts: 2 }
+        );
+
+        // Get server details to start it
+        // Note: serverId can be either a string ID or a full server object
+        const serverDetails =
+          typeof serverId === 'string' ? await mcpMarketplace.getServerDetails(serverId) : serverId;
+
+        const fullConfig: MCPServerConfig = {
+          command: config.command || serverDetails.command,
+          args: config.args || serverDetails.args || [],
+          env: { ...serverDetails.env, ...config.env },
+          transport: config.transport || 'stdio',
+          timeout: config.timeout,
+          oauth: config.oauth,
+          url: config.url,
+          cwd: config.cwd,
+        };
+
+        // Start the server with retry
+        await retryWithBackoff(
+          async () => {
+            await mcpClient.startServer(serverDetails.name, fullConfig);
+          },
+          { maxAttempts: 2 }
+        );
+
+        // Reload servers and marketplace
+        await loadServers();
+        await loadMarketplace();
+
+        // Emit success message
+        emitSystemMessage('success', `${serverDetails.name} installed successfully`);
+      } catch (error) {
+        const parsedError = parseError(error);
+        const errorMsg = `Installation failed: ${formatErrorMessage(parsedError)}`;
+        emitSystemMessage('error', errorMsg);
+        throw error;
+      }
+    },
+    [mcpClient, loadServers, loadMarketplace, emitSystemMessage]
+  );
 
   /**
    * Uninstall a server
    */
-  const uninstallServer = useCallback(async (serverName: string) => {
-    try {
-      const server = state.servers.get(serverName);
-      
-      // Stop the server first
-      await mcpClient.stopServer(serverName);
-      
-      // Unregister tools
-      if (server?.toolsList) {
-          unregisterServerTools(serverName, server.toolsList);
-      }
+  const uninstallServer = useCallback(
+    async (serverName: string) => {
+      try {
+        const server = state.servers.get(serverName);
 
-      // Clean up downloaded packages/cache
-      if (server?.config) {
-        const { mcpCleanupService } = await import('../../services/mcpCleanup.js');
-        await mcpCleanupService.cleanupServer(
-          serverName,
-          server.config.command,
-          server.config.args
-        );
-      }
-      
-      // Remove from configuration
-      await mcpConfigService.removeServerConfig(serverName);
-      
-      // Revoke OAuth if configured
-      if (server?.config.oauth?.enabled) {
-        try {
-          await oauthProvider.revokeAccess(serverName, server.config.oauth);
-        } catch (error) {
-          logger.warn(`Failed to revoke OAuth for ${serverName}:`, error);
+        // Stop the server first
+        await mcpClient.stopServer(serverName);
+
+        // Unregister tools
+        if (server?.toolsList) {
+          unregisterServerTools(serverName, server.toolsList);
         }
+
+        // Clean up downloaded packages/cache
+        if (server?.config) {
+          const { mcpCleanupService } = await import('../../services/mcpCleanup.js');
+          await mcpCleanupService.cleanupServer(
+            serverName,
+            server.config.command,
+            server.config.args
+          );
+        }
+
+        // Remove from configuration
+        await mcpConfigService.removeServerConfig(serverName);
+
+        // Revoke OAuth if configured
+        if (server?.config.oauth?.enabled) {
+          try {
+            await oauthProvider.revokeAccess(serverName, server.config.oauth);
+          } catch (error) {
+            logger.warn(`Failed to revoke OAuth for ${serverName}:`, error);
+          }
+        }
+
+        // Reload servers
+        await loadServers();
+
+        // Emit success message
+        emitSystemMessage('success', `${serverName} uninstalled successfully`);
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : 'Failed to uninstall server';
+        emitSystemMessage('error', `Failed to uninstall ${serverName}: ${errorMsg}`);
+        throw error;
       }
-      
-      // Reload servers
-      await loadServers();
-      
-      // Emit success message
-      emitSystemMessage('success', `${serverName} uninstalled successfully`);
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Failed to uninstall server';
-      emitSystemMessage('error', `Failed to uninstall ${serverName}: ${errorMsg}`);
-      throw error;
-    }
-  }, [state.servers, mcpClient, oauthProvider, loadServers, unregisterServerTools, emitSystemMessage]);
+    },
+    [state.servers, mcpClient, oauthProvider, loadServers, unregisterServerTools, emitSystemMessage]
+  );
 
   /**
    * Configure a server
    */
-  const configureServer = useCallback(async (serverName: string, config: MCPServerConfig) => {
-    // Enqueue operation to prevent race conditions
-    return enqueueServerOperation(serverName, async () => {
-      try {
-        // Update configuration
-        await mcpConfigService.updateServerConfig(serverName, config);
-        
-        // Restart the server with new config (with retry)
-        await retryWithBackoff(async () => {
-          await mcpClient.restartServer(serverName);
-        }, { maxAttempts: 2 });
-        
-        // Reload servers
-        await loadServers();
-        
-        // Emit success message
-        emitSystemMessage('success', `${serverName} configuration updated successfully`);
-      } catch (error) {
-        const parsedError = parseError(error);
-        const errorMsg = `Failed to configure ${serverName}: ${formatErrorMessage(parsedError)}`;
-        emitSystemMessage('error', errorMsg);
-        throw error;
-      }
-    });
-  }, [mcpClient, loadServers, emitSystemMessage, enqueueServerOperation]);
+  const configureServer = useCallback(
+    async (serverName: string, config: MCPServerConfig) => {
+      // Enqueue operation to prevent race conditions
+      return enqueueServerOperation(serverName, async () => {
+        try {
+          // Update configuration
+          await mcpConfigService.updateServerConfig(serverName, config);
+
+          // Restart the server with new config (with retry)
+          await retryWithBackoff(
+            async () => {
+              await mcpClient.restartServer(serverName);
+            },
+            { maxAttempts: 2 }
+          );
+
+          // Reload servers
+          await loadServers();
+
+          // Emit success message
+          emitSystemMessage('success', `${serverName} configuration updated successfully`);
+        } catch (error) {
+          const parsedError = parseError(error);
+          const errorMsg = `Failed to configure ${serverName}: ${formatErrorMessage(parsedError)}`;
+          emitSystemMessage('error', errorMsg);
+          throw error;
+        }
+      });
+    },
+    [mcpClient, loadServers, emitSystemMessage, enqueueServerOperation]
+  );
 
   /**
    * Configure OAuth for a server
    */
-  const configureOAuth = useCallback(async (serverName: string, oauth: MCPOAuthConfig) => {
-    try {
-      const server = state.servers.get(serverName);
-      if (!server) {
-        const errorMsg = `Server '${serverName}' not found`;
+  const configureOAuth = useCallback(
+    async (serverName: string, oauth: MCPOAuthConfig) => {
+      try {
+        const server = state.servers.get(serverName);
+        if (!server) {
+          const errorMsg = `Server '${serverName}' not found`;
+          emitSystemMessage('error', errorMsg);
+          throw new Error(errorMsg);
+        }
+
+        const newConfig = {
+          ...server.config,
+          oauth,
+        };
+
+        // Update configuration
+        await mcpConfigService.updateServerConfig(serverName, newConfig);
+
+        // Reload servers
+        await loadServers();
+
+        // Emit success message
+        emitSystemMessage('success', `OAuth configured for ${serverName}`);
+      } catch (error) {
+        const parsedError = parseError(error);
+        const errorMsg = `Failed to configure OAuth for ${serverName}: ${formatErrorMessage(parsedError)}`;
         emitSystemMessage('error', errorMsg);
-        throw new Error(errorMsg);
+        throw error;
       }
-
-      const newConfig = {
-        ...server.config,
-        oauth,
-      };
-
-      // Update configuration
-      await mcpConfigService.updateServerConfig(serverName, newConfig);
-      
-      // Reload servers
-      await loadServers();
-      
-      // Emit success message
-      emitSystemMessage('success', `OAuth configured for ${serverName}`);
-    } catch (error) {
-      const parsedError = parseError(error);
-      const errorMsg = `Failed to configure OAuth for ${serverName}: ${formatErrorMessage(parsedError)}`;
-      emitSystemMessage('error', errorMsg);
-      throw error;
-    }
-  }, [state.servers, loadServers, emitSystemMessage]);
+    },
+    [state.servers, loadServers, emitSystemMessage]
+  );
 
   /**
    * Refresh OAuth token
    */
-  const refreshOAuthToken = useCallback(async (serverName: string) => {
-    try {
-      const server = state.servers.get(serverName);
-      if (!server?.config.oauth) {
-        const errorMsg = `Server '${serverName}' does not have OAuth configured`;
-        emitSystemMessage('error', errorMsg);
-        throw new Error(errorMsg);
-      }
+  const refreshOAuthToken = useCallback(
+    async (serverName: string) => {
+      try {
+        const server = state.servers.get(serverName);
+        if (!server?.config.oauth) {
+          const errorMsg = `Server '${serverName}' does not have OAuth configured`;
+          emitSystemMessage('error', errorMsg);
+          throw new Error(errorMsg);
+        }
 
-      await retryWithBackoff(async () => {
-        await oauthProvider.refreshToken(serverName, server.config.oauth!);
-      }, { maxAttempts: 2 });
-      
-      // Reload servers to update OAuth status
-      await loadServers();
-      
-      // Emit success message
-      emitSystemMessage('success', `OAuth token refreshed for ${serverName}`);
-    } catch (error) {
-      const parsedError = parseError(error);
-      const errorMsg = `Failed to refresh OAuth token for ${serverName}: ${formatErrorMessage(parsedError)}`;
-      emitSystemMessage('error', errorMsg);
-      throw error;
-    }
-  }, [state.servers, oauthProvider, loadServers, emitSystemMessage]);
+        await retryWithBackoff(
+          async () => {
+            await oauthProvider.refreshToken(serverName, server.config.oauth!);
+          },
+          { maxAttempts: 2 }
+        );
+
+        // Reload servers to update OAuth status
+        await loadServers();
+
+        // Emit success message
+        emitSystemMessage('success', `OAuth token refreshed for ${serverName}`);
+      } catch (error) {
+        const parsedError = parseError(error);
+        const errorMsg = `Failed to refresh OAuth token for ${serverName}: ${formatErrorMessage(parsedError)}`;
+        emitSystemMessage('error', errorMsg);
+        throw error;
+      }
+    },
+    [state.servers, oauthProvider, loadServers, emitSystemMessage]
+  );
 
   /**
    * Revoke OAuth access
    */
-  const revokeOAuthAccess = useCallback(async (serverName: string) => {
-    try {
-      const server = state.servers.get(serverName);
-      await oauthProvider.revokeAccess(serverName, server?.config.oauth);
-      
-      // Reload servers to update OAuth status
-      await loadServers();
-      
-      // Emit success message
-      emitSystemMessage('success', `OAuth access revoked for ${serverName}`);
-    } catch (error) {
-      const parsedError = parseError(error);
-      const errorMsg = `Failed to revoke OAuth access for ${serverName}: ${formatErrorMessage(parsedError)}`;
-      emitSystemMessage('error', errorMsg);
-      throw error;
-    }
-  }, [state.servers, oauthProvider, loadServers, emitSystemMessage]);
+  const revokeOAuthAccess = useCallback(
+    async (serverName: string) => {
+      try {
+        const server = state.servers.get(serverName);
+        await oauthProvider.revokeAccess(serverName, server?.config.oauth);
+
+        // Reload servers to update OAuth status
+        await loadServers();
+
+        // Emit success message
+        emitSystemMessage('success', `OAuth access revoked for ${serverName}`);
+      } catch (error) {
+        const parsedError = parseError(error);
+        const errorMsg = `Failed to revoke OAuth access for ${serverName}: ${formatErrorMessage(parsedError)}`;
+        emitSystemMessage('error', errorMsg);
+        throw error;
+      }
+    },
+    [state.servers, oauthProvider, loadServers, emitSystemMessage]
+  );
 
   /**
    * Get tools for a server
    */
-  const getServerTools = useCallback((serverName: string): MCPTool[] => {
-    const server = state.servers.get(serverName);
-    return server?.toolsList || [];
-  }, [state.servers]);
+  const getServerTools = useCallback(
+    (serverName: string): MCPTool[] => {
+      const server = state.servers.get(serverName);
+      return server?.toolsList || [];
+    },
+    [state.servers]
+  );
 
   /**
    * Set tool auto-approve status
    */
-  const setToolAutoApprove = useCallback(async (serverName: string, toolName: string, approve: boolean) => {
-    try {
-      const server = state.servers.get(serverName);
-      if (!server) {
-        const errorMsg = `Server '${serverName}' not found`;
+  const setToolAutoApprove = useCallback(
+    async (serverName: string, toolName: string, approve: boolean) => {
+      try {
+        const server = state.servers.get(serverName);
+        if (!server) {
+          const errorMsg = `Server '${serverName}' not found`;
+          emitSystemMessage('error', errorMsg);
+          throw new Error(errorMsg);
+        }
+
+        const currentAutoApprove = server.config.autoApprove || [];
+        let newAutoApprove: string[];
+
+        if (approve) {
+          // Add tool to auto-approve list if not already there
+          newAutoApprove = currentAutoApprove.includes(toolName)
+            ? currentAutoApprove
+            : [...currentAutoApprove, toolName];
+        } else {
+          // Remove tool from auto-approve list
+          newAutoApprove = currentAutoApprove.filter((t) => t !== toolName);
+        }
+
+        const newConfig = {
+          ...server.config,
+          autoApprove: newAutoApprove,
+        };
+
+        // Update configuration
+        await mcpConfigService.updateServerConfig(serverName, newConfig);
+
+        // Reload servers
+        await loadServers();
+
+        // Emit success message
+        emitSystemMessage(
+          'success',
+          `Tool ${toolName} ${approve ? 'added to' : 'removed from'} auto-approve list`
+        );
+      } catch (error) {
+        const parsedError = parseError(error);
+        const errorMsg = `Failed to update auto-approve for ${toolName}: ${formatErrorMessage(parsedError)}`;
         emitSystemMessage('error', errorMsg);
-        throw new Error(errorMsg);
+        throw error;
       }
-
-      const currentAutoApprove = server.config.autoApprove || [];
-      let newAutoApprove: string[];
-
-      if (approve) {
-        // Add tool to auto-approve list if not already there
-        newAutoApprove = currentAutoApprove.includes(toolName)
-          ? currentAutoApprove
-          : [...currentAutoApprove, toolName];
-      } else {
-        // Remove tool from auto-approve list
-        newAutoApprove = currentAutoApprove.filter(t => t !== toolName);
-      }
-
-      const newConfig = {
-        ...server.config,
-        autoApprove: newAutoApprove,
-      };
-
-      // Update configuration
-      await mcpConfigService.updateServerConfig(serverName, newConfig);
-      
-      // Reload servers
-      await loadServers();
-      
-      // Emit success message
-      emitSystemMessage(
-        'success',
-        `Tool ${toolName} ${approve ? 'added to' : 'removed from'} auto-approve list`
-      );
-    } catch (error) {
-      const parsedError = parseError(error);
-      const errorMsg = `Failed to update auto-approve for ${toolName}: ${formatErrorMessage(parsedError)}`;
-      emitSystemMessage('error', errorMsg);
-      throw error;
-    }
-  }, [state.servers, loadServers, emitSystemMessage]);
+    },
+    [state.servers, loadServers, emitSystemMessage]
+  );
 
   /**
    * Search marketplace servers
@@ -1063,14 +1163,17 @@ export function MCPProvider({
   /**
    * Get server logs
    */
-  const getServerLogs = useCallback(async (serverName: string, lines: number = 100): Promise<string[]> => {
-    try {
-      return await mcpClient.getServerLogs(serverName, lines);
-    } catch (error) {
-      logger.error(`Failed to get logs for ${serverName}:`, error);
-      return [];
-    }
-  }, [mcpClient]);
+  const getServerLogs = useCallback(
+    async (serverName: string, lines: number = 100): Promise<string[]> => {
+      try {
+        return await mcpClient.getServerLogs(serverName, lines);
+      } catch (error) {
+        logger.error(`Failed to get logs for ${serverName}:`, error);
+        return [];
+      }
+    },
+    [mcpClient]
+  );
 
   /**
    * Clear server logs (optional - not yet implemented in MCPClient)
@@ -1085,17 +1188,14 @@ export function MCPProvider({
    * Refresh all server data
    */
   const refreshServers = useCallback(async () => {
-    setState(prev => ({ ...prev, isLoading: true }));
+    setState((prev) => ({ ...prev, isLoading: true }));
     await loadServers();
   }, [loadServers]);
 
   // Initialize: load servers and marketplace
   useEffect(() => {
     const initialize = async () => {
-      await Promise.all([
-        loadServers(),
-        loadMarketplace(),
-      ]);
+      await Promise.all([loadServers(), loadMarketplace()]);
     };
 
     initialize();
@@ -1107,10 +1207,10 @@ export function MCPProvider({
 
     const unsubscribe = healthMonitor.subscribeToHealthUpdates((health) => {
       // Update server health in state
-      setState(prev => {
+      setState((prev) => {
         const servers = new Map(prev.servers);
         const server = servers.get(health.serverName);
-        
+
         if (server) {
           servers.set(health.serverName, {
             ...server,
@@ -1120,7 +1220,7 @@ export function MCPProvider({
             error: health.error,
           });
         }
-        
+
         return { ...prev, servers };
       });
     });
@@ -1152,12 +1252,12 @@ export function MCPProvider({
    * Clear error state
    */
   const clearError = useCallback(() => {
-    setState(prev => ({ ...prev, error: null }));
+    setState((prev) => ({ ...prev, error: null }));
   }, []);
-  
+
   // Notify listeners when system messages change
   useEffect(() => {
-    systemMessageListeners.current.forEach(listener => {
+    systemMessageListeners.current.forEach((listener) => {
       listener(systemMessages);
     });
   }, [systemMessages]);

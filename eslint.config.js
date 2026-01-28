@@ -60,48 +60,51 @@ export default [
       ],
 
       // Import ordering rules
-      'import/order': ['error', {
-        'groups': [
-          'builtin',      // Node built-ins
-          'external',     // npm packages
-          'internal',     // @ollm/* packages
-          ['parent', 'sibling'],  // ../ and ./
-          'type',         // import type
-        ],
-        'pathGroups': [
-          {
-            'pattern': 'react',
-            'group': 'external',
-            'position': 'before',
+      'import/order': [
+        'error',
+        {
+          groups: [
+            'builtin', // Node built-ins
+            'external', // npm packages
+            'internal', // @ollm/* packages
+            ['parent', 'sibling'], // ../ and ./
+            'type', // import type
+          ],
+          pathGroups: [
+            {
+              pattern: 'react',
+              group: 'external',
+              position: 'before',
+            },
+            {
+              pattern: 'react-**',
+              group: 'external',
+              position: 'before',
+            },
+            {
+              pattern: 'ink',
+              group: 'external',
+              position: 'before',
+            },
+            {
+              pattern: 'ink-**',
+              group: 'external',
+              position: 'before',
+            },
+            {
+              pattern: '@ollm/**',
+              group: 'internal',
+            },
+          ],
+          pathGroupsExcludedImportTypes: ['builtin', 'type'],
+          'newlines-between': 'always',
+          alphabetize: {
+            order: 'asc',
+            caseInsensitive: true,
           },
-          {
-            'pattern': 'react-**',
-            'group': 'external',
-            'position': 'before',
-          },
-          {
-            'pattern': 'ink',
-            'group': 'external',
-            'position': 'before',
-          },
-          {
-            'pattern': 'ink-**',
-            'group': 'external',
-            'position': 'before',
-          },
-          {
-            'pattern': '@ollm/**',
-            'group': 'internal',
-          },
-        ],
-        'pathGroupsExcludedImportTypes': ['builtin', 'type'],
-        'newlines-between': 'always',
-        'alphabetize': {
-          'order': 'asc',
-          'caseInsensitive': true,
+          distinctGroup: false,
         },
-        'distinctGroup': false,
-      }],
+      ],
       'import/no-duplicates': 'error',
       'import/first': 'error',
       'import/newline-after-import': 'error',

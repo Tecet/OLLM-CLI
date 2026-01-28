@@ -9,6 +9,7 @@ This directory contains UI components for the Hooks Panel feature.
 A collapsible category header component that displays hook categories with icons, hook counts, and expand/collapse indicators.
 
 **Features:**
+
 - Displays category name with appropriate icon
 - Shows hook count (e.g., "2 hooks" or "1 hook")
 - Expand/collapse indicator (▼ when expanded, ▶ when collapsed)
@@ -70,6 +71,7 @@ The component automatically maps category names to icons:
 **Requirements:**
 
 This component satisfies requirements 1.4 and 1.5 from the Hooks Panel UI specification:
+
 - 1.4: Category headers are visual-only (not selectable)
 - 1.5: Right column shows detailed information for selected hook
 

@@ -4,6 +4,7 @@
 **Status:** Source of Truth
 
 **Related Documents:**
+
 - [Context Compression](./dev_ContextCompression.md) - Compression, checkpoints, snapshots
 - [Prompt System](./dev_PromptSystem.md) - Prompt structure, tiers, modes
 - [Model Compiler](./dev_ModelCompiler.md) - User profile compilation system
@@ -20,6 +21,7 @@ The Context Management System determines context window sizes, monitors VRAM, an
 **Core Responsibility:** Determine and maintain the context size that will be sent to Ollama.
 
 **Recent Refactoring (Jan 27, 2026):**
+
 - Consolidated duplicate calculations into ContextSizeCalculator
 - Simplified auto-sizing logic
 - Removed file logging
@@ -94,25 +96,26 @@ Tiers are now **dynamically mapped** based on the model's available context prof
 
 **Example with 4 profiles:**
 
-| Tier | Profile Index | Use Case |
-|------|---------------|----------|
-| Tier 1 (Minimal) | Profile 0 | Quick tasks, minimal context |
-| Tier 2 (Basic) | Profile 1 | Standard conversations |
-| Tier 3 (Standard) | Profile 2 | Complex tasks, code review |
-| Tier 4 (Premium) | Profile 3 | Large codebases, long conversations |
-| Tier 5 (Ultra) | Profile 3 | Maximum context (same as Tier 4 if only 4 profiles) |
+| Tier              | Profile Index | Use Case                                            |
+| ----------------- | ------------- | --------------------------------------------------- |
+| Tier 1 (Minimal)  | Profile 0     | Quick tasks, minimal context                        |
+| Tier 2 (Basic)    | Profile 1     | Standard conversations                              |
+| Tier 3 (Standard) | Profile 2     | Complex tasks, code review                          |
+| Tier 4 (Premium)  | Profile 3     | Large codebases, long conversations                 |
+| Tier 5 (Ultra)    | Profile 3     | Maximum context (same as Tier 4 if only 4 profiles) |
 
 **Example with 5+ profiles:**
 
-| Tier | Profile Index | Calculation |
-|------|---------------|-------------|
-| Tier 1 (Minimal) | 0 | First profile |
-| Tier 2 (Basic) | 25% position | Math.floor(totalProfiles * 0.25) |
-| Tier 3 (Standard) | 50% position | Math.floor(totalProfiles * 0.5) |
-| Tier 4 (Premium) | 75% position | Math.floor(totalProfiles * 0.75) |
-| Tier 5 (Ultra) | Last profile | totalProfiles - 1 |
+| Tier              | Profile Index | Calculation                       |
+| ----------------- | ------------- | --------------------------------- |
+| Tier 1 (Minimal)  | 0             | First profile                     |
+| Tier 2 (Basic)    | 25% position  | Math.floor(totalProfiles \* 0.25) |
+| Tier 3 (Standard) | 50% position  | Math.floor(totalProfiles \* 0.5)  |
+| Tier 4 (Premium)  | 75% position  | Math.floor(totalProfiles \* 0.75) |
+| Tier 5 (Ultra)    | Last profile  | totalProfiles - 1                 |
 
 **Key Points:**
+
 - Tiers are **labels only** - they don't make decisions
 - Context size drives everything
 - Tier mapping adapts to model's available profiles (1-5+ profiles)
@@ -131,7 +134,7 @@ if (size >= 16384) return TIER_3_STANDARD;
 
 // NEW (CORRECT - profile-based):
 const profiles = modelInfo.contextProfiles.sort((a, b) => a.size - b.size);
-const matchingProfile = profiles.find(p => p.size >= size);
+const matchingProfile = profiles.find((p) => p.size >= size);
 const profileIndex = profiles.indexOf(matchingProfile);
 // Map profileIndex to tier based on total profile count
 ```
@@ -191,25 +194,31 @@ Ollama (stops at ollamaContextSize)
 
 ```json
 {
-  "models": [{
-    "id": "llama3.2:3b",
-    "context_profiles": [{
-      "size": 4096,                    // User sees this (for tier detection)
-      "ollama_context_size": 3482,     // We send this to Ollama valuse set by devs
-      "size_label": "4k",
-      "vram_estimate_gb": 2.0          // VRAM estimate
-    }]
-  }]
+  "models": [
+    {
+      "id": "llama3.2:3b",
+      "context_profiles": [
+        {
+          "size": 4096, // User sees this (for tier detection)
+          "ollama_context_size": 3482, // We send this to Ollama valuse set by devs
+          "size_label": "4k",
+          "vram_estimate_gb": 2.0 // VRAM estimate
+        }
+      ]
+    }
+  ]
 }
 ```
 
 **Why pre-calculate ratios?**
+
 - Model-specific (different models need different ratios)
 - Empirically tested values
 - No runtime calculation = no bugs
 - Single source of truth
 
 **Critical Architecture:**
+
 - **Tier detection** uses `size` field (user-facing value)
 - **Ollama limit** uses `ollama_context_size` field (85% pre-calculated)
 - **Compression triggers** use percentage of `ollama_context_size`
@@ -238,17 +247,20 @@ Auto-sizing picks the optimal context size at startup based on available VRAM, t
 ### Context Sizing Logic
 
 **Step 1: Load Profile**
+
 ```typescript
 const modelEntry = profileManager.getModelEntry(modelId);
 ```
 
 **Step 2: Calculate Sizing**
+
 ```typescript
 const contextSizing = calculateContextSizing(requestedSize, modelEntry, contextCapRatio);
 // Returns: { requested: 4096, allowed: 4096, ollamaContextSize: 3482, ratio: 0.85 }
 ```
 
 **Step 3: Set Context Limits (CRITICAL)**
+
 ```typescript
 // Set context.maxTokens to Ollama's limit, NOT user's selection
 contextActions.updateConfig({ targetSize: contextSizing.ollamaContextSize });
@@ -256,9 +268,10 @@ contextActions.updateConfig({ targetSize: contextSizing.ollamaContextSize });
 ```
 
 **Step 4: Send to Provider**
+
 ```typescript
 provider.chatStream({
-  options: { num_ctx: contextSizing.ollamaContextSize }  // 3482
+  options: { num_ctx: contextSizing.ollamaContextSize }, // 3482
 });
 ```
 
@@ -292,14 +305,15 @@ Consider restarting with a smaller context size.
 
 ```typescript
 interface ContextUsage {
-  currentTokens: number;    // Current usage
-  maxTokens: number;        // Ollama limit (85% of user selection)
-  percentage: number;       // Usage percentage
-  available: number;        // Remaining tokens
+  currentTokens: number; // Current usage
+  maxTokens: number; // Ollama limit (85% of user selection)
+  percentage: number; // Usage percentage
+  available: number; // Remaining tokens
 }
 ```
 
 **Example:**
+
 ```
 User selects: 16K
 Ollama limit: 13926 (85%)
@@ -322,17 +336,20 @@ Available: 5426 tokens
 ### Platform Support
 
 **NVIDIA (nvidia-smi):**
+
 - Total VRAM
 - Used VRAM
 - Free VRAM
 - GPU utilization
 
 **AMD (rocm-smi):**
+
 - Total VRAM
 - Used VRAM
 - Free VRAM
 
 **Apple Silicon (system APIs):**
+
 - Unified memory
 - Memory pressure
 - Available memory
@@ -341,10 +358,10 @@ Available: 5426 tokens
 
 ```typescript
 enum MemoryLevel {
-  NORMAL,      // < 70% usage
-  WARNING,     // 70-85% usage
-  CRITICAL,    // 85-95% usage
-  EMERGENCY    // > 95% usage
+  NORMAL, // < 70% usage
+  WARNING, // 70-85% usage
+  CRITICAL, // 85-95% usage
+  EMERGENCY, // > 95% usage
 }
 ```
 
@@ -356,11 +373,11 @@ enum MemoryLevel {
 
 ```typescript
 interface ContextConfig {
-  targetSize: number;      // Target context size (user selection)
-  minSize: number;         // Minimum context size
-  maxSize: number;         // Maximum context size
-  autoSize: boolean;       // Enable auto-sizing
-  vramBuffer: number;      // VRAM safety buffer (MB)
+  targetSize: number; // Target context size (user selection)
+  minSize: number; // Minimum context size
+  maxSize: number; // Maximum context size
+  autoSize: boolean; // Enable auto-sizing
+  vramBuffer: number; // VRAM safety buffer (MB)
   kvQuantization: boolean; // Enable KV cache quantization
 }
 ```
@@ -373,7 +390,7 @@ const DEFAULT_CONTEXT_CONFIG = {
   minSize: 2048,
   maxSize: 131072,
   autoSize: false,
-  vramBuffer: 1024,  // 1GB safety buffer
+  vramBuffer: 1024, // 1GB safety buffer
   kvQuantization: false,
 };
 ```
@@ -414,22 +431,22 @@ class ConversationContextManager {
   // Lifecycle
   async start(): Promise<void>;
   async stop(): Promise<void>;
-  
+
   // Configuration
   updateConfig(config: Partial<ContextConfig>): void;
-  
+
   // Context
   getUsage(): ContextUsage;
   getContext(): ConversationContext;
-  
+
   // Messages
   async addMessage(message: Message): Promise<void>;
   async getMessages(): Promise<Message[]>;
-  
+
   // System Prompt (see dev_PromptSystem.md)
   setSystemPrompt(content: string): void;
   getSystemPrompt(): string;
-  
+
   // Mode & Skills (see dev_PromptSystem.md)
   setMode(mode: OperationalMode): void;
   getMode(): OperationalMode;
@@ -437,18 +454,18 @@ class ConversationContextManager {
   setActiveTools(tools: string[]): void;
   setActiveHooks(hooks: string[]): void;
   setActiveMcpServers(servers: string[]): void;
-  
+
   // Compression (see dev_ContextCompression.md)
   async compress(): Promise<void>;
   getCheckpoints(): CompressionCheckpoint[];
-  
+
   // Snapshots (see dev_ContextCompression.md)
   async createSnapshot(): Promise<ContextSnapshot>;
   async restoreSnapshot(snapshotId: string): Promise<void>;
-  
+
   // Discovery
   async discoverContext(targetPath: string): Promise<void>;
-  
+
   // Streaming
   reportInflightTokens(delta: number): void;
   clearInflightTokens(): void;
@@ -490,6 +507,7 @@ class ConversationContextManager {
 **Symptom:** "Context usage at 95%" warning
 
 **Solutions:**
+
 1. Create a snapshot and start fresh (see `dev_ContextCompression.md`)
 2. Enable compression if disabled
 3. Use smaller context size
@@ -500,6 +518,7 @@ class ConversationContextManager {
 **Symptom:** "Low memory detected" warning
 
 **Solutions:**
+
 1. Restart with smaller context size
 2. Close other applications
 3. Use model with smaller parameters
@@ -510,6 +529,7 @@ class ConversationContextManager {
 **Symptom:** Ollama receives wrong `num_ctx` value
 
 **Solutions:**
+
 1. Verify `context.maxTokens` equals `ollamaContextSize`
 2. Check `LLM_profiles.json` has correct pre-calculated values
 3. Ensure `calculateContextSizing()` reads from profile (no calculation)
@@ -520,12 +540,14 @@ class ConversationContextManager {
 ## Common Mistakes
 
 ### ❌ Calculating instead of reading
+
 ```typescript
-const ollamaSize = userSize * 0.85;  // Wrong
-const ollamaSize = profile.ollama_context_size;  // Correct
+const ollamaSize = userSize * 0.85; // Wrong
+const ollamaSize = profile.ollama_context_size; // Correct
 ```
 
 ### ❌ Not updating context.maxTokens
+
 ```typescript
 // Wrong - maxTokens stays at user selection
 provider.chat({ options: { num_ctx: ollamaContextSize } });
@@ -536,12 +558,14 @@ provider.chat({ options: { num_ctx: ollamaContextSize } });
 ```
 
 ### ❌ Using user selection for thresholds
+
 ```typescript
-const trigger = userContextSize * 0.75;  // Wrong - uses user selection
-const trigger = context.maxTokens * 0.75;  // Correct - uses ollama limit
+const trigger = userContextSize * 0.75; // Wrong - uses user selection
+const trigger = context.maxTokens * 0.75; // Correct - uses ollama limit
 ```
 
 ### ❌ Hardcoding tier thresholds
+
 ```typescript
 // Wrong - hardcoded thresholds
 if (size >= 16384) return TIER_3_STANDARD;
@@ -549,12 +573,13 @@ if (size >= 8192) return TIER_2_BASIC;
 
 // Correct - profile-based mapping
 const profiles = modelInfo.contextProfiles.sort((a, b) => a.size - b.size);
-const matchingProfile = profiles.find(p => p.size >= size);
+const matchingProfile = profiles.find((p) => p.size >= size);
 const profileIndex = profiles.indexOf(matchingProfile);
 // Map profileIndex to tier based on total profile count
 ```
 
 ### ❌ Using hardcoded sizes for tier targets
+
 ```typescript
 // Wrong - hardcoded sizes
 const tierSizes = { TIER_1: 4096, TIER_2: 8192, TIER_3: 16384 };
@@ -570,19 +595,19 @@ return sortedProfiles[targetIndex].size;
 
 ## File Locations
 
-| File | Purpose | Lines |
-|------|---------|-------|
-| `packages/core/src/context/contextManager.ts` | Main orchestration | 639 |
-| `packages/cli/src/ui/contexts/ContextManagerContext.tsx` | UI integration | 684 |
-| `packages/core/src/context/contextPool.ts` | Resource management | 194 |
-| `packages/core/src/context/vramMonitor.ts` | VRAM monitoring | - |
-| `packages/core/src/context/tokenCounter.ts` | Token counting | - |
-| `packages/core/src/context/memoryGuard.ts` | Memory safety | - |
-| `packages/core/src/context/types.ts` | Type definitions | - |
-| `packages/cli/src/config/LLM_profiles.json` | Pre-calculated 85% values | - |
-| `packages/cli/src/features/context/contextSizing.ts` | calculateContextSizing() | - |
-| `packages/cli/src/features/context/ModelContext.tsx` | Interactive mode | - |
-| `packages/cli/src/nonInteractive.ts` | CLI mode | - |
+| File                                                     | Purpose                   | Lines |
+| -------------------------------------------------------- | ------------------------- | ----- |
+| `packages/core/src/context/contextManager.ts`            | Main orchestration        | 639   |
+| `packages/cli/src/ui/contexts/ContextManagerContext.tsx` | UI integration            | 684   |
+| `packages/core/src/context/contextPool.ts`               | Resource management       | 194   |
+| `packages/core/src/context/vramMonitor.ts`               | VRAM monitoring           | -     |
+| `packages/core/src/context/tokenCounter.ts`              | Token counting            | -     |
+| `packages/core/src/context/memoryGuard.ts`               | Memory safety             | -     |
+| `packages/core/src/context/types.ts`                     | Type definitions          | -     |
+| `packages/cli/src/config/LLM_profiles.json`              | Pre-calculated 85% values | -     |
+| `packages/cli/src/features/context/contextSizing.ts`     | calculateContextSizing()  | -     |
+| `packages/cli/src/features/context/ModelContext.tsx`     | Interactive mode          | -     |
+| `packages/cli/src/nonInteractive.ts`                     | CLI mode                  | -     |
 
 ---
 

@@ -4,6 +4,7 @@
 **Status:** Planned (v1.0.0)
 
 **Related Documents:**
+
 - `dev_ProviderSystem.md` - Ollama provider configuration
 - `works_todo.md` - Task #8 (Ollama Settings Management)
 
@@ -27,6 +28,7 @@ ollm-cli
 ```
 
 **Alternatives considered:**
+
 - `@ollm/cli` - Scoped package (requires npm organization)
 - `ollm` - Shorter, but may conflict with existing packages
 
@@ -37,15 +39,7 @@ ollm-cli
   "name": "ollm-cli",
   "version": "1.0.0",
   "description": "Local-first CLI for open-source LLMs with Ollama",
-  "keywords": [
-    "ollama",
-    "llm",
-    "ai",
-    "cli",
-    "local",
-    "chatbot",
-    "assistant"
-  ],
+  "keywords": ["ollama", "llm", "ai", "cli", "local", "chatbot", "assistant"],
   "author": "Your Name",
   "license": "MIT",
   "repository": {
@@ -76,6 +70,7 @@ npm install -g ollm-cli
 ```
 
 **Benefits:**
+
 - Available as `ollm` command globally
 - Easy to use from any directory
 - Automatic updates with `npm update -g ollm-cli`
@@ -208,26 +203,28 @@ $ npm install -g ollm-cli
 ### Windows
 
 **Ollama Installation:**
+
 1. Download `OllamaSetup.exe` from https://ollama.ai/download
 2. Run installer (silent or with UI)
 3. Add to PATH automatically
 4. Start Ollama service
 
 **Script:**
+
 ```javascript
 async function installOllamaWindows() {
   const installerUrl = 'https://ollama.ai/download/OllamaSetup.exe';
   const installerPath = path.join(os.tmpdir(), 'OllamaSetup.exe');
-  
+
   // Download installer
   await downloadFile(installerUrl, installerPath);
-  
+
   // Run installer
-  await exec(`"${installerPath}" /S`);  // Silent install
-  
+  await exec(`"${installerPath}" /S`); // Silent install
+
   // Wait for installation
   await sleep(5000);
-  
+
   // Verify installation
   const installed = await checkCommand('ollama');
   if (!installed) {
@@ -239,29 +236,31 @@ async function installOllamaWindows() {
 ### macOS
 
 **Ollama Installation:**
+
 1. Download `Ollama-darwin.zip` from https://ollama.ai/download
 2. Extract to `/Applications/Ollama.app`
 3. Run initial setup
 4. Add to PATH
 
 **Script:**
+
 ```javascript
 async function installOllamaMacOS() {
   const zipUrl = 'https://ollama.ai/download/Ollama-darwin.zip';
   const zipPath = path.join(os.tmpdir(), 'Ollama.zip');
-  
+
   // Download zip
   await downloadFile(zipUrl, zipPath);
-  
+
   // Extract to /Applications
   await exec(`unzip -q "${zipPath}" -d /Applications`);
-  
+
   // Run initial setup
   await exec('open /Applications/Ollama.app');
-  
+
   // Wait for setup
   await sleep(3000);
-  
+
   // Verify installation
   const installed = await checkCommand('ollama');
   if (!installed) {
@@ -273,15 +272,17 @@ async function installOllamaMacOS() {
 ### Linux
 
 **Ollama Installation:**
+
 1. Run official install script
 2. Or use package manager (apt, yum, etc.)
 
 **Script:**
+
 ```javascript
 async function installOllamaLinux() {
   // Use official install script
   await exec('curl -fsSL https://ollama.ai/install.sh | sh');
-  
+
   // Verify installation
   const installed = await checkCommand('ollama');
   if (!installed) {
@@ -310,24 +311,24 @@ const execAsync = promisify(exec);
 async function postInstall() {
   console.log('\n┌─ OLLM CLI Setup ─────────────────────────┐\n');
   console.log('│ Welcome to OLLM CLI!\n│');
-  
+
   try {
     // 1. Check if ollama is installed
     console.log('│ Checking for Ollama...');
     const ollamaInstalled = await checkCommand('ollama');
-    
+
     if (!ollamaInstalled) {
       console.log('│ ✗ Ollama not detected\n│');
       console.log('│ Ollama is required to run local models.');
-      
+
       // 2. Ask to install ollama
       const { installOllama } = await prompts({
         type: 'confirm',
         name: 'installOllama',
         message: 'Install Ollama now?',
-        initial: true
+        initial: true,
       });
-      
+
       if (installOllama) {
         // 3. Install ollama based on platform
         await installOllamaForPlatform();
@@ -339,15 +340,15 @@ async function postInstall() {
     } else {
       console.log('│ ✓ Ollama detected at http://localhost:11434\n│');
     }
-    
+
     // 4. Ask to pull default model
     const { pullModel } = await prompts({
       type: 'confirm',
       name: 'pullModel',
       message: 'Pull default model (llama3.2:3b ~2GB)?',
-      initial: true
+      initial: true,
     });
-    
+
     if (pullModel) {
       // 5. Pull model
       await pullDefaultModel();
@@ -355,21 +356,20 @@ async function postInstall() {
       console.log('│ ⚠️ Skipping model download');
       console.log('│ Pull a model manually: ollama pull llama3.2:3b\n│');
     }
-    
+
     // 6. Write default settings
     await writeDefaultSettings();
-    
+
     console.log('│ ✓ Setup complete!\n│');
     console.log('│ Start using OLLM CLI:');
     console.log('│   ollm\n│');
     console.log('└───────────────────────────────────────────┘\n');
-    
   } catch (error) {
     console.error('│ ✗ Setup failed:', error.message);
     console.log('│\n│ Please install Ollama manually:');
     console.log('│   https://ollama.ai/download\n│');
     console.log('└───────────────────────────────────────────┘\n');
-    process.exit(0);  // Don't fail npm install
+    process.exit(0); // Don't fail npm install
   }
 }
 
@@ -384,9 +384,9 @@ async function checkCommand(command) {
 
 async function installOllamaForPlatform() {
   const platform = os.platform();
-  
+
   console.log('│ Downloading Ollama...');
-  
+
   switch (platform) {
     case 'win32':
       await installOllamaWindows();
@@ -400,16 +400,16 @@ async function installOllamaForPlatform() {
     default:
       throw new Error(`Unsupported platform: ${platform}`);
   }
-  
+
   console.log('│ ✓ Ollama installed successfully\n│');
 }
 
 async function pullDefaultModel() {
   console.log('│ Pulling llama3.2:3b...');
-  
+
   return new Promise((resolve, reject) => {
     const child = exec('ollama pull llama3.2:3b');
-    
+
     let lastProgress = '';
     child.stdout.on('data', (data) => {
       const line = data.toString().trim();
@@ -418,7 +418,7 @@ async function pullDefaultModel() {
         lastProgress = line;
       }
     });
-    
+
     child.on('close', (code) => {
       console.log('\n│ ✓ Model downloaded successfully\n│');
       if (code === 0) {
@@ -433,10 +433,10 @@ async function pullDefaultModel() {
 async function writeDefaultSettings() {
   const settingsDir = path.join(os.homedir(), '.ollm');
   const settingsPath = path.join(settingsDir, 'settings.json');
-  
+
   // Create directory if not exists
   await fs.mkdir(settingsDir, { recursive: true });
-  
+
   // Write default settings
   const settings = {
     provider: {
@@ -444,11 +444,11 @@ async function writeDefaultSettings() {
         autoStart: true,
         host: 'localhost',
         port: 11434,
-        url: 'http://localhost:11434'
-      }
-    }
+        url: 'http://localhost:11434',
+      },
+    },
   };
-  
+
   await fs.writeFile(settingsPath, JSON.stringify(settings, null, 2));
 }
 
@@ -469,7 +469,7 @@ function showManualInstructions() {
 // Run postinstall
 postInstall().catch((error) => {
   console.error('Postinstall error:', error);
-  process.exit(0);  // Don't fail npm install
+  process.exit(0); // Don't fail npm install
 });
 ```
 
@@ -645,6 +645,7 @@ npm install -g ollm-cli
 ```
 
 **Benefits:**
+
 - Easy installation
 - Automatic updates
 - Version management
@@ -661,6 +662,7 @@ ollm-cli-v1.0.0-linux-x64
 ```
 
 **Build with pkg:**
+
 ```bash
 npm install -g pkg
 pkg . --targets node20-win-x64,node20-macos-arm64,node20-linux-x64
@@ -673,6 +675,7 @@ pkg . --targets node20-win-x64,node20-macos-arm64,node20-linux-x64
 ### README.md
 
 Include in package:
+
 - Installation instructions
 - Quick start guide
 - Configuration options
@@ -682,6 +685,7 @@ Include in package:
 ### Online Documentation
 
 Host documentation at:
+
 - GitHub Pages
 - Read the Docs
 - Custom domain
@@ -693,6 +697,7 @@ Host documentation at:
 ### Issue Tracking
 
 Use GitHub Issues for:
+
 - Bug reports
 - Feature requests
 - Installation problems
@@ -708,14 +713,14 @@ Use GitHub Issues for:
 
 ## File Locations
 
-| File | Purpose |
-|------|---------|
-| `scripts/postinstall.js` | Interactive installer |
-| `scripts/installOllama.js` | Platform-specific installation |
-| `scripts/downloadWithProgress.js` | Download utility |
-| `package.json` | Package metadata |
-| `.npmignore` | Files to exclude from package |
-| `README.md` | Package documentation |
+| File                              | Purpose                        |
+| --------------------------------- | ------------------------------ |
+| `scripts/postinstall.js`          | Interactive installer          |
+| `scripts/installOllama.js`        | Platform-specific installation |
+| `scripts/downloadWithProgress.js` | Download utility               |
+| `package.json`                    | Package metadata               |
+| `.npmignore`                      | Files to exclude from package  |
+| `README.md`                       | Package documentation          |
 
 ---
 

@@ -1,6 +1,6 @@
 /**
  * Hook system for event-driven customization
- * 
+ *
  * The hook system allows users and extensions to register executable scripts
  * that run at specific lifecycle events. Hooks communicate via JSON protocol
  * over stdin/stdout and are subject to trust verification.

@@ -1,12 +1,12 @@
 /**
  * Main App Component
- * 
+ *
  * Responsibilities:
  * - Wire up all context providers
  * - Manage layout and UI state
  * - Handle keyboard shortcuts
  * - Integrate all tabs and components
- * 
+ *
  * Does NOT:
  * - Calculate context sizes (core does this)
  * - Manage VRAM (core does this)
@@ -22,10 +22,7 @@ import { AllCallbacksBridge } from './components/AllCallbacksBridge.js';
 import { useContextMenu } from './components/context/ContextMenu.js';
 import { DialogManager } from './components/dialogs/DialogManager.js';
 import { ErrorBoundary } from './components/ErrorBoundary.js';
-import { 
-  WorkspaceProvider, 
-  FileFocusProvider,
-} from './components/file-explorer/index.js';
+import { WorkspaceProvider, FileFocusProvider } from './components/file-explorer/index.js';
 import { LaunchScreen } from './components/launch/LaunchScreen.js';
 import { ChatInputArea } from './components/layout/ChatInputArea.js';
 import { Clock } from './components/layout/Clock.js';
@@ -55,7 +52,10 @@ import { useGlobalKeyboardShortcuts } from './hooks/useGlobalKeyboardShortcuts.j
 import { useMouse, MouseProvider } from './hooks/useMouse.js';
 import { ActiveContextProvider } from '../features/context/ActiveContextState.js';
 import { ChatProvider, useChat } from '../features/context/ChatContext.js';
-import { ContextManagerProvider, useContextManager } from '../features/context/ContextManagerContext.js';
+import {
+  ContextManagerProvider,
+  useContextManager,
+} from '../features/context/ContextManagerContext.js';
 import { FocusProvider, useFocusManager } from '../features/context/FocusContext.js';
 import { GPUProvider, useGPU } from '../features/context/GPUContext.js';
 import { KeybindsProvider } from '../features/context/KeybindsContext.js';
@@ -63,7 +63,10 @@ import { ModelProvider, useModel } from '../features/context/ModelContext.js';
 import { ReviewProvider } from '../features/context/ReviewContext.js';
 import { ServiceProvider } from '../features/context/ServiceContext.js';
 import { SettingsProvider } from '../features/context/SettingsContext.js';
-import { createWelcomeMessage, createCompactWelcomeMessage } from '../features/context/SystemMessages.js';
+import {
+  createWelcomeMessage,
+  createCompactWelcomeMessage,
+} from '../features/context/SystemMessages.js';
 import { UIProvider, useUI } from '../features/context/UIContext.js';
 import { UserPromptProvider } from '../features/context/UserPromptContext.js';
 import { profileManager } from '../features/profiles/ProfileManager.js';
@@ -78,7 +81,7 @@ interface AppContentProps {
 function AppContent({ config }: AppContentProps) {
   // UI State
   const { state: uiState, setActiveTab, setLaunchScreenVisible } = useUI();
-  
+
   // Terminal dimensions
   const { stdout } = useStdout();
   const terminalHeight = (stdout?.rows || 24) - 1;
@@ -93,7 +96,7 @@ function AppContent({ config }: AppContentProps) {
 
   const leftColumnWidth = Math.max(20, Math.floor(terminalWidth * 0.7));
   const rightColumnWidth = Math.max(20, terminalWidth - leftColumnWidth);
-  
+
   // Chat and context
   const { addMessage, activateMenu, requestManualContextInput, scrollUp, scrollDown } = useChat();
   const chatActions = useMemo(() => ({ scrollUp, scrollDown }), [scrollUp, scrollDown]);
@@ -101,7 +104,7 @@ function AppContent({ config }: AppContentProps) {
   const { currentModel, setCurrentModel } = useModel();
   const { info: gpuInfo } = useGPU();
   const focusManager = useFocusManager();
-  
+
   // Focus states
   const navBarFocused = focusManager.isFocused('nav-bar');
   const chatHistoryFocused = focusManager.isFocused('chat-history');
@@ -122,7 +125,7 @@ function AppContent({ config }: AppContentProps) {
   // Build welcome message
   const buildWelcomeMessage = useCallback(() => {
     const modelName = currentModel || 'No Model Selected';
-    
+
     // If no model is available, show a helpful message
     if (!currentModel || currentModel === '') {
       return {
@@ -147,11 +150,11 @@ Type \`/help\` for more commands.`,
         timestamp: new Date(),
       };
     }
-    
+
     const profile = profileManager.findProfile(modelName);
     const settings = SettingsService.getInstance().getSettings();
     const persistedHW = settings.hardware;
-    
+
     // Get effective GPU info (live or persisted)
     const effectiveGPUInfo = gpuInfo || {
       model: persistedHW?.gpuName || 'Unknown GPU',
@@ -162,7 +165,7 @@ Type \`/help\` for more commands.`,
     };
 
     const currentContextSize = contextState.usage.maxTokens;
-    
+
     if (uiState.sidePanelVisible) {
       return createWelcomeMessage(modelName, currentContextSize, profile, effectiveGPUInfo);
     } else {
@@ -175,7 +178,7 @@ Type \`/help\` for more commands.`,
     const { x, y, action, button } = event;
     const leftWidth = uiState.sidePanelVisible ? leftColumnWidth - 1 : terminalWidth - 1;
     const rightStart = leftWidth + 1;
-    
+
     const row1End = row1Height;
     const row2Start = row1End + 1;
     const row2End = row1End + row2Height;
@@ -197,7 +200,7 @@ Type \`/help\` for more commands.`,
       } else if (isRightColumn && uiState.sidePanelVisible) {
         const sideHeaderEnd = row1Height;
         const sideFileTreeEnd = sideHeaderEnd + 10;
-        
+
         if (y <= sideHeaderEnd) {
           // Header click
         } else if (y <= sideFileTreeEnd) {
@@ -224,7 +227,7 @@ Type \`/help\` for more commands.`,
   // Handle launch screen dismiss
   const handleLaunchScreenDismiss = useCallback(() => {
     setLaunchScreenVisible(false);
-    
+
     const welcomeMsg = buildWelcomeMessage();
     addMessage(welcomeMsg);
     lastWelcomeModelRef.current = currentModel || null;
@@ -245,10 +248,7 @@ Type \`/help\` for more commands.`,
   if (uiState.launchScreenVisible) {
     return (
       <Box flexDirection="column" width={terminalWidth} height={terminalHeight}>
-        <LaunchScreen 
-          theme={uiState.theme}
-          onDismiss={handleLaunchScreenDismiss} 
-        />
+        <LaunchScreen theme={uiState.theme} onDismiss={handleLaunchScreenDismiss} />
       </Box>
     );
   }
@@ -264,9 +264,15 @@ Type \`/help\` for more commands.`,
           {/* Row 1: Navigation */}
           <Box height={row1Height} flexDirection="row">
             <Clock borderColor={uiState.theme.border.primary} />
-            <Box flexGrow={1} borderStyle={uiState.theme.border.style as BoxProps['borderStyle']} borderColor={navBarFocused ? uiState.theme.border.active : uiState.theme.border.primary}>
-              <TabBar 
-                activeTab={uiState.activeTab} 
+            <Box
+              flexGrow={1}
+              borderStyle={uiState.theme.border.style as BoxProps['borderStyle']}
+              borderColor={
+                navBarFocused ? uiState.theme.border.active : uiState.theme.border.primary
+              }
+            >
+              <TabBar
+                activeTab={uiState.activeTab}
                 onTabChange={setActiveTab}
                 notifications={new Map()}
                 theme={uiState.theme}
@@ -276,8 +282,33 @@ Type \`/help\` for more commands.`,
           </Box>
 
           {/* Row 2: Main Content */}
-          <Box height={row2Height} borderStyle={uiState.theme.border.style as BoxProps['borderStyle']} borderColor={chatHistoryFocused ? uiState.theme.border.active : uiState.theme.border.primary}>
-            {uiState.activeTab === 'chat' && <ChatTab height={row2Height} showBorder={false} showWindowSwitcher={true} metricsConfig={{ enabled: config.ui?.metrics?.enabled !== false, compactMode: config.ui?.metrics?.compactMode || false, showPromptTokens: config.ui?.metrics?.showPromptTokens !== false, showTTFT: config.ui?.metrics?.showTTFT !== false, showInStatusBar: config.ui?.metrics?.showInStatusBar !== false }} reasoningConfig={{ enabled: true, maxVisibleLines: 8, autoCollapseOnComplete: false }} columnWidth={leftWidth} />}
+          <Box
+            height={row2Height}
+            borderStyle={uiState.theme.border.style as BoxProps['borderStyle']}
+            borderColor={
+              chatHistoryFocused ? uiState.theme.border.active : uiState.theme.border.primary
+            }
+          >
+            {uiState.activeTab === 'chat' && (
+              <ChatTab
+                height={row2Height}
+                showBorder={false}
+                showWindowSwitcher={true}
+                metricsConfig={{
+                  enabled: config.ui?.metrics?.enabled !== false,
+                  compactMode: config.ui?.metrics?.compactMode || false,
+                  showPromptTokens: config.ui?.metrics?.showPromptTokens !== false,
+                  showTTFT: config.ui?.metrics?.showTTFT !== false,
+                  showInStatusBar: config.ui?.metrics?.showInStatusBar !== false,
+                }}
+                reasoningConfig={{
+                  enabled: true,
+                  maxVisibleLines: 8,
+                  autoCollapseOnComplete: false,
+                }}
+                columnWidth={leftWidth}
+              />
+            )}
             {uiState.activeTab === 'tools' && <ToolsTab width={leftWidth} />}
             {uiState.activeTab === 'hooks' && <HooksTab windowWidth={leftWidth} />}
             {uiState.activeTab === 'mcp' && <MCPTab windowWidth={leftWidth} />}
@@ -304,9 +335,9 @@ Type \`/help\` for more commands.`,
           <Box width={rightColumnWidth} flexDirection="column">
             {/* Row 1: Status Bar with HeaderBar component */}
             <HeaderBar
-              connection={{ 
-                status: currentModel ? 'connected' : 'disconnected', 
-                provider: config.provider.default || 'ollama' 
+              connection={{
+                status: currentModel ? 'connected' : 'disconnected',
+                provider: config.provider.default || 'ollama',
               }}
               model={currentModel || 'none'}
               gpu={gpuInfo as unknown as GPUInfo | null}
@@ -314,7 +345,7 @@ Type \`/help\` for more commands.`,
             />
 
             {/* Rows 2-4: Side Panel (full height with context at bottom) */}
-            <SidePanel 
+            <SidePanel
               visible={uiState.sidePanelVisible}
               theme={uiState.theme}
               height={row2Height + row3Height + row4Height}
@@ -339,27 +370,27 @@ export function App({ config }: AppProps) {
   if (!config) {
     throw new Error('Configuration is required but was not provided');
   }
-  
+
   if (!config.model) {
     throw new Error('Configuration error: model configuration is missing');
   }
-  
+
   if (!config.provider) {
     throw new Error('Configuration error: provider configuration is missing');
   }
-  
+
   if (!config.ui) {
     throw new Error('Configuration error: UI configuration is missing');
   }
-  
+
   if (!config.status) {
     throw new Error('Configuration error: status configuration is missing');
   }
-  
+
   if (!config.review) {
     throw new Error('Configuration error: review configuration is missing');
   }
-  
+
   if (!config.session) {
     throw new Error('Configuration error: session configuration is missing');
   }
@@ -367,22 +398,28 @@ export function App({ config }: AppProps) {
   // Context config is optional but if present must be complete
   if (config.context) {
     const ctx = config.context;
-    if (typeof ctx.targetSize !== 'number') throw new Error('Configuration error: context.targetSize must be a number');
-    if (typeof ctx.minSize !== 'number') throw new Error('Configuration error: context.minSize must be a number');
-    if (typeof ctx.maxSize !== 'number') throw new Error('Configuration error: context.maxSize must be a number');
-    if (typeof ctx.autoSize !== 'boolean') throw new Error('Configuration error: context.autoSize must be a boolean');
-    if (typeof ctx.vramBuffer !== 'number') throw new Error('Configuration error: context.vramBuffer must be a number');
+    if (typeof ctx.targetSize !== 'number')
+      throw new Error('Configuration error: context.targetSize must be a number');
+    if (typeof ctx.minSize !== 'number')
+      throw new Error('Configuration error: context.minSize must be a number');
+    if (typeof ctx.maxSize !== 'number')
+      throw new Error('Configuration error: context.maxSize must be a number');
+    if (typeof ctx.autoSize !== 'boolean')
+      throw new Error('Configuration error: context.autoSize must be a boolean');
+    if (typeof ctx.vramBuffer !== 'number')
+      throw new Error('Configuration error: context.vramBuffer must be a number');
   }
 
   const settings = SettingsService.getInstance().getSettings();
   const persistedModel = settings.llm?.model;
-  
+
   // Get config model default - ensure it's a string
   const configModelDefault = typeof config.model.default === 'string' ? config.model.default : '';
-  
+
   // Try to get a model from: 1) persisted settings, 2) config, 3) first available model, 4) empty string
-  let initialModel: string = (typeof persistedModel === 'string' ? persistedModel : '') || configModelDefault;
-  
+  let initialModel: string =
+    (typeof persistedModel === 'string' ? persistedModel : '') || configModelDefault;
+
   // If no model is configured, try to get the first available model from profileManager
   if (!initialModel) {
     const userModels = profileManager.getUserModels();
@@ -409,48 +446,59 @@ export function App({ config }: AppProps) {
   const modelInfo = {
     parameters: extractModelSize(initialModel),
     contextLimit: config.context?.maxSize || 8192,
-    contextProfiles: (modelEntry?.context_profiles || []).map(profile => ({
+    contextProfiles: (modelEntry?.context_profiles || []).map((profile) => ({
       ...profile,
-      ollama_context_size: profile.ollama_context_size ?? Math.floor(profile.size * 0.85)
+      ollama_context_size: profile.ollama_context_size ?? Math.floor(profile.size * 0.85),
     })),
     modelId: initialModel || 'no-model',
   };
 
   // Context manager configuration
-  const contextConfig = config.context ? {
-    targetSize: config.context.targetSize,
-    minSize: config.context.minSize,
-    maxSize: config.context.maxSize,
-    autoSize: config.context.autoSize,
-    vramBuffer: config.context.vramBuffer,
-    compression: {
-      enabled: config.context.compressionEnabled,
-      threshold: config.context.compressionThreshold ?? 0.68,
-      strategy: 'truncate' as const,
-      preserveRecent: 4096,
-      summaryMaxTokens: 1024,
-    },
-    snapshots: {
-      enabled: config.context.snapshotsEnabled ?? true,
-      maxCount: config.context.maxSnapshots ?? 5,
-      autoCreate: true,
-      autoThreshold: 0.85,
-    },
-  } : undefined;
+  const contextConfig = config.context
+    ? {
+        targetSize: config.context.targetSize,
+        minSize: config.context.minSize,
+        maxSize: config.context.maxSize,
+        autoSize: config.context.autoSize,
+        vramBuffer: config.context.vramBuffer,
+        compression: {
+          enabled: config.context.compressionEnabled,
+          threshold: config.context.compressionThreshold ?? 0.68,
+          strategy: 'truncate' as const,
+          preserveRecent: 4096,
+          summaryMaxTokens: 1024,
+        },
+        snapshots: {
+          enabled: config.context.snapshotsEnabled ?? true,
+          maxCount: config.context.maxSnapshots ?? 5,
+          autoCreate: true,
+          autoThreshold: 0.85,
+        },
+      }
+    : undefined;
 
   // Create provider adapter
   const provider = (() => {
-    let LocalProviderClass: { new (opts: { baseUrl: string; timeout?: number }): ProviderAdapter } | null = null;
+    let LocalProviderClass: {
+      new (opts: { baseUrl: string; timeout?: number }): ProviderAdapter;
+    } | null = null;
     try {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const mod = require('@ollm/ollm-bridge/provider/localProvider.js') as { LocalProvider: { new (opts: { baseUrl: string; timeout?: number }): ProviderAdapter } } | { new (opts: { baseUrl: string; timeout?: number }): ProviderAdapter };
-      LocalProviderClass = (mod as Record<string, unknown>).LocalProvider as { new (opts: { baseUrl: string; timeout?: number }): ProviderAdapter } || mod;
+      const mod = require('@ollm/ollm-bridge/provider/localProvider.js') as
+        | { LocalProvider: { new (opts: { baseUrl: string; timeout?: number }): ProviderAdapter } }
+        | { new (opts: { baseUrl: string; timeout?: number }): ProviderAdapter };
+      LocalProviderClass =
+        ((mod as Record<string, unknown>).LocalProvider as {
+          new (opts: { baseUrl: string; timeout?: number }): ProviderAdapter;
+        }) || mod;
     } catch (err) {
       console.warn('Failed to load LocalProvider, using no-op provider:', err);
       LocalProviderClass = class implements ProviderAdapter {
         readonly name = 'no-op';
         constructor(_opts: { baseUrl: string; timeout?: number }) {}
-        async *chatStream(_req: unknown): AsyncIterable<{ type: 'error'; error: { message: string } }> {
+        async *chatStream(
+          _req: unknown
+        ): AsyncIterable<{ type: 'error'; error: { message: string } }> {
           yield { type: 'error', error: { message: 'Bridge not installed' } };
         }
       } as unknown as { new (opts: { baseUrl: string; timeout?: number }): ProviderAdapter };
@@ -462,7 +510,7 @@ export function App({ config }: AppProps) {
     };
 
     if (!LocalProviderClass) throw new Error('Failed to initialize LocalProvider');
-    
+
     return new LocalProviderClass({
       baseUrl: ollamaConfig.host || 'http://localhost:11434',
       timeout: ollamaConfig.timeout || 30000,
@@ -470,11 +518,14 @@ export function App({ config }: AppProps) {
   })();
 
   // Load initial theme
-  const initialThemeName = SettingsService.getInstance().getTheme() || config.ui.theme || 'default-dark';
+  const initialThemeName =
+    SettingsService.getInstance().getTheme() || config.ui.theme || 'default-dark';
   let initialTheme = defaultDarkTheme;
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { builtInThemes } = require('../config/styles.js') as { builtInThemes: Record<string, unknown> };
+    const { builtInThemes } = require('../config/styles.js') as {
+      builtInThemes: Record<string, unknown>;
+    };
     if (builtInThemes[initialThemeName]) {
       initialTheme = builtInThemes[initialThemeName] as typeof defaultDarkTheme;
     }
@@ -489,10 +540,7 @@ export function App({ config }: AppProps) {
   return (
     <ErrorBoundary>
       <MouseProvider>
-        <UIProvider 
-          initialSidePanelVisible={initialSidePanelVisible}
-          initialTheme={initialTheme}
-        >
+        <UIProvider initialSidePanelVisible={initialSidePanelVisible} initialTheme={initialTheme}>
           <SettingsProvider>
             <KeybindsProvider>
               <WindowProvider>
@@ -509,7 +557,7 @@ export function App({ config }: AppProps) {
                             <ToolsProvider>
                               <MCPProvider>
                                 <UserPromptProvider>
-                                  <GPUProvider 
+                                  <GPUProvider
                                     pollingInterval={config.status.pollInterval}
                                     autoStart={config.ui.showGpuStats !== false}
                                   >
@@ -527,11 +575,13 @@ export function App({ config }: AppProps) {
                                         <WorkspaceProvider>
                                           <FileFocusProvider>
                                             <ChatProvider>
-                                              <AllCallbacksBridge onOpenModelMenu={() => {
-                                                if (globalThis.__ollmOpenModelMenu) {
-                                                  globalThis.__ollmOpenModelMenu();
-                                                }
-                                              }}>
+                                              <AllCallbacksBridge
+                                                onOpenModelMenu={() => {
+                                                  if (globalThis.__ollmOpenModelMenu) {
+                                                    globalThis.__ollmOpenModelMenu();
+                                                  }
+                                                }}
+                                              >
                                                 <ReviewProvider>
                                                   <FocusProvider>
                                                     <ActiveContextProvider>

@@ -1,9 +1,9 @@
 /**
  * Context Event Handlers
- * 
+ *
  * Event handlers for context manager events (compression, summarization, warnings).
  * Extracted from ChatContext.tsx for better separation of concerns.
- * 
+ *
  * These handlers manage UI updates in response to context management events:
  * - Memory warnings when context is filling up
  * - Compression events when context is summarized
@@ -22,10 +22,12 @@ import type { ContextMessage } from '@ollm/core';
 export interface EventHandlerDependencies {
   /** Add a message to the UI */
   addMessage: (message: Omit<Message, 'id' | 'timestamp'>) => void;
-  
+
   /** Set a sticky status message */
-  setStatusMessage: (message: string | undefined | ((current: string | undefined) => string | undefined)) => void;
-  
+  setStatusMessage: (
+    message: string | undefined | ((current: string | undefined) => string | undefined)
+  ) => void;
+
   /** Context actions for querying state */
   contextActions: {
     getUsage: () => { percentage: number };
@@ -34,12 +36,12 @@ export interface EventHandlerDependencies {
     on?: (event: string, handler: (data: unknown) => void) => void;
     off?: (event: string, handler: (data: unknown) => void) => void;
   };
-  
+
   /** Context manager state */
   contextManagerState: {
     usage: { percentage?: number };
   };
-  
+
   /** Refs for managing compression retry state */
   compressionOccurredRef: React.MutableRefObject<boolean>;
   compressionRetryCountRef: React.MutableRefObject<number>;
@@ -48,7 +50,7 @@ export interface EventHandlerDependencies {
 
 /**
  * Create event handlers with dependencies injected
- * 
+ *
  * @param deps - Dependencies required by handlers
  * @returns Object containing all event handlers
  */
@@ -71,10 +73,10 @@ export function createContextEventHandlers(deps: EventHandlerDependencies) {
     try {
       const usage = contextActions.getUsage();
       const cfg = contextActions.getConfig?.();
-      const threshold = cfg?.compression?.threshold 
-        ? Math.round(cfg.compression.threshold * 100) 
-        : Math.round((contextManagerState.usage.percentage || 0));
-      
+      const threshold = cfg?.compression?.threshold
+        ? Math.round(cfg.compression.threshold * 100)
+        : Math.round(contextManagerState.usage.percentage || 0);
+
       addMessage({
         role: 'system',
         content: `Warning: context usage at ${Math.round(usage.percentage)}%. Compression enabled at ${threshold}%`,
@@ -96,7 +98,7 @@ export function createContextEventHandlers(deps: EventHandlerDependencies) {
         (m: ContextMessage) => typeof m.id === 'string' && m.id.startsWith('summary-')
       ) as ContextMessage | undefined;
       const summaryText = summaryMsg ? summaryMsg.content : '[Conversation summary generated]';
-      
+
       // Mark that compression occurred so ongoing generation can retry/resume
       compressionOccurredRef.current = true;
       compressionRetryCountRef.current = 0;
@@ -118,10 +120,10 @@ export function createContextEventHandlers(deps: EventHandlerDependencies) {
   const handleSummarizing = (_data: unknown) => {
     // Show immediate sticky status
     setStatusMessage('Summarizing conversation history...');
-    
+
     // Auto-clear after 5 seconds so it doesn't stay forever if summarization is slow
     setTimeout(() => {
-      setStatusMessage(current => 
+      setStatusMessage((current) =>
         current === 'Summarizing conversation history...' ? undefined : current
       );
     }, 5000);
@@ -146,21 +148,21 @@ export function createContextEventHandlers(deps: EventHandlerDependencies) {
         content: text,
         excludeFromContext: true,
       });
-      
+
       // Mark that compression happened so ongoing generation can retry/resume
       compressionOccurredRef.current = true;
       compressionRetryCountRef.current = 0;
-      
+
       // Decide whether to auto-resume or ask based on settings
       try {
         const settings = SettingsService.getInstance().getSettings();
         const resumePref = settings.llm?.resumeAfterSummary || 'ask';
         if (resumePref === 'ask') {
           waitingForResumeRef.current = true;
-          addMessage({ 
-            role: 'system', 
-            content: 'Summary complete. Type "continue" to resume generation or "stop" to abort.', 
-            excludeFromContext: true 
+          addMessage({
+            role: 'system',
+            content: 'Summary complete. Type "continue" to resume generation or "stop" to abort.',
+            excludeFromContext: true,
           });
         }
       } catch (_e) {
@@ -178,16 +180,17 @@ export function createContextEventHandlers(deps: EventHandlerDependencies) {
   const handleAutoSummaryFailed = async (data: unknown) => {
     // Clear sticky status
     setStatusMessage(undefined);
-    
+
     try {
       const typedData = data as { error?: unknown; reason?: unknown };
       const err = typedData?.error || typedData?.reason || 'Summarization failed';
-      const message = typeof err === 'string' 
-        ? err 
-        : ((err && typeof err === 'object' && 'message' in err) 
-          ? String((err as { message?: unknown }).message) 
-          : JSON.stringify(err));
-      
+      const message =
+        typeof err === 'string'
+          ? err
+          : err && typeof err === 'object' && 'message' in err
+            ? String((err as { message?: unknown }).message)
+            : JSON.stringify(err);
+
       addMessage({
         role: 'system',
         content: `❌ Task failed successfully: ${message}`,
@@ -206,15 +209,13 @@ export function createContextEventHandlers(deps: EventHandlerDependencies) {
     try {
       const typedData = data as { percentage?: number; message?: string };
       const percentage = typedData?.percentage || 70;
-      
+
       // Show warning message
       setStatusMessage(`⚠️ Context at ${Math.round(percentage)}% - compression will trigger soon`);
-      
+
       // Auto-clear after 10 seconds
       setTimeout(() => {
-        setStatusMessage(current => 
-          current?.includes('Context at') ? undefined : current
-        );
+        setStatusMessage((current) => (current?.includes('Context at') ? undefined : current));
       }, 10000);
     } catch (_e) {
       // Ignore errors in warning display
@@ -229,15 +230,13 @@ export function createContextEventHandlers(deps: EventHandlerDependencies) {
     try {
       const typedData = data as { turnNumber?: number };
       const turnNumber = typedData?.turnNumber || 0;
-      
+
       // Show brief confirmation
       setStatusMessage(`💾 Session saved (turn ${turnNumber}) - rollback available`);
-      
+
       // Auto-clear after 3 seconds
       setTimeout(() => {
-        setStatusMessage(current => 
-          current?.includes('Session saved') ? undefined : current
-        );
+        setStatusMessage((current) => (current?.includes('Session saved') ? undefined : current));
       }, 3000);
     } catch (_e) {
       // Ignore errors in confirmation display
@@ -257,7 +256,7 @@ export function createContextEventHandlers(deps: EventHandlerDependencies) {
 
 /**
  * Register event handlers with context actions
- * 
+ *
  * @param contextActions - Context actions to register handlers with
  * @param handlers - Event handlers to register
  * @returns Cleanup function to unregister handlers

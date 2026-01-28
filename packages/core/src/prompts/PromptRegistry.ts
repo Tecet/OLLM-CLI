@@ -37,14 +37,14 @@ export class PromptRegistry {
    * Get all prompts that match a specific tag.
    */
   getByTag(tag: string): RegisteredPrompt[] {
-    return this.list().filter(p => p.tags?.includes(tag));
+    return this.list().filter((p) => p.tags?.includes(tag));
   }
 
   /**
    * Get all prompts from a specific source.
    */
   getBySource(source: PromptDefinition['source']): RegisteredPrompt[] {
-    return this.list().filter(p => p.source === source);
+    return this.list().filter((p) => p.source === source);
   }
 
   /**

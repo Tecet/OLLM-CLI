@@ -1,9 +1,9 @@
 /**
  * Hook system configuration management
- * 
+ *
  * Provides default values, validation, and constants for hook system configuration.
  * All configuration options are optional and will be merged with defaults.
- * 
+ *
  * @module hooks/config
  */
 
@@ -13,10 +13,10 @@ import type { HookSource } from './types.js';
 
 /**
  * Hook configuration interface
- * 
+ *
  * Controls global hook system behavior. All fields are optional
  * and will be merged with defaults.
- * 
+ *
  * @example
  * ```typescript
  * const config: HooksConfig = {
@@ -24,26 +24,26 @@ import type { HookSource } from './types.js';
  *   timeout: 60000, // 60 seconds
  *   trustWorkspace: false,
  * };
- * 
+ *
  * const merged = mergeHooksConfig(config);
  * ```
  */
 export interface HooksConfig {
-  /** 
+  /**
    * Enable or disable all hooks
    * When false, all hooks are skipped
    * @default true
    */
   enabled?: boolean;
-  
-  /** 
+
+  /**
    * Hook execution timeout in milliseconds
    * Hooks exceeding this timeout are killed
    * @default 30000 (30 seconds)
    */
   timeout?: number;
-  
-  /** 
+
+  /**
    * Auto-trust workspace hooks without approval
    * When true, workspace hooks don't require user approval
    * Security risk: Only enable for trusted workspaces
@@ -54,7 +54,7 @@ export interface HooksConfig {
 
 /**
  * Zod schema for hook configuration validation
- * 
+ *
  * Validates configuration structure and types.
  * All fields are optional.
  */
@@ -66,7 +66,7 @@ export const hooksConfigSchema = z.object({
 
 /**
  * Default hook configuration values
- * 
+ *
  * These values are used when configuration is not provided
  * or when merging partial configurations.
  */
@@ -90,55 +90,53 @@ export const KILL_GRACE_PERIOD_MS = 1000; // 1 second
 
 /**
  * Whitelisted commands that can be executed without absolute paths
- * 
+ *
  * These are standard system commands and package managers considered
  * safe to execute. All other commands must use absolute paths.
- * 
+ *
  * Security note: bash and sh are included but hooks using them
  * should be carefully reviewed as they can execute arbitrary code.
  */
 export const WHITELISTED_COMMANDS = [
-  'node',      // Node.js runtime
-  'python',    // Python 2 interpreter
-  'python3',   // Python 3 interpreter
-  'bash',      // Bash shell
-  'sh',        // POSIX shell
-  'npx',       // Node package executor
-  'uvx',       // UV package executor (for MCP servers)
+  'node', // Node.js runtime
+  'python', // Python 2 interpreter
+  'python3', // Python 3 interpreter
+  'bash', // Bash shell
+  'sh', // POSIX shell
+  'npx', // Node package executor
+  'uvx', // UV package executor (for MCP servers)
 ] as const;
 
 /**
  * Source priority for hook execution ordering
- * 
+ *
  * Lower numbers execute first. Hooks with the same priority
  * execute in registration order.
  */
 export const SOURCE_PRIORITY: Record<HookSource, number> = {
-  builtin: 0,      // Highest priority
+  builtin: 0, // Highest priority
   user: 1,
   workspace: 2,
   downloaded: 3,
-  extension: 3,    // Same as downloaded
+  extension: 3, // Same as downloaded
 };
 
 /**
  * Merge user configuration with defaults
- * 
+ *
  * Creates a complete configuration by merging user-provided
  * values with defaults. All fields will be present in result.
- * 
+ *
  * @param userConfig - Partial user configuration
  * @returns Complete configuration with all fields
- * 
+ *
  * @example
  * ```typescript
  * const config = mergeHooksConfig({ timeout: 60000 });
  * // Result: { enabled: true, timeout: 60000, trustWorkspace: false }
  * ```
  */
-export function mergeHooksConfig(
-  userConfig: Partial<HooksConfig> = {}
-): Required<HooksConfig> {
+export function mergeHooksConfig(userConfig: Partial<HooksConfig> = {}): Required<HooksConfig> {
   return {
     ...DEFAULT_HOOKS_CONFIG,
     ...userConfig,
@@ -147,14 +145,14 @@ export function mergeHooksConfig(
 
 /**
  * Validate hook configuration
- * 
+ *
  * Validates configuration structure and types using Zod schema.
  * Throws ZodError if validation fails.
- * 
+ *
  * @param config - Configuration to validate
  * @returns Validated configuration
  * @throws {z.ZodError} if configuration is invalid
- * 
+ *
  * @example
  * ```typescript
  * try {
@@ -172,13 +170,13 @@ export function validateHooksConfig(config: unknown): HooksConfig {
 
 /**
  * Validate hook structure
- * 
+ *
  * Validates that a hook object has all required fields and
  * that field values are valid.
- * 
+ *
  * @param hook - Hook to validate
  * @returns Validation result with error message if invalid
- * 
+ *
  * @example
  * ```typescript
  * const result = validateHook(hook);
@@ -242,13 +240,13 @@ export function validateHook(hook: unknown): { valid: boolean; error?: string } 
 
 /**
  * Validate hook ID format
- * 
+ *
  * Hook IDs must be non-empty strings without special characters.
  * Allowed: alphanumeric, dash, underscore
- * 
+ *
  * @param id - Hook ID to validate
  * @returns true if ID is valid
- * 
+ *
  * @example
  * ```typescript
  * validateHookId('my-hook-123'); // true
@@ -267,13 +265,13 @@ export function validateHookId(id: string): boolean {
 
 /**
  * Validate hook command for security
- * 
+ *
  * Checks for shell metacharacters and ensures command is either
  * an absolute path or a whitelisted command.
- * 
+ *
  * @param command - Command to validate
  * @returns Validation result with error message if invalid
- * 
+ *
  * @example
  * ```typescript
  * const result = validateHookCommand('node');
@@ -294,12 +292,14 @@ export function validateHookCommand(command: string): { valid: boolean; error?: 
 
   // Check if command is absolute path or whitelisted
   const isAbsolute = command.startsWith('/') || /^[A-Z]:\\/.test(command);
-  const isWhitelisted = WHITELISTED_COMMANDS.includes(command as typeof WHITELISTED_COMMANDS[number]);
+  const isWhitelisted = WHITELISTED_COMMANDS.includes(
+    command as (typeof WHITELISTED_COMMANDS)[number]
+  );
 
   if (!isAbsolute && !isWhitelisted) {
-    return { 
-      valid: false, 
-      error: `Command must be absolute path or one of: ${WHITELISTED_COMMANDS.join(', ')}` 
+    return {
+      valid: false,
+      error: `Command must be absolute path or one of: ${WHITELISTED_COMMANDS.join(', ')}`,
     };
   }
 

@@ -1,6 +1,6 @@
 /**
  * Goal Management Tools
- * 
+ *
  * Tools for LLMs to manage goals, checkpoints, and decisions autonomously.
  * For non-tool models, use structured text markers instead.
  */
@@ -48,7 +48,7 @@ export type SwitchGoalParams = {
 export class CreateGoalTool implements DeclarativeTool {
   name = 'create_goal';
   displayName = 'Create Goal';
-  
+
   schema: ToolSchema = {
     name: 'create_goal',
     description: 'Create a new goal or task to work on. Use this when starting a new objective.',
@@ -57,21 +57,21 @@ export class CreateGoalTool implements DeclarativeTool {
       properties: {
         description: {
           type: 'string',
-          description: 'Clear description of the goal (e.g., "Fix authentication bug in login.ts")'
+          description: 'Clear description of the goal (e.g., "Fix authentication bug in login.ts")',
         },
         priority: {
           type: 'string',
           enum: ['high', 'medium', 'low'],
-          description: 'Priority level (default: medium)'
+          description: 'Priority level (default: medium)',
         },
         subtasks: {
           type: 'array',
           items: { type: 'string' },
-          description: 'Optional list of subtasks to complete this goal'
-        }
+          description: 'Optional list of subtasks to complete this goal',
+        },
       },
-      required: ['description']
-    }
+      required: ['description'],
+    },
   };
 
   async execute(
@@ -91,7 +91,7 @@ export class CreateGoalTool implements DeclarativeTool {
 
     return {
       llmContent: `Created goal: ${goal.description} (ID: ${goal.id})`,
-      returnDisplay: `✓ Goal created: ${goal.description}`
+      returnDisplay: `✓ Goal created: ${goal.description}`,
     };
   }
 }
@@ -103,35 +103,36 @@ export class CreateGoalTool implements DeclarativeTool {
 export class CreateCheckpointTool implements DeclarativeTool {
   name = 'create_checkpoint';
   displayName = 'Create Checkpoint';
-  
+
   schema: ToolSchema = {
     name: 'create_checkpoint',
-    description: 'Mark progress on the current goal. Use this when you complete a significant step.',
+    description:
+      'Mark progress on the current goal. Use this when you complete a significant step.',
     parameters: {
       type: 'object',
       properties: {
         description: {
           type: 'string',
-          description: 'What was accomplished (e.g., "Fixed login validation")'
+          description: 'What was accomplished (e.g., "Fixed login validation")',
         },
         filesModified: {
           type: 'array',
           items: { type: 'string' },
-          description: 'Files that were modified'
+          description: 'Files that were modified',
         },
         testsAdded: {
           type: 'array',
           items: { type: 'string' },
-          description: 'Tests that were added'
+          description: 'Tests that were added',
         },
         decisionsLocked: {
           type: 'array',
           items: { type: 'string' },
-          description: 'Decisions that should not be changed'
-        }
+          description: 'Decisions that should not be changed',
+        },
       },
-      required: ['description']
-    }
+      required: ['description'],
+    },
   };
 
   async execute(
@@ -153,20 +154,16 @@ export class CreateCheckpointTool implements DeclarativeTool {
       throw new Error('No active goal. Create a goal first.');
     }
 
-    const checkpoint = goalManager.createCheckpoint(
-      activeGoal.id,
-      params.description,
-      {
-        filesModified: params.filesModified || [],
-        testsAdded: params.testsAdded || [],
-        decisionsLocked: params.decisionsLocked || [],
-        metricsRecorded: {}
-      }
-    );
+    const checkpoint = goalManager.createCheckpoint(activeGoal.id, params.description, {
+      filesModified: params.filesModified || [],
+      testsAdded: params.testsAdded || [],
+      decisionsLocked: params.decisionsLocked || [],
+      metricsRecorded: {},
+    });
 
     return {
       llmContent: `Checkpoint created: ${checkpoint.description}`,
-      returnDisplay: `✓ Checkpoint: ${checkpoint.description}`
+      returnDisplay: `✓ Checkpoint: ${checkpoint.description}`,
     };
   }
 }
@@ -178,31 +175,29 @@ export class CreateCheckpointTool implements DeclarativeTool {
 export class CompleteGoalTool implements DeclarativeTool {
   name = 'complete_goal';
   displayName = 'Complete Goal';
-  
+
   schema: ToolSchema = {
     name: 'complete_goal',
-    description: 'Mark the current goal as completed. Use this when the goal is fully accomplished.',
+    description:
+      'Mark the current goal as completed. Use this when the goal is fully accomplished.',
     parameters: {
       type: 'object',
       properties: {
         summary: {
           type: 'string',
-          description: 'Summary of what was accomplished'
+          description: 'Summary of what was accomplished',
         },
         artifacts: {
           type: 'array',
           items: { type: 'string' },
-          description: 'Files created or modified during this goal'
-        }
+          description: 'Files created or modified during this goal',
+        },
       },
-      required: ['summary']
-    }
+      required: ['summary'],
+    },
   };
 
-  async execute(
-    params: { summary: string; artifacts?: string[] },
-    context: ToolContext
-  ) {
+  async execute(params: { summary: string; artifacts?: string[] }, context: ToolContext) {
     const goalManager = context.goalManager;
     if (!goalManager) {
       throw new Error('Goal manager not available');
@@ -217,7 +212,7 @@ export class CompleteGoalTool implements DeclarativeTool {
 
     return {
       llmContent: `Goal completed: ${activeGoal.description}\nSummary: ${params.summary}`,
-      returnDisplay: `✓ Goal completed: ${activeGoal.description}`
+      returnDisplay: `✓ Goal completed: ${activeGoal.description}`,
     };
   }
 }
@@ -229,7 +224,7 @@ export class CompleteGoalTool implements DeclarativeTool {
 export class RecordDecisionTool implements DeclarativeTool {
   name = 'record_decision';
   displayName = 'Record Decision';
-  
+
   schema: ToolSchema = {
     name: 'record_decision',
     description: 'Record an important decision made during the current goal.',
@@ -238,24 +233,24 @@ export class RecordDecisionTool implements DeclarativeTool {
       properties: {
         description: {
           type: 'string',
-          description: 'The decision made (e.g., "Use JWT for authentication")'
+          description: 'The decision made (e.g., "Use JWT for authentication")',
         },
         rationale: {
           type: 'string',
-          description: 'Why this decision was made'
+          description: 'Why this decision was made',
         },
         alternatives: {
           type: 'array',
           items: { type: 'string' },
-          description: 'Alternative approaches that were considered'
+          description: 'Alternative approaches that were considered',
         },
         locked: {
           type: 'boolean',
-          description: 'If true, this decision should not be changed (default: false)'
-        }
+          description: 'If true, this decision should not be changed (default: false)',
+        },
       },
-      required: ['description', 'rationale']
-    }
+      required: ['description', 'rationale'],
+    },
   };
 
   async execute(
@@ -290,7 +285,7 @@ export class RecordDecisionTool implements DeclarativeTool {
 
     return {
       llmContent: `Decision recorded: ${decision.description}\nRationale: ${decision.rationale}${decision.locked ? ' (LOCKED)' : ''}`,
-      returnDisplay: `✓ Decision: ${decision.description}${decision.locked ? ' 🔒' : ''}`
+      returnDisplay: `✓ Decision: ${decision.description}${decision.locked ? ' 🔒' : ''}`,
     };
   }
 }
@@ -302,7 +297,7 @@ export class RecordDecisionTool implements DeclarativeTool {
 export class SwitchGoalTool implements DeclarativeTool {
   name = 'switch_goal';
   displayName = 'Switch Goal';
-  
+
   schema: ToolSchema = {
     name: 'switch_goal',
     description: 'Pause current goal, resume a paused goal, or create a new goal.',
@@ -312,24 +307,24 @@ export class SwitchGoalTool implements DeclarativeTool {
         action: {
           type: 'string',
           enum: ['pause', 'resume', 'new'],
-          description: 'Action to perform'
+          description: 'Action to perform',
         },
         goalId: {
           type: 'string',
-          description: 'Goal ID (required for resume action)'
+          description: 'Goal ID (required for resume action)',
         },
         newGoalDescription: {
           type: 'string',
-          description: 'Description for new goal (required for new action)'
+          description: 'Description for new goal (required for new action)',
         },
         priority: {
           type: 'string',
           enum: ['high', 'medium', 'low'],
-          description: 'Priority for new goal (default: medium)'
-        }
+          description: 'Priority for new goal (default: medium)',
+        },
       },
-      required: ['action']
-    }
+      required: ['action'],
+    },
   };
 
   async execute(
@@ -355,7 +350,7 @@ export class SwitchGoalTool implements DeclarativeTool {
         goalManager.pauseGoal(activeGoal.id);
         return {
           llmContent: `Paused goal: ${activeGoal.description}`,
-          returnDisplay: `⏸ Paused: ${activeGoal.description}`
+          returnDisplay: `⏸ Paused: ${activeGoal.description}`,
         };
       }
 
@@ -370,7 +365,7 @@ export class SwitchGoalTool implements DeclarativeTool {
         goalManager.resumeGoal(params.goalId);
         return {
           llmContent: `Resumed goal: ${goal.description}`,
-          returnDisplay: `▶ Resumed: ${goal.description}`
+          returnDisplay: `▶ Resumed: ${goal.description}`,
         };
       }
 
@@ -378,13 +373,10 @@ export class SwitchGoalTool implements DeclarativeTool {
         if (!params.newGoalDescription) {
           throw new Error('newGoalDescription required for new action');
         }
-        const goal = goalManager.createGoal(
-          params.newGoalDescription,
-          params.priority || 'medium'
-        );
+        const goal = goalManager.createGoal(params.newGoalDescription, params.priority || 'medium');
         return {
           llmContent: `Created new goal: ${goal.description}`,
-          returnDisplay: `✓ New goal: ${goal.description}`
+          returnDisplay: `✓ New goal: ${goal.description}`,
         };
       }
 
@@ -402,5 +394,5 @@ export const GOAL_MANAGEMENT_TOOLS = [
   CreateCheckpointTool,
   CompleteGoalTool,
   RecordDecisionTool,
-  SwitchGoalTool
+  SwitchGoalTool,
 ];

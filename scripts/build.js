@@ -37,9 +37,13 @@ async function build() {
     if (!npmExecPath) {
       throw new Error('npm_execpath is not available; please run via npm.');
     }
-    await runCommand(process.execPath, [npmExecPath, 'run', 'build', '-w', 'packages/ollm-bridge'], {
-      cwd: join(__dirname, '..'),
-    });
+    await runCommand(
+      process.execPath,
+      [npmExecPath, 'run', 'build', '-w', 'packages/ollm-bridge'],
+      {
+        cwd: join(__dirname, '..'),
+      }
+    );
 
     // Load esbuild config
     const configPath = join(__dirname, '..', 'esbuild.config.js');
@@ -51,13 +55,32 @@ async function build() {
     await esbuild.build(config);
 
     // Copy llama sprite assets for runtime usage
-    const assetsSource = join(__dirname, '..', 'packages', 'cli', 'src', 'ui', 'components', 'animations', 'lama', 'lama_sprite');
+    const assetsSource = join(
+      __dirname,
+      '..',
+      'packages',
+      'cli',
+      'src',
+      'ui',
+      'components',
+      'animations',
+      'lama',
+      'lama_sprite'
+    );
     const assetsTarget = join(__dirname, '..', 'packages', 'cli', 'dist', 'lama_sprite');
     await mkdir(assetsTarget, { recursive: true });
     await cp(assetsSource, assetsTarget, { recursive: true });
 
     // Copy prompt templates from core package for runtime usage
-    const templatesSource = join(__dirname, '..', 'packages', 'core', 'src', 'prompts', 'templates');
+    const templatesSource = join(
+      __dirname,
+      '..',
+      'packages',
+      'core',
+      'src',
+      'prompts',
+      'templates'
+    );
     const templatesTarget = join(__dirname, '..', 'packages', 'cli', 'dist', 'templates');
     await mkdir(templatesTarget, { recursive: true });
     await cp(templatesSource, templatesTarget, { recursive: true });

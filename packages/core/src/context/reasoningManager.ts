@@ -1,6 +1,6 @@
 /**
  * Reasoning Manager
- * 
+ *
  * Manages reasoning traces from reasoning models (DeepSeek-R1, QwQ, o1, etc.)
  * Preserves thinking processes across context rollovers.
  */
@@ -11,7 +11,7 @@ import type {
   ReasoningTrace,
   ArchivedReasoningTrace,
   ReasoningStorage,
-  ReasoningConfig
+  ReasoningConfig,
 } from './reasoningTypes.js';
 
 /**
@@ -50,8 +50,8 @@ export class ReasoningManagerImpl {
       metadata: {
         modelName,
         thinkingTokens,
-        answerTokens
-      }
+        answerTokens,
+      },
     };
 
     // Auto-extract structured data if enabled
@@ -68,8 +68,9 @@ export class ReasoningManagerImpl {
    * Get reasoning storage for snapshot
    */
   getReasoningStorage(): ReasoningStorage {
-    const allTraces = Array.from(this.traces.values())
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    const allTraces = Array.from(this.traces.values()).sort(
+      (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
+    );
 
     // Keep last N traces in full
     const recent = allTraces.slice(0, this.config.keepRecentTraces);
@@ -78,25 +79,22 @@ export class ReasoningManagerImpl {
     const toArchive = allTraces.slice(this.config.keepRecentTraces);
     const archived: ArchivedReasoningTrace[] = toArchive
       .slice(0, this.config.maxArchivedTraces)
-      .map(trace => ({
+      .map((trace) => ({
         id: trace.id,
         timestamp: trace.timestamp,
         summary: this.summarizeThinking(trace.thinking),
         keyInsights: trace.structured?.keyInsights || [],
-        fullTraceAvailable: true
+        fullTraceAvailable: true,
       }));
 
     // Calculate totals
-    const totalThinkingTokens = allTraces.reduce(
-      (sum, t) => sum + t.metadata.thinkingTokens,
-      0
-    );
+    const totalThinkingTokens = allTraces.reduce((sum, t) => sum + t.metadata.thinkingTokens, 0);
 
     return {
       recent,
       archived,
       totalTraces: allTraces.length,
-      totalThinkingTokens
+      totalThinkingTokens,
     };
   }
 
@@ -124,7 +122,7 @@ export class ReasoningManagerImpl {
    */
   getTracesForGoal(goalId: string): ReasoningTrace[] {
     return Array.from(this.traces.values())
-      .filter(t => t.context.goalId === goalId)
+      .filter((t) => t.context.goalId === goalId)
       .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
   }
 
@@ -132,8 +130,7 @@ export class ReasoningManagerImpl {
    * Get all traces for a message
    */
   getTracesForMessage(messageId: string): ReasoningTrace[] {
-    return Array.from(this.traces.values())
-      .filter(t => t.messageId === messageId);
+    return Array.from(this.traces.values()).filter((t) => t.messageId === messageId);
   }
 
   /**
@@ -199,7 +196,7 @@ export class ReasoningManagerImpl {
       chosenApproach,
       rationale,
       confidence,
-      keyInsights
+      keyInsights,
     };
   }
 
@@ -209,7 +206,7 @@ export class ReasoningManagerImpl {
   private summarizeThinking(thinking: string): string {
     // Remove extra whitespace
     const cleaned = thinking.replace(/\s+/g, ' ').trim();
-    
+
     if (cleaned.length <= 200) {
       return cleaned;
     }

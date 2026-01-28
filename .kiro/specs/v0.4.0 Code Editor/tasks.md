@@ -97,7 +97,6 @@ This implementation plan breaks down the Code Editor feature into discrete, incr
     - Test error handling
     - _Requirements: US-4, TR-3, TR-6_
 
-
 - [ ] 5. Checkpoint - Core Services Complete
   - Ensure all core service tests pass
   - Verify EditorBuffer, EditorCursor, EditorFileOps work correctly
@@ -107,7 +106,7 @@ This implementation plan breaks down the Code Editor feature into discrete, incr
   - [ ] 6.1 Create EditorHeader component
     - Create `packages/cli/src/ui/components/code-editor/EditorHeader.tsx`
     - Display file name with icon (📄)
-    - Display dirty indicator (*) when modified
+    - Display dirty indicator (\*) when modified
     - Display current line / total lines
     - Display current column
     - Style with border
@@ -250,7 +249,6 @@ This implementation plan breaks down the Code Editor feature into discrete, incr
   - All Phase 1 user stories satisfied
   - Ask the user for review
 
-
 - [ ] 13. EditorHistory Service - Undo/Redo
   - [ ] 13.1 Implement undo/redo stack
     - Create `packages/cli/src/ui/components/code-editor/services/EditorHistory.ts`
@@ -267,7 +265,7 @@ This implementation plan breaks down the Code Editor feature into discrete, incr
     - Test with random sequences of insert/delete operations
     - Test stack size limit enforcement
     - Test redo stack clearing on new action
-    - **Validates: Requirements US-5_
+    - \*\*Validates: Requirements US-5\_
 
   - [ ] 13.3 Implement undo/redo keybindings
     - Add Ctrl+Z for undo
@@ -429,7 +427,6 @@ This implementation plan breaks down the Code Editor feature into discrete, incr
   - All Phase 2 user stories satisfied
   - Ask the user for review
 
-
 - [ ] 19. Syntax Highlighting Service
   - [ ] 19.1 Implement EditorSyntax service
     - Create `packages/cli/src/ui/components/code-editor/services/EditorSyntax.ts`
@@ -445,7 +442,7 @@ This implementation plan breaks down the Code Editor feature into discrete, incr
 
   - [ ] 19.2 Implement color scheme
     - Green for strings ("text", 'text', \`template\`)
-    - Gray for comments (// comment, /* comment */)
+    - Gray for comments (// comment, /_ comment _/)
     - Yellow for numbers (123, 3.14) and parameters
     - Purple/Magenta for keywords (var, if, else, const, class)
     - Light-blue/Cyan for operators (+, -, &&) and TypeScript types
@@ -620,7 +617,7 @@ This implementation plan breaks down the Code Editor feature into discrete, incr
     - Create `packages/cli/src/ui/components/code-editor/EditorTabs.tsx`
     - Tab bar shows open files
     - Display file names
-    - Display dirty indicators (*)
+    - Display dirty indicators (\*)
     - Highlight active tab
     - _Requirements: US-12, TR-5_
 
@@ -740,6 +737,7 @@ This implementation plan breaks down the Code Editor feature into discrete, incr
 ## Implementation Order Rationale
 
 The task order follows a bottom-up approach:
+
 1. **Foundation** (Tasks 1-5): Type definitions, core services (buffer, cursor, file ops)
 2. **UI Components** (Tasks 6-8): Header, footer, content, main component
 3. **Input Handling** (Tasks 9-12): Keyboard shortcuts, window/file explorer integration
@@ -748,4 +746,3 @@ The task order follows a bottom-up approach:
 6. **Quality** (Tasks 28-30): Testing, documentation, final review
 
 This order ensures each layer has its dependencies ready before implementation.
-

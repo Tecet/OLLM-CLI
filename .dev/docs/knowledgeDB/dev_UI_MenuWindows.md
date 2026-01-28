@@ -3,6 +3,7 @@
 **Last Updated:** January 26, 2026  
 **Status:** ✅ Implemented  
 **Related Documents:**
+
 - `dev_UI_Front.md` - Main interface
 - `dev_Keybinds.md` - Keyboard shortcuts
 - `dev_MCPIntegration.md` - MCP dialogs
@@ -27,6 +28,7 @@ Menu windows are modal dialogs and overlays that appear on top of the main inter
 **Component:** `packages/cli/src/ui/components/dialogs/ConfirmationDialog.tsx`
 
 **Layout:**
+
 ```
 ┌─ Confirmation ────────────────────────────┐
 │                                            │
@@ -42,12 +44,14 @@ Menu windows are modal dialogs and overlays that appear on top of the main inter
 ```
 
 **Keybinds:**
+
 - `Y` - Confirm
 - `N` - Cancel
 - `Escape` - Cancel
 - `Return` - Confirm (if focused on Yes)
 
 **Usage:**
+
 - File deletion
 - Session deletion
 - Hook deletion
@@ -62,6 +66,7 @@ Menu windows are modal dialogs and overlays that appear on top of the main inter
 **Component:** `packages/cli/src/ui/components/dialogs/HookApprovalDialog.tsx`
 
 **Layout:**
+
 ```
 ┌─ Hook Approval Required ──────────────────┐
 │                                            │
@@ -82,6 +87,7 @@ Menu windows are modal dialogs and overlays that appear on top of the main inter
 ```
 
 **Keybinds:**
+
 - `O` - Approve once
 - `A` - Always trust (add to trusted list)
 - `R` - Reject
@@ -98,6 +104,7 @@ Menu windows are modal dialogs and overlays that appear on top of the main inter
 **Component:** `packages/cli/src/ui/components/dialogs/ServerConfigDialog.tsx`
 
 **Layout:**
+
 ```
 ┌─ Configure MCP Server ────────────────────┐
 │                                            │
@@ -121,6 +128,7 @@ Menu windows are modal dialogs and overlays that appear on top of the main inter
 ```
 
 **Keybinds:**
+
 - `Tab` - Next field
 - `Shift+Tab` - Previous field
 - `Return` - Save (if on Save button)
@@ -137,6 +145,7 @@ Menu windows are modal dialogs and overlays that appear on top of the main inter
 **Component:** `packages/cli/src/ui/components/dialogs/OAuthConfigDialog.tsx`
 
 **Layout:**
+
 ```
 ┌─ OAuth Configuration ─────────────────────┐
 │                                            │
@@ -173,6 +182,7 @@ Menu windows are modal dialogs and overlays that appear on top of the main inter
 **Component:** `packages/cli/src/ui/components/dialogs/MarketplaceDialog.tsx`
 
 **Layout:**
+
 ```
 ┌─ MCP Marketplace ─────────────────────────┐
 │                                            │
@@ -196,6 +206,7 @@ Menu windows are modal dialogs and overlays that appear on top of the main inter
 ```
 
 **Keybinds:**
+
 - `Up/Down` - Navigate list
 - `Return` - Install selected
 - `D` - View details
@@ -213,6 +224,7 @@ Menu windows are modal dialogs and overlays that appear on top of the main inter
 **Component:** `packages/cli/src/ui/components/dialogs/HelpOverlay.tsx`
 
 **Layout:**
+
 ```
 ┌─ Help ────────────────────────────────────┐
 │                                            │
@@ -234,6 +246,7 @@ Menu windows are modal dialogs and overlays that appear on top of the main inter
 ```
 
 **Keybinds:**
+
 - `?` - Toggle help
 - `Escape` - Close
 
@@ -248,6 +261,7 @@ Menu windows are modal dialogs and overlays that appear on top of the main inter
 **Component:** `packages/cli/src/ui/components/dialogs/AddHookDialog.tsx`
 
 **Layout:**
+
 ```
 ┌─ Add Hook ────────────────────────────────┐
 │                                            │
@@ -280,6 +294,7 @@ Menu windows are modal dialogs and overlays that appear on top of the main inter
 **Component:** `packages/cli/src/ui/components/dialogs/ModeSuggestionDialog.tsx`
 
 **Layout:**
+
 ```
 ┌─ Mode Suggestion ─────────────────────────┐
 │                                            │
@@ -310,6 +325,7 @@ Menu windows are modal dialogs and overlays that appear on top of the main inter
 **Component:** `packages/cli/src/ui/components/dialogs/HealthMonitorDialog.tsx`
 
 **Layout:**
+
 ```
 ┌─ MCP Health Monitor ──────────────────────┐
 │                                            │
@@ -341,6 +357,7 @@ Menu windows are modal dialogs and overlays that appear on top of the main inter
 **Component:** `packages/cli/src/ui/components/dialogs/ServerLogsViewer.tsx`
 
 **Layout:**
+
 ```
 ┌─ Server Logs: github ─────────────────────┐
 │                                            │
@@ -358,6 +375,7 @@ Menu windows are modal dialogs and overlays that appear on top of the main inter
 ```
 
 **Keybinds:**
+
 - `Up/Down` - Scroll
 - `Home/End` - Jump to top/bottom
 - `Escape` - Close
@@ -369,6 +387,7 @@ Menu windows are modal dialogs and overlays that appear on top of the main inter
 **Component:** `packages/cli/src/ui/components/dialogs/DialogManager.tsx`
 
 **Responsibilities:**
+
 - Dialog queue management
 - Z-index stacking
 - Focus management
@@ -376,6 +395,7 @@ Menu windows are modal dialogs and overlays that appear on top of the main inter
 - Dialog transitions
 
 **Dialog Stack:**
+
 ```
 ┌─────────────────────────────────────────┐
 │ Main UI (blurred)                       │
@@ -392,6 +412,7 @@ Menu windows are modal dialogs and overlays that appear on top of the main inter
 ```
 
 **Dialog Context:**
+
 ```typescript
 // packages/cli/src/ui/contexts/DialogContext.tsx
 interface DialogContext {
@@ -406,6 +427,7 @@ interface DialogContext {
 ## Dialog Styling
 
 **Common Layout:**
+
 ```css
 .dialog {
   position: absolute;
@@ -442,6 +464,7 @@ interface DialogContext {
 ```
 
 **Button Styling:**
+
 ```css
 .button {
   padding: 0 2;
@@ -468,9 +491,11 @@ interface DialogContext {
 **Location:** `packages/cli/src/ui/components/forms/`
 
 ### TextInput
+
 **Component:** `TextInput.tsx`
 
 **Features:**
+
 - Single-line text input
 - Password masking
 - Validation
@@ -478,18 +503,22 @@ interface DialogContext {
 - Character limit
 
 ### Checkbox
+
 **Component:** `Checkbox.tsx`
 
 **Features:**
+
 - Toggle state
 - Label
 - Disabled state
 - Keyboard navigation
 
 ### Button
+
 **Component:** `Button.tsx`
 
 **Features:**
+
 - Click handler
 - Focus state
 - Disabled state
@@ -497,9 +526,11 @@ interface DialogContext {
 - Variants (primary, secondary, danger)
 
 ### FormField
+
 **Component:** `FormField.tsx`
 
 **Features:**
+
 - Label
 - Input wrapper
 - Error message
@@ -511,6 +542,7 @@ interface DialogContext {
 ## Dialog Transitions
 
 **Fade In:**
+
 ```
 Frame 1: Opacity 0%
 Frame 2: Opacity 25%
@@ -520,6 +552,7 @@ Frame 5: Opacity 100%
 ```
 
 **Slide In:**
+
 ```
 Frame 1: Y offset +10
 Frame 2: Y offset +7
@@ -537,6 +570,7 @@ Frame 5: Y offset 0
 **Component:** `packages/cli/src/ui/components/mcp/Notification.tsx`
 
 **Layout:**
+
 ```
 ┌─────────────────────────────────────────┐
 │ Main UI                                 │
@@ -552,6 +586,7 @@ Frame 5: Y offset 0
 ```
 
 **Notification Types:**
+
 - Success (green, ✓)
 - Warning (yellow, ⚠️)
 - Error (red, ✗)
@@ -563,22 +598,22 @@ Frame 5: Y offset 0
 
 ## File Locations
 
-| Component | File Path |
-|-----------|-----------|
-| DialogManager | `packages/cli/src/ui/components/dialogs/DialogManager.tsx` |
-| ConfirmationDialog | `packages/cli/src/ui/components/dialogs/ConfirmationDialog.tsx` |
-| HookApprovalDialog | `packages/cli/src/ui/components/dialogs/HookApprovalDialog.tsx` |
-| ServerConfigDialog | `packages/cli/src/ui/components/dialogs/ServerConfigDialog.tsx` |
-| OAuthConfigDialog | `packages/cli/src/ui/components/dialogs/OAuthConfigDialog.tsx` |
-| MarketplaceDialog | `packages/cli/src/ui/components/dialogs/MarketplaceDialog.tsx` |
-| HelpOverlay | `packages/cli/src/ui/components/dialogs/HelpOverlay.tsx` |
-| AddHookDialog | `packages/cli/src/ui/components/dialogs/AddHookDialog.tsx` |
+| Component            | File Path                                                         |
+| -------------------- | ----------------------------------------------------------------- |
+| DialogManager        | `packages/cli/src/ui/components/dialogs/DialogManager.tsx`        |
+| ConfirmationDialog   | `packages/cli/src/ui/components/dialogs/ConfirmationDialog.tsx`   |
+| HookApprovalDialog   | `packages/cli/src/ui/components/dialogs/HookApprovalDialog.tsx`   |
+| ServerConfigDialog   | `packages/cli/src/ui/components/dialogs/ServerConfigDialog.tsx`   |
+| OAuthConfigDialog    | `packages/cli/src/ui/components/dialogs/OAuthConfigDialog.tsx`    |
+| MarketplaceDialog    | `packages/cli/src/ui/components/dialogs/MarketplaceDialog.tsx`    |
+| HelpOverlay          | `packages/cli/src/ui/components/dialogs/HelpOverlay.tsx`          |
+| AddHookDialog        | `packages/cli/src/ui/components/dialogs/AddHookDialog.tsx`        |
 | ModeSuggestionDialog | `packages/cli/src/ui/components/dialogs/ModeSuggestionDialog.tsx` |
-| HealthMonitorDialog | `packages/cli/src/ui/components/dialogs/HealthMonitorDialog.tsx` |
-| ServerLogsViewer | `packages/cli/src/ui/components/dialogs/ServerLogsViewer.tsx` |
-| Notification | `packages/cli/src/ui/components/mcp/Notification.tsx` |
-| DialogContext | `packages/cli/src/ui/contexts/DialogContext.tsx` |
-| Form Components | `packages/cli/src/ui/components/forms/` |
+| HealthMonitorDialog  | `packages/cli/src/ui/components/dialogs/HealthMonitorDialog.tsx`  |
+| ServerLogsViewer     | `packages/cli/src/ui/components/dialogs/ServerLogsViewer.tsx`     |
+| Notification         | `packages/cli/src/ui/components/mcp/Notification.tsx`             |
+| DialogContext        | `packages/cli/src/ui/contexts/DialogContext.tsx`                  |
+| Form Components      | `packages/cli/src/ui/components/forms/`                           |
 
 ---
 

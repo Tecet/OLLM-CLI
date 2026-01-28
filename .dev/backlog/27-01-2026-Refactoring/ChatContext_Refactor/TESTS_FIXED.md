@@ -7,26 +7,32 @@ All tests have been successfully aligned with the refactored codebase. **502 tes
 ## Issues Fixed
 
 ### 1. Import Path Error
+
 **File:** `packages/cli/src/features/context/contextSizing.ts`
 **Issue:** Incorrect import path `@ollm/core/context/ContextSizeCalculator`
 **Fix:** Changed to `@ollm/ollm-cli-core/context/ContextSizeCalculator.js`
 
 ### 2. Prompt Content Test Failure
+
 **File:** `packages/core/src/context/__tests__/promptRouting.test.ts`
 **Issue:** Test expected specific old prompt text that no longer exists
 **Fix:** Updated test to verify prompt existence and length instead of exact content matching
+
 - Removed dependency on `TieredPromptStore.get()` for content verification
 - Now checks that prompts are generated and substantial (>100 chars)
 
 ### 3. Warning Threshold Test Failure
+
 **File:** `packages/core/src/context/__tests__/validateAndBuildPrompt.test.ts`
 **Issue:** Test expected warnings at 70% threshold, but code uses 80%
 **Fix:** Updated test thresholds to match implementation:
+
 - 80% → INFO warning
 - 95% → WARNING + emergency compression
 - 100% → CRITICAL + emergency rollover
 
 **Additional Fix:** Corrected token calculations in mocked budget values
+
 - For 80%: conversationTokens = 5471 (ensures 80.01% to cross threshold)
 - For 95%: conversationTokens = 6516 (ensures 95.01% to cross threshold)
 
@@ -54,6 +60,7 @@ Duration    5.65s
 ## Next Steps
 
 The refactoring is complete and all tests are aligned. The codebase is ready for:
+
 - Feature development
 - Further optimization
 - Production deployment

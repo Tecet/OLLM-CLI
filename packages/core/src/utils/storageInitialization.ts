@@ -1,6 +1,6 @@
 /**
  * Storage Initialization
- * 
+ *
  * Handles storage initialization tasks including migration and directory setup.
  */
 
@@ -9,7 +9,7 @@ import { runMigrationIfNeeded } from './storageMigration.js';
 
 /**
  * Initialize storage system
- * 
+ *
  * This should be called once during application startup before any storage operations.
  * It will:
  * 1. Log storage locations for debugging
@@ -18,14 +18,14 @@ import { runMigrationIfNeeded } from './storageMigration.js';
  */
 export async function initializeStorage(): Promise<void> {
   console.log('[Storage] Initializing storage system...');
-  
+
   // Log storage locations for debugging
   logAllStorageLocations();
-  
+
   // Run migration if needed
   try {
     const migrationResult = await runMigrationIfNeeded();
-    
+
     if (migrationResult) {
       if (migrationResult.success) {
         console.log('[Storage] Migration completed successfully');
@@ -44,7 +44,7 @@ export async function initializeStorage(): Promise<void> {
     console.error('[Storage] Migration failed:', error);
     // Don't throw - allow app to continue even if migration fails
   }
-  
+
   // Ensure all storage directories exist
   try {
     await ensureStorageDirectories();
@@ -53,13 +53,13 @@ export async function initializeStorage(): Promise<void> {
     console.error('[Storage] Failed to create storage directories:', error);
     throw error; // This is critical - can't continue without storage
   }
-  
+
   console.log('[Storage] Storage initialization complete');
 }
 
 /**
  * Initialize storage with error handling
- * 
+ *
  * Safe wrapper that logs errors but doesn't throw.
  * Use this in production to prevent storage issues from crashing the app.
  */

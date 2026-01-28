@@ -612,7 +612,7 @@ This implementation plan breaks down the Kraken Integration feature into discret
 
   - [ ] 22.2 Write property tests for API key redaction
     - **Property 41: API Key Redaction** - verify keys never appear in logs
-    - Test redaction format (sk-****...****)
+    - Test redaction format (sk-\***\*...\*\***)
     - Test validation patterns for each provider
     - Test environment variable resolution
     - **Validates: Requirements 14.3**
@@ -728,6 +728,7 @@ This implementation plan breaks down the Kraken Integration feature into discret
 ## Implementation Order Rationale
 
 The task order follows a bottom-up approach:
+
 1. **Foundation** (Tasks 1-4): Type definitions and basic executors
 2. **Core Services** (Tasks 5-11): API client, health checks, cost tracking, context transfer
 3. **Provider Layer** (Tasks 12-14): Kraken provider adapters and manager

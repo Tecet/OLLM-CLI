@@ -1,6 +1,6 @@
 /**
  * MCP (Model Context Protocol) Integration Types
- * 
+ *
  * This module defines the core types and interfaces for MCP integration,
  * including client, transport, server configuration, and tool definitions.
  */
@@ -204,7 +204,7 @@ export interface MCPStreamChunk {
 
 /**
  * MCP transport interface
- * 
+ *
  * Handles communication with MCP servers using different transport protocols.
  */
 export interface MCPTransport {
@@ -246,7 +246,7 @@ export interface MCPTransport {
 
 /**
  * MCP client interface
- * 
+ *
  * Manages MCP server connections and tool invocations.
  */
 export interface MCPClient {

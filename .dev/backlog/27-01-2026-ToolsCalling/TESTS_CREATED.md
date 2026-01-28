@@ -23,6 +23,7 @@ After reviewing actual tool implementations, the tests reveal several patterns:
 ## Test Results Summary
 
 ### Overall Stats
+
 - **Total Tests:** 97
 - **Passing:** 69 (71%)
 - **Failing:** 28 (29%)
@@ -48,11 +49,13 @@ After reviewing actual tool implementations, the tests reveal several patterns:
 **Issue:** Tools return generic error types, tests expect specific types.
 
 **Examples:**
+
 - `read-file.ts` returns `FileReadError` for abort, test expects `CancelledError`
 - `glob.ts` returns `GlobError` for abort, test expects `CancelledError`
 - `ls.ts` returns `LsError` for all errors, test expects `DirectoryNotFoundError`, `PermissionError`
 
 **Solution:** Either:
+
 - Update tests to match actual error types
 - Update tools to return more specific error types
 
@@ -61,6 +64,7 @@ After reviewing actual tool implementations, the tests reveal several patterns:
 **Issue:** Tools only require confirmation when `policyEngine` is provided.
 
 **Examples:**
+
 - `write-file.ts`: Returns `false` if no `policyEngine`, test expects confirmation details
 - `shell.ts`: Returns `false` if no `policyEngine`, test expects confirmation details
 
@@ -71,6 +75,7 @@ After reviewing actual tool implementations, the tests reveal several patterns:
 **Issue:** Tests mock `fs` module but tools actually access file system.
 
 **Examples:**
+
 - `read-file.test.ts`: Mocks `fs.readFile` but tool calls real `fs.stat` first
 - `write-file.test.ts`: Tool checks if file exists with `fs.access` before writing
 - `ls.test.ts`: Tool tries to read actual directory
@@ -82,6 +87,7 @@ After reviewing actual tool implementations, the tests reveal several patterns:
 **Issue:** Some mocks aren't set up correctly for the tool's actual behavior.
 
 **Examples:**
+
 - `shell.test.ts`: Mocks `exec` but tool uses `spawn` from `ShellExecutionService`
 - `read-file.test.ts`: Mock returns wrong content (previous test's mock value)
 
@@ -94,15 +100,18 @@ After reviewing actual tool implementations, the tests reveal several patterns:
 ### Option 1: Adjust Tests to Match Implementation (Recommended)
 
 **Pros:**
+
 - Tests will pass immediately
 - Documents actual behavior
 - Easier to maintain
 
 **Cons:**
+
 - Tests won't catch if tools should have better error types
 - May miss opportunities for improvement
 
 **Action Items:**
+
 1. Update error type expectations to match actual types
 2. Add `policyEngine` to test contexts where needed
 3. Fix mock setup to match actual tool behavior
@@ -111,16 +120,19 @@ After reviewing actual tool implementations, the tests reveal several patterns:
 ### Option 2: Update Tools to Match Test Expectations
 
 **Pros:**
+
 - Better error handling with specific types
 - More consistent behavior across tools
 - Tests document ideal behavior
 
 **Cons:**
+
 - More work to update all tools
 - May break existing code that depends on current behavior
 - Need to ensure backward compatibility
 
 **Action Items:**
+
 1. Add specific error types to all tools
 2. Make confirmation behavior more consistent
 3. Improve error messages and hints
@@ -128,15 +140,18 @@ After reviewing actual tool implementations, the tests reveal several patterns:
 ### Option 3: Hybrid Approach (Best Long-term)
 
 **Pros:**
+
 - Get tests passing quickly
 - Improve tools incrementally
 - Best of both worlds
 
 **Cons:**
+
 - More work overall
 - Need to coordinate changes
 
 **Action Items:**
+
 1. **Phase 1:** Fix tests to pass with current implementation
 2. **Phase 2:** Improve tools incrementally (better error types, etc.)
 3. **Phase 3:** Update tests as tools improve
@@ -148,6 +163,7 @@ After reviewing actual tool implementations, the tests reveal several patterns:
 ### read-file.test.ts
 
 **Failing Tests:**
+
 1. "should read entire file" - Mock returns wrong content
 2. "should read file with line range" - Mock doesn't return multi-line content
 3. "should handle permission denied" - Mock not properly configured
@@ -158,6 +174,7 @@ After reviewing actual tool implementations, the tests reveal several patterns:
 ### write-file.test.ts
 
 **Failing Tests:**
+
 1. "should write content to file" - Tool checks if file exists first (returns `FileExistsError`)
 2. "should create parent directories" - Tool checks file existence before mkdir
 3. "should require confirmation for write" - No `policyEngine` provided
@@ -169,6 +186,7 @@ After reviewing actual tool implementations, the tests reveal several patterns:
 ### shell.test.ts
 
 **Failing Tests:**
+
 1. "should execute shell command" - Mocks `exec` but tool uses `spawn`
 2. "should require confirmation" - No `policyEngine` provided
 3. "should use specified working directory" - Mock not called due to previous error
@@ -178,6 +196,7 @@ After reviewing actual tool implementations, the tests reveal several patterns:
 ### glob.test.ts
 
 **Failing Tests:**
+
 1. "should have optional parameters" - Schema uses `directory` not `cwd`
 2. "should respect maxResults limit" - Output format doesn't include "Showing first X"
 3. "should handle no matches" - Returns empty string not "No files found"
@@ -189,6 +208,7 @@ After reviewing actual tool implementations, the tests reveal several patterns:
 ### grep.test.ts
 
 **Failing Tests:**
+
 1. "should have optional parameters" - Schema uses `directory` not `cwd`
 2. "should search for pattern in files" - Returns empty (no files found in mock)
 3. "should respect case sensitivity" - Same as above
@@ -200,6 +220,7 @@ After reviewing actual tool implementations, the tests reveal several patterns:
 ### ls.test.ts
 
 **Failing Tests:**
+
 1. "should list directory contents" - Tries to read actual directory
 2. "should handle empty directory" - Same as above
 3. "should handle directory not found" - Returns `LsError` not `DirectoryNotFoundError`
@@ -211,6 +232,7 @@ After reviewing actual tool implementations, the tests reveal several patterns:
 ### web-fetch.test.ts
 
 **Failing Test:**
+
 1. "should handle timeout" - Mock doesn't properly simulate timeout
 
 **Fix:** Improve timeout simulation in mock.
@@ -222,21 +244,25 @@ After reviewing actual tool implementations, the tests reveal several patterns:
 Despite failures, these tests provide significant value:
 
 ### 1. Documentation
+
 - Tests show how tools should be used
 - Demonstrate expected parameters and behavior
 - Show edge cases to consider
 
 ### 2. Regression Prevention
+
 - Once fixed, tests will catch future breakages
 - Ensure tools maintain expected behavior
 - Validate error handling
 
 ### 3. Development Guide
+
 - New developers can see tool usage patterns
 - Tests show proper error handling
 - Demonstrate confirmation flow
 
 ### 4. Quality Improvement
+
 - Tests reveal inconsistencies in error handling
 - Show where tools could be improved
 - Highlight missing features

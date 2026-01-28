@@ -1,6 +1,6 @@
 /**
  * Core type definitions for File Explorer UI
- * 
+ *
  * These interfaces define the data structures used throughout the file explorer
  * component for workspace management, file tree navigation, focus system, and
  * vision support.

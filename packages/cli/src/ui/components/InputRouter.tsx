@@ -1,6 +1,6 @@
 /**
  * Input Router Component
- * 
+ *
  * Routes input to either LLM chat or terminal based on active window.
  * Handles left/right arrow keys for window switching.
  */
@@ -49,7 +49,7 @@ export function InputRouter({ onChatSubmit, disabled = false }: InputRouterProps
 
     // Handle backspace
     if (key.backspace || key.delete) {
-      setInput(prev => prev.slice(0, -1));
+      setInput((prev) => prev.slice(0, -1));
       return;
     }
 
@@ -69,7 +69,7 @@ export function InputRouter({ onChatSubmit, disabled = false }: InputRouterProps
 
     // Add character to input
     if (inputChar && !key.ctrl && !key.meta) {
-      setInput(prev => prev + inputChar);
+      setInput((prev) => prev + inputChar);
     }
   });
 

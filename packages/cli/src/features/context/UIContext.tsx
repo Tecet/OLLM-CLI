@@ -4,7 +4,17 @@ import { defaultKeybinds } from '../../config/defaults.js';
 import { defaultDarkTheme } from '../../config/styles.js';
 import { Theme, Keybinds } from '../../config/types.js';
 
-export type TabType = 'chat' | 'search' | 'files' | 'tools' | 'hooks' | 'mcp' | 'docs' | 'github' | 'settings' | 'bug-report';
+export type TabType =
+  | 'chat'
+  | 'search'
+  | 'files'
+  | 'tools'
+  | 'hooks'
+  | 'mcp'
+  | 'docs'
+  | 'github'
+  | 'settings'
+  | 'bug-report';
 
 export interface Notification {
   id: string;

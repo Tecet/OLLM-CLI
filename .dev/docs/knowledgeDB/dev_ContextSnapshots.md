@@ -26,6 +26,7 @@ This layering ensures clean separation between storage operations, business logi
 ### System 1: Context Snapshot Manager (Recovery & Rollback)
 
 **Locations:**
+
 - Storage: `packages/core/src/context/snapshotStorage.ts` (541 lines)
 - Management: `packages/core/src/context/snapshotManager.ts` (615 lines)
 - Coordination: `packages/core/src/context/snapshotCoordinator.ts` (88 lines)
@@ -34,6 +35,7 @@ This layering ensures clean separation between storage operations, business logi
 **Purpose:** Conversation recovery and rollback
 
 **Use Cases:**
+
 - Save conversation state before risky operations
 - Recover from errors or unwanted changes
 - Rollback to previous conversation state
@@ -43,30 +45,32 @@ This layering ensures clean separation between storage operations, business logi
 **Storage Location:** `~/.ollm/context-snapshots/`
 
 **Trigger Points:**
+
 - Manual: User explicitly creates snapshot
 - Automatic: At 85% context usage (configurable)
 - Emergency: Before context rollover (100% usage)
 - Pre-compression: Before aggressive compression
 
 **What's Captured:**
+
 ```typescript
 interface ContextSnapshot {
   id: string;
   sessionId: string;
   timestamp: Date;
-  
+
   // ALL user messages (never truncated)
   userMessages: Message[];
-  
+
   // Other messages (system, assistant, tool)
   messages: Message[];
-  
+
   // Active goals and checkpoints
   goalStack?: Goal[];
-  
+
   // Reasoning traces (for reasoning models)
   reasoningStorage?: ReasoningTrace[];
-  
+
   // Metadata
   metadata: {
     model: string;
@@ -79,6 +83,7 @@ interface ContextSnapshot {
 ```
 
 **Key Features:**
+
 - ✅ Preserves ALL user messages in full (never truncated)
 - ✅ Automatic cleanup (keeps last N snapshots)
 - ✅ Threshold callbacks for proactive management
@@ -94,6 +99,7 @@ interface ContextSnapshot {
 **Purpose:** Mode transition state preservation
 
 **Use Cases:**
+
 - Preserve context when switching between modes (code → debug → planning)
 - Carry forward mode-specific findings
 - Maintain continuity across mode changes
@@ -102,30 +108,32 @@ interface ContextSnapshot {
 **Storage Location:** `~/.ollm/snapshots/session-<id>/`
 
 **Trigger Points:**
+
 - Mode transitions (automatic)
 - Hot swap operations
 - Workflow state changes
 
 **What's Captured:**
+
 ```typescript
 interface ModeTransitionSnapshot {
   id: string;
   timestamp: Date;
   fromMode: ModeType;
   toMode: ModeType;
-  
+
   // Recent conversation context (last 5 messages)
   recentMessages: {
     role: 'user' | 'assistant' | 'system';
     content: string;
     timestamp: Date;
   }[];
-  
+
   // Active state
   activeSkills: string[];
   activeTools: string[];
   currentTask: string | null;
-  
+
   // Mode-specific findings
   findings?: {
     debugger?: {
@@ -134,7 +142,7 @@ interface ModeTransitionSnapshot {
       fixes: string[];
     };
   };
-  
+
   // Reasoning traces (for reasoning models)
   reasoningTraces?: Array<{
     content: string;
@@ -146,6 +154,7 @@ interface ModeTransitionSnapshot {
 ```
 
 **Key Features:**
+
 - ✅ Lightweight (only last 5 messages)
 - ✅ Mode-specific findings preserved
 - ✅ Fast transitions (minimal data)
@@ -157,7 +166,9 @@ interface ModeTransitionSnapshot {
 ## Architecture Layers
 
 ### Layer 1: Storage (snapshotStorage.ts)
+
 **Responsibility:** File I/O and serialization
+
 - Save/load snapshots to disk
 - List snapshots by session
 - Delete snapshots
@@ -165,7 +176,9 @@ interface ModeTransitionSnapshot {
 - Backward compatibility with old formats
 
 ### Layer 2: Management (snapshotManager.ts)
+
 **Responsibility:** Business logic and lifecycle
+
 - Create snapshots from context
 - Restore snapshots to context
 - Validate snapshot data
@@ -174,14 +187,18 @@ interface ModeTransitionSnapshot {
 - Rolling cleanup
 
 ### Layer 3: Coordination (snapshotCoordinator.ts)
+
 **Responsibility:** Integration with context system
+
 - Coordinate snapshot creation with context manager
 - Handle context state transitions
 - Manage snapshot triggers
 - Integrate with compression system
 
 ### Layer 4: Intent (intentSnapshotStorage.ts)
+
 **Responsibility:** Specialized use cases
+
 - Mode transition snapshots
 - Hot swap state preservation
 - Lightweight state transfer
@@ -191,20 +208,20 @@ interface ModeTransitionSnapshot {
 
 ## Comparison Table
 
-| Feature | Context Snapshots | Mode Snapshots |
-|---------|-------------------|----------------|
-| **Purpose** | Recovery & Rollback | Mode Transitions |
-| **Scope** | Full conversation | Last 5 messages |
-| **Size** | Large (1-10 KB) | Small (0.5-2 KB) |
-| **Trigger** | Manual/Auto (85%) | Mode transitions |
-| **Storage** | `~/.ollm/context-snapshots/` | `~/.ollm/snapshots/session-<id>/` |
-| **Lifetime** | Persistent (until cleanup) | Temporary (1 hour) |
-| **User Messages** | ALL preserved | Last 5 only |
-| **Goals** | Yes | No |
-| **Reasoning** | Yes | Yes |
-| **Mode Findings** | No | Yes |
-| **Active Tools** | No | Yes |
-| **Cleanup** | Keep last N (default: 5) | Auto-prune after 1 hour |
+| Feature           | Context Snapshots            | Mode Snapshots                    |
+| ----------------- | ---------------------------- | --------------------------------- |
+| **Purpose**       | Recovery & Rollback          | Mode Transitions                  |
+| **Scope**         | Full conversation            | Last 5 messages                   |
+| **Size**          | Large (1-10 KB)              | Small (0.5-2 KB)                  |
+| **Trigger**       | Manual/Auto (85%)            | Mode transitions                  |
+| **Storage**       | `~/.ollm/context-snapshots/` | `~/.ollm/snapshots/session-<id>/` |
+| **Lifetime**      | Persistent (until cleanup)   | Temporary (1 hour)                |
+| **User Messages** | ALL preserved                | Last 5 only                       |
+| **Goals**         | Yes                          | No                                |
+| **Reasoning**     | Yes                          | Yes                               |
+| **Mode Findings** | No                           | Yes                               |
+| **Active Tools**  | No                           | Yes                               |
+| **Cleanup**       | Keep last N (default: 5)     | Auto-prune after 1 hour           |
 
 ---
 
@@ -213,12 +230,14 @@ interface ModeTransitionSnapshot {
 ### Context Snapshot Manager
 
 **Used By:**
+
 - `ContextManager` - Main orchestrator
 - `SnapshotCoordinator` - Coordination layer
 - `MessageStore` - Threshold checking
 - `CompressionCoordinator` - Pre-compression snapshots
 
 **Example Usage:**
+
 ```typescript
 // Create snapshot before risky operation
 const snapshot = await snapshotManager.createSnapshot(context);
@@ -240,31 +259,29 @@ snapshotManager.onContextThreshold(0.85, async () => {
 ### Mode Snapshot Manager
 
 **Used By:**
+
 - `PromptModeManager` - Mode transitions
 - `HotSwapService` - Hot swap operations
 - `HotSwapTool` - Tool-triggered hot swaps
 - `WorkflowManager` - Workflow state changes
 
 **Example Usage:**
+
 ```typescript
 // Create transition snapshot
-const snapshot = snapshotManager.createTransitionSnapshot(
-  'code',
-  'debug',
-  {
-    messages: context.messages,
-    activeSkills: ['typescript', 'debugging'],
-    activeTools: ['read_file', 'grep'],
-    currentTask: 'Fix authentication bug',
-    findings: {
-      debugger: {
-        errors: ['TypeError: Cannot read property...'],
-        rootCause: 'Null check missing',
-        fixes: ['Add null check before access']
-      }
-    }
-  }
-);
+const snapshot = snapshotManager.createTransitionSnapshot('code', 'debug', {
+  messages: context.messages,
+  activeSkills: ['typescript', 'debugging'],
+  activeTools: ['read_file', 'grep'],
+  currentTask: 'Fix authentication bug',
+  findings: {
+    debugger: {
+      errors: ['TypeError: Cannot read property...'],
+      rootCause: 'Null check missing',
+      fixes: ['Add null check before access'],
+    },
+  },
+});
 
 // Store snapshot
 await snapshotManager.saveSnapshot(snapshot);
@@ -280,12 +297,14 @@ const loaded = await snapshotManager.loadSnapshot(snapshotId);
 ### Different Purposes
 
 **Context Snapshots:**
+
 - Long-term preservation
 - Full conversation state
 - Recovery from errors
 - Rollback capability
 
 **Mode Snapshots:**
+
 - Short-term transitions
 - Lightweight state transfer
 - Mode-specific context
@@ -294,12 +313,14 @@ const loaded = await snapshotManager.loadSnapshot(snapshotId);
 ### Different Performance Characteristics
 
 **Context Snapshots:**
+
 - Create: ~10-50ms (full conversation)
 - Restore: ~10-50ms
 - Storage: Persistent disk
 - Size: 1-10 KB
 
 **Mode Snapshots:**
+
 - Create: ~1-5ms (last 5 messages)
 - Restore: ~1-5ms
 - Storage: In-memory cache + disk
@@ -308,11 +329,13 @@ const loaded = await snapshotManager.loadSnapshot(snapshotId);
 ### Different Lifecycles
 
 **Context Snapshots:**
+
 - Created: Manual or at 85% threshold
 - Kept: Until cleanup (last N snapshots)
 - Restored: On demand (user action or error recovery)
 
 **Mode Snapshots:**
+
 - Created: Every mode transition
 - Kept: 1 hour (auto-pruned)
 - Restored: Automatically on mode switch
@@ -364,11 +387,7 @@ try {
 
 ```typescript
 // Mode snapshot for transition
-const snapshot = modeSnapshotManager.createTransitionSnapshot(
-  currentMode,
-  targetMode,
-  context
-);
+const snapshot = modeSnapshotManager.createTransitionSnapshot(currentMode, targetMode, context);
 
 // Switch mode
 await modeManager.switchMode(targetMode);
@@ -384,11 +403,7 @@ const loaded = await modeSnapshotManager.loadSnapshot(snapshot.id);
 const contextSnapshot = await contextSnapshotManager.createSnapshot(context);
 
 // Create mode snapshot for transition
-const modeSnapshot = modeSnapshotManager.createTransitionSnapshot(
-  'code',
-  'debug',
-  context
-);
+const modeSnapshot = modeSnapshotManager.createTransitionSnapshot('code', 'debug', context);
 
 // Perform operation
 try {
@@ -406,6 +421,7 @@ try {
 ### Context Snapshots
 
 **Old Format (Pre-Migration):**
+
 ```json
 {
   "id": "snapshot-123",
@@ -418,6 +434,7 @@ try {
 ```
 
 **New Format (Post-Migration):**
+
 ```json
 {
   "id": "snapshot-123",
@@ -446,20 +463,21 @@ No migration needed - new system introduced in recent version.
 
 ```typescript
 interface SnapshotConfig {
-  enabled: boolean;           // Enable/disable snapshots
-  maxCount: number;           // Max snapshots to keep (default: 5)
-  autoCreate: boolean;        // Auto-create at threshold (default: true)
-  autoThreshold: number;      // Threshold for auto-create (default: 0.85)
+  enabled: boolean; // Enable/disable snapshots
+  maxCount: number; // Max snapshots to keep (default: 5)
+  autoCreate: boolean; // Auto-create at threshold (default: true)
+  autoThreshold: number; // Threshold for auto-create (default: 0.85)
 }
 ```
 
 **Example:**
+
 ```typescript
 const config: SnapshotConfig = {
   enabled: true,
   maxCount: 10,
   autoCreate: true,
-  autoThreshold: 0.85
+  autoThreshold: 0.85,
 };
 ```
 
@@ -467,20 +485,21 @@ const config: SnapshotConfig = {
 
 ```typescript
 interface SnapshotOptions {
-  sessionId?: string;         // Session ID
-  storagePath?: string;       // Storage directory
-  maxCacheSize?: number;      // Max in-memory cache (default: 10)
-  pruneAfterMs?: number;      // Auto-prune after (default: 3600000 = 1 hour)
+  sessionId?: string; // Session ID
+  storagePath?: string; // Storage directory
+  maxCacheSize?: number; // Max in-memory cache (default: 10)
+  pruneAfterMs?: number; // Auto-prune after (default: 3600000 = 1 hour)
 }
 ```
 
 **Example:**
+
 ```typescript
 const options: SnapshotOptions = {
   sessionId: 'session-123',
   storagePath: '~/.ollm/snapshots',
   maxCacheSize: 10,
-  pruneAfterMs: 3600000
+  pruneAfterMs: 3600000,
 };
 ```
 
@@ -491,21 +510,25 @@ const options: SnapshotOptions = {
 ### Context Snapshots
 
 **Create:**
+
 - Time: ~10-50ms
 - Complexity: O(n) where n = message count
 - Memory: ~1-10 KB per snapshot
 
 **Restore:**
+
 - Time: ~10-50ms
 - Complexity: O(n) where n = message count
 - Memory: ~1-10 KB
 
 **List:**
+
 - Time: ~1-5ms
 - Complexity: O(m) where m = snapshot count
 - Memory: Minimal (metadata only)
 
 **Cleanup:**
+
 - Time: ~5-20ms
 - Complexity: O(m log m) where m = snapshot count
 - Memory: Minimal
@@ -513,16 +536,19 @@ const options: SnapshotOptions = {
 ### Mode Snapshots
 
 **Create:**
+
 - Time: ~1-5ms
 - Complexity: O(1) (last 5 messages only)
 - Memory: ~0.5-2 KB per snapshot
 
 **Restore:**
+
 - Time: ~1-5ms (cache hit) or ~10-20ms (cache miss)
 - Complexity: O(1)
 - Memory: ~0.5-2 KB
 
 **Cache:**
+
 - Size: 10 snapshots (default)
 - Memory: ~5-20 KB total
 - Eviction: LRU (least recently used)
@@ -549,6 +575,7 @@ const options: SnapshotOptions = {
 **No dedicated tests yet** - System is relatively new
 
 **Recommended Tests:**
+
 - Create transition snapshot
 - Save and load snapshot
 - Cache eviction
@@ -560,6 +587,7 @@ const options: SnapshotOptions = {
 ## Success Criteria
 
 ### Functional Requirements
+
 - ✅ Two systems serve different purposes
 - ✅ No conflicts between systems
 - ✅ Different storage locations
@@ -568,6 +596,7 @@ const options: SnapshotOptions = {
 - ✅ Clear documentation
 
 ### Non-Functional Requirements
+
 - ✅ Context snapshots: Full conversation preservation
 - ✅ Mode snapshots: Fast transitions
 - ✅ No performance degradation
@@ -575,6 +604,7 @@ const options: SnapshotOptions = {
 - ✅ Backward compatibility
 
 ### User Experience
+
 - ✅ Transparent operation
 - ✅ No user confusion
 - ✅ Clear purpose for each system
@@ -586,26 +616,32 @@ const options: SnapshotOptions = {
 ## Integration with Other Systems
 
 ### Phase 0: Input Preprocessing
+
 - Context snapshots preserve original messages
 - Mode snapshots carry forward extracted intent
 
 ### Phase 1: Pre-Send Validation
+
 - Context snapshots created before emergency actions
 - Mode snapshots unaffected
 
 ### Phase 2: Blocking Mechanism
+
 - Context snapshot creation blocks user input
 - Mode snapshots created instantly (no blocking)
 
 ### Phase 3: Emergency Triggers
+
 - Context snapshots created at 100% (emergency rollover)
 - Mode snapshots unaffected
 
 ### Phase 4: Session Storage
+
 - Context snapshots reference session ID
 - Mode snapshots stored per session
 
 ### Phase 6: Checkpoint Aging
+
 - Context snapshots preserve checkpoints
 - Mode snapshots don't include checkpoints
 
@@ -614,6 +650,7 @@ const options: SnapshotOptions = {
 ## Future Enhancements
 
 ### Context Snapshots
+
 1. **Compression:** Compress old snapshots (gzip)
 2. **Indexing:** Build search index for snapshot content
 3. **Export:** Export snapshots to markdown/JSON
@@ -621,6 +658,7 @@ const options: SnapshotOptions = {
 5. **Encryption:** Encrypt sensitive snapshot data
 
 ### Mode Snapshots
+
 1. **Dedicated Tests:** Add comprehensive test suite
 2. **Analytics:** Track mode transition patterns
 3. **Optimization:** Reduce snapshot size further
@@ -637,7 +675,7 @@ Phase 5 is **COMPLETE**. The two snapshot systems are now clearly documented:
 ✅ **Mode Snapshots** - Lightweight mode transition state  
 ✅ **No Conflicts** - Different purposes, storage, and lifecycles  
 ✅ **Clear Documentation** - Purpose and usage patterns documented  
-✅ **Integration Points** - How each system integrates with others  
+✅ **Integration Points** - How each system integrates with others
 
 The systems work together to provide comprehensive conversation state management without conflicts.
 
@@ -653,37 +691,45 @@ A comprehensive utility library for working with context snapshots. These utilit
 ### Available Utilities (20 functions)
 
 #### Finding Snapshots
+
 - `findSnapshotById(snapshots, id)` - Find snapshot by ID
 - `findSnapshotsBySession(snapshots, sessionId)` - Find snapshots for session
 - `findSnapshotsAfter(snapshots, timestamp)` - Find snapshots after timestamp
 - `findSnapshotsBefore(snapshots, timestamp)` - Find snapshots before timestamp
 
 #### Sorting Snapshots
+
 - `sortSnapshotsByAge(snapshots)` - Sort oldest first
 - `sortSnapshotsByAgeDesc(snapshots)` - Sort newest first
 
 #### Getting Subsets
+
 - `getRecentSnapshots(snapshots, count)` - Get N most recent
 - `getOldestSnapshots(snapshots, count)` - Get N oldest
 
 #### Validation
+
 - `validateSnapshotMetadata(snapshot)` - Validate metadata structure
 - `validateContextSnapshot(snapshot)` - Validate full snapshot
 
 #### Calculations
+
 - `calculateTotalSnapshotSize(snapshots)` - Calculate total tokens
 - `calculateTotalSnapshotFileSize(snapshots)` - Calculate total file size
 
 #### Grouping and Filtering
+
 - `groupSnapshotsBySession(snapshots)` - Group by session ID
 - `filterSnapshotsAboveThreshold(snapshots, threshold)` - Filter large snapshots
 - `filterSnapshotsBelowThreshold(snapshots, threshold)` - Filter small snapshots
 
 #### Cleanup
+
 - `getSnapshotsForCleanup(snapshots, maxCount)` - Identify snapshots to delete
 - `exceedsMaxSnapshots(snapshots, maxCount)` - Check if exceeds limit
 
 #### Message Extraction
+
 - `extractUserMessages(snapshot)` - Extract user messages
 - `extractNonUserMessages(snapshot)` - Extract non-user messages
 
@@ -695,7 +741,7 @@ import {
   findSnapshotsBySession,
   getSnapshotsForCleanup,
   calculateTotalSnapshotSize,
-  extractUserMessages
+  extractUserMessages,
 } from './snapshotUtils.js';
 
 // Get 10 most recent snapshots
@@ -733,4 +779,3 @@ const userMessages = extractUserMessages(snapshot);
 **Total Tests:** 502/502 ✅ (no new tests - documentation only)  
 **Completion Date:** January 27, 2026  
 **Time Taken:** ~30 minutes (estimated 1-2 days - 32x faster!)
-

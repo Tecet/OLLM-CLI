@@ -1,6 +1,6 @@
 /**
  * MCP Cleanup Service
- * 
+ *
  * Handles cleanup of downloaded MCP server packages and cache files
  * when servers are uninstalled.
  */
@@ -15,7 +15,7 @@ const execAsync = promisify(exec);
 
 /**
  * MCP Cleanup Service
- * 
+ *
  * Provides utilities to clean up downloaded packages and cache files
  * for MCP servers when they are uninstalled.
  */
@@ -48,8 +48,8 @@ export class MCPCleanupService {
    */
   private async cleanupNpxPackage(args: string[]): Promise<void> {
     // Extract package name from args (skip flags like -y)
-    const packageName = args.find(arg => !arg.startsWith('-'));
-    
+    const packageName = args.find((arg) => !arg.startsWith('-'));
+
     if (!packageName) {
       return;
     }
@@ -58,7 +58,7 @@ export class MCPCleanupService {
       // Try to remove from npx cache
       // npx cache is typically in ~/.npm/_npx/
       const npxCachePath = path.join(os.homedir(), '.npm', '_npx');
-      
+
       // Check if cache directory exists
       try {
         await fs.access(npxCachePath);
@@ -69,9 +69,9 @@ export class MCPCleanupService {
 
       // List cache entries
       const entries = await fs.readdir(npxCachePath);
-      
+
       // Find entries matching the package name
-      const matchingEntries = entries.filter(entry => 
+      const matchingEntries = entries.filter((entry) =>
         entry.includes(packageName.replace(/[@/]/g, '+'))
       );
 
@@ -105,10 +105,8 @@ export class MCPCleanupService {
    */
   private async cleanupDockerImage(args: string[]): Promise<void> {
     // Extract image name from args (skip 'run', '-i', etc.)
-    const imageName = args.find(arg => 
-      !arg.startsWith('-') && arg !== 'run'
-    );
-    
+    const imageName = args.find((arg) => !arg.startsWith('-') && arg !== 'run');
+
     if (!imageName) {
       return;
     }
@@ -147,7 +145,7 @@ export class MCPCleanupService {
   async getCacheSize(): Promise<number> {
     try {
       const npxCachePath = path.join(os.homedir(), '.npm', '_npx');
-      
+
       try {
         await fs.access(npxCachePath);
       } catch {

@@ -1,6 +1,6 @@
 /**
  * HooksContext - Manages hook state and operations for the Hooks Panel UI
- * 
+ *
  * Provides centralized state management for:
  * - Loading hooks from HookRegistry
  * - Managing enabled/disabled state via SettingsService
@@ -8,7 +8,15 @@
  * - Error handling for corrupted hooks
  */
 
-import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode, useMemo } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+  ReactNode,
+  useMemo,
+} from 'react';
 
 import { SettingsService } from '../../config/settingsService.js';
 import { useServices } from '../../features/context/ServiceContext.js';
@@ -90,10 +98,10 @@ export interface HooksProviderProps {
 /**
  * Provider for hooks management
  */
-export function HooksProvider({ 
-  children, 
+export function HooksProvider({
+  children,
   settingsService: customSettings,
-  hookRegistry: customRegistry
+  hookRegistry: customRegistry,
 }: HooksProviderProps) {
   const [state, setState] = useState<HooksState>({
     categories: [],
@@ -121,8 +129,11 @@ export function HooksProvider({
     if (!container) return null;
     return container.getHookService().getRegistry();
   }, [container, customRegistry]);
-  
-  const settingsService = useMemo(() => customSettings || SettingsService.getInstance(), [customSettings]);
+
+  const settingsService = useMemo(
+    () => customSettings || SettingsService.getInstance(),
+    [customSettings]
+  );
   // Debug: log whether we are using a custom settings instance (tests) or the singleton
   console.debug('[HooksProvider] using customSettings?', !!customSettings);
   console.debug('[HooksProvider] settingsService identity', settingsService);
@@ -167,10 +178,10 @@ export function HooksProvider({
 
     // Group hooks by category
     const categories: HookCategory[] = [];
-    
+
     for (const [_categoryKey, categoryDef] of Object.entries(categoryMap)) {
       const categoryHooks: Hook[] = [];
-      
+
       // Collect hooks from all event types in this category
       for (const eventType of categoryDef.eventTypes) {
         const hooksForEvent = hooksMap.get(eventType) || [];
@@ -196,11 +207,11 @@ export function HooksProvider({
   const refreshHooks = useCallback(async () => {
     // Don't proceed if hook registry is not available yet
     if (!hookRegistry) {
-      setState(prev => ({ ...prev, isLoading: false, error: 'Hook registry not initialized' }));
+      setState((prev) => ({ ...prev, isLoading: false, error: 'Hook registry not initialized' }));
       return;
     }
-    
-    setState(prev => ({ ...prev, isLoading: true, error: null }));
+
+    setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
     try {
       // Get all hooks from registry organized by event
@@ -239,7 +250,7 @@ export function HooksProvider({
         console.debug('[HooksProvider] read hookSettings (unserializable)');
       }
       const enabledHooks = new Set<string>();
-      
+
       for (const hook of allHooks) {
         // Default to enabled if not explicitly set
         const isEnabled = hookSettings.enabled[hook.id] ?? true;
@@ -260,7 +271,7 @@ export function HooksProvider({
         corruptedHooks,
       });
     } catch (error) {
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         isLoading: false,
         error: error instanceof Error ? error.message : 'Failed to load hooks',
@@ -271,60 +282,74 @@ export function HooksProvider({
   /**
    * Toggle hook enabled state
    */
-  const toggleHook = useCallback(async (hookId: string) => {
-    try {
-      const currentlyEnabled = state.enabledHooks.has(hookId);
-      const newEnabledState = !currentlyEnabled;
+  const toggleHook = useCallback(
+    async (hookId: string) => {
+      try {
+        const currentlyEnabled = state.enabledHooks.has(hookId);
+        const newEnabledState = !currentlyEnabled;
 
-      // Update settings
-      console.debug('[HooksProvider] setHookEnabled', hookId, newEnabledState);
-      settingsService.setHookEnabled(hookId, newEnabledState);
+        // Update settings
+        console.debug('[HooksProvider] setHookEnabled', hookId, newEnabledState);
+        settingsService.setHookEnabled(hookId, newEnabledState);
 
-      // Update local state
-      setState(prev => {
-        const newEnabledHooks = new Set(prev.enabledHooks);
-        if (newEnabledState) {
-          newEnabledHooks.add(hookId);
-        } else {
-          newEnabledHooks.delete(hookId);
-        }
+        // Update local state
+        setState((prev) => {
+          const newEnabledHooks = new Set(prev.enabledHooks);
+          if (newEnabledState) {
+            newEnabledHooks.add(hookId);
+          } else {
+            newEnabledHooks.delete(hookId);
+          }
 
-        console.debug('[HooksProvider] updating local enabledHooks for', hookId, '->', newEnabledState);
+          console.debug(
+            '[HooksProvider] updating local enabledHooks for',
+            hookId,
+            '->',
+            newEnabledState
+          );
 
-        return {
+          return {
+            ...prev,
+            enabledHooks: newEnabledHooks,
+          };
+        });
+      } catch (error) {
+        // Revert on error
+        setState((prev) => ({
           ...prev,
-          enabledHooks: newEnabledHooks,
-        };
-      });
-    } catch (error) {
-      // Revert on error
-      setState(prev => ({
-        ...prev,
-        error: error instanceof Error ? error.message : 'Failed to toggle hook',
-      }));
-    }
-  }, [state.enabledHooks, settingsService]);
+          error: error instanceof Error ? error.message : 'Failed to toggle hook',
+        }));
+      }
+    },
+    [state.enabledHooks, settingsService]
+  );
 
   /**
    * Check if a hook is enabled
    */
-  const isHookEnabled = useCallback((hookId: string): boolean => {
-    return state.enabledHooks.has(hookId);
-  }, [state.enabledHooks]);
+  const isHookEnabled = useCallback(
+    (hookId: string): boolean => {
+      return state.enabledHooks.has(hookId);
+    },
+    [state.enabledHooks]
+  );
 
   /**
    * Get hook by ID
    */
-  const getHook = useCallback((hookId: string): Hook | undefined => {
-    return state.allHooks.find(h => h.id === hookId);
-  }, [state.allHooks]);
+  const getHook = useCallback(
+    (hookId: string): Hook | undefined => {
+      return state.allHooks.find((h) => h.id === hookId);
+    },
+    [state.allHooks]
+  );
 
   // Load hooks from files and then refresh
   useEffect(() => {
     const initializeHooks = async () => {
       // Wait for hook registry to be available
       if (!hookRegistry) return;
-      
+
       // Load hooks from JSON files only when not using a custom registry (tests provide customRegistry)
       if (!customRegistry) {
         await loadHooksFromFiles(hookRegistry);
@@ -333,7 +358,7 @@ export function HooksProvider({
       // Refresh the UI state
       await refreshHooks();
     };
-    
+
     initializeHooks();
   }, [hookRegistry, customRegistry, refreshHooks]);
 

@@ -47,7 +47,7 @@ export class DocumentService {
           if (entry.name.startsWith('.')) {
             continue;
           }
-          
+
           const folderPath = path.join(this.basePath, entry.name);
           const documents = this.scanFolder(folderPath);
 
@@ -87,16 +87,16 @@ export class DocumentService {
       folders.sort((a, b) => {
         const indexA = folderOrder.indexOf(a.name);
         const indexB = folderOrder.indexOf(b.name);
-        
+
         // If both are in the order list, sort by their position
         if (indexA !== -1 && indexB !== -1) {
           return indexA - indexB;
         }
-        
+
         // If only one is in the order list, it comes first
         if (indexA !== -1) return -1;
         if (indexB !== -1) return 1;
-        
+
         // Otherwise, sort alphabetically
         return a.name.localeCompare(b.name);
       });
@@ -121,7 +121,7 @@ export class DocumentService {
         // Only process files (not subdirectories)
         if (entry.isFile() && entry.name.endsWith('.md')) {
           const filePath = path.join(folderPath, entry.name);
-          
+
           documents.push({
             title: this.formatDocTitle(entry.name),
             fileName: entry.name,
@@ -170,12 +170,12 @@ export class DocumentService {
     if (folderName === 'DevelopmentRoadmap') {
       return 'Development Roadmap';
     }
-    
+
     // Convert kebab-case or snake_case to Title Case
     return folderName
       .replace(/[-_]/g, ' ')
       .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
   }
 
@@ -185,50 +185,50 @@ export class DocumentService {
   private formatDocTitle(fileName: string): string {
     // Remove .md extension
     const nameWithoutExt = fileName.replace(/\.md$/, '');
-    
+
     // Handle special cases
     const specialCases: Record<string, string> = {
-      'README': 'Overview',
-      'Index': 'Index',
-      'LLM_Index': 'LLM Index',
-      'LLM_ModelsList': 'Models List',
-      'LLM_MemorySystem': 'Memory System',
-      'LLM_ModelCompatibility': 'Model Compatibility',
-      'LLM_ModelsArchitecture': 'Models Architecture',
-      'LLM_ModelsCommands': 'Models Commands',
-      'LLM_ModelsConfiguration': 'Models Configuration',
-      'LLM_GettingStarted': 'Getting Started',
-      'MCP_Architecture': 'MCP Architecture',
-      'MCP_Commands': 'MCP Commands',
-      'MCP_GettingStarted': 'MCP Getting Started',
-      'MCP_Integration': 'MCP Integration',
-      'MCP_Index': 'MCP Index',
-      'MCP_Marketplace': 'MCP Marketplace',
-      'UIGuide': 'UI Guide',
-      'ColorASCII': 'Color ASCII',
-      'Keybinds': 'Keyboard Shortcuts',
-      'ContextArchitecture': 'Context Architecture',
-      'ContextCompression': 'Context Compression',
-      'ContextManagment': 'Context Management',
-      'CheckpointFlowDiagram': 'Checkpoint Flow',
-      'PromptsRouting': 'Prompts Routing',
-      'PromptsTemplates': 'Prompts Templates',
-      'SystemPrompts': 'System Prompts',
-      'RoadmapVisual': 'Visual Roadmap',
-      'PlanedFeatures': 'Planned Features',
+      README: 'Overview',
+      Index: 'Index',
+      LLM_Index: 'LLM Index',
+      LLM_ModelsList: 'Models List',
+      LLM_MemorySystem: 'Memory System',
+      LLM_ModelCompatibility: 'Model Compatibility',
+      LLM_ModelsArchitecture: 'Models Architecture',
+      LLM_ModelsCommands: 'Models Commands',
+      LLM_ModelsConfiguration: 'Models Configuration',
+      LLM_GettingStarted: 'Getting Started',
+      MCP_Architecture: 'MCP Architecture',
+      MCP_Commands: 'MCP Commands',
+      MCP_GettingStarted: 'MCP Getting Started',
+      MCP_Integration: 'MCP Integration',
+      MCP_Index: 'MCP Index',
+      MCP_Marketplace: 'MCP Marketplace',
+      UIGuide: 'UI Guide',
+      ColorASCII: 'Color ASCII',
+      Keybinds: 'Keyboard Shortcuts',
+      ContextArchitecture: 'Context Architecture',
+      ContextCompression: 'Context Compression',
+      ContextManagment: 'Context Management',
+      CheckpointFlowDiagram: 'Checkpoint Flow',
+      PromptsRouting: 'Prompts Routing',
+      PromptsTemplates: 'Prompts Templates',
+      SystemPrompts: 'System Prompts',
+      RoadmapVisual: 'Visual Roadmap',
+      PlanedFeatures: 'Planned Features',
     };
-    
+
     if (specialCases[nameWithoutExt]) {
       return specialCases[nameWithoutExt];
     }
-    
+
     // Convert kebab-case, snake_case, or PascalCase to Title Case
     return nameWithoutExt
       .replace(/([A-Z])/g, ' $1') // Add space before capital letters
       .replace(/[-_]/g, ' ') // Replace dashes and underscores with spaces
       .trim()
       .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
       .join(' ');
   }
 }

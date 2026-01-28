@@ -16,6 +16,7 @@ The services layer is organized into six independent, composable services:
 ## Architecture
 
 Services are designed to be:
+
 - **Independent**: Each service has a single, well-defined responsibility
 - **Composable**: Services can be used together or independently
 - **Configurable**: Behavior can be customized through configuration
@@ -26,12 +27,14 @@ Services are designed to be:
 All services use shared types defined in `types.ts`:
 
 ### Session Types
+
 - `SessionMessage` - User/assistant/system messages
 - `SessionToolCall` - Tool invocations and results
 - `Session` - Complete session with metadata
 - `SessionSummary` - Session listing information
 
 ### Service Configuration Types
+
 - `CompressionOptions` - Compression strategy configuration
 - `LoopDetectionConfig` - Loop detection thresholds
 - `ContextEntry` - Dynamic context entries
@@ -52,6 +55,7 @@ The `__tests__/test-helpers.ts` file provides:
 ### Test Configuration
 
 All property-based tests:
+
 - Run a minimum of 100 iterations
 - Use fast-check library
 - Are tagged with: `Feature: services-sessions, Property N: [property text]`
@@ -111,30 +115,30 @@ services:
     dataDir: ~/.ollm/session-data
     maxSessions: 100
     autoSave: true
-    
+
   compression:
     enabled: true
     threshold: 0.8
     strategy: hybrid
     preserveRecent: 4096
-    
+
   loopDetection:
     enabled: true
     maxTurns: 50
     repeatThreshold: 3
-    
+
   fileDiscovery:
     maxDepth: 10
     followSymlinks: false
-    
+
   environment:
     allowList:
       - PATH
       - HOME
       - USER
     denyPatterns:
-      - "*_KEY"
-      - "*_SECRET"
+      - '*_KEY'
+      - '*_SECRET'
 ```
 
 ## Design Principles

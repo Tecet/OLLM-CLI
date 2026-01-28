@@ -1,6 +1,6 @@
 /**
  * Path Validation Utilities
- * 
+ *
  * Provides cross-platform path validation and diagnostics for storage locations.
  */
 
@@ -21,7 +21,7 @@ export interface PathValidationResult {
 
 /**
  * Validate and resolve a storage path
- * 
+ *
  * @param dirPath - Path to validate (can be relative or absolute)
  * @param createIfMissing - Whether to create the directory if it doesn't exist
  * @returns Validation result with resolved path and status
@@ -117,20 +117,20 @@ export function validateStoragePath(
 
 /**
  * Log storage path diagnostics
- * 
+ *
  * @param label - Label for the path (e.g., "Sessions", "Snapshots")
  * @param dirPath - Path to diagnose
  */
 export function logPathDiagnostics(label: string, dirPath: string): void {
   const result = validateStoragePath(dirPath, false);
-  
+
   console.log(`[Storage] ${label}:`);
   console.log(`  Path: ${dirPath}`);
   console.log(`  Resolved: ${result.resolved}`);
   console.log(`  Exists: ${result.exists}`);
   console.log(`  Writable: ${result.writable}`);
   console.log(`  Valid: ${result.valid}`);
-  
+
   if (result.error) {
     console.log(`  Error: ${result.error}`);
   }
@@ -166,7 +166,7 @@ export function getDefaultStorageLocations(): StorageLocations {
  */
 export function logAllStorageLocations(): void {
   const locations = getDefaultStorageLocations();
-  
+
   console.log('[Storage] Default Locations:');
   console.log(`  Home: ${os.homedir()}`);
   console.log(`  Platform: ${os.platform()}`);
@@ -181,7 +181,7 @@ export function logAllStorageLocations(): void {
  */
 export async function ensureStorageDirectories(): Promise<void> {
   const locations = getDefaultStorageLocations();
-  
+
   for (const [name, location] of Object.entries(locations)) {
     const result = validateStoragePath(location, true);
     if (!result.valid) {

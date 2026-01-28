@@ -52,29 +52,28 @@ The system consists of six core services that work together: VRAM Monitor tracks
 
 **Snapshot Storage**: Persists snapshots to disk, implements atomic writes, detects corruption, and maintains metadata index.
 
-
 ## Components and Interfaces
 
 ### VRAM Monitor
 
 ```typescript
 interface VRAMInfo {
-  total: number;        // Total VRAM in bytes
-  used: number;         // Currently used VRAM
-  available: number;    // Available for allocation
-  modelLoaded: number;  // Memory used by loaded model
+  total: number; // Total VRAM in bytes
+  used: number; // Currently used VRAM
+  available: number; // Available for allocation
+  modelLoaded: number; // Memory used by loaded model
 }
 
 interface VRAMMonitor {
   // Query current memory status
   getInfo(): Promise<VRAMInfo>;
-  
+
   // Get memory available for context allocation
   getAvailableForContext(): Promise<number>;
-  
+
   // Register callback for low memory events
   onLowMemory(callback: (info: VRAMInfo) => void): void;
-  
+
   // Start/stop monitoring
   startMonitoring(intervalMs: number): void;
   stopMonitoring(): void;
@@ -83,7 +82,7 @@ interface VRAMMonitor {
 interface GPUDetector {
   // Detect GPU type on system
   detectGPU(): Promise<GPUType>;
-  
+
   // Check if GPU is available
   hasGPU(): Promise<boolean>;
 }
@@ -92,11 +91,12 @@ enum GPUType {
   NVIDIA = 'nvidia',
   AMD = 'amd',
   APPLE_SILICON = 'apple',
-  CPU_ONLY = 'cpu'
+  CPU_ONLY = 'cpu',
 }
 ```
 
 **Implementation Notes**:
+
 - NVIDIA: Use `nvidia-smi --query-gpu=memory.total,memory.used --format=csv,noheader,nounits` or NVML bindings
 - AMD: Use `rocm-smi --showmeminfo vram` or ROCm API
 - Apple Silicon: Use `sysctl hw.memsize` and Metal API for GPU memory
@@ -104,20 +104,19 @@ enum GPUType {
 - Poll interval: 5 seconds during active inference, stop when idle
 - Low memory threshold: Emit event when available < 20% of total
 
-
 ### Token Counter
 
 ```typescript
 interface TokenCounter {
   // Count tokens in a message
   countTokens(text: string): Promise<number>;
-  
+
   // Count tokens using cached value if available
   countTokensCached(messageId: string, text: string): number;
-  
+
   // Count total tokens in conversation
   countConversationTokens(messages: Message[]): number;
-  
+
   // Clear cache
   clearCache(): void;
 }
@@ -130,6 +129,7 @@ interface TokenCountCache {
 ```
 
 **Implementation Notes**:
+
 - Primary: Use provider's token counting API if available (e.g., Ollama `/api/encode`)
 - Fallback: Estimate using `Math.ceil(text.length / 4)` (roughly 0.75 words per token)
 - Cache token counts by message ID to avoid recalculation
@@ -137,32 +137,31 @@ interface TokenCountCache {
 - Per-model adjustments: Apply multiplier from config (e.g., 1.2x for multilingual models)
 - Clear cache when model changes
 
-
 ### Context Pool
 
 ```typescript
 interface ContextPoolConfig {
-  minContextSize: number;     // Minimum context (default: 2048)
-  maxContextSize: number;     // Maximum context (model limit)
-  targetContextSize: number;  // User-preferred size
-  reserveBuffer: number;      // Safety buffer in bytes (default: 512MB)
+  minContextSize: number; // Minimum context (default: 2048)
+  maxContextSize: number; // Maximum context (model limit)
+  targetContextSize: number; // User-preferred size
+  reserveBuffer: number; // Safety buffer in bytes (default: 512MB)
   kvCacheQuantization: 'f16' | 'q8_0' | 'q4_0';
-  autoSize: boolean;          // Enable automatic sizing
+  autoSize: boolean; // Enable automatic sizing
 }
 
 interface ContextPool {
   config: ContextPoolConfig;
   currentSize: number;
-  
+
   // Calculate optimal context size based on available VRAM
   calculateOptimalSize(vramInfo: VRAMInfo, modelInfo: ModelInfo): number;
-  
+
   // Resize context (may require model reload)
   resize(newSize: number): Promise<void>;
-  
+
   // Get current usage statistics
   getUsage(): ContextUsage;
-  
+
   // Update configuration
   updateConfig(config: Partial<ContextPoolConfig>): void;
 }
@@ -176,12 +175,13 @@ interface ContextUsage {
 }
 
 interface ModelInfo {
-  parameters: number;  // Model size in billions
+  parameters: number; // Model size in billions
   contextLimit: number; // Maximum context tokens
 }
 ```
 
 **Context Size Calculation**:
+
 ```typescript
 function calculateOptimalContext(
   availableVRAM: number,
@@ -192,37 +192,37 @@ function calculateOptimalContext(
   // Formula: 2 (K+V) × layers × hidden_dim × bytes_per_value
   // Simplified: params × multiplier × bytes
   const kvBytesPerToken = {
-    'f16': modelParams * 2 * 2 / 1e9,  // 2 bytes per value
-    'q8_0': modelParams * 1 * 2 / 1e9, // 1 byte per value
-    'q4_0': modelParams * 0.5 * 2 / 1e9 // 0.5 bytes per value
+    f16: (modelParams * 2 * 2) / 1e9, // 2 bytes per value
+    q8_0: (modelParams * 1 * 2) / 1e9, // 1 byte per value
+    q4_0: (modelParams * 0.5 * 2) / 1e9, // 0.5 bytes per value
   };
-  
+
   const bytesPerToken = kvBytesPerToken[kvQuantization];
   const safetyBuffer = 512 * 1024 * 1024; // 512MB
   const usableVRAM = availableVRAM - safetyBuffer;
-  
+
   return Math.floor(usableVRAM / bytesPerToken);
 }
 ```
 
 **Implementation Notes**:
+
 - Clamp calculated size between minContextSize and maxContextSize
 - If autoSize is disabled, use targetContextSize
 - Coordinate with provider for context resize (may require model reload)
 - Preserve conversation data during resize
 - Update usage statistics in real-time
 
-
 ### Snapshot Manager
 
 ```typescript
 interface ContextSnapshot {
-  id: string;              // Unique snapshot ID (UUID)
-  sessionId: string;       // Associated session
-  timestamp: Date;         // Creation time
-  tokenCount: number;      // Total tokens at snapshot
-  summary: string;         // Brief summary of content
-  messages: Message[];     // Full conversation messages
+  id: string; // Unique snapshot ID (UUID)
+  sessionId: string; // Associated session
+  timestamp: Date; // Creation time
+  tokenCount: number; // Total tokens at snapshot
+  summary: string; // Brief summary of content
+  messages: Message[]; // Full conversation messages
   metadata: {
     model: string;
     contextSize: number;
@@ -233,35 +233,36 @@ interface ContextSnapshot {
 interface SnapshotManager {
   // Create snapshot from current context
   createSnapshot(context: ConversationContext): Promise<ContextSnapshot>;
-  
+
   // Restore context from snapshot
   restoreSnapshot(snapshotId: string): Promise<ConversationContext>;
-  
+
   // List snapshots for a session
   listSnapshots(sessionId: string): Promise<ContextSnapshot[]>;
-  
+
   // Delete a snapshot
   deleteSnapshot(snapshotId: string): Promise<void>;
-  
+
   // Register threshold callback
   onContextThreshold(threshold: number, callback: () => void): void;
-  
+
   // Register pre-overflow callback
   onBeforeOverflow(callback: () => void): void;
-  
+
   // Cleanup old snapshots
   cleanupOldSnapshots(maxCount: number): Promise<void>;
 }
 
 interface SnapshotConfig {
   enabled: boolean;
-  maxCount: number;        // Maximum snapshots to keep (default: 5)
-  autoCreate: boolean;     // Auto-create at threshold
-  autoThreshold: number;   // Threshold for auto-creation (default: 0.8)
+  maxCount: number; // Maximum snapshots to keep (default: 5)
+  autoCreate: boolean; // Auto-create at threshold
+  autoThreshold: number; // Threshold for auto-creation (default: 0.8)
 }
 ```
 
 **Implementation Notes**:
+
 - Generate snapshot ID using UUID v4
 - Store snapshots in `~/.ollm/session-data/<sessionId>/snapshots/`
 - Filename format: `snapshot-<id>.json`
@@ -270,33 +271,29 @@ interface SnapshotConfig {
 - Pre-overflow detection: Trigger when usage > 95%
 - Summary generation: Use first/last messages or compression service
 
-
 ### Compression Service
 
 ```typescript
 interface CompressionStrategy {
   type: 'summarize' | 'truncate' | 'hybrid';
-  preserveRecent: number;    // Tokens to keep uncompressed
-  summaryMaxTokens: number;  // Max tokens for summary
+  preserveRecent: number; // Tokens to keep uncompressed
+  summaryMaxTokens: number; // Max tokens for summary
 }
 
 interface CompressionService {
   // Compress messages using specified strategy
-  compress(
-    messages: Message[],
-    strategy: CompressionStrategy
-  ): Promise<CompressedContext>;
-  
+  compress(messages: Message[], strategy: CompressionStrategy): Promise<CompressedContext>;
+
   // Estimate compression without performing it
   estimateCompression(messages: Message[]): CompressionEstimate;
-  
+
   // Check if compression is needed
   shouldCompress(tokenCount: number, threshold: number): boolean;
 }
 
 interface CompressedContext {
-  summary: Message;          // System message with summary
-  preserved: Message[];      // Recent messages kept intact
+  summary: Message; // System message with summary
+  preserved: Message[]; // Recent messages kept intact
   originalTokens: number;
   compressedTokens: number;
   compressionRatio: number;
@@ -310,10 +307,10 @@ interface CompressionEstimate {
 
 interface CompressionConfig {
   enabled: boolean;
-  threshold: number;         // Trigger at % capacity (default: 0.8)
+  threshold: number; // Trigger at % capacity (default: 0.8)
   strategy: 'summarize' | 'truncate' | 'hybrid';
-  preserveRecent: number;    // Tokens to preserve (default: 4096)
-  summaryMaxTokens: number;  // Max summary size (default: 1024)
+  preserveRecent: number; // Tokens to preserve (default: 4096)
+  summaryMaxTokens: number; // Max summary size (default: 1024)
 }
 ```
 
@@ -335,12 +332,12 @@ interface CompressionConfig {
    - Balance between quality and speed
 
 **Implementation Notes**:
+
 - Always preserve system prompt (role: 'system')
 - Preserve tool definitions in context
 - Compression ratio = compressedTokens / originalTokens
 - Estimation: Assume 50% compression for summarize, 0% for preserved messages
 - Automatic trigger at configured threshold (default: 80%)
-
 
 ### Memory Guard
 
@@ -348,47 +345,47 @@ interface CompressionConfig {
 interface MemoryGuard {
   // Check if allocation is safe
   canAllocate(requestedTokens: number): boolean;
-  
+
   // Get safe allocation limit
   getSafeLimit(): number;
-  
+
   // Handle memory threshold events
   onThreshold(level: MemoryLevel, callback: () => void): void;
-  
+
   // Execute emergency actions
   executeEmergencyActions(): Promise<void>;
 }
 
 enum MemoryLevel {
-  NORMAL = 'normal',      // < 80%
-  WARNING = 'warning',    // 80-90%
-  CRITICAL = 'critical',  // 90-95%
-  EMERGENCY = 'emergency' // > 95%
+  NORMAL = 'normal', // < 80%
+  WARNING = 'warning', // 80-90%
+  CRITICAL = 'critical', // 90-95%
+  EMERGENCY = 'emergency', // > 95%
 }
 
 interface MemoryThresholds {
-  soft: number;      // 80% - Trigger compression
-  hard: number;      // 90% - Force context reduction
-  critical: number;  // 95% - Emergency snapshot + clear
+  soft: number; // 80% - Trigger compression
+  hard: number; // 90% - Force context reduction
+  critical: number; // 95% - Emergency snapshot + clear
 }
 ```
 
 **Threshold Actions**:
 
-| Level | Threshold | Action |
-|-------|-----------|--------|
-| Normal | < 80% | No action |
-| Warning | 80-90% | Trigger automatic compression |
-| Critical | 90-95% | Force context size reduction |
-| Emergency | > 95% | Create snapshot, clear context, notify user |
+| Level     | Threshold | Action                                      |
+| --------- | --------- | ------------------------------------------- |
+| Normal    | < 80%     | No action                                   |
+| Warning   | 80-90%    | Trigger automatic compression               |
+| Critical  | 90-95%    | Force context size reduction                |
+| Emergency | > 95%     | Create snapshot, clear context, notify user |
 
 **Implementation Notes**:
+
 - Check before every message addition
 - Safety buffer: 512MB reserved for overhead
 - Emergency actions: Create snapshot → Clear context → Notify user with recovery options
 - User notification includes: snapshot ID, recovery command, memory stats
 - Soft limit prevents allocation, hard limit forces action
-
 
 ### Snapshot Storage
 
@@ -396,19 +393,19 @@ interface MemoryThresholds {
 interface SnapshotStorage {
   // Save snapshot to disk
   save(snapshot: ContextSnapshot): Promise<void>;
-  
+
   // Load snapshot from disk
   load(snapshotId: string): Promise<ContextSnapshot>;
-  
+
   // List all snapshots for a session
   list(sessionId: string): Promise<SnapshotMetadata[]>;
-  
+
   // Delete snapshot
   delete(snapshotId: string): Promise<void>;
-  
+
   // Check if snapshot exists
   exists(snapshotId: string): Promise<boolean>;
-  
+
   // Verify snapshot integrity
   verify(snapshotId: string): Promise<boolean>;
 }
@@ -419,11 +416,12 @@ interface SnapshotMetadata {
   timestamp: Date;
   tokenCount: number;
   summary: string;
-  size: number;  // File size in bytes
+  size: number; // File size in bytes
 }
 ```
 
 **File Format**:
+
 ```json
 {
   "version": "1.0",
@@ -451,13 +449,13 @@ interface SnapshotMetadata {
 ```
 
 **Implementation Notes**:
+
 - Storage location: `~/.ollm/session-data/<sessionId>/snapshots/`
 - Atomic writes: Write to temp file, then rename
 - Compression: Use gzip for message content if > 100KB
 - Index file: `snapshots-index.json` with metadata for quick lookup
 - Corruption detection: Verify JSON parse + required fields
 - Error handling: Skip corrupted files, log warning, continue with valid snapshots
-
 
 ## Data Models
 
@@ -469,7 +467,7 @@ interface Message {
   role: 'system' | 'user' | 'assistant' | 'tool';
   content: string;
   timestamp: Date;
-  tokenCount?: number;  // Cached token count
+  tokenCount?: number; // Cached token count
   metadata?: {
     toolCalls?: ToolCall[];
     toolResults?: ToolResult[];
@@ -517,227 +515,265 @@ interface ContextConfig {
 }
 ```
 
-
 ## Correctness Properties
 
 A property is a characteristic or behavior that should hold true across all valid executions of a system—essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.
 
 ### Property 1: VRAM Info Completeness
-*For any* VRAM information request, the returned VRAMInfo object should contain all required fields (total, used, available, modelLoaded) with non-negative values.
+
+_For any_ VRAM information request, the returned VRAMInfo object should contain all required fields (total, used, available, modelLoaded) with non-negative values.
 **Validates: Requirements 1.2**
 
 ### Property 2: Low Memory Event Emission
-*For any* memory state and threshold, when available memory drops below the threshold, a low-memory event should be emitted.
+
+_For any_ memory state and threshold, when available memory drops below the threshold, a low-memory event should be emitted.
 **Validates: Requirements 1.8**
 
 ### Property 3: Token Count Caching
-*For any* message, counting tokens twice for the same message should return the cached value without recalculation.
+
+_For any_ message, counting tokens twice for the same message should return the cached value without recalculation.
 **Validates: Requirements 2.1, 2.4**
 
 ### Property 4: Fallback Token Estimation
-*For any* text when provider token counting is unavailable, the estimated token count should equal Math.ceil(text.length / 4).
+
+_For any_ text when provider token counting is unavailable, the estimated token count should equal Math.ceil(text.length / 4).
 **Validates: Requirements 2.3**
 
 ### Property 5: Tool Call Overhead Inclusion
-*For any* conversation with tool calls, the total token count should include overhead for each tool call.
+
+_For any_ conversation with tool calls, the total token count should include overhead for each tool call.
 **Validates: Requirements 2.5**
 
 ### Property 6: Model-Specific Multipliers
-*For any* configured per-model token adjustment multiplier, the token count should be multiplied by that factor.
+
+_For any_ configured per-model token adjustment multiplier, the token count should be multiplied by that factor.
 **Validates: Requirements 2.6**
 
 ### Property 7: Context Size Formula
-*For any* available VRAM, safety buffer, and bytes per token, the calculated context size should equal floor((availableVRAM - safetyBuffer) / bytesPerToken).
+
+_For any_ available VRAM, safety buffer, and bytes per token, the calculated context size should equal floor((availableVRAM - safetyBuffer) / bytesPerToken).
 **Validates: Requirements 3.2**
 
 ### Property 8: Quantization Bytes Per Token
-*For any* KV cache quantization type (f16, q8_0, q4_0), the bytes per value used in calculations should match the specification (2, 1, 0.5 respectively).
+
+_For any_ KV cache quantization type (f16, q8_0, q4_0), the bytes per value used in calculations should match the specification (2, 1, 0.5 respectively).
 **Validates: Requirements 3.3, 3.4, 3.5**
 
 ### Property 9: Context Resize Preservation
-*For any* context with existing conversation data, resizing the context should preserve all messages without data loss.
+
+_For any_ context with existing conversation data, resizing the context should preserve all messages without data loss.
 **Validates: Requirements 3.7**
 
 ### Property 10: Context Usage Fields
-*For any* context usage request, the returned ContextUsage object should contain current usage percentage and token counts.
+
+_For any_ context usage request, the returned ContextUsage object should contain current usage percentage and token counts.
 **Validates: Requirements 3.8**
 
 ### Property 11: Snapshot Data Completeness
-*For any* created snapshot, it should contain all required fields: messages, token count, and metadata.
+
+_For any_ created snapshot, it should contain all required fields: messages, token count, and metadata.
 **Validates: Requirements 4.1**
 
 ### Property 12: Snapshot Round Trip
-*For any* conversation context, creating a snapshot and then restoring it should produce an equivalent context with the same messages and metadata.
+
+_For any_ conversation context, creating a snapshot and then restoring it should produce an equivalent context with the same messages and metadata.
 **Validates: Requirements 4.3**
 
 ### Property 13: Snapshot List Metadata
-*For any* session with snapshots, listing snapshots should return all snapshots with their IDs, timestamps, and token counts.
+
+_For any_ session with snapshots, listing snapshots should return all snapshots with their IDs, timestamps, and token counts.
 **Validates: Requirements 4.4**
 
 ### Property 14: Snapshot Deletion Effect
-*For any* snapshot, after deletion, the snapshot should no longer appear in the list of snapshots.
+
+_For any_ snapshot, after deletion, the snapshot should no longer appear in the list of snapshots.
 **Validates: Requirements 4.5**
 
 ### Property 15: Auto-Snapshot Threshold
-*For any* context usage level, when usage reaches 80% capacity, a snapshot should be automatically created.
+
+_For any_ context usage level, when usage reaches 80% capacity, a snapshot should be automatically created.
 **Validates: Requirements 4.6**
 
 ### Property 16: Pre-Overflow Event
-*For any* context approaching overflow (>95%), a pre-overflow event should be emitted.
+
+_For any_ context approaching overflow (>95%), a pre-overflow event should be emitted.
 **Validates: Requirements 4.7**
 
 ### Property 17: Rolling Snapshot Cleanup
-*For any* configured maximum snapshot count, the number of snapshots should never exceed that maximum, with oldest deleted first.
+
+_For any_ configured maximum snapshot count, the number of snapshots should never exceed that maximum, with oldest deleted first.
 **Validates: Requirements 4.8, 8.9**
 
 ### Property 18: System Prompt Preservation in Truncation
-*For any* set of messages including a system prompt, truncation compression should always preserve the system prompt.
+
+_For any_ set of messages including a system prompt, truncation compression should always preserve the system prompt.
 **Validates: Requirements 5.2**
 
 ### Property 19: Hybrid Compression Structure
-*For any* hybrid compression, the result should contain summarized old messages and intact recent messages.
+
+_For any_ hybrid compression, the result should contain summarized old messages and intact recent messages.
 **Validates: Requirements 5.3**
 
 ### Property 20: Recent Token Preservation
-*For any* compression with a configured preserveRecent value, exactly that number of recent tokens should remain uncompressed.
+
+_For any_ compression with a configured preserveRecent value, exactly that number of recent tokens should remain uncompressed.
 **Validates: Requirements 5.4**
 
 ### Property 21: Compression Result Fields
-*For any* completed compression, the result should include both original and compressed token counts.
+
+_For any_ completed compression, the result should include both original and compressed token counts.
 **Validates: Requirements 5.5**
 
 ### Property 22: Compression Estimation No Side Effects
-*For any* context, estimating compression should not modify the context or trigger actual compression.
+
+_For any_ context, estimating compression should not modify the context or trigger actual compression.
 **Validates: Requirements 5.6**
 
 ### Property 23: Auto-Compression Threshold
-*For any* context usage level, when usage reaches the compression threshold, compression should be automatically triggered.
+
+_For any_ context usage level, when usage reaches the compression threshold, compression should be automatically triggered.
 **Validates: Requirements 5.7, 8.7**
 
 ### Property 24: Allocation Safety Check
-*For any* token allocation request, canAllocate should return true only if the allocation would not exceed the soft limit (80%).
+
+_For any_ token allocation request, canAllocate should return true only if the allocation would not exceed the soft limit (80%).
 **Validates: Requirements 6.1**
 
 ### Property 25: Emergency Action Notification
-*For any* emergency action taken by Memory Guard, the user should be notified with recovery options.
+
+_For any_ emergency action taken by Memory Guard, the user should be notified with recovery options.
 **Validates: Requirements 6.5**
 
 ### Property 26: Safety Buffer Inclusion
-*For any* safe allocation limit calculation, a safety buffer of 512MB should be subtracted from available memory.
+
+_For any_ safe allocation limit calculation, a safety buffer of 512MB should be subtracted from available memory.
 **Validates: Requirements 6.6**
 
 ### Property 27: Context Size Command
-*For any* target context size value, running `/context size <tokens>` should set the target to that value.
+
+_For any_ target context size value, running `/context size <tokens>` should set the target to that value.
 **Validates: Requirements 7.2**
 
 ### Property 28: Snapshot Restoration
-*For any* snapshot ID, running `/context restore <id>` should restore the context to match that snapshot.
+
+_For any_ snapshot ID, running `/context restore <id>` should restore the context to match that snapshot.
 **Validates: Requirements 7.5**
 
 ### Property 29: Context Clear Preservation
-*For any* context with a system prompt, running `/context clear` should remove all messages except the system prompt.
+
+_For any_ context with a system prompt, running `/context clear` should remove all messages except the system prompt.
 **Validates: Requirements 7.7**
 
 ### Property 30: Target Size Configuration
-*For any* configured targetSize value, the Context Manager should use that value as the preferred context size.
+
+_For any_ configured targetSize value, the Context Manager should use that value as the preferred context size.
 **Validates: Requirements 8.1**
 
 ### Property 31: Minimum Size Invariant
-*For any* context operation, the context size should never be reduced below the configured minSize.
+
+_For any_ context operation, the context size should never be reduced below the configured minSize.
 **Validates: Requirements 8.2**
 
 ### Property 32: Maximum Size Invariant
-*For any* context operation, the context size should never exceed the configured maxSize.
+
+_For any_ context operation, the context size should never exceed the configured maxSize.
 **Validates: Requirements 8.3**
 
 ### Property 33: Auto-Size Dynamic Adjustment
-*For any* VRAM availability change when autoSize is enabled, the context size should adjust accordingly.
+
+_For any_ VRAM availability change when autoSize is enabled, the context size should adjust accordingly.
 **Validates: Requirements 8.4**
 
 ### Property 34: VRAM Buffer Reservation
-*For any* configured vramBuffer value, that amount should be reserved and subtracted from available VRAM in all calculations.
+
+_For any_ configured vramBuffer value, that amount should be reserved and subtracted from available VRAM in all calculations.
 **Validates: Requirements 8.5**
 
 ### Property 35: Quantization Configuration
-*For any* configured kvQuantization type, that quantization should be used in all context size calculations.
+
+_For any_ configured kvQuantization type, that quantization should be used in all context size calculations.
 **Validates: Requirements 8.6**
 
 ### Property 36: Auto-Snapshot Threshold
-*For any* configured snapshot threshold, snapshots should be automatically created when context usage reaches that threshold.
+
+_For any_ configured snapshot threshold, snapshots should be automatically created when context usage reaches that threshold.
 **Validates: Requirements 8.8**
 
 ### Property 37: Status Display Completeness
-*For any* context status display, it should include model name, token usage with percentage, VRAM usage with percentage, KV cache info, snapshot count, and compression settings.
+
+_For any_ context status display, it should include model name, token usage with percentage, VRAM usage with percentage, KV cache info, snapshot count, and compression settings.
 **Validates: Requirements 9.1, 9.2, 9.3, 9.4, 9.5, 9.6**
 
 ### Property 38: High Usage Warning
-*For any* context usage level, when usage exceeds 80%, a warning indicator should be displayed in the status.
+
+_For any_ context usage level, when usage exceeds 80%, a warning indicator should be displayed in the status.
 **Validates: Requirements 9.7**
 
 ### Property 39: Snapshot JSON Format
-*For any* saved snapshot, the file should be valid JSON with the expected structure including messages and metadata.
+
+_For any_ saved snapshot, the file should be valid JSON with the expected structure including messages and metadata.
 **Validates: Requirements 10.1**
 
 ### Property 40: Corruption Detection
-*For any* corrupted snapshot file, loading should detect the corruption and report an error.
+
+_For any_ corrupted snapshot file, loading should detect the corruption and report an error.
 **Validates: Requirements 10.3**
 
 ### Property 41: Corrupted File Recovery
-*For any* set of snapshots including corrupted files, the system should skip corrupted files and successfully load valid snapshots.
-**Validates: Requirements 10.6**
 
+_For any_ set of snapshots including corrupted files, the system should skip corrupted files and successfully load valid snapshots.
+**Validates: Requirements 10.6**
 
 ## Error Handling
 
 ### VRAM Monitor Errors
 
-| Error | Cause | Recovery |
-|-------|-------|----------|
-| GPU Detection Failed | No GPU tools available | Fall back to CPU-only mode, monitor RAM |
-| Query Timeout | GPU command hangs | Use cached values, retry with backoff |
-| Permission Denied | No access to GPU tools | Fall back to estimation based on model size |
+| Error                | Cause                  | Recovery                                    |
+| -------------------- | ---------------------- | ------------------------------------------- |
+| GPU Detection Failed | No GPU tools available | Fall back to CPU-only mode, monitor RAM     |
+| Query Timeout        | GPU command hangs      | Use cached values, retry with backoff       |
+| Permission Denied    | No access to GPU tools | Fall back to estimation based on model size |
 
 ### Token Counter Errors
 
-| Error | Cause | Recovery |
-|-------|-------|----------|
-| Provider API Unavailable | Network/service error | Use fallback estimation (chars/4) |
-| Invalid Token Count | Negative or NaN result | Log warning, use estimation |
-| Cache Corruption | Invalid cache data | Clear cache, recalculate |
+| Error                    | Cause                  | Recovery                          |
+| ------------------------ | ---------------------- | --------------------------------- |
+| Provider API Unavailable | Network/service error  | Use fallback estimation (chars/4) |
+| Invalid Token Count      | Negative or NaN result | Log warning, use estimation       |
+| Cache Corruption         | Invalid cache data     | Clear cache, recalculate          |
 
 ### Context Pool Errors
 
-| Error | Cause | Recovery |
-|-------|-------|----------|
-| Resize Failed | Provider error | Revert to previous size, notify user |
-| Invalid Size | Size < min or > max | Clamp to valid range |
-| Insufficient VRAM | Not enough memory | Reduce to minimum size, trigger compression |
+| Error             | Cause               | Recovery                                    |
+| ----------------- | ------------------- | ------------------------------------------- |
+| Resize Failed     | Provider error      | Revert to previous size, notify user        |
+| Invalid Size      | Size < min or > max | Clamp to valid range                        |
+| Insufficient VRAM | Not enough memory   | Reduce to minimum size, trigger compression |
 
 ### Snapshot Errors
 
-| Error | Cause | Recovery |
-|-------|-------|----------|
-| Save Failed | Disk full, permissions | Notify user, suggest cleanup |
-| Load Failed | File not found | Return error, list available snapshots |
-| Corruption Detected | Invalid JSON, missing fields | Skip file, log warning, continue |
-| Restore Failed | Invalid snapshot data | Return error, keep current context |
+| Error               | Cause                        | Recovery                               |
+| ------------------- | ---------------------------- | -------------------------------------- |
+| Save Failed         | Disk full, permissions       | Notify user, suggest cleanup           |
+| Load Failed         | File not found               | Return error, list available snapshots |
+| Corruption Detected | Invalid JSON, missing fields | Skip file, log warning, continue       |
+| Restore Failed      | Invalid snapshot data        | Return error, keep current context     |
 
 ### Compression Errors
 
-| Error | Cause | Recovery |
-|-------|-------|----------|
-| Summarization Failed | Model error | Fall back to truncation strategy |
-| Invalid Strategy | Unknown strategy type | Use default (hybrid) |
-| Compression Timeout | Model too slow | Cancel, use truncation |
+| Error                | Cause                 | Recovery                         |
+| -------------------- | --------------------- | -------------------------------- |
+| Summarization Failed | Model error           | Fall back to truncation strategy |
+| Invalid Strategy     | Unknown strategy type | Use default (hybrid)             |
+| Compression Timeout  | Model too slow        | Cancel, use truncation           |
 
 ### Memory Guard Errors
 
-| Error | Cause | Recovery |
-|-------|-------|----------|
-| OOM Imminent | Memory > 95% | Emergency snapshot + clear |
-| Threshold Action Failed | Compression/resize error | Escalate to next threshold level |
-| Emergency Snapshot Failed | Disk/permission error | Clear context anyway, notify user |
-
+| Error                     | Cause                    | Recovery                          |
+| ------------------------- | ------------------------ | --------------------------------- |
+| OOM Imminent              | Memory > 95%             | Emergency snapshot + clear        |
+| Threshold Action Failed   | Compression/resize error | Escalate to next threshold level  |
+| Emergency Snapshot Failed | Disk/permission error    | Clear context anyway, notify user |
 
 ## Testing Strategy
 
@@ -746,42 +782,49 @@ A property is a characteristic or behavior that should hold true across all vali
 Unit tests verify specific examples, edge cases, and error conditions for individual components:
 
 **VRAM Monitor**:
+
 - GPU detection for each type (NVIDIA, AMD, Apple, CPU-only)
 - Memory info parsing from command output
 - Low memory event emission
 - Fallback to RAM monitoring
 
 **Token Counter**:
+
 - Provider API integration
 - Fallback estimation formula
 - Cache hit/miss behavior
 - Tool call overhead calculation
 
 **Context Pool**:
+
 - Context size calculation with different quantization types
 - Min/max size clamping
 - Resize coordination with provider
 - Usage statistics accuracy
 
 **Snapshot Manager**:
+
 - Snapshot creation with all required fields
 - Snapshot restoration
 - Rolling cleanup logic
 - Threshold-based auto-creation
 
 **Compression Service**:
+
 - Each compression strategy (summarize, truncate, hybrid)
 - System prompt preservation
 - Recent message preservation
 - Compression ratio calculation
 
 **Memory Guard**:
+
 - Threshold detection (80%, 90%, 95%)
 - Action triggering at each level
 - Emergency action execution
 - User notification
 
 **Snapshot Storage**:
+
 - JSON serialization/deserialization
 - Corruption detection
 - Index management
@@ -792,12 +835,14 @@ Unit tests verify specific examples, edge cases, and error conditions for indivi
 Property tests verify universal properties across all inputs using randomized test data. Each test should run a minimum of 100 iterations.
 
 **Test Configuration**:
+
 - Use `fast-check` library for TypeScript property-based testing
 - Minimum 100 iterations per property test
 - Each test references its design document property number
 - Tag format: `Feature: stage-04b-context-management, Property N: <property text>`
 
 **Key Properties to Test**:
+
 - Property 3: Token count caching (generate random messages, verify cache hits)
 - Property 4: Fallback estimation formula (generate random text, verify formula)
 - Property 7: Context size calculation (generate random VRAM values, verify formula)
@@ -809,27 +854,28 @@ Property tests verify universal properties across all inputs using randomized te
 - Property 32: Maximum size invariant (generate random operations, verify max never violated)
 
 **Generators**:
+
 ```typescript
 // Example generators for property tests
 const arbMessage = fc.record({
   id: fc.uuid(),
   role: fc.constantFrom('system', 'user', 'assistant', 'tool'),
   content: fc.string({ minLength: 1, maxLength: 1000 }),
-  timestamp: fc.date()
+  timestamp: fc.date(),
 });
 
 const arbVRAMInfo = fc.record({
   total: fc.integer({ min: 1e9, max: 80e9 }), // 1-80 GB
   used: fc.integer({ min: 0, max: 80e9 }),
   available: fc.integer({ min: 0, max: 80e9 }),
-  modelLoaded: fc.integer({ min: 0, max: 40e9 })
+  modelLoaded: fc.integer({ min: 0, max: 40e9 }),
 });
 
 const arbContextConfig = fc.record({
   minContextSize: fc.integer({ min: 512, max: 4096 }),
   maxContextSize: fc.integer({ min: 8192, max: 131072 }),
   targetContextSize: fc.integer({ min: 4096, max: 65536 }),
-  kvQuantization: fc.constantFrom('f16', 'q8_0', 'q4_0')
+  kvQuantization: fc.constantFrom('f16', 'q8_0', 'q4_0'),
 });
 ```
 
@@ -868,4 +914,3 @@ Manual testing scenarios for user-facing features:
 8. Fill context to 95% and verify emergency actions
 9. Switch models and verify context adjusts
 10. Restart session and verify snapshots persist
-

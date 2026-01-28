@@ -69,6 +69,7 @@ The integration tests validate the following requirements:
 ### Mock Setup
 
 The tests use comprehensive mocks for:
+
 - `MCPOAuthProvider` - OAuth provider with authorize, refreshToken, revokeAccess methods
 - `FileTokenStorage` - Token storage with encryption
 - `mcpConfigService` - Configuration management
@@ -121,6 +122,7 @@ The tests use comprehensive mocks for:
 ## Integration Points
 
 The tests verify integration between:
+
 - **MCPTab** ↔ **OAuthConfigDialog** - Dialog opening and callbacks
 - **MCPContext** ↔ **MCPOAuthProvider** - OAuth operations
 - **MCPOAuthProvider** ↔ **TokenStorage** - Token persistence
@@ -133,6 +135,7 @@ The tests verify integration between:
 ## Next Steps
 
 The following tasks remain in Phase 5:
+
 - [ ] 5.4 Integration test: Server installation flow
 - [ ] 5.5 Integration test: Health monitoring updates
 - [ ] 5.6 Property-based test: Configuration persistence

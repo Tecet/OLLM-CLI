@@ -1,4 +1,11 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  ReactNode,
+} from 'react';
 
 import { createGPUMonitor, type GPUInfo, type GPUMonitor } from '@ollm/core';
 
@@ -7,13 +14,13 @@ import { setLastGPUInfo } from './gpuHintStore.js';
 export interface GPUContextValue {
   /** Current GPU information, null if not yet loaded */
   info: GPUInfo | null;
-  
+
   /** Whether GPU info is currently being loaded */
   loading: boolean;
-  
+
   /** Error that occurred during GPU monitoring, if any */
   error: Error | null;
-  
+
   /** Manually refresh GPU information */
   refresh: () => Promise<void>;
 }
@@ -22,13 +29,13 @@ const GPUContext = createContext<GPUContextValue | undefined>(undefined);
 
 export interface GPUProviderProps {
   children: ReactNode;
-  
+
   /** GPU monitor instance (for testing) */
   monitor?: GPUMonitor;
-  
+
   /** Polling interval in milliseconds (default: 5000) */
   pollingInterval?: number;
-  
+
   /** Whether to start polling automatically (default: true) */
   autoStart?: boolean;
 }
@@ -47,7 +54,7 @@ export function GPUProvider({
   const refresh = useCallback(async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const newInfo = await monitor.getInfo();
       setInfo(newInfo);

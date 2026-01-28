@@ -57,12 +57,7 @@ The Provider System implements a clean adapter pattern for connecting the OLLM C
 Create a new file in `packages/ollm-bridge/src/provider/`:
 
 ```typescript
-import type {
-  ProviderAdapter,
-  ProviderRequest,
-  ProviderEvent,
-  ModelInfo,
-} from '@ollm/core';
+import type { ProviderAdapter, ProviderRequest, ProviderEvent, ModelInfo } from '@ollm/core';
 
 export interface MyProviderConfig {
   baseUrl: string;
@@ -93,7 +88,7 @@ The `chatStream` method is the core of any provider. It must:
 ```typescript
 async *chatStream(request: ProviderRequest): AsyncIterable<ProviderEvent> {
   const url = `${this.config.baseUrl}/api/chat`;
-  
+
   // Build request body
   const body = {
     model: request.model,
@@ -106,7 +101,7 @@ async *chatStream(request: ProviderRequest): AsyncIterable<ProviderEvent> {
   // Setup timeout and abort handling
   const timeout = request.timeout ?? this.config.timeout ?? 30000;
   const controller = new AbortController();
-  
+
   if (request.abortSignal) {
     request.abortSignal.addEventListener('abort', () => {
       controller.abort(request.abortSignal?.reason);
@@ -286,18 +281,23 @@ registry.setDefault('my-provider');
 ## Provider Event Types
 
 ### Text Event
+
 ```typescript
 { type: 'text', value: string }
 ```
+
 Incremental text tokens from the model.
 
 ### Thinking Event
+
 ```typescript
 { type: 'thinking', value: string }
 ```
+
 Reasoning/thinking tokens (if model supports it).
 
 ### Tool Call Event
+
 ```typescript
 {
   type: 'tool_call',
@@ -308,9 +308,11 @@ Reasoning/thinking tokens (if model supports it).
   }
 }
 ```
+
 Function/tool call request from the model.
 
 ### Finish Event
+
 ```typescript
 {
   type: 'finish',
@@ -318,9 +320,11 @@ Function/tool call request from the model.
   metrics?: ProviderMetrics
 }
 ```
+
 Completion event with reason and optional metrics.
 
 ### Error Event
+
 ```typescript
 {
   type: 'error',
@@ -332,6 +336,7 @@ Completion event with reason and optional metrics.
   }
 }
 ```
+
 Error information (prefer emitting errors over throwing).
 
 ## Error Handling Best Practices
@@ -373,7 +378,7 @@ try {
       yield { type: 'finish', reason: 'stop' };
       return;
     }
-    
+
     // Network error - emit error event
     yield {
       type: 'error',
@@ -456,7 +461,7 @@ resetTimeout();
 // Reset on each chunk
 for await (const chunk of parseStream(response.body)) {
   resetTimeout(); // Reset timeout - we received data
-  yield* this.mapChunkToEvents(chunk);
+  yield * this.mapChunkToEvents(chunk);
 }
 
 // Cleanup
@@ -476,7 +481,7 @@ if (request.abortSignal) {
     yield { type: 'error', error: { message: 'Request aborted' } };
     return;
   }
-  
+
   request.abortSignal.addEventListener('abort', () => {
     controller.abort(request.abortSignal?.reason);
   }, { once: true });
@@ -497,13 +502,9 @@ describe('MyProvider', () => {
   describe('mapMessages', () => {
     it('should map text messages', () => {
       const provider = new MyProvider({ baseUrl: 'http://localhost' });
-      const messages = [
-        { role: 'user', parts: [{ type: 'text', text: 'Hello' }] }
-      ];
+      const messages = [{ role: 'user', parts: [{ type: 'text', text: 'Hello' }] }];
       const mapped = provider['mapMessages'](messages);
-      expect(mapped).toEqual([
-        { role: 'user', content: 'Hello' }
-      ]);
+      expect(mapped).toEqual([{ role: 'user', content: 'Hello' }]);
     });
   });
 
@@ -533,7 +534,7 @@ Test streaming with mock server:
 describe('MyProvider - Integration', () => {
   it('should stream text events', async () => {
     const provider = new MyProvider({ baseUrl: 'http://localhost:8000' });
-    
+
     const request: ProviderRequest = {
       model: 'test-model',
       messages: [{ role: 'user', parts: [{ type: 'text', text: 'Hello' }] }],
@@ -550,7 +551,7 @@ describe('MyProvider - Integration', () => {
 
   it('should handle errors gracefully', async () => {
     const provider = new MyProvider({ baseUrl: 'http://invalid' });
-    
+
     const request: ProviderRequest = {
       model: 'test-model',
       messages: [{ role: 'user', parts: [{ type: 'text', text: 'Hello' }] }],
@@ -563,7 +564,7 @@ describe('MyProvider - Integration', () => {
 
     expect(events).toContainEqual({
       type: 'error',
-      error: expect.objectContaining({ message: expect.any(String) })
+      error: expect.objectContaining({ message: expect.any(String) }),
     });
   });
 });
@@ -630,7 +631,7 @@ Process chunks as they arrive:
 const text = await response.text();
 const lines = text.split('\n');
 for (const line of lines) {
-  yield* this.mapChunkToEvents(JSON.parse(line));
+  yield * this.mapChunkToEvents(JSON.parse(line));
 }
 
 // ✅ GOOD: Streaming line by line
@@ -648,7 +649,7 @@ while (true) {
 
   for (const line of lines) {
     if (line.trim()) {
-      yield* this.mapChunkToEvents(JSON.parse(line));
+      yield * this.mapChunkToEvents(JSON.parse(line));
     }
   }
 }
@@ -656,14 +657,14 @@ while (true) {
 
 ## Provider Comparison
 
-| Feature | LocalProvider | vLLMProvider | OpenAIProvider |
-|---------|---------------|--------------|----------------|
-| Streaming | ✅ | ❌ Not Implemented | ❌ Not Implemented |
-| Tool Calling | ✅ | ❌ Not Implemented | ❌ Not Implemented |
-| Vision | ❌ | ❌ Not Implemented | ❌ Not Implemented |
-| Thinking | ✅ | ❌ Not Implemented | ❌ Not Implemented |
-| Token Counting | ✅ (tiktoken + multiplier) | ❌ Not Implemented | ❌ Not Implemented |
-| Model Management | ✅ (list, pull, delete) | ❌ Not Implemented | ❌ Not Implemented |
+| Feature          | LocalProvider              | vLLMProvider       | OpenAIProvider     |
+| ---------------- | -------------------------- | ------------------ | ------------------ |
+| Streaming        | ✅                         | ❌ Not Implemented | ❌ Not Implemented |
+| Tool Calling     | ✅                         | ❌ Not Implemented | ❌ Not Implemented |
+| Vision           | ❌                         | ❌ Not Implemented | ❌ Not Implemented |
+| Thinking         | ✅                         | ❌ Not Implemented | ❌ Not Implemented |
+| Token Counting   | ✅ (tiktoken + multiplier) | ❌ Not Implemented | ❌ Not Implemented |
+| Model Management | ✅ (list, pull, delete)    | ❌ Not Implemented | ❌ Not Implemented |
 
 ## Common Pitfalls
 
@@ -757,6 +758,7 @@ if (!isOllamaChunk(chunk)) {
 ## Support
 
 For questions or issues with provider development:
+
 1. Check existing provider implementations for examples
 2. Review the audit document: `.dev/audits/provider-system-audit.md`
 3. Run tests to validate your implementation

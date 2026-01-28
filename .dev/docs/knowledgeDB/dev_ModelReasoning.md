@@ -3,6 +3,7 @@
 **Last Updated:** January 26, 2026  
 **Status:** ⚠️ Partially Implemented (Post-Alpha Work Required)  
 **Related Documents:**
+
 - [dev_ModelManagement.md](./dev_ModelManagement.md) - Model detection and profiles
 - [dev_ProviderSystem.md](./dev_ProviderSystem.md) - Ollama provider integration
 - [dev_UI_Front.md](./dev_UI_Front.md) - Reasoning box UI
@@ -19,11 +20,13 @@ Reasoning models (e.g., DeepSeek R1, QwQ) expose their internal thinking process
 ## Reasoning Model Examples
 
 **Popular Reasoning Models:**
+
 - DeepSeek R1 (7B, 14B, 32B, 70B)
 - QwQ (32B)
 - Future models with native thinking support
 
 **Characteristics:**
+
 - Expose `thinking` field in API responses
 - Require longer warmup times (120s vs 30s)
 - Generate reasoning tokens before answer tokens
@@ -94,6 +97,7 @@ Reasoning models (e.g., DeepSeek R1, QwQ) expose their internal thinking process
 ### Request Format
 
 **Enable Thinking:**
+
 ```typescript
 {
   model: "deepseek-r1:7b",
@@ -111,6 +115,7 @@ Reasoning models (e.g., DeepSeek R1, QwQ) expose their internal thinking process
 ### Response Format
 
 **Streaming Response:**
+
 ```json
 {
   "message": {
@@ -123,6 +128,7 @@ Reasoning models (e.g., DeepSeek R1, QwQ) expose their internal thinking process
 ```
 
 **Complete Response:**
+
 ```json
 {
   "message": {
@@ -138,21 +144,23 @@ Reasoning models (e.g., DeepSeek R1, QwQ) expose their internal thinking process
 ### Event Mapping
 
 **Thinking Events:**
+
 ```typescript
 if (message?.thinking !== undefined) {
-  yield { 
-    type: 'thinking', 
-    value: message.thinking 
+  yield {
+    type: 'thinking',
+    value: message.thinking
   };
 }
 ```
 
 **Text Events:**
+
 ```typescript
 if (message?.content) {
-  yield { 
-    type: 'text', 
-    value: message.content 
+  yield {
+    type: 'text',
+    value: message.content
   };
 }
 ```
@@ -166,17 +174,18 @@ if (message?.content) {
 ### Reasoning Field
 
 **Message Interface:**
+
 ```typescript
 interface Message {
   id: string;
   role: 'user' | 'assistant' | 'system';
   content: string;
   reasoning?: {
-    content: string;      // Reasoning text
-    complete: boolean;    // Streaming complete?
-    duration?: number;    // Time taken (seconds)
+    content: string; // Reasoning text
+    complete: boolean; // Streaming complete?
+    duration?: number; // Time taken (seconds)
   };
-  expanded?: boolean;     // UI collapse state
+  expanded?: boolean; // UI collapse state
   timestamp: number;
 }
 ```
@@ -186,6 +195,7 @@ interface Message {
 ### State Management
 
 **During Streaming:**
+
 ```typescript
 const assistantMsg = addMessage({
   role: 'assistant',
@@ -194,11 +204,12 @@ const assistantMsg = addMessage({
     content: '',
     complete: false,
   },
-  expanded: true,  // Show reasoning as it streams
+  expanded: true, // Show reasoning as it streams
 });
 ```
 
 **On Completion:**
+
 ```typescript
 if (msg.reasoning) {
   updates.reasoning = {
@@ -206,7 +217,7 @@ if (msg.reasoning) {
     complete: true,
     duration: metrics.evalDuration > 0 ? metrics.evalDuration / 1e9 : 0,
   };
-  updates.expanded = false;  // Auto-collapse
+  updates.expanded = false; // Auto-collapse
 }
 ```
 
@@ -238,6 +249,7 @@ if (msg.reasoning) {
 ### Rendering Architecture
 
 **Line-Based System:**
+
 ```typescript
 // ChatHistory.tsx
 const isExpanded = message.expanded === true;
@@ -266,16 +278,18 @@ if (showReasoning && message.reasoning) {
 ### Warmup Timeout
 
 **Standard Models:**
+
 ```json
 {
-  "warmup_timeout": 30000  // 30 seconds
+  "warmup_timeout": 30000 // 30 seconds
 }
 ```
 
 **Reasoning Models:**
+
 ```json
 {
-  "warmup_timeout": 120000  // 120 seconds (2 minutes)
+  "warmup_timeout": 120000 // 120 seconds (2 minutes)
 }
 ```
 
@@ -284,6 +298,7 @@ if (showReasoning && message.reasoning) {
 ### Model Detection
 
 **Reasoning Model Indicators:**
+
 - Model name contains "r1", "qwq", "reasoning"
 - Profile has `warmup_timeout > 60000`
 - Profile has `reasoning: true` flag (future)
@@ -297,7 +312,7 @@ if (showReasoning && message.reasoning) {
 ### Task 1: Reasoning-Aware Context Management
 
 **Priority:** HIGH  
-**Effort:** 1-2 weeks  
+**Effort:** 1-2 weeks
 
 **Requirements:**
 
@@ -317,17 +332,19 @@ if (showReasoning && message.reasoning) {
    - Display reasoning token usage in UI
 
 **Implementation:**
+
 ```typescript
 interface ContextBudget {
   total: number;
   system: number;
-  reasoning: number;      // NEW: Reserved for reasoning
-  available: number;      // total - system - reasoning
+  reasoning: number; // NEW: Reserved for reasoning
+  available: number; // total - system - reasoning
   used: number;
 }
 ```
 
 **Files to Modify:**
+
 - `packages/core/src/context/contextManager.ts`
 - `packages/core/src/context/tokenCounter.ts`
 - `packages/core/src/context/compressionService.ts`
@@ -337,7 +354,7 @@ interface ContextBudget {
 ### Task 2: Reasoning Analytics
 
 **Priority:** MEDIUM  
-**Effort:** 1 week  
+**Effort:** 1 week
 
 **Requirements:**
 
@@ -358,6 +375,7 @@ interface ContextBudget {
    - Reasoning effectiveness
 
 **Implementation:**
+
 ```typescript
 interface ReasoningMetrics {
   totalReasoningTokens: number;
@@ -374,6 +392,7 @@ interface ReasoningMetrics {
 ```
 
 **Files to Create:**
+
 - `packages/core/src/services/reasoningAnalytics.ts`
 - `packages/core/src/services/reasoningMetrics.ts`
 
@@ -382,7 +401,7 @@ interface ReasoningMetrics {
 ### Task 3: Reasoning History Management
 
 **Priority:** MEDIUM  
-**Effort:** 1-2 weeks  
+**Effort:** 1-2 weeks
 
 **Requirements:**
 
@@ -409,6 +428,7 @@ interface ReasoningMetrics {
    - Identify reasoning patterns
 
 **Implementation:**
+
 ```typescript
 interface ReasoningHistory {
   id: string;
@@ -427,6 +447,7 @@ interface ReasoningHistory {
 ```
 
 **Files to Create:**
+
 - `packages/core/src/services/reasoningHistory.ts`
 - `packages/core/src/services/reasoningSearch.ts`
 - `packages/core/src/services/reasoningExport.ts`
@@ -436,7 +457,7 @@ interface ReasoningHistory {
 ### Task 4: Reasoning-Specific Compression
 
 **Priority:** HIGH  
-**Effort:** 1 week  
+**Effort:** 1 week
 
 **Requirements:**
 
@@ -456,15 +477,17 @@ interface ReasoningHistory {
    - Preserve reasoning in checkpoint metadata
 
 **Implementation:**
+
 ```typescript
 interface CompressionOptions {
-  preserveReasoning: boolean;     // NEW: Never compress reasoning
+  preserveReasoning: boolean; // NEW: Never compress reasoning
   reasoningAsCheckpoints: boolean; // NEW: Use reasoning as checkpoints
   summarizeAroundReasoning: boolean; // NEW: Keep reasoning context
 }
 ```
 
 **Files to Modify:**
+
 - `packages/core/src/context/compressionService.ts`
 - `packages/core/src/context/checkpointManager.ts`
 
@@ -475,7 +498,7 @@ interface CompressionOptions {
 ### Task 5: Reasoning Model Detection
 
 **Priority:** LOW  
-**Effort:** 2-3 days  
+**Effort:** 2-3 days
 
 **Requirements:**
 
@@ -495,15 +518,17 @@ interface CompressionOptions {
    - Update profiles automatically
 
 **Implementation:**
+
 ```typescript
 interface ModelProfile {
-  reasoning: boolean;           // NEW: Supports reasoning
+  reasoning: boolean; // NEW: Supports reasoning
   reasoningTokenBudget: number; // NEW: Reserved tokens
-  reasoningTimeout: number;     // NEW: Extended timeout
+  reasoningTimeout: number; // NEW: Extended timeout
 }
 ```
 
 **Files to Modify:**
+
 - `packages/cli/src/config/LLM_profiles.json`
 - `packages/cli/src/features/profiles/ProfileManager.ts`
 
@@ -547,12 +572,14 @@ interface ModelProfile {
 **Impact:** LOW  
 **Description:** Reasoning box was always collapsed, hiding thinking process during streaming.
 
-**Solution:** 
+**Solution:**
+
 - Set `expanded: true` on message creation (shows reasoning as it streams)
 - Set `expanded: false` on completion (auto-collapse to save space)
 - User can manually toggle at any time
 
 **Implementation:**
+
 ```typescript
 // During streaming
 const assistantMsg = addMessage({
@@ -562,7 +589,7 @@ const assistantMsg = addMessage({
     content: '',
     complete: false,
   },
-  expanded: true,  // ✅ Show reasoning as it streams
+  expanded: true, // ✅ Show reasoning as it streams
 });
 
 // On completion
@@ -571,11 +598,12 @@ if (msg.reasoning) {
     ...msg.reasoning,
     complete: true,
   };
-  updates.expanded = false;  // ✅ Auto-collapse
+  updates.expanded = false; // ✅ Auto-collapse
 }
 ```
 
 **Files Modified:**
+
 - `packages/cli/src/features/context/ChatContext.tsx`
 - `packages/cli/src/features/context/handlers/agentLoopHandler.ts`
 
@@ -606,6 +634,7 @@ if (msg.reasoning) {
 ### For Developers
 
 1. **Always Check for Reasoning Field**
+
    ```typescript
    if (message.reasoning) {
      // Handle reasoning separately
@@ -665,24 +694,26 @@ if (msg.reasoning) {
 
 ## File Locations
 
-| File | Purpose |
-|------|---------|
-| `packages/ollm-bridge/src/provider/localProvider.ts` | Ollama API integration, thinking parameter |
-| `packages/cli/src/features/context/ChatContext.tsx` | Message state management, reasoning field |
-| `packages/cli/src/ui/components/chat/ChatHistory.tsx` | Reasoning box rendering |
+| File                                                   | Purpose                                          |
+| ------------------------------------------------------ | ------------------------------------------------ |
+| `packages/ollm-bridge/src/provider/localProvider.ts`   | Ollama API integration, thinking parameter       |
+| `packages/cli/src/features/context/ChatContext.tsx`    | Message state management, reasoning field        |
+| `packages/cli/src/ui/components/chat/ChatHistory.tsx`  | Reasoning box rendering                          |
 | `packages/cli/src/ui/components/chat/ReasoningBox.tsx` | Reasoning box component (not used for rendering) |
-| `packages/cli/src/config/LLM_profiles.json` | Model profiles, warmup timeouts |
+| `packages/cli/src/config/LLM_profiles.json`            | Model profiles, warmup timeouts                  |
 
 ---
 
 ## References
 
 **Audit Documents:**
+
 - `.dev/docs/devs/audits-bugtracker/ContextManagement/W3-W4-LLM-audit/LLM-audit.md`
 - `.dev/docs/devs/audits-bugtracker/ContextManagement/W3-W4-LLM-audit/other/ollama-communication-audit-2026-01-18.md`
 - `.dev/docs/devs/audits-bugtracker/ContextManagement/W3-W4-LLM-audit/other/reasoning-box-behavior-fix.md`
 
 **Related Documentation:**
+
 - [dev_ModelManagement.md](./dev_ModelManagement.md)
 - [dev_ProviderSystem.md](./dev_ProviderSystem.md)
 - [dev_UI_Front.md](./dev_UI_Front.md)

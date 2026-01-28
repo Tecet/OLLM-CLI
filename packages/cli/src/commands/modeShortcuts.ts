@@ -1,13 +1,13 @@
 /**
  * Mode Shortcuts
- * 
+ *
  * Provides convenient shortcut commands for mode switching and debugger actions.
- * 
+ *
  * Mode Switching Shortcuts:
  * - /assist - Switch to assistant mode
  * - /plan - Switch to planning mode
  * - /dev - Switch to developer mode
- * 
+ *
  * Debugger Mode Shortcuts:
  * - /debug trace - Show stack trace analysis
  * - /debug reproduce - Reproduce the error
@@ -25,7 +25,9 @@ import type { ModeType } from '@ollm/core';
 function ensureContextManager() {
   const manager = getGlobalContextManager();
   if (!manager) {
-    throw new Error('Context Manager is not initialized. Please wait for the application to fully load.');
+    throw new Error(
+      'Context Manager is not initialized. Please wait for the application to fully load.'
+    );
   }
   return manager;
 }
@@ -66,7 +68,7 @@ export const assistCommand: Command = {
     try {
       const manager = ensureContextManager();
       manager.switchMode('assistant');
-      
+
       return {
         success: true,
         message: '💬 Switched to assistant mode\nGeneral conversation and explanations',
@@ -92,7 +94,7 @@ export const planCommand: Command = {
     try {
       const manager = ensureContextManager();
       manager.switchMode('planning');
-      
+
       return {
         success: true,
         message: '📋 Switched to planning mode\nResearch, design, and planning (read-only)',
@@ -118,7 +120,7 @@ export const devCommand: Command = {
     try {
       const manager = ensureContextManager();
       manager.switchMode('developer');
-      
+
       return {
         success: true,
         message: '👨‍💻 Switched to developer mode\nFull implementation with all tools',
@@ -146,15 +148,15 @@ export const debugCommand: Command = {
   handler: async (args: string[]): Promise<CommandResult> => {
     try {
       const manager = ensureContextManager();
-      
+
       // Switch to debugger mode
       manager.switchMode('debugger');
-      
+
       // Handle subcommands
       if (args.length === 0) {
         return {
           success: true,
-          message: 
+          message:
             '🐛 Switched to debugger mode\n\n' +
             'Available shortcuts:\n' +
             '  /debug trace     - Analyze stack trace\n' +
@@ -162,14 +164,15 @@ export const debugCommand: Command = {
             '  /debug bisect    - Binary search for bug location',
         };
       }
-      
+
       const subcommand = args[0].toLowerCase();
-      const action = MODE_ACTION_SHORTCUTS.debug[subcommand as keyof typeof MODE_ACTION_SHORTCUTS.debug];
-      
+      const action =
+        MODE_ACTION_SHORTCUTS.debug[subcommand as keyof typeof MODE_ACTION_SHORTCUTS.debug];
+
       if (!action) {
         return {
           success: false,
-          message: 
+          message:
             `Unknown debug command: ${subcommand}\n\n` +
             'Available commands:\n' +
             '  trace     - Analyze stack trace\n' +
@@ -177,7 +180,7 @@ export const debugCommand: Command = {
             '  bisect    - Binary search for bug location',
         };
       }
-      
+
       return {
         success: true,
         message: `🐛 Debugger mode: ${subcommand}\n${action}`,
@@ -201,7 +204,7 @@ export const modeShortcuts: Command[] = [
   assistCommand,
   planCommand,
   devCommand,
-  
+
   // Mode-specific action shortcuts
   debugCommand,
 ];

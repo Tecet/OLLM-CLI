@@ -5,6 +5,7 @@ This directory contains the RAG infrastructure for semantic search and knowledge
 ## Overview
 
 The RAG system provides:
+
 - **Codebase Indexing**: Semantic search across your workspace files
 - **Mode-Specific Knowledge**: Specialized knowledge bases for debugger, security, performance, and planning modes
 - **Local Embeddings**: Uses `@xenova/transformers` for offline operation
@@ -26,6 +27,7 @@ rag/
 ### RAGSystem Interface
 
 Defines the core RAG system architecture:
+
 - `CodebaseIndex`: Index and search workspace files
 - `EmbeddingService`: Generate vector embeddings
 - `LanceDBVectorStore`: Store and search vectors
@@ -34,6 +36,7 @@ Defines the core RAG system architecture:
 ### LanceDBSetup
 
 Handles database initialization and table creation:
+
 - Creates storage directory
 - Initializes LanceDB connection
 - Creates tables for codebase and mode knowledge
@@ -42,6 +45,7 @@ Handles database initialization and table creation:
 ### Schemas
 
 Defines table schemas for:
+
 - **Codebase Index**: File paths, chunks, embeddings, metadata
 - **Debugger Knowledge**: Bugs, errors, solutions
 - **Security Knowledge**: Vulnerabilities, CVEs, fixes
@@ -76,8 +80,8 @@ const customSchema = {
   fields: [
     { name: 'id', type: 'string', required: true },
     { name: 'content', type: 'string', required: true },
-    { name: 'timestamp', type: 'timestamp', required: true }
-  ]
+    { name: 'timestamp', type: 'timestamp', required: true },
+  ],
 };
 
 const table = await setup.createTable(customSchema);
@@ -96,7 +100,7 @@ const record = {
   startLine: 1,
   endLine: 10,
   language: 'typescript',
-  lastModified: Date.now()
+  lastModified: Date.now(),
 };
 
 const result = validateRecord(record, CODEBASE_INDEX_SCHEMA);
@@ -172,6 +176,7 @@ This is Phase 19 of the Dynamic Prompt System (marked as FUTURE):
 ## Status
 
 ✅ **Completed**:
+
 - Core interfaces and types
 - LanceDB setup and initialization
 - Table schemas for all databases
@@ -179,6 +184,7 @@ This is Phase 19 of the Dynamic Prompt System (marked as FUTURE):
 - Comprehensive documentation
 
 ⏳ **Pending** (Future Development):
+
 - Embedding service implementation
 - Codebase indexing implementation
 - Vector store operations

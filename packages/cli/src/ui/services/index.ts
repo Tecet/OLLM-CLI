@@ -9,13 +9,6 @@ export {
   type KeyInput,
 } from './keyboardHandler.js';
 
-export {
-  ThemeManager,
-  getThemeManager,
-  resetThemeManager,
-} from './themeManager.js';
+export { ThemeManager, getThemeManager, resetThemeManager } from './themeManager.js';
 
-export {
-  DocsService,
-  type DocEntry,
-} from './docsService.js';
+export { DocsService, type DocEntry } from './docsService.js';

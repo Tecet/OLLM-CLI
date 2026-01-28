@@ -1,6 +1,6 @@
 /**
  * Default Configuration Values
- * 
+ *
  * This file acts as the single source of truth for all application fallbacks.
  * It defines:
  * - Default behavior (timeouts, intervals)
@@ -17,25 +17,27 @@ import type { Config, Typography, Keybinds, ContextSettings } from './types.js';
  * Strategies for managing context window overflow and summarizing conversations.
  */
 export const defaultContextBehavior: ContextSettings = {
-  activeProfile: "standard",
+  activeProfile: 'standard',
   profiles: {
-    "standard": {
-      "name": "Standard (High VRAM)",
-      "contextWindow": 4096,
-      "compressionThreshold": 0.68,
-      "retentionRatio": 0.3,
-      "strategy": "summarize",
-      "summaryPrompt": "Concisely summarize the conversation history above that is about to be archived. Focus on the user's technical goals, constraints, and any important code details or decisions made. Ignore the instruction to summarize this text."
+    standard: {
+      name: 'Standard (High VRAM)',
+      contextWindow: 4096,
+      compressionThreshold: 0.68,
+      retentionRatio: 0.3,
+      strategy: 'summarize',
+      summaryPrompt:
+        "Concisely summarize the conversation history above that is about to be archived. Focus on the user's technical goals, constraints, and any important code details or decisions made. Ignore the instruction to summarize this text.",
     },
-    "low_vram": {
-      "name": "Low VRAM / Aggressive",
-      "contextWindow": 2048,
-      "compressionThreshold": 0.5,
-      "retentionRatio": 0.2,
-      "strategy": "summarize",
-      "summaryPrompt": "Briefly summarize the key points of the conversation above. Focus on technical details."
-    }
-  }
+    low_vram: {
+      name: 'Low VRAM / Aggressive',
+      contextWindow: 2048,
+      compressionThreshold: 0.5,
+      retentionRatio: 0.2,
+      strategy: 'summarize',
+      summaryPrompt:
+        'Briefly summarize the key points of the conversation above. Focus on technical details.',
+    },
+  },
 };
 
 /**
@@ -79,7 +81,7 @@ export const defaultConfig: Config = {
   },
   model: {
     default: 'llama3.2:3b',
-    temperature: 0.1,  // Changed from 0.3 - Better for coding (deterministic)
+    temperature: 0.1, // Changed from 0.3 - Better for coding (deterministic)
     maxTokens: 4096,
   },
   ui: {

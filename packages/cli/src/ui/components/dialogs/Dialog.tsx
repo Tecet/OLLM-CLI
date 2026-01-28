@@ -1,13 +1,13 @@
 /**
  * Dialog - Base dialog component for modal interactions
- * 
+ *
  * Features:
  * - Consistent border and padding
  * - Title display
  * - Esc key handler for closing
  * - Theme-aware styling
  * - Flexible content area
- * 
+ *
  * Requirements: 12.14, NFR-7
  */
 
@@ -42,13 +42,13 @@ export interface DialogProps {
 
 /**
  * Base Dialog component
- * 
+ *
  * Provides a consistent dialog container with:
  * - Rounded border
  * - Title bar
  * - Esc key handling
  * - Theme-aware styling
- * 
+ *
  * @example
  * ```tsx
  * <Dialog title="Configure Server" onClose={handleClose}>

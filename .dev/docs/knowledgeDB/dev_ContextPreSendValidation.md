@@ -1,9 +1,10 @@
 # Pre-Send Validation System (Phase 1)
 
 **Status:** ✅ Complete  
-**Created:** January 27, 2026  
+**Created:** January 27, 2026
 
 **Related Documents:**
+
 - [Context Checkpoint Rollover](./dev_ContextCheckpointRollover.md) - Emergency rollover strategy
 - [Context Compression](./dev_ContextCompression.md) - Compression system
 - [Context Input Preprocessing](./dev_ContextInputPreprocessing.md) - Phase 0 (intent extraction)
@@ -96,18 +97,18 @@ async validateAndBuildPrompt(newMessage?: Message): Promise<{
 // Before adding message to context
 if (this.contextMgmtManager) {
   const validation = await this.contextMgmtManager.validateAndBuildPrompt(userMessage);
-  
+
   // Emit warnings
   for (const warning of validation.warnings) {
     console.log(`[ChatClient] ${warning}`);
   }
-  
+
   // Stop if validation failed
   if (!validation.valid) {
     yield { type: 'error', error: new Error(...) };
     return;
   }
-  
+
   // Emit emergency action event
   if (validation.emergencyAction) {
     yield { type: 'text', value: `[System: ${validation.emergencyAction}...]` };
@@ -139,6 +140,7 @@ if (this.contextMgmtManager) {
 **Message:** `WARNING: Context at 95.X% (XXXX/YYYY tokens) - Triggering emergency compression`
 
 **Emergency Compression:**
+
 - Age all checkpoints to Level 1 (most compact)
 - Merge oldest checkpoints
 - Reduce checkpoint space by 50%
@@ -151,6 +153,7 @@ if (this.contextMgmtManager) {
 **Message:** `CRITICAL: Context at 100.X% (XXXX/YYYY tokens) - Triggering emergency rollover`
 
 **Emergency Rollover:**
+
 1. Create final snapshot (preserves full history)
 2. Keep only:
    - System prompt
@@ -161,6 +164,7 @@ if (this.contextMgmtManager) {
 5. Emit rollover event
 
 **Ultra-Compact Summary:**
+
 ```
 [EMERGENCY ROLLOVER - Context exceeded limit]
 Snapshot ID: snapshot-abc123
@@ -178,12 +182,14 @@ Key context preserved in snapshot. Continuing conversation with fresh context.
 ### 1. Prevents Context Overflow
 
 **Before Phase 1:**
+
 - Prompts sent to Ollama without validation
 - Ollama rejects prompts that exceed limit
 - User sees cryptic error message
 - Conversation breaks
 
 **After Phase 1:**
+
 - Prompts validated before sending
 - Emergency actions triggered automatically
 - User sees clear warnings
@@ -192,6 +198,7 @@ Key context preserved in snapshot. Continuing conversation with fresh context.
 ### 2. Graceful Degradation
 
 **Degradation Levels:**
+
 1. **70%:** Informational (no action)
 2. **80%:** Warning (compression scheduled)
 3. **95%:** Emergency compression (aggressive)
@@ -202,12 +209,14 @@ Each level provides progressively more aggressive actions to prevent overflow.
 ### 3. Clear User Feedback
 
 **User sees:**
+
 - Clear percentage warnings (70%, 80%, 95%, 100%)
 - Token counts (current/limit)
 - Emergency action notifications
 - Snapshot IDs for recovery
 
 **User understands:**
+
 - How full the context is
 - What actions are being taken
 - How to recover if needed
@@ -221,6 +230,7 @@ Each level provides progressively more aggressive actions to prevent overflow.
 **Location:** `packages/core/src/context/__tests__/validateAndBuildPrompt.test.ts`
 
 **Tests (8 total):**
+
 1. ✅ Validate prompt successfully when under threshold
 2. ✅ Include new message in token calculation
 3. ✅ Handle validation errors gracefully
@@ -239,17 +249,20 @@ Each level provides progressively more aggressive actions to prevent overflow.
 ### Phase 0: Input Preprocessing
 
 **Before Phase 1:**
+
 - User message preprocessed (typos fixed, intent extracted)
 - Clean message stored in context
 - Original message stored in session
 
 **Phase 1 validates:**
+
 - Clean message (not original)
 - Saves 30x tokens (3000 → 100 in example)
 
 ### Phase 2: Blocking Mechanism (Next)
 
 **After Phase 1:**
+
 - Validation passes
 - Message added to context
 - **Phase 2 will block user input during checkpoint creation**
@@ -257,10 +270,12 @@ Each level provides progressively more aggressive actions to prevent overflow.
 ### Phase 3: Emergency Safety Triggers (Future)
 
 **Phase 1 triggers:**
+
 - Emergency compression at 95%
 - Emergency rollover at 100%
 
 **Phase 3 will add:**
+
 - Automatic checkpoint creation at 80%
 - Progress indicators during compression
 - UI warnings for each threshold
@@ -371,6 +386,7 @@ const validation = await contextManager.validateAndBuildPrompt(message);
 ### Token Savings
 
 **Example conversation:**
+
 - Phase 0 (Input Preprocessing): 3000 → 100 tokens (97% savings)
 - Phase 1 (Pre-Send Validation): Prevents overflow, enables compression
 - Combined: 30x token savings + no overflow errors
@@ -378,11 +394,13 @@ const validation = await contextManager.validateAndBuildPrompt(message);
 ### Reliability
 
 **Before Phase 1:**
+
 - Context overflow errors: ~5% of conversations
 - User confusion: High
 - Data loss: Possible
 
 **After Phase 1:**
+
 - Context overflow errors: 0%
 - User confusion: Low (clear warnings)
 - Data loss: None (snapshots created)

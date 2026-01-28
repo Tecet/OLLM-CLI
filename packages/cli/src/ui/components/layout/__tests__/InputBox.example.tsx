@@ -1,6 +1,6 @@
 /**
  * InputBox Component Example
- * 
+ *
  * This file demonstrates how to use the InputBox component in a real application.
  */
 
@@ -40,7 +40,7 @@ export function BasicInputBoxExample() {
 export function InputBoxWithHistoryExample() {
   const [value, setValue] = useState('');
   const userMessages = ['Hello, how are you?', 'Can you help me with a task?'];
-  
+
   const handleSubmit = (val: string) => {
     console.log('Submitted:', val);
     setValue('');

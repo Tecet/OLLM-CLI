@@ -1,9 +1,9 @@
 /**
  * FileTreeContext - React context for file tree state management
- * 
+ *
  * Manages the file tree structure, cursor position, scroll offset, and expanded
  * directories for virtual scrolling navigation.
- * 
+ *
  * Requirements: 2.1 (File tree navigation with virtual scrolling)
  */
 
@@ -96,11 +96,11 @@ export interface FileTreeProviderProps {
 
 /**
  * FileTreeProvider component
- * 
+ *
  * Provides file tree state and actions to child components.
  */
-export function FileTreeProvider({ 
-  children, 
+export function FileTreeProvider({
+  children,
   initialState,
   windowSize = 15,
 }: FileTreeProviderProps) {
@@ -109,9 +109,10 @@ export function FileTreeProvider({
     windowSize,
     ...initialState,
     // Ensure expandedPaths is a Set even if initialState provides an array
-    expandedPaths: initialState?.expandedPaths instanceof Set
-      ? initialState.expandedPaths
-      : new Set(initialState?.expandedPaths || []),
+    expandedPaths:
+      initialState?.expandedPaths instanceof Set
+        ? initialState.expandedPaths
+        : new Set(initialState?.expandedPaths || []),
   });
 
   const setRoot = useCallback((root: FileNode | null) => {
@@ -147,7 +148,7 @@ export function FileTreeProvider({
     setState((prev) => {
       const maxPosition = Math.max(0, prev.visibleWindow.length - 1);
       const clampedPosition = Math.max(0, Math.min(position, maxPosition));
-      
+
       // Adjust scroll offset if cursor moves outside visible window
       let newScrollOffset = prev.scrollOffset;
       if (clampedPosition < prev.scrollOffset) {
@@ -155,7 +156,7 @@ export function FileTreeProvider({
       } else if (clampedPosition >= prev.scrollOffset + prev.windowSize) {
         newScrollOffset = clampedPosition - prev.windowSize + 1;
       }
-      
+
       return {
         ...prev,
         cursorPosition: clampedPosition,
@@ -169,15 +170,15 @@ export function FileTreeProvider({
       if (prev.cursorPosition <= 0) {
         return prev; // Already at top
       }
-      
+
       const newPosition = prev.cursorPosition - 1;
       let newScrollOffset = prev.scrollOffset;
-      
+
       // Scroll up if cursor moves above visible window
       if (newPosition < prev.scrollOffset) {
         newScrollOffset = newPosition;
       }
-      
+
       return {
         ...prev,
         cursorPosition: newPosition,
@@ -192,15 +193,15 @@ export function FileTreeProvider({
       if (prev.cursorPosition >= maxPosition) {
         return prev; // Already at bottom
       }
-      
+
       const newPosition = prev.cursorPosition + 1;
       let newScrollOffset = prev.scrollOffset;
-      
+
       // Scroll down if cursor moves below visible window
       if (newPosition >= prev.scrollOffset + prev.windowSize) {
         newScrollOffset = newPosition - prev.windowSize + 1;
       }
-      
+
       return {
         ...prev,
         cursorPosition: newPosition,
@@ -253,9 +254,12 @@ export function FileTreeProvider({
     });
   }, []);
 
-  const isExpanded = useCallback((path: string): boolean => {
-    return state.expandedPaths.has(path);
-  }, [state.expandedPaths]);
+  const isExpanded = useCallback(
+    (path: string): boolean => {
+      return state.expandedPaths.has(path);
+    },
+    [state.expandedPaths]
+  );
 
   const setVisibleWindow = useCallback((nodes: FileNode[]) => {
     setState((prev) => ({
@@ -285,41 +289,44 @@ export function FileTreeProvider({
     }));
   }, []);
 
-  const expandToPath = useCallback(async (filePath: string) => {
-    // This method expands all parent directories to show the specified file
-    // It's used by Follow Mode to automatically expand to LLM-referenced files
-    
-    if (!state.root) {
-      return;
-    }
+  const expandToPath = useCallback(
+    async (filePath: string) => {
+      // This method expands all parent directories to show the specified file
+      // It's used by Follow Mode to automatically expand to LLM-referenced files
 
-    // Normalize the file path
-    const normalizedPath = filePath.replace(/\\/g, '/');
-    const rootPath = state.root.path.replace(/\\/g, '/');
+      if (!state.root) {
+        return;
+      }
 
-    // Check if the file is within the root
-    if (!normalizedPath.startsWith(rootPath)) {
-      return;
-    }
+      // Normalize the file path
+      const normalizedPath = filePath.replace(/\\/g, '/');
+      const rootPath = state.root.path.replace(/\\/g, '/');
 
-    // Get the relative path from root
-    const relativePath = normalizedPath.substring(rootPath.length).replace(/^\//, '');
-    const pathParts = relativePath.split('/');
+      // Check if the file is within the root
+      if (!normalizedPath.startsWith(rootPath)) {
+        return;
+      }
 
-    // Expand each parent directory
-    let currentPath = rootPath;
-    const newExpandedPaths = new Set(state.expandedPaths);
+      // Get the relative path from root
+      const relativePath = normalizedPath.substring(rootPath.length).replace(/^\//, '');
+      const pathParts = relativePath.split('/');
 
-    for (let i = 0; i < pathParts.length - 1; i++) {
-      currentPath = `${currentPath}/${pathParts[i]}`;
-      newExpandedPaths.add(currentPath);
-    }
+      // Expand each parent directory
+      let currentPath = rootPath;
+      const newExpandedPaths = new Set(state.expandedPaths);
 
-    setState((prev) => ({
-      ...prev,
-      expandedPaths: newExpandedPaths,
-    }));
-  }, [state.root, state.expandedPaths]);
+      for (let i = 0; i < pathParts.length - 1; i++) {
+        currentPath = `${currentPath}/${pathParts[i]}`;
+        newExpandedPaths.add(currentPath);
+      }
+
+      setState((prev) => ({
+        ...prev,
+        expandedPaths: newExpandedPaths,
+      }));
+    },
+    [state.root, state.expandedPaths]
+  );
 
   const value: FileTreeContextValue = {
     state,
@@ -344,7 +351,7 @@ export function FileTreeProvider({
 
 /**
  * Hook to access file tree context
- * 
+ *
  * @throws Error if used outside FileTreeProvider
  */
 export function useFileTree(): FileTreeContextValue {

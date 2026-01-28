@@ -3,6 +3,7 @@
 **Last Updated:** January 26, 2026  
 **Status:** ✅ Implemented  
 **Related Documents:**
+
 - [dev_UI_Front.md](./dev_UI_Front.md) - UI layout and components
 - [dev_SlashCommands.md](./dev_SlashCommands.md) - Theme commands
 
@@ -22,36 +23,36 @@ OLLM CLI includes a comprehensive theming system with 6 built-in color schemes. 
 interface Theme {
   name: string;
   bg: {
-    primary: string;    // Main background
-    secondary: string;  // Secondary background
-    tertiary: string;   // Tertiary background
+    primary: string; // Main background
+    secondary: string; // Secondary background
+    tertiary: string; // Tertiary background
   };
   text: {
-    primary: string;    // Main text color
-    secondary: string;  // Secondary text color
-    accent: string;     // Accent/highlight color
+    primary: string; // Main text color
+    secondary: string; // Secondary text color
+    accent: string; // Accent/highlight color
   };
   role: {
-    user: string;       // User message color
-    assistant: string;  // Assistant message color
-    system: string;     // System message color
-    tool: string;       // Tool call color
+    user: string; // User message color
+    assistant: string; // Assistant message color
+    system: string; // System message color
+    tool: string; // Tool call color
   };
   status: {
-    success: string;    // Success state color
-    warning: string;    // Warning state color
-    error: string;      // Error state color
-    info: string;       // Info state color
+    success: string; // Success state color
+    warning: string; // Warning state color
+    error: string; // Error state color
+    info: string; // Info state color
   };
   border: {
-    primary: string;    // Primary border color
-    secondary: string;  // Secondary border color
-    active: string;     // Active border color
-    style: string;      // Border style (round, single, double)
+    primary: string; // Primary border color
+    secondary: string; // Secondary border color
+    active: string; // Active border color
+    style: string; // Border style (round, single, double)
   };
   diff: {
-    added: string;      // Added lines in diff
-    removed: string;    // Removed lines in diff
+    added: string; // Added lines in diff
+    removed: string; // Removed lines in diff
   };
 }
 ```
@@ -66,6 +67,7 @@ interface Theme {
 **Description:** A precision theme designed to decrease eye strain
 
 **Color Palette:**
+
 ```typescript
 {
   name: "solarized-dark",
@@ -112,6 +114,7 @@ interface Theme {
 **Description:** A balanced dark theme suitable for most terminals
 
 **Color Palette:**
+
 ```typescript
 {
   name: "neon-dark",
@@ -158,6 +161,7 @@ interface Theme {
 **Description:** A high-contrast theme based on the popular Dracula specification
 
 **Color Palette:**
+
 ```typescript
 {
   name: "dracula-dark",
@@ -204,6 +208,7 @@ interface Theme {
 **Description:** An arctic, north-bluish color palette
 
 **Color Palette:**
+
 ```typescript
 {
   name: "nord-dark",
@@ -250,6 +255,7 @@ interface Theme {
 **Description:** A vibrant, high-contrast theme popular in Sublime Text
 
 **Color Palette:**
+
 ```typescript
 {
   name: "monokai-dark",
@@ -308,7 +314,7 @@ interface Theme {
 ```typescript
 export const defaultConfig: Config = {
   ui: {
-    theme: 'solarized-dark',  // Default theme
+    theme: 'solarized-dark', // Default theme
     // ... other UI settings
   },
   // ... other config
@@ -324,6 +330,7 @@ export const defaultConfig: Config = {
 **Storage Location:** `~/.ollm/settings.json`
 
 **Structure:**
+
 ```json
 {
   "ui": {
@@ -335,11 +342,13 @@ export const defaultConfig: Config = {
 ```
 
 **Path Resolution:**
+
 - Windows: `C:\Users\<username>\.ollm\settings.json`
 - macOS: `/Users/<username>/.ollm/settings.json`
 - Linux: `/home/<username>/.ollm/settings.json`
 
 **Persistence:**
+
 - Theme selection is saved automatically when changed
 - Settings persist across sessions
 - Settings survive application updates
@@ -353,12 +362,14 @@ export const defaultConfig: Config = {
 **Location:** `packages/cli/src/ui/services/themeManager.ts`
 
 **Responsibilities:**
+
 - Load themes from `themes.ts`
 - Validate theme names
 - Provide theme instances
 - Singleton pattern for global access
 
 **API:**
+
 ```typescript
 class ThemeManager {
   loadTheme(name: string): Theme;
@@ -377,12 +388,14 @@ const themeManager = getThemeManager();
 **Location:** `packages/cli/src/config/settingsService.ts`
 
 **Responsibilities:**
+
 - Load user settings from `~/.ollm/settings.json`
 - Save user settings
 - Provide theme getter/setter
 - Notify listeners on changes
 
 **API:**
+
 ```typescript
 class SettingsService {
   getTheme(): string;
@@ -404,11 +417,13 @@ const settings = SettingsService.getInstance();
 **Description:** List all available themes
 
 **Usage:**
+
 ```bash
 /theme list
 ```
 
 **Output:**
+
 ```
 Available themes:
   • solarized-dark (default)
@@ -426,17 +441,20 @@ Available themes:
 **Description:** Switch to a theme permanently
 
 **Usage:**
+
 ```bash
 /theme use dracula-dark
 ```
 
 **Behavior:**
+
 1. Validates theme name
 2. Loads theme from ThemeManager
 3. Applies theme to UI
 4. Saves selection to `~/.ollm/settings.json`
 
 **Output:**
+
 ```
 ✓ Theme changed to: dracula-dark
 ```
@@ -448,17 +466,20 @@ Available themes:
 **Description:** Preview a theme temporarily (not saved)
 
 **Usage:**
+
 ```bash
 /theme preview nord-dark
 ```
 
 **Behavior:**
+
 1. Validates theme name
 2. Loads theme from ThemeManager
 3. Applies theme to UI
 4. Does NOT save to settings
 
 **Output:**
+
 ```
 ✓ Previewing theme: nord-dark
 (Use /theme use nord-dark to save permanently)
@@ -509,13 +530,14 @@ UI re-renders with new theme
 ### Accessing Theme
 
 **Via UIContext:**
+
 ```typescript
 import { useUI } from '../../features/context/UIContext.js';
 
 function MyComponent() {
   const { state: uiState } = useUI();
   const { theme } = uiState;
-  
+
   return (
     <Text color={theme.text.primary}>
       Hello World
@@ -525,6 +547,7 @@ function MyComponent() {
 ```
 
 **Via Props:**
+
 ```typescript
 interface MyComponentProps {
   theme: Theme;
@@ -546,6 +569,7 @@ function MyComponent({ theme }: MyComponentProps) {
 ### Common Theme Patterns
 
 **Text Colors:**
+
 ```typescript
 // Primary text (main content)
 <Text color={theme.text.primary}>Content</Text>
@@ -558,6 +582,7 @@ function MyComponent({ theme }: MyComponentProps) {
 ```
 
 **Role Colors:**
+
 ```typescript
 // User messages
 <Text color={theme.role.user}>User: Hello</Text>
@@ -573,6 +598,7 @@ function MyComponent({ theme }: MyComponentProps) {
 ```
 
 **Status Colors:**
+
 ```typescript
 // Success state
 <Text color={theme.status.success}>✓ Success</Text>
@@ -588,6 +614,7 @@ function MyComponent({ theme }: MyComponentProps) {
 ```
 
 **Borders:**
+
 ```typescript
 // Primary border
 <Box borderColor={theme.border.primary} borderStyle={theme.border.style}>
@@ -601,6 +628,7 @@ function MyComponent({ theme }: MyComponentProps) {
 ```
 
 **Diff Colors:**
+
 ```typescript
 // Added lines
 <Text color={theme.diff.added}>+ Added line</Text>
@@ -613,14 +641,14 @@ function MyComponent({ theme }: MyComponentProps) {
 
 ## File Locations
 
-| File | Purpose |
-|------|---------|
-| `packages/cli/src/config/themes.ts` | Theme definitions (all 6 themes) |
-| `packages/cli/src/config/defaults.ts` | Default theme setting |
-| `packages/cli/src/config/settingsService.ts` | User settings persistence |
-| `packages/cli/src/ui/services/themeManager.ts` | Theme loading and validation |
-| `packages/cli/src/commands/themeCommands.ts` | Theme slash commands |
-| `~/.ollm/settings.json` | User theme selection (persisted) |
+| File                                           | Purpose                          |
+| ---------------------------------------------- | -------------------------------- |
+| `packages/cli/src/config/themes.ts`            | Theme definitions (all 6 themes) |
+| `packages/cli/src/config/defaults.ts`          | Default theme setting            |
+| `packages/cli/src/config/settingsService.ts`   | User settings persistence        |
+| `packages/cli/src/ui/services/themeManager.ts` | Theme loading and validation     |
+| `packages/cli/src/commands/themeCommands.ts`   | Theme slash commands             |
+| `~/.ollm/settings.json`                        | User theme selection (persisted) |
 
 ---
 
@@ -633,42 +661,42 @@ Add to `packages/cli/src/config/themes.ts`:
 ```typescript
 export const themesData: Record<string, Theme> = {
   // ... existing themes
-  
-  "my-custom-theme": {
-    name: "my-custom-theme",
+
+  'my-custom-theme': {
+    name: 'my-custom-theme',
     bg: {
-      primary: "#000000",
-      secondary: "#111111",
-      tertiary: "#222222"
+      primary: '#000000',
+      secondary: '#111111',
+      tertiary: '#222222',
     },
     text: {
-      primary: "#ffffff",
-      secondary: "#cccccc",
-      accent: "#00ff00"
+      primary: '#ffffff',
+      secondary: '#cccccc',
+      accent: '#00ff00',
     },
     role: {
-      user: "#0000ff",
-      assistant: "#00ff00",
-      system: "#888888",
-      tool: "#ffff00"
+      user: '#0000ff',
+      assistant: '#00ff00',
+      system: '#888888',
+      tool: '#ffff00',
     },
     status: {
-      success: "#00ff00",
-      warning: "#ff8800",
-      error: "#ff0000",
-      info: "#0088ff"
+      success: '#00ff00',
+      warning: '#ff8800',
+      error: '#ff0000',
+      info: '#0088ff',
     },
     border: {
-      primary: "#444444",
-      secondary: "#00ff00",
-      active: "#00ff00",
-      style: "round"
+      primary: '#444444',
+      secondary: '#00ff00',
+      active: '#00ff00',
+      style: 'round',
     },
     diff: {
-      added: "#00ff00",
-      removed: "#ff0000"
-    }
-  }
+      added: '#00ff00',
+      removed: '#ff0000',
+    },
+  },
 };
 ```
 
@@ -738,12 +766,14 @@ export const themesData: Record<string, Theme> = {
 ### Theme Not Applying
 
 **Check:**
+
 1. Theme name is correct (case-sensitive)
 2. Theme exists in `themes.ts`
 3. Settings file is writable (`~/.ollm/settings.json`)
 4. No JSON syntax errors in settings file
 
 **Solution:**
+
 ```bash
 # List available themes
 /theme list
@@ -757,11 +787,13 @@ export const themesData: Record<string, Theme> = {
 ### Theme Not Persisting
 
 **Check:**
+
 1. Settings directory exists (`~/.ollm/`)
 2. Settings file is writable
 3. No permission errors
 
 **Solution:**
+
 ```bash
 # Check settings file
 cat ~/.ollm/settings.json
@@ -775,11 +807,13 @@ cat ~/.ollm/settings.json
 ### Colors Look Wrong
 
 **Check:**
+
 1. Terminal supports 256 colors
 2. Terminal color scheme not overriding
 3. Theme definition is correct
 
 **Solution:**
+
 - Use a modern terminal emulator (iTerm2, Windows Terminal, Alacritty)
 - Disable terminal color scheme overrides
 - Test with different themes
@@ -815,10 +849,12 @@ cat ~/.ollm/settings.json
 ## References
 
 **Related Documentation:**
+
 - [dev_UI_Front.md](./dev_UI_Front.md) - UI components using themes
 - [dev_SlashCommands.md](./dev_SlashCommands.md) - Theme commands
 
 **External Resources:**
+
 - [Solarized Color Scheme](https://ethanschoonover.com/solarized/)
 - [Dracula Theme](https://draculatheme.com/)
 - [Nord Theme](https://www.nordtheme.com/)

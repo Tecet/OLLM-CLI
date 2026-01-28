@@ -70,14 +70,14 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             ❌ An error occurred
           </Text>
           <Text color={textColor}>{this.state.error.message}</Text>
-          
+
           {process.env.OLLM_LOG_LEVEL === 'debug' && this.state.errorInfo && (
             <Box flexDirection="column" marginTop={1}>
               <Text dimColor>Stack trace:</Text>
               <Text dimColor>{this.state.errorInfo.componentStack}</Text>
             </Box>
           )}
-          
+
           <Box marginTop={1}>
             <Text dimColor>Press Ctrl+C to exit or continue using the application</Text>
           </Box>
@@ -96,21 +96,21 @@ export const DefaultErrorFallback: React.FC<{ error: Error; errorInfo: React.Err
   error,
   errorInfo,
 }) => {
-      const theme = useUI().state.theme;
-      const borderColor = theme.border.primary;
-      const textColor = theme.status.error;
+  const theme = useUI().state.theme;
+  const borderColor = theme.border.primary;
+  const textColor = theme.status.error;
 
-      return (
-        <Box flexDirection="column" padding={1} borderStyle="round" borderColor={borderColor}>
-          <Text color={textColor} bold>
-            ❌ Component Error
-          </Text>
-          <Text color={textColor}>{error.message}</Text>
-      
+  return (
+    <Box flexDirection="column" padding={1} borderStyle="round" borderColor={borderColor}>
+      <Text color={textColor} bold>
+        ❌ Component Error
+      </Text>
+      <Text color={textColor}>{error.message}</Text>
+
       <Box marginTop={1}>
         <Text dimColor>The application encountered an error but will continue running.</Text>
       </Box>
-      
+
       {process.env.OLLM_LOG_LEVEL === 'debug' && (
         <Box flexDirection="column" marginTop={1}>
           <Text dimColor>Component stack:</Text>

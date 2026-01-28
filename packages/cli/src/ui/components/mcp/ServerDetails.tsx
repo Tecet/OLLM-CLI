@@ -1,6 +1,6 @@
 /**
  * ServerDetails Component
- * 
+ *
  * Detailed server view for the right column of the two-column MCP panel layout.
  * Displays comprehensive information about the selected server including:
  * - Server name (bold, yellow when focused)
@@ -10,7 +10,7 @@
  * - Statistics (tools, resources, uptime, OAuth status) when expanded
  * - Error/warning messages when applicable
  * - Available action shortcuts when expanded
- * 
+ *
  * Validates: Requirements 1.1-1.6, NFR-7
  */
 
@@ -33,10 +33,14 @@ export interface ServerDetailsProps {
  */
 function getHealthColor(health: string): string {
   switch (health) {
-    case 'healthy': return 'green';
-    case 'degraded': return 'yellow';
-    case 'unhealthy': return 'red';
-    default: return 'gray';
+    case 'healthy':
+      return 'green';
+    case 'degraded':
+      return 'yellow';
+    case 'unhealthy':
+      return 'red';
+    default:
+      return 'gray';
   }
 }
 
@@ -45,11 +49,16 @@ function getHealthColor(health: string): string {
  */
 function getStatusIcon(status: string): string {
   switch (status) {
-    case 'connected': return '●';
-    case 'disconnected': return '○';
-    case 'starting': return '⟳';
-    case 'error': return '✗';
-    default: return '○';
+    case 'connected':
+      return '●';
+    case 'disconnected':
+      return '○';
+    case 'starting':
+      return '⟳';
+    case 'error':
+      return '✗';
+    default:
+      return '○';
   }
 }
 
@@ -61,7 +70,7 @@ function formatUptime(uptime: number): string {
   const minutes = Math.floor(seconds / 60);
   const hours = Math.floor(minutes / 60);
   const days = Math.floor(hours / 24);
-  
+
   if (days > 0) return `${days}d ${hours % 24}h`;
   if (hours > 0) return `${hours}h ${minutes % 60}m`;
   if (minutes > 0) return `${minutes}m ${seconds % 60}s`;
@@ -79,15 +88,15 @@ function getOAuthStatus(server: ExtendedMCPServerStatus): string {
 
 /**
  * ServerDetails Component
- * 
+ *
  * Displays detailed information about a selected MCP server in the right column.
  * Shows placeholder text when no server is selected.
- * 
+ *
  * When a server is selected, displays:
  * - Server name (bold, yellow when focused)
  * - Description (dimmed)
  * - Status line with health indicator and enabled/disabled state
- * 
+ *
  * When expanded, additionally shows:
  * - Statistics (tools count, resources count, uptime)
  * - OAuth status (if OAuth is configured)
@@ -107,37 +116,41 @@ export const ServerDetails: React.FC<ServerDetailsProps> = ({
       </Box>
     );
   }
-  
+
   // Determine health status from server state
-  const healthStatus = server.status === 'connected' ? server.health :
-                      server.status === 'starting' ? 'connecting' :
-                      server.status === 'disconnected' ? 'stopped' :
-                      'unhealthy';
-  
+  const healthStatus =
+    server.status === 'connected'
+      ? server.health
+      : server.status === 'starting'
+        ? 'connecting'
+        : server.status === 'disconnected'
+          ? 'stopped'
+          : 'unhealthy';
+
   const healthColor = getHealthColor(healthStatus);
   const statusIcon = getStatusIcon(server.status);
   const toggleIndicator = server.config.disabled ? '○ Disabled' : '● Enabled';
-  
+
   return (
     <Box flexDirection="column" padding={1}>
       {/* Server name - bold and yellow when focused */}
       <Text bold color={focused ? 'yellow' : undefined}>
         {server.name}
       </Text>
-      
+
       {/* Description - dimmed secondary text */}
-      <Text dimColor>
-        {server.description || 'No description available'}
-      </Text>
-      
+      <Text dimColor>{server.description || 'No description available'}</Text>
+
       {/* Status line with health and enabled/disabled state */}
       <Box marginTop={1}>
         <Text>Status: </Text>
-        <Text color={healthColor}>{statusIcon} {healthStatus}</Text>
+        <Text color={healthColor}>
+          {statusIcon} {healthStatus}
+        </Text>
         <Text> | </Text>
         <Text>{toggleIndicator}</Text>
       </Box>
-      
+
       {/* Expanded details - only shown when server is expanded */}
       {expanded && (
         <>
@@ -149,14 +162,14 @@ export const ServerDetails: React.FC<ServerDetailsProps> = ({
               <Text> | Uptime: {formatUptime(server.uptime)}</Text>
             )}
           </Box>
-          
+
           {/* OAuth status - only shown if OAuth is configured */}
           {server.config.oauth && (
             <Box marginTop={1}>
               <Text>OAuth: {getOAuthStatus(server)}</Text>
             </Box>
           )}
-          
+
           {/* Error/warning messages - only shown when applicable */}
           {server.error && (
             <Box marginTop={1}>
@@ -166,12 +179,10 @@ export const ServerDetails: React.FC<ServerDetailsProps> = ({
               </Text>
             </Box>
           )}
-          
+
           {/* Available action shortcuts */}
           <Box marginTop={1}>
-            <Text dimColor>
-              [V] View Tools  [C] Configure  [R] Restart  [L] Logs  [U] Uninstall
-            </Text>
+            <Text dimColor>[V] View Tools [C] Configure [R] Restart [L] Logs [U] Uninstall</Text>
           </Box>
         </>
       )}

@@ -1,9 +1,9 @@
 /**
  * Token Counter Service
- * 
+ *
  * Provides token counting functionality with provider API integration,
  * fallback estimation, caching, and tool call overhead calculation.
- * 
+ *
  * Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6
  */
 
@@ -43,7 +43,7 @@ export class TokenCounterMetrics {
 
   getStats() {
     const total = this.cacheHits + this.cacheMisses;
-    const hitRate = total > 0 ? (this.cacheHits / total * 100).toFixed(1) : '0.0';
+    const hitRate = total > 0 ? ((this.cacheHits / total) * 100).toFixed(1) : '0.0';
     const uptime = Math.round((Date.now() - this.startTime) / 1000);
 
     return {
@@ -53,10 +53,9 @@ export class TokenCounterMetrics {
       recalculations: this.recalculations,
       totalTokensCounted: this.totalTokensCounted,
       largestMessage: this.largestMessage,
-      avgTokensPerMessage: this.cacheMisses > 0 
-        ? Math.round(this.totalTokensCounted / this.cacheMisses)
-        : 0,
-      uptimeSeconds: uptime
+      avgTokensPerMessage:
+        this.cacheMisses > 0 ? Math.round(this.totalTokensCounted / this.cacheMisses) : 0,
+      uptimeSeconds: uptime,
     };
   }
 
@@ -103,7 +102,7 @@ export interface TokenCounterConfig {
 
 /**
  * Token Counter implementation
- * 
+ *
  * Provides accurate token counting with:
  * - Provider API integration when available
  * - Fallback estimation using character count
@@ -130,7 +129,7 @@ export class TokenCounterService implements TokenCounter {
 
   /**
    * Count tokens in text using provider API or fallback estimation
-   * 
+   *
    * Requirements: 2.2, 2.3
    */
   async countTokens(text: string): Promise<number> {
@@ -139,7 +138,7 @@ export class TokenCounterService implements TokenCounter {
       try {
         const count = await this.provider.countTokens({
           model: '', // Model name not needed for simple text counting
-          messages: [{ role: 'user', parts: [{ type: 'text', text }] }]
+          messages: [{ role: 'user', parts: [{ type: 'text', text }] }],
         });
         // Apply multiplier and round
         return Math.round(count * this.modelMultiplier);
@@ -157,7 +156,7 @@ export class TokenCounterService implements TokenCounter {
 
   /**
    * Count tokens using cached value if available
-   * 
+   *
    * Requirements: 2.1, 2.4
    */
   countTokensCached(messageId: string, text: string): number {
@@ -171,28 +170,28 @@ export class TokenCounterService implements TokenCounter {
     // Calculate synchronously using fallback estimation
     // Single rounding operation for accuracy
     const count = Math.ceil((text.length / 4) * this.modelMultiplier);
-    
+
     // ✅ VALIDATION: Ensure token count is valid
     if (count < 0) {
       console.error('[TokenCounter] INVALID: Negative token count!', {
         messageId,
         count,
         textLength: text.length,
-        multiplier: this.modelMultiplier
+        multiplier: this.modelMultiplier,
       });
       throw new Error(`Invalid token count: ${count}`);
     }
-    
+
     // Cache the result
     this.cache.set(messageId, count);
     this.metrics.recordCacheMiss(count);
-    
+
     return count;
   }
 
   /**
    * Count total tokens in conversation including tool call overhead
-   * 
+   *
    * Requirements: 2.5
    */
   countConversationTokens(messages: Message[]): number {
@@ -212,16 +211,16 @@ export class TokenCounterService implements TokenCounter {
 
     // Add tool call overhead
     total += toolCallCount * this.toolCallOverhead;
-    
+
     // 📊 METRICS: Track recalculation
     this.metrics.recordRecalculation(messages.length, total);
-    
+
     // ✅ VALIDATION: Ensure total is valid
     if (total < 0) {
       console.error('[TokenCounter] INVALID: Negative conversation total!', {
         messageCount: messages.length,
         total,
-        toolCallCount
+        toolCallCount,
       });
       throw new Error(`Invalid conversation token count: ${total}`);
     }
@@ -259,7 +258,7 @@ export class TokenCounterService implements TokenCounter {
 
   /**
    * Update the model multiplier
-   * 
+   *
    * Requirements: 2.6
    */
   setModelMultiplier(multiplier: number): void {

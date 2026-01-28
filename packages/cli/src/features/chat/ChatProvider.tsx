@@ -51,19 +51,13 @@ export function ChatProvider({
   const contextUsage = contextManagerState.usage;
   const { setLaunchScreenVisible, setTheme } = useUI();
   const { container: serviceContainer } = useServices();
-  const { 
-    sendToLLM, 
-    cancelRequest, 
-    setCurrentModel, 
-    provider, 
-    currentModel, 
-    modelSupportsTools 
-  } = useModel();
+  const { sendToLLM, cancelRequest, setCurrentModel, provider, currentModel, modelSupportsTools } =
+    useModel();
   const injectFocusedFilesIntoPrompt = useFocusedFilesInjection();
 
   // Initialize core chat state
   const chatState = useChatState(initialMessages);
-  
+
   // Initialize menu system
   const menuSystem = useMenuSystem({
     menuState: chatState.menuState,

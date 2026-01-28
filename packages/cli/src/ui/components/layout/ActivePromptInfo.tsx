@@ -11,16 +11,16 @@ function formatTierDisplay(tier: string): string {
   if (!tier || typeof tier !== 'string') return 'Unknown';
   const match = tier.match(/Tier (\d+)/);
   if (!match) return tier;
-  
+
   const tierNum = match[1];
   const tierRanges: Record<string, string> = {
     '1': '2-4K',
     '2': '8K',
     '3': '16K',
     '4': '32K',
-    '5': '64K+'
+    '5': '64K+',
   };
-  
+
   return tierRanges[tierNum] || tier;
 }
 
@@ -42,7 +42,9 @@ export function ActivePromptInfo() {
     <Box flexDirection="column" marginBottom={1} paddingX={1} alignSelf="flex-start">
       <Box height={1} />
       <Text>
-        <Text color={uiState.theme.status.info} bold>Active Prompt: </Text>
+        <Text color={uiState.theme.status.info} bold>
+          Active Prompt:{' '}
+        </Text>
         <Text color={uiState.theme.text.primary}>
           {modeStr} {tierStr}
         </Text>

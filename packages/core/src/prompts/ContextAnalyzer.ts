@@ -1,6 +1,6 @@
 /**
  * Context Analyzer for Dynamic Prompt System
- * 
+ *
  * Analyzes conversation messages to detect context and recommend appropriate modes.
  * Implements keyword detection, confidence scoring, and conversation analysis.
  */
@@ -12,11 +12,7 @@ import type { Message } from '../provider/types.js';
 /**
  * Available mode types in the system
  */
-export type ModeType =
-  | 'assistant'
-  | 'planning'
-  | 'developer'
-  | 'debugger';
+export type ModeType = 'assistant' | 'planning' | 'developer' | 'debugger';
 
 /**
  * Result of context analysis
@@ -72,44 +68,109 @@ export interface KeywordDetection {
  */
 const MODE_KEYWORDS: Record<ModeType, string[]> = {
   assistant: [
-    'help', 'chat', 'tell me', 'hello', 'hi', 'who are you', 'what can you do',
-    'explain', 'teach me', 'how does', 'why', 'understand', 'learn',
-    'what is', 'tutorial', 'show me', 'walk me through', 'educational'
+    'help',
+    'chat',
+    'tell me',
+    'hello',
+    'hi',
+    'who are you',
+    'what can you do',
+    'explain',
+    'teach me',
+    'how does',
+    'why',
+    'understand',
+    'learn',
+    'what is',
+    'tutorial',
+    'show me',
+    'walk me through',
+    'educational',
   ],
   planning: [
-    'plan', 'architecture', 'design', 'how to implement', 'approach', 'strategy',
-    'todo list', 'steps', 'requirements', 'specification', 'outline', 'structuring',
-    'break down the task', 'sequence of actions', 'pre-implementation', 'brainstorm'
+    'plan',
+    'architecture',
+    'design',
+    'how to implement',
+    'approach',
+    'strategy',
+    'todo list',
+    'steps',
+    'requirements',
+    'specification',
+    'outline',
+    'structuring',
+    'break down the task',
+    'sequence of actions',
+    'pre-implementation',
+    'brainstorm',
   ],
   developer: [
-    'code', 'implement', 'feature', 'build', 'create', 'write', 'refactor',
-    'add', 'new', 'function', 'class', 'component', 'script', 'logic',
-    'setup', 'config', 'install', 'update', 'modify', 'change',
-    'run', 'execute', 'automated', 'scripted'
+    'code',
+    'implement',
+    'feature',
+    'build',
+    'create',
+    'write',
+    'refactor',
+    'add',
+    'new',
+    'function',
+    'class',
+    'component',
+    'script',
+    'logic',
+    'setup',
+    'config',
+    'install',
+    'update',
+    'modify',
+    'change',
+    'run',
+    'execute',
+    'automated',
+    'scripted',
   ],
   debugger: [
-    'debug', 'fix', 'bug', 'error', 'exception', 'stack trace', 'failing',
-    'broken', 'not working', 'investigate', 'diagnose', 'root cause', 'crash',
-    'logs', 'output', 'console', 'terminal', 'test failure', 'issue'
-  ]
+    'debug',
+    'fix',
+    'bug',
+    'error',
+    'exception',
+    'stack trace',
+    'failing',
+    'broken',
+    'not working',
+    'investigate',
+    'diagnose',
+    'root cause',
+    'crash',
+    'logs',
+    'output',
+    'console',
+    'terminal',
+    'test failure',
+    'issue',
+  ],
 };
 
 /**
  * Context Analyzer
- * 
+ *
  * Analyzes conversation messages to detect context and recommend modes.
  */
 export class ContextAnalyzer {
   /**
    * Analyze conversation messages for mode recommendation
-   * 
+   *
    * @param messages - Conversation messages to analyze (analyzes last 5)
    * @returns Context analysis with mode recommendation and confidence
    */
   analyzeConversation(messages: Message[]): ContextAnalysis {
     const confidences = this.calculateAllModeConfidences(messages);
-    const sortedModes = (Object.keys(confidences) as ModeType[])
-      .sort((a, b) => confidences[b] - confidences[a]);
+    const sortedModes = (Object.keys(confidences) as ModeType[]).sort(
+      (a, b) => confidences[b] - confidences[a]
+    );
 
     const topMode = sortedModes[0];
     const topConfidence = confidences[topMode];
@@ -117,16 +178,21 @@ export class ContextAnalyzer {
 
     // Build triggers from detected keywords
     const allText = messages
-      .map(m => m.parts.filter(p => p.type === 'text').map(p => (p as { type: 'text'; text: string }).text).join(' '))
+      .map((m) =>
+        m.parts
+          .filter((p) => p.type === 'text')
+          .map((p) => (p as { type: 'text'; text: string }).text)
+          .join(' ')
+      )
       .join(' ');
     const detections = this.detectKeywords(allText);
-    const triggers = Array.from(new Set(detections.flatMap(d => d.keywords)));
+    const triggers = Array.from(new Set(detections.flatMap((d) => d.keywords)));
 
     return {
       mode: topMode,
       confidence: topConfidence,
       triggers,
-      metadata
+      metadata,
     };
   }
 
@@ -143,12 +209,17 @@ export class ContextAnalyzer {
       assistant: this.calculateModeConfidence(recentMessages, 'assistant'),
       planning: this.calculateModeConfidence(recentMessages, 'planning'),
       developer: this.calculateModeConfidence(recentMessages, 'developer'),
-      debugger: this.calculateModeConfidence(recentMessages, 'debugger')
+      debugger: this.calculateModeConfidence(recentMessages, 'debugger'),
     };
 
     // Detect keywords and metadata
     const allText = recentMessages
-      .map(m => m.parts.filter(p => p.type === 'text').map(p => (p as { type: 'text'; text: string }).text).join(' '))
+      .map((m) =>
+        m.parts
+          .filter((p) => p.type === 'text')
+          .map((p) => (p as { type: 'text'; text: string }).text)
+          .join(' ')
+      )
       .join(' ');
 
     // Adjust for specific patterns
@@ -162,7 +233,7 @@ export class ContextAnalyzer {
 
     // Keyword detections - give explicit boosts so short messages still surface
     const detections = this.detectKeywords(allText);
-    if (detections.some(d => d.mode === 'developer')) {
+    if (detections.some((d) => d.mode === 'developer')) {
       modeConfidences.developer += 0.25;
     }
 
@@ -185,9 +256,10 @@ export class ContextAnalyzer {
   getSuggestedModes(messages: Message[], currentMode: ModeType, topN: number = 3): SuggestedMode[] {
     const confidences = this.calculateAllModeConfidences(messages);
     const analysis = this.analyzeConversation(messages);
-    
+
     const getIcon = (mode: ModeType): string => {
-      const metadata = (MODE_METADATA as Record<string, { icon: string }>)[mode] || MODE_METADATA.assistant;
+      const metadata =
+        (MODE_METADATA as Record<string, { icon: string }>)[mode] || MODE_METADATA.assistant;
       return metadata.icon;
     };
 
@@ -196,7 +268,9 @@ export class ContextAnalyzer {
 
       switch (mode) {
         case 'debugger':
-          return metadata.errorMessagesPresent ? 'error analysis recommended' : 'root cause investigation';
+          return metadata.errorMessagesPresent
+            ? 'error analysis recommended'
+            : 'root cause investigation';
         case 'planning':
           return 'Plan/architecture suggested';
         case 'developer':
@@ -207,7 +281,7 @@ export class ContextAnalyzer {
           return 'Suggested context switch';
       }
     };
-    
+
     return Object.entries(confidences)
       .filter(([mode]) => mode !== currentMode)
       .sort(([, a], [, b]) => b - a)
@@ -216,13 +290,13 @@ export class ContextAnalyzer {
         mode: mode as ModeType,
         icon: getIcon(mode as ModeType),
         confidence,
-        reason: generateReason(mode as ModeType, confidence)
+        reason: generateReason(mode as ModeType, confidence),
       }));
   }
-  
+
   /**
    * Calculate confidence score for a specific mode
-   * 
+   *
    * @param messages - Messages to analyze
    * @param mode - Mode to calculate confidence for
    * @returns Confidence score (0.0 to 1.0)
@@ -230,79 +304,84 @@ export class ContextAnalyzer {
   private calculateModeConfidence(messages: Message[], mode: ModeType): number {
     let confidence = 0.0;
     const keywords = MODE_KEYWORDS[mode] || [];
-    
+
     // Use simple loops to avoid any potential scope/closure weirdness
     for (let i = 0; i < messages.length; i++) {
-        const message = messages[i];
-        const weight = Math.pow(1.5, i);
-        
-        let text = "";
-        if (message.parts) {
-            for (const part of message.parts) {
-                 if (part.type === 'text') {
-                     text += part.text + " ";
-                 }
-            }
-        }
-        text = text.toLowerCase();
-        
-        // Count matches
-        let matchCount = 0;
-        if (keywords && keywords.length > 0) {
-            for (const keyword of keywords) {
-                if (text.indexOf(keyword.toLowerCase()) !== -1) {
-                    matchCount++;
-                }
-            }
-        }
-        
-        if (matchCount > 0) {
-            const keywordScore = Math.min(matchCount, 3) / 3;
-            confidence += keywordScore * weight * 0.4;
-        }
+      const message = messages[i];
+      const weight = Math.pow(1.5, i);
 
-        if (this.detectExplicitModeRequest(text, mode)) {
-             confidence += 0.8 * weight;
+      let text = '';
+      if (message.parts) {
+        for (const part of message.parts) {
+          if (part.type === 'text') {
+            text += part.text + ' ';
+          }
         }
+      }
+      text = text.toLowerCase();
+
+      // Count matches
+      let matchCount = 0;
+      if (keywords && keywords.length > 0) {
+        for (const keyword of keywords) {
+          if (text.indexOf(keyword.toLowerCase()) !== -1) {
+            matchCount++;
+          }
+        }
+      }
+
+      if (matchCount > 0) {
+        const keywordScore = Math.min(matchCount, 3) / 3;
+        confidence += keywordScore * weight * 0.4;
+      }
+
+      if (this.detectExplicitModeRequest(text, mode)) {
+        confidence += 0.8 * weight;
+      }
     }
-    
+
     return Math.min(confidence / 4.0, 1.0);
   }
-  
+
   /**
    * Detect keywords in text for all modes
-   * 
+   *
    * @param text - Text to analyze
    * @returns Array of keyword detections for each mode
    */
   detectKeywords(text: string): KeywordDetection[] {
     const lowerText = text.toLowerCase();
     const detections: KeywordDetection[] = [];
-    
+
     for (const [mode, keywords] of Object.entries(MODE_KEYWORDS)) {
-      const matchedKeywords = keywords.filter(keyword =>
+      const matchedKeywords = keywords.filter((keyword) =>
         lowerText.includes(keyword.toLowerCase())
       );
-      
+
       if (matchedKeywords.length > 0) {
         detections.push({
           mode: mode as ModeType,
-          keywords: matchedKeywords
+          keywords: matchedKeywords,
         });
       }
     }
-    
+
     return detections;
   }
-  
+
   private analyzeMetadataForResponse(messages: Message[]): ContextAnalysis['metadata'] {
     const allText = messages
-      .map(m => m.parts.filter(p => p.type === 'text').map(p => (p as { type: 'text'; text: string }).text).join(' '))
+      .map((m) =>
+        m.parts
+          .filter((p) => p.type === 'text')
+          .map((p) => (p as { type: 'text'; text: string }).text)
+          .join(' ')
+      )
       .join(' ');
 
     // Keywords detected
     const detections = this.detectKeywords(allText);
-    const keywords = Array.from(new Set(detections.flatMap(d => d.keywords)));
+    const keywords = Array.from(new Set(detections.flatMap((d) => d.keywords)));
 
     // Tools used: combine explicit toolCalls and heuristic underscore-named tokens
     const toolsFromCalls: string[] = [];
@@ -314,11 +393,15 @@ export class ContextAnalyzer {
       }
     }
 
-    const toolNameMatches = Array.from(new Set(Array.from(allText.matchAll(/\b[a-z_]{4,}\b/g)).map(m => m[0])));
+    const toolNameMatches = Array.from(
+      new Set(Array.from(allText.matchAll(/\b[a-z_]{4,}\b/g)).map((m) => m[0]))
+    );
     const toolsUsed = Array.from(new Set([...toolsFromCalls, ...toolNameMatches]));
 
     // Recent topics: simple heuristic of frequent meaningful tokens
-    const tokenMatches = Array.from(allText.toLowerCase().matchAll(/\b[a-z]{4,}\b/g)).map(m => m[0]);
+    const tokenMatches = Array.from(allText.toLowerCase().matchAll(/\b[a-z]{4,}\b/g)).map(
+      (m) => m[0]
+    );
     const recentTopics = Array.from(new Set(tokenMatches)).slice(0, 6);
 
     return {
@@ -326,13 +409,13 @@ export class ContextAnalyzer {
       toolsUsed,
       recentTopics,
       codeBlocksPresent: /```/.test(allText),
-      errorMessagesPresent: /error|exception|stack trace|failed/i.test(allText)
+      errorMessagesPresent: /error|exception|stack trace|failed/i.test(allText),
     };
   }
 
   /**
    * Detect explicit mode request in text
-   * 
+   *
    * @param text - Text to analyze
    * @param mode - Mode to check for
    * @returns True if explicit request detected
@@ -342,14 +425,14 @@ export class ContextAnalyzer {
       `switch to ${mode}`,
       `use ${mode} mode`,
       `enter ${mode} mode`,
-      `/mode ${mode}`
+      `/mode ${mode}`,
     ];
-    return patterns.some(pattern => text.includes(pattern));
+    return patterns.some((pattern) => text.includes(pattern));
   }
-  
+
   /**
    * Detect error messages in text
-   * 
+   *
    * @param text - Text to analyze
    * @returns True if error messages detected
    */
@@ -365,12 +448,12 @@ export class ContextAnalyzer {
       /undefined is not/i,
       /cannot read property/i,
       /null pointer/i,
-      /segmentation fault/i
+      /segmentation fault/i,
     ];
-    
-    return errorPatterns.some(pattern => pattern.test(text));
+
+    return errorPatterns.some((pattern) => pattern.test(text));
   }
-  
+
   /**
    * Detect security-related keywords in text
    *

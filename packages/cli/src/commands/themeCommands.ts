@@ -1,6 +1,6 @@
 /**
  * Theme Management Commands
- * 
+ *
  * Implements commands for managing themes:
  * - /theme list - List available themes
  * - /theme use <name> - Switch to a different theme
@@ -15,23 +15,16 @@ import type { Theme } from '../config/types.js';
 
 /**
  * /theme list - List available themes
- * 
+ *
  * Requirements: 19.8
  */
 async function themeListHandler(): Promise<CommandResult> {
   // This will integrate with ThemeManager
-  const themes = [
-    'default-dark',
-    'dracula',
-    'nord',
-    'monokai',
-    'solarized-dark',
-  ];
+  const themes = ['default-dark', 'dracula', 'nord', 'monokai', 'solarized-dark'];
 
   return {
     success: true,
-    message: 'Available themes:\n\n' +
-      themes.map(t => `  ${t}`).join('\n'),
+    message: 'Available themes:\n\n' + themes.map((t) => `  ${t}`).join('\n'),
     data: {
       themes,
     },
@@ -40,7 +33,7 @@ async function themeListHandler(): Promise<CommandResult> {
 
 /**
  * /theme use <name> - Switch to a different theme
- * 
+ *
  * Requirements: 19.8
  */
 function createThemeUseHandler(setTheme?: (theme: Theme) => void) {
@@ -67,7 +60,7 @@ function createThemeUseHandler(setTheme?: (theme: Theme) => void) {
     // Load the theme
     try {
       const theme = themeManager.loadTheme(themeName);
-      
+
       // Apply theme if setTheme callback is provided
       if (setTheme) {
         setTheme(theme);
@@ -75,7 +68,7 @@ function createThemeUseHandler(setTheme?: (theme: Theme) => void) {
 
       // Persist selection
       SettingsService.getInstance().setTheme(themeName);
-      
+
       return {
         success: true,
         message: `Theme switched to: ${themeName}`,
@@ -95,7 +88,7 @@ function createThemeUseHandler(setTheme?: (theme: Theme) => void) {
 
 /**
  * /theme preview <name> - Preview a theme temporarily
- * 
+ *
  * Requirements: 19.8
  */
 function createThemePreviewHandler(setTheme?: (theme: Theme) => void) {
@@ -122,12 +115,12 @@ function createThemePreviewHandler(setTheme?: (theme: Theme) => void) {
     // Load and preview the theme
     try {
       const theme = themeManager.loadTheme(themeName);
-      
+
       // Apply theme temporarily if setTheme callback is provided
       if (setTheme) {
         setTheme(theme);
       }
-      
+
       return {
         success: true,
         message: `Previewing theme: ${themeName}\n\nUse /theme use to apply permanently.`,
@@ -148,13 +141,13 @@ function createThemePreviewHandler(setTheme?: (theme: Theme) => void) {
 
 /**
  * Create theme command with setTheme callback
- * 
+ *
  * Requirements: 19.8
  */
 export function createThemeCommand(setTheme?: (theme: Theme) => void): Command {
   const themeUseHandler = createThemeUseHandler(setTheme);
   const themePreviewHandler = createThemePreviewHandler(setTheme);
-  
+
   return {
     name: '/theme',
     description: 'Manage themes',
@@ -163,7 +156,8 @@ export function createThemeCommand(setTheme?: (theme: Theme) => void): Command {
       if (args.length === 0) {
         return {
           success: false,
-          message: 'Usage: /theme <list|use|preview> [args]\n\n' +
+          message:
+            'Usage: /theme <list|use|preview> [args]\n\n' +
             'Subcommands:\n' +
             '  list              - List available themes\n' +
             '  use <name>        - Switch to a different theme\n' +
@@ -184,8 +178,8 @@ export function createThemeCommand(setTheme?: (theme: Theme) => void): Command {
         default:
           return {
             success: false,
-            message: `Unknown subcommand: ${subcommand}\n\n` +
-              'Available subcommands: list, use, preview',
+            message:
+              `Unknown subcommand: ${subcommand}\n\n` + 'Available subcommands: list, use, preview',
           };
       }
     },
@@ -201,14 +195,10 @@ export const themeCommand: Command = createThemeCommand();
  * Create all theme-related commands
  */
 export function createThemeCommands(setTheme?: (theme: Theme) => void): Command[] {
-  return [
-    createThemeCommand(setTheme),
-  ];
+  return [createThemeCommand(setTheme)];
 }
 
 /**
  * All theme-related commands (default, without setTheme)
  */
-export const themeCommands: Command[] = [
-  themeCommand,
-];
+export const themeCommands: Command[] = [themeCommand];

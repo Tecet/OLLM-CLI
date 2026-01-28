@@ -1,8 +1,8 @@
 /**
  * MCP Configuration Service
- * 
+ *
  * Handles loading, saving, and watching MCP configuration files.
- * Supports both user-level (~/.ollm/settings/mcp.json) and 
+ * Supports both user-level (~/.ollm/settings/mcp.json) and
  * workspace-level (.ollm/settings/mcp.json) configurations.
  */
 
@@ -41,7 +41,7 @@ export type ConfigChangeListener = (event: ConfigChangeEvent) => void;
 
 /**
  * MCP Configuration Service
- * 
+ *
  * Manages MCP configuration files with atomic writes, validation,
  * and file watching for external changes.
  */
@@ -59,22 +59,12 @@ export class MCPConfigService {
   constructor(basePath?: string) {
     // Use basePath if provided (for tests), otherwise use os.homedir()
     const homeDir = basePath || os.homedir();
-    
+
     // User-level config: ~/.ollm/settings/mcp.json (or basePath/.ollm/settings/mcp.json in tests)
-    this.userConfigPath = path.join(
-      homeDir,
-      '.ollm',
-      'settings',
-      'mcp.json'
-    );
+    this.userConfigPath = path.join(homeDir, '.ollm', 'settings', 'mcp.json');
 
     // Workspace-level config: .ollm/settings/mcp.json
-    this.workspaceConfigPath = path.join(
-      process.cwd(),
-      '.ollm',
-      'settings',
-      'mcp.json'
-    );
+    this.workspaceConfigPath = path.join(process.cwd(), '.ollm', 'settings', 'mcp.json');
   }
 
   /**
@@ -126,17 +116,11 @@ export class MCPConfigService {
    * @param serverName - Name of the server to update
    * @param config - Server configuration to update
    */
-  async updateServerConfig(
-    serverName: string,
-    config: MCPServerConfig
-  ): Promise<void> {
+  async updateServerConfig(serverName: string, config: MCPServerConfig): Promise<void> {
     // Create backup before updating
     try {
       if (fs.existsSync(this.userConfigPath)) {
-        await mcpConfigBackup.createBackup(
-          this.userConfigPath,
-          `Before updating ${serverName}`
-        );
+        await mcpConfigBackup.createBackup(this.userConfigPath, `Before updating ${serverName}`);
       }
     } catch (error) {
       console.warn('Failed to create backup before update:', error);
@@ -267,11 +251,11 @@ export class MCPConfigService {
     } catch (error) {
       if (error instanceof SyntaxError) {
         console.error(`JSON parsing error in ${filePath}:`, error.message);
-        
+
         // Attempt to recover from corruption
         console.log('Attempting to recover from corrupted configuration...');
         const recovered = await mcpConfigBackup.recoverFromCorruption(filePath);
-        
+
         if (recovered) {
           // Try loading again after recovery
           try {
@@ -294,10 +278,7 @@ export class MCPConfigService {
    * @param filePath - Path to the configuration file
    * @param config - Configuration to save
    */
-  private async saveConfigFile(
-    filePath: string,
-    config: MCPConfigFile
-  ): Promise<void> {
+  private async saveConfigFile(filePath: string, config: MCPConfigFile): Promise<void> {
     try {
       // Ensure directory exists
       const dir = path.dirname(filePath);
@@ -307,11 +288,7 @@ export class MCPConfigService {
       const tempPath = `${filePath}.tmp`;
 
       // Write to temporary file
-      await fs.promises.writeFile(
-        tempPath,
-        JSON.stringify(config, null, 2),
-        'utf-8'
-      );
+      await fs.promises.writeFile(tempPath, JSON.stringify(config, null, 2), 'utf-8');
 
       // Atomic rename (replaces original file)
       await fs.promises.rename(tempPath, filePath);
@@ -410,9 +387,7 @@ export class MCPConfigService {
       }
 
       if (!Array.isArray(serverConfig.args)) {
-        throw new Error(
-          `Invalid configuration for server '${serverName}': args must be an array`
-        );
+        throw new Error(`Invalid configuration for server '${serverName}': args must be an array`);
       }
 
       // Validate transport type if specified
@@ -423,7 +398,10 @@ export class MCPConfigService {
       }
 
       // Validate timeout if specified
-      if (serverConfig.timeout !== undefined && (typeof serverConfig.timeout !== 'number' || serverConfig.timeout <= 0)) {
+      if (
+        serverConfig.timeout !== undefined &&
+        (typeof serverConfig.timeout !== 'number' || serverConfig.timeout <= 0)
+      ) {
         throw new Error(
           `Invalid configuration for server '${serverName}': timeout must be a positive number`
         );
@@ -431,9 +409,7 @@ export class MCPConfigService {
 
       // Validate env if specified
       if (serverConfig.env !== undefined && typeof serverConfig.env !== 'object') {
-        throw new Error(
-          `Invalid configuration for server '${serverName}': env must be an object`
-        );
+        throw new Error(`Invalid configuration for server '${serverName}': env must be an object`);
       }
     }
   }

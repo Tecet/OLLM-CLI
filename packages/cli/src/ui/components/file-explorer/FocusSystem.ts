@@ -1,17 +1,17 @@
 /**
  * FocusSystem - File focus management for LLM context injection
- * 
+ *
  * This service manages the focused files list, which represents files that are
  * "pinned" to the LLM context. When files are focused, their content is read,
  * truncated if necessary, and injected into LLM prompts.
- * 
+ *
  * Key responsibilities:
  * - Manage focused files list
  * - Read and truncate file content (8KB limit)
  * - Inject focused content into LLM prompts
  * - Sanitize content before injection
  * - Persist focused files across sessions
- * 
+ *
  * Requirements: 3.1, 3.2, 3.3, 3.4, 10.5
  */
 
@@ -44,14 +44,14 @@ export class FocusSystem {
 
   /**
    * Focus a file - read its content and add to focus list
-   * 
+   *
    * This method:
    * 1. Validates the path for safety
    * 2. Reads the file content
    * 3. Truncates if exceeds 8KB
    * 4. Sanitizes the content
    * 5. Adds to focused files map
-   * 
+   *
    * @param filePath - Absolute path to the file to focus
    * @returns The focused file with content
    * @throws {Error} If file cannot be read or path is invalid
@@ -63,7 +63,7 @@ export class FocusSystem {
     // Check if file exists and is readable
     try {
       const stats = await fs.stat(sanitizedPath);
-      
+
       if (!stats.isFile()) {
         throw new Error(`Cannot focus directory: ${sanitizedPath}`);
       }
@@ -71,11 +71,11 @@ export class FocusSystem {
       // Read file content
       const buffer = await fs.readFile(sanitizedPath);
       const fileSize = buffer.length;
-      
+
       // Determine if truncation is needed
       const truncated = fileSize > MAX_FILE_SIZE;
       const contentBuffer = truncated ? buffer.slice(0, MAX_FILE_SIZE) : buffer;
-      
+
       // Convert to string and sanitize
       let content = contentBuffer.toString('utf-8');
       content = this.sanitizeContent(content);
@@ -102,14 +102,14 @@ export class FocusSystem {
         operation: 'focusFile',
         filePath: sanitizedPath,
       });
-      
+
       throw new Error(`Failed to focus file ${sanitizedPath}: ${errorInfo.message}`);
     }
   }
 
   /**
    * Unfocus a file - remove it from the focus list
-   * 
+   *
    * @param filePath - Absolute path to the file to unfocus
    */
   unfocusFile(filePath: string): void {
@@ -125,7 +125,7 @@ export class FocusSystem {
 
   /**
    * Get all focused files
-   * 
+   *
    * @returns Array of all focused files
    */
   getFocusedFiles(): FocusedFile[] {
@@ -134,7 +134,7 @@ export class FocusSystem {
 
   /**
    * Get the focused files map
-   * 
+   *
    * @returns Map of file paths to FocusedFile objects
    */
   getFocusedFilesMap(): Map<string, FocusedFile> {
@@ -143,7 +143,7 @@ export class FocusSystem {
 
   /**
    * Get total size of all focused files
-   * 
+   *
    * @returns Total size in bytes
    */
   getTotalFocusedSize(): number {
@@ -163,7 +163,7 @@ export class FocusSystem {
 
   /**
    * Check if a file is currently focused
-   * 
+   *
    * @param filePath - Absolute path to check
    * @returns true if the file is focused, false otherwise
    */
@@ -174,24 +174,24 @@ export class FocusSystem {
 
   /**
    * Inject focused file content into an LLM prompt
-   * 
+   *
    * This method prepends all focused file content to the prompt in a
    * structured format that the LLM can understand.
-   * 
+   *
    * Format:
    * ```
    * ## Focused Files
-   * 
+   *
    * ### File: /path/to/file1.ts
    * [content]
-   * 
+   *
    * ### File: /path/to/file2.ts
    * [content]
-   * 
+   *
    * ## User Prompt
    * [original prompt]
    * ```
-   * 
+   *
    * @param prompt - The original user prompt
    * @returns The prompt with focused file content injected
    */
@@ -209,7 +209,7 @@ export class FocusSystem {
         const truncationWarning = file.truncated
           ? `\n*Note: File truncated at ${MAX_FILE_SIZE} bytes (original size: ${file.size} bytes)*\n`
           : '';
-        
+
         return `### File: ${file.path}${truncationWarning}\n\`\`\`\n${file.content}\n\`\`\``;
       })
       .join('\n\n');
@@ -220,12 +220,12 @@ export class FocusSystem {
 
   /**
    * Sanitize file content before LLM injection
-   * 
+   *
    * This method prevents prompt injection attacks by:
    * 1. Removing null bytes
    * 2. Normalizing line endings
    * 3. Escaping potential prompt injection sequences
-   * 
+   *
    * @param content - The raw file content
    * @returns Sanitized content safe for LLM injection
    */
@@ -245,7 +245,7 @@ export class FocusSystem {
 
   /**
    * Get total size of all focused files
-   * 
+   *
    * @returns Total size in bytes
    */
   getTotalSize(): number {
@@ -261,7 +261,7 @@ export class FocusSystem {
 
   /**
    * Get the number of focused files
-   * 
+   *
    * @returns Count of focused files
    */
   getCount(): number {

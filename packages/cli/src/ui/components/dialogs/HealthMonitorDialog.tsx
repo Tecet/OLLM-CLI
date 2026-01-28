@@ -1,6 +1,6 @@
 /**
  * HealthMonitorDialog - Dialog for monitoring MCP server health
- * 
+ *
  * Features:
  * - Overall status summary (X/Y servers healthy)
  * - List all servers with health status, uptime, last check time
@@ -10,7 +10,7 @@
  * - Enable button for stopped servers
  * - Auto-restart configuration (checkbox + max restarts input)
  * - Refresh and Close buttons
- * 
+ *
  * Validates: Requirements 7.1-7.8, 9.1-9.7
  */
 
@@ -175,9 +175,11 @@ function ServerHealthItem({
             <Text dimColor>Last check: {formatLastCheck(server.lastCheckTime)}</Text>
           </Box>
         ) : null}
-        {(server.responseTime !== undefined && server.responseTime !== null) ? (
+        {server.responseTime !== undefined && server.responseTime !== null ? (
           <Box>
-            <Text dimColor>Response: <Text>{String(server.responseTime)}</Text>ms</Text>
+            <Text dimColor>
+              Response: <Text>{String(server.responseTime)}</Text>ms
+            </Text>
           </Box>
         ) : null}
       </Box>
@@ -233,7 +235,7 @@ function ServerHealthItem({
 
 /**
  * HealthMonitorDialog component
- * 
+ *
  * Provides comprehensive health monitoring for all MCP servers:
  * - Overall status summary
  * - Individual server health details
@@ -241,10 +243,7 @@ function ServerHealthItem({
  * - Log viewing
  * - Auto-restart configuration
  */
-export function HealthMonitorDialog({
-  onClose,
-  onViewLogs,
-}: HealthMonitorDialogProps) {
+export function HealthMonitorDialog({ onClose, onViewLogs }: HealthMonitorDialogProps) {
   const { state, restartServer, toggleServer, refreshServers } = useMCP();
 
   // UI state
@@ -255,52 +254,59 @@ export function HealthMonitorDialog({
 
   // Calculate overall status
   const serverList = Array.from(state.servers.values());
-  const healthyCount = serverList.filter(s => s.health === 'healthy').length;
+  const healthyCount = serverList.filter((s) => s.health === 'healthy').length;
   const totalCount = serverList.length;
-  const overallStatus = healthyCount === totalCount ? 'All Healthy' : 
-                       healthyCount === 0 ? 'All Unhealthy' : 
-                       'Degraded';
-  const overallColor = healthyCount === totalCount ? 'green' : 
-                      healthyCount === 0 ? 'red' : 
-                      'yellow';
+  const overallStatus =
+    healthyCount === totalCount ? 'All Healthy' : healthyCount === 0 ? 'All Unhealthy' : 'Degraded';
+  const overallColor =
+    healthyCount === totalCount ? 'green' : healthyCount === 0 ? 'red' : 'yellow';
 
   /**
    * Handle server restart
    */
-  const handleRestart = useCallback(async (serverName: string) => {
-    setRestartingServers(prev => new Set(prev).add(serverName));
-    try {
-      await restartServer(serverName);
-    } catch (error) {
-      console.error(`Failed to restart server ${serverName}:`, error);
-    } finally {
-      setRestartingServers(prev => {
-        const next = new Set(prev);
-        next.delete(serverName);
-        return next;
-      });
-    }
-  }, [restartServer]);
+  const handleRestart = useCallback(
+    async (serverName: string) => {
+      setRestartingServers((prev) => new Set(prev).add(serverName));
+      try {
+        await restartServer(serverName);
+      } catch (error) {
+        console.error(`Failed to restart server ${serverName}:`, error);
+      } finally {
+        setRestartingServers((prev) => {
+          const next = new Set(prev);
+          next.delete(serverName);
+          return next;
+        });
+      }
+    },
+    [restartServer]
+  );
 
   /**
    * Handle view logs
    */
-  const handleViewLogs = useCallback((serverName: string) => {
-    if (onViewLogs) {
-      onViewLogs(serverName);
-    }
-  }, [onViewLogs]);
+  const handleViewLogs = useCallback(
+    (serverName: string) => {
+      if (onViewLogs) {
+        onViewLogs(serverName);
+      }
+    },
+    [onViewLogs]
+  );
 
   /**
    * Handle enable server
    */
-  const handleEnable = useCallback(async (serverName: string) => {
-    try {
-      await toggleServer(serverName);
-    } catch (error) {
-      console.error(`Failed to enable server ${serverName}:`, error);
-    }
-  }, [toggleServer]);
+  const handleEnable = useCallback(
+    async (serverName: string) => {
+      try {
+        await toggleServer(serverName);
+      } catch (error) {
+        console.error(`Failed to enable server ${serverName}:`, error);
+      }
+    },
+    [toggleServer]
+  );
 
   /**
    * Handle refresh
@@ -327,11 +333,7 @@ export function HealthMonitorDialog({
   }, []);
 
   return (
-    <Dialog
-      title="MCP Health Monitor"
-      onClose={onClose}
-      width={90}
-    >
+    <Dialog title="MCP Health Monitor" onClose={onClose} width={90}>
       <Box flexDirection="column" paddingX={1}>
         {/* Overall Status Summary */}
         <Box marginBottom={2} paddingY={1} borderStyle="single" borderColor={overallColor}>
@@ -342,14 +344,17 @@ export function HealthMonitorDialog({
             <Text color={overallColor} bold>
               {overallStatus}
             </Text>
-            <Text dimColor> (<Text>{healthyCount}</Text>/<Text>{totalCount}</Text> servers healthy)</Text>
+            <Text dimColor>
+              {' '}
+              (<Text>{healthyCount}</Text>/<Text>{totalCount}</Text> servers healthy)
+            </Text>
           </Box>
         </Box>
 
         {/* Server List */}
         <Box flexDirection="column" marginBottom={2}>
           {serverList.length > 0 ? (
-            serverList.map(server => (
+            serverList.map((server) => (
               <ServerHealthItem
                 key={server.name}
                 server={server}
@@ -367,7 +372,13 @@ export function HealthMonitorDialog({
         </Box>
 
         {/* Auto-restart Configuration */}
-        <Box flexDirection="column" marginBottom={2} paddingY={1} borderStyle="single" borderColor="gray">
+        <Box
+          flexDirection="column"
+          marginBottom={2}
+          paddingY={1}
+          borderStyle="single"
+          borderColor="gray"
+        >
           <Box marginBottom={1}>
             <Text bold>Auto-Restart Configuration</Text>
           </Box>

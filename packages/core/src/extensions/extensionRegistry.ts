@@ -1,6 +1,6 @@
 /**
  * Extension Registry for marketplace functionality
- * 
+ *
  * Provides extension discovery, installation, and integrity verification
  * from remote sources (GitHub, npm, etc.)
  */
@@ -86,7 +86,9 @@ export class ExtensionRegistry {
   private lastCacheUpdate: number;
 
   constructor(config: RegistryConfig = {}) {
-    this.registryUrl = config.registryUrl || 'https://raw.githubusercontent.com/ollm-cli/extensions-registry/main/registry.json';
+    this.registryUrl =
+      config.registryUrl ||
+      'https://raw.githubusercontent.com/ollm-cli/extensions-registry/main/registry.json';
     this.installDir = config.installDir || join(homedir(), '.ollm', 'extensions');
     this.verifyChecksums = config.verifyChecksums ?? true;
     this.cache = new Map();
@@ -96,7 +98,7 @@ export class ExtensionRegistry {
 
   /**
    * Search for extensions in the registry
-   * 
+   *
    * @param query - Search query (name, description, tags)
    * @param options - Search options
    * @returns Array of search results sorted by relevance
@@ -117,9 +119,7 @@ export class ExtensionRegistry {
     // Filter by tags if specified
     let filtered = extensions;
     if (tags && tags.length > 0) {
-      filtered = extensions.filter((ext) =>
-        tags.some((tag) => ext.tags.includes(tag))
-      );
+      filtered = extensions.filter((ext) => tags.some((tag) => ext.tags.includes(tag)));
     }
 
     // Search and score
@@ -166,8 +166,7 @@ export class ExtensionRegistry {
     } else if (sortBy === 'updated') {
       results.sort(
         (a, b) =>
-          new Date(b.metadata.updatedAt).getTime() -
-          new Date(a.metadata.updatedAt).getTime()
+          new Date(b.metadata.updatedAt).getTime() - new Date(a.metadata.updatedAt).getTime()
       );
     }
 
@@ -177,7 +176,7 @@ export class ExtensionRegistry {
 
   /**
    * Get extension metadata by name
-   * 
+   *
    * @param name - Extension name
    * @returns Extension metadata or undefined if not found
    */
@@ -188,15 +187,12 @@ export class ExtensionRegistry {
 
   /**
    * Install an extension from the registry
-   * 
+   *
    * @param name - Extension name
    * @param version - Optional version (defaults to latest)
    * @returns Installation result
    */
-  async install(
-    name: string,
-    version?: string
-  ): Promise<ExtensionInstallResult> {
+  async install(name: string, version?: string): Promise<ExtensionInstallResult> {
     try {
       // Get extension metadata
       const metadata = await this.getExtension(name);
@@ -270,7 +266,7 @@ export class ExtensionRegistry {
 
   /**
    * Uninstall an extension
-   * 
+   *
    * @param name - Extension name
    */
   async uninstall(name: string): Promise<void> {
@@ -281,15 +277,12 @@ export class ExtensionRegistry {
 
   /**
    * Check for extension updates
-   * 
+   *
    * @param name - Extension name
    * @param currentVersion - Current installed version
    * @returns New version if update available, undefined otherwise
    */
-  async checkUpdate(
-    name: string,
-    currentVersion: string
-  ): Promise<string | undefined> {
+  async checkUpdate(name: string, currentVersion: string): Promise<string | undefined> {
     const metadata = await this.getExtension(name);
     if (!metadata) {
       return undefined;
@@ -305,7 +298,7 @@ export class ExtensionRegistry {
 
   /**
    * List all available extensions
-   * 
+   *
    * @returns Array of all extension metadata
    */
   async listAll(): Promise<ExtensionMetadata[]> {
@@ -314,16 +307,13 @@ export class ExtensionRegistry {
 
   /**
    * Fetch registry data from remote source
-   * 
+   *
    * @returns Array of extension metadata
    */
   private async fetchRegistry(): Promise<ExtensionMetadata[]> {
     // Check cache
     const now = Date.now();
-    if (
-      this.cache.has('registry') &&
-      now - this.lastCacheUpdate < this.cacheExpiry
-    ) {
+    if (this.cache.has('registry') && now - this.lastCacheUpdate < this.cacheExpiry) {
       return this.cache.get('registry')!;
     }
 
@@ -357,23 +347,18 @@ export class ExtensionRegistry {
 
   /**
    * Download extension from URL
-   * 
+   *
    * @param metadata - Extension metadata
    * @returns Path to downloaded file
    */
-  private async downloadExtension(
-    metadata: ExtensionMetadata
-  ): Promise<string> {
+  private async downloadExtension(metadata: ExtensionMetadata): Promise<string> {
     const response = await fetch(metadata.downloadUrl);
     if (!response.ok) {
       throw new Error(`Failed to download extension: ${response.statusText}`);
     }
 
     const buffer = await response.arrayBuffer();
-    const downloadPath = join(
-      this.installDir,
-      `${metadata.name}-${metadata.version}.tar.gz`
-    );
+    const downloadPath = join(this.installDir, `${metadata.name}-${metadata.version}.tar.gz`);
 
     // Ensure install directory exists
     await mkdir(this.installDir, { recursive: true });
@@ -386,15 +371,12 @@ export class ExtensionRegistry {
 
   /**
    * Verify file checksum
-   * 
+   *
    * @param filePath - Path to file
    * @param expectedChecksum - Expected SHA-256 checksum
    * @returns True if checksum matches, false otherwise
    */
-  private async verifyChecksum(
-    filePath: string,
-    expectedChecksum: string
-  ): Promise<boolean> {
+  private async verifyChecksum(filePath: string, expectedChecksum: string): Promise<boolean> {
     const content = await readFile(filePath);
     const hash = createHash('sha256');
     hash.update(content);
@@ -405,15 +387,12 @@ export class ExtensionRegistry {
 
   /**
    * Extract extension archive
-   * 
+   *
    * @param archivePath - Path to archive file
    * @param name - Extension name
    * @returns Path to extracted extension
    */
-  private async extractExtension(
-    archivePath: string,
-    name: string
-  ): Promise<string> {
+  private async extractExtension(archivePath: string, name: string): Promise<string> {
     const extractPath = join(this.installDir, name);
 
     // Ensure extraction directory exists
@@ -427,7 +406,7 @@ export class ExtensionRegistry {
 
   /**
    * Compare semantic versions
-   * 
+   *
    * @param v1 - First version
    * @param v2 - Second version
    * @returns 1 if v1 > v2, -1 if v1 < v2, 0 if equal

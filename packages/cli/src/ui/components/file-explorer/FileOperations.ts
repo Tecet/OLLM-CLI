@@ -1,10 +1,10 @@
 /**
  * FileOperations - Service for file and folder CRUD operations
- * 
+ *
  * This service provides safe file system operations with validation,
  * permission checks, and error handling. All operations are validated
  * through PathSanitizer to prevent security issues.
- * 
+ *
  * Key responsibilities:
  * - Create files and folders with path validation
  * - Rename files and folders with validation
@@ -68,7 +68,7 @@ export type ConfirmationCallback = (message: string) => Promise<boolean>;
 
 /**
  * FileOperations service for safe file system operations
- * 
+ *
  * This service now integrates with the core tool system to:
  * - Use tool registry for file operations
  * - Apply policy engine for confirmations
@@ -121,7 +121,7 @@ export class FileOperations {
 
   /**
    * Validate a path before performing operations
-   * 
+   *
    * @param inputPath - The path to validate
    * @returns The sanitized absolute path
    * @throws {PathTraversalError} If path contains traversal sequences
@@ -133,7 +133,7 @@ export class FileOperations {
       const resolvedPath = path.join(this.workspaceRoot, inputPath);
       return this.pathSanitizer.validateWorkspacePath(resolvedPath, this.workspaceRoot);
     }
-    
+
     if (this.workspaceRoot) {
       return this.pathSanitizer.validateWorkspacePath(inputPath, this.workspaceRoot);
     }
@@ -142,23 +142,27 @@ export class FileOperations {
 
   /**
    * Check if the current process has permission to perform an operation
-   * 
+   *
    * @param filePath - The file path to check
    * @param operation - The operation to perform ('read', 'write', 'execute')
    * @returns true if permission is granted
    */
-  private async checkPermission(filePath: string, operation: 'read' | 'write' | 'execute'): Promise<boolean> {
+  private async checkPermission(
+    filePath: string,
+    operation: 'read' | 'write' | 'execute'
+  ): Promise<boolean> {
     try {
       // Check if file exists first
       await fs.access(filePath, fs.constants.F_OK);
-      
+
       // Check specific permission
-      const mode = operation === 'read' 
-        ? fs.constants.R_OK 
-        : operation === 'write'
-        ? fs.constants.W_OK
-        : fs.constants.X_OK;
-      
+      const mode =
+        operation === 'read'
+          ? fs.constants.R_OK
+          : operation === 'write'
+            ? fs.constants.W_OK
+            : fs.constants.X_OK;
+
       await fs.access(filePath, mode);
       return true;
     } catch {
@@ -168,7 +172,7 @@ export class FileOperations {
 
   /**
    * Check if parent directory has write permission
-   * 
+   *
    * @param filePath - The file path whose parent to check
    * @returns true if parent directory is writable
    */
@@ -179,22 +183,26 @@ export class FileOperations {
 
   /**
    * Create a new file
-   * 
+   *
    * @param filePath - Path where the file should be created
    * @param content - Initial content for the file (default: empty string)
    * @param confirm - Optional confirmation callback for UI integration
    * @returns Result of the operation
    */
-  async createFile(filePath: string, content: string = '', confirm?: ConfirmationCallback): Promise<FileOperationResult> {
+  async createFile(
+    filePath: string,
+    content: string = '',
+    confirm?: ConfirmationCallback
+  ): Promise<FileOperationResult> {
     try {
       // Validate path
       const sanitizedPath = this.validatePath(filePath);
-      
+
       // Use tool system if available
       if (this.shouldUseToolSystem()) {
         return await this.createFileWithTool(sanitizedPath, content, confirm);
       }
-      
+
       // Fall back to direct filesystem operations
       return await this.createFileDirectly(sanitizedPath, content, confirm);
     } catch (error) {
@@ -202,15 +210,15 @@ export class FileOperations {
         return {
           success: false,
           error: error.message,
-          path: filePath
+          path: filePath,
         };
       }
-      
+
       const err = error as NodeJS.ErrnoException;
       return {
         success: false,
         error: err.message || 'Unknown error',
-        path: filePath
+        path: filePath,
       };
     }
   }
@@ -244,14 +252,15 @@ export class FileOperations {
       return {
         success: false,
         error: invocation.message,
-        path: sanitizedPath
+        path: sanitizedPath,
       };
     }
 
     // Check if confirmation needed
-    const shouldConfirm = invocation && typeof invocation.shouldConfirmExecute === 'function'
-      ? await invocation.shouldConfirmExecute(new AbortController().signal)
-      : null;
+    const shouldConfirm =
+      invocation && typeof invocation.shouldConfirmExecute === 'function'
+        ? await invocation.shouldConfirmExecute(new AbortController().signal)
+        : null;
     if (shouldConfirm && confirm) {
       const confirmed = await confirm(
         `Create file ${path.basename(sanitizedPath)}?\n${shouldConfirm.description}`
@@ -260,14 +269,13 @@ export class FileOperations {
         return {
           success: false,
           error: 'Operation cancelled by user',
-          path: sanitizedPath
+          path: sanitizedPath,
         };
       }
     }
 
     // Execute the tool if supported
     if (invocation && typeof invocation.execute === 'function') {
-       
       const _result = await invocation.execute(new AbortController().signal);
     } else {
       // Fallback if tool invocation isn't executable
@@ -281,14 +289,18 @@ export class FileOperations {
 
     return {
       success: true,
-      path: sanitizedPath
+      path: sanitizedPath,
     };
   }
 
   /**
    * Create file directly (legacy fallback)
    */
-  private async createFileDirectly(sanitizedPath: string, content: string, confirm?: ConfirmationCallback): Promise<FileOperationResult> {
+  private async createFileDirectly(
+    sanitizedPath: string,
+    content: string,
+    confirm?: ConfirmationCallback
+  ): Promise<FileOperationResult> {
     // Check confirmation if provided
     if (confirm) {
       const confirmed = await confirm(`Create file ${path.basename(sanitizedPath)}?`);
@@ -296,53 +308,56 @@ export class FileOperations {
         return {
           success: false,
           error: 'Operation cancelled by user',
-          path: sanitizedPath
+          path: sanitizedPath,
         };
       }
     }
-    
+
     // Check if file already exists
     try {
       await fs.access(sanitizedPath);
       return {
         success: false,
         error: 'File already exists',
-        path: sanitizedPath
+        path: sanitizedPath,
       };
     } catch {
       // File doesn't exist, which is what we want
     }
-    
+
     // Check parent directory write permission
-    if (!await this.checkParentWritePermission(sanitizedPath)) {
+    if (!(await this.checkParentWritePermission(sanitizedPath))) {
       throw new PermissionError(sanitizedPath, 'create file');
     }
-    
+
     // Create the file
     await fs.writeFile(sanitizedPath, content, 'utf-8');
-    
+
     return {
       success: true,
-      path: sanitizedPath
+      path: sanitizedPath,
     };
   }
 
   /**
    * Create a new folder
-   * 
+   *
    * @param folderPath - Path where the folder should be created
    * @param confirmOrRecursive - Confirmation callback or boolean for recursive creation
    * @returns Result of the operation
    */
-  async createFolder(folderPath: string, confirmOrRecursive?: ConfirmationCallback | boolean): Promise<FileOperationResult> {
+  async createFolder(
+    folderPath: string,
+    confirmOrRecursive?: ConfirmationCallback | boolean
+  ): Promise<FileOperationResult> {
     // Determine if second parameter is confirmation callback or recursive flag
     const confirm = typeof confirmOrRecursive === 'function' ? confirmOrRecursive : undefined;
     const recursive = typeof confirmOrRecursive === 'boolean' ? confirmOrRecursive : false;
-    
+
     try {
       // Validate path
       const sanitizedPath = this.validatePath(folderPath);
-      
+
       // Check confirmation if provided
       if (confirm) {
         const confirmed = await confirm(`Create folder ${path.basename(sanitizedPath)}?`);
@@ -350,11 +365,11 @@ export class FileOperations {
           return {
             success: false,
             error: 'Operation cancelled by user',
-            path: sanitizedPath
+            path: sanitizedPath,
           };
         }
       }
-      
+
       // Check if folder already exists
       try {
         const stats = await fs.stat(sanitizedPath);
@@ -362,59 +377,59 @@ export class FileOperations {
           return {
             success: false,
             error: 'Folder already exists',
-            path: sanitizedPath
+            path: sanitizedPath,
           };
         } else {
           return {
             success: false,
             error: 'A file with this name already exists',
-            path: sanitizedPath
+            path: sanitizedPath,
           };
         }
       } catch {
         // Folder doesn't exist, which is what we want
       }
-      
+
       // Check parent directory write permission
-      if (!await this.checkParentWritePermission(sanitizedPath)) {
+      if (!(await this.checkParentWritePermission(sanitizedPath))) {
         throw new PermissionError(sanitizedPath, 'create folder');
       }
-      
+
       // Create the folder
       await fs.mkdir(sanitizedPath, { recursive });
-      
+
       return {
         success: true,
-        path: sanitizedPath
+        path: sanitizedPath,
       };
     } catch (error) {
       if (error instanceof PathTraversalError || error instanceof WorkspaceBoundaryError) {
         return {
           success: false,
           error: error.message,
-          path: folderPath
+          path: folderPath,
         };
       }
       if (error instanceof PermissionError) {
         return {
           success: false,
           error: error.message,
-          path: folderPath
+          path: folderPath,
         };
       }
-      
+
       const err = error as NodeJS.ErrnoException;
       return {
         success: false,
         error: err.message || 'Unknown error',
-        path: folderPath
+        path: folderPath,
       };
     }
   }
 
   /**
    * Rename a file or folder
-   * 
+   *
    * @param oldPath - Current path of the file/folder
    * @param newPath - New path for the file/folder
    * @returns Result of the operation
@@ -424,7 +439,7 @@ export class FileOperations {
       // Validate both paths
       const sanitizedOldPath = this.validatePath(oldPath);
       const sanitizedNewPath = this.validatePath(newPath);
-      
+
       // Check if source exists
       try {
         await fs.access(sanitizedOldPath);
@@ -432,67 +447,67 @@ export class FileOperations {
         return {
           success: false,
           error: 'Source file/folder does not exist',
-          path: sanitizedOldPath
+          path: sanitizedOldPath,
         };
       }
-      
+
       // Check if destination already exists
       try {
         await fs.access(sanitizedNewPath);
         return {
           success: false,
           error: 'Destination already exists',
-          path: sanitizedNewPath
+          path: sanitizedNewPath,
         };
       } catch {
         // Destination doesn't exist, which is what we want
       }
-      
+
       // Check write permission on source
-      if (!await this.checkPermission(sanitizedOldPath, 'write')) {
+      if (!(await this.checkPermission(sanitizedOldPath, 'write'))) {
         throw new PermissionError(sanitizedOldPath, 'rename');
       }
-      
+
       // Check write permission on destination parent
-      if (!await this.checkParentWritePermission(sanitizedNewPath)) {
+      if (!(await this.checkParentWritePermission(sanitizedNewPath))) {
         throw new PermissionError(sanitizedNewPath, 'rename to');
       }
-      
+
       // Perform the rename
       await fs.rename(sanitizedOldPath, sanitizedNewPath);
-      
+
       return {
         success: true,
-        path: sanitizedNewPath
+        path: sanitizedNewPath,
       };
     } catch (error) {
       if (error instanceof PathTraversalError || error instanceof WorkspaceBoundaryError) {
         return {
           success: false,
           error: error.message,
-          path: oldPath
+          path: oldPath,
         };
       }
       if (error instanceof PermissionError) {
         return {
           success: false,
           error: error.message,
-          path: oldPath
+          path: oldPath,
         };
       }
-      
+
       const err = error as NodeJS.ErrnoException;
       return {
         success: false,
         error: err.message || 'Unknown error',
-        path: oldPath
+        path: oldPath,
       };
     }
   }
 
   /**
    * Delete a file with confirmation
-   * 
+   *
    * @param filePath - Path to the file to delete
    * @param confirm - Confirmation callback
    * @returns Result of the operation
@@ -501,7 +516,7 @@ export class FileOperations {
     try {
       // Validate path
       const sanitizedPath = this.validatePath(filePath);
-      
+
       // Check if file exists
       try {
         const stats = await fs.stat(sanitizedPath);
@@ -509,77 +524,83 @@ export class FileOperations {
           return {
             success: false,
             error: 'Path is a directory, use deleteFolder instead',
-            path: sanitizedPath
+            path: sanitizedPath,
           };
         }
       } catch {
         return {
           success: false,
           error: 'File does not exist',
-          path: sanitizedPath
+          path: sanitizedPath,
         };
       }
-      
+
       // Check write permission
-      if (!await this.checkPermission(sanitizedPath, 'write')) {
+      if (!(await this.checkPermission(sanitizedPath, 'write'))) {
         throw new PermissionError(sanitizedPath, 'delete');
       }
-      
+
       // Request confirmation
-      const confirmed = await confirm(`Are you sure you want to delete ${path.basename(sanitizedPath)}?`);
+      const confirmed = await confirm(
+        `Are you sure you want to delete ${path.basename(sanitizedPath)}?`
+      );
       if (!confirmed) {
         return {
           success: false,
           error: 'Operation cancelled by user',
-          path: sanitizedPath
+          path: sanitizedPath,
         };
       }
-      
+
       // Delete the file
       await fs.unlink(sanitizedPath);
-      
+
       return {
         success: true,
-        path: sanitizedPath
+        path: sanitizedPath,
       };
     } catch (error) {
       if (error instanceof PathTraversalError || error instanceof WorkspaceBoundaryError) {
         return {
           success: false,
           error: error.message,
-          path: filePath
+          path: filePath,
         };
       }
       if (error instanceof PermissionError) {
         return {
           success: false,
           error: error.message,
-          path: filePath
+          path: filePath,
         };
       }
-      
+
       const err = error as NodeJS.ErrnoException;
       return {
         success: false,
         error: err.message || 'Unknown error',
-        path: filePath
+        path: filePath,
       };
     }
   }
 
   /**
    * Delete a folder with confirmation
-   * 
+   *
    * @param folderPath - Path to the folder to delete
    * @param confirm - Confirmation callback
    * @param recursive - Whether to delete contents recursively (default: false)
    * @returns Result of the operation
    */
-  async deleteFolder(folderPath: string, confirm: ConfirmationCallback, recursive: boolean = false): Promise<FileOperationResult> {
+  async deleteFolder(
+    folderPath: string,
+    confirm: ConfirmationCallback,
+    recursive: boolean = false
+  ): Promise<FileOperationResult> {
     try {
       // Validate path
       const sanitizedPath = this.validatePath(folderPath);
-      
+
       // Check if folder exists
       try {
         const stats = await fs.stat(sanitizedPath);
@@ -587,22 +608,22 @@ export class FileOperations {
           return {
             success: false,
             error: 'Path is not a directory',
-            path: sanitizedPath
+            path: sanitizedPath,
           };
         }
       } catch {
         return {
           success: false,
           error: 'Folder does not exist',
-          path: sanitizedPath
+          path: sanitizedPath,
         };
       }
-      
+
       // Check write permission
-      if (!await this.checkPermission(sanitizedPath, 'write')) {
+      if (!(await this.checkPermission(sanitizedPath, 'write'))) {
         throw new PermissionError(sanitizedPath, 'delete');
       }
-      
+
       // Check if folder is empty (if not recursive)
       if (!recursive) {
         const contents = await fs.readdir(sanitizedPath);
@@ -610,25 +631,25 @@ export class FileOperations {
           return {
             success: false,
             error: 'Folder is not empty. Use recursive option to delete non-empty folders.',
-            path: sanitizedPath
+            path: sanitizedPath,
           };
         }
       }
-      
+
       // Request confirmation
       const message = recursive
         ? `Are you sure you want to delete ${path.basename(sanitizedPath)} and all its contents?`
         : `Are you sure you want to delete ${path.basename(sanitizedPath)}?`;
-      
+
       const confirmed = await confirm(message);
       if (!confirmed) {
         return {
           success: false,
           error: 'Operation cancelled by user',
-          path: sanitizedPath
+          path: sanitizedPath,
         };
       }
-      
+
       // Delete the folder
       if (recursive) {
         await fs.rm(sanitizedPath, { recursive: true, force: false });
@@ -636,43 +657,43 @@ export class FileOperations {
         // For non-recursive deletion, use rmdir which works for empty directories
         await fs.rmdir(sanitizedPath);
       }
-      
+
       return {
         success: true,
-        path: sanitizedPath
+        path: sanitizedPath,
       };
     } catch (error) {
       if (error instanceof PathTraversalError || error instanceof WorkspaceBoundaryError) {
         return {
           success: false,
           error: error.message,
-          path: folderPath
+          path: folderPath,
         };
       }
       if (error instanceof PermissionError) {
         return {
           success: false,
           error: error.message,
-          path: folderPath
+          path: folderPath,
         };
       }
-      
+
       const err = error as NodeJS.ErrnoException;
       return {
         success: false,
         error: err.message || 'Unknown error',
-        path: folderPath
+        path: folderPath,
       };
     }
   }
 
   /**
    * Copy a file path to the clipboard
-   * 
+   *
    * Note: This method returns the absolute path as a string.
    * The actual clipboard writing should be handled by the UI layer
    * using a clipboard library like clipboardy.
-   * 
+   *
    * @param filePath - Path to copy
    * @returns The absolute path to be copied to clipboard
    */

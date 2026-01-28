@@ -2,13 +2,14 @@
 
 **Date:** January 27, 2026  
 **Status:** ⚠️ Needs Implementation  
-**Priority:** MEDIUM  
+**Priority:** MEDIUM
 
 ---
 
 ## Problem Summary
 
 User asked LLM to search the web for NVIDIA stock information. The LLM received the web_search tool but it returned empty results, so:
+
 1. ❌ LLM made up data from its training set
 2. ❌ LLM admitted "I don't have direct access to the web or real-time data"
 3. ❌ LLM hallucinated creating a file `nvda_report.md` that doesn't exist
@@ -26,20 +27,22 @@ User asked LLM to search the web for NVIDIA stock information. The LLM received 
 **Location:** `packages/core/src/tools/web-search.ts`
 
 **Current Implementation:**
+
 ```typescript
 export class DefaultSearchProvider implements SearchProvider {
   async search(_query: string, _numResults: number): Promise<SearchResult[]> {
     // Placeholder - in production, this would call a real search API
     // (e.g., DuckDuckGo, SearXNG, or similar)
-    return [];  // ❌ Returns empty array!
+    return []; // ❌ Returns empty array!
   }
 }
 ```
 
 **Registration:**
+
 ```typescript
 // packages/core/src/tools/index.ts line 141
-registry.register(new WebSearchTool());  // ❌ Uses DefaultSearchProvider
+registry.register(new WebSearchTool()); // ❌ Uses DefaultSearchProvider
 ```
 
 **Result:** LLM sees the tool, but when it calls it, gets no results.
@@ -51,6 +54,7 @@ registry.register(new WebSearchTool());  // ❌ Uses DefaultSearchProvider
 **Location:** `.kiro/settings/mcp.json`
 
 **Current Configuration:**
+
 ```json
 "brave-search": {
   "command": "npx",
@@ -86,11 +90,13 @@ If you have both DuckDuckGo and Brave Search MCP enabled:
 ### LLM Behavior
 
 **The LLM will see BOTH tools** and can choose which one to use based on:
+
 - Tool descriptions
 - Context of the request
 - Previous experience in the conversation
 
 **Example:**
+
 ```json
 {
   "tools": [
@@ -99,7 +105,7 @@ If you have both DuckDuckGo and Brave Search MCP enabled:
       "description": "Search the web for information"
     },
     {
-      "name": "brave-search:web_search", 
+      "name": "brave-search:web_search",
       "description": "Search the web using Brave Search API"
     }
   ]
@@ -111,11 +117,13 @@ The LLM will pick one based on the descriptions. If both have similar descriptio
 ### Recommendation
 
 **Option A: Use Only One (Simpler)**
+
 - Either enable DuckDuckGo OR Brave Search MCP
 - Avoids confusion for the LLM
 - Clearer behavior
 
 **Option B: Use Both with Different Descriptions (Advanced)**
+
 - Modify descriptions to be distinct:
   - `web_search`: "Quick web search (free, no API key)"
   - `brave-search:web_search`: "Professional web search with Brave API (more accurate)"
@@ -123,6 +131,7 @@ The LLM will pick one based on the descriptions. If both have similar descriptio
 - Provides fallback if one fails
 
 **Option C: Implement Fallback Provider (Best)**
+
 - Single `web_search` tool
 - Tries Brave first, falls back to DuckDuckGo
 - LLM only sees one tool
@@ -135,12 +144,15 @@ The LLM will pick one based on the descriptions. If both have similar descriptio
 ### Option 1: Enable Brave Search MCP (Recommended for Testing)
 
 **Requirements:**
+
 - Brave Search API key from https://brave.com/search/api/
 - Smithery API key (if required)
 
 **Steps:**
+
 1. Get API keys
 2. Update `.kiro/settings/mcp.json`:
+
 ```json
 "brave-search": {
   "disabled": false,  // ✅ Enable
@@ -151,12 +163,14 @@ The LLM will pick one based on the descriptions. If both have similar descriptio
 ```
 
 **Pros:**
+
 - Real search results
 - Free tier available (2000 queries/month)
 - Already configured
 - Professional API
 
 **Cons:**
+
 - Requires API key
 - External dependency
 - Rate limits
@@ -174,20 +188,20 @@ import type { SearchProvider, SearchResult } from '../web-search.js';
 
 export class DuckDuckGoSearchProvider implements SearchProvider {
   private readonly baseUrl = 'https://html.duckduckgo.com/html/';
-  
+
   async search(query: string, numResults: number): Promise<SearchResult[]> {
     try {
       const url = `${this.baseUrl}?q=${encodeURIComponent(query)}`;
       const response = await fetch(url, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; OLLM-CLI/1.0)'
-        }
+          'User-Agent': 'Mozilla/5.0 (compatible; OLLM-CLI/1.0)',
+        },
       });
-      
+
       if (!response.ok) {
         throw new Error(`DuckDuckGo search failed: ${response.statusText}`);
       }
-      
+
       const html = await response.text();
       return this.parseResults(html, numResults);
     } catch (error) {
@@ -195,32 +209,33 @@ export class DuckDuckGoSearchProvider implements SearchProvider {
       return [];
     }
   }
-  
+
   private parseResults(html: string, maxResults: number): SearchResult[] {
     const results: SearchResult[] = [];
-    
+
     // Parse HTML to extract search results
     // DuckDuckGo HTML structure:
     // <div class="result">
     //   <h2 class="result__title"><a href="...">Title</a></h2>
     //   <a class="result__snippet">Snippet text</a>
     // </div>
-    
-    const resultRegex = /<div class="result[^"]*">[\s\S]*?<h2[^>]*><a[^>]*href="([^"]*)"[^>]*>([^<]*)<\/a>[\s\S]*?<a class="result__snippet[^"]*">([^<]*)<\/a>/g;
-    
+
+    const resultRegex =
+      /<div class="result[^"]*">[\s\S]*?<h2[^>]*><a[^>]*href="([^"]*)"[^>]*>([^<]*)<\/a>[\s\S]*?<a class="result__snippet[^"]*">([^<]*)<\/a>/g;
+
     let match;
     while ((match = resultRegex.exec(html)) !== null && results.length < maxResults) {
       const [, url, title, snippet] = match;
       results.push({
         title: this.decodeHtml(title.trim()),
         url: this.decodeHtml(url.trim()),
-        snippet: this.decodeHtml(snippet.trim())
+        snippet: this.decodeHtml(snippet.trim()),
       });
     }
-    
+
     return results;
   }
-  
+
   private decodeHtml(text: string): string {
     return text
       .replace(/&amp;/g, '&')
@@ -233,6 +248,7 @@ export class DuckDuckGoSearchProvider implements SearchProvider {
 ```
 
 Update registration in `packages/core/src/tools/index.ts`:
+
 ```typescript
 import { DuckDuckGoSearchProvider } from './providers/duckduckgo-search.js';
 
@@ -241,12 +257,14 @@ registry.register(new WebSearchTool(new DuckDuckGoSearchProvider()));
 ```
 
 **Pros:**
+
 - No API key needed
 - Free unlimited searches
 - Simple implementation
 - No rate limits (reasonable use)
 
 **Cons:**
+
 - HTML scraping (may break if DDG changes HTML)
 - No official API
 - Less reliable than official API
@@ -264,34 +282,32 @@ import type { SearchProvider, SearchResult } from '../web-search.js';
 
 export class SearXNGSearchProvider implements SearchProvider {
   private readonly instance: string;
-  
+
   constructor(instance = 'https://searx.be') {
     this.instance = instance;
   }
-  
+
   async search(query: string, numResults: number): Promise<SearchResult[]> {
     try {
       const url = `${this.instance}/search?q=${encodeURIComponent(query)}&format=json&pageno=1`;
-      
+
       const response = await fetch(url, {
         headers: {
-          'Accept': 'application/json'
-        }
+          Accept: 'application/json',
+        },
       });
-      
+
       if (!response.ok) {
         throw new Error(`SearXNG search failed: ${response.statusText}`);
       }
-      
+
       const data = await response.json();
-      
-      return (data.results || [])
-        .slice(0, numResults)
-        .map((result: any) => ({
-          title: result.title || '',
-          url: result.url || '',
-          snippet: result.content || ''
-        }));
+
+      return (data.results || []).slice(0, numResults).map((result: any) => ({
+        title: result.title || '',
+        url: result.url || '',
+        snippet: result.content || '',
+      }));
     } catch (error) {
       console.error('SearXNG search error:', error);
       return [];
@@ -301,6 +317,7 @@ export class SearXNGSearchProvider implements SearchProvider {
 ```
 
 Update registration:
+
 ```typescript
 import { SearXNGSearchProvider } from './providers/searxng-search.js';
 
@@ -308,18 +325,21 @@ registry.register(new WebSearchTool(new SearXNGSearchProvider()));
 ```
 
 **Public SearXNG Instances:**
+
 - https://searx.be
 - https://searx.work
 - https://search.sapti.me
 - https://searx.tiekoetter.com
 
 **Pros:**
+
 - No API key needed
 - JSON API (stable)
 - Privacy-focused
 - Aggregates multiple search engines
 
 **Cons:**
+
 - Depends on public instance availability
 - May be slower than direct APIs
 - Instance may go down
@@ -329,32 +349,38 @@ registry.register(new WebSearchTool(new SearXNGSearchProvider()));
 ## Recommendation
 
 ### Immediate Solution (Testing)
+
 **Enable Brave Search MCP** if you have an API key:
+
 - Quick to set up
 - Professional results
 - Free tier sufficient for testing
 
 ### Long-term Solution (Production)
+
 **Implement DuckDuckGo or SearXNG**:
+
 - No API keys required
 - No rate limits
 - Free forever
 - More reliable for production
 
 ### Hybrid Approach (Best)
+
 **Support multiple providers with fallback**:
+
 ```typescript
 class FallbackSearchProvider implements SearchProvider {
   private providers: SearchProvider[];
-  
+
   constructor() {
     this.providers = [
-      new BraveSearchProvider(),     // Try Brave first (if configured)
-      new SearXNGSearchProvider(),   // Fallback to SearXNG
-      new DuckDuckGoSearchProvider() // Last resort
+      new BraveSearchProvider(), // Try Brave first (if configured)
+      new SearXNGSearchProvider(), // Fallback to SearXNG
+      new DuckDuckGoSearchProvider(), // Last resort
     ];
   }
-  
+
   async search(query: string, numResults: number): Promise<SearchResult[]> {
     for (const provider of this.providers) {
       try {
@@ -374,16 +400,19 @@ class FallbackSearchProvider implements SearchProvider {
 ## Implementation Priority
 
 ### Phase 1: Quick Fix (1-2 hours)
+
 1. ⏳ Implement DuckDuckGo provider (simple, no API key)
 2. ⏳ Test with real LLM
 
 ### Phase 2: Production Ready (1 day)
+
 1. ⏳ Implement SearXNG provider
 2. ⏳ Add fallback mechanism
 3. ⏳ Add error handling and retries
 4. ⏳ Add tests
 
 ### Phase 3: Optional Enhancements (2-3 days)
+
 1. ⏳ Add Brave Search MCP support
 2. ⏳ Add configuration for preferred provider
 3. ⏳ Add caching for search results
@@ -394,6 +423,7 @@ class FallbackSearchProvider implements SearchProvider {
 ## Testing Checklist
 
 ### After Implementation:
+
 - [ ] LLM calls web_search tool
 - [ ] Tool returns real search results (not empty)
 - [ ] LLM uses search results in response
@@ -406,12 +436,14 @@ class FallbackSearchProvider implements SearchProvider {
 ## Files to Modify
 
 ### Web Search Implementation
+
 - ⏳ `packages/core/src/tools/providers/duckduckgo-search.ts` (NEW)
 - ⏳ `packages/core/src/tools/providers/searxng-search.ts` (NEW)
 - ⏳ `packages/core/src/tools/index.ts` - Update registration
 - ⏳ `packages/core/src/tools/web-search.ts` - Export provider interface
 
 ### Configuration (Optional)
+
 - ⏳ `.kiro/settings/mcp.json` - Enable Brave Search if using MCP
 
 ---
@@ -426,11 +458,13 @@ class FallbackSearchProvider implements SearchProvider {
 ## Conclusion
 
 **Current Status:**
+
 - ✅ Tools are now passed to LLM (fixed in refactoring)
 - ❌ Web search returns empty results (needs implementation)
 - ❌ LLM will still make up data until search is implemented
 
 **Next Steps:**
+
 1. Choose a search provider (recommend DuckDuckGo for quick start)
 2. Implement the provider
 3. Test with real LLM

@@ -9,13 +9,15 @@ Shared form components for building dialogs and forms in the MCP Panel UI.
 Wrapper component for form fields with label, help text, and error display.
 
 **Props:**
+
 - `label` (string, required): Field label
 - `error` (string, optional): Error message to display
-- `required` (boolean, optional): Show required indicator (*)
+- `required` (boolean, optional): Show required indicator (\*)
 - `helpText` (string, optional): Help text (hidden when error is present)
 - `children` (ReactNode, required): Input component(s)
 
 **Example:**
+
 ```tsx
 <FormField label="Server Name" required error={errors.name}>
   <TextInput value={name} onChange={setName} />
@@ -27,6 +29,7 @@ Wrapper component for form fields with label, help text, and error display.
 Text input component with validation and masking support.
 
 **Props:**
+
 - `value` (string, required): Current value
 - `onChange` (function, required): Change handler
 - `placeholder` (string, optional): Placeholder text
@@ -36,8 +39,9 @@ Text input component with validation and masking support.
 - `validate` (function, optional): Validation function
 
 **Example:**
+
 ```tsx
-<TextInput 
+<TextInput
   value={apiKey}
   onChange={setApiKey}
   placeholder="Enter API key"
@@ -47,6 +51,7 @@ Text input component with validation and masking support.
 ```
 
 **Built-in Validators:**
+
 - `validators.required` - Field is required
 - `validators.minLength(n)` - Minimum length
 - `validators.maxLength(n)` - Maximum length
@@ -58,6 +63,7 @@ Text input component with validation and masking support.
 - `validators.positive` - Positive number
 
 **Combining Validators:**
+
 ```tsx
 const validate = combineValidators(
   validators.required,
@@ -71,6 +77,7 @@ const validate = combineValidators(
 Checkbox component with label and description.
 
 **Props:**
+
 - `label` (string, required): Checkbox label
 - `checked` (boolean, required): Checked state
 - `onChange` (function, required): Change handler
@@ -78,8 +85,9 @@ Checkbox component with label and description.
 - `description` (string, optional): Description text
 
 **Example:**
+
 ```tsx
-<Checkbox 
+<Checkbox
   label="Auto-approve all tools"
   checked={autoApprove}
   onChange={setAutoApprove}
@@ -92,6 +100,7 @@ Checkbox component with label and description.
 Group of related checkboxes.
 
 **Props:**
+
 - `label` (string, required): Group label
 - `options` (array, required): Array of options with value, label, description
 - `selected` (string[], required): Array of selected values
@@ -99,12 +108,13 @@ Group of related checkboxes.
 - `disabled` (boolean, optional): Disable all checkboxes
 
 **Example:**
+
 ```tsx
-<CheckboxGroup 
+<CheckboxGroup
   label="OAuth Scopes"
   options={[
     { value: 'read', label: 'Read', description: 'Read access' },
-    { value: 'write', label: 'Write', description: 'Write access' }
+    { value: 'write', label: 'Write', description: 'Write access' },
   ]}
   selected={selectedScopes}
   onChange={setSelectedScopes}
@@ -116,6 +126,7 @@ Group of related checkboxes.
 Button component with variants and states.
 
 **Props:**
+
 - `label` (string, required): Button label
 - `onPress` (function, required): Press handler
 - `disabled` (boolean, optional): Disable button
@@ -125,8 +136,9 @@ Button component with variants and states.
 - `icon` (string, optional): Icon to display
 
 **Example:**
+
 ```tsx
-<Button 
+<Button
   label="Save"
   onPress={handleSave}
   variant="primary"
@@ -141,15 +153,17 @@ Button component with variants and states.
 Group of related buttons with consistent spacing.
 
 **Props:**
+
 - `buttons` (array, required): Array of button props
 - `spacing` (number, optional): Gap between buttons (default: 2)
 
 **Example:**
+
 ```tsx
-<ButtonGroup 
+<ButtonGroup
   buttons={[
     { label: 'Save', onPress: handleSave, shortcut: 'S', variant: 'primary' },
-    { label: 'Cancel', onPress: handleCancel, shortcut: 'C', variant: 'secondary' }
+    { label: 'Cancel', onPress: handleCancel, shortcut: 'C', variant: 'secondary' },
   ]}
 />
 ```
@@ -159,6 +173,7 @@ Group of related buttons with consistent spacing.
 Button with only an icon.
 
 **Props:**
+
 - `icon` (string, required): Icon to display
 - `onPress` (function, required): Press handler
 - `disabled` (boolean, optional): Disable button
@@ -167,13 +182,9 @@ Button with only an icon.
 - `variant` (string, optional): 'primary' | 'secondary' | 'danger' | 'success'
 
 **Example:**
+
 ```tsx
-<IconButton 
-  icon="✓"
-  onPress={handleConfirm}
-  tooltip="Confirm"
-  variant="success"
-/>
+<IconButton icon="✓" onPress={handleConfirm} tooltip="Confirm" variant="success" />
 ```
 
 ## Styling
@@ -190,11 +201,7 @@ Form validation is handled through the `validate` prop on `TextInput` and displa
 
 ```tsx
 <FormField label="Email" error={emailError}>
-  <TextInput 
-    value={email}
-    onChange={setEmail}
-    validate={validators.email}
-  />
+  <TextInput value={email} onChange={setEmail} validate={validators.email} />
 </FormField>
 ```
 
@@ -203,7 +210,7 @@ Form validation is handled through the `validate` prop on `TextInput` and displa
 - All components support keyboard navigation
 - Visual feedback for all states (disabled, loading, error)
 - Clear error messages with ⚠ icon
-- Required fields marked with * indicator
+- Required fields marked with \* indicator
 - Help text provides context
 
 ## Testing
@@ -216,6 +223,7 @@ All components have comprehensive test coverage:
 - `Button.test.tsx` - Variants, states, groups
 
 Run tests:
+
 ```bash
 npm test -- packages/cli/src/ui/components/forms/__tests__ --run
 ```

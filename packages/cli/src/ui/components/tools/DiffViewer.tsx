@@ -6,30 +6,25 @@ import { Theme } from '../../../config/types.js';
 export interface DiffViewerProps {
   /** The diff content to display */
   diff: string;
-  
+
   /** File name */
   fileName: string;
-  
+
   /** Theme for styling */
   theme: Theme;
-  
+
   /** Whether to show line numbers */
   showLineNumbers?: boolean;
 }
 
 /**
  * DiffViewer component
- * 
+ *
  * Displays a diff with syntax highlighting.
  * Shows added lines in green, removed lines in red.
  * Supports line numbers and file name header.
  */
-export function DiffViewer({
-  diff,
-  fileName,
-  theme,
-  showLineNumbers = true,
-}: DiffViewerProps) {
+export function DiffViewer({ diff, fileName, theme, showLineNumbers = true }: DiffViewerProps) {
   const lines = diff.split('\n');
 
   const renderLine = (line: string, index: number) => {
@@ -52,9 +47,7 @@ export function DiffViewer({
 
     return (
       <Box key={index}>
-        {showLineNumbers && (
-          <Text color={theme.text.secondary}>{lineNumber}</Text>
-        )}
+        {showLineNumbers && <Text color={theme.text.secondary}>{lineNumber}</Text>}
         <Text color={color}>
           {prefix} {content}
         </Text>

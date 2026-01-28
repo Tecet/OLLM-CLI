@@ -65,18 +65,18 @@ interface UIHook {
   name: string;
   version: string;
   description?: string;
-  
+
   when: {
-    type: UIHookEventType;  // fileEdited, promptSubmit, etc.
-    patterns?: string[];     // For file events
+    type: UIHookEventType; // fileEdited, promptSubmit, etc.
+    patterns?: string[]; // For file events
   };
-  
+
   then: {
-    type: UIHookActionType;  // askAgent or runCommand
-    prompt?: string;         // For askAgent
-    command?: string;        // For runCommand
+    type: UIHookActionType; // askAgent or runCommand
+    prompt?: string; // For askAgent
+    command?: string; // For runCommand
   };
-  
+
   enabled: boolean;
   trusted: boolean;
   source: HookSource;
@@ -159,8 +159,8 @@ Validate a UI Hook:
 ```typescript
 const hook: Partial<UIHook> = {
   name: 'Test Hook',
-  when: { type: 'fileEdited', patterns: [] },  // Missing patterns!
-  then: { type: 'askAgent', prompt: '' },      // Missing prompt!
+  when: { type: 'fileEdited', patterns: [] }, // Missing patterns!
+  then: { type: 'askAgent', prompt: '' }, // Missing prompt!
 };
 
 const errors = validateUIHook(hook);
@@ -243,9 +243,7 @@ const coreHooks = hookRegistry.getAllHooks();
 const enabledHooks = settingsService.getHookSettings().enabled;
 
 // Convert to UI hooks
-const uiHooks = coreHooks.map(hook => 
-  coreHookToUIHook(hook, enabledHooks[hook.id] || false)
-);
+const uiHooks = coreHooks.map((hook) => coreHookToUIHook(hook, enabledHooks[hook.id] || false));
 ```
 
 ### Saving Hooks
@@ -285,7 +283,7 @@ const handleSubmit = (formData: HookFormData) => {
     trusted: false,
     source: 'user',
   };
-  
+
   await saveHook(newHook);
 };
 

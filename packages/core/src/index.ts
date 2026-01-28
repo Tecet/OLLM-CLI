@@ -57,7 +57,13 @@ export { ProviderRegistry } from './provider/registry.js';
 
 // Core runtime
 export { ChatClient, type ChatConfig, type ChatEvent } from './core/chatClient.js';
-export { Turn, type TurnEvent, type ToolRegistry as TurnToolRegistry, type Tool, type ChatOptions } from './core/turn.js';
+export {
+  Turn,
+  type TurnEvent,
+  type ToolRegistry as TurnToolRegistry,
+  type Tool,
+  type ChatOptions,
+} from './core/turn.js';
 export { TokenCounter, type TokenLimitConfig } from './core/tokenLimits.js';
 export { ReActToolHandler, type ReActParseResult } from './core/reactToolHandler.js';
 
@@ -160,26 +166,29 @@ export {
 } from './services/index.js';
 
 // Utilities
-export { createLogger, getLogLevel, setLogLevel, type Logger, type LogLevel } from './utils/logger.js';
-export { 
-  validateStoragePath, 
-  logPathDiagnostics, 
-  getDefaultStorageLocations, 
+export {
+  createLogger,
+  getLogLevel,
+  setLogLevel,
+  type Logger,
+  type LogLevel,
+} from './utils/logger.js';
+export {
+  validateStoragePath,
+  logPathDiagnostics,
+  getDefaultStorageLocations,
   logAllStorageLocations,
   ensureStorageDirectories,
   type PathValidationResult,
-  type StorageLocations
+  type StorageLocations,
 } from './utils/pathValidation.js';
 export {
   needsMigration,
   migrateStorage,
   runMigrationIfNeeded,
-  type MigrationResult
+  type MigrationResult,
 } from './utils/storageMigration.js';
-export {
-  initializeStorage,
-  initializeStorageSafe
-} from './utils/storageInitialization.js';
+export { initializeStorage, initializeStorageSafe } from './utils/storageInitialization.js';
 
 // Context Management System
 export {
@@ -206,9 +215,7 @@ export {
 // Context Size Calculator (pure calculation functions)
 export * as ContextSizeCalculator from './context/ContextSizeCalculator.js';
 
-export {
-  deriveGPUPlacementHints,
-} from './context/gpuHints.js';
+export { deriveGPUPlacementHints } from './context/gpuHints.js';
 
 // Prompt routing helpers
 export { TieredPromptStore } from './prompts/tieredPromptStore.js';
@@ -277,7 +284,7 @@ export {
   createContextCommandHandler,
   type ContextCommandResult,
   type ContextStatusData,
-  type ContextStatsData
+  type ContextStatsData,
 } from './commands/index.js';
 
 // Hook system
@@ -377,8 +384,4 @@ export {
   type TransitionAnimation,
 } from './prompts/index.js';
 
-export {
-  ModelDatabase,
-  modelDatabase,
-  refreshModelDatabase,
-} from './routing/modelDatabase.js';
+export { ModelDatabase, modelDatabase, refreshModelDatabase } from './routing/modelDatabase.js';

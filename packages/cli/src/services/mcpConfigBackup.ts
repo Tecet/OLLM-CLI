@@ -1,6 +1,6 @@
 /**
  * MCP Configuration Backup and Restore Service
- * 
+ *
  * Handles automatic backup creation and restoration of MCP configuration files
  * to prevent data loss from corruption or errors.
  */
@@ -34,12 +34,7 @@ export class MCPConfigBackupService {
 
   constructor(maxBackups: number = 10) {
     // Store backups in ~/.ollm/mcp/backups/
-    this.backupDir = path.join(
-      os.homedir(),
-      '.ollm',
-      'mcp',
-      'backups'
-    );
+    this.backupDir = path.join(os.homedir(), '.ollm', 'mcp', 'backups');
     this.maxBackups = maxBackups;
   }
 
@@ -95,11 +90,7 @@ export class MCPConfigBackupService {
       };
 
       const metadataPath = `${backupPath}.meta`;
-      await fs.promises.writeFile(
-        metadataPath,
-        JSON.stringify(metadata, null, 2),
-        'utf-8'
-      );
+      await fs.promises.writeFile(metadataPath, JSON.stringify(metadata, null, 2), 'utf-8');
 
       // Clean up old backups
       await this.cleanupOldBackups();
@@ -156,10 +147,7 @@ export class MCPConfigBackupService {
    * @param configPath - Path to the configuration file to restore
    * @returns True if restoration was successful
    */
-  async restoreFromSpecificBackup(
-    backupPath: string,
-    configPath: string
-  ): Promise<boolean> {
+  async restoreFromSpecificBackup(backupPath: string, configPath: string): Promise<boolean> {
     try {
       // Verify backup file exists and is valid JSON
       if (!fs.existsSync(backupPath)) {
@@ -203,7 +191,7 @@ export class MCPConfigBackupService {
       const files = await fs.promises.readdir(this.backupDir);
 
       // Filter for metadata files
-      const metadataFiles = files.filter(f => f.endsWith('.meta'));
+      const metadataFiles = files.filter((f) => f.endsWith('.meta'));
 
       // Read and parse metadata
       const backups: BackupMetadata[] = [];
@@ -292,9 +280,14 @@ export class MCPConfigBackupService {
       if (fs.existsSync(configPath)) {
         const content = await fs.promises.readFile(configPath, 'utf-8');
         const data = JSON.parse(content);
-        
+
         // If we can parse it and it has the right structure, it's not corrupted
-        if (data && typeof data === 'object' && data.mcpServers && typeof data.mcpServers === 'object') {
+        if (
+          data &&
+          typeof data === 'object' &&
+          data.mcpServers &&
+          typeof data.mcpServers === 'object'
+        ) {
           console.log('Current configuration is valid, not overwriting');
           return true; // File is fine, no need to create empty config
         }
@@ -305,7 +298,9 @@ export class MCPConfigBackupService {
     }
 
     // Only create empty config if file is missing or truly corrupted
-    console.log('No backup available and file is corrupted/missing, creating new empty configuration');
+    console.log(
+      'No backup available and file is corrupted/missing, creating new empty configuration'
+    );
 
     try {
       const emptyConfig: MCPConfigFile = {
@@ -319,11 +314,7 @@ export class MCPConfigBackupService {
       }
 
       // Write empty configuration
-      await fs.promises.writeFile(
-        configPath,
-        JSON.stringify(emptyConfig, null, 2),
-        'utf-8'
-      );
+      await fs.promises.writeFile(configPath, JSON.stringify(emptyConfig, null, 2), 'utf-8');
 
       console.log('New empty configuration created');
       return true;
@@ -338,9 +329,7 @@ export class MCPConfigBackupService {
    * @param configPath - Path to the configuration file
    * @returns Most recent backup metadata, or null if none found
    */
-  private async findMostRecentBackup(
-    configPath: string
-  ): Promise<BackupMetadata | null> {
+  private async findMostRecentBackup(configPath: string): Promise<BackupMetadata | null> {
     const backups = await this.listBackups(configPath);
     return backups.length > 0 ? backups[0] : null;
   }
@@ -354,7 +343,7 @@ export class MCPConfigBackupService {
       const files = await fs.promises.readdir(this.backupDir);
 
       // Filter for metadata files
-      const metadataFiles = files.filter(f => f.endsWith('.meta'));
+      const metadataFiles = files.filter((f) => f.endsWith('.meta'));
 
       // Read and parse metadata
       const backups: BackupMetadata[] = [];

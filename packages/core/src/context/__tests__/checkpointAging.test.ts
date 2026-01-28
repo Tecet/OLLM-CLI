@@ -75,9 +75,27 @@ describe('Checkpoint Aging (Phase 6)', () => {
 
       // Simulate 3 compressions
       context.metadata.compressionHistory = [
-        { timestamp: new Date(), strategy: 'summarize', originalTokens: 1000, compressedTokens: 500, ratio: 0.5 },
-        { timestamp: new Date(), strategy: 'summarize', originalTokens: 1000, compressedTokens: 500, ratio: 0.5 },
-        { timestamp: new Date(), strategy: 'summarize', originalTokens: 1000, compressedTokens: 500, ratio: 0.5 },
+        {
+          timestamp: new Date(),
+          strategy: 'summarize',
+          originalTokens: 1000,
+          compressedTokens: 500,
+          ratio: 0.5,
+        },
+        {
+          timestamp: new Date(),
+          strategy: 'summarize',
+          originalTokens: 1000,
+          compressedTokens: 500,
+          ratio: 0.5,
+        },
+        {
+          timestamp: new Date(),
+          strategy: 'summarize',
+          originalTokens: 1000,
+          compressedTokens: 500,
+          ratio: 0.5,
+        },
       ];
 
       // Run aging
@@ -111,13 +129,15 @@ describe('Checkpoint Aging (Phase 6)', () => {
       context.checkpoints = [checkpoint];
 
       // Simulate 6 compressions
-      context.metadata.compressionHistory = Array(6).fill(null).map(() => ({
-        timestamp: new Date(),
-        strategy: 'summarize' as const,
-        originalTokens: 1000,
-        compressedTokens: 500,
-        ratio: 0.5,
-      }));
+      context.metadata.compressionHistory = Array(6)
+        .fill(null)
+        .map(() => ({
+          timestamp: new Date(),
+          strategy: 'summarize' as const,
+          originalTokens: 1000,
+          compressedTokens: 500,
+          ratio: 0.5,
+        }));
 
       // Run aging
       await checkpointManager.compressOldCheckpoints();
@@ -151,13 +171,15 @@ describe('Checkpoint Aging (Phase 6)', () => {
       context.checkpoints = [checkpoint];
 
       // Simulate 10 compressions
-      context.metadata.compressionHistory = Array(10).fill(null).map(() => ({
-        timestamp: new Date(),
-        strategy: 'summarize' as const,
-        originalTokens: 1000,
-        compressedTokens: 500,
-        ratio: 0.5,
-      }));
+      context.metadata.compressionHistory = Array(10)
+        .fill(null)
+        .map(() => ({
+          timestamp: new Date(),
+          strategy: 'summarize' as const,
+          originalTokens: 1000,
+          compressedTokens: 500,
+          ratio: 0.5,
+        }));
 
       // Run aging
       await checkpointManager.compressOldCheckpoints();
@@ -223,13 +245,15 @@ describe('Checkpoint Aging (Phase 6)', () => {
       context.checkpoints = [checkpoint1, checkpoint2, checkpoint3];
 
       // Simulate 6 compressions
-      context.metadata.compressionHistory = Array(6).fill(null).map(() => ({
-        timestamp: new Date(),
-        strategy: 'summarize' as const,
-        originalTokens: 1000,
-        compressedTokens: 500,
-        ratio: 0.5,
-      }));
+      context.metadata.compressionHistory = Array(6)
+        .fill(null)
+        .map(() => ({
+          timestamp: new Date(),
+          strategy: 'summarize' as const,
+          originalTokens: 1000,
+          compressedTokens: 500,
+          ratio: 0.5,
+        }));
 
       // Run aging
       await checkpointManager.compressOldCheckpoints();
@@ -270,13 +294,15 @@ describe('Checkpoint Aging (Phase 6)', () => {
       context.checkpoints = [checkpoint];
 
       // Simulate 3 compressions
-      context.metadata.compressionHistory = Array(3).fill(null).map(() => ({
-        timestamp: new Date(),
-        strategy: 'summarize' as const,
-        originalTokens: 1000,
-        compressedTokens: 500,
-        ratio: 0.5,
-      }));
+      context.metadata.compressionHistory = Array(3)
+        .fill(null)
+        .map(() => ({
+          timestamp: new Date(),
+          strategy: 'summarize' as const,
+          originalTokens: 1000,
+          compressedTokens: 500,
+          ratio: 0.5,
+        }));
 
       // Run aging
       await checkpointManager.compressOldCheckpoints();
@@ -296,7 +322,8 @@ describe('Checkpoint Aging (Phase 6)', () => {
         summary: {
           id: 'summary-1',
           role: 'system',
-          content: 'Very long detailed summary with lots of content\nLine 2\nLine 3\nLine 4\nLine 5\nLine 6\nLine 7',
+          content:
+            'Very long detailed summary with lots of content\nLine 2\nLine 3\nLine 4\nLine 5\nLine 6\nLine 7',
           timestamp: new Date(),
         },
         createdAt: new Date(),
@@ -309,13 +336,15 @@ describe('Checkpoint Aging (Phase 6)', () => {
       context.checkpoints = [checkpoint];
 
       // Simulate 6 compressions
-      context.metadata.compressionHistory = Array(6).fill(null).map(() => ({
-        timestamp: new Date(),
-        strategy: 'summarize' as const,
-        originalTokens: 1000,
-        compressedTokens: 500,
-        ratio: 0.5,
-      }));
+      context.metadata.compressionHistory = Array(6)
+        .fill(null)
+        .map(() => ({
+          timestamp: new Date(),
+          strategy: 'summarize' as const,
+          originalTokens: 1000,
+          compressedTokens: 500,
+          ratio: 0.5,
+        }));
 
       // Mock token counter to return different values
       mockTokenCounter.countTokens = vi.fn().mockResolvedValue(50);
@@ -408,23 +437,25 @@ describe('Checkpoint Aging (Phase 6)', () => {
     });
 
     it('should limit merged key decisions to 10', () => {
-      const oldCheckpoints: CompressionCheckpoint[] = Array(5).fill(null).map((_, i) => ({
-        id: `checkpoint-${i}`,
-        level: 2,
-        range: `Messages ${i * 10 + 1}-${(i + 1) * 10}`,
-        summary: {
-          id: `summary-${i}`,
-          role: 'system' as const,
-          content: `Summary ${i}`,
-          timestamp: new Date(),
-        },
-        createdAt: new Date(),
-        originalTokens: 1000,
-        currentTokens: 300,
-        compressionCount: 1,
-        keyDecisions: [`Decision ${i * 3 + 1}`, `Decision ${i * 3 + 2}`, `Decision ${i * 3 + 3}`],
-        filesModified: [],
-      }));
+      const oldCheckpoints: CompressionCheckpoint[] = Array(5)
+        .fill(null)
+        .map((_, i) => ({
+          id: `checkpoint-${i}`,
+          level: 2,
+          range: `Messages ${i * 10 + 1}-${(i + 1) * 10}`,
+          summary: {
+            id: `summary-${i}`,
+            role: 'system' as const,
+            content: `Summary ${i}`,
+            timestamp: new Date(),
+          },
+          createdAt: new Date(),
+          originalTokens: 1000,
+          currentTokens: 300,
+          compressionCount: 1,
+          keyDecisions: [`Decision ${i * 3 + 1}`, `Decision ${i * 3 + 2}`, `Decision ${i * 3 + 3}`],
+          filesModified: [],
+        }));
 
       const targetCheckpoint: CompressionCheckpoint = {
         id: 'checkpoint-target',
@@ -452,23 +483,27 @@ describe('Checkpoint Aging (Phase 6)', () => {
     });
 
     it('should limit merged files to 20', () => {
-      const oldCheckpoints: CompressionCheckpoint[] = Array(5).fill(null).map((_, i) => ({
-        id: `checkpoint-${i}`,
-        level: 2,
-        range: `Messages ${i * 10 + 1}-${(i + 1) * 10}`,
-        summary: {
-          id: `summary-${i}`,
-          role: 'system' as const,
-          content: `Summary ${i}`,
-          timestamp: new Date(),
-        },
-        createdAt: new Date(),
-        originalTokens: 1000,
-        currentTokens: 300,
-        compressionCount: 1,
-        keyDecisions: [],
-        filesModified: Array(6).fill(null).map((_, j) => `file${i * 6 + j}.ts`),
-      }));
+      const oldCheckpoints: CompressionCheckpoint[] = Array(5)
+        .fill(null)
+        .map((_, i) => ({
+          id: `checkpoint-${i}`,
+          level: 2,
+          range: `Messages ${i * 10 + 1}-${(i + 1) * 10}`,
+          summary: {
+            id: `summary-${i}`,
+            role: 'system' as const,
+            content: `Summary ${i}`,
+            timestamp: new Date(),
+          },
+          createdAt: new Date(),
+          originalTokens: 1000,
+          currentTokens: 300,
+          compressionCount: 1,
+          keyDecisions: [],
+          filesModified: Array(6)
+            .fill(null)
+            .map((_, j) => `file${i * 6 + j}.ts`),
+        }));
 
       const targetCheckpoint: CompressionCheckpoint = {
         id: 'checkpoint-target',
@@ -597,7 +632,10 @@ describe('Checkpoint Aging (Phase 6)', () => {
         {
           id: 'msg-1',
           role: 'assistant',
-          content: Array(15).fill(null).map((_, i) => `modified file${i}.ts`).join(' and '),
+          content: Array(15)
+            .fill(null)
+            .map((_, i) => `modified file${i}.ts`)
+            .join(' and '),
           timestamp: new Date(),
         },
       ];

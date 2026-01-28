@@ -69,8 +69,26 @@ export function loadTierPromptWithFallback(mode: OperationalMode, tier: ContextT
 
   const tierKey = tierToKey(tier);
   const candidates = [
-    path.join(process.cwd(), 'packages', 'core', 'dist', 'prompts', 'templates', mode, `${tierKey}.txt`),
-    path.join(process.cwd(), 'packages', 'core', 'src', 'prompts', 'templates', mode, `${tierKey}.txt`),
+    path.join(
+      process.cwd(),
+      'packages',
+      'core',
+      'dist',
+      'prompts',
+      'templates',
+      mode,
+      `${tierKey}.txt`
+    ),
+    path.join(
+      process.cwd(),
+      'packages',
+      'core',
+      'src',
+      'prompts',
+      'templates',
+      mode,
+      `${tierKey}.txt`
+    ),
   ];
 
   for (const candidate of candidates) {

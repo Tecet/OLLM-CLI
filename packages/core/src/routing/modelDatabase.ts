@@ -91,7 +91,9 @@ export class ModelDatabase {
       const idBase = entry.pattern.endsWith('*') ? entry.pattern.slice(0, -1) : entry.pattern;
       const raw = (RAW_PROFILES && RAW_PROFILES[idBase]) || null;
       if (raw && typeof raw.max_context_window === 'number') return Number(raw.max_context_window);
-    } catch (_e) { void _e; }
+    } catch (_e) {
+      void _e;
+    }
     return entry.contextWindow ?? DEFAULT_MODEL_ENTRY.contextWindow;
   }
 
@@ -107,18 +109,26 @@ export class ModelDatabase {
       if (raw) {
         const caps = raw.capabilities ?? {
           toolCalling: Boolean(raw.tool_support),
-          vision: (Array.isArray(raw.abilities) && raw.abilities.some((a: string) => /visual|vision|multimodal/i.test(a))) || false,
+          vision:
+            (Array.isArray(raw.abilities) &&
+              raw.abilities.some((a: string) => /visual|vision|multimodal/i.test(a))) ||
+            false,
           streaming: raw.streaming ?? true,
-          reasoning: Boolean(raw.thinking_enabled) || (Array.isArray(raw.abilities) && raw.abilities.some((a: string) => /reasoning|think/i.test(a)))
+          reasoning:
+            Boolean(raw.thinking_enabled) ||
+            (Array.isArray(raw.abilities) &&
+              raw.abilities.some((a: string) => /reasoning|think/i.test(a))),
         };
         return {
           toolCalling: Boolean(caps.toolCalling),
           vision: Boolean(caps.vision),
           streaming: Boolean(caps.streaming),
-          reasoning: Boolean(caps.reasoning)
+          reasoning: Boolean(caps.reasoning),
         };
       }
-    } catch (_e) { void _e; }
+    } catch (_e) {
+      void _e;
+    }
     return entry.capabilities ?? DEFAULT_MODEL_ENTRY.capabilities;
   }
 
@@ -134,7 +144,9 @@ export class ModelDatabase {
       if (raw && Array.isArray(raw.context_profiles)) {
         return raw.context_profiles.map((c: any) => String(c.size_label ?? c.size));
       }
-    } catch (_e) { void _e; }
+    } catch (_e) {
+      void _e;
+    }
     return entry.profiles ?? DEFAULT_MODEL_ENTRY.profiles;
   }
 
@@ -155,7 +167,9 @@ export class ModelDatabase {
       const idBase = entry.pattern.endsWith('*') ? entry.pattern.slice(0, -1) : entry.pattern;
       const raw = (RAW_PROFILES && RAW_PROFILES[idBase]) || null;
       if (raw && raw.family) return String(raw.family);
-    } catch (_e) { void _e; }
+    } catch (_e) {
+      void _e;
+    }
     return entry.family ?? null;
   }
 }
@@ -168,25 +182,39 @@ function tryLoadProfilesFromUser(): ModelEntry[] | null {
       ? join(tmpdir(), `${VITEST_OLLM_PREFIX}-${process.pid}`)
       : homedir();
     const p = join(homeDir, '.ollm', 'LLM_profiles.json');
-    
+
     if (!existsSync(p)) return null;
     const raw = readFileSync(p, 'utf-8');
     const json = JSON.parse(raw) as { models?: Array<any> };
     if (!Array.isArray(json.models)) return null;
 
-    const entries: ModelEntry[] = json.models.map(m => {
+    const entries: ModelEntry[] = json.models.map((m) => {
       const id: string = m.id || m.name || 'unknown';
       // Treat each model as its own family (no grouping)
       const family = String(id);
-      const contextWindow = Number(m.max_context_window ?? (Array.isArray(m.context_profiles) ? Math.max(...m.context_profiles.map((c: any) => Number(c.size || 0))) : 4096)) || 4096;
+      const contextWindow =
+        Number(
+          m.max_context_window ??
+            (Array.isArray(m.context_profiles)
+              ? Math.max(...m.context_profiles.map((c: any) => Number(c.size || 0)))
+              : 4096)
+        ) || 4096;
       const caps = m.capabilities ?? {
         toolCalling: Boolean(m.tool_support),
-        vision: (Array.isArray(m.abilities) && m.abilities.some((a: string) => /visual|vision|multimodal/i.test(a))) || false,
+        vision:
+          (Array.isArray(m.abilities) &&
+            m.abilities.some((a: string) => /visual|vision|multimodal/i.test(a))) ||
+          false,
         streaming: true,
-        reasoning: Boolean(m.thinking_enabled) || (Array.isArray(m.abilities) && m.abilities.some((a: string) => /reasoning|think/i.test(a)))
+        reasoning:
+          Boolean(m.thinking_enabled) ||
+          (Array.isArray(m.abilities) &&
+            m.abilities.some((a: string) => /reasoning|think/i.test(a))),
       };
 
-      const profiles = Array.isArray(m.context_profiles) ? m.context_profiles.map((c: any) => String(c.size_label ?? c.size)) : ['general'];
+      const profiles = Array.isArray(m.context_profiles)
+        ? m.context_profiles.map((c: any) => String(c.size_label ?? c.size))
+        : ['general'];
 
       return {
         // Use exact model id as the routing pattern to avoid family-based grouping
@@ -197,14 +225,17 @@ function tryLoadProfilesFromUser(): ModelEntry[] | null {
           toolCalling: Boolean(caps.toolCalling),
           vision: Boolean(caps.vision),
           streaming: Boolean(caps.streaming),
-          reasoning: Boolean(caps.reasoning)
+          reasoning: Boolean(caps.reasoning),
         },
-        profiles: profiles
+        profiles: profiles,
       } as ModelEntry;
     });
 
     return entries;
-  } catch (_e) { void _e; return null; }
+  } catch (_e) {
+    void _e;
+    return null;
+  }
 }
 
 // Load raw profiles map (id -> profile object) for direct sourcing of fields
@@ -216,7 +247,7 @@ function tryLoadRawProfiles(): Record<string, any> | null {
       ? join(tmpdir(), `${VITEST_OLLM_PREFIX}-${process.pid}`)
       : homedir();
     const p = join(homeDir, '.ollm', 'LLM_profiles.json');
-    
+
     if (!existsSync(p)) return null;
     const raw = readFileSync(p, 'utf-8');
     const json = JSON.parse(raw) as { models?: Array<any> };
@@ -227,7 +258,10 @@ function tryLoadRawProfiles(): Record<string, any> | null {
       map[String(id)] = m;
     }
     return map;
-  } catch (_e) { void _e; return null; }
+  } catch (_e) {
+    void _e;
+    return null;
+  }
 }
 
 function getRuntimeUserModelsPath(): string {
@@ -242,24 +276,38 @@ function buildModelEntryFromProfile(profile: Record<string, any>): ModelEntry {
   const contextProfiles: Array<Record<string, unknown>> = Array.isArray(profile.context_profiles)
     ? profile.context_profiles
     : [];
-  const maxContextWindow = Number(
-    profile.max_context_window ??
-    profile.context_window ??
-    (contextProfiles.length > 0
-      ? Math.max(...contextProfiles.map(cp => Number((cp as Record<string, any>).size ?? 0)))
-      : 0)
-  ) || 4096;
+  const maxContextWindow =
+    Number(
+      profile.max_context_window ??
+        profile.context_window ??
+        (contextProfiles.length > 0
+          ? Math.max(...contextProfiles.map((cp) => Number((cp as Record<string, any>).size ?? 0)))
+          : 0)
+    ) || 4096;
 
   const capabilitiesSource = profile.capabilities ?? {
     toolCalling: Boolean(profile.tool_support),
-    vision: (Array.isArray(profile.abilities) && profile.abilities.some((a: string) => /visual|vision|multimodal/i.test(a))) || false,
+    vision:
+      (Array.isArray(profile.abilities) &&
+        profile.abilities.some((a: string) => /visual|vision|multimodal/i.test(a))) ||
+      false,
     streaming: profile.streaming ?? true,
-    reasoning: Boolean(profile.thinking_enabled) || (Array.isArray(profile.abilities) && profile.abilities.some((a: string) => /reasoning|think/i.test(a))),
+    reasoning:
+      Boolean(profile.thinking_enabled) ||
+      (Array.isArray(profile.abilities) &&
+        profile.abilities.some((a: string) => /reasoning|think/i.test(a))),
   };
 
-  const profiles = contextProfiles.length > 0
-    ? contextProfiles.map(cp => String((cp as Record<string, unknown>).size_label ?? (cp as Record<string, unknown>).size ?? 'general'))
-    : ['general'];
+  const profiles =
+    contextProfiles.length > 0
+      ? contextProfiles.map((cp) =>
+          String(
+            (cp as Record<string, unknown>).size_label ??
+              (cp as Record<string, unknown>).size ??
+              'general'
+          )
+        )
+      : ['general'];
 
   return {
     pattern: id,
@@ -315,19 +363,22 @@ try {
       GENERATED_RAW_PROFILES = gen.GENERATED_RAW_PROFILES as any;
     } else {
       GENERATED_RAW_PROFILES = {};
-      for (const m of (GENERATED_ENTRIES ?? [])) {
+      for (const m of GENERATED_ENTRIES ?? []) {
         const id = (m.pattern || '').endsWith('*')
           ? (m.pattern || '').slice(0, -1)
-          : (m.pattern || '');
+          : m.pattern || '';
         GENERATED_RAW_PROFILES[id] = m as any;
       }
     }
   }
-} catch (_e) { void _e; }
+} catch (_e) {
+  void _e;
+}
 
 function resolveModelStore(): { entries: ModelEntry[]; rawProfiles: Record<string, any> | null } {
   const runtimeStore = tryLoadRuntimeLLMModels();
-  const entries = runtimeStore?.entries ?? GENERATED_ENTRIES ?? tryLoadProfilesFromUser() ?? MODEL_DATABASE;
+  const entries =
+    runtimeStore?.entries ?? GENERATED_ENTRIES ?? tryLoadProfilesFromUser() ?? MODEL_DATABASE;
   const rawProfiles = runtimeStore?.raw ?? GENERATED_RAW_PROFILES ?? tryLoadRawProfiles();
   return { entries, rawProfiles: rawProfiles ?? null };
 }

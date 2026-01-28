@@ -5,7 +5,11 @@
 
 const readline = require('readline');
 
-const rl = readline.createInterface({ input: process.stdin, output: process.stdout, terminal: false });
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+  terminal: false,
+});
 
 function sendResponse(obj) {
   try {
@@ -52,7 +56,11 @@ rl.on('line', (line) => {
   }
 
   if (method === 'tools/list') {
-    sendResponse({ jsonrpc: '2.0', id, result: { tools: [{ name: 'mock-tool', description: 'A test tool' }] } });
+    sendResponse({
+      jsonrpc: '2.0',
+      id,
+      result: { tools: [{ name: 'mock-tool', description: 'A test tool' }] },
+    });
     return;
   }
 

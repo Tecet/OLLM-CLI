@@ -1,7 +1,7 @@
 /**
  * Integration tests for streaming functionality.
  * Tests streaming responses, chunk concatenation, tool call streaming, and error handling.
- * 
+ *
  * Feature: stage-08-testing-qa
  * Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6
  */
@@ -15,7 +15,8 @@ import {
   createTextChunkSequence,
   createToolCallSequence,
   fixtureTools,
- MockProvider } from '@ollm/test-utils';
+  MockProvider,
+} from '@ollm/test-utils';
 
 import type { ProviderEvent, ProviderRequest } from '@ollm/core';
 
@@ -226,11 +227,7 @@ describe('Streaming Integration Tests', () => {
               name: fc.constantFrom('get_weather', 'calculate', 'read_file', 'search'),
               args: fc.dictionary(
                 fc.string({ minLength: 1, maxLength: 20 }),
-                fc.oneof(
-                  fc.string({ maxLength: 50 }),
-                  fc.integer(),
-                  fc.boolean()
-                )
+                fc.oneof(fc.string({ maxLength: 50 }), fc.integer(), fc.boolean())
               ),
             }),
             { minLength: 1, maxLength: 5 }
@@ -245,12 +242,20 @@ describe('Streaming Integration Tests', () => {
 
             // Create event sequence with tool calls
             const events = createToolCallSequence(toolCalls);
-            
+
             // Extract the actual tool call IDs from the generated events
             const expectedToolCalls = events
               .filter((e) => e.type === 'tool_call')
-              .map((e) => (e as { type: 'tool_call'; value: { id: string; name: string; args: Record<string, unknown> } }).value);
-            
+              .map(
+                (e) =>
+                  (
+                    e as {
+                      type: 'tool_call';
+                      value: { id: string; name: string; args: Record<string, unknown> };
+                    }
+                  ).value
+              );
+
             const provider = new MockProvider({
               eventSequence: events,
             });
@@ -266,7 +271,11 @@ describe('Streaming Integration Tests', () => {
               tools: [fixtureTools.weatherTool, fixtureTools.calculatorTool],
             };
 
-            const receivedToolCalls: Array<{ id: string; name: string; args: Record<string, unknown> }> = [];
+            const receivedToolCalls: Array<{
+              id: string;
+              name: string;
+              args: Record<string, unknown>;
+            }> = [];
             let streamCompleted = false;
 
             for await (const event of provider.chatStream(request)) {
@@ -319,12 +328,20 @@ describe('Streaming Integration Tests', () => {
 
             // Create event sequence
             const events = createToolCallSequence(toolCalls);
-            
+
             // Extract the actual tool call IDs from the generated events
             const expectedToolCalls = events
               .filter((e) => e.type === 'tool_call')
-              .map((e) => (e as { type: 'tool_call'; value: { id: string; name: string; args: Record<string, unknown> } }).value);
-            
+              .map(
+                (e) =>
+                  (
+                    e as {
+                      type: 'tool_call';
+                      value: { id: string; name: string; args: Record<string, unknown> };
+                    }
+                  ).value
+              );
+
             const provider = new MockProvider({
               eventSequence: events,
             });
@@ -339,7 +356,11 @@ describe('Streaming Integration Tests', () => {
               ],
             };
 
-            const receivedToolCalls: Array<{ id: string; name: string; args: Record<string, unknown> }> = [];
+            const receivedToolCalls: Array<{
+              id: string;
+              name: string;
+              args: Record<string, unknown>;
+            }> = [];
 
             for await (const event of provider.chatStream(request)) {
               if (event.type === 'tool_call') {
@@ -400,7 +421,11 @@ describe('Streaming Integration Tests', () => {
             };
 
             const textChunks: string[] = [];
-            const receivedToolCalls: Array<{ id: string; name: string; args: Record<string, unknown> }> = [];
+            const receivedToolCalls: Array<{
+              id: string;
+              name: string;
+              args: Record<string, unknown>;
+            }> = [];
 
             for await (const event of provider.chatStream(request)) {
               if (event.type === 'text') {
@@ -716,4 +741,3 @@ describe('Streaming Integration Tests', () => {
     });
   });
 });
-

@@ -160,7 +160,7 @@ describe('ChatRecordingService', () => {
       const initialTimestamp = session1?.lastActivity;
 
       // Wait a bit to ensure timestamp changes
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
       const message: SessionMessage = {
         role: 'user',
@@ -330,16 +330,16 @@ describe('ChatRecordingService', () => {
       const sessions = await service.listSessions();
 
       expect(sessions).toHaveLength(2);
-      expect(sessions.map(s => s.sessionId)).toContain(sessionId1);
-      expect(sessions.map(s => s.sessionId)).toContain(sessionId2);
+      expect(sessions.map((s) => s.sessionId)).toContain(sessionId1);
+      expect(sessions.map((s) => s.sessionId)).toContain(sessionId2);
     });
 
     it('should sort sessions by lastActivity (most recent first)', async () => {
       const sessionId1 = await service.createSession('model-1', 'provider-1');
-      
+
       // Wait to ensure different timestamps
-      await new Promise(resolve => setTimeout(resolve, 10));
-      
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
       const sessionId2 = await service.createSession('model-2', 'provider-2');
 
       const sessions = await service.listSessions();
@@ -372,7 +372,7 @@ describe('ChatRecordingService', () => {
       for (let i = 0; i < 5; i++) {
         const sessionId = await limitedService.createSession(`model-${i}`, 'provider');
         sessions.push(sessionId);
-        await new Promise(resolve => setTimeout(resolve, 10)); // Ensure different timestamps
+        await new Promise((resolve) => setTimeout(resolve, 10)); // Ensure different timestamps
       }
 
       // Delete oldest, keep 3
@@ -382,13 +382,13 @@ describe('ChatRecordingService', () => {
       expect(remaining).toHaveLength(3);
 
       // Verify newest 3 are kept
-      expect(remaining.map(s => s.sessionId)).toContain(sessions[2]);
-      expect(remaining.map(s => s.sessionId)).toContain(sessions[3]);
-      expect(remaining.map(s => s.sessionId)).toContain(sessions[4]);
+      expect(remaining.map((s) => s.sessionId)).toContain(sessions[2]);
+      expect(remaining.map((s) => s.sessionId)).toContain(sessions[3]);
+      expect(remaining.map((s) => s.sessionId)).toContain(sessions[4]);
 
       // Verify oldest 2 are deleted
-      expect(remaining.map(s => s.sessionId)).not.toContain(sessions[0]);
-      expect(remaining.map(s => s.sessionId)).not.toContain(sessions[1]);
+      expect(remaining.map((s) => s.sessionId)).not.toContain(sessions[0]);
+      expect(remaining.map((s) => s.sessionId)).not.toContain(sessions[1]);
     });
   });
 
@@ -400,9 +400,9 @@ describe('ChatRecordingService', () => {
         timestamp: new Date().toISOString(),
       };
 
-      await expect(
-        service.recordMessage('non-existent-id', message)
-      ).rejects.toThrow('Session not found');
+      await expect(service.recordMessage('non-existent-id', message)).rejects.toThrow(
+        'Session not found'
+      );
     });
 
     it('should throw error when recording tool call to non-existent session', async () => {
@@ -414,9 +414,9 @@ describe('ChatRecordingService', () => {
         timestamp: new Date().toISOString(),
       };
 
-      await expect(
-        service.recordToolCall('non-existent-id', toolCall)
-      ).rejects.toThrow('Session not found');
+      await expect(service.recordToolCall('non-existent-id', toolCall)).rejects.toThrow(
+        'Session not found'
+      );
     });
   });
 });

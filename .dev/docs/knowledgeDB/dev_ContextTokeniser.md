@@ -5,6 +5,7 @@
 **Audit Date:** January 27, 2026
 
 **Related Documents:**
+
 - `dev_ContextManagement.md` - Context sizing and VRAM management
 - `dev_ContextCompression.md` - Compression triggers and budget calculation
 - `dev_PromptSystem.md` - System prompt token accounting
@@ -51,15 +52,17 @@ The Token Counting System provides accurate, efficient token counting with cachi
 
 ```typescript
 // Single rounding operation for accuracy
-tokenCount = Math.ceil((text.length / 4) * modelMultiplier)
+tokenCount = Math.ceil((text.length / 4) * modelMultiplier);
 ```
 
 **Why `/4`?**
+
 - Approximates ~0.75 words per token
 - Standard estimation for English text
 - Works well for most languages
 
 **Why single `Math.ceil()`?**
+
 - More accurate than double rounding
 - Consistent behavior with multipliers
 - Example: 10 chars, 1.2x multiplier
@@ -69,6 +72,7 @@ tokenCount = Math.ceil((text.length / 4) * modelMultiplier)
 ### Model Multipliers
 
 Different models have different tokenization:
+
 - GPT models: 1.0x (baseline)
 - Llama models: 1.1x (slightly more tokens)
 - Code models: 0.9x (fewer tokens for code)
@@ -90,12 +94,12 @@ countTokensCached(messageId: string, text: string): number {
 
   // 2. Calculate if not cached
   const count = Math.ceil((text.length / 4) * this.modelMultiplier);
-  
+
   // 3. Validate
   if (count < 0) {
     throw new Error(`Invalid token count: ${count}`);
   }
-  
+
   // 4. Cache and return
   this.cache.set(messageId, count);
   this.metrics.recordCacheMiss(count); // 📊
@@ -106,6 +110,7 @@ countTokensCached(messageId: string, text: string): number {
 ### Cache Invalidation
 
 Cache is cleared when:
+
 - Model multiplier changes
 - Context is cleared
 - Manual reset requested
@@ -126,7 +131,7 @@ if (tokenCount < 0) {
   console.error('[ContextManager] INVALID: Negative token count!', {
     messageId: message.id,
     tokenCount,
-    contentLength: message.content.length
+    contentLength: message.content.length,
   });
   throw new Error(`Invalid token count: ${tokenCount}`);
 }
@@ -136,7 +141,7 @@ if (context.tokenCount > context.maxTokens) {
   console.error('[ContextManager] OVERFLOW: Token count exceeds limit!', {
     current: context.tokenCount,
     max: context.maxTokens,
-    overage: context.tokenCount - context.maxTokens
+    overage: context.tokenCount - context.maxTokens,
   });
 }
 
@@ -147,7 +152,7 @@ if (process.env.NODE_ENV === 'development') {
     console.warn('[ContextManager] TOKEN DRIFT DETECTED!', {
       tracked: context.tokenCount,
       calculated: calculatedTotal,
-      drift: calculatedTotal - context.tokenCount
+      drift: calculatedTotal - context.tokenCount,
     });
   }
 }
@@ -170,18 +175,19 @@ The system tracks performance and usage statistics:
 
 ```typescript
 interface TokenCounterMetrics {
-  cacheHits: number;           // Successful cache lookups
-  cacheMisses: number;         // Cache misses (new calculations)
-  recalculations: number;      // Full conversation recalculations
-  totalTokensCounted: number;  // Total tokens processed
-  largestMessage: number;      // Largest single message
-  startTime: number;           // Metrics start time
+  cacheHits: number; // Successful cache lookups
+  cacheMisses: number; // Cache misses (new calculations)
+  recalculations: number; // Full conversation recalculations
+  totalTokensCounted: number; // Total tokens processed
+  largestMessage: number; // Largest single message
+  startTime: number; // Metrics start time
 }
 ```
 
 ### Tracked Events
 
 **Cache Hit:**
+
 ```typescript
 countTokensCached(messageId: string, text: string): number {
   const cached = this.cache.get(messageId);
@@ -194,6 +200,7 @@ countTokensCached(messageId: string, text: string): number {
 ```
 
 **Cache Miss:**
+
 ```typescript
 const count = Math.ceil((text.length / 4) * this.modelMultiplier);
 this.cache.set(messageId, count);
@@ -202,6 +209,7 @@ return count;
 ```
 
 **Recalculation:**
+
 ```typescript
 countConversationTokens(messages: Message[]): number {
   this.metrics.recordRecalculation(messages.length, total); // 📊 Track recalc
@@ -228,11 +236,13 @@ Token Counter Metrics:
 ### Performance Insights
 
 **Good Performance:**
+
 - Cache hit rate: >85% ✅
 - Recalculations: <10 per session ✅
 - Avg tokens/message: 150-300 ✅
 
 **Needs Attention:**
+
 - Cache hit rate: <70% ⚠️ (too many unique messages)
 - Recalculations: >20 per session ⚠️ (too much compression)
 - Largest message: >5000 tokens ⚠️ (consider chunking)
@@ -244,6 +254,7 @@ Token Counter Metrics:
 ### Context Manager
 
 Token counter is used by Context Manager for:
+
 - Message token counting
 - Conversation total calculation
 - Compression trigger detection
@@ -259,6 +270,7 @@ context.tokenCount += tokenCount;
 ### Compression System
 
 Token counter is used by Compression System for:
+
 - Checkpoint token calculation
 - Compression ratio measurement
 - Available budget calculation
@@ -272,6 +284,7 @@ context.tokenCount = newTokenCount;
 ### Message Store
 
 Token counter is used by Message Store for:
+
 - Real-time usage tracking
 - Streaming token estimation
 - Validation checks
@@ -292,16 +305,19 @@ reportInflightTokens(delta: number): void {
 ### Related Systems
 
 **Context Management** (`dev_ContextManagement.md`)
+
 - Context sizing and VRAM management
 - Auto-sizing logic
 - Memory thresholds
 
 **Context Compression** (`dev_ContextCompression.md`)
+
 - Compression triggers (80% of Ollama limit)
 - Dynamic budget calculation
 - Checkpoint aging
 
 **Prompt System** (`dev_PromptSystem.md`)
+
 - System prompt token accounting
 - Tier-based prompt selection
 - Mode-specific prompts
@@ -314,7 +330,7 @@ reportInflightTokens(delta: number): void {
 
 ```typescript
 // Count tokens for a single message
-const tokens = tokenCounter.countTokens("Hello, world!");
+const tokens = tokenCounter.countTokens('Hello, world!');
 console.log(`Tokens: ${tokens}`); // ~3 tokens
 
 // Count with caching
@@ -394,6 +410,7 @@ tokenCounter.resetMetrics();
 **Symptom:** Cache hit rate <70%
 
 **Solutions:**
+
 1. Check if messages have stable IDs
 2. Verify cache isn't being cleared too often
 3. Review message creation patterns
@@ -404,6 +421,7 @@ tokenCounter.resetMetrics();
 **Symptom:** "TOKEN DRIFT DETECTED" warnings
 
 **Solutions:**
+
 1. Check for manual token count modifications
 2. Verify all token updates go through proper channels
 3. Review compression logic
@@ -414,6 +432,7 @@ tokenCounter.resetMetrics();
 **Symptom:** "INVALID: Negative token count" errors
 
 **Solutions:**
+
 1. Check text length calculation
 2. Verify model multiplier is positive
 3. Review token counting formula
@@ -424,6 +443,7 @@ tokenCounter.resetMetrics();
 **Symptom:** >20 recalculations per session
 
 **Solutions:**
+
 1. Review compression trigger threshold
 2. Check if system prompt changes too often
 3. Verify compression isn't too aggressive
@@ -433,25 +453,24 @@ tokenCounter.resetMetrics();
 
 ## File Locations
 
-| File | Purpose |
-|------|---------|
-| `packages/core/src/context/tokenCounter.ts` | Token counting implementation |
-| `packages/core/src/context/messageStore.ts` | Message token tracking |
-| `packages/core/src/context/contextManager.ts` | Token counter integration |
+| File                                           | Purpose                            |
+| ---------------------------------------------- | ---------------------------------- |
+| `packages/core/src/context/tokenCounter.ts`    | Token counting implementation      |
+| `packages/core/src/context/messageStore.ts`    | Message token tracking             |
+| `packages/core/src/context/contextManager.ts`  | Token counter integration          |
 | `packages/cli/src/commands/contextCommands.ts` | Metrics display (`/context stats`) |
 
 ---
 
 ## Audit History
 
-| Date | Status | Changes |
-|------|--------|---------|
-| 2026-01-27 | ✅ Fixed | Double rounding eliminated |
-| 2026-01-27 | ✅ Added | Validation checks |
-| 2026-01-27 | ✅ Added | Metrics tracking |
+| Date       | Status        | Changes                       |
+| ---------- | ------------- | ----------------------------- |
+| 2026-01-27 | ✅ Fixed      | Double rounding eliminated    |
+| 2026-01-27 | ✅ Added      | Validation checks             |
+| 2026-01-27 | ✅ Added      | Metrics tracking              |
 | 2026-01-27 | ✅ Documented | Complete system documentation |
 
 ---
 
 **Note:** This document describes the token counting system. For context sizing, see `dev_ContextManagement.md`. For compression triggers, see `dev_ContextCompression.md`.
-

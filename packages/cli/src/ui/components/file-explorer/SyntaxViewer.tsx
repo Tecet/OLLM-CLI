@@ -1,9 +1,9 @@
 /**
  * SyntaxViewer Component
- * 
+ *
  * Provides syntax-highlighted read-only viewing of files using shiki.
  * Supports common programming languages and configuration formats.
- * 
+ *
  * Requirements: 5.4, 5.5
  */
 
@@ -32,64 +32,64 @@ export interface SyntaxViewerProps {
  */
 const EXTENSION_TO_LANGUAGE: Record<string, string> = {
   // Programming languages
-  'ts': 'typescript',
-  'tsx': 'tsx',
-  'js': 'javascript',
-  'jsx': 'jsx',
-  'py': 'python',
-  'java': 'java',
-  'go': 'go',
-  'rs': 'rust',
-  'c': 'c',
-  'cpp': 'cpp',
-  'cc': 'cpp',
-  'cxx': 'cpp',
-  'h': 'c',
-  'hpp': 'cpp',
-  'cs': 'csharp',
-  'rb': 'ruby',
-  'php': 'php',
-  'swift': 'swift',
-  'kt': 'kotlin',
-  'scala': 'scala',
-  'sh': 'bash',
-  'bash': 'bash',
-  'zsh': 'bash',
-  'fish': 'fish',
-  'ps1': 'powershell',
-  'r': 'r',
-  'lua': 'lua',
-  'perl': 'perl',
-  'pl': 'perl',
-  
+  ts: 'typescript',
+  tsx: 'tsx',
+  js: 'javascript',
+  jsx: 'jsx',
+  py: 'python',
+  java: 'java',
+  go: 'go',
+  rs: 'rust',
+  c: 'c',
+  cpp: 'cpp',
+  cc: 'cpp',
+  cxx: 'cpp',
+  h: 'c',
+  hpp: 'cpp',
+  cs: 'csharp',
+  rb: 'ruby',
+  php: 'php',
+  swift: 'swift',
+  kt: 'kotlin',
+  scala: 'scala',
+  sh: 'bash',
+  bash: 'bash',
+  zsh: 'bash',
+  fish: 'fish',
+  ps1: 'powershell',
+  r: 'r',
+  lua: 'lua',
+  perl: 'perl',
+  pl: 'perl',
+
   // Configuration formats
-  'json': 'json',
-  'yaml': 'yaml',
-  'yml': 'yaml',
-  'toml': 'toml',
-  'xml': 'xml',
-  'ini': 'ini',
-  'conf': 'ini',
-  'cfg': 'ini',
-  
+  json: 'json',
+  yaml: 'yaml',
+  yml: 'yaml',
+  toml: 'toml',
+  xml: 'xml',
+  ini: 'ini',
+  conf: 'ini',
+  cfg: 'ini',
+
   // Markup and documentation
-  'md': 'markdown',
-  'markdown': 'markdown',
-  'html': 'html',
-  'htm': 'html',
-  'css': 'css',
-  'scss': 'scss',
-  'sass': 'sass',
-  'less': 'less',
-  
+  md: 'markdown',
+  markdown: 'markdown',
+  html: 'html',
+  htm: 'html',
+  css: 'css',
+  scss: 'scss',
+  sass: 'sass',
+  less: 'less',
+
   // Data formats
-  'sql': 'sql',
-  'graphql': 'graphql',
-  'gql': 'graphql',
-  
+  sql: 'sql',
+  graphql: 'graphql',
+  gql: 'graphql',
+
   // Other
-  'dockerfile': 'dockerfile',
-  'makefile': 'makefile',
+  dockerfile: 'dockerfile',
+  makefile: 'makefile',
 };
 
 /**
@@ -101,11 +101,11 @@ function detectLanguage(filePath: string): string | null {
   const filename = filePath.split(/[/\\]/).pop()?.toLowerCase();
   if (filename === 'dockerfile') return 'dockerfile';
   if (filename === 'makefile') return 'makefile';
-  
+
   // Then check extension
   const extension = filePath.split('.').pop()?.toLowerCase();
   if (!extension || extension === filename) return null; // No extension or filename is the extension
-  
+
   return EXTENSION_TO_LANGUAGE[extension] || null;
 }
 
@@ -126,7 +126,7 @@ function htmlToText(html: string): string {
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<\/div>/gi, '\n')
     .replace(/<[^>]+>/g, '');
-  
+
   // Decode HTML entities
   text = text
     .replace(/&lt;/g, '<')
@@ -134,7 +134,7 @@ function htmlToText(html: string): string {
     .replace(/&amp;/g, '&')
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'");
-  
+
   return text;
 }
 
@@ -160,7 +160,7 @@ export const SyntaxViewer: React.FC<SyntaxViewerProps> = ({
       try {
         // Determine language
         const detectedLanguage = languageOverride || detectLanguage(filePath);
-        
+
         if (!detectedLanguage) {
           // No language detected, display as plain text
           setHighlightedContent(content);
@@ -229,7 +229,7 @@ export const SyntaxViewer: React.FC<SyntaxViewerProps> = ({
         </Text>
         <Text color="gray"> ({detectLanguage(filePath) || 'text'})</Text>
       </Box>
-      
+
       <Box flexDirection="column">
         {lines.map((line, index) => (
           <Box key={index}>

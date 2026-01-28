@@ -1,6 +1,6 @@
 /**
  * Hybrid Mode Display Component
- * 
+ *
  * Displays the current hybrid mode status in the UI.
  * Shows combined mode icons, persona, and active modes.
  */
@@ -22,7 +22,7 @@ export function HybridModeDisplay({ hybridMode, compact = false }: HybridModeDis
   if (!hybridMode) {
     return null;
   }
-  
+
   if (compact) {
     return (
       <Box flexDirection="row" gap={1}>
@@ -33,26 +33,30 @@ export function HybridModeDisplay({ hybridMode, compact = false }: HybridModeDis
       </Box>
     );
   }
-  
+
   return (
-    <Box flexDirection="column" paddingX={1} paddingY={1} borderStyle="round" borderColor={hybridMode.color}>
+    <Box
+      flexDirection="column"
+      paddingX={1}
+      paddingY={1}
+      borderStyle="round"
+      borderColor={hybridMode.color}
+    >
       <Box flexDirection="row" gap={1} marginBottom={1}>
         <Text color={hybridMode.color}>{hybridMode.icon}</Text>
         <Text bold color={hybridMode.color}>
           {hybridMode.name}
         </Text>
       </Box>
-      
+
       <Box flexDirection="column" gap={0}>
-        <Text dimColor>
-          {hybridMode.description}
-        </Text>
-        
+        <Text dimColor>{hybridMode.description}</Text>
+
         <Box marginTop={1}>
           <Text dimColor>Persona: </Text>
           <Text>{hybridMode.persona}</Text>
         </Box>
-        
+
         <Box marginTop={1}>
           <Text dimColor>Active Modes: </Text>
           <Text>{hybridMode.modes.join(', ')}</Text>
@@ -64,7 +68,7 @@ export function HybridModeDisplay({ hybridMode, compact = false }: HybridModeDis
 
 /**
  * Hybrid Mode Badge Component
- * 
+ *
  * Small badge showing hybrid mode status
  */
 export interface HybridModeBadgeProps {
@@ -75,7 +79,7 @@ export function HybridModeBadge({ hybridMode }: HybridModeBadgeProps) {
   if (!hybridMode) {
     return null;
   }
-  
+
   return (
     <Box
       flexDirection="row"
@@ -92,7 +96,7 @@ export function HybridModeBadge({ hybridMode }: HybridModeBadgeProps) {
 
 /**
  * Hybrid Mode List Component
- * 
+ *
  * Displays a list of available hybrid modes
  */
 export interface HybridModeListProps {
@@ -101,7 +105,11 @@ export interface HybridModeListProps {
   selectedId?: string;
 }
 
-export function HybridModeList({ hybridModes, onSelect: _onSelect, selectedId }: HybridModeListProps) {
+export function HybridModeList({
+  hybridModes,
+  onSelect: _onSelect,
+  selectedId,
+}: HybridModeListProps) {
   if (hybridModes.length === 0) {
     return (
       <Box paddingX={1}>
@@ -109,12 +117,12 @@ export function HybridModeList({ hybridModes, onSelect: _onSelect, selectedId }:
       </Box>
     );
   }
-  
+
   return (
     <Box flexDirection="column" gap={1}>
       {hybridModes.map((mode) => {
         const isSelected = mode.id === selectedId;
-        
+
         return (
           <Box
             key={mode.id}
@@ -131,11 +139,11 @@ export function HybridModeList({ hybridModes, onSelect: _onSelect, selectedId }:
               </Text>
               {isSelected && <Text color="green"> ✓</Text>}
             </Box>
-            
+
             <Box marginTop={1}>
               <Text dimColor>{mode.description}</Text>
             </Box>
-            
+
             <Box marginTop={1}>
               <Text dimColor>Modes: </Text>
               <Text>{mode.modes.join(', ')}</Text>

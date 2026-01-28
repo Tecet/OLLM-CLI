@@ -1,6 +1,6 @@
 /**
  * DialogContext - Manages dialog state and interactions
- * 
+ *
  * Provides a centralized way to show/hide dialogs and handle user responses.
  * Supports hook approval, confirmations, and other modal interactions.
  */
@@ -120,135 +120,121 @@ export function DialogProvider({ children }: DialogProviderProps) {
   });
 
   // Store pending promises for async dialog operations
-  const [pendingResolve, setPendingResolve] = useState<((value: boolean) => void) | null>(
-    null
-  );
+  const [pendingResolve, setPendingResolve] = useState<((value: boolean) => void) | null>(null);
 
   /**
    * Show hook approval dialog
    */
-  const showHookApproval = useCallback(
-    (hook: Hook, hash: string): Promise<boolean> => {
-      return new Promise((resolve) => {
-        const onApprove = () => {
-          setState({ activeDialog: null, isVisible: false });
-          resolve(true);
-          setPendingResolve(null);
-        };
+  const showHookApproval = useCallback((hook: Hook, hash: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const onApprove = () => {
+        setState({ activeDialog: null, isVisible: false });
+        resolve(true);
+        setPendingResolve(null);
+      };
 
-        const onDeny = () => {
-          setState({ activeDialog: null, isVisible: false });
-          resolve(false);
-          setPendingResolve(null);
-        };
+      const onDeny = () => {
+        setState({ activeDialog: null, isVisible: false });
+        resolve(false);
+        setPendingResolve(null);
+      };
 
-        setState({
-          activeDialog: {
-            type: 'hookApproval',
-            hook,
-            hash,
-            onApprove,
-            onDeny,
-          },
-          isVisible: true,
-        });
-
-        setPendingResolve(() => resolve);
+      setState({
+        activeDialog: {
+          type: 'hookApproval',
+          hook,
+          hash,
+          onApprove,
+          onDeny,
+        },
+        isVisible: true,
       });
-    },
-    []
-  );
+
+      setPendingResolve(() => resolve);
+    });
+  }, []);
 
   /**
    * Show confirmation dialog
    */
-  const showConfirmation = useCallback(
-    (title: string, message: string): Promise<boolean> => {
-      return new Promise((resolve) => {
-        const onConfirm = () => {
-          setState({ activeDialog: null, isVisible: false });
-          resolve(true);
-          setPendingResolve(null);
-        };
+  const showConfirmation = useCallback((title: string, message: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const onConfirm = () => {
+        setState({ activeDialog: null, isVisible: false });
+        resolve(true);
+        setPendingResolve(null);
+      };
 
-        const onCancel = () => {
-          setState({ activeDialog: null, isVisible: false });
-          resolve(false);
-          setPendingResolve(null);
-        };
+      const onCancel = () => {
+        setState({ activeDialog: null, isVisible: false });
+        resolve(false);
+        setPendingResolve(null);
+      };
 
-        setState({
-          activeDialog: {
-            type: 'confirmation',
-            title,
-            message,
-            onConfirm,
-            onCancel,
-          },
-          isVisible: true,
-        });
-
-        setPendingResolve(() => resolve);
+      setState({
+        activeDialog: {
+          type: 'confirmation',
+          title,
+          message,
+          onConfirm,
+          onCancel,
+        },
+        isVisible: true,
       });
-    },
-    []
-  );
+
+      setPendingResolve(() => resolve);
+    });
+  }, []);
 
   /**
    * Show error dialog
    */
-  const showError = useCallback(
-    (title: string, message: string): Promise<void> => {
-      return new Promise((resolve) => {
-        const onClose = () => {
-          setState({ activeDialog: null, isVisible: false });
-          resolve();
-          setPendingResolve(null);
-        };
+  const showError = useCallback((title: string, message: string): Promise<void> => {
+    return new Promise((resolve) => {
+      const onClose = () => {
+        setState({ activeDialog: null, isVisible: false });
+        resolve();
+        setPendingResolve(null);
+      };
 
-        setState({
-          activeDialog: {
-            type: 'error',
-            title,
-            message,
-            onClose,
-          },
-          isVisible: true,
-        });
-
-        setPendingResolve(() => resolve);
+      setState({
+        activeDialog: {
+          type: 'error',
+          title,
+          message,
+          onClose,
+        },
+        isVisible: true,
       });
-    },
-    []
-  );
+
+      setPendingResolve(() => resolve);
+    });
+  }, []);
 
   /**
    * Show info dialog
    */
-  const showInfo = useCallback(
-    (title: string, message: string): Promise<void> => {
-      return new Promise((resolve) => {
-        const onClose = () => {
-          setState({ activeDialog: null, isVisible: false });
-          resolve();
-          setPendingResolve(null);
-        };
+  const showInfo = useCallback((title: string, message: string): Promise<void> => {
+    return new Promise((resolve) => {
+      const onClose = () => {
+        setState({ activeDialog: null, isVisible: false });
+        resolve();
+        setPendingResolve(null);
+      };
 
-        setState({
-          activeDialog: {
-            type: 'info',
-            title,
-            message,
-            onClose,
-          },
-          isVisible: true,
-        });
-
-        setPendingResolve(() => resolve);
+      setState({
+        activeDialog: {
+          type: 'info',
+          title,
+          message,
+          onClose,
+        },
+        isVisible: true,
       });
-    },
-    []
-  );
+
+      setPendingResolve(() => resolve);
+    });
+  }, []);
 
   /**
    * Close current dialog

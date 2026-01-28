@@ -1,6 +1,6 @@
 /**
  * Metrics Management Commands
- * 
+ *
  * Implements commands for managing performance metrics:
  * - /metrics - Show current metrics
  * - /metrics toggle - Toggle metrics display
@@ -11,14 +11,15 @@ import type { Command, CommandResult } from './types.js';
 
 /**
  * /metrics - Show current metrics
- * 
+ *
  * Requirements: 19.10
  */
 async function metricsShowHandler(): Promise<CommandResult> {
   // This will integrate with MetricsCollector
   return {
     success: true,
-    message: 'Session metrics:\n\n' +
+    message:
+      'Session metrics:\n\n' +
       'Total generations: 0\n' +
       'Total tokens: 0\n' +
       'Average speed: 0 t/s\n' +
@@ -34,7 +35,7 @@ async function metricsShowHandler(): Promise<CommandResult> {
 
 /**
  * /metrics toggle - Toggle metrics display
- * 
+ *
  * Requirements: 19.10
  */
 async function metricsToggleHandler(): Promise<CommandResult> {
@@ -47,7 +48,7 @@ async function metricsToggleHandler(): Promise<CommandResult> {
 
 /**
  * /metrics reset - Reset session metrics
- * 
+ *
  * Requirements: 19.10
  */
 async function metricsResetHandler(): Promise<CommandResult> {
@@ -60,7 +61,7 @@ async function metricsResetHandler(): Promise<CommandResult> {
 
 /**
  * /metrics command - Main metrics command with subcommands
- * 
+ *
  * Requirements: 19.10
  */
 export const metricsCommand: Command = {
@@ -82,7 +83,8 @@ export const metricsCommand: Command = {
       default:
         return {
           success: false,
-          message: `Unknown subcommand: ${subcommand}\n\n` +
+          message:
+            `Unknown subcommand: ${subcommand}\n\n` +
             'Available subcommands: toggle, reset\n' +
             'Or use /metrics without arguments to show current metrics',
         };
@@ -93,6 +95,4 @@ export const metricsCommand: Command = {
 /**
  * All metrics-related commands
  */
-export const metricsCommands: Command[] = [
-  metricsCommand,
-];
+export const metricsCommands: Command[] = [metricsCommand];

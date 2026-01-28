@@ -1,6 +1,6 @@
 /**
  * Mode Transition Indicator
- * 
+ *
  * Displays animated transition messages when switching between modes.
  * Shows loading spinner during transition and completion message when done.
  */
@@ -24,7 +24,7 @@ const SPINNER_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', 
 
 /**
  * Mode Transition Indicator Component
- * 
+ *
  * Displays an animated indicator during mode transitions with:
  * - Animated spinner during transition
  * - Mode-specific icon and message

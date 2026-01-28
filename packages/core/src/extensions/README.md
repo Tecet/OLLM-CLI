@@ -5,6 +5,7 @@ The extension system provides a manifest-based approach to packaging and distrib
 ## Overview
 
 Extensions are directories containing a `manifest.json` file that declares:
+
 - **Hooks**: Event-driven scripts that run at specific lifecycle points
 - **MCP Servers**: External processes that provide tools via Model Context Protocol
 - **Settings**: Configuration options that integrate with the CLI config system
@@ -70,6 +71,7 @@ my-extension/
 ## Extension Discovery
 
 Extensions are discovered from:
+
 1. User directory: `~/.ollm/extensions/`
 2. Workspace directory: `.ollm/extensions/`
 
@@ -86,6 +88,7 @@ Each subdirectory containing a `manifest.json` is treated as an extension.
 ## Security Model
 
 Extensions inherit the hook trust model:
+
 - User extensions (`~/.ollm/extensions/`) are trusted by default
 - Workspace extensions (`.ollm/extensions/`) require approval
 - Downloaded extensions require approval

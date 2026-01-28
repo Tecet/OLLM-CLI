@@ -1,6 +1,6 @@
 /**
  * Extension settings integration
- * 
+ *
  * Handles merging extension settings with configuration,
  * reading from environment variables, and providing settings to hooks/MCP servers.
  */
@@ -27,7 +27,7 @@ export interface ResolvedExtensionSetting {
 export class ExtensionSettingsManager {
   /**
    * Resolve extension settings by reading from environment variables
-   * 
+   *
    * @param settings - Extension setting definitions
    * @param extensionName - Name of the extension (for error messages)
    * @returns Array of resolved settings
@@ -70,7 +70,7 @@ export class ExtensionSettingsManager {
 
   /**
    * Convert resolved settings to environment variables for hooks/MCP servers
-   * 
+   *
    * @param resolvedSettings - Resolved extension settings
    * @param extensionName - Name of the extension
    * @returns Environment variable object
@@ -86,15 +86,15 @@ export class ExtensionSettingsManager {
         // Convert extension setting name to environment variable format
         // e.g., "githubToken" -> "EXTENSION_GITHUB_INTEGRATION_GITHUB_TOKEN"
         const envVarName = this.settingToEnvVar(extensionName, setting.name);
-        
+
         // Skip if this env var name already exists (duplicate after normalization)
         if (env[envVarName] !== undefined) {
           continue;
         }
-        
+
         // Convert value to string
         const stringValue = this.valueToString(setting.value);
-        
+
         env[envVarName] = stringValue;
       }
     }
@@ -104,17 +104,15 @@ export class ExtensionSettingsManager {
 
   /**
    * Convert setting name to environment variable name
-   * 
+   *
    * @param extensionName - Extension name
    * @param settingName - Setting name
    * @returns Environment variable name
    */
   private settingToEnvVar(extensionName: string, settingName: string): string {
     // Convert to uppercase and replace hyphens with underscores
-    const normalizedExtension = extensionName
-      .toUpperCase()
-      .replace(/-/g, '_');
-    
+    const normalizedExtension = extensionName.toUpperCase().replace(/-/g, '_');
+
     // Convert camelCase to SNAKE_CASE
     const normalizedSetting = settingName
       .replace(/([A-Z])/g, '_$1')
@@ -126,7 +124,7 @@ export class ExtensionSettingsManager {
 
   /**
    * Convert setting value to string for environment variable
-   * 
+   *
    * @param value - Setting value
    * @returns String representation
    */
@@ -146,7 +144,7 @@ export class ExtensionSettingsManager {
 
   /**
    * Redact sensitive settings from an object (for logging)
-   * 
+   *
    * @param obj - Object containing settings
    * @param sensitiveNames - Names of sensitive settings
    * @returns Object with sensitive values redacted
@@ -176,7 +174,7 @@ export class ExtensionSettingsManager {
 
   /**
    * Redact sensitive settings from environment variables
-   * 
+   *
    * @param env - Environment variables object
    * @param resolvedSettings - Resolved extension settings
    * @returns Environment variables with sensitive values redacted
@@ -193,7 +191,14 @@ export class ExtensionSettingsManager {
       if (setting.sensitive && setting.value !== undefined) {
         // Find the env var key for this setting
         for (const [key, _value] of Object.entries(env)) {
-          if (key.includes(setting.name.toUpperCase().replace(/([A-Z])/g, '_$1').replace(/^_/, ''))) {
+          if (
+            key.includes(
+              setting.name
+                .toUpperCase()
+                .replace(/([A-Z])/g, '_$1')
+                .replace(/^_/, '')
+            )
+          ) {
             sensitiveKeys.add(key);
           }
         }
@@ -214,7 +219,7 @@ export class ExtensionSettingsManager {
 
   /**
    * Validate required settings are present
-   * 
+   *
    * @param resolvedSettings - Resolved extension settings
    * @param requiredSettings - Names of required settings
    * @returns Array of missing required settings
@@ -237,15 +242,12 @@ export class ExtensionSettingsManager {
 
   /**
    * Merge extension settings into configuration schema
-   * 
+   *
    * @param extensionName - Extension name
    * @param settings - Extension setting definitions
    * @returns Configuration schema fragment for this extension
    */
-  createConfigSchema(
-    extensionName: string,
-    settings: ExtensionSetting[]
-  ): Record<string, unknown> {
+  createConfigSchema(extensionName: string, settings: ExtensionSetting[]): Record<string, unknown> {
     const schema: Record<string, unknown> = {};
 
     for (const setting of settings) {
@@ -263,4 +265,3 @@ export class ExtensionSettingsManager {
     };
   }
 }
-

@@ -1,6 +1,6 @@
 /**
  * Model Warmup Management Hook
- * 
+ *
  * Manages model warmup state, retry logic, and timeout handling.
  * Handles warmup configuration, progress tracking, and user skip functionality.
  */
@@ -61,7 +61,7 @@ export function useModelWarmup(
     setModelLoading(false);
     setWarmupStatus(null);
     warmupStartRef.current = null;
-    
+
     // Add system message
     addSystemMessage('Warmup skipped by user.');
   }, [setModelLoading, addSystemMessage]);
@@ -77,7 +77,7 @@ export function useModelWarmup(
     const settingsService = SettingsService.getInstance();
     const settings = settingsService.getSettings();
     const warmupEnabled = settings.llm?.warmup?.enabled ?? true;
-    
+
     if (!warmupEnabled) {
       // Warmup disabled, skip it
       setModelLoading(false);
@@ -102,7 +102,7 @@ export function useModelWarmup(
     const controller = new AbortController();
     warmupAbortRef.current = controller;
     const modelName = currentModel;
-    
+
     // Get configuration
     const maxAttempts = settings.llm?.warmup?.maxAttempts ?? 3;
     const retryDelaysMs = [1000, 2000, 4000].slice(0, maxAttempts - 1);
@@ -139,9 +139,7 @@ export function useModelWarmup(
 
         const stream = provider.chatStream({
           model: currentModel,
-          messages: [
-            { role: 'user', parts: [{ type: 'text' as const, text: 'warmup' }] },
-          ],
+          messages: [{ role: 'user', parts: [{ type: 'text' as const, text: 'warmup' }] }],
           abortSignal: controller.signal,
           timeout: warmupTimeout,
         });

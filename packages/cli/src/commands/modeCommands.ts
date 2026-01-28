@@ -1,6 +1,6 @@
 /**
  * Mode Management Commands
- * 
+ *
  * Implements commands for managing prompt modes:
  * - /mode assistant - Switch to assistant mode
  * - /mode planning - Switch to planning mode
@@ -27,7 +27,9 @@ import type { ModeType, ModeTransition } from '@ollm/core';
 function ensureContextManager() {
   const manager = getGlobalContextManager();
   if (!manager) {
-    throw new Error('Context Manager is not initialized. Please wait for the application to fully load.');
+    throw new Error(
+      'Context Manager is not initialized. Please wait for the application to fully load.'
+    );
   }
   return manager;
 }
@@ -39,7 +41,9 @@ function ensureModeManager() {
   const manager = ensureContextManager();
   const modeManager = manager.getModeManager();
   if (!modeManager) {
-    throw new Error('Mode Manager is not initialized. Please wait for the application to fully load.');
+    throw new Error(
+      'Mode Manager is not initialized. Please wait for the application to fully load.'
+    );
   }
   return modeManager;
 }
@@ -47,18 +51,24 @@ function ensureModeManager() {
 /**
  * Mode icons for display
  */
-const MODE_ICONS: Record<ModeType, string> = Object.entries(MODE_METADATA).reduce((acc, [key, meta]) => {
-  acc[key as ModeType] = meta.icon;
-  return acc;
-}, {} as Record<ModeType, string>);
+const MODE_ICONS: Record<ModeType, string> = Object.entries(MODE_METADATA).reduce(
+  (acc, [key, meta]) => {
+    acc[key as ModeType] = meta.icon;
+    return acc;
+  },
+  {} as Record<ModeType, string>
+);
 
 /**
  * Mode descriptions
  */
-const MODE_DESCRIPTIONS: Record<ModeType, string> = Object.entries(MODE_METADATA).reduce((acc, [key, meta]) => {
-  acc[key as ModeType] = meta.description;
-  return acc;
-}, {} as Record<ModeType, string>);
+const MODE_DESCRIPTIONS: Record<ModeType, string> = Object.entries(MODE_METADATA).reduce(
+  (acc, [key, meta]) => {
+    acc[key as ModeType] = meta.description;
+    return acc;
+  },
+  {} as Record<ModeType, string>
+);
 
 /**
  * Format a mode transition for display
@@ -68,10 +78,9 @@ function formatTransition(transition: ModeTransition): string {
   const toIcon = MODE_ICONS[transition.to] || '';
   const timestamp = transition.timestamp.toLocaleTimeString();
   const trigger = transition.trigger === 'auto' ? '🤖' : '👤';
-  const confidence = transition.confidence > 0 
-    ? ` (${Math.round(transition.confidence * 100)}%)`
-    : '';
-  
+  const confidence =
+    transition.confidence > 0 ? ` (${Math.round(transition.confidence * 100)}%)` : '';
+
   return `${timestamp} ${trigger} ${fromIcon} ${transition.from} → ${toIcon} ${transition.to}${confidence}`;
 }
 
@@ -86,10 +95,10 @@ function buildModeChangeNotification(
   const metadata = MODE_METADATA[mode];
   const allowedTools = modeManager.getAllowedTools(mode);
   const deniedTools = modeManager.getDeniedTools(mode);
-  
+
   let notification = `[System: Mode changed to ${metadata.icon} ${mode}]\n\n`;
   notification += `${metadata.description}\n\n`;
-  
+
   // Tool availability
   if (allowedTools.includes('*')) {
     notification += `Tools: All tools available\n`;
@@ -102,7 +111,7 @@ function buildModeChangeNotification(
   } else {
     notification += `Tools: No tools available (read-only mode)\n`;
   }
-  
+
   // Restrictions (only show if not all tools denied)
   if (deniedTools.length > 0 && !deniedTools.includes('*')) {
     notification += `Restricted: ${deniedTools.slice(0, 5).join(', ')}`;
@@ -111,13 +120,13 @@ function buildModeChangeNotification(
     }
     notification += `\n`;
   }
-  
+
   // Mode-specific guidance
   const guidance = getModeGuidance(mode);
   if (guidance) {
     notification += `\n${guidance}`;
   }
-  
+
   return notification;
 }
 
@@ -129,8 +138,9 @@ function getModeGuidance(mode: ModeType): string {
   const guidance: Partial<Record<ModeType, string>> = {
     assistant: 'Focus on answering questions and providing explanations.',
     planning: 'Focus on research, design, and planning. You have read-only access to the codebase.',
-    developer: 'Focus on implementation, refactoring, and code changes. You have full access to all tools.',
-    debugger: 'Focus on finding root causes and implementing fixes. Analyze errors systematically.'
+    developer:
+      'Focus on implementation, refactoring, and code changes. You have full access to all tools.',
+    debugger: 'Focus on finding root causes and implementing fixes. Analyze errors systematically.',
   };
 
   return guidance[mode] ?? '';
@@ -142,23 +152,24 @@ function getModeGuidance(mode: ModeType): string {
 export const modeCommand: Command = {
   name: '/mode',
   aliases: ['/m'],
-  description: 'Manage prompt modes (usage: /mode [assistant|planning|developer|debugger|auto|status|history])',
+  description:
+    'Manage prompt modes (usage: /mode [assistant|planning|developer|debugger|auto|status|history])',
   usage: '/mode [subcommand]',
   handler: async (args: string[]): Promise<CommandResult> => {
     try {
       const manager = ensureContextManager();
       const modeManager = ensureModeManager();
-      
+
       // Default: Show status
       if (args.length === 0) {
         const currentMode = modeManager.getCurrentMode();
         const autoSwitch = modeManager.isAutoSwitchEnabled();
         const icon = MODE_ICONS[currentMode] || '';
         const description = MODE_DESCRIPTIONS[currentMode] || '';
-        
+
         return {
           success: true,
-          message: 
+          message:
             `Current Mode: ${icon} ${currentMode}\n` +
             `Description: ${description}\n` +
             `Auto-Switch: ${autoSwitch ? 'Enabled ✓' : 'Disabled ✗'}\n\n` +
@@ -169,17 +180,15 @@ export const modeCommand: Command = {
       const subcommand = args[0].toLowerCase();
 
       // Handle mode switching commands
-      const validModes: ModeType[] = [
-        'assistant', 'planning', 'developer', 'debugger'
-      ];
-      
+      const validModes: ModeType[] = ['assistant', 'planning', 'developer', 'debugger'];
+
       if (validModes.includes(subcommand as ModeType)) {
         const mode = subcommand as ModeType;
         manager.switchMode(mode);
-        
+
         const metadata = MODE_METADATA[mode];
         const icon = metadata?.icon || '';
-        
+
         // Inject system message to LLM about mode change
         if (globalThis.__ollmAddSystemMessage) {
           const modeManager = manager.getModeManager();
@@ -188,10 +197,10 @@ export const modeCommand: Command = {
             globalThis.__ollmAddSystemMessage(notification);
           }
         }
-        
+
         return {
           success: true,
-          message: 
+          message:
             `Switched to ${icon} ${mode}\n` +
             `Auto-switching disabled. Use /mode auto to re-enable.`,
         };
@@ -203,12 +212,10 @@ export const modeCommand: Command = {
           manager.setAutoSwitch(true);
           const currentMode = modeManager.getCurrentMode();
           const icon = MODE_ICONS[currentMode] || '';
-          
+
           return {
             success: true,
-            message: 
-              `Auto-switch: Enabled ✓\n` +
-              `Current mode: ${icon} ${currentMode}`,
+            message: `Auto-switch: Enabled ✓\n` + `Current mode: ${icon} ${currentMode}`,
           };
         }
 
@@ -218,19 +225,19 @@ export const modeCommand: Command = {
           const autoSwitch = modeManager.isAutoSwitchEnabled();
           const icon = MODE_ICONS[currentMode] || '';
           const description = MODE_DESCRIPTIONS[currentMode] || '';
-          
-          let statusMsg = 
+
+          let statusMsg =
             `Mode Status\n` +
             `───────────\n` +
             `Current: ${icon} ${currentMode}\n` +
             `Description: ${description}\n` +
             `Auto-Switch: ${autoSwitch ? 'Enabled ✓' : 'Disabled ✗'}`;
-          
+
           if (previousMode) {
             const prevIcon = MODE_ICONS[previousMode] || '';
             statusMsg += `\nPrevious: ${prevIcon} ${previousMode}`;
           }
-          
+
           // Show allowed tools for current mode
           const allowedTools = modeManager.getAllowedTools(currentMode);
           if (allowedTools.length > 0) {
@@ -245,7 +252,7 @@ export const modeCommand: Command = {
           } else {
             statusMsg += `\n\nTools: No tools available`;
           }
-          
+
           // Add metrics display
           try {
             const metricsTracker = modeManager.getMetricsTracker();
@@ -266,7 +273,9 @@ export const modeCommand: Command = {
               }
 
               // Time breakdown for current mode
-              const currentModeTime = timeMetricsSummary.modeBreakdown.find(m => m.mode === currentMode);
+              const currentModeTime = timeMetricsSummary.modeBreakdown.find(
+                (m) => m.mode === currentMode
+              );
               if (currentModeTime && currentModeTime.duration > 0) {
                 const minutes = Math.floor(currentModeTime.duration / (1000 * 60));
                 const seconds = Math.floor((currentModeTime.duration % (1000 * 60)) / 1000);
@@ -285,7 +294,7 @@ export const modeCommand: Command = {
                   // Format key as human-readable (camelCase to Title Case)
                   const formattedKey = key
                     .replace(/([A-Z])/g, ' $1')
-                    .replace(/^./, str => str.toUpperCase())
+                    .replace(/^./, (str) => str.toUpperCase())
                     .trim();
                   statusMsg += `\n${formattedKey}: ${value}`;
                 }
@@ -297,8 +306,7 @@ export const modeCommand: Command = {
 
               // Productivity summary (if any activity)
               const productivity = metricsTracker.getProductivitySummary();
-              const hasActivity = productivity.totalFiles > 0 || 
-                                 productivity.totalBugsFixed > 0;
+              const hasActivity = productivity.totalFiles > 0 || productivity.totalBugsFixed > 0;
 
               if (hasActivity) {
                 statusMsg += `\n\nProductivity\n────────────`;
@@ -317,27 +325,27 @@ export const modeCommand: Command = {
             // If metrics display fails, just continue without metrics
             // This ensures the command still works even if metrics tracking has issues
           }
-          
+
           return { success: true, message: statusMsg };
         }
 
         case 'history': {
           const history = modeManager.getRecentHistory(10);
-          
+
           if (history.length === 0) {
             return {
               success: true,
               message: 'No mode transitions yet.',
             };
           }
-          
+
           const historyLines = history.map(formatTransition);
-          const historyMsg = 
+          const historyMsg =
             `Recent Mode Transitions\n` +
             `───────────────────────\n` +
             historyLines.join('\n') +
             `\n\n🤖 = Auto-switch, 👤 = Manual`;
-          
+
           return { success: true, message: historyMsg };
         }
 
@@ -350,7 +358,7 @@ export const modeCommand: Command = {
               message: 'Focus mode manager is not available.',
             };
           }
-          
+
           // Handle subcommands
           if (args.length === 1) {
             // No subcommand - show help or status
@@ -360,10 +368,10 @@ export const modeCommand: Command = {
                 const icon = MODE_ICONS[session.mode] || '';
                 const remaining = focusManager.getRemainingTimeFormatted();
                 const stats = focusManager.getSessionStats();
-                
+
                 return {
                   success: true,
-                  message: 
+                  message:
                     `Focus Mode Active 🎯\n` +
                     `─────────────────\n` +
                     `Mode: ${icon} ${session.mode}\n` +
@@ -373,10 +381,10 @@ export const modeCommand: Command = {
                 };
               }
             }
-            
+
             return {
               success: true,
-              message: 
+              message:
                 `Focus Mode Commands\n` +
                 `──────────────────\n` +
                 `/mode focus <mode> <duration> - Lock to a mode for deep work\n` +
@@ -389,9 +397,9 @@ export const modeCommand: Command = {
                 `Focus mode prevents both auto-switching and manual mode changes.`,
             };
           }
-          
+
           const focusSubcommand = args[1].toLowerCase();
-          
+
           // Disable focus mode
           if (focusSubcommand === 'off') {
             if (!focusManager.isFocusModeActive()) {
@@ -400,17 +408,17 @@ export const modeCommand: Command = {
                 message: 'Focus mode is not currently active.',
               };
             }
-            
+
             focusManager.disableFocusMode('manual');
-            
+
             return {
               success: true,
-              message: 
+              message:
                 `Focus mode disabled ✓\n\n` +
                 `You can now switch modes freely or enable auto-switching with /mode auto.`,
             };
           }
-          
+
           // Extend focus session
           if (focusSubcommand === 'extend') {
             if (!focusManager.isFocusModeActive()) {
@@ -419,14 +427,14 @@ export const modeCommand: Command = {
                 message: 'No active focus session to extend.',
               };
             }
-            
+
             if (args.length < 3) {
               return {
                 success: false,
                 message: 'Please specify minutes to extend: /mode focus extend <minutes>',
               };
             }
-            
+
             const additionalMinutes = parseInt(args[2], 10);
             if (isNaN(additionalMinutes) || additionalMinutes < 1 || additionalMinutes > 120) {
               return {
@@ -434,14 +442,14 @@ export const modeCommand: Command = {
                 message: 'Extension must be between 1 and 120 minutes.',
               };
             }
-            
+
             try {
               focusManager.extendFocusSession(additionalMinutes);
               const remaining = focusManager.getRemainingTimeFormatted();
-              
+
               return {
                 success: true,
-                message: 
+                message:
                   `Focus session extended by ${additionalMinutes} minutes ✓\n` +
                   `New remaining time: ${remaining}`,
               };
@@ -452,26 +460,25 @@ export const modeCommand: Command = {
               };
             }
           }
-          
+
           // Enable focus mode for a specific mode
           const targetMode = focusSubcommand as ModeType;
-          
+
           if (!validModes.includes(targetMode)) {
             return {
               success: false,
-              message: 
-                `Invalid mode: ${focusSubcommand}\n\n` +
-                `Valid modes: ${validModes.join(', ')}`,
+              message:
+                `Invalid mode: ${focusSubcommand}\n\n` + `Valid modes: ${validModes.join(', ')}`,
             };
           }
-          
+
           if (args.length < 3) {
             return {
               success: false,
               message: 'Please specify duration in minutes: /mode focus <mode> <duration>',
             };
           }
-          
+
           const durationMinutes = parseInt(args[2], 10);
           if (isNaN(durationMinutes) || durationMinutes < 1 || durationMinutes > 240) {
             return {
@@ -479,18 +486,18 @@ export const modeCommand: Command = {
               message: 'Duration must be between 1 and 240 minutes (4 hours).',
             };
           }
-          
+
           try {
             // Switch to the target mode first (using explicit trigger to bypass focus check)
             manager.switchModeExplicit(targetMode);
-            
+
             // Enable focus mode
             const session = focusManager.enableFocusMode(targetMode, durationMinutes);
             const icon = MODE_ICONS[targetMode] || '';
-            
+
             return {
               success: true,
-              message: 
+              message:
                 `Focus Mode Activated 🎯\n` +
                 `─────────────────────\n` +
                 `Mode: ${icon} ${targetMode}\n` +
@@ -509,7 +516,7 @@ export const modeCommand: Command = {
         default:
           return {
             success: false,
-            message: 
+            message:
               `Unknown mode: ${subcommand}\n\n` +
               `Available modes:\n` +
               `  assistant   - ${MODE_DESCRIPTIONS.assistant}\n` +
@@ -532,6 +539,4 @@ export const modeCommand: Command = {
   },
 };
 
-export const modeCommands: Command[] = [
-  modeCommand,
-];
+export const modeCommands: Command[] = [modeCommand];

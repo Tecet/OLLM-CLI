@@ -11,7 +11,7 @@ export function normalizeKey(key: string): string {
 /**
  * Checks if an Ink input event matches a configured keybind string.
  * Supports modifiers like "ctrl+c", "shift+enter", "meta+s".
- * 
+ *
  * @param input The raw input string from Ink
  * @param key The Key object from Ink containing modifiers and special keys
  * @param configKey The configured keybind string to match against (e.g. "ctrl+s")

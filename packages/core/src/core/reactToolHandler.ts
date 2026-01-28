@@ -106,14 +106,8 @@ Final Answer: [Your response to the user]`;
     return `Observation: ${JSON.stringify(result)}`;
   }
 
-  static validateActionInput(
-    actionInput: unknown
-  ): actionInput is Record<string, unknown> {
-    return (
-      typeof actionInput === 'object' &&
-      actionInput !== null &&
-      !Array.isArray(actionInput)
-    );
+  static validateActionInput(actionInput: unknown): actionInput is Record<string, unknown> {
+    return typeof actionInput === 'object' && actionInput !== null && !Array.isArray(actionInput);
   }
 
   /**

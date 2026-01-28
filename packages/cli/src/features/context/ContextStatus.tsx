@@ -1,6 +1,6 @@
 /**
  * ContextStatus Component
- * 
+ *
  * Displays context management status including:
  * - Model name
  * - Token usage (current/max with percentage)
@@ -49,11 +49,11 @@ export interface ContextStatusProps {
  */
 function formatBytes(bytes: number): string {
   if (bytes === 0) return '0 B';
-  
+
   const k = 1024;
   const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  
+
   return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
 }
 
@@ -86,33 +86,44 @@ export const ContextStatus: React.FC<ContextStatusProps> = ({
   kvCacheMemory,
   snapshotCount,
   compressionEnabled,
-  compressionThreshold
+  compressionThreshold,
 }) => {
   const { state: uiState } = useUI();
   const theme = uiState.theme;
   // Calculate percentages
   const tokenPercentage = (currentTokens / maxTokens) * 100;
   const vramPercentage = (vramUsed / vramTotal) * 100;
-  
+
   // Determine if warning should be shown
   const showWarning = tokenPercentage > 80 || vramPercentage > 80;
-  
+
   return (
-    <Box flexDirection="column" paddingX={1} paddingY={1} borderStyle="round" borderColor={theme.border.primary}>
+    <Box
+      flexDirection="column"
+      paddingX={1}
+      paddingY={1}
+      borderStyle="round"
+      borderColor={theme.border.primary}
+    >
       {/* Title */}
       <Box marginBottom={1}>
-        <Text bold color={theme.text.accent}>Context Status</Text>
+        <Text bold color={theme.text.accent}>
+          Context Status
+        </Text>
         {showWarning && (
-          <Text color={theme.status.warning} bold> ⚠ HIGH USAGE</Text>
+          <Text color={theme.status.warning} bold>
+            {' '}
+            ⚠ HIGH USAGE
+          </Text>
         )}
       </Box>
-      
+
       {/* Model Name */}
       <Box>
         <Text dimColor>Model: </Text>
         <Text bold>{modelName}</Text>
       </Box>
-      
+
       {/* Token Usage */}
       <Box>
         <Text dimColor>Tokens: </Text>
@@ -125,7 +136,7 @@ export const ContextStatus: React.FC<ContextStatusProps> = ({
         </Text>
         <Text dimColor>)</Text>
       </Box>
-      
+
       {/* VRAM Usage */}
       <Box>
         <Text dimColor>VRAM: </Text>
@@ -138,7 +149,7 @@ export const ContextStatus: React.FC<ContextStatusProps> = ({
         </Text>
         <Text dimColor>)</Text>
       </Box>
-      
+
       {/* KV Cache Info */}
       <Box>
         <Text dimColor>KV Cache: </Text>
@@ -146,13 +157,13 @@ export const ContextStatus: React.FC<ContextStatusProps> = ({
         <Text dimColor> - </Text>
         <Text>{formatBytes(kvCacheMemory)}</Text>
       </Box>
-      
+
       {/* Snapshot Count */}
       <Box>
         <Text dimColor>Snapshots: </Text>
         <Text>{snapshotCount}</Text>
       </Box>
-      
+
       {/* Compression Settings */}
       <Box>
         <Text dimColor>Compression: </Text>

@@ -1,6 +1,6 @@
 /**
  * MarketplaceDialog - Dialog for browsing and installing MCP servers from marketplace
- * 
+ *
  * Features:
  * - Display full list of marketplace servers
  * - Search input field (filter by name/description)
@@ -10,7 +10,7 @@
  * - Navigation with arrow keys
  * - / key to focus search box
  * - Close button
- * 
+ *
  * Validates: Requirements 3.1-3.7, 12.15
  */
 
@@ -38,10 +38,8 @@ function formatRating(rating: number): string {
   const fullStars = Math.floor(rating);
   const hasHalfStar = rating % 1 >= 0.5;
   const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
-  
-  return '★'.repeat(fullStars) + 
-         (hasHalfStar ? '½' : '') + 
-         '☆'.repeat(emptyStars);
+
+  return '★'.repeat(fullStars) + (hasHalfStar ? '½' : '') + '☆'.repeat(emptyStars);
 }
 
 /**
@@ -109,13 +107,7 @@ function ServerListItem({ server, focused, onInstall }: ServerListItemProps) {
       {/* Install button when focused */}
       {focused && (
         <Box marginTop={1}>
-          <Button
-            label="Install"
-            onPress={onInstall}
-            variant="primary"
-            shortcut="Enter"
-            icon="⬇"
-          />
+          <Button label="Install" onPress={onInstall} variant="primary" shortcut="Enter" icon="⬇" />
         </Box>
       )}
     </Box>
@@ -124,7 +116,7 @@ function ServerListItem({ server, focused, onInstall }: ServerListItemProps) {
 
 /**
  * MarketplaceDialog component
- * 
+ *
  * Provides a comprehensive marketplace browser:
  * - Full server list with search
  * - Arrow key navigation
@@ -133,7 +125,11 @@ function ServerListItem({ server, focused, onInstall }: ServerListItemProps) {
  * - Esc to close
  */
 export function MarketplaceDialog({ onClose }: MarketplaceDialogProps) {
-  const { state: { marketplace }, searchMarketplace, installServer } = useMCP();
+  const {
+    state: { marketplace },
+    searchMarketplace,
+    installServer,
+  } = useMCP();
 
   // State
   const [searchQuery, setSearchQuery] = useState('');
@@ -199,20 +195,20 @@ export function MarketplaceDialog({ onClose }: MarketplaceDialogProps) {
     // Handle search input when focused
     if (isSearchFocused) {
       if (key.backspace || key.delete) {
-        setSearchQuery(prev => prev.slice(0, -1));
+        setSearchQuery((prev) => prev.slice(0, -1));
       } else if (key.return) {
         setIsSearchFocused(false);
       } else if (input && !key.ctrl && !key.meta) {
-        setSearchQuery(prev => prev + input);
+        setSearchQuery((prev) => prev + input);
       }
       return;
     }
 
     // Navigation when not in search mode
     if (key.upArrow) {
-      setSelectedIndex(prev => Math.max(0, prev - 1));
+      setSelectedIndex((prev) => Math.max(0, prev - 1));
     } else if (key.downArrow) {
-      setSelectedIndex(prev => Math.min(filteredServers.length - 1, prev + 1));
+      setSelectedIndex((prev) => Math.min(filteredServers.length - 1, prev + 1));
     } else if (key.return) {
       // Install selected server
       if (filteredServers[selectedIndex]) {
@@ -231,15 +227,18 @@ export function MarketplaceDialog({ onClose }: MarketplaceDialogProps) {
   /**
    * Handle server installation
    */
-  const handleInstall = useCallback(async (serverId: string, config: MCPServerConfig) => {
-    try {
-      await installServer(serverId, config);
-      setInstallDialogServer(null);
-    } catch (err) {
-      // Error is handled by InstallServerDialog
-      console.error('Installation failed:', err);
-    }
-  }, [installServer]);
+  const handleInstall = useCallback(
+    async (serverId: string, config: MCPServerConfig) => {
+      try {
+        await installServer(serverId, config);
+        setInstallDialogServer(null);
+      } catch (err) {
+        // Error is handled by InstallServerDialog
+        console.error('Installation failed:', err);
+      }
+    },
+    [installServer]
+  );
 
   /**
    * Close install dialog
@@ -260,11 +259,7 @@ export function MarketplaceDialog({ onClose }: MarketplaceDialogProps) {
   }
 
   return (
-    <Dialog
-      title="MCP Marketplace"
-      onClose={onClose}
-      width={90}
-    >
+    <Dialog title="MCP Marketplace" onClose={onClose} width={90}>
       <Box flexDirection="column" paddingX={1}>
         {/* Search box */}
         <Box flexDirection="column" marginBottom={1}>
@@ -283,8 +278,7 @@ export function MarketplaceDialog({ onClose }: MarketplaceDialogProps) {
             <Text dimColor>
               {isSearchFocused
                 ? 'Type to search, Enter to finish, Esc to cancel'
-                : '↑↓: Navigate | Enter: Install | /: Search | Esc: Close'
-              }
+                : '↑↓: Navigate | Enter: Install | /: Search | Esc: Close'}
             </Text>
           </Box>
         </Box>
@@ -322,9 +316,7 @@ export function MarketplaceDialog({ onClose }: MarketplaceDialogProps) {
             {/* Empty state */}
             {filteredServers.length === 0 && (
               <Box marginY={2}>
-                <Text dimColor>
-                  No servers found matching "{searchQuery}"
-                </Text>
+                <Text dimColor>No servers found matching "{searchQuery}"</Text>
               </Box>
             )}
 
@@ -342,9 +334,7 @@ export function MarketplaceDialog({ onClose }: MarketplaceDialogProps) {
 
         {/* Footer actions */}
         <Box marginTop={2} borderStyle="single" borderColor="gray" paddingX={1}>
-          <Text dimColor>
-            💡 Tip: Use arrow keys to navigate, Enter to install, / to search
-          </Text>
+          <Text dimColor>💡 Tip: Use arrow keys to navigate, Enter to install, / to search</Text>
         </Box>
       </Box>
     </Dialog>

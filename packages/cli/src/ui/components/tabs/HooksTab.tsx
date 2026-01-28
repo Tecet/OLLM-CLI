@@ -22,7 +22,7 @@ const getCategoryIcon = (categoryName: string): string => {
     'Model Events': '🧠',
     'Tool Events': '🔧',
     'Compression Events': '📦',
-    'Notifications': '🔔',
+    Notifications: '🔔',
     'File Events': '📝',
     'Prompt Events': '💬',
     'User Triggered': '👤',
@@ -47,40 +47,41 @@ export interface HooksTabProps {
 
 /**
  * HooksTab component
- * 
+ *
  * Main container for the Hooks Panel UI with two-column layout:
  * - Left (30%): Hook list organized by category with Exit item
  * - Right (70%): Detailed information for selected hook
- * 
+ *
  * Features:
  * - Windowed rendering for large hook lists
  * - Keyboard navigation (↑↓ for navigation, ←→/Enter for toggle)
  * - Enable/disable hooks with visual indicators (● enabled, ○ disabled)
  * - Dialog state management for Add/Edit/Delete/Test operations
- * 
+ *
  * Requirements: 1.1, 1.2, 1.3
  */
 export function HooksTab({ windowSize = 30, windowWidth }: HooksTabProps) {
   const { state: uiState } = useUI();
   const { isFocused, exitToNavBar } = useFocusManager();
   const { state: hooksState, toggleHook, isHookEnabled, refreshHooks } = useHooks();
-  
+
   // Calculate absolute widths if windowWidth is provided
   const absoluteLeftWidth = windowWidth ? Math.floor(windowWidth * 0.3) : undefined;
-  const absoluteRightWidth = windowWidth && absoluteLeftWidth ? (windowWidth - absoluteLeftWidth) : undefined;
+  const absoluteRightWidth =
+    windowWidth && absoluteLeftWidth ? windowWidth - absoluteLeftWidth : undefined;
 
   // Get HookRegistry instance for checking editability
   const hookRegistry = useMemo(() => new HookRegistry(), []);
-  
+
   // Check if this panel has focus
   const hasFocus = isFocused('hooks-panel');
-  
+
   // Navigation state
   const [selectedCategoryIndex, setSelectedCategoryIndex] = useState(0);
   const [selectedHookIndex, setSelectedHookIndex] = useState(0);
   const [scrollOffset, setScrollOffset] = useState(0);
   const [isOnExitItem, setIsOnExitItem] = useState(false);
-  
+
   // Dialog state management
   const [dialogState, setDialogState] = useState<{
     type: 'add' | 'edit' | 'delete' | 'test' | null;
@@ -102,7 +103,7 @@ export function HooksTab({ windowSize = 30, windowWidth }: HooksTabProps) {
     }> = [];
 
     let position = 0;
-    
+
     // Add Exit item at position 0
     items.push({
       type: 'exit',
@@ -131,14 +132,14 @@ export function HooksTab({ windowSize = 30, windowWidth }: HooksTabProps) {
 
     // Filter to visible window
     return items.filter(
-      item => item.position >= scrollOffset && item.position < scrollOffset + windowSize
+      (item) => item.position >= scrollOffset && item.position < scrollOffset + windowSize
     );
   }, [hooksState.categories, scrollOffset, windowSize]);
 
   // Get currently selected hook
   const selectedHook = useMemo(() => {
     if (isOnExitItem) return null;
-    
+
     if (selectedCategoryIndex >= 0 && selectedCategoryIndex < hooksState.categories.length) {
       const category = hooksState.categories[selectedCategoryIndex];
       if (selectedHookIndex >= 0 && selectedHookIndex < category.hooks.length) {
@@ -154,13 +155,13 @@ export function HooksTab({ windowSize = 30, windowWidth }: HooksTabProps) {
       // Already at Exit, can't go up
       return;
     }
-    
+
     if (selectedHookIndex > 0) {
-      setSelectedHookIndex(prev => prev - 1);
+      setSelectedHookIndex((prev) => prev - 1);
     } else if (selectedCategoryIndex > 0) {
       // Move to previous category's last hook
       const prevCategory = hooksState.categories[selectedCategoryIndex - 1];
-      setSelectedCategoryIndex(prev => prev - 1);
+      setSelectedCategoryIndex((prev) => prev - 1);
       setSelectedHookIndex(prevCategory.hooks.length - 1);
     } else {
       // At first hook of first category, move to Exit
@@ -177,15 +178,15 @@ export function HooksTab({ windowSize = 30, windowWidth }: HooksTabProps) {
       setSelectedHookIndex(0);
       return;
     }
-    
+
     const currentCategory = hooksState.categories[selectedCategoryIndex];
     if (!currentCategory) return;
-    
+
     if (selectedHookIndex < currentCategory.hooks.length - 1) {
-      setSelectedHookIndex(prev => prev + 1);
+      setSelectedHookIndex((prev) => prev + 1);
     } else if (selectedCategoryIndex < hooksState.categories.length - 1) {
       // Move to next category's first hook
-      setSelectedCategoryIndex(prev => prev + 1);
+      setSelectedCategoryIndex((prev) => prev + 1);
       setSelectedHookIndex(0);
     }
   };
@@ -196,7 +197,7 @@ export function HooksTab({ windowSize = 30, windowWidth }: HooksTabProps) {
       exitToNavBar();
       return;
     }
-    
+
     if (selectedHook) {
       toggleHook(selectedHook.id);
     }
@@ -251,9 +252,7 @@ export function HooksTab({ windowSize = 30, windowWidth }: HooksTabProps) {
       // Close dialog
       closeDialog();
     } catch (error) {
-      throw new Error(
-        error instanceof Error ? error.message : 'Failed to create hook'
-      );
+      throw new Error(error instanceof Error ? error.message : 'Failed to create hook');
     }
   };
 
@@ -266,9 +265,7 @@ export function HooksTab({ windowSize = 30, windowWidth }: HooksTabProps) {
       // Close dialog
       closeDialog();
     } catch (error) {
-      throw new Error(
-        error instanceof Error ? error.message : 'Failed to update hook'
-      );
+      throw new Error(error instanceof Error ? error.message : 'Failed to update hook');
     }
   };
 
@@ -283,49 +280,50 @@ export function HooksTab({ windowSize = 30, windowWidth }: HooksTabProps) {
       // Close dialog
       closeDialog();
     } catch (error) {
-      throw new Error(
-        error instanceof Error ? error.message : 'Failed to delete hook'
-      );
+      throw new Error(error instanceof Error ? error.message : 'Failed to delete hook');
     }
   };
 
   // Handle keyboard input
-  useInput((input, key) => {
-    // Handle dialog keyboard input
-    if (dialogState.type !== null) {
-      if (key.escape || input === 'c' || input === 'C') {
-        closeDialog();
-      } else if (input === 's' || input === 'S') {
-        // Save action handled by dialog component
-      } else if (input === 'd' || input === 'D') {
-        // Delete action handled by dialog component
+  useInput(
+    (input, key) => {
+      // Handle dialog keyboard input
+      if (dialogState.type !== null) {
+        if (key.escape || input === 'c' || input === 'C') {
+          closeDialog();
+        } else if (input === 's' || input === 'S') {
+          // Save action handled by dialog component
+        } else if (input === 'd' || input === 'D') {
+          // Delete action handled by dialog component
+        }
+        return;
       }
-      return;
-    }
 
-    // Allow ESC to bubble to global handler when no dialog is open
-    if (key.escape) return;
+      // Allow ESC to bubble to global handler when no dialog is open
+      if (key.escape) return;
 
-    // Handle navigation
-    if (key.upArrow) {
-      handleNavigateUp();
-    } else if (key.downArrow) {
-      handleNavigateDown();
-    } else if (key.leftArrow || key.rightArrow || key.return) {
-      handleToggleCurrent();
-    } else if (input === '0') {
-      // '0' still works as shortcut to exit
-      exitToNavBar();
-    } else if (input === 'a' || input === 'A') {
-      openAddDialog();
-    } else if (input === 'e' || input === 'E') {
-      openEditDialog();
-    } else if (input === 'd' || input === 'D') {
-      openDeleteDialog();
-    } else if (input === 't' || input === 'T') {
-      openTestDialog();
-    }
-  }, { isActive: hasFocus });
+      // Handle navigation
+      if (key.upArrow) {
+        handleNavigateUp();
+      } else if (key.downArrow) {
+        handleNavigateDown();
+      } else if (key.leftArrow || key.rightArrow || key.return) {
+        handleToggleCurrent();
+      } else if (input === '0') {
+        // '0' still works as shortcut to exit
+        exitToNavBar();
+      } else if (input === 'a' || input === 'A') {
+        openAddDialog();
+      } else if (input === 'e' || input === 'E') {
+        openEditDialog();
+      } else if (input === 'd' || input === 'D') {
+        openDeleteDialog();
+      } else if (input === 't' || input === 'T') {
+        openTestDialog();
+      }
+    },
+    { isActive: hasFocus }
+  );
 
   // Auto-scroll to keep selected item visible
   useEffect(() => {
@@ -345,7 +343,14 @@ export function HooksTab({ windowSize = 30, windowWidth }: HooksTabProps) {
     } else if (currentPosition >= scrollOffset + windowSize) {
       setScrollOffset(currentPosition - windowSize + 1);
     }
-  }, [selectedCategoryIndex, selectedHookIndex, hooksState.categories, scrollOffset, windowSize, isOnExitItem]);
+  }, [
+    selectedCategoryIndex,
+    selectedHookIndex,
+    hooksState.categories,
+    scrollOffset,
+    windowSize,
+    isOnExitItem,
+  ]);
 
   // Loading state with enhanced styling
   if (hooksState.isLoading) {
@@ -364,13 +369,11 @@ export function HooksTab({ windowSize = 30, windowWidth }: HooksTabProps) {
       <Box flexDirection="column" padding={2}>
         <Box borderStyle="round" borderColor="red" paddingX={2} paddingY={1}>
           <Text color="redBright" bold>
-            ⚠️  Error loading hooks
+            ⚠️ Error loading hooks
           </Text>
         </Box>
         <Box marginTop={1} paddingLeft={2}>
-          <Text color={uiState.theme.text.secondary}>
-            {hooksState.error}
-          </Text>
+          <Text color={uiState.theme.text.secondary}>{hooksState.error}</Text>
         </Box>
       </Box>
     );
@@ -387,7 +390,11 @@ export function HooksTab({ windowSize = 30, windowWidth }: HooksTabProps) {
         </Box>
         <Box marginTop={2}>
           <Text color={uiState.theme.text.secondary}>
-            Press <Text color="cyan" bold>A</Text> to add a new hook
+            Press{' '}
+            <Text color="cyan" bold>
+              A
+            </Text>{' '}
+            to add a new hook
           </Text>
         </Box>
       </Box>
@@ -405,20 +412,29 @@ export function HooksTab({ windowSize = 30, windowWidth }: HooksTabProps) {
             </Text>
           </Box>
           <Box flexShrink={1} marginLeft={1} flexDirection="column">
-            <Text wrap="wrap" color={hasFocus ? uiState.theme.text.primary : uiState.theme.text.secondary} dimColor={!hasFocus}>
-              ↑↓:Nav {ACTION_ICONS.toggle}Enter:Toggle {ACTION_ICONS.add}A:Add {ACTION_ICONS.edit}E:Edit {ACTION_ICONS.delete}D:Del
+            <Text
+              wrap="wrap"
+              color={hasFocus ? uiState.theme.text.primary : uiState.theme.text.secondary}
+              dimColor={!hasFocus}
+            >
+              ↑↓:Nav {ACTION_ICONS.toggle}Enter:Toggle {ACTION_ICONS.add}A:Add {ACTION_ICONS.edit}
+              E:Edit {ACTION_ICONS.delete}D:Del
             </Text>
-            <Text wrap="wrap" color={hasFocus ? uiState.theme.text.primary : uiState.theme.text.secondary} dimColor={!hasFocus}>
+            <Text
+              wrap="wrap"
+              color={hasFocus ? uiState.theme.text.primary : uiState.theme.text.secondary}
+              dimColor={!hasFocus}
+            >
               {ACTION_ICONS.test}T:Test {ACTION_ICONS.exit}0/Esc:Exit
             </Text>
           </Box>
         </Box>
-        
+
         {/* Show corrupted hooks warning with enhanced styling */}
         {hooksState.corruptedHooks.length > 0 && (
           <Box marginTop={1} paddingX={1} borderStyle="round" borderColor="yellow">
             <Text color="yellow" bold>
-              ⚠️  {hooksState.corruptedHooks.length} corrupted hook(s) found
+              ⚠️ {hooksState.corruptedHooks.length} corrupted hook(s) found
             </Text>
           </Box>
         )}
@@ -427,17 +443,22 @@ export function HooksTab({ windowSize = 30, windowWidth }: HooksTabProps) {
       {/* Two-column layout */}
       <Box flexGrow={1} overflow="hidden" width="100%">
         {/* Left column: Hook list (30%) with enhanced styling */}
-        <Box 
-          flexDirection="column" 
-          width={absoluteLeftWidth ?? "30%"} 
-          borderStyle="single" 
+        <Box
+          flexDirection="column"
+          width={absoluteLeftWidth ?? '30%'}
+          borderStyle="single"
           borderColor={hasFocus ? 'cyan' : uiState.theme.border.primary}
           paddingY={1}
         >
           {/* Scroll indicator at top - STICKY with improved styling */}
           {scrollOffset > 0 && (
             <>
-              <Box justifyContent="center" paddingX={1} borderStyle="round" borderColor={uiState.theme.text.secondary}>
+              <Box
+                justifyContent="center"
+                paddingX={1}
+                borderStyle="round"
+                borderColor={uiState.theme.text.secondary}
+              >
                 <Text color="cyan" bold>
                   ▲ More above
                 </Text>
@@ -457,13 +478,21 @@ export function HooksTab({ windowSize = 30, windowWidth }: HooksTabProps) {
                     <Box paddingY={0}>
                       <Text
                         bold={isOnExitItem && hasFocus}
-                        color={isOnExitItem && hasFocus ? uiState.theme.text.accent : uiState.theme.text.primary}
+                        color={
+                          isOnExitItem && hasFocus
+                            ? uiState.theme.text.accent
+                            : uiState.theme.text.primary
+                        }
                       >
                         {ACTION_ICONS.exit} Exit
                       </Text>
                     </Box>
                     <Text> </Text>
-                    <Box borderStyle="single" borderColor={uiState.theme.border.primary} width="100%">
+                    <Box
+                      borderStyle="single"
+                      borderColor={uiState.theme.border.primary}
+                      width="100%"
+                    >
                       <Text> </Text>
                     </Box>
                     <Text> </Text>
@@ -471,15 +500,19 @@ export function HooksTab({ windowSize = 30, windowWidth }: HooksTabProps) {
                 );
               } else if (item.type === 'category') {
                 const category = hooksState.categories[item.categoryIndex];
-                
+
                 const hasVisibleHooks = visibleItems.some(
-                  vi => vi.type === 'hook' && vi.categoryIndex === item.categoryIndex
+                  (vi) => vi.type === 'hook' && vi.categoryIndex === item.categoryIndex
                 );
 
                 if (!hasVisibleHooks) return null;
 
                 return (
-                  <Box key={`cat-${item.categoryIndex}`} marginTop={item.categoryIndex > 0 ? 1 : 0} paddingY={0}>
+                  <Box
+                    key={`cat-${item.categoryIndex}`}
+                    marginTop={item.categoryIndex > 0 ? 1 : 0}
+                    paddingY={0}
+                  >
                     <Text bold color="cyan">
                       {getCategoryIcon(category.name)} {category.name}
                     </Text>
@@ -490,7 +523,11 @@ export function HooksTab({ windowSize = 30, windowWidth }: HooksTabProps) {
                 const category = hooksState.categories[item.categoryIndex];
                 const hook = category.hooks[item.hookIndex!];
                 const isSelectedCategory = item.categoryIndex === selectedCategoryIndex;
-                const isHookSelected = hasFocus && !isOnExitItem && isSelectedCategory && item.hookIndex === selectedHookIndex;
+                const isHookSelected =
+                  hasFocus &&
+                  !isOnExitItem &&
+                  isSelectedCategory &&
+                  item.hookIndex === selectedHookIndex;
                 const isEnabled = isHookEnabled(hook.id);
 
                 return (
@@ -511,7 +548,12 @@ export function HooksTab({ windowSize = 30, windowWidth }: HooksTabProps) {
           {scrollOffset + windowSize < totalItems && (
             <>
               <Text> </Text>
-              <Box justifyContent="center" paddingX={1} borderStyle="round" borderColor={uiState.theme.text.secondary}>
+              <Box
+                justifyContent="center"
+                paddingX={1}
+                borderStyle="round"
+                borderColor={uiState.theme.text.secondary}
+              >
                 <Text color="cyan" bold>
                   ▼ More below
                 </Text>
@@ -521,12 +563,12 @@ export function HooksTab({ windowSize = 30, windowWidth }: HooksTabProps) {
         </Box>
 
         {/* Right column: Hook details (70%) with enhanced styling */}
-        <Box 
-          flexDirection="column" 
-          width={absoluteRightWidth ?? "70%"} 
-          borderStyle="single" 
-          borderColor={uiState.theme.border.primary} 
-          paddingX={2} 
+        <Box
+          flexDirection="column"
+          width={absoluteRightWidth ?? '70%'}
+          borderStyle="single"
+          borderColor={uiState.theme.border.primary}
+          paddingX={2}
           paddingY={2}
         >
           {selectedHook ? (
@@ -559,9 +601,7 @@ export function HooksTab({ windowSize = 30, windowWidth }: HooksTabProps) {
                 </Text>
               </Box>
               <Box paddingLeft={2} marginTop={0}>
-                <Text color={uiState.theme.text.primary}>
-                  {selectedHook.command}
-                </Text>
+                <Text color={uiState.theme.text.primary}>{selectedHook.command}</Text>
               </Box>
 
               {/* Hook arguments with icon */}
@@ -573,9 +613,7 @@ export function HooksTab({ windowSize = 30, windowWidth }: HooksTabProps) {
                     </Text>
                   </Box>
                   <Box paddingLeft={2} marginTop={0}>
-                    <Text color={uiState.theme.text.primary}>
-                      {selectedHook.args.join(' ')}
-                    </Text>
+                    <Text color={uiState.theme.text.primary}>{selectedHook.args.join(' ')}</Text>
                   </Box>
                 </>
               )}
@@ -593,9 +631,7 @@ export function HooksTab({ windowSize = 30, windowWidth }: HooksTabProps) {
                   📦 Source:
                 </Text>
                 <Box marginLeft={1}>
-                  <Text color={uiState.theme.text.secondary}>
-                    {selectedHook.source}
-                  </Text>
+                  <Text color={uiState.theme.text.secondary}>{selectedHook.source}</Text>
                 </Box>
               </Box>
 
@@ -606,9 +642,7 @@ export function HooksTab({ windowSize = 30, windowWidth }: HooksTabProps) {
                     🔌 Extension:
                   </Text>
                   <Box marginLeft={1}>
-                    <Text color={uiState.theme.text.secondary}>
-                      {selectedHook.extensionName}
-                    </Text>
+                    <Text color={uiState.theme.text.secondary}>{selectedHook.extensionName}</Text>
                   </Box>
                 </Box>
               )}
@@ -621,11 +655,14 @@ export function HooksTab({ windowSize = 30, windowWidth }: HooksTabProps) {
               </Box>
 
               {/* Hook status with enhanced visual distinction */}
-              <Box marginTop={1} paddingX={1} paddingY={1} borderStyle="round" borderColor={isHookEnabled(selectedHook.id) ? 'green' : 'red'}>
-                <Text 
-                  color={isHookEnabled(selectedHook.id) ? 'green' : 'red'} 
-                  bold
-                >
+              <Box
+                marginTop={1}
+                paddingX={1}
+                paddingY={1}
+                borderStyle="round"
+                borderColor={isHookEnabled(selectedHook.id) ? 'green' : 'red'}
+              >
+                <Text color={isHookEnabled(selectedHook.id) ? 'green' : 'red'} bold>
                   {isHookEnabled(selectedHook.id) ? '✓ Enabled' : '✗ Disabled'}
                 </Text>
               </Box>
@@ -633,7 +670,9 @@ export function HooksTab({ windowSize = 30, windowWidth }: HooksTabProps) {
           ) : (
             <Box flexDirection="column" alignItems="center" justifyContent="center" height="100%">
               <Text color={uiState.theme.text.secondary} dimColor>
-                {isOnExitItem ? '⬅️  Press Enter or Esc to exit' : '👆 Select a hook to view details'}
+                {isOnExitItem
+                  ? '⬅️  Press Enter or Esc to exit'
+                  : '👆 Select a hook to view details'}
               </Text>
             </Box>
           )}
@@ -642,22 +681,12 @@ export function HooksTab({ windowSize = 30, windowWidth }: HooksTabProps) {
 
       {/* TODO: Render dialogs when dialog components are implemented */}
       {dialogState.type === 'add' && (
-        <Box
-          alignItems="center"
-          justifyContent="center"
-          marginTop={2}
-          marginBottom={2}
-        >
+        <Box alignItems="center" justifyContent="center" marginTop={2} marginBottom={2}>
           <AddHookDialog onSave={handleAddHook} onCancel={closeDialog} />
         </Box>
       )}
       {dialogState.type === 'edit' && selectedHook && (
-        <Box
-          alignItems="center"
-          justifyContent="center"
-          marginTop={2}
-          marginBottom={2}
-        >
+        <Box alignItems="center" justifyContent="center" marginTop={2} marginBottom={2}>
           <EditHookDialog
             hook={selectedHook}
             onSave={handleEditHook}
@@ -667,12 +696,7 @@ export function HooksTab({ windowSize = 30, windowWidth }: HooksTabProps) {
         </Box>
       )}
       {dialogState.type === 'delete' && selectedHook && (
-        <Box
-          alignItems="center"
-          justifyContent="center"
-          marginTop={2}
-          marginBottom={2}
-        >
+        <Box alignItems="center" justifyContent="center" marginTop={2} marginBottom={2}>
           <DeleteConfirmationDialog
             hook={selectedHook}
             onConfirm={handleDeleteHook}
@@ -682,12 +706,7 @@ export function HooksTab({ windowSize = 30, windowWidth }: HooksTabProps) {
         </Box>
       )}
       {dialogState.type === 'test' && selectedHook && (
-        <Box
-          alignItems="center"
-          justifyContent="center"
-          marginTop={2}
-          marginBottom={2}
-        >
+        <Box alignItems="center" justifyContent="center" marginTop={2} marginBottom={2}>
           <TestHookDialog hook={selectedHook} onClose={closeDialog} />
         </Box>
       )}

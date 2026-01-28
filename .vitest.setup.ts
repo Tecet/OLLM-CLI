@@ -22,7 +22,7 @@ if (!process.env.VERBOSE_TESTS) {
 if (!console.Console) {
   (console as { Console?: typeof NodeConsole }).Console = NodeConsole;
 }
- 
+
 // Note: we avoid attempting to override `fc.assert` because some fast-check
 // builds expose a non-configurable `assert` property which causes runtime
 // errors when redefined. Rely on `fc.configureGlobal({ numRuns })` above and
@@ -55,11 +55,11 @@ function _sanitizeForLog(value: unknown, depth = 0): unknown {
     for (const k of Object.keys(anyVal)) {
       try {
         const v = anyVal[k];
-          if (typeof v === 'function') {
-            out[k] = '[Function]';
-          } else {
-            out[k] = _sanitizeForLog(v, depth + 1);
-          }
+        if (typeof v === 'function') {
+          out[k] = '[Function]';
+        } else {
+          out[k] = _sanitizeForLog(v, depth + 1);
+        }
       } catch {
         out[k] = '[Unserializable]';
       }
@@ -78,7 +78,7 @@ function _sanitizeForLog(value: unknown, depth = 0): unknown {
 try {
   // Use require to avoid ESM import complexity in the test setup file
   // and to ensure this runs in Node test harness.
-   
+
   const childProcess = require('child_process');
   const { resolve } = require('path');
 
@@ -120,7 +120,7 @@ try {
 } catch (err: unknown) {
   // If patching fails, do not break the test setup; tests will run with
   // original behavior (may be noisier on some platforms).
-  
+
   const errMsg = err instanceof Error ? err.message : String(err);
   console.warn('Failed to install spawn shim for tests:', errMsg);
 }

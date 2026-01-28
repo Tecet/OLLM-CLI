@@ -9,21 +9,25 @@ Each task builds on previous work and includes property-based tests to validate 
 ## Current Status (January 22, 2026)
 
 ### Implementation Progress
+
 - **Phase 1-6**: ✅ **COMPLETE** (Foundation, Core, Focus, Viewer/Editor, File Ops, Polish)
 - **Phase 7**: ⚠️ **PARTIALLY COMPLETE** (Vision service implemented, tests pending)
 - **Phase 8**: ✅ **COMPLETE** (Integration complete)
 
 ### Test Coverage Status
+
 - **Unit Tests**: ✅ Most services have unit tests
 - **Property-Based Tests**: ⚠️ **INCOMPLETE** - Many correctness properties not yet tested
 - **Integration Tests**: ⚠️ **INCOMPLETE** - Some workflows tested, others pending
 
 ### Recent Additions (Today)
+
 1. ✅ **Workspace Panel** - 3-panel layout with focused files, file tree, and keybinds
 2. ✅ **File Search Dialog** - Content search using grep tool (Ctrl+F)
 3. ✅ **Comprehensive Bug Fixes** - Fixed height, navigation, scrolling, file visibility
 
 ### Known Gaps
+
 1. ⏳ Property-based tests for most correctness properties (Properties 1-42)
 2. ⏳ Batch operations (multi-select, batch delete/rename)
 3. ⏳ FileTreeService integration with ls tool
@@ -52,15 +56,12 @@ Each task builds on previous work and includes property-based tests to validate 
     - Implement `isPathInWorkspace()` for path validation
     - Implement `getProjectExcludePatterns()` for exclude pattern retrieval
     - _Requirements: 1.1, 1.3, 1.4_
-  
   - [x] 2.2 Write property test for workspace configuration parsing
     - **Property 1: Workspace Configuration Parsing Preserves All Valid Projects**
     - **Validates: Requirements 1.1, 1.3**
-  
   - [x] 2.3 Write property test for invalid project path handling
     - **Property 2: Invalid Project Paths Are Gracefully Skipped**
     - **Validates: Requirements 1.2**
-  
   - [x] 2.4 Write property test for active project selection
     - **Property 3: Active Project Selection Updates Context**
     - **Validates: Requirements 1.4**
@@ -72,11 +73,9 @@ Each task builds on previous work and includes property-based tests to validate 
     - Implement `isWithinWorkspace()` for workspace boundary checks
     - Implement `rejectTraversal()` to throw on `../` sequences
     - _Requirements: 4.5, 10.1, 10.2_
-  
   - [ ] 3.2 Write property test for path traversal rejection
     - **Property 16: Path Traversal Is Rejected**
     - **Validates: Requirements 4.5, 10.1**
-  
   - [ ] 3.3 Write property test for workspace boundary enforcement
     - **Property 35: Workspace Mode Rejects External Paths**
     - **Validates: Requirements 10.2**
@@ -102,11 +101,9 @@ Each task builds on previous work and includes property-based tests to validate 
     - Implement `findNodeByPath()` for tree navigation
     - Apply exclude patterns during tree building
     - _Requirements: 2.1, 9.1, 9.4_
-  
   - [ ] 6.2 Write property test for virtual scrolling
     - **Property 4: Virtual Scrolling Renders Only Visible Window**
     - **Validates: Requirements 2.1, 9.1**
-  
   - [ ] 6.3 Write property test for lazy loading
     - **Property 34: Collapsed Directories Are Not Loaded**
     - **Validates: Requirements 9.4**
@@ -119,7 +116,6 @@ Each task builds on previous work and includes property-based tests to validate 
     - Apply git status colors (green, yellow, grey)
     - Show focus indicators (📌) for focused files
     - _Requirements: 2.1, 2.6, 2.7, 3.1_
-  
   - [ ] 7.2 Write property test for file icon display
     - **Property 7: File Icons Are Displayed for All Nodes**
     - **Validates: Requirements 2.6**
@@ -133,11 +129,9 @@ Each task builds on previous work and includes property-based tests to validate 
     - Update cursor position and scroll offset
     - Debounce keyboard input (50ms)
     - _Requirements: 2.2, 2.3, 2.4, 2.5, 9.3_
-  
   - [ ] 8.2 Write property test for keyboard navigation
     - **Property 5: Keyboard Navigation Moves Cursor Correctly**
     - **Validates: Requirements 2.2, 2.3, 2.4, 2.5**
-  
   - [ ] 8.3 Write property test for input debouncing
     - **Property 33: Keyboard Input Is Debounced**
     - **Validates: Requirements 9.3**
@@ -150,15 +144,12 @@ Each task builds on previous work and includes property-based tests to validate 
     - Implement `isGitRepository()` to detect git repos
     - Handle non-git directories gracefully
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5_
-  
   - [ ] 9.2 Write property test for git status color mapping
     - **Property 6: Git Status Maps to Correct Colors**
     - **Validates: Requirements 2.7, 8.2, 8.3, 8.4**
-  
   - [ ] 9.3 Write property test for git status caching
     - **Property 31: Git Status Results Are Cached**
     - **Validates: Requirements 8.5**
-  
   - [ ] 9.4 Write property test for git repository detection
     - **Property 30: Git Status Is Queried for Repositories**
     - **Validates: Requirements 8.1**
@@ -178,23 +169,18 @@ Each task builds on previous work and includes property-based tests to validate 
     - Truncate files exceeding 8KB with warning
     - Sanitize content before injection
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 10.5_
-  
   - [ ] 11.2 Write property test for file focusing
     - **Property 8: Focusing a File Adds It to Focus List**
     - **Validates: Requirements 3.1**
-  
   - [ ] 11.3 Write property test for file truncation
     - **Property 9: Large Files Are Truncated at 8KB**
     - **Validates: Requirements 3.2**
-  
   - [ ] 11.4 Write property test for content injection
     - **Property 10: Focused File Content Is Injected Into Prompts**
     - **Validates: Requirements 3.3**
-  
   - [ ] 11.5 Write property test for focus/unfocus round-trip
     - **Property 11: Focus Then Unfocus Removes File**
     - **Validates: Requirements 3.4**
-  
   - [ ] 11.6 Write property test for content sanitization
     - **Property 37: File Content Is Sanitized Before LLM Injection**
     - **Validates: Requirements 10.5**
@@ -206,16 +192,15 @@ Each task builds on previous work and includes property-based tests to validate 
     - Display file sizes and truncation warnings
     - Show total focused content size
     - _Requirements: 3.5_
-  
   - [ ] 12.2 Write property test for focused files display
     - **Property 12: All Focused Files Appear in Context Panel**
     - **Validates: Requirements 3.5**
 
- - [x] 13. Integrate focus system with FileTreeView
-   Add focus/unfocus actions to keyboard shortcuts (e.g., 'f' to toggle focus)
-   Update FileTreeView to show focus indicators
-   Wire up FileFocusContext to FocusSystem
-   _Requirements: 3.1, 3.4_
+- [x] 13. Integrate focus system with FileTreeView
+      Add focus/unfocus actions to keyboard shortcuts (e.g., 'f' to toggle focus)
+      Update FileTreeView to show focus indicators
+      Wire up FileFocusContext to FocusSystem
+      _Requirements: 3.1, 3.4_
 
 - [x] 14. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
@@ -230,7 +215,6 @@ Each task builds on previous work and includes property-based tests to validate 
     - Render highlighted code in Ink
     - Handle files without recognized language
     - _Requirements: 5.4, 5.5_
-  
   - [ ] 15.2 Write property test for syntax highlighting
     - **Property 20: Syntax Highlighting Is Applied to Files**
     - **Validates: Requirements 5.4, 5.5**
@@ -243,15 +227,12 @@ Each task builds on previous work and includes property-based tests to validate 
     - Implement `waitForEditorExit()` to wait for editor to close
     - Implement `reloadFile()` to reload file content after editing
     - _Requirements: 5.1, 5.2, 5.3_
-  
   - [ ] 16.2 Write property test for editor spawning
     - **Property 18: Editor Integration Spawns Correct Editor**
     - **Validates: Requirements 5.1**
-  
   - [ ] 16.3 Write unit test for editor fallback
     - Test that nano/notepad is used when $EDITOR is not set
     - _Requirements: 5.2_
-  
   - [ ] 16.4 Write property test for file reload
     - **Property 19: File Content Is Reloaded After Editing**
     - **Validates: Requirements 5.3**
@@ -279,23 +260,18 @@ Each task builds on previous work and includes property-based tests to validate 
     - Validate permissions before operations
     - Display error messages on failure
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.6, 10.4_
-  
   - [ ] 19.2 Write property test for valid file operations
     - **Property 13: Valid File Operations Succeed**
     - **Validates: Requirements 4.1, 4.2**
-  
   - [ ] 19.3 Write property test for destructive operation confirmation
     - **Property 14: Destructive Operations Require Confirmation**
     - **Validates: Requirements 4.3, 10.3**
-  
   - [ ] 19.4 Write property test for copy path
     - **Property 15: Copy Path Writes Absolute Path to Clipboard**
     - **Validates: Requirements 4.4**
-  
   - [ ] 19.5 Write property test for failed operations
     - **Property 17: Failed Operations Display Error Messages**
     - **Validates: Requirements 4.6**
-  
   - [ ] 19.6 Write property test for permission validation
     - **Property 36: File Permissions Are Validated Before Operations**
     - **Validates: Requirements 10.4**
@@ -307,7 +283,6 @@ Each task builds on previous work and includes property-based tests to validate 
     - Wire up to file operation handlers
     - Show menu on keyboard shortcut (e.g., 'a' for actions)
     - _Requirements: 7.4_
-  
   - [ ] 20.2 Write property test for menu options
     - **Property 28: Quick Actions Menu Contains Required Options**
     - **Validates: Requirements 7.4**
@@ -331,15 +306,12 @@ Each task builds on previous work and includes property-based tests to validate 
     - Navigate to selected file
     - Track Quick Open history
     - _Requirements: 7.1, 7.2, 7.3, 12.4_
-  
   - [ ] 23.2 Write property test for fuzzy filtering
     - **Property 26: Quick Open Filters Files by Fuzzy Match**
     - **Validates: Requirements 7.2**
-  
   - [ ] 23.3 Write property test for file navigation
     - **Property 27: Quick Open Selection Navigates to File**
     - **Validates: Requirements 7.3**
-  
   - [ ] 23.4 Write property test for history tracking
     - **Property 41: Quick Open History Tracks Opened Files**
     - **Validates: Requirements 12.4**
@@ -350,7 +322,6 @@ Each task builds on previous work and includes property-based tests to validate 
     - Automatically expand tree to show referenced files
     - Add toggle for Follow Mode (e.g., 'F' key)
     - _Requirements: 7.5_
-  
   - [ ] 24.2 Write property test for Follow Mode expansion
     - **Property 29: Follow Mode Expands to Referenced Files**
     - **Validates: Requirements 7.5**
@@ -362,11 +333,9 @@ Each task builds on previous work and includes property-based tests to validate 
     - Save expanded directories, focused files, Quick Open history
     - Handle corrupted state files gracefully
     - _Requirements: 12.1, 12.2, 12.3, 12.5_
-  
   - [ ] 25.2 Write property test for state persistence round-trip
     - **Property 40: Explorer State Persistence Round-Trip**
     - **Validates: Requirements 12.1, 12.2, 12.3**
-  
   - [ ] 25.3 Write property test for corrupted config handling
     - **Property 42: Corrupted Configuration Resets to Default**
     - **Validates: Requirements 12.5**
@@ -378,15 +347,12 @@ Each task builds on previous work and includes property-based tests to validate 
     - Add loading indicators for operations >500ms
     - Add visual feedback for user actions
     - _Requirements: 11.1, 11.2, 11.4_
-  
   - [ ] 26.2 Write property test for mode display
     - **Property 38: Current Mode Is Displayed in Header**
     - **Validates: Requirements 11.1**
-  
   - [x] 26.3 Write unit test for help panel
     - Test that '?' key shows help panel
     - _Requirements: 11.2_
-  
   - [ ] 26.4 Write property test for loading indicators
     - **Property 39: Long Operations Display Loading Indicators**
     - **Validates: Requirements 11.4**
@@ -397,7 +363,6 @@ Each task builds on previous work and includes property-based tests to validate 
     - Implement memory monitoring for tree state
     - Add pagination for large directories
     - _Requirements: 9.2_
-  
   - [ ] 27.2 Write property test for large directory warnings
     - **Property 32: Large Directories Trigger Warnings**
     - **Validates: Requirements 9.2**
@@ -415,7 +380,6 @@ Each task builds on previous work and includes property-based tests to validate 
     - Dynamic height measurement using measureElement
     - Proper panel height calculations with useMemo
     - _Requirements: 3.5, 2.1, 11.2_
-  
   - [x] 37.2 Fix file tree navigation and scrolling
     - Fixed Enter key to expand directories
     - Fixed file visibility (both files and directories show)
@@ -423,7 +387,6 @@ Each task builds on previous work and includes property-based tests to validate 
     - Fixed cursor movement (↑↓ separate from ←→/Enter)
     - Added focus indicators (📌) for focused files
     - _Requirements: 2.2, 2.3, 2.4, 2.5, 3.1_
-  
   - [x] 37.3 Integrate WorkspacePanel into SidePanel
     - Added to SidePanel as "Workspace" tab
     - Accessible by switching from Tools to Workspace
@@ -435,29 +398,26 @@ Each task builds on previous work and includes property-based tests to validate 
     - Search file contents using grep tool
     - Regex pattern support
     - Case sensitivity toggle (Ctrl+C)
-    - File pattern filtering (*.ts, *.js, etc.)
+    - File pattern filtering (_.ts, _.js, etc.)
     - Results list with file:line:content preview
     - Keyboard navigation (↑↓ to navigate, Enter to select)
     - _Requirements: 7.1, 7.2_
-  
   - [x] 38.2 Integrate search dialog into FileTreeView
     - Added Ctrl+F keyboard shortcut to open search
     - Implemented result selection handler
     - Opens files at specific line numbers
     - Passes ToolRegistry from FileExplorerComponent
     - _Requirements: 7.1, 7.3_
-  
   - [ ] 38.3 Write property test for file search
     - **Property 43: File Search Returns Matching Lines**
     - **Validates: Requirements 7.1, 7.2**
 
-- [X] 28. Checkpoint - Ensure all tests pass
+- [x] 28. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ### Phase 7: Vision and Image Support (2-3 days)
 
 - [ ] 29. Implement VisionService
-
   - [x] 29.1 Create `VisionService.ts` with image processing
     - Implement `processImage()` to detect dimensions and format
     - Implement `resizeImage()` using sharp to resize images >2048px
@@ -466,27 +426,22 @@ Each task builds on previous work and includes property-based tests to validate 
     - Handle unsupported formats with error messages
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
     - **Status**: ✅ Service implemented, ⏳ tests pending
-  
   - [ ] 29.2 Write property test for image dimension detection
     - **Property 21: Image Dimensions Are Detected**
     - **Validates: Requirements 6.1**
     - **Status**: ⏳ Not implemented
-  
   - [ ] 29.3 Write property test for image resizing
     - **Property 22: Large Images Are Resized Proportionally**
     - **Validates: Requirements 6.2**
     - **Status**: ⏳ Not implemented
-  
   - [ ] 29.4 Write property test for base64 encoding
     - **Property 23: Image Encoding Produces Valid Base64**
     - **Validates: Requirements 6.3**
     - **Status**: ⏳ Not implemented
-  
   - [ ] 29.5 Write property test for supported formats
     - **Property 24: Supported Image Formats Are Processed**
     - **Validates: Requirements 6.4**
     - **Status**: ⏳ Not implemented
-  
   - [ ] 29.6 Write property test for unsupported format errors
     - **Property 25: Unsupported Image Formats Return Errors**
     - **Validates: Requirements 6.5**
@@ -500,7 +455,6 @@ Each task builds on previous work and includes property-based tests to validate 
     - Make service optional (only if puppeteer is installed)
     - _Requirements: 6.6_
     - **Status**: ⏳ Not implemented
-  
   - [ ] 30.2 Write property test for screenshot capture
     - **Property 26: Screenshot Service Captures Web Pages** (if enabled)
     - **Validates: Requirements 6.6**
@@ -534,12 +488,10 @@ Each task builds on previous work and includes property-based tests to validate 
     - Test: navigate tree → focus file → verify in focus panel → unfocus
     - _Requirements: 3.1, 3.4, 3.5_
     - **Status**: ⏳ Not implemented
-  
   - [ ] 34.2 Write integration test for file editing workflow
     - Test: navigate tree → open in editor → edit → reload → verify changes
     - _Requirements: 5.1, 5.3_
     - **Status**: ⏳ Not implemented
-  
   - [ ] 34.3 Write integration test for file operations workflow
     - Test: create file → rename → delete with confirmation
     - _Requirements: 4.1, 4.2, 4.3_
@@ -569,12 +521,10 @@ Each task builds on previous work and includes property-based tests to validate 
     - 'a' to select all
     - Selection counter in status bar
     - _Requirements: Future enhancement_
-  
   - [ ] 39.2 Implement batch delete
     - Ctrl+D to delete selected files
     - Confirmation dialog with count
     - _Requirements: Future enhancement_
-  
   - [ ] 39.3 Implement batch rename
     - Pattern-based renaming
     - Preview changes before applying
@@ -594,7 +544,6 @@ Each task builds on previous work and includes property-based tests to validate 
     - Option to reload automatically
     - Option to show diff
     - _Requirements: Future enhancement_
-  
   - [ ] 41.2 Install chokidar dependency
     - Add chokidar to package.json
     - _Requirements: Future enhancement_
@@ -606,7 +555,6 @@ Each task builds on previous work and includes property-based tests to validate 
     - Side-by-side view option
     - Accept/reject changes
     - _Requirements: Future enhancement_
-  
   - [ ] 42.2 Install diff dependency
     - Add diff package to package.json
     - _Requirements: Future enhancement_
@@ -624,6 +572,7 @@ Each task builds on previous work and includes property-based tests to validate 
 ## Summary of Current State (January 22, 2026)
 
 ### What's Working ✅
+
 - **Core Functionality**: File tree navigation, focus system, file operations
 - **UI Components**: FileTreeView, FocusedFilesPanel, QuickOpen, QuickActions, SyntaxViewer
 - **Services**: WorkspaceManager, FileTreeService, FocusSystem, GitStatusService, EditorIntegration, VisionService
@@ -632,6 +581,7 @@ Each task builds on previous work and includes property-based tests to validate 
 - **Build**: TypeScript compiles, all 345 tests passing
 
 ### What's Missing ⏳
+
 - **Property-Based Tests**: Most of the 42+ correctness properties not yet tested
 - **Integration Tests**: File focus workflow, editing workflow, operations workflow
 - **Vision Service Tests**: Service works but tests not written
@@ -642,6 +592,7 @@ Each task builds on previous work and includes property-based tests to validate 
 - **Error Handling Review**: Comprehensive error path review
 
 ### Test Coverage Gap
+
 - **Current**: ~345 unit tests passing
 - **Missing**: ~40+ property-based tests for correctness properties
 - **Missing**: ~3 integration tests for key workflows
@@ -649,12 +600,14 @@ Each task builds on previous work and includes property-based tests to validate 
 - **Target**: 80% line coverage + all correctness properties tested
 
 ### Priority for Next Session
+
 1. **High Priority**: Property-based tests for core functionality (Properties 1-20)
 2. **Medium Priority**: Integration tests for key workflows (Tasks 34.1-34.3)
 3. **Medium Priority**: Vision service tests (Tasks 29.2-29.6)
 4. **Low Priority**: Batch operations, file watching, diff viewer (Future enhancements)
 
 ### Estimated Effort to Complete
+
 - **Property-Based Tests**: 8-10 hours (40+ properties)
 - **Integration Tests**: 2-3 hours (3 workflows)
 - **Vision Service Tests**: 2-3 hours (6 properties)
@@ -662,6 +615,7 @@ Each task builds on previous work and includes property-based tests to validate 
 - **Total**: ~13-18 hours to reach full test coverage
 
 ### Documentation Status
+
 - ✅ Design document: Complete and up-to-date
 - ✅ Tasks document: Updated with current status
 - ✅ Implementation guides: INTEGRATION_GUIDE.md, USAGE.md

@@ -1,6 +1,6 @@
 /**
  * Global Keyboard Shortcuts Hook
- * 
+ *
  * Centralizes all global keyboard shortcuts in one place for better maintainability.
  * This hook handles:
  * - Tab navigation (Ctrl+1-9)
@@ -8,12 +8,12 @@
  * - Chat shortcuts (clear, save, cancel)
  * - Scroll shortcuts (Ctrl+PageUp/Down)
  * - Focus management shortcuts (Tab, Shift+Tab, focus shortcuts)
- * 
+ *
  * Architecture:
  * - Uses keybinds configuration for customizable shortcuts
  * - Integrates with FocusContext for hierarchical navigation
  * - Respects chat state for context-aware behavior
- * 
+ *
  * @example
  * ```typescript
  * function App() {
@@ -43,11 +43,11 @@ interface UseGlobalKeyboardShortcutsOptions {
 
 /**
  * Hook that registers all global keyboard shortcuts
- * 
+ *
  * This hook should be called once at the top level of the application.
  * It handles all global shortcuts that should work regardless of which
  * component has focus.
- * 
+ *
  * @param options - Optional callbacks for specific actions
  */
 export function useGlobalKeyboardShortcuts(options: UseGlobalKeyboardShortcutsOptions = {}) {
@@ -57,30 +57,27 @@ export function useGlobalKeyboardShortcuts(options: UseGlobalKeyboardShortcutsOp
   const focusManager = useFocusManager();
   const { activeDestination, setActiveDestination } = useInputRouting();
 
-  const {
-    onToggleDebug,
-    onCommandPalette,
-    onSaveSession,
-    onScrollUp,
-    onScrollDown,
-  } = options;
+  const { onToggleDebug, onCommandPalette, onSaveSession, onScrollUp, onScrollDown } = options;
 
   /**
    * Handle tab switching
    * Switches to the specified tab and focuses the nav bar
    */
-  const handleTabSwitch = useCallback((tab: TabType) => {
-    setActiveTab(tab);
-    focusManager.setFocus('nav-bar');
-    focusManager.setMode('browse');
-  }, [setActiveTab, focusManager]);
+  const handleTabSwitch = useCallback(
+    (tab: TabType) => {
+      setActiveTab(tab);
+      focusManager.setFocus('nav-bar');
+      focusManager.setMode('browse');
+    },
+    [setActiveTab, focusManager]
+  );
 
   /**
    * Handle ESC key - hierarchical navigation with cancellation side effect
-   * 
+   *
    * ESC always performs hierarchical navigation (moving up one level).
    * If generation is in progress, it also cancels the generation as a side effect.
-   * 
+   *
    * Navigation flow:
    * - Level 3 (Modal) → Level 2 (Parent)
    * - Level 2 (Tab Content) → Level 1 (Navbar-Chat)
@@ -91,97 +88,101 @@ export function useGlobalKeyboardShortcuts(options: UseGlobalKeyboardShortcutsOp
     if (chatState.streaming || chatState.waitingForResponse) {
       cancelGeneration();
     }
-    
+
     // Primary action: Always perform hierarchical navigation
     focusManager.exitOneLevel();
   }, [chatState.streaming, chatState.waitingForResponse, cancelGeneration, focusManager]);
 
   // Register global keyboard shortcuts
-  useInput((input, key) => {
-    const isTerminalInput = activeDestination === 'terminal1' || activeDestination === 'terminal2';
-    if (isTerminalInput) {
-      if (key.escape) {
-        setActiveDestination('llm');
-        focusManager.setFocus('chat-input');
-        focusManager.setMode('browse');
+  useInput(
+    (input, key) => {
+      const isTerminalInput =
+        activeDestination === 'terminal1' || activeDestination === 'terminal2';
+      if (isTerminalInput) {
+        if (key.escape) {
+          setActiveDestination('llm');
+          focusManager.setFocus('chat-input');
+          focusManager.setMode('browse');
+          return;
+        }
+        if (isKey(input, key, activeKeybinds.global.cycleNext)) {
+          focusManager.cycleFocus('next');
+          return;
+        }
+        if (isKey(input, key, activeKeybinds.global.cyclePrev)) {
+          focusManager.cycleFocus('previous');
+          return;
+        }
         return;
       }
-      if (isKey(input, key, activeKeybinds.global.cycleNext)) {
+
+      // Tab Navigation (Ctrl+1-9)
+      if (isKey(input, key, activeKeybinds.tabNavigation.tabChat)) {
+        handleTabSwitch('chat');
+      } else if (isKey(input, key, activeKeybinds.tabNavigation.tabTools)) {
+        handleTabSwitch('tools');
+      } else if (isKey(input, key, activeKeybinds.tabNavigation.tabHooks)) {
+        handleTabSwitch('hooks');
+      } else if (isKey(input, key, activeKeybinds.tabNavigation.tabFiles)) {
+        handleTabSwitch('files');
+      } else if (isKey(input, key, activeKeybinds.tabNavigation.tabSearch)) {
+        handleTabSwitch('search');
+      } else if (isKey(input, key, activeKeybinds.tabNavigation.tabDocs)) {
+        handleTabSwitch('docs');
+      } else if (isKey(input, key, activeKeybinds.tabNavigation.tabGithub)) {
+        handleTabSwitch('github');
+      } else if (isKey(input, key, activeKeybinds.tabNavigation.tabMcp)) {
+        handleTabSwitch('mcp');
+      } else if (isKey(input, key, activeKeybinds.tabNavigation.tabSettings)) {
+        handleTabSwitch('settings');
+      }
+
+      // Layout Shortcuts
+      else if (isKey(input, key, activeKeybinds.layout.togglePanel)) {
+        toggleSidePanel();
+      } else if (isKey(input, key, activeKeybinds.layout.commandPalette)) {
+        onCommandPalette?.();
+      } else if (isKey(input, key, activeKeybinds.layout.toggleDebug)) {
+        onToggleDebug?.();
+      }
+
+      // Chat Shortcuts
+      else if (isKey(input, key, activeKeybinds.chat.clearChat)) {
+        clearChat();
+      } else if (isKey(input, key, activeKeybinds.chat.saveSession)) {
+        onSaveSession?.();
+      }
+
+      // ESC key - hierarchical navigation (with cancellation side effect when streaming)
+      else if (key.escape) {
+        handleEscape();
+      }
+
+      // Scroll Chat Shortcuts
+      // Note: These use hardcoded keys as they're not in the keybinds config
+      else if (isKey(input, key, 'ctrl+pageup') || isKey(input, key, 'meta+up')) {
+        onScrollUp?.();
+      } else if (isKey(input, key, 'ctrl+pagedown') || isKey(input, key, 'meta+down')) {
+        onScrollDown?.();
+      }
+
+      // Focus Management Shortcuts
+      else if (isKey(input, key, activeKeybinds.global.cycleNext)) {
         focusManager.cycleFocus('next');
-        return;
-      }
-      if (isKey(input, key, activeKeybinds.global.cyclePrev)) {
+      } else if (isKey(input, key, activeKeybinds.global.cyclePrev)) {
         focusManager.cycleFocus('previous');
-        return;
+      } else if (isKey(input, key, activeKeybinds.global.focusChatInput)) {
+        focusManager.setFocus('chat-input');
+      } else if (isKey(input, key, activeKeybinds.global.focusNavigation)) {
+        focusManager.setFocus('nav-bar');
+      } else if (isKey(input, key, activeKeybinds.global.focusContext)) {
+        focusManager.setFocus('context-panel');
+      } else if (isKey(input, key, activeKeybinds.global.focusFileTree)) {
+        focusManager.setFocus('file-tree');
+      } else if (isKey(input, key, activeKeybinds.global.focusFunctions)) {
+        focusManager.setFocus('functions');
       }
-      return;
-    }
-
-    // Tab Navigation (Ctrl+1-9)
-    if (isKey(input, key, activeKeybinds.tabNavigation.tabChat)) {
-      handleTabSwitch('chat');
-    } else if (isKey(input, key, activeKeybinds.tabNavigation.tabTools)) {
-      handleTabSwitch('tools');
-    } else if (isKey(input, key, activeKeybinds.tabNavigation.tabHooks)) {
-      handleTabSwitch('hooks');
-    } else if (isKey(input, key, activeKeybinds.tabNavigation.tabFiles)) {
-      handleTabSwitch('files');
-    } else if (isKey(input, key, activeKeybinds.tabNavigation.tabSearch)) {
-      handleTabSwitch('search');
-    } else if (isKey(input, key, activeKeybinds.tabNavigation.tabDocs)) {
-      handleTabSwitch('docs');
-    } else if (isKey(input, key, activeKeybinds.tabNavigation.tabGithub)) {
-      handleTabSwitch('github');
-    } else if (isKey(input, key, activeKeybinds.tabNavigation.tabMcp)) {
-      handleTabSwitch('mcp');
-    } else if (isKey(input, key, activeKeybinds.tabNavigation.tabSettings)) {
-      handleTabSwitch('settings');
-    }
-
-    // Layout Shortcuts
-    else if (isKey(input, key, activeKeybinds.layout.togglePanel)) {
-      toggleSidePanel();
-    } else if (isKey(input, key, activeKeybinds.layout.commandPalette)) {
-      onCommandPalette?.();
-    } else if (isKey(input, key, activeKeybinds.layout.toggleDebug)) {
-      onToggleDebug?.();
-    }
-
-    // Chat Shortcuts
-    else if (isKey(input, key, activeKeybinds.chat.clearChat)) {
-      clearChat();
-    } else if (isKey(input, key, activeKeybinds.chat.saveSession)) {
-      onSaveSession?.();
-    }
-    
-    // ESC key - hierarchical navigation (with cancellation side effect when streaming)
-    else if (key.escape) {
-      handleEscape();
-    }
-
-    // Scroll Chat Shortcuts
-    // Note: These use hardcoded keys as they're not in the keybinds config
-    else if (isKey(input, key, 'ctrl+pageup') || isKey(input, key, 'meta+up')) {
-      onScrollUp?.();
-    } else if (isKey(input, key, 'ctrl+pagedown') || isKey(input, key, 'meta+down')) {
-      onScrollDown?.();
-    }
-
-    // Focus Management Shortcuts
-    else if (isKey(input, key, activeKeybinds.global.cycleNext)) {
-      focusManager.cycleFocus('next');
-    } else if (isKey(input, key, activeKeybinds.global.cyclePrev)) {
-      focusManager.cycleFocus('previous');
-    } else if (isKey(input, key, activeKeybinds.global.focusChatInput)) {
-      focusManager.setFocus('chat-input');
-    } else if (isKey(input, key, activeKeybinds.global.focusNavigation)) {
-      focusManager.setFocus('nav-bar');
-    } else if (isKey(input, key, activeKeybinds.global.focusContext)) {
-      focusManager.setFocus('context-panel');
-    } else if (isKey(input, key, activeKeybinds.global.focusFileTree)) {
-      focusManager.setFocus('file-tree');
-    } else if (isKey(input, key, activeKeybinds.global.focusFunctions)) {
-      focusManager.setFocus('functions');
-    }
-  }, { isActive: true });
+    },
+    { isActive: true }
+  );
 }

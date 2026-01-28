@@ -1,9 +1,9 @@
 /**
  * MCP Marketplace Service
- * 
+ *
  * Provides access to the MCP server marketplace with caching,
  * search functionality, and installation capabilities.
- * 
+ *
  * Connects to the official MCP Registry at registry.modelcontextprotocol.io
  */
 
@@ -132,10 +132,10 @@ interface RegistryResponse {
 
 /**
  * MCP Marketplace Service
- * 
+ *
  * Manages marketplace data with caching and provides search,
  * installation, and server discovery functionality.
- * 
+ *
  * Connects to the official MCP Registry API v0.1
  */
 export class MCPMarketplace {
@@ -157,21 +157,28 @@ export class MCPMarketplace {
 
     try {
       // Try to search using the registry API (uses 'search' parameter for substring match on name)
-      const response = await fetch(`${this.MARKETPLACE_URL}?search=${encodeURIComponent(query)}&limit=50&version=latest`, {
-        headers: {
-          'Accept': 'application/json',
-          'User-Agent': 'OLLM-CLI/0.1.0',
-        },
-        signal: AbortSignal.timeout(5000),
-      });
+      const response = await fetch(
+        `${this.MARKETPLACE_URL}?search=${encodeURIComponent(query)}&limit=50&version=latest`,
+        {
+          headers: {
+            Accept: 'application/json',
+            'User-Agent': 'OLLM-CLI/0.1.0',
+          },
+          signal: AbortSignal.timeout(5000),
+        }
+      );
 
       if (response.ok) {
         const data: RegistryResponse = await response.json();
-        
+
         if (data.servers && Array.isArray(data.servers)) {
           return data.servers
-            .filter(wrapper => wrapper.server && wrapper._meta?.['io.modelcontextprotocol.registry/official']?.isLatest)
-            .map(wrapper => this.transformRegistryServer(wrapper));
+            .filter(
+              (wrapper) =>
+                wrapper.server &&
+                wrapper._meta?.['io.modelcontextprotocol.registry/official']?.isLatest
+            )
+            .map((wrapper) => this.transformRegistryServer(wrapper));
         }
       }
     } catch (error) {
@@ -205,7 +212,7 @@ export class MCPMarketplace {
       // Attempt to fetch from official MCP Registry (only latest versions)
       const response = await fetch(`${this.MARKETPLACE_URL}?limit=100&version=latest`, {
         headers: {
-          'Accept': 'application/json',
+          Accept: 'application/json',
           'User-Agent': 'OLLM-CLI/0.1.0',
         },
         signal: AbortSignal.timeout(10000), // 10 second timeout
@@ -216,24 +223,27 @@ export class MCPMarketplace {
       }
 
       const data: RegistryResponse = await response.json();
-      
+
       if (!data.servers || !Array.isArray(data.servers)) {
         console.warn('Unexpected registry API response format:', data);
         throw new Error('Unexpected API response format');
       }
-      
+
       // Transform registry format to our format
       const transformedServers = data.servers
-        .filter(wrapper => wrapper.server && wrapper._meta?.['io.modelcontextprotocol.registry/official']?.isLatest)
-        .map(wrapper => this.transformRegistryServer(wrapper));
+        .filter(
+          (wrapper) =>
+            wrapper.server && wrapper._meta?.['io.modelcontextprotocol.registry/official']?.isLatest
+        )
+        .map((wrapper) => this.transformRegistryServer(wrapper));
 
       // Ensure certain canonical servers from local registry exist in results
       const requiredIds = ['filesystem', 'github', 'postgres'];
-      const transformedIds = new Set(transformedServers.map(s => s.id));
+      const transformedIds = new Set(transformedServers.map((s) => s.id));
       const local = this.getLocalRegistry();
       for (const req of requiredIds) {
         if (!transformedIds.has(req)) {
-          const found = local.find(s => s.id === req);
+          const found = local.find((s) => s.id === req);
           if (found) transformedServers.push(found);
         }
       }
@@ -246,16 +256,16 @@ export class MCPMarketplace {
       return transformedServers;
     } catch (error) {
       console.warn('Failed to fetch from MCP Registry, using local registry:', error);
-      
+
       // Fallback to local registry
       const localServers = this.getLocalRegistry();
-      
+
       // Update cache with local registry if empty
       if (this.cache.length === 0) {
         this.cache = localServers;
         this.cacheExpiry = Date.now() + this.CACHE_TTL;
       }
-      
+
       return this.cache.length > 0 ? this.cache : localServers;
     }
   }
@@ -270,24 +280,27 @@ export class MCPMarketplace {
     // First check cached/local data (faster and more reliable)
     const servers = await this.getAllServers();
     const cachedServer = servers.find((s) => s.id === serverId);
-    
+
     if (cachedServer) {
       console.log(`Found server ${serverId} in cache`);
       return cachedServer;
     }
 
     console.log(`Server ${serverId} not in cache, trying API...`);
-    console.log(`Available server IDs in cache:`, servers.map(s => s.id).slice(0, 10));
+    console.log(`Available server IDs in cache:`, servers.map((s) => s.id).slice(0, 10));
 
     // If not in cache, try to fetch from registry
     try {
-      const response = await fetch(`${this.MARKETPLACE_DETAIL_URL}/${encodeURIComponent(serverId)}`, {
-        headers: {
-          'Accept': 'application/json',
-          'User-Agent': 'OLLM-CLI/0.1.0',
-        },
-        signal: AbortSignal.timeout(5000),
-      });
+      const response = await fetch(
+        `${this.MARKETPLACE_DETAIL_URL}/${encodeURIComponent(serverId)}`,
+        {
+          headers: {
+            Accept: 'application/json',
+            'User-Agent': 'OLLM-CLI/0.1.0',
+          },
+          signal: AbortSignal.timeout(5000),
+        }
+      );
 
       if (response.ok) {
         const wrapper: RegistryServerWrapper = await response.json();
@@ -317,14 +330,14 @@ export class MCPMarketplace {
     config: Partial<MCPServerConfig>
   ): Promise<void> {
     // Get server details (either from parameter or fetch)
-    const server = typeof serverOrId === 'string' 
-      ? await this.getServerDetails(serverOrId)
-      : serverOrId;
+    const server =
+      typeof serverOrId === 'string' ? await this.getServerDetails(serverOrId) : serverOrId;
 
     // Detect if this is a remote server (has URL in repository)
-    const isRemoteServer = server.repository?.startsWith('https://') && 
-                          server.command === 'node' && 
-                          server.args?.length === 0;
+    const isRemoteServer =
+      server.repository?.startsWith('https://') &&
+      server.command === 'node' &&
+      server.args?.length === 0;
 
     // Build complete server configuration with metadata
     const serverConfig: MCPServerConfig = {
@@ -358,7 +371,7 @@ export class MCPMarketplace {
 
     // Note: We allow installation without API keys
     // Users can add them later by editing the server configuration
-    
+
     // Add server to MCP configuration
     // Use server.id as the config key to ensure uniqueness and consistency
     await mcpConfigService.updateServerConfig(server.id, serverConfig);
@@ -371,10 +384,8 @@ export class MCPMarketplace {
    */
   async getPopularServers(limit: number = 10): Promise<MCPMarketplaceServer[]> {
     const servers = await this.getAllServers();
-    
-    return servers
-      .sort((a, b) => b.installCount - a.installCount)
-      .slice(0, limit);
+
+    return servers.sort((a, b) => b.installCount - a.installCount).slice(0, limit);
   }
 
   /**
@@ -384,10 +395,8 @@ export class MCPMarketplace {
    */
   async getServersByCategory(category: string): Promise<MCPMarketplaceServer[]> {
     const servers = await this.getAllServers();
-    
-    return servers.filter(
-      (server) => server.category?.toLowerCase() === category.toLowerCase()
-    );
+
+    return servers.filter((server) => server.category?.toLowerCase() === category.toLowerCase());
   }
 
   /**
@@ -407,7 +416,7 @@ export class MCPMarketplace {
    */
   private transformRegistryServer(wrapper: RegistryServerWrapper): MCPMarketplaceServer {
     const server = wrapper.server;
-    
+
     // Normalize server ID and display name
     const rawId = server.name;
     const lastSegment = rawId.includes('/') ? rawId.split('/').pop() || rawId : rawId;
@@ -418,55 +427,56 @@ export class MCPMarketplace {
 
     // Use title if available, otherwise use normalized id
     const name = server.title || normalizedId || server.name;
-    
+
     // Determine category from name/description
     const category = this.getCategoryFromName(server.name, server.description);
-    
+
     // Check if OAuth/auth is required
-    const requiresOAuth = server.description.toLowerCase().includes('oauth') ||
-                         server.description.toLowerCase().includes('authentication');
-    
+    const requiresOAuth =
+      server.description.toLowerCase().includes('oauth') ||
+      server.description.toLowerCase().includes('authentication');
+
     // Extract requirements
     const requirements: string[] = [];
-    
+
     // Check for environment variables in packages
     const firstPackage = server.packages?.[0];
     if (firstPackage?.environmentVariables && firstPackage.environmentVariables.length > 0) {
-      const requiredVars = firstPackage.environmentVariables.filter(v => v.isRequired);
-      const secretVars = firstPackage.environmentVariables.filter(v => v.isSecret);
-      
+      const requiredVars = firstPackage.environmentVariables.filter((v) => v.isRequired);
+      const secretVars = firstPackage.environmentVariables.filter((v) => v.isSecret);
+
       if (requiredVars.length > 0) {
-        requirements.push(`Required: ${requiredVars.map(v => v.name).join(', ')}`);
+        requirements.push(`Required: ${requiredVars.map((v) => v.name).join(', ')}`);
       }
       if (secretVars.length > 0 && secretVars.length !== requiredVars.length) {
-        requirements.push(`API Keys: ${secretVars.map(v => v.name).join(', ')}`);
+        requirements.push(`API Keys: ${secretVars.map((v) => v.name).join(', ')}`);
       }
     }
-    
+
     // Check for environment variables in remotes
     const firstRemote = server.remotes?.[0];
     if (firstRemote?.headers && firstRemote.headers.length > 0) {
-      const secretHeaders = firstRemote.headers.filter(h => h.isSecret);
+      const secretHeaders = firstRemote.headers.filter((h) => h.isSecret);
       if (secretHeaders.length > 0) {
-        requirements.push(`Headers: ${secretHeaders.map(h => h.name).join(', ')}`);
+        requirements.push(`Headers: ${secretHeaders.map((h) => h.name).join(', ')}`);
       }
     }
-    
+
     // Add runtime hint if available
     if (firstPackage?.runtimeHint) {
       requirements.push(`Runtime: ${firstPackage.runtimeHint}`);
     }
-    
+
     // Extract installation command
     let command = 'npx';
     let args: string[] = [];
     const env: Record<string, string> = {};
-    
+
     if (firstPackage) {
       if (firstPackage.registryType === 'npm') {
         command = firstPackage.runtimeHint || 'npx';
         args = ['-y', firstPackage.identifier || server.name];
-        
+
         // Add package arguments if specified
         if (firstPackage.packageArguments) {
           for (const arg of firstPackage.packageArguments) {
@@ -481,14 +491,14 @@ export class MCPMarketplace {
         command = 'docker';
         args = ['run', '-i', firstPackage.identifier || server.name];
       }
-      
+
       // Extract environment variables
       if (firstPackage.environmentVariables) {
         for (const envVar of firstPackage.environmentVariables) {
           env[envVar.name] = envVar.default || '';
         }
       }
-      
+
       // Use transport type if specified
       if (firstPackage.transport?.type) {
         // Transport type will be used in config
@@ -498,7 +508,7 @@ export class MCPMarketplace {
       // Remote servers don't use stdio, they connect via HTTP/SSE
       command = 'node'; // Placeholder, won't be used for SSE transport
       args = [];
-      
+
       // Extract headers as environment variables
       if (firstRemote.headers) {
         for (const header of firstRemote.headers) {
@@ -508,21 +518,23 @@ export class MCPMarketplace {
         }
       }
     }
-    
+
     // Extract author from name (first part before /)
-    const author = server.name.includes('/') 
+    const author = server.name.includes('/')
       ? server.name.split('/')[0].replace(/^(io|com|org|ai)\./, '')
       : 'Unknown';
-    
+
     // Extract version
     const version = server.version || firstPackage?.version || '0.1.0';
-    
+
     // Default install count: try to infer from registry metadata, otherwise set to 1
     let inferredInstallCount = 1;
     try {
       const maybeCount = (wrapper as any)._meta?.count;
       if (typeof maybeCount === 'number' && maybeCount > 0) inferredInstallCount = maybeCount;
-    } catch { /* no-op, ignore metadata parsing errors */ }
+    } catch {
+      /* no-op, ignore metadata parsing errors */
+    }
 
     return {
       id,
@@ -551,7 +563,7 @@ export class MCPMarketplace {
    */
   private getCategoryFromName(name: string, description: string): string {
     const text = `${name} ${description}`.toLowerCase();
-    
+
     const categoryPatterns: Array<[RegExp, string]> = [
       [/filesystem|files|storage|disk/, 'File System'],
       [/database|sql|postgres|mysql|sqlite|redis|mongo/, 'Database'],
@@ -564,13 +576,13 @@ export class MCPMarketplace {
       [/memory|context|cache|store/, 'Utilities'],
       [/ai|ml|llm|model|intelligence/, 'AI & ML'],
     ];
-    
+
     for (const [pattern, category] of categoryPatterns) {
       if (pattern.test(text)) {
         return category;
       }
     }
-    
+
     return 'Utilities';
   }
 
@@ -581,49 +593,49 @@ export class MCPMarketplace {
    */
   private getCategoryFromTags(tags: string[]): string {
     const categoryMap: Record<string, string> = {
-      'filesystem': 'File System',
-      'files': 'File System',
-      'storage': 'File System',
-      'database': 'Database',
-      'sql': 'Database',
-      'postgres': 'Database',
-      'postgresql': 'Database',
-      'sqlite': 'Database',
-      'mysql': 'Database',
-      'redis': 'Database',
-      'api': 'Development',
-      'github': 'Development',
-      'git': 'Development',
-      'gitlab': 'Development',
-      'web': 'Web',
-      'http': 'Web',
-      'fetch': 'Web',
-      'browser': 'Web Automation',
-      'puppeteer': 'Web Automation',
-      'playwright': 'Web Automation',
-      'search': 'Search',
-      'brave': 'Search',
-      'google': 'Search',
-      'communication': 'Communication',
-      'slack': 'Communication',
-      'discord': 'Communication',
-      'email': 'Communication',
-      'cloud': 'Cloud Storage',
-      'drive': 'Cloud Storage',
-      's3': 'Cloud Storage',
-      'memory': 'Utilities',
-      'utility': 'Utilities',
-      'context': 'Utilities',
-      'ai': 'AI & ML',
-      'ml': 'AI & ML',
-      'llm': 'AI & ML',
+      filesystem: 'File System',
+      files: 'File System',
+      storage: 'File System',
+      database: 'Database',
+      sql: 'Database',
+      postgres: 'Database',
+      postgresql: 'Database',
+      sqlite: 'Database',
+      mysql: 'Database',
+      redis: 'Database',
+      api: 'Development',
+      github: 'Development',
+      git: 'Development',
+      gitlab: 'Development',
+      web: 'Web',
+      http: 'Web',
+      fetch: 'Web',
+      browser: 'Web Automation',
+      puppeteer: 'Web Automation',
+      playwright: 'Web Automation',
+      search: 'Search',
+      brave: 'Search',
+      google: 'Search',
+      communication: 'Communication',
+      slack: 'Communication',
+      discord: 'Communication',
+      email: 'Communication',
+      cloud: 'Cloud Storage',
+      drive: 'Cloud Storage',
+      s3: 'Cloud Storage',
+      memory: 'Utilities',
+      utility: 'Utilities',
+      context: 'Utilities',
+      ai: 'AI & ML',
+      ml: 'AI & ML',
+      llm: 'AI & ML',
     };
-    
+
     for (const tag of tags) {
       const category = categoryMap[tag.toLowerCase()];
       if (category) return category;
     }
-    
+
     return 'Utilities';
   }
 
@@ -874,4 +886,3 @@ export class MCPMarketplace {
 
 // Singleton instance
 export const mcpMarketplace = new MCPMarketplace();
-

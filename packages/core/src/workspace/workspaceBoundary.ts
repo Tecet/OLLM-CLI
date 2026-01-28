@@ -1,10 +1,10 @@
 /**
  * Workspace Boundary Service
- * 
+ *
  * Restricts LLM file access to:
  * 1. User-defined workspace (project directory)
  * 2. OLLM data directories (sessions, snapshots, config, etc.)
- * 
+ *
  * Prevents access to system directories and sensitive files.
  */
 
@@ -21,16 +21,16 @@ import { WorkspaceBoundaryError } from '../errors/index.js';
 export interface WorkspaceBoundaryConfig {
   /** Absolute path to workspace directory */
   workspacePath: string;
-  
+
   /** Allow access to subdirectories */
   allowSubdirectories: boolean;
-  
+
   /** Allowed OLLM data paths (relative to ~/.ollm) */
   allowedOllmPaths: string[];
-  
+
   /** Blocked path patterns (regex) */
   blockedPatterns: RegExp[];
-  
+
   /** Enforce strict boundary checking */
   enforceStrict: boolean;
 }
@@ -56,7 +56,7 @@ const DEFAULT_BLOCKED_PATTERNS = [
   /^[A-Z]:\\Windows\\/i,
   /^[A-Z]:\\Program Files/i,
   /^[A-Z]:\\Program Files \(x86\)/i,
-  
+
   // Linux/Mac system directories
   /^\/etc\//,
   /^\/sys\//,
@@ -64,7 +64,7 @@ const DEFAULT_BLOCKED_PATTERNS = [
   /^\/dev\//,
   /^\/boot\//,
   /^\/root\//,
-  
+
   // Sensitive directories (any platform)
   /\.ssh[/\\]/,
   /\.aws[/\\]/,
@@ -98,7 +98,7 @@ export class WorkspaceBoundary {
   constructor(config: Partial<WorkspaceBoundaryConfig> = {}) {
     // Get OLLM data path
     this.ollmDataPath = path.join(os.homedir(), '.ollm');
-    
+
     // Default configuration
     this.config = {
       workspacePath: config.workspacePath || process.cwd(),
@@ -107,7 +107,7 @@ export class WorkspaceBoundary {
       blockedPatterns: config.blockedPatterns || DEFAULT_BLOCKED_PATTERNS,
       enforceStrict: config.enforceStrict ?? true,
     };
-    
+
     // Normalize paths for comparison (handle case sensitivity on Windows)
     this.normalizedWorkspace = this.normalizePath(this.config.workspacePath);
     this.normalizedOllmPath = this.normalizePath(this.ollmDataPath);
@@ -122,18 +122,16 @@ export class WorkspaceBoundary {
   private normalizePath(inputPath: string): string {
     const resolved = path.resolve(inputPath);
     const normalized = path.normalize(resolved);
-    
+
     // Lowercase on Windows for case-insensitive comparison
-    return process.platform === 'win32' 
-      ? normalized.toLowerCase() 
-      : normalized;
+    return process.platform === 'win32' ? normalized.toLowerCase() : normalized;
   }
 
   /**
    * Check if path matches any blocked pattern
    */
   private isBlocked(normalizedPath: string): boolean {
-    return this.config.blockedPatterns.some(pattern => pattern.test(normalizedPath));
+    return this.config.blockedPatterns.some((pattern) => pattern.test(normalizedPath));
   }
 
   /**
@@ -145,10 +143,12 @@ export class WorkspaceBoundary {
       const parent = path.dirname(normalizedPath);
       return this.normalizePath(parent) === this.normalizedWorkspace;
     }
-    
+
     // Allow workspace and all subdirectories
-    return normalizedPath === this.normalizedWorkspace || 
-           normalizedPath.startsWith(this.normalizedWorkspace + path.sep);
+    return (
+      normalizedPath === this.normalizedWorkspace ||
+      normalizedPath.startsWith(this.normalizedWorkspace + path.sep)
+    );
   }
 
   /**
@@ -156,15 +156,17 @@ export class WorkspaceBoundary {
    */
   private isInOllmData(normalizedPath: string): boolean {
     // Check if path is in .ollm directory
-    if (normalizedPath !== this.normalizedOllmPath && 
-        !normalizedPath.startsWith(this.normalizedOllmPath + path.sep)) {
+    if (
+      normalizedPath !== this.normalizedOllmPath &&
+      !normalizedPath.startsWith(this.normalizedOllmPath + path.sep)
+    ) {
       return false;
     }
-    
+
     // Get relative path from .ollm
     const relativePath = path.relative(this.ollmDataPath, normalizedPath);
     const firstSegment = relativePath.split(path.sep)[0];
-    
+
     // Check if first segment is in allowed paths
     return this.config.allowedOllmPaths.includes(firstSegment);
   }
@@ -175,12 +177,12 @@ export class WorkspaceBoundary {
   isPathAllowed(inputPath: string): boolean {
     try {
       const normalized = this.normalizePath(inputPath);
-      
+
       // Check blocked patterns first
       if (this.isBlocked(normalized)) {
         return false;
       }
-      
+
       // Check if in workspace or OLLM data
       return this.isInWorkspace(normalized) || this.isInOllmData(normalized);
     } catch (_error) {
@@ -197,7 +199,7 @@ export class WorkspaceBoundary {
     if (path.isAbsolute(inputPath)) {
       return path.resolve(inputPath);
     }
-    
+
     // Resolve relative to workspace
     return path.resolve(this.config.workspacePath, inputPath);
   }
@@ -209,14 +211,14 @@ export class WorkspaceBoundary {
   async validatePath(inputPath: string): Promise<string> {
     // Resolve to absolute path
     const resolved = this.resolvePath(inputPath);
-    
+
     // Check if path is allowed
     if (!this.isPathAllowed(resolved)) {
       const allowedPaths = [
         `Workspace: ${this.config.workspacePath}`,
         `OLLM Data: ${this.ollmDataPath}`,
       ];
-      
+
       throw new WorkspaceBoundaryError(
         `Access denied: Path outside workspace boundary`,
         resolved,
@@ -224,18 +226,18 @@ export class WorkspaceBoundary {
         allowedPaths
       );
     }
-    
+
     // If enforcing strict mode, resolve symlinks and check again
     if (this.config.enforceStrict) {
       try {
         const realPath = await fs.realpath(resolved);
-        
+
         if (!this.isPathAllowed(realPath)) {
           const allowedPaths = [
             `Workspace: ${this.config.workspacePath}`,
             `OLLM Data: ${this.ollmDataPath}`,
           ];
-          
+
           throw new WorkspaceBoundaryError(
             `Access denied: Symlink target outside workspace boundary`,
             realPath,
@@ -243,7 +245,7 @@ export class WorkspaceBoundary {
             allowedPaths
           );
         }
-        
+
         return realPath;
       } catch (error) {
         // If realpath fails (file doesn't exist), that's okay
@@ -254,7 +256,7 @@ export class WorkspaceBoundary {
         }
       }
     }
-    
+
     return resolved;
   }
 
@@ -265,9 +267,7 @@ export class WorkspaceBoundary {
     return {
       workspacePath: this.config.workspacePath,
       ollmDataPath: this.ollmDataPath,
-      allowedOllmPaths: this.config.allowedOllmPaths.map(p => 
-        path.join(this.ollmDataPath, p)
-      ),
+      allowedOllmPaths: this.config.allowedOllmPaths.map((p) => path.join(this.ollmDataPath, p)),
       restrictions: [
         'Cannot access system directories (Windows, Program Files, /etc, etc.)',
         'Cannot access sensitive directories (.ssh, .aws, .kube, etc.)',
@@ -282,7 +282,7 @@ export class WorkspaceBoundary {
   async setWorkspace(newPath: string): Promise<void> {
     // Resolve and validate new workspace path
     const resolved = path.resolve(newPath);
-    
+
     // Check if path exists and is a directory
     try {
       const stats = await fs.stat(resolved);
@@ -296,7 +296,7 @@ export class WorkspaceBoundary {
       }
       throw error;
     }
-    
+
     // Update workspace path
     this.config.workspacePath = resolved;
     this.normalizedWorkspace = this.normalizePath(resolved);
@@ -320,6 +320,8 @@ export class WorkspaceBoundary {
 /**
  * Create a new workspace boundary instance
  */
-export function createWorkspaceBoundary(config?: Partial<WorkspaceBoundaryConfig>): WorkspaceBoundary {
+export function createWorkspaceBoundary(
+  config?: Partial<WorkspaceBoundaryConfig>
+): WorkspaceBoundary {
   return new WorkspaceBoundary(config);
 }

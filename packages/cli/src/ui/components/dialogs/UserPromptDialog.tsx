@@ -1,6 +1,6 @@
 /**
  * UserPromptDialog - Interactive user prompt component
- * 
+ *
  * Displays a question with multiple choice options for user selection.
  * Used for tool support detection, model configuration, and other
  * interactive workflows.
@@ -49,13 +49,9 @@ export function UserPromptDialog({
   }
 
   // Calculate timeout progress if applicable
-  const timeoutProgress = timeout
-    ? Math.min(100, (timeout.elapsed / timeout.duration) * 100)
-    : 0;
+  const timeoutProgress = timeout ? Math.min(100, (timeout.elapsed / timeout.duration) * 100) : 0;
 
-  const remainingSeconds = timeout
-    ? Math.ceil((timeout.duration - timeout.elapsed) / 1000)
-    : 0;
+  const remainingSeconds = timeout ? Math.ceil((timeout.duration - timeout.elapsed) / 1000) : 0;
 
   return (
     <Box
@@ -111,10 +107,7 @@ export function UserPromptDialog({
           const isSelected = index === selectedIndex;
           return (
             <Box key={index} marginLeft={2}>
-              <Text
-                color={isSelected ? theme.text.accent : theme.text.primary}
-                bold={isSelected}
-              >
+              <Text color={isSelected ? theme.text.accent : theme.text.primary} bold={isSelected}>
                 {isSelected ? '▶ ' : '  '}
                 {option}
               </Text>

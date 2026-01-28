@@ -4,6 +4,7 @@
 **Status:** Source of Truth
 
 **Related Documents:**
+
 - `dev_ContextManagement.md` - Context sizing, tiers, VRAM
 - `dev_ContextCompression.md` - Compression, checkpoints, snapshots
 - `dev_ModelDB.md` - Model database schema and access patterns
@@ -39,11 +40,13 @@ PromptOrchestrator (Coordinator)
 ## Core Components
 
 ### 1. PromptOrchestrator
+
 **Location:** `packages/core/src/context/promptOrchestrator.ts`
 
 **Role:** Coordinates prompt loading and system prompt construction
 
 **Responsibilities:**
+
 - Loads tiered prompt templates from filesystem
 - Resolves mode+tier combinations
 - Calculates token budgets per tier
@@ -51,39 +54,44 @@ PromptOrchestrator (Coordinator)
 - Updates system prompt in conversation context
 
 **Key Methods:**
+
 ```typescript
 getSystemPromptForTierAndMode(mode, tier): string
   ↓ Loads from TieredPromptStore
-  
+
 getSystemPromptTokenBudget(tier): number
   ↓ Returns tier-specific budget
-  
+
 updateSystemPrompt({ mode, tier, activeSkills, ... })
   ↓ Builds and injects system prompt
 ```
 
 ### 2. TieredPromptStore
+
 **Location:** `packages/core/src/prompts/tieredPromptStore.ts`
 
 **Role:** Loads and stores mode+tier prompt templates from filesystem
 
 **Key Methods:**
+
 ```typescript
 load(): void
   ↓ Scans templates/ directory
   ↓ Loads all mode+tier combinations
-  
+
 get(mode, tier): string | undefined
   ↓ Returns template for mode+tier
   ↓ Returns undefined if not found
 ```
 
 ### 3. PromptRegistry
+
 **Location:** `packages/core/src/prompts/PromptRegistry.ts`
 
 **Role:** Registry for core prompts (mandates, sanity checks, skills)
 
 **Key Methods:**
+
 ```typescript
 register(definition: PromptDefinition): void
 get(id: string): RegisteredPrompt | undefined
@@ -93,11 +101,13 @@ clearMcpPrompts(serverName: string): void
 ```
 
 ### 4. SystemPromptBuilder
+
 **Location:** `packages/core/src/context/SystemPromptBuilder.ts`
 
 **Role:** Assembles final system prompt from registry components
 
 **Assembly Order:**
+
 ```
 1. Core Mandates (from registry: 'core-mandates')
 2. Active Goals (from goal manager - never compressed)
@@ -114,43 +124,48 @@ Prompt tiers correspond to context tiers (see `dev_ContextManagement.md`) and de
 
 ### Tier Token Budgets
 
-| Tier | Context Size | Prompt Budget | % of Context |
-|------|--------------|---------------|--------------|
-| Tier 1 (Minimal) | 2K, 4K | 200 tokens | 5-10% |
-| Tier 2 (Basic) | 8K | 500 tokens | 6.3% |
-| Tier 3 (Standard) | 16K | 1000 tokens | 6.3% |
-| Tier 4 (Premium) | 32K | 1500 tokens | 4.7% |
-| Tier 5 (Ultra) | 64K, 128K | 1500 tokens | 1.2-2.3% |
+| Tier              | Context Size | Prompt Budget | % of Context |
+| ----------------- | ------------ | ------------- | ------------ |
+| Tier 1 (Minimal)  | 2K, 4K       | 200 tokens    | 5-10%        |
+| Tier 2 (Basic)    | 8K           | 500 tokens    | 6.3%         |
+| Tier 3 (Standard) | 16K          | 1000 tokens   | 6.3%         |
+| Tier 4 (Premium)  | 32K          | 1500 tokens   | 4.7%         |
+| Tier 5 (Ultra)    | 64K, 128K    | 1500 tokens   | 1.2-2.3%     |
 
 **Principle:** Larger contexts can afford more detailed prompts without sacrificing user content space.
 
 ### Why Scale Prompts by Tier?
 
 **Tier 1 (2-4K):** Minimal context
+
 - ~200 tokens (5% of 4K)
 - Essential behavior only
 - No verbose instructions
 - Focus on core capabilities
 
 **Tier 2 (8K):** Basic context
+
 - ~500 tokens (6.3% of 8K)
 - Detailed guidance
 - Basic tool instructions
 - Mode-specific behavior
 
 **Tier 3 (16K):** Standard context ⭐
+
 - ~1000 tokens (6.3% of 16K)
 - Comprehensive instructions
 - Full tool documentation
 - Mode-specific strategies
 
 **Tier 4 (32K):** Premium context
+
 - ~1500 tokens (4.7% of 32K)
 - Expert-level guidance
 - Advanced patterns
 - Optimization strategies
 
 **Tier 5 (64-128K):** Ultra context
+
 - ~1500 tokens (1.2% of 131K)
 - Maximum sophistication
 - Complex reasoning patterns
@@ -165,6 +180,7 @@ Prompt tiers correspond to context tiers (see `dev_ContextManagement.md`) and de
 Goals are a critical part of the prompt system. They help the LLM stay focused on the task at hand and track progress through complex multi-step workflows.
 
 **Key Principles:**
+
 - Goals are NEVER compressed
 - Goals are always included in system prompt
 - Goals are updated when milestones are reached
@@ -196,7 +212,7 @@ interface Decision {
   id: string;
   description: string;
   rationale: string;
-  locked: boolean;  // Locked decisions cannot be changed
+  locked: boolean; // Locked decisions cannot be changed
 }
 
 interface Artifact {
@@ -301,30 +317,35 @@ These markers are parsed and used to update the goal structure automatically.
 ### Mode Profiles
 
 **Assistant Mode** (Default)
+
 - General-purpose conversational AI
 - Balanced between helpfulness and safety
 - Moderate tool usage
 - Template: `templates/assistant/tier{1-5}.txt`
 
 **Developer Mode**
+
 - Code-focused assistance
 - Aggressive tool usage
 - Technical language
 - Template: `templates/developer/tier{1-5}.txt`
 
 **Planning Mode**
+
 - Project planning and architecture
 - Goal-oriented thinking
 - Strategic recommendations
 - Template: `templates/planning/tier{1-5}.txt`
 
 **Debugger Mode**
+
 - Error analysis and troubleshooting
 - Systematic debugging approach
 - Root cause analysis
 - Template: `templates/debugger/tier{1-5}.txt`
 
 **User Mode** (Custom)
+
 - User-defined behavior
 - Customizable prompt templates
 - Same structure as Assistant mode (default copy)
@@ -475,11 +496,13 @@ getPromptTier(): ContextTier {
 ```
 
 **Behavior:**
+
 - Auto-sizing enabled: Prompt tier changes as context size changes
 - Manual sizing: Prompt tier matches user-selected context size
 - Single tier variable (selectedTier) is source of truth
 
 **Example:**
+
 ```
 Hardware: 24GB VRAM → Can support 32K context
 User Selection: 16K context
@@ -509,7 +532,7 @@ interface RegisteredPrompt {
   requiredTools?: string[];
   tags?: string[];
   source: 'static' | 'mcp' | 'config';
-  serverName?: string;  // If from MCP
+  serverName?: string; // If from MCP
   registeredAt: number;
 }
 ```
@@ -532,7 +555,7 @@ promptRegistry.register({
   content: 'Instructions for GitHub operations...',
   source: 'mcp',
   serverName: 'github-mcp',
-  tags: ['skill', 'github']
+  tags: ['skill', 'github'],
 });
 
 // When server disconnects, clear its prompts
@@ -551,8 +574,8 @@ interface SystemPromptConfig {
   useSanityChecks?: boolean;
   agentName?: string;
   additionalInstructions?: string;
-  skills?: string[];  // Skill IDs to include
-  goal?: Goal;        // Active goal to include
+  skills?: string[]; // Skill IDs to include
+  goal?: Goal; // Active goal to include
 }
 ```
 
@@ -565,18 +588,32 @@ interface GoalManager {
   getActiveGoal(): Goal | null;
   pauseGoal(goalId: string): void;
   completeGoal(goalId: string, summary: string): void;
-  
+
   // Checkpoints
-  createCheckpoint(goalId: string, description: string, metadata?: any, summary?: string): Checkpoint;
-  updateCheckpoint(goalId: string, checkpointId: string, status: 'pending' | 'in-progress' | 'completed'): void;
-  
+  createCheckpoint(
+    goalId: string,
+    description: string,
+    metadata?: any,
+    summary?: string
+  ): Checkpoint;
+  updateCheckpoint(
+    goalId: string,
+    checkpointId: string,
+    status: 'pending' | 'in-progress' | 'completed'
+  ): void;
+
   // Decisions
   recordDecision(goalId: string, description: string, rationale: string): Decision;
   lockDecision(goalId: string, decisionId: string): void;
-  
+
   // Artifacts
-  recordArtifact(goalId: string, type: 'file' | 'test' | 'documentation', path: string, action: 'created' | 'modified' | 'deleted'): void;
-  
+  recordArtifact(
+    goalId: string,
+    type: 'file' | 'test' | 'documentation',
+    path: string,
+    action: 'created' | 'modified' | 'deleted'
+  ): void;
+
   // Query
   getGoalProgress(goalId: string): { completed: number; total: number; percentage: number };
   getGoalHistory(): Goal[];
@@ -591,7 +628,7 @@ const DEFAULT_CONFIG = {
   useSanityChecks: true,
   agentName: 'Assistant',
   additionalInstructions: '',
-  skills: []
+  skills: [],
 };
 ```
 
@@ -649,6 +686,7 @@ const DEFAULT_CONFIG = {
 - Keep tier token budgets in mind when editing
 
 **Example Customization:**
+
 ```bash
 # Edit user mode tier 3 prompt
 nano packages/core/src/prompts/templates/user/tier3.txt
@@ -658,6 +696,7 @@ nano packages/core/src/prompts/templates/user/tier3.txt
 ```
 
 **Use Cases:**
+
 - Domain-specific assistants (medical, legal, etc.)
 - Company-specific tone and guidelines
 - Specialized workflows
@@ -673,6 +712,7 @@ nano packages/core/src/prompts/templates/user/tier3.txt
 **Symptom:** Default prompt used instead of tier-specific
 
 **Solutions:**
+
 1. Check template file exists
 2. Verify file path is correct
 3. Check fallback strategy
@@ -683,6 +723,7 @@ nano packages/core/src/prompts/templates/user/tier3.txt
 **Symptom:** Prompt exceeds tier budget
 
 **Solutions:**
+
 1. Reduce prompt verbosity
 2. Remove unnecessary instructions
 3. Split into skills
@@ -693,6 +734,7 @@ nano packages/core/src/prompts/templates/user/tier3.txt
 **Symptom:** Prompt doesn't change when mode changes
 
 **Solutions:**
+
 1. Verify mode is set correctly
 2. Check template exists for mode+tier
 3. Review updateSystemPrompt() call
@@ -705,18 +747,21 @@ nano packages/core/src/prompts/templates/user/tier3.txt
 Goals are integrated into both the Prompt System and Compression System:
 
 **In Prompt System (dev_PromptSystem.md):**
+
 - Goals are part of the system prompt
 - Always visible to the LLM
 - Updated when milestones are reached
 - Guide LLM behavior and focus
 
 **In Compression System (dev_ContextCompression.md):**
+
 - Goals are NEVER compressed
 - Goals guide summarization (what to preserve)
 - Goal markers update goal structure
 - Goals maintain continuity across compressions
 
 **Flow:**
+
 ```
 User provides task
   ↓
@@ -741,20 +786,20 @@ Continue conversation with updated goal
 
 ## File Locations
 
-| File | Purpose |
-|------|---------|
-| `packages/core/src/context/promptOrchestrator.ts` | Coordinator |
-| `packages/core/src/prompts/tieredPromptStore.ts` | Template loader |
-| `packages/core/src/prompts/PromptRegistry.ts` | Core prompt registry |
-| `packages/core/src/context/SystemPromptBuilder.ts` | Prompt assembly |
-| `packages/core/src/context/goalManager.ts` | Goal management |
-| `packages/core/src/prompts/templates/assistant/` | Assistant mode prompts |
-| `packages/core/src/prompts/templates/developer/` | Developer mode prompts |
-| `packages/core/src/prompts/templates/planning/` | Planning mode prompts |
-| `packages/core/src/prompts/templates/debugger/` | Debugger mode prompts |
-| `packages/core/src/prompts/templates/user/` | User mode prompts (customizable) |
-| `packages/core/src/prompts/templates/mandates.ts` | Core behavior |
-| `packages/core/src/prompts/templates/sanity.ts` | Reality checks |
+| File                                               | Purpose                          |
+| -------------------------------------------------- | -------------------------------- |
+| `packages/core/src/context/promptOrchestrator.ts`  | Coordinator                      |
+| `packages/core/src/prompts/tieredPromptStore.ts`   | Template loader                  |
+| `packages/core/src/prompts/PromptRegistry.ts`      | Core prompt registry             |
+| `packages/core/src/context/SystemPromptBuilder.ts` | Prompt assembly                  |
+| `packages/core/src/context/goalManager.ts`         | Goal management                  |
+| `packages/core/src/prompts/templates/assistant/`   | Assistant mode prompts           |
+| `packages/core/src/prompts/templates/developer/`   | Developer mode prompts           |
+| `packages/core/src/prompts/templates/planning/`    | Planning mode prompts            |
+| `packages/core/src/prompts/templates/debugger/`    | Debugger mode prompts            |
+| `packages/core/src/prompts/templates/user/`        | User mode prompts (customizable) |
+| `packages/core/src/prompts/templates/mandates.ts`  | Core behavior                    |
+| `packages/core/src/prompts/templates/sanity.ts`    | Reality checks                   |
 
 ---
 

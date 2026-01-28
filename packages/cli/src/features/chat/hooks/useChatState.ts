@@ -17,7 +17,7 @@ export interface UseChatStateReturn {
   statusMessage: string | undefined;
   selectedLineIndex: number;
   scrollOffset: number;
-  
+
   // Setters
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
   setStreaming: (streaming: boolean) => void;
@@ -28,7 +28,7 @@ export interface UseChatStateReturn {
   setStatusMessage: (message: string | undefined) => void;
   setSelectedLineIndex: React.Dispatch<React.SetStateAction<number>>;
   setScrollOffset: React.Dispatch<React.SetStateAction<number>>;
-  
+
   // Actions
   addMessage: (message: Omit<Message, 'id' | 'timestamp'>) => Message;
   updateMessage: (id: string, updates: Partial<Message>) => void;
@@ -46,7 +46,7 @@ export function useChatState(initialMessages: Message[] = []): UseChatStateRetur
   const [selectedLineIndex, setSelectedLineIndex] = useState(0);
   const [statusMessage, setStatusMessage] = useState<string | undefined>(undefined);
   const [scrollOffset, setScrollOffset] = useState(0);
-  
+
   // Menu State
   const [inputMode, setInputMode] = useState<'text' | 'menu'>('text');
   const [menuState, setMenuState] = useState<MenuState>({
@@ -54,7 +54,7 @@ export function useChatState(initialMessages: Message[] = []): UseChatStateRetur
     options: [],
     selectedIndex: 0,
   });
-  
+
   /**
    * Add a new message to the chat
    */
@@ -72,9 +72,7 @@ export function useChatState(initialMessages: Message[] = []): UseChatStateRetur
    * Update an existing message
    */
   const updateMessage = useCallback((id: string, updates: Partial<Message>) => {
-    setMessages((prev) =>
-      prev.map((msg) => (msg.id === id ? { ...msg, ...updates } : msg))
-    );
+    setMessages((prev) => prev.map((msg) => (msg.id === id ? { ...msg, ...updates } : msg)));
   }, []);
 
   /**
@@ -98,7 +96,7 @@ export function useChatState(initialMessages: Message[] = []): UseChatStateRetur
     statusMessage,
     selectedLineIndex,
     scrollOffset,
-    
+
     // Setters
     setMessages,
     setStreaming,
@@ -109,7 +107,7 @@ export function useChatState(initialMessages: Message[] = []): UseChatStateRetur
     setStatusMessage,
     setSelectedLineIndex,
     setScrollOffset,
-    
+
     // Actions
     addMessage,
     updateMessage,

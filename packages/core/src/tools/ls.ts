@@ -1,6 +1,6 @@
 /**
  * Ls tool implementation
- * 
+ *
  * Provides a tool for listing directory contents with support for
  * recursive listing, hidden file filtering, and depth control.
  */
@@ -77,10 +77,7 @@ export class LsTool implements DeclarativeTool<LsParams, ToolResult> {
     },
   };
 
-  createInvocation(
-    params: LsParams,
-    _context: ToolContext
-  ): ToolInvocation<LsParams, ToolResult> {
+  createInvocation(params: LsParams, _context: ToolContext): ToolInvocation<LsParams, ToolResult> {
     return new LsInvocation(params);
   }
 }
@@ -89,9 +86,7 @@ export class LsTool implements DeclarativeTool<LsParams, ToolResult> {
  * Invocation instance for directory listing
  */
 export class LsInvocation implements ToolInvocation<LsParams, ToolResult> {
-  constructor(
-    public params: LsParams
-  ) {}
+  constructor(public params: LsParams) {}
 
   getDescription(): string {
     return `List ${this.params.path}`;
@@ -200,12 +195,10 @@ export class LsInvocation implements ToolInvocation<LsParams, ToolResult> {
         const relativePath = path.relative(baseDir, itemPath);
         // Normalize path separators to forward slashes
         const normalizedPath = relativePath.replace(/\\/g, '/');
-        
+
         // For directories, check with trailing slash
-        const pathToCheck = item.isDirectory() 
-          ? normalizedPath + '/'
-          : normalizedPath;
-        
+        const pathToCheck = item.isDirectory() ? normalizedPath + '/' : normalizedPath;
+
         if (ig.ignores(pathToCheck)) {
           continue;
         }

@@ -41,18 +41,19 @@ interface DataEvent {
   servers?: string[];
 }
 
-    // ModeChangedEvent interface removed as it was unused and replaced by ModeTransitionPayload locally
-
+// ModeChangedEvent interface removed as it was unused and replaced by ModeTransitionPayload locally
 
 /**
  * Get mode metadata (icon, color, persona)
  */
 function getModeMetadata(mode: ModeType): { icon: string; color: string; persona: string } {
-  const meta = (MODE_METADATA as Record<string, { icon: string; color: string; persona: string }>)[mode] || MODE_METADATA.assistant;
+  const meta =
+    (MODE_METADATA as Record<string, { icon: string; color: string; persona: string }>)[mode] ||
+    MODE_METADATA.assistant;
   return {
     icon: meta.icon,
     color: meta.color,
-    persona: meta.persona
+    persona: meta.persona,
   };
 }
 
@@ -61,7 +62,7 @@ const ActiveContextContext = createContext<ActiveContextContextType | undefined>
 export const ActiveContextProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   // Use the correct hook which returns { state, actions }
   const { state: contextState, actions } = useContextManager();
-  
+
   // Real-time state from other providers
   // We use optional chaining access via hooks because we are inside properly nested providers in App.tsx
   // but we want to be safe if used in isolation.
@@ -83,9 +84,9 @@ export const ActiveContextProvider: React.FC<{ children: ReactNode }> = ({ child
     modeColor: 'blue',
     currentModeConfidence: 1.0,
     modeDuration: 0,
-    suggestedModes: []
+    suggestedModes: [],
   });
-  
+
   const [modeStartTime, setModeStartTime] = useState<Date>(new Date());
 
   // Sync with Providers
@@ -93,8 +94,8 @@ export const ActiveContextProvider: React.FC<{ children: ReactNode }> = ({ child
     // Update MCP Servers
     // mcpState.servers is a Map, so we need to convert to array first
     let connectedServers = Array.from(mcpState.servers.values())
-        .filter(s => s.status === 'connected')
-        .map(s => s.name);
+      .filter((s) => s.status === 'connected')
+      .map((s) => s.name);
 
     // Filter MCP servers by mode permission (mcp:*). Hide MCP UI if not allowed in current mode
     try {
@@ -109,7 +110,7 @@ export const ActiveContextProvider: React.FC<{ children: ReactNode }> = ({ child
     } catch (_e) {
       // ignore and keep servers as-is
     }
-        
+
     // Update Hooks
     // hooksState uses enabledHooks which is a Set of IDs
     const activeHooks = Array.from(hooksState.enabledHooks || []);
@@ -120,7 +121,7 @@ export const ActiveContextProvider: React.FC<{ children: ReactNode }> = ({ child
     const modeManager = actions.getModeManager?.();
     const currentMode = modeManager ? modeManager.getCurrentMode() : undefined;
 
-    const filteredActiveTools = reportedActiveTools.filter(toolName => {
+    const filteredActiveTools = reportedActiveTools.filter((toolName) => {
       if (!modeManager || !currentMode) return true;
       try {
         return modeManager.isToolAllowed(toolName, currentMode);
@@ -129,7 +130,7 @@ export const ActiveContextProvider: React.FC<{ children: ReactNode }> = ({ child
       }
     });
 
-    setState(prev => {
+    setState((prev) => {
       // Only update if changed to avoid render loops
       if (
         JSON.stringify(prev.activeMcpServers) === JSON.stringify(connectedServers) &&
@@ -143,7 +144,7 @@ export const ActiveContextProvider: React.FC<{ children: ReactNode }> = ({ child
         ...prev,
         activeMcpServers: connectedServers,
         activeHooks: activeHooks,
-        activeTools: filteredActiveTools
+        activeTools: filteredActiveTools,
       };
     });
   }, [mcpState.servers, hooksState.enabledHooks, toolsState.enabledTools, actions]);
@@ -153,9 +154,9 @@ export const ActiveContextProvider: React.FC<{ children: ReactNode }> = ({ child
     const interval = setInterval(() => {
       const now = new Date();
       const duration = now.getTime() - modeStartTime.getTime();
-      setState(prev => ({ ...prev, modeDuration: duration }));
+      setState((prev) => ({ ...prev, modeDuration: duration }));
     }, 1000);
-    
+
     return () => clearInterval(interval);
   }, [modeStartTime]);
 
@@ -170,14 +171,14 @@ export const ActiveContextProvider: React.FC<{ children: ReactNode }> = ({ child
       // Apply initial metadata
       const metadata = getModeMetadata(mode);
       const allowedTools = modeManager.getAllowedTools(mode);
-      
-      setState(prev => ({
+
+      setState((prev) => ({
         ...prev,
         currentMode: mode,
         currentPersona: metadata.persona,
         modeIcon: metadata.icon,
         modeColor: metadata.color,
-        allowedTools
+        allowedTools,
       }));
     }
   }, [contextState.active, actions]); // Run whenever active state changes
@@ -188,18 +189,18 @@ export const ActiveContextProvider: React.FC<{ children: ReactNode }> = ({ child
 
     // Listen for events from ContextManager
     const handleClear = () => {
-       setState(prev => ({ 
-           ...prev, 
-           activeSkills: [], 
-           activeTools: [],
-           activeHooks: [],
-           activeMcpServers: [],
-           activePrompts: [],
-           contextStrategy: 'Standard',
-           suggestedModes: []
-       }));
+      setState((prev) => ({
+        ...prev,
+        activeSkills: [],
+        activeTools: [],
+        activeHooks: [],
+        activeMcpServers: [],
+        activePrompts: [],
+        contextStrategy: 'Standard',
+        suggestedModes: [],
+      }));
     };
-    
+
     // Define the event payload type from ContextManager
     interface ModeTransitionPayload {
       from: ModeType;
@@ -208,43 +209,44 @@ export const ActiveContextProvider: React.FC<{ children: ReactNode }> = ({ child
       trigger: 'auto' | 'manual' | 'tool' | 'explicit';
       confidence: number;
     }
-    
+
     const handleModeTransition = async (data: unknown) => {
       // Cast safely and validate
       const event = data as ModeTransitionPayload;
       if (!event || !event.to) return;
-      
+
       const metadata = getModeMetadata(event.to);
-      
+
       // Get allowed tools from ModeManager
       const modeManager = actions.getModeManager();
       const allowedTools = modeManager ? modeManager.getAllowedTools(event.to) : [];
-      
+
       // Get suggested modes from ContextAnalyzer
       // Helper function to get messages safely
       let messages: Array<{ role: Role; parts: MessagePart[] }> = [];
       try {
-          if (actions.getContext) {
-            const contextMessages = await actions.getContext();
-            // Convert to provider messages expected by ContextAnalyzer
-            messages = contextMessages.map(msg => ({
-              role: msg.role,
-              parts: [{ type: 'text', text: msg.content || '' }]
-            }));
-          }
+        if (actions.getContext) {
+          const contextMessages = await actions.getContext();
+          // Convert to provider messages expected by ContextAnalyzer
+          messages = contextMessages.map((msg) => ({
+            role: msg.role,
+            parts: [{ type: 'text', text: msg.content || '' }],
+          }));
+        }
       } catch (err) {
-          console.warn('Failed to get context for analysis:', err);
+        console.warn('Failed to get context for analysis:', err);
       }
 
       const contextAnalyzer = modeManager?.getContextAnalyzer();
-      const suggestedModes = contextAnalyzer && messages.length > 0
-        ? contextAnalyzer.getSuggestedModes(messages, event.to, 3)
-        : [];
-      
+      const suggestedModes =
+        contextAnalyzer && messages.length > 0
+          ? contextAnalyzer.getSuggestedModes(messages, event.to, 3)
+          : [];
+
       // Reset mode start time
       setModeStartTime(new Date(event.timestamp || new Date()));
-      
-      setState(prev => ({
+
+      setState((prev) => ({
         ...prev,
         currentMode: event.to,
         currentPersona: metadata.persona,
@@ -253,88 +255,96 @@ export const ActiveContextProvider: React.FC<{ children: ReactNode }> = ({ child
         allowedTools,
         currentModeConfidence: event.confidence,
         modeDuration: 0, // Reset duration on mode change
-        suggestedModes
+        suggestedModes,
       }));
     };
 
     // Assuming ContextManagerContext exposes 'on' which wires to the internal emitter
     if (actions.on) {
-        actions.on('active-skills-updated', (data: unknown) => {
-            const d = data as DataEvent;
-            setState(prev => ({ ...prev, activeSkills: d.skills || [], contextStrategy: 'Hot Swap' }));
-        });
-        actions.on('active-tools-updated', (data: unknown) => {
-          const d = data as DataEvent;
-          const reported = d.tools || [];
-          const modeManagerLocal = actions.getModeManager?.();
-          const modeLocal = modeManagerLocal ? modeManagerLocal.getCurrentMode() : undefined;
-          const filtered = reported.filter(name => {
-            if (!modeManagerLocal || !modeLocal) return true;
-            try { return modeManagerLocal.isToolAllowed(name, modeLocal); } catch (_e) { return true; }
-          });
-          setState(prev => ({ ...prev, activeTools: filtered }));
-        });
-        actions.on('active-hooks-updated', (data: unknown) => {
-            const d = data as DataEvent;
-            setState(prev => ({ ...prev, activeHooks: d.hooks || [] }));
-        });
-        actions.on('active-mcp-updated', (data: unknown) => {
-          const d = data as DataEvent;
-          const reported = d.servers || [];
+      actions.on('active-skills-updated', (data: unknown) => {
+        const d = data as DataEvent;
+        setState((prev) => ({
+          ...prev,
+          activeSkills: d.skills || [],
+          contextStrategy: 'Hot Swap',
+        }));
+      });
+      actions.on('active-tools-updated', (data: unknown) => {
+        const d = data as DataEvent;
+        const reported = d.tools || [];
+        const modeManagerLocal = actions.getModeManager?.();
+        const modeLocal = modeManagerLocal ? modeManagerLocal.getCurrentMode() : undefined;
+        const filtered = reported.filter((name) => {
+          if (!modeManagerLocal || !modeLocal) return true;
           try {
-            const mm = actions.getModeManager?.();
-            const modeNow = mm ? mm.getCurrentMode() : undefined;
-            if (mm && modeNow) {
-              const allowed = mm.isToolAllowed('mcp:probe', modeNow);
-              setState(prev => ({ ...prev, activeMcpServers: allowed ? reported : [] }));
-            } else {
-              setState(prev => ({ ...prev, activeMcpServers: reported }));
-            }
+            return modeManagerLocal.isToolAllowed(name, modeLocal);
           } catch (_e) {
-            setState(prev => ({ ...prev, activeMcpServers: reported }));
+            return true;
           }
         });
-        
-        // Listen for mode-transition from manager (legacy/proxy)
-        actions.on('mode-transition', handleModeTransition);
-
-        // Listen DIRECTLY to ModeManager for robust updates
-        const modeManager = actions.getModeManager();
-        if (modeManager) {
-            // We can reuse the same handler as the payload structure is compatible
-            // But we need to be careful about not doubling up if manager also re-emits.
-            // However, React batching usually handles this, or we can debounce.
-            // For now, robust updates are better than no updates.
-            modeManager.on('mode-changed', handleModeTransition);
-            modeManager.on('skills-changed', (skills: string[]) => {
-                setState(prev => ({ ...prev, activeSkills: skills }));
-            });
+        setState((prev) => ({ ...prev, activeTools: filtered }));
+      });
+      actions.on('active-hooks-updated', (data: unknown) => {
+        const d = data as DataEvent;
+        setState((prev) => ({ ...prev, activeHooks: d.hooks || [] }));
+      });
+      actions.on('active-mcp-updated', (data: unknown) => {
+        const d = data as DataEvent;
+        const reported = d.servers || [];
+        try {
+          const mm = actions.getModeManager?.();
+          const modeNow = mm ? mm.getCurrentMode() : undefined;
+          if (mm && modeNow) {
+            const allowed = mm.isToolAllowed('mcp:probe', modeNow);
+            setState((prev) => ({ ...prev, activeMcpServers: allowed ? reported : [] }));
+          } else {
+            setState((prev) => ({ ...prev, activeMcpServers: reported }));
+          }
+        } catch (_e) {
+          setState((prev) => ({ ...prev, activeMcpServers: reported }));
         }
-        
-        actions.on('cleared', handleClear);
+      });
+
+      // Listen for mode-transition from manager (legacy/proxy)
+      actions.on('mode-transition', handleModeTransition);
+
+      // Listen DIRECTLY to ModeManager for robust updates
+      const modeManager = actions.getModeManager();
+      if (modeManager) {
+        // We can reuse the same handler as the payload structure is compatible
+        // But we need to be careful about not doubling up if manager also re-emits.
+        // However, React batching usually handles this, or we can debounce.
+        // For now, robust updates are better than no updates.
+        modeManager.on('mode-changed', handleModeTransition);
+        modeManager.on('skills-changed', (skills: string[]) => {
+          setState((prev) => ({ ...prev, activeSkills: skills }));
+        });
+      }
+
+      actions.on('cleared', handleClear);
     }
 
     return () => {
       if (actions.off) {
-          actions.off('active-skills-updated', () => {});
-          actions.off('active-tools-updated', () => {});
-          actions.off('active-hooks-updated', () => {});
-          actions.off('active-mcp-updated', () => {});
-          
-          actions.off('mode-transition', handleModeTransition);
-          actions.off('cleared', handleClear);
+        actions.off('active-skills-updated', () => {});
+        actions.off('active-tools-updated', () => {});
+        actions.off('active-hooks-updated', () => {});
+        actions.off('active-mcp-updated', () => {});
+
+        actions.off('mode-transition', handleModeTransition);
+        actions.off('cleared', handleClear);
       }
-      
+
       const modeManager = actions.getModeManager();
       if (modeManager) {
-          modeManager.off('mode-changed', handleModeTransition);
-          modeManager.off('skills-changed', () => {});
+        modeManager.off('mode-changed', handleModeTransition);
+        modeManager.off('skills-changed', () => {});
       }
     };
   }, [contextState.active, actions]);
 
   const updateContextState = (newState: Partial<ActiveContextState>) => {
-    setState(prev => ({ ...prev, ...newState }));
+    setState((prev) => ({ ...prev, ...newState }));
   };
 
   return (

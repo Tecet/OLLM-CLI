@@ -29,12 +29,7 @@ import { buildSystemPrompt } from './utils/systemPromptBuilder.js';
 import { commandRegistry } from '../../commands/index.js';
 import { profileManager } from '../profiles/ProfileManager.js';
 
-import type {
-  Message,
-  MenuState,
-  ChatContextValue,
-  ChatProviderProps,
-} from './types/chatTypes.js';
+import type { Message, MenuState, ChatContextValue, ChatProviderProps } from './types/chatTypes.js';
 import type { ToolSchema } from '@ollm/core';
 
 declare global {
@@ -59,7 +54,7 @@ export type {
 export function ChatProvider({
   children,
   initialMessages = [],
-  onSendMessage: _onSendMessage, 
+  onSendMessage: _onSendMessage,
   onCancelGeneration: _onCancelGeneration,
 }: ChatProviderProps) {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
@@ -68,7 +63,7 @@ export function ChatProvider({
   const [currentInput, setCurrentInput] = useState('');
   const [selectedLineIndex, setSelectedLineIndex] = useState(0);
   const [statusMessage, setStatusMessage] = useState<string | undefined>(undefined);
-  
+
   // Menu State
   const [inputMode, setInputMode] = useState<'text' | 'menu'>('text');
   const [menuState, setMenuState] = useState<MenuState>({
@@ -76,25 +71,29 @@ export function ChatProvider({
     options: [],
     selectedIndex: 0,
   });
-  
+
   const { actions: contextActions, state: contextManagerState } = useContextManager();
   const contextUsage = contextManagerState.usage;
 
   const { setLaunchScreenVisible, setTheme } = useUI();
   const { container: serviceContainer } = useServices();
-  const { sendToLLM, cancelRequest, setCurrentModel, provider, currentModel, modelSupportsTools } = useModel();
+  const { sendToLLM, cancelRequest, setCurrentModel, provider, currentModel, modelSupportsTools } =
+    useModel();
   const injectFocusedFilesIntoPrompt = useFocusedFilesInjection();
-  
+
   const assistantMessageIdRef = useRef<string | null>(null);
   const recordingSessionIdRef = useRef<string | null>(null);
-  const manualContextRequestRef = useRef<{ modelId: string; onComplete: (value: number) => void | Promise<void> } | null>(null);
+  const manualContextRequestRef = useRef<{
+    modelId: string;
+    onComplete: (value: number) => void | Promise<void>;
+  } | null>(null);
   const compressionOccurredRef = useRef(false);
   const compressionRetryCountRef = useRef(0);
   const lastUserMessageRef = useRef<string | null>(null);
   const waitingForResumeRef = useRef(false);
   const inflightTokenAccumulatorRef = useRef(0);
   const inflightFlushTimerRef = useRef<NodeJS.Timeout | null>(null);
-  
+
   // Define addMessage before it's used in useEffect
   const addMessage = useCallback((message: Omit<Message, 'id' | 'timestamp'>) => {
     const newMessage: Message = {
@@ -108,36 +107,39 @@ export function ChatProvider({
     // and to ensure better control over tool call/result sequencing.
   }, []);
 
-  const recordSessionMessage = useCallback(async (role: 'user' | 'assistant', text: string) => {
-    if (!serviceContainer) {
-      return;
-    }
-    const recordingService = serviceContainer.getChatRecordingService?.();
-    if (!recordingService) {
-      return;
-    }
-    if (!recordingSessionIdRef.current) {
-      try {
-        recordingSessionIdRef.current = await recordingService.createSession(
-          currentModel,
-          provider?.name ?? 'unknown'
-        );
-      } catch (error) {
-        console.error('[ChatRecording] Failed to create session:', error);
+  const recordSessionMessage = useCallback(
+    async (role: 'user' | 'assistant', text: string) => {
+      if (!serviceContainer) {
         return;
       }
-    }
-    try {
-      await recordingService.recordMessage(recordingSessionIdRef.current, {
-        role,
-        parts: [{ type: 'text', text }],
-        timestamp: new Date().toISOString()
-      });
-    } catch (error) {
-      console.error('[ChatRecording] Failed to record message:', error);
-    }
-  }, [serviceContainer, currentModel, provider]);
-  
+      const recordingService = serviceContainer.getChatRecordingService?.();
+      if (!recordingService) {
+        return;
+      }
+      if (!recordingSessionIdRef.current) {
+        try {
+          recordingSessionIdRef.current = await recordingService.createSession(
+            currentModel,
+            provider?.name ?? 'unknown'
+          );
+        } catch (error) {
+          console.error('[ChatRecording] Failed to create session:', error);
+          return;
+        }
+      }
+      try {
+        await recordingService.recordMessage(recordingSessionIdRef.current, {
+          role,
+          parts: [{ type: 'text', text }],
+          timestamp: new Date().toISOString(),
+        });
+      } catch (error) {
+        console.error('[ChatRecording] Failed to record message:', error);
+      }
+    },
+    [serviceContainer, currentModel, provider]
+  );
+
   const clearChat = useCallback(() => {
     setMessages([]);
     setCurrentInput('');
@@ -148,7 +150,7 @@ export function ChatProvider({
       // System prompt will be rebuilt by ContextManager on next message
     }
   }, [contextActions]);
-  
+
   useEffect(() => {
     if (!contextActions) return;
 
@@ -167,13 +169,13 @@ export function ChatProvider({
     const cleanup = registerContextEventHandlers(contextActions, handlers);
 
     return cleanup;
-  }, [contextActions, contextManagerState.usage, addMessage]);
+  }, [contextActions, contextManagerState.usage, contextManagerState, addMessage]);
 
   useEffect(() => {
     if (serviceContainer) {
       commandRegistry.setServiceContainer(serviceContainer);
       globalThis.__ollmModelSwitchCallback = setCurrentModel;
-      
+
       // Listen to messageBus events
       const messageBus = serviceContainer.getHookService()?.getMessageBus();
       if (messageBus) {
@@ -187,18 +189,25 @@ export function ChatProvider({
           compressionRetryCountRef,
           waitingForResumeRef,
         });
-        
+
         const listenerId = messageBus.on('session_saved', handlers.handleSessionSaved);
-        
+
         return () => {
           messageBus.off(listenerId);
         };
       }
     }
-    
+
     // Note: __ollmAddSystemMessage and __ollmClearContext are now registered
     // by AllCallbacksBridge component for better separation of concerns
-  }, [serviceContainer, setCurrentModel, addMessage, setStatusMessage, contextActions, contextManagerState]);
+  }, [
+    serviceContainer,
+    setCurrentModel,
+    addMessage,
+    setStatusMessage,
+    contextActions,
+    contextManagerState,
+  ]);
 
   useEffect(() => {
     if (setTheme) {
@@ -207,9 +216,7 @@ export function ChatProvider({
   }, [setTheme]);
 
   const updateMessage = useCallback((id: string, updates: Partial<Message>) => {
-    setMessages((prev) =>
-      prev.map((msg) => (msg.id === id ? { ...msg, ...updates } : msg))
-    );
+    setMessages((prev) => prev.map((msg) => (msg.id === id ? { ...msg, ...updates } : msg)));
   }, []);
 
   const sendMessage = useCallback(
@@ -223,7 +230,7 @@ export function ChatProvider({
           addMessage({
             role: 'system',
             content: 'Manual context entry cancelled.',
-            excludeFromContext: true
+            excludeFromContext: true,
           });
           return;
         }
@@ -232,7 +239,7 @@ export function ChatProvider({
           addMessage({
             role: 'system',
             content: 'Invalid context size. Enter a positive integer, or type "cancel" to abort.',
-            excludeFromContext: true
+            excludeFromContext: true,
           });
           return;
         }
@@ -242,7 +249,7 @@ export function ChatProvider({
           addMessage({
             role: 'system',
             content: validation.message ?? 'Context size exceeds the allowable maximum.',
-            excludeFromContext: true
+            excludeFromContext: true,
           });
           return;
         }
@@ -257,15 +264,17 @@ export function ChatProvider({
         const last = lastUserMessageRef.current;
         if (last) {
           // Re-dispatch the last user message asynchronously to avoid recursion
-          setTimeout(() => { void sendMessage(last); }, 0);
+          setTimeout(() => {
+            void sendMessage(last);
+          }, 0);
         }
         return;
       }
-      
+
       // TASK 7.2: Analyze message with ContextAnalyzer before sending
       // Get the mode manager and context analyzer
       const modeManager = contextActions.getModeManager();
-      
+
       // Add user message to UI
       addMessage({
         role: 'user',
@@ -288,27 +297,27 @@ export function ChatProvider({
         });
         return;
       }
-      
+
       // TASK 7.2-7.7: Mode switching logic
       if (modeManager) {
         try {
           // Get current context for analysis
           const currentContext = await contextActions.getContext();
-          
+
           // Convert context messages to format expected by ContextAnalyzer
-          const messagesForAnalysis = currentContext.map(msg => ({
+          const messagesForAnalysis = currentContext.map((msg) => ({
             role: msg.role as 'user' | 'assistant' | 'system' | 'tool',
             parts: [{ type: 'text' as const, text: msg.content || '' }],
-            toolCalls: msg.toolCalls
+            toolCalls: msg.toolCalls,
           }));
-          
+
           // Analyze conversation context
           const analysis = modeManager['contextAnalyzer'].analyzeConversation(messagesForAnalysis);
-          
+
           // TASK 7.3: Check if mode should switch based on analysis
           const currentMode = modeManager.getCurrentMode();
           const shouldSwitch = modeManager.shouldSwitchMode(currentMode, analysis);
-          
+
           if (shouldSwitch) {
             // TASK 7.4: Create transition snapshot if switching to specialized mode
             const specializedModes = ['debugger'];
@@ -321,15 +330,15 @@ export function ChatProvider({
                 // Continue with mode switch even if snapshot fails
               }
             }
-            
+
             // TASK 7.5: Switch mode if confidence threshold met
             modeManager.switchMode(analysis.mode, 'auto', analysis.confidence);
-            
+
             // TASK 7.6-7.7: Prompt rebuilding is now unified below to ensure consistency
             addMessage({
               role: 'system',
               content: `Switched to ${analysis.mode in MODE_METADATA ? (MODE_METADATA as Record<string, { icon: string }>)[analysis.mode].icon : '🔄'} ${analysis.mode} (${(analysis.confidence * 100).toFixed(0)}%)`,
-              excludeFromContext: true
+              excludeFromContext: true,
             });
           }
         } catch (modeError) {
@@ -354,46 +363,57 @@ export function ChatProvider({
 
       // Stage 1: Check tool support (model capability check)
       const supportsTools = modelSupportsTools(currentModel);
-      
+
       let toolSchemas: ToolSchema[] | undefined;
-      
+
       if (supportsTools) {
         // Stage 2: Get central tool registry from service container
         const toolRegistry = serviceContainer?.getToolRegistry();
-        
+
         if (toolRegistry) {
           const promptRegistry = new PromptRegistry();
-          
+
           const manager = contextActions.getManager();
           if (manager && provider) {
-              const modeManager = contextActions.getModeManager();
-              const promptsSnapshotManager = contextActions.getPromptsSnapshotManager();
-              
-              // Register dynamic tools only if not already registered
-              // These tools require runtime dependencies that aren't available at startup
-              if (!toolRegistry.get('trigger_hot_swap')) {
-                toolRegistry.register(new HotSwapTool(manager, promptRegistry, provider, currentModel, modeManager || undefined, promptsSnapshotManager || undefined));
-              }
-              if (!toolRegistry.get('memory_dump')) {
-                toolRegistry.register(new MemoryDumpTool(modeManager || undefined));
-              }
-              
-              const toolNames = toolRegistry.list().map(t => t.name);
-              manager.emit('active-tools-updated', toolNames);
+            const modeManager = contextActions.getModeManager();
+            const promptsSnapshotManager = contextActions.getPromptsSnapshotManager();
+
+            // Register dynamic tools only if not already registered
+            // These tools require runtime dependencies that aren't available at startup
+            if (!toolRegistry.get('trigger_hot_swap')) {
+              toolRegistry.register(
+                new HotSwapTool(
+                  manager,
+                  promptRegistry,
+                  provider,
+                  currentModel,
+                  modeManager || undefined,
+                  promptsSnapshotManager || undefined
+                )
+              );
+            }
+            if (!toolRegistry.get('memory_dump')) {
+              toolRegistry.register(new MemoryDumpTool(modeManager || undefined));
+            }
+
+            const toolNames = toolRegistry.list().map((t) => t.name);
+            manager.emit('active-tools-updated', toolNames);
           }
-          
+
           // Get modeManager for combined filtering
           const modeManager = contextActions.getModeManager();
-          
+
           if (modeManager) {
             const currentMode = modeManager.getCurrentMode();
-            
+
             // Use combined filtering method (user prefs + mode permissions in single pass)
             toolSchemas = toolRegistry.getFunctionSchemasForMode(currentMode, modeManager);
           } else {
             // FALLBACK: If modeManager is not initialized yet, use all tools without mode filtering
             // This ensures tools are available even if mode manager isn't ready
-            console.warn('[ChatContext] modeManager not initialized, using all tools without mode filtering');
+            console.warn(
+              '[ChatContext] modeManager not initialized, using all tools without mode filtering'
+            );
             toolSchemas = toolRegistry.getFunctionSchemas();
           }
         } else {
@@ -408,13 +428,10 @@ export function ChatProvider({
       const coreManager = contextActions.getManager?.();
       const coreMode = coreManager?.getMode?.() ?? contextActions.getCurrentMode?.() ?? 'assistant';
       const effectiveTier = resolveTierForSize(usageForTier.maxTokens);
-      const tierPrompt = loadTierPromptWithFallback(
-        toOperationalMode(coreMode),
-        effectiveTier
-      );
-      
+      const tierPrompt = loadTierPromptWithFallback(toOperationalMode(coreMode), effectiveTier);
+
       const modelProfile = profileManager.findProfile(currentModel);
-      
+
       const systemPrompt = buildSystemPrompt({
         basePrompt,
         tierPrompt,
@@ -425,7 +442,7 @@ export function ChatProvider({
 
       // 1. Initial user message addition to context manager
       if (contextActions) {
-          await contextActions.addMessage({ role: 'user', content });
+        await contextActions.addMessage({ role: 'user', content });
       }
       await recordSessionMessage('user', content);
 
@@ -463,7 +480,7 @@ export function ChatProvider({
       setStreaming(false);
       setWaitingForResponse(false);
       assistantMessageIdRef.current = null;
-      
+
       // Emit after_agent hook event
       if (serviceContainer) {
         const hookService = serviceContainer.getHookService();
@@ -475,7 +492,21 @@ export function ChatProvider({
         });
       }
     },
-    [addMessage, setMessages, sendToLLM, setLaunchScreenVisible, contextActions, provider, currentModel, clearChat, modelSupportsTools, serviceContainer, cancelRequest, injectFocusedFilesIntoPrompt, recordSessionMessage]
+    [
+      addMessage,
+      setMessages,
+      sendToLLM,
+      setLaunchScreenVisible,
+      contextActions,
+      provider,
+      currentModel,
+      clearChat,
+      modelSupportsTools,
+      serviceContainer,
+      cancelRequest,
+      injectFocusedFilesIntoPrompt,
+      recordSessionMessage,
+    ]
   );
 
   const cancelGeneration = useCallback(() => {
@@ -487,7 +518,6 @@ export function ChatProvider({
       _onCancelGeneration();
     }
   }, [_onCancelGeneration, cancelRequest]);
-
 
   const editMessage = useCallback(
     (id: string, content: string) => {
@@ -518,45 +548,45 @@ export function ChatProvider({
     setStatusMessage,
     contextUsage,
     setInputMode,
-    setMenuState: (updates) => setMenuState(prev => ({ ...prev, ...updates })),
+    setMenuState: (updates) => setMenuState((prev) => ({ ...prev, ...updates })),
     executeMenuOption: async () => {
-        if (!menuState.active || !menuState.options[menuState.selectedIndex]) return;
-        const option = menuState.options[menuState.selectedIndex];
-        setInputMode('text');
-        setMenuState(prev => ({ ...prev, active: false }));
-        await option.action();
+      if (!menuState.active || !menuState.options[menuState.selectedIndex]) return;
+      const option = menuState.options[menuState.selectedIndex];
+      setInputMode('text');
+      setMenuState((prev) => ({ ...prev, active: false }));
+      await option.action();
     },
     navigateMenu: (direction) => {
-        setMenuState(prev => {
-            const count = prev.options.length;
-            if (count === 0) return prev;
-            let nextIndex = prev.selectedIndex;
-            if (direction === 'up') {
-                nextIndex = (prev.selectedIndex - 1 + count) % count;
-            } else {
-                nextIndex = (prev.selectedIndex + 1) % count;
-            }
-            return { ...prev, selectedIndex: nextIndex };
-        });
+      setMenuState((prev) => {
+        const count = prev.options.length;
+        if (count === 0) return prev;
+        let nextIndex = prev.selectedIndex;
+        if (direction === 'up') {
+          nextIndex = (prev.selectedIndex - 1 + count) % count;
+        } else {
+          nextIndex = (prev.selectedIndex + 1) % count;
+        }
+        return { ...prev, selectedIndex: nextIndex };
+      });
     },
     activateMenu: (options, messageId) => {
-        const orderedOptions = [
-            ...options.filter(option => option.id === 'opt-back'),
-            ...options.filter(option => option.id === 'opt-exit'),
-            ...options.filter(option => option.id !== 'opt-back' && option.id !== 'opt-exit'),
-        ];
-        setMenuState({
-            active: true,
-            options: orderedOptions,
-            selectedIndex: 0,
-            messageId
-        });
-        setInputMode('menu');
+      const orderedOptions = [
+        ...options.filter((option) => option.id === 'opt-back'),
+        ...options.filter((option) => option.id === 'opt-exit'),
+        ...options.filter((option) => option.id !== 'opt-back' && option.id !== 'opt-exit'),
+      ];
+      setMenuState({
+        active: true,
+        options: orderedOptions,
+        selectedIndex: 0,
+        messageId,
+      });
+      setInputMode('menu');
     },
     requestManualContextInput: (modelId, onComplete) => {
-        manualContextRequestRef.current = { modelId, onComplete };
-        setMenuState(prev => ({ ...prev, active: false }));
-        setInputMode('text');
+      manualContextRequestRef.current = { modelId, onComplete };
+      setMenuState((prev) => ({ ...prev, active: false }));
+      setInputMode('text');
     },
     // Scroll Logic
     selectedLineIndex,
@@ -570,24 +600,24 @@ export function ChatProvider({
   const [scrollOffset, setScrollOffset] = useState(0);
 
   // Reset scroll when messages change (new message usually means scroll to bottom)
-    // Standard behavior: auto-scroll to bottom if at bottom.
- 
+  // Standard behavior: auto-scroll to bottom if at bottom.
+
   useEffect(() => {
-      // If we are streaming (assistant typing), we want to stay at 0.
-      if (streaming) setScrollOffset(0);
+    // If we are streaming (assistant typing), we want to stay at 0.
+    if (streaming) setScrollOffset(0);
   }, [messages.length, streaming]);
 
   const contextValue: ChatContextValue = {
-      ...value,
-      selectedLineIndex,
-      setSelectedLineIndex,
-      scrollOffset,
-      scrollUp: useCallback(() => {
-          setSelectedLineIndex(prev => Math.max(0, prev - 1));
-      }, []),
-      scrollDown: useCallback(() => {
-          setSelectedLineIndex(prev => prev + 1);
-      }, [])
+    ...value,
+    selectedLineIndex,
+    setSelectedLineIndex,
+    scrollOffset,
+    scrollUp: useCallback(() => {
+      setSelectedLineIndex((prev) => Math.max(0, prev - 1));
+    }, []),
+    scrollDown: useCallback(() => {
+      setSelectedLineIndex((prev) => prev + 1);
+    }, []),
   };
 
   return <ChatContext.Provider value={contextValue}>{children}</ChatContext.Provider>;

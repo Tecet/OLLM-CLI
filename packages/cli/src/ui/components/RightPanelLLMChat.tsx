@@ -17,15 +17,19 @@ export function RightPanelLLMChat({ height, width }: RightPanelLLMChatProps) {
   const maxVisibleLines = Math.max(1, height - 2);
   const contentWidth = Math.max(20, width - 2);
 
-  const lines = useMemo(() => buildChatLines(
-    chatState.messages,
-    uiState.theme,
-    { enabled: true, compactMode: false },
-    { enabled: true, maxVisibleLines: 8 },
-    0,
-    contentWidth,
-    0
-  ), [chatState.messages, uiState.theme, contentWidth]);
+  const lines = useMemo(
+    () =>
+      buildChatLines(
+        chatState.messages,
+        uiState.theme,
+        { enabled: true, compactMode: false },
+        { enabled: true, maxVisibleLines: 8 },
+        0,
+        contentWidth,
+        0
+      ),
+    [chatState.messages, uiState.theme, contentWidth]
+  );
 
   return (
     <Box flexDirection="column" height="100%" width="100%" overflow="hidden">

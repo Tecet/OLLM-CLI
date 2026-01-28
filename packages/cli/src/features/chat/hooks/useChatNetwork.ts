@@ -7,28 +7,20 @@ import { useCallback, useRef } from 'react';
 
 // Import types and dependencies
 
-import {
-  HotSwapTool,
-  MemoryDumpTool,
-  MODE_METADATA,
-  PromptRegistry,
-} from '@ollm/core';
+import { HotSwapTool, MemoryDumpTool, MODE_METADATA, PromptRegistry } from '@ollm/core';
 
 import { commandRegistry } from '../../../commands/index.js';
 import { validateManualContext } from '../../context/contextSizing.js';
 import { profileManager } from '../../profiles/ProfileManager.js';
-import { 
-  resolveTierForSize, 
-  toOperationalMode, 
-  loadTierPromptWithFallback, 
-  stripSection 
+import {
+  resolveTierForSize,
+  toOperationalMode,
+  loadTierPromptWithFallback,
+  stripSection,
 } from '../utils/promptUtils.js';
 
 import type { Message, MenuState } from '../types.js';
-import type { 
-  ToolSchema,
-  ServiceContainer,
-} from '@ollm/core';
+import type { ToolSchema, ServiceContainer } from '@ollm/core';
 
 export interface UseChatNetworkProps {
   // Dependencies
@@ -40,7 +32,7 @@ export interface UseChatNetworkProps {
   modelSupportsTools: (model: string) => boolean;
   serviceContainer: ServiceContainer | null;
   injectFocusedFilesIntoPrompt: (prompt: string) => string;
-  
+
   // State management
   addMessage: (message: Omit<Message, 'id' | 'timestamp'>) => Message;
   _updateMessage: (id: string, updates: Partial<Message>) => void;
@@ -50,10 +42,10 @@ export interface UseChatNetworkProps {
   setMenuState: React.Dispatch<React.SetStateAction<any>>;
   clearChat: () => void;
   setLaunchScreenVisible: (visible: boolean) => void;
-  
+
   // Session recording
   recordSessionMessage: (role: 'user' | 'assistant', text: string) => Promise<void>;
-  
+
   // Context events
   _compressionOccurred: boolean;
   _compressionRetryCount: number;
@@ -64,7 +56,10 @@ export interface UseChatNetworkProps {
 
 export interface UseChatNetworkReturn {
   sendMessage: (content: string) => Promise<void>;
-  requestManualContextInput: (modelId: string, onComplete: (value: number) => void | Promise<void>) => void;
+  requestManualContextInput: (
+    modelId: string,
+    onComplete: (value: number) => void | Promise<void>
+  ) => void;
 }
 
 /**
@@ -98,9 +93,9 @@ export function useChatNetwork(props: UseChatNetworkProps): UseChatNetworkReturn
 
   // Refs for tracking state across async operations
   const _assistantMessageIdRef = useRef<string | null>(null);
-  const manualContextRequestRef = useRef<{ 
-    modelId: string; 
-    onComplete: (value: number) => void | Promise<void> 
+  const manualContextRequestRef = useRef<{
+    modelId: string;
+    onComplete: (value: number) => void | Promise<void>;
   } | null>(null);
   const lastUserMessageRef = useRef<string | null>(null);
   const _inflightTokenAccumulatorRef = useRef(0);
@@ -109,14 +104,14 @@ export function useChatNetwork(props: UseChatNetworkProps): UseChatNetworkReturn
   /**
    * Request manual context size input from user
    */
-  const requestManualContextInput = useCallback((
-    modelId: string, 
-    onComplete: (value: number) => void | Promise<void>
-  ) => {
-    manualContextRequestRef.current = { modelId, onComplete };
-    setMenuState((prev: MenuState) => ({ ...prev, active: false }));
-    setInputMode('text');
-  }, [setMenuState, setInputMode]);
+  const requestManualContextInput = useCallback(
+    (modelId: string, onComplete: (value: number) => void | Promise<void>) => {
+      manualContextRequestRef.current = { modelId, onComplete };
+      setMenuState((prev: MenuState) => ({ ...prev, active: false }));
+      setInputMode('text');
+    },
+    [setMenuState, setInputMode]
+  );
 
   /**
    * Main message sending logic with agent loop
@@ -128,38 +123,38 @@ export function useChatNetwork(props: UseChatNetworkProps): UseChatNetworkReturn
         const request = manualContextRequestRef.current;
         const trimmed = content.trim();
         const normalized = trimmed.toLowerCase();
-        
+
         if (normalized === 'cancel' || normalized === 'back' || normalized === 'exit') {
           manualContextRequestRef.current = null;
           addMessage({
             role: 'system',
             content: 'Manual context entry cancelled.',
-            excludeFromContext: true
+            excludeFromContext: true,
           });
           return;
         }
-        
+
         const value = Number.parseInt(trimmed, 10);
         if (!Number.isFinite(value) || value <= 0) {
           addMessage({
             role: 'system',
             content: 'Invalid context size. Enter a positive integer, or type "cancel" to abort.',
-            excludeFromContext: true
+            excludeFromContext: true,
           });
           return;
         }
-        
+
         const modelEntry = profileManager.getModelEntry(request.modelId);
         const validation = validateManualContext(modelEntry, value);
         if (!validation.valid) {
           addMessage({
             role: 'system',
             content: validation.message ?? 'Context size exceeds the allowable maximum.',
-            excludeFromContext: true
+            excludeFromContext: true,
           });
           return;
         }
-        
+
         manualContextRequestRef.current = null;
         await request.onComplete(value);
         return;
@@ -172,20 +167,22 @@ export function useChatNetwork(props: UseChatNetworkProps): UseChatNetworkReturn
         const last = lastUserMessageRef.current;
         if (last) {
           // Re-dispatch the last user message asynchronously to avoid recursion
-          setTimeout(() => { void sendMessage(last); }, 0);
+          setTimeout(() => {
+            void sendMessage(last);
+          }, 0);
         }
         return;
       }
-      
+
       // Get the mode manager and context analyzer
       const modeManager = contextActions.getModeManager();
-      
+
       // Add user message to UI
       addMessage({
         role: 'user',
         content,
       });
-      
+
       // Store last user message so we can retry generation after compression
       lastUserMessageRef.current = content;
 
@@ -195,7 +192,7 @@ export function useChatNetwork(props: UseChatNetworkProps): UseChatNetworkReturn
           const result = await commandRegistry.execute(content);
           if (result.action === 'show-launch-screen') setLaunchScreenVisible(true);
           if (result.action === 'clear-chat') {
-              clearChat();
+            clearChat();
           }
           if (result.action === 'exit') {
             if (provider?.unloadModel && currentModel) {
@@ -203,20 +200,20 @@ export function useChatNetwork(props: UseChatNetworkProps): UseChatNetworkReturn
                 addMessage({
                   role: 'system',
                   content: `Unloading model "${currentModel}"...`,
-                  excludeFromContext: true
+                  excludeFromContext: true,
                 });
                 await provider.unloadModel(currentModel);
                 addMessage({
                   role: 'system',
                   content: `Model "${currentModel}" unloaded.`,
-                  excludeFromContext: true
+                  excludeFromContext: true,
                 });
-                await new Promise(resolve => setTimeout(resolve, 250));
+                await new Promise((resolve) => setTimeout(resolve, 250));
               } catch (error) {
                 addMessage({
                   role: 'system',
                   content: `Failed to unload model "${currentModel}": ${error instanceof Error ? error.message : String(error)}`,
-                  excludeFromContext: true
+                  excludeFromContext: true,
                 });
               }
             }
@@ -224,39 +221,41 @@ export function useChatNetwork(props: UseChatNetworkProps): UseChatNetworkReturn
           }
           addMessage({
             role: 'system',
-            content: result.message || (result.success ? 'Command executed successfully' : 'Command failed'),
-            excludeFromContext: true
+            content:
+              result.message ||
+              (result.success ? 'Command executed successfully' : 'Command failed'),
+            excludeFromContext: true,
           });
         } catch (error) {
           addMessage({
             role: 'system',
             content: `Command error: ${error instanceof Error ? error.message : String(error)}`,
-            excludeFromContext: true
+            excludeFromContext: true,
           });
         }
         return;
       }
-      
+
       // Mode switching logic
       if (modeManager) {
         try {
           // Get current context for analysis
           const currentContext = await contextActions.getContext();
-          
+
           // Convert context messages to format expected by ContextAnalyzer
           const messagesForAnalysis = currentContext.map((msg: any) => ({
             role: msg.role as 'user' | 'assistant' | 'system' | 'tool',
             parts: [{ type: 'text' as const, text: msg.content || '' }],
-            toolCalls: msg.toolCalls
+            toolCalls: msg.toolCalls,
           }));
-          
+
           // Analyze conversation context
           const analysis = modeManager['contextAnalyzer'].analyzeConversation(messagesForAnalysis);
-          
+
           // Check if mode should switch based on analysis
           const currentMode = modeManager.getCurrentMode();
           const shouldSwitch = modeManager.shouldSwitchMode(currentMode, analysis);
-          
+
           if (shouldSwitch) {
             // Create transition snapshot if switching to specialized mode
             const specializedModes = ['debugger'];
@@ -267,14 +266,14 @@ export function useChatNetwork(props: UseChatNetworkProps): UseChatNetworkReturn
                 console.warn('Failed to create transition snapshot:', snapshotError);
               }
             }
-            
+
             // Switch mode if confidence threshold met
             modeManager.switchMode(analysis.mode, 'auto', analysis.confidence);
-            
+
             addMessage({
               role: 'system',
               content: `Switched to ${analysis.mode in MODE_METADATA ? (MODE_METADATA as Record<string, { icon: string }>)[analysis.mode].icon : '🔄'} ${analysis.mode} (${(analysis.confidence * 100).toFixed(0)}%)`,
-              excludeFromContext: true
+              excludeFromContext: true,
             });
           }
         } catch (modeError) {
@@ -297,36 +296,45 @@ export function useChatNetwork(props: UseChatNetworkProps): UseChatNetworkReturn
 
       // Check tool support (model capability check)
       const supportsTools = modelSupportsTools(currentModel);
-      
+
       let _toolSchemas: ToolSchema[] | undefined;
-      
+
       if (supportsTools) {
         // Get central tool registry from service container
         const toolRegistry = serviceContainer?.getToolRegistry();
-        
+
         if (toolRegistry) {
           const promptRegistry = new PromptRegistry();
-          
+
           const manager = contextActions.getManager();
           if (manager && provider) {
-              const modeManager = contextActions.getModeManager();
-              const promptsSnapshotManager = contextActions.getPromptsSnapshotManager();
-              
-              // Register dynamic tools only if not already registered
-              if (!toolRegistry.get('trigger_hot_swap')) {
-                toolRegistry.register(new HotSwapTool(manager, promptRegistry, provider, currentModel, modeManager || undefined, promptsSnapshotManager || undefined));
-              }
-              if (!toolRegistry.get('memory_dump')) {
-                toolRegistry.register(new MemoryDumpTool(modeManager || undefined));
-              }
-              
-              const toolNames = toolRegistry.list().map((t: any) => t.name);
-              manager.emit('active-tools-updated', toolNames);
+            const modeManager = contextActions.getModeManager();
+            const promptsSnapshotManager = contextActions.getPromptsSnapshotManager();
+
+            // Register dynamic tools only if not already registered
+            if (!toolRegistry.get('trigger_hot_swap')) {
+              toolRegistry.register(
+                new HotSwapTool(
+                  manager,
+                  promptRegistry,
+                  provider,
+                  currentModel,
+                  modeManager || undefined,
+                  promptsSnapshotManager || undefined
+                )
+              );
+            }
+            if (!toolRegistry.get('memory_dump')) {
+              toolRegistry.register(new MemoryDumpTool(modeManager || undefined));
+            }
+
+            const toolNames = toolRegistry.list().map((t: any) => t.name);
+            manager.emit('active-tools-updated', toolNames);
           }
-          
+
           // Get modeManager for combined filtering
           const modeManager = contextActions.getModeManager();
-          
+
           if (modeManager) {
             const currentMode = modeManager.getCurrentMode();
             _toolSchemas = toolRegistry.getFunctionSchemasForMode(currentMode, modeManager);
@@ -345,15 +353,13 @@ export function useChatNetwork(props: UseChatNetworkProps): UseChatNetworkReturn
       const coreManager = contextActions.getManager?.();
       const coreMode = coreManager?.getMode?.() ?? contextActions.getCurrentMode?.() ?? 'assistant';
       const effectiveTier = resolveTierForSize(usageForTier.maxTokens);
-      const tierPrompt = loadTierPromptWithFallback(
-        toOperationalMode(coreMode),
-        effectiveTier
-      );
-      
+      const tierPrompt = loadTierPromptWithFallback(toOperationalMode(coreMode), effectiveTier);
+
       if (!supportsTools) {
-        systemPrompt += '\n\nNote: This model does not support function calling. Do not attempt to use tools or make tool calls.';
+        systemPrompt +=
+          '\n\nNote: This model does not support function calling. Do not attempt to use tools or make tool calls.';
       }
-      
+
       const toolNote = supportsTools
         ? ''
         : 'Note: This model does not support function calling. Do not attempt to use tools or make tool calls.';
@@ -365,7 +371,7 @@ export function useChatNetwork(props: UseChatNetworkProps): UseChatNetworkReturn
 
       // Add initial user message to context manager
       if (contextActions) {
-          await contextActions.addMessage({ role: 'user', content });
+        await contextActions.addMessage({ role: 'user', content });
       }
       await recordSessionMessage('user', content);
 
@@ -382,7 +388,9 @@ export function useChatNetwork(props: UseChatNetworkProps): UseChatNetworkReturn
       // (Agent loop implementation continues in the actual file)
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [/* dependencies */]
+    [
+      /* dependencies */
+    ]
   );
 
   return {

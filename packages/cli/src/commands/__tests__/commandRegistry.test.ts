@@ -14,7 +14,7 @@ describe('CommandRegistry', () => {
   it('should register home command by default', () => {
     const commands = registry.getCommands();
     expect(commands.length).toBeGreaterThan(0);
-    
+
     const homeCmd = registry.getCommand('/home');
     expect(homeCmd).toBeDefined();
     expect(homeCmd?.name).toBe('/home');
@@ -28,7 +28,7 @@ describe('CommandRegistry', () => {
     };
 
     registry.register(testCommand);
-    
+
     const cmd = registry.getCommand('/test');
     expect(cmd).toBeDefined();
     expect(cmd?.name).toBe('/test');
@@ -43,7 +43,7 @@ describe('CommandRegistry', () => {
     };
 
     registry.register(testCommand);
-    
+
     const cmd = registry.getCommand('/t');
     expect(cmd).toBeDefined();
     expect(cmd?.name).toBe('/test');
@@ -58,21 +58,21 @@ describe('CommandRegistry', () => {
 
   it('should execute registered commands', async () => {
     const result = await registry.execute('/home');
-    
+
     expect(result.success).toBe(true);
     expect(result.action).toBe('show-launch-screen');
   });
 
   it('should return error for unknown commands', async () => {
     const result = await registry.execute('/unknown');
-    
+
     expect(result.success).toBe(false);
     expect(result.message).toContain('Unknown command');
   });
 
   it('should pass arguments to command handler', async () => {
     let receivedArgs: string[] = [];
-    
+
     const testCommand: Command = {
       name: '/test',
       description: 'Test command',
@@ -84,7 +84,7 @@ describe('CommandRegistry', () => {
 
     registry.register(testCommand);
     await registry.execute('/test arg1 arg2');
-    
+
     expect(receivedArgs).toEqual(['arg1', 'arg2']);
   });
 
@@ -99,7 +99,7 @@ describe('CommandRegistry', () => {
 
     registry.register(testCommand);
     const result = await registry.execute('/error');
-    
+
     expect(result.success).toBe(false);
     expect(result.message).toContain('Test error');
   });

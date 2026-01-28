@@ -1,6 +1,6 @@
 /**
  * Context Management Commands
- * 
+ *
  * Implements commands for managing context:
  * - /context - Show current context information
  * - /context size <tokens> - Set target context size
@@ -22,7 +22,9 @@ import type { Command, CommandResult } from './types.js';
 function ensureContextManager() {
   const manager = getGlobalContextManager();
   if (!manager) {
-    throw new Error('Context Manager is not initialized. Please wait for the application to fully load.');
+    throw new Error(
+      'Context Manager is not initialized. Please wait for the application to fully load.'
+    );
   }
   return manager;
 }
@@ -37,7 +39,7 @@ export const contextCommand: Command = {
   handler: async (args: string[]): Promise<CommandResult> => {
     try {
       const manager = ensureContextManager();
-      
+
       // Default: Show status
       if (args.length === 0) {
         const messages = await manager.getContext();
@@ -71,16 +73,16 @@ export const contextCommand: Command = {
 
         case 'snapshot': {
           const snapshot = await manager.createSnapshot();
-          return { 
-            success: true, 
-            message: `Snapshot created: ${snapshot.id.substring(0, 8)} (${snapshot.tokenCount} tokens)` 
+          return {
+            success: true,
+            message: `Snapshot created: ${snapshot.id.substring(0, 8)} (${snapshot.tokenCount} tokens)`,
           };
         }
 
         case 'list': {
           await manager.refreshSnapshots(); // Trigger refresh
           // The UI should update to show the list, but we can't easily return the list here
-          // unless we exposed a getter. 
+          // unless we exposed a getter.
           return { success: true, message: 'Refreshing snapshot list...' };
         }
 
@@ -91,49 +93,47 @@ export const contextCommand: Command = {
           await manager.restoreSnapshot(subArgs[0]);
           return { success: true, message: `Restoring snapshot ${subArgs[0]}...` };
         }
-        
-        case 'stats': {
-           const usage = manager.getUsage();
-           const config = manager.getConfig();
-           const tokenMetrics = manager.getTokenMetrics();
-           
-           const statsMsg = 
-             `Context Statistics:\n` +
-             `------------------\n` +
-             `Tokens: ${usage.currentTokens} / ${usage.maxTokens} (${Math.round(usage.percentage)}%)\n` +
-             `VRAM: ${(usage.vramUsed / 1024 / 1024).toFixed(0)}MB / ${(usage.vramTotal / 1024 / 1024).toFixed(0)}MB\n` +
-             `Target Size: ${config.targetSize}\n` +
-             `Auto-Size: ${config.autoSize ? 'Enabled' : 'Disabled'}\n` +
-             `Strategy: ${config.compression.strategy}\n\n` +
-             `Token Counting Metrics:\n` +
-             `----------------------\n` +
-             `Cache Hit Rate: ${tokenMetrics.cacheHitRate}\n` +
-             `Cache Hits: ${tokenMetrics.cacheHits}\n` +
-             `Cache Misses: ${tokenMetrics.cacheMisses}\n` +
-             `Recalculations: ${tokenMetrics.recalculations}\n` +
-             `Total Tokens Counted: ${tokenMetrics.totalTokensCounted.toLocaleString()}\n` +
-             `Largest Message: ${tokenMetrics.largestMessage} tokens\n` +
-             `Avg Tokens/Message: ${tokenMetrics.avgTokensPerMessage}\n` +
-             `Uptime: ${tokenMetrics.uptimeSeconds}s`;
 
-           return { success: true, message: statsMsg };
+        case 'stats': {
+          const usage = manager.getUsage();
+          const config = manager.getConfig();
+          const tokenMetrics = manager.getTokenMetrics();
+
+          const statsMsg =
+            `Context Statistics:\n` +
+            `------------------\n` +
+            `Tokens: ${usage.currentTokens} / ${usage.maxTokens} (${Math.round(usage.percentage)}%)\n` +
+            `VRAM: ${(usage.vramUsed / 1024 / 1024).toFixed(0)}MB / ${(usage.vramTotal / 1024 / 1024).toFixed(0)}MB\n` +
+            `Target Size: ${config.targetSize}\n` +
+            `Auto-Size: ${config.autoSize ? 'Enabled' : 'Disabled'}\n` +
+            `Strategy: ${config.compression.strategy}\n\n` +
+            `Token Counting Metrics:\n` +
+            `----------------------\n` +
+            `Cache Hit Rate: ${tokenMetrics.cacheHitRate}\n` +
+            `Cache Hits: ${tokenMetrics.cacheHits}\n` +
+            `Cache Misses: ${tokenMetrics.cacheMisses}\n` +
+            `Recalculations: ${tokenMetrics.recalculations}\n` +
+            `Total Tokens Counted: ${tokenMetrics.totalTokensCounted.toLocaleString()}\n` +
+            `Largest Message: ${tokenMetrics.largestMessage} tokens\n` +
+            `Avg Tokens/Message: ${tokenMetrics.avgTokensPerMessage}\n` +
+            `Uptime: ${tokenMetrics.uptimeSeconds}s`;
+
+          return { success: true, message: statsMsg };
         }
 
         default:
           return {
             success: false,
-            message: `Unknown subcommand: ${subcommand}\nAvailable: size, auto, snapshot, restore, list, stats`
+            message: `Unknown subcommand: ${subcommand}\nAvailable: size, auto, snapshot, restore, list, stats`,
           };
       }
     } catch (error) {
       return {
         success: false,
-        message: `Error: ${error instanceof Error ? error.message : String(error)}`
+        message: `Error: ${error instanceof Error ? error.message : String(error)}`,
       };
     }
   },
 };
 
-export const contextCommands: Command[] = [
-  contextCommand,
-];
+export const contextCommands: Command[] = [contextCommand];

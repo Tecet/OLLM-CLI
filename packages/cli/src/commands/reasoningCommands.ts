@@ -1,6 +1,6 @@
 /**
  * Reasoning Display Commands
- * 
+ *
  * Implements commands for managing reasoning display:
  * - /reasoning toggle - Toggle reasoning display
  * - /reasoning expand - Expand all reasoning boxes
@@ -11,7 +11,7 @@ import type { Command, CommandResult } from './types.js';
 
 /**
  * /reasoning toggle - Toggle reasoning display
- * 
+ *
  * Requirements: 19.11
  */
 async function reasoningToggleHandler(): Promise<CommandResult> {
@@ -24,7 +24,7 @@ async function reasoningToggleHandler(): Promise<CommandResult> {
 
 /**
  * /reasoning expand - Expand all reasoning boxes
- * 
+ *
  * Requirements: 19.11
  */
 async function reasoningExpandHandler(): Promise<CommandResult> {
@@ -37,7 +37,7 @@ async function reasoningExpandHandler(): Promise<CommandResult> {
 
 /**
  * /reasoning collapse - Collapse all reasoning boxes
- * 
+ *
  * Requirements: 19.11
  */
 async function reasoningCollapseHandler(): Promise<CommandResult> {
@@ -50,7 +50,7 @@ async function reasoningCollapseHandler(): Promise<CommandResult> {
 
 /**
  * /reasoning command - Main reasoning command with subcommands
- * 
+ *
  * Requirements: 19.11
  */
 export const reasoningCommand: Command = {
@@ -61,7 +61,8 @@ export const reasoningCommand: Command = {
     if (args.length === 0) {
       return {
         success: false,
-        message: 'Usage: /reasoning <toggle|expand|collapse>\n\n' +
+        message:
+          'Usage: /reasoning <toggle|expand|collapse>\n\n' +
           'Subcommands:\n' +
           '  toggle         - Toggle reasoning display\n' +
           '  expand         - Expand all reasoning boxes\n' +
@@ -81,7 +82,8 @@ export const reasoningCommand: Command = {
       default:
         return {
           success: false,
-          message: `Unknown subcommand: ${subcommand}\n\n` +
+          message:
+            `Unknown subcommand: ${subcommand}\n\n` +
             'Available subcommands: toggle, expand, collapse',
         };
     }
@@ -91,6 +93,4 @@ export const reasoningCommand: Command = {
 /**
  * All reasoning-related commands
  */
-export const reasoningCommands: Command[] = [
-  reasoningCommand,
-];
+export const reasoningCommands: Command[] = [reasoningCommand];

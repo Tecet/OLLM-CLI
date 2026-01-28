@@ -21,27 +21,30 @@ export function InputRoutingProvider({ children }: { children: React.ReactNode }
     return 'line-buffered';
   }, [activeDestination]);
 
-  const cycleDestination = useCallback((direction: 'next' | 'prev') => {
-    const destinations: InputDestination[] = ['llm', 'editor', 'terminal1', 'terminal2'];
-    const currentIndex = destinations.indexOf(activeDestination);
-    const nextIndex = direction === 'next'
-      ? (currentIndex + 1) % destinations.length
-      : (currentIndex - 1 + destinations.length) % destinations.length;
-    setActiveDestination(destinations[nextIndex]);
-  }, [activeDestination]);
-
-  const value = useMemo(() => ({
-    activeDestination,
-    setActiveDestination,
-    cycleDestination,
-    inputMode,
-  }), [activeDestination, cycleDestination, inputMode]);
-
-  return (
-    <InputRoutingContext.Provider value={value}>
-      {children}
-    </InputRoutingContext.Provider>
+  const cycleDestination = useCallback(
+    (direction: 'next' | 'prev') => {
+      const destinations: InputDestination[] = ['llm', 'editor', 'terminal1', 'terminal2'];
+      const currentIndex = destinations.indexOf(activeDestination);
+      const nextIndex =
+        direction === 'next'
+          ? (currentIndex + 1) % destinations.length
+          : (currentIndex - 1 + destinations.length) % destinations.length;
+      setActiveDestination(destinations[nextIndex]);
+    },
+    [activeDestination]
   );
+
+  const value = useMemo(
+    () => ({
+      activeDestination,
+      setActiveDestination,
+      cycleDestination,
+      inputMode,
+    }),
+    [activeDestination, cycleDestination, inputMode]
+  );
+
+  return <InputRoutingContext.Provider value={value}>{children}</InputRoutingContext.Provider>;
 }
 
 export function useInputRouting() {

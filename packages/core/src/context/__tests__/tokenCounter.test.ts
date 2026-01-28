@@ -1,9 +1,9 @@
 /**
  * Property-Based Tests for Token Counter Service
- * 
+ *
  * Tests token counting functionality including caching, fallback estimation,
  * tool call overhead, and model-specific multipliers.
- * 
+ *
  * Feature: stage-04b-context-management
  */
 
@@ -32,29 +32,31 @@ describe('Token Counter - Property-Based Tests', () => {
   const arbToolCall = fc.record({
     id: fc.uuid(),
     name: fc.string({ minLength: 1, maxLength: 50 }),
-    arguments: fc.dictionary(fc.string(), fc.anything())
+    arguments: fc.dictionary(fc.string(), fc.anything()),
   }) as fc.Arbitrary<ToolCall>;
 
   // Generator for messages
   const arbMessage = fc.record({
     id: fc.uuid(),
-    role: fc.constantFrom('system', 'user', 'assistant', 'tool') as fc.Arbitrary<'system' | 'user' | 'assistant' | 'tool'>,
+    role: fc.constantFrom('system', 'user', 'assistant', 'tool') as fc.Arbitrary<
+      'system' | 'user' | 'assistant' | 'tool'
+    >,
     content: arbText,
     timestamp: fc.date(),
     tokenCount: fc.option(fc.integer({ min: 1, max: 10000 }), { nil: undefined }),
     metadata: fc.option(
       fc.record({
-        toolCalls: fc.array(arbToolCall, { minLength: 0, maxLength: 5 })
+        toolCalls: fc.array(arbToolCall, { minLength: 0, maxLength: 5 }),
       }),
       { nil: undefined }
-    )
+    ),
   }) as fc.Arbitrary<Message>;
 
   /**
    * Property 3: Token Count Caching
    * Feature: stage-04b-context-management, Property 3: Token Count Caching
    * Validates: Requirements 2.1, 2.4
-   * 
+   *
    * For any message, counting tokens twice for the same message should return
    * the cached value without recalculation.
    */
@@ -80,7 +82,7 @@ describe('Token Counter - Property-Based Tests', () => {
    * Property 4: Fallback Token Estimation
    * Feature: stage-04b-context-management, Property 4: Fallback Token Estimation
    * Validates: Requirements 2.3
-   * 
+   *
    * For any text when provider token counting is unavailable, the estimated
    * token count should equal Math.ceil(text.length / 4) with multiplier applied.
    */
@@ -104,7 +106,7 @@ describe('Token Counter - Property-Based Tests', () => {
    * Property 5: Tool Call Overhead Inclusion
    * Feature: stage-04b-context-management, Property 5: Tool Call Overhead Inclusion
    * Validates: Requirements 2.5
-   * 
+   *
    * For any conversation with tool calls, the total token count should include
    * overhead for each tool call.
    */
@@ -128,7 +130,7 @@ describe('Token Counter - Property-Based Tests', () => {
         for (const msg of messages) {
           contentTokens += msg.tokenCount ?? Math.ceil(msg.content.length / 4);
         }
-        const expectedMinimum = contentTokens + (toolCallCount * 50);
+        const expectedMinimum = contentTokens + toolCallCount * 50;
 
         // Property: Total should be at least content + tool overhead
         return totalTokens >= expectedMinimum;
@@ -141,7 +143,7 @@ describe('Token Counter - Property-Based Tests', () => {
    * Property 6: Model-Specific Multipliers
    * Feature: stage-04b-context-management, Property 6: Model-Specific Multipliers
    * Validates: Requirements 2.6
-   * 
+   *
    * For any configured per-model token adjustment multiplier, the token count
    * should be multiplied by that factor using single rounding operation.
    */
@@ -164,7 +166,7 @@ describe('Token Counter - Property-Based Tests', () => {
 
 /**
  * Unit Tests for Token Counter Service
- * 
+ *
  * These tests verify specific examples and edge cases
  */
 describe('Token Counter - Unit Tests', () => {
@@ -199,11 +201,9 @@ describe('Token Counter - Unit Tests', () => {
         content: 'Hello',
         timestamp: new Date(),
         metadata: {
-          toolCalls: [
-            { id: 't1', name: 'tool1', arguments: {} }
-          ]
-        }
-      }
+          toolCalls: [{ id: 't1', name: 'tool1', arguments: {} }],
+        },
+      },
     ];
 
     const total = counter.countConversationTokens(messages);
@@ -251,8 +251,8 @@ describe('Token Counter - Unit Tests', () => {
         id: '1',
         role: 'user',
         content: 'Hello',
-        timestamp: new Date()
-      }
+        timestamp: new Date(),
+      },
     ];
 
     const total = counter.countConversationTokens(messages);
@@ -266,8 +266,8 @@ describe('Token Counter - Unit Tests', () => {
         role: 'user',
         content: 'Hello world',
         timestamp: new Date(),
-        tokenCount: 100 // Pre-cached count
-      }
+        tokenCount: 100, // Pre-cached count
+      },
     ];
 
     const total = counter.countConversationTokens(messages);

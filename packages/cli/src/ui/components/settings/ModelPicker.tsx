@@ -12,20 +12,20 @@ export interface Model {
 export interface ModelPickerProps {
   /** Available models */
   models: Model[];
-  
+
   /** Currently selected model */
   selectedModel: string;
-  
+
   /** Callback when a model is selected */
   onSelect: (modelName: string) => void;
-  
+
   /** Theme for styling */
   theme: Theme;
 }
 
 /**
  * ModelPicker component
- * 
+ *
  * Displays available models and allows selection.
  * Shows model name, size, and last modified date.
  */
@@ -53,7 +53,7 @@ export function ModelPicker({
         <Box flexDirection="column">
           {models.map((model) => {
             const isSelected = model.name === selectedModel;
-            
+
             return (
               <Box
                 key={model.name}

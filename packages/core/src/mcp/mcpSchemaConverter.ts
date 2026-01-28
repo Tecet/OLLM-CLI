@@ -1,6 +1,6 @@
 /**
  * MCP Schema Converter
- * 
+ *
  * This module converts between MCP tool schemas and internal tool schemas.
  * Handles type mapping, parameter conversion, and result transformation.
  */
@@ -44,13 +44,13 @@ export interface MCPSchemaConverter {
 export class DefaultMCPSchemaConverter implements MCPSchemaConverter {
   /**
    * Convert MCP tool schema to internal ToolSchema format
-   * 
+   *
    * Maps MCP JSON Schema to internal tool schema format, handling:
    * - Basic types (string, number, boolean, object, array)
    * - Required vs optional parameters
    * - Descriptions and constraints
    * - Nested objects and arrays
-   * 
+   *
    * @param mcpTool - MCP tool definition with JSON Schema
    * @returns Internal tool schema
    */
@@ -64,11 +64,11 @@ export class DefaultMCPSchemaConverter implements MCPSchemaConverter {
 
   /**
    * Convert internal arguments to MCP format
-   * 
+   *
    * MCP expects arguments as a plain object matching the input schema.
    * This method performs a pass-through conversion, ensuring the args
    * are in the correct format for MCP tool invocation.
-   * 
+   *
    * @param args - Internal arguments object
    * @returns MCP-formatted arguments
    */
@@ -80,10 +80,10 @@ export class DefaultMCPSchemaConverter implements MCPSchemaConverter {
 
   /**
    * Convert MCP result to internal format
-   * 
+   *
    * MCP results can be any JSON-serializable value. This method
    * ensures the result is properly formatted for internal use.
-   * 
+   *
    * @param result - MCP result value
    * @returns Internal result format
    */
@@ -95,7 +95,7 @@ export class DefaultMCPSchemaConverter implements MCPSchemaConverter {
 
   /**
    * Convert MCP JSON Schema to internal parameters format
-   * 
+   *
    * @param schema - MCP input schema (JSON Schema)
    * @returns Internal parameters object
    */
@@ -122,7 +122,7 @@ export class DefaultMCPSchemaConverter implements MCPSchemaConverter {
 
   /**
    * Convert JSON Schema properties to internal format
-   * 
+   *
    * @param properties - JSON Schema properties object
    * @returns Converted properties
    */
@@ -132,7 +132,7 @@ export class DefaultMCPSchemaConverter implements MCPSchemaConverter {
     for (const [key, value] of Object.entries(properties)) {
       if (value && typeof value === 'object') {
         const propSchema = value as Record<string, unknown>;
-        
+
         // Handle nested objects
         if (propSchema.type === 'object' && propSchema.properties) {
           converted[key] = {
@@ -172,7 +172,7 @@ export class DefaultMCPSchemaConverter implements MCPSchemaConverter {
 
   /**
    * Deep clone an object to ensure immutability
-   * 
+   *
    * @param obj - Object to clone
    * @returns Cloned object
    */
@@ -182,7 +182,7 @@ export class DefaultMCPSchemaConverter implements MCPSchemaConverter {
     }
 
     if (Array.isArray(obj)) {
-      return obj.map(item => this.deepClone(item));
+      return obj.map((item) => this.deepClone(item));
     }
 
     const cloned: Record<string, unknown> = {};

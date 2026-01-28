@@ -72,26 +72,30 @@ export class MessageStore {
    */
   async addMessage(message: Message): Promise<void> {
     const context = this.getContext();
-    const tokenCount = this.tokenCounter.countTokensCached(
-      message.id,
-      message.content
-    );
+    const tokenCount = this.tokenCounter.countTokensCached(message.id, message.content);
     message.tokenCount = tokenCount;
 
     try {
       if (!this.isTestEnv) {
-        console.debug('[ContextManager] addMessage: tokenCount=', tokenCount, 'currentContext.tokenCount=', context.tokenCount, 'currentContext.maxTokens=', context.maxTokens);
+        console.debug(
+          '[ContextManager] addMessage: tokenCount=',
+          tokenCount,
+          'currentContext.tokenCount=',
+          context.tokenCount,
+          'currentContext.maxTokens=',
+          context.maxTokens
+        );
       }
     } catch (_e) {
       // ignore logging errors
     }
-    
+
     // ✅ VALIDATION: Ensure token count is valid
     if (tokenCount < 0) {
       console.error('[MessageStore] INVALID: Negative token count!', {
         messageId: message.id,
         tokenCount,
-        contentLength: message.content.length
+        contentLength: message.content.length,
       });
       throw new Error(`Invalid token count for message ${message.id}: ${tokenCount}`);
     }
@@ -100,27 +104,22 @@ export class MessageStore {
       await this.memoryGuard.checkMemoryLevelAndAct();
 
       if (!this.memoryGuard.canAllocate(tokenCount)) {
-        const systemPrompt = context.messages.find(m => m.role === 'system');
-        const nonSystemMessages = context.messages.filter(m => m.role !== 'system');
+        const systemPrompt = context.messages.find((m) => m.role === 'system');
+        const nonSystemMessages = context.messages.filter((m) => m.role !== 'system');
 
         while (nonSystemMessages.length > 0 && !this.memoryGuard.canAllocate(tokenCount)) {
           nonSystemMessages.shift();
 
-          context.messages = [
-            ...(systemPrompt ? [systemPrompt] : []),
-            ...nonSystemMessages
-          ];
+          context.messages = [...(systemPrompt ? [systemPrompt] : []), ...nonSystemMessages];
 
-          context.tokenCount = this.tokenCounter.countConversationTokens(
-            context.messages
-          );
+          context.tokenCount = this.tokenCounter.countConversationTokens(context.messages);
           this.contextPool.setCurrentTokens(context.tokenCount);
         }
 
         if (!this.memoryGuard.canAllocate(tokenCount)) {
           throw new Error(
             'Cannot add message: would exceed memory safety limit even after truncation. ' +
-            'The message itself might be too large for the current context window.'
+              'The message itself might be too large for the current context window.'
           );
         }
       }
@@ -130,30 +129,30 @@ export class MessageStore {
     const _previousTokenCount = context.tokenCount;
     context.tokenCount += tokenCount;
     this.contextPool.setCurrentTokens(context.tokenCount);
-    
+
     // ✅ ASSERTION: Verify token count consistency (development only)
     if (this.isDevelopmentMode() && message.role === 'assistant') {
       const calculatedTotal = this.tokenCounter.countConversationTokens(context.messages);
       const drift = Math.abs(calculatedTotal - context.tokenCount);
-      
+
       if (drift > 10) {
         console.warn('[MessageStore] TOKEN DRIFT DETECTED!', {
           tracked: context.tokenCount,
           calculated: calculatedTotal,
           drift,
           messageCount: context.messages.length,
-          lastMessageTokens: tokenCount
+          lastMessageTokens: tokenCount,
         });
       }
     }
-    
+
     // ⚠️ WARNING: Check if exceeding limit
     if (context.tokenCount > context.maxTokens) {
       console.warn('[MessageStore] OVERFLOW: Token count exceeds limit!', {
         current: context.tokenCount,
         max: context.maxTokens,
         overage: context.tokenCount - context.maxTokens,
-        percentage: Math.round((context.tokenCount / context.maxTokens) * 100)
+        percentage: Math.round((context.tokenCount / context.maxTokens) * 100),
       });
     }
 
@@ -164,20 +163,23 @@ export class MessageStore {
 
       const lastSnapTokens = this.lastSnapshotTokens || 0;
       const tokenDiff = Math.abs(context.tokenCount - lastSnapTokens);
-      const significantChange = tokenDiff > (context.maxTokens * 0.02);
+      const significantChange = tokenDiff > context.maxTokens * 0.02;
 
       this.messagesSinceLastSnapshot++;
-      const turnBasedSnapshotNeeded = this.config.snapshots.enabled &&
-                                      this.config.snapshots.autoCreate &&
-                                      this.messagesSinceLastSnapshot >= 5;
+      const turnBasedSnapshotNeeded =
+        this.config.snapshots.enabled &&
+        this.config.snapshots.autoCreate &&
+        this.messagesSinceLastSnapshot >= 5;
 
       const safetySnapshotNeeded = usageFraction >= 0.85 && significantChange;
 
       if (safetySnapshotNeeded || turnBasedSnapshotNeeded) {
         const reason = safetySnapshotNeeded ? 'User Input > 85%' : 'Periodic Backup (5 turns)';
-        console.log(`[ContextManager] Safety Snapshot Triggered (${reason}) - Pre-generation backup`);
+        console.log(
+          `[ContextManager] Safety Snapshot Triggered (${reason}) - Pre-generation backup`
+        );
 
-        this.createSnapshot().catch(err =>
+        this.createSnapshot().catch((err) =>
           console.error('[ContextManager] Snapshot failed:', err)
         );
 
@@ -189,7 +191,10 @@ export class MessageStore {
     if (message.role === 'assistant') {
       // Post-assistant checks include threshold callbacks and compression.
       try {
-        console.debug('[ContextManager] calling snapshotManager.checkThresholds', { currentTokens: context.tokenCount, maxTokens: context.maxTokens });
+        console.debug('[ContextManager] calling snapshotManager.checkThresholds', {
+          currentTokens: context.tokenCount,
+          maxTokens: context.maxTokens,
+        });
       } catch (_e) {
         // ignore logging errors
       }
@@ -202,18 +207,18 @@ export class MessageStore {
         // Get dynamic budget information from context manager
         const budget = this.getBudget();
         const budgetFraction = budget.budgetPercentage / 100;
-        
+
         // Warn user when available budget is getting full (70-75% range)
-        if (budgetFraction >= 0.70 && budgetFraction < 0.75) {
+        if (budgetFraction >= 0.7 && budgetFraction < 0.75) {
           this.emit('context-warning-low', {
             percentage: budget.budgetPercentage,
             currentTokens: budget.conversationTokens,
             availableBudget: budget.availableBudget,
             checkpointTokens: budget.checkpointTokens,
-            message: 'Available budget is filling up - compression will trigger soon'
+            message: 'Available budget is filling up - compression will trigger soon',
           });
         }
-        
+
         // Trigger compression at threshold (80% of AVAILABLE BUDGET, not total)
         // This accounts for space used by system prompt and checkpoints
         if (budgetFraction >= this.config.compression.threshold) {
@@ -223,7 +228,7 @@ export class MessageStore {
             availableBudget: budget.availableBudget,
             checkpointTokens: budget.checkpointTokens,
             systemPromptTokens: budget.systemPromptTokens,
-            totalOllamaSize: budget.totalOllamaSize
+            totalOllamaSize: budget.totalOllamaSize,
           });
           await this.compress();
         }
@@ -238,9 +243,7 @@ export class MessageStore {
    */
   clear(): void {
     const context = this.getContext();
-    const systemPrompt = context.messages.find(
-      m => m.role === 'system'
-    );
+    const systemPrompt = context.messages.find((m) => m.role === 'system');
 
     context.messages = systemPrompt ? [systemPrompt] : [];
     context.tokenCount = systemPrompt?.tokenCount || 0;
@@ -253,7 +256,7 @@ export class MessageStore {
 
   /**
    * Track streaming tokens so thresholds can react mid-generation.
-   * 
+   *
    * STRATEGY: Trust Ollama to stop at num_ctx limit, compress AFTER message completes.
    * SAFETY: Emergency brake if stream exceeds limit (prevents runaway streams).
    */
@@ -262,34 +265,34 @@ export class MessageStore {
       const context = this.getContext();
       this.inflightTokens = Math.max(0, this.inflightTokens + delta);
       const totalTokens = context.tokenCount + this.inflightTokens;
-      
+
       this.contextPool.setCurrentTokens(totalTokens);
       this.snapshotManager.checkThresholds(totalTokens, context.maxTokens);
-      
+
       // EMERGENCY BRAKE: If streaming exceeds Ollama limit, emit warning
       // This should NEVER happen (Ollama stops at num_ctx), but protects against bugs
       const ollamaLimit = context.maxTokens; // This is the Ollama size (85%)
       if (totalTokens > ollamaLimit) {
         const overage = totalTokens - ollamaLimit;
-        
+
         // Only log in non-test mode (tests intentionally trigger this)
         if (!this.isTestEnv) {
           console.error('[ContextManager] EMERGENCY: Stream exceeded Ollama limit!', {
             totalTokens,
             ollamaLimit,
             overage,
-            message: 'This indicates a bug - Ollama should stop at num_ctx'
+            message: 'This indicates a bug - Ollama should stop at num_ctx',
           });
         }
-        
+
         // Emit emergency event for UI to display
         this.emit('stream-overflow-emergency', {
           totalTokens,
           ollamaLimit,
-          overage
+          overage,
         });
       }
-      
+
       // NO mid-stream compression - we compress AFTER addMessage() completes
       // This ensures we capture the full message before compressing
     } catch (e) {
@@ -331,7 +334,7 @@ export class MessageStore {
     this.lastSnapshotTokens = 0;
     this.messagesSinceLastSnapshot = 0;
   }
-  
+
   /**
    * Check if running in development mode
    */

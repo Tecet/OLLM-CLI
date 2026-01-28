@@ -4,6 +4,7 @@
 **Status:** Design Document (Implementation Pending)
 
 **Related Documents:**
+
 - [Context Checkpoint Rollover](./dev_ContextCheckpointRollover.md) - Sessions, snapshots, and chat history
 - [Context Compression](./dev_ContextCompression.md) - Compression system
 - [Context Management](./dev_ContextManagement.md) - Context management
@@ -23,6 +24,7 @@ The Input Preprocessing system transforms how conversations start by extracting 
 ## The Problem
 
 ### Current Flow (Reactive)
+
 ```
 User sends: [3000 tokens]
 ├─ Typos: "uhh", "like", "you know"
@@ -45,6 +47,7 @@ Context fills with garbage:
 ```
 
 ### The Solution (Proactive)
+
 ```
 User sends: [3000 tokens with noise]
   ↓
@@ -205,13 +208,13 @@ LLM becomes proactive:
 // packages/core/src/services/inputPreprocessor.ts
 
 interface IntentExtraction {
-  intent: string;              // Clean 1-sentence intent
-  keyPoints: string[];         // 3-5 bullet points
-  typosFixed: number;          // Count of typos corrected
-  attachments: Attachment[];   // Extracted logs, code, etc.
-  originalTokens: number;      // Original message size
-  extractedTokens: number;     // Extracted intent size
-  compressionRatio: number;    // extractedTokens / originalTokens
+  intent: string; // Clean 1-sentence intent
+  keyPoints: string[]; // 3-5 bullet points
+  typosFixed: number; // Count of typos corrected
+  attachments: Attachment[]; // Extracted logs, code, etc.
+  originalTokens: number; // Original message size
+  extractedTokens: number; // Extracted intent size
+  compressionRatio: number; // extractedTokens / originalTokens
 }
 
 interface Attachment {
@@ -223,12 +226,12 @@ interface Attachment {
 
 class InputPreprocessor {
   private readonly LONG_MESSAGE_THRESHOLD = 500; // tokens
-  
+
   constructor(
     private tokenCounter: TokenCounter,
     private llmProvider: ProviderAdapter
   ) {}
-  
+
   /**
    * Check if message should be preprocessed
    */
@@ -236,13 +239,13 @@ class InputPreprocessor {
     const tokenCount = await this.tokenCounter.countTokens(message);
     return tokenCount > this.LONG_MESSAGE_THRESHOLD;
   }
-  
+
   /**
    * Extract intent from noisy message
    */
   async extractIntent(message: string): Promise<IntentExtraction> {
     const originalTokens = await this.tokenCounter.countTokens(message);
-    
+
     const prompt = `Extract the key intent from this message. Fix typos, remove filler words, identify attachments.
 
 Message:
@@ -262,20 +265,20 @@ Respond in JSON format:
     }
   ]
 }`;
-    
+
     const response = await this.llmProvider.complete(prompt);
     const extraction = JSON.parse(response);
-    
+
     const extractedTokens = await this.tokenCounter.countTokens(extraction.intent);
-    
+
     return {
       ...extraction,
       originalTokens,
       extractedTokens,
-      compressionRatio: extractedTokens / originalTokens
+      compressionRatio: extractedTokens / originalTokens,
     };
   }
-  
+
   /**
    * Propose goal with milestones
    */
@@ -296,7 +299,7 @@ Respond in JSON format:
     "Milestone 3"
   ]
 }`;
-    
+
     const response = await this.llmProvider.complete(prompt);
     return JSON.parse(response);
   }
@@ -312,13 +315,13 @@ interface IntentSnapshot {
   id: string;
   timestamp: Date;
   sessionId: string;
-  
+
   // Original message
   original: {
     content: string;
     tokens: number;
   };
-  
+
   // Extracted intent
   extracted: {
     intent: string;
@@ -327,13 +330,13 @@ interface IntentSnapshot {
     attachments: Attachment[];
     tokens: number;
   };
-  
+
   // Proposed goal
   goal: {
     description: string;
     milestones: string[];
   };
-  
+
   // Metadata
   compressionRatio: number;
   confirmed: boolean;
@@ -341,11 +344,11 @@ interface IntentSnapshot {
 
 class IntentSnapshotManager {
   private storagePath: string;
-  
+
   constructor(storagePath: string = '~/.ollm/intent-snapshots') {
     this.storagePath = storagePath;
   }
-  
+
   async createSnapshot(
     sessionId: string,
     original: string,
@@ -358,43 +361,43 @@ class IntentSnapshotManager {
       sessionId,
       original: {
         content: original,
-        tokens: extraction.originalTokens
+        tokens: extraction.originalTokens,
       },
       extracted: {
         intent: extraction.intent,
         keyPoints: extraction.keyPoints,
         typosFixed: extraction.typosFixed,
         attachments: extraction.attachments,
-        tokens: extraction.extractedTokens
+        tokens: extraction.extractedTokens,
       },
       goal: {
         description: goal.description,
-        milestones: goal.milestones
+        milestones: goal.milestones,
       },
       compressionRatio: extraction.compressionRatio,
-      confirmed: false
+      confirmed: false,
     };
-    
+
     await this.save(snapshot);
     return snapshot;
   }
-  
+
   async save(snapshot: IntentSnapshot): Promise<void> {
     const path = join(this.storagePath, snapshot.sessionId, `${snapshot.id}.json`);
     await fs.mkdir(dirname(path), { recursive: true });
     await fs.writeFile(path, JSON.stringify(snapshot, null, 2));
   }
-  
+
   async load(snapshotId: string, sessionId: string): Promise<IntentSnapshot> {
     const path = join(this.storagePath, sessionId, `${snapshotId}.json`);
     const content = await fs.readFile(path, 'utf-8');
     return JSON.parse(content);
   }
-  
+
   async list(sessionId: string): Promise<IntentSnapshot[]> {
     const path = join(this.storagePath, sessionId);
     const files = await fs.readdir(path);
-    
+
     const snapshots: IntentSnapshot[] = [];
     for (const file of files) {
       if (file.endsWith('.json')) {
@@ -402,7 +405,7 @@ class IntentSnapshotManager {
         snapshots.push(JSON.parse(content));
       }
     }
-    
+
     return snapshots.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
   }
 }
@@ -418,9 +421,9 @@ async *chat(prompt: string, options?: ChatOptions): AsyncIterable<ChatEvent> {
   if (await this.inputPreprocessor.shouldPreprocess(prompt)) {
     // Extract intent
     yield { type: 'preprocessing_started' };
-    
+
     const extraction = await this.inputPreprocessor.extractIntent(prompt);
-    
+
     // Clarification loop
     yield {
       type: 'clarification_request',
@@ -428,30 +431,30 @@ async *chat(prompt: string, options?: ChatOptions): AsyncIterable<ChatEvent> {
       keyPoints: extraction.keyPoints,
       typosFixed: extraction.typosFixed
     };
-    
+
     const clarified = await this.waitForUserConfirmation();
-    
+
     if (!clarified) {
       // User rejected, ask for correction
       yield { type: 'clarification_rejected' };
       return;
     }
-    
+
     // Propose goal
     const goal = await this.inputPreprocessor.proposeGoal(extraction);
-    
+
     yield {
       type: 'goal_proposal',
       goal: goal
     };
-    
+
     const goalConfirmed = await this.waitForUserConfirmation();
-    
+
     if (!goalConfirmed) {
       // User rejected goal, proceed without goal
       yield { type: 'goal_rejected' };
     }
-    
+
     // Create intent snapshot
     const snapshot = await this.intentSnapshotManager.createSnapshot(
       sessionId,
@@ -459,12 +462,12 @@ async *chat(prompt: string, options?: ChatOptions): AsyncIterable<ChatEvent> {
       extraction,
       goal
     );
-    
+
     yield {
       type: 'intent_snapshot_created',
       snapshot: snapshot
     };
-    
+
     // Store extracted intent in active context (NOT original)
     await this.contextMgmtManager.addMessage({
       id: `user-${Date.now()}`,
@@ -479,7 +482,7 @@ async *chat(prompt: string, options?: ChatOptions): AsyncIterable<ChatEvent> {
         compressionRatio: extraction.compressionRatio
       }
     });
-    
+
     // Store original in session file (for RAG/memory)
     if (this.recordingService) {
       await this.recordingService.recordMessage(sessionId, {
@@ -493,7 +496,7 @@ async *chat(prompt: string, options?: ChatOptions): AsyncIterable<ChatEvent> {
         }
       });
     }
-    
+
     // Create goal if confirmed
     if (goalConfirmed && this.goalManager) {
       await this.goalManager.createGoal(goal.description, 'high');
@@ -506,7 +509,7 @@ async *chat(prompt: string, options?: ChatOptions): AsyncIterable<ChatEvent> {
         );
       }
     }
-    
+
     yield { type: 'preprocessing_complete' };
   } else {
     // Normal flow for short messages
@@ -516,7 +519,7 @@ async *chat(prompt: string, options?: ChatOptions): AsyncIterable<ChatEvent> {
       content: prompt,
       timestamp: new Date()
     });
-    
+
     if (this.recordingService) {
       await this.recordingService.recordMessage(sessionId, {
         role: 'user',
@@ -525,7 +528,7 @@ async *chat(prompt: string, options?: ChatOptions): AsyncIterable<ChatEvent> {
       });
     }
   }
-  
+
   // Continue with normal chat flow...
 }
 ```
@@ -544,30 +547,35 @@ export function ClarificationPrompt({
   keyPoints,
   typosFixed,
   onConfirm,
-  onReject
+  onReject,
 }: ClarificationPromptProps) {
   return (
     <Box flexDirection="column" borderStyle="round" borderColor="cyan" padding={1}>
-      <Text bold color="cyan">🤔 Let me clarify what you want:</Text>
-      
+      <Text bold color="cyan">
+        🤔 Let me clarify what you want:
+      </Text>
+
       <Box marginTop={1}>
         <Text bold>Intent:</Text>
         <Text>{intent}</Text>
       </Box>
-      
+
       <Box marginTop={1}>
         <Text bold>Key points:</Text>
         {keyPoints.map((point, i) => (
-          <Text key={i}>  {i + 1}. {point}</Text>
+          <Text key={i}>
+            {' '}
+            {i + 1}. {point}
+          </Text>
         ))}
       </Box>
-      
+
       {typosFixed > 0 && (
         <Box marginTop={1}>
           <Text dimColor>✓ Fixed {typosFixed} typos</Text>
         </Box>
       )}
-      
+
       <Box marginTop={1}>
         <Text dimColor>Is this correct? (y/n)</Text>
       </Box>
@@ -581,23 +589,24 @@ export function ClarificationPrompt({
 ```tsx
 // packages/cli/src/ui/components/goals/GoalProposal.tsx
 
-export function GoalProposal({
-  goal,
-  onConfirm,
-  onReject
-}: GoalProposalProps) {
+export function GoalProposal({ goal, onConfirm, onReject }: GoalProposalProps) {
   return (
     <Box flexDirection="column" borderStyle="round" borderColor="green" padding={1}>
-      <Text bold color="green">🎯 Proposed Goal:</Text>
+      <Text bold color="green">
+        🎯 Proposed Goal:
+      </Text>
       <Text>{goal.description}</Text>
-      
+
       <Box marginTop={1}>
         <Text bold>Milestones:</Text>
         {goal.milestones.map((milestone, i) => (
-          <Text key={i}>  {i + 1}. {milestone}</Text>
+          <Text key={i}>
+            {' '}
+            {i + 1}. {milestone}
+          </Text>
         ))}
       </Box>
-      
+
       <Box marginTop={1}>
         <Text dimColor>Shall I proceed with this plan? (y/n)</Text>
       </Box>
@@ -611,12 +620,14 @@ export function GoalProposal({
 ## Storage
 
 ### Active Context
+
 ```
 User: "Fix authentication system crash and add test coverage"
 [100 tokens - clean signal]
 ```
 
 ### Session File
+
 ```json
 {
   "role": "user",
@@ -635,6 +646,7 @@ User: "Fix authentication system crash and add test coverage"
 ```
 
 ### Intent Snapshot
+
 ```json
 {
   "id": "intent-snapshot-abc123",
@@ -682,19 +694,23 @@ User: "Fix authentication system crash and add test coverage"
 ## Benefits
 
 ### Token Efficiency
+
 - **Before:** 3000 tokens of garbage in active context
 - **After:** 100 tokens of clean signal in active context
 - **Savings:** 97% reduction (30x improvement)
 
 ### Clarity
+
 - **Before:** LLM confused by noise
 - **After:** LLM understands clear intent
 
 ### Goal-Driven
+
 - **Before:** Reactive conversation
 - **After:** Proactive with milestones
 
 ### Future Integration
+
 - **RAG:** Intent snapshots searchable
 - **Memory:** LLM recalls past intents
 - **Analytics:** Track intent patterns
@@ -707,7 +723,7 @@ User: "Fix authentication system crash and add test coverage"
 # ~/.ollm/config.yaml
 inputPreprocessing:
   enabled: true
-  threshold: 500  # tokens
+  threshold: 500 # tokens
   typoCorrection: true
   clarificationLoop: true
   goalProposal: true
@@ -734,18 +750,21 @@ inputPreprocessing:
 ## Testing
 
 ### Unit Tests
+
 - Intent extraction accuracy
 - Typo correction
 - Attachment detection
 - Goal proposal generation
 
 ### Integration Tests
+
 - Full preprocessing flow
 - Clarification loop
 - Goal creation
 - Storage verification
 
 ### Manual Tests
+
 - Long message with typos
 - Message with logs
 - Message with code

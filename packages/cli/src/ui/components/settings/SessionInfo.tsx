@@ -17,14 +17,14 @@ export interface SessionStats {
 export interface SessionInfoProps {
   /** Session statistics */
   stats: SessionStats;
-  
+
   /** Theme for styling */
   theme: Theme;
 }
 
 /**
  * SessionInfo component
- * 
+ *
  * Displays current session statistics.
  * Shows tokens, duration, cost, and generation count.
  */
@@ -33,7 +33,7 @@ export function SessionInfo({ stats, theme }: SessionInfoProps) {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = Math.floor(seconds % 60);
-    
+
     if (hours > 0) {
       return `${hours}h ${minutes}m ${secs}s`;
     } else if (minutes > 0) {
@@ -63,16 +63,12 @@ export function SessionInfo({ stats, theme }: SessionInfoProps) {
 
         <Box>
           <Text color={theme.text.secondary}>Started: </Text>
-          <Text color={theme.text.primary}>
-            {stats.startTime.toLocaleString()}
-          </Text>
+          <Text color={theme.text.primary}>{stats.startTime.toLocaleString()}</Text>
         </Box>
 
         <Box>
           <Text color={theme.text.secondary}>Duration: </Text>
-          <Text color={theme.text.primary}>
-            {formatDuration(stats.totalTime)}
-          </Text>
+          <Text color={theme.text.primary}>{formatDuration(stats.totalTime)}</Text>
         </Box>
 
         <Box>
@@ -97,9 +93,7 @@ export function SessionInfo({ stats, theme }: SessionInfoProps) {
 
         <Box>
           <Text color={theme.text.secondary}>Estimated Cost: </Text>
-          <Text color={theme.status.warning}>
-            {formatCost(stats.estimatedCost)}
-          </Text>
+          <Text color={theme.status.warning}>{formatCost(stats.estimatedCost)}</Text>
         </Box>
       </Box>
     </Box>

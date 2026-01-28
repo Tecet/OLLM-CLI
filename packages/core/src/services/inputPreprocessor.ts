@@ -1,6 +1,6 @@
 /**
  * Input Preprocessor Service
- * 
+ *
  * Extracts signal from noise in user messages:
  * - Detects long messages (>500 tokens)
  * - Extracts clean intent using LLM
@@ -9,7 +9,7 @@
  * - Creates intent snapshots for RAG/memory
  * - Stores clean signal in active context
  * - Stores original in session file
- * 
+ *
  * Benefits:
  * - 30x token savings (3000 → 100 tokens)
  * - No garbage in context
@@ -123,7 +123,7 @@ export const DEFAULT_PREPROCESSOR_CONFIG: InputPreprocessorConfig = {
 
 /**
  * Input Preprocessor Service
- * 
+ *
  * Extracts clean intent from noisy user messages
  */
 export class InputPreprocessor {
@@ -209,10 +209,7 @@ Respond in JSON format:
     const extracted = JSON.parse(jsonMatch[0]) as ExtractedIntent;
 
     // Calculate token savings
-    const originalTokens = this.tokenCounter.countTokensCached(
-      `original-${Date.now()}`,
-      message
-    );
+    const originalTokens = this.tokenCounter.countTokensCached(`original-${Date.now()}`, message);
     const cleanTokens = this.tokenCounter.countTokensCached(
       `clean-${Date.now()}`,
       extracted.intent
@@ -307,7 +304,7 @@ Respond in JSON format:
 
   /**
    * Preprocess user message
-   * 
+   *
    * Main entry point for preprocessing flow
    */
   async preprocess(message: string): Promise<PreprocessingResult> {
@@ -316,15 +313,9 @@ Respond in JSON format:
       return {
         triggered: false,
         original: message,
-        originalTokens: this.tokenCounter.countTokensCached(
-          `original-${Date.now()}`,
-          message
-        ),
+        originalTokens: this.tokenCounter.countTokensCached(`original-${Date.now()}`, message),
         cleanMessage: message,
-        cleanTokens: this.tokenCounter.countTokensCached(
-          `clean-${Date.now()}`,
-          message
-        ),
+        cleanTokens: this.tokenCounter.countTokensCached(`clean-${Date.now()}`, message),
       };
     }
 
@@ -337,16 +328,10 @@ Respond in JSON format:
 Key Points:
 ${extracted.keyPoints.map((p, i) => `${i + 1}. ${p}`).join('\n')}
 
-${extracted.attachments.length > 0 ? `\nAttachments:\n${extracted.attachments.map(a => `- ${a.type}: ${a.summary}`).join('\n')}` : ''}`;
+${extracted.attachments.length > 0 ? `\nAttachments:\n${extracted.attachments.map((a) => `- ${a.type}: ${a.summary}`).join('\n')}` : ''}`;
 
-    const originalTokens = this.tokenCounter.countTokensCached(
-      `original-${Date.now()}`,
-      message
-    );
-    const cleanTokens = this.tokenCounter.countTokensCached(
-      `clean-${Date.now()}`,
-      cleanMessage
-    );
+    const originalTokens = this.tokenCounter.countTokensCached(`original-${Date.now()}`, message);
+    const cleanTokens = this.tokenCounter.countTokensCached(`clean-${Date.now()}`, cleanMessage);
 
     return {
       triggered: true,

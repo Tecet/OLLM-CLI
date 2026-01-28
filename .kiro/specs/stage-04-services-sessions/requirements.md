@@ -116,8 +116,8 @@ This specification defines the core services layer for the OLLM CLI, focusing on
 
 1. THE Environment_Sanitization_Service SHALL maintain an allow list of environment variables that are always passed to tools
 2. THE Environment_Sanitization_Service SHALL maintain a deny list of environment variable patterns that are never passed to tools
-3. THE Environment_Sanitization_Service SHALL include core variables in the allow list: PATH, HOME, USER, SHELL, TERM, LANG, LC_*
-4. THE Environment_Sanitization_Service SHALL include sensitive patterns in the deny list: *_KEY, *_SECRET, *_TOKEN, *_PASSWORD, *_CREDENTIAL, AWS_*, GITHUB_*
+3. THE Environment*Sanitization_Service SHALL include core variables in the allow list: PATH, HOME, USER, SHELL, TERM, LANG, LC*\*
+4. THE Environment*Sanitization_Service SHALL include sensitive patterns in the deny list: *\_KEY, *\_SECRET, *\_TOKEN, *\_PASSWORD, \*\_CREDENTIAL, AWS*_, GITHUB\__
 5. WHEN sanitizing an environment, THE Environment_Sanitization_Service SHALL remove all variables matching deny patterns
 6. WHEN sanitizing an environment, THE Environment_Sanitization_Service SHALL preserve all variables in the allow list
 7. THE Environment_Sanitization_Service SHALL support custom allow and deny rules via configuration

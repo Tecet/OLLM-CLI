@@ -32,19 +32,18 @@ export function useScrollManager({
   streaming,
   messagesLength,
 }: UseScrollManagerProps): UseScrollManagerReturn {
-  
   /**
    * Scroll up one line
    */
   const scrollUp = useCallback(() => {
-    setSelectedLineIndex(prev => Math.max(0, prev - 1));
+    setSelectedLineIndex((prev) => Math.max(0, prev - 1));
   }, [setSelectedLineIndex]);
 
   /**
    * Scroll down one line
    */
   const scrollDown = useCallback(() => {
-    setSelectedLineIndex(prev => prev + 1);
+    setSelectedLineIndex((prev) => prev + 1);
   }, [setSelectedLineIndex]);
 
   /**

@@ -34,8 +34,8 @@ export function StaticInputArea({
     }
     if (streaming) {
       return (
-        <StreamingIndicator 
-          text="Assistant is typing..." 
+        <StreamingIndicator
+          text="Assistant is typing..."
           spinnerType="dots"
           color={theme.text.secondary}
         />
@@ -43,14 +43,14 @@ export function StaticInputArea({
     }
     if (waitingForResponse) {
       return (
-        <StreamingIndicator 
-          text="Waiting for response..." 
+        <StreamingIndicator
+          text="Waiting for response..."
           spinnerType="dots"
           color={theme.text.secondary}
         />
       );
     }
-    return <Text>{' '}</Text>;
+    return <Text> </Text>;
   };
 
   return (

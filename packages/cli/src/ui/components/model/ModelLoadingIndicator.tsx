@@ -11,14 +11,14 @@ import { useModel } from '../../../features/context/ModelContext.js';
 
 export function ModelLoadingIndicator() {
   const { modelLoading, warmupStatus } = useModel();
-  
+
   if (!modelLoading || !warmupStatus?.active) {
     return null;
   }
-  
+
   const { attempt, elapsedMs } = warmupStatus;
   const elapsedSec = Math.floor(elapsedMs / 1000);
-  
+
   return (
     <Box flexDirection="column" marginY={1} paddingX={2}>
       <Box>

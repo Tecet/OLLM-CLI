@@ -1,6 +1,6 @@
 /**
  * Intent Snapshot Storage Service
- * 
+ *
  * Stores intent snapshots for RAG and memory retrieval.
  * Snapshots capture user intent extraction for future reference.
  */
@@ -13,7 +13,7 @@ import type { IntentSnapshot } from './inputPreprocessor.js';
 
 /**
  * Intent Snapshot Storage
- * 
+ *
  * Manages persistent storage of intent snapshots
  */
 export class IntentSnapshotStorage {
@@ -47,10 +47,10 @@ export class IntentSnapshotStorage {
    */
   async save(snapshot: IntentSnapshot): Promise<void> {
     await this.ensureDirectory();
-    
+
     const filePath = this.getSnapshotPath(snapshot.id);
     const data = JSON.stringify(snapshot, null, 2);
-    
+
     await fs.writeFile(filePath, data, 'utf-8');
   }
 
@@ -75,7 +75,7 @@ export class IntentSnapshotStorage {
     try {
       await this.ensureDirectory();
       const files = await fs.readdir(this.basePath);
-      
+
       const snapshots: IntentSnapshot[] = [];
       for (const file of files) {
         if (file.endsWith('.json')) {
@@ -86,10 +86,10 @@ export class IntentSnapshotStorage {
           }
         }
       }
-      
+
       // Sort by timestamp (newest first)
-      return snapshots.sort((a, b) => 
-        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      return snapshots.sort(
+        (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
       );
     } catch (_error) {
       return [];
@@ -114,12 +114,11 @@ export class IntentSnapshotStorage {
   async search(query: string): Promise<IntentSnapshot[]> {
     const allSnapshots = await this.list();
     const lowerQuery = query.toLowerCase();
-    
-    return allSnapshots.filter(snapshot => 
-      snapshot.extracted.intent.toLowerCase().includes(lowerQuery) ||
-      snapshot.extracted.keyPoints.some(point => 
-        point.toLowerCase().includes(lowerQuery)
-      )
+
+    return allSnapshots.filter(
+      (snapshot) =>
+        snapshot.extracted.intent.toLowerCase().includes(lowerQuery) ||
+        snapshot.extracted.keyPoints.some((point) => point.toLowerCase().includes(lowerQuery))
     );
   }
 
@@ -136,17 +135,17 @@ export class IntentSnapshotStorage {
    */
   async cleanup(keepCount: number = 100): Promise<number> {
     const allSnapshots = await this.list();
-    
+
     if (allSnapshots.length <= keepCount) {
       return 0;
     }
-    
+
     const toDelete = allSnapshots.slice(keepCount);
-    
+
     for (const snapshot of toDelete) {
       await this.delete(snapshot.id);
     }
-    
+
     return toDelete.length;
   }
 
@@ -160,7 +159,7 @@ export class IntentSnapshotStorage {
     newestSnapshot: Date | null;
   }> {
     const snapshots = await this.list();
-    
+
     if (snapshots.length === 0) {
       return {
         totalSnapshots: 0,
@@ -169,7 +168,7 @@ export class IntentSnapshotStorage {
         newestSnapshot: null,
       };
     }
-    
+
     // Calculate total size
     let totalSize = 0;
     for (const snapshot of snapshots) {
@@ -181,7 +180,7 @@ export class IntentSnapshotStorage {
         // Ignore errors
       }
     }
-    
+
     return {
       totalSnapshots: snapshots.length,
       totalSize,

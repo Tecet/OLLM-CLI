@@ -1,6 +1,6 @@
 /**
  * Memory Management Commands
- * 
+ *
  * Implements commands for managing cross-session memory:
  * - /memory list - Show all memories
  * - /memory add <key> <value> - Add memory
@@ -14,13 +14,13 @@ import type { Command, CommandResult } from './types.js';
 
 /**
  * /memory list - Show all memories
- * 
+ *
  * Requirements: 12.5
  */
 async function memoryListHandler(service: MemoryService): Promise<CommandResult> {
   try {
     const memories = service.listAll();
-    
+
     if (memories.length === 0) {
       return {
         success: true,
@@ -28,14 +28,16 @@ async function memoryListHandler(service: MemoryService): Promise<CommandResult>
         data: { memories: [] },
       };
     }
-    
+
     // Format memory list
-    const memoryList = memories.map(memory => {
-      const category = memory.category ? ` [${memory.category}]` : '';
-      const source = memory.source ? ` (${memory.source})` : '';
-      return `  ${memory.key}: ${memory.value}${category}${source}`;
-    }).join('\n');
-    
+    const memoryList = memories
+      .map((memory) => {
+        const category = memory.category ? ` [${memory.category}]` : '';
+        const source = memory.source ? ` (${memory.source})` : '';
+        return `  ${memory.key}: ${memory.value}${category}${source}`;
+      })
+      .join('\n');
+
     return {
       success: true,
       message: `Stored memories:\n\n${memoryList}`,
@@ -51,7 +53,7 @@ async function memoryListHandler(service: MemoryService): Promise<CommandResult>
 
 /**
  * /memory add <key> <value> - Add memory
- * 
+ *
  * Requirements: 12.1
  */
 async function memoryAddHandler(args: string[], service: MemoryService): Promise<CommandResult> {
@@ -68,7 +70,7 @@ async function memoryAddHandler(args: string[], service: MemoryService): Promise
   try {
     service.remember(key, value, { source: 'user' });
     await service.save();
-    
+
     return {
       success: true,
       message: `Memory added: ${key} = ${value}`,
@@ -84,7 +86,7 @@ async function memoryAddHandler(args: string[], service: MemoryService): Promise
 
 /**
  * /memory forget <key> - Remove memory
- * 
+ *
  * Requirements: 12.4
  */
 async function memoryForgetHandler(args: string[], service: MemoryService): Promise<CommandResult> {
@@ -105,10 +107,10 @@ async function memoryForgetHandler(args: string[], service: MemoryService): Prom
         message: `Memory not found: ${key}`,
       };
     }
-    
+
     service.forget(key);
     await service.save();
-    
+
     return {
       success: true,
       message: `Memory forgotten: ${key}`,
@@ -124,20 +126,20 @@ async function memoryForgetHandler(args: string[], service: MemoryService): Prom
 
 /**
  * /memory clear - Clear all memories
- * 
+ *
  * Requirements: 12.4
  */
 async function memoryClearHandler(service: MemoryService): Promise<CommandResult> {
   try {
     const memories = service.listAll();
     const count = memories.length;
-    
+
     // Forget all memories
     for (const memory of memories) {
       service.forget(memory.key);
     }
     await service.save();
-    
+
     return {
       success: true,
       message: `Cleared ${count} ${count === 1 ? 'memory' : 'memories'}`,
@@ -153,7 +155,7 @@ async function memoryClearHandler(service: MemoryService): Promise<CommandResult
 
 /**
  * /memory command - Main memory command with subcommands
- * 
+ *
  * Requirements: 12.1, 12.4, 12.5
  */
 export const memoryCommand: Command = {
@@ -164,7 +166,8 @@ export const memoryCommand: Command = {
     if (args.length === 0) {
       return {
         success: false,
-        message: 'Usage: /memory <list|add|forget|clear> [args]\n\n' +
+        message:
+          'Usage: /memory <list|add|forget|clear> [args]\n\n' +
           'Subcommands:\n' +
           '  list              - Show all memories\n' +
           '  add <key> <value> - Add a memory\n' +
@@ -182,7 +185,7 @@ export const memoryCommand: Command = {
       memoryPath: undefined, // Will use default
       tokenBudget: 500,
     });
-    
+
     // Load memories from disk
     await service.load();
 
@@ -198,7 +201,8 @@ export const memoryCommand: Command = {
       default:
         return {
           success: false,
-          message: `Unknown subcommand: ${subcommand}\n\n` +
+          message:
+            `Unknown subcommand: ${subcommand}\n\n` +
             'Available subcommands: list, add, forget, clear',
         };
     }
@@ -208,10 +212,7 @@ export const memoryCommand: Command = {
 /**
  * All memory-related commands
  */
-export const memoryCommands: Command[] = [
-  memoryCommand,
-];
-
+export const memoryCommands: Command[] = [memoryCommand];
 
 /**
  * Create memory commands with service container dependency injection

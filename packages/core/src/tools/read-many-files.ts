@@ -1,6 +1,6 @@
 /**
  * Multiple file reading tool implementation
- * 
+ *
  * Provides a tool for reading multiple files at once with formatted output.
  */
 
@@ -82,9 +82,7 @@ export class ReadManyFilesTool implements DeclarativeTool<ReadManyFilesParams, T
  * Invocation instance for reading multiple files
  */
 export class ReadManyFilesInvocation implements ToolInvocation<ReadManyFilesParams, ToolResult> {
-  constructor(
-    public params: ReadManyFilesParams
-  ) {}
+  constructor(public params: ReadManyFilesParams) {}
 
   getDescription(): string {
     return `Read ${this.params.paths.length} files`;
@@ -99,10 +97,7 @@ export class ReadManyFilesInvocation implements ToolInvocation<ReadManyFilesPara
     return false;
   }
 
-  async execute(
-    signal: AbortSignal,
-    updateOutput?: (output: string) => void
-  ): Promise<ToolResult> {
+  async execute(signal: AbortSignal, updateOutput?: (output: string) => void): Promise<ToolResult> {
     const results: string[] = [];
     let successCount = 0;
     let errorCount = 0;
@@ -177,7 +172,7 @@ export class ReadManyFilesInvocation implements ToolInvocation<ReadManyFilesPara
         let errorMessage: string;
 
         if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-          errorMessage = 'File not found. Tip: Use \'ls\' or \'find_by_name\' to locate it.';
+          errorMessage = "File not found. Tip: Use 'ls' or 'find_by_name' to locate it.";
         } else if ((error as NodeJS.ErrnoException).code === 'EACCES') {
           errorMessage = 'Permission denied';
         } else if (

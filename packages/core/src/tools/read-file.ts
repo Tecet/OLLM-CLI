@@ -1,6 +1,6 @@
 /**
  * File reading tool implementation
- * 
+ *
  * Provides tools for reading file contents with optional line range support.
  * Handles encoding detection, size limits, and binary file detection.
  */
@@ -82,9 +82,7 @@ export class ReadFileTool implements DeclarativeTool<ReadFileParams, ToolResult>
  * Invocation instance for reading a file
  */
 export class ReadFileInvocation implements ToolInvocation<ReadFileParams, ToolResult> {
-  constructor(
-    public params: ReadFileParams
-  ) {}
+  constructor(public params: ReadFileParams) {}
 
   getDescription(): string {
     const range =
@@ -226,8 +224,10 @@ export class ReadFileInvocation implements ToolInvocation<ReadFileParams, ToolRe
       }
 
       // Check for binary file error (invalid UTF-8)
-      if ((error as Error).message.includes('invalid') || 
-          (error as Error).message.includes('decode')) {
+      if (
+        (error as Error).message.includes('invalid') ||
+        (error as Error).message.includes('decode')
+      ) {
         return {
           llmContent: '',
           returnDisplay: '',

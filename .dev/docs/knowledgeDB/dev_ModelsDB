@@ -1,0 +1,738 @@
+# Here is the updated list with the estimated Total VRAM usage 
+(Model Weights + KV Cache + ~1GB System Overhead) for each context step.
+
+> **Note:** "N/A" indicates the context length exceeds the model's native training limit.
+
+---
+
+### **Open Source Model List**
+
+**codegeex4:9b**
+
+* **Company:** Zhipu AI
+* **Model ID:** codegeex4:9b
+* **Quantization:** Q4_0 (Standard 4-bit)
+* **Description:** Multilingual code generation model with high inference speed.
+* **URL:** [ollama.com/library/codegeex4](https://ollama.com/library/codegeex4)
+* **Tools:** Yes
+* **Reasoning:** No
+* **Max Context:** 128k
+* **Size:** 5.5 GB
+* **Required VRAM:** ~7.5 GB (Base)
+* **4k** - 7.5 GB
+* **8k** - 8.1 GB
+* **16k** - 9.2 GB
+* **32K** - 11.5 GB
+* **64k** - 15.8 GB
+* **128k** - 24.5 GB
+
+**codegemma:2b**
+
+* **Company:** Google DeepMind
+* **Model ID:** codegemma:2b
+* **Quantization:** Q4_K_M (Standard 4-bit)
+* **Description:** Lightweight code completion model for on-device use.
+* **URL:** [ollama.com/library/codegemma](https://ollama.com/library/codegemma)
+* **Tools:** No
+* **Reasoning:** No
+* **Max Context:** 8k
+* **Size:** 1.6 GB
+* **Required VRAM:** ~3.0 GB (Base)
+* **4k** - 3.0 GB
+* **8k** - 3.4 GB
+* **16k** - N/A
+* **32K** - N/A
+* **64k** - N/A
+* **128k** - N/A
+
+**codegemma:7b**
+
+* **Company:** Google DeepMind
+* **Model ID:** codegemma:7b
+* **Quantization:** Q4_K_M (Standard 4-bit)
+* **Description:** Specialized code generation and completion model.
+* **URL:** [ollama.com/library/codegemma](https://ollama.com/library/codegemma)
+* **Tools:** No
+* **Reasoning:** No
+* **Max Context:** 8k
+* **Size:** 5.0 GB
+* **Required VRAM:** ~7.0 GB (Base)
+* **4k** - 7.0 GB
+* **8k** - 8.5 GB (High cache usage)
+* **16k** - N/A
+* **32K** - N/A
+* **64k** - N/A
+* **128k** - N/A
+
+**codestral:22b**
+
+* **Company:** Mistral AI
+* **Model ID:** codestral:22b
+* **Quantization:** Q4_0 (Standard 4-bit)
+* **Description:** Mistral's model optimized for intermediate code generation tasks.
+* **URL:** [ollama.com/library/codestral](https://ollama.com/library/codestral)
+* **Tools:** Yes
+* **Reasoning:** No
+* **Max Context:** 32k
+* **Size:** 12 GB
+* **Required VRAM:** ~14 GB (Base)
+* **4k** - 14.5 GB
+* **8k** - 15.6 GB
+* **16k** - 17.8 GB
+* **32K** - 22.0 GB
+* **64k** - N/A
+* **128k** - N/A
+
+**command-r7b:7b**
+
+* **Company:** Cohere
+* **Model ID:** command-r7b:7b
+* **Quantization:** Q4_K_M (Standard 4-bit)
+* **Description:** Optimized for RAG and tool use, excellent instruction following.
+* **URL:** [ollama.com/library/command-r7b](https://ollama.com/library/command-r7b)
+* **Tools:** Yes
+* **Reasoning:** No
+* **Max Context:** 128k
+* **Size:** 5.1 GB
+* **Required VRAM:** ~7.0 GB (Base)
+* **4k** - 7.0 GB
+* **8k** - 7.6 GB
+* **16k** - 8.8 GB
+* **32K** - 11.0 GB
+* **64k** - 15.5 GB
+* **128k** - 24.5 GB
+
+**deepseek-coder-v2:16b**
+
+* **Company:** DeepSeek
+* **Model ID:** deepseek-coder-v2:16b
+* **Quantization:** Q4_K_M (Standard 4-bit)
+* **Description:** Mixture-of-Experts (MoE) model for advanced coding tasks.
+* **URL:** [ollama.com/library/deepseek-coder-v2](https://ollama.com/library/deepseek-coder-v2)
+* **Tools:** Yes
+* **Reasoning:** No
+* **Max Context:** 128k
+* **Size:** 8.9 GB
+* **Required VRAM:** ~11 GB (Base)
+* **4k** - 11.2 GB
+* **8k** - 11.5 GB
+* **16k** - 12.0 GB
+* **32K** - 13.1 GB
+* **64k** - 15.2 GB
+* **128k** - 19.5 GB (Highly efficient MLA Cache)
+
+**deepseek-r1:1.5b**
+
+* **Company:** DeepSeek
+* **Model ID:** deepseek-r1:1.5b
+* **Quantization:** Q4_K_M (Standard 4-bit)
+* **Description:** Distilled reasoning model, highly efficient for logic puzzles.
+* **URL:** [ollama.com/library/deepseek-r1](https://ollama.com/library/deepseek-r1)
+* **Tools:** No
+* **Reasoning:** Yes
+* **Max Context:** 128k
+* **Size:** 1.1 GB
+* **Required VRAM:** ~2.5 GB (Base)
+* **4k** - 2.5 GB
+* **8k** - 2.8 GB
+* **16k** - 3.2 GB
+* **32K** - 4.1 GB
+* **64k** - 6.0 GB
+* **128k** - 9.8 GB
+
+**deepseek-r1:7b**
+
+* **Company:** DeepSeek
+* **Model ID:** deepseek-r1:7b
+* **Quantization:** Q4_K_M (Standard 4-bit)
+* **Description:** Distilled reasoning model based on Qwen 2.5, excels in math/logic.
+* **URL:** [ollama.com/library/deepseek-r1](https://ollama.com/library/deepseek-r1)
+* **Tools:** No
+* **Reasoning:** Yes
+* **Max Context:** 128k
+* **Size:** 4.7 GB
+* **Required VRAM:** ~6.5 GB (Base)
+* **4k** - 6.5 GB
+* **8k** - 7.2 GB
+* **16k** - 8.4 GB
+* **32K** - 10.8 GB
+* **64k** - 15.5 GB
+* **128k** - 24.5 GB
+
+**deepseek-r1:8b**
+
+* **Company:** DeepSeek
+* **Model ID:** deepseek-r1:8b
+* **Quantization:** Q4_K_M (Standard 4-bit)
+* **Description:** Distilled reasoning model based on Llama 3, balanced for logic.
+* **URL:** [ollama.com/library/deepseek-r1](https://ollama.com/library/deepseek-r1)
+* **Tools:** No
+* **Reasoning:** Yes
+* **Max Context:** 128k
+* **Size:** 5.2 GB
+* **Required VRAM:** ~7.0 GB (Base)
+* **4k** - 7.0 GB
+* **8k** - 7.8 GB
+* **16k** - 9.0 GB
+* **32K** - 11.5 GB
+* **64k** - 16.2 GB
+* **128k** - 25.0 GB
+
+**dolphin3:8b**
+
+* **Company:** Cognitive Computations
+* **Model ID:** dolphin3:8b
+* **Quantization:** Q4_K_M (Standard 4-bit)
+* **Description:** Uncensored/compliant model optimized for general conversation/coding.
+* **URL:** [ollama.com/library/dolphin3](https://ollama.com/library/dolphin3)
+* **Tools:** Yes
+* **Reasoning:** No
+* **Max Context:** 32k
+* **Size:** 4.9 GB
+* **Required VRAM:** ~7.0 GB (Base)
+* **4k** - 7.0 GB
+* **8k** - 7.7 GB
+* **16k** - 8.9 GB
+* **32K** - 11.2 GB
+* **64k** - N/A
+* **128k** - N/A
+
+**gemma3:1b**
+
+* **Company:** Google DeepMind
+* **Model ID:** gemma3:1b
+* **Quantization:** Q4_K_M (Standard 4-bit)
+* **Description:** Ultra-compact text model from Google, high efficiency.
+* **URL:** [ollama.com/library/gemma3](https://ollama.com/library/gemma3)
+* **Tools:** Yes
+* **Reasoning:** No
+* **Max Context:** 128k
+* **Size:** 815 MB
+* **Required VRAM:** ~2.0 GB (Base)
+* **4k** - 2.0 GB
+* **8k** - 2.4 GB
+* **16k** - 3.2 GB
+* **32K** - 4.8 GB
+* **64k** - 8.0 GB
+* **128k** - 14.2 GB
+
+**gemma3:4b**
+
+* **Company:** Google DeepMind
+* **Model ID:** gemma3:4b
+* **Quantization:** Q4_K_M (Standard 4-bit)
+* **Description:** Balanced Google model with strong general purpose capabilities.
+* **URL:** [ollama.com/library/gemma3](https://ollama.com/library/gemma3)
+* **Tools:** Yes
+* **Reasoning:** No
+* **Max Context:** 128k
+* **Size:** 3.3 GB
+* **Required VRAM:** ~5.0 GB (Base)
+* **4k** - 5.0 GB
+* **8k** - 5.8 GB
+* **16k** - 7.5 GB
+* **32K** - 10.5 GB
+* **64k** - 16.5 GB
+* **128k** - 28.5 GB
+
+**gemma3n:e2b**
+
+* **Company:** Google DeepMind
+* **Model ID:** gemma3n:e2b
+* **Quantization:** Q4_K_M (Standard 4-bit)
+* **Description:** Nano/Experimental variant of Gemma 3.
+* **URL:** [ollama.com/library/gemma3](https://ollama.com/library/gemma3)
+* **Tools:** Yes
+* **Reasoning:** No
+* **Max Context:** 128k
+* **Size:** 5.6 GB
+* **Required VRAM:** ~7.5 GB (Base)
+* **4k** - 7.5 GB
+* **8k** - 8.5 GB
+* **16k** - 10.5 GB
+* **32K** - 14.5 GB
+* **64k** - 22.5 GB
+* **128k** - 38.5 GB (High cache usage likely)
+
+**gemma3n:latest**
+
+* **Company:** Google DeepMind
+* **Model ID:** gemma3n:latest
+* **Quantization:** Q4_K_M (Standard 4-bit)
+* **Description:** Latest standard variant of the Gemma 3 Nano/Next series.
+* **URL:** [ollama.com/library/gemma3](https://ollama.com/library/gemma3)
+* **Tools:** Yes
+* **Reasoning:** No
+* **Max Context:** 128k
+* **Size:** 7.5 GB
+* **Required VRAM:** ~9.5 GB (Base)
+* **4k** - 9.5 GB
+* **8k** - 10.8 GB
+* **16k** - 13.5 GB
+* **32K** - 18.5 GB
+* **64k** - 28.5 GB
+* **128k** - 48.0 GB
+
+**gpt-oss:20b**
+
+* **Company:** OpenAI (Hypothetical/Mirror)
+* **Model ID:** gpt-oss:20b
+* **Quantization:** Q4_0 (Standard 4-bit)
+* **Description:** Open-weight model by OpenAI (hypothetical/leaked) for general tasks.
+* **URL:** [ollama.com/library/gpt-oss](https://ollama.com/library/gpt-oss)
+* **Tools:** Yes
+* **Reasoning:** No
+* **Max Context:** 128k
+* **Size:** 13 GB
+* **Required VRAM:** ~16 GB (Base)
+* **4k** - 16.5 GB
+* **8k** - 17.5 GB
+* **16k** - 19.5 GB
+* **32K** - 23.5 GB
+* **64k** - 31.5 GB
+* **128k** - 47.5 GB
+
+**granite-code:3b**
+
+* **Company:** IBM
+* **Model ID:** granite-code:3b
+* **Quantization:** Q4_K_M (Standard 4-bit)
+* **Description:** IBM enterprise coding model, very fast.
+* **URL:** [ollama.com/library/granite-code](https://ollama.com/library/granite-code)
+* **Tools:** No
+* **Reasoning:** No
+* **Max Context:** 4k
+* **Size:** 2.0 GB
+* **Required VRAM:** ~3.5 GB (Base)
+* **4k** - 3.5 GB
+* **8k** - N/A
+* **16k** - N/A
+* **32K** - N/A
+* **64k** - N/A
+* **128k** - N/A
+
+**granite-code:8b**
+
+* **Company:** IBM
+* **Model ID:** granite-code:8b
+* **Quantization:** Q4_K_M (Standard 4-bit)
+* **Description:** IBM enterprise coding model, robust for Python/Java/JS.
+* **URL:** [ollama.com/library/granite-code](https://ollama.com/library/granite-code)
+* **Tools:** No
+* **Reasoning:** No
+* **Max Context:** 4k
+* **Size:** 4.6 GB
+* **Required VRAM:** ~6.5 GB (Base)
+* **4k** - 6.5 GB
+* **8k** - N/A
+* **16k** - N/A
+* **32K** - N/A
+* **64k** - N/A
+* **128k** - N/A
+
+**granite3.3:8b**
+
+* **Company:** IBM
+* **Model ID:** granite3.3:8b
+* **Quantization:** Q4_K_M (Standard 4-bit)
+* **Description:** Updated IBM model with improved reasoning and instruction following.
+* **URL:** [ollama.com/library/granite3.3](https://ollama.com/library/granite3.3)
+* **Tools:** Yes
+* **Reasoning:** No
+* **Max Context:** 128k
+* **Size:** 4.9 GB
+* **Required VRAM:** ~7.0 GB (Base)
+* **4k** - 7.0 GB
+* **8k** - 7.7 GB
+* **16k** - 8.9 GB
+* **32K** - 11.2 GB
+* **64k** - 15.8 GB
+* **128k** - 24.8 GB
+
+**granite4:latest**
+
+* **Company:** IBM
+* **Model ID:** granite4:latest
+* **Quantization:** Q4_K_M (Standard 4-bit)
+* **Description:** Next-gen IBM model, hybrid Mamba architecture for speed.
+* **URL:** [ollama.com/library/granite4](https://ollama.com/library/granite4)
+* **Tools:** Yes
+* **Reasoning:** No
+* **Max Context:** 128k
+* **Size:** 2.1 GB
+* **Required VRAM:** ~4.0 GB (Base)
+* **4k** - 4.0 GB
+* **8k** - 4.5 GB
+* **16k** - 5.5 GB
+* **32K** - 7.5 GB
+* **64k** - 11.5 GB
+* **128k** - 19.5 GB
+
+**llama3:latest**
+
+* **Company:** Meta
+* **Model ID:** llama3:latest
+* **Quantization:** Q4_K_M (Standard 4-bit)
+* **Description:** Meta's 8B standard model (robust generalist).
+* **URL:** [ollama.com/library/llama3](https://ollama.com/library/llama3)
+* **Tools:** Yes
+* **Reasoning:** No
+* **Max Context:** 8k (Native Llama 3.0)
+* **Size:** 4.7 GB
+* **Required VRAM:** ~6.5 GB (Base)
+* **4k** - 6.5 GB
+* **8k** - 7.2 GB
+* **16k** - N/A
+* **32K** - N/A
+* **64k** - N/A
+* **128k** - N/A
+
+**llama3.2:3b**
+
+* **Company:** Meta
+* **Model ID:** llama3.2:3b
+* **Quantization:** Q4_K_M (Standard 4-bit)
+* **Description:** Lightweight Llama optimized for edge devices.
+* **URL:** [ollama.com/library/llama3.2](https://ollama.com/library/llama3.2)
+* **Tools:** Yes
+* **Reasoning:** No
+* **Max Context:** 128k
+* **Size:** 2.0 GB
+* **Required VRAM:** ~3.5 GB (Base)
+* **4k** - 3.5 GB
+* **8k** - 3.9 GB
+* **16k** - 4.6 GB
+* **32K** - 6.0 GB
+* **64k** - 8.8 GB
+* **128k** - 14.5 GB
+
+**magicoder:latest**
+
+* **Company:** ise-uiuc (OSS-Instruct Team)
+* **Model ID:** magicoder:latest
+* **Quantization:** Q4_K_M (Standard 4-bit)
+* **Description:** Code model trained on synthetic data (OSS-Instruct).
+* **URL:** [ollama.com/library/magicoder](https://ollama.com/library/magicoder)
+* **Tools:** No
+* **Reasoning:** No
+* **Max Context:** 16k
+* **Size:** 3.8 GB
+* **Required VRAM:** ~5.5 GB (Base)
+* **4k** - 5.5 GB
+* **8k** - 6.0 GB
+* **16k** - 7.1 GB
+* **32K** - N/A
+* **64k** - N/A
+* **128k** - N/A
+
+**ministral-3:3b**
+
+* **Company:** Mistral AI
+* **Model ID:** ministral-3:3b
+* **Quantization:** Q4_K_M (Standard 4-bit)
+* **Description:** Mistral's edge model with high intelligence-to-size ratio.
+* **URL:** [ollama.com/library/ministral-3](https://ollama.com/library/ministral-3)
+* **Tools:** Yes
+* **Reasoning:** No
+* **Max Context:** 128k
+* **Size:** 3.0 GB
+* **Required VRAM:** ~5.0 GB (Base)
+* **4k** - 5.0 GB
+* **8k** - 5.6 GB
+* **16k** - 6.8 GB
+* **32K** - 9.0 GB
+* **64k** - 13.5 GB
+* **128k** - 22.5 GB
+
+**ministral-3:8b**
+
+* **Company:** Mistral AI
+* **Model ID:** ministral-3:8b
+* **Quantization:** Q4_K_M (Standard 4-bit)
+* **Description:** Larger edge model from Mistral, strong instruction following.
+* **URL:** [ollama.com/library/ministral-3](https://ollama.com/library/ministral-3)
+* **Tools:** Yes
+* **Reasoning:** No
+* **Max Context:** 128k
+* **Size:** 6.0 GB
+* **Required VRAM:** ~8.0 GB (Base)
+* **4k** - 8.0 GB
+* **8k** - 8.8 GB
+* **16k** - 10.5 GB
+* **32K** - 13.6 GB
+* **64k** - 20.0 GB
+* **128k** - 32.5 GB
+
+**opencoder:8b**
+
+* **Company:** OpenCoder Team / INF
+* **Model ID:** opencoder:8b
+* **Quantization:** Q4_K_M (Standard 4-bit)
+* **Description:** Fully open-source coding model with transparent dataset.
+* **URL:** [ollama.com/library/opencoder](https://ollama.com/library/opencoder)
+* **Tools:** No
+* **Reasoning:** No
+* **Max Context:** 8k
+* **Size:** 4.7 GB
+* **Required VRAM:** ~6.5 GB (Base)
+* **4k** - 6.5 GB
+* **8k** - 7.2 GB
+* **16k** - N/A
+* **32K** - N/A
+* **64k** - N/A
+* **128k** - N/A
+
+**phi3:3.8b**
+
+* **Company:** Microsoft
+* **Model ID:** phi3:3.8b
+* **Quantization:** Q4_K_M (Standard 4-bit)
+* **Description:** Microsoft's highly capable small model (Mini).
+* **URL:** [ollama.com/library/phi3](https://ollama.com/library/phi3)
+* **Tools:** Yes
+* **Reasoning:** No
+* **Max Context:** 128k
+* **Size:** 2.2 GB
+* **Required VRAM:** ~4.0 GB (Base)
+* **4k** - 4.0 GB
+* **8k** - 4.5 GB
+* **16k** - 5.5 GB
+* **32K** - 7.5 GB
+* **64k** - 11.5 GB
+* **128k** - 19.5 GB
+
+**phi4-mini-reasoning:latest**
+
+* **Company:** Microsoft
+* **Model ID:** phi4-mini-reasoning:latest
+* **Quantization:** Q4_K_M (Standard 4-bit)
+* **Description:** Microsoft model specialized in math and logical reasoning steps.
+* **URL:** [ollama.com/library/phi4](https://ollama.com/library/phi4)
+* **Tools:** No
+* **Reasoning:** Yes
+* **Max Context:** 128k
+* **Size:** 3.2 GB
+* **Required VRAM:** ~5.0 GB (Base)
+* **4k** - 5.0 GB
+* **8k** - 5.6 GB
+* **16k** - 6.8 GB
+* **32K** - 9.2 GB
+* **64k** - 13.8 GB
+* **128k** - 23.0 GB
+
+**qwen2.5:7b**
+
+* **Company:** Alibaba Cloud
+* **Model ID:** qwen2.5:7b
+* **Quantization:** Q4_K_M (Standard 4-bit)
+* **Description:** Alibaba's strong generalist, beats Llama 3.1 8B in benchmarks.
+* **URL:** [ollama.com/library/qwen2.5](https://ollama.com/library/qwen2.5)
+* **Tools:** Yes
+* **Reasoning:** No
+* **Max Context:** 128k
+* **Size:** 4.7 GB
+* **Required VRAM:** ~6.5 GB (Base)
+* **4k** - 6.5 GB
+* **8k** - 7.2 GB
+* **16k** - 8.4 GB
+* **32K** - 10.8 GB
+* **64k** - 15.5 GB
+* **128k** - 24.5 GB
+
+**qwen2.5-coder:3b**
+
+* **Company:** Alibaba Cloud
+* **Model ID:** qwen2.5-coder:3b
+* **Quantization:** Q4_K_M (Standard 4-bit)
+* **Description:** Small but potent coding assistant.
+* **URL:** [ollama.com/library/qwen2.5-coder](https://ollama.com/library/qwen2.5-coder)
+* **Tools:** Yes
+* **Reasoning:** No
+* **Max Context:** 128k
+* **Size:** 1.9 GB
+* **Required VRAM:** ~3.5 GB (Base)
+* **4k** - 3.5 GB
+* **8k** - 4.0 GB
+* **16k** - 4.8 GB
+* **32K** - 6.5 GB
+* **64k** - 9.8 GB
+* **128k** - 16.5 GB
+
+**qwen2.5-coder:7b**
+
+* **Company:** Alibaba Cloud
+* **Model ID:** qwen2.5-coder:7b
+* **Quantization:** Q4_K_M (Standard 4-bit)
+* **Description:** SOTA coding model in the 7B class.
+* **URL:** [ollama.com/library/qwen2.5-coder](https://ollama.com/library/qwen2.5-coder)
+* **Tools:** Yes
+* **Reasoning:** No
+* **Max Context:** 128k
+* **Size:** 4.7 GB
+* **Required VRAM:** ~6.5 GB (Base)
+* **4k** - 6.5 GB
+* **8k** - 7.2 GB
+* **16k** - 8.4 GB
+* **32K** - 10.8 GB
+* **64k** - 15.5 GB
+* **128k** - 24.5 GB
+
+**qwen3:4b**
+
+* **Company:** Alibaba Cloud
+* **Model ID:** qwen3:4b
+* **Quantization:** Q4_K_M (Standard 4-bit)
+* **Description:** Next-gen Qwen generalist, high efficiency.
+* **URL:** [ollama.com/library/qwen3](https://ollama.com/library/qwen3)
+* **Tools:** Yes
+* **Reasoning:** No
+* **Max Context:** 256k
+* **Size:** 2.5 GB
+* **Required VRAM:** ~4.5 GB (Base)
+* **4k** - 4.5 GB
+* **8k** - 5.0 GB
+* **16k** - 6.0 GB
+* **32K** - 8.0 GB
+* **64k** - 12.0 GB
+* **128k** - 20.0 GB
+
+**qwen3:8b**
+
+* **Company:** Alibaba Cloud
+* **Model ID:** qwen3:8b
+* **Quantization:** Q4_K_M (Standard 4-bit)
+* **Description:** Next-gen Qwen generalist 8B, high reasoning capability.
+* **URL:** [ollama.com/library/qwen3](https://ollama.com/library/qwen3)
+* **Tools:** Yes
+* **Reasoning:** Yes
+* **Max Context:** 256k
+* **Size:** 5.2 GB
+* **Required VRAM:** ~7.5 GB (Base)
+* **4k** - 7.5 GB
+* **8k** - 8.2 GB
+* **16k** - 9.5 GB
+* **32K** - 12.0 GB
+* **64k** - 17.0 GB
+* **128k** - 27.0 GB
+
+**qwen3-coder:30b**
+
+* **Company:** Alibaba Cloud
+* **Model ID:** qwen3-coder:30b
+* **Quantization:** Q4_0 (Standard 4-bit)
+* **Description:** Heavyweight coding model, expert level generation.
+* **URL:** [ollama.com/library/qwen3-coder](https://ollama.com/library/qwen3-coder)
+* **Tools:** Yes
+* **Reasoning:** No
+* **Max Context:** 128k
+* **Size:** 18 GB
+* **Required VRAM:** ~20 GB (Base)
+* **4k** - 20.5 GB
+* **8k** - 22.0 GB
+* **16k** - 24.5 GB
+* **32K** - 29.5 GB
+* **64k** - 39.5 GB
+* **128k** - 59.5 GB
+
+**qwen3-vl:4b**
+
+* **Company:** Alibaba Cloud
+* **Model ID:** qwen3-vl:4b
+* **Quantization:** Q4_K_M (Standard 4-bit)
+* **Description:** Vision-Language model, can analyze images/video inputs.
+* **URL:** [ollama.com/library/qwen3-vl](https://ollama.com/library/qwen3-vl)
+* **Tools:** Yes
+* **Reasoning:** No
+* **Max Context:** 128k
+* **Size:** 3.3 GB
+* **Required VRAM:** ~5.0 GB (Base)
+* **4k** - 5.0 GB
+* **8k** - 5.5 GB
+* **16k** - 6.5 GB
+* **32K** - 8.5 GB
+* **64k** - 12.5 GB
+* **128k** - 20.5 GB
+
+**qwen3-vl:8b**
+
+* **Company:** Alibaba Cloud
+* **Model ID:** qwen3-vl:8b
+* **Quantization:** Q4_K_M (Standard 4-bit)
+* **Description:** Larger Vision-Language model for detailed visual reasoning.
+* **URL:** [ollama.com/library/qwen3-vl](https://ollama.com/library/qwen3-vl)
+* **Tools:** Yes
+* **Reasoning:** No
+* **Max Context:** 128k
+* **Size:** 6.1 GB
+* **Required VRAM:** ~8.0 GB (Base)
+* **4k** - 8.0 GB
+* **8k** - 8.7 GB
+* **16k** - 10.0 GB
+* **32K** - 12.5 GB
+* **64k** - 17.5 GB
+* **128k** - 27.5 GB
+
+
+Detailed Breakdown
+If you want to calculate this for other setups (like 8-bit weights or different context limits), use the "Context Cost" below and add it to your base model size.
+
+1. The "Small" Class (8B - 9B)
+Models: Llama 3 8B, Mistral 7B v0.3
+
+Context Cost: ~0.13 GB per 1,000 tokens.
+
+Notes: These are extremely efficient. You can easily fit 32k context on a 12GB card (RTX 3060/4070) if you use 4-bit weights.
+
+Warning: Gemma 2 9B is an outlier here. It uses a much larger cache (approx 0.34 GB per 1k tokens) due to its architecture (high head dimension). It eats VRAM much faster than Llama 3.
+
+2. The "Medium" Class (Mixtral 8x7B)
+Models: Mixtral 8x7B, Mixtral 8x22B
+
+Context Cost: ~0.13 GB per 1,000 tokens.
+
+Notes: Mixtral is unique. While the weights are huge (26GB+), the context cache is tiny (identical to the small 7B model). This means if you can fit the weights, increasing context to 32k is very "cheap" in terms of extra VRAM.
+
+3. The "Large" Class (70B+)
+Models: Llama 3 70B, Qwen2 72B
+
+Context Cost: ~0.33 GB per 1,000 tokens.
+
+Notes: These models are heavy.
+
+32k Context: Requires ~10.5 GB just for the context.
+
+128k Context: Requires ~42 GB just for the context.
+
+To run Llama 3 70B at full 128k context, you generally need roughly 80GB+ VRAM (e.g., 2x A6000 or Mac Studio Ultra), even with 4-bit weights.
+
+Tips for Saving VRAM
+KV Cache Quantization (FP8): If you use llama.cpp or ExLlamaV2, you can enable "FP8 Cache" (sometimes called Q8 cache). This cuts the context VRAM usage in half with negligible quality loss.
+
+Example: Llama 3 70B at 32k context drops from ~50.5 GB total to ~45 GB total.
+
+System Overhead: Always leave 1-2 GB of VRAM free for your display and OS overhead. If the chart says 23.8 GB and you have a 24 GB card, it will likely crash (OOM).
+
+Context Size,What it represents,Total VRAM Needed (Approx),GPU Class
+4k,A long article,~6.0 GB,8GB Cards (RTX 3060/4060)
+16k,A small book chapter,~7.5 GB,8GB Cards (Tight fit)
+32k,A short book,~9.5 GB,12GB Cards (RTX 3060/4070)
+128k,A full novel,~22.0 GB,24GB Cards (RTX 3090/4090)
+
+The Formula: Weights vs. Context
+VRAM usage comes from two distinct places:
+
+1. The "Parking Fee" (Model Weights)
+This is the fixed cost just to load the model.
+
+For an 8B model (Q4 quantization): You need roughly 5.5 GB just to store the "brain" of the model. This never changes, regardless of how much text you type.
+
+2. The "Running Cost" (KV Cache)
+This is the memory needed to "remember" the conversation. It grows with every single word (token) you add.
+
+For short context (4k tokens): You only need ~0.5 GB extra.
+
+Total: 5.5 + 0.5 = 6.0 GB (Fits in 8GB card)
+
+For full context (128k tokens): You need ~10 GB to 16 GB of extra VRAM just for the memory (depending on technical settings like GQA).
+
+Total: 5.5 + 16 = ~21.5 GB (Requires a 24GB card like an RTX 3090/4090)

@@ -1,6 +1,6 @@
 /**
  * ToolSupportMessages - Helper functions for formatting tool support status messages
- * 
+ *
  * This module provides utilities for creating consistent system messages
  * related to tool support detection, auto-detection progress, and runtime errors.
  */
@@ -34,7 +34,10 @@ export function formatToolSupportStatus(
  * @param stage - The current stage of auto-detection
  * @returns Formatted progress message with appropriate emoji
  */
-export function formatAutoDetectProgress(modelName: string, stage: 'starting' | 'testing' | 'success' | 'failure'): string {
+export function formatAutoDetectProgress(
+  modelName: string,
+  stage: 'starting' | 'testing' | 'success' | 'failure'
+): string {
   const messages = {
     starting: `🔍 Auto-detecting tool support for "${modelName}"...`,
     testing: `🔍 Testing tool capabilities for "${modelName}"...`,
@@ -101,12 +104,12 @@ export function formatModelSwitchNotification(
   newToolSupport: boolean
 ): string {
   const base = `🔄 Model switched: "${fromModel}" → "${toModel}"`;
-  
+
   if (toolSupportChanged) {
     const status = newToolSupport ? 'enabled' : 'disabled';
     return `${base}\n🛠️ Tool support is now ${status}`;
   }
-  
+
   return base;
 }
 
@@ -127,7 +130,10 @@ export function formatTimeoutWarning(modelName: string, defaultChoice: boolean):
  * @param action - The action being requested ('save' or 'detect')
  * @returns Formatted confirmation request
  */
-export function formatUserConfirmationRequest(modelName: string, action: 'save' | 'detect'): string {
+export function formatUserConfirmationRequest(
+  modelName: string,
+  action: 'save' | 'detect'
+): string {
   if (action === 'save') {
     return `💾 Save tool support metadata for "${modelName}" to user_models.json?`;
   } else {

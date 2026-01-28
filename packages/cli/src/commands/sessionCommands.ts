@@ -1,6 +1,6 @@
 /**
  * Session Management Commands
- * 
+ *
  * Implements commands for managing chat sessions:
  * - /new - Create new session with confirmation
  * - /clear - Clear context but preserve system prompt
@@ -20,14 +20,16 @@ import type { Command, CommandResult } from './types.js';
 function ensureContextManager() {
   const manager = getGlobalContextManager();
   if (!manager) {
-    throw new Error('Context Manager is not initialized. Please wait for the application to fully load.');
+    throw new Error(
+      'Context Manager is not initialized. Please wait for the application to fully load.'
+    );
   }
   return manager;
 }
 
 /**
  * /new command - Create new session with confirmation
- * 
+ *
  * Requirements: 17.1, 17.2, 19.9
  */
 export const newCommand: Command = {
@@ -47,7 +49,7 @@ export const newCommand: Command = {
 
 /**
  * /clear command - Clear context but preserve system prompt
- * 
+ *
  * Requirements: 17.3, 19.9
  */
 export const clearCommand: Command = {
@@ -65,7 +67,7 @@ export const clearCommand: Command = {
         message: 'Chat history cleared. System prompt preserved.',
       };
     } catch (error) {
-       return {
+      return {
         success: false,
         message: `Error clearing context: ${error instanceof Error ? error.message : String(error)}`,
       };
@@ -75,7 +77,7 @@ export const clearCommand: Command = {
 
 /**
  * /compact command - Trigger context compression
- * 
+ *
  * Requirements: 17.4, 19.9
  */
 export const compactCommand: Command = {
@@ -105,7 +107,7 @@ export const compactCommand: Command = {
 
 /**
  * /session save - Persist current session
- * 
+ *
  * Requirements: 17.5, 19.9
  */
 async function sessionSaveHandler(_args: string[]): Promise<CommandResult> {
@@ -120,7 +122,7 @@ async function sessionSaveHandler(_args: string[]): Promise<CommandResult> {
 
 /**
  * /session list - Display saved sessions
- * 
+ *
  * Requirements: 17.6, 19.9
  */
 async function sessionListHandler(_args: string[]): Promise<CommandResult> {
@@ -137,7 +139,7 @@ async function sessionListHandler(_args: string[]): Promise<CommandResult> {
 
 /**
  * /session resume <id> - Restore a session
- * 
+ *
  * Requirements: 17.7, 19.9
  */
 async function sessionResumeHandler(args: string[]): Promise<CommandResult> {
@@ -163,7 +165,7 @@ async function sessionResumeHandler(args: string[]): Promise<CommandResult> {
 
 /**
  * /session delete <id> - Delete a session
- * 
+ *
  * Requirements: 19.4
  */
 async function sessionDeleteHandler(args: string[]): Promise<CommandResult> {
@@ -185,7 +187,7 @@ async function sessionDeleteHandler(args: string[]): Promise<CommandResult> {
 
 /**
  * /session export <id> - Export a session
- * 
+ *
  * Requirements: 19.4
  */
 async function sessionExportHandler(args: string[]): Promise<CommandResult> {
@@ -208,7 +210,7 @@ async function sessionExportHandler(args: string[]): Promise<CommandResult> {
 
 /**
  * /session command - Main session command with subcommands
- * 
+ *
  * Requirements: 17.5, 17.6, 17.7, 19.4, 19.9
  */
 export const sessionCommand: Command = {
@@ -219,7 +221,8 @@ export const sessionCommand: Command = {
     if (args.length === 0) {
       return {
         success: false,
-        message: 'Usage: /session <save|list|resume|delete|export> [args]\n\n' +
+        message:
+          'Usage: /session <save|list|resume|delete|export> [args]\n\n' +
           'Subcommands:\n' +
           '  save              - Save current session\n' +
           '  list              - List saved sessions\n' +
@@ -246,7 +249,8 @@ export const sessionCommand: Command = {
       default:
         return {
           success: false,
-          message: `Unknown subcommand: ${subcommand}\n\n` +
+          message:
+            `Unknown subcommand: ${subcommand}\n\n` +
             'Available subcommands: save, list, resume, delete, export',
         };
     }

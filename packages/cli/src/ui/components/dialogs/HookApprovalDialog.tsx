@@ -1,6 +1,6 @@
 /**
  * HookApprovalDialog - Prompts user to approve untrusted hooks
- * 
+ *
  * Displays hook details, source information, and allows user to approve or deny
  * hook execution. Integrates with TrustedHooks system for security.
  */
@@ -81,9 +81,7 @@ export function HookApprovalDialog({
 
       {/* Warning */}
       <Box marginBottom={1}>
-        <Text color={riskColor}>
-          ⚠️  This hook requires your approval before it can execute.
-        </Text>
+        <Text color={riskColor}>⚠️ This hook requires your approval before it can execute.</Text>
       </Box>
 
       {/* Hook Details */}
@@ -148,9 +146,7 @@ export function HookApprovalDialog({
         <Text color={theme.text.secondary}>
           • Hooks can execute arbitrary commands on your system
         </Text>
-        <Text color={theme.text.secondary}>
-          • Only approve hooks from sources you trust
-        </Text>
+        <Text color={theme.text.secondary}>• Only approve hooks from sources you trust</Text>
         <Text color={theme.text.secondary}>
           • Approval is stored and won't be asked again unless the hook changes
         </Text>
@@ -165,11 +161,7 @@ export function HookApprovalDialog({
         <Box marginTop={1} paddingLeft={2}>
           <Box marginRight={4}>
             <Text
-              color={
-                selectedOption === 'approve'
-                  ? theme.text.accent
-                  : theme.text.secondary
-              }
+              color={selectedOption === 'approve' ? theme.text.accent : theme.text.secondary}
               bold={selectedOption === 'approve'}
             >
               {selectedOption === 'approve' ? '▶' : ' '} [A] Approve
@@ -178,9 +170,7 @@ export function HookApprovalDialog({
 
           <Box>
             <Text
-              color={
-                selectedOption === 'deny' ? theme.text.accent : theme.text.secondary
-              }
+              color={selectedOption === 'deny' ? theme.text.accent : theme.text.secondary}
               bold={selectedOption === 'deny'}
             >
               {selectedOption === 'deny' ? '▶' : ' '} [D] Deny

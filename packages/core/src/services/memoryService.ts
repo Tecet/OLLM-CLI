@@ -87,8 +87,7 @@ export class MemoryService {
   private savePromise: Promise<void> | null = null;
 
   constructor(config: MemoryServiceConfig = {}) {
-    this.memoryPath =
-      config.memoryPath || join(homedir(), '.ollm', 'memory.json');
+    this.memoryPath = config.memoryPath || join(homedir(), '.ollm', 'memory.json');
     this.tokenBudget = config.tokenBudget ?? 500;
     this.enabled = config.enabled ?? true;
   }

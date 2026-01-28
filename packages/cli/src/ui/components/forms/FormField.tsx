@@ -1,12 +1,12 @@
 /**
  * FormField - Wrapper component for form fields with label
- * 
+ *
  * Features:
  * - Label display
  * - Error message display
  * - Consistent spacing
  * - Theme-aware styling
- * 
+ *
  * Validates: Requirements NFR-7, NFR-9
  */
 
@@ -26,13 +26,7 @@ export interface FormFieldProps {
 /**
  * FormField component - wraps form inputs with label and error display
  */
-export function FormField({
-  label,
-  error,
-  required = false,
-  helpText,
-  children,
-}: FormFieldProps) {
+export function FormField({ label, error, required = false, helpText, children }: FormFieldProps) {
   const { state: uiState } = useUI();
 
   return (

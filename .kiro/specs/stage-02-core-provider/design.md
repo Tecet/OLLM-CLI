@@ -267,9 +267,7 @@ export class ChatClient {
       throw new Error('No provider available');
     }
 
-    const messages: Message[] = [
-      { role: 'user', parts: [{ type: 'text', text: prompt }] }
-    ];
+    const messages: Message[] = [{ role: 'user', parts: [{ type: 'text', text: prompt }] }];
 
     let turnNumber = 0;
     const maxTurns = options?.maxTurns ?? 10;
@@ -277,12 +275,7 @@ export class ChatClient {
     while (turnNumber < maxTurns) {
       turnNumber++;
 
-      const turn = new Turn(
-        provider,
-        this.toolRegistry,
-        messages,
-        options
-      );
+      const turn = new Turn(provider, this.toolRegistry, messages, options);
 
       let hasToolCalls = false;
 
@@ -477,7 +470,10 @@ export class TokenCounter {
     return Math.ceil(totalChars / 4);
   }
 
-  checkLimit(model: string, estimatedTokens: number): {
+  checkLimit(
+    model: string,
+    estimatedTokens: number
+  ): {
     withinLimit: boolean;
     isWarning: boolean;
     limit: number;
@@ -520,13 +516,16 @@ export interface ReActParseResult {
 }
 
 export class ReActToolHandler {
-  private static readonly REACT_PATTERN = /Thought:\s*(.+?)\n(?:Action:\s*(.+?)\n)?(?:Action Input:\s*(.+?)\n)?(?:Final Answer:\s*(.+))?/s;
+  private static readonly REACT_PATTERN =
+    /Thought:\s*(.+?)\n(?:Action:\s*(.+?)\n)?(?:Action Input:\s*(.+?)\n)?(?:Final Answer:\s*(.+))?/s;
 
   static formatToolsAsInstructions(tools: ToolSchema[]): string {
-    const toolDescriptions = tools.map(tool => {
-      return `- ${tool.name}: ${tool.description || 'No description'}
+    const toolDescriptions = tools
+      .map((tool) => {
+        return `- ${tool.name}: ${tool.description || 'No description'}
   Parameters: ${JSON.stringify(tool.parameters, null, 2)}`;
-    }).join('\n');
+      })
+      .join('\n');
 
     return `You have access to the following tools:
 
@@ -577,11 +576,7 @@ Final Answer: [Your response to the user]`;
   }
 
   static validateActionInput(actionInput: unknown): actionInput is Record<string, unknown> {
-    return (
-      typeof actionInput === 'object' &&
-      actionInput !== null &&
-      !Array.isArray(actionInput)
-    );
+    return typeof actionInput === 'object' && actionInput !== null && !Array.isArray(actionInput);
   }
 }
 ```
@@ -686,7 +681,7 @@ export class LocalProvider implements ProviderAdapter {
 
     for (const msg of messages) {
       const content = msg.parts
-        .map(part => (part.type === 'text' ? part.text : '[image]'))
+        .map((part) => (part.type === 'text' ? part.text : '[image]'))
         .join('');
 
       mapped.push({
@@ -700,7 +695,7 @@ export class LocalProvider implements ProviderAdapter {
   }
 
   private mapTools(tools: ToolSchema[]): unknown[] {
-    return tools.map(tool => ({
+    return tools.map((tool) => ({
       type: 'function',
       function: {
         name: tool.name,
@@ -845,17 +840,20 @@ export class LocalProvider implements ProviderAdapter {
 ### State Management
 
 **ChatClient State:**
+
 - Current conversation messages
 - Turn counter
 - Active provider
 - Tool registry reference
 
 **Turn State:**
+
 - Tool call queue
 - Accumulated text
 - Message history reference
 
 **Provider Registry State:**
+
 - Map of provider name → adapter
 - Default provider name
 
@@ -937,218 +935,217 @@ try {
 }
 ```
 
-
 ## Correctness Properties
 
 A property is a characteristic or behavior that should hold true across all valid executions of a system—essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.
 
 ### Property 1: Provider Registration and Retrieval
 
-*For any* provider adapter with a unique name, registering it in the Provider_Registry and then retrieving it by name should return the same adapter instance.
+_For any_ provider adapter with a unique name, registering it in the Provider_Registry and then retrieving it by name should return the same adapter instance.
 
 **Validates: Requirements 1.1, 1.2**
 
 ### Property 2: Default Provider Resolution
 
-*For any* provider adapter set as the default, calling getDefault() should return that adapter, and calling get() without a name should also return that adapter.
+_For any_ provider adapter set as the default, calling getDefault() should return that adapter, and calling get() without a name should also return that adapter.
 
 **Validates: Requirements 1.3, 1.5**
 
 ### Property 3: Provider List Completeness
 
-*For any* set of registered providers, the list() method should return exactly the names of all registered providers, with no duplicates or omissions.
+_For any_ set of registered providers, the list() method should return exactly the names of all registered providers, with no duplicates or omissions.
 
 **Validates: Requirements 1.4**
 
 ### Property 4: Event Stream Forwarding
 
-*For any* sequence of provider events (text, tool_call, finish, error), the Chat_Runtime should forward each event to consumers in the same order with the same content.
+_For any_ sequence of provider events (text, tool_call, finish, error), the Chat_Runtime should forward each event to consumers in the same order with the same content.
 
 **Validates: Requirements 2.1, 2.2, 2.3, 2.4**
 
 ### Property 5: Abort Signal Cancellation
 
-*For any* chat stream in progress, triggering the abort signal should cause the stream to terminate and emit a cancellation event.
+_For any_ chat stream in progress, triggering the abort signal should cause the stream to terminate and emit a cancellation event.
 
 **Validates: Requirements 2.5**
 
 ### Property 6: Tool Call Queuing and Execution
 
-*For any* set of tool_call events emitted during a turn, all tool calls should be queued and then executed after the stream completes.
+_For any_ set of tool_call events emitted during a turn, all tool calls should be queued and then executed after the stream completes.
 
 **Validates: Requirements 3.1, 3.2, 8.3, 8.4**
 
 ### Property 7: Tool Result Continuation
 
-*For any* completed tool execution, the tool result should be added to the conversation history as a tool message, and a new turn should begin with the updated history.
+_For any_ completed tool execution, the tool result should be added to the conversation history as a tool message, and a new turn should begin with the updated history.
 
 **Validates: Requirements 3.3**
 
 ### Property 8: Parallel Tool Execution
 
-*For any* set of multiple tool calls in a single turn, all tool calls should execute concurrently rather than sequentially (execution time should be closer to the slowest tool rather than the sum of all tools).
+_For any_ set of multiple tool calls in a single turn, all tool calls should execute concurrently rather than sequentially (execution time should be closer to the slowest tool rather than the sum of all tools).
 
 **Validates: Requirements 3.4**
 
 ### Property 9: Maximum Turn Limit
 
-*For any* conversation that would continue indefinitely, the Chat_Runtime should terminate after reaching the maximum turn count and emit a finish event with reason 'max_turns'.
+_For any_ conversation that would continue indefinitely, the Chat_Runtime should terminate after reaching the maximum turn count and emit a finish event with reason 'max_turns'.
 
 **Validates: Requirements 3.5**
 
 ### Property 10: Provider Interface Compliance
 
-*For any* provider adapter, it should implement the chatStream method that returns an async iterable of ProviderEvent objects.
+_For any_ provider adapter, it should implement the chatStream method that returns an async iterable of ProviderEvent objects.
 
 **Validates: Requirements 4.1**
 
 ### Property 11: Optional Method Presence
 
-*For any* provider adapter that supports token counting, calling countTokens should return a positive number; for any provider that supports model management, the methods listModels, pullModel, deleteModel, and showModel should be defined.
+_For any_ provider adapter that supports token counting, calling countTokens should return a positive number; for any provider that supports model management, the methods listModels, pullModel, deleteModel, and showModel should be defined.
 
 **Validates: Requirements 4.2, 4.3**
 
 ### Property 12: Message Format Mapping
 
-*For any* internal message, converting it to provider format and then back to internal format should produce an equivalent message (round-trip property).
+_For any_ internal message, converting it to provider format and then back to internal format should produce an equivalent message (round-trip property).
 
 **Validates: Requirements 4.4, 9.4, 9.5**
 
 ### Property 13: Tool Schema Conversion
 
-*For any* set of tool schemas, converting them to the provider's function calling format should preserve all tool names, descriptions, and parameter definitions.
+_For any_ set of tool schemas, converting them to the provider's function calling format should preserve all tool names, descriptions, and parameter definitions.
 
 **Validates: Requirements 4.5, 5.5**
 
 ### Property 14: Local Provider Request Formatting
 
-*For any* chat request, the Local_Provider should generate an HTTP request body that contains all required fields (model, messages, options) in the correct format.
+_For any_ chat request, the Local_Provider should generate an HTTP request body that contains all required fields (model, messages, options) in the correct format.
 
 **Validates: Requirements 5.2**
 
 ### Property 15: Local Provider Event Streaming
 
-*For any* server response stream, the Local_Provider should emit corresponding ProviderEvent objects for each chunk received.
+_For any_ server response stream, the Local_Provider should emit corresponding ProviderEvent objects for each chunk received.
 
 **Validates: Requirements 5.3**
 
 ### Property 16: Connection Error Handling
 
-*For any* connection failure, the provider should emit an error event with a descriptive message and error code.
+_For any_ connection failure, the provider should emit an error event with a descriptive message and error code.
 
 **Validates: Requirements 5.4, 10.1**
 
 ### Property 17: ReAct Instruction Formatting
 
-*For any* set of tool schemas, the ReAct_Handler should format them as text instructions that include tool names, descriptions, and parameter schemas.
+_For any_ set of tool schemas, the ReAct_Handler should format them as text instructions that include tool names, descriptions, and parameter schemas.
 
 **Validates: Requirements 6.1**
 
 ### Property 18: ReAct Output Parsing
 
-*For any* valid ReAct-formatted string, the ReAct_Handler should correctly extract the Thought, Action, Action Input, and Final Answer fields.
+_For any_ valid ReAct-formatted string, the ReAct_Handler should correctly extract the Thought, Action, Action Input, and Final Answer fields.
 
 **Validates: Requirements 6.2**
 
 ### Property 19: ReAct JSON Validation
 
-*For any* Action Input string, the ReAct_Handler should validate it as JSON before execution, accepting valid JSON and rejecting invalid JSON.
+_For any_ Action Input string, the ReAct_Handler should validate it as JSON before execution, accepting valid JSON and rejecting invalid JSON.
 
 **Validates: Requirements 6.3, 6.4**
 
 ### Property 20: ReAct Observation Formatting
 
-*For any* tool result, the ReAct_Handler should format it as "Observation: [JSON result]" for inclusion in the next turn.
+_For any_ tool result, the ReAct_Handler should format it as "Observation: [JSON result]" for inclusion in the next turn.
 
 **Validates: Requirements 6.5**
 
 ### Property 21: ReAct Turn Completion
 
-*For any* model output containing "Final Answer", the ReAct_Handler should expose the final answer in its parsed output.
+_For any_ model output containing "Final Answer", the ReAct_Handler should expose the final answer in its parsed output.
 
 **Validates: Requirements 6.6**
 
 ### Property 22: Token Count Estimation
 
-*For any* chat request, the Token_Counter should produce a positive integer estimate of the total token count.
+_For any_ chat request, the Token_Counter should produce a positive integer estimate of the total token count.
 
 **Validates: Requirements 7.1**
 
 ### Property 23: Provider Tokenizer Usage
 
-*For any* provider that implements countTokens, the Token_Counter should use the provider's method rather than the fallback estimation.
+_For any_ provider that implements countTokens, the Token_Counter should use the provider's method rather than the fallback estimation.
 
 **Validates: Requirements 7.2**
 
 ### Property 24: Fallback Token Estimation
 
-*For any* text content, the fallback token estimation should equal Math.ceil(text.length / 4).
+_For any_ text content, the fallback token estimation should equal Math.ceil(text.length / 4).
 
 **Validates: Requirements 7.3**
 
 ### Property 25: Token Limit Warning
 
-*For any* chat request where estimated tokens are between the configured warning threshold and the model's limit, Token_Counter.checkLimit should report isWarning: true.
+_For any_ chat request where estimated tokens are between the configured warning threshold and the model's limit, Token_Counter.checkLimit should report isWarning: true.
 
 **Validates: Requirements 7.4**
 
 ### Property 26: Token Limit Enforcement
 
-*For any* chat request where estimated tokens exceed the model's limit, Token_Counter.checkLimit should report withinLimit: false.
+_For any_ chat request where estimated tokens exceed the model's limit, Token_Counter.checkLimit should report withinLimit: false.
 
 **Validates: Requirements 7.5**
 
 ### Property 27: Turn Initialization
 
-*For any* turn, it should begin with the current conversation state (messages array) and maintain that state throughout execution.
+_For any_ turn, it should begin with the current conversation state (messages array) and maintain that state throughout execution.
 
 **Validates: Requirements 8.1**
 
 ### Property 28: Event Collection Completeness
 
-*For any* provider stream, the Turn should collect and emit all events until a finish or error event is received.
+_For any_ provider stream, the Turn should collect and emit all events until a finish or error event is received.
 
 **Validates: Requirements 8.2**
 
 ### Property 29: Conversation History Update
 
-*For any* completed turn, the conversation history should include the assistant's response and all tool results from that turn.
+_For any_ completed turn, the conversation history should include the assistant's response and all tool results from that turn.
 
 **Validates: Requirements 8.5**
 
 ### Property 30: Message Structure Validity
 
-*For any* message, it should have a role field with one of the valid values (system, user, assistant, tool) and a parts array containing at least one part.
+_For any_ message, it should have a role field with one of the valid values (system, user, assistant, tool) and a parts array containing at least one part.
 
 **Validates: Requirements 9.1, 9.2**
 
 ### Property 31: Tool Message Name Field
 
-*For any* message with role='tool', it should include a name field identifying the tool that produced the result.
+_For any_ message with role='tool', it should include a name field identifying the tool that produced the result.
 
 **Validates: Requirements 9.3**
 
 ### Property 32: Tool Execution Error Handling
 
-*For any* tool execution that fails, the error should be captured in the tool result message and the conversation should continue rather than terminating.
+_For any_ tool execution that fails, the error should be captured in the tool result message and the conversation should continue rather than terminating.
 
 **Validates: Requirements 10.2**
 
 ### Property 33: ReAct JSON Error Recovery
 
-*For any* invalid JSON in ReAct Action Input, the ReAct_Handler should provide a correction request message for the conversation.
+_For any_ invalid JSON in ReAct Action Input, the ReAct_Handler should provide a correction request message for the conversation.
 
 **Validates: Requirements 10.3**
 
 ### Property 34: Abort Signal Cleanup
 
-*For any* aborted chat stream, the system should clean up resources (close connections, cancel pending operations) and emit a cancellation event.
+_For any_ aborted chat stream, the system should clean up resources (close connections, cancel pending operations) and emit a cancellation event.
 
 **Validates: Requirements 10.4**
 
 ### Property 35: Unexpected Error Resilience
 
-*For any* unexpected error during chat execution, the system should emit an error event and continue running without crashing the process.
+_For any_ unexpected error during chat execution, the system should emit an error event and continue running without crashing the process.
 
 **Validates: Requirements 10.5**
 
@@ -1159,12 +1156,14 @@ A property is a characteristic or behavior that should hold true across all vali
 This feature will use both unit tests and property-based tests to ensure comprehensive coverage:
 
 **Unit Tests** will verify:
+
 - Specific examples of provider registration and retrieval
 - Edge cases like empty provider registries or missing default providers
 - Error conditions such as connection failures and invalid JSON
 - Integration between components (ChatClient → Turn → Provider)
 
 **Property-Based Tests** will verify:
+
 - Universal properties across all inputs (as defined above)
 - Randomized message sequences, tool calls, and provider events
 - Round-trip properties for message format conversion
@@ -1175,6 +1174,7 @@ This feature will use both unit tests and property-based tests to ensure compreh
 We will use **fast-check** (already in package.json) as the property-based testing library for TypeScript.
 
 Each property test will:
+
 - Run a minimum of 100 iterations to ensure comprehensive input coverage
 - Be tagged with a comment referencing the design property
 - Tag format: `// Feature: stage-02-core-provider, Property N: [property text]`
@@ -1220,6 +1220,7 @@ describe('Provider Registry', () => {
 ### Mock Providers for Testing
 
 We will create mock provider adapters in `packages/test-utils` that:
+
 - Emit predictable event sequences for testing
 - Simulate various error conditions
 - Support configurable delays for testing parallel execution

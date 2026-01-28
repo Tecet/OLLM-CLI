@@ -3,8 +3,8 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
-    "composite": true
-    ,"baseUrl": "../../",
+    "composite": true,
+    "baseUrl": "../../",
     "paths": {
       "@ollm/core": ["packages/core/src/index.ts"],
       "@ollm/core/*": ["packages/core/src/*"],
@@ -13,7 +13,5 @@
     }
   },
   "include": ["src", "../../types/**/*.d.ts"],
-  "references": [
-    { "path": "../core" }
-  ]
+  "references": [{ "path": "../core" }]
 }

@@ -21,7 +21,7 @@ export interface TruncationResult {
 export class OutputFormatter {
   /**
    * Truncate output based on character and/or line limits
-   * 
+   *
    * @param output - The output string to truncate
    * @param config - Truncation configuration with maxChars and/or maxLines
    * @returns TruncationResult with truncated content and metadata
@@ -61,7 +61,7 @@ export class OutputFormatter {
   /**
    * Format output for optimal LLM consumption
    * Trims whitespace and ensures clean structure
-   * 
+   *
    * @param output - The output string to format
    * @returns Formatted output string
    */
@@ -72,7 +72,7 @@ export class OutputFormatter {
   /**
    * Format output for user display
    * Currently returns output as-is, but can be extended for user-specific formatting
-   * 
+   *
    * @param output - The output string to format
    * @returns Formatted output string
    */

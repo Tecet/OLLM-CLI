@@ -1,12 +1,12 @@
 /**
  * Standard tab container component
- * 
+ *
  * Provides a consistent wrapper for tab content with:
  * - Focus-aware border styling
  * - Consistent padding and layout
  * - Optional title and help text
  * - Keyboard navigation integration
- * 
+ *
  * @example
  * ```typescript
  * <TabContainer
@@ -28,7 +28,6 @@ import { useFocusedBorder } from '../../hooks/useFocusedBorder.js';
 
 import type { Theme } from '../../../config/types.js';
 import type { FocusableId } from '../../../features/context/FocusContext.js';
-
 
 export interface TabContainerProps {
   /** Focus ID for this tab */
@@ -55,7 +54,7 @@ export interface TabContainerProps {
 
 /**
  * Standard tab container with focus-aware styling
- * 
+ *
  * Features:
  * - Automatic border color based on focus state
  * - Optional title and help text

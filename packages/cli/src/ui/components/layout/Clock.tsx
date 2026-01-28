@@ -19,17 +19,17 @@ export function Clock({ borderColor }: ClockProps) {
     return () => clearInterval(timer);
   }, []);
 
-  const timeString = time.toLocaleTimeString([], { 
-    hour: '2-digit', 
-    minute: '2-digit', 
+  const timeString = time.toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
     second: '2-digit',
-    hour12: false 
+    hour12: false,
   });
 
   return (
-    <Box 
-      borderStyle={theme.border.style as BoxProps['borderStyle']} 
-      borderColor={borderColor || theme.border.primary} 
+    <Box
+      borderStyle={theme.border.style as BoxProps['borderStyle']}
+      borderColor={borderColor || theme.border.primary}
       paddingX={1}
     >
       <Text color="greenBright" bold>

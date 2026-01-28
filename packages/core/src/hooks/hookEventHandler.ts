@@ -1,6 +1,6 @@
 /**
  * HookEventHandler bridges MessageBus events to Hook execution
- * 
+ *
  * Subscribes to MessageBus events and executes registered hooks,
  * providing a clean separation between event emission and hook execution.
  */
@@ -131,14 +131,17 @@ export class HookEventHandler {
 
   /**
    * Handle an event by executing registered hooks
-   * 
+   *
    * @param event - The event to handle
    * @param data - Event-specific data
    * @returns Promise resolving to handling result
    */
-  private async handleEvent(event: HookEvent, data: Record<string, unknown>): Promise<EventHandlingResult> {
+  private async handleEvent(
+    event: HookEvent,
+    data: Record<string, unknown>
+  ): Promise<EventHandlingResult> {
     const startTime = Date.now();
-    
+
     // Get hooks for this event
     const hooks = this.hookRegistry.getHooksForEvent(event);
 
@@ -195,7 +198,10 @@ export class HookEventHandler {
   /**
    * Execute hooks sequentially
    */
-  private async executeHooksSequential(hooks: Hook[], input: HookInput): Promise<EventHandlingResult> {
+  private async executeHooksSequential(
+    hooks: Hook[],
+    input: HookInput
+  ): Promise<EventHandlingResult> {
     const summary = await this.hookRunner.executeHooksWithSummary(hooks, input);
 
     return {
@@ -205,16 +211,17 @@ export class HookEventHandler {
       systemMessages: summary.systemMessages,
       shouldContinue: summary.shouldContinue,
       aggregatedData: summary.aggregatedData,
-      errors: summary.outputs
-        .filter((o) => o.error)
-        .map((o) => new Error(o.error)),
+      errors: summary.outputs.filter((o) => o.error).map((o) => new Error(o.error)),
     };
   }
 
   /**
    * Execute hooks in parallel
    */
-  private async executeHooksParallel(hooks: Hook[], input: HookInput): Promise<EventHandlingResult> {
+  private async executeHooksParallel(
+    hooks: Hook[],
+    input: HookInput
+  ): Promise<EventHandlingResult> {
     const results = await Promise.allSettled(
       hooks.map((hook) => this.hookRunner.executeHook(hook, input))
     );
@@ -227,7 +234,7 @@ export class HookEventHandler {
     for (const result of results) {
       if (result.status === 'fulfilled') {
         const output = result.value;
-        
+
         if (output.systemMessage) {
           systemMessages.push(output.systemMessage);
         }

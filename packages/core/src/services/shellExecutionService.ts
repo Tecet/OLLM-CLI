@@ -27,7 +27,7 @@ export class ShellExecutionService {
   constructor(private sanitizationService: EnvironmentSanitizationService) {}
   /**
    * Execute a shell command with the specified options.
-   * 
+   *
    * @param options - Execution options including command, timeouts, and callbacks
    * @returns Promise resolving to execution result with output and exit code
    * @throws Error if command times out, is cancelled, or fails to start
@@ -40,9 +40,7 @@ export class ShellExecutionService {
 
     return new Promise((resolve, reject) => {
       // Sanitize environment variables to prevent secret leakage (Requirement 7.8)
-      const sanitizedEnv = this.sanitizationService.sanitize(
-        process.env as Record<string, string>
-      );
+      const sanitizedEnv = this.sanitizationService.sanitize(process.env as Record<string, string>);
 
       // Spawn the process
       const proc = spawn(options.command, {
@@ -99,7 +97,10 @@ export class ShellExecutionService {
             clearTimeout(timeoutId);
             reject(new Error(`Command idle timeout after ${options.idleTimeout}ms of no output`));
           } else {
-            idleTimeoutId = setTimeout(checkIdleTimeout, Math.min(1000, options.idleTimeout! - idleTime));
+            idleTimeoutId = setTimeout(
+              checkIdleTimeout,
+              Math.min(1000, options.idleTimeout! - idleTime)
+            );
           }
         };
         idleTimeoutId = setTimeout(checkIdleTimeout, options.idleTimeout);
@@ -163,15 +164,13 @@ export class ShellExecutionService {
 
   /**
    * Execute a command in the background and return immediately with process ID.
-   * 
+   *
    * @param options - Execution options
    * @returns Promise resolving to result with process ID
    */
   private async executeBackground(options: ShellExecutionOptions): Promise<ShellExecutionResult> {
     // Sanitize environment variables to prevent secret leakage (Requirement 7.8)
-    const sanitizedEnv = this.sanitizationService.sanitize(
-      process.env as Record<string, string>
-    );
+    const sanitizedEnv = this.sanitizationService.sanitize(process.env as Record<string, string>);
 
     const proc = spawn(options.command, {
       cwd: options.cwd,

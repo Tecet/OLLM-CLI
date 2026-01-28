@@ -1,6 +1,6 @@
 /**
  * Test utilities for MCP components
- * 
+ *
  * Provides mock factories and helpers for testing MCP-related components.
  * Use these utilities to create consistent mocks across test files.
  */
@@ -38,7 +38,9 @@ export function createMockMCPClient(overrides?: Partial<MCPClient>): Partial<MCP
 /**
  * Create a mock MCPHealthMonitor for testing
  */
-export function createMockHealthMonitor(overrides?: Partial<MCPHealthMonitor>): Partial<MCPHealthMonitor> {
+export function createMockHealthMonitor(
+  overrides?: Partial<MCPHealthMonitor>
+): Partial<MCPHealthMonitor> {
   return {
     start: vi.fn().mockReturnValue(undefined),
     stop: vi.fn().mockReturnValue(undefined),
@@ -56,7 +58,9 @@ export function createMockHealthMonitor(overrides?: Partial<MCPHealthMonitor>): 
 /**
  * Create a mock MCPOAuthProvider for testing
  */
-export function createMockOAuthProvider(overrides?: Partial<MCPOAuthProvider>): Partial<MCPOAuthProvider> {
+export function createMockOAuthProvider(
+  overrides?: Partial<MCPOAuthProvider>
+): Partial<MCPOAuthProvider> {
   return {
     getOAuthStatus: vi.fn().mockReturnValue({
       connected: false,
@@ -169,9 +173,11 @@ export function setupMCPServiceMocks() {
 /**
  * Create a test MCPContext value with mock data
  */
-export function createMockMCPContextValue(overrides?: Partial<ReturnType<typeof import('../MCPContext.js').useMCP>>) {
+export function createMockMCPContextValue(
+  overrides?: Partial<ReturnType<typeof import('../MCPContext.js').useMCP>>
+) {
   const servers = new Map<string, ExtendedMCPServerStatus>();
-  
+
   return {
     state: {
       servers,

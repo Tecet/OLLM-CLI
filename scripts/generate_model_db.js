@@ -6,8 +6,24 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const cliProfilesPath = path.join(__dirname, '..', 'packages', 'cli', 'src', 'config', 'LLM_profiles.json');
-const outPath = path.join(__dirname, '..', 'packages', 'core', 'src', 'routing', 'generated_model_db.ts');
+const cliProfilesPath = path.join(
+  __dirname,
+  '..',
+  'packages',
+  'cli',
+  'src',
+  'config',
+  'LLM_profiles.json'
+);
+const outPath = path.join(
+  __dirname,
+  '..',
+  'packages',
+  'core',
+  'src',
+  'routing',
+  'generated_model_db.ts'
+);
 
 function normalizeProfile(p) {
   const copy = Object.assign({}, p);
@@ -15,7 +31,7 @@ function normalizeProfile(p) {
     copy.max_context_window = copy.context_window;
   }
   if (Array.isArray(copy.context_profiles)) {
-    copy.context_profiles = copy.context_profiles.map(cp => {
+    copy.context_profiles = copy.context_profiles.map((cp) => {
       const c = Object.assign({}, cp);
       if (c.vram_estimate_gb == null && typeof c.vram_estimate === 'string') {
         const m = c.vram_estimate.match(/([0-9]+(?:\.[0-9]+)?)/);
@@ -45,18 +61,31 @@ function main() {
   const models = Array.isArray(json.models) ? json.models.map(normalizeProfile) : [];
 
   // Build ModelEntry list and raw profile map
-  const entries = models.map(m => {
+  const entries = models.map((m) => {
     const id = m.id || m.name || 'unknown';
     const pattern = `${id}`;
     const family = String(id);
-    const contextWindow = Number(m.max_context_window ?? (Array.isArray(m.context_profiles) ? Math.max(...m.context_profiles.map(c => Number(c.size || 0))) : 4096)) || 4096;
+    const contextWindow =
+      Number(
+        m.max_context_window ??
+          (Array.isArray(m.context_profiles)
+            ? Math.max(...m.context_profiles.map((c) => Number(c.size || 0)))
+            : 4096)
+      ) || 4096;
     const caps = m.capabilities ?? {
       toolCalling: Boolean(m.tool_support),
-      vision: (Array.isArray(m.abilities) && m.abilities.some(a => /visual|vision|multimodal/i.test(a))) || false,
+      vision:
+        (Array.isArray(m.abilities) &&
+          m.abilities.some((a) => /visual|vision|multimodal/i.test(a))) ||
+        false,
       streaming: m.streaming ?? true,
-      reasoning: Boolean(m.thinking_enabled) || (Array.isArray(m.abilities) && m.abilities.some(a => /reasoning|think/i.test(a)))
+      reasoning:
+        Boolean(m.thinking_enabled) ||
+        (Array.isArray(m.abilities) && m.abilities.some((a) => /reasoning|think/i.test(a))),
     };
-    const profiles = Array.isArray(m.context_profiles) ? m.context_profiles.map(c => String(c.size_label ?? c.size)) : ['general'];
+    const profiles = Array.isArray(m.context_profiles)
+      ? m.context_profiles.map((c) => String(c.size_label ?? c.size))
+      : ['general'];
     return {
       pattern,
       family,
@@ -66,9 +95,9 @@ function main() {
         toolCalling: Boolean(caps.toolCalling),
         vision: Boolean(caps.vision),
         streaming: Boolean(caps.streaming),
-        reasoning: Boolean(caps.reasoning)
+        reasoning: Boolean(caps.reasoning),
       },
-      profiles
+      profiles,
     };
   });
 
@@ -87,7 +116,8 @@ export const GENERATED_MODEL_DB: ModelEntry[] = `;
   const body = JSON.stringify(entries, null, 2);
   const rawBody = JSON.stringify(rawMap, null, 2);
 
-  const content = header + body + ' as any;\n\nexport const GENERATED_RAW_PROFILES = ' + rawBody + ' as any;\n';
+  const content =
+    header + body + ' as any;\n\nexport const GENERATED_RAW_PROFILES = ' + rawBody + ' as any;\n';
 
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
   fs.writeFileSync(outPath, content, 'utf8');

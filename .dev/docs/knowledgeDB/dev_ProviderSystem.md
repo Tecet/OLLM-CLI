@@ -4,6 +4,7 @@
 **Status:** Source of Truth
 
 **Related Documents:**
+
 - `dev_ContextManagement.md` - Context sizing, VRAM monitoring
 - `dev_ModelManagement.md` - Model profiles, detection
 - `dev_ModelDB.md` - Model database schema and access patterns
@@ -58,6 +59,7 @@ The Ollama provider is the primary and currently only implemented provider. It p
 **Use Case:** Local development, privacy-focused, offline operation
 
 **Features:**
+
 - Full local execution
 - No API keys required
 - Model management (pull, remove, list)
@@ -77,6 +79,7 @@ The Ollama provider is the primary and currently only implemented provider. It p
 ```
 
 **Environment Variables:**
+
 - `OLLAMA_HOST` - Ollama server URL (default: http://localhost:11434)
 
 **User Settings:**
@@ -97,6 +100,7 @@ The application reads Ollama configuration from `~/.ollm/settings.json`:
 ```
 
 **Settings Fields:**
+
 - `autoStart` - Enable/disable automatic `ollama serve` on app startup
 - `host` - Ollama server hostname (default: localhost)
 - `port` - Ollama server port (default: 11434)
@@ -112,6 +116,7 @@ The application can automatically start `ollama serve` in the background on star
 - **Background process** - Runs in background, doesn't block app
 
 **Configuration Commands:**
+
 ```bash
 # Enable/disable auto-start
 /config ollama autostart on
@@ -126,6 +131,7 @@ The application can automatically start `ollama serve` in the background on star
 ```
 
 **Settings UI:**
+
 ```
 ┌─ Ollama Provider Settings ─────────────┐
 │                                         │
@@ -141,6 +147,7 @@ The application can automatically start `ollama serve` in the background on star
 **npm Installation:**
 
 When installing via npm, the package will:
+
 1. Detect if Ollama is installed
 2. Ask user permission to install Ollama (if not found)
 3. Ask user permission to pull default model (llama3.2:3b)
@@ -151,15 +158,15 @@ When installing via npm, the package will:
 
 ### Capabilities
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Streaming responses | ✅ | NDJSON format |
-| Tool calling | ✅ | Function calling format |
-| Context window detection | ✅ | From model metadata |
-| Model management | ✅ | Pull, remove, list |
-| VRAM monitoring | ✅ | Platform-specific (NVIDIA, AMD, Apple) |
-| Multi-modal | ⚠️ | Limited (images only) |
-| Multi-GPU | ❌ | Single GPU only |
+| Feature                  | Status | Notes                                  |
+| ------------------------ | ------ | -------------------------------------- |
+| Streaming responses      | ✅     | NDJSON format                          |
+| Tool calling             | ✅     | Function calling format                |
+| Context window detection | ✅     | From model metadata                    |
+| Model management         | ✅     | Pull, remove, list                     |
+| VRAM monitoring          | ✅     | Platform-specific (NVIDIA, AMD, Apple) |
+| Multi-modal              | ⚠️     | Limited (images only)                  |
+| Multi-GPU                | ❌     | Single GPU only                        |
 
 ### Message Format
 
@@ -169,11 +176,12 @@ Ollama uses a simple message format:
 interface OllamaMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
-  images?: string[];  // Base64-encoded images
+  images?: string[]; // Base64-encoded images
 }
 ```
 
 **Translation from Internal Format:**
+
 ```typescript
 // Internal message
 {
@@ -224,6 +232,7 @@ Ollama uses NDJSON (Newline-Delimited JSON) for streaming:
 ```
 
 **Parsing:**
+
 1. Split stream by newlines
 2. Parse each line as JSON
 3. Extract `message.content` for text delta
@@ -232,23 +241,27 @@ Ollama uses NDJSON (Newline-Delimited JSON) for streaming:
 ### Model Management
 
 **List Models:**
+
 ```bash
 GET /api/tags
 ```
 
 **Pull Model:**
+
 ```bash
 POST /api/pull
 { "name": "llama3.2:3b" }
 ```
 
 **Remove Model:**
+
 ```bash
 DELETE /api/delete
 { "name": "llama3.2:3b" }
 ```
 
 **Model Info:**
+
 ```bash
 POST /api/show
 { "name": "llama3.2:3b" }
@@ -275,6 +288,7 @@ Ollama provides context window size in model metadata:
 ```
 
 **Extraction:**
+
 ```typescript
 const contextLength = modelInfo.model_info['llama.context_length'];
 // Returns: 8192
@@ -287,6 +301,7 @@ const contextLength = modelInfo.model_info['llama.context_length'];
 ### v0.6.0: Release Kraken
 
 **Planned Providers:**
+
 - **Codex** - GitHub Copilot backend
 - **Claude Code** - Anthropic's code-focused model
 - **Gemini CLI** - Google's Gemini via CLI
@@ -296,6 +311,7 @@ const contextLength = modelInfo.model_info['llama.context_length'];
 ### v0.9.0: vLLM-LMS Providers
 
 **Planned Providers:**
+
 - **vLLM** - High-performance inference engine
 - **Other open source providers** - TBD
 
@@ -310,18 +326,15 @@ All providers must implement the `ProviderAdapter` interface:
 ```typescript
 interface ProviderAdapter {
   // Streaming chat
-  chatStream(
-    messages: Message[],
-    options: ChatOptions
-  ): AsyncGenerator<StreamEvent>;
-  
+  chatStream(messages: Message[], options: ChatOptions): AsyncGenerator<StreamEvent>;
+
   // Model management
   listModels(): Promise<ModelInfo[]>;
   getModelInfo(modelId: string): Promise<ModelInfo>;
-  
+
   // Health check
   healthCheck(): Promise<boolean>;
-  
+
   // Optional: Model operations
   pullModel?(modelId: string): Promise<void>;
   removeModel?(modelId: string): Promise<void>;
@@ -349,7 +362,7 @@ interface ChatOptions {
   topK?: number;
   stop?: string[];
   tools?: Tool[];
-  num_ctx?: number;  // Context window size
+  num_ctx?: number; // Context window size
 }
 ```
 
@@ -373,10 +386,12 @@ const providers = providerRegistry.list();
 ### Provider Selection
 
 **Current (v0.1.0):**
+
 - Single provider (Ollama)
 - No selection logic needed
 
 **Future (v0.6.0+):**
+
 - User preference
 - Automatic detection
 - Fallback mechanisms
@@ -426,23 +441,23 @@ async function* parseNDJSON(stream: ReadableStream) {
   const reader = stream.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
-  
+
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
-    
+
     buffer += decoder.decode(value, { stream: true });
     const lines = buffer.split('\n');
     buffer = lines.pop() || '';
-    
+
     for (const line of lines) {
       if (line.trim()) {
         const data = JSON.parse(line);
         yield {
           type: 'chunk',
-          delta: data.message?.content || ''
+          delta: data.message?.content || '',
         };
-        
+
         if (data.done) {
           yield { type: 'done', metadata: data };
         }
@@ -459,15 +474,15 @@ async function* parseSSE(stream: ReadableStream) {
   const reader = stream.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
-  
+
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
-    
+
     buffer += decoder.decode(value, { stream: true });
     const events = buffer.split('\n\n');
     buffer = events.pop() || '';
-    
+
     for (const event of events) {
       if (event.startsWith('data: ')) {
         const data = event.slice(6);
@@ -477,7 +492,7 @@ async function* parseSSE(stream: ReadableStream) {
           const parsed = JSON.parse(data);
           yield {
             type: 'chunk',
-            delta: parsed.choices[0]?.delta?.content || ''
+            delta: parsed.choices[0]?.delta?.content || '',
           };
         }
       }
@@ -501,7 +516,7 @@ const contextWindow = modelInfo.contextLength;
 
 // Context Manager uses this for sizing
 contextManager.updateConfig({
-  maxSize: contextWindow
+  maxSize: contextWindow,
 });
 ```
 
@@ -551,7 +566,7 @@ Sent back to LLM
 
 ```typescript
 interface ProviderConfig {
-  provider: 'ollama';  // Only Ollama in v0.1.0
+  provider: 'ollama'; // Only Ollama in v0.1.0
   host: string;
   model: string;
   temperature?: number;
@@ -658,6 +673,7 @@ for await (const event of provider.chatStream(messages, options)) {
 **Solution:**
 
 **If auto-start is enabled:**
+
 ```bash
 # Check if ollama process is running
 ps aux | grep ollama
@@ -667,6 +683,7 @@ ps aux | grep ollama
 ```
 
 **If auto-start is disabled:**
+
 ```bash
 # Start Ollama server manually
 ollama serve
@@ -676,11 +693,13 @@ ollama serve
 ```
 
 **Check connection:**
+
 ```bash
 curl http://localhost:11434/api/tags
 ```
 
 **Custom server:**
+
 ```bash
 # If using custom host/port
 /config ollama host your-server.com
@@ -692,6 +711,7 @@ curl http://localhost:11434/api/tags
 **Symptom:** 404 error when loading model
 
 **Solution:**
+
 ```bash
 # Pull the model
 ollama pull llama3.2:3b
@@ -705,6 +725,7 @@ ollama list
 **Symptom:** Invalid JSON errors during streaming
 
 **Solution:**
+
 1. Check Ollama version (update if needed)
 2. Verify model is compatible
 3. Check for network issues
@@ -714,14 +735,14 @@ ollama list
 
 ## File Locations
 
-| File | Purpose |
-|------|---------|
-| `packages/core/src/provider/types.ts` | Provider interfaces |
-| `packages/core/src/provider/registry.ts` | Provider registry |
-| `packages/ollm-bridge/src/provider/localProvider.ts` | Ollama adapter |
-| `packages/ollm-bridge/src/adapters/sseParser.ts` | SSE parsing (future) |
-| `packages/cli/src/config/LLM_profiles.json` | Model profiles |
-| `packages/core/src/services/modelManagementService.ts` | Model management |
+| File                                                   | Purpose              |
+| ------------------------------------------------------ | -------------------- |
+| `packages/core/src/provider/types.ts`                  | Provider interfaces  |
+| `packages/core/src/provider/registry.ts`               | Provider registry    |
+| `packages/ollm-bridge/src/provider/localProvider.ts`   | Ollama adapter       |
+| `packages/ollm-bridge/src/adapters/sseParser.ts`       | SSE parsing (future) |
+| `packages/cli/src/config/LLM_profiles.json`            | Model profiles       |
+| `packages/core/src/services/modelManagementService.ts` | Model management     |
 
 ---
 

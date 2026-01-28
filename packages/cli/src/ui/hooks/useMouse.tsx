@@ -47,7 +47,7 @@ export function MouseProvider({ children }: MouseProviderProps): React.ReactElem
   useEffect(() => {
     if (isRawModeSupported) {
       setRawMode(true);
-      enableMouseEvents(); 
+      enableMouseEvents();
       isEnabled.current = true;
     }
 
@@ -61,10 +61,10 @@ export function MouseProvider({ children }: MouseProviderProps): React.ReactElem
 
   useEffect(() => {
     if (!stdin) return;
-    
+
     const handleData = (data: Buffer) => {
       const input = data.toString();
-      
+
       // Check for SGR mouse sequence: \\x1b[<button;x;yM (or m)
       const mouseRegex = /\\x1b\[<(\d+);(\d+);(\d+)([Mm])/;
       const match = input.match(mouseRegex);
@@ -77,7 +77,7 @@ export function MouseProvider({ children }: MouseProviderProps): React.ReactElem
 
         let action: MouseAction = 'move';
         let button: MouseButton = 'none';
-        
+
         // Decode button/action
         let mod = rawButton;
         const scroll = (mod & 64) === 64;
@@ -90,12 +90,12 @@ export function MouseProvider({ children }: MouseProviderProps): React.ReactElem
         mod &= ~8;
         const shift = (mod & 4) === 4;
         mod &= ~4;
-        
+
         const btnCode = mod;
 
         if (scroll) {
           action = btnCode === 0 ? 'scroll-up' : 'scroll-down';
-          button = 'none'; 
+          button = 'none';
         } else {
           if (type === 'M') {
             action = 'down';
@@ -115,11 +115,11 @@ export function MouseProvider({ children }: MouseProviderProps): React.ReactElem
           button,
           shift,
           alt,
-          ctrl
+          ctrl,
         };
 
         // Notify listeners
-        listenersRef.current.forEach(listener => listener(event));
+        listenersRef.current.forEach((listener) => listener(event));
       }
     };
 
@@ -131,16 +131,12 @@ export function MouseProvider({ children }: MouseProviderProps): React.ReactElem
     };
   }, [stdin]);
 
-  return (
-    <MouseContext.Provider value={{ subscribe }}>
-      {children}
-    </MouseContext.Provider>
-  );
+  return <MouseContext.Provider value={{ subscribe }}>{children}</MouseContext.Provider>;
 }
 
 export function useMouse(onMouse: (event: MouseEvent) => void) {
   const context = useContext(MouseContext);
-  
+
   useEffect(() => {
     if (!context) return;
     return context.subscribe(onMouse);

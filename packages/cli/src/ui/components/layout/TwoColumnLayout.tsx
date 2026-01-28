@@ -1,10 +1,10 @@
 /**
  * Reusable two-column layout component
- * 
+ *
  * Provides a standardized two-column layout used across multiple tabs
  * (HooksTab, MCPTab, SearchTab, SettingsTab). Handles width calculations
  * and consistent styling.
- * 
+ *
  * @example
  * ```typescript
  * <TwoColumnLayout
@@ -47,7 +47,7 @@ export interface TwoColumnLayoutProps {
 
 /**
  * Two-column layout component with configurable widths
- * 
+ *
  * Features:
  * - Percentage-based width for left column
  * - Automatic right column width calculation
@@ -68,12 +68,8 @@ export const TwoColumnLayout: React.FC<TwoColumnLayoutProps> = ({
   gap = 0,
 }) => {
   // Calculate column widths
-  const leftColumnWidth = width
-    ? Math.floor((width * leftWidth) / 100)
-    : undefined;
-  const rightColumnWidth = width && leftColumnWidth
-    ? width - leftColumnWidth - gap
-    : undefined;
+  const leftColumnWidth = width ? Math.floor((width * leftWidth) / 100) : undefined;
+  const rightColumnWidth = width && leftColumnWidth ? width - leftColumnWidth - gap : undefined;
 
   // Default border colors from theme
   const leftBorder = leftBorderColor || theme.border.primary;

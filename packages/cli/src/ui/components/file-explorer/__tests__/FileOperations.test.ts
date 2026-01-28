@@ -1,6 +1,6 @@
 /**
  * FileOperations Tests
- * 
+ *
  * Tests for file CRUD operations with tool integration
  */
 

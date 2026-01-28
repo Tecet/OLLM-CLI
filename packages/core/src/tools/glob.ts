@@ -1,6 +1,6 @@
 /**
  * Glob tool implementation
- * 
+ *
  * Provides a tool for finding files matching glob patterns with support for
  * hidden file filtering, result limits, and .gitignore respect.
  */
@@ -87,9 +87,7 @@ export class GlobTool implements DeclarativeTool<GlobParams, ToolResult> {
  * Invocation instance for glob search
  */
 export class GlobInvocation implements ToolInvocation<GlobParams, ToolResult> {
-  constructor(
-    public params: GlobParams
-  ) {}
+  constructor(public params: GlobParams) {}
 
   getDescription(): string {
     return `Find files matching ${this.params.pattern}`;

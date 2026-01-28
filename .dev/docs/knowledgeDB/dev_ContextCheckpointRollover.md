@@ -4,6 +4,7 @@
 **Status:** ✅ Production Ready - Core Systems Complete
 
 **Related Documents:**
+
 - [Context Compression](./dev_ContextCompression.md) - Compression triggers and checkpoint system
 - [Context Management](./dev_ContextManagement.md) - Context sizing and VRAM management
 - [Context Tokeniser](./dev_ContextTokeniser.md) - Token counting system
@@ -20,6 +21,7 @@
 ### ✅ Core Systems Complete
 
 **Phases 0-6 Completed:**
+
 1. **Input Preprocessing** - Clean intent extraction (30x token savings)
 2. **Pre-Send Validation** - Overflow prevention (0% error rate)
 3. **Blocking Mechanism** - User input blocking during checkpoints
@@ -28,6 +30,7 @@
 6. **Checkpoint Aging** - Progressive compression (50% space reduction)
 
 **Implementation Status:**
+
 - ✅ Pre-send validation implemented
 - ✅ Blocking mechanism implemented
 - ✅ Progressive compaction implemented
@@ -159,6 +162,7 @@ After 2nd Compression:
 ### The Core Issue
 
 As conversation progresses:
+
 - ✅ Checkpoints accumulate (each compression adds one)
 - ✅ User messages accumulate (never compressed)
 - ✅ Recent messages accumulate (not yet compressed)
@@ -177,21 +181,21 @@ As conversation progresses:
 ```typescript
 async function validateAndBuildPrompt(): Promise<Message[]> {
   const ollamaLimit = contextPool.getCurrentSize(); // 6963 for 8K
-  
+
   // 1. Build prompt components
   const systemPrompt = context.systemPrompt;
-  const checkpoints = context.checkpoints.map(cp => cp.summary);
-  const userMessages = context.messages.filter(m => m.role === 'user');
+  const checkpoints = context.checkpoints.map((cp) => cp.summary);
+  const userMessages = context.messages.filter((m) => m.role === 'user');
   const recentMessages = getRecentAssistantMessages();
-  
+
   // 2. Calculate total size
   const systemTokens = tokenCounter.countMessageTokens(systemPrompt);
   const checkpointTokens = tokenCounter.countConversationTokens(checkpoints);
   const userTokens = tokenCounter.countConversationTokens(userMessages);
   const recentTokens = tokenCounter.countConversationTokens(recentMessages);
-  
+
   const totalPromptSize = systemTokens + checkpointTokens + userTokens + recentTokens;
-  
+
   // 3. Safety check
   if (totalPromptSize > ollamaLimit) {
     console.error('[SAFETY] Prompt exceeds Ollama limit!', {
@@ -202,17 +206,17 @@ async function validateAndBuildPrompt(): Promise<Message[]> {
         system: systemTokens,
         checkpoints: checkpointTokens,
         users: userTokens,
-        recent: recentTokens
-      }
+        recent: recentTokens,
+      },
     });
-    
+
     // 4. Trigger emergency compression
     await emergencyCompression();
-    
+
     // 5. Retry validation
     return validateAndBuildPrompt(); // Recursive retry
   }
-  
+
   // 6. Safe to send
   return [systemPrompt, ...checkpoints, ...userMessages, ...recentMessages];
 }
@@ -249,12 +253,12 @@ Rollover 4:
 
 **Compression Levels:**
 
-| Level | Compression | Token Target | Content |
-|-------|-------------|--------------|---------|
-| **Level 3** (Detailed) | 50-70% | ~2000 tokens | Key decisions, code snippets, technical details |
-| **Level 2** (Moderate) | 60% | ~1200 tokens | Main points, code references, critical info |
-| **Level 1** (Compact) | 70% | ~800 tokens | Brief summary, essential context only |
-| **Merged** (Ultra) | 80% | ~400 tokens | Minimal summary, critical facts only |
+| Level                  | Compression | Token Target | Content                                         |
+| ---------------------- | ----------- | ------------ | ----------------------------------------------- |
+| **Level 3** (Detailed) | 50-70%      | ~2000 tokens | Key decisions, code snippets, technical details |
+| **Level 2** (Moderate) | 60%         | ~1200 tokens | Main points, code references, critical info     |
+| **Level 1** (Compact)  | 70%         | ~800 tokens  | Brief summary, essential context only           |
+| **Merged** (Ultra)     | 80%         | ~400 tokens  | Minimal summary, critical facts only            |
 
 ### 3. Blocking Mechanism (Summarization Lock)
 
@@ -264,7 +268,7 @@ When LLM is creating a summary, the system must **block new user input** to prev
 class CompressionCoordinator {
   private summarizationInProgress = false;
   private summarizationLock = new AsyncLock();
-  
+
   /**
    * Create checkpoint with blocking mechanism
    * Prevents user input during LLM summarization
@@ -272,24 +276,21 @@ class CompressionCoordinator {
   async createCheckpoint(): Promise<void> {
     // Acquire lock
     await this.summarizationLock.acquire();
-    
+
     try {
       this.summarizationInProgress = true;
-      
+
       // Emit UI event: Show "Creating checkpoint..." message
       this.emit('checkpoint-started', {
-        message: '💾 Creating checkpoint... (LLM is summarizing conversation)'
+        message: '💾 Creating checkpoint... (LLM is summarizing conversation)',
       });
-      
+
       // Block user input in UI
       this.emit('block-user-input', { reason: 'checkpoint-creation' });
-      
+
       // Ask LLM to summarize
-      const summary = await this.compressionService.compress(
-        messagesToCompress,
-        strategy
-      );
-      
+      const summary = await this.compressionService.compress(messagesToCompress, strategy);
+
       // Create checkpoint
       const checkpoint = {
         id: `checkpoint-${Date.now()}`,
@@ -297,15 +298,14 @@ class CompressionCoordinator {
         level: 3,
         // ...
       };
-      
+
       context.checkpoints.push(checkpoint);
-      
+
       // Emit UI event: Checkpoint complete
       this.emit('checkpoint-completed', {
         checkpoint,
-        message: '✅ Checkpoint created successfully'
+        message: '✅ Checkpoint created successfully',
       });
-      
     } finally {
       // Release lock
       this.summarizationInProgress = false;
@@ -313,7 +313,7 @@ class CompressionCoordinator {
       this.summarizationLock.release();
     }
   }
-  
+
   /**
    * Check if summarization is in progress
    */
@@ -385,6 +385,7 @@ Safety Level 4: Emergency Rollover (100% of Ollama limit)
 Clear, actionable warnings at each safety level:
 
 **Warning at 70% (Informational):**
+
 ```
 ⚠️ Context Usage: 70%
 
@@ -395,6 +396,7 @@ Current usage: 4,525 / 6,463 tokens
 ```
 
 **Warning at 80% (Checkpoint Creation):**
+
 ```
 💾 Creating Checkpoint
 
@@ -405,6 +407,7 @@ This will take 2-5 seconds. Please wait...
 ```
 
 **Warning at 95% (Emergency Compression):**
+
 ```
 🚨 Emergency Compression
 
@@ -421,6 +424,7 @@ You can continue chatting, but consider:
 ```
 
 **Warning at 100% (Emergency Rollover):**
+
 ```
 🔄 Context Limit Reached
 
@@ -549,23 +553,23 @@ Options:
 ```typescript
 interface CheckpointAgingRules {
   // Age thresholds (number of compressions since checkpoint created)
-  MODERATE_AGE: 3;   // Compress to Level 2 after 3 compressions
-  COMPACT_AGE: 6;    // Compress to Level 1 after 6 compressions
-  MERGE_AGE: 10;     // Merge into ultra-compact after 10 compressions
-  
+  MODERATE_AGE: 3; // Compress to Level 2 after 3 compressions
+  COMPACT_AGE: 6; // Compress to Level 1 after 6 compressions
+  MERGE_AGE: 10; // Merge into ultra-compact after 10 compressions
+
   // Compression targets
-  LEVEL_3_TARGET: 2000;  // Detailed (50-70% compression)
-  LEVEL_2_TARGET: 1200;  // Moderate (60% compression)
-  LEVEL_1_TARGET: 800;   // Compact (70% compression)
-  MERGED_TARGET: 400;    // Ultra-compact (80% compression)
+  LEVEL_3_TARGET: 2000; // Detailed (50-70% compression)
+  LEVEL_2_TARGET: 1200; // Moderate (60% compression)
+  LEVEL_1_TARGET: 800; // Compact (70% compression)
+  MERGED_TARGET: 400; // Ultra-compact (80% compression)
 }
 
 async function ageCheckpoints(): Promise<void> {
   const totalCompressions = context.metadata.compressionHistory.length;
-  
+
   for (const checkpoint of context.checkpoints) {
     const age = totalCompressions - checkpoint.compressionNumber;
-    
+
     // Age to Level 2 (Moderate)
     if (age >= MODERATE_AGE && checkpoint.level === 3) {
       checkpoint.level = 2;
@@ -573,7 +577,7 @@ async function ageCheckpoints(): Promise<void> {
       checkpoint.currentTokens = LEVEL_2_TARGET;
       checkpoint.compressionCount++;
     }
-    
+
     // Age to Level 1 (Compact)
     else if (age >= COMPACT_AGE && checkpoint.level === 2) {
       checkpoint.level = 1;
@@ -581,22 +585,22 @@ async function ageCheckpoints(): Promise<void> {
       checkpoint.currentTokens = LEVEL_1_TARGET;
       checkpoint.compressionCount++;
     }
-    
+
     // Merge ancient checkpoints
     else if (age >= MERGE_AGE && checkpoint.level === 1) {
       // Find other ancient checkpoints to merge
       const ancientCheckpoints = context.checkpoints.filter(
-        cp => (totalCompressions - cp.compressionNumber) >= MERGE_AGE
+        (cp) => totalCompressions - cp.compressionNumber >= MERGE_AGE
       );
-      
+
       if (ancientCheckpoints.length > 1) {
         const merged = mergeCheckpoints(ancientCheckpoints);
         merged.currentTokens = MERGED_TARGET;
-        
+
         // Replace ancient checkpoints with merged one
         context.checkpoints = [
           merged,
-          ...context.checkpoints.filter(cp => !ancientCheckpoints.includes(cp))
+          ...context.checkpoints.filter((cp) => !ancientCheckpoints.includes(cp)),
         ];
       }
     }
@@ -607,6 +611,7 @@ async function ageCheckpoints(): Promise<void> {
 ### Compression Level Content
 
 **Level 3 (Detailed) - ~2000 tokens:**
+
 ```
 🎯 Active Goals:
 - Implement user authentication system
@@ -640,6 +645,7 @@ async function ageCheckpoints(): Promise<void> {
 ```
 
 **Level 2 (Moderate) - ~1200 tokens:**
+
 ```
 🎯 Active Goals:
 - User authentication system (JWT-based)
@@ -661,6 +667,7 @@ async function ageCheckpoints(): Promise<void> {
 ```
 
 **Level 1 (Compact) - ~800 tokens:**
+
 ```
 🎯 Goal: User authentication (JWT)
 📜 History: Login endpoint, token validation, user model
@@ -670,6 +677,7 @@ async function ageCheckpoints(): Promise<void> {
 ```
 
 **Merged (Ultra-Compact) - ~400 tokens:**
+
 ```
 Auth system implemented: JWT tokens, login endpoint, user model.
 Files: src/auth/*, src/models/User.ts
@@ -687,10 +695,10 @@ Next: Registration, password reset
 async sendMessageToLLM(userMessage: string): Promise<void> {
   // Add user message
   await contextManager.addMessage(userMessage);
-  
+
   // ✅ CRITICAL: Validate before sending
   const prompt = await contextManager.validateAndBuildPrompt();
-  
+
   // Guaranteed to fit in Ollama limit
   await provider.chatStream({ messages: prompt });
 }
@@ -703,10 +711,10 @@ async createCheckpoint(): Promise<void> {
   // Create checkpoint
   const checkpoint = await compressionService.compress(...);
   context.checkpoints.push(checkpoint);
-  
+
   // Age older checkpoints
   await checkpointManager.ageCheckpoints();
-  
+
   // ✅ VALIDATE: Ensure we didn't exceed limit
   const totalSize = calculatePromptSize();
   if (totalSize > ollamaLimit) {
@@ -722,7 +730,7 @@ async emergencyCompression(): Promise<void> {
   // Aggressive compaction
   await compactAllCheckpoints();
   await mergeAncientCheckpoints();
-  
+
   // ✅ VALIDATE: Check if we freed enough space
   const totalSize = calculatePromptSize();
   if (totalSize > ollamaLimit) {
@@ -814,7 +822,7 @@ Your options:
 
 [Continue] [New Chat] [Settings] [View History]
 
-AI: "I'll add two-factor authentication. Note: I have a compressed 
+AI: "I'll add two-factor authentication. Note: I have a compressed
 summary of our previous work on the authentication system..."
 ```
 
@@ -825,31 +833,31 @@ summary of our previous work on the authentication system..."
 ```typescript
 interface CheckpointRolloverConfig {
   // Safety thresholds
-  warningThreshold: 0.70;      // Show warning at 70%
-  checkpointThreshold: 0.80;   // Create checkpoint at 80%
-  emergencyThreshold: 0.95;    // Emergency compression at 95%
-  rolloverThreshold: 1.00;     // Emergency rollover at 100%
-  
+  warningThreshold: 0.7; // Show warning at 70%
+  checkpointThreshold: 0.8; // Create checkpoint at 80%
+  emergencyThreshold: 0.95; // Emergency compression at 95%
+  rolloverThreshold: 1.0; // Emergency rollover at 100%
+
   // Checkpoint aging
-  moderateAge: 3;              // Age to Level 2 after 3 compressions
-  compactAge: 6;               // Age to Level 1 after 6 compressions
-  mergeAge: 10;                // Merge after 10 compressions
-  
+  moderateAge: 3; // Age to Level 2 after 3 compressions
+  compactAge: 6; // Age to Level 1 after 6 compressions
+  mergeAge: 10; // Merge after 10 compressions
+
   // Compression targets
-  level3Target: 2000;          // Detailed checkpoint size
-  level2Target: 1200;          // Moderate checkpoint size
-  level1Target: 800;           // Compact checkpoint size
-  mergedTarget: 400;           // Ultra-compact merged size
-  
+  level3Target: 2000; // Detailed checkpoint size
+  level2Target: 1200; // Moderate checkpoint size
+  level1Target: 800; // Compact checkpoint size
+  mergedTarget: 400; // Ultra-compact merged size
+
   // Blocking behavior
   blockUserInputDuringCheckpoint: true;
   showProgressDuringCheckpoint: true;
-  checkpointTimeout: 30000;    // 30 seconds max for checkpoint creation
-  
+  checkpointTimeout: 30000; // 30 seconds max for checkpoint creation
+
   // User warnings
   showWarnings: true;
   showEmergencyMessages: true;
-  allowRolloverCancellation: false;  // Rollover cannot be cancelled
+  allowRolloverCancellation: false; // Rollover cannot be cancelled
 }
 ```
 
@@ -944,22 +952,22 @@ A **session** is the complete, uncompressed record of a conversation from start 
    ↓
    sessionId = uuid()
    file = ~/.ollm/sessions/{sessionId}.json
-   
+
 2. Messages Recorded (Auto-save)
    ↓
    Every message → Append to session file
    Every tool call → Append to session file
-   
+
 3. Session Active
    ↓
    User continues conversation
    Compression may occur (doesn't affect session file)
-   
+
 4. Session Ends
    ↓
    Final save to disk
    Session remains available for review
-   
+
 5. Session Management
    ↓
    User can: List, View, Export, Delete
@@ -1024,43 +1032,49 @@ A **session** is the complete, uncompressed record of a conversation from start 
 ### Session Operations
 
 **Create Session:**
+
 ```typescript
 const sessionId = await chatRecordingService.createSession(model, provider);
 ```
 
 **Record Message:**
+
 ```typescript
 await chatRecordingService.recordMessage(sessionId, {
   role: 'user',
   parts: [{ type: 'text', text: 'Hello' }],
-  timestamp: new Date().toISOString()
+  timestamp: new Date().toISOString(),
 });
 ```
 
 **Record Tool Call:**
+
 ```typescript
 await chatRecordingService.recordToolCall(sessionId, {
   id: 'call_123',
   name: 'read_file',
   args: { path: 'file.ts' },
   result: { llmContent: '...' },
-  timestamp: new Date().toISOString()
+  timestamp: new Date().toISOString(),
 });
 ```
 
 **List Sessions:**
+
 ```typescript
 const sessions = await chatRecordingService.listSessions();
 // Returns: [{ sessionId, startTime, lastActivity, model, messageCount, tokenCount }]
 ```
 
 **Get Session:**
+
 ```typescript
 const session = await chatRecordingService.getSession(sessionId);
 // Returns: Full session with all messages and tool calls
 ```
 
 **Delete Session:**
+
 ```typescript
 await chatRecordingService.deleteSession(sessionId);
 ```
@@ -1069,9 +1083,9 @@ await chatRecordingService.deleteSession(sessionId);
 
 ```typescript
 interface ChatRecordingServiceConfig {
-  dataDir?: string;        // Default: ~/.ollm/sessions
-  maxSessions?: number;    // Default: 100
-  autoSave?: boolean;      // Default: true
+  dataDir?: string; // Default: ~/.ollm/sessions
+  maxSessions?: number; // Default: 100
+  autoSave?: boolean; // Default: true
 }
 ```
 
@@ -1094,6 +1108,7 @@ A **snapshot** is a point-in-time capture of the conversation context, created f
 ### When Snapshots are Created
 
 **Automatic Triggers:**
+
 1. **Before Compression** (default: 85% context usage)
    - Captures state before messages are compressed
    - Allows recovery if compression goes wrong
@@ -1105,44 +1120,45 @@ A **snapshot** is a point-in-time capture of the conversation context, created f
    - Before mode transitions
 
 **Manual Triggers:**
+
 - User explicitly requests snapshot
 - Via `/context snapshot` command
 - Via API call
 
 ### Snapshot vs Session
 
-| Feature | Snapshot | Session |
-|---------|----------|---------|
-| **Purpose** | Recovery, rollback | Complete history |
-| **Trigger** | Automatic (85%) or manual | Continuous recording |
-| **Content** | Current context state | ALL messages ever |
-| **Compression** | Reflects current state | Never compressed |
-| **User Messages** | ALL preserved in full | ALL preserved in full |
-| **Location** | `~/.ollm/context-snapshots/` | `~/.ollm/sessions/` |
-| **Cleanup** | Keep last 5 (configurable) | Keep last 100 |
-| **Use Case** | "Undo" to this point | Review full conversation |
+| Feature           | Snapshot                     | Session                  |
+| ----------------- | ---------------------------- | ------------------------ |
+| **Purpose**       | Recovery, rollback           | Complete history         |
+| **Trigger**       | Automatic (85%) or manual    | Continuous recording     |
+| **Content**       | Current context state        | ALL messages ever        |
+| **Compression**   | Reflects current state       | Never compressed         |
+| **User Messages** | ALL preserved in full        | ALL preserved in full    |
+| **Location**      | `~/.ollm/context-snapshots/` | `~/.ollm/sessions/`      |
+| **Cleanup**       | Keep last 5 (configurable)   | Keep last 100            |
+| **Use Case**      | "Undo" to this point         | Review full conversation |
 
 ### Snapshot Structure
 
 ```typescript
 interface ContextSnapshot {
-  id: string;                    // Unique snapshot ID
-  sessionId: string;             // Parent session ID
-  timestamp: Date;               // When snapshot was created
-  tokenCount: number;            // Total tokens at snapshot time
-  summary: string;               // Human-readable summary
-  
+  id: string; // Unique snapshot ID
+  sessionId: string; // Parent session ID
+  timestamp: Date; // When snapshot was created
+  tokenCount: number; // Total tokens at snapshot time
+  summary: string; // Human-readable summary
+
   // User messages (NEVER truncated)
-  userMessages: Message[];       // ALL user messages in full
-  archivedUserMessages: [];      // Empty (no archiving)
-  
+  userMessages: Message[]; // ALL user messages in full
+  archivedUserMessages: []; // Empty (no archiving)
+
   // Other messages (system, assistant, tool)
-  messages: Message[];           // Excludes user messages
-  
+  messages: Message[]; // Excludes user messages
+
   // Goal and reasoning state
-  goalStack?: GoalStack;         // Active goals and checkpoints
-  reasoningStorage?: ReasoningStorage;  // Thinking traces
-  
+  goalStack?: GoalStack; // Active goals and checkpoints
+  reasoningStorage?: ReasoningStorage; // Thinking traces
+
   // Metadata
   metadata: {
     model: string;
@@ -1173,6 +1189,7 @@ interface ContextSnapshot {
 ### Snapshot Operations
 
 **Create Snapshot:**
+
 ```typescript
 const snapshot = await snapshotManager.createSnapshot(context);
 // Automatically saves to disk
@@ -1180,6 +1197,7 @@ const snapshot = await snapshotManager.createSnapshot(context);
 ```
 
 **Restore Snapshot:**
+
 ```typescript
 const context = await snapshotManager.restoreSnapshot(snapshotId);
 // Reconstructs full context from snapshot
@@ -1187,12 +1205,14 @@ const context = await snapshotManager.restoreSnapshot(snapshotId);
 ```
 
 **List Snapshots:**
+
 ```typescript
 const snapshots = await snapshotManager.listSnapshots(sessionId);
 // Returns: Array of snapshots, newest first
 ```
 
 **Delete Snapshot:**
+
 ```typescript
 await snapshotManager.deleteSnapshot(snapshotId);
 ```
@@ -1201,10 +1221,10 @@ await snapshotManager.deleteSnapshot(snapshotId);
 
 ```typescript
 interface SnapshotConfig {
-  enabled: boolean;        // Enable/disable snapshots
-  maxCount: number;        // Max snapshots per session (default: 5)
-  autoCreate: boolean;     // Auto-create at threshold (default: true)
-  autoThreshold: number;   // Trigger threshold 0.0-1.0 (default: 0.85)
+  enabled: boolean; // Enable/disable snapshots
+  maxCount: number; // Max snapshots per session (default: 5)
+  autoCreate: boolean; // Auto-create at threshold (default: true)
+  autoThreshold: number; // Trigger threshold 0.0-1.0 (default: 0.85)
 }
 ```
 
@@ -1286,11 +1306,13 @@ Example (8K context):
 ### What Gets Compressed?
 
 **COMPRESSED (in active context):**
+
 - ✅ Assistant messages (LLM output)
 - ✅ Tool call results
 - ✅ System messages (except current system prompt)
 
 **NEVER COMPRESSED:**
+
 - ❌ User messages (always preserved in full)
 - ❌ Current system prompt
 - ❌ Active goals and decisions
@@ -1298,6 +1320,7 @@ Example (8K context):
 - ❌ Locked decisions
 
 **SAVED TO DISK (uncompressed):**
+
 - ✅ Session file: ALL messages, ALL tool calls
 - ✅ Snapshot file: Current context state
 - ✅ User messages: ALWAYS in full
@@ -1311,6 +1334,7 @@ Example (8K context):
 Users can access the complete, uncompressed chat history at any time:
 
 **Via CLI Commands:**
+
 ```bash
 # List all sessions
 ollm sessions list
@@ -1326,6 +1350,7 @@ ollm sessions search "keyword"
 ```
 
 **Via UI:**
+
 ```
 Chat Menu → History → View Full History
 ├─ Shows ALL messages (uncompressed)
@@ -1339,22 +1364,26 @@ Chat Menu → History → View Full History
 Users have full control over their data:
 
 **Delete Single Session:**
+
 ```bash
 ollm sessions delete <sessionId>
 ```
 
 **Delete All Sessions:**
+
 ```bash
 ollm sessions clear --all
 ```
 
 **Delete Old Sessions:**
+
 ```bash
 ollm sessions cleanup --keep 10
 # Keeps 10 most recent, deletes older
 ```
 
 **Auto-Cleanup:**
+
 - Configured via `maxSessions` (default: 100)
 - Automatically deletes oldest sessions
 - User can disable: `maxSessions: 0`
@@ -1362,11 +1391,13 @@ ollm sessions cleanup --keep 10
 ### Privacy and Data Control
 
 **Local Storage Only:**
+
 - All data stored locally in `~/.ollm/`
 - No cloud sync (unless user explicitly enables)
 - No telemetry or tracking
 
 **Data Locations:**
+
 ```
 ~/.ollm/
 ├── sessions/              # Full chat history
@@ -1378,6 +1409,7 @@ ollm sessions cleanup --keep 10
 ```
 
 **Data Deletion:**
+
 - Deleting a session removes:
   - Session file
   - All snapshots for that session
@@ -1473,6 +1505,7 @@ User views history:
 ## Implementation Status
 
 ### ✅ Phase 1: Pre-Send Validation (COMPLETE)
+
 - ✅ Added `validateAndBuildPrompt()` method to contextManager
 - ✅ Calculate total prompt size before sending
 - ✅ Compare against Ollama limit
@@ -1480,6 +1513,7 @@ User views history:
 - ✅ Added validation tests (8 comprehensive tests)
 
 ### ✅ Phase 2: Blocking Mechanism (COMPLETE)
+
 - ✅ Added `summarizationInProgress` flag
 - ✅ Implemented async lock for checkpoint creation
 - ✅ Emit `block-user-input` event
@@ -1487,18 +1521,21 @@ User views history:
 - ✅ Added UI handlers for blocking (9 comprehensive tests)
 
 ### ✅ Phase 3: Progressive Compaction (COMPLETE)
+
 - ✅ Implemented checkpoint aging algorithm
 - ✅ Added compression level transitions (3→2→1→merged)
 - ✅ Added checkpoint merging logic
 - ✅ Tested aging across multiple rollovers (14 comprehensive tests)
 
 ### ✅ Phase 4: Emergency Safety Triggers (COMPLETE)
+
 - ✅ Implemented emergency compression (95% threshold)
 - ✅ Implemented emergency rollover (100% threshold)
 - ✅ Added user warnings for each level (70%, 80%, 95%, 100%)
 - ✅ Tested emergency scenarios
 
 ### ✅ Phase 5: User Experience (COMPLETE)
+
 - ✅ Added warning messages (70%, 80%, 95%, 100%)
 - ✅ Added progress indicators for checkpoint creation
 - ✅ Added rollover explanation UI
@@ -1512,20 +1549,18 @@ User views history:
 
 ## File Locations
 
-| File | Purpose |
-|------|---------|
-| `packages/core/src/context/contextManager.ts` | Add validateAndBuildPrompt() |
-| `packages/core/src/context/compressionCoordinator.ts` | Add blocking mechanism |
-| `packages/core/src/context/checkpointManager.ts` | Add progressive compaction |
-| `packages/core/src/context/messageStore.ts` | Add safety triggers |
-| `packages/cli/src/features/context/ChatContext.tsx` | Add UI blocking/warnings |
-| `packages/core/src/core/chatClient.ts` | Add pre-send validation |
+| File                                                  | Purpose                      |
+| ----------------------------------------------------- | ---------------------------- |
+| `packages/core/src/context/contextManager.ts`         | Add validateAndBuildPrompt() |
+| `packages/core/src/context/compressionCoordinator.ts` | Add blocking mechanism       |
+| `packages/core/src/context/checkpointManager.ts`      | Add progressive compaction   |
+| `packages/core/src/context/messageStore.ts`           | Add safety triggers          |
+| `packages/cli/src/features/context/ChatContext.tsx`   | Add UI blocking/warnings     |
+| `packages/core/src/core/chatClient.ts`                | Add pre-send validation      |
 
 ---
 
 **Note:** This is a design document. Implementation is pending. All mechanics described here are critical for safe, continuous conversation within fixed context limits.
-
-
 
 ---
 
@@ -1553,38 +1588,38 @@ snapshots:
 compression:
   enabled: true
   strategy: summarize
-  threshold: 0.80  # 80% of available budget
+  threshold: 0.80 # 80% of available budget
   preserveRecent: 2048
   summaryMaxTokens: 1024
 
 # Checkpoint and Rollover Configuration
 checkpointRollover:
   # Safety thresholds
-  warningThreshold: 0.70      # Show warning at 70%
-  checkpointThreshold: 0.80   # Create checkpoint at 80%
-  emergencyThreshold: 0.95    # Emergency compression at 95%
-  rolloverThreshold: 1.00     # Emergency rollover at 100%
-  
+  warningThreshold: 0.70 # Show warning at 70%
+  checkpointThreshold: 0.80 # Create checkpoint at 80%
+  emergencyThreshold: 0.95 # Emergency compression at 95%
+  rolloverThreshold: 1.00 # Emergency rollover at 100%
+
   # Checkpoint aging
-  moderateAge: 3              # Age to Level 2 after 3 compressions
-  compactAge: 6               # Age to Level 1 after 6 compressions
-  mergeAge: 10                # Merge after 10 compressions
-  
+  moderateAge: 3 # Age to Level 2 after 3 compressions
+  compactAge: 6 # Age to Level 1 after 6 compressions
+  mergeAge: 10 # Merge after 10 compressions
+
   # Compression targets
-  level3Target: 2000          # Detailed checkpoint size
-  level2Target: 1200          # Moderate checkpoint size
-  level1Target: 800           # Compact checkpoint size
-  mergedTarget: 400           # Ultra-compact merged size
-  
+  level3Target: 2000 # Detailed checkpoint size
+  level2Target: 1200 # Moderate checkpoint size
+  level1Target: 800 # Compact checkpoint size
+  mergedTarget: 400 # Ultra-compact merged size
+
   # Blocking behavior
   blockUserInputDuringCheckpoint: true
   showProgressDuringCheckpoint: true
-  checkpointTimeout: 30000    # 30 seconds max for checkpoint creation
-  
+  checkpointTimeout: 30000 # 30 seconds max for checkpoint creation
+
   # User warnings
   showWarnings: true
   showEmergencyMessages: true
-  allowRolloverCancellation: false  # Rollover cannot be cancelled
+  allowRolloverCancellation: false # Rollover cannot be cancelled
 ```
 
 ---
@@ -1648,24 +1683,28 @@ checkpointRollover:
 ### For Developers
 
 **Session Management:**
+
 - ✅ Enable auto-save (default)
 - ✅ Use atomic writes for durability
 - ✅ Handle corrupted session files gracefully
 - ✅ Implement session cleanup (maxSessions)
 
 **Snapshot Management:**
+
 - ✅ Create snapshots before risky operations
 - ✅ Keep maxCount low (5-10) to save disk space
 - ✅ Use autoThreshold wisely (default: 0.85)
 - ✅ Implement rolling cleanup
 
 **Compression:**
+
 - ✅ Never compress user messages
 - ✅ Never compress active goals/decisions
 - ✅ Trigger at 80% of available budget
 - ✅ Track checkpoint space in budget calculation
 
 **Checkpoint and Rollover:**
+
 1. **Always validate before sending to Ollama**
    - Never assume prompt fits
    - Calculate total size including all components
@@ -1690,27 +1729,32 @@ checkpointRollover:
 ### For Users
 
 **Viewing History:**
+
 - Use `/history` command to view full conversation
 - Export sessions for documentation
 - Search across sessions for insights
 
 **Managing Storage:**
+
 - Review old sessions periodically
 - Delete unnecessary sessions
 - Configure maxSessions for auto-cleanup
 - Monitor disk usage in `~/.ollm/`
 
 **Privacy:**
+
 - All data stored locally
 - Delete sessions to remove data permanently
 - No cloud sync unless explicitly enabled
 
 **During Checkpoint Creation:**
+
 - Wait for completion (2-5 seconds)
 - Don't close app during checkpoint
 - Input will be re-enabled automatically
 
 **After Emergency Rollover:**
+
 - Review what happened
 - Consider increasing context size
 - Full history available in snapshots
@@ -1724,6 +1768,7 @@ checkpointRollover:
 **Symptom:** "Failed to load session" error
 
 **Solutions:**
+
 1. Check file permissions
 2. Verify JSON syntax
 3. Restore from snapshot if available
@@ -1734,6 +1779,7 @@ checkpointRollover:
 **Symptom:** No snapshot at 85% usage
 
 **Solutions:**
+
 1. Verify `autoCreate: true` in config
 2. Check `autoThreshold` setting
 3. Ensure snapshots are enabled
@@ -1744,6 +1790,7 @@ checkpointRollover:
 **Symptom:** Compression triggers immediately after previous compression
 
 **Solutions:**
+
 1. Verify dynamic budget calculation is working
 2. Check checkpoint tokens are being tracked
 3. Ensure checkpoints are aging properly
@@ -1754,6 +1801,7 @@ checkpointRollover:
 **Symptom:** "Prompt exceeds Ollama limit" error
 
 **Solutions:**
+
 1. Verify pre-send validation is implemented
 2. Check emergency compression is working
 3. Ensure checkpoint aging is functioning
@@ -1764,6 +1812,7 @@ checkpointRollover:
 **Symptom:** Running out of disk space
 
 **Solutions:**
+
 1. Reduce `maxSessions` (default: 100)
 2. Reduce `maxCount` for snapshots (default: 5)
 3. Delete old sessions manually
@@ -1773,29 +1822,29 @@ checkpointRollover:
 
 ## File Locations
 
-| Component | Location | Purpose |
-|-----------|----------|---------|
-| **Sessions** | `~/.ollm/sessions/{sessionId}.json` | Full chat history |
-| **Snapshots** | `~/.ollm/context-snapshots/{sessionId}/snapshots/` | Recovery points |
-| **Snapshot Index** | `~/.ollm/context-snapshots/{sessionId}/snapshots/snapshots-index.json` | Metadata index |
-| **Snapshot Map** | `~/.ollm/context-snapshots/snapshot-map.json` | Quick lookup |
-| **Config** | `~/.ollm/config.yaml` | User settings |
+| Component          | Location                                                               | Purpose           |
+| ------------------ | ---------------------------------------------------------------------- | ----------------- |
+| **Sessions**       | `~/.ollm/sessions/{sessionId}.json`                                    | Full chat history |
+| **Snapshots**      | `~/.ollm/context-snapshots/{sessionId}/snapshots/`                     | Recovery points   |
+| **Snapshot Index** | `~/.ollm/context-snapshots/{sessionId}/snapshots/snapshots-index.json` | Metadata index    |
+| **Snapshot Map**   | `~/.ollm/context-snapshots/snapshot-map.json`                          | Quick lookup      |
+| **Config**         | `~/.ollm/config.yaml`                                                  | User settings     |
 
 ---
 
 ## Implementation Files
 
-| File | Purpose |
-|------|---------|
-| `packages/core/src/services/chatRecordingService.ts` | Session management |
-| `packages/core/src/context/snapshotManager.ts` | Snapshot lifecycle |
-| `packages/core/src/context/snapshotStorage.ts` | Snapshot persistence |
-| `packages/core/src/context/compressionCoordinator.ts` | Compression orchestration |
-| `packages/core/src/context/checkpointManager.ts` | Checkpoint management |
-| `packages/core/src/context/messageStore.ts` | Message tracking and triggers |
-| `packages/core/src/context/contextManager.ts` | Add validateAndBuildPrompt() |
-| `packages/core/src/core/chatClient.ts` | Add pre-send validation |
-| `packages/cli/src/features/context/ChatContext.tsx` | Add UI blocking/warnings |
+| File                                                  | Purpose                       |
+| ----------------------------------------------------- | ----------------------------- |
+| `packages/core/src/services/chatRecordingService.ts`  | Session management            |
+| `packages/core/src/context/snapshotManager.ts`        | Snapshot lifecycle            |
+| `packages/core/src/context/snapshotStorage.ts`        | Snapshot persistence          |
+| `packages/core/src/context/compressionCoordinator.ts` | Compression orchestration     |
+| `packages/core/src/context/checkpointManager.ts`      | Checkpoint management         |
+| `packages/core/src/context/messageStore.ts`           | Message tracking and triggers |
+| `packages/core/src/context/contextManager.ts`         | Add validateAndBuildPrompt()  |
+| `packages/core/src/core/chatClient.ts`                | Add pre-send validation       |
+| `packages/cli/src/features/context/ChatContext.tsx`   | Add UI blocking/warnings      |
 
 ---
 
@@ -1804,24 +1853,28 @@ checkpointRollover:
 ### Related Systems
 
 **Context Compression** (`dev_ContextCompression.md`)
+
 - Compression triggers (80% of available budget)
 - Checkpoint creation and aging
 - Dynamic budget calculation
 - Never-compressed content rules
 
 **Context Management** (`dev_ContextManagement.md`)
+
 - Context sizing and VRAM management
 - Auto-sizing logic
 - Memory thresholds
 - Token counting
 
 **Token Counter** (`dev_Tokeniser.md`)
+
 - Token counting for sessions
 - Cache management
 - Metrics tracking
 - Validation
 
 **Prompt System** (`dev_PromptSystem.md`)
+
 - System prompt in sessions
 - Tier-based prompts
 - Mode-specific prompts

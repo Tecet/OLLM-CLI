@@ -49,12 +49,16 @@ export class WebSearchTool implements DeclarativeTool<WebSearchParams, ToolResul
   displayName = 'Search the Web';
   schema: ToolSchema = {
     name: 'web_search',
-    description: 'Search the web for information. Use this to find URLs and information about any topic. Returns search results with titles, URLs, and descriptions. This is your PRIMARY tool for finding information on the internet.',
+    description:
+      'Search the web for information. Use this to find URLs and information about any topic. Returns search results with titles, URLs, and descriptions. This is your PRIMARY tool for finding information on the internet.',
     parameters: {
       type: 'object',
       properties: {
         query: { type: 'string', description: 'Search query' },
-        numResults: { type: 'number', description: 'Maximum number of results to return (default: 5)' },
+        numResults: {
+          type: 'number',
+          description: 'Maximum number of results to return (default: 5)',
+        },
       },
       required: ['query'],
     },
@@ -73,7 +77,6 @@ export class WebSearchTool implements DeclarativeTool<WebSearchParams, ToolResul
     return new WebSearchInvocation(params, this.searchProvider);
   }
 }
-
 
 export class WebSearchInvocation implements ToolInvocation<WebSearchParams, ToolResult> {
   private static readonly DEFAULT_NUM_RESULTS = 5;
@@ -97,10 +100,7 @@ export class WebSearchInvocation implements ToolInvocation<WebSearchParams, Tool
     return false;
   }
 
-  async execute(
-    signal: AbortSignal,
-    updateOutput?: (output: string) => void
-  ): Promise<ToolResult> {
+  async execute(signal: AbortSignal, updateOutput?: (output: string) => void): Promise<ToolResult> {
     const numResults = this.params.numResults ?? WebSearchInvocation.DEFAULT_NUM_RESULTS;
 
     try {
@@ -134,7 +134,9 @@ export class WebSearchInvocation implements ToolInvocation<WebSearchParams, Tool
       // Perform the search
       const results = await this.searchProvider.search(this.params.query, numResults);
 
-      console.log(`[WebSearchTool] Search for "${this.params.query}" returned ${results.length} results`);
+      console.log(
+        `[WebSearchTool] Search for "${this.params.query}" returned ${results.length} results`
+      );
 
       // Ensure we don't return more than numResults
       const limitedResults = results.slice(0, numResults);
@@ -169,13 +171,14 @@ export class WebSearchInvocation implements ToolInvocation<WebSearchParams, Tool
 
     const formatted = results
       .map((r, i) => {
-        const snippet = r.snippet && r.snippet !== 'No description available' 
-          ? r.snippet 
-          : 'Visit the URL for more information';
+        const snippet =
+          r.snippet && r.snippet !== 'No description available'
+            ? r.snippet
+            : 'Visit the URL for more information';
         return `${i + 1}. ${r.title}\n   URL: ${r.url}\n   ${snippet}`;
       })
       .join('\n\n');
-    
+
     return `Search Results (from DuckDuckGo):\n\n${formatted}\n\n✓ These are real search results. Share the URLs and titles above with the user.`;
   }
 }

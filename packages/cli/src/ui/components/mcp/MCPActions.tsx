@@ -1,9 +1,9 @@
 /**
  * MCPActions Component
- * 
+ *
  * Displays available keyboard shortcuts in the footer of the MCP panel.
  * Shows context-sensitive actions based on the focused item and current state.
- * 
+ *
  * Validates: Requirements 12.1-12.15, NFR-6
  */
 
@@ -43,7 +43,7 @@ const Shortcut: React.FC<{ keys: string; description: string; dimmed?: boolean }
 
 /**
  * MCPActions Component
- * 
+ *
  * Displays keyboard shortcuts in a footer bar.
  * Shortcuts are context-sensitive based on the current focus and state.
  */
@@ -110,7 +110,11 @@ export const MCPActions: React.FC<MCPActionsProps> = ({
       <Box flexDirection="row" flexWrap="wrap">
         <Shortcut keys="↑↓" description="Navigate" />
         <Shortcut keys="←→" description="Toggle" dimmed={!hasServerFocused} />
-        <Shortcut keys="Enter" description={isServerExpanded ? 'Collapse' : 'Expand'} dimmed={!hasServerFocused} />
+        <Shortcut
+          keys="Enter"
+          description={isServerExpanded ? 'Collapse' : 'Expand'}
+          dimmed={!hasServerFocused}
+        />
         <Shortcut keys="Tab" description="Main Menu" />
         <Shortcut keys="?" description="Help" />
       </Box>

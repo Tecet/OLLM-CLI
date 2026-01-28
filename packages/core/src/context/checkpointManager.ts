@@ -69,7 +69,7 @@ export class CheckpointManager {
       preserved.push({
         type: 'task_definition',
         content: JSON.stringify(context.taskDefinition),
-        timestamp: context.taskDefinition.timestamp
+        timestamp: context.taskDefinition.timestamp,
       });
     }
 
@@ -79,7 +79,7 @@ export class CheckpointManager {
           type: 'architecture_decision',
           content: JSON.stringify(decision),
           timestamp: decision.timestamp,
-          metadata: { id: decision.id }
+          metadata: { id: decision.id },
         });
       }
     }
@@ -95,11 +95,11 @@ export class CheckpointManager {
    * Rehydrate serialized sections into system messages.
    */
   reconstructNeverCompressed(sections: NeverCompressedSection[]): Message[] {
-    return sections.map(section => ({
+    return sections.map((section) => ({
       id: `never-compressed-${section.type}-${section.timestamp?.getTime() || Date.now()}`,
       role: 'system' as const,
       content: `[${section.type}]\n${section.content}`,
-      timestamp: section.timestamp || new Date()
+      timestamp: section.timestamp || new Date(),
     }));
   }
 
@@ -111,50 +111,61 @@ export class CheckpointManager {
     targetCheckpoint: CompressionCheckpoint
   ): CompressionCheckpoint {
     const allSummaries = [
-      ...oldCheckpoints.map(cp => cp.summary.content),
-      targetCheckpoint.summary.content
+      ...oldCheckpoints.map((cp) => cp.summary.content),
+      targetCheckpoint.summary.content,
     ].join('\n\n---\n\n');
 
     const allDecisions = [
-      ...oldCheckpoints.flatMap(cp => cp.keyDecisions || []),
-      ...(targetCheckpoint.keyDecisions || [])
+      ...oldCheckpoints.flatMap((cp) => cp.keyDecisions || []),
+      ...(targetCheckpoint.keyDecisions || []),
     ];
     const allFiles = [
-      ...oldCheckpoints.flatMap(cp => cp.filesModified || []),
-      ...(targetCheckpoint.filesModified || [])
+      ...oldCheckpoints.flatMap((cp) => cp.filesModified || []),
+      ...(targetCheckpoint.filesModified || []),
     ];
 
     const firstRange = oldCheckpoints[0]?.range || targetCheckpoint.range;
     const lastRange = targetCheckpoint.range;
     const combinedRange = `${firstRange} to ${lastRange}`;
 
-    const totalOriginalTokens = oldCheckpoints.reduce((sum, cp) => sum + cp.originalTokens, 0) + targetCheckpoint.originalTokens;
-    const totalCurrentTokens = oldCheckpoints.reduce((sum, cp) => sum + cp.currentTokens, 0) + targetCheckpoint.currentTokens;
+    const totalOriginalTokens =
+      oldCheckpoints.reduce((sum, cp) => sum + cp.originalTokens, 0) +
+      targetCheckpoint.originalTokens;
+    const totalCurrentTokens =
+      oldCheckpoints.reduce((sum, cp) => sum + cp.currentTokens, 0) +
+      targetCheckpoint.currentTokens;
 
     return {
       id: `merged-${Date.now()}`,
-      level: Math.min(...oldCheckpoints.map(cp => cp.level), targetCheckpoint.level),
+      level: Math.min(...oldCheckpoints.map((cp) => cp.level), targetCheckpoint.level),
       range: combinedRange,
       summary: {
         id: `merged-summary-${Date.now()}`,
         role: 'system' as const,
         content: `[MERGED CHECKPOINT]\n${allSummaries}`,
-        timestamp: new Date()
+        timestamp: new Date(),
       },
       createdAt: oldCheckpoints[0]?.createdAt || targetCheckpoint.createdAt,
       compressedAt: new Date(),
       originalTokens: totalOriginalTokens,
       currentTokens: totalCurrentTokens,
-      compressionCount: Math.max(...oldCheckpoints.map(cp => cp.compressionCount), targetCheckpoint.compressionCount) + 1,
+      compressionCount:
+        Math.max(
+          ...oldCheckpoints.map((cp) => cp.compressionCount),
+          targetCheckpoint.compressionCount
+        ) + 1,
       keyDecisions: Array.from(new Set(allDecisions)).slice(0, 10),
-      filesModified: Array.from(new Set(allFiles)).slice(0, 20)
+      filesModified: Array.from(new Set(allFiles)).slice(0, 20),
     };
   }
 
   /**
    * Extract mode-specific highlights to persist across compression.
    */
-  extractCriticalInfo(messages: Message[], modeProfile: ModeProfile): { decisions: string[]; files: string[] } {
+  extractCriticalInfo(
+    messages: Message[],
+    modeProfile: ModeProfile
+  ): { decisions: string[]; files: string[] } {
     const decisions: string[] = [];
     const files: string[] = [];
 
@@ -180,7 +191,7 @@ export class CheckpointManager {
 
     return {
       decisions: Array.from(new Set(decisions)).slice(0, 5),
-      files: Array.from(new Set(files)).slice(0, 10)
+      files: Array.from(new Set(files)).slice(0, 10),
     };
   }
 
@@ -199,7 +210,7 @@ export class CheckpointManager {
 
     console.log('[ContextManager] compressOldCheckpoints:', {
       totalCompressions,
-      checkpointCount: context.checkpoints.length
+      checkpointCount: context.checkpoints.length,
     });
 
     for (const checkpoint of context.checkpoints) {
@@ -209,7 +220,7 @@ export class CheckpointManager {
         age = totalCompressions - checkpoint.compressionNumber;
       } else {
         const checkpointIndex = context.metadata.compressionHistory.findIndex(
-          h => h.timestamp >= checkpoint.createdAt
+          (h) => h.timestamp >= checkpoint.createdAt
         );
         age = checkpointIndex >= 0 ? totalCompressions - checkpointIndex : totalCompressions;
       }
@@ -219,7 +230,7 @@ export class CheckpointManager {
         level: checkpoint.level,
         age,
         compressionNumber: checkpoint.compressionNumber,
-        totalCompressions
+        totalCompressions,
       });
 
       if (age >= COMPACT_AGE && checkpoint.level !== 1) {
@@ -254,7 +265,10 @@ export class CheckpointManager {
     return `[Checkpoint ${checkpoint.range}] ${firstLine.substring(0, 100)}...`;
   }
 
-  private createModerateSummary(originalContent: string, checkpoint: CompressionCheckpoint): string {
+  private createModerateSummary(
+    originalContent: string,
+    checkpoint: CompressionCheckpoint
+  ): string {
     const lines = originalContent.split('\n');
     const summary = lines.slice(0, 5).join('\n');
 

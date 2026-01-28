@@ -1,6 +1,6 @@
 /**
  * ChatRecordingService - Handles session persistence and management
- * 
+ *
  * Responsibilities:
  * - Create and manage chat sessions
  * - Record messages and tool calls to disk
@@ -17,12 +17,7 @@ import { join } from 'node:path';
 import { sanitizeErrorMessage } from './errorSanitization.js';
 import { validateStoragePath, logPathDiagnostics } from '../utils/pathValidation.js';
 
-import type {
-  Session,
-  SessionMessage,
-  SessionToolCall,
-  SessionSummary,
-} from './types.js';
+import type { Session, SessionMessage, SessionToolCall, SessionSummary } from './types.js';
 
 /**
  * Configuration options for ChatRecordingService
@@ -52,7 +47,7 @@ export class ChatRecordingService {
   constructor(config: ChatRecordingServiceConfig = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
     this.sessionCache = new Map();
-    
+
     // Log path diagnostics on initialization
     logPathDiagnostics('Sessions', this.config.dataDir);
   }
@@ -149,7 +144,7 @@ export class ChatRecordingService {
 
     try {
       const files = await readdir(this.config.dataDir);
-      const sessionFiles = files.filter(f => f.endsWith('.json'));
+      const sessionFiles = files.filter((f) => f.endsWith('.json'));
 
       const summaries: SessionSummary[] = [];
 
@@ -179,8 +174,8 @@ export class ChatRecordingService {
       }
 
       // Sort by lastActivity (most recent first)
-      summaries.sort((a, b) => 
-        new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime()
+      summaries.sort(
+        (a, b) => new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime()
       );
 
       return summaries;
@@ -376,11 +371,11 @@ export class ChatRecordingService {
   private async ensureDataDir(): Promise<void> {
     // Validate path before creating
     const validation = validateStoragePath(this.config.dataDir, true);
-    
+
     if (!validation.valid) {
       throw new Error(`Invalid session storage path: ${validation.error}`);
     }
-    
+
     try {
       await mkdir(this.config.dataDir, { recursive: true });
     } catch (error) {
@@ -390,7 +385,7 @@ export class ChatRecordingService {
       }
     }
   }
-  
+
   /**
    * Get the data directory path
    */

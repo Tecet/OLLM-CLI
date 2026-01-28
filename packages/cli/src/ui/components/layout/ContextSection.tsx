@@ -12,16 +12,16 @@ function _formatTierDisplay(tier: string): string {
   if (!tier || typeof tier !== 'string') return 'Unknown';
   const match = tier.match(/Tier (\d+)/);
   if (!match) return tier;
-  
+
   const tierNum = match[1];
   const tierRanges: Record<string, string> = {
     '1': '2-4K',
     '2': '8K',
     '3': '16K',
     '4': '32K',
-    '5': '64K+'
+    '5': '64K+',
   };
-  
+
   return tierRanges[tierNum] || tier;
 }
 
@@ -33,8 +33,8 @@ function _formatModeName(mode: string): string {
 export function ContextSection() {
   const { state: uiState } = useUI();
   const { state: contextState } = useContextManager();
-  const { 
-    activeSkills, 
+  const {
+    activeSkills,
     activeHooks,
     activeMcpServers,
     currentMode,
@@ -64,10 +64,12 @@ export function ContextSection() {
           theme={uiState.theme}
         />
       </Box>
-      
+
       <Box flexDirection="column" paddingX={1} alignItems="flex-start">
         <Box flexDirection="column" marginBottom={1} alignSelf="flex-start">
-          <Text color={uiState.theme.status.success} bold>Active Skills:</Text>
+          <Text color={uiState.theme.status.success} bold>
+            Active Skills:
+          </Text>
           <Box marginLeft={1} alignSelf="flex-start">
             {activeSkills.length === 0 ? (
               <Text dimColor>None</Text>
@@ -78,7 +80,9 @@ export function ContextSection() {
         </Box>
 
         <Box flexDirection="column" marginBottom={1} alignSelf="flex-start">
-          <Text color={uiState.theme.text.accent} bold>MCP Servers:</Text>
+          <Text color={uiState.theme.text.accent} bold>
+            MCP Servers:
+          </Text>
           <Box marginLeft={1} alignSelf="flex-start">
             {activeMcpServers.length === 0 ? (
               <Text dimColor>None</Text>
@@ -89,7 +93,9 @@ export function ContextSection() {
         </Box>
 
         <Box flexDirection="column" alignSelf="flex-start">
-          <Text color={uiState.theme.status.info} bold>Active Hooks:</Text>
+          <Text color={uiState.theme.status.info} bold>
+            Active Hooks:
+          </Text>
           <Box marginLeft={1} alignSelf="flex-start">
             {activeHooks.length === 0 ? (
               <Text dimColor>None</Text>

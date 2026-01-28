@@ -1,6 +1,6 @@
 /**
  * HookRegistry manages registration and discovery of hooks
- * 
+ *
  * Maintains a registry of hooks organized by event type, preserving
  * insertion order for deterministic execution.
  */
@@ -21,27 +21,27 @@ export class HookRegistry {
 
   /**
    * Register a hook for a specific event
-   * 
+   *
    * @param event - The event to register the hook for
    * @param hook - The hook to register
    */
   registerHook(event: HookEvent, hook: Hook): void {
     // Get or create the hooks array for this event
     const eventHooks = this.hooks.get(event) || [];
-    
+
     // Add the hook to the event's hooks array
     eventHooks.push(hook);
-    
+
     // Update the map
     this.hooks.set(event, eventHooks);
-    
+
     // Store hook by ID for quick lookup
     this.hookById.set(hook.id, hook);
   }
 
   /**
    * Get all hooks registered for a specific event
-   * 
+   *
    * @param event - The event to get hooks for
    * @returns Array of hooks in registration order
    */
@@ -51,7 +51,7 @@ export class HookRegistry {
 
   /**
    * Unregister a hook by its ID
-   * 
+   *
    * @param hookId - The ID of the hook to unregister
    * @returns true if hook was found and removed, false otherwise
    */
@@ -79,7 +79,7 @@ export class HookRegistry {
 
   /**
    * Get all registered hooks organized by event
-   * 
+   *
    * @returns Map of events to their registered hooks
    */
   getAllHooks(): Map<HookEvent, Hook[]> {
@@ -93,17 +93,17 @@ export class HookRegistry {
 
   /**
    * Clear all hooks for a specific event
-   * 
+   *
    * @param event - The event to clear hooks for
    */
   clearEvent(event: HookEvent): void {
     const eventHooks = this.hooks.get(event) || [];
-    
+
     // Remove all hooks for this event from hookById map
     for (const hook of eventHooks) {
       this.hookById.delete(hook.id);
     }
-    
+
     // Clear the event's hooks array
     this.hooks.delete(event);
   }
@@ -118,7 +118,7 @@ export class HookRegistry {
 
   /**
    * Get the total number of registered hooks
-   * 
+   *
    * @returns Total count of hooks across all events
    */
   getHookCount(): number {
@@ -127,7 +127,7 @@ export class HookRegistry {
 
   /**
    * Check if a hook is registered
-   * 
+   *
    * @param hookId - The ID of the hook to check
    * @returns true if the hook is registered
    */
@@ -137,7 +137,7 @@ export class HookRegistry {
 
   /**
    * Get a hook by its ID
-   * 
+   *
    * @param hookId - The ID of the hook to retrieve
    * @returns The hook if found, undefined otherwise
    */
@@ -147,7 +147,7 @@ export class HookRegistry {
 
   /**
    * Get all hooks organized by event type (category)
-   * 
+   *
    * @returns Map of event types to their hooks
    */
   getHooksByCategory(): Map<HookEvent, Hook[]> {
@@ -156,30 +156,26 @@ export class HookRegistry {
 
   /**
    * Get all user-created hooks
-   * 
+   *
    * @returns Array of hooks with source 'user'
    */
   getUserHooks(): Hook[] {
-    return Array.from(this.hookById.values()).filter(
-      (hook) => hook.source === 'user'
-    );
+    return Array.from(this.hookById.values()).filter((hook) => hook.source === 'user');
   }
 
   /**
    * Get all built-in hooks
-   * 
+   *
    * @returns Array of hooks with source 'builtin'
    */
   getBuiltinHooks(): Hook[] {
-    return Array.from(this.hookById.values()).filter(
-      (hook) => hook.source === 'builtin'
-    );
+    return Array.from(this.hookById.values()).filter((hook) => hook.source === 'builtin');
   }
 
   /**
    * Check if a hook can be edited
    * Only user-created hooks can be edited
-   * 
+   *
    * @param hookId - The ID of the hook to check
    * @returns true if the hook can be edited
    */
@@ -191,7 +187,7 @@ export class HookRegistry {
   /**
    * Check if a hook can be deleted
    * Only user-created hooks can be deleted
-   * 
+   *
    * @param hookId - The ID of the hook to check
    * @returns true if the hook can be deleted
    */

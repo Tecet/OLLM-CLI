@@ -8,21 +8,27 @@ and this project adheres to Semantic Versioning (https://semver.org/spec/v2.0.0.
 ## [Unreleased]
 
 ### Added
+
 - New features in development
 
 ### Changed
+
 - Changes to existing functionality
 
 ### Deprecated
+
 - Soon-to-be removed features
 
 ### Removed
+
 - Removed features
 
 ### Fixed
+
 - Fixed TypeScript type errors in `promptRouting.test.ts` by adding explicit Vitest imports
 
 ### Security
+
 - Security fixes
 
 ## [0.1.0] - 2026-01-26
@@ -30,6 +36,7 @@ and this project adheres to Semantic Versioning (https://semver.org/spec/v2.0.0.
 ### Added
 
 #### Comprehensive Documentation
+
 - **57 complete documentation files** covering every aspect of OLLM CLI
 - **Getting Started Guides**: Introduction, Installation, Quick Start, Troubleshooting
 - **User Interface Documentation**: UI Guide, Commands, Keybinds, Themes, Terminal, Configuration
@@ -43,6 +50,7 @@ and this project adheres to Semantic Versioning (https://semver.org/spec/v2.0.0.
 - **Complete Index**: All documentation organized by topic, audience, and goal
 
 #### Interactive Terminal UI
+
 - React + Ink powered terminal interface with streaming responses
 - Syntax highlighting for code blocks with automatic language detection
 - Status bar displaying model name, context usage, and VRAM metrics
@@ -51,6 +59,7 @@ and this project adheres to Semantic Versioning (https://semver.org/spec/v2.0.0.
 - Hybrid and simple layout modes for different use cases
 
 #### Context Management
+
 - **Fixed context sizing** based on available VRAM (determined at startup)
 - Five context tiers: Minimal (2K), Basic (4K), Standard (8K), Premium (16K), Ultra (32K+)
 - Automatic compression when approaching context limits using sliding-window strategy
@@ -62,6 +71,7 @@ and this project adheres to Semantic Versioning (https://semver.org/spec/v2.0.0.
 - Pre-calculated 85% utilization values in LLM_profiles.json
 
 #### Tool System
+
 - Built-in tools for file operations (read, write, edit, list, glob, grep)
 - Shell command execution with timeout and output truncation
 - Web fetch and search capabilities
@@ -72,6 +82,7 @@ and this project adheres to Semantic Versioning (https://semver.org/spec/v2.0.0.
 - Tool timeout configuration
 
 #### Session Management
+
 - Record and resume conversations with full context preservation
 - Automatic session compression to manage context limits
 - Loop detection to prevent runaway tool calls
@@ -80,6 +91,7 @@ and this project adheres to Semantic Versioning (https://semver.org/spec/v2.0.0.
 - Session state persistence across restarts
 
 #### Extensibility
+
 - Hook system for event-driven automation and safety gates
 - Extension system with manifest-based configuration
 - MCP (Model Context Protocol) integration for external tools
@@ -87,6 +99,7 @@ and this project adheres to Semantic Versioning (https://semver.org/spec/v2.0.0.
 - Skills system for task-specific instruction modules
 
 #### Configuration System
+
 - Layered configuration with clear precedence order
 - User-level config at `~/.ollm/settings.json`
 - Workspace-level config at `.ollm/settings.json`
@@ -96,6 +109,7 @@ and this project adheres to Semantic Versioning (https://semver.org/spec/v2.0.0.
 - Support for Ollama provider configuration
 
 #### Model Management
+
 - List available models from provider
 - Pull models from remote repositories
 - Remove models to free up disk space
@@ -106,6 +120,7 @@ and this project adheres to Semantic Versioning (https://semver.org/spec/v2.0.0.
 - Reasoning model support with extended timeouts
 
 #### Performance Monitoring
+
 - Real-time GPU statistics (temperature, VRAM usage, utilization)
 - Token usage tracking and cost estimation
 - Performance metrics display (TTFT, tokens/sec)
@@ -114,6 +129,7 @@ and this project adheres to Semantic Versioning (https://semver.org/spec/v2.0.0.
 - Configurable polling intervals for status updates
 
 #### Developer Features
+
 - Diff review mode with approve/reject workflow
 - Inline diff display for small changes
 - External pager for large diffs
@@ -123,6 +139,7 @@ and this project adheres to Semantic Versioning (https://semver.org/spec/v2.0.0.
 - Comprehensive error messages with context
 
 #### Testing Infrastructure
+
 - Vitest-based testing framework
 - Property-based testing with fast-check
 - Unit tests for core functionality
@@ -132,6 +149,7 @@ and this project adheres to Semantic Versioning (https://semver.org/spec/v2.0.0.
 - Mock providers for testing
 
 ### Changed
+
 - Updated README.md with npm package installation (`@tecet/ollm`)
 - Updated all documentation to reflect fixed context sizing (not dynamic)
 - Updated context tier system from ranges to labels (Minimal, Basic, Standard, Premium, Ultra)
@@ -140,6 +158,7 @@ and this project adheres to Semantic Versioning (https://semver.org/spec/v2.0.0.
 - Updated all GitHub links to use correct username (tecet)
 
 ### Documentation Structure
+
 - **9 major sections** with complete coverage
 - **Getting Started** (4 files): Introduction, Installation, Quickstart, Troubleshooting
 - **UI & Settings** (9 files): Complete interface and configuration documentation
@@ -152,15 +171,19 @@ and this project adheres to Semantic Versioning (https://semver.org/spec/v2.0.0.
 - **Development Roadmap** (6 files): Roadmap, visual timeline, planned features
 
 ### Deprecated
+
 - N/A (initial release)
 
 ### Removed
+
 - N/A (initial release)
 
 ### Fixed
+
 - N/A (initial release)
 
 ### Security
+
 - Environment variable sanitization to prevent secret leakage
 - Secret redaction in logs and error messages
 - Safe shell command execution with proper escaping

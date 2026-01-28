@@ -1,9 +1,9 @@
 /**
  * UI Callbacks Bridge
- * 
+ *
  * This component sits between the context providers (UserPromptProvider, ChatProvider)
  * and the ModelProvider, wiring up the UICallbacks from existing contexts.
- * 
+ *
  * It accesses the UserPrompt and Chat contexts and provides their functions
  * via the UICallbacksProvider.
  */
@@ -22,7 +22,7 @@ export interface UICallbacksBridgeProps {
 
 /**
  * Bridge component that wires up UI callbacks from existing contexts
- * 
+ *
  * This component must be placed:
  * - AFTER UserPromptProvider (needs useUserPrompt)
  * - AFTER ChatProvider (needs useChat)
@@ -83,9 +83,5 @@ export function UICallbacksBridge({ children, onOpenModelMenu }: UICallbacksBrid
     openModelMenu,
   };
 
-  return (
-    <UICallbacksProvider callbacks={uiCallbacks}>
-      {children}
-    </UICallbacksProvider>
-  );
+  return <UICallbacksProvider callbacks={uiCallbacks}>{children}</UICallbacksProvider>;
 }

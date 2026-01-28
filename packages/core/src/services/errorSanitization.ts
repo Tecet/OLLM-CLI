@@ -72,9 +72,7 @@ export function sanitizeError(error: Error): Error {
   const sanitizedMessage = sanitizeErrorMessage(error.message);
   const sanitizedError = new Error(sanitizedMessage);
   sanitizedError.name = error.name;
-  sanitizedError.stack = error.stack
-    ? sanitizeErrorMessage(error.stack)
-    : undefined;
+  sanitizedError.stack = error.stack ? sanitizeErrorMessage(error.stack) : undefined;
   return sanitizedError;
 }
 

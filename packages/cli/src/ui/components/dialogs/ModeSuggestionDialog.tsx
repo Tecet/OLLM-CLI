@@ -1,6 +1,6 @@
 /**
  * ModeSuggestionDialog - Mode transition suggestion component
- * 
+ *
  * Displays proactive suggestions for mode transitions to help users
  * discover and navigate the mode system effectively.
  */
@@ -29,7 +29,7 @@ const MODE_ICONS: Record<string, string> = {
   assistant: '💬',
   planning: '📋',
   developer: '👨‍💻',
-  debugger: '🐛'
+  debugger: '🐛',
 };
 
 /**
@@ -48,12 +48,12 @@ export function ModeSuggestionDialog({
   const options = [
     'Yes, switch mode',
     'No, stay in current mode',
-    "Don't ask again for this transition"
+    "Don't ask again for this transition",
   ];
 
   const suggestedModeIcon = MODE_ICONS[suggestion.suggestedMode] || '🔄';
   const currentModeIcon = MODE_ICONS[suggestion.currentMode] || '🔄';
-  
+
   // Format confidence as percentage
   const confidencePercent = Math.round(suggestion.confidence * 100);
 
@@ -100,9 +100,7 @@ export function ModeSuggestionDialog({
         flexDirection="column"
       >
         <Box>
-          <Text color={theme.text.secondary}>
-            Confidence: {confidencePercent}%
-          </Text>
+          <Text color={theme.text.secondary}>Confidence: {confidencePercent}%</Text>
         </Box>
         <Box marginTop={0}>
           <Text color={theme.text.accent}>
@@ -120,22 +118,18 @@ export function ModeSuggestionDialog({
           {suggestion.context.errorCount !== undefined && (
             <Box>
               <Text color={theme.status.warning}>
-                ⚠️  {suggestion.context.errorCount} error(s) detected
+                ⚠️ {suggestion.context.errorCount} error(s) detected
               </Text>
             </Box>
           )}
           {suggestion.context.planComplete && (
             <Box>
-              <Text color={theme.status.success}>
-                ✓ Plan appears complete
-              </Text>
+              <Text color={theme.status.success}>✓ Plan appears complete</Text>
             </Box>
           )}
           {suggestion.context.hasTechnicalTerms && (
             <Box>
-              <Text color={theme.status.info}>
-                ℹ️  Technical implementation detected
-              </Text>
+              <Text color={theme.status.info}>ℹ️ Technical implementation detected</Text>
             </Box>
           )}
         </Box>
@@ -151,10 +145,7 @@ export function ModeSuggestionDialog({
           const isSelected = index === selectedIndex;
           return (
             <Box key={index} marginLeft={2}>
-              <Text
-                color={isSelected ? theme.text.accent : theme.text.primary}
-                bold={isSelected}
-              >
+              <Text color={isSelected ? theme.text.accent : theme.text.primary} bold={isSelected}>
                 {isSelected ? '▶ ' : '  '}
                 {option}
               </Text>

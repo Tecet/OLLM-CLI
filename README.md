@@ -14,36 +14,42 @@ OLLM CLI brings the power of open-source large language models to your terminal 
 ## ✨ Features
 
 ### 🎨 Interactive Terminal UI
+
 - **React + Ink powered interface** with streaming responses and real-time updates
 - **Syntax highlighting** for code blocks with language detection
 - **Status bar** showing model, context usage, and VRAM metrics
 - **Tool execution preview** with diff visualization for file changes
 
 ### 🧠 Smart Context Management
+
 - **Fixed context sizing** based on available VRAM (determined at startup)
 - **Automatic compression** when approaching context limits
 - **Snapshot and rollover** support for long conversations
 - **Real-time monitoring** of token usage and memory consumption
 
 ### 🛠️ Powerful Tool System
+
 - **Built-in tools**: File operations, shell execution, web fetch, search, memory
 - **Policy-based confirmation**: ASK, AUTO, and YOLO approval modes
 - **Diff preview** for file edits before applying changes
 - **Output truncation** and streaming for long-running operations
 
 ### 🔌 Extensibility
+
 - **Hook system** for event-driven automation and safety gates
 - **Extension system** with manifest-based configuration
 - **MCP integration** (Model Context Protocol) for external tools
 - **Provider-agnostic** architecture supporting multiple LLM backends
 
 ### 💾 Session Management
+
 - **Record and resume** conversations with full context
 - **Automatic compression** to manage context limits
 - **Loop detection** to prevent runaway tool calls
 - **Session history** with searchable archives
 
 ### 🌐 Offline First
+
 - **Works without internet** when models are installed locally
 - **No telemetry** - all data stays on your machine
 - **Local model management** - pull, list, and remove models
@@ -100,12 +106,14 @@ ollm --help
 ## 📖 Documentation
 
 ### Getting Started
+
 - **[Introduction](docs/Introduction.md)** - What is OLLM CLI? (friendly, non-technical)
 - **[Installation](docs/Installation.md)** - Complete installation guide
 - **[Quick Start](docs/Quickstart.md)** - Get started in 5 minutes
 - **[Troubleshooting](docs/Troubleshooting.md)** - Common issues and solutions
 
 ### Core Features
+
 - **[User Interface & Settings](docs/UI&Settings/README.md)** - Interface, commands, themes, keybinds, and configuration
 - **[Context Management](docs/Context/README.md)** - Context sizing, compression, checkpoints, and VRAM monitoring
 - **[Model Management](docs/LLM%20Models/README.md)** - Models, providers, compatibility, and memory system
@@ -115,6 +123,7 @@ ollm --help
 - **[Prompts System](docs/Prompts%20System/README.md)** - System prompts, templates, and routing
 
 ### Development
+
 - **[Development Roadmap](docs/DevelopmentRoadmap/README.md)** - Future plans and version releases (v0.2.0-v0.9.0)
 - **[Complete Index](docs/Index.md)** - All 57 documentation files organized by topic
 
@@ -124,22 +133,22 @@ ollm --help
 
 ## ⚙️ System Requirements
 
-| Component | Minimum | Recommended |
-|-----------|---------|-------------|
-| **Node.js** | 20.0.0 | 22.x LTS |
-| **RAM** | 8GB | 16GB+ |
-| **VRAM** | 4GB | 8GB+ |
-| **Storage** | 10GB | 50GB+ (for models) |
-| **OS** | Windows 10, macOS 11, Linux | Latest versions |
+| Component   | Minimum                     | Recommended        |
+| ----------- | --------------------------- | ------------------ |
+| **Node.js** | 20.0.0                      | 22.x LTS           |
+| **RAM**     | 8GB                         | 16GB+              |
+| **VRAM**    | 4GB                         | 8GB+               |
+| **Storage** | 10GB                        | 50GB+ (for models) |
+| **OS**      | Windows 10, macOS 11, Linux | Latest versions    |
 
 ### Recommended Models by VRAM
 
-| VRAM | Recommended Models | Context Sweet Spot |
-|------|-------------------|-------------------|
-| 4GB | Llama 3.2 3B, Qwen3 4B | 4K-8K tokens |
-| 8GB | Llama 3.1 8B, Mistral 7B | 8K-16K tokens |
-| 12GB | Gemma 3 12B, Phi-4 14B | 16K-32K tokens |
-| 24GB+ | Qwen3 32B, Mixtral 8x7B | 32K-64K tokens |
+| VRAM  | Recommended Models       | Context Sweet Spot |
+| ----- | ------------------------ | ------------------ |
+| 4GB   | Llama 3.2 3B, Qwen3 4B   | 4K-8K tokens       |
+| 8GB   | Llama 3.1 8B, Mistral 7B | 8K-16K tokens      |
+| 12GB  | Gemma 3 12B, Phi-4 14B   | 16K-32K tokens     |
+| 24GB+ | Qwen3 32B, Mixtral 8x7B  | 32K-64K tokens     |
 
 ---
 
@@ -160,6 +169,7 @@ Context is **fixed for the session** and automatically compressed when approachi
 ### Tool System
 
 The AI can use tools to help you:
+
 - **File Tools** - Read, write, edit files
 - **Web Tools** - Search internet, fetch pages
 - **Shell Tool** - Run commands
@@ -169,6 +179,7 @@ The AI can use tools to help you:
 ### Approval Modes
 
 Control how tools are executed:
+
 - **ASK** - Confirm each tool use (default, safest)
 - **AUTO** - Auto-approve safe tools, ask for risky ones
 - **YOLO** - Auto-approve everything (use with caution!)
@@ -313,6 +324,7 @@ See **[Project Structure](.kiro/steering/structure.md)** for detailed architectu
 OLLM CLI is under active development with a clear roadmap for future features.
 
 ### ✅ Completed (v0.1.0 - Alpha)
+
 - Interactive TUI with React + Ink
 - Context management with VRAM monitoring
 - Tool system with policy engine
@@ -325,47 +337,56 @@ OLLM CLI is under active development with a clear roadmap for future features.
 ### 🔮 Planned Features (v0.2.0 - v0.9.0)
 
 **v0.2.0 - Enhanced Context Management**
+
 - Advanced context pool management
 - Multi-tier context strategies
 - Improved VRAM optimization
 
 **v0.3.0 - Advanced Compression**
+
 - Multiple compression strategies
 - Semantic compression
 - Context checkpointing
 
 **v0.4.0 - Reasoning Models**
+
 - Extended reasoning support
 - Reasoning capture and display
 - Specialized reasoning modes
 
 **v0.5.0 - Session Management**
+
 - Enhanced session persistence
 - Session templates
 - Collaborative sessions
 
 **v0.6.0 - Multi-Provider Support**
+
 - OpenAI, Anthropic, Google AI
 - Cost tracking and budgets
 - Auto-escalation between providers
 
 **v0.7.0 - Developer Productivity**
+
 - Git integration
 - @-mentions for context
 - Diff review workflows
 
 **v0.8.0 - Intelligence Layer**
+
 - Semantic codebase search (RAG)
 - Structured output
 - Code execution sandbox
 - Vision support
 
 **v0.9.0 - Cross-Platform Polish**
+
 - Platform-specific optimizations
 - Enhanced Windows support
 - Improved terminal compatibility
 
 **v1.0.0+ - Beta and Beyond**
+
 - Production-ready release
 - Enterprise features
 - Plugin marketplace
@@ -377,11 +398,13 @@ See **[Development Roadmap](docs/DevelopmentRoadmap/Roadmap.md)** for detailed s
 ## 🧰 Tech Stack
 
 ### Runtime & Language
+
 - **Node.js 20+** - JavaScript runtime
 - **TypeScript 5.9** - Type-safe development
 - **ES Modules** - Modern module system
 
 ### Build & Tooling
+
 - **npm workspaces** - Monorepo management
 - **esbuild** - Fast bundling
 - **Vitest** - Testing framework
@@ -389,10 +412,12 @@ See **[Development Roadmap](docs/DevelopmentRoadmap/Roadmap.md)** for detailed s
 - **Prettier** - Code formatting
 
 ### UI Framework
+
 - **React 19** - UI library
 - **Ink 6** - Terminal rendering
 
 ### Key Dependencies
+
 - **yargs** - CLI argument parsing
 - **yaml** - Configuration parsing
 - **ajv** - JSON schema validation

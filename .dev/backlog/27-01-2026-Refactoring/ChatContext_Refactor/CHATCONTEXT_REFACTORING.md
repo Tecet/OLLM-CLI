@@ -8,6 +8,7 @@
 ## Current Structure Analysis
 
 ### Helper Functions (Lines 33-115) - ~82 lines
+
 Can be extracted to separate utility files:
 
 1. **`resolveTierForSize()`** - Tier resolution logic
@@ -21,6 +22,7 @@ Can be extracted to separate utility files:
 ---
 
 ### Type Definitions (Lines 118-274) - ~156 lines
+
 Can be extracted to separate type files:
 
 1. **`ToolCall`** - Tool call interface
@@ -38,6 +40,7 @@ Can be extracted to separate type files:
 ---
 
 ### Event Handlers (Inside ChatProvider) - ~200 lines
+
 Large event handler functions that can be extracted:
 
 1. **`handleMemoryWarning`** - Memory warning handler
@@ -53,6 +56,7 @@ Large event handler functions that can be extracted:
 ---
 
 ### Message Recording (Inside sendMessage) - ~50 lines
+
 Session recording logic:
 
 1. **`recordSessionMessage()`** - Already a callback, but could be simplified
@@ -62,6 +66,7 @@ Session recording logic:
 ---
 
 ### Command Handling (Inside sendMessage) - ~80 lines
+
 Command registry integration:
 
 ```typescript
@@ -75,6 +80,7 @@ if (commandRegistry.isCommand(content)) {
 ---
 
 ### System Prompt Building (Inside sendMessage) - ~50 lines
+
 Complex prompt construction logic:
 
 ```typescript
@@ -88,6 +94,7 @@ let systemPrompt = contextActions.getSystemPrompt();
 ---
 
 ### Agent Loop (Inside sendMessage) - ~400 lines
+
 The massive agent loop with tool execution:
 
 ```typescript
@@ -106,6 +113,7 @@ while (turnCount < maxTurns && !stopLoop) {
 ---
 
 ### Tool Execution (Inside agent loop) - ~150 lines
+
 Tool call handling and execution:
 
 ```typescript
@@ -140,6 +148,7 @@ packages/cli/src/features/context/
 ## Refactoring Steps
 
 ### Phase 1: Extract Types (Low Risk) ✅ COMPLETE
+
 1. ✅ Create `types/chatTypes.ts`
 2. ✅ Move all interfaces
 3. ✅ Update imports in ChatContext.tsx
@@ -151,6 +160,7 @@ packages/cli/src/features/context/
 ---
 
 ### Phase 2: Extract Utilities (Low Risk) ✅ COMPLETE
+
 1. ✅ Create `utils/promptUtils.ts`
 2. ✅ Move helper functions
 3. ✅ Update imports
@@ -162,6 +172,7 @@ packages/cli/src/features/context/
 ---
 
 ### Phase 4: Extract Event Handlers (Medium Risk) ✅ COMPLETE
+
 1. ✅ Create `handlers/contextEventHandlers.ts`
 2. ✅ Move event handler functions
 3. ✅ Create factory function that returns handlers with closures
@@ -172,9 +183,11 @@ packages/cli/src/features/context/
 **Status:** Complete - All tests passing (502/502)
 
 **Files Created:**
+
 - `packages/cli/src/features/context/handlers/contextEventHandlers.ts` (280 lines)
 
 **Handlers Extracted:**
+
 - `handleMemoryWarning` - Memory warning handler
 - `handleCompressed` - Compression handler
 - `handleSummarizing` - Summarizing handler
@@ -186,6 +199,7 @@ packages/cli/src/features/context/
 ---
 
 ### Phase 3: Extract System Prompt Builder (Medium Risk) ✅ COMPLETE
+
 1. ✅ Create `utils/systemPromptBuilder.ts`
 2. ✅ Move prompt building logic
 3. ✅ Create `buildSystemPrompt()` function
@@ -201,6 +215,7 @@ Current implementation is a temporary solution to reduce file size.
 ---
 
 ### Phase 5: Extract Command Handler (Medium Risk) ✅ COMPLETE
+
 1. ✅ Create `handlers/commandHandler.ts`
 2. ✅ Move command handling logic
 3. ✅ Create `handleCommand()` function
@@ -211,9 +226,11 @@ Current implementation is a temporary solution to reduce file size.
 **Status:** Complete - All tests passing (502/502)
 
 **Files Created:**
+
 - `packages/cli/src/features/context/handlers/commandHandler.ts` (150 lines)
 
 **Functions Extracted:**
+
 - `handleCommand()` - Main command execution handler
 - `handleExitCommand()` - Exit command with model unloading
 - `isCommand()` - Check if content is a command
@@ -221,6 +238,7 @@ Current implementation is a temporary solution to reduce file size.
 ---
 
 ### Phase 6: Extract Agent Loop (High Risk)
+
 1. Create `handlers/agentLoopHandler.ts`
 2. Move agent loop logic
 3. Create `runAgentLoop()` function with all dependencies
@@ -232,6 +250,7 @@ Current implementation is a temporary solution to reduce file size.
 ---
 
 ### Phase 7: Extract Tool Execution (High Risk)
+
 1. Create `handlers/toolExecutionHandler.ts`
 2. Move tool execution logic
 3. Create `executeToolCall()` function
@@ -261,6 +280,7 @@ Current implementation is a temporary solution to reduce file size.
 We've achieved **58.8% reduction** (826 lines removed) and are only **78 lines away** from the target of <500 lines!
 
 The remaining 578 lines consist of:
+
 - React component structure and hooks
 - State management (useState, useRef, useEffect)
 - Message handling (addMessage, updateMessage)
@@ -274,6 +294,7 @@ The remaining 578 lines consist of:
 - Context value construction
 
 **Next Steps (Optional Fine-Tuning):**
+
 - Could extract mode switching logic (~50 lines)
 - Could extract tool schema preparation (~30 lines)
 - Could simplify menu state management (~20 lines)
@@ -285,6 +306,7 @@ However, the current state is **highly maintainable** with clear separation of c
 ## Next Steps (High Risk, High Value)
 
 ### Phase 6: Extract Agent Loop (High Risk) ✅ COMPLETE
+
 1. ✅ Create `handlers/agentLoopHandler.ts`
 2. ✅ Move agent loop logic
 3. ✅ Create `runAgentLoop()` function with all dependencies
@@ -295,9 +317,11 @@ However, the current state is **highly maintainable** with clear separation of c
 **Status:** Complete - All tests passing (502/502)
 
 **Files Created:**
+
 - `packages/cli/src/features/context/handlers/agentLoopHandler.ts` (650 lines)
 
 **Components Extracted:**
+
 - Multi-turn agent loop logic
 - Model change detection
 - History preparation
@@ -309,6 +333,7 @@ However, the current state is **highly maintainable** with clear separation of c
 - Hook events (before_model, after_model, before_tool, after_tool)
 
 **Architecture:**
+
 - Comprehensive dependency injection
 - All state management via refs
 - Clean callback structure
@@ -320,6 +345,7 @@ However, the current state is **highly maintainable** with clear separation of c
 ## Testing Strategy
 
 After each phase:
+
 1. Run `npm run build` - ensure no build errors
 2. Run `npm test` - ensure all 502 tests pass
 3. Manual testing of affected features
@@ -330,11 +356,13 @@ After each phase:
 ## Risks & Mitigation
 
 ### High Risk Areas:
+
 1. **Agent Loop** - Complex state management, many dependencies
 2. **Tool Execution** - Critical for functionality
 3. **Event Handlers** - Closure dependencies
 
 ### Mitigation:
+
 1. Extract in small, testable chunks
 2. Keep comprehensive tests
 3. Use TypeScript to catch errors early

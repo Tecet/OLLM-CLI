@@ -12,6 +12,7 @@ The placeholder spec from `.kiro/specs/stage-06a-github-panel-ui/` has been cons
 ### 2. Updated Files
 
 **requirements.md:**
+
 - Added "Existing Placeholder Implementation" section
 - Documented existing placeholder components
 - Documented integration points (TabBar, keyboard shortcuts)
@@ -19,6 +20,7 @@ The placeholder spec from `.kiro/specs/stage-06a-github-panel-ui/` has been cons
 - Added migration strategy
 
 **design.md:**
+
 - Added "Existing Placeholder Implementation" section
 - Documented current placeholder components and their purpose
 - Provided implementation approach for replacing placeholder
@@ -26,6 +28,7 @@ The placeholder spec from `.kiro/specs/stage-06a-github-panel-ui/` has been cons
 - Showed current placeholder visual layout
 
 **tasks.md:**
+
 - Updated Overview section with placeholder information
 - Modified Task 22 to reference placeholder replacement
 - Clarified which components to remove vs replace
@@ -36,6 +39,7 @@ The placeholder spec from `.kiro/specs/stage-06a-github-panel-ui/` has been cons
 Removed directory: `.kiro/specs/stage-06a-github-panel-ui/`
 
 This directory contained:
+
 - `requirements.md` - Placeholder requirements
 - `design.md` - Placeholder design
 - `tasks.md` - Placeholder implementation tasks (95% complete)
@@ -45,6 +49,7 @@ This directory contained:
 ### What Currently Exists in the Codebase
 
 **Components Created:**
+
 1. `packages/cli/src/ui/components/tabs/GitHubTab.tsx`
    - Main placeholder tab component
    - Displays "Coming Soon" message
@@ -62,6 +67,7 @@ This directory contained:
    - Status: ✅ Implemented
 
 **Integration Points:**
+
 - ✅ GitHub tab added to TabBar (Ctrl+6 shortcut)
 - ✅ Tab routing integrated in App.tsx
 - ✅ TabType updated in UIContext to include 'github'
@@ -103,29 +109,39 @@ This directory contained:
 When implementing the full GitHub integration (v0.6.0):
 
 ### Step 1: Remove Placeholder Components
+
 Delete these files:
+
 - ❌ `packages/cli/src/ui/components/github/PlannedFeaturesList.tsx`
 - ❌ `packages/cli/src/ui/components/github/FeatureSection.tsx`
 
 ### Step 2: Replace GitHubTab Component
+
 Replace the placeholder content in:
+
 - 🔄 `packages/cli/src/ui/components/tabs/GitHubTab.tsx`
 
 Keep the file, but replace the placeholder content with the full functional implementation as designed in the spec.
 
 ### Step 3: Update Tests
+
 Replace smoke tests with functional tests:
+
 - 🔄 `packages/cli/src/ui/components/tabs/__tests__/GitHubTab.test.tsx`
 
 ### Step 4: Keep Existing Integration
+
 **DO NOT CHANGE** these integration points:
+
 - ✅ GitHub tab in TabBar (Ctrl+6 shortcut)
 - ✅ Tab routing in App.tsx
 - ✅ TabType definition in UIContext
 - ✅ Tab position in navigation bar
 
 ### Step 5: Add New Components
+
 Create new functional components as specified in the design document:
+
 - `GitHubAuthFlow.tsx` - OAuth authentication
 - `GitHubHeader.tsx` - Account status and info
 - `RepositoryList.tsx` - Repository management
@@ -155,6 +171,7 @@ Create new functional components as specified in the design document:
 ## Next Steps
 
 When ready to implement full GitHub integration:
+
 1. Review the consolidated spec in `.kiro/specs/v0.6.0 GitHub-integration/`
 2. Follow the migration strategy outlined above
 3. Start with Task 1 in `tasks.md` (infrastructure setup)

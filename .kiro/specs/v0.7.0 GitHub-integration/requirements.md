@@ -209,20 +209,22 @@ This document specifies the requirements for comprehensive GitHub integration in
 7. WHEN notifications arrive, THE GitHub_Panel SHALL display a badge with unread count
 8. WHERE multiple accounts are configured, THE GitHub_Panel SHALL show an account switcher
 
-
 ## Existing Placeholder Implementation
 
 **Status:** A placeholder GitHub tab was implemented in stage-06a-github-panel-ui (now consolidated here)
 
 ### What Exists
+
 The following components were created as a "Coming Soon" placeholder:
 
 **Components:**
+
 - `packages/cli/src/ui/components/tabs/GitHubTab.tsx` - Main placeholder tab
 - `packages/cli/src/ui/components/github/PlannedFeaturesList.tsx` - List of planned features
 - `packages/cli/src/ui/components/github/FeatureSection.tsx` - Individual feature category display
 
 **Integration:**
+
 - GitHub tab added to TabBar navigation (Ctrl+6 shortcut)
 - Tab routing integrated in App.tsx
 - TabType updated in UIContext to include 'github'
@@ -230,13 +232,16 @@ The following components were created as a "Coming Soon" placeholder:
 
 **Content:**
 The placeholder displays:
+
 - "🚧 Coming Soon 🚧" heading
 - Description: "GitHub integration will be available in a future release"
 - List of 7 planned feature categories (OAuth, Repositories, Issues, PRs, Code Review, Actions, Notifications)
 - Documentation link to this spec
 
 ### Migration Strategy
+
 When implementing full GitHub integration:
+
 1. **Remove** placeholder components: `PlannedFeaturesList.tsx`, `FeatureSection.tsx`
 2. **Replace** `GitHubTab.tsx` with full implementation
 3. **Add** new functional components (auth flow, repository list, PR view, etc.)
@@ -244,6 +249,7 @@ When implementing full GitHub integration:
 5. **Keep** existing navigation integration (tab position, keyboard shortcut)
 
 ### Files to Replace/Remove
+
 - ❌ Remove: `packages/cli/src/ui/components/github/PlannedFeaturesList.tsx`
 - ❌ Remove: `packages/cli/src/ui/components/github/FeatureSection.tsx`
 - 🔄 Replace: `packages/cli/src/ui/components/tabs/GitHubTab.tsx`

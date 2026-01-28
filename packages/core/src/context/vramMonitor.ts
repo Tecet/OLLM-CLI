@@ -1,6 +1,6 @@
 /**
  * VRAM Monitor Service
- * 
+ *
  * Monitors GPU memory availability and emits low-memory events.
  * Supports NVIDIA, AMD, Apple Silicon, and falls back to system RAM for CPU-only mode.
  */
@@ -116,7 +116,7 @@ export class DefaultVRAMMonitor extends EventEmitter implements VRAMMonitor {
     this.monitoringInterval = setInterval(async () => {
       try {
         const info = await this.getInfo();
-        
+
         // Check if memory is low
         if (info.available < info.total * this.lowMemoryThreshold) {
           // Emit event with cooldown to avoid spam
@@ -153,9 +153,12 @@ export class DefaultVRAMMonitor extends EventEmitter implements VRAMMonitor {
         { timeout: 5000, windowsHide: true }
       );
 
-      const values = stdout.trim().split(',').map(v => parseInt(v.trim(), 10));
-      
-      if (values.length >= 3 && values.every(v => !isNaN(v))) {
+      const values = stdout
+        .trim()
+        .split(',')
+        .map((v) => parseInt(v.trim(), 10));
+
+      if (values.length >= 3 && values.every((v) => !isNaN(v))) {
         const totalMB = values[0];
         const usedMB = values[1];
         const freeMB = values[2];
@@ -166,7 +169,7 @@ export class DefaultVRAMMonitor extends EventEmitter implements VRAMMonitor {
         const available = freeMB * 1024 * 1024;
 
         // Estimate model memory (rough approximation)
-        const modelLoaded = Math.max(0, used - (total * 0.1)); // Assume 10% overhead
+        const modelLoaded = Math.max(0, used - total * 0.1); // Assume 10% overhead
 
         return { total, used, available, modelLoaded };
       }
@@ -184,7 +187,7 @@ export class DefaultVRAMMonitor extends EventEmitter implements VRAMMonitor {
   private async getAMDMemory(): Promise<VRAMInfo> {
     try {
       const { stdout } = await execAsync('rocm-smi --showmeminfo vram', {
-        timeout: 5000
+        timeout: 5000,
       });
 
       // Parse rocm-smi output
@@ -196,7 +199,7 @@ export class DefaultVRAMMonitor extends EventEmitter implements VRAMMonitor {
         const total = parseInt(totalMatch[1], 10);
         const used = parseInt(usedMatch[1], 10);
         const available = total - used;
-        const modelLoaded = Math.max(0, used - (total * 0.1));
+        const modelLoaded = Math.max(0, used - total * 0.1);
 
         return { total, used, available, modelLoaded };
       }
@@ -215,13 +218,13 @@ export class DefaultVRAMMonitor extends EventEmitter implements VRAMMonitor {
     try {
       // Get total memory
       const { stdout: totalOutput } = await execAsync('sysctl -n hw.memsize', {
-        timeout: 5000
+        timeout: 5000,
       });
       const total = parseInt(totalOutput.trim(), 10);
 
       // Get memory statistics using vm_stat
       const { stdout: vmOutput } = await execAsync('vm_stat', {
-        timeout: 5000
+        timeout: 5000,
       });
 
       // Parse vm_stat output
@@ -234,7 +237,7 @@ export class DefaultVRAMMonitor extends EventEmitter implements VRAMMonitor {
         const inactivePages = parseInt(inactiveMatch[1], 10);
         const available = (freePages + inactivePages) * pageSize;
         const used = total - available;
-        const modelLoaded = Math.max(0, used - (total * 0.2)); // Assume 20% system overhead
+        const modelLoaded = Math.max(0, used - total * 0.2); // Assume 20% system overhead
 
         return { total, used, available, modelLoaded };
       }
@@ -255,32 +258,35 @@ export class DefaultVRAMMonitor extends EventEmitter implements VRAMMonitor {
       // Query GPU adapter memory counters using PowerShell
       const { stdout: memOutput } = await execAsync(
         `powershell -NoProfile -Command "` +
-        `$counters = Get-Counter -Counter @('\\GPU Adapter Memory(*)\\Local Usage', '\\GPU Adapter Memory(*)\\Dedicated Usage', '\\GPU Adapter Memory(*)\\Shared Usage') -ErrorAction SilentlyContinue; ` +
-        `if ($counters) { ` +
+          `$counters = Get-Counter -Counter @('\\GPU Adapter Memory(*)\\Local Usage', '\\GPU Adapter Memory(*)\\Dedicated Usage', '\\GPU Adapter Memory(*)\\Shared Usage') -ErrorAction SilentlyContinue; ` +
+          `if ($counters) { ` +
           `$local = ($counters.CounterSamples | Where-Object { $_.Path -like '*Local Usage' } | Measure-Object -Property CookedValue -Sum).Sum; ` +
           `$dedicated = ($counters.CounterSamples | Where-Object { $_.Path -like '*Dedicated Usage' } | Measure-Object -Property CookedValue -Sum).Sum; ` +
           `$shared = ($counters.CounterSamples | Where-Object { $_.Path -like '*Shared Usage' } | Measure-Object -Property CookedValue -Sum).Sum; ` +
           'Write-Output "$local,$dedicated,$shared" ' +
-        `} else { Write-Output '0,0,0' }"`,
+          `} else { Write-Output '0,0,0' }"`,
         { timeout: 10000, windowsHide: true }
       );
 
       // Parse memory values (they come in bytes)
-      const memValues = memOutput.trim().split(',').map(v => parseInt(v.trim(), 10) || 0);
+      const memValues = memOutput
+        .trim()
+        .split(',')
+        .map((v) => parseInt(v.trim(), 10) || 0);
       const localUsage = memValues[0] || 0;
       const dedicatedUsage = memValues[1] || 0;
-      
+
       // Calculate VRAM metrics
       const used = localUsage + dedicatedUsage;
-      
+
       // Query total dedicated memory from registry (more accurate)
       let total = 0;
       try {
         const { stdout: regOutput } = await execAsync(
           `powershell -NoProfile -Command "` +
-          `Get-ItemProperty -Path 'HKLM:\\SYSTEM\\ControlSet001\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0*' -ErrorAction SilentlyContinue | ` +
-          `ForEach-Object { if ($_.'HardwareInformation.qwMemorySize') { $_.'HardwareInformation.qwMemorySize' } } | ` +
-          `Measure-Object -Maximum | Select-Object -ExpandProperty Maximum"`,
+            `Get-ItemProperty -Path 'HKLM:\\SYSTEM\\ControlSet001\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0*' -ErrorAction SilentlyContinue | ` +
+            `ForEach-Object { if ($_.'HardwareInformation.qwMemorySize') { $_.'HardwareInformation.qwMemorySize' } } | ` +
+            `Measure-Object -Maximum | Select-Object -ExpandProperty Maximum"`,
           { timeout: 5000, windowsHide: true }
         );
         total = parseInt(regOutput.trim(), 10) || 0;
@@ -290,7 +296,7 @@ export class DefaultVRAMMonitor extends EventEmitter implements VRAMMonitor {
       }
 
       const available = Math.max(0, total - used);
-      const modelLoaded = Math.max(0, used - (total * 0.1)); // Assume 10% overhead
+      const modelLoaded = Math.max(0, used - total * 0.1); // Assume 10% overhead
 
       return { total, used, available, modelLoaded };
     } catch (error) {
@@ -308,14 +314,13 @@ export class DefaultVRAMMonitor extends EventEmitter implements VRAMMonitor {
     const total = totalmem();
     const available = freemem();
     const used = total - available;
-    
+
     // For CPU-only, we don't have a good way to estimate model memory
     // Assume model uses about 30% of used memory (rough heuristic)
     const modelLoaded = Math.floor(used * 0.3);
 
     return { total, used, available, modelLoaded };
   }
-
 }
 
 /**

@@ -127,7 +127,7 @@ export class EnvironmentSanitizationService {
   isAllowed(varName: string): boolean {
     // Allow list takes precedence (case-insensitive check)
     const allowListArray = Array.from(this.allowList);
-    if (allowListArray.some(allowed => allowed.toUpperCase() === varName.toUpperCase())) {
+    if (allowListArray.some((allowed) => allowed.toUpperCase() === varName.toUpperCase())) {
       return true;
     }
 

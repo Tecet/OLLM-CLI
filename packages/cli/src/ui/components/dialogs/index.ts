@@ -28,6 +28,10 @@ export type { MarketplaceDialogProps } from './MarketplaceDialog.js';
 export { UninstallConfirmDialog } from './UninstallConfirmDialog.js';
 export type { UninstallConfirmDialogProps } from './UninstallConfirmDialog.js';
 export { ConfirmationDialog, QuickConfirm } from './ConfirmationDialog.js';
-export type { ConfirmationDialogProps, QuickConfirmProps, ConfirmationLevel } from './ConfirmationDialog.js';
+export type {
+  ConfirmationDialogProps,
+  QuickConfirmProps,
+  ConfirmationLevel,
+} from './ConfirmationDialog.js';
 export { HelpOverlay } from './HelpOverlay.js';
 export type { HelpOverlayProps } from './HelpOverlay.js';

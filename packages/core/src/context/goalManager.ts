@@ -1,6 +1,6 @@
 /**
  * Goal Manager Implementation
- * 
+ *
  * Manages goals, checkpoints, decisions, and artifacts for long-running sessions.
  */
 
@@ -21,7 +21,7 @@ import type {
   ArtifactAction,
   Blocker,
   BlockerType,
-  GoalManagementConfig
+  GoalManagementConfig,
 } from './goalTypes.js';
 
 /**
@@ -49,13 +49,13 @@ export class GoalManagerImpl implements GoalManager {
       status: 'active',
       createdAt: new Date(),
       parentGoalId: undefined,
-      subtasks: subtasks?.map(desc => this.createSubtaskObject(desc)) || [],
+      subtasks: subtasks?.map((desc) => this.createSubtaskObject(desc)) || [],
       checkpoints: [],
       decisions: [],
       artifacts: [],
       blockers: [],
       priority,
-      tags: []
+      tags: [],
     };
 
     // Pause current active goal if exists
@@ -147,7 +147,7 @@ export class GoalManagerImpl implements GoalManager {
     }
 
     goal.status = 'abandoned';
-    
+
     // Record reason as a checkpoint
     this.createCheckpoint(goalId, `Goal abandoned: ${reason}`, {}, reason);
 
@@ -174,10 +174,10 @@ export class GoalManagerImpl implements GoalManager {
 
   completeSubtask(goalId: string, subtaskId: string): void {
     this.updateSubtaskStatus(goalId, subtaskId, 'completed');
-    
+
     const goal = this.goals.get(goalId);
     if (goal) {
-      const subtask = goal.subtasks.find(st => st.id === subtaskId);
+      const subtask = goal.subtasks.find((st) => st.id === subtaskId);
       if (subtask) {
         subtask.completedAt = new Date();
       }
@@ -190,7 +190,7 @@ export class GoalManagerImpl implements GoalManager {
       throw new Error(`Goal not found: ${goalId}`);
     }
 
-    const subtask = goal.subtasks.find(st => st.id === subtaskId);
+    const subtask = goal.subtasks.find((st) => st.id === subtaskId);
     if (!subtask) {
       throw new Error(`Subtask not found: ${subtaskId}`);
     }
@@ -222,9 +222,9 @@ export class GoalManagerImpl implements GoalManager {
         filesModified: state.filesModified || [],
         testsAdded: state.testsAdded || [],
         decisionsLocked: state.decisionsLocked || [],
-        metricsRecorded: state.metricsRecorded || {}
+        metricsRecorded: state.metricsRecorded || {},
       },
-      assistantSummary: summary
+      assistantSummary: summary,
     };
 
     goal.checkpoints.push(checkpoint);
@@ -258,7 +258,7 @@ export class GoalManagerImpl implements GoalManager {
       rationale,
       alternatives,
       timestamp: new Date(),
-      locked: false
+      locked: false,
     };
 
     goal.decisions.push(decision);
@@ -272,7 +272,7 @@ export class GoalManagerImpl implements GoalManager {
       throw new Error(`Goal not found: ${goalId}`);
     }
 
-    const decision = goal.decisions.find(d => d.id === decisionId);
+    const decision = goal.decisions.find((d) => d.id === decisionId);
     if (!decision) {
       throw new Error(`Decision not found: ${decisionId}`);
     }
@@ -301,7 +301,7 @@ export class GoalManagerImpl implements GoalManager {
       path,
       action,
       timestamp: new Date(),
-      description
+      description,
     };
 
     goal.artifacts.push(artifact);
@@ -323,7 +323,7 @@ export class GoalManagerImpl implements GoalManager {
       id: randomUUID(),
       description,
       type,
-      createdAt: new Date()
+      createdAt: new Date(),
     };
 
     goal.blockers.push(blocker);
@@ -342,7 +342,7 @@ export class GoalManagerImpl implements GoalManager {
       throw new Error(`Goal not found: ${goalId}`);
     }
 
-    const blocker = goal.blockers.find(b => b.id === blockerId);
+    const blocker = goal.blockers.find((b) => b.id === blockerId);
     if (!blocker) {
       throw new Error(`Blocker not found: ${blockerId}`);
     }
@@ -351,7 +351,7 @@ export class GoalManagerImpl implements GoalManager {
     blocker.resolution = resolution;
 
     // Unblock goal if all blockers resolved
-    const hasUnresolvedBlockers = goal.blockers.some(b => !b.resolvedAt);
+    const hasUnresolvedBlockers = goal.blockers.some((b) => !b.resolvedAt);
     if (!hasUnresolvedBlockers && goal.status === 'blocked') {
       goal.status = 'active';
     }
@@ -373,11 +373,11 @@ export class GoalManagerImpl implements GoalManager {
   }
 
   getCompletedGoals(): Goal[] {
-    return Array.from(this.goals.values()).filter(g => g.status === 'completed');
+    return Array.from(this.goals.values()).filter((g) => g.status === 'completed');
   }
 
   getPausedGoals(): Goal[] {
-    return Array.from(this.goals.values()).filter(g => g.status === 'paused');
+    return Array.from(this.goals.values()).filter((g) => g.status === 'paused');
   }
 
   getGoalProgress(goalId: string): number {
@@ -390,15 +390,15 @@ export class GoalManagerImpl implements GoalManager {
       return goal.status === 'completed' ? 100 : 0;
     }
 
-    const completedSubtasks = goal.subtasks.filter(st => st.status === 'completed').length;
+    const completedSubtasks = goal.subtasks.filter((st) => st.status === 'completed').length;
     return Math.round((completedSubtasks / goal.subtasks.length) * 100);
   }
 
   getGoalStack(): GoalStack {
     const allGoals = Array.from(this.goals.values());
-    const completedGoals = allGoals.filter(g => g.status === 'completed');
-    const pausedGoals = allGoals.filter(g => g.status === 'paused');
-    
+    const completedGoals = allGoals.filter((g) => g.status === 'completed');
+    const pausedGoals = allGoals.filter((g) => g.status === 'paused');
+
     const totalCheckpoints = allGoals.reduce((sum, g) => sum + g.checkpoints.length, 0);
     const sessionDuration = Date.now() - this.sessionStartTime.getTime();
 
@@ -411,8 +411,8 @@ export class GoalManagerImpl implements GoalManager {
         totalGoals: allGoals.length,
         completedGoals: completedGoals.length,
         totalCheckpoints,
-        sessionDuration
-      }
+        sessionDuration,
+      },
     };
   }
 
@@ -422,20 +422,24 @@ export class GoalManagerImpl implements GoalManager {
 
   toJSON(): string {
     const goalStack = this.getGoalStack();
-    return JSON.stringify({
-      activeGoalId: this.activeGoalId,
-      goals: Array.from(this.goals.entries()),
-      sessionStartTime: this.sessionStartTime.toISOString(),
-      goalStack
-    }, null, 2);
+    return JSON.stringify(
+      {
+        activeGoalId: this.activeGoalId,
+        goals: Array.from(this.goals.entries()),
+        sessionStartTime: this.sessionStartTime.toISOString(),
+        goalStack,
+      },
+      null,
+      2
+    );
   }
 
   fromJSON(json: string): void {
     const data = JSON.parse(json);
-    
+
     this.activeGoalId = data.activeGoalId;
     this.sessionStartTime = new Date(data.sessionStartTime);
-    
+
     this.goals.clear();
     for (const [id, goal] of data.goals) {
       // Convert date strings back to Date objects
@@ -454,17 +458,17 @@ export class GoalManagerImpl implements GoalManager {
       description,
       status: 'pending',
       createdAt: new Date(),
-      dependsOn
+      dependsOn,
     };
   }
 
   private cleanupCompletedGoals(): void {
     const completedGoals = this.getCompletedGoals();
-    
+
     if (completedGoals.length > this.config.maxCompletedGoals) {
       // Sort by completion date (oldest first)
-      const sorted = completedGoals.sort((a, b) => 
-        (a.completedAt?.getTime() || 0) - (b.completedAt?.getTime() || 0)
+      const sorted = completedGoals.sort(
+        (a, b) => (a.completedAt?.getTime() || 0) - (b.completedAt?.getTime() || 0)
       );
 
       // Remove oldest goals
@@ -487,7 +491,7 @@ export class GoalManagerImpl implements GoalManager {
       blockers: Array<{ createdAt: string; resolvedAt?: string; [key: string]: unknown }>;
       [key: string]: unknown;
     };
-    
+
     return {
       ...goalData,
       createdAt: new Date(goalData.createdAt),
@@ -496,25 +500,25 @@ export class GoalManagerImpl implements GoalManager {
       subtasks: goalData.subtasks.map((st) => ({
         ...st,
         createdAt: new Date(st.createdAt),
-        completedAt: st.completedAt ? new Date(st.completedAt) : undefined
+        completedAt: st.completedAt ? new Date(st.completedAt) : undefined,
       })) as Subtask[],
       checkpoints: goalData.checkpoints.map((cp) => ({
         ...cp,
-        timestamp: new Date(cp.timestamp)
+        timestamp: new Date(cp.timestamp),
       })) as Checkpoint[],
       decisions: goalData.decisions.map((d) => ({
         ...d,
-        timestamp: new Date(d.timestamp)
+        timestamp: new Date(d.timestamp),
       })) as Decision[],
       artifacts: goalData.artifacts.map((a) => ({
         ...a,
-        timestamp: new Date(a.timestamp)
+        timestamp: new Date(a.timestamp),
       })) as Artifact[],
       blockers: goalData.blockers.map((b) => ({
         ...b,
         createdAt: new Date(b.createdAt),
-        resolvedAt: b.resolvedAt ? new Date(b.resolvedAt) : undefined
-      })) as Blocker[]
+        resolvedAt: b.resolvedAt ? new Date(b.resolvedAt) : undefined,
+      })) as Blocker[],
     } as Goal;
   }
 }
@@ -534,5 +538,5 @@ export const DEFAULT_GOAL_CONFIG: GoalManagementConfig = {
   maxCompletedGoals: 10,
   maxCheckpointsPerGoal: 20,
   autoCheckpoint: false,
-  autoCheckpointInterval: 15
+  autoCheckpointInterval: 15,
 };

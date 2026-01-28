@@ -1,12 +1,12 @@
 /**
  * InstalledServersSection Component
- * 
+ *
  * Displays the list of installed MCP servers with:
  * - Section header with server count
  * - List of ServerItem components
  * - Empty state when no servers are configured
  * - Focus state management for individual servers
- * 
+ *
  * Validates: Requirements 1.1, 12.1, 12.2
  */
 
@@ -33,7 +33,7 @@ export interface InstalledServersSectionProps {
 
 /**
  * InstalledServersSection Component
- * 
+ *
  * Main component that displays all installed MCP servers.
  * Handles empty state and passes focus state to individual ServerItem components.
  */
@@ -45,7 +45,7 @@ export const InstalledServersSection: React.FC<InstalledServersSectionProps> = (
   isLoading = false,
 }) => {
   const serverCount = servers.length;
-  const enabledCount = servers.filter(s => !s.config.disabled).length;
+  const enabledCount = servers.filter((s) => !s.config.disabled).length;
 
   return (
     <Box flexDirection="column" paddingX={1}>

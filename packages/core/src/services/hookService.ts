@@ -1,6 +1,6 @@
 /**
  * Hook Service - Manages hook system initialization and lifecycle
- * 
+ *
  * Provides centralized management of hooks, including:
  * - Hook registry
  * - Hook runner with trust verification
@@ -61,7 +61,8 @@ export class HookService {
     this.planner = new HookPlanner(this.registry);
 
     // Initialize trusted hooks
-    const trustedHooksPath = config.trustedHooksPath || join(homedir(), '.ollm', 'trusted-hooks.json');
+    const trustedHooksPath =
+      config.trustedHooksPath || join(homedir(), '.ollm', 'trusted-hooks.json');
     const trustedHooksConfig: TrustedHooksConfig = {
       storagePath: trustedHooksPath,
       trustWorkspace: config.trustWorkspace ?? false,
@@ -74,14 +75,9 @@ export class HookService {
     this.runner = new HookRunner(timeout, this.trustedHooks);
 
     // Initialize hook event handler
-    this.eventHandler = new HookEventHandler(
-      this.messageBus,
-      this.registry,
-      this.runner,
-      {
-        parallel: false, // Sequential by default
-      }
-    );
+    this.eventHandler = new HookEventHandler(this.messageBus, this.registry, this.runner, {
+      parallel: false, // Sequential by default
+    });
   }
 
   /**

@@ -1,6 +1,6 @@
 /**
  * Compression Coordinator Tests
- * 
+ *
  * Tests for compression coordinator orchestration including:
  * - Compression strategy selection
  * - Threshold triggers
@@ -13,6 +13,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { CompressionCoordinator } from '../compressionCoordinator.js';
 import { MemoryLevel, ContextTier } from '../types.js';
 
+import type { CheckpointManager } from '../checkpointManager.js';
 import type {
   ContextConfig,
   ContextUsage,
@@ -25,7 +26,6 @@ import type {
   SnapshotConfig,
   TokenCounter,
 } from '../types.js';
-import type { CheckpointManager } from '../checkpointManager.js';
 
 describe('CompressionCoordinator', () => {
   let coordinator: CompressionCoordinator;
@@ -60,7 +60,7 @@ describe('CompressionCoordinator', () => {
         strategy: 'moderate',
         thresholds: {
           aggressive: 0.75,
-          moderate: 0.80,
+          moderate: 0.8,
           conservative: 0.85,
         },
       },
@@ -76,29 +76,35 @@ describe('CompressionCoordinator', () => {
     } as any as ContextConfig;
 
     // Mock context
-    mockGetContext = vi.fn(() => ({
-      sessionId: 'test-session',
-      messages: [],
-      userMessages: [],
-      archivedUserMessages: [],
-      tokenCount: 1000,
-      summary: 'Test context',
-      systemPrompt: null,
-      maxTokens: 4096,
-      metadata: {},
-    } as any as ConversationContext));
+    mockGetContext = vi.fn(
+      () =>
+        ({
+          sessionId: 'test-session',
+          messages: [],
+          userMessages: [],
+          archivedUserMessages: [],
+          tokenCount: 1000,
+          summary: 'Test context',
+          systemPrompt: null,
+          maxTokens: 4096,
+          metadata: {},
+        }) as any as ConversationContext
+    );
 
     // Mock usage
-    mockGetUsage = vi.fn(() => ({
-      currentTokens: 1000,
-      targetSize: 4096,
-      maxSize: 8192,
-      usagePercent: 0.25,
-      maxTokens: 8192,
-      percentage: 0.25,
-      vramUsed: 0,
-      vramTotal: 0,
-    } as any as ContextUsage));
+    mockGetUsage = vi.fn(
+      () =>
+        ({
+          currentTokens: 1000,
+          targetSize: 4096,
+          maxSize: 8192,
+          usagePercent: 0.25,
+          maxTokens: 8192,
+          percentage: 0.25,
+          vramUsed: 0,
+          vramTotal: 0,
+        }) as any as ContextUsage
+    );
 
     // Mock tier config
     mockGetTierConfig = vi.fn(() => ({
@@ -108,15 +114,18 @@ describe('CompressionCoordinator', () => {
     }));
 
     // Mock mode profile
-    mockGetModeProfile = vi.fn(() => ({
-      mode: 'default' as any,
-      name: 'default',
-      description: 'Default mode',
-      contextSize: 4096,
-      temperature: 0.7,
-      neverCompress: [],
-      compressionPriority: [],
-    } as any as ModeProfile));
+    mockGetModeProfile = vi.fn(
+      () =>
+        ({
+          mode: 'default' as any,
+          name: 'default',
+          description: 'Default mode',
+          contextSize: 4096,
+          temperature: 0.7,
+          neverCompress: [],
+          compressionPriority: [],
+        }) as any as ModeProfile
+    );
 
     // Mock snapshot manager
     mockSnapshotManager = {
@@ -222,9 +231,7 @@ describe('CompressionCoordinator', () => {
         0.8,
         expect.any(Function)
       );
-      expect(mockSnapshotManager.onBeforeOverflow).toHaveBeenCalledWith(
-        expect.any(Function)
-      );
+      expect(mockSnapshotManager.onBeforeOverflow).toHaveBeenCalledWith(expect.any(Function));
     });
 
     it('should not register threshold handler when autoCreate is disabled', () => {
@@ -269,10 +276,7 @@ describe('CompressionCoordinator', () => {
         MemoryLevel.EMERGENCY,
         expect.any(Function)
       );
-      expect(mockMemoryGuard.on).toHaveBeenCalledWith(
-        'emergency',
-        expect.any(Function)
-      );
+      expect(mockMemoryGuard.on).toHaveBeenCalledWith('emergency', expect.any(Function));
     });
 
     it('should register WARNING threshold callback', () => {
@@ -393,7 +397,7 @@ describe('CompressionCoordinator', () => {
         await (overflowCallback as () => Promise<void>)();
       }
 
-      expect(emittedEvents.some(e => e.event === 'pre-overflow')).toBe(true);
+      expect(emittedEvents.some((e) => e.event === 'pre-overflow')).toBe(true);
     });
   });
 

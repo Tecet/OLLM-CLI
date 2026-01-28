@@ -14,15 +14,12 @@ export interface ServerDetection {
 /**
  * Default server URL for integration tests.
  */
-export const DEFAULT_SERVER_URL =
-  process.env.OLLM_TEST_SERVER || 'http://localhost:11434';
+export const DEFAULT_SERVER_URL = process.env.OLLM_TEST_SERVER || 'http://localhost:11434';
 
 /**
  * Check if a local LLM server is available.
  */
-export async function isServerAvailable(
-  serverUrl: string = DEFAULT_SERVER_URL
-): Promise<boolean> {
+export async function isServerAvailable(serverUrl: string = DEFAULT_SERVER_URL): Promise<boolean> {
   try {
     const response = await fetch(`${serverUrl}/api/tags`, {
       signal: AbortSignal.timeout(5000),
@@ -48,7 +45,12 @@ export function skipIfNoServer(serverUrl: string = DEFAULT_SERVER_URL) {
   return async () => {
     const available = await isServerAvailable(serverUrl);
     if (!available) {
-      console.log('DEBUG: skipIfNoServer called, available=false, NODE_ENV=' + process.env.NODE_ENV + ', VITEST=' + process.env.VITEST);
+      console.log(
+        'DEBUG: skipIfNoServer called, available=false, NODE_ENV=' +
+          process.env.NODE_ENV +
+          ', VITEST=' +
+          process.env.VITEST
+      );
       if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
         console.log('⚠️  Skipping: Local LLM server not available');
         console.log(`   Set OLLM_TEST_SERVER or start server at ${serverUrl}`);

@@ -1,6 +1,6 @@
 /**
  * ServerConfigDialog - Dialog for configuring MCP server settings
- * 
+ *
  * Features:
  * - Command and arguments configuration
  * - Environment variables editor with add/remove
@@ -9,7 +9,7 @@
  * - Test connection button
  * - Secret masking for sensitive environment variables
  * - Save and Cancel buttons
- * 
+ *
  * Validates: Requirements 5.1-5.8, NFR-16
  */
 
@@ -49,12 +49,12 @@ interface EnvVar {
 function isSecretKey(key: string): boolean {
   const secretPatterns = ['API_KEY', 'TOKEN', 'SECRET', 'PASSWORD', 'PRIVATE_KEY', 'CREDENTIAL'];
   const upperKey = key.toUpperCase();
-  return secretPatterns.some(pattern => upperKey.includes(pattern));
+  return secretPatterns.some((pattern) => upperKey.includes(pattern));
 }
 
 /**
  * ServerConfigDialog component
- * 
+ *
  * Provides a comprehensive interface for configuring MCP servers:
  * - Command and arguments
  * - Environment variables with secret masking
@@ -62,11 +62,7 @@ function isSecretKey(key: string): boolean {
  * - Connection testing
  * - Form validation
  */
-export function ServerConfigDialog({
-  serverName,
-  onClose,
-  onSave,
-}: ServerConfigDialogProps) {
+export function ServerConfigDialog({ serverName, onClose, onSave }: ServerConfigDialogProps) {
   const { state } = useMCP();
   const server = state.servers.get(serverName);
 
@@ -81,7 +77,7 @@ export function ServerConfigDialog({
     server?.config.autoApprove || []
   );
   const [cwd, setCwd] = useState(server?.config.cwd || '');
-  
+
   // UI state
   const [isSaving, setIsSaving] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
@@ -114,21 +110,21 @@ export function ServerConfigDialog({
    * Add a new environment variable
    */
   const handleAddEnvVar = useCallback(() => {
-    setEnvVars(prev => [...prev, { key: '', value: '' }]);
+    setEnvVars((prev) => [...prev, { key: '', value: '' }]);
   }, []);
 
   /**
    * Remove an environment variable
    */
   const handleRemoveEnvVar = useCallback((index: number) => {
-    setEnvVars(prev => prev.filter((_, i) => i !== index));
+    setEnvVars((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
   /**
    * Update an environment variable
    */
   const handleUpdateEnvVar = useCallback((index: number, field: 'key' | 'value', value: string) => {
-    setEnvVars(prev => {
+    setEnvVars((prev) => {
       const updated = [...prev];
       updated[index] = { ...updated[index], [field]: value };
       return updated;
@@ -154,19 +150,22 @@ export function ServerConfigDialog({
       // Build config for testing
       const _testConfig: MCPServerConfig = {
         command,
-        args: args.split(' ').filter(arg => arg.trim()),
-        env: envVars.reduce((acc, { key, value }) => {
-          if (key.trim()) {
-            acc[key] = value;
-          }
-          return acc;
-        }, {} as Record<string, string>),
+        args: args.split(' ').filter((arg) => arg.trim()),
+        env: envVars.reduce(
+          (acc, { key, value }) => {
+            if (key.trim()) {
+              acc[key] = value;
+            }
+            return acc;
+          },
+          {} as Record<string, string>
+        ),
         cwd: cwd || undefined,
       };
 
       // TODO: Implement actual connection test via MCPClient
       // For now, simulate a test
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       setTestResult({
         success: true,
@@ -196,13 +195,16 @@ export function ServerConfigDialog({
       // Build config object
       const config: MCPServerConfig = {
         command,
-        args: args.split(' ').filter(arg => arg.trim()),
-        env: envVars.reduce((acc, { key, value }) => {
-          if (key.trim()) {
-            acc[key] = value;
-          }
-          return acc;
-        }, {} as Record<string, string>),
+        args: args.split(' ').filter((arg) => arg.trim()),
+        env: envVars.reduce(
+          (acc, { key, value }) => {
+            if (key.trim()) {
+              acc[key] = value;
+            }
+            return acc;
+          },
+          {} as Record<string, string>
+        ),
         cwd: cwd || undefined,
         autoApprove: autoApproveTools,
       };
@@ -219,18 +221,14 @@ export function ServerConfigDialog({
 
   // Get available tools for auto-approve selection
   const availableTools = server?.toolsList || [];
-  const toolOptions = availableTools.map(tool => ({
+  const toolOptions = availableTools.map((tool) => ({
     value: tool.name,
     label: tool.name,
     description: tool.description,
   }));
 
   return (
-    <Dialog
-      title={`Configure Server: ${serverName}`}
-      onClose={onClose}
-      width={80}
-    >
+    <Dialog title={`Configure Server: ${serverName}`} onClose={onClose} width={80}>
       <Box flexDirection="column" paddingX={1}>
         {/* Command */}
         <FormField
@@ -248,10 +246,7 @@ export function ServerConfigDialog({
         </FormField>
 
         {/* Arguments */}
-        <FormField
-          label="Arguments"
-          helpText="Space-separated command-line arguments"
-        >
+        <FormField label="Arguments" helpText="Space-separated command-line arguments">
           <TextInput
             value={args}
             onChange={setArgs}
@@ -264,11 +259,7 @@ export function ServerConfigDialog({
           label="Working Directory"
           helpText="Optional working directory for the server process"
         >
-          <TextInput
-            value={cwd}
-            onChange={setCwd}
-            placeholder="e.g., /path/to/project"
-          />
+          <TextInput value={cwd} onChange={setCwd} placeholder="e.g., /path/to/project" />
         </FormField>
 
         {/* Environment Variables */}
@@ -316,12 +307,7 @@ export function ServerConfigDialog({
               </Box>
             ))}
             <Box marginTop={1}>
-              <Button
-                label="Add Variable"
-                onPress={handleAddEnvVar}
-                variant="secondary"
-                icon="+"
-              />
+              <Button label="Add Variable" onPress={handleAddEnvVar} variant="secondary" icon="+" />
             </Box>
           </Box>
         </FormField>

@@ -20,11 +20,13 @@ This spec focuses on code quality, cleanup, and polish across the entire OLLM CL
 ## User Stories
 
 ### US-1: Code Audit
+
 **As a** developer  
 **I want** a comprehensive audit of the codebase  
 **So that** I can identify areas needing cleanup and optimization
 
 **Acceptance Criteria**:
+
 - Audit document created for each major module
 - Legacy code patterns identified
 - Unused exports documented
@@ -33,11 +35,13 @@ This spec focuses on code quality, cleanup, and polish across the entire OLLM CL
 - Complex logic flagged for documentation
 
 ### US-2: Legacy Code Removal
+
 **As a** developer  
 **I want** to remove legacy code and unused exports  
 **So that** the codebase is cleaner and easier to maintain
 
 **Acceptance Criteria**:
+
 - All unused exports removed
 - Legacy patterns replaced with modern equivalents
 - Dead code eliminated
@@ -45,11 +49,13 @@ This spec focuses on code quality, cleanup, and polish across the entire OLLM CL
 - No breaking changes to public APIs
 
 ### US-3: Code Documentation
+
 **As a** developer  
 **I want** comprehensive comments and documentation  
 **So that** I can understand complex logic and architecture decisions
 
 **Acceptance Criteria**:
+
 - All complex functions have explanatory comments
 - Architecture decisions documented
 - Public APIs have JSDoc comments
@@ -57,11 +63,13 @@ This spec focuses on code quality, cleanup, and polish across the entire OLLM CL
 - Usage examples provided
 
 ### US-4: Performance Optimization
+
 **As a** user  
 **I want** the application to be fast and responsive  
 **So that** I have a smooth experience
 
 **Acceptance Criteria**:
+
 - Performance bottlenecks identified and fixed
 - Unnecessary re-renders eliminated
 - Expensive operations optimized
@@ -69,11 +77,13 @@ This spec focuses on code quality, cleanup, and polish across the entire OLLM CL
 - Load times improved
 
 ### US-5: Code Consistency
+
 **As a** developer  
 **I want** consistent patterns and conventions  
 **So that** the codebase is predictable and easy to navigate
 
 **Acceptance Criteria**:
+
 - Naming conventions consistent
 - File structure consistent
 - Import patterns consistent
@@ -81,11 +91,13 @@ This spec focuses on code quality, cleanup, and polish across the entire OLLM CL
 - Logging patterns consistent
 
 ### US-6: Test Coverage
+
 **As a** developer  
 **I want** comprehensive test coverage  
 **So that** I can refactor with confidence
 
 **Acceptance Criteria**:
+
 - Test coverage > 80% for core modules
 - Critical paths have integration tests
 - Edge cases covered
@@ -95,18 +107,21 @@ This spec focuses on code quality, cleanup, and polish across the entire OLLM CL
 ## Technical Requirements
 
 ### TR-1: Audit Process
+
 - Create audit checklist for each module
 - Document findings in markdown files
 - Prioritize issues by severity
 - Track progress with checkboxes
 
 ### TR-2: Cleanup Guidelines
+
 - No breaking changes to public APIs
 - Maintain backward compatibility
 - Update tests after cleanup
 - Run full test suite before committing
 
 ### TR-3: Documentation Standards
+
 - Use JSDoc for all public functions
 - Add inline comments for complex logic
 - Update README files
@@ -114,6 +129,7 @@ This spec focuses on code quality, cleanup, and polish across the entire OLLM CL
 - Document architecture decisions
 
 ### TR-4: Performance Standards
+
 - Operations < 100ms for UI interactions
 - Memory usage stable over time
 - No memory leaks
@@ -121,6 +137,7 @@ This spec focuses on code quality, cleanup, and polish across the entire OLLM CL
 - Lazy loading where appropriate
 
 ### TR-5: Consistency Standards
+
 - Follow existing ESLint rules
 - Use Prettier for formatting
 - Consistent naming conventions
@@ -128,6 +145,7 @@ This spec focuses on code quality, cleanup, and polish across the entire OLLM CL
 - Consistent error handling
 
 ### TR-6: Testing Standards
+
 - Unit tests for all services
 - Integration tests for critical flows
 - Property-based tests for complex logic
@@ -137,6 +155,7 @@ This spec focuses on code quality, cleanup, and polish across the entire OLLM CL
 ## Modules to Audit
 
 ### High Priority
+
 1. **Window System** (App.tsx, WindowContext, WindowSwitcher)
 2. **Focus Management** (FocusContext, focus-related hooks)
 3. **Navigation System** (Tab navigation, ESC handling)
@@ -144,6 +163,7 @@ This spec focuses on code quality, cleanup, and polish across the entire OLLM CL
 5. **Code Editor** (EditorMockup, editor services)
 
 ### Medium Priority
+
 6. **Context Management** (ContextManager, CompressionService)
 7. **Provider System** (ProviderAdapter, LocalProvider)
 8. **Hook System** (HookRegistry, HookRunner)
@@ -151,6 +171,7 @@ This spec focuses on code quality, cleanup, and polish across the entire OLLM CL
 10. **UI Components** (Tabs, Panels, Dialogs)
 
 ### Low Priority
+
 11. **Configuration** (SettingsService, config loaders)
 12. **Utilities** (keyUtils, terminal utils)
 13. **Services** (ServiceContainer, various services)

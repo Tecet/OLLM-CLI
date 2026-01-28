@@ -27,11 +27,11 @@ export interface HookCategoryProps {
 
 /**
  * HookCategory component
- * 
+ *
  * Displays a collapsible category header with hook count.
  * Shows category name, icon, and number of hooks.
  * Supports expand/collapse functionality and focus state styling.
- * 
+ *
  * Requirements: 1.4, 1.5
  */
 export function HookCategory({
@@ -48,7 +48,7 @@ export function HookCategory({
     'Model Events': '🧠',
     'Tool Events': '🔧',
     'Compression Events': '📦',
-    'Notifications': '🔔',
+    Notifications: '🔔',
     'File Events': '📝',
     'Prompt Events': '💬',
     'User Triggered': '👤',
@@ -66,16 +66,13 @@ export function HookCategory({
   return (
     <Box flexDirection="column">
       {/* Category header */}
-      <Box
-        borderStyle="round"
-        borderColor={borderColor}
-        paddingX={1}
-      >
+      <Box borderStyle="round" borderColor={borderColor} paddingX={1}>
         <Text bold color={headerColor}>
           {expandIndicator} {icon} {category.name}
         </Text>
         <Text color={countColor}>
-          {' '}({hookCount} {hookCount === 1 ? 'hook' : 'hooks'})
+          {' '}
+          ({hookCount} {hookCount === 1 ? 'hook' : 'hooks'})
         </Text>
       </Box>
     </Box>

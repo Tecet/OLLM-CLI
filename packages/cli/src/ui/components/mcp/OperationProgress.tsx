@@ -1,9 +1,9 @@
 /**
  * OperationProgress Component
- * 
+ *
  * Displays progress for ongoing MCP operations (restart, install, etc.)
  * Shows as an overlay or notification in the MCP panel.
- * 
+ *
  * Validates: NFR-7
  */
 
@@ -19,7 +19,7 @@ export interface OperationProgressProps {
 
 /**
  * OperationProgress Component
- * 
+ *
  * Displays all ongoing operations as progress indicators.
  * Typically shown at the bottom of the MCP panel.
  */
@@ -31,11 +31,7 @@ export function OperationProgress({ operations }: OperationProgressProps) {
   return (
     <Box flexDirection="column" gap={1}>
       {Array.from(operations.entries()).map(([serverName, operation]) => (
-        <ProgressIndicator
-          key={serverName}
-          operation={operation}
-          serverName={serverName}
-        />
+        <ProgressIndicator key={serverName} operation={operation} serverName={serverName} />
       ))}
     </Box>
   );

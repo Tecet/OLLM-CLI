@@ -1,6 +1,6 @@
 /**
  * Chat Context Type Definitions
- * 
+ *
  * All type definitions for the chat context system.
  * Extracted from ChatContext.tsx for better organization.
  */
@@ -36,15 +36,15 @@ export interface InferenceMetrics {
   // Raw values from provider
   promptTokens: number;
   completionTokens: number;
-  totalDuration: number;       // Nanoseconds
-  promptDuration: number;      // Nanoseconds
-  evalDuration: number;        // Nanoseconds
-  
+  totalDuration: number; // Nanoseconds
+  promptDuration: number; // Nanoseconds
+  evalDuration: number; // Nanoseconds
+
   // Calculated values
   tokensPerSecond: number;
-  timeToFirstToken: number;    // Seconds
+  timeToFirstToken: number; // Seconds
   totalSeconds: number;
-  
+
   // Optional
   loadDuration?: number;
 }
@@ -57,16 +57,16 @@ export interface Message {
   role: 'user' | 'assistant' | 'system' | 'tool';
   content: string;
   timestamp: Date;
-  
+
   // Optional fields
   toolCalls?: ToolCall[];
   reasoning?: ReasoningBlock;
   metrics?: InferenceMetrics;
-  
+
   // UI state
   expanded?: boolean;
   editing?: boolean;
-  
+
   // Context management
   excludeFromContext?: boolean;
   toolCallId?: string; // For tool role
@@ -111,31 +111,31 @@ export interface ChatState {
  */
 export interface ChatContextValue {
   state: ChatState;
-  
+
   /** Send a message to the assistant */
   sendMessage: (content: string) => Promise<void>;
-  
+
   /** Cancel the current generation */
   cancelGeneration: () => void;
-  
+
   /** Clear all messages */
   clearChat: () => void;
-  
+
   /** Edit a message */
   editMessage: (id: string, content: string) => void;
-  
+
   /** Set the current input value */
   setCurrentInput: (input: string) => void;
-  
+
   /** Add a message to the chat */
   addMessage: (message: Omit<Message, 'id' | 'timestamp'>) => void;
-  
+
   /** Update a message */
   updateMessage: (id: string, updates: Partial<Message>) => void;
-  
+
   /** Set streaming state */
   setStreaming: (streaming: boolean) => void;
-  
+
   /** Set waiting for response state */
   setWaitingForResponse: (waiting: boolean) => void;
 
@@ -159,12 +159,15 @@ export interface ChatContextValue {
 
   /** Navigate menu */
   navigateMenu: (direction: 'up' | 'down') => void;
-  
+
   /** Activate menu for a message */
   activateMenu: (options: MenuOption[], messageId?: string) => void;
 
   /** Request manual context input */
-  requestManualContextInput: (modelId: string, onComplete: (value: number) => void | Promise<void>) => void;
+  requestManualContextInput: (
+    modelId: string,
+    onComplete: (value: number) => void | Promise<void>
+  ) => void;
 
   /** Scroll State */
   selectedLineIndex: number;
@@ -179,13 +182,13 @@ export interface ChatContextValue {
  */
 export interface ChatProviderProps {
   children: ReactNode;
-  
+
   /** Initial messages */
   initialMessages?: Message[];
-  
+
   /** Callback when a message is sent */
   onSendMessage?: (content: string) => Promise<void>;
-  
+
   /** Callback when generation is cancelled */
   onCancelGeneration?: () => void;
 }

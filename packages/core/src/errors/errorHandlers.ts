@@ -1,12 +1,12 @@
 /**
  * Common Error Handling Utilities
- * 
+ *
  * This module provides reusable error handling patterns and utilities.
  */
 
-import { 
-  FileSystemError, 
-  ConfigError, 
+import {
+  FileSystemError,
+  ConfigError,
   ProviderConnectionError,
   TimeoutError,
   AbortError,
@@ -29,64 +29,29 @@ export async function handleFileSystemError<T>(
       // Handle specific Node.js error codes
       switch (error.code) {
         case 'ENOENT':
-          throw new FileSystemError(
-            `File not found: ${path}`,
-            operation,
-            path,
-            error
-          );
-        
+          throw new FileSystemError(`File not found: ${path}`, operation, path, error);
+
         case 'EACCES':
         case 'EPERM':
-          throw new FileSystemError(
-            `Permission denied: ${path}`,
-            operation,
-            path,
-            error
-          );
-        
+          throw new FileSystemError(`Permission denied: ${path}`, operation, path, error);
+
         case 'EEXIST':
-          throw new FileSystemError(
-            `File already exists: ${path}`,
-            operation,
-            path,
-            error
-          );
-        
+          throw new FileSystemError(`File already exists: ${path}`, operation, path, error);
+
         case 'ENOTDIR':
-          throw new FileSystemError(
-            `Not a directory: ${path}`,
-            operation,
-            path,
-            error
-          );
-        
+          throw new FileSystemError(`Not a directory: ${path}`, operation, path, error);
+
         case 'EISDIR':
-          throw new FileSystemError(
-            `Is a directory: ${path}`,
-            operation,
-            path,
-            error
-          );
-        
+          throw new FileSystemError(`Is a directory: ${path}`, operation, path, error);
+
         case 'ENOSPC':
-          throw new FileSystemError(
-            `No space left on device: ${path}`,
-            operation,
-            path,
-            error
-          );
-        
+          throw new FileSystemError(`No space left on device: ${path}`, operation, path, error);
+
         default:
-          throw new FileSystemError(
-            `File system error: ${error.message}`,
-            operation,
-            path,
-            error
-          );
+          throw new FileSystemError(`File system error: ${error.message}`, operation, path, error);
       }
     }
-    
+
     throw new FileSystemError(
       `File system error: ${getErrorMessage(error)}`,
       operation,
@@ -99,24 +64,15 @@ export async function handleFileSystemError<T>(
 /**
  * Handle JSON parsing errors with proper error types
  */
-export function handleJSONParseError<T>(
-  content: string,
-  filePath?: string
-): T {
+export function handleJSONParseError<T>(content: string, filePath?: string): T {
   try {
     return JSON.parse(content) as T;
   } catch (error) {
     if (error instanceof SyntaxError) {
-      throw new ConfigError(
-        `Invalid JSON: ${error.message}`,
-        filePath
-      );
+      throw new ConfigError(`Invalid JSON: ${error.message}`, filePath);
     }
-    
-    throw new ConfigError(
-      `Failed to parse JSON: ${getErrorMessage(error)}`,
-      filePath
-    );
+
+    throw new ConfigError(`Failed to parse JSON: ${getErrorMessage(error)}`, filePath);
   }
 }
 
@@ -141,7 +97,7 @@ export async function handleProviderError<T>(
             host,
             error
           );
-        
+
         case 'ENOTFOUND':
           throw new ProviderConnectionError(
             `Cannot connect to provider at ${host}: Host not found`,
@@ -149,7 +105,7 @@ export async function handleProviderError<T>(
             host,
             error
           );
-        
+
         case 'ETIMEDOUT':
           throw new ProviderConnectionError(
             `Cannot connect to provider at ${host}: Connection timed out`,
@@ -157,7 +113,7 @@ export async function handleProviderError<T>(
             host,
             error
           );
-        
+
         default:
           throw new ProviderConnectionError(
             `Provider connection error: ${error.message}`,
@@ -167,7 +123,7 @@ export async function handleProviderError<T>(
           );
       }
     }
-    
+
     throw new ProviderConnectionError(
       `Provider error: ${getErrorMessage(error)}`,
       provider,
@@ -188,32 +144,25 @@ export async function withTimeout<T>(
 ): Promise<T> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-  
+
   try {
     // Combine signals if provided
-    const _combinedSignal = signal 
+    const _combinedSignal = signal
       ? combineAbortSignals([signal, controller.signal])
       : controller.signal;
-    
+
     const result = await fn();
     return result;
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
       // Check if it was our timeout or external abort
       if (controller.signal.aborted && !signal?.aborted) {
-        throw new TimeoutError(
-          `Operation timed out after ${timeoutMs}ms`,
-          operation,
-          timeoutMs
-        );
+        throw new TimeoutError(`Operation timed out after ${timeoutMs}ms`, operation, timeoutMs);
       }
-      
-      throw new AbortError(
-        'Operation cancelled by user',
-        operation
-      );
+
+      throw new AbortError('Operation cancelled by user', operation);
     }
-    
+
     throw error;
   } finally {
     clearTimeout(timeoutId);
@@ -225,16 +174,16 @@ export async function withTimeout<T>(
  */
 function combineAbortSignals(signals: AbortSignal[]): AbortSignal {
   const controller = new AbortController();
-  
+
   for (const signal of signals) {
     if (signal.aborted) {
       controller.abort();
       break;
     }
-    
+
     signal.addEventListener('abort', () => controller.abort(), { once: true });
   }
-  
+
   return controller.signal;
 }
 
@@ -243,10 +192,7 @@ function combineAbortSignals(signals: AbortSignal[]): AbortSignal {
  */
 export function checkAborted(signal: AbortSignal | undefined, operation: string): void {
   if (signal?.aborted) {
-    throw new AbortError(
-      'Operation cancelled by user',
-      operation
-    );
+    throw new AbortError('Operation cancelled by user', operation);
   }
 }
 
@@ -271,34 +217,34 @@ export async function withRetry<T>(
     backoffMultiplier = 2,
     shouldRetry = () => true,
   } = options;
-  
+
   let lastError: unknown;
   let delayMs = initialDelayMs;
-  
+
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       return await fn();
     } catch (error) {
       lastError = error;
-      
+
       // Don't retry if we've exhausted attempts
       if (attempt === maxRetries) {
         break;
       }
-      
+
       // Don't retry if error is not retryable
       if (!shouldRetry(error)) {
         break;
       }
-      
+
       // Wait before retrying
-      await new Promise(resolve => setTimeout(resolve, delayMs));
-      
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+
       // Increase delay for next attempt
       delayMs = Math.min(delayMs * backoffMultiplier, maxDelayMs);
     }
   }
-  
+
   throw lastError;
 }
 
@@ -316,10 +262,8 @@ export async function withFallback<T>(
     if (onError) {
       onError(error);
     }
-    
-    return typeof fallback === 'function' 
-      ? await (fallback as () => T | Promise<T>)()
-      : fallback;
+
+    return typeof fallback === 'function' ? await (fallback as () => T | Promise<T>)() : fallback;
   }
 }
 
@@ -334,14 +278,14 @@ export class AggregateError extends Error {
     super(message);
     this.name = 'AggregateError';
   }
-  
+
   toString(): string {
     let result = `${this.message}\n`;
-    
+
     for (let i = 0; i < this.errors.length; i++) {
       result += `\n${i + 1}. ${this.errors[i].message}`;
     }
-    
+
     return result;
   }
 }
@@ -355,7 +299,7 @@ export async function collectErrors<T>(
 ): Promise<{ results: T[]; errors: Error[] }> {
   const results: T[] = [];
   const errors: Error[] = [];
-  
+
   for (const operation of operations) {
     try {
       const result = await operation();
@@ -366,12 +310,12 @@ export async function collectErrors<T>(
       } else {
         errors.push(new Error(String(error)));
       }
-      
+
       if (!continueOnError) {
         break;
       }
     }
   }
-  
+
   return { results, errors };
 }

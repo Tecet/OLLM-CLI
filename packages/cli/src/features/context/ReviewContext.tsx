@@ -24,25 +24,25 @@ export interface Review {
 export interface ReviewContextValue {
   /** All reviews */
   reviews: Review[];
-  
+
   /** Number of pending reviews */
   pendingCount: number;
-  
+
   /** Approve a review */
   approve: (id: string) => Promise<void>;
-  
+
   /** Reject a review */
   reject: (id: string) => Promise<void>;
-  
+
   /** Approve all pending reviews */
   approveAll: () => Promise<void>;
-  
+
   /** Reject all pending reviews */
   rejectAll: () => Promise<void>;
-  
+
   /** Add a new review */
   addReview: (review: Omit<Review, 'id' | 'status' | 'timestamp'>) => void;
-  
+
   /** Get pending reviews */
   getPendingReviews: () => Review[];
 }
@@ -51,13 +51,13 @@ const ReviewContext = createContext<ReviewContextValue | undefined>(undefined);
 
 export interface ReviewProviderProps {
   children: ReactNode;
-  
+
   /** Initial reviews */
   initialReviews?: Review[];
-  
+
   /** Callback when a review is approved */
   onApprove?: (review: Review) => Promise<void>;
-  
+
   /** Callback when a review is rejected */
   onReject?: (review: Review) => Promise<void>;
 }
@@ -128,7 +128,7 @@ export function ReviewProvider({
 
   const approveAll = useCallback(async () => {
     const pending = reviews.filter((r) => r.status === 'pending');
-    
+
     try {
       // Approve all pending reviews
       for (const review of pending) {
@@ -147,7 +147,7 @@ export function ReviewProvider({
 
   const rejectAll = useCallback(async () => {
     const pending = reviews.filter((r) => r.status === 'pending');
-    
+
     try {
       // Reject all pending reviews
       for (const review of pending) {

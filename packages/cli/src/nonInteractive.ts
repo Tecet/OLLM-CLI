@@ -3,7 +3,7 @@
  * Handles single-prompt execution without the TUI.
  */
 
-import { ProviderRegistry, ChatClient , ToolRegistry } from '@ollm/core';
+import { ProviderRegistry, ChatClient, ToolRegistry } from '@ollm/core';
 import { NonInteractiveError } from '@ollm/ollm-cli-core/errors/index.js';
 
 import { LocalProvider } from '../../ollm-bridge/src/provider/localProvider.js';
@@ -82,27 +82,27 @@ export class NonInteractiveRunner {
         NonInteractiveErrorCode.INVALID_OUTPUT_FORMAT
       );
     }
-    
+
     const startTime = Date.now();
-    
+
     // Initialize provider registry
     const providerRegistry = new ProviderRegistry();
-    
+
     // Register providers based on config
     const providerName = options.provider || options.config.provider.default;
-    
+
     try {
       if (providerName === 'ollama' || providerName === 'local') {
         const ollamaConfig = options.config.provider.ollama || {
           host: 'http://localhost:11434',
           timeout: 30000,
         };
-        
+
         const localProvider = new LocalProvider({
           baseUrl: ollamaConfig.host,
           timeout: ollamaConfig.timeout,
         });
-        
+
         providerRegistry.register(localProvider);
         providerRegistry.setDefault('local');
       }
@@ -117,44 +117,44 @@ export class NonInteractiveRunner {
       if (error instanceof NonInteractiveError) {
         throw error;
       }
-      
+
       // Enhance error message with connection details
       let enhancedMessage = `Failed to initialize provider: ${error instanceof Error ? error.message : String(error)}`;
-      
+
       if (providerName === 'ollama' || providerName === 'local') {
         const host = options.config.provider.ollama?.host || 'http://localhost:11434';
         enhancedMessage += `\n  Provider: ${providerName}\n  Host: ${host}`;
       }
-      
+
       throw new NonInteractiveError(
         enhancedMessage,
         NonInteractiveErrorCode.PROVIDER_CONNECTION_FAILURE
       );
     }
-    
+
     // Initialize tool registry (empty for now)
     const toolRegistry = new ToolRegistry();
-    
+
     // Initialize chat client
     // Cast toolRegistry to unknown to bypass type mismatch with Turn's ToolRegistry interface
     const chatClient = new ChatClient(providerRegistry, toolRegistry as unknown as any);
-    
+
     // Determine model
     const model = options.model || options.config.model.default;
-    
+
     // Set up timeout if configured
     const timeout = options.config.provider.ollama?.timeout || 30000;
     const abortController = new AbortController();
     const timeoutId = setTimeout(() => {
       abortController.abort();
     }, timeout);
-    
+
     // Execute chat
     let response = '';
     let hasError = false;
     let errorMessage = '';
     let errorCode = NonInteractiveErrorCode.GENERAL_ERROR;
-    
+
     try {
       for await (const event of chatClient.chat(options.prompt, {
         model,
@@ -163,7 +163,7 @@ export class NonInteractiveRunner {
       })) {
         if (event.type === 'text') {
           response += event.value;
-          
+
           // For stream-json output, emit each text chunk
           if (options.output === 'stream-json') {
             this.emitStreamEvent({ type: 'text', data: event.value });
@@ -190,7 +190,7 @@ export class NonInteractiveRunner {
         } else if (event.type === 'error') {
           hasError = true;
           errorMessage = event.error.message;
-          
+
           // Determine error code based on message
           if (errorMessage.includes('Provider') || errorMessage.includes('connection')) {
             errorCode = NonInteractiveErrorCode.PROVIDER_CONNECTION_FAILURE;
@@ -199,7 +199,7 @@ export class NonInteractiveRunner {
           } else if (errorMessage.includes('timeout') || errorMessage.includes('aborted')) {
             errorCode = NonInteractiveErrorCode.TIMEOUT;
           }
-          
+
           if (options.output === 'stream-json') {
             this.emitStreamEvent({ type: 'error', data: { message: event.error.message } });
           }
@@ -207,10 +207,10 @@ export class NonInteractiveRunner {
       }
     } catch (error) {
       hasError = true;
-      
+
       if (error instanceof Error) {
         errorMessage = error.message;
-        
+
         // Check for timeout/abort
         if (error.name === 'AbortError' || errorMessage.includes('aborted')) {
           errorCode = NonInteractiveErrorCode.TIMEOUT;
@@ -221,7 +221,11 @@ export class NonInteractiveRunner {
           errorMessage = `Cannot connect to provider at ${host}: ${errorMessage}`;
         } else if (errorMessage.includes('Provider') || errorMessage.includes('connection')) {
           errorCode = NonInteractiveErrorCode.PROVIDER_CONNECTION_FAILURE;
-        } else if (errorMessage.includes('model') || errorMessage.includes('not found') || errorMessage.includes('404')) {
+        } else if (
+          errorMessage.includes('model') ||
+          errorMessage.includes('not found') ||
+          errorMessage.includes('404')
+        ) {
           errorCode = NonInteractiveErrorCode.MODEL_NOT_FOUND;
           errorMessage = `Model "${model}" not found. ${errorMessage}`;
         }
@@ -231,14 +235,14 @@ export class NonInteractiveRunner {
     } finally {
       clearTimeout(timeoutId);
     }
-    
+
     const duration = Date.now() - startTime;
-    
+
     // If there was an error, throw it with the appropriate exit code
     if (hasError) {
       throw new NonInteractiveError(errorMessage, errorCode);
     }
-    
+
     // Build result
     const result: NonInteractiveResult = {
       response,
@@ -248,10 +252,10 @@ export class NonInteractiveRunner {
         duration,
       },
     };
-    
+
     return result;
   }
-  
+
   /**
    * Format output according to the specified format.
    * @param result The execution result
@@ -262,20 +266,20 @@ export class NonInteractiveRunner {
     switch (format) {
       case 'text':
         return result.response;
-      
+
       case 'json':
         return JSON.stringify(result, null, 2);
-      
+
       case 'stream-json':
         // For stream-json, events are emitted during execution
         // This is just for the final result
         return '';
-      
+
       default:
         return result.response;
     }
   }
-  
+
   /**
    * Emit a stream event for stream-json output.
    * @param event The event to emit
@@ -283,7 +287,7 @@ export class NonInteractiveRunner {
   private emitStreamEvent(event: StreamEvent): void {
     console.log(JSON.stringify(event));
   }
-  
+
   /**
    * Handle errors and write to stderr with detailed information.
    * @param error The error to handle
@@ -291,13 +295,13 @@ export class NonInteractiveRunner {
   handleError(error: Error | NonInteractiveError): never {
     // Write error to stderr
     console.error(`\nError: ${error.message}`);
-    
+
     // Determine exit code
     let exitCode = NonInteractiveErrorCode.GENERAL_ERROR;
-    
+
     if (error instanceof NonInteractiveError) {
       exitCode = error.exitCode;
-      
+
       // Provide helpful suggestions based on error type
       switch (exitCode) {
         case NonInteractiveErrorCode.PROVIDER_CONNECTION_FAILURE:
@@ -311,7 +315,7 @@ export class NonInteractiveRunner {
           console.error('  - Start Ollama: ollama serve');
           console.error('  - Default host: http://localhost:11434');
           break;
-        
+
         case NonInteractiveErrorCode.MODEL_NOT_FOUND:
           console.error('\n❌ Model Status: Not Found');
           console.error('\nRetry Options:');
@@ -322,7 +326,7 @@ export class NonInteractiveRunner {
           console.error('  ollm --pull-model llama3.2:3b');
           console.error('  ollm --list-models');
           break;
-        
+
         case NonInteractiveErrorCode.TIMEOUT:
           console.error('\n⏱️  Connection Status: Timeout');
           console.error('\nRetry Options:');
@@ -336,7 +340,7 @@ export class NonInteractiveRunner {
           console.error('    ollama:');
           console.error('      timeout: 60000  # 60 seconds');
           break;
-        
+
         case NonInteractiveErrorCode.INVALID_OUTPUT_FORMAT:
           console.error('\n❌ Invalid Output Format');
           console.error('\nValid output formats:');
@@ -346,7 +350,7 @@ export class NonInteractiveRunner {
           console.error('\nExample:');
           console.error('  ollm --prompt "Hello" --output json');
           break;
-        
+
         default:
           console.error('\nFor more help, run: ollm --help');
           break;
@@ -354,7 +358,7 @@ export class NonInteractiveRunner {
     } else {
       console.error('\nFor more help, run: ollm --help');
     }
-    
+
     console.error(''); // Empty line before exit
     process.exit(exitCode);
   }
@@ -369,20 +373,20 @@ export async function readStdin(): Promise<string | null> {
   if (process.stdin.isTTY) {
     return null;
   }
-  
+
   return new Promise((resolve, reject) => {
     let data = '';
-    
+
     process.stdin.setEncoding('utf8');
-    
+
     process.stdin.on('data', (chunk) => {
       data += chunk;
     });
-    
+
     process.stdin.on('end', () => {
       resolve(data.trim());
     });
-    
+
     process.stdin.on('error', (error) => {
       reject(error);
     });

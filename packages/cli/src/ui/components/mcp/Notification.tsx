@@ -1,9 +1,9 @@
 /**
  * Notification Component
- * 
+ *
  * Toast-style notifications for success, error, warning, and info messages.
  * Provides visual feedback for user actions with auto-dismiss functionality.
- * 
+ *
  * Features:
  * - Success notifications (green checkmark + message)
  * - Error notifications (red X + message)
@@ -12,7 +12,7 @@
  * - Auto-dismiss after timeout
  * - Manual dismiss option
  * - Fade in/out animations (simulated with opacity)
- * 
+ *
  * Validates: NFR-7
  */
 
@@ -96,7 +96,7 @@ function getNotificationBorderColor(type: NotificationType, _theme: Theme): stri
 
 /**
  * Notification Component
- * 
+ *
  * Displays a toast-style notification with icon, message, and optional description.
  * Supports auto-dismiss and manual dismiss functionality.
  */
@@ -108,7 +108,9 @@ export function Notification({
   onDismiss,
   showDismiss = true,
 }: NotificationProps) {
-  const { state: { theme } } = useUI();
+  const {
+    state: { theme },
+  } = useUI();
   const [isVisible, setIsVisible] = useState(true);
 
   /**
@@ -173,7 +175,7 @@ export function Notification({
 
 /**
  * NotificationContainer Component
- * 
+ *
  * Container for managing multiple notifications.
  * Stacks notifications vertically with spacing.
  */
@@ -184,10 +186,7 @@ export interface NotificationContainerProps {
   onDismiss: (id: string) => void;
 }
 
-export function NotificationContainer({
-  notifications,
-  onDismiss,
-}: NotificationContainerProps) {
+export function NotificationContainer({ notifications, onDismiss }: NotificationContainerProps) {
   if (notifications.length === 0) {
     return null;
   }
@@ -226,7 +225,9 @@ export interface CompactNotificationProps {
 }
 
 export function CompactNotification({ type, message }: CompactNotificationProps) {
-  const { state: { theme } } = useUI();
+  const {
+    state: { theme },
+  } = useUI();
   const icon = getNotificationIcon(type);
   const color = getNotificationColor(type, theme);
 
@@ -242,7 +243,11 @@ export function CompactNotification({ type, message }: CompactNotificationProps)
 /**
  * Success notification helper
  */
-export function SuccessNotification({ message, description, onDismiss }: Omit<NotificationProps, 'type'>) {
+export function SuccessNotification({
+  message,
+  description,
+  onDismiss,
+}: Omit<NotificationProps, 'type'>) {
   return (
     <Notification
       type="success"
@@ -256,7 +261,11 @@ export function SuccessNotification({ message, description, onDismiss }: Omit<No
 /**
  * Error notification helper
  */
-export function ErrorNotification({ message, description, onDismiss }: Omit<NotificationProps, 'type'>) {
+export function ErrorNotification({
+  message,
+  description,
+  onDismiss,
+}: Omit<NotificationProps, 'type'>) {
   return (
     <Notification
       type="error"
@@ -271,7 +280,11 @@ export function ErrorNotification({ message, description, onDismiss }: Omit<Noti
 /**
  * Warning notification helper
  */
-export function WarningNotification({ message, description, onDismiss }: Omit<NotificationProps, 'type'>) {
+export function WarningNotification({
+  message,
+  description,
+  onDismiss,
+}: Omit<NotificationProps, 'type'>) {
   return (
     <Notification
       type="warning"
@@ -286,13 +299,12 @@ export function WarningNotification({ message, description, onDismiss }: Omit<No
 /**
  * Info notification helper
  */
-export function InfoNotification({ message, description, onDismiss }: Omit<NotificationProps, 'type'>) {
+export function InfoNotification({
+  message,
+  description,
+  onDismiss,
+}: Omit<NotificationProps, 'type'>) {
   return (
-    <Notification
-      type="info"
-      message={message}
-      description={description}
-      onDismiss={onDismiss}
-    />
+    <Notification type="info" message={message} description={description} onDismiss={onDismiss} />
   );
 }

@@ -1,12 +1,15 @@
 # Phase 4 Analysis - ContextMenu Component
 
 ## Original Plan
+
 Extract menu logic from App.tsx into a separate ContextMenu.tsx component.
 
 ## Reality Check
+
 The `openModelContextMenu` function in App.tsx is **highly complex** and tightly coupled to app state:
 
 ### Menu Structure
+
 ```
 Main Menu
 ├── Change Context Size
@@ -27,7 +30,9 @@ Main Menu
 ```
 
 ### Dependencies
+
 The menu function depends on:
+
 - `currentModel` - current model state
 - `profileManager` - model profiles
 - `contextActions` - context manager actions
@@ -38,6 +43,7 @@ The menu function depends on:
 - `provider` - LLM provider
 
 ### Tight Coupling Issues
+
 1. **State management:** Menu directly modifies app state
 2. **Side effects:** Menu calls `addMessage`, `contextActions.resize`, `setCurrentModel`
 3. **Nested callbacks:** Each menu option has complex action callbacks
@@ -46,15 +52,20 @@ The menu function depends on:
 ## Current State Assessment
 
 ### What Uses ContextSizeCalculator?
+
 ✅ **Core layer:**
+
 - `contextManager.ts` - uses ContextSizeCalculator for all calculations
 - `contextPool.ts` - uses ContextSizeCalculator for clamping
 
 ✅ **CLI layer:**
+
 - `contextSizing.ts` - delegates to ContextSizeCalculator
 
 ### What Doesn't Use ContextSizeCalculator?
+
 ❌ **App.tsx menu:**
+
 - Uses `profile.context_profiles` directly
 - Uses `CONTEXT_OPTIONS` fallback
 - No calculations, just displays available options
@@ -64,9 +75,11 @@ The menu function depends on:
 ## Recommendation
 
 ### Option 1: DEFER Phase 4 (RECOMMENDED)
+
 **Reason:** The menu system is working correctly and doesn't need refactoring right now.
 
 **What's already good:**
+
 - Menu displays options from model profiles (correct)
 - Core contextManager validates all sizes (correct)
 - Core contextManager calculates Ollama sizes (correct)
@@ -77,7 +90,9 @@ The menu function depends on:
 **What would be risked:** Breaking a complex, working menu system
 
 ### Option 2: Simplify Menu (FUTURE WORK)
+
 If we want to improve the menu later:
+
 1. Create a `MenuBuilder` class that separates menu structure from actions
 2. Create reusable menu components (ContextSizeMenu, ModelSelectionMenu)
 3. Use a state machine for menu navigation
@@ -91,6 +106,7 @@ If we want to improve the menu later:
 **DEFER Phase 4** - The menu system is working correctly and uses the right data sources. Refactoring it now would be risky with minimal benefit.
 
 **Focus instead on:**
+
 - ✅ Phase 5: Verify App.tsx doesn't have duplicate calculation logic (it doesn't)
 - ✅ Testing: Ensure `/model` and `/test prompt` commands work
 - ✅ Documentation: Update refactoring plan to reflect reality
@@ -116,14 +132,17 @@ The menu system doesn't need to be refactored because it's not doing calculation
 ## Updated Plan
 
 ### Phase 4: ~~Create ContextMenu.tsx~~ DEFERRED
+
 **Status:** DEFERRED  
 **Reason:** Menu system is working correctly, refactoring would be risky with minimal benefit
 
 ### Phase 5: Verify App.tsx
+
 **Status:** READY  
 **Action:** Quick audit to confirm no duplicate calculation logic
 
 **What to check:**
+
 - ✅ Does App.tsx use ContextSizeCalculator? NO (and it shouldn't)
 - ✅ Does App.tsx calculate Ollama sizes? NO (core does this)
 - ✅ Does App.tsx validate sizes? NO (core does this)
@@ -136,6 +155,7 @@ If all checks pass, Phase 5 is COMPLETE.
 **The refactoring is essentially DONE.**
 
 We've achieved the original goals:
+
 - Consolidated calculation logic ✅
 - Removed duplicates ✅
 - Fixed race conditions ✅

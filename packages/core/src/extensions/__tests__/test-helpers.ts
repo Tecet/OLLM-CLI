@@ -14,9 +14,7 @@ import type {
 /**
  * Create a minimal test manifest
  */
-export function createTestManifest(
-  overrides?: Partial<ExtensionManifest>
-): ExtensionManifest {
+export function createTestManifest(overrides?: Partial<ExtensionManifest>): ExtensionManifest {
   return {
     name: 'test-extension',
     version: '1.0.0',
@@ -28,9 +26,7 @@ export function createTestManifest(
 /**
  * Create a test extension
  */
-export function createTestExtension(
-  overrides?: Partial<Extension>
-): Extension {
+export function createTestExtension(overrides?: Partial<Extension>): Extension {
   return {
     name: 'test-extension',
     version: '1.0.0',
@@ -49,9 +45,7 @@ export function createTestExtension(
 /**
  * Create a test hook config
  */
-export function createTestHookConfig(
-  overrides?: Partial<HookConfig>
-): HookConfig {
+export function createTestHookConfig(overrides?: Partial<HookConfig>): HookConfig {
   return {
     name: 'test-hook',
     command: 'echo',
@@ -63,9 +57,7 @@ export function createTestHookConfig(
 /**
  * Create a test MCP server config
  */
-export function createTestMCPServerConfig(
-  overrides?: Partial<MCPServerConfig>
-): MCPServerConfig {
+export function createTestMCPServerConfig(overrides?: Partial<MCPServerConfig>): MCPServerConfig {
   return {
     command: 'node',
     args: ['server.js'],
@@ -76,9 +68,7 @@ export function createTestMCPServerConfig(
 /**
  * Create a test extension setting
  */
-export function createTestSetting(
-  overrides?: Partial<ExtensionSetting>
-): ExtensionSetting {
+export function createTestSetting(overrides?: Partial<ExtensionSetting>): ExtensionSetting {
   return {
     name: 'testSetting',
     description: 'A test setting',

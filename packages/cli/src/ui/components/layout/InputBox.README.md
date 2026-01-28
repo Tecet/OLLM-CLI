@@ -7,30 +7,35 @@ The `InputBox` component is a multi-line input field for the OLLM CLI terminal i
 ## Features
 
 ### 1. Multi-line Input Support (Requirement 20.9)
+
 - Automatically displays input across multiple lines
 - Tracks cursor position within multi-line text
 - Renders each line separately for proper display
 - Handles line wrapping and navigation
 
 ### 2. Enter to Send (Requirement 20.10)
+
 - Press Enter to send the current message
 - Input is cleared after sending
 - Message is added to chat history via ChatContext
 - Disabled when component is in disabled state
 
 ### 3. Shift+Enter for Newline (Requirement 20.11)
+
 - Press Shift+Enter to insert a newline character
 - Cursor moves to the next line
 - Message is not sent
 - Allows composing multi-line messages
 
 ### 4. Up Arrow for Edit Previous (Requirement 20.11)
+
 - Press Up arrow (when input is empty) to load previous user message
 - Navigate through message history
 - Shows history indicator with current position
 - Exits history mode when typing new content
 
 ### 5. Additional Features
+
 - Visual cursor indicator showing current position
 - Disabled state for waiting periods
 - Theme customization support
@@ -73,35 +78,39 @@ function MyApp() {
 ## Props
 
 ### `theme` (required)
+
 Theme configuration for colors and styling.
 
 ```typescript
 {
   text: {
-    primary: string;    // Main text color
-    secondary: string;  // Secondary text color (hints, labels)
-    accent: string;     // Accent color (prompt, border)
-  };
+    primary: string; // Main text color
+    secondary: string; // Secondary text color (hints, labels)
+    accent: string; // Accent color (prompt, border)
+  }
   bg: {
-    primary: string;    // Primary background color
-    secondary: string;  // Secondary background color
-  };
+    primary: string; // Primary background color
+    secondary: string; // Secondary background color
+  }
 }
 ```
 
 ### `keybinds` (required)
+
 Keyboard shortcut configuration.
 
 ```typescript
 {
-  send: string;         // Key to send message (default: 'return')
-  newline: string;      // Key to insert newline (default: 'shift+return')
+  send: string; // Key to send message (default: 'return')
+  newline: string; // Key to insert newline (default: 'shift+return')
   editPrevious: string; // Key to edit previous message (default: 'up')
 }
 ```
 
 ### `disabled` (optional)
+
 Whether the input is disabled. When true:
+
 - Shows "Waiting for response..." message
 - Prevents all input
 - Changes border color to secondary
@@ -111,15 +120,15 @@ Default: `false`
 
 ## Keyboard Shortcuts
 
-| Key | Action |
-|-----|--------|
-| Enter | Send message |
-| Shift+Enter | Insert newline |
-| Up Arrow | Edit previous message (when input is empty) |
-| Left Arrow | Move cursor left |
-| Right Arrow | Move cursor right |
-| Backspace | Delete character before cursor |
-| Any character | Insert character at cursor position |
+| Key           | Action                                      |
+| ------------- | ------------------------------------------- |
+| Enter         | Send message                                |
+| Shift+Enter   | Insert newline                              |
+| Up Arrow      | Edit previous message (when input is empty) |
+| Left Arrow    | Move cursor left                            |
+| Right Arrow   | Move cursor right                           |
+| Backspace     | Delete character before cursor              |
+| Any character | Insert character at cursor position         |
 
 ## Integration with ChatContext
 
@@ -141,6 +150,7 @@ The InputBox component integrates with ChatContext for:
 ## Visual Behavior
 
 ### Normal State
+
 ```
 ┌─────────────────────────────────────────────────────┐
 │ > Type your message (Enter to send, Shift+Enter... │
@@ -151,6 +161,7 @@ The InputBox component integrates with ChatContext for:
 ```
 
 ### Disabled State
+
 ```
 ┌─────────────────────────────────────────────────────┐
 │ ⏸ Waiting for response...                          │
@@ -158,6 +169,7 @@ The InputBox component integrates with ChatContext for:
 ```
 
 ### History Mode
+
 ```
 ┌─────────────────────────────────────────────────────┐
 │ > Type your message (Enter to send, Shift+Enter... │
@@ -169,24 +181,30 @@ The InputBox component integrates with ChatContext for:
 ## Implementation Details
 
 ### Cursor Rendering
+
 The cursor is rendered as an inverse character at the current position:
+
 - Shows the character under the cursor with inverted colors
 - Displays a space if at the end of a line
 - Updates position based on keyboard input
 
 ### Multi-line Display
+
 Input is split into lines and rendered separately:
+
 - Each line is a separate Box component
 - Empty lines show a space to maintain height
 - Cursor is shown on the current line only
 
 ### History Navigation
+
 - Tracks history index (-1 when not in history mode)
 - Filters messages to only include user messages
 - Loads message content and sets cursor to end
 - Exits history mode when user types new content
 
 ### State Management
+
 - Local state for input and cursor position
 - Syncs with ChatContext for persistence
 - Updates context on every change
@@ -215,6 +233,7 @@ The component includes comprehensive tests:
    - Integration patterns
 
 Run tests:
+
 ```bash
 npm test -- InputBox --run
 ```
@@ -222,21 +241,25 @@ npm test -- InputBox --run
 ## Requirements Validation
 
 ✅ **Requirement 20.9**: Multi-line input support
+
 - Input displays across multiple lines
 - Cursor tracks position in multi-line text
 - Each line renders separately
 
 ✅ **Requirement 20.10**: Enter to send
+
 - Enter key sends message
 - Input clears after sending
 - Message added to history
 
 ✅ **Requirement 20.11**: Shift+Enter for newline
+
 - Shift+Enter inserts newline
 - Cursor moves to next line
 - Message not sent
 
 ✅ **Requirement 20.11**: Up arrow for edit previous
+
 - Up arrow loads previous message
 - History navigation supported
 - History indicator shown

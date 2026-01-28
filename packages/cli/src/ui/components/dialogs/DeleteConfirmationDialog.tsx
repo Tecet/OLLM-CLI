@@ -1,12 +1,12 @@
 /**
  * DeleteConfirmationDialog - Confirmation dialog for deleting hooks
- * 
+ *
  * Features:
  * - Shows hook name and warning message
  * - Confirm and cancel buttons
  * - Built-in hook protection
  * - Visual warning styling
- * 
+ *
  * Requirements: 3.6, 3.7
  */
 
@@ -115,9 +115,7 @@ export function DeleteConfirmationDialog({
 
       {/* Actions */}
       <Box gap={2}>
-        <Text color={isDeleting ? 'gray' : 'red'}>
-          {isDeleting ? 'Deleting...' : '[D] Delete'}
-        </Text>
+        <Text color={isDeleting ? 'gray' : 'red'}>{isDeleting ? 'Deleting...' : '[D] Delete'}</Text>
         <Text color="yellow">[C] Cancel</Text>
       </Box>
     </Box>

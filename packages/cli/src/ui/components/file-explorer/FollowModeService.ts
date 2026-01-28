@@ -1,9 +1,9 @@
 /**
  * FollowModeService
- * 
+ *
  * Service for detecting LLM-referenced file paths in chat messages
  * and automatically expanding the file tree to show those files.
- * 
+ *
  * Requirements: 7.5 (Follow Mode automatic expansion)
  */
 
@@ -11,13 +11,13 @@ import * as path from 'path';
 
 /**
  * Pattern to match file paths in text
- * 
+ *
  * Matches:
  * - Absolute paths: /path/to/file.ts, C:\path\to\file.ts
  * - Relative paths: ./path/to/file.ts, ../path/to/file.ts, src/file.ts
  * - Paths with spaces: /path/to/my file.ts
  * - Common file extensions
- * 
+ *
  * The pattern looks for:
  * 1. Positive lookbehind for start of string or whitespace (including after punctuation)
  * 2. Optional leading ./ or ../ or drive letter or absolute path
@@ -25,33 +25,81 @@ import * as path from 'path';
  * 4. File name with extension
  * 5. Positive lookahead for whitespace, punctuation, or end of string
  */
-const FILE_PATH_PATTERN = /(?<=^|\s)((\.\.?\/|[a-zA-Z]:[\\/]|\/)?[^\s:*?"<>|`]+\.[a-zA-Z0-9]+)(?=\s|,|;|:|\.(?=\s|$)|$)/g;
+const FILE_PATH_PATTERN =
+  /(?<=^|\s)((\.\.?\/|[a-zA-Z]:[\\/]|\/)?[^\s:*?"<>|`]+\.[a-zA-Z0-9]+)(?=\s|,|;|:|\.(?=\s|$)|$)/g;
 
 /**
  * Common file extensions to validate detected paths
  */
 const COMMON_EXTENSIONS = new Set([
   // Programming languages
-  'ts', 'tsx', 'js', 'jsx', 'py', 'java', 'cpp', 'c', 'h', 'hpp',
-  'go', 'rs', 'rb', 'php', 'swift', 'kt', 'cs', 'scala', 'sh',
-  
+  'ts',
+  'tsx',
+  'js',
+  'jsx',
+  'py',
+  'java',
+  'cpp',
+  'c',
+  'h',
+  'hpp',
+  'go',
+  'rs',
+  'rb',
+  'php',
+  'swift',
+  'kt',
+  'cs',
+  'scala',
+  'sh',
+
   // Web
-  'html', 'css', 'scss', 'sass', 'less', 'vue', 'svelte',
-  
+  'html',
+  'css',
+  'scss',
+  'sass',
+  'less',
+  'vue',
+  'svelte',
+
   // Config
-  'json', 'yaml', 'yml', 'toml', 'xml', 'ini', 'conf', 'config',
-  
+  'json',
+  'yaml',
+  'yml',
+  'toml',
+  'xml',
+  'ini',
+  'conf',
+  'config',
+
   // Documentation
-  'md', 'markdown', 'txt', 'rst', 'adoc',
-  
+  'md',
+  'markdown',
+  'txt',
+  'rst',
+  'adoc',
+
   // Data
-  'csv', 'sql', 'graphql', 'proto',
-  
+  'csv',
+  'sql',
+  'graphql',
+  'proto',
+
   // Images
-  'png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'ico',
-  
+  'png',
+  'jpg',
+  'jpeg',
+  'gif',
+  'svg',
+  'webp',
+  'ico',
+
   // Other
-  'lock', 'log', 'env', 'gitignore', 'dockerignore',
+  'lock',
+  'log',
+  'env',
+  'gitignore',
+  'dockerignore',
 ]);
 
 /**
@@ -70,10 +118,10 @@ export interface DetectFilePathsOptions {
 export class FollowModeService {
   /**
    * Detect file paths referenced in text
-   * 
+   *
    * Scans text for file path patterns and returns a list of
    * normalized absolute paths.
-   * 
+   *
    * @param text - Text to scan for file paths
    * @param options - Detection options
    * @returns Array of detected file paths
@@ -98,7 +146,7 @@ export class FollowModeService {
 
       // Normalize the path
       let normalizedPath: string;
-      
+
       if (path.isAbsolute(rawPath)) {
         normalizedPath = path.normalize(rawPath);
       } else if (rootPath) {
@@ -113,12 +161,12 @@ export class FollowModeService {
       if (filterByRoot && rootPath) {
         // Normalize root path for comparison
         const normalizedRoot = path.normalize(path.resolve(rootPath));
-        
+
         // Check if the normalized path starts with the normalized root
         // Use case-insensitive comparison on Windows
         const pathLower = normalizedPath.toLowerCase();
         const rootLower = normalizedRoot.toLowerCase();
-        
+
         if (!pathLower.startsWith(rootLower)) {
           continue;
         }
@@ -132,10 +180,10 @@ export class FollowModeService {
 
   /**
    * Extract file paths from LLM response
-   * 
+   *
    * Specialized method for extracting file paths from LLM responses,
    * which may include code blocks, markdown formatting, etc.
-   * 
+   *
    * @param llmResponse - LLM response text
    * @param options - Detection options
    * @returns Array of detected file paths
@@ -143,19 +191,19 @@ export class FollowModeService {
   extractFromLLMResponse(llmResponse: string, options: DetectFilePathsOptions = {}): string[] {
     // Remove code blocks to avoid false positives
     const withoutCodeBlocks = llmResponse.replace(/```[\s\S]*?```/g, ' ');
-    
+
     // Remove inline code to avoid false positives
     // Use a more careful regex that doesn't remove surrounding text
     const withoutInlineCode = withoutCodeBlocks.replace(/`[^`\n]+`/g, ' ');
-    
+
     return this.detectFilePaths(withoutInlineCode, options);
   }
 
   /**
    * Check if a path should trigger Follow Mode expansion
-   * 
+   *
    * Validates that a path is suitable for Follow Mode expansion.
-   * 
+   *
    * @param filePath - Path to validate
    * @param rootPath - Root path to check against
    * @returns True if the path should trigger expansion
@@ -167,7 +215,7 @@ export class FollowModeService {
     // Path must be within the root (case-insensitive on Windows)
     const pathLower = normalizedPath.toLowerCase();
     const rootLower = normalizedRoot.toLowerCase();
-    
+
     if (!pathLower.startsWith(rootLower)) {
       return false;
     }

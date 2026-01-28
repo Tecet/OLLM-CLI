@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import type { CompressionCheckpoint } from '../types.js';
+
 import {
   findCheckpointById,
   findCheckpointsAfter,
@@ -21,6 +21,8 @@ import {
   exceedsMaxCheckpoints,
   getCheckpointsForMerging,
 } from '../checkpointUtils.js';
+
+import type { CompressionCheckpoint } from '../types.js';
 
 describe('Checkpoint Utilities', () => {
   // Helper to create test checkpoints
@@ -76,7 +78,7 @@ describe('Checkpoint Utilities', () => {
     it('should find checkpoints after timestamp', () => {
       const result = findCheckpointsAfter(checkpoints, new Date('2026-01-03'));
       expect(result).toHaveLength(2);
-      expect(result.map(cp => cp.id)).toEqual(['cp-4', 'cp-5']);
+      expect(result.map((cp) => cp.id)).toEqual(['cp-4', 'cp-5']);
     });
 
     it('should return empty array if none found', () => {
@@ -94,7 +96,7 @@ describe('Checkpoint Utilities', () => {
     it('should find checkpoints before timestamp', () => {
       const result = findCheckpointsBefore(checkpoints, new Date('2026-01-03'));
       expect(result).toHaveLength(2);
-      expect(result.map(cp => cp.id)).toEqual(['cp-1', 'cp-2']);
+      expect(result.map((cp) => cp.id)).toEqual(['cp-1', 'cp-2']);
     });
 
     it('should return empty array if none found', () => {
@@ -112,7 +114,7 @@ describe('Checkpoint Utilities', () => {
     it('should sort checkpoints oldest first', () => {
       const unsorted = [checkpoints[4], checkpoints[1], checkpoints[0]];
       const result = sortCheckpointsByAge(unsorted);
-      expect(result.map(cp => cp.id)).toEqual(['cp-1', 'cp-2', 'cp-5']);
+      expect(result.map((cp) => cp.id)).toEqual(['cp-1', 'cp-2', 'cp-5']);
     });
 
     it('should not mutate original array', () => {
@@ -131,7 +133,7 @@ describe('Checkpoint Utilities', () => {
     it('should sort checkpoints newest first', () => {
       const unsorted = [checkpoints[0], checkpoints[2], checkpoints[4]];
       const result = sortCheckpointsByAgeDesc(unsorted);
-      expect(result.map(cp => cp.id)).toEqual(['cp-5', 'cp-3', 'cp-1']);
+      expect(result.map((cp) => cp.id)).toEqual(['cp-5', 'cp-3', 'cp-1']);
     });
 
     it('should not mutate original array', () => {
@@ -150,7 +152,7 @@ describe('Checkpoint Utilities', () => {
     it('should filter checkpoints by level', () => {
       const result = filterCheckpointsByLevel(checkpoints, 1);
       expect(result).toHaveLength(2);
-      expect(result.map(cp => cp.id)).toEqual(['cp-1', 'cp-3']);
+      expect(result.map((cp) => cp.id)).toEqual(['cp-1', 'cp-3']);
     });
 
     it('should return empty array if no matches', () => {
@@ -168,7 +170,7 @@ describe('Checkpoint Utilities', () => {
     it('should get N most recent checkpoints', () => {
       const result = getRecentCheckpoints(checkpoints, 3);
       expect(result).toHaveLength(3);
-      expect(result.map(cp => cp.id)).toEqual(['cp-5', 'cp-4', 'cp-3']);
+      expect(result.map((cp) => cp.id)).toEqual(['cp-5', 'cp-4', 'cp-3']);
     });
 
     it('should handle count larger than array', () => {
@@ -186,7 +188,7 @@ describe('Checkpoint Utilities', () => {
     it('should get N oldest checkpoints', () => {
       const result = getOldestCheckpoints(checkpoints, 3);
       expect(result).toHaveLength(3);
-      expect(result.map(cp => cp.id)).toEqual(['cp-1', 'cp-2', 'cp-3']);
+      expect(result.map((cp) => cp.id)).toEqual(['cp-1', 'cp-2', 'cp-3']);
     });
 
     it('should handle count larger than array', () => {
@@ -274,8 +276,8 @@ describe('Checkpoint Utilities', () => {
       const result = splitCheckpointsByAge(checkpoints, 2);
       expect(result.old).toHaveLength(3);
       expect(result.recent).toHaveLength(2);
-      expect(result.old.map(cp => cp.id)).toEqual(['cp-1', 'cp-2', 'cp-3']);
-      expect(result.recent.map(cp => cp.id)).toEqual(['cp-4', 'cp-5']);
+      expect(result.old.map((cp) => cp.id)).toEqual(['cp-1', 'cp-2', 'cp-3']);
+      expect(result.recent.map((cp) => cp.id)).toEqual(['cp-4', 'cp-5']);
     });
 
     it('should handle keepRecent larger than array', () => {
@@ -313,8 +315,8 @@ describe('Checkpoint Utilities', () => {
       const result = getCheckpointsForMerging(checkpoints, 3);
       expect(result.toMerge).toHaveLength(3); // excess (2) + 1
       expect(result.toKeep).toHaveLength(2);
-      expect(result.toMerge.map(cp => cp.id)).toEqual(['cp-1', 'cp-2', 'cp-3']);
-      expect(result.toKeep.map(cp => cp.id)).toEqual(['cp-4', 'cp-5']);
+      expect(result.toMerge.map((cp) => cp.id)).toEqual(['cp-1', 'cp-2', 'cp-3']);
+      expect(result.toKeep.map((cp) => cp.id)).toEqual(['cp-4', 'cp-5']);
     });
 
     it('should return empty toMerge when within limit', () => {

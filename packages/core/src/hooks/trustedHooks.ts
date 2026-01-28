@@ -1,6 +1,6 @@
 /**
  * TrustedHooks manages hook trust verification and approval
- * 
+ *
  * Implements a security model where hooks from different sources have
  * different trust levels. Workspace and downloaded hooks require explicit
  * user approval before execution.
@@ -53,13 +53,13 @@ export class TrustedHooks {
 
   /**
    * Check if a hook is trusted
-   * 
+   *
    * Trust rules:
    * - builtin: Always trusted
    * - user: Always trusted (from ~/.ollm/)
    * - workspace: Requires approval (unless trustWorkspace is enabled)
    * - downloaded: Requires approval
-   * 
+   *
    * @param hook - The hook to check
    * @returns true if the hook is trusted
    */
@@ -98,14 +98,14 @@ export class TrustedHooks {
 
   /**
    * Check if a hook has been approved and hash matches
-   * 
+   *
    * @param hook - The hook to check
    * @returns true if hook is approved and hash matches
    */
   private async isApproved(hook: Hook): Promise<boolean> {
     // Get the source path for this hook
     const sourcePath = this.getHookSourcePath(hook);
-    
+
     // Check if we have an approval for this source
     const approval = this.approvals.get(sourcePath);
     if (!approval) {
@@ -119,7 +119,7 @@ export class TrustedHooks {
 
   /**
    * Get the source path for a hook
-   * 
+   *
    * @param hook - The hook to get source path for
    * @returns Source path string
    */
@@ -128,7 +128,7 @@ export class TrustedHooks {
     if (hook.sourcePath) {
       return hook.sourcePath;
     }
-    
+
     // Create a unique identifier from hook properties
     // This ensures different hooks are tracked separately
     const identifier = `${hook.source}:${hook.extensionName || 'none'}:${hook.id}`;
@@ -137,9 +137,9 @@ export class TrustedHooks {
 
   /**
    * Request user approval for a hook
-   * 
+   *
    * Uses the approval callback if provided, otherwise returns false.
-   * 
+   *
    * @param hook - The hook to request approval for
    * @returns Promise that resolves to true if approved
    */
@@ -173,16 +173,16 @@ export class TrustedHooks {
 
   /**
    * Store approval for a hook
-   * 
+   *
    * @param hook - The hook to approve
    * @param hash - The hash of the hook script
    */
   async storeApproval(hook: Hook, hash: string): Promise<void> {
     const sourcePath = this.getHookSourcePath(hook);
-    
+
     // Get username from environment or use 'user' as default
     const username = process.env.USER || process.env.USERNAME || 'user';
-    
+
     const approval: HookApproval = {
       source: sourcePath,
       hash,
@@ -199,7 +199,7 @@ export class TrustedHooks {
 
   /**
    * Compute SHA-256 hash of hook script
-   * 
+   *
    * @param hook - The hook to compute hash for
    * @returns Promise that resolves to the hash string
    */
@@ -215,7 +215,9 @@ export class TrustedHooks {
         } catch (_error) {
           // If file read fails, fall back to hashing command and args
           if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
-            console.warn(`Failed to read hook script at ${hook.sourcePath}, using command hash instead`);
+            console.warn(
+              `Failed to read hook script at ${hook.sourcePath}, using command hash instead`
+            );
           }
         }
       }
@@ -276,16 +278,12 @@ export class TrustedHooks {
     await mkdir(dir, { recursive: true });
 
     // Write to file
-    await writeFile(
-      this.config.storagePath,
-      JSON.stringify(storage, null, 2),
-      'utf-8'
-    );
+    await writeFile(this.config.storagePath, JSON.stringify(storage, null, 2), 'utf-8');
   }
 
   /**
    * Get all approvals
-   * 
+   *
    * @returns Array of all hook approvals
    */
   getApprovals(): HookApproval[] {
@@ -294,7 +292,7 @@ export class TrustedHooks {
 
   /**
    * Remove approval for a hook
-   * 
+   *
    * @param sourcePath - The source path of the hook
    * @returns true if approval was removed
    */

@@ -1,12 +1,15 @@
 /**
  * Shell execution tool implementation
- * 
+ *
  * Provides a tool for executing shell commands with streaming output,
  * timeouts, and policy-controlled confirmation.
  */
 
 import { EnvironmentSanitizationService } from '../services/environmentSanitization.js';
-import { ShellExecutionService, type ShellExecutionOptions } from '../services/shellExecutionService.js';
+import {
+  ShellExecutionService,
+  type ShellExecutionOptions,
+} from '../services/shellExecutionService.js';
 
 import type {
   DeclarativeTool,
@@ -127,13 +130,18 @@ export class ShellInvocation implements ToolInvocation<ShellParams, ToolResult> 
     return this.params.cwd ? [this.params.cwd] : [];
   }
 
-  async shouldConfirmExecute(_abortSignal: AbortSignal): Promise<ToolCallConfirmationDetails | false> {
+  async shouldConfirmExecute(
+    _abortSignal: AbortSignal
+  ): Promise<ToolCallConfirmationDetails | false> {
     // If no policy engine, don't require confirmation
     if (!this.policyEngine) {
       return false;
     }
 
-    const decision = this.policyEngine.evaluate('shell', this.params as unknown as Record<string, unknown>);
+    const decision = this.policyEngine.evaluate(
+      'shell',
+      this.params as unknown as Record<string, unknown>
+    );
 
     if (decision === 'allow') {
       return false;
@@ -152,10 +160,7 @@ export class ShellInvocation implements ToolInvocation<ShellParams, ToolResult> 
     };
   }
 
-  async execute(
-    signal: AbortSignal,
-    updateOutput?: (output: string) => void
-  ): Promise<ToolResult> {
+  async execute(signal: AbortSignal, updateOutput?: (output: string) => void): Promise<ToolResult> {
     try {
       // Check if aborted
       if (signal.aborted) {
@@ -178,13 +183,9 @@ export class ShellInvocation implements ToolInvocation<ShellParams, ToolResult> 
 
       // Format the result
       const displayOutput = result.output.trim();
-      const exitCodeMsg = result.exitCode !== 0 
-        ? ` (exit code: ${result.exitCode})` 
-        : '';
-      
-      const processIdMsg = result.processId 
-        ? ` [PID: ${result.processId}]` 
-        : '';
+      const exitCodeMsg = result.exitCode !== 0 ? ` (exit code: ${result.exitCode})` : '';
+
+      const processIdMsg = result.processId ? ` [PID: ${result.processId}]` : '';
 
       // Generate hint for common errors
       let hint = '';
@@ -200,10 +201,13 @@ export class ShellInvocation implements ToolInvocation<ShellParams, ToolResult> 
       return {
         llmContent: displayOutput,
         returnDisplay: `${displayOutput}${exitCodeMsg}${processIdMsg}`,
-        error: result.exitCode !== 0 ? {
-          message: `Command exited with code ${result.exitCode}${hint}`,
-          type: 'ShellExecutionError',
-        } : undefined,
+        error:
+          result.exitCode !== 0
+            ? {
+                message: `Command exited with code ${result.exitCode}${hint}`,
+                type: 'ShellExecutionError',
+              }
+            : undefined,
       };
     } catch (error) {
       // Handle cancellation

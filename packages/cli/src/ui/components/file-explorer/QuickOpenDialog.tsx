@@ -1,9 +1,9 @@
 /**
  * QuickOpenDialog - Fuzzy search dialog for rapid file navigation
- * 
+ *
  * Provides a Ctrl+O dialog with fuzzy search functionality to quickly
  * navigate to files in the workspace. Tracks history of opened files.
- * 
+ *
  * Requirements: 7.1, 7.2, 7.3, 12.4
  */
 
@@ -41,29 +41,32 @@ export interface QuickOpenDialogProps {
 
 /**
  * Fuzzy match algorithm
- * 
+ *
  * Implements a simple fuzzy matching algorithm that:
  * 1. Matches characters in order (not necessarily consecutive)
  * 2. Scores matches based on:
  *    - Consecutive character matches (higher score)
  *    - Match position (earlier matches score higher)
  *    - Case sensitivity (exact case matches score higher)
- * 
+ *
  * @param query - Search query
  * @param target - Target string to match against
  * @returns Match result with score and matched indices, or null if no match
  */
-function fuzzyMatch(query: string, target: string): { score: number; matchedIndices: number[] } | null {
+function fuzzyMatch(
+  query: string,
+  target: string
+): { score: number; matchedIndices: number[] } | null {
   // Trim whitespace from query
   const trimmedQuery = query.trim();
-  
+
   if (!trimmedQuery) {
     return { score: 0, matchedIndices: [] };
   }
 
   const queryLower = trimmedQuery.toLowerCase();
   const targetLower = target.toLowerCase();
-  
+
   let queryIndex = 0;
   let targetIndex = 0;
   const matchedIndices: number[] = [];
@@ -76,32 +79,32 @@ function fuzzyMatch(query: string, target: string): { score: number; matchedIndi
 
     if (queryChar === targetChar) {
       matchedIndices.push(targetIndex);
-      
+
       // Score calculation:
       // - Base score: 1 point per match
       // - Consecutive bonus: +2 points for consecutive matches
       // - Position bonus: Earlier matches get higher scores
       // - Case match bonus: +1 point for exact case match
       score += 1;
-      
+
       if (consecutiveMatches > 0) {
         score += 2; // Consecutive match bonus
       }
       consecutiveMatches++;
-      
+
       // Position bonus (earlier matches are better)
       score += Math.max(0, 10 - targetIndex);
-      
+
       // Case match bonus (compare with trimmed query)
       if (trimmedQuery[queryIndex] === target[targetIndex]) {
         score += 1;
       }
-      
+
       queryIndex++;
     } else {
       consecutiveMatches = 0;
     }
-    
+
     targetIndex++;
   }
 
@@ -115,7 +118,7 @@ function fuzzyMatch(query: string, target: string): { score: number; matchedIndi
 
 /**
  * Filter and rank files by fuzzy match
- * 
+ *
  * @param files - All files to search
  * @param query - Search query
  * @param history - Quick Open history for boosting recent files
@@ -136,17 +139,17 @@ function fuzzyFilterFiles(
 
     // Try to match against the file name
     const match = fuzzyMatch(query, node.name);
-    
+
     if (match) {
       let finalScore = match.score;
-      
+
       // Boost score for files in history (more recent = higher boost)
       const historyIndex = history.indexOf(node.path);
       if (historyIndex !== -1) {
         // Recent files get a significant boost
         finalScore += (history.length - historyIndex) * 5;
       }
-      
+
       results.push({
         node,
         score: finalScore,
@@ -163,7 +166,7 @@ function fuzzyFilterFiles(
 
 /**
  * Render a file name with highlighted matched characters
- * 
+ *
  * @param name - File name
  * @param matchedIndices - Indices of matched characters
  * @returns React elements with highlighted matches
@@ -175,30 +178,22 @@ function renderHighlightedName(name: string, matchedIndices: number[]): React.Re
   for (const index of matchedIndices) {
     // Add non-matched text before this match
     if (index > lastIndex) {
-      parts.push(
-        <Text key={`text-${lastIndex}`}>
-          {name.substring(lastIndex, index)}
-        </Text>
-      );
+      parts.push(<Text key={`text-${lastIndex}`}>{name.substring(lastIndex, index)}</Text>);
     }
-    
+
     // Add matched character (highlighted)
     parts.push(
       <Text key={`match-${index}`} color="cyan" bold>
         {name[index]}
       </Text>
     );
-    
+
     lastIndex = index + 1;
   }
 
   // Add remaining text after last match
   if (lastIndex < name.length) {
-    parts.push(
-      <Text key={`text-${lastIndex}`}>
-        {name.substring(lastIndex)}
-      </Text>
-    );
+    parts.push(<Text key={`text-${lastIndex}`}>{name.substring(lastIndex)}</Text>);
   }
 
   return <>{parts}</>;
@@ -206,10 +201,10 @@ function renderHighlightedName(name: string, matchedIndices: number[]): React.Re
 
 /**
  * QuickOpenDialog component
- * 
+ *
  * Displays a fuzzy search dialog for rapid file navigation.
  * Supports keyboard navigation and tracks history of opened files.
- * 
+ *
  * Keyboard shortcuts:
  * - Type to search
  * - Up/Down: Navigate results
@@ -256,15 +251,15 @@ export function QuickOpenDialog({
   const handleSelect = useCallback(() => {
     if (displayResults.length > 0 && selectedIndex >= 0 && selectedIndex < displayResults.length) {
       const selected = displayResults[selectedIndex];
-      
+
       // Update history
       if (onHistoryUpdate) {
         onHistoryUpdate(selected.node.path);
       }
-      
+
       // Call onSelect callback
       onSelect(selected.node);
-      
+
       // Close dialog
       onClose();
     }
@@ -323,13 +318,7 @@ export function QuickOpenDialog({
   }
 
   return (
-    <Box
-      flexDirection="column"
-      borderStyle="round"
-      borderColor="cyan"
-      padding={1}
-      width="80%"
-    >
+    <Box flexDirection="column" borderStyle="round" borderColor="cyan" padding={1} width="80%">
       {/* Header */}
       <Box marginBottom={1}>
         <Text color="cyan" bold>
@@ -348,9 +337,7 @@ export function QuickOpenDialog({
       {/* Results */}
       <Box flexDirection="column">
         {displayResults.length === 0 ? (
-          <Text dimColor>
-            {query ? 'No matches found' : 'Type to search files...'}
-          </Text>
+          <Text dimColor>{query ? 'No matches found' : 'Type to search files...'}</Text>
         ) : (
           displayResults.map((result, index) => {
             const isSelected = index === selectedIndex;
@@ -362,19 +349,15 @@ export function QuickOpenDialog({
                 <Text bold={isSelected} inverse={isSelected}>
                   {isSelected ? '>' : ' '}
                 </Text>
-                
+
                 <Text> </Text>
-                
+
                 {/* File name with highlighted matches */}
-                <Box>
-                  {renderHighlightedName(result.node.name, result.matchedIndices)}
-                </Box>
-                
+                <Box>{renderHighlightedName(result.node.name, result.matchedIndices)}</Box>
+
                 {/* History indicator */}
-                {isInHistory && (
-                  <Text color="gray"> (recent)</Text>
-                )}
-                
+                {isInHistory && <Text color="gray"> (recent)</Text>}
+
                 {/* Score (for debugging, can be removed) */}
                 {/* <Text color="gray"> [{result.score}]</Text> */}
               </Box>
@@ -385,9 +368,7 @@ export function QuickOpenDialog({
 
       {/* Footer with help text */}
       <Box marginTop={1}>
-        <Text dimColor>
-          ↑↓ Navigate • Enter Select • Esc Close
-        </Text>
+        <Text dimColor>↑↓ Navigate • Enter Select • Esc Close</Text>
       </Box>
 
       {/* Results count */}

@@ -1,6 +1,6 @@
 /**
  * ServerLogsViewer - Dialog for viewing MCP server logs
- * 
+ *
  * Features:
  * - Display recent log entries (last 100 lines)
  * - Add timestamps for each log entry
@@ -9,7 +9,7 @@
  * - Add Copy to Clipboard button
  * - Add Clear Logs button
  * - Add Close button
- * 
+ *
  * Validates: Requirements 10.1-10.8
  */
 
@@ -50,28 +50,28 @@ function parseLogLine(line: string): ParsedLogEntry {
   // [2024-01-18T12:34:56.789Z] [INFO] Message
   // 2024-01-18 12:34:56 INFO Message
   // INFO: Message
-  
+
   const timestampRegex = /^\[?(\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z?)\]?\s*/;
   const levelRegex = /\[?(DEBUG|INFO|WARN|ERROR)\]?:?\s*/i;
-  
+
   let timestamp = '';
   let level: LogLevel = 'info';
   let message = line;
-  
+
   // Extract timestamp
   const timestampMatch = line.match(timestampRegex);
   if (timestampMatch) {
     timestamp = timestampMatch[1];
     message = line.substring(timestampMatch[0].length);
   }
-  
+
   // Extract level
   const levelMatch = message.match(levelRegex);
   if (levelMatch) {
     level = levelMatch[1].toLowerCase() as LogLevel;
     message = message.substring(levelMatch[0].length);
   }
-  
+
   return {
     timestamp,
     level,
@@ -85,7 +85,7 @@ function parseLogLine(line: string): ParsedLogEntry {
  */
 function formatTimestamp(timestamp: string): string {
   if (!timestamp) return '';
-  
+
   try {
     const date = new Date(timestamp);
     const hours = date.getHours().toString().padStart(2, '0');
@@ -125,7 +125,7 @@ interface LogEntryProps {
 
 function LogEntry({ entry, showTimestamp }: LogEntryProps) {
   const levelColor = getLevelColor(entry.level);
-  
+
   return (
     <Box>
       {showTimestamp && entry.timestamp && (
@@ -147,7 +147,7 @@ function LogEntry({ entry, showTimestamp }: LogEntryProps) {
 
 /**
  * ServerLogsViewer component
- * 
+ *
  * Provides log viewing functionality for MCP servers:
  * - Display recent log entries
  * - Filter by log level
@@ -155,10 +155,7 @@ function LogEntry({ entry, showTimestamp }: LogEntryProps) {
  * - Copy logs to clipboard
  * - Clear logs
  */
-export function ServerLogsViewer({
-  serverName,
-  onClose,
-}: ServerLogsViewerProps) {
+export function ServerLogsViewer({ serverName, onClose }: ServerLogsViewerProps) {
   const { getServerLogs, clearServerLogs } = useMCP();
 
   // UI state
@@ -191,13 +188,13 @@ export function ServerLogsViewer({
    */
   useEffect(() => {
     const parsed = logs.map(parseLogLine);
-    
+
     if (logLevel === 'all') {
       setFilteredLogs(parsed);
     } else {
-      setFilteredLogs(parsed.filter(entry => entry.level === logLevel));
+      setFilteredLogs(parsed.filter((entry) => entry.level === logLevel));
     }
-    
+
     // Reset scroll when filter changes
     setScrollOffset(0);
   }, [logs, logLevel]);
@@ -217,15 +214,15 @@ export function ServerLogsViewer({
     try {
       // In a real implementation, this would use a clipboard library
       // For now, we'll just simulate the action
-      const logText = filteredLogs.map(entry => entry.raw).join('\n');
-      
+      const logText = filteredLogs.map((entry) => entry.raw).join('\n');
+
       // Simulate clipboard copy (would use clipboardy or similar in production)
       console.log('Copying logs to clipboard:', logText);
-      
+
       // In a terminal environment, we might write to a temp file
       // or use platform-specific clipboard commands
-      
-      await new Promise(resolve => setTimeout(resolve, 500));
+
+      await new Promise((resolve) => setTimeout(resolve, 500));
     } catch (error) {
       console.error('Failed to copy logs:', error);
     } finally {
@@ -274,11 +271,7 @@ export function ServerLogsViewer({
   const canScrollDown = scrollOffset + maxVisibleLines < filteredLogs.length;
 
   return (
-    <Dialog
-      title={`Server Logs: ${serverName}`}
-      onClose={onClose}
-      width={100}
-    >
+    <Dialog title={`Server Logs: ${serverName}`} onClose={onClose} width={100}>
       <Box flexDirection="column" paddingX={1}>
         {/* Filter Controls */}
         <Box marginBottom={1} paddingY={1} borderStyle="single" borderColor="gray">
@@ -314,9 +307,7 @@ export function ServerLogsViewer({
           ) : filteredLogs.length === 0 ? (
             <Box paddingY={2} justifyContent="center">
               <Text dimColor>
-                {logs.length === 0 
-                  ? 'No logs available' 
-                  : `No ${logLevel} logs found`}
+                {logs.length === 0 ? 'No logs available' : `No ${logLevel} logs found`}
               </Text>
             </Box>
           ) : (
@@ -326,15 +317,11 @@ export function ServerLogsViewer({
                   <Text dimColor>▲ Scroll up for more (↑)</Text>
                 </Box>
               )}
-              
+
               {visibleLogs.map((entry, index) => (
-                <LogEntry
-                  key={scrollOffset + index}
-                  entry={entry}
-                  showTimestamp={true}
-                />
+                <LogEntry key={scrollOffset + index} entry={entry} showTimestamp={true} />
               ))}
-              
+
               {canScrollDown && (
                 <Box marginTop={1}>
                   <Text dimColor>▼ Scroll down for more (↓)</Text>

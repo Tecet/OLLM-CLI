@@ -1,65 +1,65 @@
 /**
  * Compression Service
- * 
+ *
  * Manages context compression using multiple strategies to reduce token usage while
  * preserving conversation quality and critical information.
- * 
+ *
  * ## Compression Strategies
- * 
+ *
  * ### 1. Truncate Strategy
  * - Removes oldest messages until under target token count
  * - Always preserves system prompt and user messages
  * - Fast and deterministic
  * - Best for: Simple token reduction without LLM overhead
- * 
+ *
  * ### 2. Summarize Strategy
  * - Uses LLM to generate summary of older messages
  * - Preserves recent messages verbatim
  * - Requires provider and model configuration
  * - Best for: Maintaining conversation context with semantic compression
- * 
+ *
  * ### 3. Hybrid Strategy
  * - Combines truncation and summarization
  * - Truncates very old messages, summarizes middle messages, preserves recent
  * - Supports recursive summarization (merges previous summaries)
  * - Best for: Long conversations requiring multiple compression cycles
- * 
+ *
  * ## Preservation Rules
- * 
+ *
  * - **User messages**: NEVER compressed - always preserved in full
  * - **System prompts**: Always preserved (first system message)
  * - **Recent messages**: Preserved based on `preserveRecent` token budget
  * - **Fractional preservation**: Keeps at least 30% of total tokens as recent history
- * 
+ *
  * ## Performance Characteristics
- * 
+ *
  * - **Truncate**: O(n) time, no LLM calls, instant
  * - **Summarize**: O(n) + LLM call (~2-5s), high quality compression
  * - **Hybrid**: O(n) + LLM call (~2-5s), best compression ratio
- * 
+ *
  * ## Token Counting
- * 
+ *
  * - Uses TokenCounter service if available for accurate counts
  * - Falls back to estimation (4 chars ≈ 1 token)
  * - Adds overhead for tool calls (50 tokens per call)
- * 
+ *
  * ## Inflation Guard
- * 
+ *
  * Prevents compression from increasing token count:
  * - Compares compressed vs original token counts
  * - Sets status='inflated' if compression fails
  * - Caller can decide whether to use compressed result
- * 
+ *
  * @example
  * ```typescript
  * const service = new CompressionService(provider, model, tokenCounter);
- * 
+ *
  * const compressed = await service.compress(messages, {
  *   type: 'hybrid',
  *   preserveRecent: 4096,
  *   summaryMaxTokens: 1024
  * });
- * 
+ *
  * if (compressed.status === 'success') {
  *   // Use compressed context
  *   const newMessages = [compressed.summary, ...compressed.preserved];
@@ -78,14 +78,14 @@ import type {
 
 /**
  * Provider adapter interface for LLM-based summarization
- * 
+ *
  * Defines the contract for LLM providers used in compression.
  * Only the chatStream method is required for summarization.
  */
 export interface ProviderAdapter {
   /**
    * Stream chat responses from the LLM
-   * 
+   *
    * @param params - Chat parameters including model, messages, and options
    * @param params.model - Model name to use for summarization
    * @param params.messages - Messages to send to the LLM
@@ -106,14 +106,13 @@ export interface ProviderAdapter {
     timeout?: number;
     abortSignal?: AbortSignal;
   }): AsyncIterable<
-    | { type: 'text'; value: string }
-    | { type: 'error'; error: { message: string } }
+    { type: 'text'; value: string } | { type: 'error'; error: { message: string } }
   >;
 }
 
 /**
  * Default tool call overhead in tokens
- * 
+ *
  * Each tool call adds approximately 50 tokens of overhead for:
  * - Tool name and parameters
  * - JSON structure
@@ -123,29 +122,29 @@ const TOOL_CALL_OVERHEAD = 50;
 
 /**
  * Compression Service Implementation
- * 
+ *
  * Implements three compression strategies:
  * - Summarize: Use LLM to create summary of older messages
  * - Truncate: Remove oldest messages while preserving system prompt
  * - Hybrid: Combine summarization and truncation
- * 
+ *
  * ## Performance Notes
- * 
+ *
  * ### Token Counting Performance
  * - With TokenCounter: O(1) cached lookups, ~0.1ms per message
  * - Without TokenCounter: O(n) estimation, ~0.01ms per message
  * - Conversation counting: O(n) where n = message count
- * 
+ *
  * ### Compression Performance
  * - **Truncate**: O(n) iteration, no I/O, <10ms for 1000 messages
  * - **Summarize**: O(n) + LLM call, 2-5s depending on model speed
  * - **Hybrid**: O(n) + LLM call, 2-5s depending on model speed
- * 
+ *
  * ### Memory Usage
  * - Temporary arrays during compression: O(n) space
  * - LLM summarization: Additional O(m) where m = summary length
  * - No persistent caching (stateless service)
- * 
+ *
  * ### Optimization Tips
  * - Use TokenCounter for accurate, cached token counts
  * - Truncate strategy for instant compression without LLM overhead
@@ -159,7 +158,7 @@ export class CompressionService implements ICompressionService {
 
   /**
    * Create a new CompressionService
-   * 
+   *
    * @param provider - Optional provider adapter for LLM-based summarization
    * @param model - Optional model name to use for summarization
    * @param tokenCounter - Optional token counter service for accurate token counting
@@ -172,7 +171,7 @@ export class CompressionService implements ICompressionService {
 
   /**
    * Set the provider and model for LLM-based summarization
-   * 
+   *
    * @param provider - Provider adapter
    * @param model - Model name
    */
@@ -183,7 +182,7 @@ export class CompressionService implements ICompressionService {
 
   /**
    * Set the token counter service
-   * 
+   *
    * @param tokenCounter - Token counter service
    */
   setTokenCounter(tokenCounter: TokenCounter): void {
@@ -192,15 +191,12 @@ export class CompressionService implements ICompressionService {
 
   /**
    * Compress messages using specified strategy
-   * 
+   *
    * @param messages - Messages to compress
    * @param strategy - Compression strategy configuration
    * @returns Compressed context with summary and preserved messages
    */
-  async compress(
-    messages: Message[],
-    strategy: CompressionStrategy
-  ): Promise<CompressedContext> {
+  async compress(messages: Message[], strategy: CompressionStrategy): Promise<CompressedContext> {
     const originalTokens = this.countMessagesTokens(messages);
 
     let result: CompressedContext;
@@ -222,7 +218,7 @@ export class CompressionService implements ICompressionService {
     // Ensure originalTokens is set correctly
     result.originalTokens = originalTokens;
 
-    // Inflation Guard: Verify token reduction 
+    // Inflation Guard: Verify token reduction
     if (result.compressedTokens >= originalTokens && originalTokens > 0) {
       result.status = 'inflated';
       // If inflated, we "fail" the compression and keep original messages
@@ -238,13 +234,13 @@ export class CompressionService implements ICompressionService {
 
   /**
    * Estimate compression without performing it
-   * 
+   *
    * @param messages - Messages to estimate compression for
    * @returns Compression estimate with predicted token count and ratio
    */
   estimateCompression(messages: Message[]): CompressionEstimate {
     const originalTokens = this.countMessagesTokens(messages);
-    
+
     // Estimate 50% compression for summarize strategy
     // This is a conservative estimate
     const estimatedTokens = Math.ceil(originalTokens * 0.5);
@@ -263,11 +259,11 @@ export class CompressionService implements ICompressionService {
 
   /**
    * The fraction of the latest chat history to keep verbatim during compression.
-   * 
+   *
    * This ensures that as context grows, we don't truncate too aggressively.
    * With a value of 0.3, we preserve at least 30% of the total token count
    * as recent history, even if it exceeds the configured preserveRecent value.
-   * 
+   *
    * @example
    * If total context is 10,000 tokens and preserveRecent is 2,000:
    * - Fractional preserve = 10,000 * 0.3 = 3,000 tokens
@@ -277,7 +273,7 @@ export class CompressionService implements ICompressionService {
 
   /**
    * Check if compression is needed
-   * 
+   *
    * @param tokenCount - Current token count
    * @param threshold - Threshold percentage (0-1)
    * @returns true if compression should be triggered
@@ -290,18 +286,15 @@ export class CompressionService implements ICompressionService {
 
   /**
    * Calculate how many tokens to preserve based on a fraction of total tokens
-   * 
+   *
    * @param messages - Messages to analyze
    * @param basePreserveRecent - The minimum tokens to preserve from config
    * @returns Dynamic token budget for preserved messages
    */
-  private calculatePreserveTokens(
-    messages: Message[],
-    basePreserveRecent: number
-  ): number {
+  private calculatePreserveTokens(messages: Message[], basePreserveRecent: number): number {
     const totalTokens = this.countMessagesTokens(messages);
     const fractionalPreserve = Math.ceil(totalTokens * this.COMPRESSION_PRESERVE_FRACTION);
-    
+
     // Use the larger of the two to ensure we keep a healthy amount of recent history
     return Math.max(basePreserveRecent, fractionalPreserve);
   }
@@ -310,15 +303,12 @@ export class CompressionService implements ICompressionService {
    * Truncate strategy: Remove oldest messages (excluding USER) until under target
    * Always preserves system prompt (first message with role='system')
    * NEVER compresses user messages - they are preserved separately
-   * 
+   *
    * @param messages - Messages to compress
    * @param strategy - Compression strategy configuration
    * @returns Compressed context
    */
-  private truncate(
-    messages: Message[],
-    strategy: CompressionStrategy
-  ): CompressedContext {
+  private truncate(messages: Message[], strategy: CompressionStrategy): CompressedContext {
     if (messages.length === 0) {
       return {
         summary: this.createEmptySummary(),
@@ -331,22 +321,19 @@ export class CompressionService implements ICompressionService {
 
     // NEVER compress user messages - isolate them to strict preservation
     const userMessages = messages.filter((m) => m.role === 'user');
-    
+
     // Candidates for truncation: everything else
     const nonUserMessages = messages.filter((m) => m.role !== 'user');
 
     // Always preserve system prompt if it exists (Requirement 5.2)
     const systemPromptMessage = nonUserMessages.find((m) => m.role === 'system');
-    
+
     // Messages actually eligible for removal (Assistant, Tool, etc., minus system prompt)
     const removableMessages = nonUserMessages.filter((m) => m.role !== 'system');
 
     // Calculate target tokens for preserved messages (Fractional Preservation)
     // IMPORTANT: The budget applies to the *removable* messages we keep
-    const targetTokens = this.calculatePreserveTokens(
-      removableMessages,
-      strategy.preserveRecent
-    );
+    const targetTokens = this.calculatePreserveTokens(removableMessages, strategy.preserveRecent);
 
     // Start from the end and work backwards, keeping messages until we hit the target
     const preservedRemovable: Message[] = [];
@@ -367,28 +354,27 @@ export class CompressionService implements ICompressionService {
 
     // Reassemble: System Prompt + All User Messages + Preserved Assistant/Tool
     const allPreserved = [
-        ...userMessages,
-        ...(systemPromptMessage ? [systemPromptMessage] : []),
-        ...preservedRemovable
+      ...userMessages,
+      ...(systemPromptMessage ? [systemPromptMessage] : []),
+      ...preservedRemovable,
     ].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
 
     // Create summary message indicating truncation
     const truncatedCount = removableMessages.length - preservedRemovable.length;
     // Only create summary if we actually removed something
-    const summary = truncatedCount > 0 
-        ? this.createTruncationSummary(truncatedCount)
-        : null;
+    const summary = truncatedCount > 0 ? this.createTruncationSummary(truncatedCount) : null;
 
     // Calculate tokens
     const userTokens = this.countMessagesTokens(userMessages);
     const systemTokens = systemPromptMessage ? this.countMessageTokens(systemPromptMessage) : 0;
     const preservedRemovableTokens = this.countMessagesTokens(preservedRemovable);
-    
-    const compressedTokens = (summary ? this.countMessageTokens(summary) : 0) + 
-                             preservedRemovableTokens + 
-                             userTokens + 
-                             systemTokens;
-                             
+
+    const compressedTokens =
+      (summary ? this.countMessageTokens(summary) : 0) +
+      preservedRemovableTokens +
+      userTokens +
+      systemTokens;
+
     const originalTokens = this.countMessagesTokens(messages);
 
     return {
@@ -406,7 +392,7 @@ export class CompressionService implements ICompressionService {
    * Summarize strategy: Use LLM to generate summary of older messages (excluding USER)
    * Preserves system prompt and recent messages, replaces old messages with summary
    * NEVER compresses user messages - they are preserved separately
-   * 
+   *
    * @param messages - Messages to compress
    * @param strategy - Compression strategy configuration
    * @returns Compressed context with summary
@@ -427,20 +413,20 @@ export class CompressionService implements ICompressionService {
 
     // NEVER compress user messages - isolate them
     const userMessages = messages.filter((m) => m.role === 'user');
-    
+
     // Candidates for summarization
     const nonUserMessages = messages.filter((m) => m.role !== 'user');
 
     // Always preserve system prompt
     const systemPromptMessage = nonUserMessages.find((m) => m.role === 'system');
-    
+
     // Messages eligible for summarization (Assistant, Tool, excluding system prompt)
     const summarizableMessages = nonUserMessages.filter((m) => m.role !== 'system');
 
     if (summarizableMessages.length === 0) {
-       // Nothing to summarize (only system/user messages present)
-       const allPreserved = messages.sort((a,b) => a.timestamp.getTime() - b.timestamp.getTime());
-       return {
+      // Nothing to summarize (only system/user messages present)
+      const allPreserved = messages.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+      return {
         summary: this.createEmptySummary(),
         preserved: allPreserved,
         originalTokens: this.countMessagesTokens(messages),
@@ -479,8 +465,8 @@ export class CompressionService implements ICompressionService {
 
     if (messagesToSummarize.length === 0) {
       // Nothing old enough to summarize
-      const allPreserved = messages.sort((a,b) => a.timestamp.getTime() - b.timestamp.getTime());
-       return {
+      const allPreserved = messages.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+      return {
         summary: this.createEmptySummary(),
         preserved: allPreserved,
         originalTokens: this.countMessagesTokens(messages),
@@ -508,8 +494,9 @@ export class CompressionService implements ICompressionService {
     }
 
     // Use timestamp of the last summarized message to preserve chronological order
-    const lastSummarizedTimestamp = messagesToSummarize.length > 0 
-        ? messagesToSummarize[messagesToSummarize.length - 1].timestamp 
+    const lastSummarizedTimestamp =
+      messagesToSummarize.length > 0
+        ? messagesToSummarize[messagesToSummarize.length - 1].timestamp
         : new Date();
 
     const summary: Message = {
@@ -521,21 +508,19 @@ export class CompressionService implements ICompressionService {
 
     // Reassemble: System Prompt + All User Messages + Preserved Recent Assistant/Tool
     const allPreserved = [
-        ...userMessages,
-        ...(systemPromptMessage ? [systemPromptMessage] : []),
-        ...preservedRecent
+      ...userMessages,
+      ...(systemPromptMessage ? [systemPromptMessage] : []),
+      ...preservedRecent,
     ].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
 
     // Calculate tokens
     const userTokens = this.countMessagesTokens(userMessages);
     const systemTokens = systemPromptMessage ? this.countMessageTokens(systemPromptMessage) : 0;
     const recentPreservedTokens = this.countMessagesTokens(preservedRecent);
-    
+
     // Note: The summary is technically "added" to the context, replacing the summarized messages
-    const compressedTokens = this.countMessageTokens(summary) + 
-                             recentPreservedTokens + 
-                             userTokens + 
-                             systemTokens;
+    const compressedTokens =
+      this.countMessageTokens(summary) + recentPreservedTokens + userTokens + systemTokens;
     const originalTokens = this.countMessagesTokens(messages);
 
     return {
@@ -551,7 +536,7 @@ export class CompressionService implements ICompressionService {
    * Hybrid strategy: Combine summarize and truncate (Requirement 5.3)
    * Summarizes middle messages, truncates oldest, preserves recent
    * NEVER compresses user messages - they are preserved separately
-   * 
+   *
    * @param messages - Messages to compress
    * @param strategy - Compression strategy configuration
    * @returns Compressed context
@@ -579,19 +564,19 @@ export class CompressionService implements ICompressionService {
 
     // RECURSIVE LOGIC: Look for existing summary to merge
     let previousSummary: string | undefined;
-    const existingSummaryIndex = nonUserMessages.findIndex(m => 
-        m.role === 'system' && m.content.startsWith('[Recursive Context Summary]')
+    const existingSummaryIndex = nonUserMessages.findIndex(
+      (m) => m.role === 'system' && m.content.startsWith('[Recursive Context Summary]')
     );
 
     if (existingSummaryIndex !== -1) {
-        // Extract content
-        const summaryMsg = nonUserMessages[existingSummaryIndex];
-        previousSummary = summaryMsg.content.replace('[Recursive Context Summary]\n', '');
-        
-        // Remove old summary from valid messages
-        nonUserMessages.splice(existingSummaryIndex, 1);
+      // Extract content
+      const summaryMsg = nonUserMessages[existingSummaryIndex];
+      previousSummary = summaryMsg.content.replace('[Recursive Context Summary]\n', '');
+
+      // Remove old summary from valid messages
+      nonUserMessages.splice(existingSummaryIndex, 1);
     }
-    
+
     // Valid non-system messages
     const nonSystemMessages = nonUserMessages.filter((m) => m.role !== 'system');
 
@@ -601,7 +586,8 @@ export class CompressionService implements ICompressionService {
         preserved: userMessages,
         originalTokens: this.countMessagesTokens(messages),
         compressedTokens: this.countMessagesTokens(userMessages),
-        compressionRatio: this.countMessagesTokens(userMessages) / this.countMessagesTokens(messages),
+        compressionRatio:
+          this.countMessagesTokens(userMessages) / this.countMessagesTokens(messages),
       };
     }
 
@@ -628,16 +614,14 @@ export class CompressionService implements ICompressionService {
     }
 
     // Messages to process are everything not in recent
-    const olderMessages = nonSystemMessages.slice(
-      0,
-      nonSystemMessages.length - preserved.length
-    );
+    const olderMessages = nonSystemMessages.slice(0, nonSystemMessages.length - preserved.length);
 
     if (olderMessages.length === 0 && !previousSummary) {
       // Nothing to compress, add user messages back and return
-      const allPreserved = [...userMessages, ...preserved]
-        .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
-      
+      const allPreserved = [...userMessages, ...preserved].sort(
+        (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
+      );
+
       const userTokens = this.countMessagesTokens(userMessages);
       return {
         summary: this.createEmptySummary(),
@@ -665,10 +649,7 @@ export class CompressionService implements ICompressionService {
         );
       } catch (error) {
         // Fall back to placeholder if LLM summarization fails
-        console.warn(
-          'LLM summarization failed in hybrid strategy, using placeholder:',
-          error
-        );
+        console.warn('LLM summarization failed in hybrid strategy, using placeholder:', error);
         summaryText = this.createSummaryPlaceholder(middleMessages);
       }
     } else {
@@ -677,11 +658,10 @@ export class CompressionService implements ICompressionService {
 
     const truncatedCount = olderMessages.length - middleMessages.length;
     const summaryWithTruncation = `${summaryText}\n\n[${truncatedCount} older messages truncated]`;
-    
+
     // Use timestamp of the last summarized message to preserve chronological order
-    const lastSummarizedTimestamp = middleMessages.length > 0 
-        ? middleMessages[middleMessages.length - 1].timestamp 
-        : new Date();
+    const lastSummarizedTimestamp =
+      middleMessages.length > 0 ? middleMessages[middleMessages.length - 1].timestamp : new Date();
 
     const summary: Message = {
       id: `summary-${Date.now()}`,
@@ -692,20 +672,18 @@ export class CompressionService implements ICompressionService {
 
     // Reassemble: System Prompt + All User Messages + Preserved Recent
     const allPreserved = [
-        ...userMessages,
-        ...(_systemPrompt ? [_systemPrompt] : []),
-        ...preserved
+      ...userMessages,
+      ...(_systemPrompt ? [_systemPrompt] : []),
+      ...preserved,
     ].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
 
     // Calculate tokens
     const userTokens = this.countMessagesTokens(userMessages);
     const systemTokens = _systemPrompt ? this.countMessageTokens(_systemPrompt) : 0;
     const recentPreservedTokens = this.countMessagesTokens(preserved);
-    
-    const compressedTokens = this.countMessageTokens(summary) + 
-                             recentPreservedTokens + 
-                             userTokens + 
-                             systemTokens;
+
+    const compressedTokens =
+      this.countMessageTokens(summary) + recentPreservedTokens + userTokens + systemTokens;
     const originalTokens = this.countMessagesTokens(messages);
 
     return {
@@ -719,7 +697,7 @@ export class CompressionService implements ICompressionService {
 
   /**
    * Generate a summary using the LLM with Recursive/Rolling logic
-   * 
+   *
    * @param messages - Messages to summarize
    * @param maxTokens - Maximum tokens for the summary
    * @param previousSummary - (Optional) Content of the previous summary to merge
@@ -736,15 +714,13 @@ export class CompressionService implements ICompressionService {
     }
 
     // Convert Messages to conversation text
-    const conversationText = messages
-      .map((msg) => `${msg.role}: ${msg.content}`)
-      .join('\n\n');
+    const conversationText = messages.map((msg) => `${msg.role}: ${msg.content}`).join('\n\n');
 
     let summaryPrompt = '';
 
     if (previousSummary) {
-        // RECURSIVE MODE: We have a previous summary, so we must merge and update
-        summaryPrompt = `You are a specialized Context Compressor. Your goal is to maintain a coherent "Long-Term Memory" for an AI session.
+      // RECURSIVE MODE: We have a previous summary, so we must merge and update
+      summaryPrompt = `You are a specialized Context Compressor. Your goal is to maintain a coherent "Long-Term Memory" for an AI session.
 
 INPUTS:
 1. PREVIOUS SUMMARY: A summary of the conversation up to this point.
@@ -766,8 +742,8 @@ ${conversationText}
 
 Updated Summary:`;
     } else {
-        // FRESH MODE: First time encoding
-        summaryPrompt = `You are a specialized Context Compressor. Your goal is to create a long-term memory for this conversation.
+      // FRESH MODE: First time encoding
+      summaryPrompt = `You are a specialized Context Compressor. Your goal is to create a long-term memory for this conversation.
 
 INSTRUCTIONS:
 - Summarize the provided conversation.
@@ -799,8 +775,8 @@ Summary:`;
         model: this.model,
         messages: providerMessages,
         options: {
-            maxTokens: maxTokens + 100, // Allowance for structure
-            temperature: 0.2, // Low temp for factual consistency
+          maxTokens: maxTokens + 100, // Allowance for structure
+          temperature: 0.2, // Low temp for factual consistency
         },
         timeout,
       })) {
@@ -825,7 +801,7 @@ Summary:`;
 
   /**
    * Create a placeholder summary text
-   * 
+   *
    * @param messages - Messages to summarize
    * @returns Summary text
    */
@@ -836,7 +812,7 @@ Summary:`;
 
   /**
    * Create a truncation summary message
-   * 
+   *
    * @param truncatedCount - Number of messages truncated
    * @returns Summary message
    */
@@ -851,7 +827,7 @@ Summary:`;
 
   /**
    * Create an empty summary message
-   * 
+   *
    * @returns Empty summary message
    */
   private createEmptySummary(): Message {
@@ -866,7 +842,7 @@ Summary:`;
   /**
    * Count tokens in a single message
    * Uses TokenCounterService if available, otherwise falls back to estimation
-   * 
+   *
    * @param message - Message to count
    * @returns Token count
    */
@@ -875,32 +851,32 @@ Summary:`;
     if (this.tokenCounter) {
       // Use cached count if available
       const count = this.tokenCounter.countTokensCached(message.id, message.content);
-      
+
       // Add tool call overhead if present
       if (message.metadata?.toolCalls) {
-        return count + (message.metadata.toolCalls.length * TOOL_CALL_OVERHEAD);
+        return count + message.metadata.toolCalls.length * TOOL_CALL_OVERHEAD;
       }
-      
+
       return count;
     }
-    
+
     // Fallback to estimation
     const contentTokens = Math.ceil(message.content.length / 4);
     // Add overhead for role and structure
     let total = contentTokens + 10;
-    
+
     // Add tool call overhead if present
     if (message.metadata?.toolCalls) {
       total += message.metadata.toolCalls.length * TOOL_CALL_OVERHEAD;
     }
-    
+
     return total;
   }
 
   /**
    * Count tokens in an array of messages
    * Uses TokenCounterService if available for accurate counting
-   * 
+   *
    * @param messages - Messages to count
    * @returns Total token count
    */
@@ -909,11 +885,8 @@ Summary:`;
     if (this.tokenCounter) {
       return this.tokenCounter.countConversationTokens(messages);
     }
-    
+
     // Fallback to local counting
-    return messages.reduce(
-      (sum, msg) => sum + this.countMessageTokens(msg),
-      0
-    );
+    return messages.reduce((sum, msg) => sum + this.countMessageTokens(msg), 0);
   }
 }

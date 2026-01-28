@@ -1,6 +1,6 @@
 /**
  * Tool System Exports
- * 
+ *
  * This module exports all built-in tools and provides a registration function
  * to register them with a tool registry.
  */
@@ -8,12 +8,12 @@
 // Import tool classes for registration function
 import { EditFileTool } from './edit-file.js';
 import { GlobTool } from './glob.js';
-import { 
-  CreateGoalTool, 
-  CreateCheckpointTool, 
-  CompleteGoalTool, 
-  RecordDecisionTool, 
-  SwitchGoalTool 
+import {
+  CreateGoalTool,
+  CreateCheckpointTool,
+  CompleteGoalTool,
+  RecordDecisionTool,
+  SwitchGoalTool,
 } from './goal-management.js';
 import { GrepTool } from './grep.js';
 import { LsTool } from './ls.js';
@@ -52,9 +52,17 @@ export { OutputFormatter, type TruncationConfig } from './output-helpers.js';
 
 // Export all built-in tools
 export { ReadFileTool, ReadFileInvocation, type ReadFileParams } from './read-file.js';
-export { ReadManyFilesTool, ReadManyFilesInvocation, type ReadManyFilesParams } from './read-many-files.js';
+export {
+  ReadManyFilesTool,
+  ReadManyFilesInvocation,
+  type ReadManyFilesParams,
+} from './read-many-files.js';
 export { WriteFileTool, WriteFileInvocation, type WriteFileParams } from './write-file.js';
-export { EditFileTool, EditFileInvocation, type EditFileParams /*, type FileEdit */ } from './edit-file.js';
+export {
+  EditFileTool,
+  EditFileInvocation,
+  type EditFileParams /*, type FileEdit */,
+} from './edit-file.js';
 export { GlobTool, GlobInvocation, type GlobParams } from './glob.js';
 export { GrepTool, GrepInvocation, type GrepParams } from './grep.js';
 export { LsTool, LsInvocation, type LsParams } from './ls.js';
@@ -67,17 +75,17 @@ export { RememberTool, RememberInvocation, type RememberParams } from './remembe
 export { MemoryDumpTool } from './MemoryDumpTool.js';
 export { HotSwapTool, HotSwapInvocation, type HotSwapParams } from './HotSwapTool.js';
 export { ToolRouter, type ToolRoutingConfig, DEFAULT_TOOL_ROUTING_CONFIG } from './toolRouter.js';
-export { 
-  CreateGoalTool, 
-  CreateCheckpointTool, 
-  CompleteGoalTool, 
-  RecordDecisionTool, 
+export {
+  CreateGoalTool,
+  CreateCheckpointTool,
+  CompleteGoalTool,
+  RecordDecisionTool,
   SwitchGoalTool,
   type CreateGoalParams,
   type CreateCheckpointParams,
   type CompleteGoalParams,
   type RecordDecisionParams,
-  type SwitchGoalParams
+  type SwitchGoalParams,
 } from './goal-management.js';
 export { ReadReasoningTool, type ReadReasoningParams } from './read-reasoning.js';
 
@@ -89,7 +97,7 @@ export interface BuiltInToolsConfig {
    * Path for memory storage (default: ~/.ollm/memory.json)
    */
   memoryPath?: string;
-  
+
   /**
    * Path for todos storage (default: ~/.ollm/todos.json)
    */
@@ -98,28 +106,28 @@ export interface BuiltInToolsConfig {
 
 /**
  * Register all built-in tools with a tool registry
- * 
+ *
  * This function creates instances of all built-in tools and registers them
  * with the provided registry. This is the recommended way to set up the
  * tool system with all standard tools.
- * 
+ *
  * @param registry The tool registry to register tools with
  * @param config Optional configuration for tools that require paths
- * 
+ *
  * @example
  * ```typescript
  * import { ToolRegistry, registerBuiltInTools } from '@ollm/core';
- * 
+ *
  * const registry = new ToolRegistry();
  * registerBuiltInTools(registry);
- * 
+ *
  * // Now the registry has all built-in tools available
  * const schemas = registry.getFunctionSchemas();
  * ```
  */
 export function registerBuiltInTools(registry: ToolRegistry, config?: BuiltInToolsConfig): void {
   const { memoryPath = '~/.ollm/memory.json', todosPath = '~/.ollm/todos.json' } = config || {};
-  
+
   // File reading tools
   registry.register(new ReadFileTool());
   registry.register(new ReadManyFilesTool());
@@ -143,17 +151,17 @@ export function registerBuiltInTools(registry: ToolRegistry, config?: BuiltInToo
   // Persistent storage tools
   registry.register(new MemoryTool(memoryPath));
   registry.register(new WriteTodosTool(todosPath));
-  
+
   // Goal management tools (for tool-capable models)
   registry.register(new CreateGoalTool());
   registry.register(new CreateCheckpointTool());
   registry.register(new CompleteGoalTool());
   registry.register(new RecordDecisionTool());
   registry.register(new SwitchGoalTool());
-  
+
   // Reasoning traces tool
   registry.register(new ReadReasoningTool());
-  
+
   // Note: MemoryDumpTool and HotSwapTool are registered dynamically in ChatContext
   // because they require runtime dependencies (modeManager, contextManager, etc.)
 }

@@ -42,16 +42,16 @@ export class KeyboardHandler {
    */
   register(shortcut: KeyboardShortcut): void {
     const normalizedKey = this.normalizeKey(shortcut.key);
-    
+
     // Check for conflicts
     if (this.shortcuts.has(normalizedKey)) {
       const existing = this.shortcuts.get(normalizedKey)!;
-      
+
       // Allow same key in different contexts
       if (shortcut.context !== existing.context) {
         // Store with context prefix
-        const contextKey = shortcut.context 
-          ? `${shortcut.context}:${normalizedKey}` 
+        const contextKey = shortcut.context
+          ? `${shortcut.context}:${normalizedKey}`
           : normalizedKey;
         this.shortcuts.set(contextKey, shortcut);
       } else {
@@ -121,9 +121,7 @@ export class KeyboardHandler {
    * Get shortcuts for a specific context
    */
   getContextShortcuts(context: string): KeyboardShortcut[] {
-    return Array.from(this.shortcuts.values()).filter(
-      (s) => s.context === context
-    );
+    return Array.from(this.shortcuts.values()).filter((s) => s.context === context);
   }
 
   /**
@@ -180,7 +178,7 @@ export class KeyboardHandler {
         const order = ['ctrl', 'shift', 'meta'];
         const aIndex = order.indexOf(a);
         const bIndex = order.indexOf(b);
-        
+
         if (aIndex !== -1 && bIndex !== -1) {
           return aIndex - bIndex;
         }

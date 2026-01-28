@@ -149,10 +149,37 @@ export class ModelRouter {
    */
   listProfiles(): RoutingProfile[] {
     return [
-      { name: 'fast', description: 'Quick responses with smaller models', preferredFamilies: ['phi', 'gemma', 'mistral'], minContextWindow: 4096, requiredCapabilities: ['streaming'], fallbackProfile: 'general' },
-      { name: 'general', description: 'Balanced performance for most tasks', preferredFamilies: ['llama', 'mistral', 'qwen'], minContextWindow: 8192, requiredCapabilities: ['streaming'] },
-      { name: 'code', description: 'Optimized for code generation', preferredFamilies: ['codellama', 'deepseek-coder', 'starcoder', 'qwen'], minContextWindow: 16384, requiredCapabilities: ['streaming'], fallbackProfile: 'general' },
-      { name: 'creative', description: 'Creative writing and storytelling', preferredFamilies: ['llama', 'mistral'], minContextWindow: 8192, requiredCapabilities: ['streaming'], fallbackProfile: 'general' },
+      {
+        name: 'fast',
+        description: 'Quick responses with smaller models',
+        preferredFamilies: ['phi', 'gemma', 'mistral'],
+        minContextWindow: 4096,
+        requiredCapabilities: ['streaming'],
+        fallbackProfile: 'general',
+      },
+      {
+        name: 'general',
+        description: 'Balanced performance for most tasks',
+        preferredFamilies: ['llama', 'mistral', 'qwen'],
+        minContextWindow: 8192,
+        requiredCapabilities: ['streaming'],
+      },
+      {
+        name: 'code',
+        description: 'Optimized for code generation',
+        preferredFamilies: ['codellama', 'deepseek-coder', 'starcoder', 'qwen'],
+        minContextWindow: 16384,
+        requiredCapabilities: ['streaming'],
+        fallbackProfile: 'general',
+      },
+      {
+        name: 'creative',
+        description: 'Creative writing and storytelling',
+        preferredFamilies: ['llama', 'mistral'],
+        minContextWindow: 8192,
+        requiredCapabilities: ['streaming'],
+        fallbackProfile: 'general',
+      },
     ];
   }
 

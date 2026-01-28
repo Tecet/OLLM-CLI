@@ -4,6 +4,7 @@
 **Status:** Source of Truth
 
 **Related Documents:**
+
 - `dev_ContextManagement.md` - Context sizing, tiers, VRAM
 - `dev_PromptSystem.md` - Prompt structure, tiers, modes
 
@@ -22,11 +23,13 @@ The Compression System manages conversation history when context approaches its 
 Ollama enforces a fixed context limit (e.g., 6800 tokens for 8K selection). As conversation grows, we must compress history into checkpoints while maintaining available space for new messages.
 
 **Without dynamic budget tracking:**
+
 - Compression triggers too frequently
 - Context fills up prematurely
 - Conversation ends after 1-2 compressions
 
 **With dynamic budget tracking:**
+
 - Compression triggers based on available space
 - Checkpoints age and compress further
 - Conversation sustains 3-5+ compressions
@@ -126,10 +129,11 @@ const checkpointTokens = checkpoints.reduce((sum, cp) => sum + cp.tokens, 0);
 const availableBudget = context.maxTokens - systemTokens - checkpointTokens;
 
 // Trigger compression at 80% of AVAILABLE budget
-const compressionTrigger = availableBudget * 0.80;
+const compressionTrigger = availableBudget * 0.8;
 ```
 
 **Why 80%?**
+
 - Leaves 20% buffer for final messages
 - Prevents race condition with Ollama's limit
 - Allows time for compression to complete
@@ -143,18 +147,18 @@ const compressionTrigger = availableBudget * 0.80;
 ```typescript
 interface CompressionCheckpoint {
   id: string;
-  level: 1 | 2 | 3;           // Compression level (1=compact, 3=detailed)
-  range: string;              // Message range (e.g., "Messages 1-50")
-  summary: Message;           // LLM-generated summary
+  level: 1 | 2 | 3; // Compression level (1=compact, 3=detailed)
+  range: string; // Message range (e.g., "Messages 1-50")
+  summary: Message; // LLM-generated summary
   createdAt: Date;
-  compressedAt?: Date;        // When aged/re-compressed
-  originalTokens: number;     // Before compression
-  currentTokens: number;      // After compression
-  compressionCount: number;   // How many times compressed
+  compressedAt?: Date; // When aged/re-compressed
+  originalTokens: number; // Before compression
+  currentTokens: number; // After compression
+  compressionCount: number; // How many times compressed
   compressionNumber?: number; // Sequence number
-  keyDecisions?: string[];    // Important decisions
-  filesModified?: string[];   // Files changed
-  nextSteps?: string[];       // Planned actions
+  keyDecisions?: string[]; // Important decisions
+  filesModified?: string[]; // Files changed
+  nextSteps?: string[]; // Planned actions
 }
 ```
 
@@ -234,6 +238,7 @@ interface Goal {
 ### Goal Preservation Rules
 
 **Always Preserved (Never Compressed):**
+
 - Active goal description
 - All checkpoints (pending, in-progress, completed)
 - Locked decisions
@@ -241,6 +246,7 @@ interface Goal {
 - Next steps
 
 **Updated During Compression:**
+
 - Checkpoint status (marked as completed)
 - New decisions added
 - New artifacts recorded
@@ -256,16 +262,28 @@ Priority: ${goal.priority}
 Status: ${goal.status}
 
 COMPLETED CHECKPOINTS:
-${goal.checkpoints.filter(cp => cp.status === 'completed').map(cp => `✅ ${cp.description}`).join('\n')}
+${goal.checkpoints
+  .filter((cp) => cp.status === 'completed')
+  .map((cp) => `✅ ${cp.description}`)
+  .join('\n')}
 
 IN PROGRESS:
-${goal.checkpoints.filter(cp => cp.status === 'in-progress').map(cp => `🔄 ${cp.description}`).join('\n')}
+${goal.checkpoints
+  .filter((cp) => cp.status === 'in-progress')
+  .map((cp) => `🔄 ${cp.description}`)
+  .join('\n')}
 
 PENDING:
-${goal.checkpoints.filter(cp => cp.status === 'pending').map(cp => `⏳ ${cp.description}`).join('\n')}
+${goal.checkpoints
+  .filter((cp) => cp.status === 'pending')
+  .map((cp) => `⏳ ${cp.description}`)
+  .join('\n')}
 
 LOCKED DECISIONS:
-${goal.decisions.filter(d => d.locked).map(d => `🔒 ${d.description}`).join('\n')}
+${goal.decisions
+  .filter((d) => d.locked)
+  .map((d) => `🔒 ${d.description}`)
+  .join('\n')}
 
 ---
 
@@ -315,19 +333,19 @@ const markers = parseGoalMarkers(llmOutput);
 
 // Update goal
 if (markers.checkpoints) {
-  markers.checkpoints.forEach(cp => {
+  markers.checkpoints.forEach((cp) => {
     updateCheckpoint(goal.id, cp.description, cp.status);
   });
 }
 
 if (markers.decisions) {
-  markers.decisions.forEach(d => {
+  markers.decisions.forEach((d) => {
     addDecision(goal.id, d.description, d.locked);
   });
 }
 
 if (markers.artifacts) {
-  markers.artifacts.forEach(a => {
+  markers.artifacts.forEach((a) => {
     recordArtifact(goal.id, a.type, a.path, a.action);
   });
 }
@@ -372,21 +390,25 @@ if (markers.artifacts) {
 ### Benefits of Goal-Aware Compression
 
 **1. Better Summarization Quality**
+
 - LLM knows what's important
 - Preserves goal-relevant information
 - Summarizes off-topic content more aggressively
 
 **2. Maintains Context Continuity**
+
 - Goals provide thread through conversation
 - Checkpoints show progress
 - Decisions prevent backtracking
 
 **3. Improved Reliability**
+
 - Less context loss over compressions
 - Clear progress tracking
 - Explicit decision recording
 
 **4. Better User Experience**
+
 - User can see progress at a glance
 - Clear next steps
 - Transparent decision-making
@@ -398,6 +420,7 @@ if (markers.artifacts) {
 ### Who Does the Compression?
 
 **The LLM does the summarization**, not our app. Our app:
+
 1. Identifies messages to compress
 2. Sends them to the LLM with a summarization prompt
 3. Receives the summary back
@@ -425,16 +448,16 @@ const checkpoint = {
   tokens: countTokens(summary),
   originalTokens: countTokens(messagesToCompress),
   compressionRatio: summary.tokens / messagesToCompress.tokens,
-  timestamp: Date.now()
+  timestamp: Date.now(),
 };
 
 // 4. Replace original messages with checkpoint
 context.messages = [
-  systemPrompt,           // Always preserved
-  ...checkpoints,         // All previous checkpoints
-  checkpoint,             // New checkpoint
-  ...userMessages,        // Always preserved (never compress)
-  ...recentMessages       // Most recent (not yet compressed)
+  systemPrompt, // Always preserved
+  ...checkpoints, // All previous checkpoints
+  checkpoint, // New checkpoint
+  ...userMessages, // Always preserved (never compress)
+  ...recentMessages, // Most recent (not yet compressed)
 ];
 ```
 
@@ -454,29 +477,34 @@ context.messages = [
 The following content is ALWAYS preserved in full and never compressed:
 
 **1. System Prompt**
+
 - Core mandates
 - Active goals
 - Active skills
 - Sanity checks
 
 **2. User Messages**
+
 - All user input
 - All user questions
 - All user instructions
 
 **3. Goals and Decisions**
+
 - Active goal description
 - Goal checkpoints (pending, in-progress, completed)
 - Locked decisions
 - Key artifacts
 
 **4. Architecture Decisions**
+
 - Design patterns chosen
 - Technology stack decisions
 - API contracts
 - Database schemas
 
 **Example Context Structure:**
+
 ```
 [System Prompt] - 500 tokens (never compressed)
   ├─ Core Mandates
@@ -593,12 +621,14 @@ The system maintains two separate storage systems:
 ### Snapshot vs Checkpoint
 
 **Checkpoint:**
+
 - Compressed summary of conversation history
 - Part of active context
 - Sent to LLM with each message
 - Ages over time
 
 **Snapshot:**
+
 - Full conversation state saved to disk
 - Not part of active context
 - Used for recovery and rollback
@@ -611,7 +641,7 @@ interface ContextSnapshot {
   id: string;
   sessionId: string;
   timestamp: Date;
-  context: ConversationContext;  // Full state
+  context: ConversationContext; // Full state
   tokenCount: number;
   messageCount: number;
   checkpointCount: number;
@@ -626,18 +656,21 @@ interface ContextSnapshot {
 ### Snapshot Operations
 
 **Create Snapshot:**
+
 ```typescript
 const snapshot = await contextManager.createSnapshot();
 // Saves full conversation state to disk
 ```
 
 **Restore Snapshot:**
+
 ```typescript
 await contextManager.restoreSnapshot(snapshotId);
 // Restores conversation to previous state
 ```
 
 **List Snapshots:**
+
 ```typescript
 const snapshots = await contextManager.listSnapshots();
 // Returns all available snapshots
@@ -653,17 +686,21 @@ The system tracks conversation reliability based on model size and compression c
 
 ```typescript
 // Model size factor (see dev_ModelManagement.md for detection)
-const modelFactor = 
-  modelSize >= 70 ? 0.95 :  // 70B+ models
-  modelSize >= 30 ? 0.85 :  // 30B models
-  modelSize >= 13 ? 0.70 :  // 13B models
-  modelSize >= 7  ? 0.50 :  // 7B models
-  0.30;                      // 3B and below
+const modelFactor =
+  modelSize >= 70
+    ? 0.95 // 70B+ models
+    : modelSize >= 30
+      ? 0.85 // 30B models
+      : modelSize >= 13
+        ? 0.7 // 13B models
+        : modelSize >= 7
+          ? 0.5 // 7B models
+          : 0.3; // 3B and below
 
 // Compression penalty (15% per compression)
 const compressionPenalty = Math.max(
-  1.0 - (compressionCount * 0.15),
-  0.30  // Never go below 30%
+  1.0 - compressionCount * 0.15,
+  0.3 // Never go below 30%
 );
 
 // Final score
@@ -672,12 +709,12 @@ const score = modelFactor * compressionPenalty * contextConfidence;
 
 ### Reliability Levels
 
-| Score | Level | Icon | Meaning |
-|-------|-------|------|---------|
-| 85-100% | High | 🟢 | Excellent reliability |
-| 60-84% | Medium | 🟡 | Good reliability |
-| 40-59% | Low | 🟠 | Degraded reliability |
-| <40% | Critical | 🔴 | Poor reliability |
+| Score   | Level    | Icon | Meaning               |
+| ------- | -------- | ---- | --------------------- |
+| 85-100% | High     | 🟢   | Excellent reliability |
+| 60-84%  | Medium   | 🟡   | Good reliability      |
+| 40-59%  | Low      | 🟠   | Degraded reliability  |
+| <40%    | Critical | 🔴   | Poor reliability      |
 
 ### UI Display
 
@@ -686,6 +723,7 @@ Context: 5,234/6,800  🟡 65%  (2 compressions)
 ```
 
 **Warning for Low Reliability:**
+
 ```
 ⚠️ Context Compression Warning
 Your model (llama3.2:3b) has compressed the conversation 3 times.
@@ -707,8 +745,8 @@ Recommendations:
 interface CompressionConfig {
   enabled: boolean;
   strategy: 'summarize' | 'truncate';
-  preserveRecent: number;     // Tokens to preserve
-  summaryMaxTokens: number;   // Max tokens for summary
+  preserveRecent: number; // Tokens to preserve
+  summaryMaxTokens: number; // Max tokens for summary
 }
 ```
 
@@ -718,7 +756,7 @@ interface CompressionConfig {
 interface SnapshotConfig {
   enabled: boolean;
   autoCreate: boolean;
-  autoThreshold: number;  // Trigger at % of context
+  autoThreshold: number; // Trigger at % of context
 }
 ```
 
@@ -735,7 +773,7 @@ const DEFAULT_CONFIG = {
   snapshots: {
     enabled: true,
     autoCreate: true,
-    autoThreshold: 0.80,  // 80% of available budget
+    autoThreshold: 0.8, // 80% of available budget
   },
 };
 ```
@@ -805,6 +843,7 @@ const DEFAULT_CONFIG = {
 **Symptom:** Reliability score below 40%
 
 **Solutions:**
+
 1. Start new conversation
 2. Use larger model (13B+ recommended)
 3. Review and preserve important decisions
@@ -815,6 +854,7 @@ const DEFAULT_CONFIG = {
 **Symptom:** "Compression failed" error
 
 **Solutions:**
+
 1. Check LLM is responding
 2. Verify enough messages to compress
 3. Check compression config
@@ -825,6 +865,7 @@ const DEFAULT_CONFIG = {
 **Symptom:** Compression triggers immediately after previous compression
 
 **Solutions:**
+
 1. Verify dynamic budget calculation is working
 2. Check checkpoint tokens are being tracked
 3. Ensure checkpoints are aging properly
@@ -837,18 +878,21 @@ const DEFAULT_CONFIG = {
 Goals are integrated into both the Compression System and Prompt System:
 
 **In Compression System (this document):**
+
 - Goals are NEVER compressed
 - Goals guide summarization (what to preserve)
 - Goal markers update goal structure
 - Goals maintain continuity across compressions
 
 **In Prompt System (dev_PromptSystem.md):**
+
 - Goals are part of the system prompt
 - Always visible to the LLM
 - Updated when milestones are reached
 - Guide LLM behavior and focus
 
 **Flow:**
+
 ```
 User provides task
   ↓
@@ -873,15 +917,15 @@ Continue conversation with updated goal
 
 ## File Locations
 
-| File | Purpose |
-|------|---------|
-| `packages/core/src/context/compressionCoordinator.ts` | Orchestrates compression |
-| `packages/core/src/context/compressionService.ts` | LLM summarization |
-| `packages/core/src/context/checkpointManager.ts` | Checkpoint management |
-| `packages/core/src/context/snapshotManager.ts` | Snapshot operations |
-| `packages/core/src/context/messageStore.ts` | Tracks usage, triggers compression |
-| `packages/core/src/context/goalManager.ts` | Goal management |
-| `packages/core/src/services/chatRecordingService.ts` | Full history storage |
+| File                                                  | Purpose                            |
+| ----------------------------------------------------- | ---------------------------------- |
+| `packages/core/src/context/compressionCoordinator.ts` | Orchestrates compression           |
+| `packages/core/src/context/compressionService.ts`     | LLM summarization                  |
+| `packages/core/src/context/checkpointManager.ts`      | Checkpoint management              |
+| `packages/core/src/context/snapshotManager.ts`        | Snapshot operations                |
+| `packages/core/src/context/messageStore.ts`           | Tracks usage, triggers compression |
+| `packages/core/src/context/goalManager.ts`            | Goal management                    |
+| `packages/core/src/services/chatRecordingService.ts`  | Full history storage               |
 
 ---
 

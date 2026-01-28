@@ -89,10 +89,10 @@ describe('Chat Client - Property-Based Tests', () => {
             ];
 
             const provider = new MockProvider(eventsWithFinish);
-            
+
             // Unregister if already exists (for property test iterations)
             providerRegistry.unregister('mock');
-            
+
             providerRegistry.register(provider);
             providerRegistry.setDefault('mock');
 
@@ -136,7 +136,7 @@ describe('Chat Client - Property-Based Tests', () => {
         fc.asyncProperty(fc.string(), async (errorMessage: string) => {
           const providerEvents = [
             { type: 'error' as const, error: { message: errorMessage } },
-            { type: 'finish' as const, reason: 'error' as const }
+            { type: 'finish' as const, reason: 'error' as const },
           ];
 
           const provider = new MockProvider(providerEvents);
@@ -239,51 +239,44 @@ describe('Chat Client - Property-Based Tests', () => {
       // Feature: stage-02-core-provider, Property 9: Maximum Turn Limit
       // Validates: Requirements 3.5
       await fc.assert(
-        fc.asyncProperty(
-          fc.integer({ min: 1, max: 5 }),
-          async (maxTurns: number) => {
-            // Create a provider that always emits tool calls (infinite loop scenario)
-            const providerEvents: ProviderEvent[] = [
-              { type: 'text', value: 'Calling tool' },
-              {
-                type: 'tool_call',
-                value: { id: '1', name: 'test_tool', args: {} },
-              },
-              { type: 'finish', reason: 'tool' },
-            ];
+        fc.asyncProperty(fc.integer({ min: 1, max: 5 }), async (maxTurns: number) => {
+          // Create a provider that always emits tool calls (infinite loop scenario)
+          const providerEvents: ProviderEvent[] = [
+            { type: 'text', value: 'Calling tool' },
+            {
+              type: 'tool_call',
+              value: { id: '1', name: 'test_tool', args: {} },
+            },
+            { type: 'finish', reason: 'tool' },
+          ];
 
-            const provider = new MockProvider(providerEvents);
-            providerRegistry.unregister('mock');
-            providerRegistry.register(provider);
-            providerRegistry.setDefault('mock');
+          const provider = new MockProvider(providerEvents);
+          providerRegistry.unregister('mock');
+          providerRegistry.register(provider);
+          providerRegistry.setDefault('mock');
 
-            // Register a mock tool
-            toolRegistry.register('test_tool', {
-              execute: async () => ({ result: 'success' }),
-            });
+          // Register a mock tool
+          toolRegistry.register('test_tool', {
+            execute: async () => ({ result: 'success' }),
+          });
 
-            const client = new ChatClient(providerRegistry, toolRegistry);
-            const events = await collectEvents(
-              client.chat('test prompt', { maxTurns })
-            );
+          const client = new ChatClient(providerRegistry, toolRegistry);
+          const events = await collectEvents(client.chat('test prompt', { maxTurns }));
 
-            // Count turn_complete events
-            const turnCompleteEvents = events.filter(
-              (e) => e.type === 'turn_complete'
-            );
-            expect(turnCompleteEvents.length).toBe(maxTurns);
+          // Count turn_complete events
+          const turnCompleteEvents = events.filter((e) => e.type === 'turn_complete');
+          expect(turnCompleteEvents.length).toBe(maxTurns);
 
-            // Should have finish event with max_turns reason
-            const finishEvents = events.filter((e) => e.type === 'finish');
-            expect(finishEvents.length).toBe(1);
+          // Should have finish event with max_turns reason
+          const finishEvents = events.filter((e) => e.type === 'finish');
+          expect(finishEvents.length).toBe(1);
 
-            if (finishEvents[0].type === 'finish') {
-              expect(finishEvents[0].reason).toBe('max_turns');
-            }
-
-            return true;
+          if (finishEvents[0].type === 'finish') {
+            expect(finishEvents[0].reason).toBe('max_turns');
           }
-        ),
+
+          return true;
+        }),
         { numRuns: 100 }
       );
     });
@@ -292,42 +285,35 @@ describe('Chat Client - Property-Based Tests', () => {
       // Feature: stage-02-core-provider, Property 9: Maximum Turn Limit
       // Validates: Requirements 3.5
       await fc.assert(
-        fc.asyncProperty(
-          fc.integer({ min: 2, max: 10 }),
-          async (maxTurns: number) => {
-            // Create a provider that completes without tool calls
-            const providerEvents: ProviderEvent[] = [
-              { type: 'text', value: 'Final answer' },
-              { type: 'finish', reason: 'stop' },
-            ];
+        fc.asyncProperty(fc.integer({ min: 2, max: 10 }), async (maxTurns: number) => {
+          // Create a provider that completes without tool calls
+          const providerEvents: ProviderEvent[] = [
+            { type: 'text', value: 'Final answer' },
+            { type: 'finish', reason: 'stop' },
+          ];
 
-            const provider = new MockProvider(providerEvents);
-            providerRegistry.unregister('mock');
-            providerRegistry.register(provider);
-            providerRegistry.setDefault('mock');
+          const provider = new MockProvider(providerEvents);
+          providerRegistry.unregister('mock');
+          providerRegistry.register(provider);
+          providerRegistry.setDefault('mock');
 
-            const client = new ChatClient(providerRegistry, toolRegistry);
-            const events = await collectEvents(
-              client.chat('test prompt', { maxTurns })
-            );
+          const client = new ChatClient(providerRegistry, toolRegistry);
+          const events = await collectEvents(client.chat('test prompt', { maxTurns }));
 
-            // Should complete in 1 turn
-            const turnCompleteEvents = events.filter(
-              (e) => e.type === 'turn_complete'
-            );
-            expect(turnCompleteEvents.length).toBe(1);
+          // Should complete in 1 turn
+          const turnCompleteEvents = events.filter((e) => e.type === 'turn_complete');
+          expect(turnCompleteEvents.length).toBe(1);
 
-            // Should have finish event with complete reason
-            const finishEvents = events.filter((e) => e.type === 'finish');
-            expect(finishEvents.length).toBe(1);
+          // Should have finish event with complete reason
+          const finishEvents = events.filter((e) => e.type === 'finish');
+          expect(finishEvents.length).toBe(1);
 
-            if (finishEvents[0].type === 'finish') {
-              expect(finishEvents[0].reason).toBe('complete');
-            }
-
-            return true;
+          if (finishEvents[0].type === 'finish') {
+            expect(finishEvents[0].reason).toBe('complete');
           }
-        ),
+
+          return true;
+        }),
         { numRuns: 100 }
       );
     });
@@ -480,9 +466,7 @@ describe('Chat Client - Unit Tests', () => {
       });
 
       const client = new ChatClient(providerRegistry, toolRegistry);
-      const events = await collectEvents(
-        client.chat('Start infinite loop', { maxTurns: 3 })
-      );
+      const events = await collectEvents(client.chat('Start infinite loop', { maxTurns: 3 }));
 
       // Should have exactly 3 turns
       const turnCompleteEvents = events.filter((e) => e.type === 'turn_complete');
@@ -535,9 +519,7 @@ describe('Chat Client - Unit Tests', () => {
   describe('Error Handling', () => {
     it('should emit error when provider is not found', async () => {
       const client = new ChatClient(providerRegistry, toolRegistry);
-      const events = await collectEvents(
-        client.chat('Test', { provider: 'nonexistent' })
-      );
+      const events = await collectEvents(client.chat('Test', { provider: 'nonexistent' }));
 
       // Should have error event
       const errorEvents = events.filter((e) => e.type === 'error');
@@ -599,79 +581,76 @@ describe('Chat Client - Unit Tests', () => {
       // Feature: stage-02-core-provider, Property 32: Tool Execution Error Handling
       // Validates: Requirements 10.2
       await fc.assert(
-        fc.asyncProperty(
-          fc.string({ minLength: 1 }),
-          async (errorMessage: string) => {
-            // First turn: tool call that will fail
-            const firstTurnEvents: ProviderEvent[] = [
-              { type: 'text', value: 'Calling tool' },
-              {
-                type: 'tool_call',
-                value: { id: 'call-1', name: 'failing_tool', args: {} },
-              },
-              { type: 'finish', reason: 'tool' },
-            ];
+        fc.asyncProperty(fc.string({ minLength: 1 }), async (errorMessage: string) => {
+          // First turn: tool call that will fail
+          const firstTurnEvents: ProviderEvent[] = [
+            { type: 'text', value: 'Calling tool' },
+            {
+              type: 'tool_call',
+              value: { id: 'call-1', name: 'failing_tool', args: {} },
+            },
+            { type: 'finish', reason: 'tool' },
+          ];
 
-            // Second turn: model responds after seeing error
-            const secondTurnEvents: ProviderEvent[] = [
-              { type: 'text', value: 'I see there was an error' },
-              { type: 'finish', reason: 'stop' },
-            ];
+          // Second turn: model responds after seeing error
+          const secondTurnEvents: ProviderEvent[] = [
+            { type: 'text', value: 'I see there was an error' },
+            { type: 'finish', reason: 'stop' },
+          ];
 
-            let callCount = 0;
-            const provider: ProviderAdapter = {
-              name: 'mock',
-              async *chatStream(_request: ProviderRequest): AsyncIterable<ProviderEvent> {
-                callCount++;
-                const events = callCount === 1 ? firstTurnEvents : secondTurnEvents;
-                for (const event of events) {
-                  yield event;
-                }
-              },
-            };
+          let callCount = 0;
+          const provider: ProviderAdapter = {
+            name: 'mock',
+            async *chatStream(_request: ProviderRequest): AsyncIterable<ProviderEvent> {
+              callCount++;
+              const events = callCount === 1 ? firstTurnEvents : secondTurnEvents;
+              for (const event of events) {
+                yield event;
+              }
+            },
+          };
 
-            providerRegistry.unregister('mock');
-            providerRegistry.register(provider);
-            providerRegistry.setDefault('mock');
+          providerRegistry.unregister('mock');
+          providerRegistry.register(provider);
+          providerRegistry.setDefault('mock');
 
-            // Register tool that throws error
-            toolRegistry.register('failing_tool', {
-              execute: async () => {
-                throw new Error(errorMessage);
-              },
-            });
+          // Register tool that throws error
+          toolRegistry.register('failing_tool', {
+            execute: async () => {
+              throw new Error(errorMessage);
+            },
+          });
 
-            const client = new ChatClient(providerRegistry, toolRegistry);
-            const events = await collectEvents(client.chat('Test'));
+          const client = new ChatClient(providerRegistry, toolRegistry);
+          const events = await collectEvents(client.chat('Test'));
 
-            // Should have tool result with error
-            const toolResultEvents = events.filter((e) => e.type === 'tool_call_result');
-            if (toolResultEvents.length === 0) return false;
+          // Should have tool result with error
+          const toolResultEvents = events.filter((e) => e.type === 'tool_call_result');
+          if (toolResultEvents.length === 0) return false;
 
-            const toolResult = toolResultEvents[0];
-            if (toolResult.type !== 'tool_call_result') return false;
+          const toolResult = toolResultEvents[0];
+          if (toolResult.type !== 'tool_call_result') return false;
 
-            const hasError =
-              typeof toolResult.result === 'object' &&
-              toolResult.result !== null &&
-              'error' in toolResult.result &&
-              typeof (toolResult.result as any).error === 'string' &&
-              (toolResult.result as any).error.includes(errorMessage);
+          const hasError =
+            typeof toolResult.result === 'object' &&
+            toolResult.result !== null &&
+            'error' in toolResult.result &&
+            typeof (toolResult.result as any).error === 'string' &&
+            (toolResult.result as any).error.includes(errorMessage);
 
-            // Should continue to second turn (not terminate)
-            const turnCompleteEvents = events.filter((e) => e.type === 'turn_complete');
-            const continuedAfterError = turnCompleteEvents.length === 2;
+          // Should continue to second turn (not terminate)
+          const turnCompleteEvents = events.filter((e) => e.type === 'turn_complete');
+          const continuedAfterError = turnCompleteEvents.length === 2;
 
-            // Should finish with complete reason (not error)
-            const finishEvents = events.filter((e) => e.type === 'finish');
-            const finishedNormally =
-              finishEvents.length === 1 &&
-              finishEvents[0].type === 'finish' &&
-              finishEvents[0].reason === 'complete';
+          // Should finish with complete reason (not error)
+          const finishEvents = events.filter((e) => e.type === 'finish');
+          const finishedNormally =
+            finishEvents.length === 1 &&
+            finishEvents[0].type === 'finish' &&
+            finishEvents[0].reason === 'complete';
 
-            return hasError && continuedAfterError && finishedNormally;
-          }
-        ),
+          return hasError && continuedAfterError && finishedNormally;
+        }),
         { numRuns: 100 }
       );
     });
@@ -682,64 +661,61 @@ describe('Chat Client - Unit Tests', () => {
       // Feature: stage-02-core-provider, Property 34: Abort Signal Cleanup
       // Validates: Requirements 10.4
       await fc.assert(
-        fc.asyncProperty(
-          fc.integer({ min: 1, max: 3 }),
-          async (abortAfterTurns: number) => {
-            // Provider that emits tool calls to trigger multiple turns
-            const providerEvents: ProviderEvent[] = [
-              { type: 'text', value: 'Calling tool' },
-              {
-                type: 'tool_call',
-                value: { id: '1', name: 'test_tool', args: {} },
-              },
-              { type: 'finish', reason: 'tool' },
-            ];
+        fc.asyncProperty(fc.integer({ min: 1, max: 3 }), async (abortAfterTurns: number) => {
+          // Provider that emits tool calls to trigger multiple turns
+          const providerEvents: ProviderEvent[] = [
+            { type: 'text', value: 'Calling tool' },
+            {
+              type: 'tool_call',
+              value: { id: '1', name: 'test_tool', args: {} },
+            },
+            { type: 'finish', reason: 'tool' },
+          ];
 
-            const provider = new MockProvider(providerEvents);
-            providerRegistry.unregister('mock');
-            providerRegistry.register(provider);
-            providerRegistry.setDefault('mock');
+          const provider = new MockProvider(providerEvents);
+          providerRegistry.unregister('mock');
+          providerRegistry.register(provider);
+          providerRegistry.setDefault('mock');
 
-            toolRegistry.register('test_tool', {
-              execute: async () => ({ result: 'success' }),
-            });
+          toolRegistry.register('test_tool', {
+            execute: async () => ({ result: 'success' }),
+          });
 
-            const abortController = new AbortController();
-            const client = new ChatClient(providerRegistry, toolRegistry);
+          const abortController = new AbortController();
+          const client = new ChatClient(providerRegistry, toolRegistry);
 
-            const events: ChatEvent[] = [];
-            let turnCount = 0;
+          const events: ChatEvent[] = [];
+          let turnCount = 0;
 
-            const chatIterator = client.chat('test prompt', {
-              abortSignal: abortController.signal,
-              maxTurns: 10,
-            });
+          const chatIterator = client.chat('test prompt', {
+            abortSignal: abortController.signal,
+            maxTurns: 10,
+          });
 
-            for await (const event of chatIterator) {
-              events.push(event);
+          for await (const event of chatIterator) {
+            events.push(event);
 
-              if (event.type === 'turn_complete') {
-                turnCount++;
-                if (turnCount === abortAfterTurns) {
-                  abortController.abort();
-                }
+            if (event.type === 'turn_complete') {
+              turnCount++;
+              if (turnCount === abortAfterTurns) {
+                abortController.abort();
               }
             }
-
-            // Should have finish event with cancelled reason
-            const finishEvents = events.filter((e) => e.type === 'finish');
-            const wasCancelled =
-              finishEvents.length === 1 &&
-              finishEvents[0].type === 'finish' &&
-              finishEvents[0].reason === 'cancelled';
-
-            // Should not have exceeded the abort turn count by more than 1
-            const turnCompleteEvents = events.filter((e) => e.type === 'turn_complete');
-            const stoppedQuickly = turnCompleteEvents.length <= abortAfterTurns + 1;
-
-            return wasCancelled && stoppedQuickly;
           }
-        ),
+
+          // Should have finish event with cancelled reason
+          const finishEvents = events.filter((e) => e.type === 'finish');
+          const wasCancelled =
+            finishEvents.length === 1 &&
+            finishEvents[0].type === 'finish' &&
+            finishEvents[0].reason === 'cancelled';
+
+          // Should not have exceeded the abort turn count by more than 1
+          const turnCompleteEvents = events.filter((e) => e.type === 'turn_complete');
+          const stoppedQuickly = turnCompleteEvents.length <= abortAfterTurns + 1;
+
+          return wasCancelled && stoppedQuickly;
+        }),
         { numRuns: 100 }
       );
     });
@@ -750,50 +726,47 @@ describe('Chat Client - Unit Tests', () => {
       // Feature: stage-02-core-provider, Property 35: Unexpected Error Resilience
       // Validates: Requirements 10.5
       await fc.assert(
-        fc.asyncProperty(
-          fc.string({ minLength: 1 }),
-          async (errorMessage: string) => {
-            // Provider that throws an unexpected error
-            const provider: ProviderAdapter = {
-              name: 'mock',
-              async *chatStream(_request: ProviderRequest): AsyncIterable<ProviderEvent> {
-                yield { type: 'text', value: 'Starting...' };
-                throw new Error(errorMessage);
-              },
-            };
+        fc.asyncProperty(fc.string({ minLength: 1 }), async (errorMessage: string) => {
+          // Provider that throws an unexpected error
+          const provider: ProviderAdapter = {
+            name: 'mock',
+            async *chatStream(_request: ProviderRequest): AsyncIterable<ProviderEvent> {
+              yield { type: 'text', value: 'Starting...' };
+              throw new Error(errorMessage);
+            },
+          };
 
-            providerRegistry.unregister('mock');
-            providerRegistry.register(provider);
-            providerRegistry.setDefault('mock');
+          providerRegistry.unregister('mock');
+          providerRegistry.register(provider);
+          providerRegistry.setDefault('mock');
 
-            const client = new ChatClient(providerRegistry, toolRegistry);
-            const events: ChatEvent[] = [];
+          const client = new ChatClient(providerRegistry, toolRegistry);
+          const events: ChatEvent[] = [];
 
-            // Should not throw - should emit error event instead
-            let didThrow = false;
-            try {
-              for await (const event of client.chat('test message')) {
-                events.push(event);
-              }
-            } catch (_error) {
-              didThrow = true;
+          // Should not throw - should emit error event instead
+          let didThrow = false;
+          try {
+            for await (const event of client.chat('test message')) {
+              events.push(event);
             }
-            expect(didThrow).toBe(false);
-
-            // Should have error event
-            const errorEvents = events.filter((e) => e.type === 'error');
-            const hasErrorEvent =
-              errorEvents.length > 0 &&
-              errorEvents[0].type === 'error' &&
-              errorEvents[0].error.message.includes(errorMessage);
-
-            // Should have finish event
-            const finishEvents = events.filter((e) => e.type === 'finish');
-            const hasFinishEvent = finishEvents.length === 1;
-
-            return hasErrorEvent && hasFinishEvent;
+          } catch (_error) {
+            didThrow = true;
           }
-        ),
+          expect(didThrow).toBe(false);
+
+          // Should have error event
+          const errorEvents = events.filter((e) => e.type === 'error');
+          const hasErrorEvent =
+            errorEvents.length > 0 &&
+            errorEvents[0].type === 'error' &&
+            errorEvents[0].error.message.includes(errorMessage);
+
+          // Should have finish event
+          const finishEvents = events.filter((e) => e.type === 'finish');
+          const hasFinishEvent = finishEvents.length === 1;
+
+          return hasErrorEvent && hasFinishEvent;
+        }),
         { numRuns: 100 }
       );
     });
@@ -859,9 +832,7 @@ describe('Chat Client - Session Recording Integration', () => {
       expect(userMessages[0].message.parts[0].text).toBe('Say hello');
 
       // Should have recorded assistant message
-      const assistantMessages = recordedMessages.filter(
-        (m) => m.message.role === 'assistant'
-      );
+      const assistantMessages = recordedMessages.filter((m) => m.message.role === 'assistant');
       expect(assistantMessages.length).toBe(1);
       expect(assistantMessages[0].message.parts[0].text).toBe('Hello, world!');
 
@@ -1001,7 +972,7 @@ describe('Chat Client - Session Recording Integration', () => {
   describe('Compression Service Integration', () => {
     it('should check compression threshold before each turn', async () => {
       let compressionChecked = false;
-      
+
       const mockCompressionService = {
         shouldCompress: (messages: any[], tokenLimit: number, threshold: number) => {
           compressionChecked = true;
@@ -1126,7 +1097,7 @@ describe('Chat Client - Session Recording Integration', () => {
 
       // Track the messages sent to the provider
       let providerMessages: any[] = [];
-      
+
       const providerEvents: ProviderEvent[] = [
         { type: 'text', value: 'Response' },
         { type: 'finish', reason: 'stop' },
@@ -1491,7 +1462,7 @@ describe('Chat Client - Loop Detection Integration', () => {
 
     it('should track tool calls with different arguments separately', async () => {
       let callCount = 0;
-      
+
       // Create a provider that calls the same tool with different arguments
       const provider: ProviderAdapter = {
         name: 'mock',
@@ -1561,7 +1532,7 @@ describe('Chat Client - Context Manager Integration', () => {
     it('should inject context additions into system prompt', async () => {
       // Track the messages sent to the provider
       let providerMessages: any[] = [];
-      
+
       const providerEvents: ProviderEvent[] = [
         { type: 'text', value: 'Response with context' },
         { type: 'finish', reason: 'stop' },
@@ -1594,11 +1565,11 @@ describe('Chat Client - Context Manager Integration', () => {
 
       // Verify that context was injected into system prompt
       expect(providerMessages.length).toBeGreaterThan(0);
-      
+
       // Should have a system message with context
       const systemMessages = providerMessages.filter((m) => m.role === 'system');
       expect(systemMessages.length).toBe(1);
-      
+
       // System message should contain the context
       const systemText = systemMessages[0].parts.map((p: any) => p.text).join('');
       expect(systemText).toContain('This is test context');
@@ -1607,7 +1578,7 @@ describe('Chat Client - Context Manager Integration', () => {
 
     it('should inject context from multiple sources in priority order', async () => {
       let providerMessages: any[] = [];
-      
+
       const providerEvents: ProviderEvent[] = [
         { type: 'text', value: 'Response' },
         { type: 'finish', reason: 'stop' },
@@ -1649,14 +1620,14 @@ describe('Chat Client - Context Manager Integration', () => {
       // Verify that context was injected in priority order
       const systemMessages = providerMessages.filter((m) => m.role === 'system');
       expect(systemMessages.length).toBe(1);
-      
+
       const systemText = systemMessages[0].parts.map((p: any) => p.text).join('');
-      
+
       // High priority should appear before medium, medium before low
       const highIndex = systemText.indexOf('High priority context');
       const mediumIndex = systemText.indexOf('Medium priority context');
       const lowIndex = systemText.indexOf('Low priority context');
-      
+
       expect(highIndex).toBeGreaterThan(-1);
       expect(mediumIndex).toBeGreaterThan(-1);
       expect(lowIndex).toBeGreaterThan(-1);
@@ -1666,7 +1637,7 @@ describe('Chat Client - Context Manager Integration', () => {
 
     it('should append context to existing system prompt', async () => {
       let providerMessages: any[] = [];
-      
+
       const providerEvents: ProviderEvent[] = [
         { type: 'text', value: 'Response' },
         { type: 'finish', reason: 'stop' },
@@ -1704,9 +1675,9 @@ describe('Chat Client - Context Manager Integration', () => {
       // Verify that context was appended to existing system prompt
       const systemMessages = providerMessages.filter((m) => m.role === 'system');
       expect(systemMessages.length).toBe(1);
-      
+
       const systemText = systemMessages[0].parts.map((p: any) => p.text).join('');
-      
+
       // Should contain both original prompt and context
       expect(systemText).toContain('Original system prompt');
       expect(systemText).toContain('Additional context');
@@ -1739,7 +1710,7 @@ describe('Chat Client - Context Manager Integration', () => {
     it('should inject context on every turn', async () => {
       let turnCount = 0;
       const capturedMessages: any[][] = [];
-      
+
       // First turn: model calls a tool
       const firstTurnEvents: ProviderEvent[] = [
         { type: 'text', value: 'Calling tool' },
@@ -1798,7 +1769,7 @@ describe('Chat Client - Context Manager Integration', () => {
       for (const messages of capturedMessages) {
         const systemMessages = messages.filter((m) => m.role === 'system');
         expect(systemMessages.length).toBe(1);
-        
+
         const systemText = systemMessages[0].parts.map((p: any) => p.text).join('');
         expect(systemText).toContain('Context for all turns');
       }

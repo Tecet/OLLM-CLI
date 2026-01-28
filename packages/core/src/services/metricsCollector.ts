@@ -75,7 +75,8 @@ export class MetricsCollector {
     // Calculate time to first token
     let timeToFirstToken = 0;
     if (this.currentGeneration.firstTokenTime !== null) {
-      timeToFirstToken = (this.currentGeneration.firstTokenTime - this.currentGeneration.startTime) / 1000;
+      timeToFirstToken =
+        (this.currentGeneration.firstTokenTime - this.currentGeneration.startTime) / 1000;
     }
 
     // Calculate tokens per second
@@ -153,8 +154,10 @@ export class MetricsCollector {
 
     // Calculate average TTFT
     if (metrics.timeToFirstToken > 0) {
-      const previousTotal = this.sessionStats.averageTTFT * (this.sessionStats.totalGenerations - 1);
-      this.sessionStats.averageTTFT = (previousTotal + metrics.timeToFirstToken) / this.sessionStats.totalGenerations;
+      const previousTotal =
+        this.sessionStats.averageTTFT * (this.sessionStats.totalGenerations - 1);
+      this.sessionStats.averageTTFT =
+        (previousTotal + metrics.timeToFirstToken) / this.sessionStats.totalGenerations;
     }
   }
 }

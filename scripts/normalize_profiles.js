@@ -1,7 +1,14 @@
 import fs from 'fs/promises';
 import path from 'path';
 
-const profilesPath = path.join(process.cwd(), 'packages', 'cli', 'src', 'config', 'LLM_profiles.json');
+const profilesPath = path.join(
+  process.cwd(),
+  'packages',
+  'cli',
+  'src',
+  'config',
+  'LLM_profiles.json'
+);
 
 function parseVramEstimate(v) {
   if (v == null) return null;
@@ -60,7 +67,7 @@ async function main() {
   }
 }
 
-main().catch(err => {
+main().catch((err) => {
   console.error(err);
   process.exit(2);
 });

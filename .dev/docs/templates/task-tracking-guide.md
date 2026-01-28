@@ -5,6 +5,7 @@ This guide explains how to use the task tracking system to monitor time spent on
 ## Overview
 
 The task tracking system helps you:
+
 - Record start and completion times for each task
 - Calculate actual duration vs estimates
 - Generate status reports for stages
@@ -25,11 +26,13 @@ node scripts/task-tracker.js start <task-file> <task-number>
 ```
 
 Example:
+
 ```bash
 node scripts/task-tracker.js start .kiro/specs/stage-03-tools-policy/tasks.md 1
 ```
 
 This will:
+
 - Add a `Started: YYYY-MM-DD HH:MM` timestamp to the task
 - Display confirmation with the timestamp
 
@@ -40,11 +43,13 @@ node scripts/task-tracker.js complete <task-file> <task-number>
 ```
 
 Example:
+
 ```bash
 node scripts/task-tracker.js complete .kiro/specs/stage-03-tools-policy/tasks.md 1
 ```
 
 This will:
+
 - Mark the task as complete `[x]`
 - Add a `Completed: YYYY-MM-DD HH:MM` timestamp
 - Calculate and add `Duration: Xh Ym` if start time exists
@@ -57,11 +62,13 @@ node scripts/task-tracker.js status <task-file>
 ```
 
 Example:
+
 ```bash
 node scripts/task-tracker.js status .kiro/specs/stage-03-tools-policy/tasks.md
 ```
 
 This will display:
+
 - Table of all tracked tasks with timestamps
 - Summary statistics (total, completed, active)
 - Total time spent on completed tasks
@@ -143,6 +150,7 @@ The script supports nested tasks (e.g., 1.1, 1.2, 2.1):
 ### Working on Tasks
 
 1. **Before starting a task:**
+
    ```bash
    node scripts/task-tracker.js start .kiro/specs/stage-XX/tasks.md <task-number>
    ```
@@ -150,6 +158,7 @@ The script supports nested tasks (e.g., 1.1, 1.2, 2.1):
 2. **Work on the task**
 
 3. **After completing a task:**
+
    ```bash
    node scripts/task-tracker.js complete .kiro/specs/stage-XX/tasks.md <task-number>
    ```
@@ -162,6 +171,7 @@ The script supports nested tasks (e.g., 1.1, 1.2, 2.1):
 ### Completing a Stage
 
 1. Run final status report:
+
    ```bash
    node scripts/task-tracker.js status .kiro/specs/stage-XX/tasks.md
    ```
@@ -220,7 +230,7 @@ git commit -m "feat(stage-03): complete task 5 - implement tool registry"
 After completing a stage, compare the task breakdown table:
 
 | Task | Estimate | Actual | Variance |
-|------|----------|--------|----------|
+| ---- | -------- | ------ | -------- |
 | 1    | 45 min   | 50 min | +5 min   |
 | 2.1  | 40 min   | 35 min | -5 min   |
 | 2.2  | 35 min   | 45 min | +10 min  |
@@ -228,6 +238,7 @@ After completing a stage, compare the task breakdown table:
 ### Improving Estimates
 
 Use actual durations to:
+
 - Identify task types that consistently take longer
 - Adjust Kiro credit estimates
 - Better plan future stages
@@ -236,6 +247,7 @@ Use actual durations to:
 ### Efficiency Metrics
 
 Track these metrics per stage:
+
 - **Total estimated time** vs **Total actual time**
 - **Tasks completed on time** vs **Tasks over time**
 - **Average variance** (actual - estimate)
@@ -246,6 +258,7 @@ Track these metrics per stage:
 ### Task Not Found
 
 If you get "Task X not found":
+
 - Check the task number matches exactly (including decimals)
 - Ensure the task follows the format: `- [ ] X.` or `- [x] X.`
 - Verify the file path is correct
@@ -257,12 +270,14 @@ The script will update existing timestamps if you run start/complete again.
 ### Duration Not Calculated
 
 Duration requires both start and complete timestamps. If missing:
+
 - Manually add the start timestamp in the format: `_Started: YYYY-MM-DD HH:MM_`
 - Run complete again to calculate duration
 
 ## Future Enhancements
 
 Potential improvements to the tracking system:
+
 - VS Code extension for one-click task tracking
 - Automatic git commit message generation with task references
 - Dashboard visualization of time spent per stage

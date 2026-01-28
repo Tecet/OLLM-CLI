@@ -1,6 +1,6 @@
 /**
  * Snapshot Management Commands
- * 
+ *
  * Implements commands for managing context snapshots:
  * - /snapshot list <session-id> - List snapshots for a session
  * - /snapshot show <snapshot-id> - Show snapshot details
@@ -19,7 +19,9 @@ import type { Command, CommandResult } from './types.js';
 function ensureContextManager() {
   const manager = getGlobalContextManager();
   if (!manager) {
-    throw new Error('Context Manager is not initialized. Please wait for the application to fully load.');
+    throw new Error(
+      'Context Manager is not initialized. Please wait for the application to fully load.'
+    );
   }
   return manager;
 }
@@ -77,7 +79,7 @@ async function snapshotListHandler(args: string[]): Promise<CommandResult> {
       const timestamp = new Date(snapshot.timestamp).toLocaleString();
       const tokens = snapshot.tokenCount.toString().padStart(6);
       const summary = snapshot.summary.substring(0, 50);
-      
+
       lines.push(`${id} | ${timestamp} | ${tokens} | ${summary}`);
     }
 
@@ -279,7 +281,8 @@ export const snapshotCommand: Command = {
     if (args.length === 0) {
       return {
         success: false,
-        message: 'Usage: /snapshot <list|show|restore|rollback|create> [args]\n\n' +
+        message:
+          'Usage: /snapshot <list|show|restore|rollback|create> [args]\n\n' +
           'Subcommands:\n' +
           '  list <session-id>     - List snapshots for a session\n' +
           '  show <snapshot-id>    - Show snapshot details\n' +
@@ -306,7 +309,8 @@ export const snapshotCommand: Command = {
       default:
         return {
           success: false,
-          message: `Unknown subcommand: ${subcommand}\n\n` +
+          message:
+            `Unknown subcommand: ${subcommand}\n\n` +
             'Available subcommands: list, show, restore, rollback, create',
         };
     }
@@ -316,6 +320,4 @@ export const snapshotCommand: Command = {
 /**
  * All snapshot-related commands
  */
-export const snapshotCommands: Command[] = [
-  snapshotCommand,
-];
+export const snapshotCommands: Command[] = [snapshotCommand];

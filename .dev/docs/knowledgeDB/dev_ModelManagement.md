@@ -4,6 +4,7 @@
 **Status:** Source of Truth
 
 **Related Documents:**
+
 - `dev_ModelDB.md` - Model database schema and access patterns
 - `dev_ModelCompiler.md` - Model profile compilation system
 - `dev_ContextManagement.md` - Context sizing, tiers, VRAM
@@ -146,6 +147,7 @@ User Response:
 ### Tool Support Precedence
 
 **Priority Order (highest to lowest):**
+
 1. `user_confirmed` - User explicitly confirmed (never auto-overwritten)
 2. `auto_detected` - Automatically detected via test
 3. `runtime_error` - Detected from actual errors
@@ -266,6 +268,7 @@ Route to Provider
 ```
 
 **Profile Criteria:**
+
 - Model size (parameters)
 - Context window size
 - Specialization (code, chat, etc.)
@@ -283,47 +286,52 @@ Model size (parameter count) is used for reliability tracking in the compression
 ### Detection Methods
 
 **1. From Model Name (Primary)**
+
 ```typescript
 // Extract size from model name
 // Examples: "llama3:7b" → 7, "mistral:13b" → 13, "qwen2.5:72b" → 72
 function detectModelSize(modelName: string): number {
   const match = modelName.match(/(\d+)b/i);
   if (match) return parseInt(match[1]);
-  
+
   // Fallback to default
   return 7; // Assume 7B if unknown
 }
 ```
 
 **2. From Model Metadata (Secondary)**
+
 ```typescript
 // Some providers return parameter count in metadata
 interface ModelMetadata {
-  parameter_count?: number;  // e.g., 7000000000 for 7B
-  size?: string;             // e.g., "7B"
+  parameter_count?: number; // e.g., 7000000000 for 7B
+  size?: string; // e.g., "7B"
 }
 ```
 
 **3. From LLM_profiles.json (Tertiary)**
+
 ```json
 {
-  "models": [{
-    "id": "llama3:7b",
-    "parameters": 7,  // Billions of parameters
-    "description": "7B parameter model"
-  }]
+  "models": [
+    {
+      "id": "llama3:7b",
+      "parameters": 7, // Billions of parameters
+      "description": "7B parameter model"
+    }
+  ]
 }
 ```
 
 ### Model Size Categories
 
-| Size | Category | Compression Quality | Reliability |
-|------|----------|---------------------|-------------|
-| 3B and below | Small | Basic | Low after 2-3 compressions |
-| 7B | Medium-Small | Good | Moderate after 3-4 compressions |
-| 13B | Medium | Very Good | Good after 4-5 compressions |
-| 30B | Large | Excellent | Very Good after 5-7 compressions |
-| 70B+ | Very Large | Outstanding | Excellent after 7+ compressions |
+| Size         | Category     | Compression Quality | Reliability                      |
+| ------------ | ------------ | ------------------- | -------------------------------- |
+| 3B and below | Small        | Basic               | Low after 2-3 compressions       |
+| 7B           | Medium-Small | Good                | Moderate after 3-4 compressions  |
+| 13B          | Medium       | Very Good           | Good after 4-5 compressions      |
+| 30B          | Large        | Excellent           | Very Good after 5-7 compressions |
+| 70B+         | Very Large   | Outstanding         | Excellent after 7+ compressions  |
 
 ### Integration with Reliability System
 
@@ -331,17 +339,22 @@ Model size is a key factor in the reliability score calculation:
 
 ```typescript
 // From dev_ContextCompression.md
-const modelFactor = 
-  modelSize >= 70 ? 0.95 :  // 70B+ models
-  modelSize >= 30 ? 0.85 :  // 30B models
-  modelSize >= 13 ? 0.70 :  // 13B models
-  modelSize >= 7  ? 0.50 :  // 7B models
-  0.30;                      // 3B and below
+const modelFactor =
+  modelSize >= 70
+    ? 0.95 // 70B+ models
+    : modelSize >= 30
+      ? 0.85 // 30B models
+      : modelSize >= 13
+        ? 0.7 // 13B models
+        : modelSize >= 7
+          ? 0.5 // 7B models
+          : 0.3; // 3B and below
 
 const reliabilityScore = modelFactor * compressionPenalty * contextConfidence;
 ```
 
 **Why Model Size Matters:**
+
 - Larger models understand context better
 - Better at summarization (compression quality)
 - Preserve nuance through multiple compressions
@@ -362,6 +375,7 @@ const reliabilityScore = modelFactor * compressionPenalty * contextConfidence;
 ```
 
 **Detection Priority:**
+
 1. Explicit value in user_models.json (user override)
 2. Value from LLM_profiles.json (shipped profile)
 3. Extracted from model name (regex)
@@ -372,36 +386,42 @@ const reliabilityScore = modelFactor * compressionPenalty * contextConfidence;
 ## Key Interconnections
 
 ### LLM_profiles.json → user_models.json
+
 - Shipped profiles are source of truth
 - `/model list` enriches installed models with profile data
 - Profile metadata merged into user_models.json
 - User overrides preserved during updates
 
 ### user_models.json → Model Selection
+
 - Model menu reads from user_models.json only
 - If empty, prompts user to run `/model list`
 - Context options from context_profiles
 - Tool support from tool_support field
 
 ### Tool Support Detection → user_models.json
+
 - Detection results saved with source and timestamp
 - User confirmations have highest priority
 - Runtime errors trigger update prompts
 - Profile defaults can be overridden
 
 ### Context Selection → Provider
+
 - User selection → ollama_context_size (85% value)
 - Manual context saved to user_models.json
 - Auto context uses hardware detection
 - Provider receives num_ctx parameter
 
 ### Model Router → user_models.json
+
 - Router queries available models
 - Filters by routing profile criteria
 - Selects best match from installed models
 - Falls back if primary unavailable
 
 ### Model Size → Reliability Tracking
+
 - Model size detected from name or profile
 - Used in compression reliability calculation (see `dev_ContextCompression.md`)
 - Larger models = better compression quality
@@ -412,23 +432,28 @@ const reliabilityScore = modelFactor * compressionPenalty * contextConfidence;
 ## File Locations
 
 **Profile Compilation (see `dev_ModelCompiler.md`):**
+
 - `packages/cli/src/config/LLM_profiles.json` - Master database (READ ONLY by ProfileCompiler)
 - `~/.ollm/LLM_profiles.json` - User file (READ by entire app)
 - `packages/cli/src/services/profileCompiler.ts` - Compilation logic
 
 **Profile Management:**
+
 - `~/.ollm/user_models.json` - User installed models
 
 **Model Management:**
+
 - `packages/core/src/services/modelManagementService.ts` - Model operations
 - `packages/cli/src/commands/modelCommands.ts` - CLI commands
 
 **Model Routing:**
+
 - `packages/core/src/routing/modelRouter.ts` - Routing logic (planned)
 - `packages/core/src/routing/routingProfiles.ts` - Profile definitions (planned)
 - `packages/core/src/routing/modelDatabase.ts` - Model database
 
 **Context Management:**
+
 - `packages/cli/src/features/context/contextSizing.ts` - Context calculations (see dev_ContextManagement.md)
 - `packages/cli/src/features/profiles/ProfileManager.ts` - Profile loading
 

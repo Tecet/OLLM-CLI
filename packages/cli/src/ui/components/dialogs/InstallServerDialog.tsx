@@ -1,6 +1,6 @@
 /**
  * InstallServerDialog - Dialog for installing MCP servers from marketplace
- * 
+ *
  * Features:
  * - Display server name, description, rating, install count
  * - Display requirements list
@@ -9,7 +9,7 @@
  * - Auto-approve all tools checkbox
  * - Install and Cancel buttons
  * - Validate required fields before installation
- * 
+ *
  * Validates: Requirements 4.1-4.7
  */
 
@@ -50,7 +50,7 @@ interface EnvVar {
 function isSecretKey(key: string): boolean {
   const secretPatterns = ['API_KEY', 'TOKEN', 'SECRET', 'PASSWORD', 'PRIVATE_KEY', 'CREDENTIAL'];
   const upperKey = key.toUpperCase();
-  return secretPatterns.some(pattern => upperKey.includes(pattern));
+  return secretPatterns.some((pattern) => upperKey.includes(pattern));
 }
 
 /**
@@ -58,7 +58,7 @@ function isSecretKey(key: string): boolean {
  */
 function extractRequiredEnvVars(server: MCPMarketplaceServer): EnvVar[] {
   const envVars: EnvVar[] = [];
-  
+
   // Add environment variables from server.env
   if (server.env) {
     Object.entries(server.env).forEach(([key, value]) => {
@@ -69,13 +69,13 @@ function extractRequiredEnvVars(server: MCPMarketplaceServer): EnvVar[] {
       });
     });
   }
-  
+
   // Parse requirements for additional env vars
-  server.requirements.forEach(req => {
+  server.requirements.forEach((req) => {
     const lowerReq = req.toLowerCase();
-    
+
     // Check for API key requirements
-    if (lowerReq.includes('api key') && !envVars.some(v => v.key.includes('API_KEY'))) {
+    if (lowerReq.includes('api key') && !envVars.some((v) => v.key.includes('API_KEY'))) {
       // Try to extract the service name
       const match = req.match(/(\w+)\s+api\s+key/i);
       const serviceName = match ? match[1].toUpperCase() : 'API';
@@ -85,9 +85,13 @@ function extractRequiredEnvVars(server: MCPMarketplaceServer): EnvVar[] {
         required: true,
       });
     }
-    
+
     // Check for token requirements
-    if (lowerReq.includes('token') && !lowerReq.includes('api') && !envVars.some(v => v.key.includes('TOKEN'))) {
+    if (
+      lowerReq.includes('token') &&
+      !lowerReq.includes('api') &&
+      !envVars.some((v) => v.key.includes('TOKEN'))
+    ) {
       const match = req.match(/(\w+)\s+.*token/i);
       const serviceName = match ? match[1].toUpperCase() : 'ACCESS';
       envVars.push({
@@ -96,9 +100,12 @@ function extractRequiredEnvVars(server: MCPMarketplaceServer): EnvVar[] {
         required: true,
       });
     }
-    
+
     // Check for connection string requirements
-    if (lowerReq.includes('connection string') && !envVars.some(v => v.key.includes('CONNECTION'))) {
+    if (
+      lowerReq.includes('connection string') &&
+      !envVars.some((v) => v.key.includes('CONNECTION'))
+    ) {
       const match = req.match(/(\w+)\s+connection\s+string/i);
       const serviceName = match ? match[1].toUpperCase() : 'DATABASE';
       envVars.push({
@@ -108,7 +115,7 @@ function extractRequiredEnvVars(server: MCPMarketplaceServer): EnvVar[] {
       });
     }
   });
-  
+
   return envVars;
 }
 
@@ -119,10 +126,8 @@ function formatRating(rating: number): string {
   const fullStars = Math.floor(rating);
   const hasHalfStar = rating % 1 >= 0.5;
   const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
-  
-  return '★'.repeat(fullStars) + 
-         (hasHalfStar ? '½' : '') + 
-         '☆'.repeat(emptyStars);
+
+  return '★'.repeat(fullStars) + (hasHalfStar ? '½' : '') + '☆'.repeat(emptyStars);
 }
 
 /**
@@ -140,7 +145,7 @@ function formatInstallCount(count: number): string {
 
 /**
  * InstallServerDialog component
- * 
+ *
  * Provides a comprehensive interface for installing MCP servers:
  * - Server information display
  * - Requirements checklist
@@ -149,24 +154,22 @@ function formatInstallCount(count: number): string {
  * - Auto-approve tools option
  * - Installation validation
  */
-export function InstallServerDialog({
-  server,
-  onClose,
-  onInstall,
-}: InstallServerDialogProps) {
+export function InstallServerDialog({ server, onClose, onInstall }: InstallServerDialogProps) {
   // Extract required environment variables from server
   const requiredEnvVars = extractRequiredEnvVars(server);
-  
+
   // Initialize form state
   const [envVars, setEnvVars] = useState<EnvVar[]>(requiredEnvVars);
   const [autoApproveAll, setAutoApproveAll] = useState(false);
   const [customArgs, setCustomArgs] = useState(server.args?.join(' ') || '');
   const [customCwd, setCustomCwd] = useState('');
-  
+
   // UI state
   const [isInstalling, setIsInstalling] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
-  const [installResult, setInstallResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [installResult, setInstallResult] = useState<{ success: boolean; message: string } | null>(
+    null
+  );
 
   /**
    * Validate form fields
@@ -189,7 +192,7 @@ export function InstallServerDialog({
    * Update an environment variable
    */
   const handleUpdateEnvVar = useCallback((index: number, value: string) => {
-    setEnvVars(prev => {
+    setEnvVars((prev) => {
       const updated = [...prev];
       updated[index] = { ...updated[index], value };
       return updated;
@@ -200,14 +203,14 @@ export function InstallServerDialog({
    * Add a custom environment variable
    */
   const handleAddEnvVar = useCallback(() => {
-    setEnvVars(prev => [...prev, { key: '', value: '', required: false }]);
+    setEnvVars((prev) => [...prev, { key: '', value: '', required: false }]);
   }, []);
 
   /**
    * Remove a custom environment variable
    */
   const handleRemoveEnvVar = useCallback((index: number) => {
-    setEnvVars(prev => prev.filter((_, i) => i !== index));
+    setEnvVars((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
   /**
@@ -229,25 +232,28 @@ export function InstallServerDialog({
       // Build config object
       const config: MCPServerConfig = {
         command: server.command,
-        args: customArgs.split(' ').filter(arg => arg.trim()) || server.args || [],
-        env: envVars.reduce((acc, { key, value }) => {
-          if (key.trim() && value.trim()) {
-            acc[key] = value;
-          }
-          return acc;
-        }, {} as Record<string, string>),
+        args: customArgs.split(' ').filter((arg) => arg.trim()) || server.args || [],
+        env: envVars.reduce(
+          (acc, { key, value }) => {
+            if (key.trim() && value.trim()) {
+              acc[key] = value;
+            }
+            return acc;
+          },
+          {} as Record<string, string>
+        ),
         cwd: customCwd || undefined,
         autoApprove: autoApproveAll ? ['*'] : [],
         transport: 'stdio',
       };
 
       await onInstall(server.id, config);
-      
+
       setInstallResult({
         success: true,
         message: `Successfully installed ${server.name}`,
       });
-      
+
       // Close dialog after short delay
       setTimeout(() => {
         onClose();
@@ -263,17 +269,15 @@ export function InstallServerDialog({
   }, [server, envVars, customArgs, customCwd, autoApproveAll, onInstall, onClose, validateForm]);
 
   return (
-    <Dialog
-      title="Install MCP Server"
-      onClose={onClose}
-      width={80}
-    >
+    <Dialog title="Install MCP Server" onClose={onClose} width={80}>
       <Box flexDirection="column" paddingX={1}>
         {/* Server Information */}
         <Box flexDirection="column" marginBottom={1}>
-          <Text bold color="yellow">{server.name}</Text>
+          <Text bold color="yellow">
+            {server.name}
+          </Text>
           <Text dimColor>{server.description}</Text>
-          
+
           <Box marginTop={1}>
             <Text>Rating: </Text>
             <Text color="yellow">{formatRating(server.rating)}</Text>
@@ -281,14 +285,14 @@ export function InstallServerDialog({
             <Text> | </Text>
             <Text>{formatInstallCount(server.installCount)} installs</Text>
           </Box>
-          
+
           {server.category && (
             <Box marginTop={1}>
               <Text>Category: </Text>
               <Text color="cyan">{server.category}</Text>
             </Box>
           )}
-          
+
           {server.author && (
             <Box>
               <Text>Author: </Text>
@@ -321,16 +325,13 @@ export function InstallServerDialog({
         )}
 
         {/* Configuration */}
-        <FormField
-          label="Configuration"
-          helpText="Server command and arguments"
-        >
+        <FormField label="Configuration" helpText="Server command and arguments">
           <Box flexDirection="column">
             <Box>
               <Text dimColor>Command: </Text>
               <Text>{server.command}</Text>
             </Box>
-            
+
             <Box marginTop={1}>
               <Text dimColor>Arguments: </Text>
             </Box>
@@ -379,7 +380,7 @@ export function InstallServerDialog({
                       </Box>
                     )}
                   </Box>
-                  
+
                   <Box marginLeft={2}>
                     <TextInput
                       value={envVar.value}
@@ -389,7 +390,7 @@ export function InstallServerDialog({
                       validate={envVar.required ? validators.required : undefined}
                     />
                   </Box>
-                  
+
                   {validationErrors[`env_${index}`] && (
                     <Box marginLeft={2}>
                       <Text color="red">⚠ {validationErrors[`env_${index}`]}</Text>
@@ -397,7 +398,7 @@ export function InstallServerDialog({
                   )}
                 </Box>
               ))}
-              
+
               <Box marginTop={1}>
                 <Button
                   label="Add Custom Variable"
@@ -466,12 +467,8 @@ export function InstallServerDialog({
 
         {/* Help Text */}
         <Box marginTop={2} flexDirection="column">
-          <Text dimColor>
-            💡 Tip: The server will be added to your MCP configuration and
-          </Text>
-          <Text dimColor>
-            started automatically after installation.
-          </Text>
+          <Text dimColor>💡 Tip: The server will be added to your MCP configuration and</Text>
+          <Text dimColor>started automatically after installation.</Text>
         </Box>
       </Box>
     </Dialog>

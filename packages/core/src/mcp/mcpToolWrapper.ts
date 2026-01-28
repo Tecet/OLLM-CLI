@@ -1,17 +1,13 @@
 /**
  * MCP Tool Wrapper Implementation
- * 
+ *
  * This module wraps MCP tools as internal tools, handling schema conversion,
  * invocation, error translation, and result formatting.
  */
 
 import { DefaultMCPSchemaConverter } from './mcpSchemaConverter.js';
 
-import type {
-  MCPClient,
-  MCPTool,
-  MCPStreamChunk,
-} from './types.js';
+import type { MCPClient, MCPTool, MCPStreamChunk } from './types.js';
 import type {
   DeclarativeTool,
   ToolInvocation,
@@ -80,18 +76,18 @@ class MCPToolInvocation implements ToolInvocation<Record<string, unknown>, ToolR
     // Check policy if available
     if (this.context.policyEngine) {
       const policy = this.context.policyEngine.evaluate(this.toolName, this.params);
-      
+
       if (policy === 'allow') {
         return false;
       }
-      
+
       if (policy === 'deny') {
         throw new Error(`Tool '${this.toolName}' is denied by policy`);
       }
-      
+
       // policy === 'ask', return confirmation details
       const risk = this.context.policyEngine.getRiskLevel(this.toolName);
-      
+
       return {
         toolName: this.toolName,
         description: this.getDescription(),
@@ -99,20 +95,17 @@ class MCPToolInvocation implements ToolInvocation<Record<string, unknown>, ToolR
         locations: this.toolLocations(),
       };
     }
-    
+
     // No policy engine, don't require confirmation
     return false;
   }
 
-  async execute(
-    signal: AbortSignal,
-    updateOutput?: (output: string) => void
-  ): Promise<ToolResult> {
+  async execute(signal: AbortSignal, updateOutput?: (output: string) => void): Promise<ToolResult> {
     try {
       // Check if streaming is supported and updateOutput callback is provided
       if (updateOutput && this.mcpClient.callToolStreaming) {
         let accumulatedResult = '';
-        
+
         // Call with streaming support
         const result = await this.mcpClient.callToolStreaming(
           this.serverName,
@@ -130,22 +123,18 @@ class MCPToolInvocation implements ToolInvocation<Record<string, unknown>, ToolR
 
         // Format the final result using wrapper's shared method
         const formattedResult = this.wrapper['formatMCPResult'](result);
-        
+
         return {
           llmContent: formattedResult,
           returnDisplay: formattedResult,
         };
       } else {
         // Non-streaming call
-        const result = await this.mcpClient.callTool(
-          this.serverName,
-          this.toolName,
-          this.params
-        );
+        const result = await this.mcpClient.callTool(this.serverName, this.toolName, this.params);
 
         // Format the result using wrapper's shared method
         const formattedResult = this.wrapper['formatMCPResult'](result);
-        
+
         return {
           llmContent: formattedResult,
           returnDisplay: formattedResult,
@@ -253,7 +242,7 @@ export class DefaultMCPToolWrapper implements MCPToolWrapper {
   wrapTool(serverName: string, mcpTool: MCPTool): Tool {
     // Convert MCP tool schema to internal format
     const internalSchema = this.schemaConverter.convertToolSchema(mcpTool);
-    
+
     // Override the name to include server prefix
     const prefixedName = `${serverName}:${mcpTool.name}`;
     internalSchema.name = prefixedName;
@@ -266,7 +255,7 @@ export class DefaultMCPToolWrapper implements MCPToolWrapper {
       createInvocation: (params: Record<string, unknown>, context: ToolContext) => {
         // Convert params to MCP format
         const mcpArgs = this.schemaConverter.convertArgsToMCP(params) as Record<string, unknown>;
-        
+
         // Create invocation
         return new MCPToolInvocation(
           mcpArgs,
@@ -321,7 +310,7 @@ export class DefaultMCPToolWrapper implements MCPToolWrapper {
     if (isRecord(result) || Array.isArray(result)) {
       // Check for common MCP result formats
       const resultObj = isRecord(result) ? result : {};
-      
+
       // If it has a 'content' field, use that
       if (resultObj.content !== undefined) {
         const content = resultObj.content;
@@ -331,7 +320,8 @@ export class DefaultMCPToolWrapper implements MCPToolWrapper {
             .map((item) => {
               if (typeof item === 'string') return item;
               if (isRecord(item) && typeof item.text === 'string') return item.text;
-              if (isRecord(item) && item.type === 'text' && typeof item.text === 'string') return item.text;
+              if (isRecord(item) && item.type === 'text' && typeof item.text === 'string')
+                return item.text;
               if (isRecord(item) && item.type === 'image') return '[Image]';
               if (isRecord(item) && item.type === 'resource') {
                 return `[Resource: ${typeof item.uri === 'string' ? item.uri : 'unknown'}]`;

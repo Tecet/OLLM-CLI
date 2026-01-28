@@ -1,6 +1,6 @@
 /**
  * Snapshot Storage Service
- * 
+ *
  * Handles persistent storage of context snapshots to disk with atomic writes,
  * corruption detection, and metadata indexing.
  */
@@ -93,7 +93,7 @@ export class SnapshotStorageImpl implements SnapshotStorage {
   constructor(baseDir?: string) {
     // Default to ~/.ollm/context-snapshots
     this.baseDir = baseDir || path.join(os.homedir(), '.ollm', 'context-snapshots');
-    
+
     // Log path diagnostics on initialization
     logPathDiagnostics('Context Snapshots', this.baseDir);
   }
@@ -164,29 +164,38 @@ export class SnapshotStorageImpl implements SnapshotStorage {
       summary: snapshot.summary,
       metadata: snapshot.metadata,
       // Support snapshots that provide only `messages` by deriving userMessages
-      userMessages: (snapshot.userMessages || snapshot.messages || []).map(msg => ({
+      userMessages: (snapshot.userMessages || snapshot.messages || []).map((msg) => ({
         id: msg.id,
         role: (msg as any).role || 'user',
         content: msg.content,
-        timestamp: (msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp)).toISOString(),
+        timestamp: (msg.timestamp instanceof Date
+          ? msg.timestamp
+          : new Date(msg.timestamp)
+        ).toISOString(),
         tokenCount: (msg as any).tokenCount,
-        taskId: (msg as any).taskId
+        taskId: (msg as any).taskId,
       })),
       // archivedUserMessages may be absent
-      archivedUserMessages: (snapshot.archivedUserMessages || []).map(msg => ({
+      archivedUserMessages: (snapshot.archivedUserMessages || []).map((msg) => ({
         id: msg.id,
         summary: msg.summary,
-        timestamp: (msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp)).toISOString(),
-        fullMessageAvailable: msg.fullMessageAvailable
+        timestamp: (msg.timestamp instanceof Date
+          ? msg.timestamp
+          : new Date(msg.timestamp)
+        ).toISOString(),
+        fullMessageAvailable: msg.fullMessageAvailable,
       })),
-      messages: (snapshot.messages || []).map(msg => ({
+      messages: (snapshot.messages || []).map((msg) => ({
         id: msg.id,
         role: msg.role,
         content: msg.content,
-        timestamp: (msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp)).toISOString(),
+        timestamp: (msg.timestamp instanceof Date
+          ? msg.timestamp
+          : new Date(msg.timestamp)
+        ).toISOString(),
         tokenCount: msg.tokenCount,
-        metadata: msg.metadata
-      }))
+        metadata: msg.metadata,
+      })),
     };
 
     const snapshotPath = this.getSnapshotPath(snapshot.sessionId, snapshot.id);
@@ -204,7 +213,7 @@ export class SnapshotStorageImpl implements SnapshotStorage {
         } catch (err) {
           if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
             // wait briefly then retry
-            await new Promise(res => setTimeout(res, 10));
+            await new Promise((res) => setTimeout(res, 10));
             continue;
           }
           throw err;
@@ -222,7 +231,7 @@ export class SnapshotStorageImpl implements SnapshotStorage {
         timestamp: snapshot.timestamp.toISOString(),
         tokenCount: snapshot.tokenCount,
         summary: snapshot.summary,
-        size: stats.size
+        size: stats.size,
       });
 
       // Update quick lookup map to make existence checks reliable
@@ -273,34 +282,34 @@ export class SnapshotStorageImpl implements SnapshotStorage {
         timestamp: new Date(snapshotFile.timestamp),
         tokenCount: snapshotFile.tokenCount,
         summary: snapshotFile.summary,
-        userMessages: (snapshotFile.userMessages || []).map(msg => ({
+        userMessages: (snapshotFile.userMessages || []).map((msg) => ({
           id: msg.id,
           role: 'user' as const,
           content: msg.content,
           timestamp: new Date(msg.timestamp),
           tokenCount: msg.tokenCount,
-          taskId: msg.taskId
+          taskId: msg.taskId,
         })),
-        archivedUserMessages: (snapshotFile.archivedUserMessages || []).map(msg => ({
+        archivedUserMessages: (snapshotFile.archivedUserMessages || []).map((msg) => ({
           id: msg.id,
           summary: msg.summary,
           timestamp: new Date(msg.timestamp),
-          fullMessageAvailable: msg.fullMessageAvailable
+          fullMessageAvailable: msg.fullMessageAvailable,
         })),
-        messages: snapshotFile.messages.map(msg => ({
+        messages: snapshotFile.messages.map((msg) => ({
           id: msg.id,
           role: msg.role as 'system' | 'user' | 'assistant' | 'tool',
           content: msg.content,
           timestamp: new Date(msg.timestamp),
           tokenCount: msg.tokenCount,
-          metadata: msg.metadata as Record<string, unknown>
+          metadata: msg.metadata as Record<string, unknown>,
         })),
         metadata: {
           ...snapshotFile.metadata,
           totalUserMessages: snapshotFile.metadata.totalUserMessages || 0,
           totalGoalsCompleted: snapshotFile.metadata.totalGoalsCompleted || 0,
-          totalCheckpoints: snapshotFile.metadata.totalCheckpoints || 0
-        }
+          totalCheckpoints: snapshotFile.metadata.totalCheckpoints || 0,
+        },
       };
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
@@ -315,14 +324,14 @@ export class SnapshotStorageImpl implements SnapshotStorage {
    */
   async list(sessionId: string): Promise<SnapshotMetadata[]> {
     const index = await this.loadIndex(sessionId);
-    
-    return index.map(entry => ({
+
+    return index.map((entry) => ({
       id: entry.id,
       sessionId: entry.sessionId,
       timestamp: new Date(entry.timestamp),
       tokenCount: entry.tokenCount,
       summary: entry.summary,
-      size: entry.size
+      size: entry.size,
     }));
   }
 
@@ -377,7 +386,7 @@ export class SnapshotStorageImpl implements SnapshotStorage {
   async verify(snapshotId: string): Promise<boolean> {
     try {
       const snapshot = await this.load(snapshotId);
-      
+
       // Check required fields
       if (!snapshot.id || !snapshot.sessionId || !snapshot.messages) {
         return false;
@@ -411,17 +420,17 @@ export class SnapshotStorageImpl implements SnapshotStorage {
     try {
       const content = await fs.readFile(indexPath, 'utf-8');
       const index: SnapshotIndex = JSON.parse(content);
-      
+
       // Cache the index
       this.indexCache.set(sessionId, index.snapshots);
-      
+
       return index.snapshots;
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
         // No index yet, return empty
         return [];
       }
-      
+
       // Corrupted index, try to rebuild from files
       console.warn(`Corrupted index for session ${sessionId}, rebuilding...`);
       return await this.rebuildIndex(sessionId);
@@ -433,13 +442,13 @@ export class SnapshotStorageImpl implements SnapshotStorage {
    */
   private async updateIndex(sessionId: string, entry: SnapshotIndexEntry): Promise<void> {
     const index = await this.loadIndex(sessionId);
-    
+
     // Remove existing entry if present
-    const filtered = index.filter(e => e.id !== entry.id);
-    
+    const filtered = index.filter((e) => e.id !== entry.id);
+
     // Add new entry
     filtered.push(entry);
-    
+
     // Sort by timestamp (newest first)
     filtered.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
@@ -452,7 +461,7 @@ export class SnapshotStorageImpl implements SnapshotStorage {
    */
   private async removeFromIndex(sessionId: string, snapshotId: string): Promise<void> {
     const index = await this.loadIndex(sessionId);
-    const filtered = index.filter(e => e.id !== snapshotId);
+    const filtered = index.filter((e) => e.id !== snapshotId);
     await this.saveIndex(sessionId, filtered);
   }
 
@@ -484,7 +493,7 @@ export class SnapshotStorageImpl implements SnapshotStorage {
 
     const index: SnapshotIndex = {
       version: SNAPSHOT_VERSION,
-      snapshots: entries
+      snapshots: entries,
     };
 
     try {
@@ -507,14 +516,14 @@ export class SnapshotStorageImpl implements SnapshotStorage {
 
     try {
       const files = await fs.readdir(snapshotDir);
-      
+
       for (const file of files) {
         if (!file.startsWith('snapshot-') || !file.endsWith('.json')) {
           continue;
         }
 
         const filePath = path.join(snapshotDir, file);
-        
+
         try {
           const content = await fs.readFile(filePath, 'utf-8');
           const snapshot: SnapshotFile = JSON.parse(content);
@@ -526,7 +535,7 @@ export class SnapshotStorageImpl implements SnapshotStorage {
             timestamp: snapshot.timestamp,
             tokenCount: snapshot.tokenCount,
             summary: snapshot.summary,
-            size: stats.size
+            size: stats.size,
           });
         } catch (_error) {
           // Skip corrupted files
@@ -571,7 +580,12 @@ export class SnapshotStorageImpl implements SnapshotStorage {
       // First, directly check for snapshot file existence under each session's snapshots directory.
       for (const sessionId of sessions) {
         try {
-          const candidate = path.join(this.baseDir, sessionId, 'snapshots', `snapshot-${snapshotId}.json`);
+          const candidate = path.join(
+            this.baseDir,
+            sessionId,
+            'snapshots',
+            `snapshot-${snapshotId}.json`
+          );
           await fs.access(candidate);
           return sessionId;
         } catch {
@@ -582,7 +596,7 @@ export class SnapshotStorageImpl implements SnapshotStorage {
       // Fallback: check indices if present
       for (const sessionId of sessions) {
         const index = await this.loadIndex(sessionId);
-        if (index.some(e => e.id === snapshotId)) {
+        if (index.some((e) => e.id === snapshotId)) {
           return sessionId;
         }
       }

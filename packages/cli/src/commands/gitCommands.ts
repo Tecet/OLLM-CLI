@@ -1,6 +1,6 @@
 /**
  * Git Integration Commands
- * 
+ *
  * Implements commands for git operations:
  * - /git status - Show git status
  * - /git commit - Commit changes with AI-generated message
@@ -11,7 +11,7 @@ import type { Command, CommandResult } from './types.js';
 
 /**
  * /git status - Show git status
- * 
+ *
  * Requirements: 19.5
  */
 async function gitStatusHandler(): Promise<CommandResult> {
@@ -19,9 +19,7 @@ async function gitStatusHandler(): Promise<CommandResult> {
   // For now, return a placeholder
   return {
     success: true,
-    message: 'Git status:\n\n' +
-      'Branch: main\n' +
-      'No changes to commit',
+    message: 'Git status:\n\n' + 'Branch: main\n' + 'No changes to commit',
     data: {
       branch: 'main',
       staged: 0,
@@ -33,14 +31,14 @@ async function gitStatusHandler(): Promise<CommandResult> {
 
 /**
  * /git commit - Commit changes with AI-generated message
- * 
+ *
  * Requirements: 19.5
  */
 async function gitCommitHandler(args: string[]): Promise<CommandResult> {
   // This will integrate with GitService
   // For now, return a placeholder
   const message = args.join(' ') || 'Auto-generated commit message';
-  
+
   return {
     success: true,
     message: `Changes committed:\n\n${message}`,
@@ -52,7 +50,7 @@ async function gitCommitHandler(args: string[]): Promise<CommandResult> {
 
 /**
  * /git undo - Undo last commit
- * 
+ *
  * Requirements: 19.5
  */
 async function gitUndoHandler(): Promise<CommandResult> {
@@ -66,7 +64,7 @@ async function gitUndoHandler(): Promise<CommandResult> {
 
 /**
  * /git command - Main git command with subcommands
- * 
+ *
  * Requirements: 19.5
  */
 export const gitCommand: Command = {
@@ -77,7 +75,8 @@ export const gitCommand: Command = {
     if (args.length === 0) {
       return {
         success: false,
-        message: 'Usage: /git <status|commit|undo> [args]\n\n' +
+        message:
+          'Usage: /git <status|commit|undo> [args]\n\n' +
           'Subcommands:\n' +
           '  status         - Show git status\n' +
           '  commit [msg]   - Commit changes (with optional message)\n' +
@@ -98,8 +97,8 @@ export const gitCommand: Command = {
       default:
         return {
           success: false,
-          message: `Unknown subcommand: ${subcommand}\n\n` +
-            'Available subcommands: status, commit, undo',
+          message:
+            `Unknown subcommand: ${subcommand}\n\n` + 'Available subcommands: status, commit, undo',
         };
     }
   },
@@ -108,6 +107,4 @@ export const gitCommand: Command = {
 /**
  * All git-related commands
  */
-export const gitCommands: Command[] = [
-  gitCommand,
-];
+export const gitCommands: Command[] = [gitCommand];

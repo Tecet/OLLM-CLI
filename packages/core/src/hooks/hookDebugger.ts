@@ -1,6 +1,6 @@
 /**
  * Hook Debugger
- * 
+ *
  * Provides debugging and tracing capabilities for hook execution.
  */
 
@@ -68,7 +68,7 @@ const DEFAULT_CONFIG: HookDebuggerConfig = {
 
 /**
  * Hook Debugger
- * 
+ *
  * Provides debugging and tracing capabilities for hook execution.
  */
 export class HookDebugger {
@@ -174,21 +174,21 @@ export class HookDebugger {
    * Get traces for a specific hook
    */
   getTracesForHook(hookName: string): HookTraceEntry[] {
-    return this.traces.filter(t => t.hookName === hookName);
+    return this.traces.filter((t) => t.hookName === hookName);
   }
 
   /**
    * Get traces for a specific event
    */
   getTracesForEvent(event: HookEvent): HookTraceEntry[] {
-    return this.traces.filter(t => t.event === event);
+    return this.traces.filter((t) => t.event === event);
   }
 
   /**
    * Get failed traces
    */
   getFailedTraces(): HookTraceEntry[] {
-    return this.traces.filter(t => !t.success);
+    return this.traces.filter((t) => !t.success);
   }
 
   /**
@@ -210,7 +210,7 @@ export class HookDebugger {
    * Export traces to formatted text
    */
   exportToText(): string {
-    return this.traces.map(trace => this.formatTrace(trace, 'pretty')).join('\n\n');
+    return this.traces.map((trace) => this.formatTrace(trace, 'pretty')).join('\n\n');
   }
 
   /**
@@ -225,11 +225,10 @@ export class HookDebugger {
     byEvent: Record<string, number>;
   } {
     const total = this.traces.length;
-    const successful = this.traces.filter(t => t.success).length;
+    const successful = this.traces.filter((t) => t.success).length;
     const failed = total - successful;
-    const averageDuration = total > 0
-      ? this.traces.reduce((sum, t) => sum + (t.duration || 0), 0) / total
-      : 0;
+    const averageDuration =
+      total > 0 ? this.traces.reduce((sum, t) => sum + (t.duration || 0), 0) / total : 0;
 
     const byHook: Record<string, number> = {};
     const byEvent: Record<string, number> = {};

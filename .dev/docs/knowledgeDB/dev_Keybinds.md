@@ -3,6 +3,7 @@
 **Last Updated:** January 26, 2026  
 **Status:** ✅ Implemented  
 **Related Documents:**
+
 - `dev_SlashCommands.md` - Slash commands
 - User settings location: `~/.ollm/user_keybinds.json`
 
@@ -13,6 +14,7 @@
 OLLM CLI provides customizable keyboard shortcuts for efficient navigation and interaction. Keybinds are organized by functional area and can be customized through the Settings UI.
 
 **Key Features:**
+
 - Default keybinds defined in code
 - User overrides saved to `~/.ollm/user_keybinds.json`
 - Deep merge strategy (user overrides defaults)
@@ -27,17 +29,17 @@ OLLM CLI provides customizable keyboard shortcuts for efficient navigation and i
 
 Switch between main application tabs using Ctrl + Number.
 
-| Action | Default Keybind | Description |
-|--------|----------------|-------------|
-| Chat Tab | `Ctrl+1` | Switch to chat view |
-| Tools Tab | `Ctrl+2` | Switch to tools panel |
-| Hooks Tab | `Ctrl+3` | Switch to hooks panel |
-| Files Tab | `Ctrl+4` | Switch to file explorer |
-| Search Tab | `Ctrl+5` | Switch to search panel |
-| Docs Tab | `Ctrl+6` | Switch to documentation |
-| GitHub Tab | `Ctrl+7` | Switch to GitHub integration |
-| MCP Tab | `Ctrl+8` | Switch to MCP servers |
-| Settings Tab | `Ctrl+9` | Switch to settings |
+| Action       | Default Keybind | Description                  |
+| ------------ | --------------- | ---------------------------- |
+| Chat Tab     | `Ctrl+1`        | Switch to chat view          |
+| Tools Tab    | `Ctrl+2`        | Switch to tools panel        |
+| Hooks Tab    | `Ctrl+3`        | Switch to hooks panel        |
+| Files Tab    | `Ctrl+4`        | Switch to file explorer      |
+| Search Tab   | `Ctrl+5`        | Switch to search panel       |
+| Docs Tab     | `Ctrl+6`        | Switch to documentation      |
+| GitHub Tab   | `Ctrl+7`        | Switch to GitHub integration |
+| MCP Tab      | `Ctrl+8`        | Switch to MCP servers        |
+| Settings Tab | `Ctrl+9`        | Switch to settings           |
 
 ---
 
@@ -45,13 +47,13 @@ Switch between main application tabs using Ctrl + Number.
 
 Global layout and panel management.
 
-| Action | Default Keybind | Description |
-|--------|----------------|-------------|
-| Toggle Panel | `Ctrl+P` | Toggle side panel visibility |
-| Command Palette | `Ctrl+K` | Open command palette |
-| Toggle Debug | `Ctrl+/` | Toggle debug mode |
-| Switch Window Left | `Ctrl+Shift+Tab` | Switch to previous window |
-| Switch Window Right | `Ctrl+Tab` | Switch to next window |
+| Action              | Default Keybind  | Description                  |
+| ------------------- | ---------------- | ---------------------------- |
+| Toggle Panel        | `Ctrl+P`         | Toggle side panel visibility |
+| Command Palette     | `Ctrl+K`         | Open command palette         |
+| Toggle Debug        | `Ctrl+/`         | Toggle debug mode            |
+| Switch Window Left  | `Ctrl+Shift+Tab` | Switch to previous window    |
+| Switch Window Right | `Ctrl+Tab`       | Switch to next window        |
 
 ---
 
@@ -59,14 +61,14 @@ Global layout and panel management.
 
 Shortcuts for chat input and session management.
 
-| Action | Default Keybind | Description |
-|--------|----------------|-------------|
-| Send Message | `Return` | Send message to LLM |
-| New Line | `Shift+Return` | Insert new line in message |
-| Clear Chat | `Ctrl+L` | Clear chat history |
-| Save Session | `Ctrl+S` | Save current session |
-| Cancel | `Escape` | Cancel current operation |
-| Edit Previous | `Up` | Edit previous message |
+| Action        | Default Keybind | Description                |
+| ------------- | --------------- | -------------------------- |
+| Send Message  | `Return`        | Send message to LLM        |
+| New Line      | `Shift+Return`  | Insert new line in message |
+| Clear Chat    | `Ctrl+L`        | Clear chat history         |
+| Save Session  | `Ctrl+S`        | Save current session       |
+| Cancel        | `Escape`        | Cancel current operation   |
+| Edit Previous | `Up`            | Edit previous message      |
 
 ---
 
@@ -74,10 +76,10 @@ Shortcuts for chat input and session management.
 
 Code diff review shortcuts.
 
-| Action | Default Keybind | Description |
-|--------|----------------|-------------|
-| Approve | `Y` | Approve current diff |
-| Reject | `N` | Reject current diff |
+| Action  | Default Keybind | Description          |
+| ------- | --------------- | -------------------- |
+| Approve | `Y`             | Approve current diff |
+| Reject  | `N`             | Reject current diff  |
 
 ---
 
@@ -85,17 +87,17 @@ Code diff review shortcuts.
 
 Standard navigation keys with Vim-style alternatives.
 
-| Action | Default Keybind | Description |
-|--------|----------------|-------------|
-| Scroll Down | `J` | Scroll down (Vim-style) |
-| Scroll Up | `K` | Scroll up (Vim-style) |
-| Select | `Return` | Select current item |
-| Back | `Backspace` | Go back |
-| Cycle Focus | `Tab` | Cycle focus forward |
-| Move Left | `Left` | Move cursor/selection left |
-| Move Right | `Right` | Move cursor/selection right |
-| Move Up | `Up` | Move cursor/selection up |
-| Move Down | `Down` | Move cursor/selection down |
+| Action      | Default Keybind | Description                 |
+| ----------- | --------------- | --------------------------- |
+| Scroll Down | `J`             | Scroll down (Vim-style)     |
+| Scroll Up   | `K`             | Scroll up (Vim-style)       |
+| Select      | `Return`        | Select current item         |
+| Back        | `Backspace`     | Go back                     |
+| Cycle Focus | `Tab`           | Cycle focus forward         |
+| Move Left   | `Left`          | Move cursor/selection left  |
+| Move Right  | `Right`         | Move cursor/selection right |
+| Move Up     | `Up`            | Move cursor/selection up    |
+| Move Down   | `Down`          | Move cursor/selection down  |
 
 ---
 
@@ -103,23 +105,23 @@ Standard navigation keys with Vim-style alternatives.
 
 File tree navigation and operations.
 
-| Action | Default Keybind | Description |
-|--------|----------------|-------------|
-| Open File | `O` | Open selected file |
-| Focus Explorer | `F` | Focus file explorer |
-| Edit File | `E` | Edit selected file |
-| Rename | `R` | Rename file/folder |
-| Delete | `D` | Delete file/folder |
-| Copy Path | `C` | Copy file path to clipboard |
-| Move Down | `J` | Move selection down (Vim-style) |
-| Move Up | `K` | Move selection up (Vim-style) |
-| Collapse | `H` | Collapse folder (Vim-style) |
-| Expand | `L` | Expand folder (Vim-style) |
-| Toggle Follow | `Shift+F` | Toggle follow active file |
-| Toggle Help | `?` | Toggle help overlay |
-| Select | `Return` | Select/open item |
-| Quick Open | `P` | Quick file open |
-| Actions Menu | `A` | Open actions menu |
+| Action         | Default Keybind | Description                     |
+| -------------- | --------------- | ------------------------------- |
+| Open File      | `O`             | Open selected file              |
+| Focus Explorer | `F`             | Focus file explorer             |
+| Edit File      | `E`             | Edit selected file              |
+| Rename         | `R`             | Rename file/folder              |
+| Delete         | `D`             | Delete file/folder              |
+| Copy Path      | `C`             | Copy file path to clipboard     |
+| Move Down      | `J`             | Move selection down (Vim-style) |
+| Move Up        | `K`             | Move selection up (Vim-style)   |
+| Collapse       | `H`             | Collapse folder (Vim-style)     |
+| Expand         | `L`             | Expand folder (Vim-style)       |
+| Toggle Follow  | `Shift+F`       | Toggle follow active file       |
+| Toggle Help    | `?`             | Toggle help overlay             |
+| Select         | `Return`        | Select/open item                |
+| Quick Open     | `P`             | Quick file open                 |
+| Actions Menu   | `A`             | Open actions menu               |
 
 ---
 
@@ -127,13 +129,13 @@ File tree navigation and operations.
 
 Terminal interaction shortcuts.
 
-| Action | Default Keybind | Description |
-|--------|----------------|-------------|
-| Scroll Up | `Up` | Scroll terminal up |
-| Scroll Down | `Down` | Scroll terminal down |
-| History Up | `Ctrl+Up` | Navigate command history up |
-| History Down | `Ctrl+Down` | Navigate command history down |
-| Interrupt | `Ctrl+C` | Send interrupt signal (hardcoded) |
+| Action       | Default Keybind | Description                       |
+| ------------ | --------------- | --------------------------------- |
+| Scroll Up    | `Up`            | Scroll terminal up                |
+| Scroll Down  | `Down`          | Scroll terminal down              |
+| History Up   | `Ctrl+Up`       | Navigate command history up       |
+| History Down | `Ctrl+Down`     | Navigate command history down     |
+| Interrupt    | `Ctrl+C`        | Send interrupt signal (hardcoded) |
 
 ---
 
@@ -141,15 +143,15 @@ Terminal interaction shortcuts.
 
 Focus management across the application.
 
-| Action | Default Keybind | Description |
-|--------|----------------|-------------|
-| Focus Chat Input | `Ctrl+Space` | Focus chat input field |
-| Focus Navigation | `Ctrl+M` | Focus navigation panel |
-| Focus Context | `Ctrl+C` | Focus context panel |
-| Focus File Tree | `Ctrl+F` | Focus file explorer |
-| Focus Functions | `Ctrl+I` | Focus functions panel |
-| Cycle Next | `Tab` | Cycle focus to next element |
-| Cycle Previous | `Shift+Tab` | Cycle focus to previous element |
+| Action           | Default Keybind | Description                     |
+| ---------------- | --------------- | ------------------------------- |
+| Focus Chat Input | `Ctrl+Space`    | Focus chat input field          |
+| Focus Navigation | `Ctrl+M`        | Focus navigation panel          |
+| Focus Context    | `Ctrl+C`        | Focus context panel             |
+| Focus File Tree  | `Ctrl+F`        | Focus file explorer             |
+| Focus Functions  | `Ctrl+I`        | Focus functions panel           |
+| Cycle Next       | `Tab`           | Cycle focus to next element     |
+| Cycle Previous   | `Shift+Tab`     | Cycle focus to previous element |
 
 ---
 
@@ -160,6 +162,7 @@ Focus management across the application.
 **Location:** `~/.ollm/user_keybinds.json`
 
 **Format:**
+
 ```json
 {
   "tabNavigation": {
@@ -176,6 +179,7 @@ Focus management across the application.
 ### Merge Strategy
 
 User keybinds are deep-merged with defaults:
+
 1. Default keybinds are loaded from `packages/cli/src/config/keybinds.ts`
 2. User keybinds are loaded from `~/.ollm/user_keybinds.json`
 3. User values override defaults
@@ -200,12 +204,14 @@ Use the "Reset All" button in Settings UI or delete `~/.ollm/user_keybinds.json`
 Keybinds use the following format:
 
 **Modifiers:**
+
 - `ctrl` - Control key
 - `shift` - Shift key
 - `alt` - Alt key (Option on macOS)
 - `meta` - Meta key (Command on macOS, Windows key on Windows)
 
 **Special Keys:**
+
 - `return` - Enter key
 - `escape` - Escape key
 - `tab` - Tab key
@@ -214,11 +220,13 @@ Keybinds use the following format:
 - `up`, `down`, `left`, `right` - Arrow keys
 
 **Format:**
+
 ```
 [modifier+][modifier+]key
 ```
 
 **Examples:**
+
 - `ctrl+s` - Control + S
 - `shift+return` - Shift + Enter
 - `ctrl+shift+tab` - Control + Shift + Tab
@@ -231,22 +239,26 @@ Keybinds use the following format:
 ### Potential Conflicts
 
 **Terminal Conflicts:**
+
 - Some terminal emulators intercept certain key combinations
 - `Ctrl+C` is hardcoded for interrupt (cannot be changed)
 - `Ctrl+Z` may be intercepted by terminal for suspend
 
 **System Conflicts:**
+
 - `Ctrl+Tab` may be intercepted by browser/OS for tab switching
 - `Ctrl+W` may close terminal window
 - `Ctrl+Q` may quit terminal application
 
 **Internal Conflicts:**
+
 - Some keybinds may conflict with each other
 - Focus context determines which keybind takes precedence
 
 ### Hardcoded Keybinds
 
 **Known Hardcoded Keybinds:**
+
 - `Ctrl+C` - Terminal interrupt (in `TerminalContext.tsx`)
 - Some `useInput` hooks may have hardcoded keys
 
@@ -261,6 +273,7 @@ Keybinds use the following format:
 **Location:** `packages/cli/src/services/KeybindsService.ts`
 
 **Responsibilities:**
+
 - Load default keybinds
 - Load user keybinds from `~/.ollm/user_keybinds.json`
 - Merge user and default keybinds
@@ -268,6 +281,7 @@ Keybinds use the following format:
 - Reset to defaults
 
 **Singleton Pattern:**
+
 ```typescript
 const keybindsService = KeybindsService.getInstance();
 const keybinds = keybindsService.load();
@@ -278,6 +292,7 @@ const keybinds = keybindsService.load();
 **Location:** `packages/cli/src/config/keybinds.ts`
 
 **Export:**
+
 ```typescript
 export const keybindsData = {
   tabNavigation: { ... },
@@ -292,6 +307,7 @@ export const keybindsData = {
 **Location:** `packages/cli/src/ui/contexts/KeybindsContext.tsx` (assumed)
 
 **Provides:**
+
 - Current active keybinds
 - Keybind update functions
 - Reset functionality
@@ -306,12 +322,14 @@ export const keybindsData = {
 **Effort:** 4-6 hours
 
 **Issues:**
+
 - Not all keybinds displayed in Settings UI
 - Some keybinds don't work (conflicts)
 - No visual feedback for conflicts
 - No validation for invalid keybinds
 
 **Implementation:**
+
 1. Audit Settings UI keybind display
 2. Add all missing keybinds to UI
 3. Add conflict detection
@@ -320,6 +338,7 @@ export const keybindsData = {
 6. Add "Test" button to test keybind
 
 **Files to Modify:**
+
 - `packages/cli/src/ui/components/settings/KeybindsSettings.tsx` - Settings UI
 - `packages/cli/src/services/KeybindsService.ts` - Add validation
 
@@ -331,12 +350,14 @@ export const keybindsData = {
 **Effort:** 4-6 hours
 
 **Issues:**
+
 - Some keybinds don't work
 - Conflicts with terminal/system
 - Conflicts between keybinds
 - Focus context issues
 
 **Investigation:**
+
 1. Test each keybind in different contexts
 2. Identify conflicts with terminal
 3. Identify conflicts with system
@@ -344,6 +365,7 @@ export const keybindsData = {
 5. Document working/non-working keybinds
 
 **Files to Check:**
+
 - All `useInput` hooks in UI components
 - Focus management system
 - Input routing system
@@ -358,6 +380,7 @@ export const keybindsData = {
 **Goal:** All keybinds should be configurable, no hardcoded keys
 
 **Implementation:**
+
 1. Search for all `useInput` hooks
 2. Search for hardcoded key checks (e.g., `key.ctrl && input === 'c'`)
 3. Replace with keybind lookups
@@ -365,6 +388,7 @@ export const keybindsData = {
 5. Test all keybinds work after changes
 
 **Search Patterns:**
+
 ```bash
 # Find useInput hooks
 grep -r "useInput" packages/cli/src/ui/
@@ -376,6 +400,7 @@ grep -r "input ===" packages/cli/src/ui/
 ```
 
 **Files to Modify:**
+
 - All UI components with `useInput` hooks
 - `packages/cli/src/ui/contexts/TerminalContext.tsx` - `Ctrl+C` hardcoded
 
@@ -383,13 +408,13 @@ grep -r "input ===" packages/cli/src/ui/
 
 ## File Locations
 
-| File | Purpose |
-|------|---------|
-| `packages/cli/src/config/keybinds.ts` | Default keybind definitions |
-| `packages/cli/src/services/KeybindsService.ts` | Keybind loading/saving service |
-| `packages/cli/src/ui/contexts/KeybindsContext.tsx` | Keybinds React context (assumed) |
-| `packages/cli/src/ui/components/settings/KeybindsSettings.tsx` | Settings UI (assumed) |
-| `~/.ollm/user_keybinds.json` | User keybind overrides |
+| File                                                           | Purpose                          |
+| -------------------------------------------------------------- | -------------------------------- |
+| `packages/cli/src/config/keybinds.ts`                          | Default keybind definitions      |
+| `packages/cli/src/services/KeybindsService.ts`                 | Keybind loading/saving service   |
+| `packages/cli/src/ui/contexts/KeybindsContext.tsx`             | Keybinds React context (assumed) |
+| `packages/cli/src/ui/components/settings/KeybindsSettings.tsx` | Settings UI (assumed)            |
+| `~/.ollm/user_keybinds.json`                                   | User keybind overrides           |
 
 ---
 
@@ -443,6 +468,7 @@ grep -r "input ===" packages/cli/src/ui/
 ### Custom Keybinds
 
 **Example 1: Vim-style navigation everywhere**
+
 ```json
 {
   "navigation": {
@@ -461,6 +487,7 @@ grep -r "input ===" packages/cli/src/ui/
 ```
 
 **Example 2: Emacs-style shortcuts**
+
 ```json
 {
   "chat": {
@@ -477,6 +504,7 @@ grep -r "input ===" packages/cli/src/ui/
 ```
 
 **Example 3: Custom tab navigation**
+
 ```json
 {
   "tabNavigation": {

@@ -75,7 +75,7 @@ The Dynamic Prompt System provides context-aware system prompt management with f
 2. WHEN in planning mode, THE system SHALL provide only read-only tools: web_search, web_fetch, read_file, grep_search, file_search, list_directory, get_diagnostics
 3. WHEN in planning mode, THE system SHALL deny write tools: write_file, fs_append, str_replace, delete_file
 4. WHEN in planning mode, THE system SHALL deny execution tools: execute_pwsh, control_pwsh_process
-5. WHEN in planning mode, THE system SHALL deny git tools: git_*
+5. WHEN in planning mode, THE system SHALL deny git tools: git\_\*
 6. WHEN in developer mode, THE system SHALL provide all tools
 7. WHEN in tool mode, THE system SHALL provide all tools with enhanced schemas
 8. WHEN a tool is requested that's not allowed in current mode, THE system SHALL return an error explaining the restriction
@@ -199,4 +199,3 @@ The Dynamic Prompt System provides context-aware system prompt management with f
 6. THE error message SHALL include the current mode and why the tool is restricted
 7. THE error message SHALL suggest switching to developer mode if appropriate
 8. FOR ALL mode errors, the system SHALL not crash or lose conversation state
-

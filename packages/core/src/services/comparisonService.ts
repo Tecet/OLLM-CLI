@@ -35,7 +35,10 @@ export class ComparisonService {
   private abortController: AbortController | null = null;
   private tokenCounter?: TokenCounter;
 
-  constructor(private provider: ProviderAdapter, tokenCounter?: TokenCounter) {
+  constructor(
+    private provider: ProviderAdapter,
+    tokenCounter?: TokenCounter
+  ) {
     this.tokenCounter = tokenCounter;
   }
 
@@ -49,7 +52,7 @@ export class ComparisonService {
   /**
    * Compare multiple models by running the same prompt through each.
    * Executes all models in parallel and handles individual failures gracefully.
-   * 
+   *
    * @param prompt The prompt to send to all models
    * @param models Array of model names to compare
    * @returns Comparison result with all model outputs
@@ -88,7 +91,7 @@ export class ComparisonService {
   /**
    * Execute a single model and collect results.
    * Handles errors gracefully by returning a result with error field.
-   * 
+   *
    * @param prompt The prompt to send
    * @param model The model name
    * @param signal Abort signal for cancellation

@@ -1,6 +1,6 @@
 /**
  * Compatibility Matrix Infrastructure
- * 
+ *
  * Provides infrastructure for testing model compatibility across different
  * capabilities and generating documentation of test results.
  */
@@ -72,7 +72,7 @@ export type CapabilityTestFn = (modelName: string) => Promise<TestResult>;
 
 /**
  * Compatibility test runner
- * 
+ *
  * Runs compatibility tests for specified models and capabilities.
  */
 export class CompatibilityTestRunner {

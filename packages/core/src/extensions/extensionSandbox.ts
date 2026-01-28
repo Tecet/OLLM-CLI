@@ -1,6 +1,6 @@
 /**
  * Extension Sandbox for permission management
- * 
+ *
  * Provides runtime enforcement of extension permissions
  * to prevent unauthorized access to system resources.
  */
@@ -11,12 +11,7 @@ import { resolve, relative, sep } from 'path';
 /**
  * Permission types
  */
-export type PermissionType =
-  | 'filesystem'
-  | 'network'
-  | 'env'
-  | 'shell'
-  | 'mcp';
+export type PermissionType = 'filesystem' | 'network' | 'env' | 'shell' | 'mcp';
 
 /**
  * Permission definition
@@ -76,10 +71,7 @@ export interface SandboxConfig {
 export class ExtensionSandbox {
   private permissions: Map<string, Required<ExtensionPermissions>>;
   private config: Required<SandboxConfig>;
-  private promptCallback?: (
-    extensionName: string,
-    permission: Permission
-  ) => Promise<boolean>;
+  private promptCallback?: (extensionName: string, permission: Permission) => Promise<boolean>;
 
   constructor(config: SandboxConfig = {}) {
     this.permissions = new Map();
@@ -98,28 +90,22 @@ export class ExtensionSandbox {
 
   /**
    * Set permission prompt callback
-   * 
+   *
    * @param callback - Callback function for permission prompts
    */
   setPromptCallback(
-    callback: (
-      extensionName: string,
-      permission: Permission
-    ) => Promise<boolean>
+    callback: (extensionName: string, permission: Permission) => Promise<boolean>
   ): void {
     this.promptCallback = callback;
   }
 
   /**
    * Register extension permissions
-   * 
+   *
    * @param extensionName - Extension name
    * @param permissions - Extension permissions
    */
-  registerPermissions(
-    extensionName: string,
-    permissions: Partial<ExtensionPermissions>
-  ): void {
+  registerPermissions(extensionName: string, permissions: Partial<ExtensionPermissions>): void {
     const fullPermissions: Required<ExtensionPermissions> = {
       extensionName,
       filesystem: permissions.filesystem ?? this.config.defaultPermissions.filesystem ?? [],
@@ -135,7 +121,7 @@ export class ExtensionSandbox {
 
   /**
    * Unregister extension permissions
-   * 
+   *
    * @param extensionName - Extension name
    */
   unregisterPermissions(extensionName: string): void {
@@ -145,15 +131,12 @@ export class ExtensionSandbox {
 
   /**
    * Check filesystem access permission
-   * 
+   *
    * @param extensionName - Extension name
    * @param path - File path to access
    * @returns Permission check result
    */
-  async checkFilesystemAccess(
-    extensionName: string,
-    path: string
-  ): Promise<PermissionCheckResult> {
+  async checkFilesystemAccess(extensionName: string, path: string): Promise<PermissionCheckResult> {
     if (!this.config.enabled) {
       return { granted: true };
     }
@@ -172,7 +155,7 @@ export class ExtensionSandbox {
     // Check if path is within allowed scopes
     for (const allowedPath of permissions.filesystem) {
       const resolvedAllowed = this.resolvePath(allowedPath);
-      
+
       // Check if path is within allowed directory
       if (this.isPathWithin(absolutePath, resolvedAllowed)) {
         return { granted: true };
@@ -188,7 +171,7 @@ export class ExtensionSandbox {
       };
 
       const granted = await this.promptCallback(extensionName, permission);
-      
+
       if (granted) {
         // Add to permissions
         permissions.filesystem.push(path);
@@ -204,15 +187,12 @@ export class ExtensionSandbox {
 
   /**
    * Check network access permission
-   * 
+   *
    * @param extensionName - Extension name
    * @param domain - Domain to access
    * @returns Permission check result
    */
-  async checkNetworkAccess(
-    extensionName: string,
-    domain: string
-  ): Promise<PermissionCheckResult> {
+  async checkNetworkAccess(extensionName: string, domain: string): Promise<PermissionCheckResult> {
     if (!this.config.enabled) {
       return { granted: true };
     }
@@ -241,7 +221,7 @@ export class ExtensionSandbox {
       };
 
       const granted = await this.promptCallback(extensionName, permission);
-      
+
       if (granted) {
         // Add to permissions
         permissions.network.push(domain);
@@ -257,15 +237,12 @@ export class ExtensionSandbox {
 
   /**
    * Check environment variable access permission
-   * 
+   *
    * @param extensionName - Extension name
    * @param envVar - Environment variable name
    * @returns Permission check result
    */
-  async checkEnvAccess(
-    extensionName: string,
-    envVar: string
-  ): Promise<PermissionCheckResult> {
+  async checkEnvAccess(extensionName: string, envVar: string): Promise<PermissionCheckResult> {
     if (!this.config.enabled) {
       return { granted: true };
     }
@@ -292,7 +269,7 @@ export class ExtensionSandbox {
       };
 
       const granted = await this.promptCallback(extensionName, permission);
-      
+
       if (granted) {
         // Add to permissions
         permissions.env.push(envVar);
@@ -308,13 +285,11 @@ export class ExtensionSandbox {
 
   /**
    * Check shell execution permission
-   * 
+   *
    * @param extensionName - Extension name
    * @returns Permission check result
    */
-  async checkShellAccess(
-    extensionName: string
-  ): Promise<PermissionCheckResult> {
+  async checkShellAccess(extensionName: string): Promise<PermissionCheckResult> {
     if (!this.config.enabled) {
       return { granted: true };
     }
@@ -340,7 +315,7 @@ export class ExtensionSandbox {
       };
 
       const granted = await this.promptCallback(extensionName, permission);
-      
+
       if (granted) {
         // Grant permission
         permissions.shell = true;
@@ -356,13 +331,11 @@ export class ExtensionSandbox {
 
   /**
    * Check MCP server management permission
-   * 
+   *
    * @param extensionName - Extension name
    * @returns Permission check result
    */
-  async checkMCPAccess(
-    extensionName: string
-  ): Promise<PermissionCheckResult> {
+  async checkMCPAccess(extensionName: string): Promise<PermissionCheckResult> {
     if (!this.config.enabled) {
       return { granted: true };
     }
@@ -388,7 +361,7 @@ export class ExtensionSandbox {
       };
 
       const granted = await this.promptCallback(extensionName, permission);
-      
+
       if (granted) {
         // Grant permission
         permissions.mcp = true;
@@ -404,7 +377,7 @@ export class ExtensionSandbox {
 
   /**
    * Get permissions for an extension
-   * 
+   *
    * @param extensionName - Extension name
    * @returns Extension permissions or undefined
    */
@@ -414,7 +387,7 @@ export class ExtensionSandbox {
 
   /**
    * Grant permission to an extension
-   * 
+   *
    * @param extensionName - Extension name
    * @param permission - Permission to grant
    */
@@ -447,7 +420,7 @@ export class ExtensionSandbox {
 
   /**
    * Revoke permission from an extension
-   * 
+   *
    * @param extensionName - Extension name
    * @param permission - Permission to revoke
    */
@@ -464,14 +437,10 @@ export class ExtensionSandbox {
         );
         break;
       case 'network':
-        permissions.network = permissions.network.filter(
-          (p) => !permission.scope.includes(p)
-        );
+        permissions.network = permissions.network.filter((p) => !permission.scope.includes(p));
         break;
       case 'env':
-        permissions.env = permissions.env.filter(
-          (p) => !permission.scope.includes(p)
-        );
+        permissions.env = permissions.env.filter((p) => !permission.scope.includes(p));
         break;
       case 'shell':
         permissions.shell = false;
@@ -486,7 +455,7 @@ export class ExtensionSandbox {
 
   /**
    * Resolve path with tilde expansion
-   * 
+   *
    * @param path - Path to resolve
    * @returns Resolved absolute path
    */
@@ -499,7 +468,7 @@ export class ExtensionSandbox {
 
   /**
    * Check if path is within allowed directory
-   * 
+   *
    * @param path - Path to check
    * @param allowedPath - Allowed directory path
    * @returns True if path is within allowed directory
@@ -511,7 +480,7 @@ export class ExtensionSandbox {
 
   /**
    * Check if domain matches allowed domain pattern
-   * 
+   *
    * @param domain - Domain to check
    * @param pattern - Allowed domain pattern (supports wildcards)
    * @returns True if domain matches pattern
@@ -538,7 +507,7 @@ export class ExtensionSandbox {
 
   /**
    * Enable or disable sandbox
-   * 
+   *
    * @param enabled - Whether to enable sandbox
    */
   setEnabled(enabled: boolean): void {
@@ -548,7 +517,7 @@ export class ExtensionSandbox {
 
   /**
    * Check if sandbox is enabled
-   * 
+   *
    * @returns True if sandbox is enabled
    */
   isEnabled(): boolean {

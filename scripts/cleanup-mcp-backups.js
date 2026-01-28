@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /**
  * MCP Backup Cleanup Script
- * 
+ *
  * Cleans up old MCP configuration backups, keeping only the most recent ones.
- * 
+ *
  * Usage:
  *   node scripts/cleanup-mcp-backups.js [--keep=5] [--dry-run]
- * 
+ *
  * Options:
  *   --keep=N     Number of backups to keep (default: 5)
  *   --dry-run    Show what would be deleted without actually deleting
@@ -74,19 +74,19 @@ if (!fs.existsSync(backupDir)) {
 try {
   // Read all files in backup directory
   const files = fs.readdirSync(backupDir);
-  
+
   // Filter for backup files (*.json, not *.json.meta)
-  const backupFiles = files.filter(f => f.endsWith('.json') && !f.endsWith('.meta.json'));
-  
+  const backupFiles = files.filter((f) => f.endsWith('.json') && !f.endsWith('.meta.json'));
+
   if (backupFiles.length === 0) {
     console.log('✓ No backup files found - nothing to clean up');
     process.exit(0);
   }
-  
+
   console.log(`Found ${backupFiles.length} backup file(s)`);
-  
+
   // Get file stats and sort by modification time (newest first)
-  const backupsWithStats = backupFiles.map(file => {
+  const backupsWithStats = backupFiles.map((file) => {
     const filePath = path.join(backupDir, file);
     const stats = fs.statSync(filePath);
     return {
@@ -96,42 +96,44 @@ try {
       size: stats.size,
     };
   });
-  
+
   backupsWithStats.sort((a, b) => b.mtime.getTime() - a.mtime.getTime());
-  
+
   // Determine which files to keep and which to delete
   const toKeep = backupsWithStats.slice(0, keepCount);
   const toDelete = backupsWithStats.slice(keepCount);
-  
+
   if (toDelete.length === 0) {
     console.log(`✓ Only ${backupsWithStats.length} backup(s) found - nothing to delete`);
     process.exit(0);
   }
-  
+
   console.log('');
   console.log(`Keeping ${toKeep.length} backup(s):`);
   for (const backup of toKeep) {
     const sizeKB = (backup.size / 1024).toFixed(2);
     console.log(`  ✓ ${backup.file} (${sizeKB} KB, ${backup.mtime.toLocaleString()})`);
   }
-  
+
   console.log('');
   console.log(`${dryRun ? 'Would delete' : 'Deleting'} ${toDelete.length} old backup(s):`);
-  
+
   let deletedCount = 0;
   let deletedSize = 0;
-  
+
   for (const backup of toDelete) {
     const sizeKB = (backup.size / 1024).toFixed(2);
-    console.log(`  ${dryRun ? '○' : '✗'} ${backup.file} (${sizeKB} KB, ${backup.mtime.toLocaleString()})`);
-    
+    console.log(
+      `  ${dryRun ? '○' : '✗'} ${backup.file} (${sizeKB} KB, ${backup.mtime.toLocaleString()})`
+    );
+
     if (!dryRun) {
       try {
         // Delete backup file
         fs.unlinkSync(backup.path);
         deletedCount++;
         deletedSize += backup.size;
-        
+
         // Delete metadata file if it exists
         const metaPath = `${backup.path}.meta`;
         if (fs.existsSync(metaPath)) {
@@ -142,7 +144,7 @@ try {
       }
     }
   }
-  
+
   console.log('');
   if (dryRun) {
     const totalSizeKB = (toDelete.reduce((sum, b) => sum + b.size, 0) / 1024).toFixed(2);
@@ -151,7 +153,6 @@ try {
     const freedKB = (deletedSize / 1024).toFixed(2);
     console.log(`✓ Cleanup complete - deleted ${deletedCount} file(s), freed ${freedKB} KB`);
   }
-  
 } catch (error) {
   console.error('Error during cleanup:', error.message);
   process.exit(1);

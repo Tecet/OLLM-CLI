@@ -22,25 +22,26 @@ export interface MCPCapabilityMap {
 /**
  * Detect capabilities from MCP server tools
  */
-export function detectServerCapabilities(
-  serverName: string,
-  tools: Tool[]
-): ToolCapability[] {
+export function detectServerCapabilities(serverName: string, tools: Tool[]): ToolCapability[] {
   const capabilities: ToolCapability[] = [];
-  
+
   // Analyze tool names/descriptions to infer capabilities
   for (const tool of tools) {
     const name = tool.name.toLowerCase();
     const desc = tool.schema.description?.toLowerCase() || '';
-    
+
     // Web Search detection
     if (
       (name.includes('search') || name.includes('query')) &&
-      (name.includes('web') || name.includes('google') || name.includes('bing') || name.includes('brave') || desc.includes('web search'))
+      (name.includes('web') ||
+        name.includes('google') ||
+        name.includes('bing') ||
+        name.includes('brave') ||
+        desc.includes('web search'))
     ) {
       capabilities.push(ToolCapability.WEB_SEARCH);
     }
-    
+
     // Documentation Search detection
     if (
       (name.includes('search') || name.includes('query') || name.includes('doc')) &&
@@ -48,22 +49,23 @@ export function detectServerCapabilities(
     ) {
       capabilities.push(ToolCapability.DOCUMENTATION_SEARCH);
     }
-    
+
     // Code Search detection
-    if (
-      name.includes('code') && (name.includes('search') || desc.includes('search code'))
-    ) {
+    if (name.includes('code') && (name.includes('search') || desc.includes('search code'))) {
       capabilities.push(ToolCapability.CODE_SEARCH);
     }
 
     // File Operations detection
     if (
       (name.includes('file') || name.includes('fs')) &&
-      (name.includes('read') || name.includes('write') || name.includes('list') || desc.includes('file system'))
+      (name.includes('read') ||
+        name.includes('write') ||
+        name.includes('list') ||
+        desc.includes('file system'))
     ) {
       capabilities.push(ToolCapability.FILE_OPERATIONS);
     }
   }
-  
+
   return [...new Set(capabilities)]; // Remove duplicates
 }

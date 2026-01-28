@@ -1,6 +1,6 @@
 /**
  * OAuth 2.0 Provider for MCP Servers
- * 
+ *
  * Handles OAuth authentication flow for remote MCP servers,
  * including token storage, refresh, and automatic discovery.
  */
@@ -71,7 +71,7 @@ export class MCPOAuthProvider {
 
   /**
    * Register OAuth configuration for a server
-   * 
+   *
    * @param serverName - Name of the server
    * @param config - OAuth configuration
    */
@@ -81,7 +81,7 @@ export class MCPOAuthProvider {
 
   /**
    * Authenticate with an MCP server using OAuth
-   * 
+   *
    * @param serverName - Name of the server
    * @param config - OAuth configuration
    * @returns OAuth tokens
@@ -107,7 +107,7 @@ export class MCPOAuthProvider {
 
   /**
    * Get valid tokens for a server (refresh if needed)
-   * 
+   *
    * @param serverName - Name of the server
    * @returns Valid tokens or undefined
    */
@@ -174,7 +174,7 @@ export class MCPOAuthProvider {
           return undefined;
         }
       }
-      
+
       // No refresh token, tokens are invalid
       await this.revokeTokens(serverName);
       return undefined;
@@ -191,15 +191,14 @@ export class MCPOAuthProvider {
     return tokens?.accessToken;
   }
 
-
   /**
    * Revoke tokens for a server
-   * 
+   *
    * @param serverName - Name of the server
    */
   async revokeTokens(serverName: string): Promise<void> {
     this.tokens.delete(serverName);
-    
+
     if (this.tokenStorage) {
       await this.tokenStorage.deleteTokens(serverName);
     }
@@ -207,7 +206,7 @@ export class MCPOAuthProvider {
 
   /**
    * Get OAuth status for a server (UI method)
-   * 
+   *
    * @param serverName - Name of the server
    * @returns OAuth status including connection state and expiry
    */
@@ -217,7 +216,7 @@ export class MCPOAuthProvider {
     scopes?: string[];
   }> {
     const tokens = await this.getValidTokens(serverName);
-    
+
     if (!tokens) {
       return { connected: false };
     }
@@ -231,7 +230,7 @@ export class MCPOAuthProvider {
 
   /**
    * Authorize with OAuth and return auth URL (UI method)
-   * 
+   *
    * @param serverName - Name of the server
    * @param config - OAuth configuration
    * @returns Authorization URL for browser opening
@@ -248,8 +247,13 @@ export class MCPOAuthProvider {
       const codeVerifier = this.generateCodeVerifier();
       codeChallenge = await this.generateCodeChallenge(codeVerifier);
       // Store code verifier for later use in token exchange
-      (this as unknown as { pendingCodeVerifiers?: Map<string, string> }).pendingCodeVerifiers = (this as unknown as { pendingCodeVerifiers?: Map<string, string> }).pendingCodeVerifiers || new Map();
-      (this as unknown as { pendingCodeVerifiers: Map<string, string> }).pendingCodeVerifiers.set(serverName, codeVerifier);
+      (this as unknown as { pendingCodeVerifiers?: Map<string, string> }).pendingCodeVerifiers =
+        (this as unknown as { pendingCodeVerifiers?: Map<string, string> }).pendingCodeVerifiers ||
+        new Map();
+      (this as unknown as { pendingCodeVerifiers: Map<string, string> }).pendingCodeVerifiers.set(
+        serverName,
+        codeVerifier
+      );
     }
 
     // Build authorization URL
@@ -269,14 +273,14 @@ export class MCPOAuthProvider {
 
   /**
    * Refresh OAuth token (UI method)
-   * 
+   *
    * @param serverName - Name of the server
    * @param config - OAuth configuration (needed for token endpoint)
    * @returns New tokens
    */
   async refreshToken(serverName: string, config: OAuthConfig): Promise<OAuthTokens> {
     const tokens = this.tokens.get(serverName);
-    
+
     if (!tokens || !tokens.refreshToken) {
       throw new Error(`No refresh token available for server '${serverName}'`);
     }
@@ -304,7 +308,7 @@ export class MCPOAuthProvider {
       throw new Error(`Token refresh failed: ${error}`);
     }
 
-    const data = await response.json() as {
+    const data = (await response.json()) as {
       access_token: string;
       refresh_token?: string;
       expires_in: number;
@@ -315,7 +319,7 @@ export class MCPOAuthProvider {
     const newTokens: OAuthTokens = {
       accessToken: data.access_token,
       refreshToken: data.refresh_token || tokens.refreshToken, // Keep old refresh token if not provided
-      expiresAt: Date.now() + (data.expires_in * 1000),
+      expiresAt: Date.now() + data.expires_in * 1000,
       tokenType: data.token_type || 'Bearer',
       scope: data.scope,
     };
@@ -327,7 +331,7 @@ export class MCPOAuthProvider {
 
   /**
    * Revoke OAuth access (UI method)
-   * 
+   *
    * @param serverName - Name of the server
    * @param config - OAuth configuration (optional, for revocation endpoint)
    */
@@ -339,7 +343,7 @@ export class MCPOAuthProvider {
       try {
         // Try to find revocation endpoint (usually token_url with /revoke)
         const revocationUrl = config.tokenUrl.replace(/\/token$/, '/revoke');
-        
+
         const body = new URLSearchParams({
           token: tokens.accessToken,
           client_id: config.clientId,
@@ -368,7 +372,7 @@ export class MCPOAuthProvider {
 
   /**
    * Start OAuth authorization flow
-   * 
+   *
    * @param serverName - Name of the server
    * @param config - OAuth configuration
    * @returns OAuth tokens
@@ -403,19 +407,14 @@ export class MCPOAuthProvider {
     const authCode = await this.startCallbackServer(redirectPort, authUrl.toString());
 
     // Exchange authorization code for tokens
-    const tokens = await this.exchangeCodeForTokens(
-      config,
-      authCode,
-      redirectUri,
-      codeVerifier
-    );
+    const tokens = await this.exchangeCodeForTokens(config, authCode, redirectUri, codeVerifier);
 
     return tokens;
   }
 
   /**
    * Start local HTTP server to receive OAuth callback
-   * 
+   *
    * @param port - Port to listen on
    * @param authUrl - Authorization URL to open
    * @returns Authorization code
@@ -460,7 +459,9 @@ export class MCPOAuthProvider {
 
           if (code) {
             res.writeHead(200, { 'Content-Type': 'text/html' });
-            res.end('<html><body><h1>Authentication Successful</h1><p>You can close this window.</p></body></html>');
+            res.end(
+              '<html><body><h1>Authentication Successful</h1><p>You can close this window.</p></body></html>'
+            );
             if (!resolved) {
               resolved = true;
               cleanup();
@@ -477,19 +478,22 @@ export class MCPOAuthProvider {
         }
       });
 
-      timeout = setTimeout(() => {
-        if (!resolved) {
-          resolved = true;
-          cleanup();
-          reject(new Error('OAuth callback timeout'));
-        }
-      }, 5 * 60 * 1000); // 5 minute timeout
+      timeout = setTimeout(
+        () => {
+          if (!resolved) {
+            resolved = true;
+            cleanup();
+            reject(new Error('OAuth callback timeout'));
+          }
+        },
+        5 * 60 * 1000
+      ); // 5 minute timeout
 
       server.listen(port, () => {
         console.log(`OAuth callback server listening on http://localhost:${port}`);
         console.log(`Opening browser for authentication...`);
         console.log(`Authorization URL: ${authUrl}`);
-        
+
         // Open browser (platform-specific)
         this.openBrowser(authUrl);
       });
@@ -506,7 +510,7 @@ export class MCPOAuthProvider {
 
   /**
    * Exchange authorization code for tokens
-   * 
+   *
    * @param config - OAuth configuration
    * @param code - Authorization code
    * @param redirectUri - Redirect URI
@@ -547,7 +551,7 @@ export class MCPOAuthProvider {
       throw new Error(`Token exchange failed: ${error}`);
     }
 
-    const data = await response.json() as {
+    const data = (await response.json()) as {
       access_token: string;
       refresh_token?: string;
       expires_in: number;
@@ -558,7 +562,7 @@ export class MCPOAuthProvider {
     return {
       accessToken: data.access_token,
       refreshToken: data.refresh_token,
-      expiresAt: Date.now() + (data.expires_in * 1000),
+      expiresAt: Date.now() + data.expires_in * 1000,
       tokenType: data.token_type || 'Bearer',
       scope: data.scope,
     };
@@ -566,7 +570,7 @@ export class MCPOAuthProvider {
 
   /**
    * Store tokens
-   * 
+   *
    * @param serverName - Server name
    * @param tokens - Tokens to store
    */
@@ -580,7 +584,7 @@ export class MCPOAuthProvider {
 
   /**
    * Generate PKCE code verifier
-   * 
+   *
    * @returns Code verifier
    */
   private generateCodeVerifier(): string {
@@ -591,7 +595,7 @@ export class MCPOAuthProvider {
 
   /**
    * Generate PKCE code challenge from verifier
-   * 
+   *
    * @param verifier - Code verifier
    * @returns Code challenge
    */
@@ -604,21 +608,18 @@ export class MCPOAuthProvider {
 
   /**
    * Base64 URL encode
-   * 
+   *
    * @param buffer - Buffer to encode
    * @returns Base64 URL encoded string
    */
   private base64UrlEncode(buffer: Uint8Array): string {
     const base64 = Buffer.from(buffer).toString('base64');
-    return base64
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=/g, '');
+    return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
   }
 
   /**
    * Open browser (platform-specific)
-   * 
+   *
    * @param url - URL to open
    */
   private openBrowser(url: string): void {
@@ -643,7 +644,7 @@ export class MCPOAuthProvider {
 
   /**
    * Discover OAuth configuration from server
-   * 
+   *
    * @param serverUrl - Server URL
    * @returns OAuth discovery information
    */
@@ -657,7 +658,7 @@ export class MCPOAuthProvider {
         return undefined;
       }
 
-      const data = await response.json() as {
+      const data = (await response.json()) as {
         authorization_endpoint: string;
         token_endpoint: string;
         scopes_supported?: string[];
@@ -680,7 +681,7 @@ export class MCPOAuthProvider {
 export interface TokenStorage {
   /**
    * Get tokens for a server
-   * 
+   *
    * @param serverName - Server name
    * @returns Tokens or undefined
    */
@@ -688,7 +689,7 @@ export interface TokenStorage {
 
   /**
    * Store tokens for a server
-   * 
+   *
    * @param serverName - Server name
    * @param tokens - Tokens to store
    */
@@ -696,7 +697,7 @@ export interface TokenStorage {
 
   /**
    * Delete tokens for a server
-   * 
+   *
    * @param serverName - Server name
    */
   deleteTokens(serverName: string): Promise<void>;
@@ -797,7 +798,7 @@ export class KeytarTokenStorage implements TokenStorage {
 
 /**
  * Create appropriate token storage based on availability
- * 
+ *
  * @param fallbackFile - Fallback file path if keytar not available
  * @returns Token storage instance
  */

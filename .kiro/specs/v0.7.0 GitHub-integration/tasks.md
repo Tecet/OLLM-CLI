@@ -9,14 +9,17 @@ This implementation plan breaks down the GitHub integration feature into discret
 **Note:** A placeholder GitHub tab currently exists in the UI (created in stage-06a-github-panel-ui). When implementing this spec:
 
 **Existing Components to Remove:**
+
 - `packages/cli/src/ui/components/github/PlannedFeaturesList.tsx`
 - `packages/cli/src/ui/components/github/FeatureSection.tsx`
 
 **Existing Components to Replace:**
+
 - `packages/cli/src/ui/components/tabs/GitHubTab.tsx` - Replace placeholder with functional implementation
 - `packages/cli/src/ui/components/tabs/__tests__/GitHubTab.test.tsx` - Replace smoke tests with functional tests
 
 **Existing Integration to Keep:**
+
 - GitHub tab in TabBar navigation (Ctrl+6 shortcut)
 - Tab routing in App.tsx
 - TabType definition in UIContext

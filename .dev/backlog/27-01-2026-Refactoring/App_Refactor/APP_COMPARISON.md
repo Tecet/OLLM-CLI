@@ -7,17 +7,19 @@
 
 ## File Sizes
 
-| Version | Lines | Change |
-|---------|-------|--------|
-| Old | 1,186 | - |
-| New | 550 | -636 lines (54% reduction) |
+| Version | Lines | Change                     |
+| ------- | ----- | -------------------------- |
+| Old     | 1,186 | -                          |
+| New     | 550   | -636 lines (54% reduction) |
 
 ---
 
 ## What Was Removed
 
 ### 1. **Ollama Health Check & Auto-Start Logic** (Lines 250-310)
+
 **Removed:**
+
 - `checkOllamaHealth()` function
 - `startOllamaServe()` function
 - `normalizeOllamaHost()` function
@@ -31,7 +33,9 @@
 ---
 
 ### 2. **Hardware Info Persistence** (Lines 312-335)
+
 **Removed:**
+
 - `useEffect` that persists GPU info to settings
 - Logic to compare live vs saved hardware info
 - Automatic hardware info updates
@@ -43,7 +47,9 @@
 ---
 
 ### 3. **Model Loading Tracking** (Lines 600-610)
+
 **Removed:**
+
 - `prevModelLoadingRef` tracking
 - `useEffect` that shows welcome message when model finishes loading
 - Automatic welcome message on model switch
@@ -55,7 +61,9 @@
 ---
 
 ### 4. **Complex Layout Calculations** (Lines 730-850)
+
 **Removed:**
+
 - 10/80/10 split for main content area
 - Spacer boxes on left and right
 - Complex width calculations for content
@@ -67,7 +75,9 @@
 ---
 
 ### 5. **Debug Overlay** (Lines 1050-1065)
+
 **Removed:**
+
 - Debug mode overlay showing:
   - Active tab
   - Side panel visibility
@@ -82,7 +92,9 @@
 ---
 
 ### 6. **Command Palette Placeholder** (Lines 1067-1075)
+
 **Removed:**
+
 - Command palette overlay
 - "Coming Soon" message
 
@@ -93,7 +105,9 @@
 ---
 
 ### 7. **Launch Screen Overlay** (Lines 1077-1095)
+
 **Removed:**
+
 - Absolute positioned launch screen overlay
 - Model info display
 - GPU info display
@@ -106,7 +120,9 @@
 ---
 
 ### 8. **Complex Provider Setup** (Lines 1100-1180)
+
 **Removed:**
+
 - Dynamic LocalProvider loading with try/catch
 - No-op provider fallback
 - Model size extraction from name
@@ -120,7 +136,9 @@
 ---
 
 ### 9. **Theme Loading from SettingsService** (Lines 1145-1155)
+
 **Removed:**
+
 - Initial theme loading from settings
 - Built-in themes lookup
 - Theme fallback logic
@@ -132,7 +150,9 @@
 ---
 
 ### 10. **Workspace Path** (Line 1158)
+
 **Removed:**
+
 - `workspacePath` variable
 - Passing to ServiceProvider
 
@@ -145,20 +165,27 @@
 ## What Was Simplified
 
 ### 1. **Welcome Message Building**
+
 **Old:**
+
 ```typescript
 const buildWelcomeMessage = useCallback(() => {
   const modelName = currentModel || 'Unknown Model';
   const profile = profileManager.findProfile(modelName);
   const settings = SettingsService.getInstance().getSettings();
   const persistedHW = settings.hardware;
-  const effectiveGPUInfo = gpuInfo || { /* fallback */ };
+  const effectiveGPUInfo =
+    gpuInfo ||
+    {
+      /* fallback */
+    };
   const currentContextSize = contextState.usage.maxTokens;
   return createWelcomeMessage(modelName, currentContextSize, profile, effectiveGPUInfo);
 }, [currentModel, gpuInfo, contextState.usage.maxTokens]);
 ```
 
 **New:**
+
 ```typescript
 const buildWelcomeMessage = useCallback(() => {
   if (uiState.sidePanelVisible) {
@@ -174,6 +201,7 @@ const buildWelcomeMessage = useCallback(() => {
 ---
 
 ### 2. **Context Menu**
+
 **Old:** 600+ lines of menu logic with VRAM calculations, safety checks, model switching
 **New:** 200+ lines with simplified logic, delegates VRAM to core
 
@@ -183,6 +211,7 @@ const buildWelcomeMessage = useCallback(() => {
 ---
 
 ### 3. **Mouse Handling**
+
 **Old:** Complex hit testing with tab detection, spacer calculations
 **New:** Simplified hit testing without spacers
 
@@ -192,6 +221,7 @@ const buildWelcomeMessage = useCallback(() => {
 ---
 
 ### 4. **Tab Rendering**
+
 **Old:** `renderActiveTab()` function with switch statement, complex props
 **New:** Inline switch in JSX with simplified props
 
@@ -271,6 +301,7 @@ const buildWelcomeMessage = useCallback(() => {
 ## Architecture Goals
 
 ### What App.tsx SHOULD Do:
+
 - Wire up context providers
 - Handle layout and dimensions
 - Route keyboard shortcuts
@@ -278,6 +309,7 @@ const buildWelcomeMessage = useCallback(() => {
 - Integrate components
 
 ### What App.tsx SHOULD NOT Do:
+
 - Calculate context sizes (core does this)
 - Manage VRAM (core does this)
 - Build prompts (core does this)

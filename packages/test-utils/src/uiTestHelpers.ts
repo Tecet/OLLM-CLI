@@ -1,6 +1,6 @@
 /**
  * UI Test Helpers for Ink Component Testing
- * 
+ *
  * This module provides utilities for testing Ink components with React 19.
  * It includes helpers for rendering components, simulating user input,
  * and asserting on UI output.
@@ -93,82 +93,82 @@ export const KeyboardInput = {
    * Enter key (carriage return).
    */
   ENTER: '\r',
-  
+
   /**
    * Newline (line feed).
    */
   NEWLINE: '\n',
-  
+
   /**
    * Tab key.
    */
   TAB: '\t',
-  
+
   /**
    * Escape key.
    */
   ESCAPE: '\x1B',
-  
+
   /**
    * Backspace key.
    */
   BACKSPACE: '\x7F',
-  
+
   /**
    * Delete key.
    */
   DELETE: '\x1B[3~',
-  
+
   /**
    * Arrow up.
    */
   ARROW_UP: '\x1B[A',
-  
+
   /**
    * Arrow down.
    */
   ARROW_DOWN: '\x1B[B',
-  
+
   /**
    * Arrow right.
    */
   ARROW_RIGHT: '\x1B[C',
-  
+
   /**
    * Arrow left.
    */
   ARROW_LEFT: '\x1B[D',
-  
+
   /**
    * Ctrl+C (interrupt).
    */
   CTRL_C: '\x03',
-  
+
   /**
    * Ctrl+D (end of transmission).
    */
   CTRL_D: '\x04',
-  
+
   /**
    * Ctrl+Z (suspend).
    */
   CTRL_Z: '\x1A',
-  
+
   /**
    * Home key.
    */
   HOME: '\x1B[H',
-  
+
   /**
    * End key.
    */
   END: '\x1B[F',
-  
+
   /**
    * Page up.
    */
   PAGE_UP: '\x1B[5~',
-  
+
   /**
    * Page down.
    */
@@ -220,13 +220,10 @@ export async function waitForText(
   text: string,
   options: { timeout?: number; interval?: number } = {}
 ): Promise<void> {
-  await waitForCondition(
-    () => frameContains(getFrame(), text),
-    {
-      ...options,
-      message: `Frame did not contain "${text}"`,
-    }
-  );
+  await waitForCondition(() => frameContains(getFrame(), text), {
+    ...options,
+    message: `Frame did not contain "${text}"`,
+  });
 }
 
 /**
@@ -237,13 +234,10 @@ export async function waitForPattern(
   pattern: RegExp,
   options: { timeout?: number; interval?: number } = {}
 ): Promise<void> {
-  await waitForCondition(
-    () => frameMatches(getFrame(), pattern),
-    {
-      ...options,
-      message: `Frame did not match pattern ${pattern}`,
-    }
-  );
+  await waitForCondition(() => frameMatches(getFrame(), pattern), {
+    ...options,
+    message: `Frame did not match pattern ${pattern}`,
+  });
 }
 
 /**
@@ -254,13 +248,10 @@ export async function waitForFrameUpdate(
   options: { timeout?: number; interval?: number } = {}
 ): Promise<void> {
   const initialFrame = getFrame();
-  await waitForCondition(
-    () => getFrame() !== initialFrame,
-    {
-      ...options,
-      message: 'Frame did not update',
-    }
-  );
+  await waitForCondition(() => getFrame() !== initialFrame, {
+    ...options,
+    message: 'Frame did not update',
+  });
 }
 
 /**
@@ -318,17 +309,17 @@ export const mockKeybinds = {
 /**
  * Create a test wrapper component that provides common context providers.
  * This is a type-safe helper that can be used with any context providers.
- * 
+ *
  * Note: This function returns a component factory. Use it in your test files
  * which should be .tsx files to support JSX syntax.
- * 
+ *
  * Example:
  * ```tsx
  * const TestWrapper = createTestWrapper([
  *   { Provider: UIProvider },
  *   { Provider: ChatProvider }
  * ]);
- * 
+ *
  * render(<TestWrapper><MyComponent /></TestWrapper>);
  * ```
  */
@@ -378,9 +369,7 @@ export const UIAssertions = {
   assertMatches(frame: string | undefined, pattern: RegExp, message?: string): void {
     if (!frameMatches(frame, pattern)) {
       const content = getTextContent(frame);
-      throw new Error(
-        message || `Expected frame to match ${pattern}\nActual content:\n${content}`
-      );
+      throw new Error(message || `Expected frame to match ${pattern}\nActual content:\n${content}`);
     }
   },
 
@@ -410,8 +399,7 @@ export const UIAssertions = {
     const lines = getLines(frame);
     if (lines.length !== count) {
       throw new Error(
-        message ||
-          `Expected ${count} lines, got ${lines.length}\nLines:\n${lines.join('\n')}`
+        message || `Expected ${count} lines, got ${lines.length}\nLines:\n${lines.join('\n')}`
       );
     }
   },
@@ -469,23 +457,26 @@ export const UISnapshot = {
    */
   normalizeFrame(frame: string | undefined): string {
     if (!frame) return '';
-    
+
     let normalized = getTextContent(frame);
-    
+
     // Remove timestamps (various formats)
     normalized = normalized.replace(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/g, '<TIMESTAMP>');
     normalized = normalized.replace(/\d{2}:\d{2}:\d{2}/g, '<TIME>');
-    
+
     // Remove IDs (call_xxx, uuid-like patterns)
     normalized = normalized.replace(/call_[a-z0-9]{9}/g, '<CALL_ID>');
-    normalized = normalized.replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, '<UUID>');
-    
+    normalized = normalized.replace(
+      /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi,
+      '<UUID>'
+    );
+
     // Remove file paths (absolute paths)
     normalized = normalized.replace(/\/[^\s]+\.(ts|tsx|js|jsx)/g, '<FILE_PATH>');
-    
+
     // Normalize whitespace
     normalized = normalized.replace(/\s+$/gm, ''); // Remove trailing whitespace
-    
+
     return normalized;
   },
 
@@ -519,7 +510,9 @@ export const UIState = {
    * Check if a component shows success.
    */
   hasSuccess(frame: string | undefined): boolean {
-    return frameContains(frame, 'success') || frameContains(frame, '✓') || frameContains(frame, '✔');
+    return (
+      frameContains(frame, 'success') || frameContains(frame, '✓') || frameContains(frame, '✔')
+    );
   },
 
   /**

@@ -1,14 +1,14 @@
 /**
  * Context Manager
- * 
+ *
  * Manages conversation context: messages, token counting, VRAM monitoring.
  * Does ONE job: context management.
- * 
+ *
  * Does NOT:
  * - Build prompts (that's PromptOrchestrator)
  * - Create snapshots (that's SnapshotCoordinator)
  * - Compress messages (that's CompressionCoordinator)
- * 
+ *
  * Emits events for other systems to react to.
  */
 
@@ -20,12 +20,7 @@ import { createContextPool } from './contextPool.js';
 import * as ContextSizeCalculator from './ContextSizeCalculator.js';
 import { PromptOrchestrator } from './promptOrchestrator.js';
 import { createTokenCounter } from './tokenCounter.js';
-import { 
-  ContextTier,
-  TIER_CONFIGS,
-  OperationalMode,
-  MODE_PROFILES
-} from './types.js';
+import { ContextTier, TIER_CONFIGS, OperationalMode, MODE_PROFILES } from './types.js';
 import { createVRAMMonitor } from './vramMonitor.js';
 
 import type { ContextModuleOverrides, ContextModules } from './contextModules.js';
@@ -42,21 +37,21 @@ import type {
   TokenCounter,
   ContextPool,
   MemoryGuard,
-  ModelInfo
+  ModelInfo,
 } from './types.js';
 
 const isTestEnv = process.env.NODE_ENV === 'test' || !!process.env.VITEST;
 
 /**
  * Context Manager Implementation
- * 
+ *
  * Manages conversation context and coordinates context-related services.
  */
 export class ConversationContextManager extends EventEmitter implements ContextManager {
   public config: ContextConfig;
   public activeSkills: string[] = [];
   public activeTools: string[] = [];
-  
+
   private vramMonitor: VRAMMonitor;
   private tokenCounter: TokenCounter;
   private contextPool: ContextPool;
@@ -64,16 +59,16 @@ export class ConversationContextManager extends EventEmitter implements ContextM
   private messageStore: MessageStore;
   private contextModules: ContextModules;
   private promptOrchestrator: PromptOrchestrator;
-  
+
   private currentContext: ConversationContext;
   private modelInfo: ModelInfo;
   private isStarted: boolean = false;
   private sessionId: string;
-  
+
   // Tier and mode tracking
   private currentTier: ContextTier = ContextTier.TIER_3_STANDARD;
   private currentMode: OperationalMode = OperationalMode.ASSISTANT;
-  
+
   // Expose snapshot/compression methods (bound from coordinators)
   public createSnapshot: () => Promise<ContextSnapshot>;
   public restoreSnapshot: (snapshotId: string) => Promise<void>;
@@ -94,60 +89,71 @@ export class ConversationContextManager extends EventEmitter implements ContextM
     }
   ) {
     super();
-    
+
     this.sessionId = sessionId;
     this.modelInfo = modelInfo;
     this.config = { ...DEFAULT_CONTEXT_CONFIG, ...config };
-    
+
     // Calculate Ollama context size from user's target size
     const ollamaContextSize = ContextSizeCalculator.getOllamaContextSize(
       this.config.targetSize,
       this.modelInfo.contextProfiles || []
     );
-    
+
     // Initialize services
     this.vramMonitor = services?.vramMonitor || createVRAMMonitor();
     this.tokenCounter = services?.tokenCounter || createTokenCounter();
     this.promptOrchestrator = new PromptOrchestrator({ tokenCounter: this.tokenCounter });
-    
+
     // Create context pool
-    this.contextPool = services?.contextPool || createContextPool(
-      {
-        minContextSize: ContextSizeCalculator.getOllamaContextSize(this.config.minSize, this.modelInfo.contextProfiles || []),
-        maxContextSize: ContextSizeCalculator.getOllamaContextSize(this.config.maxSize, this.modelInfo.contextProfiles || []),
-        targetContextSize: ollamaContextSize,
-        reserveBuffer: this.config.vramBuffer,
-        kvCacheQuantization: this.config.kvQuantization,
-        autoSize: this.config.autoSize
-      },
-      async (newSize: number) => {
-        // Resize callback
-        this.currentContext.maxTokens = newSize;
-        this.currentContext.metadata.contextSize = newSize;
-        
-        // Update tier based on new size
-        const userSize = ContextSizeCalculator.getUserSizeFromOllama(newSize, this.modelInfo.contextProfiles || []);
-        const newTier = ContextSizeCalculator.determineTier(userSize);
-        const previousTier = this.currentTier;
-        this.currentTier = newTier;
-        
-        this.emit('context-resized', { 
-          newSize,
-          previousTier,
-          newTier
-        });
-        
-        if (previousTier !== newTier) {
-          this.emit('tier-changed', { 
-            tier: newTier,
-            config: TIER_CONFIGS[newTier]
+    this.contextPool =
+      services?.contextPool ||
+      createContextPool(
+        {
+          minContextSize: ContextSizeCalculator.getOllamaContextSize(
+            this.config.minSize,
+            this.modelInfo.contextProfiles || []
+          ),
+          maxContextSize: ContextSizeCalculator.getOllamaContextSize(
+            this.config.maxSize,
+            this.modelInfo.contextProfiles || []
+          ),
+          targetContextSize: ollamaContextSize,
+          reserveBuffer: this.config.vramBuffer,
+          kvCacheQuantization: this.config.kvQuantization,
+          autoSize: this.config.autoSize,
+        },
+        async (newSize: number) => {
+          // Resize callback
+          this.currentContext.maxTokens = newSize;
+          this.currentContext.metadata.contextSize = newSize;
+
+          // Update tier based on new size
+          const userSize = ContextSizeCalculator.getUserSizeFromOllama(
+            newSize,
+            this.modelInfo.contextProfiles || []
+          );
+          const newTier = ContextSizeCalculator.determineTier(userSize);
+          const previousTier = this.currentTier;
+          this.currentTier = newTier;
+
+          this.emit('context-resized', {
+            newSize,
+            previousTier,
+            newTier,
           });
+
+          if (previousTier !== newTier) {
+            this.emit('tier-changed', {
+              tier: newTier,
+              config: TIER_CONFIGS[newTier],
+            });
+          }
         }
-      }
-    );
-    
+      );
+
     this.contextPool.setUserContextSize(this.config.targetSize);
-    
+
     // Initialize current context
     this.currentContext = {
       sessionId,
@@ -156,7 +162,7 @@ export class ConversationContextManager extends EventEmitter implements ContextM
         id: `system-${Date.now()}`,
         role: 'system',
         content: '',
-        timestamp: new Date()
+        timestamp: new Date(),
       },
       tokenCount: 0,
       maxTokens: this.contextPool.currentSize,
@@ -166,13 +172,13 @@ export class ConversationContextManager extends EventEmitter implements ContextM
       metadata: {
         model: modelInfo.parameters.toString(),
         contextSize: this.contextPool.currentSize,
-        compressionHistory: []
-      }
+        compressionHistory: [],
+      },
     };
-    
+
     // Detect initial tier
     this.currentTier = ContextSizeCalculator.determineTier(this.config.targetSize);
-    
+
     // Create context modules
     this.contextModules = createContextModules({
       sessionId,
@@ -190,7 +196,7 @@ export class ConversationContextManager extends EventEmitter implements ContextM
       getModeProfile: () => MODE_PROFILES[this.currentMode],
       emit: this.emit.bind(this),
       isTestEnv,
-      services
+      services,
     });
 
     this.memoryGuard = this.contextModules.memoryGuard;
@@ -206,11 +212,13 @@ export class ConversationContextManager extends EventEmitter implements ContextM
     this.listSnapshots = snapshotCoordinator.listSnapshots.bind(snapshotCoordinator);
     this.getSnapshot = snapshotCoordinator.getSnapshot.bind(snapshotCoordinator);
     this.compress = compressionCoordinator.compress.bind(compressionCoordinator);
-    this.isSummarizationInProgress = compressionCoordinator.isSummarizationInProgress.bind(compressionCoordinator);
-    this.waitForSummarization = compressionCoordinator.waitForSummarization.bind(compressionCoordinator);
-    
+    this.isSummarizationInProgress =
+      compressionCoordinator.isSummarizationInProgress.bind(compressionCoordinator);
+    this.waitForSummarization =
+      compressionCoordinator.waitForSummarization.bind(compressionCoordinator);
+
     this.messageStore.setCompress(() => this.compress());
-    
+
     // Set up event coordination
     this.setupEventCoordination();
   }
@@ -222,16 +230,16 @@ export class ConversationContextManager extends EventEmitter implements ContextM
     this.vramMonitor.onLowMemory(async (vramInfo) => {
       this.emit('low-memory', vramInfo);
       this.contextPool.updateVRAMInfo(vramInfo);
-      
+
       const usagePercent = Math.round((vramInfo.used / vramInfo.total) * 100);
       this.emit('low-memory-warning', {
         vramInfo,
         currentContextSize: this.contextPool.currentSize,
         usagePercent,
-        message: 'Low memory detected. Consider restarting with smaller context size.'
+        message: 'Low memory detected. Consider restarting with smaller context size.',
       });
     });
-    
+
     this.contextModules.registerHandlers(this.config);
   }
 
@@ -242,14 +250,14 @@ export class ConversationContextManager extends EventEmitter implements ContextM
     if (this.isStarted) {
       return;
     }
-    
+
     // Start VRAM monitoring
     this.vramMonitor.startMonitoring(5000);
-    
+
     // Get initial VRAM info
     const vramInfo = await this.vramMonitor.getInfo();
     this.contextPool.updateVRAMInfo(vramInfo);
-    
+
     if (this.config.autoSize) {
       // Auto-size based on available VRAM
       const maxPossibleContext = this.contextPool.calculateOptimalSize(vramInfo, this.modelInfo);
@@ -258,30 +266,30 @@ export class ConversationContextManager extends EventEmitter implements ContextM
         this.modelInfo.contextProfiles || [],
         this.modelInfo.contextLimit
       );
-      
+
       // Use largest available tier that fits in VRAM
       const selectedTier = availableTiers.options[availableTiers.options.length - 1];
       const recommendedSize = Math.min(selectedTier.ollamaSize, maxPossibleContext);
       const userFacingSize = selectedTier.size;
-      
+
       this.config.targetSize = userFacingSize;
       await this.contextPool.resize(recommendedSize, userFacingSize);
       this.contextPool.updateConfig({ targetContextSize: recommendedSize });
-      
+
       this.currentContext.maxTokens = this.contextPool.currentSize;
       this.currentContext.metadata.contextSize = this.contextPool.currentSize;
-      
+
       this.currentTier = selectedTier.tier;
-      
-      this.emit('tier-changed', { 
+
+      this.emit('tier-changed', {
         tier: this.currentTier,
-        config: TIER_CONFIGS[this.currentTier]
+        config: TIER_CONFIGS[this.currentTier],
       });
     } else {
       // Manual sizing
       this.currentTier = ContextSizeCalculator.determineTier(this.config.targetSize);
     }
-    
+
     // Apply initial system prompt based on tier and mode
     this.promptOrchestrator.updateSystemPrompt({
       mode: this.currentMode,
@@ -289,13 +297,13 @@ export class ConversationContextManager extends EventEmitter implements ContextM
       activeSkills: this.activeSkills,
       currentContext: this.currentContext,
       contextPool: this.contextPool,
-      emit: this.emit.bind(this)
+      emit: this.emit.bind(this),
     });
-    
+
     this.isStarted = true;
     this.emit('started', {
       tier: this.currentTier,
-      autoSizeEnabled: this.config.autoSize
+      autoSizeEnabled: this.config.autoSize,
     });
   }
 
@@ -306,7 +314,7 @@ export class ConversationContextManager extends EventEmitter implements ContextM
     if (!this.isStarted) {
       return;
     }
-    
+
     this.vramMonitor.stopMonitoring();
     this.isStarted = false;
     this.emit('stopped');
@@ -317,30 +325,30 @@ export class ConversationContextManager extends EventEmitter implements ContextM
    */
   updateConfig(config: Partial<ContextConfig>): void {
     this.config = { ...this.config, ...config };
-    
+
     if (config.targetSize !== undefined) {
       const ollamaSize = ContextSizeCalculator.getOllamaContextSize(
         config.targetSize,
         this.modelInfo.contextProfiles || []
       );
-      
+
       this.contextPool.updateConfig({
-        targetContextSize: ollamaSize
+        targetContextSize: ollamaSize,
       });
-      
+
       this.contextPool.setUserContextSize(config.targetSize);
       this.currentContext.maxTokens = ollamaSize;
-      
+
       const newTier = ContextSizeCalculator.determineTier(config.targetSize);
       if (newTier !== this.currentTier) {
         this.currentTier = newTier;
         this.emit('tier-changed', {
           tier: this.currentTier,
-          config: TIER_CONFIGS[this.currentTier]
+          config: TIER_CONFIGS[this.currentTier],
         });
       }
     }
-    
+
     this.contextModules.updateConfig(this.config);
     this.emit('config-updated', this.config);
   }
@@ -358,27 +366,30 @@ export class ConversationContextManager extends EventEmitter implements ContextM
   getBudget(): ContextBudget {
     const context = this.getContext();
     const ollamaSize = this.contextPool.getCurrentSize();
-    
+
     const systemPromptTokens = context.messages
-      .filter(m => m.role === 'system')
+      .filter((m) => m.role === 'system')
       .reduce((sum, m) => sum + (m.tokenCount || 0), 0);
-    
-    const checkpointTokens = (context.checkpoints || [])
-      .reduce((sum, cp) => sum + cp.currentTokens, 0);
-    
+
+    const checkpointTokens = (context.checkpoints || []).reduce(
+      (sum, cp) => sum + cp.currentTokens,
+      0
+    );
+
     const availableBudget = Math.max(0, ollamaSize - systemPromptTokens - checkpointTokens);
     const conversationTokens = context.tokenCount - systemPromptTokens - checkpointTokens;
-    const budgetPercentage = availableBudget > 0
-      ? Math.min(100, Math.max(0, (conversationTokens / availableBudget) * 100))
-      : 100;
-    
+    const budgetPercentage =
+      availableBudget > 0
+        ? Math.min(100, Math.max(0, (conversationTokens / availableBudget) * 100))
+        : 100;
+
     return {
       totalOllamaSize: ollamaSize,
       systemPromptTokens,
       checkpointTokens,
       availableBudget,
       conversationTokens,
-      budgetPercentage
+      budgetPercentage,
     };
   }
 
@@ -395,7 +406,7 @@ export class ConversationContextManager extends EventEmitter implements ContextM
   public setMode(mode: OperationalMode): void {
     const previousMode = this.currentMode;
     this.currentMode = mode;
-    
+
     // Update system prompt for new mode
     this.promptOrchestrator.updateSystemPrompt({
       mode: this.currentMode,
@@ -403,13 +414,13 @@ export class ConversationContextManager extends EventEmitter implements ContextM
       activeSkills: this.activeSkills,
       currentContext: this.currentContext,
       contextPool: this.contextPool,
-      emit: this.emit.bind(this)
+      emit: this.emit.bind(this),
     });
-    
-    this.emit('mode-changed', { 
+
+    this.emit('mode-changed', {
       previousMode,
       mode,
-      profile: MODE_PROFILES[mode]
+      profile: MODE_PROFILES[mode],
     });
   }
 
@@ -464,26 +475,21 @@ export class ConversationContextManager extends EventEmitter implements ContextM
       role: 'system',
       content,
       timestamp: new Date(),
-      tokenCount: this.tokenCounter.countTokensCached(
-        `system-${Date.now()}`,
-        content
-      )
+      tokenCount: this.tokenCounter.countTokensCached(`system-${Date.now()}`, content),
     };
-    
+
     // Remove old system prompt
-    this.currentContext.messages = this.currentContext.messages.filter(
-      m => m.role !== 'system'
-    );
-    
+    this.currentContext.messages = this.currentContext.messages.filter((m) => m.role !== 'system');
+
     // Add new system prompt
     this.currentContext.messages.unshift(systemPrompt);
     this.currentContext.systemPrompt = systemPrompt;
-    
+
     // Recalculate token count
     this.currentContext.tokenCount = this.tokenCounter.countConversationTokens(
       this.currentContext.messages
     );
-    
+
     this.contextPool.setCurrentTokens(this.currentContext.tokenCount);
     this.emit('system-prompt-updated', { content });
   }
@@ -537,25 +543,23 @@ export class ConversationContextManager extends EventEmitter implements ContextM
   }> {
     const warnings: string[] = [];
     let emergencyAction: 'compression' | 'rollover' | undefined;
-    
+
     const budget = this.getBudget();
     const ollamaLimit = budget.totalOllamaSize;
-    
+
     let newMessageTokens = 0;
     if (newMessage) {
-      newMessageTokens = this.tokenCounter.countTokensCached(
-        newMessage.id,
-        newMessage.content
-      );
+      newMessageTokens = this.tokenCounter.countTokensCached(newMessage.id, newMessage.content);
     }
-    
-    const totalTokens = budget.systemPromptTokens + 
-                       budget.checkpointTokens + 
-                       budget.conversationTokens + 
-                       newMessageTokens;
-    
+
+    const totalTokens =
+      budget.systemPromptTokens +
+      budget.checkpointTokens +
+      budget.conversationTokens +
+      newMessageTokens;
+
     const usagePercentage = (totalTokens / ollamaLimit) * 100;
-    
+
     // Check thresholds
     if (usagePercentage >= 100) {
       warnings.push(
@@ -563,20 +567,20 @@ export class ConversationContextManager extends EventEmitter implements ContextM
         'Triggering emergency rollover'
       );
       emergencyAction = 'rollover';
-      
+
       // Create snapshot and rollover
       try {
         const snapshot = await this.createSnapshot();
-        
+
         const recentMessages = this.currentContext.messages
-          .filter(m => m.role === 'user')
+          .filter((m) => m.role === 'user')
           .slice(-10);
-        
+
         const summaryContent = `[EMERGENCY ROLLOVER - Context exceeded limit]
 Snapshot ID: ${snapshot.id}
 Previous conversation: ${this.currentContext.messages.length} messages
 Total tokens before rollover: ${totalTokens}`;
-        
+
         const summaryMessage: Message = {
           id: `rollover-summary-${Date.now()}`,
           role: 'system',
@@ -585,25 +589,25 @@ Total tokens before rollover: ${totalTokens}`;
           tokenCount: this.tokenCounter.countTokensCached(
             `rollover-summary-${Date.now()}`,
             summaryContent
-          )
+          ),
         };
-        
+
         this.currentContext.messages = [
           this.currentContext.systemPrompt,
           summaryMessage,
-          ...recentMessages
+          ...recentMessages,
         ];
         this.currentContext.checkpoints = [];
         this.currentContext.tokenCount = this.tokenCounter.countConversationTokens(
           this.currentContext.messages
         );
-        
+
         this.contextPool.setCurrentTokens(this.currentContext.tokenCount);
-        
+
         this.emit('emergency-rollover', {
           snapshotId: snapshot.id,
           previousTokens: totalTokens,
-          newTokens: this.currentContext.tokenCount
+          newTokens: this.currentContext.tokenCount,
         });
       } catch (error) {
         warnings.push(`Emergency rollover failed: ${(error as Error).message}`);
@@ -613,7 +617,7 @@ Total tokens before rollover: ${totalTokens}`;
           totalTokens,
           ollamaLimit,
           warnings,
-          emergencyAction
+          emergencyAction,
         };
       }
     } else if (usagePercentage >= 95) {
@@ -622,7 +626,7 @@ Total tokens before rollover: ${totalTokens}`;
         'Triggering emergency compression'
       );
       emergencyAction = 'compression';
-      
+
       try {
         await this.compress();
       } catch (error) {
@@ -633,7 +637,7 @@ Total tokens before rollover: ${totalTokens}`;
           totalTokens,
           ollamaLimit,
           warnings,
-          emergencyAction
+          emergencyAction,
         };
       }
     } else if (usagePercentage >= 80) {
@@ -641,19 +645,19 @@ Total tokens before rollover: ${totalTokens}`;
         `INFO: Context at ${usagePercentage.toFixed(1)}% (${totalTokens}/${ollamaLimit} tokens)`
       );
     }
-    
+
     const prompt = [...this.currentContext.messages];
     if (newMessage) {
       prompt.push(newMessage);
     }
-    
+
     return {
       valid: true,
       prompt,
       totalTokens,
       ollamaLimit,
       warnings,
-      emergencyAction
+      emergencyAction,
     };
   }
 }

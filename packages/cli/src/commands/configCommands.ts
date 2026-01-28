@@ -1,6 +1,6 @@
 /**
  * Configuration Commands
- * 
+ *
  * Implements commands for viewing and managing configuration:
  * - /config paths - Show storage paths
  * - /config show - Show current configuration
@@ -8,7 +8,10 @@
 
 import * as os from 'os';
 
-import { getDefaultStorageLocations, logAllStorageLocations } from '../../../core/src/utils/pathValidation.js';
+import {
+  getDefaultStorageLocations,
+  logAllStorageLocations,
+} from '../../../core/src/utils/pathValidation.js';
 
 import type { Command, CommandResult } from './types.js';
 
@@ -18,7 +21,7 @@ import type { Command, CommandResult } from './types.js';
 async function configPathsHandler(_args: string[]): Promise<CommandResult> {
   try {
     const locations = getDefaultStorageLocations();
-    
+
     const lines = [
       'Storage Locations:',
       '',
@@ -72,7 +75,8 @@ export const configCommand: Command = {
     if (args.length === 0) {
       return {
         success: false,
-        message: 'Usage: /config <paths|show> [args]\n\n' +
+        message:
+          'Usage: /config <paths|show> [args]\n\n' +
           'Subcommands:\n' +
           '  paths - Show storage paths\n' +
           '  show  - Show current configuration',
@@ -90,8 +94,7 @@ export const configCommand: Command = {
       default:
         return {
           success: false,
-          message: `Unknown subcommand: ${subcommand}\n\n` +
-            'Available subcommands: paths, show',
+          message: `Unknown subcommand: ${subcommand}\n\n` + 'Available subcommands: paths, show',
         };
     }
   },
@@ -100,6 +103,4 @@ export const configCommand: Command = {
 /**
  * All config-related commands
  */
-export const configCommands: Command[] = [
-  configCommand,
-];
+export const configCommands: Command[] = [configCommand];

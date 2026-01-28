@@ -1,6 +1,6 @@
 /**
  * Mode Transition Suggester for Dynamic Prompt System
- * 
+ *
  * Provides proactive suggestions for mode transitions based on conversation context,
  * mode history, and common transition patterns. Helps users discover and understand
  * the mode system by suggesting appropriate mode switches at the right time.
@@ -72,40 +72,40 @@ export interface SuggestionPreferences {
 
 /**
  * Mode Transition Suggester
- * 
+ *
  * Analyzes conversation context and suggests appropriate mode transitions
  * to help users navigate the mode system effectively.
  */
 export class ModeTransitionSuggester {
   private preferences: SuggestionPreferences;
-  
+
   constructor(preferences?: Partial<SuggestionPreferences>) {
     this.preferences = {
       enabled: true,
       disabledSuggestions: [],
       disabledTransitions: [],
-      minConfidence: 0.70,
-      ...preferences
+      minConfidence: 0.7,
+      ...preferences,
     };
   }
-  
+
   /**
    * Update suggestion preferences
    */
   updatePreferences(preferences: Partial<SuggestionPreferences>): void {
     this.preferences = {
       ...this.preferences,
-      ...preferences
+      ...preferences,
     };
   }
-  
+
   /**
    * Get current preferences
    */
   getPreferences(): SuggestionPreferences {
     return { ...this.preferences };
   }
-  
+
   /**
    * Disable suggestions for a specific mode
    */
@@ -114,36 +114,32 @@ export class ModeTransitionSuggester {
       this.preferences.disabledSuggestions.push(mode);
     }
   }
-  
+
   /**
    * Disable a specific transition
    */
   disableTransition(from: ModeType, to: ModeType): void {
-    const exists = this.preferences.disabledTransitions.some(
-      t => t.from === from && t.to === to
-    );
-    
+    const exists = this.preferences.disabledTransitions.some((t) => t.from === from && t.to === to);
+
     if (!exists) {
       this.preferences.disabledTransitions.push({ from, to });
     }
   }
-  
+
   /**
    * Check if a transition is disabled
    */
   private isTransitionDisabled(from: ModeType, to: ModeType): boolean {
-    return this.preferences.disabledTransitions.some(
-      t => t.from === from && t.to === to
-    );
+    return this.preferences.disabledTransitions.some((t) => t.from === from && t.to === to);
   }
-  
+
   /**
    * Check if suggestions for a mode are disabled
    */
   private isSuggestionDisabled(mode: ModeType): boolean {
     return this.preferences.disabledSuggestions.includes(mode);
   }
-  
+
   /**
    * Suggest a mode transition based on conversation context
    */
@@ -152,32 +148,32 @@ export class ModeTransitionSuggester {
     if (!this.preferences.enabled) {
       return null;
     }
-    
+
     // Try each suggestion pattern in order of priority
-    const suggestion = 
+    const suggestion =
       this.suggestDebuggerMode(context) ||
       this.suggestPlanningMode(context) ||
       this.suggestDeveloperMode(context);
-    
+
     // Check if suggestion meets minimum confidence
     if (suggestion && suggestion.confidence < this.preferences.minConfidence) {
       return null;
     }
-    
+
     // Check if suggestion is disabled
     if (suggestion) {
       if (this.isSuggestionDisabled(suggestion.suggestedMode)) {
         return null;
       }
-      
+
       if (this.isTransitionDisabled(suggestion.currentMode, suggestion.suggestedMode)) {
         return null;
       }
     }
-    
+
     return suggestion;
   }
-  
+
   /**
    * Suggest debugger mode when errors are detected
    */
@@ -186,21 +182,21 @@ export class ModeTransitionSuggester {
     if (context.currentMode !== 'developer') {
       return null;
     }
-    
+
     // Check for multiple errors
     if (context.errorCount >= 3) {
       return {
         currentMode: 'developer',
         suggestedMode: 'debugger',
         reason: 'Multiple errors detected. Systematic debugging recommended',
-        confidence: 0.90,
-        autoSwitch: true,  // Auto-switch for errors
+        confidence: 0.9,
+        autoSwitch: true, // Auto-switch for errors
         context: {
-          errorCount: context.errorCount
-        }
+          errorCount: context.errorCount,
+        },
       };
     }
-    
+
     // Check for single error with high confidence
     if (context.errorCount >= 1) {
       return {
@@ -208,16 +204,16 @@ export class ModeTransitionSuggester {
         suggestedMode: 'debugger',
         reason: 'Error detected. Switch to Debugger mode for systematic analysis?',
         confidence: 0.75,
-        autoSwitch: false,  // Ask user first
+        autoSwitch: false, // Ask user first
         context: {
-          errorCount: context.errorCount
-        }
+          errorCount: context.errorCount,
+        },
       };
     }
-    
+
     return null;
   }
-  
+
   /**
    * Suggest planning mode from assistant mode
    */
@@ -226,7 +222,7 @@ export class ModeTransitionSuggester {
     if (context.currentMode !== 'assistant') {
       return null;
     }
-    
+
     // Check for technical terms
     if (context.hasTechnicalTerms) {
       return {
@@ -234,16 +230,16 @@ export class ModeTransitionSuggester {
         suggestedMode: 'planning',
         reason: 'This sounds like you want to plan an implementation. Switch to Planning mode?',
         confidence: 0.75,
-        autoSwitch: false,  // Ask user first
+        autoSwitch: false, // Ask user first
         context: {
-          hasTechnicalTerms: true
-        }
+          hasTechnicalTerms: true,
+        },
       };
     }
-    
+
     return null;
   }
-  
+
   /**
    * Suggest developer mode from planning mode
    */
@@ -252,7 +248,7 @@ export class ModeTransitionSuggester {
     if (context.currentMode !== 'planning') {
       return null;
     }
-    
+
     // Check if plan appears complete
     if (context.planComplete) {
       return {
@@ -260,28 +256,29 @@ export class ModeTransitionSuggester {
         suggestedMode: 'developer',
         reason: 'The plan is complete. Ready to switch to Developer mode and start implementing?',
         confidence: 0.85,
-        autoSwitch: false,  // Ask user first
+        autoSwitch: false, // Ask user first
         context: {
-          planComplete: true
-        }
+          planComplete: true,
+        },
       };
     }
-    
+
     // Check for implementation keywords in planning mode
-    if (context.timeInMode > 300000) {  // 5 minutes
+    if (context.timeInMode > 300000) {
+      // 5 minutes
       return {
         currentMode: 'planning',
         suggestedMode: 'developer',
         reason: 'Ready to start implementing? Switch to Developer mode?',
-        confidence: 0.70,
-        autoSwitch: false,  // Ask user first
-        context: {}
+        confidence: 0.7,
+        autoSwitch: false, // Ask user first
+        context: {},
       };
     }
-    
+
     return null;
   }
-  
+
   /**
    * Extract text content from a message
    */
@@ -289,13 +286,13 @@ export class ModeTransitionSuggester {
     if (!message.parts || message.parts.length === 0) {
       return '';
     }
-    
+
     return message.parts
-      .filter(part => part.type === 'text')
-      .map(part => part.text)
+      .filter((part) => part.type === 'text')
+      .map((part) => part.text)
       .join(' ');
   }
-  
+
   /**
    * Build conversation context from messages
    */
@@ -306,22 +303,22 @@ export class ModeTransitionSuggester {
   ): ConversationContext {
     const now = Date.now();
     const timeInMode = now - modeEntryTime.getTime();
-    
+
     // Analyze recent messages (last 5)
     const recentMessages = messages.slice(-5);
-    
+
     // Count errors
     const errorCount = this.countErrors(recentMessages);
-    
+
     // Detect technical terms
     const hasTechnicalTerms = this.detectTechnicalTerms(recentMessages);
-    
+
     // Check if plan is complete
     const planComplete = this.detectPlanComplete(recentMessages);
-    
+
     // Count code blocks
     const codeBlockCount = this.countCodeBlocks(recentMessages);
-    
+
     return {
       messages: recentMessages,
       currentMode,
@@ -329,19 +326,19 @@ export class ModeTransitionSuggester {
       errorCount,
       hasTechnicalTerms,
       planComplete,
-      codeBlockCount
+      codeBlockCount,
     };
   }
-  
+
   /**
    * Count errors in messages
    */
   private countErrors(messages: Message[]): number {
     let count = 0;
-    
+
     for (const msg of messages) {
       const content = this.getMessageContent(msg).toLowerCase();
-      
+
       // Check for error keywords
       if (
         content.includes('error') ||
@@ -355,33 +352,46 @@ export class ModeTransitionSuggester {
         count++;
       }
     }
-    
+
     return count;
   }
-  
+
   /**
    * Detect technical terms in messages
    */
   private detectTechnicalTerms(messages: Message[]): boolean {
     const technicalTerms = [
-      'implement', 'function', 'class', 'component', 'api', 'database',
-      'algorithm', 'architecture', 'design pattern', 'framework', 'library',
-      'typescript', 'javascript', 'python', 'react', 'node'
+      'implement',
+      'function',
+      'class',
+      'component',
+      'api',
+      'database',
+      'algorithm',
+      'architecture',
+      'design pattern',
+      'framework',
+      'library',
+      'typescript',
+      'javascript',
+      'python',
+      'react',
+      'node',
     ];
-    
+
     for (const msg of messages) {
       const content = this.getMessageContent(msg).toLowerCase();
-      
+
       for (const term of technicalTerms) {
         if (content.includes(term)) {
           return true;
         }
       }
     }
-    
+
     return false;
   }
-  
+
   /**
    * Detect if plan is complete
    */
@@ -390,39 +400,39 @@ export class ModeTransitionSuggester {
       'plan is complete',
       'planning is done',
       'ready to implement',
-      'let\'s implement',
+      "let's implement",
       'start implementing',
       'begin implementation',
-      'plan looks good'
+      'plan looks good',
     ];
-    
+
     for (const msg of messages) {
       const content = this.getMessageContent(msg).toLowerCase();
-      
+
       for (const phrase of completionPhrases) {
         if (content.includes(phrase)) {
           return true;
         }
       }
     }
-    
+
     return false;
   }
-  
+
   /**
    * Count code blocks in messages
    */
   private countCodeBlocks(messages: Message[]): number {
     let count = 0;
-    
+
     for (const msg of messages) {
       const content = this.getMessageContent(msg);
       const matches = content.match(/```/g);
       if (matches) {
-        count += Math.floor(matches.length / 2);  // Each code block has 2 backticks
+        count += Math.floor(matches.length / 2); // Each code block has 2 backticks
       }
     }
-    
+
     return count;
   }
 }

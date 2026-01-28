@@ -1,6 +1,6 @@
 /**
  * HookRunner executes hooks with timeout and error handling
- * 
+ *
  * Spawns hook processes, communicates via stdin/stdout using JSON protocol,
  * and ensures proper error isolation and timeout enforcement.
  */
@@ -61,7 +61,7 @@ export class HookRunner {
 
   /**
    * Create a new HookRunner
-   * 
+   *
    * @param timeout - Timeout in milliseconds (default: 30000)
    * @param trustedHooks - Optional TrustedHooks instance for trust verification
    * @param config - Optional hooks configuration
@@ -75,7 +75,7 @@ export class HookRunner {
       timeout: config?.timeout ?? DEFAULT_HOOKS_CONFIG.timeout,
       trustWorkspace: config?.trustWorkspace ?? DEFAULT_HOOKS_CONFIG.trustWorkspace,
     };
-    
+
     // Use config timeout if provided
     if (config?.timeout) {
       this.timeout = config.timeout;
@@ -84,7 +84,7 @@ export class HookRunner {
 
   /**
    * Set the timeout for hook execution
-   * 
+   *
    * @param ms - Timeout in milliseconds
    */
   setTimeout(ms: number): void {
@@ -93,7 +93,7 @@ export class HookRunner {
 
   /**
    * Validate hook command for security
-   * 
+   *
    * @param command - Command to validate
    * @throws Error if command is invalid
    */
@@ -102,7 +102,7 @@ export class HookRunner {
     if (/[;&|`$(){}[\]<>]/.test(command)) {
       throw new Error(`Invalid characters in hook command: ${command}`);
     }
-    
+
     // Ensure command is an absolute path or whitelisted command
     if (!path.isAbsolute(command) && !this.isWhitelistedCommand(command)) {
       throw new Error(`Hook command must be absolute path or whitelisted: ${command}`);
@@ -111,7 +111,7 @@ export class HookRunner {
 
   /**
    * Check if command is whitelisted
-   * 
+   *
    * Whitelisted commands are considered safe to execute without absolute paths.
    * These are standard system commands and package managers:
    * - node: Node.js runtime
@@ -119,7 +119,7 @@ export class HookRunner {
    * - bash/sh: Shell interpreters
    * - npx: Node package executor
    * - uvx: UV package executor (used for MCP servers)
-   * 
+   *
    * @param command - Command to check
    * @returns true if command is whitelisted
    */
@@ -130,7 +130,7 @@ export class HookRunner {
 
   /**
    * Execute a single hook (internal method, trust checking should be done by caller)
-   * 
+   *
    * @param hook - The hook to execute
    * @param input - Input data for the hook
    * @returns Promise resolving to hook output
@@ -138,14 +138,14 @@ export class HookRunner {
   private async executeHookInternal(hook: Hook, input: HookInput): Promise<HookOutput> {
     const hookDebugger = getHookDebugger();
     const traceId = hookDebugger.startTrace(hook, input.event as HookEvent, input);
-    
+
     let child: ReturnType<typeof spawn> | null = null;
     let timeoutId: NodeJS.Timeout | null = null;
-    
+
     try {
       // Validate command for security
       this.validateCommand(hook.command);
-      
+
       // Spawn the hook process
       child = spawn(hook.command, hook.args || [], {
         stdio: ['pipe', 'pipe', 'pipe'],
@@ -173,26 +173,26 @@ export class HookRunner {
       child.stdout?.on('data', (data) => {
         const chunk = data.toString();
         outputSize += chunk.length;
-        
+
         if (outputSize > MAX_OUTPUT_SIZE) {
           child?.kill('SIGTERM');
           outputExceeded = true;
           return;
         }
-        
+
         stdout += chunk;
       });
 
       child.stderr?.on('data', (data) => {
         const chunk = data.toString();
         outputSize += chunk.length;
-        
+
         if (outputSize > MAX_OUTPUT_SIZE) {
           child?.kill('SIGTERM');
           outputExceeded = true;
           return;
         }
-        
+
         stderr += chunk;
       });
 
@@ -239,9 +239,9 @@ export class HookRunner {
       }
 
       const output = this.translator.parseHookOutput(stdout.trim());
-      
+
       hookDebugger.endTrace(traceId, output, undefined, exitCode ?? 0);
-      
+
       return output;
     } catch (error) {
       // Log error but don't propagate - return error output instead
@@ -251,9 +251,13 @@ export class HookRunner {
         const extensionInfo = hook.extensionName ? ` (from extension '${hook.extensionName}')` : '';
         console.error(`Hook execution failed for '${hook.name}'${extensionInfo}: ${errorMessage}`);
       }
-      
-      hookDebugger.endTrace(traceId, undefined, error instanceof Error ? error : new Error(String(error)));
-      
+
+      hookDebugger.endTrace(
+        traceId,
+        undefined,
+        error instanceof Error ? error : new Error(String(error))
+      );
+
       // Return a default output that allows continuation
       return {
         continue: true,
@@ -272,7 +276,7 @@ export class HookRunner {
 
   /**
    * Check trust and request approval if needed
-   * 
+   *
    * @param hook - The hook to check
    * @returns true if hook is trusted or approved, false if denied
    */
@@ -282,11 +286,11 @@ export class HookRunner {
     }
 
     const isTrusted = await this.trustedHooks.isTrusted(hook);
-    
+
     if (!isTrusted) {
       // Request approval for untrusted hooks
       const approved = await this.trustedHooks.requestApproval(hook);
-      
+
       if (approved) {
         // Store approval with hash
         const hash = await this.trustedHooks.computeHash(hook);
@@ -306,7 +310,7 @@ export class HookRunner {
 
   /**
    * Execute a single hook
-   * 
+   *
    * @param hook - The hook to execute
    * @param input - Input data for the hook
    * @returns Promise resolving to hook output
@@ -334,7 +338,7 @@ export class HookRunner {
 
   /**
    * Execute multiple hooks in sequence
-   * 
+   *
    * @param hooks - Array of hooks to execute
    * @param input - Input data for the hooks
    * @returns Promise resolving to array of hook outputs
@@ -386,10 +390,12 @@ export class HookRunner {
         // Only log error if not in a test environment
         if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
           const errorMessage = error instanceof Error ? error.message : String(error);
-          const extensionInfo = hook.extensionName ? ` (from extension '${hook.extensionName}')` : '';
+          const extensionInfo = hook.extensionName
+            ? ` (from extension '${hook.extensionName}')`
+            : '';
           console.error(`Hook '${hook.name}'${extensionInfo} failed: ${errorMessage}`);
         }
-        
+
         // Add error result
         results.push({
           continue: true,
@@ -403,7 +409,7 @@ export class HookRunner {
 
   /**
    * Execute multiple hooks in sequence and return aggregated summary
-   * 
+   *
    * @param hooks - Array of hooks to execute
    * @param input - Input data for the hooks
    * @returns Promise resolving to execution summary with aggregated results
@@ -480,10 +486,12 @@ export class HookRunner {
         // Only log error if not in a test environment
         if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
           const errorMessage = error instanceof Error ? error.message : String(error);
-          const extensionInfo = hook.extensionName ? ` (from extension '${hook.extensionName}')` : '';
+          const extensionInfo = hook.extensionName
+            ? ` (from extension '${hook.extensionName}')`
+            : '';
           console.error(`Hook '${hook.name}'${extensionInfo} failed: ${errorMessage}`);
         }
-        
+
         // Add error result
         const errorOutput: HookOutput = {
           continue: true,
@@ -504,7 +512,7 @@ export class HookRunner {
 
   /**
    * Execute a single hook and return detailed execution result
-   * 
+   *
    * @param hook - The hook to execute
    * @param input - Input data for the hook
    * @returns Promise resolving to detailed execution result
@@ -624,7 +632,7 @@ export class HookRunner {
       }
 
       const output = this.translator.parseHookOutput(stdout.trim());
-      
+
       return {
         hook,
         output,
@@ -633,7 +641,7 @@ export class HookRunner {
       };
     } catch (error) {
       const executionTime = Date.now() - startTime;
-      
+
       return {
         hook,
         error: error instanceof Error ? error : new Error(String(error)),

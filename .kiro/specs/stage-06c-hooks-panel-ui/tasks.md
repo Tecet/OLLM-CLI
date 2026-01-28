@@ -325,4 +325,3 @@
 - Settings stored in ~/.ollm/settings.json
 - Hook validation prevents invalid configurations
 - Test feature helps users verify hooks work correctly
-

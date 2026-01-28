@@ -14,15 +14,15 @@ export const DEFAULT_CONTEXT_CONFIG: ContextConfig = {
   kvQuantization: 'q8_0',
   compression: {
     enabled: true,
-    threshold: 0.80, // Trigger at 80% of available context budget
+    threshold: 0.8, // Trigger at 80% of available context budget
     strategy: 'hybrid',
     preserveRecent: 4096,
-    summaryMaxTokens: 1024
+    summaryMaxTokens: 1024,
   },
   snapshots: {
     enabled: true,
     maxCount: 5,
     autoCreate: true,
-    autoThreshold: 0.85 // Create snapshot at 85% usage
-  }
+    autoThreshold: 0.85, // Create snapshot at 85% usage
+  },
 };

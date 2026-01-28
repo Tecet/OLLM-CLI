@@ -81,7 +81,7 @@ export class ChatClient {
     this.inputPreprocessor = config.inputPreprocessor;
     this.servicesConfig = mergeServicesConfig(config.servicesConfig);
     this.modelDatabase = config.modelDatabase ?? modelDatabase;
-    
+
     // Initialize loop detection service only if explicitly provided
     // (not auto-created from config to avoid interfering with existing tests)
     this.loopDetectionService = config.loopDetectionService;
@@ -95,7 +95,7 @@ export class ChatClient {
   async *chat(prompt: string, options?: ChatOptions): AsyncIterable<ChatEvent> {
     // Resolve provider (Requirement 10.1: Handle provider errors gracefully)
     let provider: ProviderAdapter | undefined;
-    
+
     try {
       provider = options?.provider
         ? this.providerRegistry.get(options.provider)
@@ -103,9 +103,9 @@ export class ChatClient {
     } catch (error) {
       // Emit error event with clear message (Requirement 10.5)
       const err = error as Error;
-      yield { 
-        type: 'error', 
-        error: new Error(`Provider resolution failed: ${err.message}`)
+      yield {
+        type: 'error',
+        error: new Error(`Provider resolution failed: ${err.message}`),
       };
       return;
     }
@@ -128,7 +128,10 @@ export class ChatClient {
           contextSize: usage.maxTokens,
           ollamaContextSize: Math.floor(usage.maxTokens * 0.85),
         };
-        if (!isTestEnv) console.log(`[ChatClient] Context size from manager: ${usage.maxTokens}, Ollama: ${Math.floor(usage.maxTokens * 0.85)}`);
+        if (!isTestEnv)
+          console.log(
+            `[ChatClient] Context size from manager: ${usage.maxTokens}, Ollama: ${Math.floor(usage.maxTokens * 0.85)}`
+          );
       } else {
         // Fallback to default
         const defaultContextSize = 8192;
@@ -138,10 +141,16 @@ export class ChatClient {
           contextSize: defaultContextSize,
           ollamaContextSize: defaultOllamaSize,
         };
-        if (!isTestEnv) console.warn(`[ChatClient] No context size specified, using default ${defaultContextSize} (Ollama: ${defaultOllamaSize})`);
+        if (!isTestEnv)
+          console.warn(
+            `[ChatClient] No context size specified, using default ${defaultContextSize} (Ollama: ${defaultOllamaSize})`
+          );
       }
     } else {
-      if (!isTestEnv) console.log(`[ChatClient] Context size: ${options.contextSize}, Ollama: ${options.ollamaContextSize}`);
+      if (!isTestEnv)
+        console.log(
+          `[ChatClient] Context size: ${options.contextSize}, Ollama: ${options.ollamaContextSize}`
+        );
     }
 
     // Sync context manager threshold with Ollama context size
@@ -149,14 +158,14 @@ export class ChatClient {
     if (this.contextMgmtManager && options?.contextSize && options?.ollamaContextSize) {
       const ratio = options.ollamaContextSize / options.contextSize;
       if (!isTestEnv) console.log(`[ChatClient] Syncing autoThreshold to ${ratio.toFixed(4)}`);
-      
+
       const currentConfig = this.contextMgmtManager.config;
       if (currentConfig) {
         this.contextMgmtManager.updateConfig({
           snapshots: {
             ...currentConfig.snapshots,
-            autoThreshold: ratio
-          }
+            autoThreshold: ratio,
+          },
         });
       }
     }
@@ -168,7 +177,7 @@ export class ChatClient {
         const model = options?.model ?? this.config.defaultModel ?? 'unknown';
         const providerName = options?.provider ?? 'default';
         sessionId = await this.recordingService.createSession(model, providerName);
-        
+
         // Emit session_start event
         this.messageBus.emit('session_start', {
           sessionId,
@@ -177,8 +186,8 @@ export class ChatClient {
           timestamp: new Date().toISOString(),
         });
       } catch (error) {
-          // Log error but continue without recording (Requirement 10.1)
-          if (!isTestEnv) console.error('Failed to create session:', error);
+        // Log error but continue without recording (Requirement 10.1)
+        if (!isTestEnv) console.error('Failed to create session:', error);
       }
     }
 
@@ -188,11 +197,11 @@ export class ChatClient {
     // Extract clean intent from noisy user messages to save tokens
     let processedPrompt = prompt;
     const originalPrompt = prompt;
-    
+
     if (this.inputPreprocessor) {
       try {
         const result = await this.inputPreprocessor.preprocess(prompt);
-        
+
         if (result.triggered) {
           // Emit preprocessing event
           yield {
@@ -200,7 +209,7 @@ export class ChatClient {
             originalTokens: result.originalTokens,
             cleanTokens: result.cleanTokens,
           };
-          
+
           // Emit intent extraction event
           if (result.extracted) {
             yield {
@@ -209,7 +218,7 @@ export class ChatClient {
               keyPoints: result.extracted.keyPoints,
               tokenSavings: result.extracted.tokenSavings,
             };
-            
+
             // Emit clarification question
             const clarificationQuestion = `🤔 Let me clarify what you want:
 
@@ -218,18 +227,18 @@ Intent: ${result.extracted.intent}
 Key points:
 ${result.extracted.keyPoints.map((p, i) => `  ${i + 1}. ${p}`).join('\n')}
 
-${result.extracted.attachments.length > 0 ? `\nAttachments:\n${result.extracted.attachments.map(a => `  - ${a.type}: ${a.summary}`).join('\n')}\n` : ''}
+${result.extracted.attachments.length > 0 ? `\nAttachments:\n${result.extracted.attachments.map((a) => `  - ${a.type}: ${a.summary}`).join('\n')}\n` : ''}
 Is this correct? (y/n)`;
-            
+
             yield {
               type: 'clarification_needed',
               question: clarificationQuestion,
             };
-            
+
             // TODO: Wait for user confirmation (requires UI integration)
             // For now, we'll use the clean message automatically
             processedPrompt = result.cleanMessage;
-            
+
             // Store original in session for RAG
             if (sessionId && this.recordingService) {
               try {
@@ -242,18 +251,18 @@ Is this correct? (y/n)`;
                 if (!isTestEnv) console.error('Failed to record original message:', error);
               }
             }
-            
+
             // Propose goal if enabled
             if (this.inputPreprocessor.getConfig().autoPropose) {
               try {
                 const proposedGoal = await this.inputPreprocessor.proposeGoal(result.extracted);
-                
+
                 yield {
                   type: 'goal_proposed',
                   goal: proposedGoal.goal,
                   milestones: proposedGoal.milestones,
                 };
-                
+
                 // Create intent snapshot with proposed goal
                 try {
                   const snapshot = await this.inputPreprocessor.createSnapshot(
@@ -262,14 +271,14 @@ Is this correct? (y/n)`;
                     proposedGoal,
                     true // Auto-confirmed for now (TODO: wait for user confirmation)
                   );
-                  
+
                   if (!isTestEnv) {
                     console.log('[InputPreprocessor] Intent snapshot created:', snapshot.id);
                   }
                 } catch (error) {
                   if (!isTestEnv) console.error('Failed to create intent snapshot:', error);
                 }
-                
+
                 // TODO: Wait for user confirmation and create goal in context manager
                 // For now, we'll log it
                 if (!isTestEnv) {
@@ -289,7 +298,7 @@ Is this correct? (y/n)`;
                   undefined,
                   true // Auto-confirmed for now
                 );
-                
+
                 if (!isTestEnv) {
                   console.log('[InputPreprocessor] Intent snapshot created:', snapshot.id);
                 }
@@ -318,56 +327,54 @@ Is this correct? (y/n)`;
       // Phase 2: Wait for any in-progress summarization to complete
       if (this.contextMgmtManager.isSummarizationInProgress()) {
         if (!isTestEnv) console.log('[ChatClient] Waiting for checkpoint creation to complete...');
-        
+
         yield {
           type: 'text',
-          value: '\n[System: Creating checkpoint, please wait...]\n\n'
+          value: '\n[System: Creating checkpoint, please wait...]\n\n',
         };
-        
+
         try {
           await this.contextMgmtManager.waitForSummarization();
-          
+
           yield {
             type: 'text',
-            value: '[System: Checkpoint complete, continuing...]\n\n'
+            value: '[System: Checkpoint complete, continuing...]\n\n',
           };
         } catch (error) {
           if (!isTestEnv) console.error('[ChatClient] Summarization wait failed:', error);
         }
       }
-      
+
       try {
         // Create a context-compatible message for validation
         const userMessage: import('../context/types.js').Message = {
           id: `user-${Date.now()}`,
           role: 'user',
           content: processedPrompt,
-          timestamp: new Date()
+          timestamp: new Date(),
         };
-        
+
         const validation = await this.contextMgmtManager.validateAndBuildPrompt(userMessage);
-        
+
         // Emit warnings to user
         for (const warning of validation.warnings) {
           if (!isTestEnv) console.log(`[ChatClient] ${warning}`);
         }
-        
+
         // If validation failed, emit error and stop
         if (!validation.valid) {
           yield {
             type: 'error',
-            error: new Error(
-              `Context validation failed: ${validation.warnings.join('; ')}`
-            )
+            error: new Error(`Context validation failed: ${validation.warnings.join('; ')}`),
           };
           return;
         }
-        
+
         // If emergency action was taken, emit event
         if (validation.emergencyAction) {
           yield {
             type: 'text',
-            value: `\n[System: ${validation.emergencyAction === 'rollover' ? 'Emergency rollover' : 'Emergency compression'} triggered due to context limit]\n\n`
+            value: `\n[System: ${validation.emergencyAction === 'rollover' ? 'Emergency rollover' : 'Emergency compression'} triggered due to context limit]\n\n`,
           };
         }
       } catch (error) {
@@ -375,7 +382,7 @@ Is this correct? (y/n)`;
         const err = error as Error;
         yield {
           type: 'error',
-          error: new Error(`Context validation error: ${err.message}`)
+          error: new Error(`Context validation error: ${err.message}`),
         };
         return;
       }
@@ -388,14 +395,14 @@ Is this correct? (y/n)`;
           id: `user-${Date.now()}`,
           role: 'user',
           content: processedPrompt, // Use processed prompt
-          timestamp: new Date()
+          timestamp: new Date(),
         });
       } catch (error) {
         // If context manager rejects the message (e.g., memory limit), emit error
         const err = error as Error;
-        yield { 
-          type: 'error', 
-          error: new Error(`Context management error: ${err.message}`)
+        yield {
+          type: 'error',
+          error: new Error(`Context management error: ${err.message}`),
         };
         return;
       }
@@ -410,8 +417,8 @@ Is this correct? (y/n)`;
           timestamp: new Date().toISOString(),
         });
       } catch (error) {
-          // Log error but continue (Requirement 10.1)
-          if (!isTestEnv) console.error('Failed to record user message:', error);
+        // Log error but continue (Requirement 10.1)
+        if (!isTestEnv) console.error('Failed to record user message:', error);
       }
     }
 
@@ -452,46 +459,48 @@ Is this correct? (y/n)`;
         try {
           // Get model name for token limit lookup
           const model = options?.model ?? this.config.defaultModel ?? 'unknown';
-          
+
           // Query Model Database for context window limit (Requirement 8.1, 8.2)
           // Config override takes precedence if specified
           const tokenLimit = this.config.tokenLimit ?? this.modelDatabase.getContextWindow(model);
           const threshold = this.servicesConfig.compression.threshold ?? 0.8;
-          
+
           // Convert messages to SessionMessage format for compression check
-          const sessionMessages = messages.map(msg => this.messageToSessionMessage(msg));
-          
-          if (await this.compressionService.shouldCompress(sessionMessages, tokenLimit, threshold)) {
+          const sessionMessages = messages.map((msg) => this.messageToSessionMessage(msg));
+
+          if (
+            await this.compressionService.shouldCompress(sessionMessages, tokenLimit, threshold)
+          ) {
             // Emit pre_compress event
             this.messageBus.emit('pre_compress', {
               contextSize: sessionMessages.length,
-              tokenCount: sessionMessages.reduce((sum, msg) => 
-                sum + msg.parts.reduce((s, p) => s + p.text.length, 0), 0
+              tokenCount: sessionMessages.reduce(
+                (sum, msg) => sum + msg.parts.reduce((s, p) => s + p.text.length, 0),
+                0
               ),
               maxSize: tokenLimit,
               sessionId,
             });
-            
-            // Trigger compression (Requirement 8.3)
-            const compressionResult = await this.compressionService.compress(
-              sessionMessages,
-              {
-                strategy: this.servicesConfig.compression.strategy ?? 'hybrid',
-                preserveRecentTokens: this.servicesConfig.compression.preserveRecent ?? 1000,
-                targetTokens: Math.floor(tokenLimit * 0.7), // Target 70% of limit after compression
-              }
-            );
 
-            const compressionRatio = compressionResult.originalTokenCount > 0 
-              ? compressionResult.compressedTokenCount / compressionResult.originalTokenCount 
-              : 1.0;
+            // Trigger compression (Requirement 8.3)
+            const compressionResult = await this.compressionService.compress(sessionMessages, {
+              strategy: this.servicesConfig.compression.strategy ?? 'hybrid',
+              preserveRecentTokens: this.servicesConfig.compression.preserveRecent ?? 1000,
+              targetTokens: Math.floor(tokenLimit * 0.7), // Target 70% of limit after compression
+            });
+
+            const compressionRatio =
+              compressionResult.originalTokenCount > 0
+                ? compressionResult.compressedTokenCount / compressionResult.originalTokenCount
+                : 1.0;
 
             // Emit post_compress event
             this.messageBus.emit('post_compress', {
               originalSize: sessionMessages.length,
               compressedSize: compressionResult.compressedMessages.length,
-              originalTokenCount: sessionMessages.reduce((sum, msg) => 
-                sum + msg.parts.reduce((s, p) => s + p.text.length, 0), 0
+              originalTokenCount: sessionMessages.reduce(
+                (sum, msg) => sum + msg.parts.reduce((s, p) => s + p.text.length, 0),
+                0
               ),
               compressedTokenCount: compressionResult.compressedTokenCount,
               compressionRatio,
@@ -500,9 +509,11 @@ Is this correct? (y/n)`;
 
             // Update message history with compressed messages
             messages.length = 0; // Clear existing messages
-            messages.push(...compressionResult.compressedMessages.map(msg => 
-              this.sessionMessageToMessage(msg)
-            ));
+            messages.push(
+              ...compressionResult.compressedMessages.map((msg) =>
+                this.sessionMessageToMessage(msg)
+              )
+            );
 
             // Update session metadata if recording is enabled
             if (sessionId && this.recordingService) {
@@ -517,7 +528,8 @@ Is this correct? (y/n)`;
                 }
               } catch (error) {
                 // Log error but continue (Requirement 10.3)
-                if (!isTestEnv) console.error('Failed to update session metadata after compression:', error);
+                if (!isTestEnv)
+                  console.error('Failed to update session metadata after compression:', error);
               }
             }
           }
@@ -531,7 +543,7 @@ Is this correct? (y/n)`;
       if (this.contextMgmtManager) {
         try {
           const usage = this.contextMgmtManager.getUsage();
-          
+
           // Context management system handles automatic compression and snapshots
           // based on configured thresholds, so we just need to check if we can proceed
           if (usage.percentage >= 95) {
@@ -540,8 +552,8 @@ Is this correct? (y/n)`;
               type: 'error',
               error: new Error(
                 `Context usage at ${usage.percentage.toFixed(1)}%. ` +
-                'Consider creating a snapshot or clearing context.'
-              )
+                  'Consider creating a snapshot or clearing context.'
+              ),
             };
           }
         } catch (error) {
@@ -568,7 +580,10 @@ Is this correct? (y/n)`;
 
       // Get available tools for the current mode (if toolRegistry supports it)
       let availableTools: ChatOptions['tools'];
-      if (this.toolRegistry && typeof (this.toolRegistry as any).getFunctionSchemas === 'function') {
+      if (
+        this.toolRegistry &&
+        typeof (this.toolRegistry as any).getFunctionSchemas === 'function'
+      ) {
         availableTools = options?.modeManager
           ? (this.toolRegistry as any).getFunctionSchemasForMode(
               options.modeManager.getCurrentMode(),
@@ -625,7 +640,7 @@ Is this correct? (y/n)`;
             assistantOutput += event.value;
           } else if (event.type === 'tool_call') {
             hasToolCalls = true;
-            
+
             // Emit before_tool event
             this.messageBus.emit('before_tool', {
               toolName: event.toolCall.name,
@@ -633,7 +648,7 @@ Is this correct? (y/n)`;
               sessionId,
               turnNumber,
             });
-            
+
             // Record tool call for loop detection (Requirement 4.1, 4.4)
             if (this.loopDetectionService) {
               this.loopDetectionService.recordToolCall(event.toolCall.name, event.toolCall.args);
@@ -647,7 +662,7 @@ Is this correct? (y/n)`;
               sessionId,
               turnNumber,
             });
-            
+
             // Store tool call and result for recording
             turnToolCalls.push({ toolCall: event.toolCall, result: event.result });
           } else if (event.type === 'error') {
@@ -659,9 +674,9 @@ Is this correct? (y/n)`;
       } catch (error) {
         // Requirement 10.5: Emit error event without crashing
         const err = error as Error;
-        yield { 
-          type: 'error', 
-          error: new Error(`Turn execution failed: ${err.message}`)
+        yield {
+          type: 'error',
+          error: new Error(`Turn execution failed: ${err.message}`),
         };
         hasError = true;
       }
@@ -675,29 +690,34 @@ Is this correct? (y/n)`;
       this.messageBus.emit('after_agent', {
         prompt: turnNumber === 1 ? prompt : messages[messages.length - 1],
         response: assistantOutput,
-        toolCalls: turnToolCalls.map(tc => tc.toolCall),
+        toolCalls: turnToolCalls.map((tc) => tc.toolCall),
         sessionId,
         turnNumber,
       });
 
       // Record assistant message (Requirement 1.2)
-      if (sessionId && this.recordingService && assistantMessage && assistantMessage.parts.length > 0) {
+      if (
+        sessionId &&
+        this.recordingService &&
+        assistantMessage &&
+        assistantMessage.parts.length > 0
+      ) {
         try {
           await this.recordingService.recordMessage(sessionId, {
             role: 'assistant',
-            parts: assistantMessage.parts.map(part => ({
+            parts: assistantMessage.parts.map((part) => ({
               type: 'text',
               text: part.type === 'text' ? part.text : '',
             })),
             timestamp: new Date().toISOString(),
           });
-          
+
           // Emit session-saved event for UI (rollback precursor)
           this.messageBus.emit('session_saved', {
             sessionId,
             turnNumber,
             messageCount: messages.length,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
           });
         } catch (error) {
           // Log error but continue (Requirement 10.1)
@@ -709,29 +729,29 @@ Is this correct? (y/n)`;
       if (this.contextMgmtManager && assistantMessage && assistantMessage.parts.length > 0) {
         try {
           const content = assistantMessage.parts
-            .filter(part => part.type === 'text')
-            .map(part => part.type === 'text' ? part.text : '')
+            .filter((part) => part.type === 'text')
+            .map((part) => (part.type === 'text' ? part.text : ''))
             .join('');
-          
+
           await this.contextMgmtManager.addMessage({
             id: `assistant-${Date.now()}`,
             role: 'assistant',
             content,
-            timestamp: new Date()
+            timestamp: new Date(),
           });
-          
+
           // Parse goal management markers for non-tool models (Phase 3C)
           try {
             const { GoalManagementParser } = await import('../prompts/goalManagementPrompt.js');
             const markers = GoalManagementParser.parse(content);
-            
+
             // Get goal manager from context manager if available
             // Some ContextManager implementations expose a goal manager accessor.
-    const goalManager = (this.contextMgmtManager as any)?.goalManager;
-    if (!goalManager) {
-      throw new Error('Goal manager not available');
-    }
-            
+            const goalManager = (this.contextMgmtManager as any)?.goalManager;
+            if (!goalManager) {
+              throw new Error('Goal manager not available');
+            }
+
             if (goalManager) {
               // Process new goals
               for (const newGoal of markers.newGoals) {
@@ -742,7 +762,7 @@ Is this correct? (y/n)`;
                   if (!isTestEnv) console.error('[Marker] Failed to create goal:', err);
                 }
               }
-              
+
               // Process checkpoints
               const activeGoal = goalManager.getActiveGoal();
               if (activeGoal) {
@@ -759,7 +779,7 @@ Is this correct? (y/n)`;
                     if (!isTestEnv) console.error('[Marker] Failed to create checkpoint:', err);
                   }
                 }
-                
+
                 // Process decisions
                 for (const decision of markers.decisions) {
                   try {
@@ -776,28 +796,31 @@ Is this correct? (y/n)`;
                     if (!isTestEnv) console.error('[Marker] Failed to record decision:', err);
                   }
                 }
-                
+
                 // Process artifacts
                 for (const artifact of markers.artifacts) {
                   try {
-                    const artifactType = artifact.path.endsWith('.test.ts') || artifact.path.endsWith('.test.js')
-                      ? 'test'
-                      : artifact.path.endsWith('.md')
-                      ? 'documentation'
-                      : 'file';
-                    
+                    const artifactType =
+                      artifact.path.endsWith('.test.ts') || artifact.path.endsWith('.test.js')
+                        ? 'test'
+                        : artifact.path.endsWith('.md')
+                          ? 'documentation'
+                          : 'file';
+
                     goalManager.recordArtifact(
                       activeGoal.id,
                       artifactType,
                       artifact.path,
                       artifact.action
                     );
-                    console.log(`[Marker] Recorded artifact: ${artifact.path} (${artifact.action})`);
+                    console.log(
+                      `[Marker] Recorded artifact: ${artifact.path} (${artifact.action})`
+                    );
                   } catch (err) {
                     if (!isTestEnv) console.error('[Marker] Failed to record artifact:', err);
                   }
                 }
-                
+
                 // Process goal completion
                 if (markers.goalComplete) {
                   try {
@@ -807,7 +830,7 @@ Is this correct? (y/n)`;
                     if (!isTestEnv) console.error('[Marker] Failed to complete goal:', err);
                   }
                 }
-                
+
                 // Process goal pause
                 if (markers.goalPause) {
                   try {
@@ -817,9 +840,16 @@ Is this correct? (y/n)`;
                     if (!isTestEnv) console.error('[Marker] Failed to pause goal:', err);
                   }
                 }
-              } else if (markers.checkpoints.length > 0 || markers.decisions.length > 0 || 
-                         markers.artifacts.length > 0 || markers.goalComplete || markers.goalPause) {
-                console.warn('[Marker] No active goal - checkpoint/decision/artifact/complete/pause markers ignored');
+              } else if (
+                markers.checkpoints.length > 0 ||
+                markers.decisions.length > 0 ||
+                markers.artifacts.length > 0 ||
+                markers.goalComplete ||
+                markers.goalPause
+              ) {
+                console.warn(
+                  '[Marker] No active goal - checkpoint/decision/artifact/complete/pause markers ignored'
+                );
               }
             }
           } catch (err) {
@@ -828,7 +858,8 @@ Is this correct? (y/n)`;
           }
         } catch (error) {
           // Log error but continue
-          if (!isTestEnv) console.error('Failed to add assistant message to context manager:', error);
+          if (!isTestEnv)
+            console.error('Failed to add assistant message to context manager:', error);
         }
       }
 
@@ -888,11 +919,11 @@ Is this correct? (y/n)`;
     if (sessionId && this.recordingService) {
       try {
         await this.recordingService.saveSession(sessionId);
-        
+
         // Emit session_end event
         this.messageBus.emit('session_end', {
           sessionId,
-          duration: Date.now() - (new Date().getTime()), // Approximate
+          duration: Date.now() - new Date().getTime(), // Approximate
           turnCount: turnNumber,
           messageCount: messages.length,
         });
@@ -933,7 +964,7 @@ Is this correct? (y/n)`;
   private messageToSessionMessage(message: Message): SessionMessage {
     return {
       role: message.role,
-      parts: message.parts.map(part => ({
+      parts: message.parts.map((part) => ({
         type: 'text',
         text: part.type === 'text' ? part.text : '',
       })),
@@ -949,7 +980,7 @@ Is this correct? (y/n)`;
   private sessionMessageToMessage(sessionMessage: SessionMessage): Message {
     return {
       role: sessionMessage.role,
-      parts: sessionMessage.parts.map(part => ({
+      parts: sessionMessage.parts.map((part) => ({
         type: 'text',
         text: part.text,
       })),

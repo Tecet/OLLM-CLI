@@ -4,7 +4,6 @@
 
 import { useEffect, useRef } from 'react';
 
-
 import { SettingsService } from '../../../config/settingsService.js';
 
 import type { Message } from '../types.js';
@@ -48,10 +47,10 @@ export function useContextEvents({
       try {
         const usage = contextActions.getUsage();
         const cfg = contextActions.getConfig?.();
-        const threshold = cfg?.compression?.threshold 
-          ? Math.round(cfg.compression.threshold * 100) 
+        const threshold = cfg?.compression?.threshold
+          ? Math.round(cfg.compression.threshold * 100)
           : Math.round(contextUsagePercentage);
-        
+
         addMessage({
           role: 'system',
           content: `Warning: context usage at ${Math.round(usage.percentage)}%. Compression enabled at ${threshold}%`,
@@ -68,11 +67,11 @@ export function useContextEvents({
     const handleCompressed = async (_data: unknown) => {
       try {
         const msgs = await contextActions.getContext();
-        const summaryMsg = msgs.find((m: ContextMessage) => 
-          typeof m.id === 'string' && m.id.startsWith('summary-')
+        const summaryMsg = msgs.find(
+          (m: ContextMessage) => typeof m.id === 'string' && m.id.startsWith('summary-')
         ) as ContextMessage | undefined;
         const summaryText = summaryMsg ? summaryMsg.content : '[Conversation summary generated]';
-        
+
         // Mark that compression occurred so ongoing generation can retry/resume
         compressionOccurredRef.current = true;
         compressionRetryCountRef.current = 0;
@@ -93,7 +92,7 @@ export function useContextEvents({
     const handleSummarizing = (_data: unknown) => {
       // Show immediate sticky status
       setStatusMessage('Summarizing conversation history...');
-      
+
       // Auto-clear after 5 seconds if summarization is slow
       setTimeout(() => {
         setStatusMessage(undefined);
@@ -118,21 +117,21 @@ export function useContextEvents({
           content: text,
           excludeFromContext: true,
         });
-        
+
         // Mark that compression happened so ongoing generation can retry/resume
         compressionOccurredRef.current = true;
         compressionRetryCountRef.current = 0;
-        
+
         // Decide whether to auto-resume or ask based on settings
         try {
           const settings = SettingsService.getInstance().getSettings();
           const resumePref = settings.llm?.resumeAfterSummary || 'ask';
           if (resumePref === 'ask') {
             waitingForResumeRef.current = true;
-            addMessage({ 
-              role: 'system', 
-              content: 'Summary complete. Type "continue" to resume generation or "stop" to abort.', 
-              excludeFromContext: true 
+            addMessage({
+              role: 'system',
+              content: 'Summary complete. Type "continue" to resume generation or "stop" to abort.',
+              excludeFromContext: true,
             });
           }
         } catch (_e) {
@@ -149,16 +148,17 @@ export function useContextEvents({
     const handleAutoSummaryFailed = async (data: unknown) => {
       // Clear sticky status
       setStatusMessage(undefined);
-      
+
       try {
         const typedData = data as { error?: unknown; reason?: unknown };
         const err = typedData?.error || typedData?.reason || 'Summarization failed';
-        const message = typeof err === 'string' 
-          ? err 
-          : ((err && typeof err === 'object' && 'message' in err) 
-            ? String((err as { message?: unknown }).message) 
-            : JSON.stringify(err));
-        
+        const message =
+          typeof err === 'string'
+            ? err
+            : err && typeof err === 'object' && 'message' in err
+              ? String((err as { message?: unknown }).message)
+              : JSON.stringify(err);
+
         addMessage({
           role: 'system',
           content: `Summarization failed: ${message}`,

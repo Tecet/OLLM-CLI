@@ -1,6 +1,6 @@
 /**
  * DialogManager - Renders active dialogs
- * 
+ *
  * Centralized component that renders the currently active dialog based on
  * dialog context state. Handles keyboard input and dialog positioning.
  */
@@ -20,7 +20,13 @@ import { useDialog } from '../../contexts/DialogContext.js';
 export function DialogManager() {
   const { state, closeDialog } = useDialog();
   const { state: uiState } = useUI();
-  const { state: promptState, navigateUp, navigateDown, selectOption, cancelPrompt } = useUserPrompt();
+  const {
+    state: promptState,
+    navigateUp,
+    navigateDown,
+    selectOption,
+    cancelPrompt,
+  } = useUserPrompt();
 
   // Handle keyboard input for dialogs
   useInput((input, key) => {
@@ -120,12 +126,7 @@ export function DialogManager() {
       flexDirection="column"
     >
       {/* Semi-transparent backdrop */}
-      <Box
-        position="absolute"
-        width="100%"
-        height="100%"
-        backgroundColor="black"
-      />
+      <Box position="absolute" width="100%" height="100%" backgroundColor="black" />
 
       {/* Dialog content */}
       <Box position="relative">
@@ -177,9 +178,7 @@ export function DialogManager() {
                   </Text>
                 </Box>
                 <Box marginBottom={1}>
-                  <Text color={uiState.theme.text.primary}>
-                    {state.activeDialog.message}
-                  </Text>
+                  <Text color={uiState.theme.text.primary}>{state.activeDialog.message}</Text>
                 </Box>
                 <Box>
                   <Text color={uiState.theme.text.secondary} dimColor>
@@ -203,9 +202,7 @@ export function DialogManager() {
                   </Text>
                 </Box>
                 <Box marginBottom={1}>
-                  <Text color={uiState.theme.text.primary}>
-                    {state.activeDialog.message}
-                  </Text>
+                  <Text color={uiState.theme.text.primary}>{state.activeDialog.message}</Text>
                 </Box>
                 <Box>
                   <Text color={uiState.theme.text.secondary} dimColor>
@@ -225,13 +222,11 @@ export function DialogManager() {
               >
                 <Box marginBottom={1}>
                   <Text color={uiState.theme.text.accent} bold>
-                    ℹ️  {state.activeDialog.title}
+                    ℹ️ {state.activeDialog.title}
                   </Text>
                 </Box>
                 <Box marginBottom={1}>
-                  <Text color={uiState.theme.text.primary}>
-                    {state.activeDialog.message}
-                  </Text>
+                  <Text color={uiState.theme.text.primary}>{state.activeDialog.message}</Text>
                 </Box>
                 <Box>
                   <Text color={uiState.theme.text.secondary} dimColor>

@@ -1,9 +1,9 @@
 /**
  * All Callbacks Bridge
- * 
+ *
  * This component registers ALL UI callbacks (both old global style and new context style).
  * It provides a transition path from global callbacks to React Context.
- * 
+ *
  * Phase 1 (Current): Registers both global callbacks AND provides UICallbacksContext
  * Phase 2 (Future): Remove global callback registration, keep only UICallbacksContext
  */
@@ -30,7 +30,7 @@ export interface AllCallbacksBridgeProps {
 
 /**
  * Bridge component that registers all UI callbacks
- * 
+ *
  * This component must be placed:
  * - AFTER UserPromptProvider (needs useUserPrompt)
  * - AFTER ChatProvider (needs useChat)
@@ -100,9 +100,5 @@ export function AllCallbacksBridge({ children, onOpenModelMenu }: AllCallbacksBr
     openModelMenu,
   };
 
-  return (
-    <UICallbacksProvider callbacks={uiCallbacks}>
-      {children}
-    </UICallbacksProvider>
-  );
+  return <UICallbacksProvider callbacks={uiCallbacks}>{children}</UICallbacksProvider>;
 }

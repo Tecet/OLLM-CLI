@@ -1,15 +1,13 @@
 /**
  * Memory Guard Service
- * 
+ *
  * Monitors memory thresholds and prevents out-of-memory errors by triggering
  * appropriate actions at different memory levels (80%, 90%, 95%).
  */
 
 import { EventEmitter } from 'events';
 
-import {
-  MemoryLevel
-} from './types.js';
+import { MemoryLevel } from './types.js';
 
 import type {
   MemoryGuard,
@@ -18,7 +16,7 @@ import type {
   SnapshotManager,
   ICompressionService,
   ConversationContext,
-  MemoryGuardConfig
+  MemoryGuardConfig,
 } from './types.js';
 
 /**
@@ -27,15 +25,15 @@ import type {
 const DEFAULT_CONFIG: MemoryGuardConfig = {
   safetyBuffer: 512 * 1024 * 1024, // 512MB
   thresholds: {
-    soft: 0.8,      // 80% - Trigger compression
-    hard: 0.9,      // 90% - Force context reduction
-    critical: 0.95  // 95% - Emergency snapshot + clear
-  }
+    soft: 0.8, // 80% - Trigger compression
+    hard: 0.9, // 90% - Force context reduction
+    critical: 0.95, // 95% - Emergency snapshot + clear
+  },
 };
 
 /**
  * Memory Guard Implementation
- * 
+ *
  * Monitors memory usage and triggers actions at different threshold levels:
  * - 80% (soft): Trigger automatic compression
  * - 90% (hard): Force context size reduction
@@ -89,7 +87,7 @@ export class MemoryGuardImpl extends EventEmitter implements MemoryGuard {
   canAllocate(requestedTokens: number): boolean {
     const usage = this.contextPool.getUsage();
     const newTokenCount = usage.currentTokens + requestedTokens;
-    const newPercentage = (newTokenCount / usage.maxTokens);
+    const newPercentage = newTokenCount / usage.maxTokens;
 
     // Include safety buffer in calculation
     const safeLimit = this.getSafeLimit();
@@ -104,10 +102,10 @@ export class MemoryGuardImpl extends EventEmitter implements MemoryGuard {
    */
   getSafeLimit(): number {
     const usage = this.contextPool.getUsage();
-    
+
     // Calculate soft limit based on max tokens
     const softLimitTokens = Math.floor(usage.maxTokens * this.config.thresholds.soft);
-    
+
     // The safety buffer is already accounted for in the context pool's calculations
     // (it's subtracted from available VRAM when calculating optimal size)
     // So we just return the soft limit here
@@ -156,18 +154,40 @@ export class MemoryGuardImpl extends EventEmitter implements MemoryGuard {
     switch (level) {
       case MemoryLevel.WARNING:
         // Attempt automatic compression when available
-        this.emit('threshold-reached', { level, percentage: this.contextPool.getUsage().percentage });
+        this.emit('threshold-reached', {
+          level,
+          percentage: this.contextPool.getUsage().percentage,
+        });
         if (this.compressionService && this.currentContext) {
           try {
-            const strategy = { type: 'hybrid', preserveRecent: Math.floor(this.currentContext.maxTokens ? this.currentContext.maxTokens * 0.3 : 4096), summaryMaxTokens: 1024 } as any;
-            const compressed = await this.compressionService.compress(this.currentContext.messages, strategy as any);
+            const strategy = {
+              type: 'hybrid',
+              preserveRecent: Math.floor(
+                this.currentContext.maxTokens ? this.currentContext.maxTokens * 0.3 : 4096
+              ),
+              summaryMaxTokens: 1024,
+            } as any;
+            const compressed = await this.compressionService.compress(
+              this.currentContext.messages,
+              strategy as any
+            );
             // Apply compression results if successful
             if (compressed && compressed.preserved) {
               // Rebuild messages: preserved messages + summary as assistant/system if present
               const preserved = compressed.preserved || [];
-              const summaryMsg = compressed.summary ? [{ id: compressed.summary.id || 'summary', role: compressed.summary.role || 'assistant', content: compressed.summary.content || '', timestamp: compressed.summary.timestamp || new Date() }] : [];
+              const summaryMsg = compressed.summary
+                ? [
+                    {
+                      id: compressed.summary.id || 'summary',
+                      role: compressed.summary.role || 'assistant',
+                      content: compressed.summary.content || '',
+                      timestamp: compressed.summary.timestamp || new Date(),
+                    },
+                  ]
+                : [];
               this.currentContext.messages = [...preserved, ...summaryMsg];
-              this.currentContext.tokenCount = compressed.compressedTokens || this.currentContext.messages.length;
+              this.currentContext.tokenCount =
+                compressed.compressedTokens || this.currentContext.messages.length;
               // Sync context pool tokens
               try {
                 this.contextPool.setCurrentTokens(this.currentContext.tokenCount);
@@ -182,7 +202,10 @@ export class MemoryGuardImpl extends EventEmitter implements MemoryGuard {
         }
         break;
       case MemoryLevel.CRITICAL:
-        this.emit('threshold-reached', { level, percentage: this.contextPool.getUsage().percentage });
+        this.emit('threshold-reached', {
+          level,
+          percentage: this.contextPool.getUsage().percentage,
+        });
         // Force context reduction at hard threshold
         await this.forceContextReduction();
         break;
@@ -212,21 +235,20 @@ export class MemoryGuardImpl extends EventEmitter implements MemoryGuard {
     }
   }
 
-
-
   /**
    * Force context size reduction (90% threshold)
    */
   private async forceContextReduction(): Promise<void> {
     try {
       const usage = this.contextPool.getUsage();
-      
+
       // Emit warning that resize is pending
       let hasActive = false;
       try {
-        hasActive = typeof (this.contextPool as any).hasActiveRequests === 'function'
-          ? (this.contextPool as any).hasActiveRequests()
-          : false;
+        hasActive =
+          typeof (this.contextPool as any).hasActiveRequests === 'function'
+            ? (this.contextPool as any).hasActiveRequests()
+            : false;
       } catch {
         hasActive = false;
       }
@@ -234,24 +256,24 @@ export class MemoryGuardImpl extends EventEmitter implements MemoryGuard {
       this.emit('context-resize-pending', {
         level: MemoryLevel.CRITICAL,
         currentSize: usage.maxTokens,
-        hasActiveRequests: hasActive
+        hasActiveRequests: hasActive,
       });
-      
+
       // Reduce context size by 20%
       const newSize = Math.floor(usage.maxTokens * 0.8);
-      
+
       await this.contextPool.resize(newSize);
 
-      this.emit('context-reduced', { 
+      this.emit('context-reduced', {
         level: MemoryLevel.CRITICAL,
         oldSize: usage.maxTokens,
-        newSize
+        newSize,
       });
     } catch (error) {
       console.error('Failed to reduce context size:', error);
       this.emit('context-resize-failed', {
         level: MemoryLevel.CRITICAL,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       });
     }
   }
@@ -267,13 +289,9 @@ export class MemoryGuardImpl extends EventEmitter implements MemoryGuard {
       // 1. Create emergency snapshot if possible
       if (this.snapshotManager && this.currentContext) {
         try {
-          const hasUserMessages = this.currentContext.messages.some(
-            m => m.role === 'user'
-          );
+          const hasUserMessages = this.currentContext.messages.some((m) => m.role === 'user');
           if (hasUserMessages) {
-            const snapshot = await this.snapshotManager.createSnapshot(
-              this.currentContext
-            );
+            const snapshot = await this.snapshotManager.createSnapshot(this.currentContext);
             if (snapshot && snapshot.id) {
               actions.push(`Created emergency snapshot: ${snapshot.id}`);
             } else {
@@ -290,16 +308,14 @@ export class MemoryGuardImpl extends EventEmitter implements MemoryGuard {
 
       // 2. Clear context (except system prompt)
       if (this.currentContext) {
-        const systemPrompt = this.currentContext.messages.find(
-          m => m.role === 'system'
-        );
-        
+        const systemPrompt = this.currentContext.messages.find((m) => m.role === 'system');
+
         this.currentContext.messages = systemPrompt ? [systemPrompt] : [];
         this.currentContext.tokenCount = systemPrompt?.tokenCount || 0;
-        
+
         // Synchronize with context pool
         this.contextPool.setCurrentTokens(this.currentContext.tokenCount);
-        
+
         actions.push('Cleared context to prevent OOM');
       }
 
@@ -316,10 +332,9 @@ export class MemoryGuardImpl extends EventEmitter implements MemoryGuard {
         recoveryOptions: [
           'Use /context restore <id> to restore from snapshot',
           'Reduce context size with /context size <tokens>',
-          'Enable auto-compression with /context auto'
-        ]
+          'Enable auto-compression with /context auto',
+        ],
       });
-
     } catch (error) {
       console.error('Emergency actions failed:', error);
       this.emit('emergency-failed', { error });

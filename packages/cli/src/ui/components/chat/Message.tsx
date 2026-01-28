@@ -27,7 +27,7 @@ export interface MessageProps {
 export function Message({ message, theme, metricsConfig, reasoningConfig }: MessageProps) {
   const roleColor = theme.role[message.role];
   const timestamp = message.timestamp.toLocaleTimeString();
-  
+
   // Initialize reasoning box as open if reasoning is incomplete, closed if complete
   const [reasoningExpanded, setReasoningExpanded] = useState(() => {
     return message.reasoning ? !message.reasoning.complete : true;
@@ -73,7 +73,9 @@ export function Message({ message, theme, metricsConfig, reasoningConfig }: Mess
 
       {/* Message content */}
       <Box paddingLeft={2}>
-        <Text color={theme.text.primary} wrap="wrap">{message.content}</Text>
+        <Text color={theme.text.primary} wrap="wrap">
+          {message.content}
+        </Text>
       </Box>
 
       {/* Metrics display (if present) */}

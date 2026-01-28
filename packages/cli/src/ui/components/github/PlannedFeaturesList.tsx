@@ -46,21 +46,11 @@ const PLANNED_FEATURES: PlannedFeature[] = [
   },
   {
     title: 'Code Review Features',
-    items: [
-      'Inline code comments',
-      'Suggestion mode',
-      'Review approval workflow',
-      'Diff viewing',
-    ],
+    items: ['Inline code comments', 'Suggestion mode', 'Review approval workflow', 'Diff viewing'],
   },
   {
     title: 'GitHub Actions',
-    items: [
-      'View workflow runs',
-      'Trigger workflows',
-      'View logs and artifacts',
-      'Manage secrets',
-    ],
+    items: ['View workflow runs', 'Trigger workflows', 'View logs and artifacts', 'Manage secrets'],
   },
   {
     title: 'Notifications',
@@ -75,10 +65,10 @@ const PLANNED_FEATURES: PlannedFeature[] = [
 
 /**
  * PlannedFeaturesList Component
- * 
+ *
  * Renders the list of planned GitHub features organized by category.
  * Part of the GitHub panel placeholder (Stage-06a).
- * 
+ *
  * @see .kiro/specs/stage-11-developer-productivity-future-dev/
  */
 export const PlannedFeaturesList: React.FC = () => {

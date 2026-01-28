@@ -10,11 +10,7 @@ import { EventEmitter } from 'events';
 import { sanitizeErrorMessage } from './errorSanitization.js';
 import { STATE_SNAPSHOT_PROMPT } from '../prompts/templates/stateSnapshot.js';
 
-import type {
-  SessionMessage,
-  CompressionOptions,
-  CompressionResult,
-} from './types.js';
+import type { SessionMessage, CompressionOptions, CompressionResult } from './types.js';
 import type { TokenCounter } from '../context/types.js';
 import type { ProviderAdapter } from '../provider/types.js';
 
@@ -28,7 +24,7 @@ export class ChatCompressionService extends EventEmitter {
 
   /**
    * Create a new ChatCompressionService
-   * 
+   *
    * @param provider - Optional provider adapter for LLM-based summarization
    * @param model - Optional model name to use for summarization
    * @param tokenCounter - Optional token counter service for accurate token counting
@@ -42,7 +38,7 @@ export class ChatCompressionService extends EventEmitter {
 
   /**
    * Set the provider and model for LLM-based summarization
-   * 
+   *
    * @param provider - Provider adapter
    * @param model - Model name
    */
@@ -53,7 +49,7 @@ export class ChatCompressionService extends EventEmitter {
 
   /**
    * Set the token counter service
-   * 
+   *
    * @param tokenCounter - Token counter service
    */
   setTokenCounter(tokenCounter: TokenCounter): void {
@@ -82,12 +78,12 @@ export class ChatCompressionService extends EventEmitter {
         .filter((p) => p.type === 'text')
         .map((p) => p.text)
         .join('\n');
-      
+
       // Use a unique ID for caching (use timestamp as fallback)
       const messageId = `session-${message.timestamp}`;
       return this.tokenCounter.countTokensCached(messageId, text) + 10; // +10 for structure overhead
     }
-    
+
     // Fallback estimation
     let total = 0;
     for (const part of message.parts) {
@@ -205,8 +201,7 @@ export class ChatCompressionService extends EventEmitter {
     }
 
     // Always preserve system prompt if it exists
-    const systemPrompt =
-      messages[0]?.role === 'system' ? [messages[0]] : [];
+    const systemPrompt = messages[0]?.role === 'system' ? [messages[0]] : [];
     const nonSystemMessages = messages[0]?.role === 'system' ? messages.slice(1) : messages;
 
     // Start from the end and work backwards, keeping messages until we hit the target
@@ -237,17 +232,13 @@ export class ChatCompressionService extends EventEmitter {
    * @param targetTokens - Target token count after compression
    * @returns Compressed messages with summary
    */
-  async summarize(
-    messages: SessionMessage[],
-    targetTokens: number
-  ): Promise<SessionMessage[]> {
+  async summarize(messages: SessionMessage[], targetTokens: number): Promise<SessionMessage[]> {
     if (messages.length === 0) {
       return [];
     }
 
     // Always preserve system prompt if it exists
-    const systemPrompt =
-      messages[0]?.role === 'system' ? [messages[0]] : [];
+    const systemPrompt = messages[0]?.role === 'system' ? [messages[0]] : [];
     const nonSystemMessages = messages[0]?.role === 'system' ? messages.slice(1) : messages;
 
     if (nonSystemMessages.length === 0) {
@@ -295,7 +286,10 @@ export class ChatCompressionService extends EventEmitter {
       } catch (error) {
         // Fall back to placeholder if LLM summarization fails
         const errorMessage = error instanceof Error ? error.message : String(error);
-        console.warn('LLM summarization failed, using placeholder:', sanitizeErrorMessage(errorMessage));
+        console.warn(
+          'LLM summarization failed, using placeholder:',
+          sanitizeErrorMessage(errorMessage)
+        );
         summaryText = this.createSummaryPlaceholder(messagesToSummarize);
       }
     } else {
@@ -319,10 +313,7 @@ export class ChatCompressionService extends EventEmitter {
    * @param options - Compression options
    * @returns Compressed messages
    */
-  async hybrid(
-    messages: SessionMessage[],
-    options: CompressionOptions
-  ): Promise<SessionMessage[]> {
+  async hybrid(messages: SessionMessage[], options: CompressionOptions): Promise<SessionMessage[]> {
     const targetTokens = options.targetTokens ?? options.preserveRecentTokens;
 
     if (messages.length === 0) {
@@ -330,8 +321,7 @@ export class ChatCompressionService extends EventEmitter {
     }
 
     // Always preserve system prompt if it exists
-    const systemPrompt =
-      messages[0]?.role === 'system' ? [messages[0]] : [];
+    const systemPrompt = messages[0]?.role === 'system' ? [messages[0]] : [];
     const nonSystemMessages = messages[0]?.role === 'system' ? messages.slice(1) : messages;
 
     if (nonSystemMessages.length === 0) {
@@ -383,7 +373,10 @@ export class ChatCompressionService extends EventEmitter {
       } catch (error) {
         // Fall back to placeholder if LLM summarization fails
         const errorMessage = error instanceof Error ? error.message : String(error);
-        console.warn('LLM summarization failed in hybrid strategy, using placeholder:', sanitizeErrorMessage(errorMessage));
+        console.warn(
+          'LLM summarization failed in hybrid strategy, using placeholder:',
+          sanitizeErrorMessage(errorMessage)
+        );
         summaryText = this.createSummaryPlaceholder(middleMessages);
       }
     } else {
@@ -402,15 +395,12 @@ export class ChatCompressionService extends EventEmitter {
 
   /**
    * Generate a summary using the LLM
-   * 
+   *
    * @param messages - Messages to summarize
    * @param maxTokens - Maximum tokens for the summary
    * @returns Summary text
    */
-  private async generateLLMSummary(
-    messages: SessionMessage[],
-    maxTokens: number
-  ): Promise<string> {
+  private async generateLLMSummary(messages: SessionMessage[], maxTokens: number): Promise<string> {
     if (!this.provider || !this.model) {
       throw new Error('Provider and model must be set for LLM summarization');
     }
@@ -443,7 +433,7 @@ Summary:`;
     ];
 
     let summaryText = '';
-    
+
     try {
       for await (const event of this.provider.chatStream({
         model: this.model,
@@ -460,7 +450,9 @@ Summary:`;
         }
       }
     } catch (error) {
-      throw new Error(`Failed to generate LLM summary: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to generate LLM summary: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
 
     if (!summaryText.trim()) {
@@ -472,7 +464,7 @@ Summary:`;
 
   /**
    * Generate an XML snapshot using STATE_SNAPSHOT_PROMPT
-   * 
+   *
    * @param messages - Messages to create snapshot from
    * @returns XML snapshot string
    */
@@ -494,7 +486,7 @@ Summary:`;
 
     // Use STATE_SNAPSHOT_PROMPT template
     const systemPrompt = STATE_SNAPSHOT_PROMPT.content;
-    
+
     const providerMessages = [
       {
         role: 'user' as const,
@@ -503,7 +495,7 @@ Summary:`;
     ];
 
     let snapshotXml = '';
-    
+
     try {
       for await (const event of this.provider.chatStream({
         model: this.model,
@@ -520,7 +512,9 @@ Summary:`;
         }
       }
     } catch (error) {
-      throw new Error(`Failed to generate XML snapshot: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to generate XML snapshot: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
 
     if (!snapshotXml.trim()) {
@@ -532,7 +526,7 @@ Summary:`;
 
   /**
    * Validate XML structure
-   * 
+   *
    * @param xml - XML string to validate
    * @returns true if valid, false otherwise
    */
@@ -544,13 +538,13 @@ Summary:`;
         'overall_goal',
         'key_knowledge',
         'file_system_state',
-        'current_plan'
+        'current_plan',
       ];
 
       for (const tag of requiredTags) {
         const openTag = `<${tag}>`;
         const closeTag = `</${tag}>`;
-        
+
         if (!xml.includes(openTag) || !xml.includes(closeTag)) {
           console.warn(`XML validation failed: Missing tag ${tag}`);
           return false;
@@ -559,7 +553,7 @@ Summary:`;
         // Check that close tag comes after open tag
         const openIndex = xml.indexOf(openTag);
         const closeIndex = xml.indexOf(closeTag);
-        
+
         if (closeIndex <= openIndex) {
           console.warn(`XML validation failed: Invalid tag order for ${tag}`);
           return false;
@@ -575,7 +569,7 @@ Summary:`;
 
   /**
    * Parse and format XML snapshot
-   * 
+   *
    * @param xml - XML string to parse
    * @returns Formatted XML string
    */
@@ -595,7 +589,7 @@ Summary:`;
 
       for (const line of lines) {
         const trimmed = line.trim();
-        
+
         if (!trimmed) continue;
 
         // Decrease indent for closing tags
@@ -607,7 +601,12 @@ Summary:`;
         indentedLines.push('  '.repeat(indentLevel) + trimmed);
 
         // Increase indent for opening tags (but not self-closing or if closing tag on same line)
-        if (trimmed.startsWith('<') && !trimmed.startsWith('</') && !trimmed.endsWith('/>') && !trimmed.includes('</')) {
+        if (
+          trimmed.startsWith('<') &&
+          !trimmed.startsWith('</') &&
+          !trimmed.endsWith('/>') &&
+          !trimmed.includes('</')
+        ) {
           indentLevel++;
         }
       }
@@ -629,8 +628,7 @@ Summary:`;
   private createSummaryPlaceholder(messages: SessionMessage[]): string {
     const messageCount = messages.length;
     const userMessages = messages.filter((m) => m.role === 'user').length;
-    const assistantMessages = messages.filter((m) => m.role === 'assistant')
-      .length;
+    const assistantMessages = messages.filter((m) => m.role === 'assistant').length;
 
     return `[Conversation summary: ${messageCount} messages compressed (${userMessages} user, ${assistantMessages} assistant)]`;
   }

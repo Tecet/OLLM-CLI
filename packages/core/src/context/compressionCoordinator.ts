@@ -41,7 +41,11 @@ export class CompressionCoordinator {
   private readonly config: ContextConfig;
   private readonly getContext: () => ConversationContext;
   private readonly getUsage: () => ContextUsage;
-  private readonly getTierConfig: () => { tier: ContextTier; strategy: string; maxCheckpoints: number };
+  private readonly getTierConfig: () => {
+    tier: ContextTier;
+    strategy: string;
+    maxCheckpoints: number;
+  };
   private readonly getModeProfile: () => ModeProfile;
   private readonly snapshotManager: SnapshotManager;
   private readonly compressionService: ICompressionService;
@@ -54,7 +58,7 @@ export class CompressionCoordinator {
   private autoSummaryRunning = false;
   private lastAutoSummaryAt: number | null = null;
   private readonly autoSummaryCooldownMs = 60000;
-  
+
   // Phase 2: Blocking Mechanism
   private summarizationInProgress = false;
   private summarizationLock: Promise<void> | null = null;
@@ -78,14 +82,14 @@ export class CompressionCoordinator {
   isAutoSummaryRunning(): boolean {
     return this.autoSummaryRunning;
   }
-  
+
   /**
    * Check if summarization is currently in progress (Phase 2: Blocking Mechanism)
    */
   isSummarizationInProgress(): boolean {
     return this.summarizationInProgress;
   }
-  
+
   /**
    * Wait for any in-progress summarization to complete (Phase 2: Blocking Mechanism)
    * @param timeoutMs - Optional timeout in milliseconds (default: 30000)
@@ -95,9 +99,9 @@ export class CompressionCoordinator {
     if (!this.summarizationInProgress || !this.summarizationLock) {
       return;
     }
-    
+
     const timeout = timeoutMs ?? this.summarizationTimeoutMs;
-    
+
     // Create a timeout promise
     const timeoutPromise = new Promise<void>((resolve) => {
       setTimeout(() => {
@@ -107,7 +111,7 @@ export class CompressionCoordinator {
         resolve();
       }, timeout);
     });
-    
+
     // Race between summarization completion and timeout
     await Promise.race([this.summarizationLock, timeoutPromise]);
   }
@@ -117,18 +121,15 @@ export class CompressionCoordinator {
    */
   registerSnapshotHandlers(snapshotConfig: SnapshotConfig): void {
     if (snapshotConfig.autoCreate) {
-      this.snapshotManager.onContextThreshold(
-        snapshotConfig.autoThreshold,
-        async () => {
-          await this.handleAutoThreshold();
-        }
-      );
+      this.snapshotManager.onContextThreshold(snapshotConfig.autoThreshold, async () => {
+        await this.handleAutoThreshold();
+      });
     }
 
     this.snapshotManager.onBeforeOverflow(async () => {
       this.emit('pre-overflow', {
         usage: this.getUsage(),
-        context: this.getContext()
+        context: this.getContext(),
       });
     });
   }
@@ -165,11 +166,12 @@ export class CompressionCoordinator {
     console.log('[ContextManager] Tier 1 rollover compression triggered');
 
     const context = this.getContext();
-    const baseSystemPrompt = context.systemPrompt
-      ?? context.messages.find(m => m.id.startsWith('system-'))
-      ?? context.messages.find(m => m.role === 'system');
+    const baseSystemPrompt =
+      context.systemPrompt ??
+      context.messages.find((m) => m.id.startsWith('system-')) ??
+      context.messages.find((m) => m.role === 'system');
     const userAssistantMessages = context.messages.filter(
-      m => m.role === 'user' || m.role === 'assistant'
+      (m) => m.role === 'user' || m.role === 'assistant'
     );
 
     if (userAssistantMessages.length === 0) {
@@ -181,7 +183,7 @@ export class CompressionCoordinator {
         snapshot: null,
         summary: null,
         originalTokens: 0,
-        compressedTokens: newTokenCount
+        compressedTokens: newTokenCount,
       });
       return;
     }
@@ -192,7 +194,8 @@ export class CompressionCoordinator {
       this.emit('rollover-snapshot-created', { snapshot });
       console.log('[ContextManager] Rollover snapshot created', { id: snapshot.id });
     } catch (error) {
-      if (!this.isTestEnv) console.error('[ContextManager] Rollover snapshot creation failed', error);
+      if (!this.isTestEnv)
+        console.error('[ContextManager] Rollover snapshot creation failed', error);
       this.emit('snapshot-error', error);
     }
 
@@ -203,14 +206,11 @@ export class CompressionCoordinator {
       id: `rollover-summary-${Date.now()}`,
       role: 'system' as const,
       content: summaryContent,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
 
     const systemMessages = baseSystemPrompt ? [baseSystemPrompt] : [];
-    context.messages = [
-      ...systemMessages,
-      summaryMessage
-    ];
+    context.messages = [...systemMessages, summaryMessage];
 
     const newTokenCount = this.tokenCounter.countConversationTokens(context.messages);
     context.tokenCount = newTokenCount;
@@ -221,14 +221,14 @@ export class CompressionCoordinator {
       strategy: 'rollover',
       originalTokens: snapshot?.tokenCount || 0,
       compressedTokens: newTokenCount,
-      ratio: snapshot ? newTokenCount / snapshot.tokenCount : 0
+      ratio: snapshot ? newTokenCount / snapshot.tokenCount : 0,
     });
 
     this.emit('rollover-complete', {
       snapshot,
       summary: summaryMessage,
       originalTokens: snapshot?.tokenCount || 0,
-      compressedTokens: newTokenCount
+      compressedTokens: newTokenCount,
     });
   }
 
@@ -237,9 +237,9 @@ export class CompressionCoordinator {
    */
   private generateCompactSummary(messages: Array<{ role: string; content: string }>): string {
     const keyPoints = messages
-      .filter(m => m.role === 'user' || m.role === 'assistant')
+      .filter((m) => m.role === 'user' || m.role === 'assistant')
       .slice(-10)
-      .map(m => `${m.role}: ${m.content.substring(0, 100)}...`)
+      .map((m) => `${m.role}: ${m.content.substring(0, 100)}...`)
       .join('\n');
 
     return `[Previous conversation summary - ${messages.length} messages]\n${keyPoints}`;
@@ -252,10 +252,12 @@ export class CompressionCoordinator {
   async handleAutoThreshold(): Promise<void> {
     const now = Date.now();
     if (this.autoSummaryRunning) {
-      console.debug('[ContextManager] autoThreshold reached but auto-summary already running; skipping');
+      console.debug(
+        '[ContextManager] autoThreshold reached but auto-summary already running; skipping'
+      );
       return;
     }
-    if (this.lastAutoSummaryAt && (now - this.lastAutoSummaryAt) < this.autoSummaryCooldownMs) {
+    if (this.lastAutoSummaryAt && now - this.lastAutoSummaryAt < this.autoSummaryCooldownMs) {
       console.debug('[ContextManager] autoThreshold reached but within cooldown; skipping');
       return;
     }
@@ -264,13 +266,13 @@ export class CompressionCoordinator {
     this.autoSummaryRunning = true;
     this.summarizationInProgress = true;
     this.lastAutoSummaryAt = now;
-    
+
     // Emit block-user-input event
     this.emit('block-user-input', {
       reason: 'checkpoint-creation',
-      estimatedDuration: 'Creating checkpoint...'
+      estimatedDuration: 'Creating checkpoint...',
     });
-    
+
     // Create lock promise
     let resolveLock: (() => void) | undefined;
     this.summarizationLock = new Promise<void>((resolve) => {
@@ -279,21 +281,21 @@ export class CompressionCoordinator {
 
     try {
       const context = this.getContext();
-      console.log('[ContextManager] autoThreshold reached, starting snapshot and summarization checks', { usage: this.getUsage() });
+      console.log(
+        '[ContextManager] autoThreshold reached, starting snapshot and summarization checks',
+        { usage: this.getUsage() }
+      );
       this.emit('summarizing', { usage: this.getUsage() });
 
-      const hasUserMessages = context.messages.some(
-        m => m.role === 'user'
-      );
+      const hasUserMessages = context.messages.some((m) => m.role === 'user');
       if (!hasUserMessages) {
         console.log('[ContextManager] No user messages, skipping snapshot/compression');
         return;
       }
 
-      const checkpointIds = new Set((context.checkpoints || []).map(cp => cp.summary.id));
-      const compressibleMessages = context.messages.filter(m =>
-        m.role !== 'system' &&
-        !checkpointIds.has(m.id)
+      const checkpointIds = new Set((context.checkpoints || []).map((cp) => cp.summary.id));
+      const compressibleMessages = context.messages.filter(
+        (m) => m.role !== 'system' && !checkpointIds.has(m.id)
       );
 
       const MIN_MESSAGES_TO_COMPRESS = 10;
@@ -302,7 +304,7 @@ export class CompressionCoordinator {
           compressible: compressibleMessages.length,
           minimum: MIN_MESSAGES_TO_COMPRESS,
           total: context.messages.length,
-          checkpoints: context.checkpoints?.length || 0
+          checkpoints: context.checkpoints?.length || 0,
         });
         return;
       }
@@ -311,7 +313,10 @@ export class CompressionCoordinator {
       try {
         snapshot = await this.snapshotManager.createSnapshot(context);
         this.emit('auto-snapshot-created', snapshot);
-        console.log('[ContextManager] auto-snapshot-created', { id: snapshot.id, tokenCount: snapshot.tokenCount });
+        console.log('[ContextManager] auto-snapshot-created', {
+          id: snapshot.id,
+          tokenCount: snapshot.tokenCount,
+        });
       } catch (error) {
         console.error('[ContextManager] snapshot creation failed', error);
         this.emit('snapshot-error', error);
@@ -321,26 +326,27 @@ export class CompressionCoordinator {
         const strategy: import('./types.js').CompressionStrategy = {
           type: 'summarize',
           preserveRecent: this.config.compression.preserveRecent,
-          summaryMaxTokens: this.config.compression.summaryMaxTokens
+          summaryMaxTokens: this.config.compression.summaryMaxTokens,
         };
 
         console.log('[ContextManager] invoking compressionService.compress', { strategy });
-        const compressed = await this.compressionService.compress(
-          context.messages,
-          strategy
-        );
-        console.log('[ContextManager] compressionService.compress completed', { originalTokens: compressed.originalTokens, compressedTokens: compressed.compressedTokens, status: compressed.status });
+        const compressed = await this.compressionService.compress(context.messages, strategy);
+        console.log('[ContextManager] compressionService.compress completed', {
+          originalTokens: compressed.originalTokens,
+          compressedTokens: compressed.compressedTokens,
+          status: compressed.status,
+        });
 
         if (compressed.status === 'inflated') {
-          console.log('[ContextManager] Compression skipped - no messages to compress', { status: compressed.status });
+          console.log('[ContextManager] Compression skipped - no messages to compress', {
+            status: compressed.status,
+          });
           this.emit('compression-skipped', { reason: compressed.status });
           return;
         }
 
         if (compressed && compressed.summary) {
-          const systemMessages = context.messages.filter(
-            m => m.role === 'system'
-          );
+          const systemMessages = context.messages.filter((m) => m.role === 'system');
 
           const checkpoint: import('./types.js').CompressionCheckpoint = {
             id: `checkpoint-${Date.now()}`,
@@ -353,7 +359,7 @@ export class CompressionCoordinator {
             compressionCount: 1,
             keyDecisions: compressed.checkpoint?.keyDecisions,
             filesModified: compressed.checkpoint?.filesModified,
-            nextSteps: compressed.checkpoint?.nextSteps
+            nextSteps: compressed.checkpoint?.nextSteps,
           };
 
           if (!context.checkpoints) {
@@ -368,23 +374,17 @@ export class CompressionCoordinator {
             context.checkpoints = context.checkpoints.slice(-MAX_CHECKPOINTS);
             console.log('[ContextManager] Checkpoint limit reached, removed oldest checkpoints', {
               removed,
-              remaining: context.checkpoints.length
+              remaining: context.checkpoints.length,
             });
           }
 
           await this.checkpointManager.compressOldCheckpoints();
 
-          const checkpointMessages = context.checkpoints.map(cp => cp.summary);
+          const checkpointMessages = context.checkpoints.map((cp) => cp.summary);
 
-          context.messages = [
-            ...systemMessages,
-            ...checkpointMessages,
-            ...compressed.preserved
-          ];
+          context.messages = [...systemMessages, ...checkpointMessages, ...compressed.preserved];
 
-          const newTokenCount = this.tokenCounter.countConversationTokens(
-            context.messages
-          );
+          const newTokenCount = this.tokenCounter.countConversationTokens(context.messages);
           context.tokenCount = newTokenCount;
           this.contextPool.setCurrentTokens(newTokenCount);
 
@@ -393,7 +393,7 @@ export class CompressionCoordinator {
             strategy: 'summarize',
             originalTokens: compressed.originalTokens,
             compressedTokens: compressed.compressedTokens,
-            ratio: compressed.compressionRatio
+            ratio: compressed.compressionRatio,
           });
 
           this.emit('auto-summary-created', {
@@ -402,7 +402,7 @@ export class CompressionCoordinator {
             snapshot: snapshot || null,
             originalTokens: compressed.originalTokens,
             compressedTokens: compressed.compressedTokens,
-            ratio: compressed.compressionRatio
+            ratio: compressed.compressionRatio,
           });
         } else {
           console.warn('[ContextManager] compression returned no summary');
@@ -416,16 +416,16 @@ export class CompressionCoordinator {
       // Phase 2: Clear blocking flags and emit unblock event
       this.autoSummaryRunning = false;
       this.summarizationInProgress = false;
-      
+
       // Resolve lock
       if (resolveLock) {
         resolveLock();
       }
       this.summarizationLock = null;
-      
+
       // Emit unblock-user-input event
       this.emit('unblock-user-input', {
-        reason: 'checkpoint-complete'
+        reason: 'checkpoint-complete',
       });
     }
   }
@@ -438,17 +438,18 @@ export class CompressionCoordinator {
 
     const context = this.getContext();
     const preserved = this.checkpointManager.preserveNeverCompressed(context);
-    const critical = this.checkpointManager.extractCriticalInfo(context.messages, this.getModeProfile());
+    const critical = this.checkpointManager.extractCriticalInfo(
+      context.messages,
+      this.getModeProfile()
+    );
 
-    const systemMessages = context.messages.filter(m => m.role === 'system');
-    const checkpointIds = new Set((context.checkpoints || []).map(cp => cp.summary.id));
+    const systemMessages = context.messages.filter((m) => m.role === 'system');
+    const checkpointIds = new Set((context.checkpoints || []).map((cp) => cp.summary.id));
     const neverCompressedMessages = this.checkpointManager.reconstructNeverCompressed(preserved);
-    const neverCompressedIds = new Set(neverCompressedMessages.map(m => m.id));
+    const neverCompressedIds = new Set(neverCompressedMessages.map((m) => m.id));
 
-    const compressibleMessages = context.messages.filter(m =>
-      m.role !== 'system' &&
-      !checkpointIds.has(m.id) &&
-      !neverCompressedIds.has(m.id)
+    const compressibleMessages = context.messages.filter(
+      (m) => m.role !== 'system' && !checkpointIds.has(m.id) && !neverCompressedIds.has(m.id)
     );
 
     const recentCount = 10;
@@ -470,13 +471,10 @@ export class CompressionCoordinator {
     const strategy = {
       type: 'summarize' as const,
       preserveRecent: 0,
-      summaryMaxTokens: 700
+      summaryMaxTokens: 700,
     };
 
-    const compressed = await this.compressionService.compress(
-      oldMessages,
-      strategy
-    );
+    const compressed = await this.compressionService.compress(oldMessages, strategy);
 
     if (compressed.status === 'inflated') {
       this.emit('compression-skipped', { reason: 'inflation', tier: 'tier2' });
@@ -498,7 +496,7 @@ export class CompressionCoordinator {
       compressionNumber,
       keyDecisions: critical.decisions,
       filesModified: critical.files,
-      nextSteps: compressed.checkpoint?.nextSteps
+      nextSteps: compressed.checkpoint?.nextSteps,
     };
 
     if (!context.checkpoints) {
@@ -506,12 +504,12 @@ export class CompressionCoordinator {
     }
     context.checkpoints.push(checkpoint);
 
-    const checkpointMessages = context.checkpoints.map(cp => cp.summary);
+    const checkpointMessages = context.checkpoints.map((cp) => cp.summary);
     context.messages = [
       ...systemMessages,
       ...neverCompressedMessages,
       ...checkpointMessages,
-      ...recentMessages
+      ...recentMessages,
     ];
 
     await this.checkpointManager.compressOldCheckpoints();
@@ -526,16 +524,19 @@ export class CompressionCoordinator {
       const toMerge = context.checkpoints.slice(0, -toKeep);
       const recent = context.checkpoints.slice(-toKeep);
       if (toMerge.length > 1) {
-        const merged = this.checkpointManager.mergeCheckpoints(toMerge.slice(0, -1), toMerge[toMerge.length - 1]);
+        const merged = this.checkpointManager.mergeCheckpoints(
+          toMerge.slice(0, -1),
+          toMerge[toMerge.length - 1]
+        );
         context.checkpoints = [merged, ...recent];
 
         const rebuiltNeverCompressed = this.checkpointManager.reconstructNeverCompressed(preserved);
-        const rebuiltCheckpointMessages = context.checkpoints.map(cp => cp.summary);
+        const rebuiltCheckpointMessages = context.checkpoints.map((cp) => cp.summary);
         context.messages = [
           ...systemMessages,
           ...rebuiltNeverCompressed,
           ...rebuiltCheckpointMessages,
-          ...recentMessages
+          ...recentMessages,
         ];
       }
     }
@@ -545,14 +546,14 @@ export class CompressionCoordinator {
       strategy: 'smart',
       originalTokens: compressed.originalTokens,
       compressedTokens: compressed.compressedTokens,
-      ratio: compressed.compressionRatio
+      ratio: compressed.compressionRatio,
     });
 
     this.emit('tier2-compressed', {
       checkpoint,
       critical,
       originalTokens: compressed.originalTokens,
-      compressedTokens: compressed.compressedTokens
+      compressedTokens: compressed.compressedTokens,
     });
   }
 
@@ -567,20 +568,20 @@ export class CompressionCoordinator {
     const strategy = {
       type: this.config.compression.strategy,
       preserveRecent: this.config.compression.preserveRecent,
-      summaryMaxTokens: this.config.compression.summaryMaxTokens
+      summaryMaxTokens: this.config.compression.summaryMaxTokens,
     };
 
-    const compressed = await this.compressionService.compress(
-      context.messages,
-      strategy
-    );
+    const compressed = await this.compressionService.compress(context.messages, strategy);
 
     if (compressed.status === 'inflated') {
       this.emit('compression-skipped', { reason: 'inflation', tier: 'tier3' });
       return;
     }
 
-    const extracted = this.checkpointManager.extractCriticalInfo(context.messages, this.getModeProfile());
+    const extracted = this.checkpointManager.extractCriticalInfo(
+      context.messages,
+      this.getModeProfile()
+    );
     const checkpointId = `checkpoint-tier3-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const compressionNumber = context.metadata.compressionHistory.length;
 
@@ -596,7 +597,7 @@ export class CompressionCoordinator {
       compressionNumber,
       keyDecisions: extracted.decisions,
       filesModified: extracted.files,
-      nextSteps: compressed.checkpoint?.nextSteps
+      nextSteps: compressed.checkpoint?.nextSteps,
     };
 
     if (!context.checkpoints) {
@@ -621,29 +622,29 @@ export class CompressionCoordinator {
           id: `summary-merged-${Date.now()}`,
           role: 'system',
           content: `[Merged checkpoint: ${toMerge.length} earlier checkpoints]`,
-          timestamp: new Date()
+          timestamp: new Date(),
         },
         createdAt: toMerge[0].createdAt,
         compressedAt: new Date(),
         originalTokens: toMerge.reduce((sum, cp) => sum + cp.originalTokens, 0),
         currentTokens: 100,
-        compressionCount: Math.max(...toMerge.map(cp => cp.compressionCount)) + 1,
-        keyDecisions: toMerge.flatMap(cp => cp.keyDecisions || []).slice(0, 10),
-        filesModified: toMerge.flatMap(cp => cp.filesModified || []).slice(0, 20)
+        compressionCount: Math.max(...toMerge.map((cp) => cp.compressionCount)) + 1,
+        keyDecisions: toMerge.flatMap((cp) => cp.keyDecisions || []).slice(0, 10),
+        filesModified: toMerge.flatMap((cp) => cp.filesModified || []).slice(0, 20),
       };
 
       context.checkpoints = [mergedCheckpoint, ...remaining];
     }
 
-    const systemMessages = context.messages.filter(m => m.role === 'system');
+    const systemMessages = context.messages.filter((m) => m.role === 'system');
     const neverCompressedMessages = this.checkpointManager.reconstructNeverCompressed(preserved);
-    const checkpointMessages = context.checkpoints.map(cp => cp.summary);
+    const checkpointMessages = context.checkpoints.map((cp) => cp.summary);
 
     context.messages = [
       ...systemMessages,
       ...neverCompressedMessages,
       ...checkpointMessages,
-      ...compressed.preserved
+      ...compressed.preserved,
     ];
 
     const newTokenCount = this.tokenCounter.countConversationTokens(context.messages);
@@ -655,7 +656,7 @@ export class CompressionCoordinator {
       strategy: 'progressive',
       originalTokens: compressed.originalTokens,
       compressedTokens: compressed.compressedTokens,
-      ratio: compressed.compressionRatio
+      ratio: compressed.compressionRatio,
     });
 
     this.emit('tier3-compressed', {
@@ -664,7 +665,7 @@ export class CompressionCoordinator {
       neverCompressedCount: preserved.length,
       extracted,
       originalTokens: compressed.originalTokens,
-      compressedTokens: compressed.compressedTokens
+      compressedTokens: compressed.compressedTokens,
     });
   }
 
@@ -676,18 +677,18 @@ export class CompressionCoordinator {
 
     const context = this.getContext();
     const preserved = this.checkpointManager.preserveNeverCompressed(context);
-    const extracted = this.checkpointManager.extractCriticalInfo(context.messages, this.getModeProfile());
+    const extracted = this.checkpointManager.extractCriticalInfo(
+      context.messages,
+      this.getModeProfile()
+    );
 
     const strategy = {
       type: 'summarize' as const,
       preserveRecent: this.config.compression.preserveRecent,
-      summaryMaxTokens: 1500
+      summaryMaxTokens: 1500,
     };
 
-    const compressed = await this.compressionService.compress(
-      context.messages,
-      strategy
-    );
+    const compressed = await this.compressionService.compress(context.messages, strategy);
 
     if (compressed.status === 'inflated') {
       this.emit('compression-skipped', { reason: 'inflation', tier: 'tier4' });
@@ -709,7 +710,7 @@ export class CompressionCoordinator {
       compressionNumber,
       keyDecisions: extracted.decisions,
       filesModified: extracted.files,
-      nextSteps: compressed.checkpoint?.nextSteps
+      nextSteps: compressed.checkpoint?.nextSteps,
     };
 
     if (!context.checkpoints) {
@@ -724,9 +725,7 @@ export class CompressionCoordinator {
       const toMerge = context.checkpoints.slice(0, excess + 1);
       const remaining = context.checkpoints.slice(excess + 1);
 
-      const mergedContent = toMerge
-        .map(cp => cp.summary.content)
-        .join('\n\n---\n\n');
+      const mergedContent = toMerge.map((cp) => cp.summary.content).join('\n\n---\n\n');
 
       const mergedCheckpoint: import('./types.js').CompressionCheckpoint = {
         id: `checkpoint-merged-tier4-${Date.now()}`,
@@ -736,15 +735,15 @@ export class CompressionCoordinator {
           id: `summary-merged-tier4-${Date.now()}`,
           role: 'system',
           content: `[Merged ${toMerge.length} checkpoints]\n${mergedContent.substring(0, 500)}...`,
-          timestamp: new Date()
+          timestamp: new Date(),
         },
         createdAt: toMerge[0].createdAt,
         compressedAt: new Date(),
         originalTokens: toMerge.reduce((sum, cp) => sum + cp.originalTokens, 0),
         currentTokens: 200,
-        compressionCount: Math.max(...toMerge.map(cp => cp.compressionCount)) + 1,
-        keyDecisions: toMerge.flatMap(cp => cp.keyDecisions || []).slice(0, 10),
-        filesModified: toMerge.flatMap(cp => cp.filesModified || []).slice(0, 20)
+        compressionCount: Math.max(...toMerge.map((cp) => cp.compressionCount)) + 1,
+        keyDecisions: toMerge.flatMap((cp) => cp.keyDecisions || []).slice(0, 10),
+        filesModified: toMerge.flatMap((cp) => cp.filesModified || []).slice(0, 20),
       };
 
       context.checkpoints = [mergedCheckpoint, ...remaining];
@@ -752,15 +751,15 @@ export class CompressionCoordinator {
 
     void this.checkpointManager.compressOldCheckpoints();
 
-    const systemMessages = context.messages.filter(m => m.role === 'system');
+    const systemMessages = context.messages.filter((m) => m.role === 'system');
     const neverCompressedMessages = this.checkpointManager.reconstructNeverCompressed(preserved);
-    const checkpointMessages = context.checkpoints.map(cp => cp.summary);
+    const checkpointMessages = context.checkpoints.map((cp) => cp.summary);
 
     context.messages = [
       ...systemMessages,
       ...neverCompressedMessages,
       ...checkpointMessages,
-      ...compressed.preserved
+      ...compressed.preserved,
     ];
 
     const newTokenCount = this.tokenCounter.countConversationTokens(context.messages);
@@ -772,7 +771,7 @@ export class CompressionCoordinator {
       strategy: 'structured',
       originalTokens: compressed.originalTokens,
       compressedTokens: compressed.compressedTokens,
-      ratio: compressed.compressionRatio
+      ratio: compressed.compressionRatio,
     });
 
     this.emit('tier4-compressed', {
@@ -781,10 +780,10 @@ export class CompressionCoordinator {
       neverCompressedCount: preserved.length,
       richMetadata: {
         decisions: extracted.decisions.length,
-        files: extracted.files.length
+        files: extracted.files.length,
       },
       originalTokens: compressed.originalTokens,
-      compressedTokens: compressed.compressedTokens
+      compressedTokens: compressed.compressedTokens,
     });
   }
 
@@ -796,18 +795,18 @@ export class CompressionCoordinator {
 
     const context = this.getContext();
     const preserved = this.checkpointManager.preserveNeverCompressed(context);
-    const extracted = this.checkpointManager.extractCriticalInfo(context.messages, this.getModeProfile());
+    const extracted = this.checkpointManager.extractCriticalInfo(
+      context.messages,
+      this.getModeProfile()
+    );
 
     const strategy = {
       type: 'summarize' as const,
       preserveRecent: this.config.compression.preserveRecent,
-      summaryMaxTokens: 2000
+      summaryMaxTokens: 2000,
     };
 
-    const compressed = await this.compressionService.compress(
-      context.messages,
-      strategy
-    );
+    const compressed = await this.compressionService.compress(context.messages, strategy);
 
     if (compressed.status === 'inflated') {
       this.emit('compression-skipped', { reason: 'inflation', tier: 'tier5' });
@@ -829,7 +828,7 @@ export class CompressionCoordinator {
       compressionNumber,
       keyDecisions: extracted.decisions,
       filesModified: extracted.files,
-      nextSteps: compressed.checkpoint?.nextSteps
+      nextSteps: compressed.checkpoint?.nextSteps,
     };
 
     if (!context.checkpoints) {
@@ -844,9 +843,7 @@ export class CompressionCoordinator {
       const toMerge = context.checkpoints.slice(0, excess + 1);
       const remaining = context.checkpoints.slice(excess + 1);
 
-      const mergedContent = toMerge
-        .map(cp => cp.summary.content)
-        .join('\n\n---\n\n');
+      const mergedContent = toMerge.map((cp) => cp.summary.content).join('\n\n---\n\n');
 
       const mergedCheckpoint: import('./types.js').CompressionCheckpoint = {
         id: `checkpoint-merged-tier5-${Date.now()}`,
@@ -856,15 +853,15 @@ export class CompressionCoordinator {
           id: `summary-merged-tier5-${Date.now()}`,
           role: 'system',
           content: `[Merged ${toMerge.length} checkpoints - Ultra tier]\n${mergedContent.substring(0, 800)}...`,
-          timestamp: new Date()
+          timestamp: new Date(),
         },
         createdAt: toMerge[0].createdAt,
         compressedAt: new Date(),
         originalTokens: toMerge.reduce((sum, cp) => sum + cp.originalTokens, 0),
         currentTokens: 300,
-        compressionCount: Math.max(...toMerge.map(cp => cp.compressionCount)) + 1,
-        keyDecisions: toMerge.flatMap(cp => cp.keyDecisions || []).slice(0, 15),
-        filesModified: toMerge.flatMap(cp => cp.filesModified || []).slice(0, 30)
+        compressionCount: Math.max(...toMerge.map((cp) => cp.compressionCount)) + 1,
+        keyDecisions: toMerge.flatMap((cp) => cp.keyDecisions || []).slice(0, 15),
+        filesModified: toMerge.flatMap((cp) => cp.filesModified || []).slice(0, 30),
       };
 
       context.checkpoints = [mergedCheckpoint, ...remaining];
@@ -872,15 +869,15 @@ export class CompressionCoordinator {
 
     await this.checkpointManager.compressOldCheckpoints();
 
-    const systemMessages = context.messages.filter(m => m.role === 'system');
+    const systemMessages = context.messages.filter((m) => m.role === 'system');
     const neverCompressedMessages = this.checkpointManager.reconstructNeverCompressed(preserved);
-    const checkpointMessages = context.checkpoints.map(cp => cp.summary);
+    const checkpointMessages = context.checkpoints.map((cp) => cp.summary);
 
     context.messages = [
       ...systemMessages,
       ...neverCompressedMessages,
       ...checkpointMessages,
-      ...compressed.preserved
+      ...compressed.preserved,
     ];
 
     const newTokenCount = this.tokenCounter.countConversationTokens(context.messages);
@@ -892,7 +889,7 @@ export class CompressionCoordinator {
       strategy: 'structured',
       originalTokens: compressed.originalTokens,
       compressedTokens: compressed.compressedTokens,
-      ratio: compressed.compressionRatio
+      ratio: compressed.compressionRatio,
     });
 
     this.emit('tier5-compressed', {
@@ -901,10 +898,10 @@ export class CompressionCoordinator {
       neverCompressedCount: preserved.length,
       richMetadata: {
         decisions: extracted.decisions.length,
-        files: extracted.files.length
+        files: extracted.files.length,
       },
       originalTokens: compressed.originalTokens,
-      compressedTokens: compressed.compressedTokens
+      compressedTokens: compressed.compressedTokens,
     });
   }
 
@@ -916,7 +913,7 @@ export class CompressionCoordinator {
     console.log('[ContextManager] compress invoked', {
       tier: tier.tier,
       strategy: tier.strategy,
-      messageCount: this.getContext().messages.length
+      messageCount: this.getContext().messages.length,
     });
 
     try {
@@ -945,7 +942,7 @@ export class CompressionCoordinator {
       console.log('[ContextManager] compression complete', {
         tier: tier.tier,
         newTokenCount: this.getContext().tokenCount,
-        checkpointCount: this.getContext().checkpoints?.length || 0
+        checkpointCount: this.getContext().checkpoints?.length || 0,
       });
     } catch (error) {
       console.error('[ContextManager] compression failed', error);

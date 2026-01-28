@@ -1,6 +1,6 @@
 /**
  * Theme Manager Service
- * 
+ *
  * Handles theme loading, custom theme merging, and theme application.
  */
 
@@ -35,7 +35,10 @@ function deepMerge<T extends Record<string, unknown>>(target: T, source: Partial
     const targetValue = result[key];
     if (isPlainObject(sourceValue) && isPlainObject(targetValue)) {
       // Recursively merge nested objects
-      result[key] = deepMerge(targetValue, sourceValue as Partial<typeof targetValue>) as T[typeof key];
+      result[key] = deepMerge(
+        targetValue,
+        sourceValue as Partial<typeof targetValue>
+      ) as T[typeof key];
     } else {
       // Override with source value
       result[key] = sourceValue as T[typeof key];
@@ -47,7 +50,7 @@ function deepMerge<T extends Record<string, unknown>>(target: T, source: Partial
 
 /**
  * Theme Manager
- * 
+ *
  * Manages theme loading, custom theme merging, and theme application.
  */
 export class ThemeManager {
@@ -66,9 +69,11 @@ export class ThemeManager {
   loadTheme(name: string): Theme {
     const theme = builtInThemes[name];
     if (!theme) {
-      throw new Error(`Theme "${name}" not found. Available themes: ${this.listThemes().join(', ')}`);
+      throw new Error(
+        `Theme "${name}" not found. Available themes: ${this.listThemes().join(', ')}`
+      );
     }
-    
+
     this.currentTheme = theme;
     return theme;
   }
@@ -82,18 +87,18 @@ export class ThemeManager {
       // Read and parse the YAML file
       const fileContent = fs.readFileSync(themePath, 'utf-8');
       const customThemeData = yaml.parse(fileContent) as Partial<Theme>;
-      
+
       // Validate that it's an object
       if (!customThemeData || typeof customThemeData !== 'object') {
         throw new Error('Custom theme must be an object');
       }
-      
+
       // Store the custom theme
       this.customTheme = customThemeData;
-      
+
       // Merge with default theme
       const mergedTheme = this.mergeThemes(defaultDarkTheme, customThemeData);
-      
+
       this.currentTheme = mergedTheme;
       return mergedTheme;
     } catch (error) {
@@ -116,7 +121,10 @@ export class ThemeManager {
    * Uses deep merge to preserve unspecified default values
    */
   mergeThemes(base: Theme, custom: Partial<Theme>): Theme {
-    return deepMerge(base as unknown as Record<string, unknown>, custom as unknown as Record<string, unknown>) as unknown as Theme;
+    return deepMerge(
+      base as unknown as Record<string, unknown>,
+      custom as unknown as Record<string, unknown>
+    ) as unknown as Theme;
   }
 
   /**
@@ -148,7 +156,7 @@ export class ThemeManager {
     if (this.customThemePath && fs.existsSync(this.customThemePath)) {
       return this.loadCustomTheme(this.customThemePath);
     }
-    
+
     // Try default location
     const homeDir = process.env.HOME || process.env.USERPROFILE;
     if (homeDir) {
@@ -157,7 +165,7 @@ export class ThemeManager {
         return this.loadCustomTheme(defaultPath);
       }
     }
-    
+
     return null;
   }
 

@@ -1,6 +1,6 @@
 /**
  * EnhancedFileExplorer - Improved UI wrapper for File Explorer
- * 
+ *
  * Provides a more user-friendly interface with:
  * - Header with breadcrumbs and stats
  * - Action toolbar
@@ -63,29 +63,23 @@ export function EnhancedFileExplorer({
         >
           <Box flexDirection="row" justifyContent="space-between">
             <Box flexDirection="row" gap={1}>
-              <Text color="cyan" bold>📁</Text>
-              <Text color="cyan" bold>File Explorer</Text>
+              <Text color="cyan" bold>
+                📁
+              </Text>
+              <Text color="cyan" bold>
+                File Explorer
+              </Text>
             </Box>
             <Box flexDirection="row" gap={2}>
-              <Text dimColor>
-                {stats.totalFiles} files
-              </Text>
+              <Text dimColor>{stats.totalFiles} files</Text>
               {stats.focusedFiles > 0 && (
-                <Text color="yellow">
-                  📌 {stats.focusedFiles} focused
-                </Text>
+                <Text color="yellow">📌 {stats.focusedFiles} focused</Text>
               )}
-              {stats.gitStatus !== 'clean' && (
-                <Text color="yellow">
-                  ⚠️ {stats.gitStatus}
-                </Text>
-              )}
+              {stats.gitStatus !== 'clean' && <Text color="yellow">⚠️ {stats.gitStatus}</Text>}
             </Box>
           </Box>
           <Box>
-            <Text dimColor>
-              📂 {rootPath || process.cwd()}
-            </Text>
+            <Text dimColor>📂 {rootPath || process.cwd()}</Text>
           </Box>
         </Box>
       )}
@@ -155,15 +149,9 @@ export function EnhancedFileExplorer({
             <Text dimColor>Ready</Text>
           </Box>
           <Box flexDirection="row" gap={2}>
-            <Text dimColor>
-              {props.toolRegistry ? '🔧 Tools' : ''}
-            </Text>
-            <Text dimColor>
-              {props.policyEngine ? '🛡️ Policy' : ''}
-            </Text>
-            <Text dimColor>
-              {props.messageBus ? '🔔 Hooks' : ''}
-            </Text>
+            <Text dimColor>{props.toolRegistry ? '🔧 Tools' : ''}</Text>
+            <Text dimColor>{props.policyEngine ? '🛡️ Policy' : ''}</Text>
+            <Text dimColor>{props.messageBus ? '🔔 Hooks' : ''}</Text>
           </Box>
         </Box>
       )}

@@ -48,14 +48,15 @@ const defaultUserSettings = {
   hooks: { enabled: {} },
 };
 
-;(SettingsService as unknown as { instance: unknown }).instance = {
+(SettingsService as unknown as { instance: unknown }).instance = {
   getSettings: () => defaultUserSettings,
   addChangeListener: (_: () => void) => () => {},
   getHookSettings: () => ({ enabled: {} }),
 };
 
 // Also override the static getter to return our mock (covers different import interop cases)
-(SettingsService as unknown as { getInstance: () => unknown }).getInstance = () => (SettingsService as unknown as { instance: unknown }).instance;
+(SettingsService as unknown as { getInstance: () => unknown }).getInstance = () =>
+  (SettingsService as unknown as { instance: unknown }).instance;
 
 export function TestProviders({ children }: { children: React.ReactNode }) {
   return (

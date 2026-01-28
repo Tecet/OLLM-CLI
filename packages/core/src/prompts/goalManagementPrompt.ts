@@ -1,6 +1,6 @@
 /**
  * Goal Management Prompt for Non-Tool Models
- * 
+ *
  * This prompt is appended to the system prompt when the model doesn't support tools.
  * It teaches the model to use structured text markers for goal management.
  */
@@ -116,7 +116,7 @@ export class GoalManagementParser {
       decisions: [],
       artifacts: [],
       goalComplete: null,
-      goalPause: false
+      goalPause: false,
     };
 
     const lines = text.split('\n');
@@ -129,7 +129,7 @@ export class GoalManagementParser {
       if (newGoalMatch) {
         markers.newGoals.push({
           description: newGoalMatch[1].trim(),
-          priority: newGoalMatch[2].toLowerCase() as 'high' | 'medium' | 'low'
+          priority: newGoalMatch[2].toLowerCase() as 'high' | 'medium' | 'low',
         });
         continue;
       }
@@ -138,7 +138,7 @@ export class GoalManagementParser {
       const checkpointMatch = trimmed.match(/^CHECKPOINT:\s*(.+)$/i);
       if (checkpointMatch) {
         markers.checkpoints.push({
-          description: checkpointMatch[1].trim()
+          description: checkpointMatch[1].trim(),
         });
         continue;
       }
@@ -149,7 +149,7 @@ export class GoalManagementParser {
         markers.decisions.push({
           description: decisionMatch[1].trim(),
           rationale: decisionMatch[2].trim(),
-          locked: false
+          locked: false,
         });
         continue;
       }
@@ -160,7 +160,7 @@ export class GoalManagementParser {
         markers.decisions.push({
           description: decisionLockedMatch[1].trim(),
           rationale: decisionLockedMatch[2].trim(),
-          locked: true
+          locked: true,
         });
         continue;
       }
@@ -170,7 +170,7 @@ export class GoalManagementParser {
       if (artifactMatch) {
         markers.artifacts.push({
           path: artifactMatch[1].trim(),
-          action: artifactMatch[2].toLowerCase() as 'created' | 'modified' | 'deleted'
+          action: artifactMatch[2].toLowerCase() as 'created' | 'modified' | 'deleted',
         });
         continue;
       }
@@ -197,7 +197,7 @@ export class GoalManagementParser {
    */
   static removeMarkers(text: string): string {
     const lines = text.split('\n');
-    const filtered = lines.filter(line => {
+    const filtered = lines.filter((line) => {
       const trimmed = line.trim();
       return !(
         trimmed.match(/^NEW_GOAL:/i) ||

@@ -22,6 +22,7 @@
   - [x] 2.4 Integrate into App.tsx provider tree
 
 ### Phase 2: ModelContext Enhancements
+
 - [x] 3. Enhanced tool support override tracking
   - [x] 3.1 Update toolSupportOverridesRef to store source and timestamp
   - [x] 3.2 Add helper function to check override precedence
@@ -60,6 +61,7 @@
   - [x] 8.4 Call ProfileManager.setUserModels() to persist
 
 ### Phase 3: ChatContext Enhancements
+
 - [x] 9. Conditional tool registry creation
   - [x] 9.1 Check modelSupportsTools() before creating ToolRegistry
   - [x] 9.2 Only register tools if model supports them
@@ -77,6 +79,7 @@
   - [x] 11.4 Add system message about transition
 
 ### Phase 4: ProfileManager Enhancements
+
 - [x] 12. Startup metadata refresh
   - [x] 12.1 Add refreshMetadataAsync() method
   - [x] 12.2 Call on ProfileManager construction (async, non-blocking)
@@ -90,6 +93,7 @@
   - [x] 13.3 Don't override user_confirmed tool support
 
 ### Phase 5: Provider Integration
+
 - [x] 14. Enhanced error detection in LocalProvider
   - [x] 14.1 Return detailed error events for tool errors
   - [x] 14.2 Include error type/code in ProviderEvent
@@ -101,6 +105,7 @@
   - [x] 15.3 Debounce repeated errors (don't prompt multiple times)
 
 ### Phase 6: UI Components
+
 - [x] 16. UserPromptDialog component
   - [x] 16.1 Create dialog component with Ink
   - [x] 16.2 Show message and options
@@ -113,6 +118,7 @@
   - [x] 17.3 Format auto-detect progress messages
 
 ### Phase 7: Testing & Validation
+
 - [x] 18. Core unit tests
   - [x] 18.1 Test modelSupportsTools() with various scenarios
   - [x] 18.2 Test override precedence logic
@@ -135,6 +141,7 @@
   - Fix any failures before proceeding to Phase 8
 
 ### Phase 8: Interactive Tools Panel (UI)
+
 - [x] 21. Tool configuration data layer
   - [x] 21.1 Create default tool registry in `packages/cli/src/config/toolsConfig.ts`
   - [x] 21.2 Define all 15 tools with metadata (id, displayName, category, description, docLink, risk)
@@ -174,6 +181,7 @@
   - Verify UI rendering and navigation
 
 ### Phase 9: Documentation & Cleanup
+
 - [x] 27. Update documentation
   - [x] 27.1 Update model database docs with new fields
   - [x] 27.2 Add user guide for unknown model handling

@@ -1,9 +1,9 @@
 /**
  * EditorIntegration Service
- * 
+ *
  * Handles spawning external text editors for file editing.
  * Supports $EDITOR environment variable with fallback to platform defaults.
- * 
+ *
  * Requirements:
  * - 5.1: Spawn editor specified in $EDITOR environment variable
  * - 5.2: Fall back to nano (Unix) or notepad (Windows)
@@ -42,11 +42,11 @@ export class EditorIntegration {
 
   /**
    * Get the editor command to use
-   * 
+   *
    * Checks $EDITOR environment variable first, then falls back to:
    * - nano on Unix-like systems (Linux, macOS)
    * - notepad on Windows
-   * 
+   *
    * @returns The editor command to execute
    */
   getEditorCommand(): string {
@@ -68,10 +68,10 @@ export class EditorIntegration {
 
   /**
    * Open a file in an external editor
-   * 
+   *
    * Spawns the editor process and waits for it to exit.
    * The editor is spawned with stdio: 'inherit' to allow terminal interaction.
-   * 
+   *
    * @param filePath - Absolute path to the file to edit
    * @returns Promise that resolves when the editor exits
    * @throws Error if the file path is unsafe or the editor fails to spawn
@@ -96,7 +96,7 @@ export class EditorIntegration {
         // Handle process exit
         this.currentEditorProcess.on('exit', (code: number | null) => {
           this.currentEditorProcess = null;
-          
+
           if (code === 0 || code === null) {
             resolve({
               success: true,
@@ -135,10 +135,10 @@ export class EditorIntegration {
 
   /**
    * Wait for the current editor process to exit
-   * 
+   *
    * This is useful when you need to wait for an editor that was spawned
    * but you don't have the promise from openInEditor.
-   * 
+   *
    * @returns Promise that resolves when the editor exits
    */
   async waitForEditorExit(): Promise<void> {
@@ -155,10 +155,10 @@ export class EditorIntegration {
 
   /**
    * Reload file content after editing
-   * 
+   *
    * Reads the file from disk and returns its content.
    * This should be called after the editor exits to get the updated content.
-   * 
+   *
    * @param filePath - Absolute path to the file to reload
    * @returns Promise that resolves with the file content
    * @throws Error if the file cannot be read

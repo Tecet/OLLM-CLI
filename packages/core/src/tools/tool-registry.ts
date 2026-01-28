@@ -1,6 +1,6 @@
 /**
  * Tool Registry
- * 
+ *
  * Central registry for tool registration, discovery, and schema exposure.
  * Manages the lifecycle of tools and provides access to tool schemas for LLM consumption.
  */
@@ -19,7 +19,7 @@ export interface ToolStateProvider {
 
 /**
  * Central registry for managing tools
- * 
+ *
  * The Tool Registry stores all registered tools and provides methods to:
  * - Register new tools
  * - Unregister existing tools
@@ -39,18 +39,20 @@ export class ToolRegistry {
 
   /**
    * Register a tool in the registry
-   * 
+   *
    * If a tool with the same name already exists, it will be replaced.
    * The tool's schema is registered for parameter validation.
-   * 
+   *
    * @param tool The tool to register
    */
   register(tool: DeclarativeTool<unknown, unknown>): void {
     // Warn if replacing existing tool
     if (this.tools.has(tool.name)) {
-      console.warn(`[ToolRegistry] Tool '${tool.name}' already registered, replacing with new definition`);
+      console.warn(
+        `[ToolRegistry] Tool '${tool.name}' already registered, replacing with new definition`
+      );
     }
-    
+
     this.tools.set(tool.name, tool);
     // Register the schema for validation
     globalValidator.registerSchema(tool.name, tool.schema);
@@ -58,7 +60,7 @@ export class ToolRegistry {
 
   /**
    * Unregister a tool from the registry
-   * 
+   *
    * @param name The name of the tool to unregister
    */
   unregister(name: string): void {
@@ -67,7 +69,7 @@ export class ToolRegistry {
 
   /**
    * Get a tool by name
-   * 
+   *
    * @param name The name of the tool to retrieve
    * @returns The tool if found, undefined otherwise
    */
@@ -77,27 +79,25 @@ export class ToolRegistry {
 
   /**
    * List all registered tools
-   * 
+   *
    * Tools are returned in alphabetical order by name for consistency.
-   * 
+   *
    * @returns Array of all registered tools, sorted alphabetically by name
    */
   list(): DeclarativeTool<unknown, unknown>[] {
-    return Array.from(this.tools.values()).sort((a, b) =>
-      a.name.localeCompare(b.name)
-    );
+    return Array.from(this.tools.values()).sort((a, b) => a.name.localeCompare(b.name));
   }
 
   /**
    * Get function schemas for all registered tools
-   * 
+   *
    * Converts all registered tools to provider-compatible schemas
    * for LLM consumption. The schemas are returned in the same order
    * as list() (alphabetically by name).
-   * 
+   *
    * This method applies user preference filtering - only tools that are
    * enabled in the user's settings will be included.
-   * 
+   *
    * @returns Array of tool schemas for enabled tools only
    */
   getFunctionSchemas(): ToolSchema[] {
@@ -115,19 +115,21 @@ export class ToolRegistry {
 
   /**
    * Get function schemas filtered by mode permissions and user preferences
-   * 
+   *
    * This combines both user preference filtering and mode-based filtering
    * into a single pass for better performance. This is the recommended method
    * for getting tool schemas when a mode manager is available.
-   * 
+   *
    * @param mode - The current mode type
    * @param modeManager - Object with isToolAllowed method for mode-based filtering
    * @returns Array of tool schemas filtered by both user prefs and mode permissions
    */
-  getFunctionSchemasForMode<M = string, T extends { isToolAllowed: (name: string, mode: M) => boolean } = { isToolAllowed: (name: string, mode: M) => boolean }>(
-    mode: M,
-    modeManager: T
-  ): ToolSchema[] {
+  getFunctionSchemasForMode<
+    M = string,
+    T extends { isToolAllowed: (name: string, mode: M) => boolean } = {
+      isToolAllowed: (name: string, mode: M) => boolean;
+    },
+  >(mode: M, modeManager: T): ToolSchema[] {
     return this.list()
       .filter((tool) => {
         // Layer 1a: User preference filter
@@ -142,10 +144,10 @@ export class ToolRegistry {
 
   /**
    * Get all enabled tools
-   * 
+   *
    * Returns only the tools that are enabled according to user preferences.
    * If no tool state provider is configured, returns all tools.
-   * 
+   *
    * @returns Array of enabled tools, sorted alphabetically by name
    */
   getEnabledTools(): DeclarativeTool<unknown, unknown>[] {
@@ -161,10 +163,10 @@ export class ToolRegistry {
 
   /**
    * Create a validated tool invocation
-   * 
+   *
    * Validates the parameters against the tool's schema before creating
    * the invocation. Returns a validation error if parameters are invalid.
-   * 
+   *
    * @param toolName Name of the tool to invoke
    * @param params Parameters for the tool invocation
    * @param context Tool context (message bus, policy engine)
@@ -199,7 +201,7 @@ export class ToolRegistry {
     // by creating an adapter invocation that calls `execute` when invoked.
     const adapter: ToolInvocation<unknown, unknown> = {
       params,
-      getDescription: () => (tool.displayName || tool.name),
+      getDescription: () => tool.displayName || tool.name,
       toolLocations: () => [],
       async shouldConfirmExecute() {
         return false;
@@ -208,7 +210,7 @@ export class ToolRegistry {
         const exec = (tool as any).execute;
         if (typeof exec !== 'function') throw new Error('Tool does not implement execute');
         return exec.call(tool, params, context);
-      }
+      },
     };
 
     return adapter;

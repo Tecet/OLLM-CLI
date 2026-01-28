@@ -46,7 +46,7 @@ export function createCoreMessage(
   options?: { name?: string; toolCalls?: ToolCall[] }
 ): Message {
   const parts: MessagePart[] = [{ type: 'text', text: content }];
-  
+
   return {
     role,
     parts,
@@ -75,10 +75,7 @@ export function createImageMessage(
 /**
  * Create a tool result message.
  */
-export function createToolResultMessage(
-  toolName: string,
-  result: string
-): Message {
+export function createToolResultMessage(toolName: string, result: string): Message {
   return {
     role: 'tool',
     parts: [{ type: 'text', text: result }],
@@ -89,10 +86,7 @@ export function createToolResultMessage(
 /**
  * Create a test tool call (legacy format).
  */
-export function createTestToolCall(
-  name: string,
-  args: Record<string, unknown>
-): TestToolCall {
+export function createTestToolCall(name: string, args: Record<string, unknown>): TestToolCall {
   return {
     id: `call_${Math.random().toString(36).substr(2, 9)}`,
     name,
@@ -296,24 +290,27 @@ export const extendedFixtureMessages = {
       { type: 'image' as const, data: 'base64data', mimeType: 'image/png' },
     ],
   },
-  
+
   // Tool result message
   toolResult: createToolResultMessage('get_weather', 'Temperature: 72°F, Sunny'),
-  
+
   // Empty content messages
   emptyUser: createCoreMessage('user', ''),
   emptyAssistant: createCoreMessage('assistant', ''),
-  
+
   // Messages with special characters
   specialCharsUser: createCoreMessage('user', 'Test with "quotes" and \'apostrophes\' and <tags>'),
   unicodeUser: createCoreMessage('user', 'Unicode: 你好 🌍 émojis'),
-  
+
   // Very long message
   veryLongUser: createCoreMessage('user', 'x'.repeat(10000)),
-  
+
   // Code-related messages
-  codeSnippet: createCoreMessage('user', 'Here is code:\n```python\ndef hello():\n    print("world")\n```'),
-  
+  codeSnippet: createCoreMessage(
+    'user',
+    'Here is code:\n```python\ndef hello():\n    print("world")\n```'
+  ),
+
   // Multi-line messages
   multiLine: createCoreMessage('user', 'Line 1\nLine 2\nLine 3\nLine 4'),
 };
@@ -331,7 +328,7 @@ export const extendedFixtureTools: Record<string, ToolSchema> = {
       properties: {},
     },
   },
-  
+
   // Tool with optional parameters
   optionalParamsTool: {
     name: 'search',
@@ -345,7 +342,7 @@ export const extendedFixtureTools: Record<string, ToolSchema> = {
       required: ['query'],
     },
   },
-  
+
   // Tool with complex nested parameters
   complexTool: {
     name: 'create_task',
@@ -368,7 +365,7 @@ export const extendedFixtureTools: Record<string, ToolSchema> = {
       required: ['title'],
     },
   },
-  
+
   // Tool with array parameters
   arrayTool: {
     name: 'batch_process',
@@ -384,7 +381,7 @@ export const extendedFixtureTools: Record<string, ToolSchema> = {
       required: ['items'],
     },
   },
-  
+
   // Tool with boolean parameters
   booleanTool: {
     name: 'toggle_feature',
@@ -418,7 +415,7 @@ export const extendedFixtureModels = {
       },
     },
   }),
-  
+
   // Tool-calling capable model
   toolModel: createTestModel({
     name: 'llama3.1:8b',
@@ -433,7 +430,7 @@ export const extendedFixtureModels = {
       },
     },
   }),
-  
+
   // Model with large context window
   largeContextModel: createTestModel({
     name: 'llama3.1:70b',
@@ -445,7 +442,7 @@ export const extendedFixtureModels = {
       contextWindow: 128000,
     },
   }),
-  
+
   // Model with small context window
   smallContextModel: createTestModel({
     name: 'phi3:mini',
@@ -457,7 +454,7 @@ export const extendedFixtureModels = {
       contextWindow: 4096,
     },
   }),
-  
+
   // Quantized models
   q8Model: createTestModel({
     name: 'llama3.1:8b-q8',
@@ -468,7 +465,7 @@ export const extendedFixtureModels = {
       quantizationLevel: 'q8_0',
     },
   }),
-  
+
   f16Model: createTestModel({
     name: 'llama3.1:8b-f16',
     sizeBytes: 16e9,
@@ -524,7 +521,7 @@ export function generateMessageSequence(count: number): Message[] {
 export function generateRandomToolCall(): ToolCall {
   const tools = ['get_weather', 'calculate', 'read_file', 'search', 'get_time'];
   const tool = tools[Math.floor(Math.random() * tools.length)];
-  
+
   return createCoreToolCall(tool, {
     param1: generateRandomString(10),
     param2: Math.floor(Math.random() * 100),
@@ -538,11 +535,11 @@ export function generateRandomModel(): ModelInfo {
   const families = ['llama', 'mistral', 'codellama', 'phi', 'gemma'];
   const sizes = ['3B', '7B', '13B', '34B', '70B'];
   const quantizations = ['q4_0', 'q8_0', 'f16'];
-  
+
   const family = families[Math.floor(Math.random() * families.length)];
   const size = sizes[Math.floor(Math.random() * sizes.length)];
   const quant = quantizations[Math.floor(Math.random() * quantizations.length)];
-  
+
   return createTestModel({
     name: `${family}:${size.toLowerCase()}-${quant}`,
     sizeBytes: Math.floor(Math.random() * 50e9) + 1e9,
@@ -618,20 +615,20 @@ export function messagesEqual(a: Message, b: Message): boolean {
   if (a.role !== b.role) return false;
   if (a.name !== b.name) return false;
   if (a.parts.length !== b.parts.length) return false;
-  
+
   for (let i = 0; i < a.parts.length; i++) {
     const partA = a.parts[i];
     const partB = b.parts[i];
-    
+
     if (partA.type !== partB.type) return false;
-    
+
     if (partA.type === 'text' && partB.type === 'text') {
       if (partA.text !== partB.text) return false;
     } else if (partA.type === 'image' && partB.type === 'image') {
       if (partA.data !== partB.data || partA.mimeType !== partB.mimeType) return false;
     }
   }
-  
+
   return true;
 }
 

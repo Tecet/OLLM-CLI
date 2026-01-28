@@ -80,16 +80,19 @@ Implemented comprehensive integration tests for the server configuration flow in
 ## Integration Points Tested
 
 ### 1. MCPTab → ServerConfigDialog
+
 - Dialog opening via keyboard shortcut ('C')
 - Dialog state management
 - Dialog closing (Esc key)
 
 ### 2. ServerConfigDialog → MCPContext
+
 - onSave callback wired to configureServer
 - Configuration persistence
 - Server restart after save
 
 ### 3. MCPContext → Services
+
 - mcpConfigService.updateServerConfig for persistence
 - MCPClient.restartServer for server lifecycle
 - Error handling and recovery
@@ -106,12 +109,14 @@ The integration tests focus on:
 ### What's Tested Here vs. Unit Tests
 
 **Integration Tests (this file):**
+
 - Dialog opening and closing
 - Keyboard navigation to trigger dialog
 - Callback wiring between components
 - Error handling at integration boundaries
 
 **Unit Tests (ServerConfigDialog.test.tsx):**
+
 - Form field validation
 - Environment variable editing
 - Auto-approve tool selection

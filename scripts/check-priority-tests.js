@@ -2,7 +2,6 @@
 const fs = require('fs');
 const path = require('path');
 
- 
 const files = [
   'packages/core/src/context/__tests__/contextManager.test.ts',
   'packages/core/src/core/__tests__/chatClient.test.ts',
@@ -35,7 +34,7 @@ for (const f of files) {
 }
 
 console.log('\nPresent files:');
-present.forEach(x => console.log('  ', x));
+present.forEach((x) => console.log('  ', x));
 console.log('\nMissing files:');
-missing.forEach(x => console.log('  ', x));
+missing.forEach((x) => console.log('  ', x));
 process.exit(missing.length === 0 ? 0 : 2);

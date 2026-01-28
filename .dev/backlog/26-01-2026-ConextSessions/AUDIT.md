@@ -17,9 +17,11 @@ Completed all critical phases (0-6) of the sessions, snapshots, compression, and
 ## Work Completed
 
 ### Phase 0: Input Preprocessing ✅
+
 **Goal:** Extract clean intent from noisy user messages
 
 **Achievements:**
+
 - Token threshold detection (>500 tokens)
 - Intent extraction with typo fixes
 - Clarification loop with user
@@ -28,11 +30,13 @@ Completed all critical phases (0-6) of the sessions, snapshots, compression, and
 - Dual storage (clean in context, original in session)
 
 **Benefits:**
+
 - 30x token savings (3000 → 100 tokens)
 - Clean context without garbage
 - Goal-driven conversations
 
 **Files Created:**
+
 - `packages/core/src/services/inputPreprocessor.ts`
 - `packages/core/src/services/intentSnapshotStorage.ts`
 - `packages/core/src/services/__tests__/inputPreprocessor.test.ts` (9 tests)
@@ -40,9 +44,11 @@ Completed all critical phases (0-6) of the sessions, snapshots, compression, and
 ---
 
 ### Phase 1: Pre-Send Validation ✅
+
 **Goal:** Prevent context overflow before sending to Ollama
 
 **Achievements:**
+
 - `validateAndBuildPrompt()` method
 - 4-tier threshold system (70%, 80%, 95%, 100%)
 - Emergency compression at 95%
@@ -50,24 +56,29 @@ Completed all critical phases (0-6) of the sessions, snapshots, compression, and
 - Clear user warnings
 
 **Benefits:**
+
 - 0% error rate (no overflow)
 - Graceful degradation
 - Data preservation
 
 **Files Modified:**
+
 - `packages/core/src/context/contextManager.ts`
 - `packages/core/src/core/chatClient.ts`
 - `packages/core/src/context/types.ts`
 
 **Files Created:**
+
 - `packages/core/src/context/__tests__/validateAndBuildPrompt.test.ts` (8 tests)
 
 ---
 
 ### Phase 2: Blocking Mechanism ✅
+
 **Goal:** Block user input during checkpoint creation
 
 **Achievements:**
+
 - `summarizationInProgress` flag
 - Async lock with Promise
 - 30-second timeout
@@ -75,24 +86,29 @@ Completed all critical phases (0-6) of the sessions, snapshots, compression, and
 - Status check methods
 
 **Benefits:**
+
 - No interruption during summarization
 - Better checkpoint quality
 - Timeout prevents infinite blocking
 
 **Files Modified:**
+
 - `packages/core/src/context/compressionCoordinator.ts`
 - `packages/core/src/context/contextManager.ts`
 - `packages/core/src/core/chatClient.ts`
 
 **Files Created:**
+
 - `packages/core/src/context/__tests__/blockingMechanism.test.ts` (9 tests)
 
 ---
 
 ### Phase 3: Emergency Triggers ✅
+
 **Goal:** Graceful degradation when context limits approached
 
 **Achievements:**
+
 - Warning at 70% (informational)
 - Checkpoint trigger at 80% (normal compression)
 - Emergency compression at 95% (aggressive)
@@ -103,35 +119,42 @@ Completed all critical phases (0-6) of the sessions, snapshots, compression, and
 ---
 
 ### Phase 4: Session Storage Verification ✅
+
 **Goal:** Verify full conversation history is saved
 
 **Achievements:**
+
 - Verified auto-save functionality
 - Verified atomic writes with fsync
 - Verified full history preservation
 - Verified graceful interruption handling
 
 **Benefits:**
+
 - No data loss on interruption
 - Full history always available
 - Fast writes (<10ms)
 - Crash-safe
 
 **Files Created:**
+
 - `packages/core/src/services/__tests__/chatRecordingService.test.ts` (18 tests)
 
 ---
 
 ### Phase 5: Snapshot System Clarification ✅
+
 **Goal:** Clarify the two snapshot systems
 
 **Achievements:**
+
 - Documented Context Snapshots (recovery & rollback)
 - Documented Mode Snapshots (mode transitions)
 - Verified no conflicts
 - Documented storage locations and lifecycles
 
 **Files Reviewed:**
+
 - `packages/core/src/context/snapshotManager.ts`
 - `packages/core/src/prompts/modeSnapshotManager.ts`
 - `packages/core/src/context/snapshotCoordinator.ts`
@@ -139,9 +162,11 @@ Completed all critical phases (0-6) of the sessions, snapshots, compression, and
 ---
 
 ### Phase 6: Checkpoint Aging Consistency ✅
+
 **Goal:** Verify checkpoint aging works correctly
 
 **Achievements:**
+
 - Verified aging called in 5 places
 - Verified progressive aging (Level 3 → 2 → 1)
 - Verified token count updates
@@ -149,11 +174,13 @@ Completed all critical phases (0-6) of the sessions, snapshots, compression, and
 - Verified never-compressed sections
 
 **Benefits:**
+
 - 50% reduction in checkpoint space
 - Important information preserved
 - Progressive degradation
 
 **Files Created:**
+
 - `packages/core/src/context/__tests__/checkpointAging.test.ts` (14 tests)
 
 ---
@@ -161,6 +188,7 @@ Completed all critical phases (0-6) of the sessions, snapshots, compression, and
 ## Bugs Fixed
 
 ### Bug #1: Token Count Display ✅
+
 **Issue:** UI showed `408/4000` instead of `408/16384`
 
 **Root Cause:** `userContextSize` not updated correctly
@@ -172,6 +200,7 @@ Completed all critical phases (0-6) of the sessions, snapshots, compression, and
 ---
 
 ### Bug #2: Auto-Context Not Working ✅
+
 **Issue:** Auto-sizing didn't update tier selection
 
 **Root Cause:** `maxTokens` set to Ollama size instead of user-facing size
@@ -183,6 +212,7 @@ Completed all critical phases (0-6) of the sessions, snapshots, compression, and
 ---
 
 ### Bug #3: Manual Context Wrong Tier ✅
+
 **Issue:** Changing to 8K still showed 16K tier
 
 **Root Cause:** Tier detection used wrong size
@@ -194,6 +224,7 @@ Completed all critical phases (0-6) of the sessions, snapshots, compression, and
 ---
 
 ### Bug #4: Manual → Auto Transition ✅
+
 **Issue:** Switching to auto didn't recalculate size
 
 **Root Cause:** Missing transition detection
@@ -205,6 +236,7 @@ Completed all critical phases (0-6) of the sessions, snapshots, compression, and
 ---
 
 ### Bug #5: Prompt Tier Alignment ✅
+
 **Issue:** Tier changes don't trigger prompt rebuilds
 
 **Status:** Verified working - already centralized in `updateSystemPrompt()`
@@ -214,11 +246,13 @@ Completed all critical phases (0-6) of the sessions, snapshots, compression, and
 ---
 
 ### Bug #6: Compression Triggers ✅
+
 **Issue:** UI shows user size but compression uses Ollama size
 
 **Status:** Working as designed - documented behavior
 
 **Explanation:**
+
 - UI shows user-facing size for clarity
 - Compression uses Ollama size (85%) for accuracy
 - Ensures compression before overflow
@@ -228,6 +262,7 @@ Completed all critical phases (0-6) of the sessions, snapshots, compression, and
 ## Cleanup Completed
 
 ### Removed from App.tsx
+
 - `getVramGBFromOption()` function (~10 lines)
 - `getVramDisplayFromOption()` function (~8 lines)
 - VRAM calculation logic (~18 lines)
@@ -238,6 +273,7 @@ Completed all critical phases (0-6) of the sessions, snapshots, compression, and
 **Total:** ~76 lines of duplicate code removed
 
 ### Fixed Issues
+
 - ✅ Debug log spam from tests (wrapped in !isTestEnv check)
 - ✅ Duplicate tier-changed events (removed started listener)
 - ✅ Context size persistence (always auto-size on startup)
@@ -248,6 +284,7 @@ Completed all critical phases (0-6) of the sessions, snapshots, compression, and
 ## Architecture Improvements
 
 ### Before
+
 ```
 Multiple files with duplicate logic:
 - contextManager.ts (core logic)
@@ -257,6 +294,7 @@ Multiple files with duplicate logic:
 ```
 
 ### After
+
 ```
 Single source of truth:
 - contextManager.ts (all core logic)
@@ -266,6 +304,7 @@ Single source of truth:
 ```
 
 ### Benefits
+
 - No conflicting logic
 - Easier to debug (one place to look)
 - Core validates all sizes
@@ -276,12 +315,14 @@ Single source of truth:
 ## Testing Results
 
 ### Test Coverage
+
 - **Total Tests:** 502/502 ✅
 - **New Tests Added:** 58 tests
 - **Build Status:** ✅ Successful
 - **TypeScript Errors:** 0
 
 ### Test Breakdown
+
 - Phase 0: 9 tests (Input Preprocessing)
 - Phase 1: 8 tests (Pre-Send Validation)
 - Phase 2: 9 tests (Blocking Mechanism)
@@ -303,6 +344,7 @@ Single source of truth:
 ## System Capabilities
 
 ### Input Processing
+
 ✅ Long user messages (>500 tokens)
 ✅ Typo correction
 ✅ Intent extraction
@@ -310,6 +352,7 @@ Single source of truth:
 ✅ Intent snapshots
 
 ### Context Management
+
 ✅ Pre-send validation
 ✅ 4-tier threshold system
 ✅ Emergency compression (95%)
@@ -317,6 +360,7 @@ Single source of truth:
 ✅ Blocking during checkpoint creation
 
 ### Session Persistence
+
 ✅ Auto-save (immediate writes)
 ✅ Atomic writes with fsync
 ✅ Full history preservation
@@ -324,6 +368,7 @@ Single source of truth:
 ✅ No data loss
 
 ### Memory Optimization
+
 ✅ Checkpoint aging (Level 3 → 2 → 1)
 ✅ 50% space reduction
 ✅ Key decisions preserved
@@ -331,6 +376,7 @@ Single source of truth:
 ✅ Never-compressed sections
 
 ### Snapshot Systems
+
 ✅ Context snapshots (recovery & rollback)
 ✅ Mode snapshots (mode transitions)
 ✅ No conflicts between systems
@@ -343,18 +389,21 @@ Single source of truth:
 ### User-Facing Size vs Ollama Size
 
 **User-Facing Size:**
+
 - What the user selects (4K, 8K, 16K, etc.)
 - Used for tier detection
 - Displayed in UI
 - Stored in `config.targetSize`
 
 **Ollama Size (85%):**
+
 - Actual limit sent to Ollama
 - Pre-calculated from model profiles
 - Used for compression triggers
 - Stored in `contextPool.currentSize`
 
 **Why 85%?**
+
 - Ollama needs buffer for KV cache overhead
 - Pre-calculated in model profiles for accuracy
 - Prevents context overflow errors
@@ -362,6 +411,7 @@ Single source of truth:
 ### Tier Detection
 
 Tiers determined by **user-facing size**:
+
 - Tier 1 (Minimal): < 8K
 - Tier 2 (Basic): 8K - 16K
 - Tier 3 (Standard): 16K - 32K
@@ -371,6 +421,7 @@ Tiers determined by **user-facing size**:
 ### Compression Triggers
 
 Compression uses **Ollama size** for percentages:
+
 - 70%: Warning
 - 80%: Normal compression
 - 95%: Emergency compression
@@ -381,6 +432,7 @@ Compression uses **Ollama size** for percentages:
 ## Files Modified
 
 ### Core Files
+
 - `packages/core/src/context/contextManager.ts`
 - `packages/core/src/context/contextPool.ts`
 - `packages/core/src/context/types.ts`
@@ -388,10 +440,12 @@ Compression uses **Ollama size** for percentages:
 - `packages/core/src/core/chatClient.ts`
 
 ### Service Files
+
 - `packages/core/src/services/inputPreprocessor.ts` (new)
 - `packages/core/src/services/intentSnapshotStorage.ts` (new)
 
 ### CLI Files
+
 - `packages/cli/src/ui/App.tsx` (cleanup)
 - `packages/cli/src/features/context/ContextManagerContext.tsx`
 
@@ -399,13 +453,13 @@ Compression uses **Ollama size** for percentages:
 
 ## Metrics
 
-| Metric | Before | After | Change |
-|--------|--------|-------|--------|
-| Bugs | 6 open | 0 open | 100% fixed |
-| Tests | 444 | 502 | +58 tests |
-| Duplicate code | ~200 lines | 0 lines | Removed |
-| Documentation | 0 docs | 5 docs | Complete |
-| Context overflow | Possible | 0% rate | Fixed |
+| Metric           | Before     | After   | Change     |
+| ---------------- | ---------- | ------- | ---------- |
+| Bugs             | 6 open     | 0 open  | 100% fixed |
+| Tests            | 444        | 502     | +58 tests  |
+| Duplicate code   | ~200 lines | 0 lines | Removed    |
+| Documentation    | 0 docs     | 5 docs  | Complete   |
+| Context overflow | Possible   | 0% rate | Fixed      |
 
 ---
 

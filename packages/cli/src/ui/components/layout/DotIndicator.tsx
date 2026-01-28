@@ -18,11 +18,7 @@ export function DotIndicator({ total, active, theme }: DotIndicatorProps) {
   for (let i = 0; i < total; i++) {
     const isActive = i === active;
     dots.push(
-      <Text 
-        key={i} 
-        color={isActive ? theme.text.accent : theme.text.secondary}
-        bold={isActive}
-      >
+      <Text key={i} color={isActive ? theme.text.accent : theme.text.secondary} bold={isActive}>
         {isActive ? '●' : '○'}
       </Text>
     );

@@ -35,15 +35,14 @@ export const hookDebugCommand: Command = {
           message: '🔍 Hook debugging disabled.',
         };
 
-      case 'status':
-        {
-          const isEnabled = hookDebugger.isEnabled();
-          const traces = hookDebugger.getTraces();
-          return {
-            success: true,
-            message: `Hook debugging is ${isEnabled ? 'enabled' : 'disabled'}. ${traces.length} traces collected.`,
-          };
-        }
+      case 'status': {
+        const isEnabled = hookDebugger.isEnabled();
+        const traces = hookDebugger.getTraces();
+        return {
+          success: true,
+          message: `Hook debugging is ${isEnabled ? 'enabled' : 'disabled'}. ${traces.length} traces collected.`,
+        };
+      }
 
       case 'clear':
         hookDebugger.clearTraces();
@@ -106,8 +105,9 @@ export const hookDebugCommand: Command = {
         const lines = [
           `❌ ${failed.length} Failed Hook Executions:`,
           '',
-          ...failed.map((trace: any) => 
-            `  ${trace.hookName} (${trace.event}) - ${trace.error || 'Unknown error'}`
+          ...failed.map(
+            (trace: any) =>
+              `  ${trace.hookName} (${trace.event}) - ${trace.error || 'Unknown error'}`
           ),
         ];
 
@@ -145,6 +145,4 @@ export const hookDebugCommand: Command = {
 /**
  * All hook commands
  */
-export const hookCommands: Command[] = [
-  hookDebugCommand,
-];
+export const hookCommands: Command[] = [hookDebugCommand];

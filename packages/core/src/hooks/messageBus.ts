@@ -1,6 +1,6 @@
 /**
  * Message Bus for Hook System
- * 
+ *
  * Provides an event-driven communication channel for the hook system.
  * Supports priority-based listeners, async event emission, and wildcard events.
  */
@@ -55,7 +55,7 @@ export class MessageBus {
 
   /**
    * Register a listener for an event
-   * 
+   *
    * @param event The event to listen for, or '*' for all events
    * @param listener The listener function
    * @param options Listener options
@@ -90,7 +90,7 @@ export class MessageBus {
 
   /**
    * Remove a listener by its ID
-   * 
+   *
    * @param id The listener ID returned by on() or once()
    * @returns true if the listener was removed, false otherwise
    */
@@ -219,8 +219,8 @@ export class MessageBus {
    */
   filter(predicate: (event: HookEvent, data: unknown) => boolean): MessageBus {
     const proxy = new MessageBus();
-    
-    // This is a simplified proxy implementation. 
+
+    // This is a simplified proxy implementation.
     // In a real system, this would subscribe to the parent bus.
     this.on('*', async (event, data) => {
       if (predicate(event as HookEvent, data)) {

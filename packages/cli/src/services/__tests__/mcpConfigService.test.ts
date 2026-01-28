@@ -101,7 +101,7 @@ describe('MCPConfigService', () => {
 
       // Mock os.homedir() to return user temp directory
       vi.spyOn(os, 'homedir').mockReturnValue(userTempDir);
-      
+
       // Mock process.cwd() to return workspace temp directory
       vi.spyOn(process, 'cwd').mockReturnValue(workspaceTempDir);
 
@@ -164,7 +164,7 @@ describe('MCPConfigService', () => {
     it('should handle corrupted JSON gracefully', async () => {
       // Suppress expected error logs during this test
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      
+
       // Create corrupted config
       const userConfigPath = path.join(tempDir, '.ollm', 'settings', 'mcp.json');
       fs.mkdirSync(path.dirname(userConfigPath), { recursive: true });
@@ -174,7 +174,7 @@ describe('MCPConfigService', () => {
 
       // Should return empty config instead of throwing
       expect(config).toEqual({ mcpServers: {} });
-      
+
       // Restore console.error
       consoleErrorSpy.mockRestore();
     });
@@ -293,7 +293,7 @@ describe('MCPConfigService', () => {
       // Save initial config
       const config1 = {
         mcpServers: {
-          'server1': {
+          server1: {
             command: 'node',
             args: ['server1.js'],
           },
@@ -304,7 +304,7 @@ describe('MCPConfigService', () => {
       // Save new config
       const config2 = {
         mcpServers: {
-          'server2': {
+          server2: {
             command: 'python',
             args: ['server2.py'],
           },
@@ -324,11 +324,11 @@ describe('MCPConfigService', () => {
       // Create initial config
       const initialConfig = {
         mcpServers: {
-          'server1': {
+          server1: {
             command: 'node',
             args: ['server1.js'],
           },
-          'server2': {
+          server2: {
             command: 'python',
             args: ['server2.py'],
           },
@@ -356,7 +356,7 @@ describe('MCPConfigService', () => {
       // Create initial config with one server
       const initialConfig = {
         mcpServers: {
-          'server1': {
+          server1: {
             command: 'node',
             args: ['server1.js'],
           },
@@ -392,7 +392,7 @@ describe('MCPConfigService', () => {
       // Create initial config
       const initialConfig = {
         mcpServers: {
-          'server1': {
+          server1: {
             command: 'node',
             args: ['server1.js'],
           },
@@ -419,11 +419,11 @@ describe('MCPConfigService', () => {
       // Create initial config
       const initialConfig = {
         mcpServers: {
-          'server1': {
+          server1: {
             command: 'node',
             args: ['server1.js'],
           },
-          'server2': {
+          server2: {
             command: 'python',
             args: ['server2.py'],
           },
@@ -444,7 +444,7 @@ describe('MCPConfigService', () => {
       // Create initial config
       const initialConfig = {
         mcpServers: {
-          'server1': {
+          server1: {
             command: 'node',
             args: ['server1.js'],
           },
@@ -453,9 +453,7 @@ describe('MCPConfigService', () => {
       await service.saveMCPConfig(initialConfig);
 
       // Remove non-existent server (should not throw)
-      await expect(
-        service.removeServerConfig('non-existent')
-      ).resolves.not.toThrow();
+      await expect(service.removeServerConfig('non-existent')).resolves.not.toThrow();
     });
   });
 
@@ -477,10 +475,7 @@ describe('MCPConfigService', () => {
       // Create initial config
       const userConfigPath = service.getUserConfigPath();
       fs.mkdirSync(path.dirname(userConfigPath), { recursive: true });
-      fs.writeFileSync(
-        userConfigPath,
-        JSON.stringify({ mcpServers: {} })
-      );
+      fs.writeFileSync(userConfigPath, JSON.stringify({ mcpServers: {} }));
 
       // Add listener
       const listener = vi.fn();
@@ -490,7 +485,7 @@ describe('MCPConfigService', () => {
       service.startWatching();
 
       // Wait a bit for watcher to initialize
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Modify config file
       fs.writeFileSync(
@@ -506,7 +501,7 @@ describe('MCPConfigService', () => {
       );
 
       // Wait for file watcher to detect change (with debounce)
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await new Promise((resolve) => setTimeout(resolve, 200));
 
       // Verify listener was called
       expect(listener).toHaveBeenCalled();
@@ -526,13 +521,10 @@ describe('MCPConfigService', () => {
       // Create and modify config
       const userConfigPath = service.getUserConfigPath();
       fs.mkdirSync(path.dirname(userConfigPath), { recursive: true });
-      fs.writeFileSync(
-        userConfigPath,
-        JSON.stringify({ mcpServers: {} })
-      );
+      fs.writeFileSync(userConfigPath, JSON.stringify({ mcpServers: {} }));
 
       service.startWatching();
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       fs.writeFileSync(
         userConfigPath,
@@ -546,7 +538,7 @@ describe('MCPConfigService', () => {
         })
       );
 
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await new Promise((resolve) => setTimeout(resolve, 200));
 
       // Listener should not have been called
       expect(listener).not.toHaveBeenCalled();

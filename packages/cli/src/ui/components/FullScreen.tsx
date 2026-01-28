@@ -1,10 +1,10 @@
 /**
  * FullScreen component - Uses alternate screen buffer for flicker-free rendering
- * 
+ *
  * This component switches to the terminal's alternate screen buffer (like vim/htop)
  * which eliminates flickering during re-renders. The alternate buffer is a separate
  * screen that doesn't affect the main terminal scrollback.
- * 
+ *
  * ANSI escape codes:
  * - \x1b[?1049h - Enter alternate screen buffer
  * - \x1b[?1049l - Leave alternate screen buffer
@@ -40,7 +40,7 @@ export function FullScreen({ children, hideCursor = false }: FullScreenProps) {
     } catch (_e) {
       // best-effort
     }
-    
+
     if (hideCursor) {
       hideCursorFn();
     }

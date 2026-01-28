@@ -10,11 +10,13 @@
 **Format:** `dev_<CategoryTopic>.md` (no underscore between words in topic)
 
 **Examples:**
+
 - `dev_ContextManagement.md` (NOT dev_Context_Management.md)
 - `dev_SessionStorage.md` (NOT dev_Session_Storage.md)
 - `dev_CheckpointAging.md` (already correct)
 
 **Categories:**
+
 - `Context` - Context management, compression, checkpoints
 - `Session` - Session recording, storage, snapshots
 - `Input` - Input processing, preprocessing
@@ -25,6 +27,7 @@
 ## Files to Reorganize (Focus Group)
 
 ### Context Management Group (7 files)
+
 1. `dev_CheckpointAging.md` → **Keep as is** ✅
 2. `dev_CheckpointRollover.md` → **Keep as is** ✅
 3. `dev_ContextCompression.md` → **Keep as is** ✅
@@ -34,14 +37,17 @@
 7. `dev_SnapshotSystems.md` → `dev_ContextSnapshots.md`
 
 ### Input Processing Group (1 file)
+
 1. `dev_InputPreprocessing.md` → **Keep as is** ✅
 
 ### Session Management Group (3 files)
+
 1. `dev_SessionRecording.md` → **DELETE** (duplicate of SessionStorage.md)
 2. `dev_SessionStorage.md` → **Keep as is** ✅
 3. `dev_SessionsCompressionSummary.md` → **DELETE** (duplicate, keep in SESSIONS_WORK_COMPLETE.md)
 
 ### Other Files (Keep as is)
+
 1. `dev_PromptSystem.md` → **Keep as is** ✅
 2. `dev_ProviderSystem.md` → **Keep as is** ✅
 
@@ -50,15 +56,18 @@
 ## Actions Summary
 
 **Rename (3 files):**
+
 - `dev_PreSendValidation.md` → `dev_ContextPreSendValidation.md`
 - `dev_Tokeniser.md` → `dev_ContextTokeniser.md`
 - `dev_SnapshotSystems.md` → `dev_ContextSnapshots.md`
 
 **Delete (2 files):**
+
 - `dev_SessionRecording.md` (duplicate)
 - `dev_SessionsCompressionSummary.md` (duplicate)
 
 **Keep as is (8 files):**
+
 - dev_CheckpointAging.md
 - dev_CheckpointRollover.md
 - dev_ContextCompression.md
@@ -73,11 +82,13 @@
 ## Duplicate Content to Remove
 
 ### 1. dev_SessionRecording.md
+
 **Status:** Duplicate of dev_SessionStorage.md  
 **Action:** DELETE  
 **Reason:** Both cover the same ChatRecordingService
 
 ### 2. dev_SessionsCompressionSummary.md
+
 **Status:** Summary document  
 **Action:** DELETE (keep content in SESSIONS_WORK_COMPLETE.md)  
 **Reason:** Duplicate summary, main summary is in .dev/docs/SESSIONS_WORK_COMPLETE.md
@@ -89,6 +100,7 @@
 ### Context Management Documents
 
 **Keep Separate (Each has unique focus):**
+
 - `dev_Context_Management.md` - Overall context management architecture
 - `dev_Context_Compression.md` - Compression strategies and algorithms
 - `dev_Context_CheckpointAging.md` - Checkpoint aging system (Phase 6)
@@ -103,9 +115,11 @@ Each document should reference related documents at the top.
 ### Session Management Documents
 
 **Keep:**
+
 - `dev_Session_Storage.md` - Session storage system (Phase 4)
 
 **Delete:**
+
 - `dev_SessionRecording.md` - Duplicate content
 
 ---
@@ -113,6 +127,7 @@ Each document should reference related documents at the top.
 ## New Index Document
 
 Create `dev_INDEX.md` as the main entry point with:
+
 - Overview of all documentation
 - Quick links to each category
 - Brief description of each document
@@ -126,6 +141,7 @@ Add to the top of each document:
 
 ```markdown
 **Related Documentation:**
+
 - [Context Management](./dev_Context_Management.md) - Overview
 - [Compression](./dev_Context_Compression.md) - Compression strategies
 - [Checkpoints](./dev_Context_CheckpointAging.md) - Checkpoint aging
@@ -205,9 +221,9 @@ dev_npm_package.md → dev_System_NpmPackage.md
 **After:** 24 files, no duplicates, clear naming convention, cross-referenced
 
 **Benefits:**
+
 - Easy to find related documents
 - Clear categorization
 - No duplicate content
 - Cross-references for navigation
 - Index document for overview
-

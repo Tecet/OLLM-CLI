@@ -121,22 +121,21 @@ export class MockProvider implements ProviderAdapter {
    * Return mock models if configured.
    */
   async listModels(): Promise<ModelInfo[]> {
-    return this.config.models ?? [
-      {
-        name: 'mock-model',
-        sizeBytes: 1000000,
-        modifiedAt: new Date().toISOString(),
-      },
-    ];
+    return (
+      this.config.models ?? [
+        {
+          name: 'mock-model',
+          sizeBytes: 1000000,
+          modifiedAt: new Date().toISOString(),
+        },
+      ]
+    );
   }
 
   /**
    * Simulate model pulling with progress callbacks.
    */
-  async pullModel(
-    _name: string,
-    onProgress?: (progress: PullProgress) => void
-  ): Promise<void> {
+  async pullModel(_name: string, onProgress?: (progress: PullProgress) => void): Promise<void> {
     const steps = [
       { status: 'downloading', completed: 0, total: 100 },
       { status: 'downloading', completed: 50, total: 100 },

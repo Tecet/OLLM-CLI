@@ -1,18 +1,18 @@
 /**
  * FadeTransition Component
- * 
+ *
  * Provides fade in/out animations for state changes.
  * Simulates opacity transitions in terminal UI.
- * 
+ *
  * Features:
  * - Fade in animation on mount
  * - Fade out animation on unmount
  * - Configurable duration
  * - Callback on animation complete
- * 
+ *
  * Note: Terminal UI doesn't support true opacity, so this uses
  * dimColor and visibility to simulate fade effects.
- * 
+ *
  * Validates: NFR-7
  */
 
@@ -34,7 +34,7 @@ export interface FadeTransitionProps {
 
 /**
  * FadeTransition Component
- * 
+ *
  * Wraps content with fade in/out animations.
  * Uses dimColor to simulate opacity changes in terminal.
  */
@@ -92,7 +92,7 @@ export function FadeTransition({
 
 /**
  * SlideIn Component
- * 
+ *
  * Slides content in from the side with animation.
  * Simulates slide animation using spacing.
  */
@@ -103,19 +103,14 @@ export interface SlideInProps {
   duration?: number;
 }
 
-export function SlideIn({
-  children,
-  show,
-  direction = 'right',
-  duration = 300,
-}: SlideInProps) {
+export function SlideIn({ children, show, direction = 'right', duration = 300 }: SlideInProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [offset, setOffset] = useState(10);
 
   useEffect(() => {
     if (show) {
       setIsVisible(true);
-      
+
       // Animate offset to 0
       const steps = 5;
       const stepDuration = duration / steps;
@@ -123,7 +118,7 @@ export function SlideIn({
 
       const interval = setInterval(() => {
         currentStep++;
-        setOffset(10 - (currentStep * 2));
+        setOffset(10 - currentStep * 2);
 
         if (currentStep >= steps) {
           clearInterval(interval);
@@ -155,7 +150,7 @@ export function SlideIn({
 
 /**
  * Pulse Component
- * 
+ *
  * Pulses content to draw attention.
  * Uses color alternation to simulate pulse effect.
  */
@@ -166,12 +161,7 @@ export interface PulseProps {
   interval?: number;
 }
 
-export function Pulse({
-  children,
-  active,
-  color = 'cyan',
-  interval = 500,
-}: PulseProps) {
+export function Pulse({ children, active, color = 'cyan', interval = 500 }: PulseProps) {
   const [isPulsing, setIsPulsing] = useState(false);
 
   useEffect(() => {
@@ -200,7 +190,7 @@ export function Pulse({
 
 /**
  * Blink Component
- * 
+ *
  * Blinks content on and off to draw attention.
  */
 export interface BlinkProps {
@@ -209,11 +199,7 @@ export interface BlinkProps {
   interval?: number;
 }
 
-export function Blink({
-  children,
-  active,
-  interval = 500,
-}: BlinkProps) {
+export function Blink({ children, active, interval = 500 }: BlinkProps) {
   const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {

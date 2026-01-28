@@ -1,6 +1,6 @@
 /**
  * Goal-Oriented Context Management Types
- * 
+ *
  * Provides structured goal tracking, checkpoints, and decision management
  * for long-running sessions without losing context.
  */
@@ -150,7 +150,7 @@ export interface Goal {
   id: string;
   /** Goal description */
   description: string;
-  
+
   // Status
   /** Current status */
   status: GoalStatus;
@@ -160,13 +160,13 @@ export interface Goal {
   completedAt?: Date;
   /** When paused */
   pausedAt?: Date;
-  
+
   // Hierarchy
   /** Parent goal ID for sub-goals */
   parentGoalId?: string;
   /** Subtasks within this goal */
   subtasks: Subtask[];
-  
+
   // Progress tracking
   /** Checkpoints marking progress */
   checkpoints: Checkpoint[];
@@ -176,7 +176,7 @@ export interface Goal {
   artifacts: Artifact[];
   /** Blockers encountered */
   blockers: Blocker[];
-  
+
   // Metadata
   /** Priority level */
   priority: GoalPriority;
@@ -233,7 +233,7 @@ export interface GoalManager {
   resumeGoal(goalId: string): void;
   /** Abandon a goal */
   abandonGoal(goalId: string, reason: string): void;
-  
+
   // Subtask management
   /** Add subtask to goal */
   addSubtask(goalId: string, description: string, dependsOn?: string[]): Subtask;
@@ -241,27 +241,43 @@ export interface GoalManager {
   completeSubtask(goalId: string, subtaskId: string): void;
   /** Update subtask status */
   updateSubtaskStatus(goalId: string, subtaskId: string, status: SubtaskStatus): void;
-  
+
   // Checkpoint management
   /** Create a checkpoint */
-  createCheckpoint(goalId: string, description: string, state: Partial<CheckpointState>, summary?: string): Checkpoint;
-  
+  createCheckpoint(
+    goalId: string,
+    description: string,
+    state: Partial<CheckpointState>,
+    summary?: string
+  ): Checkpoint;
+
   // Decision tracking
   /** Record a decision */
-  recordDecision(goalId: string, description: string, rationale: string, alternatives?: string[]): Decision;
+  recordDecision(
+    goalId: string,
+    description: string,
+    rationale: string,
+    alternatives?: string[]
+  ): Decision;
   /** Lock a decision to prevent changes */
   lockDecision(goalId: string, decisionId: string): void;
-  
+
   // Artifact tracking
   /** Record an artifact */
-  recordArtifact(goalId: string, type: ArtifactType, path: string, action: ArtifactAction, description?: string): Artifact;
-  
+  recordArtifact(
+    goalId: string,
+    type: ArtifactType,
+    path: string,
+    action: ArtifactAction,
+    description?: string
+  ): Artifact;
+
   // Blocker management
   /** Add a blocker */
   addBlocker(goalId: string, description: string, type: BlockerType): Blocker;
   /** Resolve a blocker */
   resolveBlocker(goalId: string, blockerId: string, resolution: string): void;
-  
+
   // Query
   /** Get active goal */
   getActiveGoal(): Goal | null;
@@ -275,7 +291,7 @@ export interface GoalManager {
   getGoalProgress(goalId: string): number;
   /** Get goal stack */
   getGoalStack(): GoalStack;
-  
+
   // Serialization
   /** Export goal stack to JSON */
   toJSON(): string;

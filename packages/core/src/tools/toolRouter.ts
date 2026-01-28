@@ -63,7 +63,7 @@ export class ToolRouter extends EventEmitter {
    */
   async discoverCapabilities(): Promise<void> {
     const servers = this.mcpClient.listServers();
-    
+
     for (const server of servers) {
       if (server.status.status === 'connected') {
         try {
@@ -78,7 +78,7 @@ export class ToolRouter extends EventEmitter {
         }
       }
     }
-    
+
     this.emit('capabilitiesUpdated', this.getCapabilityMap());
   }
 
@@ -114,17 +114,17 @@ export class ToolRouter extends EventEmitter {
    */
   private isServerAvailable(serverName: string, capability: ToolCapability): boolean {
     const capabilities = this.capabilityMap.get(serverName);
-    
+
     // If we haven't discovered capabilities yet, generic check
     if (!capabilities && this.isServerConnected(serverName)) {
       // Optimistic check if we don't have capability map populated yet
-      return true; 
+      return true;
     }
 
     if (!capabilities || !capabilities.includes(capability)) {
       return false;
     }
-    
+
     return this.isServerConnected(serverName);
   }
 

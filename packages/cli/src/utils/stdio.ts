@@ -9,18 +9,14 @@ const originalStderrWrite = process.stderr.write.bind(process.stderr);
 /**
  * Writes to the real stdout, bypassing any monkey patching on process.stdout.write.
  */
-export function writeToStdout(
-  ...args: Parameters<typeof process.stdout.write>
-): boolean {
+export function writeToStdout(...args: Parameters<typeof process.stdout.write>): boolean {
   return originalStdoutWrite(...args);
 }
 
 /**
  * Writes to the real stderr, bypassing any monkey patching on process.stderr.write.
  */
-export function writeToStderr(
-  ...args: Parameters<typeof process.stderr.write>
-): boolean {
+export function writeToStderr(...args: Parameters<typeof process.stderr.write>): boolean {
   return originalStderrWrite(...args);
 }
 
@@ -72,12 +68,17 @@ export function patchStdio(): () => void {
 
   // Intercept stdin data to handle bracketed paste sequences (\x1b[200~ ... \x1b[201~)
   // Coalesce pasted content into a single 'data' emit to avoid per-character events.
-  const previousStdinEmit = process.stdin.emit.bind(process.stdin as NodeJS.ReadStream & NodeJS.EventEmitter);
+  const previousStdinEmit = process.stdin.emit.bind(
+    process.stdin as NodeJS.ReadStream & NodeJS.EventEmitter
+  );
   let stdinAcc = '';
   let inPaste = false;
   let pasteBuffer = '';
 
-  (process.stdin as NodeJS.ReadStream & NodeJS.EventEmitter).emit = function (event: string, chunk?: Buffer | string) {
+  (process.stdin as NodeJS.ReadStream & NodeJS.EventEmitter).emit = function (
+    event: string,
+    chunk?: Buffer | string
+  ) {
     if (event !== 'data' || !chunk) {
       return previousStdinEmit(event, chunk);
     }
@@ -141,10 +142,8 @@ export function patchStdio(): () => void {
 
   process.stdout.write = (
     chunk: Uint8Array | string,
-    encodingOrCb?:
-      | BufferEncoding
-      | ((err?: NodeJS.ErrnoException | null) => void),
-    cb?: (err?: NodeJS.ErrnoException | null) => void,
+    encodingOrCb?: BufferEncoding | ((err?: NodeJS.ErrnoException | null) => void),
+    cb?: (err?: NodeJS.ErrnoException | null) => void
   ) => {
     const encoding = typeof encodingOrCb === 'string' ? encodingOrCb : undefined;
     try {
@@ -165,10 +164,8 @@ export function patchStdio(): () => void {
 
   process.stderr.write = (
     chunk: Uint8Array | string,
-    encodingOrCb?:
-      | BufferEncoding
-      | ((err?: NodeJS.ErrnoException | null) => void),
-    cb?: (err?: NodeJS.ErrnoException | null) => void,
+    encodingOrCb?: BufferEncoding | ((err?: NodeJS.ErrnoException | null) => void),
+    cb?: (err?: NodeJS.ErrnoException | null) => void
   ) => {
     const encoding = typeof encodingOrCb === 'string' ? encodingOrCb : undefined;
     try {

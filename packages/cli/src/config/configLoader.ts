@@ -91,11 +91,11 @@ function extractYamlErrorLocation(error: unknown): { line?: number; column?: num
       column: (err.mark.column ?? 0) + 1,
     };
   }
-  
+
   // Try to extract from error message
   const lineMatch = err.message?.match(/line (\d+)/i);
   const colMatch = err.message?.match(/column (\d+)/i);
-  
+
   return {
     line: lineMatch ? parseInt(lineMatch[1], 10) : undefined,
     column: colMatch ? parseInt(colMatch[1], 10) : undefined,
@@ -109,36 +109,36 @@ function getErrorSnippet(content: string, line?: number, column?: number): strin
   if (line === undefined) {
     return undefined;
   }
-  
+
   const lines = content.split('\n');
   const errorLine = lines[line - 1]; // Convert 1-based to 0-based
-  
+
   if (!errorLine) {
     return undefined;
   }
-  
+
   let snippet = `  ${line} | ${errorLine}\n`;
-  
+
   if (column !== undefined) {
     // Add caret indicator
     const padding = String(line).length + 3; // "  N | "
     const spaces = ' '.repeat(padding + column - 1);
     snippet += `${spaces}^\n`;
   }
-  
+
   // Add context lines if available
   const contextLines: string[] = [];
-  
+
   if (line > 1 && lines[line - 2]) {
     contextLines.push(`  ${line - 1} | ${lines[line - 2]}`);
   }
-  
+
   contextLines.push(snippet.trim());
-  
+
   if (line < lines.length && lines[line]) {
     contextLines.push(`  ${line + 1} | ${lines[line]}`);
   }
-  
+
   return contextLines.join('\n');
 }
 
@@ -149,7 +149,7 @@ function loadConfigFile(path: string): Partial<Config> | null {
   if (!existsSync(path)) {
     return null;
   }
-  
+
   let content: string;
   try {
     content = readFileSync(path, 'utf-8');
@@ -159,19 +159,19 @@ function loadConfigFile(path: string): Partial<Config> | null {
       path
     );
   }
-  
+
   try {
     return parseYaml(content) as Partial<Config>;
   } catch (error) {
     const location = extractYamlErrorLocation(error);
     const snippet = getErrorSnippet(content, location.line, location.column);
-    
+
     let message = 'Failed to parse YAML';
     if (error instanceof Error && error.message) {
       // Clean up error message
       message = error.message.replace(/^.*?:\s*/, '');
     }
-    
+
     // Add common fix suggestions
     const suggestions: string[] = [];
     if (message.includes('quote') || message.includes('string')) {
@@ -183,19 +183,13 @@ function loadConfigFile(path: string): Partial<Config> | null {
     if (message.includes('comma')) {
       suggestions.push('Tip: YAML does not use trailing commas');
     }
-    
+
     let fullMessage = message;
     if (suggestions.length > 0) {
       fullMessage += '\n\n' + suggestions.join('\n');
     }
-    
-    throw new ConfigError(
-      fullMessage,
-      path,
-      location.line,
-      location.column,
-      snippet
-    );
+
+    throw new ConfigError(fullMessage, path, location.line, location.column, snippet);
   }
 }
 
@@ -204,7 +198,7 @@ function loadConfigFile(path: string): Partial<Config> | null {
  */
 function loadEnvConfig(): Partial<Config> {
   const config: Partial<Config> = {};
-  
+
   // Provider settings
   if (process.env.OLLAMA_HOST) {
     config.provider = {
@@ -215,7 +209,7 @@ function loadEnvConfig(): Partial<Config> {
       },
     } as any;
   }
-  
+
   if (process.env.VLLM_HOST) {
     config.provider = {
       ...(config.provider ?? {}),
@@ -225,7 +219,7 @@ function loadEnvConfig(): Partial<Config> {
       },
     } as any;
   }
-  
+
   if (process.env.OPENAI_COMPATIBLE_HOST) {
     config.provider = {
       ...(config.provider ?? {}),
@@ -235,7 +229,7 @@ function loadEnvConfig(): Partial<Config> {
       },
     } as any;
   }
-  
+
   // Model settings
   if (process.env.OLLM_DEFAULT_MODEL) {
     config.model = {
@@ -243,12 +237,12 @@ function loadEnvConfig(): Partial<Config> {
       default: process.env.OLLM_DEFAULT_MODEL,
     } as any;
   }
-  
+
   // Logging
   if (process.env.OLLM_LOG_LEVEL) {
     // Store for later use
   }
-  
+
   return config;
 }
 
@@ -266,13 +260,13 @@ function formatValidationError(error: unknown): ValidationError {
   };
   const path = err.instancePath || '/';
   let message = err.message || 'Validation error';
-  
+
   // Add more context based on error type
   if (err.keyword === 'type') {
     const expected = err.params?.type as string | undefined;
     const actual = typeof err.data;
     message = `Expected ${expected}, got ${actual}`;
-    
+
     // Add example
     if (expected === 'number') {
       message += '\n    Example: 42 or 3.14';
@@ -299,7 +293,7 @@ function formatValidationError(error: unknown): ValidationError {
   } else if (err.keyword === 'pattern') {
     message = `Does not match required pattern`;
   }
-  
+
   return {
     path,
     message,
@@ -313,13 +307,13 @@ function formatValidationError(error: unknown): ValidationError {
 export function validateConfig(config: Partial<Config>): ValidationResult {
   const validator = getValidator();
   const valid = validator(config);
-  
+
   if (valid) {
     return { valid: true, errors: [] };
   }
-  
+
   const errors: ValidationError[] = (validator.errors || []).map(formatValidationError);
-  
+
   return { valid: false, errors };
 }
 
@@ -329,15 +323,15 @@ export function validateConfig(config: Partial<Config>): ValidationResult {
 function mergeConfigs(sources: ConfigSource[]): Config {
   // Sort by priority (lowest to highest)
   const sorted = [...sources].sort((a, b) => a.priority - b.priority);
-  
+
   // Start with empty config
   let merged = {} as Config;
-  
+
   // Merge each layer
   for (const source of sorted) {
     merged = deepMerge(merged, source.data);
   }
-  
+
   return merged;
 }
 
@@ -351,14 +345,14 @@ export interface LoadConfigOptions {
  */
 export function loadConfig(options: LoadConfigOptions = {}): Config {
   const sources: ConfigSource[] = [];
-  
+
   // Layer 1: System defaults (priority 1)
   sources.push({
     layer: 'system',
     priority: 1,
     data: defaultConfig,
   });
-  
+
   // Layer 2: User config (priority 2)
   const userConfigPath = options.configPath || getConfigPath('user');
   const userConfig = loadConfigFile(userConfigPath);
@@ -369,7 +363,7 @@ export function loadConfig(options: LoadConfigOptions = {}): Config {
       data: userConfig,
     });
   }
-  
+
   // Layer 3: Workspace config (priority 3)
   const workspaceConfigPath = getConfigPath('workspace');
   const workspaceConfig = loadConfigFile(workspaceConfigPath);
@@ -380,7 +374,7 @@ export function loadConfig(options: LoadConfigOptions = {}): Config {
       data: workspaceConfig,
     });
   }
-  
+
   // Layer 4: Environment variables (priority 4)
   const envConfig = loadEnvConfig();
   if (Object.keys(envConfig).length > 0) {
@@ -390,7 +384,7 @@ export function loadConfig(options: LoadConfigOptions = {}): Config {
       data: envConfig,
     });
   }
-  
+
   // Layer 5: CLI overrides (priority 5)
   if (options.cliOverrides) {
     sources.push({
@@ -399,10 +393,10 @@ export function loadConfig(options: LoadConfigOptions = {}): Config {
       data: options.cliOverrides,
     });
   }
-  
+
   // Merge all layers
   const merged = mergeConfigs(sources);
-  
+
   // Validate final configuration
   const validation = validateConfig(merged);
   if (!validation.valid) {
@@ -414,26 +408,26 @@ export function loadConfig(options: LoadConfigOptions = {}): Config {
       }
       return line;
     });
-    
+
     // Check which config files were loaded to help user identify source
     const loadedFiles: string[] = [];
     if (userConfig) loadedFiles.push(userConfigPath);
     if (workspaceConfig) loadedFiles.push(workspaceConfigPath);
-    
+
     let message = 'Configuration validation failed:\n\n';
     message += errorLines.join('\n\n');
-    
+
     if (loadedFiles.length > 0) {
       message += '\n\nLoaded configuration from:\n';
       message += loadedFiles.map((f) => `  - ${f}`).join('\n');
     }
-    
+
     message += '\n\nNote: Missing required fields will use default values.';
     message += '\nRun with --help to see configuration options.';
-    
+
     throw new ConfigError(message);
   }
-  
+
   return merged;
 }
 
@@ -444,15 +438,15 @@ export class ConfigLoader {
   loadConfig(options: LoadConfigOptions = {}): Config {
     return loadConfig(options);
   }
-  
+
   mergeConfigs(sources: ConfigSource[]): Config {
     return mergeConfigs(sources);
   }
-  
+
   validateConfig(config: Partial<Config>): ValidationResult {
     return validateConfig(config);
   }
-  
+
   getConfigPath(type: 'user' | 'workspace'): string {
     return getConfigPath(type);
   }

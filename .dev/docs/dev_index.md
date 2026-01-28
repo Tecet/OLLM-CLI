@@ -16,6 +16,7 @@ This index provides quick access to all developer knowledge base documents. Each
 # Quick Reference by Topic
 
 ### Context & Memory
+
 - [Context Management](./knowledgeDB/dev_ContextManagement.md) - Sizing, tiers, VRAM
 - [Context Compression](./knowledgeDB/dev_ContextCompression.md) - Checkpoints, snapshots
 - [Context Pre-Send Validation](./knowledgeDB/dev_ContextPreSendValidation.md) - Overflow prevention
@@ -26,47 +27,51 @@ This index provides quick access to all developer knowledge base documents. Each
 - [Context Input Preprocessing](./knowledgeDB/dev_ContextInputPreprocessing.md) - Intent extraction
 
 ### Sessions
+
 - [Session Storage](./knowledgeDB/dev_SessionStorage.md) - Session recording
 
 ### Prompts & Models
+
 - [Prompt System](./knowledgeDB/dev_PromptSystem.md) - Tiers, modes, templates
 - [Model Management](./knowledgeDB/dev_ModelManagement.md) - Profiles, detection
 - [Model Reasoning](./knowledgeDB/dev_ModelReasoning.md) - DeepSeek R1, QwQ
 - [Model Compiler](./knowledgeDB/dev_ModelCompiler.md) - Profile compilation
 
 ### Providers & Integration
+
 - [Provider System](./knowledgeDB/dev_ProviderSystem.md) - Ollama, future providers
 - [MCP Integration](./knowledgeDB/dev_MCPIntegration.md) - External tools
 
 ### Tools & Hooks
+
 - [Tool Execution](./knowledgeDB/dev_ToolExecution.md) - Registration, permissions
 - [Hook System](./knowledgeDB/dev_HookSystem.md) - Events, automation
 
 ### User Interface
+
 - [UI Frontend](./knowledgeDB/dev_UI_Front.md) - Layout, message rendering
 - [UI Menu Windows](./knowledgeDB/dev_UI_MenuWindows.md) - Dialogs, notifications
 - [UI Themes](./knowledgeDB/dev_UI_Themes.md) - Color schemes
 - [UI Color ASCII](./knowledgeDB/dev_UI_ColorASCII.md) - Color and ASCII art
 
 ### Commands & System
+
 - [Slash Commands](./knowledgeDB/dev_SlashCommands.md) - 50+ commands
 - [Keybinds](./knowledgeDB/dev_Keybinds.md) - 70+ shortcuts
 - [Terminal](./knowledgeDB/dev_Terminal.md) - PTY, ANSI rendering
 
 ### Distribution
+
 - [npm Package](./knowledgeDB/dev_npm_package.md) - Packaging, installer
 
 ---
 
-
-
 # Core Systems
-
-
 
 ### Context & Memory Management
 
 #### [dev_ContextManagement.md](./knowledgeDB/dev_ContextManagement.md)
+
 **Context sizing, tiers, VRAM monitoring, and auto-sizing logic**
 
 - 5 context tiers (2K, 4K, 8K, 16K, 32K, 64K, 128K)
@@ -81,6 +86,7 @@ This index provides quick access to all developer knowledge base documents. Each
 ---
 
 #### [dev_ContextCompression.md](./knowledgeDB/dev_ContextCompression.md)
+
 **Compression strategies, checkpoints, snapshots, and session storage**
 
 - Compression triggers (80% of available budget)
@@ -96,6 +102,7 @@ This index provides quick access to all developer knowledge base documents. Each
 ---
 
 #### [dev_ContextPreSendValidation.md](./knowledgeDB/dev_ContextPreSendValidation.md)
+
 **Pre-send validation to prevent context overflow (Phase 1)**
 
 - 4-tier threshold system (70%, 80%, 95%, 100%)
@@ -110,6 +117,7 @@ This index provides quick access to all developer knowledge base documents. Each
 ---
 
 #### [dev_ContextTokeniser.md](./knowledgeDB/dev_ContextTokeniser.md)
+
 **Token counting system with caching and validation**
 
 - Fallback estimation (text.length / 4)
@@ -124,6 +132,7 @@ This index provides quick access to all developer knowledge base documents. Each
 ---
 
 #### [dev_ContextSnapshots.md](./knowledgeDB/dev_ContextSnapshots.md)
+
 **Two distinct snapshot systems (Phase 5)**
 
 - Context Snapshots (recovery & rollback)
@@ -137,6 +146,7 @@ This index provides quick access to all developer knowledge base documents. Each
 ---
 
 #### [dev_ContextCheckpointAging.md](./knowledgeDB/dev_ContextCheckpointAging.md)
+
 **Progressive checkpoint compression (Phase 6)**
 
 - 3-level aging (Level 3 → 2 → 1)
@@ -150,6 +160,7 @@ This index provides quick access to all developer knowledge base documents. Each
 ---
 
 #### [dev_ContextCheckpointRollover.md](./knowledgeDB/dev_ContextCheckpointRollover.md)
+
 **Emergency rollover strategy**
 
 - Snapshot creation before rollover
@@ -165,6 +176,7 @@ This index provides quick access to all developer knowledge base documents. Each
 ## Input & Session Management
 
 #### [dev_ContextInputPreprocessing.md](./knowledgeDB/dev_ContextInputPreprocessing.md)
+
 **Intent extraction from noisy user messages (Phase 0)**
 
 - 30x token savings
@@ -179,6 +191,7 @@ This index provides quick access to all developer knowledge base documents. Each
 ---
 
 #### [dev_SessionStorage.md](./knowledgeDB/dev_SessionStorage.md)
+
 **Session recording and auto-save (Phase 4)**
 
 - Auto-save enabled by default
@@ -194,6 +207,7 @@ This index provides quick access to all developer knowledge base documents. Each
 ## Prompt & Mode System
 
 #### [dev_PromptSystem.md](./knowledgeDB/dev_PromptSystem.md)
+
 **Prompt structure, tiers, modes, and template management**
 
 - 5 prompt tiers (tier1.txt through tier5.txt)
@@ -210,6 +224,7 @@ This index provides quick access to all developer knowledge base documents. Each
 ## Model Management
 
 #### [dev_ModelManagement.md](./knowledgeDB/dev_ModelManagement.md)
+
 **Model detection, profiles, tool support, and context windows**
 
 - Model profiles (LLM_profiles.json)
@@ -224,6 +239,7 @@ This index provides quick access to all developer knowledge base documents. Each
 ---
 
 #### [dev_ModelReasoning.md](./knowledgeDB/dev_ModelReasoning.md)
+
 **Reasoning model support (DeepSeek R1, QwQ) - Partially Implemented**
 
 - Ollama API integration (think parameter)
@@ -240,6 +256,7 @@ This index provides quick access to all developer knowledge base documents. Each
 ---
 
 #### [dev_ModelCompiler.md](./knowledgeDB/dev_ModelCompiler.md)
+
 **Model profile compilation and tier detection**
 
 - Profile compilation from LLM_profiles.json
@@ -254,6 +271,7 @@ This index provides quick access to all developer knowledge base documents. Each
 ## Provider & Integration
 
 #### [dev_ProviderSystem.md](./knowledgeDB/dev_ProviderSystem.md)
+
 **Ollama provider integration and future provider plans**
 
 - Ollama adapter (Tier 1 - primary)
@@ -268,6 +286,7 @@ This index provides quick access to all developer knowledge base documents. Each
 ---
 
 #### [dev_MCPIntegration.md](./knowledgeDB/dev_MCPIntegration.md)
+
 **Model Context Protocol integration for external tools**
 
 - MCP client lifecycle
@@ -284,6 +303,7 @@ This index provides quick access to all developer knowledge base documents. Each
 ## Tool & Hook Systems
 
 #### [dev_ToolExecution.md](./knowledgeDB/dev_ToolExecution.md)
+
 **Tool registration, execution, permissions, and policy engine**
 
 - Tool categories (file, web, shell, memory, goal)
@@ -298,6 +318,7 @@ This index provides quick access to all developer knowledge base documents. Each
 ---
 
 #### [dev_HookSystem.md](./knowledgeDB/dev_HookSystem.md)
+
 **Event-driven automation and safety gates**
 
 - Event types (fileEdited, promptSubmit, agentStop, etc.)
@@ -314,6 +335,7 @@ This index provides quick access to all developer knowledge base documents. Each
 ## User Interface
 
 #### [dev_UI_Front.md](./knowledgeDB/dev_UI_Front.md)
+
 **Main interface layout, message rendering, and reasoning boxes**
 
 - Layout structure (Header, Content, Side Panel, Status Bar)
@@ -329,6 +351,7 @@ This index provides quick access to all developer knowledge base documents. Each
 ---
 
 #### [dev_UI_MenuWindows.md](./knowledgeDB/dev_UI_MenuWindows.md)
+
 **Dialogs, overlays, and notification system**
 
 - 10 dialog types (Confirmation, Input, Selection, etc.)
@@ -342,6 +365,7 @@ This index provides quick access to all developer knowledge base documents. Each
 ---
 
 #### [dev_Terminal.md](./knowledgeDB/dev_Terminal.md)
+
 **Integrated terminal with PTY and ANSI rendering**
 
 - Dual terminal design (Terminal 1 & 2)
@@ -359,6 +383,7 @@ This index provides quick access to all developer knowledge base documents. Each
 ## Commands & Keybinds
 
 #### [dev_SlashCommands.md](./knowledgeDB/dev_SlashCommands.md)
+
 **Complete reference of 50+ slash commands**
 
 - Commands organized by category:
@@ -376,6 +401,7 @@ This index provides quick access to all developer knowledge base documents. Each
 ---
 
 #### [dev_Keybinds.md](./knowledgeDB/dev_Keybinds.md)
+
 **Complete reference of 70+ keyboard shortcuts**
 
 - Keybinds organized by category:
@@ -392,6 +418,7 @@ This index provides quick access to all developer knowledge base documents. Each
 ---
 
 #### [dev_UI_Themes.md](./knowledgeDB/dev_UI_Themes.md)
+
 **Complete theme system with 6 built-in color schemes**
 
 - 6 built-in themes:
@@ -413,6 +440,7 @@ This index provides quick access to all developer knowledge base documents. Each
 ---
 
 #### [dev_UI_ColorASCII.md](./knowledgeDB/dev_UI_ColorASCII.md)
+
 **Color and ASCII art system**
 
 - Color palette management
@@ -427,6 +455,7 @@ This index provides quick access to all developer knowledge base documents. Each
 ## Packaging & Distribution
 
 #### [dev_npm_package.md](./knowledgeDB/dev_npm_package.md)
+
 **npm packaging strategy and installer design**
 
 - Package structure and metadata
@@ -443,11 +472,14 @@ This index provides quick access to all developer knowledge base documents. Each
 ## Document Organization
 
 ### File Naming Convention
+
 - `dev_[Feature].md` - Knowledge base documents
 - Located in: `.dev/docs/knowledgeDB/`
 
 ### Document Structure
-Each dev_ file includes:
+
+Each dev\_ file includes:
+
 - **Last Updated** - Date of last modification
 - **Status** - Implementation status (✅ Implemented, ⚠️ Partial, ❌ Planned)
 - **Related Documents** - Cross-references
@@ -457,11 +489,10 @@ Each dev_ file includes:
 - **Best Practices** - Usage guidelines
 - **File Locations** - Relevant source files
 
-
-
 ## Related Documentation
 
 ### Backlog & Planning
+
 - `.dev/backlog/` - Audits, bug tracking, refactoring notes
 - `.dev/docs/knowledgeDB/works_todo.md` - Active task list
 - `.dev/docs/knowledgeDB/works_todo_ALPHA.md` - Alpha priorities (7 days)
@@ -469,6 +500,7 @@ Each dev_ file includes:
 - `.dev/docs/knowledgeDB/AUDIT_contradictions.md` - Known contradictions
 
 ### Workspace Configuration
+
 - `.kiro/steering/` - Workspace-level rules (tech.md, structure.md, product.md)
 - `package.json` - Project metadata and scripts
 - `tsconfig.base.json` - TypeScript configuration
@@ -478,21 +510,24 @@ Each dev_ file includes:
 ## Maintenance
 
 ### When to Update
-- **Logic changes** - Update relevant dev_ file when data flows change
-- **New features** - Create new dev_ file or update existing
+
+- **Logic changes** - Update relevant dev\_ file when data flows change
+- **New features** - Create new dev\_ file or update existing
 - **Bug fixes** - Update if logic chain affected
 - **Refactoring** - Update file locations and references
 
-### When to Create New dev_ File
+### When to Create New dev\_ File
+
 - New major feature added
 - Significant architectural pattern emerges
 - Complex logic chains need documentation
 - Multiple components interact in non-obvious ways
 
 ### Document Lifecycle
+
 1. **During Development** - Track in backlog, create audits
-2. **After Completion** - Extract logic chains, create/update dev_ file
-3. **Maintenance** - Keep dev_ files current with code changes
+2. **After Completion** - Extract logic chains, create/update dev\_ file
+3. **Maintenance** - Keep dev\_ files current with code changes
 
 ---
 
@@ -503,14 +538,16 @@ Each dev_ file includes:
 **UI Documentation:** 4  
 **Commands & System:** 3  
 **Tools & Hooks:** 2  
-**Distribution:** 1  
+**Distribution:** 1
 
 **Implementation Status:**
+
 - ✅ Fully Implemented: 20
 - ⚠️ Partially Implemented: 2 (Model Reasoning, npm Package)
 - ❌ Planned: 1 (npm Package - post-alpha)
 
 **Recent Work (Phases 0-6):**
+
 - See [SESSIONS_WORK_COMPLETE.md](./SESSIONS_WORK_COMPLETE.md) for comprehensive summary
 
 ---
@@ -526,6 +563,7 @@ Each dev_ file includes:
 **Format:** `dev_CategoryTopic.md` (NO underscore between words in topic)
 
 **Examples:**
+
 - ✅ `dev_ContextManagement.md` (correct)
 - ✅ `dev_SessionStorage.md` (correct)
 - ❌ `dev_Context_Management.md` (incorrect - underscore between words)

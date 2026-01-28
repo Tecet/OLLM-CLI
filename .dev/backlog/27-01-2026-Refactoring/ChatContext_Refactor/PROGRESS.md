@@ -8,10 +8,12 @@
 ## Completed Phases
 
 ### ✅ Phase 1: Create ContextSizeCalculator.ts
+
 **Status:** COMPLETE  
 **File:** `packages/core/src/context/ContextSizeCalculator.ts`
 
 **What was done:**
+
 - Created pure calculation functions for context sizing
 - `calculateAvailableTiers()` - calculates available tiers from VRAM
 - `determineTier()` - maps size to tier enum
@@ -27,10 +29,12 @@
 ---
 
 ### ✅ Phase 2: Update contextManager.ts
+
 **Status:** COMPLETE (REWROTE FROM SCRATCH)  
 **File:** `packages/core/src/context/contextManager.ts`
 
 **What was done:**
+
 - Renamed old file to `old_contextManager.ts` (1089 lines)
 - Wrote new contextManager from scratch (616 lines)
 - Removed 473 lines (43% reduction)
@@ -46,10 +50,12 @@
 ---
 
 ### ✅ Phase 3: Update ContextManagerContext.tsx
+
 **Status:** COMPLETE (REWROTE FROM SCRATCH)  
 **File:** `packages/cli/src/features/context/ContextManagerContext.tsx`
 
 **What was done:**
+
 - Renamed old file to `old_ContextManagerContext.tsx` (1056 lines)
 - Wrote new version from scratch (750 lines)
 - Removed 306 lines (29% reduction)
@@ -64,10 +70,12 @@
 ---
 
 ### ✅ Phase 6: Update contextSizing.ts
+
 **Status:** COMPLETE (REWROTE TO DELEGATE)  
 **File:** `packages/cli/src/features/context/contextSizing.ts`
 
 **What was done:**
+
 - Renamed old file to `old_contextSizing.ts` (87 lines)
 - Rewrote to delegate to ContextSizeCalculator (130 lines)
 - Removed `sortProfiles()` helper
@@ -81,10 +89,12 @@
 ---
 
 ### ✅ Bonus: Rewrote contextPool.ts
+
 **Status:** COMPLETE (REWROTE FROM SCRATCH)  
 **File:** `packages/core/src/context/contextPool.ts`
 
 **What was done:**
+
 - Renamed old file to `old_contextPool.ts` (260 lines)
 - Wrote new version from scratch (180 lines)
 - Removed 80 lines (30% reduction)
@@ -98,10 +108,12 @@
 ---
 
 ### ✅ Phase 4: Update App.tsx
+
 **Status:** COMPLETE (REWROTE FROM SCRATCH)  
 **File:** `packages/cli/src/ui/App.tsx`
 
 **What was done:**
+
 - Renamed old file to `old_App.tsx` (1186 lines)
 - Wrote new version from scratch (550 lines)
 - Removed 636 lines (54% reduction)
@@ -122,12 +134,15 @@
 ---
 
 ### ✅ Phase 5: Extract Context Menu
+
 **Status:** COMPLETE  
-**Files:** 
+**Files:**
+
 - Created: `packages/cli/src/ui/components/context/ContextMenu.tsx` (210 lines)
 - Updated: `packages/cli/src/ui/App.tsx` (550 → 438 lines)
 
 **What was done:**
+
 - Created `useContextMenu` hook
 - Extracted 130+ lines of menu building logic from App.tsx
 - Removed 112 lines from App.tsx (20% reduction)
@@ -146,10 +161,11 @@
 
 **Lines removed:** 1,980 lines  
 **Files cleaned:** 6 files  
-**Files backed up:** 5 files (old_*)  
+**Files backed up:** 5 files (old\_\*)  
 **New components:** 1 (ContextMenu.tsx)
 
 **Key achievements:**
+
 - ✅ All context calculations in ONE place (ContextSizeCalculator)
 - ✅ No duplicate logic
 - ✅ No file logging
@@ -164,21 +180,22 @@
 
 ## File Summary
 
-| File | Before | After | Change | Status |
-|------|--------|-------|--------|--------|
-| contextManager.ts | 1089 | 616 | -473 (-43%) | ✅ Rewritten |
-| ContextManagerContext.tsx | 1056 | 750 | -306 (-29%) | ✅ Rewritten |
-| contextPool.ts | 260 | 180 | -80 (-30%) | ✅ Rewritten |
-| contextSizing.ts | 87 | 130 | +43 | ✅ Rewritten |
-| App.tsx | 1186 | 438 | -748 (-63%) | ✅ Rewritten |
-| ContextMenu.tsx | 0 | 210 | +210 | ✅ Created |
-| **TOTAL** | **3678** | **2324** | **-1354 (-37%)** | ✅ |
+| File                      | Before   | After    | Change           | Status       |
+| ------------------------- | -------- | -------- | ---------------- | ------------ |
+| contextManager.ts         | 1089     | 616      | -473 (-43%)      | ✅ Rewritten |
+| ContextManagerContext.tsx | 1056     | 750      | -306 (-29%)      | ✅ Rewritten |
+| contextPool.ts            | 260      | 180      | -80 (-30%)       | ✅ Rewritten |
+| contextSizing.ts          | 87       | 130      | +43              | ✅ Rewritten |
+| App.tsx                   | 1186     | 438      | -748 (-63%)      | ✅ Rewritten |
+| ContextMenu.tsx           | 0        | 210      | +210             | ✅ Created   |
+| **TOTAL**                 | **3678** | **2324** | **-1354 (-37%)** | ✅           |
 
 ---
 
 ## Architecture Before vs After
 
 ### Before Refactoring:
+
 ```
 ❌ Scattered Logic
 ├── contextManager.ts (1089 lines)
@@ -203,6 +220,7 @@
 ```
 
 ### After Refactoring:
+
 ```
 ✅ Clean Architecture
 ├── ContextSizeCalculator.ts (NEW)
@@ -262,7 +280,7 @@
 1. **Consolidate calculations first** - Creating ContextSizeCalculator first made all other refactoring easier
 2. **Rewrite from scratch** - Faster and cleaner than incremental changes
 3. **One job per file** - Each file now has a single, clear responsibility
-4. **Backup before rewriting** - old_* files provide safety net
+4. **Backup before rewriting** - old\_\* files provide safety net
 5. **Test build frequently** - Catch type errors early
 6. **Extract components last** - Core logic first, UI components after
 

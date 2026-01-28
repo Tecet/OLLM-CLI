@@ -10,11 +10,11 @@ import { useTabEscapeHandler } from '../../hooks/useTabEscapeHandler.js';
 
 /**
  * DocsPanel Component
- * 
+ *
  * Two-column documentation browser:
  * - Left (30%): Document navigation tree
  * - Right (70%): Document content viewer
- * 
+ *
  * Navigation:
  * - Up/Down: Navigate documents (left column)
  * - Left/Right: Switch between columns
@@ -31,13 +31,14 @@ export function DocsPanel({ height, windowWidth }: DocsPanelProps) {
   const { state: uiState } = useUI();
   const focusManager = useFocusManager();
   const hasFocus = focusManager.isFocused('docs-panel');
-  
+
   // Use shared escape handler for consistent navigation
   useTabEscapeHandler(hasFocus);
 
   // Calculate absolute widths if windowWidth is provided
   const absoluteLeftWidth = windowWidth ? Math.floor(windowWidth * 0.3) : undefined;
-  const absoluteRightWidth = windowWidth && absoluteLeftWidth ? (windowWidth - absoluteLeftWidth) : undefined;
+  const absoluteRightWidth =
+    windowWidth && absoluteLeftWidth ? windowWidth - absoluteLeftWidth : undefined;
 
   // State
   const [selectedFolderIndex, setSelectedFolderIndex] = useState(0);
@@ -134,7 +135,7 @@ export function DocsPanel({ height, windowWidth }: DocsPanelProps) {
     const effectiveWindowSize = Math.max(5, height - 6);
 
     return items.filter(
-      item => item.position >= scrollOffset && item.position < scrollOffset + effectiveWindowSize
+      (item) => item.position >= scrollOffset && item.position < scrollOffset + effectiveWindowSize
     );
   }, [folders, scrollOffset, height]);
 
@@ -142,7 +143,7 @@ export function DocsPanel({ height, windowWidth }: DocsPanelProps) {
   const handleNavigateUp = () => {
     if (focusedColumn === 'right') {
       // Scroll content up
-      setContentScrollOffset(prev => Math.max(0, prev - 1));
+      setContentScrollOffset((prev) => Math.max(0, prev - 1));
       return;
     }
 
@@ -152,11 +153,11 @@ export function DocsPanel({ height, windowWidth }: DocsPanelProps) {
     }
 
     if (selectedDocIndex > 0) {
-      setSelectedDocIndex(prev => prev - 1);
+      setSelectedDocIndex((prev) => prev - 1);
     } else if (selectedFolderIndex > 0) {
       // Move to previous folder's last document
       const prevFolder = folders[selectedFolderIndex - 1];
-      setSelectedFolderIndex(prev => prev - 1);
+      setSelectedFolderIndex((prev) => prev - 1);
       setSelectedDocIndex(prevFolder.documents.length - 1);
     } else {
       // Move to Exit
@@ -169,7 +170,7 @@ export function DocsPanel({ height, windowWidth }: DocsPanelProps) {
     if (focusedColumn === 'right') {
       // Scroll content down
       const contentLines = documentContent.split('\n').length;
-      setContentScrollOffset(prev => Math.min(contentLines - 1, prev + 1));
+      setContentScrollOffset((prev) => Math.min(contentLines - 1, prev + 1));
       return;
     }
 
@@ -184,10 +185,10 @@ export function DocsPanel({ height, windowWidth }: DocsPanelProps) {
 
     const currentFolder = folders[selectedFolderIndex];
     if (selectedDocIndex < currentFolder.documents.length - 1) {
-      setSelectedDocIndex(prev => prev + 1);
+      setSelectedDocIndex((prev) => prev + 1);
     } else if (selectedFolderIndex < folders.length - 1) {
       // Move to next folder's first document
-      setSelectedFolderIndex(prev => prev + 1);
+      setSelectedFolderIndex((prev) => prev + 1);
       setSelectedDocIndex(0);
     }
   };
@@ -202,29 +203,32 @@ export function DocsPanel({ height, windowWidth }: DocsPanelProps) {
 
   /**
    * Keyboard Navigation
-   * 
+   *
    * Navigation Keys:
    * - ↑/↓: Navigate documents or scroll content
    * - ←/→: Switch between columns
    * - Enter: Select document
    * - ESC/0: Exit to nav bar (handled by useTabEscapeHandler)
-   * 
+   *
    * Note: ESC handling is now managed by the shared useTabEscapeHandler hook
    * for consistent hierarchical navigation across all tab components.
    */
-  useInput((input, key) => {
-    if (!hasFocus) return;
+  useInput(
+    (input, key) => {
+      if (!hasFocus) return;
 
-    if (key.upArrow) {
-      handleNavigateUp();
-    } else if (key.downArrow) {
-      handleNavigateDown();
-    } else if (key.leftArrow) {
-      handleSwitchColumn('left');
-    } else if (key.rightArrow) {
-      handleSwitchColumn('right');
-    }
-  }, { isActive: hasFocus });
+      if (key.upArrow) {
+        handleNavigateUp();
+      } else if (key.downArrow) {
+        handleNavigateDown();
+      } else if (key.leftArrow) {
+        handleSwitchColumn('left');
+      } else if (key.rightArrow) {
+        handleSwitchColumn('right');
+      }
+    },
+    { isActive: hasFocus }
+  );
 
   // Auto-scroll to keep selected item visible
   useEffect(() => {
@@ -255,7 +259,7 @@ export function DocsPanel({ height, windowWidth }: DocsPanelProps) {
 
   const visibleContentLines = useMemo(() => {
     // Height - Borders(2) - PaddingY(2) - Title(1) - Spacer(1) - ScrollIndicator(1) - Safety(5ish)
-    const maxLines = Math.max(5, height - 12); 
+    const maxLines = Math.max(5, height - 12);
     return contentLines.slice(contentScrollOffset, contentScrollOffset + maxLines);
   }, [contentLines, contentScrollOffset, height]);
 
@@ -275,7 +279,10 @@ export function DocsPanel({ height, windowWidth }: DocsPanelProps) {
             </Text>
           </Box>
           <Box flexShrink={1} marginLeft={1}>
-            <Text wrap="truncate-end" color={hasFocus ? uiState.theme.text.primary : uiState.theme.text.secondary}>
+            <Text
+              wrap="truncate-end"
+              color={hasFocus ? uiState.theme.text.primary : uiState.theme.text.secondary}
+            >
               ↑↓:Nav ←→:Column Enter:Select 0/Esc:Exit
             </Text>
           </Box>
@@ -285,21 +292,23 @@ export function DocsPanel({ height, windowWidth }: DocsPanelProps) {
       {/* Two-column layout */}
       <Box flexGrow={1} overflow="hidden" flexDirection="row" width="100%">
         {/* Left column: Document list (30%) */}
-        <Box 
-          flexDirection="column" 
-          width={absoluteLeftWidth ?? "30%"} 
+        <Box
+          flexDirection="column"
+          width={absoluteLeftWidth ?? '30%'}
           height="100%"
-          borderStyle="single" 
-          borderColor={focusedColumn === 'left' && hasFocus ? uiState.theme.text.accent : uiState.theme.border.primary}
+          borderStyle="single"
+          borderColor={
+            focusedColumn === 'left' && hasFocus
+              ? uiState.theme.text.accent
+              : uiState.theme.border.primary
+          }
           paddingY={1}
         >
           {/* Scroll indicator at top */}
           {scrollOffset > 0 && (
             <>
               <Box justifyContent="center" paddingX={1}>
-                <Text color={uiState.theme.text.secondary}>
-                  ▲ Scroll up for more
-                </Text>
+                <Text color={uiState.theme.text.secondary}>▲ Scroll up for more</Text>
               </Box>
               <Text> </Text>
             </>
@@ -337,8 +346,9 @@ export function DocsPanel({ height, windowWidth }: DocsPanelProps) {
                 // Document item
                 const folder = folders[item.folderIndex];
                 const doc = folder.documents[item.docIndex!];
-                const isSelected = !isOnExitItem && 
-                  item.folderIndex === selectedFolderIndex && 
+                const isSelected =
+                  !isOnExitItem &&
+                  item.folderIndex === selectedFolderIndex &&
                   item.docIndex === selectedDocIndex &&
                   focusedColumn === 'left';
 
@@ -361,21 +371,23 @@ export function DocsPanel({ height, windowWidth }: DocsPanelProps) {
             <>
               <Text> </Text>
               <Box justifyContent="center" paddingX={1}>
-                <Text color={uiState.theme.text.secondary}>
-                  ▼ Scroll down for more
-                </Text>
+                <Text color={uiState.theme.text.secondary}>▼ Scroll down for more</Text>
               </Box>
             </>
           )}
         </Box>
 
         {/* Right column: Document content (70%) */}
-        <Box 
-          flexDirection="column" 
-          width={absoluteRightWidth ?? "70%"} 
+        <Box
+          flexDirection="column"
+          width={absoluteRightWidth ?? '70%'}
           height="100%"
-          borderStyle="single" 
-          borderColor={focusedColumn === 'right' && hasFocus ? uiState.theme.text.accent : uiState.theme.border.primary} 
+          borderStyle="single"
+          borderColor={
+            focusedColumn === 'right' && hasFocus
+              ? uiState.theme.text.accent
+              : uiState.theme.border.primary
+          }
           paddingX={2}
           paddingY={1}
         >
@@ -406,16 +418,12 @@ export function DocsPanel({ height, windowWidth }: DocsPanelProps) {
               {/* Scroll indicator for content */}
               {contentScrollOffset + visibleContentLines.length < contentLines.length && (
                 <Box marginTop={1} flexShrink={0}>
-                  <Text color={uiState.theme.text.secondary}>
-                    ▼ Scroll down for more
-                  </Text>
+                  <Text color={uiState.theme.text.secondary}>▼ Scroll down for more</Text>
                 </Box>
               )}
             </>
           ) : (
-            <Text color={uiState.theme.text.secondary}>
-              Select a document to view
-            </Text>
+            <Text color={uiState.theme.text.secondary}>Select a document to view</Text>
           )}
         </Box>
       </Box>

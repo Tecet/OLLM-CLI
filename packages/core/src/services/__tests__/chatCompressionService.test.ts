@@ -1,6 +1,6 @@
 /**
  * Chat Compression Service Tests
- * 
+ *
  * Tests for chat compression service including:
  * - Message compression strategies
  * - Token counting
@@ -12,9 +12,9 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 import { ChatCompressionService } from '../chatCompressionService.js';
 
-import type { SessionMessage, CompressionOptions } from '../types.js';
 import type { TokenCounter } from '../../context/types.js';
 import type { ProviderAdapter } from '../../provider/types.js';
+import type { SessionMessage, CompressionOptions } from '../types.js';
 
 describe('ChatCompressionService', () => {
   let service: ChatCompressionService;
@@ -41,7 +41,11 @@ describe('ChatCompressionService', () => {
   // Helper Functions
   // ============================================================================
 
-  function createTestMessage(role: 'user' | 'assistant' | 'system', content: string, timestamp?: Date): SessionMessage {
+  function createTestMessage(
+    role: 'user' | 'assistant' | 'system',
+    content: string,
+    timestamp?: Date
+  ): SessionMessage {
     return {
       role,
       parts: [{ type: 'text', text: content }],
@@ -95,9 +99,7 @@ describe('ChatCompressionService', () => {
 
     it('should use fallback estimation when token counter is not available', async () => {
       const serviceWithoutCounter = new ChatCompressionService();
-      const messages = [
-        createTestMessage('user', 'Hello world'),
-      ];
+      const messages = [createTestMessage('user', 'Hello world')];
 
       const shouldCompress = await serviceWithoutCounter.shouldCompress(messages, 1000, 0.8);
 
@@ -131,9 +133,7 @@ describe('ChatCompressionService', () => {
     });
 
     it('should return false when token count is below threshold', async () => {
-      const messages = [
-        createTestMessage('user', 'Short message'),
-      ];
+      const messages = [createTestMessage('user', 'Short message')];
 
       const shouldCompress = await service.shouldCompress(messages, 10000, 0.8);
 
@@ -207,9 +207,7 @@ describe('ChatCompressionService', () => {
     });
 
     it('should update metadata compression count', async () => {
-      const messages = [
-        createTestMessage('user', 'Test message'),
-      ];
+      const messages = [createTestMessage('user', 'Test message')];
 
       const options: CompressionOptions = {
         strategy: 'truncate',
@@ -265,7 +263,7 @@ describe('ChatCompressionService', () => {
     it('should support multiple listeners', () => {
       const listener1 = vi.fn();
       const listener2 = vi.fn();
-      
+
       service.on('test-event', listener1);
       service.on('test-event', listener2);
       service.emit('test-event');
@@ -315,9 +313,7 @@ describe('ChatCompressionService', () => {
     });
 
     it('should handle very long messages', async () => {
-      const messages = [
-        createTestMessage('user', 'A'.repeat(100000)),
-      ];
+      const messages = [createTestMessage('user', 'A'.repeat(100000))];
 
       const shouldCompress = await service.shouldCompress(messages, 10000, 0.8);
 
@@ -325,9 +321,7 @@ describe('ChatCompressionService', () => {
     });
 
     it('should handle empty message content', async () => {
-      const messages = [
-        createTestMessage('user', ''),
-      ];
+      const messages = [createTestMessage('user', '')];
 
       const shouldCompress = await service.shouldCompress(messages, 1000, 0.8);
 
@@ -335,9 +329,7 @@ describe('ChatCompressionService', () => {
     });
 
     it('should handle zero token limit', async () => {
-      const messages = [
-        createTestMessage('user', 'Test'),
-      ];
+      const messages = [createTestMessage('user', 'Test')];
 
       const shouldCompress = await service.shouldCompress(messages, 0, 0.8);
 
@@ -345,9 +337,7 @@ describe('ChatCompressionService', () => {
     });
 
     it('should handle zero threshold', async () => {
-      const messages = [
-        createTestMessage('user', 'Test'),
-      ];
+      const messages = [createTestMessage('user', 'Test')];
 
       const shouldCompress = await service.shouldCompress(messages, 1000, 0);
 
@@ -361,11 +351,13 @@ describe('ChatCompressionService', () => {
 
   describe('provider integration', () => {
     it('should work without provider for truncate strategy', async () => {
-      const serviceWithoutProvider = new ChatCompressionService(undefined, undefined, mockTokenCounter);
-      
-      const messages = [
-        createTestMessage('user', 'Test message'),
-      ];
+      const serviceWithoutProvider = new ChatCompressionService(
+        undefined,
+        undefined,
+        mockTokenCounter
+      );
+
+      const messages = [createTestMessage('user', 'Test message')];
 
       const options: CompressionOptions = {
         strategy: 'truncate',
@@ -392,9 +384,7 @@ describe('ChatCompressionService', () => {
 
   describe('token counter integration', () => {
     it('should use token counter when available', async () => {
-      const messages = [
-        createTestMessage('user', 'Test message'),
-      ];
+      const messages = [createTestMessage('user', 'Test message')];
 
       await service.shouldCompress(messages, 1000, 0.8);
 
@@ -425,9 +415,7 @@ describe('ChatCompressionService', () => {
 
   describe('metadata handling', () => {
     it('should preserve metadata fields', async () => {
-      const messages = [
-        createTestMessage('user', 'Test'),
-      ];
+      const messages = [createTestMessage('user', 'Test')];
 
       const options: CompressionOptions = {
         strategy: 'truncate',
@@ -447,9 +435,7 @@ describe('ChatCompressionService', () => {
     });
 
     it('should work without metadata', async () => {
-      const messages = [
-        createTestMessage('user', 'Test'),
-      ];
+      const messages = [createTestMessage('user', 'Test')];
 
       const options: CompressionOptions = {
         strategy: 'truncate',

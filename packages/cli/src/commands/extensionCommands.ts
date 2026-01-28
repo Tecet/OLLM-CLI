@@ -1,6 +1,6 @@
 /**
  * Extension commands for marketplace functionality
- * 
+ *
  * Provides commands for:
  * - Searching extensions
  * - Installing extensions
@@ -41,11 +41,10 @@ export function createExtensionCommands(
         }
 
         // Parse arguments
-        const query = args.filter(arg => !arg.startsWith('--')).join(' ');
+        const query = args.filter((arg) => !arg.startsWith('--')).join(' ');
         const limitIndex = args.indexOf('--limit');
-        const limit = limitIndex !== -1 && args[limitIndex + 1] 
-          ? parseInt(args[limitIndex + 1], 10) 
-          : 10;
+        const limit =
+          limitIndex !== -1 && args[limitIndex + 1] ? parseInt(args[limitIndex + 1], 10) : 10;
 
         try {
           const results = await extensionRegistry.search(query, { limit });
@@ -58,18 +57,20 @@ export function createExtensionCommands(
           }
 
           // Format results
-          const formatted = results.map((result, index) => {
-            const { metadata, score } = result;
-            return [
-              `${index + 1}. **${metadata.name}** v${metadata.version}`,
-              `   ${metadata.description}`,
-              `   Author: ${metadata.author}`,
-              `   Tags: ${metadata.tags.join(', ')}`,
-              `   Downloads: ${metadata.downloads}`,
-              `   Match: ${(score * 100).toFixed(0)}%`,
-              '',
-            ].join('\n');
-          }).join('\n');
+          const formatted = results
+            .map((result, index) => {
+              const { metadata, score } = result;
+              return [
+                `${index + 1}. **${metadata.name}** v${metadata.version}`,
+                `   ${metadata.description}`,
+                `   Author: ${metadata.author}`,
+                `   Tags: ${metadata.tags.join(', ')}`,
+                `   Downloads: ${metadata.downloads}`,
+                `   Match: ${(score * 100).toFixed(0)}%`,
+                '',
+              ].join('\n');
+            })
+            .join('\n');
 
           return {
             success: true,
@@ -143,11 +144,7 @@ export function createExtensionCommands(
       aliases: ['ext list', 'ext ls'],
       description: 'List all installed extensions',
       usage: '/extensions list [--all]',
-      examples: [
-        '/extensions list',
-        '/extensions list --all',
-        '/ext ls',
-      ],
+      examples: ['/extensions list', '/extensions list --all', '/ext ls'],
       handler: async (args: string[]): Promise<CommandResult> => {
         const showAll = args.includes('--all');
 
@@ -162,9 +159,7 @@ export function createExtensionCommands(
           }
 
           // Filter by enabled status if not showing all
-          const filtered = showAll 
-            ? extensions 
-            : extensions.filter(ext => ext.enabled);
+          const filtered = showAll ? extensions : extensions.filter((ext) => ext.enabled);
 
           if (filtered.length === 0) {
             return {
@@ -174,23 +169,25 @@ export function createExtensionCommands(
           }
 
           // Format extensions
-          const formatted = filtered.map((ext: any, index: number) => {
-            const status = ext.enabled ? '✅' : '❌';
-            const hooks = ext.hooks?.length || 0;
-            const mcpServers = Object.keys(ext.mcpServers || {}).length;
-            const skills = ext.skills?.length || 0;
-            const metadata = ext.manifest || {};
-            const author = (metadata as any).author || 'unknown';
+          const formatted = filtered
+            .map((ext: any, index: number) => {
+              const status = ext.enabled ? '✅' : '❌';
+              const hooks = ext.hooks?.length || 0;
+              const mcpServers = Object.keys(ext.mcpServers || {}).length;
+              const skills = ext.skills?.length || 0;
+              const metadata = ext.manifest || {};
+              const author = (metadata as any).author || 'unknown';
 
-            return [
-              `${index + 1}. ${status} **${metadata.name || ext.name}** v${metadata.version || ext.version}`,
-              `   ${metadata.description || ext.description}`,
-              `   Author: ${author}`,
-              `   Hooks: ${hooks}, MCP Servers: ${mcpServers}, Skills: ${skills}`,
-              `   Path: ${ext.path}`,
-              '',
-            ].join('\n');
-          }).join('\n');
+              return [
+                `${index + 1}. ${status} **${metadata.name || ext.name}** v${metadata.version || ext.version}`,
+                `   ${metadata.description || ext.description}`,
+                `   Author: ${author}`,
+                `   Hooks: ${hooks}, MCP Servers: ${mcpServers}, Skills: ${skills}`,
+                `   Path: ${ext.path}`,
+                '',
+              ].join('\n');
+            })
+            .join('\n');
 
           return {
             success: true,
@@ -211,10 +208,7 @@ export function createExtensionCommands(
       aliases: ['ext enable', 'ext on'],
       description: 'Enable a disabled extension',
       usage: '/extensions enable <name>',
-      examples: [
-        '/extensions enable github-integration',
-        '/ext enable mcp-server',
-      ],
+      examples: ['/extensions enable github-integration', '/ext enable mcp-server'],
       handler: async (args: string[]): Promise<CommandResult> => {
         if (args.length === 0) {
           return {
@@ -247,10 +241,7 @@ export function createExtensionCommands(
       aliases: ['ext disable', 'ext off'],
       description: 'Disable an enabled extension',
       usage: '/extensions disable <name>',
-      examples: [
-        '/extensions disable github-integration',
-        '/ext disable mcp-server',
-      ],
+      examples: ['/extensions disable github-integration', '/ext disable mcp-server'],
       handler: async (args: string[]): Promise<CommandResult> => {
         if (args.length === 0) {
           return {
@@ -283,10 +274,7 @@ export function createExtensionCommands(
       aliases: ['ext info', 'ext show'],
       description: 'Show detailed information about an extension',
       usage: '/extensions info <name>',
-      examples: [
-        '/extensions info github-integration',
-        '/ext info mcp-server',
-      ],
+      examples: ['/extensions info github-integration', '/ext info mcp-server'],
       handler: async (args: string[]): Promise<CommandResult> => {
         if (args.length === 0) {
           return {
@@ -320,9 +308,9 @@ export function createExtensionCommands(
             `**Description:**`,
             extension.description,
             '',
-            `**Author:** ${((extension.manifest as any).author) || 'N/A'}`,
-            `**Repository:** ${((extension.manifest as any).repository) || 'N/A'}`,
-            `**License:** ${((extension.manifest as any).license) || 'N/A'}`,
+            `**Author:** ${(extension.manifest as any).author || 'N/A'}`,
+            `**Repository:** ${(extension.manifest as any).repository || 'N/A'}`,
+            `**License:** ${(extension.manifest as any).license || 'N/A'}`,
             '',
             `**Components:**`,
             `- Hooks: ${hooks}`,
@@ -336,7 +324,7 @@ export function createExtensionCommands(
           // Add hooks info if available
           if (extension.hooks && extension.hooks.length > 0) {
             info.push('', '**Hooks:**');
-            extension.hooks.forEach(hook => {
+            extension.hooks.forEach((hook) => {
               const ev = (hook as any).event ?? 'N/A';
               info.push(`- ${hook.name} (${ev})`);
             });
@@ -369,10 +357,7 @@ export function createExtensionCommands(
       aliases: ['ext reload', 'ext refresh'],
       description: 'Reload all extensions',
       usage: '/extensions reload',
-      examples: [
-        '/extensions reload',
-        '/ext reload',
-      ],
+      examples: ['/extensions reload', '/ext reload'],
       handler: async (): Promise<CommandResult> => {
         try {
           await extensionManager.loadExtensions();

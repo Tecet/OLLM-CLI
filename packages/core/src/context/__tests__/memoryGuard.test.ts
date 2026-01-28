@@ -1,6 +1,6 @@
 /**
  * Memory Guard Tests
- * 
+ *
  * Tests for the Memory Guard service including property-based tests
  * and unit tests for threshold actions.
  */
@@ -18,7 +18,7 @@ import type {
   ICompressionService,
   ConversationContext,
   VRAMInfo,
-  ContextUsage
+  ContextUsage,
 } from '../types.js';
 
 // ============================================================================
@@ -28,9 +28,9 @@ import type {
 class MockVRAMMonitor implements VRAMMonitor {
   private info: VRAMInfo = {
     total: 8 * 1024 * 1024 * 1024, // 8GB
-    used: 4 * 1024 * 1024 * 1024,  // 4GB
+    used: 4 * 1024 * 1024 * 1024, // 4GB
     available: 4 * 1024 * 1024 * 1024, // 4GB
-    modelLoaded: 3 * 1024 * 1024 * 1024 // 3GB
+    modelLoaded: 3 * 1024 * 1024 * 1024, // 3GB
   };
 
   async getInfo(): Promise<VRAMInfo> {
@@ -65,7 +65,7 @@ class MockContextPool implements ContextPool {
     targetContextSize: 8192,
     reserveBuffer: 512 * 1024 * 1024,
     kvCacheQuantization: 'q8_0' as const,
-    autoSize: true
+    autoSize: true,
   };
 
   currentSize = 8192;
@@ -87,7 +87,7 @@ class MockContextPool implements ContextPool {
       maxTokens: this.maxTokens,
       percentage: (this.currentTokens / this.maxTokens) * 100,
       vramUsed: 4 * 1024 * 1024 * 1024,
-      vramTotal: 8 * 1024 * 1024 * 1024
+      vramTotal: 8 * 1024 * 1024 * 1024,
     };
   }
 
@@ -137,7 +137,7 @@ describe('MemoryGuard - Property Tests', () => {
    * Property 24: Allocation Safety Check
    * For any token allocation request, canAllocate should return true only if
    * the allocation would not exceed the soft limit (80%).
-   * 
+   *
    * Feature: stage-04b-context-management, Property 24: Allocation Safety Check
    * Validates: Requirements 6.1
    */
@@ -185,7 +185,7 @@ describe('MemoryGuard - Property Tests', () => {
    * Property 26: Safety Buffer Inclusion
    * For any safe allocation limit calculation, a safety buffer of 512MB
    * should be subtracted from available memory.
-   * 
+   *
    * Feature: stage-04b-context-management, Property 26: Safety Buffer Inclusion
    * Validates: Requirements 6.6
    */
@@ -195,7 +195,9 @@ describe('MemoryGuard - Property Tests', () => {
         // Generate max tokens
         fc.integer({ min: 2048, max: 131072 }),
         // Generate soft threshold
-        fc.double({ min: 0.5, max: 0.9, noNaN: true, noDefaultInfinity: true }).filter(v => isFinite(v) && !isNaN(v)),
+        fc
+          .double({ min: 0.5, max: 0.9, noNaN: true, noDefaultInfinity: true })
+          .filter((v) => isFinite(v) && !isNaN(v)),
         (maxTokens, softThreshold) => {
           // Setup
           const vramMonitor = new MockVRAMMonitor();
@@ -207,8 +209,8 @@ describe('MemoryGuard - Property Tests', () => {
             thresholds: {
               soft: softThreshold,
               hard: 0.9,
-              critical: 0.95
-            }
+              critical: 0.95,
+            },
           });
 
           // Calculate expected safe limit
@@ -230,7 +232,7 @@ describe('MemoryGuard - Property Tests', () => {
    * Property 25: Emergency Action Notification
    * For any emergency action taken by Memory Guard, the user should be
    * notified with recovery options.
-   * 
+   *
    * Feature: stage-04b-context-management, Property 25: Emergency Action Notification
    * Validates: Requirements 6.5
    */
@@ -254,9 +256,9 @@ describe('MemoryGuard - Property Tests', () => {
           // Create mock context with random messages
           const messages = Array.from({ length: messageCount }, (_, i) => ({
             id: `msg-${i}`,
-            role: i === 0 ? 'system' as const : 'user' as const,
+            role: i === 0 ? ('system' as const) : ('user' as const),
             content: `Message ${i}`,
-            timestamp: new Date()
+            timestamp: new Date(),
           }));
 
           const mockContext: ConversationContext = {
@@ -266,15 +268,15 @@ describe('MemoryGuard - Property Tests', () => {
               id: 'system',
               role: 'system',
               content: 'System',
-              timestamp: new Date()
+              timestamp: new Date(),
             },
             tokenCount: messageCount * 100,
             maxTokens: 10000,
             metadata: {
               model: 'test-model',
               contextSize: 10000,
-              compressionHistory: []
-            }
+              compressionHistory: [],
+            },
           };
 
           memoryGuard.setContext(mockContext);
@@ -371,8 +373,8 @@ describe('MemoryGuard - Unit Tests', () => {
         thresholds: {
           soft: 0.7, // Custom soft threshold
           hard: 0.9,
-          critical: 0.95
-        }
+          critical: 0.95,
+        },
       });
 
       contextPool.setMaxTokens(100000);
@@ -416,28 +418,28 @@ describe('MemoryGuard - Unit Tests', () => {
             id: '1',
             role: 'system',
             content: 'System prompt',
-            timestamp: new Date()
+            timestamp: new Date(),
           },
           {
             id: '2',
             role: 'user',
             content: 'User message',
-            timestamp: new Date()
-          }
+            timestamp: new Date(),
+          },
         ],
         systemPrompt: {
           id: '1',
           role: 'system',
           content: 'System prompt',
-          timestamp: new Date()
+          timestamp: new Date(),
         },
         tokenCount: 100,
         maxTokens: 1000,
         metadata: {
           model: 'test-model',
           contextSize: 1000,
-          compressionHistory: []
-        }
+          compressionHistory: [],
+        },
       };
 
       snapshotManager.createSnapshot.mockResolvedValue({
@@ -450,8 +452,8 @@ describe('MemoryGuard - Unit Tests', () => {
         metadata: {
           model: 'test-model',
           contextSize: 1000,
-          compressionRatio: 1.0
-        }
+          compressionRatio: 1.0,
+        },
       });
 
       memoryGuard.setContext(mockContext);
@@ -481,15 +483,15 @@ describe('MemoryGuard - Unit Tests', () => {
           id: '1',
           role: 'system',
           content: 'System prompt',
-          timestamp: new Date()
+          timestamp: new Date(),
         },
         tokenCount: 0,
         maxTokens: 1000,
         metadata: {
           model: 'test-model',
           contextSize: 1000,
-          compressionHistory: []
-        }
+          compressionHistory: [],
+        },
       };
 
       memoryGuard.setContext(mockContext);
@@ -517,22 +519,22 @@ describe('MemoryGuard - Unit Tests', () => {
             id: '1',
             role: 'user',
             content: 'Test message',
-            timestamp: new Date()
-          }
+            timestamp: new Date(),
+          },
         ],
         systemPrompt: {
           id: '0',
           role: 'system',
           content: 'System',
-          timestamp: new Date()
+          timestamp: new Date(),
         },
         tokenCount: 8000,
         maxTokens: 10000,
         metadata: {
           model: 'test-model',
           contextSize: 10000,
-          compressionHistory: []
-        }
+          compressionHistory: [],
+        },
       };
 
       compressionService.compress.mockResolvedValue({
@@ -540,12 +542,12 @@ describe('MemoryGuard - Unit Tests', () => {
           id: 'summary',
           role: 'system',
           content: 'Summary',
-          timestamp: new Date()
+          timestamp: new Date(),
         },
         preserved: [],
         originalTokens: 8000,
         compressedTokens: 4000,
-        compressionRatio: 0.5
+        compressionRatio: 0.5,
       });
 
       memoryGuard.setContext(mockContext);
@@ -580,28 +582,28 @@ describe('MemoryGuard - Unit Tests', () => {
             id: '1',
             role: 'system',
             content: 'System',
-            timestamp: new Date()
+            timestamp: new Date(),
           },
           {
             id: '2',
             role: 'user',
             content: 'User message',
-            timestamp: new Date()
-          }
+            timestamp: new Date(),
+          },
         ],
         systemPrompt: {
           id: '1',
           role: 'system',
           content: 'System',
-          timestamp: new Date()
+          timestamp: new Date(),
         },
         tokenCount: 9500,
         maxTokens: 10000,
         metadata: {
           model: 'test-model',
           contextSize: 10000,
-          compressionHistory: []
-        }
+          compressionHistory: [],
+        },
       };
 
       memoryGuard.setContext(mockContext);
@@ -617,7 +619,7 @@ describe('MemoryGuard - Unit Tests', () => {
       // Wait for emergency event with timeout
       await Promise.race([
         emergencyPromise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 3000))
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 3000)),
       ]);
 
       // Verify emergency actions were executed
@@ -640,8 +642,8 @@ describe('MemoryGuard - Unit Tests', () => {
         thresholds: {
           soft: 0.7,
           hard: 0.85,
-          critical: 0.95
-        }
+          critical: 0.95,
+        },
       });
 
       expect(guard).toBeDefined();

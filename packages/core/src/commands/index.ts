@@ -1,6 +1,6 @@
 /**
  * Commands Module
- * 
+ *
  * Exports command handlers for CLI commands
  */
 
@@ -9,5 +9,5 @@ export {
   createContextCommandHandler,
   type ContextCommandResult,
   type ContextStatusData,
-  type ContextStatsData
+  type ContextStatsData,
 } from './contextCommand.js';

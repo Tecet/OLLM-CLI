@@ -4,6 +4,7 @@
 **Status:** Source of Truth
 
 **Related Documents:**
+
 - `dev_ProviderSystem.md` - Provider integration with tools
 - `dev_MCPIntegration.md` - MCP tool integration
 - `dev_HookSystem.md` - Hook integration with tools
@@ -40,29 +41,32 @@ LLM sees tool in available tools list
 
 ### Tool Capabilities Summary
 
-| Category | Tools | Risk Level | Auto-Approve (AUTO mode) |
-|----------|-------|------------|--------------------------|
-| File Discovery | glob, ls, grep | Low | ✅ Yes |
-| File Reading | read_file, read_many_files | Low | ✅ Yes |
-| File Writing | write_file, edit_file | Medium | ❌ Ask |
-| Web | web_search, web_fetch | Low | ✅ Yes |
-| Shell | shell | High | ❌ Ask |
-| Memory | memory, remember | Low | ✅ Yes |
-| Goals | create_goal, etc. | Low | ✅ Yes |
-| Context | write_memory_dump, read_reasoning | Low | ✅ Yes |
+| Category       | Tools                             | Risk Level | Auto-Approve (AUTO mode) |
+| -------------- | --------------------------------- | ---------- | ------------------------ |
+| File Discovery | glob, ls, grep                    | Low        | ✅ Yes                   |
+| File Reading   | read_file, read_many_files        | Low        | ✅ Yes                   |
+| File Writing   | write_file, edit_file             | Medium     | ❌ Ask                   |
+| Web            | web_search, web_fetch             | Low        | ✅ Yes                   |
+| Shell          | shell                             | High       | ❌ Ask                   |
+| Memory         | memory, remember                  | Low        | ✅ Yes                   |
+| Goals          | create_goal, etc.                 | Low        | ✅ Yes                   |
+| Context        | write_memory_dump, read_reasoning | Low        | ✅ Yes                   |
 
 ### File Discovery Tools
+
 - `glob` - Find files by pattern (wildcards, respects .gitignore)
 - `ls` - List directory contents (recursive, sizes, permissions)
 - `grep` - Search file contents (regex, case-sensitive/insensitive)
 
 ### File Operations Tools
+
 - `read_file` - Read single file (line ranges, large file handling)
 - `read_many_files` - Read multiple files (batch reading)
 - `edit_file` - Edit file sections (search-replace, diff preview)
 - `write_file` - Create/overwrite files (creates directories)
 
 ### Web Tools
+
 - `web_search` - Search internet (multiple results, snippets)
 - `web_fetch` - Fetch URL content (various content types, redirects)
 
@@ -97,6 +101,7 @@ The shell tool will be enhanced with a visual collapsible terminal component for
 ```
 
 **Features:**
+
 - Auto-expand on errors (show details)
 - Auto-collapse on success (save space)
 - Real-time streaming output
@@ -107,6 +112,7 @@ The shell tool will be enhanced with a visual collapsible terminal component for
 **See:** `works_todo.md` Task #11 for implementation details
 
 ### Memory & Context Tools
+
 - `memory` - Persistent memory (survives sessions, searchable)
 - `remember` - Simplified memory (quick storage)
 - `write_memory_dump` - Context snapshot (debugging, backup)
@@ -125,6 +131,7 @@ The shell tool will be enhanced with a visual collapsible terminal component for
 **See:** `dev_PromptSystem.md` for goal system architecture
 
 ### Other Tools
+
 - `write_todos` - Manage todo list
 - `trigger_hot_swap` - Trigger context hot swap (dynamic registration)
 
@@ -231,18 +238,21 @@ Return permission result
 ### Approval Modes
 
 **YOLO Mode:**
+
 - Auto-approve all tools
 - No confirmations
 - Maximum speed
 - Use with caution
 
 **AUTO Mode:**
+
 - Auto-approve read-only tools
 - Ask for write operations
 - Ask for shell commands
 - Balanced safety/speed
 
 **ASK Mode:**
+
 - Confirm every tool
 - Maximum safety
 - Slower workflow
@@ -297,6 +307,7 @@ LLM can use tool in next turn
 ```
 
 **Examples:**
+
 - `write_memory_dump` - Registered by ChatContext when memory service available
 - `trigger_hot_swap` - Registered by HotSwapService when enabled
 - Extension tools - Registered when extension loads
@@ -307,20 +318,20 @@ LLM can use tool in next turn
 
 ```typescript
 interface ToolDefinition {
-  name: string;              // Tool identifier
-  description: string;       // What the tool does
+  name: string; // Tool identifier
+  description: string; // What the tool does
   inputSchema: {
     type: 'object';
     properties: {
       [key: string]: {
-        type: string;        // Parameter type
+        type: string; // Parameter type
         description: string; // Parameter description
-        required?: boolean;  // Is required?
-      }
+        required?: boolean; // Is required?
+      };
     };
-    required: string[];      // Required parameters
+    required: string[]; // Required parameters
   };
-  execute: (args: any) => Promise<any>;  // Implementation
+  execute: (args: any) => Promise<any>; // Implementation
 }
 ```
 
@@ -381,12 +392,14 @@ Return to LLM
 ### Truncation Strategy
 
 **Large outputs:**
+
 - File contents > 10KB: Show first 5KB + "... [truncated]"
 - Directory listings > 1000 items: Show first 500 + count
 - Search results > 100 matches: Show first 50 + count
 - Shell output > 10KB: Show last 5KB (most recent)
 
 **Rationale:**
+
 - Prevents context overflow
 - Keeps most relevant information
 - LLM can request specific sections if needed
@@ -394,30 +407,35 @@ Return to LLM
 ## Key Interconnections
 
 ### Tool Registry → Policy Engine
+
 - `ToolRegistry.executeTool()` calls `PolicyEngine.checkPermission()`
 - Policy engine evaluates risk level
 - Returns approval/denial
 - Registry proceeds or aborts based on result
 
 ### Tool Registry → MCP Client
+
 - MCP tools registered via `MCPToolWrapper`
 - Wrapper routes to `MCPClient.callTool()`
 - MCP client handles transport and protocol
 - Result returned through wrapper
 
 ### Tool Registry → LLM
+
 - Registry provides tool list to LLM
 - LLM sees tool names and descriptions
 - LLM requests tool execution
 - Registry executes and returns result
 
 ### Policy Engine → User Interface
+
 - Policy engine requests confirmation
 - UI shows tool details and preview
 - User approves/denies
 - Result returned to policy engine
 
 ### Dynamic Tools → Services
+
 - Services register tools at runtime
 - `ChatContext` registers memory dump tool
 - `HotSwapService` registers hot swap tool
@@ -426,12 +444,14 @@ Return to LLM
 ## Related Files
 
 **Core Tool System:**
+
 - `packages/core/src/tools/tool-registry.ts` - Tool registration and execution
 - `packages/core/src/tools/types.ts` - Tool type definitions
 - `packages/core/src/tools/validation.ts` - Parameter validation
 - `packages/core/src/tools/output-helpers.ts` - Result formatting
 
 **Built-in Tools:**
+
 - `packages/core/src/tools/glob.ts` - File pattern search
 - `packages/core/src/tools/ls.ts` - Directory listing
 - `packages/core/src/tools/grep.ts` - Content search
@@ -449,14 +469,17 @@ Return to LLM
 - `packages/core/src/tools/read-reasoning.ts` - Reasoning retrieval
 
 **Dynamic Tools:**
+
 - `packages/core/src/tools/MemoryDumpTool.ts` - Memory dump tool
 - `packages/core/src/tools/HotSwapTool.ts` - Hot swap tool
 
 **Policy System:**
+
 - `packages/core/src/policy/policyEngine.ts` - Permission checking
 - `packages/core/src/policy/policyRules.ts` - Risk evaluation rules
 
 **MCP Integration:**
+
 - `packages/core/src/mcp/mcpToolWrapper.ts` - MCP tool wrapper
 - `packages/core/src/mcp/mcpClient.ts` - MCP client
 
@@ -471,6 +494,7 @@ Return to LLM
 **Solution:** Tools are now properly passed to the provider in chat requests via the refactored ChatContext system.
 
 **Implementation:**
+
 - Tools registered in ToolRegistry
 - Passed through ChatContext to provider
 - Available to LLM in all chat requests
@@ -482,6 +506,7 @@ Return to LLM
 **Symptom:** Tool call returns error
 
 **Solutions:**
+
 1. Check tool implementation for bugs
 2. Verify parameters match schema
 3. Check file paths are valid
@@ -492,6 +517,7 @@ Return to LLM
 **Symptom:** Tool execution blocked by policy engine
 
 **Solutions:**
+
 1. Check approval mode (YOLO, AUTO, ASK)
 2. Approve tool manually if in ASK mode
 3. Review tool risk level
@@ -534,18 +560,19 @@ Return to LLM
 
 ## File Locations
 
-| File | Purpose |
-|------|---------|
-| `packages/core/src/tools/tool-registry.ts` | Tool registration and execution |
-| `packages/core/src/tools/types.ts` | Tool type definitions |
-| `packages/core/src/tools/validation.ts` | Parameter validation |
-| `packages/core/src/tools/output-helpers.ts` | Result formatting |
-| `packages/core/src/policy/policyEngine.ts` | Permission checking |
-| `packages/core/src/policy/policyRules.ts` | Risk evaluation rules |
-| `packages/core/src/mcp/mcpToolWrapper.ts` | MCP tool wrapper |
-| `packages/core/src/mcp/mcpClient.ts` | MCP client |
+| File                                        | Purpose                         |
+| ------------------------------------------- | ------------------------------- |
+| `packages/core/src/tools/tool-registry.ts`  | Tool registration and execution |
+| `packages/core/src/tools/types.ts`          | Tool type definitions           |
+| `packages/core/src/tools/validation.ts`     | Parameter validation            |
+| `packages/core/src/tools/output-helpers.ts` | Result formatting               |
+| `packages/core/src/policy/policyEngine.ts`  | Permission checking             |
+| `packages/core/src/policy/policyRules.ts`   | Risk evaluation rules           |
+| `packages/core/src/mcp/mcpToolWrapper.ts`   | MCP tool wrapper                |
+| `packages/core/src/mcp/mcpClient.ts`        | MCP client                      |
 
 **Built-in Tools:**
+
 - `packages/core/src/tools/glob.ts` - File pattern search
 - `packages/core/src/tools/ls.ts` - Directory listing
 - `packages/core/src/tools/grep.ts` - Content search
@@ -563,6 +590,7 @@ Return to LLM
 - `packages/core/src/tools/read-reasoning.ts` - Reasoning retrieval
 
 **Dynamic Tools:**
+
 - `packages/core/src/tools/MemoryDumpTool.ts` - Memory dump tool
 - `packages/core/src/tools/HotSwapTool.ts` - Hot swap tool
 

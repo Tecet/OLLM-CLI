@@ -1,6 +1,6 @@
 /**
  * Workflow Status Component
- * 
+ *
  * Displays the current workflow progress and status
  */
 
@@ -38,7 +38,7 @@ function getModeIcon(mode: string): string {
     assistant: '💬',
     planning: '📋',
     developer: '👨‍💻',
-    debugger: '🐛'
+    debugger: '🐛',
   };
   return icons[mode] || '📝';
 }
@@ -54,7 +54,7 @@ function getProgressBar(percent: number, width: number = 20): string {
 
 /**
  * Workflow Status Component
- * 
+ *
  * Displays current workflow progress in the UI
  */
 export function WorkflowStatus({ progress, theme, compact = false }: WorkflowStatusProps) {
@@ -99,26 +99,24 @@ export function WorkflowStatus({ progress, theme, compact = false }: WorkflowSta
           </>
         )}
       </Box>
-      
+
       <Box flexDirection="column" marginTop={1}>
         {/* Progress bar */}
         <Box flexDirection="row" alignItems="center">
           <Text color={theme.text.secondary}>Progress: </Text>
-          <Text color={theme.status.info}>
-            {getProgressBar(progress.percentComplete)}
-          </Text>
+          <Text color={theme.status.info}>{getProgressBar(progress.percentComplete)}</Text>
           <Text color={theme.text.secondary}> </Text>
-          <Text color={theme.status.info}>
-            {progress.percentComplete}%
-          </Text>
+          <Text color={theme.status.info}>{progress.percentComplete}%</Text>
         </Box>
-        
+
         {/* Current step */}
         <Box flexDirection="row" alignItems="center" marginTop={1}>
-          <Text color={theme.text.secondary}>Step {progress.currentStep}/{progress.totalSteps}: </Text>
+          <Text color={theme.text.secondary}>
+            Step {progress.currentStep}/{progress.totalSteps}:{' '}
+          </Text>
           <Text color={theme.text.primary}>{progress.currentStepDescription}</Text>
         </Box>
-        
+
         {/* Current mode */}
         <Box flexDirection="row" alignItems="center">
           <Text color={theme.text.secondary}>Mode: </Text>
@@ -126,7 +124,7 @@ export function WorkflowStatus({ progress, theme, compact = false }: WorkflowSta
             {getModeIcon(progress.currentMode)} {progress.currentMode}
           </Text>
         </Box>
-        
+
         {/* Steps completed */}
         <Box flexDirection="row" alignItems="center">
           <Text color={theme.text.secondary}>Completed: </Text>

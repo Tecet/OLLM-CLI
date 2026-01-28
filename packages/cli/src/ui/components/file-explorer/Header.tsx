@@ -1,9 +1,9 @@
 /**
  * Header - File Explorer header component
- * 
+ *
  * Displays the current mode (Browse/Workspace), active project, and
  * provides visual context for the file explorer state.
- * 
+ *
  * Requirements: 11.1 (Display current mode in header)
  */
 
@@ -22,7 +22,7 @@ export interface HeaderProps {
 
 /**
  * Header component
- * 
+ *
  * Displays:
  * - File Explorer title
  * - Current mode (Browse/Workspace)

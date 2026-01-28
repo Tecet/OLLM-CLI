@@ -6,34 +6,28 @@ import { Theme } from '../../../config/types.js';
 export interface DocViewerProps {
   /** Document content (markdown) */
   content: string;
-  
+
   /** Document title */
   title: string;
-  
+
   /** Theme for styling */
   theme: Theme;
-  
+
   /** Whether content is loading */
   loading?: boolean;
-  
+
   /** Error message if loading failed */
   error?: string;
 }
 
 /**
  * DocViewer component
- * 
+ *
  * Displays markdown documentation content.
  * Supports basic markdown rendering.
  * Shows loading and error states.
  */
-export function DocViewer({
-  content,
-  title,
-  theme,
-  loading = false,
-  error,
-}: DocViewerProps) {
+export function DocViewer({ content, title, theme, loading = false, error }: DocViewerProps) {
   if (loading) {
     return (
       <Box flexDirection="column" padding={2}>
@@ -78,9 +72,7 @@ export function DocViewer({
     if (line.startsWith('### ')) {
       return (
         <Box key={index}>
-          <Text color={theme.text.primary}>
-            {line.substring(4)}
-          </Text>
+          <Text color={theme.text.primary}>{line.substring(4)}</Text>
         </Box>
       );
     }
@@ -100,9 +92,7 @@ export function DocViewer({
     if (line.startsWith('- ') || line.startsWith('* ')) {
       return (
         <Box key={index}>
-          <Text color={theme.text.primary}>
-            • {line.substring(2)}
-          </Text>
+          <Text color={theme.text.primary}>• {line.substring(2)}</Text>
         </Box>
       );
     }

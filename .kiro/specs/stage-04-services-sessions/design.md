@@ -5,6 +5,7 @@
 This design defines six core services that provide session persistence, context management, safety mechanisms, and security features for the OLLM CLI. These services work together to enable reliable conversation history, intelligent context size management, protection against runaway execution, and secure tool execution environments.
 
 The services are designed to be:
+
 - **Independent**: Each service has a single, well-defined responsibility
 - **Composable**: Services can be used together or independently
 - **Configurable**: Behavior can be customized through configuration
@@ -67,7 +68,7 @@ sequenceDiagram
     ContextMgr-->>ChatClient: Return context
     ChatClient->>Recording: Record user message
     ChatClient->>LoopDetection: Check for loops
-    
+
     alt Loop detected
         LoopDetection-->>ChatClient: Loop event
         ChatClient-->>User: Stop execution
@@ -137,22 +138,23 @@ interface ChatRecordingService {
   // Record operations
   recordMessage(sessionId: string, message: SessionMessage): Promise<void>;
   recordToolCall(sessionId: string, toolCall: SessionToolCall): Promise<void>;
-  
+
   // Session retrieval
   getSession(sessionId: string): Promise<Session | null>;
   listSessions(): Promise<SessionSummary[]>;
-  
+
   // Session management
   createSession(model: string, provider: string): Promise<string>;
   deleteSession(sessionId: string): Promise<void>;
   deleteOldestSessions(keepCount: number): Promise<void>;
-  
+
   // Auto-save
   saveSession(sessionId: string): Promise<void>;
 }
 ```
 
 **Implementation Notes:**
+
 - Store sessions as individual JSON files in `~/.ollm/session-data/`
 - Use atomic writes (write to temp file, then rename) to prevent corruption
 - Maintain an in-memory cache of the current session for performance
@@ -181,18 +183,11 @@ interface CompressionResult {
 
 interface ChatCompressionService {
   // Check if compression is needed
-  shouldCompress(
-    messages: SessionMessage[],
-    tokenLimit: number,
-    threshold: number
-  ): boolean;
-  
+  shouldCompress(messages: SessionMessage[], tokenLimit: number, threshold: number): boolean;
+
   // Perform compression
-  compress(
-    messages: SessionMessage[],
-    options: CompressionOptions
-  ): Promise<CompressionResult>;
-  
+  compress(messages: SessionMessage[], options: CompressionOptions): Promise<CompressionResult>;
+
   // Strategy-specific methods
   summarize(messages: SessionMessage[], targetTokens: number): Promise<SessionMessage[]>;
   truncate(messages: SessionMessage[], targetTokens: number): SessionMessage[];
@@ -201,6 +196,7 @@ interface ChatCompressionService {
 ```
 
 **Implementation Notes:**
+
 - **Summarize strategy**: Use the LLM to create a concise summary of older messages
 - **Truncate strategy**: Simply remove oldest messages until under target
 - **Hybrid strategy**: Summarize old messages, keep recent N tokens intact
@@ -228,21 +224,22 @@ interface LoopDetectionConfig {
 interface LoopDetectionService {
   // Configuration
   configure(config: LoopDetectionConfig): void;
-  
+
   // Tracking
   recordTurn(): void;
   recordToolCall(toolName: string, args: Record<string, unknown>): void;
   recordOutput(output: string): void;
-  
+
   // Detection
   checkForLoop(): LoopPattern | null;
-  
+
   // Reset
   reset(): void;
 }
 ```
 
 **Implementation Notes:**
+
 - Track last N tool calls with arguments (use hash for comparison)
 - Track last N outputs (use similarity metric, not just exact match)
 - Increment turn counter on each user-assistant cycle
@@ -265,18 +262,14 @@ interface ContextEntry {
 
 interface ContextManager {
   // Add/remove context
-  addContext(
-    key: string,
-    content: string,
-    options?: { priority?: number; source?: string }
-  ): void;
+  addContext(key: string, content: string, options?: { priority?: number; source?: string }): void;
   removeContext(key: string): void;
   clearContext(): void;
-  
+
   // Retrieve context
   getContext(): ContextEntry[];
   getSystemPromptAdditions(): string;
-  
+
   // Query
   hasContext(key: string): boolean;
   getContextBySource(source: string): ContextEntry[];
@@ -284,6 +277,7 @@ interface ContextManager {
 ```
 
 **Implementation Notes:**
+
 - Store context entries in a Map keyed by unique key
 - Sort by priority when generating system prompt additions
 - Format context as markdown sections in system prompt
@@ -315,13 +309,13 @@ interface FileDiscoveryService {
   // Discovery
   discover(options: DiscoveryOptions): AsyncIterable<FileEntry>;
   discoverAll(options: DiscoveryOptions): Promise<FileEntry[]>;
-  
+
   // Watching
   watchChanges(
     root: string,
     callback: (event: 'add' | 'change' | 'unlink', path: string) => void
   ): Disposable;
-  
+
   // Ignore patterns
   loadIgnorePatterns(root: string): Promise<string[]>;
   shouldIgnore(path: string, patterns: string[]): boolean;
@@ -333,6 +327,7 @@ interface Disposable {
 ```
 
 **Implementation Notes:**
+
 - Use `fdir` library for fast directory traversal
 - Read `.ollmignore` and `.gitignore` files
 - Built-in ignores: `node_modules`, `.git`, `dist`, `build`, `.next`, `.cache`
@@ -353,10 +348,10 @@ interface SanitizationConfig {
 interface EnvironmentSanitizationService {
   // Configuration
   configure(config: SanitizationConfig): void;
-  
+
   // Sanitization
   sanitize(env: Record<string, string>): Record<string, string>;
-  
+
   // Utilities
   isAllowed(varName: string): boolean;
   isDenied(varName: string): boolean;
@@ -364,6 +359,7 @@ interface EnvironmentSanitizationService {
 ```
 
 **Implementation Notes:**
+
 - Default allow list: `PATH`, `HOME`, `USER`, `SHELL`, `TERM`, `LANG`, `LC_*`
 - Default deny patterns: `*_KEY`, `*_SECRET`, `*_TOKEN`, `*_PASSWORD`, `*_CREDENTIAL`, `AWS_*`, `GITHUB_*`
 - Use `picomatch` for pattern matching
@@ -432,18 +428,18 @@ services:
     dataDir: ~/.ollm/session-data
     maxSessions: 100
     autoSave: true
-    
+
   compression:
     enabled: true
     threshold: 0.8
     strategy: hybrid
     preserveRecent: 4096
-    
+
   loopDetection:
     enabled: true
     maxTurns: 50
     repeatThreshold: 3
-    
+
   fileDiscovery:
     maxDepth: 10
     followSymlinks: false
@@ -452,7 +448,7 @@ services:
       - .git
       - dist
       - build
-    
+
   environment:
     allowList:
       - PATH
@@ -462,142 +458,141 @@ services:
       - TERM
       - LANG
     denyPatterns:
-      - "*_KEY"
-      - "*_SECRET"
-      - "*_TOKEN"
-      - "*_PASSWORD"
-      - "*_CREDENTIAL"
-      - "AWS_*"
-      - "GITHUB_*"
+      - '*_KEY'
+      - '*_SECRET'
+      - '*_TOKEN'
+      - '*_PASSWORD'
+      - '*_CREDENTIAL'
+      - 'AWS_*'
+      - 'GITHUB_*'
 ```
-
 
 ## Correctness Properties
 
-*A property is a characteristic or behavior that should hold true across all valid executions of a system—essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
+_A property is a characteristic or behavior that should hold true across all valid executions of a system—essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees._
 
 ### Session Recording Properties
 
 **Property 1: Session persistence round-trip**
-*For any* session with messages and tool calls, saving the session and then loading it should produce an equivalent session with all data intact.
+_For any_ session with messages and tool calls, saving the session and then loading it should produce an equivalent session with all data intact.
 **Validates: Requirements 1.1, 1.2, 1.3, 1.5**
 
 **Property 2: Session file format completeness**
-*For any* saved session, the JSON file should contain all required fields (sessionId, startTime, lastActivity, model, provider, messages, toolCalls, metadata) and all nested structures should have their required fields (messages have role/parts/timestamp, tool calls have id/name/args/result/timestamp).
+_For any_ saved session, the JSON file should contain all required fields (sessionId, startTime, lastActivity, model, provider, messages, toolCalls, metadata) and all nested structures should have their required fields (messages have role/parts/timestamp, tool calls have id/name/args/result/timestamp).
 **Validates: Requirements 1.7, 1.8, 2.1, 2.2, 2.3**
 
 **Property 3: Timestamp format validity**
-*For any* timestamp field in any session file, it should parse as a valid ISO 8601 formatted string.
+_For any_ timestamp field in any session file, it should parse as a valid ISO 8601 formatted string.
 **Validates: Requirements 2.4**
 
 **Property 4: Session ID uniqueness and format**
-*For any* created session, the session ID should be a valid UUID format and should be unique across all sessions.
+_For any_ created session, the session ID should be a valid UUID format and should be unique across all sessions.
 **Validates: Requirements 1.7, 2.5**
 
 **Property 5: Session listing completeness**
-*For any* set of saved sessions, listing sessions should return summaries for all sessions with correct counts and metadata.
+_For any_ set of saved sessions, listing sessions should return summaries for all sessions with correct counts and metadata.
 **Validates: Requirements 1.4**
 
 **Property 6: Session deletion removes file**
-*For any* session, deleting it should remove the session file from the file system and the session should no longer appear in the session list.
+_For any_ session, deleting it should remove the session file from the file system and the session should no longer appear in the session list.
 **Validates: Requirements 1.6**
 
 **Property 7: Session auto-save durability**
-*For any* sequence of messages and tool calls recorded to a session, all recorded data should be persisted to disk and recoverable even if the process terminates unexpectedly.
+_For any_ sequence of messages and tool calls recorded to a session, all recorded data should be persisted to disk and recoverable even if the process terminates unexpectedly.
 **Validates: Requirements 9.3, 9.6**
 
 **Property 8: Session count limit enforcement**
-*For any* session count exceeding the configured maximum, the oldest sessions should be automatically deleted until the count is at or below the maximum.
+_For any_ session count exceeding the configured maximum, the oldest sessions should be automatically deleted until the count is at or below the maximum.
 **Validates: Requirements 9.4**
 
 **Property 9: Last activity timestamp updates**
-*For any* message or tool call recorded to a session, the lastActivity timestamp should be updated to a value greater than or equal to the previous lastActivity timestamp.
+_For any_ message or tool call recorded to a session, the lastActivity timestamp should be updated to a value greater than or equal to the previous lastActivity timestamp.
 **Validates: Requirements 9.5**
 
 ### Compression Properties
 
 **Property 10: Compression trigger threshold**
-*For any* message history where token count exceeds (threshold × token limit), the compression service should indicate that compression is needed.
+_For any_ message history where token count exceeds (threshold × token limit), the compression service should indicate that compression is needed.
 **Validates: Requirements 3.1, 3.7**
 
 **Property 11: Compression preserves critical messages**
-*For any* compression operation, the system prompt (first message) and the most recent N tokens of messages should remain unchanged in the compressed result.
+_For any_ compression operation, the system prompt (first message) and the most recent N tokens of messages should remain unchanged in the compressed result.
 **Validates: Requirements 3.2, 3.3, 3.6**
 
 **Property 12: Compression reduces token count**
-*For any* compression operation, the compressed message history should have fewer tokens than the original while preserving the system prompt and recent messages.
+_For any_ compression operation, the compressed message history should have fewer tokens than the original while preserving the system prompt and recent messages.
 **Validates: Requirements 3.4**
 
 **Property 13: Compression count increments**
-*For any* compression operation on a session, the compressionCount in metadata should increase by exactly 1.
+_For any_ compression operation on a session, the compressionCount in metadata should increase by exactly 1.
 **Validates: Requirements 3.8**
 
 ### Loop Detection Properties
 
 **Property 14: Repeated tool call detection**
-*For any* sequence of N consecutive identical tool calls (same name and arguments), where N equals the repeatThreshold, the loop detection service should detect a loop.
+_For any_ sequence of N consecutive identical tool calls (same name and arguments), where N equals the repeatThreshold, the loop detection service should detect a loop.
 **Validates: Requirements 4.1, 4.4**
 
 **Property 15: Repeated output detection**
-*For any* sequence of N consecutive identical outputs, where N equals the repeatThreshold, the loop detection service should detect a loop.
+_For any_ sequence of N consecutive identical outputs, where N equals the repeatThreshold, the loop detection service should detect a loop.
 **Validates: Requirements 4.2, 4.5**
 
 **Property 16: Turn limit detection**
-*For any* turn count that exceeds maxTurns, the loop detection service should detect a loop.
+_For any_ turn count that exceeds maxTurns, the loop detection service should detect a loop.
 **Validates: Requirements 4.3**
 
 **Property 17: Loop detection stops execution**
-*For any* detected loop, the loop detection service should emit a loop event with pattern details and prevent further execution.
+_For any_ detected loop, the loop detection service should emit a loop event with pattern details and prevent further execution.
 **Validates: Requirements 4.7, 4.8**
 
 ### Context Management Properties
 
 **Property 18: Context add-remove round-trip**
-*For any* context entry added with a unique key, removing it by that key should result in the context no longer being present in the active context list.
+_For any_ context entry added with a unique key, removing it by that key should result in the context no longer being present in the active context list.
 **Validates: Requirements 5.2**
 
 **Property 19: Context retrieval completeness**
-*For any* set of added context entries, retrieving all active contexts should return all entries with their original content and metadata.
+_For any_ set of added context entries, retrieving all active contexts should return all entries with their original content and metadata.
 **Validates: Requirements 5.3**
 
 **Property 20: Context inclusion in system prompt**
-*For any* set of active context entries, the generated system prompt additions should contain the content from all entries.
+_For any_ set of active context entries, the generated system prompt additions should contain the content from all entries.
 **Validates: Requirements 5.4**
 
 **Property 21: Context priority ordering**
-*For any* set of context entries with different priority values, the generated system prompt additions should include contexts in descending priority order (highest priority first).
+_For any_ set of context entries with different priority values, the generated system prompt additions should include contexts in descending priority order (highest priority first).
 **Validates: Requirements 5.5, 5.8**
 
 ### File Discovery Properties
 
 **Property 22: Ignore pattern respect**
-*For any* directory structure with files matching patterns in .ollmignore, .gitignore, or built-in ignore patterns (node_modules, .git, dist, build), those files should not be included in discovery results.
+_For any_ directory structure with files matching patterns in .ollmignore, .gitignore, or built-in ignore patterns (node_modules, .git, dist, build), those files should not be included in discovery results.
 **Validates: Requirements 6.2, 6.3, 6.4**
 
 **Property 23: Depth limit enforcement**
-*For any* discovery operation with a maxDepth configuration, files in directories deeper than maxDepth levels from the root should not be included in results.
+_For any_ discovery operation with a maxDepth configuration, files in directories deeper than maxDepth levels from the root should not be included in results.
 **Validates: Requirements 6.5**
 
 **Property 24: File change notification**
-*For any* file system change (add, modify, delete) in a watched directory, the registered callback should be invoked with the correct event type and file path.
+_For any_ file system change (add, modify, delete) in a watched directory, the registered callback should be invoked with the correct event type and file path.
 **Validates: Requirements 6.8**
 
 ### Environment Sanitization Properties
 
 **Property 25: Deny pattern filtering**
-*For any* environment containing variables matching deny patterns, sanitization should remove all matching variables from the result.
+_For any_ environment containing variables matching deny patterns, sanitization should remove all matching variables from the result.
 **Validates: Requirements 7.5**
 
 **Property 26: Allow list preservation**
-*For any* environment containing variables in the allow list, sanitization should preserve all those variables in the result.
+_For any_ environment containing variables in the allow list, sanitization should preserve all those variables in the result.
 **Validates: Requirements 7.6**
 
 **Property 27: Sanitization completeness**
-*For any* environment, after sanitization, the result should contain only variables that are either in the allow list or do not match any deny patterns.
+_For any_ environment, after sanitization, the result should contain only variables that are either in the allow list or do not match any deny patterns.
 **Validates: Requirements 7.5, 7.6**
 
 **Property 28: Sensitive data exclusion from errors**
-*For any* error message or log output from any service, it should not contain values matching sensitive patterns (*_KEY, *_SECRET, *_TOKEN, *_PASSWORD, API keys, etc.).
+_For any_ error message or log output from any service, it should not contain values matching sensitive patterns (_\_KEY, _\_SECRET, _\_TOKEN, _\_PASSWORD, API keys, etc.).
 **Validates: Requirements 10.7**
 
 ## Error Handling
@@ -636,12 +631,14 @@ All services implement graceful degradation:
 ### Error Logging
 
 All services use structured logging with levels:
+
 - **ERROR**: Operation failures that affect functionality
 - **WARN**: Recoverable issues, degraded functionality
 - **INFO**: Normal operations, state changes
 - **DEBUG**: Detailed execution information
 
 Error messages include:
+
 - Service name and operation
 - Error type and message
 - Context (session ID, file path, etc.)
@@ -654,6 +651,7 @@ Error messages include:
 Unit tests verify specific behaviors and edge cases:
 
 **ChatRecordingService**:
+
 - Session creation with valid metadata
 - Message and tool call recording
 - Session file format validation
@@ -661,6 +659,7 @@ Unit tests verify specific behaviors and edge cases:
 - Session deletion and cleanup
 
 **ChatCompressionService**:
+
 - Threshold calculation
 - Each compression strategy (summarize, truncate, hybrid)
 - System prompt preservation
@@ -668,18 +667,21 @@ Unit tests verify specific behaviors and edge cases:
 - Token counting accuracy
 
 **LoopDetectionService**:
+
 - Each detection condition (repeated tools, outputs, turn limit)
 - Configuration handling
 - Reset behavior
 - Pattern matching accuracy
 
 **ContextManager**:
+
 - Add/remove operations
 - Priority ordering
 - System prompt generation
 - Multiple source handling
 
 **FileDiscoveryService**:
+
 - Directory traversal
 - Ignore pattern matching
 - Depth limiting
@@ -687,6 +689,7 @@ Unit tests verify specific behaviors and edge cases:
 - Symlink handling
 
 **EnvironmentSanitizationService**:
+
 - Allow list matching
 - Deny pattern matching
 - Default configuration
@@ -697,6 +700,7 @@ Unit tests verify specific behaviors and edge cases:
 Property tests verify universal correctness properties across randomized inputs. Each test should run a minimum of 100 iterations.
 
 **Test Configuration**:
+
 - Use `fast-check` library for TypeScript property-based testing
 - Minimum 100 iterations per property test
 - Each test tagged with: `Feature: services-sessions, Property N: [property text]`
@@ -774,35 +778,34 @@ For property-based testing, implement generators for:
 // Session data generators
 fc.record({
   sessionId: fc.uuid(),
-  startTime: fc.date().map(d => d.toISOString()),
+  startTime: fc.date().map((d) => d.toISOString()),
   model: fc.constantFrom('llama3.1:8b', 'mistral:7b', 'codellama:13b'),
   messages: fc.array(messageGenerator, { minLength: 1, maxLength: 100 }),
-  toolCalls: fc.array(toolCallGenerator, { maxLength: 50 })
-})
+  toolCalls: fc.array(toolCallGenerator, { maxLength: 50 }),
+});
 
 // Message generators
 fc.record({
   role: fc.constantFrom('user', 'assistant', 'system'),
-  parts: fc.array(fc.record({
-    type: fc.constant('text'),
-    text: fc.string({ minLength: 1, maxLength: 1000 })
-  })),
-  timestamp: fc.date().map(d => d.toISOString())
-})
+  parts: fc.array(
+    fc.record({
+      type: fc.constant('text'),
+      text: fc.string({ minLength: 1, maxLength: 1000 }),
+    })
+  ),
+  timestamp: fc.date().map((d) => d.toISOString()),
+});
 
 // Context entry generators
 fc.record({
   key: fc.string({ minLength: 1, maxLength: 50 }),
   content: fc.string({ minLength: 1, maxLength: 5000 }),
   priority: fc.integer({ min: 0, max: 100 }),
-  source: fc.constantFrom('hook', 'extension', 'user', 'system')
-})
+  source: fc.constantFrom('hook', 'extension', 'user', 'system'),
+});
 
 // Environment variable generators
-fc.dictionary(
-  fc.string({ minLength: 1, maxLength: 50 }),
-  fc.string({ maxLength: 200 })
-)
+fc.dictionary(fc.string({ minLength: 1, maxLength: 50 }), fc.string({ maxLength: 200 }));
 ```
 
 ### Performance Testing

@@ -1,9 +1,9 @@
 /**
  * ConfirmationDialog Component
- * 
+ *
  * Generic confirmation dialog for destructive or important actions.
  * Provides clear visual feedback and prevents accidental actions.
- * 
+ *
  * Features:
  * - Customizable title, message, and action labels
  * - Warning level (info, warning, danger)
@@ -11,7 +11,7 @@
  * - Confirm and Cancel buttons with keyboard shortcuts
  * - Loading state during action execution
  * - Error handling
- * 
+ *
  * Validates: NFR-7
  */
 
@@ -81,7 +81,7 @@ function getLevelColors(level: ConfirmationLevel, theme: import('../../../config
 
 /**
  * ConfirmationDialog Component
- * 
+ *
  * Generic confirmation dialog with customizable appearance and behavior.
  * Provides clear visual feedback for important user actions.
  */
@@ -98,7 +98,9 @@ export function ConfirmationDialog({
   onClose,
   onConfirm,
 }: ConfirmationDialogProps) {
-  const { state: { theme } } = useUI();
+  const {
+    state: { theme },
+  } = useUI();
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -162,12 +164,7 @@ export function ConfirmationDialog({
 
         {/* Warning Notes */}
         {warningNotes && warningNotes.length > 0 && (
-          <Box
-            marginBottom={2}
-            borderStyle="single"
-            borderColor={colors.border}
-            padding={1}
-          >
+          <Box marginBottom={2} borderStyle="single" borderColor={colors.border} padding={1}>
             <Box flexDirection="column">
               <Text color={colors.title}>{displayIcon} Important Notes:</Text>
               <Box marginTop={1} flexDirection="column">
@@ -213,9 +210,7 @@ export function ConfirmationDialog({
 
         {/* Help Text */}
         <Box marginTop={2}>
-          <Text dimColor>
-            💡 Tip: Press Enter to confirm or Esc to cancel
-          </Text>
+          <Text dimColor>💡 Tip: Press Enter to confirm or Esc to cancel</Text>
         </Box>
       </Box>
     </Dialog>
@@ -231,17 +226,17 @@ export interface QuickConfirmProps {
   onCancel: () => void;
 }
 
-export function QuickConfirm({ message, onConfirm: _onConfirm, onCancel: _onCancel }: QuickConfirmProps) {
-  const { state: { theme } } = useUI();
+export function QuickConfirm({
+  message,
+  onConfirm: _onConfirm,
+  onCancel: _onCancel,
+}: QuickConfirmProps) {
+  const {
+    state: { theme },
+  } = useUI();
 
   return (
-    <Box
-      flexDirection="column"
-      borderStyle="round"
-      borderColor="yellow"
-      paddingX={2}
-      paddingY={1}
-    >
+    <Box flexDirection="column" borderStyle="round" borderColor="yellow" paddingX={2} paddingY={1}>
       <Box marginBottom={1}>
         <Text color={theme.status.warning} bold>
           ⚠ {message}

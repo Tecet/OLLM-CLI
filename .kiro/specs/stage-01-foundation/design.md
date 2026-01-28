@@ -5,6 +5,7 @@
 This design establishes the foundational structure for OLLM CLI, a local-first command-line interface for open-source LLMs. The foundation consists of an npm workspaces monorepo with four packages, TypeScript configuration, esbuild bundling, ESLint/Prettier tooling, and a minimal CLI entry point.
 
 The architecture follows a modular design where:
+
 - `packages/cli` handles user interaction and terminal UI
 - `packages/core` contains provider-agnostic business logic
 - `packages/ollm-bridge` provides LLM provider adapters
@@ -48,11 +49,11 @@ The root `package.json` configures npm workspaces and defines shared scripts:
 
 ```typescript
 interface RootPackageJson {
-  name: string;           // "ollm-cli"
-  version: string;        // "0.1.0"
+  name: string; // "ollm-cli"
+  version: string; // "0.1.0"
   private: true;
-  type: "module";
-  workspaces: string[];   // ["packages/*"]
+  type: 'module';
+  workspaces: string[]; // ["packages/*"]
   scripts: {
     build: string;
     dev: string;
@@ -70,11 +71,11 @@ Each package follows a consistent structure:
 
 ```typescript
 interface PackageJson {
-  name: string;           // "@ollm/cli", "@ollm/core", etc.
+  name: string; // "@ollm/cli", "@ollm/core", etc.
   version: string;
-  type: "module";
-  main?: string;          // Entry point for libraries
-  bin?: Record<string, string>;  // CLI executables
+  type: 'module';
+  main?: string; // Entry point for libraries
+  bin?: Record<string, string>; // CLI executables
   dependencies?: Record<string, string>;
   devDependencies?: Record<string, string>;
 }
@@ -101,16 +102,16 @@ esbuild configuration for bundling:
 
 ```typescript
 interface BuildConfig {
-  entryPoints: string[];      // ["packages/cli/src/cli.tsx"]
-  outfile: string;            // "packages/cli/dist/cli.js"
+  entryPoints: string[]; // ["packages/cli/src/cli.tsx"]
+  outfile: string; // "packages/cli/dist/cli.js"
   bundle: true;
-  platform: "node";
-  target: "node20";
-  format: "esm";
+  platform: 'node';
+  target: 'node20';
+  format: 'esm';
   banner: {
-    js: string;               // "#!/usr/bin/env node"
+    js: string; // "#!/usr/bin/env node"
   };
-  external: string[];         // Node built-ins
+  external: string[]; // Node built-ins
 }
 ```
 
@@ -147,8 +148,8 @@ interface ESLintConfig {
   languageOptions: {
     parser: typeof tsParser;
     parserOptions: {
-      ecmaVersion: "latest";
-      sourceType: "module";
+      ecmaVersion: 'latest';
+      sourceType: 'module';
       ecmaFeatures: { jsx: true };
     };
   };
@@ -171,23 +172,23 @@ interface ESLintConfig {
 
 ## Correctness Properties
 
-*A property is a characteristic or behavior that should hold true across all valid executions of a system—essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
+_A property is a characteristic or behavior that should hold true across all valid executions of a system—essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees._
 
 ### Property 1: Package TypeScript Configuration Inheritance
 
-*For any* package in the `packages/` directory, its `tsconfig.json` SHALL extend `../../tsconfig.base.json`, ensuring consistent TypeScript settings across the entire monorepo.
+_For any_ package in the `packages/` directory, its `tsconfig.json` SHALL extend `../../tsconfig.base.json`, ensuring consistent TypeScript settings across the entire monorepo.
 
 **Validates: Requirements 2.3**
 
 ### Property 2: Build Output Shebang
 
-*For any* build of the CLI, the output file in `packages/cli/dist/cli.js` SHALL begin with the shebang `#!/usr/bin/env node`, making it directly executable as a Node.js script.
+_For any_ build of the CLI, the output file in `packages/cli/dist/cli.js` SHALL begin with the shebang `#!/usr/bin/env node`, making it directly executable as a Node.js script.
 
 **Validates: Requirements 3.4**
 
 ### Property 3: Unknown CLI Flag Rejection
 
-*For any* command-line flag that is not recognized by the CLI (not `--version`, `--help`, or other defined flags), the CLI SHALL exit with a non-zero exit code and display an error message indicating the unknown flag.
+_For any_ command-line flag that is not recognized by the CLI (not `--version`, `--help`, or other defined flags), the CLI SHALL exit with a non-zero exit code and display an error message indicating the unknown flag.
 
 **Validates: Requirements 5.4**
 
@@ -195,25 +196,25 @@ interface ESLintConfig {
 
 ### Build Errors
 
-| Error Condition | Handling Strategy |
-|-----------------|-------------------|
+| Error Condition               | Handling Strategy                               |
+| ----------------------------- | ----------------------------------------------- |
 | TypeScript compilation errors | Exit with non-zero code, display error messages |
-| Missing dependencies | Exit with error, suggest running `npm install` |
-| Invalid esbuild config | Exit with descriptive error message |
+| Missing dependencies          | Exit with error, suggest running `npm install`  |
+| Invalid esbuild config        | Exit with descriptive error message             |
 
 ### CLI Runtime Errors
 
-| Error Condition | Handling Strategy |
-|-----------------|-------------------|
-| Unknown flag provided | Display error message, show help, exit code 1 |
+| Error Condition           | Handling Strategy                              |
+| ------------------------- | ---------------------------------------------- |
+| Unknown flag provided     | Display error message, show help, exit code 1  |
 | Missing required argument | Display error message, show usage, exit code 1 |
 
 ### Lint/Format Errors
 
-| Error Condition | Handling Strategy |
-|-----------------|-------------------|
-| ESLint violations | Report violations, exit non-zero if errors |
-| Prettier formatting issues | Report files that need formatting |
+| Error Condition            | Handling Strategy                          |
+| -------------------------- | ------------------------------------------ |
+| ESLint violations          | Report violations, exit non-zero if errors |
+| Prettier formatting issues | Report files that need formatting          |
 
 ## Testing Strategy
 
@@ -233,22 +234,26 @@ This foundation stage uses both unit tests and property-based tests:
 ### Test Categories
 
 #### Configuration Validation Tests (Unit)
+
 - Verify root package.json structure
 - Verify tsconfig.base.json settings
 - Verify ESLint and Prettier configurations
 - Verify package structure exists
 
 #### CLI Behavior Tests (Unit)
+
 - `--version` flag outputs version and exits 0
 - `--help` flag outputs help text
 - Unknown flags exit with error
 
 #### Build Integration Tests (Unit)
+
 - `npm run build` produces output in `packages/cli/dist/`
 - Output file has correct shebang
 - TypeScript and JSX are transformed correctly
 
 #### Property Tests
+
 - All package tsconfigs extend base (Property 1)
 - Build output always has shebang (Property 2)
 - Unknown flags always rejected (Property 3)
@@ -269,4 +274,3 @@ packages/
     └── src/
         └── index.ts
 ```
-

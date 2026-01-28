@@ -5,6 +5,7 @@
 The Kraken Integration feature extends OLLM CLI's provider system to support external LLM providers, enabling users to access powerful cloud-based models and CLI-based coding agents when local models need assistance. This design implements a unified provider adapter pattern that seamlessly integrates with the existing architecture while adding new capabilities for subprocess execution, API communication, context transfer, and cost tracking.
 
 The system introduces two new provider types:
+
 - **CLI Bridge Providers**: Execute terminal-based coding agents (Gemini CLI, Claude Code, Codex CLI) via subprocess
 - **API Providers**: Connect to cloud LLM APIs (OpenAI, Anthropic, Google AI) via HTTPS
 
@@ -67,7 +68,6 @@ The Kraken system integrates with existing OLLM CLI components:
 7. **Session Manager** (`packages/core/src/services/`): Integration for context transfer and session tracking
 8. **Cost Tracker** (`packages/core/src/services/costTracker.ts`): Token usage and budget monitoring
 
-
 ## Components and Interfaces
 
 ### 1. Kraken Provider Adapters
@@ -90,7 +90,7 @@ export interface KrakenCliConfig {
 
 export class KrakenCliProvider implements ProviderAdapter {
   readonly name: string;
-  
+
   constructor(
     name: string,
     private config: KrakenCliConfig,
@@ -98,25 +98,25 @@ export class KrakenCliProvider implements ProviderAdapter {
   ) {
     this.name = name;
   }
-  
+
   async *chatStream(request: ProviderRequest): AsyncIterable<ProviderEvent> {
     // Build prompt from messages
     const prompt = this.buildPrompt(request);
-    
+
     // Execute via subprocess or proxy
     const output = this.config.proxyUrl
       ? await this.executor.executeViaProxy(prompt, this.config)
       : await this.executor.executeDirect(prompt, this.config);
-    
+
     // Parse output and yield events
     yield* this.parseOutput(output);
   }
-  
+
   async countTokens(request: ProviderRequest): Promise<number> {
     // Estimate tokens using character count / 4
     return this.estimateTokens(request);
   }
-  
+
   async listModels(): Promise<ModelInfo[]> {
     // Return configured model
     return [{ name: this.config.defaultModel }];
@@ -141,7 +141,7 @@ export interface KrakenApiConfig {
 
 export class KrakenApiProvider implements ProviderAdapter {
   readonly name: string;
-  
+
   constructor(
     name: string,
     private config: KrakenApiConfig,
@@ -149,32 +149,31 @@ export class KrakenApiProvider implements ProviderAdapter {
   ) {
     this.name = name;
   }
-  
+
   async *chatStream(request: ProviderRequest): AsyncIterable<ProviderEvent> {
     // Format request for specific API
     const apiRequest = this.formatRequest(request);
-    
+
     // Stream response
     const stream = await this.client.streamChat(apiRequest, this.config);
-    
+
     // Parse SSE events
     for await (const chunk of stream) {
       yield* this.parseChunk(chunk);
     }
   }
-  
+
   async countTokens(request: ProviderRequest): Promise<number> {
     // Use provider-specific token counting
     return this.client.countTokens(request, this.config);
   }
-  
+
   async listModels(): Promise<ModelInfo[]> {
     // Fetch available models from API
     return this.client.listModels(this.config);
   }
 }
 ```
-
 
 ### 2. CLI Executor
 
@@ -194,19 +193,16 @@ export class CliExecutor {
   /**
    * Execute CLI tool directly via subprocess
    */
-  async executeDirect(
-    prompt: string,
-    config: KrakenCliConfig
-  ): Promise<CliExecutionResult> {
-    const executable = config.executablePath || await this.discover(config.tool);
-    
+  async executeDirect(prompt: string, config: KrakenCliConfig): Promise<CliExecutionResult> {
+    const executable = config.executablePath || (await this.discover(config.tool));
+
     if (!executable) {
       throw new Error(`${config.tool} CLI not found`);
     }
-    
+
     // Build command args
     const args = this.buildArgs(config);
-    
+
     // Execute with STDIN (avoid Windows command length limit)
     const result = await this.execWithStdin(
       executable,
@@ -214,39 +210,36 @@ export class CliExecutor {
       prompt + '\n', // Trailing newline prevents Gemini hang
       config.timeout
     );
-    
+
     return result;
   }
-  
+
   /**
    * Execute CLI tool via HTTP proxy
    */
-  async executeViaProxy(
-    prompt: string,
-    config: KrakenCliConfig
-  ): Promise<CliExecutionResult> {
+  async executeViaProxy(prompt: string, config: KrakenCliConfig): Promise<CliExecutionResult> {
     const response = await fetch(`${config.proxyUrl}/execute`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(config.proxyApiKey && { 'X-API-Key': config.proxyApiKey })
+        ...(config.proxyApiKey && { 'X-API-Key': config.proxyApiKey }),
       },
       body: JSON.stringify({
         tool: config.tool,
         prompt,
         model: config.defaultModel,
-        timeout: config.timeout
+        timeout: config.timeout,
       }),
-      signal: AbortSignal.timeout(config.timeout * 1000)
+      signal: AbortSignal.timeout(config.timeout * 1000),
     });
-    
+
     if (!response.ok) {
       throw new Error(`Proxy error: HTTP ${response.status}`);
     }
-    
+
     return response.json();
   }
-  
+
   /**
    * Discover CLI executable on system
    */
@@ -254,7 +247,7 @@ export class CliExecutor {
     // Check PATH first
     const fromPath = await this.which(tool);
     if (fromPath) return fromPath;
-    
+
     // Check platform-specific locations
     const searchPaths = this.getSearchPaths(tool);
     for (const path of searchPaths) {
@@ -262,10 +255,10 @@ export class CliExecutor {
         return path;
       }
     }
-    
+
     return null;
   }
-  
+
   /**
    * Execute process with STDIN input
    */
@@ -276,44 +269,44 @@ export class CliExecutor {
     timeoutSeconds: number
   ): Promise<CliExecutionResult> {
     const startTime = Date.now();
-    
+
     return new Promise((resolve, reject) => {
       const proc = spawn(executable, args, {
-        stdio: ['pipe', 'pipe', 'pipe']
+        stdio: ['pipe', 'pipe', 'pipe'],
       });
-      
+
       let stdout = '';
       let stderr = '';
-      
+
       proc.stdout.on('data', (data) => {
         stdout += data.toString();
       });
-      
+
       proc.stderr.on('data', (data) => {
         stderr += data.toString();
       });
-      
+
       // Timeout handler
       const timeout = setTimeout(() => {
         proc.kill('SIGTERM');
         reject(new Error(`Execution timeout after ${timeoutSeconds}s`));
       }, timeoutSeconds * 1000);
-      
+
       proc.on('close', (exitCode) => {
         clearTimeout(timeout);
         resolve({
           stdout,
           stderr,
           exitCode: exitCode || 0,
-          duration: Date.now() - startTime
+          duration: Date.now() - startTime,
         });
       });
-      
+
       proc.on('error', (error) => {
         clearTimeout(timeout);
         reject(error);
       });
-      
+
       // Write input to STDIN
       proc.stdin.write(input);
       proc.stdin.end();
@@ -321,7 +314,6 @@ export class CliExecutor {
   }
 }
 ```
-
 
 ### 3. API Client
 
@@ -334,27 +326,24 @@ export class ApiClient {
   /**
    * Stream chat completion from API
    */
-  async *streamChat(
-    request: any,
-    config: KrakenApiConfig
-  ): AsyncIterable<any> {
+  async *streamChat(request: any, config: KrakenApiConfig): AsyncIterable<any> {
     const url = this.getEndpoint(config);
     const headers = this.getHeaders(config);
-    
+
     const response = await fetch(url, {
       method: 'POST',
       headers,
-      body: JSON.stringify(request)
+      body: JSON.stringify(request),
     });
-    
+
     if (!response.ok) {
       throw new Error(`API error: HTTP ${response.status}`);
     }
-    
+
     // Parse SSE stream
     yield* this.parseSSE(response.body!);
   }
-  
+
   /**
    * Parse Server-Sent Events stream
    */
@@ -362,20 +351,20 @@ export class ApiClient {
     const reader = body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
-    
+
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-      
+
       buffer += decoder.decode(value, { stream: true });
       const lines = buffer.split('\n');
       buffer = lines.pop() || '';
-      
+
       for (const line of lines) {
         if (line.startsWith('data: ')) {
           const data = line.slice(6);
           if (data === '[DONE]') return;
-          
+
           try {
             yield JSON.parse(data);
           } catch {
@@ -385,14 +374,11 @@ export class ApiClient {
       }
     }
   }
-  
+
   /**
    * Count tokens using provider-specific API
    */
-  async countTokens(
-    request: ProviderRequest,
-    config: KrakenApiConfig
-  ): Promise<number> {
+  async countTokens(request: ProviderRequest, config: KrakenApiConfig): Promise<number> {
     switch (config.provider) {
       case 'openai':
         return this.countTokensOpenAI(request);
@@ -402,22 +388,21 @@ export class ApiClient {
         return this.countTokensGoogle(request);
     }
   }
-  
+
   /**
    * List available models from API
    */
   async listModels(config: KrakenApiConfig): Promise<ModelInfo[]> {
     const url = this.getModelsEndpoint(config);
     const headers = this.getHeaders(config);
-    
+
     const response = await fetch(url, { headers });
     const data = await response.json();
-    
+
     return this.parseModels(data, config.provider);
   }
 }
 ```
-
 
 ### 4. Kraken Manager
 
@@ -457,69 +442,66 @@ export class KrakenManager {
     private costTracker: CostTracker,
     private config: KrakenConfig
   ) {}
-  
+
   /**
    * List all configured Kraken providers
    */
   listProviders(): KrakenProviderInfo[] {
-    return this.registry.list()
-      .filter(name => name.startsWith('kraken-'))
-      .map(name => ({
+    return this.registry
+      .list()
+      .filter((name) => name.startsWith('kraken-'))
+      .map((name) => ({
         name,
         type: this.getProviderType(name),
-        available: this.healthStatus.get(name) || false
+        available: this.healthStatus.get(name) || false,
       }));
   }
-  
+
   /**
    * Select best provider for task
    */
   selectProvider(hint: KrakenTaskHint): ProviderAdapter {
-    const providers = this.listProviders().filter(p => p.available);
-    
+    const providers = this.listProviders().filter((p) => p.available);
+
     if (providers.length === 0) {
       throw new Error('No Kraken providers available');
     }
-    
+
     // Prefer CLI over API for cost efficiency
     if (hint.preferCLI !== false) {
-      const cliProvider = providers.find(p => p.type === 'cli');
+      const cliProvider = providers.find((p) => p.type === 'cli');
       if (cliProvider) {
         return this.registry.get(cliProvider.name)!;
       }
     }
-    
+
     // Select based on complexity and context size
-    const suitable = providers.filter(p => 
-      this.isSuitable(p, hint)
-    );
-    
+    const suitable = providers.filter((p) => this.isSuitable(p, hint));
+
     if (suitable.length === 0) {
       // Fallback to first available
       return this.registry.get(providers[0].name)!;
     }
-    
+
     // Use preferred provider if configured
     if (this.config.defaultProvider) {
-      const preferred = suitable.find(p => 
-        p.name === this.config.defaultProvider
-      );
+      const preferred = suitable.find((p) => p.name === this.config.defaultProvider);
       if (preferred) {
         return this.registry.get(preferred.name)!;
       }
     }
-    
+
     // Return first suitable
     return this.registry.get(suitable[0].name)!;
   }
-  
+
   /**
    * Perform health checks on all providers
    */
   async healthCheckAll(): Promise<Map<string, boolean>> {
     const results = new Map<string, boolean>();
     const providers = this.listProviders();
-    
+
     await Promise.all(
       providers.map(async (info) => {
         try {
@@ -528,7 +510,7 @@ export class KrakenManager {
             results.set(info.name, false);
             return;
           }
-          
+
           const healthy = await this.healthCheck(provider);
           results.set(info.name, healthy);
         } catch {
@@ -536,11 +518,11 @@ export class KrakenManager {
         }
       })
     );
-    
+
     this.healthStatus = results;
     return results;
   }
-  
+
   /**
    * Release the Kraken - escalate to external provider
    */
@@ -549,16 +531,16 @@ export class KrakenManager {
     if (!this.costTracker.canAfford(this.config.maxCostPerSession)) {
       throw new Error('Session budget exceeded');
     }
-    
+
     // Select provider
     const provider = options.provider
       ? this.registry.get(options.provider)
       : this.selectProvider({ complexity: 'complex', domain: 'code', contextSize: 0 });
-    
+
     if (!provider) {
       throw new Error(`Provider not found: ${options.provider}`);
     }
-    
+
     // Create session
     const session: KrakenSession = {
       id: crypto.randomUUID(),
@@ -566,18 +548,18 @@ export class KrakenManager {
       startTime: Date.now(),
       tokenUsage: { input: 0, output: 0 },
       cost: 0,
-      success: false
+      success: false,
     };
-    
+
     // Export context if requested
     let context: KrakenContext | undefined;
     if (options.inheritContext) {
       context = await this.contextTransfer.exportForKraken();
     }
-    
+
     return session;
   }
-  
+
   /**
    * Check if auto-escalation should trigger
    */
@@ -585,12 +567,11 @@ export class KrakenManager {
     if (!this.config.autoEscalate.enabled) {
       return false;
     }
-    
+
     return this.config.autoEscalate.triggerOn.includes(reason);
   }
 }
 ```
-
 
 ### 5. Context Transfer Service
 
@@ -612,44 +593,44 @@ export class ContextTransferService {
     private compressionService: CompressionService,
     private sessionManager: SessionManager
   ) {}
-  
+
   /**
    * Export current context for Kraken
    */
   async exportForKraken(options?: ExportOptions): Promise<KrakenContext> {
     const session = this.sessionManager.getCurrentSession();
-    
+
     // Get recent messages
     const messages = session.getMessages();
     const recentMessages = messages.slice(-10); // Last 10 messages
-    
+
     // Compress if needed
     const summary = await this.compressionService.summarize(messages);
-    
+
     // Get active files from context
     const activeFiles = this.extractActiveFiles(messages);
-    
+
     // Get current task
     const currentTask = this.extractCurrentTask(messages);
-    
+
     // Get recent tool results
     const toolResults = this.extractToolResults(messages);
-    
+
     return {
       summary,
       recentMessages,
       activeFiles,
       currentTask,
-      toolResults
+      toolResults,
     };
   }
-  
+
   /**
    * Import Kraken response back to local context
    */
   async importFromKraken(response: KrakenResponse): Promise<void> {
     const session = this.sessionManager.getCurrentSession();
-    
+
     // Add Kraken response as assistant message
     session.addMessage({
       role: 'assistant',
@@ -658,32 +639,32 @@ export class ContextTransferService {
         provider: 'kraken',
         krakenProvider: response.providerName,
         cost: response.cost,
-        tokens: response.tokenUsage
-      }
+        tokens: response.tokenUsage,
+      },
     });
   }
-  
+
   /**
    * Merge Kraken session insights with local session
    */
   async mergeKrakenSession(krakenSession: KrakenSession): Promise<void> {
     const session = this.sessionManager.getCurrentSession();
-    
+
     // Add metadata about Kraken usage
     session.addMetadata({
       krakenUsed: true,
       krakenProvider: krakenSession.provider,
       krakenCost: krakenSession.cost,
-      krakenTokens: krakenSession.tokenUsage
+      krakenTokens: krakenSession.tokenUsage,
     });
   }
-  
+
   /**
    * Extract active files from messages
    */
   private extractActiveFiles(messages: Message[]): string[] {
     const files = new Set<string>();
-    
+
     for (const msg of messages) {
       // Look for file paths in tool results
       if (msg.role === 'tool' && msg.name) {
@@ -691,15 +672,15 @@ export class ContextTransferService {
         if (content.type === 'text') {
           const matches = content.text.match(/[\w\-./]+\.(ts|js|py|java|go|rs)/g);
           if (matches) {
-            matches.forEach(f => files.add(f));
+            matches.forEach((f) => files.add(f));
           }
         }
       }
     }
-    
+
     return Array.from(files);
   }
-  
+
   /**
    * Extract current task from messages
    */
@@ -713,33 +694,32 @@ export class ContextTransferService {
         }
       }
     }
-    
+
     return 'No current task';
   }
-  
+
   /**
    * Extract recent tool results
    */
   private extractToolResults(messages: Message[]): ToolResult[] {
     const results: ToolResult[] = [];
-    
+
     for (let i = messages.length - 1; i >= 0 && results.length < 5; i--) {
       if (messages[i].role === 'tool') {
         const content = messages[i].parts[0];
         if (content.type === 'text') {
           results.push({
             tool: messages[i].name || 'unknown',
-            result: content.text.slice(0, 500) // First 500 chars
+            result: content.text.slice(0, 500), // First 500 chars
           });
         }
       }
     }
-    
+
     return results.reverse();
   }
 }
 ```
-
 
 ### 6. Cost Tracker
 
@@ -764,89 +744,81 @@ export interface CostRecord {
 export class CostTracker {
   private sessionCost: number = 0;
   private records: CostRecord[] = [];
-  
+
   // Pricing per 1M tokens (USD)
   private pricing = {
-    'openai-gpt-4o': { input: 2.50, output: 10.00 },
-    'openai-gpt-4-turbo': { input: 10.00, output: 30.00 },
-    'anthropic-claude-sonnet': { input: 3.00, output: 15.00 },
-    'anthropic-claude-opus': { input: 15.00, output: 75.00 },
-    'google-gemini-flash': { input: 0.075, output: 0.30 }
+    'openai-gpt-4o': { input: 2.5, output: 10.0 },
+    'openai-gpt-4-turbo': { input: 10.0, output: 30.0 },
+    'anthropic-claude-sonnet': { input: 3.0, output: 15.0 },
+    'anthropic-claude-opus': { input: 15.0, output: 75.0 },
+    'google-gemini-flash': { input: 0.075, output: 0.3 },
   };
-  
+
   /**
    * Calculate cost for token usage
    */
-  calculateCost(
-    provider: string,
-    model: string,
-    tokenUsage: TokenUsage
-  ): number {
+  calculateCost(provider: string, model: string, tokenUsage: TokenUsage): number {
     const key = `${provider}-${model}`;
     const prices = this.pricing[key];
-    
+
     if (!prices) {
       // Unknown pricing, estimate conservatively
-      return (tokenUsage.input + tokenUsage.output) * 0.01 / 1000;
+      return ((tokenUsage.input + tokenUsage.output) * 0.01) / 1000;
     }
-    
+
     const inputCost = (tokenUsage.input / 1_000_000) * prices.input;
     const outputCost = (tokenUsage.output / 1_000_000) * prices.output;
-    
+
     return inputCost + outputCost;
   }
-  
+
   /**
    * Track usage and update session cost
    */
-  trackUsage(
-    provider: string,
-    model: string,
-    tokenUsage: TokenUsage
-  ): number {
+  trackUsage(provider: string, model: string, tokenUsage: TokenUsage): number {
     const cost = this.calculateCost(provider, model, tokenUsage);
-    
+
     this.sessionCost += cost;
-    
+
     this.records.push({
       timestamp: Date.now(),
       provider,
       model,
       tokenUsage,
-      cost
+      cost,
     });
-    
+
     return cost;
   }
-  
+
   /**
    * Check if budget allows for estimated cost
    */
   canAfford(maxCost: number): boolean {
     return this.sessionCost < maxCost;
   }
-  
+
   /**
    * Get remaining budget
    */
   getRemainingBudget(maxCost: number): number {
     return Math.max(0, maxCost - this.sessionCost);
   }
-  
+
   /**
    * Reset session cost (called on new session)
    */
   resetSession(): void {
     this.sessionCost = 0;
   }
-  
+
   /**
    * Get usage history
    */
   getHistory(): CostRecord[] {
     return [...this.records];
   }
-  
+
   /**
    * Estimate cost for a request
    */
@@ -857,24 +829,22 @@ export class CostTracker {
   ): { min: number; max: number } {
     const key = `${provider}-${model}`;
     const prices = this.pricing[key];
-    
+
     if (!prices) {
-      return { min: 0, max: estimatedTokens * 0.02 / 1000 };
+      return { min: 0, max: (estimatedTokens * 0.02) / 1000 };
     }
-    
+
     // Assume 70/30 split input/output for estimation
     const inputTokens = estimatedTokens * 0.7;
     const outputTokens = estimatedTokens * 0.3;
-    
+
     const minCost = (inputTokens / 1_000_000) * prices.input;
     const maxCost = minCost + (outputTokens / 1_000_000) * prices.output;
-    
+
     return { min: minCost, max: maxCost };
   }
 }
 ```
-
-
 
 ## Data Models
 
@@ -886,15 +856,15 @@ export interface KrakenConfig {
   enabled: boolean;
   defaultProvider?: string;
   maxCostPerSession: number;
-  
+
   autoEscalate: {
     enabled: boolean;
     triggerOn: EscalationReason[];
   };
-  
+
   cliProviders: Record<string, CliProviderConfig>;
   apiProviders: Record<string, ApiProviderConfig>;
-  
+
   policies: {
     confirmBeforeRelease: boolean;
     showCostWarnings: boolean;
@@ -922,10 +892,7 @@ export interface ApiProviderConfig {
   maxTokens: number;
 }
 
-export type EscalationReason = 
-  | 'modelFailure'
-  | 'contextOverflow'
-  | 'userRequest';
+export type EscalationReason = 'modelFailure' | 'contextOverflow' | 'userRequest';
 ```
 
 ### Example Configuration File
@@ -937,13 +904,13 @@ kraken:
   enabled: true
   defaultProvider: kraken-gemini-cli
   maxCostPerSession: 10.00
-  
+
   autoEscalate:
     enabled: true
     triggerOn:
       - modelFailure
       - contextOverflow
-  
+
   cliProviders:
     gemini-cli:
       enabled: true
@@ -951,13 +918,13 @@ kraken:
       executablePath: /usr/local/bin/gemini
       timeout: 120
       defaultModel: gemini-2.0-flash-exp
-    
+
     claude-cli:
       enabled: true
       tool: claude
       timeout: 120
       defaultModel: claude-sonnet-4
-    
+
     # Proxy mode example
     gemini-proxy:
       enabled: true
@@ -966,7 +933,7 @@ kraken:
       proxyApiKey: $KRAKEN_PROXY_KEY
       timeout: 120
       defaultModel: gemini-2.0-flash-exp
-  
+
   apiProviders:
     openai:
       enabled: true
@@ -974,14 +941,14 @@ kraken:
       apiKey: $OPENAI_API_KEY
       model: gpt-4o
       maxTokens: 4096
-    
+
     anthropic:
       enabled: true
       provider: anthropic
       apiKey: $ANTHROPIC_API_KEY
       model: claude-sonnet-4
       maxTokens: 8192
-    
+
     google:
       enabled: true
       provider: google
@@ -989,7 +956,7 @@ kraken:
       baseUrl: https://generativelanguage.googleapis.com
       model: gemini-2.0-flash-exp
       maxTokens: 8192
-  
+
   policies:
     confirmBeforeRelease: true
     showCostWarnings: true
@@ -1009,12 +976,12 @@ import addFormats from 'ajv-formats';
 
 export class KrakenConfigValidator {
   private ajv: Ajv;
-  
+
   constructor() {
     this.ajv = new Ajv({ allErrors: true });
     addFormats(this.ajv);
   }
-  
+
   /**
    * Validate Kraken configuration
    */
@@ -1026,7 +993,7 @@ export class KrakenConfigValidator {
         enabled: { type: 'boolean' },
         defaultProvider: { type: 'string' },
         maxCostPerSession: { type: 'number', minimum: 0 },
-        
+
         autoEscalate: {
           type: 'object',
           required: ['enabled', 'triggerOn'],
@@ -1035,12 +1002,12 @@ export class KrakenConfigValidator {
             triggerOn: {
               type: 'array',
               items: {
-                enum: ['modelFailure', 'contextOverflow', 'userRequest']
-              }
-            }
-          }
+                enum: ['modelFailure', 'contextOverflow', 'userRequest'],
+              },
+            },
+          },
         },
-        
+
         cliProviders: {
           type: 'object',
           additionalProperties: {
@@ -1053,11 +1020,11 @@ export class KrakenConfigValidator {
               proxyUrl: { type: 'string', format: 'uri' },
               proxyApiKey: { type: 'string' },
               timeout: { type: 'number', minimum: 1 },
-              defaultModel: { type: 'string' }
-            }
-          }
+              defaultModel: { type: 'string' },
+            },
+          },
         },
-        
+
         apiProviders: {
           type: 'object',
           additionalProperties: {
@@ -1069,11 +1036,11 @@ export class KrakenConfigValidator {
               apiKey: { type: 'string' },
               baseUrl: { type: 'string', format: 'uri' },
               model: { type: 'string' },
-              maxTokens: { type: 'number', minimum: 1 }
-            }
-          }
+              maxTokens: { type: 'number', minimum: 1 },
+            },
+          },
         },
-        
+
         policies: {
           type: 'object',
           properties: {
@@ -1082,25 +1049,26 @@ export class KrakenConfigValidator {
             logKrakenUsage: { type: 'boolean' },
             allowedProviders: {
               type: 'array',
-              items: { type: 'string' }
-            }
-          }
-        }
-      }
+              items: { type: 'string' },
+            },
+          },
+        },
+      },
     };
-    
+
     const valid = this.ajv.validate(schema, config);
-    
+
     if (!valid) {
       return {
         valid: false,
-        errors: this.ajv.errors?.map(err => ({
-          field: err.instancePath,
-          message: err.message || 'Validation error'
-        })) || []
+        errors:
+          this.ajv.errors?.map((err) => ({
+            field: err.instancePath,
+            message: err.message || 'Validation error',
+          })) || [],
       };
     }
-    
+
     return { valid: true, errors: [] };
   }
 }
@@ -1182,8 +1150,6 @@ export interface KrakenResponse {
 }
 ```
 
-
-
 ## Correctness Properties
 
 A property is a characteristic or behavior that should hold true across all valid executions of a system—essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.
@@ -1191,206 +1157,204 @@ A property is a characteristic or behavior that should hold true across all vali
 ### CLI Bridge Properties
 
 Property 1: STDIN Prompt Delivery
-*For any* prompt string (regardless of length), the CLI Bridge should send it via STDIN rather than command-line arguments
+_For any_ prompt string (regardless of length), the CLI Bridge should send it via STDIN rather than command-line arguments
 **Validates: Requirements 1.2**
 
 Property 2: Output Parsing Completeness
-*For any* CLI output containing text, code blocks, or JSON, the parser should extract all structured elements into corresponding ProviderEvent objects
+_For any_ CLI output containing text, code blocks, or JSON, the parser should extract all structured elements into corresponding ProviderEvent objects
 **Validates: Requirements 1.3**
 
 Property 3: Timeout Enforcement
-*For any* CLI execution that exceeds the configured timeout, the executor should terminate the process and return a timeout error
+_For any_ CLI execution that exceeds the configured timeout, the executor should terminate the process and return a timeout error
 **Validates: Requirements 1.4**
 
 Property 4: Proxy Routing
-*For any* configuration with a proxy URL, requests should be routed through the proxy instead of direct subprocess execution
+_For any_ configuration with a proxy URL, requests should be routed through the proxy instead of direct subprocess execution
 **Validates: Requirements 1.7**
 
 ### API Provider Properties
 
 Property 5: Request Formatting Consistency
-*For any* ProviderRequest, the API client should format it according to the target provider's specification without losing information
+_For any_ ProviderRequest, the API client should format it according to the target provider's specification without losing information
 **Validates: Requirements 2.2**
 
 Property 6: SSE Parsing Completeness
-*For any* valid Server-Sent Events stream, the parser should convert all events into ProviderEvent objects
+_For any_ valid Server-Sent Events stream, the parser should convert all events into ProviderEvent objects
 **Validates: Requirements 2.3**
 
 Property 7: Cost Calculation Accuracy
-*For any* token usage (input and output tokens), the cost tracker should calculate cost using the correct provider pricing
+_For any_ token usage (input and output tokens), the cost tracker should calculate cost using the correct provider pricing
 **Validates: Requirements 2.4, 6.1**
 
 Property 8: Retry with Exponential Backoff
-*For any* network failure, the API client should retry up to 3 times with exponentially increasing delays
+_For any_ network failure, the API client should retry up to 3 times with exponentially increasing delays
 **Validates: Requirements 2.7**
 
 ### Health Check Properties
 
 Property 9: Health Check Execution
-*For any* configured provider, the health check should verify availability and return a status result
+_For any_ configured provider, the health check should verify availability and return a status result
 **Validates: Requirements 3.1, 3.2**
 
 Property 10: Version Detection
-*For any* CLI tool that supports `--version`, the health check should extract and return the version string
+_For any_ CLI tool that supports `--version`, the health check should extract and return the version string
 **Validates: Requirements 3.3**
 
 Property 11: Authentication Detection
-*For any* CLI tool, the health check should determine whether authentication is required
+_For any_ CLI tool, the health check should determine whether authentication is required
 **Validates: Requirements 3.4**
 
 Property 12: API Health Check Timeout
-*For any* API provider health check, it should complete within 5 seconds or return a timeout error
+_For any_ API provider health check, it should complete within 5 seconds or return a timeout error
 **Validates: Requirements 3.5**
 
 Property 13: Health Status Tracking
-*For any* failed health check, the manager should log the failure reason and mark the provider as unavailable
+_For any_ failed health check, the manager should log the failure reason and mark the provider as unavailable
 **Validates: Requirements 3.6**
 
 ### Provider Selection Properties
 
 Property 14: Task-Based Selection
-*For any* task hint (complexity, domain, context size), the manager should select a provider that meets the requirements
+_For any_ task hint (complexity, domain, context size), the manager should select a provider that meets the requirements
 **Validates: Requirements 4.2**
 
 Property 15: CLI Provider Preference
-*For any* selection with multiple available providers, CLI providers should be preferred over API providers when cost efficiency is prioritized
+_For any_ selection with multiple available providers, CLI providers should be preferred over API providers when cost efficiency is prioritized
 **Validates: Requirements 4.3**
 
 Property 16: Preferred Provider Priority
-*For any* configuration with a preferred provider, that provider should be selected when available and suitable
+_For any_ configuration with a preferred provider, that provider should be selected when available and suitable
 **Validates: Requirements 4.4**
 
 Property 17: Unavailable Provider Exclusion
-*For any* provider marked as unavailable, it should be excluded from selection options
+_For any_ provider marked as unavailable, it should be excluded from selection options
 **Validates: Requirements 4.5**
 
 Property 18: Explicit Provider Selection
-*For any* user-specified provider name, that provider should be used if it exists and is available
+_For any_ user-specified provider name, that provider should be used if it exists and is available
 **Validates: Requirements 4.7**
 
 ### Context Transfer Properties
 
 Property 19: Context Export Completeness
-*For any* session with context inheritance enabled, the exported context should include summary, recent messages, active files, current task, and tool results
+_For any_ session with context inheritance enabled, the exported context should include summary, recent messages, active files, current task, and tool results
 **Validates: Requirements 5.1, 5.2**
 
 Property 20: Context Compression
-*For any* context that exceeds the provider's limit, compression should reduce the size while preserving essential information
+_For any_ context that exceeds the provider's limit, compression should reduce the size while preserving essential information
 **Validates: Requirements 5.3**
 
 Property 21: Response Import
-*For any* Kraken response, it should be imported into the local session as an assistant message with metadata
+_For any_ Kraken response, it should be imported into the local session as an assistant message with metadata
 **Validates: Requirements 5.4**
 
 Property 22: Session Merging
-*For any* Kraken session, insights should be merged with the local session without losing existing conversation history
+_For any_ Kraken session, insights should be merged with the local session without losing existing conversation history
 **Validates: Requirements 5.5**
 
 Property 23: Fallback on Transfer Failure
-*For any* context transfer failure, the system should proceed with a minimal context summary rather than failing completely
+_For any_ context transfer failure, the system should proceed with a minimal context summary rather than failing completely
 **Validates: Requirements 5.6**
 
 Property 24: Context Inheritance Toggle
-*For any* request with context inheritance disabled, only the current prompt should be sent (no conversation history)
+_For any_ request with context inheritance disabled, only the current prompt should be sent (no conversation history)
 **Validates: Requirements 5.7**
 
 ### Cost Tracking Properties
 
 Property 25: Budget Enforcement
-*For any* session with a configured budget, requests should be rejected when the budget would be exceeded
+_For any_ session with a configured budget, requests should be rejected when the budget would be exceeded
 **Validates: Requirements 6.2, 6.3**
 
 Property 26: Budget Display
-*For any* status request, the remaining budget and total session costs should be displayed accurately
+_For any_ status request, the remaining budget and total session costs should be displayed accurately
 **Validates: Requirements 6.4**
 
 Property 27: Session Reset
-*For any* new session, the budget counter should be reset to zero
+_For any_ new session, the budget counter should be reset to zero
 **Validates: Requirements 6.5**
 
 Property 28: Cost Warning Display
-*For any* request with estimated cost above the warning threshold, a warning should be displayed before execution
+_For any_ request with estimated cost above the warning threshold, a warning should be displayed before execution
 **Validates: Requirements 6.6**
 
 Property 29: Usage Logging
-*For any* Kraken invocation when logging is enabled, a record should be created with timestamp, provider, tokens, and cost
+_For any_ Kraken invocation when logging is enabled, a record should be created with timestamp, provider, tokens, and cost
 **Validates: Requirements 6.7**
 
 ### Auto-Escalation Properties
 
 Property 30: Escalation Trigger Detection
-*For any* configured escalation reason (model failure, context overflow, user request), the manager should trigger escalation when that condition occurs
+_For any_ configured escalation reason (model failure, context overflow, user request), the manager should trigger escalation when that condition occurs
 **Validates: Requirements 9.1, 9.2, 9.3**
 
 Property 31: Escalation Provider Selection
-*For any* triggered escalation, the manager should select the most appropriate provider based on the failure reason
+_For any_ triggered escalation, the manager should select the most appropriate provider based on the failure reason
 **Validates: Requirements 9.4**
 
 Property 32: Escalation Hook Emission
-*For any* escalation event, a `kraken_escalate` hook should be emitted with the reason and provider details
+_For any_ escalation event, a `kraken_escalate` hook should be emitted with the reason and provider details
 **Validates: Requirements 9.5**
 
 Property 33: Escalation Disabled Behavior
-*For any* system with auto-escalation disabled, Kraken providers should not be invoked automatically
+_For any_ system with auto-escalation disabled, Kraken providers should not be invoked automatically
 **Validates: Requirements 9.6**
 
 ### Hook System Properties
 
 Property 34: Before Kraken Hook
-*For any* Kraken invocation, a `before_kraken` hook should be emitted with provider and prompt details
+_For any_ Kraken invocation, a `before_kraken` hook should be emitted with provider and prompt details
 **Validates: Requirements 10.1**
 
 Property 35: After Kraken Hook
-*For any* completed Kraken response, an `after_kraken` hook should be emitted with response, tokens, and cost
+_For any_ completed Kraken response, an `after_kraken` hook should be emitted with response, tokens, and cost
 **Validates: Requirements 10.2**
 
 Property 36: Hook Cancellation
-*For any* hook handler that returns false, the Kraken invocation should be cancelled
+_For any_ hook handler that returns false, the Kraken invocation should be cancelled
 **Validates: Requirements 10.5**
 
 Property 37: Hook Error Handling
-*For any* hook handler that throws an error, the error should be logged and the invocation should continue
+_For any_ hook handler that throws an error, the error should be logged and the invocation should continue
 **Validates: Requirements 10.6**
 
 ### Configuration Properties
 
 Property 38: Configuration Validation
-*For any* Kraken configuration, required fields should be validated and errors should be returned for missing or invalid values
+_For any_ Kraken configuration, required fields should be validated and errors should be returned for missing or invalid values
 **Validates: Requirements 11.2, 11.3**
 
 Property 39: Environment Variable Resolution
-*For any* API key referencing an environment variable, it should be resolved at runtime
+_For any_ API key referencing an environment variable, it should be resolved at runtime
 **Validates: Requirements 11.4**
 
 Property 40: Configuration Hot-Reload
-*For any* configuration change, the system should reload without requiring a restart
+_For any_ configuration change, the system should reload without requiring a restart
 **Validates: Requirements 11.6**
 
 ### Security Properties
 
 Property 41: API Key Redaction
-*For any* log entry or error message, API keys should be redacted to prevent exposure
+_For any_ log entry or error message, API keys should be redacted to prevent exposure
 **Validates: Requirements 14.3**
 
 Property 42: HTTPS Encryption
-*For any* data transmission to external providers, HTTPS should be used
+_For any_ data transmission to external providers, HTTPS should be used
 **Validates: Requirements 14.7**
 
 ### Cross-Platform Properties
 
 Property 43: Executable Discovery Cross-Platform
-*For any* platform (Windows, macOS, Linux), the discovery service should check platform-appropriate locations and file extensions
+_For any_ platform (Windows, macOS, Linux), the discovery service should check platform-appropriate locations and file extensions
 **Validates: Requirements 15.1, 15.2**
 
 Property 44: Subprocess Execution Cross-Platform
-*For any* platform, subprocess execution should use platform-appropriate mechanisms (thread pool on Windows, fork/exec on Unix)
+_For any_ platform, subprocess execution should use platform-appropriate mechanisms (thread pool on Windows, fork/exec on Unix)
 **Validates: Requirements 15.3, 15.4**
 
 Property 45: Path Resolution Cross-Platform
-*For any* file path, the resolver should use platform-specific separators and conventions
+_For any_ file path, the resolver should use platform-specific separators and conventions
 **Validates: Requirements 15.5**
-
-
 
 ## Security and Privacy
 
@@ -1410,18 +1374,18 @@ export class ApiKeyManager {
     if (keyOrEnvVar.startsWith('$')) {
       const envVar = keyOrEnvVar.slice(1);
       const value = process.env[envVar];
-      
+
       if (!value) {
         throw new Error(`Environment variable ${envVar} not set`);
       }
-      
+
       return value;
     }
-    
+
     // Direct API key (not recommended for production)
     return keyOrEnvVar;
   }
-  
+
   /**
    * Redact API key for logging
    */
@@ -1429,10 +1393,10 @@ export class ApiKeyManager {
     if (key.length <= 8) {
       return '***';
     }
-    
+
     return `${key.slice(0, 4)}...${key.slice(-4)}`;
   }
-  
+
   /**
    * Validate API key format
    */
@@ -1440,9 +1404,9 @@ export class ApiKeyManager {
     const patterns = {
       openai: /^sk-[A-Za-z0-9]{48}$/,
       anthropic: /^sk-ant-[A-Za-z0-9-]{95}$/,
-      google: /^[A-Za-z0-9_-]{39}$/
+      google: /^[A-Za-z0-9_-]{39}$/,
     };
-    
+
     const pattern = patterns[provider];
     return pattern ? pattern.test(key) : true;
   }
@@ -1462,15 +1426,15 @@ export class PrivacyGuard {
     /\b\d{3}-\d{2}-\d{4}\b/g, // SSN
     /\b(?:\d{4}[-\s]?){3}\d{4}\b/g, // Credit card
     /\b(?:password|secret|token|key)\s*[:=]\s*['"]?[\w-]+['"]?/gi, // Credentials
-    /-----BEGIN [A-Z ]+-----[\s\S]+-----END [A-Z ]+-----/g // Private keys
+    /-----BEGIN [A-Z ]+-----[\s\S]+-----END [A-Z ]+-----/g, // Private keys
   ];
-  
+
   /**
    * Detect sensitive information in context
    */
   detectSensitiveData(context: KrakenContext): SensitiveDataWarning[] {
     const warnings: SensitiveDataWarning[] = [];
-    
+
     // Check recent messages
     for (const msg of context.recentMessages) {
       for (const part of msg.parts) {
@@ -1480,24 +1444,24 @@ export class PrivacyGuard {
               warnings.push({
                 type: this.getPatternType(pattern),
                 location: 'message',
-                severity: 'high'
+                severity: 'high',
               });
             }
           }
         }
       }
     }
-    
+
     return warnings;
   }
-  
+
   /**
    * Sanitize context by removing sensitive data
    */
   sanitizeContext(context: KrakenContext): KrakenContext {
     // Create a deep copy
     const sanitized = JSON.parse(JSON.stringify(context));
-    
+
     // Redact sensitive patterns
     for (const msg of sanitized.recentMessages) {
       for (const part of msg.parts) {
@@ -1506,17 +1470,17 @@ export class PrivacyGuard {
         }
       }
     }
-    
+
     return sanitized;
   }
-  
+
   private redactSensitiveData(text: string): string {
     let redacted = text;
-    
+
     for (const pattern of this.sensitivePatterns) {
       redacted = redacted.replace(pattern, '[REDACTED]');
     }
-    
+
     return redacted;
   }
 }
@@ -1545,11 +1509,11 @@ export interface AuditLogEntry {
 
 export class AuditLogger {
   private logPath: string;
-  
+
   constructor(logPath: string) {
     this.logPath = logPath;
   }
-  
+
   /**
    * Log Kraken invocation
    */
@@ -1559,17 +1523,13 @@ export class AuditLogger {
       ...entry,
       // Never log actual prompts or responses
       prompt: undefined,
-      response: undefined
+      response: undefined,
     };
-    
+
     // Append to log file
-    await fs.appendFile(
-      this.logPath,
-      JSON.stringify(sanitized) + '\n',
-      'utf-8'
-    );
+    await fs.appendFile(this.logPath, JSON.stringify(sanitized) + '\n', 'utf-8');
   }
-  
+
   /**
    * Query audit log
    */
@@ -1577,10 +1537,10 @@ export class AuditLogger {
     const content = await fs.readFile(this.logPath, 'utf-8');
     const entries = content
       .split('\n')
-      .filter(line => line.trim())
-      .map(line => JSON.parse(line));
-    
-    return entries.filter(entry => this.matchesFilter(entry, filter));
+      .filter((line) => line.trim())
+      .map((line) => JSON.parse(line));
+
+    return entries.filter((entry) => this.matchesFilter(entry, filter));
   }
 }
 ```
@@ -1598,27 +1558,23 @@ export class ApiClient {
    */
   private validateSecureUrl(url: string): void {
     const parsed = new URL(url);
-    
+
     if (parsed.protocol !== 'https:') {
       throw new Error(
-        `Insecure protocol ${parsed.protocol} not allowed. ` +
-        `All API requests must use HTTPS.`
+        `Insecure protocol ${parsed.protocol} not allowed. ` + `All API requests must use HTTPS.`
       );
     }
   }
-  
+
   /**
    * Stream chat completion from API
    */
-  async *streamChat(
-    request: any,
-    config: KrakenApiConfig
-  ): AsyncIterable<any> {
+  async *streamChat(request: any, config: KrakenApiConfig): AsyncIterable<any> {
     const url = this.getEndpoint(config);
-    
+
     // Enforce HTTPS
     this.validateSecureUrl(url);
-    
+
     // ... rest of implementation
   }
 }
@@ -1639,6 +1595,7 @@ export class ApiClient {
 ### Error Messages
 
 All error messages should be actionable and include:
+
 - Clear description of what went wrong
 - Specific reason or error code
 - Suggested resolution steps
@@ -1657,18 +1614,18 @@ export class KrakenErrorBuilder {
     const installCommands = {
       gemini: 'npm install -g @google/generative-ai-cli',
       claude: 'npm install -g @anthropic-ai/claude-cli',
-      codex: 'npm install -g @openai/codex-cli'
+      codex: 'npm install -g @openai/codex-cli',
     };
-    
+
     return {
       message: `${tool} CLI not found`,
       code: 'CLI_NOT_FOUND',
       resolution: `Install with: ${installCommands[tool]}`,
       docs: `https://ollm.dev/docs/kraken/cli-setup#${tool}`,
-      recoverable: true
+      recoverable: true,
     };
   }
-  
+
   /**
    * Build error for authentication required
    */
@@ -1676,18 +1633,18 @@ export class KrakenErrorBuilder {
     const authCommands = {
       gemini: 'gemini auth login',
       claude: 'claude login',
-      codex: 'codex auth'
+      codex: 'codex auth',
     };
-    
+
     return {
       message: `${tool} CLI requires authentication`,
       code: 'AUTH_REQUIRED',
       resolution: `Run: ${authCommands[tool]}`,
       docs: `https://ollm.dev/docs/kraken/authentication#${tool}`,
-      recoverable: true
+      recoverable: true,
     };
   }
-  
+
   /**
    * Build error for budget exceeded
    */
@@ -1698,10 +1655,10 @@ export class KrakenErrorBuilder {
       resolution: 'Increase maxCostPerSession in config or wait for session reset',
       currentCost: current,
       limit: limit,
-      recoverable: false
+      recoverable: false,
     };
   }
-  
+
   /**
    * Build error for timeout
    */
@@ -1711,10 +1668,10 @@ export class KrakenErrorBuilder {
       code: 'TIMEOUT',
       resolution: 'Increase timeout in config or try a different provider',
       timeout: duration,
-      recoverable: true
+      recoverable: true,
     };
   }
-  
+
   /**
    * Build error for proxy unreachable
    */
@@ -1724,10 +1681,10 @@ export class KrakenErrorBuilder {
       code: 'PROXY_UNREACHABLE',
       resolution: 'Check proxy URL and network connectivity',
       proxyUrl: url,
-      recoverable: true
+      recoverable: true,
     };
   }
-  
+
   /**
    * Build error for model not found
    */
@@ -1738,10 +1695,10 @@ export class KrakenErrorBuilder {
       resolution: `Available models: ${available.join(', ')}`,
       requestedModel: model,
       availableModels: available,
-      recoverable: true
+      recoverable: true,
     };
   }
-  
+
   /**
    * Build error for invalid API key
    */
@@ -1749,15 +1706,15 @@ export class KrakenErrorBuilder {
     const envVars = {
       openai: 'OPENAI_API_KEY',
       anthropic: 'ANTHROPIC_API_KEY',
-      google: 'GOOGLE_API_KEY'
+      google: 'GOOGLE_API_KEY',
     };
-    
+
     return {
       message: `Invalid API key for ${provider}`,
       code: 'INVALID_API_KEY',
       resolution: `Set ${envVars[provider]} environment variable or update config`,
       docs: `https://ollm.dev/docs/kraken/api-keys#${provider}`,
-      recoverable: true
+      recoverable: true,
     };
   }
 }
@@ -1770,7 +1727,6 @@ export class KrakenErrorBuilder {
 3. **Graceful Degradation**: Continue with local model if Kraken unavailable
 4. **Context Compression**: Reduce context size if too large
 5. **User Intervention**: Prompt user for action when automatic recovery fails
-
 
 ## UI Components and Commands
 
@@ -1788,62 +1744,62 @@ export class KrakenCommandHandler implements KrakenCommand {
     private manager: KrakenManager,
     private ui: UIRenderer
   ) {}
-  
+
   async execute(args: string[], context: CommandContext): Promise<void> {
     const subcommand = args[0];
-    
+
     switch (subcommand) {
       case undefined:
       case 'select':
         await this.showProviderSelection();
         break;
-        
+
       case 'status':
         await this.showStatus();
         break;
-        
+
       case 'config':
         await this.openConfig();
         break;
-        
+
       case 'history':
         await this.showHistory();
         break;
-        
+
       default:
         // Treat as prompt
         await this.executePrompt(args.join(' '));
     }
   }
-  
+
   /**
    * Show interactive provider selection menu
    */
   private async showProviderSelection(): Promise<void> {
     const providers = this.manager.listProviders();
-    
+
     if (providers.length === 0) {
       this.ui.showError('No Kraken providers configured');
       this.ui.showInfo('Run: /kraken config to set up providers');
       return;
     }
-    
+
     const selected = await this.ui.showMenu({
       title: 'Select Kraken Provider',
-      items: providers.map(p => ({
+      items: providers.map((p) => ({
         label: p.name,
         value: p.name,
         description: `${p.type} • ${p.available ? '✓ Available' : '✗ Unavailable'}`,
-        disabled: !p.available
-      }))
+        disabled: !p.available,
+      })),
     });
-    
+
     if (selected) {
       context.setProvider(selected);
       this.ui.showSuccess(`Switched to ${selected}`);
     }
   }
-  
+
   /**
    * Show provider status
    */
@@ -1852,62 +1808,64 @@ export class KrakenCommandHandler implements KrakenCommand {
     const budget = this.manager.costTracker.getRemainingBudget(
       this.manager.config.maxCostPerSession
     );
-    
+
     this.ui.showTable({
       title: 'Kraken Status',
       headers: ['Provider', 'Type', 'Status', 'Model', 'Last Used'],
-      rows: providers.map(p => [
+      rows: providers.map((p) => [
         p.name,
         p.type,
         p.available ? '✓ Available' : '✗ Unavailable',
         p.model || 'N/A',
-        p.lastUsed ? new Date(p.lastUsed).toLocaleString() : 'Never'
-      ])
+        p.lastUsed ? new Date(p.lastUsed).toLocaleString() : 'Never',
+      ]),
     });
-    
+
     this.ui.showInfo(`Session Budget: $${budget.toFixed(2)} remaining`);
   }
-  
+
   /**
    * Open Kraken configuration
    */
   private async openConfig(): Promise<void> {
     const configPath = path.join(os.homedir(), '.ollm', 'config.yaml');
-    
+
     this.ui.showInfo(`Opening: ${configPath}`);
-    
+
     // Open in default editor
     const editor = process.env.EDITOR || 'nano';
     await spawn(editor, [configPath], { stdio: 'inherit' });
   }
-  
+
   /**
    * Show usage history
    */
   private async showHistory(): Promise<void> {
     const history = this.manager.costTracker.getHistory();
-    
+
     if (history.length === 0) {
       this.ui.showInfo('No Kraken usage history');
       return;
     }
-    
+
     this.ui.showTable({
       title: 'Kraken Usage History',
       headers: ['Time', 'Provider', 'Model', 'Tokens', 'Cost'],
-      rows: history.slice(-10).map(record => [
-        new Date(record.timestamp).toLocaleTimeString(),
-        record.provider,
-        record.model,
-        `${record.tokenUsage.input + record.tokenUsage.output}`,
-        `$${record.cost.toFixed(4)}`
-      ])
+      rows: history
+        .slice(-10)
+        .map((record) => [
+          new Date(record.timestamp).toLocaleTimeString(),
+          record.provider,
+          record.model,
+          `${record.tokenUsage.input + record.tokenUsage.output}`,
+          `$${record.cost.toFixed(4)}`,
+        ]),
     });
-    
+
     const totalCost = history.reduce((sum, r) => sum + r.cost, 0);
     this.ui.showInfo(`Total session cost: $${totalCost.toFixed(2)}`);
   }
-  
+
   /**
    * Execute prompt with default provider
    */
@@ -1915,11 +1873,11 @@ export class KrakenCommandHandler implements KrakenCommand {
     const provider = this.manager.selectProvider({
       complexity: 'complex',
       domain: 'code',
-      contextSize: 0
+      contextSize: 0,
     });
-    
+
     this.ui.showInfo(`Using ${provider.name}`);
-    
+
     // Execute through normal chat flow
     await context.chat.sendMessage(prompt, { provider: provider.name });
   }
@@ -1928,7 +1886,7 @@ export class KrakenCommandHandler implements KrakenCommand {
 // Register command aliases
 export function registerKrakenCommands(registry: CommandRegistry): void {
   const handler = new KrakenCommandHandler(manager, ui);
-  
+
   registry.register('/kraken', handler);
   registry.register('/k', handler); // Short alias
   registry.register('/release', handler); // Thematic alias
@@ -1958,7 +1916,7 @@ export const KrakenStatusBar: React.FC<KrakenStatusBarProps> = ({
 }) => {
   let status: string;
   let color: string;
-  
+
   if (budgetExceeded) {
     status = '🦑 ⚠️';
     color = 'yellow';
@@ -1972,7 +1930,7 @@ export const KrakenStatusBar: React.FC<KrakenStatusBarProps> = ({
     status = '🦑 ---';
     color = 'gray';
   }
-  
+
   return (
     <Box>
       <Text color={color}>{status}</Text>
@@ -2015,7 +1973,7 @@ export const ProviderSelectionMenu: React.FC<ProviderSelectionMenuProps> = ({
 }) => {
   const cliProviders = providers.filter(p => p.type === 'cli');
   const apiProviders = providers.filter(p => p.type === 'api');
-  
+
   const items = [
     ...cliProviders.map(p => ({
       label: `${p.available ? '✓' : '✗'} ${p.label} (CLI)`,
@@ -2028,18 +1986,18 @@ export const ProviderSelectionMenu: React.FC<ProviderSelectionMenuProps> = ({
       isDisabled: !p.available
     }))
   ];
-  
+
   return (
     <Box flexDirection="column">
       <Box marginBottom={1}>
         <Text bold>Select Kraken Provider:</Text>
       </Box>
-      
+
       <SelectInput
         items={items}
         onSelect={item => onSelect(item.value)}
       />
-      
+
       <Box marginTop={1}>
         <Text dimColor>Press Esc to cancel</Text>
       </Box>
@@ -2081,22 +2039,22 @@ export const KrakenConfirmationDialog: React.FC<KrakenConfirmationProps> = ({
       <Box marginBottom={1}>
         <Text bold color="yellow">⚠️  Kraken Confirmation Required</Text>
       </Box>
-      
+
       <Box flexDirection="column" marginBottom={1}>
         <Text>Provider: <Text bold>{provider}</Text></Text>
         <Text>Model: <Text bold>{model}</Text></Text>
         <Text>Estimated Cost: <Text bold>${estimatedCost.min.toFixed(4)} - ${estimatedCost.max.toFixed(4)}</Text></Text>
       </Box>
-      
+
       <Box flexDirection="column" marginBottom={1}>
         <Text dimColor>Context to be shared:</Text>
         <Text dimColor>{contextSummary}</Text>
       </Box>
-      
+
       <Box flexDirection="column">
         <Text>
-          <Text bold color="green">[Y]</Text> Approve  
-          <Text bold color="red"> [N]</Text> Reject  
+          <Text bold color="green">[Y]</Text> Approve
+          <Text bold color="red"> [N]</Text> Reject
           <Text bold color="cyan"> [A]</Text> Always Allow
         </Text>
       </Box>
@@ -2137,18 +2095,18 @@ export const KrakenResponseMessage: React.FC<KrakenResponseProps> = ({
         <Text bold color="cyan">🦑 {provider}</Text>
         <Text dimColor> • {model}</Text>
       </Box>
-      
+
       {/* Content */}
       <Box marginBottom={1}>
         <Text>{content}</Text>
       </Box>
-      
+
       {/* Footer */}
       <Box borderStyle="single" borderColor="gray" padding={1}>
         <Text dimColor>
-          Tokens: {tokenUsage.input + tokenUsage.output} 
-          ({tokenUsage.input} in, {tokenUsage.output} out) • 
-          Cost: ${cost.toFixed(4)} • 
+          Tokens: {tokenUsage.input + tokenUsage.output}
+          ({tokenUsage.input} in, {tokenUsage.output} out) •
+          Cost: ${cost.toFixed(4)} •
           Time: {(duration / 1000).toFixed(1)}s
         </Text>
       </Box>
@@ -2156,7 +2114,6 @@ export const KrakenResponseMessage: React.FC<KrakenResponseProps> = ({
   );
 };
 ```
-
 
 ## Testing Strategy
 
@@ -2186,26 +2143,23 @@ describe('Feature: kraken-integration', () => {
   it('Property 1: STDIN Prompt Delivery', () => {
     // Feature: kraken-integration, Property 1: STDIN Prompt Delivery
     fc.assert(
-      fc.property(
-        fc.string({ minLength: 0, maxLength: 10000 }),
-        async (prompt) => {
-          const executor = new CliExecutor();
-          const spy = jest.spyOn(executor as any, 'execWithStdin');
-          
-          await executor.executeDirect(prompt, mockConfig);
-          
-          expect(spy).toHaveBeenCalledWith(
-            expect.any(String),
-            expect.any(Array),
-            expect.stringContaining(prompt),
-            expect.any(Number)
-          );
-        }
-      ),
+      fc.property(fc.string({ minLength: 0, maxLength: 10000 }), async (prompt) => {
+        const executor = new CliExecutor();
+        const spy = jest.spyOn(executor as any, 'execWithStdin');
+
+        await executor.executeDirect(prompt, mockConfig);
+
+        expect(spy).toHaveBeenCalledWith(
+          expect.any(String),
+          expect.any(Array),
+          expect.stringContaining(prompt),
+          expect.any(Number)
+        );
+      }),
       { numRuns: 100 }
     );
   });
-  
+
   it('Property 7: Cost Calculation Accuracy', () => {
     // Feature: kraken-integration, Property 7: Cost Calculation Accuracy
     fc.assert(
@@ -2214,19 +2168,18 @@ describe('Feature: kraken-integration', () => {
           provider: fc.constantFrom('openai', 'anthropic', 'google'),
           model: fc.string(),
           inputTokens: fc.integer({ min: 0, max: 1000000 }),
-          outputTokens: fc.integer({ min: 0, max: 1000000 })
+          outputTokens: fc.integer({ min: 0, max: 1000000 }),
         }),
         (data) => {
           const tracker = new CostTracker();
-          const cost = tracker.calculateCost(
-            data.provider,
-            data.model,
-            { input: data.inputTokens, output: data.outputTokens }
-          );
-          
+          const cost = tracker.calculateCost(data.provider, data.model, {
+            input: data.inputTokens,
+            output: data.outputTokens,
+          });
+
           // Cost should be non-negative
           expect(cost).toBeGreaterThanOrEqual(0);
-          
+
           // Cost should scale with token count
           if (data.inputTokens > 0 || data.outputTokens > 0) {
             expect(cost).toBeGreaterThan(0);
@@ -2305,18 +2258,18 @@ For testing without real CLI tools or API access:
 // Mock CLI executable
 export class MockCliExecutor extends CliExecutor {
   private responses = new Map<string, string>();
-  
+
   setResponse(prompt: string, response: string) {
     this.responses.set(prompt, response);
   }
-  
+
   async executeDirect(prompt: string, config: KrakenCliConfig) {
     const response = this.responses.get(prompt) || 'Default response';
     return {
       stdout: response,
       stderr: '',
       exitCode: 0,
-      duration: 100
+      duration: 100,
     };
   }
 }
@@ -2325,11 +2278,11 @@ export class MockCliExecutor extends CliExecutor {
 export class MockApiServer {
   private server: http.Server;
   private responses: any[] = [];
-  
+
   setResponses(responses: any[]) {
     this.responses = responses;
   }
-  
+
   async start(port: number) {
     this.server = http.createServer((req, res) => {
       res.setHeader('Content-Type', 'text/event-stream');
@@ -2338,12 +2291,12 @@ export class MockApiServer {
       }
       res.end();
     });
-    
-    await new Promise(resolve => this.server.listen(port, resolve));
+
+    await new Promise((resolve) => this.server.listen(port, resolve));
   }
-  
+
   async stop() {
-    await new Promise(resolve => this.server.close(resolve));
+    await new Promise((resolve) => this.server.close(resolve));
   }
 }
 ```
@@ -2356,14 +2309,14 @@ export class MockApiServer {
 - **Unit Tests**: All core functions covered
 - **Integration Tests**: All major flows covered
 
-
 ## Design Decisions and Rationales
 
 ### 1. Unified Provider Adapter Pattern
 
 **Decision**: Both CLI Bridge and API providers implement the same `ProviderAdapter` interface.
 
-**Rationale**: 
+**Rationale**:
+
 - Ensures consistency across all provider types
 - Allows transparent switching between local and external models
 - Simplifies the provider registry and selection logic
@@ -2374,6 +2327,7 @@ export class MockApiServer {
 **Decision**: Send prompts to CLI tools via STDIN instead of command-line arguments.
 
 **Rationale**:
+
 - Avoids Windows command-line length limits (8191 characters)
 - Prevents shell escaping issues with special characters
 - More secure (arguments visible in process list)
@@ -2384,6 +2338,7 @@ export class MockApiServer {
 **Decision**: Support HTTP proxy for CLI tool execution in addition to direct subprocess execution.
 
 **Rationale**:
+
 - Enables use of CLI tools on systems where they're not installed
 - Allows centralized management of CLI tool versions
 - Provides fallback when local execution fails
@@ -2394,6 +2349,7 @@ export class MockApiServer {
 **Decision**: Track token usage and enforce per-session budget limits before allowing Kraken invocations.
 
 **Rationale**:
+
 - Prevents unexpected costs from runaway API usage
 - Provides transparency about external provider costs
 - Allows users to set spending limits
@@ -2404,6 +2360,7 @@ export class MockApiServer {
 **Decision**: Export conversation context with automatic compression when it exceeds provider limits.
 
 **Rationale**:
+
 - Ensures external providers have necessary background
 - Handles large conversations gracefully
 - Preserves essential information while reducing size
@@ -2414,6 +2371,7 @@ export class MockApiServer {
 **Decision**: Show confirmation dialogs before Kraken invocations with option to always allow specific providers.
 
 **Rationale**:
+
 - Gives users control over when external providers are used
 - Displays cost and context sharing information upfront
 - Allows trusted providers to skip confirmation
@@ -2424,6 +2382,7 @@ export class MockApiServer {
 **Decision**: Automatically escalate to Kraken providers on specific failures, with hook events for customization.
 
 **Rationale**:
+
 - Provides seamless fallback when local models fail
 - Allows users to customize escalation behavior via hooks
 - Emits events for logging and monitoring
@@ -2434,6 +2393,7 @@ export class MockApiServer {
 **Decision**: Support environment variable references in configuration for API keys.
 
 **Rationale**:
+
 - Avoids storing sensitive credentials in plaintext config files
 - Follows security best practices
 - Compatible with CI/CD and deployment workflows
@@ -2444,6 +2404,7 @@ export class MockApiServer {
 **Decision**: Use platform-specific subprocess execution mechanisms (thread pool on Windows, fork/exec on Unix).
 
 **Rationale**:
+
 - Ensures reliable subprocess execution on all platforms
 - Handles Windows-specific subprocess limitations
 - Provides consistent behavior across operating systems
@@ -2454,6 +2415,7 @@ export class MockApiServer {
 **Decision**: Implement both unit tests and property-based tests for all components.
 
 **Rationale**:
+
 - Unit tests catch specific bugs and edge cases
 - Property tests verify universal correctness across inputs
 - Complementary approaches provide comprehensive coverage
@@ -2464,6 +2426,7 @@ export class MockApiServer {
 **Decision**: Implement CLI Bridge and API providers as separate classes rather than a single unified implementation.
 
 **Rationale**:
+
 - CLI and API execution have fundamentally different mechanisms
 - Separation of concerns improves maintainability
 - Allows independent evolution of each provider type
@@ -2474,11 +2437,11 @@ export class MockApiServer {
 **Decision**: Perform health checks on all configured providers when OLLM CLI starts.
 
 **Rationale**:
+
 - Provides immediate feedback about provider availability
 - Allows early detection of configuration issues
 - Enables intelligent provider selection based on availability
 - Improves user experience with clear status information
-
 
 ## Implementation Notes
 
@@ -2516,6 +2479,7 @@ packages/core/src/kraken/
 ### Dependencies
 
 New dependencies required:
+
 - None (uses existing Node.js built-ins and project dependencies)
 
 ### Integration Points
@@ -2567,7 +2531,6 @@ Add to `schemas/settings.schema.json`:
 }
 ```
 
-
 ## Summary
 
 The Kraken Integration design provides a comprehensive solution for accessing external LLM providers through OLLM CLI. Key highlights:
@@ -2580,4 +2543,3 @@ The Kraken Integration design provides a comprehensive solution for accessing ex
 - **Comprehensive Testing**: Dual strategy with unit tests and property-based tests
 
 The design addresses all 15 requirement categories with 45 testable correctness properties, ensuring a robust and reliable implementation.
-

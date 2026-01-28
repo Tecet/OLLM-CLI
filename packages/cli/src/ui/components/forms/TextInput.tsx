@@ -1,13 +1,13 @@
 /**
  * TextInput - Text input component with validation
- * 
+ *
  * Features:
  * - Controlled input with onChange callback
  * - Optional masking for sensitive data
  * - Placeholder support
  * - Validation support
  * - Theme-aware styling
- * 
+ *
  * Validates: Requirements NFR-7, NFR-9, NFR-16
  */
 
@@ -28,7 +28,7 @@ export interface TextInputProps {
 
 /**
  * TextInput component - displays text with edit indicator
- * 
+ *
  * Note: This is a display-only component for terminal UI.
  * Actual editing happens through dialog interactions.
  */
@@ -60,11 +60,7 @@ export function TextInput({
       <Box>
         <Text
           color={
-            disabled
-              ? 'gray'
-              : error
-                ? uiState.theme.status.error
-                : uiState.theme.text.secondary
+            disabled ? 'gray' : error ? uiState.theme.status.error : uiState.theme.text.secondary
           }
           dimColor={disabled}
         >
@@ -129,9 +125,7 @@ export const validators = {
 /**
  * Combine multiple validators
  */
-export function combineValidators(
-  ...validators: Array<(value: string) => string | undefined>
-) {
+export function combineValidators(...validators: Array<(value: string) => string | undefined>) {
   return (value: string): string | undefined => {
     for (const validator of validators) {
       const error = validator(value);

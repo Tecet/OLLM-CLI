@@ -11,27 +11,27 @@ Enhanced the Code Editor specification to include detailed syntax highlighting w
 
 ### Color Mapping
 
-| Element | Color | ANSI Code | Examples |
-|---------|-------|-----------|----------|
-| **Strings** | Green | `\x1b[32m` | `"text"`, `'text'`, `` `template` `` |
-| **Comments** | Gray | `\x1b[90m` | `// comment`, `/* block */` |
-| **Numbers** | Yellow | `\x1b[33m` | `123`, `3.14`, `0xFF` |
-| **Parameters** | Yellow | `\x1b[33m` | Function params, object properties |
-| **Keywords** | Purple/Magenta | `\x1b[35m` | `var`, `if`, `else`, `const`, `class`, `return` |
-| **Operators** | Light-blue/Cyan | `\x1b[36m` | `+`, `-`, `&&`, `\|\|`, `===`, `=>` |
-| **Functions** | Dark-blue | `\x1b[34m` | Function names, method calls |
-| **Classes** | Red | `\x1b[31m` | Class names, `this` keyword |
-| **Types** | Cyan | `\x1b[36m` | TypeScript types, interfaces |
-| **Errors** | Bright Red | `\x1b[91m` | Error underlines |
-| **Warnings** | Bright Yellow | `\x1b[93m` | Warning underlines |
-| **Default** | White | `\x1b[37m` | Default text |
+| Element        | Color           | ANSI Code  | Examples                                        |
+| -------------- | --------------- | ---------- | ----------------------------------------------- |
+| **Strings**    | Green           | `\x1b[32m` | `"text"`, `'text'`, `` `template` ``            |
+| **Comments**   | Gray            | `\x1b[90m` | `// comment`, `/* block */`                     |
+| **Numbers**    | Yellow          | `\x1b[33m` | `123`, `3.14`, `0xFF`                           |
+| **Parameters** | Yellow          | `\x1b[33m` | Function params, object properties              |
+| **Keywords**   | Purple/Magenta  | `\x1b[35m` | `var`, `if`, `else`, `const`, `class`, `return` |
+| **Operators**  | Light-blue/Cyan | `\x1b[36m` | `+`, `-`, `&&`, `\|\|`, `===`, `=>`             |
+| **Functions**  | Dark-blue       | `\x1b[34m` | Function names, method calls                    |
+| **Classes**    | Red             | `\x1b[31m` | Class names, `this` keyword                     |
+| **Types**      | Cyan            | `\x1b[36m` | TypeScript types, interfaces                    |
+| **Errors**     | Bright Red      | `\x1b[91m` | Error underlines                                |
+| **Warnings**   | Bright Yellow   | `\x1b[93m` | Warning underlines                              |
+| **Default**    | White           | `\x1b[37m` | Default text                                    |
 
 ### Visual Example
 
 ```typescript
 // TypeScript code with color annotations
 
-const message: string = "Hello World";
+const message: string = 'Hello World';
 // ^^^^^ keyword (purple)
 //    ^^^^^^^ variable (white)
 //           ^ operator (cyan)
@@ -40,34 +40,34 @@ const message: string = "Hello World";
 //                      ^^^^^^^^^^^^^ string (green)
 
 function greet(name: string): void {
-// ^^^^^^^^ keyword (purple)
-//         ^^^^^ function name (blue)
-//              ^^^^ parameter (yellow)
-//                  ^ operator (cyan)
-//                    ^^^^^^ type (cyan)
-//                          ^ operator (cyan)
-//                            ^^^^ type (cyan)
+  // ^^^^^^^^ keyword (purple)
+  //         ^^^^^ function name (blue)
+  //              ^^^^ parameter (yellow)
+  //                  ^ operator (cyan)
+  //                    ^^^^^^ type (cyan)
+  //                          ^ operator (cyan)
+  //                            ^^^^ type (cyan)
   return `Hi, ${name}!`;
   // ^^^^^^ keyword (purple)
   //       ^^^^^^^^^^^^^^ string (green)
 }
 
 class User {
-// ^^^^^ keyword (purple)
-//    ^^^^ class name (red)
+  // ^^^^^ keyword (purple)
+  //    ^^^^ class name (red)
   constructor(public name: string) {
-  // ^^^^^^^^^^^ function name (blue)
-  //          ^^^^^^ keyword (purple)
-  //                 ^^^^ parameter (yellow)
-  //                     ^ operator (cyan)
-  //                       ^^^^^^ type (cyan)
+    // ^^^^^^^^^^^ function name (blue)
+    //          ^^^^^^ keyword (purple)
+    //                 ^^^^ parameter (yellow)
+    //                     ^ operator (cyan)
+    //                       ^^^^^^ type (cyan)
     this.name = name;
     // ^^^^ this keyword (red)
   }
 }
 
 // Error highlighting
-const x: number = "text";  // ❌ Type error
+const x: number = 'text'; // ❌ Type error
 //                ^^^^^^ (bright red underline)
 //                       Error: Type 'string' not assignable to 'number'
 ```
@@ -102,9 +102,9 @@ Line 45 │ let unused = 123;
 
 ### Error Navigation
 
-| Shortcut | Action |
-|----------|--------|
-| `Ctrl+E` | Jump to next error |
+| Shortcut       | Action                 |
+| -------------- | ---------------------- |
+| `Ctrl+E`       | Jump to next error     |
 | `Shift+Ctrl+E` | Jump to previous error |
 
 ### Status Bar
@@ -126,7 +126,7 @@ class EditorSyntax {
   detectLanguage(filePath: string): string | null;
   getSupportedLanguages(): string[];
   applyColorScheme(tokens: Token[]): ColoredTokens;
-  
+
   // Color scheme
   private colorScheme: SyntaxColorScheme = {
     strings: 'green',
@@ -160,14 +160,14 @@ interface EditorDiagnostic {
 class EditorDiagnostics {
   // Get diagnostics for current file
   getDiagnostics(filePath: string, content: string): Promise<EditorDiagnostic[]>;
-  
+
   // Highlight errors in editor
   highlightErrors(diagnostics: EditorDiagnostic[]): void;
-  
+
   // Navigate errors
   jumpToNextError(): void;
   jumpToPreviousError(): void;
-  
+
   // Error count
   getErrorCount(): number;
   getWarningCount(): number;
@@ -188,13 +188,10 @@ async function getTypeScriptDiagnostics(
     noEmit: true,
     target: ts.ScriptTarget.ES2020,
   });
-  
-  const diagnostics = [
-    ...program.getSyntacticDiagnostics(),
-    ...program.getSemanticDiagnostics(),
-  ];
-  
-  return diagnostics.map(d => ({
+
+  const diagnostics = [...program.getSyntacticDiagnostics(), ...program.getSemanticDiagnostics()];
+
+  return diagnostics.map((d) => ({
     line: ts.getLineAndCharacterOfPosition(d.file!, d.start!).line,
     column: ts.getLineAndCharacterOfPosition(d.file!, d.start!).character,
     length: d.length || 1,
@@ -217,9 +214,9 @@ async function getESLintDiagnostics(
 ): Promise<EditorDiagnostic[]> {
   const eslint = new ESLint();
   const results = await eslint.lintText(content, { filePath });
-  
-  return results[0].messages.map(m => ({
-    line: m.line - 1,  // ESLint is 1-based
+
+  return results[0].messages.map((m) => ({
+    line: m.line - 1, // ESLint is 1-based
     column: m.column - 1,
     length: m.endColumn ? m.endColumn - m.column : 1,
     severity: m.severity === 2 ? 'error' : 'warning',
@@ -232,11 +229,13 @@ async function getESLintDiagnostics(
 ## User Stories
 
 ### US-9: Syntax Highlighting
+
 **As a** developer  
 **I want to** see syntax-highlighted code with semantic colors  
 **So that** I can read and understand the code more easily
 
 **Acceptance Criteria**:
+
 - ✅ Syntax highlighting applied based on file extension
 - ✅ Reuses existing SyntaxViewer's shiki integration
 - ✅ Supports 50+ programming languages
@@ -253,11 +252,13 @@ async function getESLintDiagnostics(
   - White: Default
 
 ### US-9b: Error and Warning Highlighting
+
 **As a** developer  
 **I want to** see TypeScript and lint errors highlighted in the editor  
 **So that** I can fix issues as I type
 
 **Acceptance Criteria**:
+
 - ✅ TypeScript errors shown with red underlines
 - ✅ ESLint warnings shown with yellow underlines
 - ✅ Error messages displayed inline or on hover
@@ -271,6 +272,7 @@ async function getESLintDiagnostics(
 ## Implementation Tasks
 
 ### Task 28: Implement EditorSyntax Service (6 hours)
+
 - [x] Reuse SyntaxViewer's shiki integration
 - [x] Implement detectLanguage(filePath)
 - [x] Implement highlight(content, language)
@@ -296,6 +298,7 @@ async function getESLintDiagnostics(
   - [x] Debounced error checking (1000ms)
 
 ### Task 29: Integrate Syntax Highlighting (5 hours)
+
 - [x] Apply highlighting to visible lines
 - [x] Detect language from file extension
 - [x] Update highlighting as user types
@@ -314,22 +317,26 @@ async function getESLintDiagnostics(
 ## Dependencies
 
 ### Existing
+
 - ✅ `shiki` - Syntax highlighting (already installed)
 - ✅ `typescript` - TypeScript compiler (already installed)
 
 ### New
+
 - ⏳ `eslint` - Linting (may need to install)
 - ⏳ `@typescript/vfs` - TypeScript virtual file system (optional)
 
 ## Performance Considerations
 
 ### Syntax Highlighting
+
 - Debounce: 500ms after last keystroke
 - Only highlight visible lines
 - Cache highlighted content
 - Reuse shiki highlighter instance
 
 ### Error Detection
+
 - Debounce: 1000ms after last keystroke
 - Run in background thread if possible
 - Cache diagnostics
@@ -339,18 +346,21 @@ async function getESLintDiagnostics(
 ## Testing
 
 ### Unit Tests
+
 - Color scheme mapping
 - ANSI code generation
 - Language detection
 - Error parsing
 
 ### Integration Tests
+
 - Syntax highlighting updates on typing
 - Error highlighting appears correctly
 - Error navigation works
 - Status bar updates
 
 ### Visual Tests
+
 - All colors render correctly in terminal
 - Errors are clearly visible
 - Performance is acceptable

@@ -1,6 +1,6 @@
 /**
  * Context Management System
- * 
+ *
  * This module provides memory-efficient conversation management for local LLMs
  * through VRAM monitoring, dynamic context sizing, snapshots, compression,
  * and memory safety guards.

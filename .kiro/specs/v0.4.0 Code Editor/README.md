@@ -11,15 +11,18 @@ This specification defines a built-in terminal-based code editor for OLLM CLI. T
 ## Specification Files
 
 ### 1. [requirements.md](./requirements.md)
+
 Defines what we're building and why.
 
 **Contents**:
+
 - 12 User Stories with acceptance criteria
 - 6 Technical Requirements
 - Success metrics
 - Dependencies and references
 
 **Key User Stories**:
+
 - US-1: Open file in editor
 - US-2: Navigate with cursor
 - US-3: Insert and delete text
@@ -34,9 +37,11 @@ Defines what we're building and why.
 - US-12: Multiple file support
 
 ### 2. [design.md](./design.md)
+
 Defines how we're building it.
 
 **Contents**:
+
 - Architecture overview with diagrams
 - Component structure
 - Data structures and interfaces
@@ -51,6 +56,7 @@ Defines how we're building it.
 - Configuration
 
 **Key Services**:
+
 - EditorBuffer: Text content management
 - EditorCursor: Cursor position and movement
 - EditorHistory: Undo/redo stack
@@ -61,9 +67,11 @@ Defines how we're building it.
 - EditorFileOps: File operations
 
 ### 3. [tasks.md](./tasks.md)
+
 Defines the implementation plan.
 
 **Contents**:
+
 - 40 actionable tasks organized in 3 phases
 - Each task includes:
   - Requirements mapping
@@ -98,11 +106,9 @@ Defines the implementation plan.
 - **Phase 1 (MVP)**: 3-4 days
   - Basic editing, cursor navigation, save/load
   - Goal: Can open, edit, and save files
-  
 - **Phase 2 (Enhanced)**: 2-3 days
   - Undo/redo, clipboard, find, go-to-line
   - Goal: Comfortable editing experience
-  
 - **Phase 3 (Polish)**: 2-3 days
   - Syntax highlighting, Prettier, multi-file, auto-save
   - Goal: Production-ready editor
@@ -110,6 +116,7 @@ Defines the implementation plan.
 ## Key Features
 
 ### MVP (Phase 1)
+
 - ✅ Open files from File Explorer
 - ✅ Cursor navigation (arrows, Home, End, PgUp/PgDn)
 - ✅ Text insertion and deletion
@@ -118,6 +125,7 @@ Defines the implementation plan.
 - ✅ Window integration
 
 ### Enhanced (Phase 2)
+
 - ✅ Undo/Redo (Ctrl+Z, Ctrl+Y)
 - ✅ Copy/Cut/Paste (Ctrl+C, Ctrl+X, Ctrl+V)
 - ✅ Find text (Ctrl+F)
@@ -125,6 +133,7 @@ Defines the implementation plan.
 - ✅ Text selection (Shift+arrows)
 
 ### Polish (Phase 3)
+
 - ✅ Syntax highlighting (50+ languages)
 - ✅ Prettier formatting (Ctrl+Shift+F)
 - ✅ Multiple file tabs
@@ -135,20 +144,24 @@ Defines the implementation plan.
 ## Integration Points
 
 ### 1. File Explorer
+
 - Press `e` in File Explorer to open file in editor
 - Editor window becomes active automatically
 - File path passed to CodeEditor component
 
 ### 2. Window Management
+
 - Editor is the 3rd window (Chat/Terminal/Editor)
 - Ctrl+3 switches to editor
 - Ctrl+1/2 switches to Chat/Terminal
 
 ### 3. Focus System
+
 - Saving a file updates focused file content
 - Keeps LLM context in sync with edits
 
 ### 4. Syntax Highlighting
+
 - Reuses SyntaxViewer's shiki integration
 - Supports 50+ programming languages
 - Debounced updates for performance
@@ -156,12 +169,14 @@ Defines the implementation plan.
 ## Technical Stack
 
 ### Dependencies
+
 - **React + Ink**: UI framework
 - **shiki**: Syntax highlighting (already installed)
 - **prettier**: Code formatting (new dependency)
 - **clipboardy**: Clipboard operations (new dependency)
 
 ### File Structure
+
 ```
 packages/cli/src/ui/components/code-editor/
 ├── CodeEditor.tsx              # Main component
@@ -180,23 +195,27 @@ packages/cli/src/ui/components/code-editor/
 ## Testing Strategy
 
 ### Unit Tests
+
 - EditorBuffer: Text operations
 - EditorCursor: Movement logic
 - EditorHistory: Undo/redo
 - EditorSelection: Selection logic
 
 ### Integration Tests
+
 - File operations: Open, save, reload
 - Keyboard shortcuts: All keybindings
 - Focus integration: Update on save
 - Window switching: Editor integration
 
 ### Property-Based Tests
+
 - Undo/redo round-trip
 - Buffer operations consistency
 - Cursor movement boundaries
 
 ### Manual Testing
+
 - Cross-platform: Windows, macOS, Linux
 - Performance: Files up to 1MB
 - Usability: Can edit without docs
@@ -211,17 +230,20 @@ packages/cli/src/ui/components/code-editor/
 ## References
 
 ### Related Documents
+
 - Proposal: `.dev/CODE-EDITOR-PROPOSAL.md`
 - Audit: `.dev/CODE-EDITOR-AUDIT-SUMMARY.md`
 - File Explorer Spec: `.kiro/specs/v0.3.0 File Explorer/`
 
 ### Related Code
+
 - SyntaxViewer: `packages/cli/src/ui/components/file-explorer/SyntaxViewer.tsx`
 - EditorIntegration: `packages/cli/src/ui/components/file-explorer/EditorIntegration.ts`
 - WindowContext: `packages/cli/src/ui/contexts/WindowContext.tsx`
 - App.tsx: `packages/cli/src/ui/App.tsx`
 
 ### External Documentation
+
 - Shiki: https://shiki.matsu.io/
 - Prettier: https://prettier.io/docs/en/api.html
 - Ink: https://github.com/vadimdemedes/ink
@@ -230,6 +252,7 @@ packages/cli/src/ui/components/code-editor/
 ## Questions or Issues?
 
 If you have questions about this specification:
+
 1. Check the design document for architecture details
 2. Review the tasks document for implementation guidance
 3. Refer to the proposal document for rationale
@@ -237,8 +260,8 @@ If you have questions about this specification:
 
 ## Status Updates
 
-| Date | Status | Notes |
-|------|--------|-------|
+| Date       | Status           | Notes                    |
+| ---------- | ---------------- | ------------------------ |
 | 2026-01-22 | 📋 Spec Complete | Ready for implementation |
 
 ## Next Steps

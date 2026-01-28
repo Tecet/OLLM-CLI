@@ -7,15 +7,15 @@ import { DuckDuckGoSearchProvider } from '../packages/core/dist/tools/providers/
 
 async function testSearch() {
   console.log('Testing DuckDuckGo Search Provider...\n');
-  
+
   const provider = new DuckDuckGoSearchProvider();
-  
+
   try {
     console.log('Searching for: "NVIDIA stock price today"');
     const results = await provider.search('NVIDIA stock price today', 5);
-    
+
     console.log(`\nFound ${results.length} results:\n`);
-    
+
     if (results.length === 0) {
       console.log('❌ No results found - HTML parsing may be failing');
     } else {

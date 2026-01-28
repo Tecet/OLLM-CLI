@@ -1,11 +1,11 @@
 /**
  * Tool Configuration Registry
- * 
+ *
  * Defines all available tools with metadata for the Tools Panel UI.
  * This is the source of truth for tool information, categories, and default states.
  */
 
-export type ToolCategory = 
+export type ToolCategory =
   | 'file-operations'
   | 'file-discovery'
   | 'shell'
@@ -26,7 +26,7 @@ export interface ToolMetadata {
 
 /**
  * Default tool registry
- * 
+ *
  * All 15 built-in tools with their metadata.
  * Tools are organized into 6 categories:
  * - File Operations: read, write, edit files
@@ -161,7 +161,7 @@ export const DEFAULT_TOOLS: ToolMetadata[] = [
  * @returns The tool metadata if found, undefined otherwise
  */
 export function getToolMetadata(toolId: string): ToolMetadata | undefined {
-  return DEFAULT_TOOLS.find(tool => tool.id === toolId);
+  return DEFAULT_TOOLS.find((tool) => tool.id === toolId);
 }
 
 /**
@@ -170,7 +170,7 @@ export function getToolMetadata(toolId: string): ToolMetadata | undefined {
  * @returns Array of tool metadata for the specified category
  */
 export function getToolsByCategory(category: ToolCategory): ToolMetadata[] {
-  return DEFAULT_TOOLS.filter(tool => tool.category === category);
+  return DEFAULT_TOOLS.filter((tool) => tool.category === category);
 }
 
 /**
@@ -178,14 +178,7 @@ export function getToolsByCategory(category: ToolCategory): ToolMetadata[] {
  * @returns Array of all tool categories
  */
 export function getAllCategories(): ToolCategory[] {
-  return [
-    'file-operations',
-    'file-discovery',
-    'shell',
-    'web',
-    'memory',
-    'context',
-  ];
+  return ['file-operations', 'file-discovery', 'shell', 'web', 'memory', 'context'];
 }
 
 /**
@@ -197,10 +190,10 @@ export function getCategoryDisplayName(category: ToolCategory): string {
   const displayNames: Record<ToolCategory, string> = {
     'file-operations': 'File Operations',
     'file-discovery': 'File Discovery',
-    'shell': 'Shell',
-    'web': 'Web',
-    'memory': 'Memory',
-    'context': 'Context',
+    shell: 'Shell',
+    web: 'Web',
+    memory: 'Memory',
+    context: 'Context',
   };
   return displayNames[category];
 }

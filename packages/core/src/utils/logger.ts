@@ -28,20 +28,20 @@ export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 /**
  * Create a logger instance with the given name
  * Log level is controlled by OLLM_LOG_LEVEL environment variable
- * 
+ *
  * @param name - Logger name (typically module or component name)
  * @returns Logger instance
  */
 export function createLogger(name: string): Logger {
   const logLevel = (process.env.OLLM_LOG_LEVEL || 'info') as LogLevel;
-  const levels: Record<LogLevel, number> = { 
-    debug: 0, 
-    info: 1, 
-    warn: 2, 
-    error: 3 
+  const levels: Record<LogLevel, number> = {
+    debug: 0,
+    info: 1,
+    warn: 2,
+    error: 3,
   };
   const currentLevel = levels[logLevel] ?? 1;
-  
+
   const safeStringify = (v: unknown) => {
     try {
       if (typeof v === 'string') return v;
@@ -60,7 +60,7 @@ export function createLogger(name: string): Logger {
     const metaStr = meta && meta.length ? ` ${meta.map(safeStringify).join(' ')}` : '';
     return `[${timestamp}] [${level.toUpperCase()}] [${name}] ${message}${metaStr}`;
   };
-  
+
   /* File Logging Support */
   const logDir = path.join(os.homedir(), '.ollm', 'logs');
   try {

@@ -1,8 +1,8 @@
 /**
  * Unit Tests for Slash Command Parsing
- * 
+ *
  * Tests recognition of slash commands including /help, /clear, and /model.
- * 
+ *
  * Requirements: 11.4, 11.5, 11.6
  * Feature: stage-08-testing-qa
  */
@@ -224,15 +224,15 @@ describe('Slash Command Parsing', () => {
     it('should recognize command aliases', () => {
       // Check if registry has aliases
       const commands = registry.getCommands();
-      const hasAliases = commands.some(cmd => cmd.aliases && cmd.aliases.length > 0);
+      const hasAliases = commands.some((cmd) => cmd.aliases && cmd.aliases.length > 0);
       expect(hasAliases).toBe(true);
     });
 
     it('should execute command via alias', async () => {
       // Find a command with aliases
       const commands = registry.getCommands();
-      const cmdWithAlias = commands.find(cmd => cmd.aliases && cmd.aliases.length > 0);
-      
+      const cmdWithAlias = commands.find((cmd) => cmd.aliases && cmd.aliases.length > 0);
+
       if (cmdWithAlias && cmdWithAlias.aliases) {
         const alias = cmdWithAlias.aliases[0];
         const result = await registry.execute(alias);
@@ -254,7 +254,7 @@ describe('Slash Command Parsing', () => {
     it('should suggest commands for partial matches', () => {
       const suggestions = registry.getSuggestions('/mod');
       expect(suggestions.length).toBeGreaterThan(0);
-      expect(suggestions.some(s => s.includes('model'))).toBe(true);
+      expect(suggestions.some((s) => s.includes('model'))).toBe(true);
     });
 
     it('should limit suggestions to reasonable distance', () => {

@@ -285,7 +285,6 @@ This implementation plan breaks down the tool system and policy engine into disc
   - _Duration: 3m_
   - _Credits: 2.56_
 
- 
 - [x] 7.9 Write property test for gitignore respect
   - **Property 24: Gitignore Respect**
   - **Validates: Requirements 4.12**
@@ -301,7 +300,6 @@ This implementation plan breaks down the tool system and policy engine into disc
   - _Duration: 6m_
   - _Credits: 2.5_
   - _Note: Some property tests have flaky failures due to platform-specific case sensitivity and special character handling. Core functionality is verified._
-
 
 - [x] 9. Implement shell execution service
   - Create `packages/core/src/services/shellExecutionService.ts`
@@ -323,7 +321,6 @@ This implementation plan breaks down the tool system and policy engine into disc
   - _Completed: 2026-01-10 17:56_
   - _Duration: 5m_
   - _Credits: 4.00_
-  
 - [x] 10.1 Write property test for shell command execution
   - **Property 25: Shell Command Execution**
   - **Validates: Requirements 5.1**
@@ -370,8 +367,7 @@ This implementation plan breaks down the tool system and policy engine into disc
   - Create `packages/core/src/tools/web-fetch.ts` with URL fetching and CSS selector support
   - Create `packages/core/src/tools/web-search.ts` with search functionality
   - Handle HTTP errors, timeouts, and truncation
-  - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8_  
- 
+  - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8_
 
 - [x] 11.1 Write property test for web fetch content retrieval
   - **Property 29: Web Fetch Content Retrieval**
@@ -380,7 +376,6 @@ This implementation plan breaks down the tool system and policy engine into disc
   - _Completed: 2026-01-10 20:18_
   - _Duration: 19m_
   - _Credits: 32.01_
-  
 - [x] 11.2 Write property test for web fetch CSS selector
   - **Property 30: Web Fetch CSS Selector**
   - **Validates: Requirements 6.2**
@@ -551,7 +546,6 @@ This implementation plan breaks down the tool system and policy engine into disc
   - _Completed: 2026-01-10 23:25_
   - _Duration: 10m_
   - _Credits: 7.2_
-  
 - [x] 15.1 Write property test for message bus correlation ID uniqueness
   - **Property 38: Message Bus Correlation ID Uniqueness**
   - **Validates: Requirements 8.1**

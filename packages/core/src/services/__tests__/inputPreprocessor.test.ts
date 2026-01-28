@@ -22,12 +22,12 @@ describe('InputPreprocessor', () => {
         { type: 'finish', reason: 'stop' },
       ],
     });
-    
+
     // Mock token counter
     mockTokenCounter = {
       countTokens: async (text: string) => Math.ceil(text.length / 4),
       countTokensCached: (id: string, text: string) => Math.ceil(text.length / 4),
-      countConversationTokens: (messages: any[]) => 
+      countConversationTokens: (messages: any[]) =>
         messages.reduce((sum, m) => sum + Math.ceil(m.content.length / 4), 0),
       clearCache: () => {},
       getMetrics: () => ({
@@ -43,17 +43,13 @@ describe('InputPreprocessor', () => {
       resetMetrics: () => {},
     } as TokenCounter;
 
-    preprocessor = new InputPreprocessor(
-      mockProvider,
-      mockTokenCounter,
-      {
-        enabled: true,
-        tokenThreshold: 500,
-        alwaysClarify: true,
-        autoPropose: true,
-        storeSnapshots: true,
-      }
-    );
+    preprocessor = new InputPreprocessor(mockProvider, mockTokenCounter, {
+      enabled: true,
+      tokenThreshold: 500,
+      alwaysClarify: true,
+      autoPropose: true,
+      storeSnapshots: true,
+    });
   });
 
   describe('shouldPreprocess', () => {
@@ -77,7 +73,7 @@ describe('InputPreprocessor', () => {
       preprocessor.updateConfig({ tokenThreshold: 1000 });
       const mediumMessage = 'a'.repeat(2500); // ~625 tokens
       expect(preprocessor.shouldPreprocess(mediumMessage)).toBe(false);
-      
+
       const longMessage = 'a'.repeat(5000); // ~1250 tokens
       expect(preprocessor.shouldPreprocess(longMessage)).toBe(true);
     });
@@ -87,7 +83,7 @@ describe('InputPreprocessor', () => {
     it('should not trigger for short messages', async () => {
       const shortMessage = 'Hello world';
       const result = await preprocessor.preprocess(shortMessage);
-      
+
       expect(result.triggered).toBe(false);
       expect(result.cleanMessage).toBe(shortMessage);
       expect(result.extracted).toBeUndefined();
@@ -104,9 +100,9 @@ describe('InputPreprocessor', () => {
         attachments: [],
         tokenSavings: 50,
       };
-      
+
       const snapshot = await preprocessor.createSnapshot(original, extracted);
-      
+
       expect(snapshot.id).toMatch(/^intent-/);
       expect(snapshot.original).toBe(original);
       expect(snapshot.extracted).toEqual(extracted);
@@ -127,14 +123,9 @@ describe('InputPreprocessor', () => {
         goal: 'Test goal',
         milestones: ['Milestone 1', 'Milestone 2'],
       };
-      
-      const snapshot = await preprocessor.createSnapshot(
-        original,
-        extracted,
-        proposedGoal,
-        true
-      );
-      
+
+      const snapshot = await preprocessor.createSnapshot(original, extracted, proposedGoal, true);
+
       expect(snapshot.proposedGoal).toEqual(proposedGoal);
       expect(snapshot.confirmed).toBe(true);
     });
@@ -146,7 +137,7 @@ describe('InputPreprocessor', () => {
         tokenThreshold: 1000,
         autoPropose: false,
       });
-      
+
       const config = preprocessor.getConfig();
       expect(config.tokenThreshold).toBe(1000);
       expect(config.autoPropose).toBe(false);
@@ -155,7 +146,7 @@ describe('InputPreprocessor', () => {
 
     it('should get current configuration', () => {
       const config = preprocessor.getConfig();
-      
+
       expect(config.enabled).toBe(true);
       expect(config.tokenThreshold).toBe(500);
       expect(config.alwaysClarify).toBe(true);

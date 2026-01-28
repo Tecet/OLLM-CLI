@@ -81,8 +81,8 @@ export function ComparisonView({ result, onSelectPreferred, theme }: ComparisonV
               selectedModel === modelResult.model
                 ? theme.status.success
                 : modelResult.error
-                ? theme.status.error
-                : theme.text.secondary
+                  ? theme.status.error
+                  : theme.text.secondary
             }
             paddingX={1}
             paddingY={1}
@@ -103,10 +103,14 @@ export function ComparisonView({ result, onSelectPreferred, theme }: ComparisonV
             {!modelResult.error && (
               <Box flexDirection="column" marginBottom={1}>
                 <Text color={theme.text.secondary}>
-                  Latency: <Text color={theme.text.primary}>{formatLatency(modelResult.latencyMs)}</Text>
+                  Latency:{' '}
+                  <Text color={theme.text.primary}>{formatLatency(modelResult.latencyMs)}</Text>
                 </Text>
                 <Text color={theme.text.secondary}>
-                  Speed: <Text color={theme.text.primary}>{formatTokensPerSecond(modelResult.tokensPerSecond)}</Text>
+                  Speed:{' '}
+                  <Text color={theme.text.primary}>
+                    {formatTokensPerSecond(modelResult.tokensPerSecond)}
+                  </Text>
                 </Text>
                 <Text color={theme.text.secondary}>
                   Tokens: <Text color={theme.text.primary}>{modelResult.tokenCount}</Text>
@@ -147,9 +151,7 @@ export function ComparisonView({ result, onSelectPreferred, theme }: ComparisonV
 
       {/* Timestamp */}
       <Box marginTop={1}>
-        <Text color={theme.text.secondary}>
-          Compared at: {result.timestamp.toLocaleString()}
-        </Text>
+        <Text color={theme.text.secondary}>Compared at: {result.timestamp.toLocaleString()}</Text>
       </Box>
     </Box>
   );

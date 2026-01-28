@@ -1,6 +1,6 @@
 /**
  * Button - Button component with press handler
- * 
+ *
  * Features:
  * - Press handler callback
  * - Disabled state
@@ -8,7 +8,7 @@
  * - Variant styles (primary, secondary, danger)
  * - Theme-aware styling
  * - Keyboard shortcut display
- * 
+ *
  * Validates: Requirements NFR-7, NFR-9
  */
 

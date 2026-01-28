@@ -51,9 +51,7 @@ export class SnapshotCoordinator {
    * Persist a snapshot of the current context.
    */
   async createSnapshot(): Promise<ContextSnapshot> {
-    const snapshot = await this.snapshotManager.createSnapshot(
-      this.getContext()
-    );
+    const snapshot = await this.snapshotManager.createSnapshot(this.getContext());
     this.emit('snapshot-created', snapshot);
     return snapshot;
   }

@@ -1,6 +1,6 @@
 /**
  * Snapshot Coordinator Tests
- * 
+ *
  * Tests for snapshot coordinator orchestration including:
  * - Snapshot creation and restoration
  * - Integration with context manager
@@ -8,7 +8,7 @@
  * - Event emission
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 import { SnapshotCoordinator } from '../snapshotCoordinator.js';
 
@@ -20,7 +20,6 @@ import type {
   SnapshotManager,
   SnapshotStorage,
   ContextPool,
-  Message,
 } from '../types.js';
 
 describe('SnapshotCoordinator', () => {
@@ -34,10 +33,23 @@ describe('SnapshotCoordinator', () => {
   let mockEmit: (event: string, payload?: unknown) => void;
   let currentContext: ConversationContext;
   let emittedEvents: Array<{ event: string; payload?: unknown }>;
+  let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
+  let consoleWarnSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
+    // Suppress console output during tests
+    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
     // Initialize current context
     currentContext = {
+      sessionId: 'session-1',
+      systemPrompt: {
+        id: 'system-1',
+        role: 'system',
+        content: 'You are a helpful assistant',
+        timestamp: new Date('2024-01-15T10:00:00Z'),
+      },
       messages: [
         {
           id: 'msg-1',
@@ -52,10 +64,13 @@ describe('SnapshotCoordinator', () => {
           timestamp: new Date('2024-01-15T10:15:00Z'),
         },
       ],
-      userMessages: [],
-      archivedUserMessages: [],
       tokenCount: 100,
-      summary: 'Test conversation',
+      maxTokens: 4096,
+      metadata: {
+        model: 'test-model',
+        contextSize: 4096,
+        compressionHistory: [],
+      },
     };
 
     // Track emitted events
@@ -69,19 +84,29 @@ describe('SnapshotCoordinator', () => {
           sessionId: 'session-1',
           timestamp: new Date(),
           tokenCount: context.tokenCount,
-          summary: context.summary,
+          summary: 'Test snapshot',
+          userMessages: [],
+          archivedUserMessages: [],
           messages: context.messages,
-          userMessages: context.userMessages,
-          archivedUserMessages: context.archivedUserMessages,
           metadata: {
             model: 'test-model',
             contextSize: 4096,
             compressionRatio: 1.0,
+            totalUserMessages: 1,
+            totalGoalsCompleted: 0,
+            totalCheckpoints: 0,
           },
         };
       }),
-      restoreSnapshot: vi.fn(async (snapshotId: string): Promise<ConversationContext> => {
+      restoreSnapshot: vi.fn(async (_snapshotId: string): Promise<ConversationContext> => {
         return {
+          sessionId: 'session-1',
+          systemPrompt: {
+            id: 'system-1',
+            role: 'system',
+            content: 'Restored system message',
+            timestamp: new Date('2024-01-15T09:00:00Z'),
+          },
           messages: [
             {
               id: 'restored-msg-1',
@@ -90,10 +115,13 @@ describe('SnapshotCoordinator', () => {
               timestamp: new Date('2024-01-15T09:00:00Z'),
             },
           ],
-          userMessages: [],
-          archivedUserMessages: [],
           tokenCount: 50,
-          summary: 'Restored conversation',
+          maxTokens: 4096,
+          metadata: {
+            model: 'test-model',
+            contextSize: 4096,
+            compressionHistory: [],
+          },
         };
       }),
       listSnapshots: vi.fn(async (sessionId: string): Promise<ContextSnapshot[]> => {
@@ -104,13 +132,16 @@ describe('SnapshotCoordinator', () => {
             timestamp: new Date('2024-01-15T10:00:00Z'),
             tokenCount: 100,
             summary: 'First snapshot',
-            messages: [],
             userMessages: [],
             archivedUserMessages: [],
+            messages: [],
             metadata: {
               model: 'test-model',
               contextSize: 4096,
               compressionRatio: 1.0,
+              totalUserMessages: 0,
+              totalGoalsCompleted: 0,
+              totalCheckpoints: 0,
             },
           },
           {
@@ -119,13 +150,16 @@ describe('SnapshotCoordinator', () => {
             timestamp: new Date('2024-01-15T11:00:00Z'),
             tokenCount: 200,
             summary: 'Second snapshot',
-            messages: [],
             userMessages: [],
             archivedUserMessages: [],
+            messages: [],
             metadata: {
               model: 'test-model',
               contextSize: 4096,
               compressionRatio: 1.0,
+              totalUserMessages: 0,
+              totalGoalsCompleted: 0,
+              totalCheckpoints: 0,
             },
           },
         ];
@@ -144,13 +178,16 @@ describe('SnapshotCoordinator', () => {
             timestamp: new Date('2024-01-15T10:00:00Z'),
             tokenCount: 100,
             summary: 'Test snapshot',
-            messages: [],
             userMessages: [],
             archivedUserMessages: [],
+            messages: [],
             metadata: {
               model: 'test-model',
               contextSize: 4096,
               compressionRatio: 1.0,
+              totalUserMessages: 0,
+              totalGoalsCompleted: 0,
+              totalCheckpoints: 0,
             },
           };
         }
@@ -199,6 +236,12 @@ describe('SnapshotCoordinator', () => {
     });
   });
 
+  afterEach(() => {
+    // Restore console methods
+    consoleErrorSpy.mockRestore();
+    consoleWarnSpy.mockRestore();
+  });
+
   // ============================================================================
   // Snapshot Creation Tests
   // ============================================================================
@@ -238,11 +281,10 @@ describe('SnapshotCoordinator', () => {
 
       expect(mockSnapshotManager.restoreSnapshot).toHaveBeenCalledWith('snapshot-1');
       expect(mockSetContext).toHaveBeenCalled();
-      
+
       // Verify context was updated
-      const updatedContext = mockSetContext.mock.calls[0][0];
+      const updatedContext = (mockSetContext as any).mock.calls[0][0];
       expect(updatedContext.tokenCount).toBe(50);
-      expect(updatedContext.summary).toBe('Restored conversation');
     });
 
     it('should synchronize context pool with restored token count', async () => {
@@ -254,39 +296,42 @@ describe('SnapshotCoordinator', () => {
     it('should synchronize memory guard with restored context', async () => {
       await coordinator.restoreSnapshot('snapshot-1');
 
-      const restoredContext = mockSetContext.mock.calls[0][0];
+      const restoredContext = (mockSetContext as any).mock.calls[0][0];
       expect(mockMemoryGuard.setContext).toHaveBeenCalledWith(restoredContext);
     });
 
     it('should emit snapshot-restored event', async () => {
       await coordinator.restoreSnapshot('snapshot-1');
 
-      expect(mockEmit).toHaveBeenCalledWith('snapshot-restored', expect.objectContaining({
-        snapshotId: 'snapshot-1',
-        context: expect.any(Object),
-      }));
+      expect(mockEmit).toHaveBeenCalledWith(
+        'snapshot-restored',
+        expect.objectContaining({
+          snapshotId: 'snapshot-1',
+          context: expect.any(Object),
+        })
+      );
     });
 
     it('should restore snapshot with correct order of operations', async () => {
       const callOrder: string[] = [];
-      
+
       mockSnapshotManager.restoreSnapshot = vi.fn(async () => {
         callOrder.push('restore');
         return currentContext;
       });
-      
+
       mockSetContext = vi.fn(() => {
         callOrder.push('setContext');
       });
-      
+
       mockContextPool.setCurrentTokens = vi.fn(() => {
         callOrder.push('setTokens');
       });
-      
+
       mockMemoryGuard.setContext = vi.fn(() => {
         callOrder.push('setGuard');
       });
-      
+
       mockEmit = vi.fn(() => {
         callOrder.push('emit');
       });
@@ -365,6 +410,11 @@ describe('SnapshotCoordinator', () => {
       const snapshot = await coordinator.getSnapshot('snapshot-1');
 
       expect(snapshot).toBeNull();
+      // Verify error was logged (but suppressed by mock)
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Failed to load snapshot'),
+        expect.any(Error)
+      );
     });
   });
 
@@ -376,8 +426,9 @@ describe('SnapshotCoordinator', () => {
     it('should update snapshot manager configuration', () => {
       const newConfig: SnapshotConfig = {
         enabled: true,
-        maxSnapshots: 50,
-        autoSnapshotInterval: 600000,
+        maxCount: 50,
+        autoCreate: true,
+        autoThreshold: 0.8,
       };
 
       coordinator.updateConfig(newConfig);
@@ -387,7 +438,7 @@ describe('SnapshotCoordinator', () => {
 
     it('should allow partial configuration updates', () => {
       const partialConfig: Partial<SnapshotConfig> = {
-        maxSnapshots: 100,
+        maxCount: 100,
       };
 
       coordinator.updateConfig(partialConfig as SnapshotConfig);

@@ -1,9 +1,9 @@
 /**
  * FileTreeView - Terminal UI component for file tree rendering
- * 
+ *
  * Renders the file tree with virtual scrolling, Nerd Font icons, git status
  * colors, and focus indicators. Supports keyboard navigation and file focusing.
- * 
+ *
  * Requirements: 2.1, 2.6, 2.7, 3.1, 3.4
  */
 
@@ -63,7 +63,7 @@ const ICONS = {
   // Directory icons
   directoryExpanded: '📂',
   directoryCollapsed: '📁',
-  
+
   // File type icons
   file: '📄',
   typescript: '📘',
@@ -74,9 +74,9 @@ const ICONS = {
   image: '🖼️',
   text: '📄',
   code: '💻',
-  
+
   // Status icons
-  focusIndicator: '📌',     // Pin emoji for focused files
+  focusIndicator: '📌', // Pin emoji for focused files
 } as const;
 
 /**
@@ -86,10 +86,10 @@ function getNodeIcon(node: FileNode): string {
   if (node.type === 'directory') {
     return node.expanded ? ICONS.directoryExpanded : ICONS.directoryCollapsed;
   }
-  
+
   // File type detection based on extension
   const ext = node.name.split('.').pop()?.toLowerCase();
-  
+
   switch (ext) {
     case 'ts':
     case 'tsx':
@@ -153,21 +153,31 @@ function calculateIndentation(node: FileNode, rootPath: string): number {
   if (!rootPath || !node.path) return 0;
   const relativePath = node.path.replace(rootPath, '');
   // Split by forward or backward slash to handle both Unix and Windows paths
-  const depth = relativePath.split(/[/\\]/).filter(p => p.length > 0).length;
+  const depth = relativePath.split(/[/\\]/).filter((p) => p.length > 0).length;
   return Math.max(0, depth - 1); // Root is at depth 0
 }
 
 /**
  * FileTreeView component
- * 
+ *
  * Renders the file tree with virtual scrolling, showing only the visible
  * window of nodes. Displays icons, git status colors, and focus indicators.
  * Supports keyboard navigation with debouncing and file focusing.
  */
-export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, fileOperations, followModeService, toolRegistry, rootPath = process.cwd(), excludePatterns = [], hasFocus = true }: FileTreeViewProps) {
-  const { 
-    state: treeState, 
-    setVisibleWindow, 
+export function FileTreeView({
+  fileTreeService,
+  focusSystem,
+  editorIntegration,
+  fileOperations,
+  followModeService,
+  toolRegistry,
+  rootPath = process.cwd(),
+  excludePatterns = [],
+  hasFocus = true,
+}: FileTreeViewProps) {
+  const {
+    state: treeState,
+    setVisibleWindow,
     setCursorPosition,
     setScrollOffset,
     expandDirectory,
@@ -192,7 +202,7 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
   const [loadingMessage, setLoadingMessage] = useState<string>('Loading...');
 
   // Viewer modal state
-  const [viewerState, setViewerState] = useState<{ 
+  const [viewerState, setViewerState] = useState<{
     isOpen: boolean;
     filePath: string;
     content: string;
@@ -209,7 +219,7 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
   const [searchDialogOpen, setSearchDialogOpen] = useState(false);
 
   // Confirmation dialog state
-  const [confirmationState, setConfirmationState] = useState<{ 
+  const [confirmationState, setConfirmationState] = useState<{
     isOpen: boolean;
     message: string;
     onConfirm: () => void;
@@ -227,12 +237,12 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
    */
   const showStatus = useCallback((message: string) => {
     setStatusMessage(message);
-    
+
     // Clear existing timer
     if (statusTimerRef.current) {
       clearTimeout(statusTimerRef.current);
     }
-    
+
     // Set new timer to clear message after 2 seconds
     statusTimerRef.current = setTimeout(() => {
       setStatusMessage('');
@@ -249,43 +259,49 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
   /**
    * Handle Quick Open file selection
    */
-  const handleQuickOpenSelect = useCallback(async (node: FileNode) => {
-    if (!treeState.root) {
-      return;
-    }
-    showStatus(`Selected: ${node.name}`);
-    setQuickOpenState(false);
-  }, [treeState.root, showStatus]);
+  const handleQuickOpenSelect = useCallback(
+    async (node: FileNode) => {
+      if (!treeState.root) {
+        return;
+      }
+      showStatus(`Selected: ${node.name}`);
+      setQuickOpenState(false);
+    },
+    [treeState.root, showStatus]
+  );
 
   /**
    * Handle search result selection
    */
-  const handleSearchSelect = useCallback(async (result: SearchResult) => {
-    try {
-      // Expand to the file path
-      await expandToPath(result.path);
-      
-      // Open the file in viewer
-      const content = await readFile(result.path, 'utf-8');
-      setViewerState({
-        isOpen: true,
-        filePath: result.path,
-        content,
-      });
-      
-      showStatus(`Opened: ${result.path}:${result.line}`);
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-      showStatus(`Error opening file: ${errorMsg}`);
-    }
-  }, [expandToPath, showStatus]);
+  const handleSearchSelect = useCallback(
+    async (result: SearchResult) => {
+      try {
+        // Expand to the file path
+        await expandToPath(result.path);
+
+        // Open the file in viewer
+        const content = await readFile(result.path, 'utf-8');
+        setViewerState({
+          isOpen: true,
+          filePath: result.path,
+          content,
+        });
+
+        showStatus(`Opened: ${result.path}:${result.line}`);
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+        showStatus(`Error opening file: ${errorMsg}`);
+      }
+    },
+    [expandToPath, showStatus]
+  );
 
   /**
    * Update Quick Open history
    */
   const updateQuickOpenHistory = useCallback((filePath: string) => {
     setQuickOpenHistory((prev) => {
-      const filtered = prev.filter(p => p !== filePath);
+      const filtered = prev.filter((p) => p !== filePath);
       const updated = [filePath, ...filtered];
       return updated.slice(0, 20);
     });
@@ -296,19 +312,19 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
    */
   const toggleFocus = useCallback(async () => {
     const selectedNode = getSelectedNode();
-    
+
     if (!selectedNode) {
       showStatus('No file selected');
       return;
     }
-    
+
     if (selectedNode.type === 'directory') {
       showStatus('Cannot focus directories');
       return;
     }
-    
+
     const filePath = selectedNode.path;
-    
+
     try {
       if (isFocused(filePath)) {
         focusSystem.unfocusFile(filePath);
@@ -317,7 +333,7 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
       } else {
         const focusedFile = await focusSystem.focusFile(filePath);
         addFocusedFile(focusedFile);
-        
+
         const truncatedMsg = focusedFile.truncated ? ' (truncated)' : '';
         showStatus(`Focused: ${selectedNode.name}${truncatedMsg}`);
       }
@@ -332,35 +348,35 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
    */
   const openViewer = useCallback(async () => {
     const selectedNode = getSelectedNode();
-    
+
     if (!selectedNode) {
       showStatus('No file selected');
       return;
     }
-    
+
     if (selectedNode.type === 'directory') {
       showStatus('Cannot view directories');
       return;
     }
-    
+
     const filePath = selectedNode.path;
-    
+
     try {
       setIsLoading(true);
       setLoadingMessage('Loading file...');
-      
+
       const content = await readFile(filePath, 'utf-8');
-      
+
       setViewerState({
         isOpen: true,
         filePath,
         content,
       });
-      
+
       // Register modal with focus manager
       focusManager.openModal('syntax-viewer');
-      
-      setStatusMessage(''); 
+
+      setStatusMessage('');
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';
       showStatus(`Error reading file: ${errorMsg}`);
@@ -383,30 +399,32 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
    */
   const openInEditor = useCallback(async () => {
     const selectedNode = getSelectedNode();
-    
+
     if (!selectedNode) {
       showStatus('No file selected');
       return;
     }
-    
+
     if (selectedNode.type === 'directory') {
       showStatus('Cannot edit directories');
       return;
     }
-    
+
     const filePath = selectedNode.path;
     const editorCommand = editorIntegration.getEditorCommand();
-    
+
     try {
       setIsLoading(true);
       setLoadingMessage(`Opening in ${editorCommand}...`);
-      
+
       const result = await editorIntegration.openInEditor(filePath);
-      
+
       if (result.success) {
         showStatus(`Editor closed successfully`);
       } else {
-        showStatus(`Editor exited with code ${result.exitCode}: ${result.error || 'Unknown error'}`);
+        showStatus(
+          `Editor exited with code ${result.exitCode}: ${result.error || 'Unknown error'}`
+        );
       }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';
@@ -419,91 +437,99 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
   /**
    * Handle quick actions menu action selection
    */
-  const handleQuickAction = useCallback(async (action: QuickAction) => {
-    switch (action) {
-      case 'open': {
-        await openViewer();
-        break;
-      }
-      case 'focus': {
-        await toggleFocus();
-        break;
-      }
-      case 'edit': {
-        await openInEditor();
-        break;
-      }
-      case 'rename': {
-        showStatus('Rename functionality not yet implemented');
-        break;
-      }
-      case 'delete': {
-        const selectedNode = getSelectedNode();
-        if (!selectedNode) {
-          showStatus('No file or folder selected');
-          return;
+  const handleQuickAction = useCallback(
+    async (action: QuickAction) => {
+      switch (action) {
+        case 'open': {
+          await openViewer();
+          break;
         }
-        
-        const isDirectory = selectedNode.type === 'directory';
-        const message = isDirectory
-          ? `Are you sure you want to delete the folder "${selectedNode.name}" and all its contents?`
-          : `Are you sure you want to delete "${selectedNode.name}"?`;
-        
-        setConfirmationState({
-          isOpen: true,
-          message,
-          onConfirm: async () => {
+        case 'focus': {
+          await toggleFocus();
+          break;
+        }
+        case 'edit': {
+          await openInEditor();
+          break;
+        }
+        case 'rename': {
+          showStatus('Rename functionality not yet implemented');
+          break;
+        }
+        case 'delete': {
+          const selectedNode = getSelectedNode();
+          if (!selectedNode) {
+            showStatus('No file or folder selected');
+            return;
+          }
+
+          const isDirectory = selectedNode.type === 'directory';
+          const message = isDirectory
+            ? `Are you sure you want to delete the folder "${selectedNode.name}" and all its contents?`
+            : `Are you sure you want to delete "${selectedNode.name}"?`;
+
+          setConfirmationState({
+            isOpen: true,
+            message,
+            onConfirm: async () => {
+              try {
+                setIsLoading(true);
+                setLoadingMessage(`Deleting ${selectedNode.name}...`);
+
+                const alwaysConfirm = async () => true;
+
+                let result;
+                if (isDirectory) {
+                  result = await fileOperations.deleteFolder(
+                    selectedNode.path,
+                    alwaysConfirm,
+                    true // recursive
+                  );
+                } else {
+                  result = await fileOperations.deleteFile(selectedNode.path, alwaysConfirm);
+                }
+
+                if (result.success) {
+                  showStatus(`Successfully deleted ${selectedNode.name}`);
+                } else {
+                  showStatus(`Failed to delete: ${result.error}`);
+                }
+              } catch (error) {
+                const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+                showStatus(`Error deleting: ${errorMsg}`);
+              } finally {
+                setIsLoading(false);
+                setConfirmationState(null);
+              }
+            },
+          });
+          break;
+        }
+        case 'copyPath': {
+          const node = getSelectedNode();
+          if (node) {
             try {
-              setIsLoading(true);
-              setLoadingMessage(`Deleting ${selectedNode.name}...`);
-              
-              const alwaysConfirm = async () => true;
-              
-              let result;
-              if (isDirectory) {
-                result = await fileOperations.deleteFolder(
-                  selectedNode.path,
-                  alwaysConfirm,
-                  true // recursive
-                );
-              } else {
-                result = await fileOperations.deleteFile(
-                  selectedNode.path,
-                  alwaysConfirm
-                );
-              }
-              
-              if (result.success) {
-                showStatus(`Successfully deleted ${selectedNode.name}`);
-              } else {
-                showStatus(`Failed to delete: ${result.error}`);
-              }
+              const absolutePath = await fileOperations.copyPath(node.path);
+              showStatus(`Copied to clipboard: ${absolutePath}`);
             } catch (error) {
               const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-              showStatus(`Error deleting: ${errorMsg}`);
-            } finally {
-              setIsLoading(false);
-              setConfirmationState(null);
+              showStatus(`Error copying path: ${errorMsg}`);
             }
-          },
-        });
-        break;
-      }
-      case 'copyPath': {
-        const node = getSelectedNode();
-        if (node) {
-          try {
-            const absolutePath = await fileOperations.copyPath(node.path);
-            showStatus(`Copied to clipboard: ${absolutePath}`);
-          } catch (error) {
-            const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-            showStatus(`Error copying path: ${errorMsg}`);
           }
+          break;
         }
-        break;
       }
-    }
-  }, [openViewer, toggleFocus, openInEditor, getSelectedNode, fileOperations, showStatus, setIsLoading]);
+    },
+    [
+      openViewer,
+      toggleFocus,
+      openInEditor,
+      getSelectedNode,
+      fileOperations,
+      showStatus,
+      setIsLoading,
+    ]
+  );
 
   /**
    * Debounced action executor
@@ -553,217 +579,224 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
   /**
    * Handle LLM message for Follow Mode
    */
-  const _handleLLMMessage = useCallback(async (message: string) => {
-    if (!treeState.followModeEnabled || !followModeService || !treeState.root) {
-      return;
-    }
-
-    const rootPath = treeState.root.path;
-    const detectedPaths = followModeService.extractFromLLMResponse(message, {
-      rootPath,
-      filterByRoot: true,
-    });
-
-    for (const filePath of detectedPaths) {
-      if (followModeService.shouldExpandToPath(filePath, rootPath)) {
-        await expandToPath(filePath);
-        showStatus(`Follow Mode: Expanded to ${filePath}`);
-      }
-    }
-  }, [treeState.followModeEnabled, treeState.root, followModeService, expandToPath, showStatus]);
-
-  /**
-   * Handle keyboard input
-   */
-  /**
-   * Handle keyboard input
-   */
-  const handleInput = useCallback((input: string, key: Key) => {
-    if (helpPanelOpen) {
-      if (isKey(input, key, activeKeybinds.chat.cancel) || input === '?') {
-        setHelpPanelOpen(false);
-        focusManager.closeModal();
-      }
-      return;
-    }
-
-    if (viewerState?.isOpen) {
-      if (isKey(input, key, activeKeybinds.chat.cancel)) {
-        closeViewer();  // Will call focusManager.closeModal()
-      }
-      return;
-    }
-
-    if (quickOpenState) {
-      // Quick open dialog handles its own input
-      return;
-    }
-
-    if (searchDialogOpen) {
-      // Search dialog handles its own input
-      return;
-    }
-
-    if (menuOpen) {
-      if (isKey(input, key, activeKeybinds.chat.cancel)) {
-        setMenuOpen(false);
-        focusManager.closeModal();
-      }
-      return;
-    }
-
-    if (input === '?') {
-      setHelpPanelOpen(true);
-      focusManager.openModal('help-panel');
-      return;
-    }
-
-    if (isKey(input, key, activeKeybinds.fileExplorer.quickOpen)) {
-      setQuickOpenState(true);
-      focusManager.openModal('quick-open-dialog');
-      return;
-    }
-
-    // Ctrl+F to open search dialog
-    if (input === 'f' && key.ctrl) {
-      setSearchDialogOpen(true);
-      focusManager.openModal('search-dialog');
-      return;
-    }
-
-    // Arrow key navigation (direct support)
-    if (key.downArrow) {
-      moveDown();
-      return;
-    } else if (key.upArrow) {
-      moveUp();
-      return;
-    } else if (key.leftArrow) {
-      const selectedNode = getSelectedNode();
-      if (selectedNode && selectedNode.type === 'directory' && selectedNode.expanded) {
-        debouncedAction(() => {
-          collapseDirectory(selectedNode.path);
-          fileTreeService.collapseDirectory(selectedNode);
-        });
-      }
-      return;
-    } else if (key.rightArrow) {
-      const selectedNode = getSelectedNode();
-      if (selectedNode && selectedNode.type === 'directory' && !selectedNode.expanded) {
-        (async () => {
-          try {
-            await fileTreeService.expandDirectory(selectedNode, excludePatterns);
-            expandDirectory(selectedNode.path);
-          } catch (_err) {
-            showStatus('Error expanding directory');
-          }
-        })();
-      }
-      return;
-    }
-
-    // Keybind-based navigation (fallback)
-    if (isKey(input, key, activeKeybinds.fileExplorer.moveDown)) {
-      moveDown();
-    } else if (isKey(input, key, activeKeybinds.fileExplorer.moveUp)) {
-      moveUp();
-    } else if (isKey(input, key, activeKeybinds.fileExplorer.collapse)) {
-      const selectedNode = getSelectedNode();
-      if (selectedNode && selectedNode.type === 'directory' && selectedNode.expanded) {
-        debouncedAction(() => {
-          collapseDirectory(selectedNode.path);
-          fileTreeService.collapseDirectory(selectedNode);
-        });
-      }
-    } else if (isKey(input, key, activeKeybinds.fileExplorer.expand)) {
-      const selectedNode = getSelectedNode();
-      if (selectedNode && selectedNode.type === 'directory' && !selectedNode.expanded) {
-        (async () => {
-          try {
-            await fileTreeService.expandDirectory(selectedNode, excludePatterns);
-            expandDirectory(selectedNode.path);
-          } catch (_err) {
-            showStatus('Error expanding directory');
-          }
-        })();
-      }
-    } else if (isKey(input, key, activeKeybinds.fileExplorer.select)) {
-      // Suppress immediate select when focus was just given to avoid the
-      // Enter key press that activated the Files tab from also toggling
-      // the directory open/closed state.
-      if (Date.now() - lastFocusTimeRef.current < 200) {
+  const _handleLLMMessage = useCallback(
+    async (message: string) => {
+      if (!treeState.followModeEnabled || !followModeService || !treeState.root) {
         return;
       }
 
-      const selectedNode = getSelectedNode();
-      if (!selectedNode) return;
+      const rootPath = treeState.root.path;
+      const detectedPaths = followModeService.extractFromLLMResponse(message, {
+        rootPath,
+        filterByRoot: true,
+      });
 
-      if (selectedNode.type === 'directory') {
-        if (selectedNode.expanded) {
-          collapseDirectory(selectedNode.path);
-          fileTreeService.collapseDirectory(selectedNode);
-        } else {
-          // Expand directory - do this synchronously to prevent double-toggle
-          expandDirectory(selectedNode.path);
+      for (const filePath of detectedPaths) {
+        if (followModeService.shouldExpandToPath(filePath, rootPath)) {
+          await expandToPath(filePath);
+          showStatus(`Follow Mode: Expanded to ${filePath}`);
+        }
+      }
+    },
+    [treeState.followModeEnabled, treeState.root, followModeService, expandToPath, showStatus]
+  );
+
+  /**
+   * Handle keyboard input
+   */
+  /**
+   * Handle keyboard input
+   */
+  const handleInput = useCallback(
+    (input: string, key: Key) => {
+      if (helpPanelOpen) {
+        if (isKey(input, key, activeKeybinds.chat.cancel) || input === '?') {
+          setHelpPanelOpen(false);
+          focusManager.closeModal();
+        }
+        return;
+      }
+
+      if (viewerState?.isOpen) {
+        if (isKey(input, key, activeKeybinds.chat.cancel)) {
+          closeViewer(); // Will call focusManager.closeModal()
+        }
+        return;
+      }
+
+      if (quickOpenState) {
+        // Quick open dialog handles its own input
+        return;
+      }
+
+      if (searchDialogOpen) {
+        // Search dialog handles its own input
+        return;
+      }
+
+      if (menuOpen) {
+        if (isKey(input, key, activeKeybinds.chat.cancel)) {
+          setMenuOpen(false);
+          focusManager.closeModal();
+        }
+        return;
+      }
+
+      if (input === '?') {
+        setHelpPanelOpen(true);
+        focusManager.openModal('help-panel');
+        return;
+      }
+
+      if (isKey(input, key, activeKeybinds.fileExplorer.quickOpen)) {
+        setQuickOpenState(true);
+        focusManager.openModal('quick-open-dialog');
+        return;
+      }
+
+      // Ctrl+F to open search dialog
+      if (input === 'f' && key.ctrl) {
+        setSearchDialogOpen(true);
+        focusManager.openModal('search-dialog');
+        return;
+      }
+
+      // Arrow key navigation (direct support)
+      if (key.downArrow) {
+        moveDown();
+        return;
+      } else if (key.upArrow) {
+        moveUp();
+        return;
+      } else if (key.leftArrow) {
+        const selectedNode = getSelectedNode();
+        if (selectedNode && selectedNode.type === 'directory' && selectedNode.expanded) {
+          debouncedAction(() => {
+            collapseDirectory(selectedNode.path);
+            fileTreeService.collapseDirectory(selectedNode);
+          });
+        }
+        return;
+      } else if (key.rightArrow) {
+        const selectedNode = getSelectedNode();
+        if (selectedNode && selectedNode.type === 'directory' && !selectedNode.expanded) {
           (async () => {
             try {
               await fileTreeService.expandDirectory(selectedNode, excludePatterns);
+              expandDirectory(selectedNode.path);
             } catch (_err) {
-              // If expansion fails, collapse it back
-              collapseDirectory(selectedNode.path);
               showStatus('Error expanding directory');
             }
           })();
         }
-      } else {
-        openViewer();
+        return;
       }
-    } else if (isKey(input, key, activeKeybinds.fileExplorer.focus)) {
-      toggleFocus();
-    } else if (isKey(input, key, activeKeybinds.fileExplorer.open)) {
-      openViewer();
-    } else if (isKey(input, key, activeKeybinds.fileExplorer.edit)) {
-      openInEditor();
-    } else if (isKey(input, key, activeKeybinds.fileExplorer.actions)) {
-      setMenuOpen(true);
-      focusManager.openModal('quick-actions-menu');
-    } else if (isKey(input, key, activeKeybinds.fileExplorer.toggleFollow)) {
-      toggleFollowMode();
-      const newState = !treeState.followModeEnabled;
-      showStatus(`Follow Mode: ${newState ? 'Enabled' : 'Disabled'}`);
-    }
-  }, [
-    helpPanelOpen,
-    viewerState,
-    quickOpenState,
-    searchDialogOpen,
-    menuOpen,
-    closeViewer,
-    debouncedAction,
-    moveDown,
-    moveUp,
-    getSelectedNode,
-    collapseDirectory,
-    fileTreeService,
-    expandDirectory,
-    excludePatterns,
-    toggleFocus,
-    openViewer,
-    openInEditor,
-    toggleFollowMode,
-    treeState.followModeEnabled,
-    showStatus,
-    activeKeybinds,
-    focusManager,
-  ]);
 
-  useInput(handleInput, { 
-    isActive: hasFocus || 
+      // Keybind-based navigation (fallback)
+      if (isKey(input, key, activeKeybinds.fileExplorer.moveDown)) {
+        moveDown();
+      } else if (isKey(input, key, activeKeybinds.fileExplorer.moveUp)) {
+        moveUp();
+      } else if (isKey(input, key, activeKeybinds.fileExplorer.collapse)) {
+        const selectedNode = getSelectedNode();
+        if (selectedNode && selectedNode.type === 'directory' && selectedNode.expanded) {
+          debouncedAction(() => {
+            collapseDirectory(selectedNode.path);
+            fileTreeService.collapseDirectory(selectedNode);
+          });
+        }
+      } else if (isKey(input, key, activeKeybinds.fileExplorer.expand)) {
+        const selectedNode = getSelectedNode();
+        if (selectedNode && selectedNode.type === 'directory' && !selectedNode.expanded) {
+          (async () => {
+            try {
+              await fileTreeService.expandDirectory(selectedNode, excludePatterns);
+              expandDirectory(selectedNode.path);
+            } catch (_err) {
+              showStatus('Error expanding directory');
+            }
+          })();
+        }
+      } else if (isKey(input, key, activeKeybinds.fileExplorer.select)) {
+        // Suppress immediate select when focus was just given to avoid the
+        // Enter key press that activated the Files tab from also toggling
+        // the directory open/closed state.
+        if (Date.now() - lastFocusTimeRef.current < 200) {
+          return;
+        }
+
+        const selectedNode = getSelectedNode();
+        if (!selectedNode) return;
+
+        if (selectedNode.type === 'directory') {
+          if (selectedNode.expanded) {
+            collapseDirectory(selectedNode.path);
+            fileTreeService.collapseDirectory(selectedNode);
+          } else {
+            // Expand directory - do this synchronously to prevent double-toggle
+            expandDirectory(selectedNode.path);
+            (async () => {
+              try {
+                await fileTreeService.expandDirectory(selectedNode, excludePatterns);
+              } catch (_err) {
+                // If expansion fails, collapse it back
+                collapseDirectory(selectedNode.path);
+                showStatus('Error expanding directory');
+              }
+            })();
+          }
+        } else {
+          openViewer();
+        }
+      } else if (isKey(input, key, activeKeybinds.fileExplorer.focus)) {
+        toggleFocus();
+      } else if (isKey(input, key, activeKeybinds.fileExplorer.open)) {
+        openViewer();
+      } else if (isKey(input, key, activeKeybinds.fileExplorer.edit)) {
+        openInEditor();
+      } else if (isKey(input, key, activeKeybinds.fileExplorer.actions)) {
+        setMenuOpen(true);
+        focusManager.openModal('quick-actions-menu');
+      } else if (isKey(input, key, activeKeybinds.fileExplorer.toggleFollow)) {
+        toggleFollowMode();
+        const newState = !treeState.followModeEnabled;
+        showStatus(`Follow Mode: ${newState ? 'Enabled' : 'Disabled'}`);
+      }
+    },
+    [
+      helpPanelOpen,
+      viewerState,
+      quickOpenState,
+      searchDialogOpen,
+      menuOpen,
+      closeViewer,
+      debouncedAction,
+      moveDown,
+      moveUp,
+      getSelectedNode,
+      collapseDirectory,
+      fileTreeService,
+      expandDirectory,
+      excludePatterns,
+      toggleFocus,
+      openViewer,
+      openInEditor,
+      toggleFollowMode,
+      treeState.followModeEnabled,
+      showStatus,
+      activeKeybinds,
+      focusManager,
+    ]
+  );
+
+  useInput(handleInput, {
+    isActive:
+      hasFocus ||
       focusManager.isFocused('syntax-viewer') ||
       focusManager.isFocused('help-panel') ||
       focusManager.isFocused('search-dialog') ||
       focusManager.isFocused('quick-open-dialog') ||
-      focusManager.isFocused('quick-actions-menu')
+      focusManager.isFocused('quick-actions-menu'),
   });
 
   useEffect(() => {
@@ -788,12 +821,7 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
       scrollOffset: treeState.scrollOffset,
       windowSize: treeState.windowSize,
     });
-  }, [
-    treeState.root,
-    treeState.scrollOffset,
-    treeState.windowSize,
-    fileTreeService,
-  ]);
+  }, [treeState.root, treeState.scrollOffset, treeState.windowSize, fileTreeService]);
 
   // Update visible window in state when it changes
   useEffect(() => {
@@ -813,16 +841,17 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
   return (
     <Box flexDirection="column" height="100%">
       {helpPanelOpen && (
-        <HelpPanel
-          isOpen={helpPanelOpen}
-          onClose={() => setHelpPanelOpen(false)}
-        />
+        <HelpPanel isOpen={helpPanelOpen} onClose={() => setHelpPanelOpen(false)} />
       )}
 
       {quickOpenState && (
         <QuickOpenDialog
           isOpen={quickOpenState}
-          allFiles={treeState.root ? fileTreeService.flattenTree(treeState.root).filter(n => n.type === 'file') : []}
+          allFiles={
+            treeState.root
+              ? fileTreeService.flattenTree(treeState.root).filter((n) => n.type === 'file')
+              : []
+          }
           onSelect={handleQuickOpenSelect}
           onClose={() => setQuickOpenState(false)}
           history={quickOpenHistory}
@@ -874,11 +903,8 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
             </Text>
             <Text color="gray"> (Press Esc to close)</Text>
           </Box>
-          
-          <SyntaxViewer
-            filePath={viewerState.filePath}
-            content={viewerState.content}
-          />
+
+          <SyntaxViewer filePath={viewerState.filePath} content={viewerState.content} />
         </Box>
       )}
 
@@ -887,60 +913,53 @@ export function FileTreeView({ fileTreeService, focusSystem, editorIntegration, 
           <LoadingIndicator isLoading={isLoading} message={loadingMessage} />
 
           <Box flexDirection="column" flexGrow={1} overflow="hidden">
-            {Array.isArray(treeState.visibleWindow) && treeState.visibleWindow.map((node, index) => {
-              if (!node || !node.path || !node.name) return null;
-              
-              const isSelected = index === treeState.cursorPosition;
-              const isFocusedFile = isFocused(node.path);
-              const indentation = calculateIndentation(node, treeRootPath);
-              const icon = getNodeIcon(node);
-              const gitColor = getGitStatusColor(node.gitStatus);
+            {Array.isArray(treeState.visibleWindow) &&
+              treeState.visibleWindow.map((node, index) => {
+                if (!node || !node.path || !node.name) return null;
 
-              return (
-                <Box key={node.path} flexDirection="row">
-                  <Text>{' '.repeat(indentation * 2)}</Text>
-                  
-                  <Text bold={isSelected} color={isSelected ? 'cyan' : undefined}>
-                    {isSelected ? '> ' : '  '}
-                  </Text>
-                  
-                  <Text> {icon} </Text>
-                  
-                  <Text
-                    bold={isSelected}
-                    color={gitColor || (isSelected ? 'cyan' : undefined)}
-                  >
-                    {node.name}
-                  </Text>
-                  
-                  {isFocusedFile && (
-                    <Text> {ICONS.focusIndicator}</Text>
-                  )}
-                </Box>
-              );
-            })}
-            
-            {treeState.visibleWindow.length === 0 && (
-              <Text dimColor>No items found</Text>
-            )}
+                const isSelected = index === treeState.cursorPosition;
+                const isFocusedFile = isFocused(node.path);
+                const indentation = calculateIndentation(node, treeRootPath);
+                const icon = getNodeIcon(node);
+                const gitColor = getGitStatusColor(node.gitStatus);
+
+                return (
+                  <Box key={node.path} flexDirection="row">
+                    <Text>{' '.repeat(indentation * 2)}</Text>
+
+                    <Text bold={isSelected} color={isSelected ? 'cyan' : undefined}>
+                      {isSelected ? '> ' : '  '}
+                    </Text>
+
+                    <Text> {icon} </Text>
+
+                    <Text bold={isSelected} color={gitColor || (isSelected ? 'cyan' : undefined)}>
+                      {node.name}
+                    </Text>
+
+                    {isFocusedFile && <Text> {ICONS.focusIndicator}</Text>}
+                  </Box>
+                );
+              })}
+
+            {treeState.visibleWindow.length === 0 && <Text dimColor>No items found</Text>}
           </Box>
-          
+
           {statusMessage && (
             <Box marginTop={1}>
               <Text dimColor>{statusMessage}</Text>
             </Box>
           )}
-          
+
           {treeState.followModeEnabled && (
             <Box marginTop={statusMessage ? 0 : 1}>
               <Text color="cyan">Follow Mode: ON</Text>
               <Text dimColor> (Press F to toggle)</Text>
             </Box>
           )}
-          
+
           <Box marginTop={1}>
-            <Text dimColor>
-            </Text>
+            <Text dimColor></Text>
           </Box>
         </>
       )}

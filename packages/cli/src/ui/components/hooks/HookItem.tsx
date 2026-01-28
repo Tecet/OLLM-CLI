@@ -21,18 +21,18 @@ export interface HookItemProps {
 
 /**
  * HookItem component
- * 
+ *
  * Displays an individual hook with enable/disable toggle indicator.
  * Shows hook name with visual indicators for enabled (●) and disabled (○) states.
  * Applies focus state styling when selected.
- * 
+ *
  * Visual States:
  * - Enabled: Green ● indicator with bright text
  * - Disabled: Gray ○ indicator with dimmed text
  * - Selected + Focus: Yellow bold text with cyan background
  * - Selected without Focus: Normal text
  * - Disabled: Dimmed text for better visual distinction
- * 
+ *
  * Example Usage:
  * ```tsx
  * <HookItem
@@ -43,7 +43,7 @@ export interface HookItemProps {
  *   theme={uiTheme}
  * />
  * ```
- * 
+ *
  * Requirements: 1.6, 1.7, 1.8
  * - 1.6: Hook details include name, version, description, trigger conditions, action, and status
  * - 1.7: Visual distinction between enabled (●) and disabled (○) hooks
@@ -63,10 +63,10 @@ export function HookItem({
     if (isEnabled) return theme.text.primary;
     return theme.text.secondary;
   };
-  
+
   // Improved indicator colors with better contrast
   const indicatorColor = isEnabled ? 'green' : 'gray';
-  
+
   // Apply dimming to disabled hooks for better visual hierarchy
   const shouldDim = !isEnabled;
 
@@ -77,13 +77,9 @@ export function HookItem({
         <Text color={indicatorColor} bold={isEnabled}>
           {isEnabled ? '●' : '○'}
         </Text>
-        
+
         {/* Hook name with improved visual hierarchy */}
-        <Text
-          bold={isSelected && hasFocus}
-          color={getTextColor()}
-          dimColor={shouldDim}
-        >
+        <Text bold={isSelected && hasFocus} color={getTextColor()} dimColor={shouldDim}>
           {hook.name}
         </Text>
       </Box>

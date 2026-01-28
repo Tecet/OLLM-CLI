@@ -191,25 +191,25 @@ export const DEFAULT_SERVICES_CONFIG: Required<ServicesConfig> = {
       autoThreshold: 0.8,
     },
   },
-    model: {
-      default: 'llama3.1:8b',
-      routing: {
-        enabled: true,
-        defaultProfile: 'general',
-        overrides: {},
-      },
-      toolRouting: {
-        enabled: true,
-        bindings: {},
-        enableFallback: true,
-      },
-      keepAlive: {
-        enabled: true,
-        models: [],
-        timeout: 300, // 5 minutes
-      },
-      cacheTTL: 300000, // 5 minutes
+  model: {
+    default: 'llama3.1:8b',
+    routing: {
+      enabled: true,
+      defaultProfile: 'general',
+      overrides: {},
     },
+    toolRouting: {
+      enabled: true,
+      bindings: {},
+      enableFallback: true,
+    },
+    keepAlive: {
+      enabled: true,
+      models: [],
+      timeout: 300, // 5 minutes
+    },
+    cacheTTL: 300000, // 5 minutes
+  },
   options: {
     temperature: 0.7,
     maxTokens: 4096,
@@ -254,17 +254,23 @@ export function mergeServicesConfig(
       ...userConfig.fileDiscovery,
       builtinIgnores: [
         ...(DEFAULT_SERVICES_CONFIG.fileDiscovery.builtinIgnores ?? []),
-        ...(userConfig.fileDiscovery?.builtinIgnores ?? [])
+        ...(userConfig.fileDiscovery?.builtinIgnores ?? []),
       ],
     },
     environment: {
       ...DEFAULT_SERVICES_CONFIG.environment,
       ...userConfig.environment,
       allowList: userConfig.environment?.allowList
-        ? [...(DEFAULT_SERVICES_CONFIG.environment.allowList ?? []), ...(userConfig.environment.allowList ?? [])]
+        ? [
+            ...(DEFAULT_SERVICES_CONFIG.environment.allowList ?? []),
+            ...(userConfig.environment.allowList ?? []),
+          ]
         : DEFAULT_SERVICES_CONFIG.environment.allowList,
       denyPatterns: userConfig.environment?.denyPatterns
-        ? [...(DEFAULT_SERVICES_CONFIG.environment.denyPatterns ?? []), ...(userConfig.environment.denyPatterns ?? [])]
+        ? [
+            ...(DEFAULT_SERVICES_CONFIG.environment.denyPatterns ?? []),
+            ...(userConfig.environment.denyPatterns ?? []),
+          ]
         : DEFAULT_SERVICES_CONFIG.environment.denyPatterns,
     },
     contextManagement: {
@@ -297,7 +303,8 @@ export function mergeServicesConfig(
       keepAlive: {
         ...DEFAULT_SERVICES_CONFIG.model.keepAlive!,
         ...userConfig.model?.keepAlive,
-        models: userConfig.model?.keepAlive?.models ?? DEFAULT_SERVICES_CONFIG.model.keepAlive!.models,
+        models:
+          userConfig.model?.keepAlive?.models ?? DEFAULT_SERVICES_CONFIG.model.keepAlive!.models,
       },
     },
     options: {
@@ -311,7 +318,8 @@ export function mergeServicesConfig(
     templates: {
       ...DEFAULT_SERVICES_CONFIG.templates,
       ...userConfig.templates,
-      directories: userConfig.templates?.directories ?? DEFAULT_SERVICES_CONFIG.templates.directories,
+      directories:
+        userConfig.templates?.directories ?? DEFAULT_SERVICES_CONFIG.templates.directories,
     },
     project: {
       ...DEFAULT_SERVICES_CONFIG.project,
@@ -356,9 +364,7 @@ export function getSanitizationConfig(
 /**
  * Get model management configuration from services config
  */
-export function getModelManagementConfig(
-  servicesConfig: Required<ServicesConfig>
-) {
+export function getModelManagementConfig(servicesConfig: Required<ServicesConfig>) {
   return {
     cacheTTL: servicesConfig.model.cacheTTL!,
     keepAliveEnabled: servicesConfig.model.keepAlive!.enabled,
@@ -370,9 +376,7 @@ export function getModelManagementConfig(
 /**
  * Get model router configuration from services config
  */
-export function getModelRouterConfig(
-  servicesConfig: Required<ServicesConfig>
-) {
+export function getModelRouterConfig(servicesConfig: Required<ServicesConfig>) {
   return {
     overrides: servicesConfig.model.routing!.overrides,
   };
@@ -381,9 +385,7 @@ export function getModelRouterConfig(
 /**
  * Get memory service configuration from services config
  */
-export function getMemoryServiceConfig(
-  servicesConfig: Required<ServicesConfig>
-) {
+export function getMemoryServiceConfig(servicesConfig: Required<ServicesConfig>) {
   return {
     storagePath: servicesConfig.memory.storagePath!,
     tokenBudget: servicesConfig.memory.tokenBudget,
@@ -393,9 +395,7 @@ export function getMemoryServiceConfig(
 /**
  * Get template service configuration from services config
  */
-export function getTemplateServiceConfig(
-  servicesConfig: Required<ServicesConfig>
-) {
+export function getTemplateServiceConfig(servicesConfig: Required<ServicesConfig>) {
   return {
     userTemplatesDir: servicesConfig.templates.directories![0],
     workspaceTemplatesDir: servicesConfig.templates.directories![1],
@@ -405,9 +405,7 @@ export function getTemplateServiceConfig(
 /**
  * Get project profile service configuration from services config
  */
-export function getProjectProfileServiceConfig(
-  servicesConfig: Required<ServicesConfig>
-) {
+export function getProjectProfileServiceConfig(servicesConfig: Required<ServicesConfig>) {
   return {
     autoDetect: servicesConfig.project.autoDetect,
   };
@@ -416,9 +414,7 @@ export function getProjectProfileServiceConfig(
 /**
  * Get generation options from services config
  */
-export function getGenerationOptions(
-  servicesConfig: Required<ServicesConfig>
-) {
+export function getGenerationOptions(servicesConfig: Required<ServicesConfig>) {
   return {
     temperature: servicesConfig.options.temperature,
     maxTokens: servicesConfig.options.maxTokens,
@@ -440,7 +436,7 @@ export const ENV_VAR_NAMES = {
 /**
  * Apply environment variable overrides to configuration
  * Environment variables take precedence over config file settings
- * 
+ *
  * @param config Base configuration from file
  * @returns Configuration with environment variable overrides applied
  */
@@ -499,12 +495,12 @@ export function applyEnvironmentOverrides(
 
 /**
  * Load and merge configuration with environment variable precedence
- * 
+ *
  * Precedence order (highest to lowest):
  * 1. Environment variables
  * 2. User configuration
  * 3. Default configuration
- * 
+ *
  * @param userConfig User configuration from file
  * @returns Fully merged configuration with all overrides applied
  */
@@ -513,7 +509,7 @@ export function loadConfigWithEnvOverrides(
 ): Required<ServicesConfig> {
   // Apply environment variable overrides first
   const configWithEnv = applyEnvironmentOverrides(userConfig);
-  
+
   // Then merge with defaults
   return mergeServicesConfig(configWithEnv);
 }

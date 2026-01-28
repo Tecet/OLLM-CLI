@@ -66,7 +66,10 @@ function getConnectionIndicator(status: ConnectionStatus['status']): string {
   }
 }
 
-function getConnectionColor(status: ConnectionStatus['status'], theme: StatusBarProps['theme']): string {
+function getConnectionColor(
+  status: ConnectionStatus['status'],
+  theme: StatusBarProps['theme']
+): string {
   switch (status) {
     case 'connected':
       return theme.status.success;
@@ -97,7 +100,9 @@ export function StatusBar({
   if (compact) {
     return (
       <Box flexDirection="row" alignItems="center">
-        <Text color={connectionColor}>{connectionIndicator} {connection.provider}</Text>
+        <Text color={connectionColor}>
+          {connectionIndicator} {connection.provider}
+        </Text>
         <Text color={theme.text.secondary}>{separator}</Text>
         <Text color={theme.text.accent}>{model}</Text>
 
@@ -120,7 +125,9 @@ export function StatusBar({
             <Text color={theme.text.secondary}>{separator}</Text>
             <Text color={theme.text.secondary}>{git.branch}</Text>
             <Text color={theme.text.secondary}>{separator}</Text>
-            <Text color={theme.text.secondary}>+{git.staged} ~{git.modified}</Text>
+            <Text color={theme.text.secondary}>
+              +{git.staged} ~{git.modified}
+            </Text>
           </>
         )}
 
@@ -141,7 +148,9 @@ export function StatusBar({
         )}
 
         <Text color={theme.text.secondary}>{separator}</Text>
-        <Text color={theme.text.secondary}>{tokens.current}/{tokens.max}</Text>
+        <Text color={theme.text.secondary}>
+          {tokens.current}/{tokens.max}
+        </Text>
 
         {gpu && gpu.available && (
           <>
@@ -186,7 +195,9 @@ export function StatusBar({
             <Text color={theme.text.secondary}>{separator}</Text>
             <Text color={theme.text.secondary}>{git.branch}</Text>
             <Text color={theme.text.secondary}>{separator}</Text>
-            <Text color={theme.text.secondary}>+{git.staged} ~{git.modified}</Text>
+            <Text color={theme.text.secondary}>
+              +{git.staged} ~{git.modified}
+            </Text>
           </>
         )}
 
@@ -211,7 +222,9 @@ export function StatusBar({
       <Box flexDirection="row" alignItems="center" paddingX={1}>
         <Text color={theme.text.secondary}>|</Text>
         <Text color={theme.text.secondary}> </Text>
-        <Text color={theme.text.secondary}>{tokens.current}/{tokens.max}</Text>
+        <Text color={theme.text.secondary}>
+          {tokens.current}/{tokens.max}
+        </Text>
       </Box>
 
       {/* Right: GPU status */}

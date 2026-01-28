@@ -1,6 +1,6 @@
 /**
  * Workflow Manager for Dynamic Prompt System
- * 
+ *
  * Manages predefined mode workflows for common development tasks.
  * Tracks workflow progress and handles step transitions.
  */
@@ -98,23 +98,23 @@ export const PREDEFINED_WORKFLOWS: Record<string, WorkflowDefinition> = {
         id: 'plan',
         mode: 'planning',
         description: 'Plan the feature implementation',
-        instructions: 'Research requirements, design architecture, and create implementation plan'
+        instructions: 'Research requirements, design architecture, and create implementation plan',
       },
       {
         id: 'implement',
         mode: 'developer',
         description: 'Implement the feature',
-        instructions: 'Write code following the plan and existing patterns'
+        instructions: 'Write code following the plan and existing patterns',
       },
       {
         id: 'verify',
         mode: 'developer',
         description: 'Verify the implementation',
-        instructions: 'Validate behavior, tests, and edge cases'
-      }
-    ]
+        instructions: 'Validate behavior, tests, and edge cases',
+      },
+    ],
   },
-  
+
   bug_fix: {
     id: 'bug_fix',
     name: 'Bug Fix',
@@ -125,32 +125,32 @@ export const PREDEFINED_WORKFLOWS: Record<string, WorkflowDefinition> = {
         id: 'debug',
         mode: 'debugger',
         description: 'Analyze and debug the issue',
-        instructions: 'Reproduce the bug, identify root cause, and plan the fix'
+        instructions: 'Reproduce the bug, identify root cause, and plan the fix',
       },
       {
         id: 'fix',
         mode: 'developer',
         description: 'Implement the fix',
-        instructions: 'Apply the fix and add tests to prevent regression'
-      }
-    ]
-  }
+        instructions: 'Apply the fix and add tests to prevent regression',
+      },
+    ],
+  },
 };
 
 /**
  * Workflow Manager
- * 
+ *
  * Manages workflow execution, progress tracking, and step transitions.
  */
 export class WorkflowManager extends EventEmitter {
   private currentWorkflow: WorkflowState | null = null;
   private readonly modeManager: PromptModeManager;
-  
+
   constructor(modeManager: PromptModeManager) {
     super();
     this.modeManager = modeManager;
   }
-  
+
   /**
    * Start a workflow
    */
@@ -159,12 +159,12 @@ export class WorkflowManager extends EventEmitter {
     if (!workflow) {
       return false;
     }
-    
+
     // Stop current workflow if any
     if (this.currentWorkflow) {
       this.stopWorkflow();
     }
-    
+
     // Initialize workflow state
     this.currentWorkflow = {
       workflow,
@@ -172,25 +172,25 @@ export class WorkflowManager extends EventEmitter {
       startedAt: new Date(),
       paused: false,
       completedSteps: [],
-      skippedSteps: []
+      skippedSteps: [],
     };
-    
+
     // Switch to first step's mode
     const firstStep = workflow.steps[0];
     if (firstStep) {
       this.modeManager.switchMode(firstStep.mode, 'manual');
     }
-    
+
     this.emit('workflow-started', {
       workflowId: workflow.id,
-      workflowName: workflow.name
+      workflowName: workflow.name,
     });
-    
+
     this.emit('workflow-step-changed', this.getProgress());
-    
+
     return true;
   }
-  
+
   /**
    * Move to next step in workflow
    */
@@ -198,31 +198,31 @@ export class WorkflowManager extends EventEmitter {
     if (!this.currentWorkflow) {
       return false;
     }
-    
+
     const currentStep = this.currentWorkflow.workflow.steps[this.currentWorkflow.currentStepIndex];
     if (currentStep) {
       this.currentWorkflow.completedSteps.push(currentStep.id);
     }
-    
+
     // Move to next step
     this.currentWorkflow.currentStepIndex++;
-    
+
     // Check if workflow is complete
     if (this.currentWorkflow.currentStepIndex >= this.currentWorkflow.workflow.steps.length) {
       this.completeWorkflow();
       return true;
     }
-    
+
     // Switch to next step's mode
     const nextStep = this.currentWorkflow.workflow.steps[this.currentWorkflow.currentStepIndex];
     if (nextStep) {
       this.modeManager.switchMode(nextStep.mode, 'manual');
       this.emit('workflow-step-changed', this.getProgress());
     }
-    
+
     return true;
   }
-  
+
   /**
    * Skip current step (if optional)
    */
@@ -230,16 +230,16 @@ export class WorkflowManager extends EventEmitter {
     if (!this.currentWorkflow) {
       return false;
     }
-    
+
     const currentStep = this.currentWorkflow.workflow.steps[this.currentWorkflow.currentStepIndex];
     if (!currentStep || !currentStep.optional) {
       return false;
     }
-    
+
     this.currentWorkflow.skippedSteps.push(currentStep.id);
     return this.nextStep();
   }
-  
+
   /**
    * Go back to previous step
    */
@@ -247,28 +247,29 @@ export class WorkflowManager extends EventEmitter {
     if (!this.currentWorkflow || this.currentWorkflow.currentStepIndex === 0) {
       return false;
     }
-    
+
     // Remove from completed steps
-    const previousStep = this.currentWorkflow.workflow.steps[this.currentWorkflow.currentStepIndex - 1];
+    const previousStep =
+      this.currentWorkflow.workflow.steps[this.currentWorkflow.currentStepIndex - 1];
     if (previousStep) {
       const index = this.currentWorkflow.completedSteps.indexOf(previousStep.id);
       if (index > -1) {
         this.currentWorkflow.completedSteps.splice(index, 1);
       }
     }
-    
+
     this.currentWorkflow.currentStepIndex--;
-    
+
     // Switch to previous step's mode
     const step = this.currentWorkflow.workflow.steps[this.currentWorkflow.currentStepIndex];
     if (step) {
       this.modeManager.switchMode(step.mode, 'manual');
       this.emit('workflow-step-changed', this.getProgress());
     }
-    
+
     return true;
   }
-  
+
   /**
    * Pause workflow
    */
@@ -276,12 +277,12 @@ export class WorkflowManager extends EventEmitter {
     if (!this.currentWorkflow || this.currentWorkflow.paused) {
       return false;
     }
-    
+
     this.currentWorkflow.paused = true;
     this.emit('workflow-paused', this.getProgress());
     return true;
   }
-  
+
   /**
    * Resume workflow
    */
@@ -289,12 +290,12 @@ export class WorkflowManager extends EventEmitter {
     if (!this.currentWorkflow || !this.currentWorkflow.paused) {
       return false;
     }
-    
+
     this.currentWorkflow.paused = false;
     this.emit('workflow-resumed', this.getProgress());
     return true;
   }
-  
+
   /**
    * Stop/exit workflow
    */
@@ -302,14 +303,14 @@ export class WorkflowManager extends EventEmitter {
     if (!this.currentWorkflow) {
       return false;
     }
-    
+
     const workflowId = this.currentWorkflow.workflow.id;
     this.currentWorkflow = null;
-    
+
     this.emit('workflow-stopped', { workflowId });
     return true;
   }
-  
+
   /**
    * Complete workflow
    */
@@ -317,20 +318,21 @@ export class WorkflowManager extends EventEmitter {
     if (!this.currentWorkflow) {
       return;
     }
-    
+
     this.currentWorkflow.completedAt = new Date();
-    
+
     this.emit('workflow-completed', {
       workflowId: this.currentWorkflow.workflow.id,
       workflowName: this.currentWorkflow.workflow.name,
-      duration: this.currentWorkflow.completedAt.getTime() - this.currentWorkflow.startedAt.getTime(),
+      duration:
+        this.currentWorkflow.completedAt.getTime() - this.currentWorkflow.startedAt.getTime(),
       stepsCompleted: this.currentWorkflow.completedSteps.length,
-      stepsSkipped: this.currentWorkflow.skippedSteps.length
+      stepsSkipped: this.currentWorkflow.skippedSteps.length,
     });
-    
+
     this.currentWorkflow = null;
   }
-  
+
   /**
    * Get current workflow progress
    */
@@ -338,11 +340,11 @@ export class WorkflowManager extends EventEmitter {
     if (!this.currentWorkflow) {
       return null;
     }
-    
+
     const currentStep = this.currentWorkflow.workflow.steps[this.currentWorkflow.currentStepIndex];
     const totalSteps = this.currentWorkflow.workflow.steps.length;
     const stepsCompleted = this.currentWorkflow.completedSteps.length;
-    
+
     return {
       workflowName: this.currentWorkflow.workflow.name,
       currentStep: this.currentWorkflow.currentStepIndex + 1,
@@ -351,38 +353,38 @@ export class WorkflowManager extends EventEmitter {
       currentMode: currentStep?.mode || 'assistant',
       percentComplete: Math.round((stepsCompleted / totalSteps) * 100),
       stepsCompleted,
-      paused: this.currentWorkflow.paused
+      paused: this.currentWorkflow.paused,
     };
   }
-  
+
   /**
    * Get current workflow state
    */
   getCurrentWorkflow(): WorkflowState | null {
     return this.currentWorkflow;
   }
-  
+
   /**
    * Check if a workflow is active
    */
   isWorkflowActive(): boolean {
     return this.currentWorkflow !== null;
   }
-  
+
   /**
    * Get list of available workflows
    */
   getAvailableWorkflows(): WorkflowDefinition[] {
     return Object.values(PREDEFINED_WORKFLOWS);
   }
-  
+
   /**
    * Get workflow by ID
    */
   getWorkflow(workflowId: string): WorkflowDefinition | null {
     return PREDEFINED_WORKFLOWS[workflowId] || null;
   }
-  
+
   /**
    * Get current step
    */
@@ -390,7 +392,7 @@ export class WorkflowManager extends EventEmitter {
     if (!this.currentWorkflow) {
       return null;
     }
-    
+
     return this.currentWorkflow.workflow.steps[this.currentWorkflow.currentStepIndex] || null;
   }
 }

@@ -70,11 +70,11 @@ export function SystemBar({ height }: SystemBarProps) {
         alignItems="center"
         justifyContent="flex-start"
       >
-        <Text color={theme.text.accent} bold>OLLM:</Text>
-        <Text> </Text>
-        <Text color={isTerminalMode ? 'cyan' : theme.text.primary}>
-          {displayStatus}
+        <Text color={theme.text.accent} bold>
+          OLLM:
         </Text>
+        <Text> </Text>
+        <Text color={isTerminalMode ? 'cyan' : theme.text.primary}>{displayStatus}</Text>
       </Box>
       <Box
         borderStyle={theme.border.style as BoxProps['borderStyle']}

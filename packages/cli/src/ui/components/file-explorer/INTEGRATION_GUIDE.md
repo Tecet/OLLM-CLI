@@ -5,6 +5,7 @@ This document explains how to integrate the File Explorer with the core OLLM CLI
 ## Overview
 
 The File Explorer needs to be integrated with three core systems:
+
 1. **Tool Registry** - For file operations
 2. **Policy Engine** - For confirmations
 3. **Message Bus** - For hook events
@@ -13,6 +14,7 @@ The File Explorer needs to be integrated with three core systems:
 ## 1. Tool Registry Integration
 
 ### Current Status
+
 ✅ **IMPLEMENTED** - FileOperations now supports tool registry integration
 
 ### Usage
@@ -26,9 +28,9 @@ import { FileOperations } from './FileOperations.js';
 // Create FileOperations with tool system integration
 const fileOps = new FileOperations(
   workspaceRoot,
-  toolRegistry,  // Optional: enables tool-based operations
-  policyEngine,  // Optional: enables policy enforcement
-  messageBus     // Optional: enables hook events
+  toolRegistry, // Optional: enables tool-based operations
+  policyEngine, // Optional: enables policy enforcement
+  messageBus // Optional: enables hook events
 );
 
 // File operations will now:
@@ -39,6 +41,7 @@ await fileOps.createFile('/path/to/file.ts', 'content');
 ```
 
 ### Benefits
+
 - **Policy Enforcement**: All file operations go through policy engine
 - **Hook Integration**: File operations trigger hooks automatically
 - **Audit Trail**: Operations are logged via tool system
@@ -47,6 +50,7 @@ await fileOps.createFile('/path/to/file.ts', 'content');
 ## 2. Focus System Integration
 
 ### Current Status
+
 ✅ **IMPLEMENTED** - FocusSystem now emits hook events
 
 ### Usage
@@ -82,6 +86,7 @@ messageBus.on('file:unfocused', async (event, data) => {
 ## 3. LLM Context Integration
 
 ### Current Status
+
 ⚠️ **NEEDS IMPLEMENTATION** - FocusSystem not connected to ChatContext
 
 ### Required Changes
@@ -123,7 +128,7 @@ export class SystemPromptBuilder {
 
   build(): string {
     let prompt = this.basePrompt;
-    
+
     // Add focused files section
     if (this.focusSystem) {
       const focusedContent = this.focusSystem.injectIntoPrompt('');
@@ -131,7 +136,7 @@ export class SystemPromptBuilder {
         prompt += '\n\n' + focusedContent;
       }
     }
-    
+
     return prompt;
   }
 }
@@ -139,7 +144,7 @@ export class SystemPromptBuilder {
 
 ### Testing Integration
 
-```typescript
+````typescript
 // Test that focused files appear in LLM prompts
 const focusSystem = new FocusSystem();
 await focusSystem.focusFile('/path/to/test.ts');
@@ -148,19 +153,20 @@ const prompt = focusSystem.injectIntoPrompt('What does this code do?');
 
 // Prompt should contain:
 // ## Focused Files
-// 
+//
 // ### File: /path/to/test.ts
 // ```
 // [file content]
 // ```
-// 
+//
 // ## User Prompt
 // What does this code do?
-```
+````
 
 ## 4. FileExplorerComponent Integration
 
 ### Current Status
+
 ⚠️ **NEEDS IMPLEMENTATION** - Component doesn't receive tool system dependencies
 
 ### Required Changes
@@ -175,12 +181,12 @@ export interface FileExplorerComponentProps {
   restoreState?: boolean;
   excludePatterns?: string[];
   hasFocus?: boolean;
-  
+
   // NEW: Tool system integration
   toolRegistry?: ToolRegistry;
   policyEngine?: PolicyEngine;
   messageBus?: MessageBus;
-  
+
   // Callbacks
   onWorkspaceLoaded?: (config: WorkspaceConfig) => void;
   onStateRestored?: () => void;
@@ -199,13 +205,13 @@ export function FileExplorerComponent({
     const pathSanitizer = new PathSanitizer();
     const gitStatusService = new GitStatusService();
     const fileTreeService = new FileTreeService();
-    const focusSystem = new FocusSystem(messageBus);  // Pass messageBus
+    const focusSystem = new FocusSystem(messageBus); // Pass messageBus
     const editorIntegration = new EditorIntegration();
     const fileOperations = new FileOperations(
       rootPath,
-      toolRegistry,   // Pass toolRegistry
-      policyEngine,   // Pass policyEngine
-      messageBus      // Pass messageBus
+      toolRegistry, // Pass toolRegistry
+      policyEngine, // Pass policyEngine
+      messageBus // Pass messageBus
     );
     const followModeService = new FollowModeService();
     const workspaceManager = new WorkspaceManager();
@@ -223,7 +229,7 @@ export function FileExplorerComponent({
       explorerPersistence,
     };
   });
-  
+
   // ... rest of component
 }
 ```
@@ -231,6 +237,7 @@ export function FileExplorerComponent({
 ## 5. App.tsx Integration
 
 ### Current Status
+
 ⚠️ **NEEDS IMPLEMENTATION** - App doesn't pass tool system to FileExplorer
 
 ### Required Changes
@@ -243,16 +250,16 @@ import { useServices } from '../features/context/ServiceContext.js';
 
 export function App() {
   const { container } = useServices();
-  
+
   // Get tool system instances from service container
   const toolRegistry = container?.getToolRegistry();
   const policyEngine = container?.getPolicyEngine();
   const messageBus = container?.getMessageBus();
-  
+
   return (
     <Box flexDirection="column">
       {/* ... other components */}
-      
+
       <FileExplorerComponent
         rootPath={process.cwd()}
         toolRegistry={toolRegistry}
@@ -269,6 +276,7 @@ export function App() {
 ## 6. Vision Service Implementation
 
 ### Current Status
+
 ⚠️ **PLACEHOLDER** - VisionService doesn't actually resize images
 
 ### Required Changes
@@ -285,12 +293,12 @@ import sharp from 'sharp';
 
 async resizeImage(imagePath: string, maxDimension: number): Promise<Buffer> {
   const imageBuffer = await fs.readFile(imagePath);
-  
+
   // Use sharp to resize
   return await sharp(imageBuffer)
-    .resize(maxDimension, maxDimension, { 
+    .resize(maxDimension, maxDimension, {
       fit: 'inside',
-      withoutEnlargement: true 
+      withoutEnlargement: true
     })
     .toBuffer();
 }
@@ -314,7 +322,9 @@ const result = await fileOps.createFile('/test.ts', 'console.log("test")');
 ```typescript
 // Test that focused files emit events
 let eventEmitted = false;
-messageBus.on('file:focused', () => { eventEmitted = true; });
+messageBus.on('file:focused', () => {
+  eventEmitted = true;
+});
 
 await focusSystem.focusFile('/test.ts');
 assert(eventEmitted, 'file:focused event should be emitted');
@@ -334,11 +344,13 @@ assert(prompt.includes('/test.ts'), 'Prompt should include file path');
 ## Summary
 
 ### Completed ✅
+
 - FileOperations tool system integration
 - FocusSystem hook event emissions
 - Integration documentation
 
 ### Remaining ⚠️
+
 - Connect FocusSystem to ChatContext/SystemPromptBuilder
 - Pass tool system dependencies to FileExplorerComponent
 - Update App.tsx to provide tool system instances
@@ -346,6 +358,7 @@ assert(prompt.includes('/test.ts'), 'Prompt should include file path');
 - Add integration tests
 
 ### Priority Order
+
 1. **High**: Connect FocusSystem to LLM context (core feature)
 2. **High**: Pass tool system to FileExplorerComponent
 3. **Medium**: Implement VisionService with sharp

@@ -1,6 +1,6 @@
 /**
  * Prompt Mode Manager for Dynamic Prompt System
- * 
+ *
  * Orchestrates mode transitions, builds prompts, filters tools, and maintains mode history.
  * Implements hysteresis and cooldown to prevent rapid mode switching.
  */
@@ -20,8 +20,8 @@ import type { ModelCapabilities } from '../services/modelManagementService.js';
 export interface ModeConfig {
   mode: ModeType;
   autoSwitch: boolean;
-  minDuration: number;      // Minimum time in mode (ms)
-  cooldownPeriod: number;   // Time between switches (ms)
+  minDuration: number; // Minimum time in mode (ms)
+  cooldownPeriod: number; // Time between switches (ms)
   confidenceThreshold: number;
 }
 
@@ -68,103 +68,103 @@ interface ModeState {
  */
 const CONFIDENCE_THRESHOLDS: Record<string, number> = {
   // Explicit requests always switch
-  'explicit': 1.0,
-  
+  explicit: 1.0,
+
   // Core mode transitions
-  'assistant->planning': 0.70,
-  'planning->developer': 0.80,
-  'developer->planning': 0.60,  // Easier to step back
+  'assistant->planning': 0.7,
+  'planning->developer': 0.8,
+  'developer->planning': 0.6, // Easier to step back
   'developer->debugger': 0.85,
-  'debugger->developer': 0.70,
-  
+  'debugger->developer': 0.7,
+
   // Tool mode
-  'any->tool': 0.90,
-  
+  'any->tool': 0.9,
+
   // Default threshold
-  'default': 0.70
+  default: 0.7,
 };
 
 /**
  * Prompt Mode Manager
- * 
+ *
  * Central orchestration layer for the dynamic prompt system.
  */
 export class PromptModeManager extends EventEmitter {
   private state: ModeState;
   private modeHistory: ModeTransition[] = [];
   private readonly maxHistorySize = 100;
-  private metricsTracker?: ModeMetricsTracker;  // Optional: only created if enabled
+  private metricsTracker?: ModeMetricsTracker; // Optional: only created if enabled
   private focusModeManager: FocusModeManager;
   private animator: ModeTransitionAnimator;
-  
+
   // Timing configuration
-  private readonly minDuration = 60000;  // 60 seconds (increased from 15s to prevent rapid switching)
-  private readonly cooldownPeriod = 30000;  // 30 seconds (increased from 10s)
-  
+  private readonly minDuration = 60000; // 60 seconds (increased from 15s to prevent rapid switching)
+  private readonly cooldownPeriod = 30000; // 30 seconds (increased from 10s)
+
   constructor(
     private contextAnalyzer: ContextAnalyzer,
     config: { enableMetrics?: boolean } = {}
   ) {
     super();
-    
+
     // Initialize metrics tracker (optional, default disabled)
     if (config.enableMetrics) {
       this.metricsTracker = new ModeMetricsTracker();
       // Load persisted metrics from disk
       this.loadMetrics();
     }
-    
+
     // Initialize focus mode manager
     this.focusModeManager = new FocusModeManager();
-    
+
     // Initialize transition animator
     this.animator = new ModeTransitionAnimator();
-    
+
     // Initialize state
     this.state = {
       currentMode: 'assistant',
       previousMode: null,
-      autoSwitchEnabled: false,  // DISABLED: Prevent mid-response mode switching
+      autoSwitchEnabled: false, // DISABLED: Prevent mid-response mode switching
       lastSwitchTime: new Date(),
       modeEntryTime: new Date(),
-      activeSkills: []
+      activeSkills: [],
     };
-    
+
     // Track initial mode entry (if metrics enabled)
     this.metricsTracker?.trackModeEntry('assistant');
   }
-  
+
   /**
    * Get current mode
    */
   getCurrentMode(): ModeType {
     return this.state.currentMode;
   }
-  
+
   /**
    * Get previous mode
    */
   getPreviousMode(): ModeType | null {
     return this.state.previousMode;
   }
-  
+
   /**
    * Check if auto-switching is enabled
    */
   isAutoSwitchEnabled(): boolean {
     return this.state.autoSwitchEnabled;
   }
-  
+
   /**
    * Enable or disable auto-switching
    */
   setAutoSwitch(enabled: boolean): void {
     this.state.autoSwitchEnabled = enabled;
-    
+
     // Emit event so UI can persist the preference
     this.emit('auto-switch-changed', enabled);
   }
-  
+
   /**
    * Force a specific mode (disables auto-switch)
    */
@@ -172,7 +172,7 @@ export class PromptModeManager extends EventEmitter {
     this.state.autoSwitchEnabled = false;
     this.switchMode(mode, 'manual', 1.0);
   }
-  
+
   /**
    * Update active skills
    */
@@ -180,28 +180,28 @@ export class PromptModeManager extends EventEmitter {
     this.state.activeSkills = skills;
     this.emit('skills-changed', skills);
   }
-  
+
   /**
    * Get active skills
    */
   getActiveSkills(): string[] {
     return this.state.activeSkills;
   }
-  
+
   /**
    * Get metrics tracker (may be undefined if metrics disabled)
    */
   getMetricsTracker(): ModeMetricsTracker | undefined {
     return this.metricsTracker;
   }
-  
+
   /**
    * Get transition animator
    */
   getAnimator(): ModeTransitionAnimator {
     return this.animator;
   }
-  
+
   /**
    * Get focus mode manager
    */
@@ -215,28 +215,28 @@ export class PromptModeManager extends EventEmitter {
   getContextAnalyzer(): ContextAnalyzer {
     return this.contextAnalyzer;
   }
-  
+
   /**
    * Track a mode-specific event
    * Convenience method to track events through the metrics tracker
    */
   trackEvent(event: import('./ModeMetricsTracker.js').ModeEvent): void {
     this.metricsTracker?.trackEvent(event);
-    
+
     // Persist metrics after tracking significant events (if metrics enabled)
     // (debounced to avoid excessive disk writes)
     if (this.metricsTracker) {
       this.debouncedPersistMetrics();
     }
   }
-  
+
   /**
    * Persist metrics to disk
    * Saves current metrics to ~/.ollm/metrics/mode-metrics.json
    */
   persistMetrics(): void {
-    if (!this.metricsTracker) return;  // Skip if metrics disabled
-    
+    if (!this.metricsTracker) return; // Skip if metrics disabled
+
     try {
       this.metricsTracker.saveMetricsToDisk();
     } catch (error) {
@@ -244,7 +244,7 @@ export class PromptModeManager extends EventEmitter {
       console.error('Failed to persist mode metrics:', error);
     }
   }
-  
+
   /**
    * Debounced version of persistMetrics to avoid excessive disk writes
    */
@@ -253,22 +253,22 @@ export class PromptModeManager extends EventEmitter {
     if (this.persistMetricsTimeout) {
       clearTimeout(this.persistMetricsTimeout);
     }
-    
+
     this.persistMetricsTimeout = setTimeout(() => {
       this.persistMetrics();
       this.persistMetricsTimeout = null;
     }, 5000); // Wait 5 seconds after last event before persisting
   }
-  
+
   /**
    * Load metrics from disk
    * Loads persisted metrics from ~/.ollm/metrics/mode-metrics.json
-   * 
+   *
    * @returns true if metrics were loaded successfully, false otherwise
    */
   loadMetrics(): boolean {
-    if (!this.metricsTracker) return false;  // Skip if metrics disabled
-    
+    if (!this.metricsTracker) return false; // Skip if metrics disabled
+
     try {
       return this.metricsTracker.loadMetricsFromDisk();
     } catch (error) {
@@ -276,14 +276,14 @@ export class PromptModeManager extends EventEmitter {
       return false;
     }
   }
-  
+
   /**
    * Clear persisted metrics
    * Deletes the metrics file and resets in-memory metrics
    */
   clearMetrics(): void {
-    if (!this.metricsTracker) return;  // Skip if metrics disabled
-    
+    if (!this.metricsTracker) return; // Skip if metrics disabled
+
     try {
       this.metricsTracker.clearPersistedMetrics();
       this.metricsTracker.resetMetrics();
@@ -291,7 +291,7 @@ export class PromptModeManager extends EventEmitter {
       console.error('Failed to clear mode metrics:', error);
     }
   }
-  
+
   /**
    * Cleanup method to be called when shutting down
    * Ensures metrics are persisted before exit
@@ -302,17 +302,17 @@ export class PromptModeManager extends EventEmitter {
       clearTimeout(this.persistMetricsTimeout);
       this.persistMetricsTimeout = null;
     }
-    
+
     // Persist metrics one final time
     this.persistMetrics();
-    
+
     // Shutdown focus mode manager
     this.focusModeManager.shutdown();
   }
-  
+
   /**
    * Check if mode should switch based on analysis
-   * 
+   *
    * Implements hysteresis and cooldown logic.
    */
   shouldSwitchMode(currentMode: ModeType, analysis: ContextAnalysis): boolean {
@@ -321,38 +321,38 @@ export class PromptModeManager extends EventEmitter {
     if (focusCheck.blocked) {
       return false;
     }
-    
+
     // Don't switch if auto-switch is disabled
     if (!this.state.autoSwitchEnabled) {
       return false;
     }
-    
+
     // Don't switch to the same mode
     if (analysis.mode === currentMode) {
       return false;
     }
-    
+
     // Check cooldown period (10s between switches)
     const timeSinceLastSwitch = Date.now() - this.state.lastSwitchTime.getTime();
     if (timeSinceLastSwitch < this.cooldownPeriod) {
       return false;
     }
-    
+
     // Check hysteresis (15s minimum duration in current mode)
     const timeInCurrentMode = Date.now() - this.state.modeEntryTime.getTime();
     if (timeInCurrentMode < this.minDuration) {
       return false;
     }
-    
+
     // Check confidence threshold
     const threshold = this.getConfidenceThreshold(currentMode, analysis.mode);
     if (analysis.confidence < threshold) {
       return false;
     }
-    
+
     return true;
   }
-  
+
   /**
    * Get confidence threshold for a mode transition
    */
@@ -362,17 +362,17 @@ export class PromptModeManager extends EventEmitter {
     if (transitionKey in CONFIDENCE_THRESHOLDS) {
       return CONFIDENCE_THRESHOLDS[transitionKey];
     }
-    
+
     // Check for any->mode pattern
     const anyToKey = `any->${to}`;
     if (anyToKey in CONFIDENCE_THRESHOLDS) {
       return CONFIDENCE_THRESHOLDS[anyToKey];
     }
-    
+
     // Use default threshold
     return CONFIDENCE_THRESHOLDS['default'];
   }
-  
+
   /**
    * Switch to a new mode
    */
@@ -388,62 +388,62 @@ export class PromptModeManager extends EventEmitter {
         // Emit blocked event so UI can show message
         this.emit('mode-switch-blocked', {
           targetMode: newMode,
-          reason: focusCheck.reason
+          reason: focusCheck.reason,
         });
         return;
       }
     }
-    
+
     const oldMode = this.state.currentMode;
-    
+
     // Create transition record
     const transition: ModeTransition = {
       from: oldMode,
       to: newMode,
       timestamp: new Date(),
       trigger,
-      confidence
+      confidence,
     };
-    
+
     // Create and start animation
     const animation = this.animator.createAnimation(transition);
     this.animator.startAnimation(animation.id);
-    
+
     // Emit animation-started event for UI
     this.emit('mode-animation-started', animation);
-    
+
     // Update state
     this.state.previousMode = oldMode;
     this.state.currentMode = newMode;
     this.state.lastSwitchTime = new Date();
     this.state.modeEntryTime = new Date();
-    
+
     this.addToHistory(transition);
-    
+
     // Track metrics for this transition (if metrics enabled)
     this.metricsTracker?.trackModeTransition(transition);
-    
+
     // Persist metrics to disk after transition (if metrics enabled)
     if (this.metricsTracker) {
       this.debouncedPersistMetrics();
     }
-    
+
     // Emit mode-changed event
     this.emit('mode-changed', transition);
-    
+
     // Complete animation after a short delay
     setTimeout(() => {
       this.animator.completeAnimation(animation.id);
       this.emit('mode-animation-completed', animation);
     }, animation.duration);
   }
-  
+
   /**
    * Add transition to history
    */
   private addToHistory(transition: ModeTransition): void {
     this.modeHistory.push(transition);
-    
+
     // Keep only last 100 transitions
     if (this.modeHistory.length > this.maxHistorySize) {
       // Remove excess items from the beginning
@@ -451,21 +451,21 @@ export class PromptModeManager extends EventEmitter {
       this.modeHistory.splice(0, excess);
     }
   }
-  
+
   /**
    * Get mode history
    */
   getModeHistory(): ModeTransition[] {
     return [...this.modeHistory];
   }
-  
+
   /**
    * Get recent mode history (last N transitions)
    */
   getRecentHistory(count: number = 10): ModeTransition[] {
     return this.modeHistory.slice(-count);
   }
-  
+
   /**
    * Build prompt for current mode
    *
@@ -474,7 +474,7 @@ export class PromptModeManager extends EventEmitter {
   buildPrompt(_options: PromptBuildOptions): string {
     return '';
   }
-  
+
   /**
    * Get allowed tools for a specific mode
    */
@@ -482,26 +482,36 @@ export class PromptModeManager extends EventEmitter {
     const toolAccess: Record<ModeType, string[]> = {
       assistant: [],
       planning: [
-        'web_search', 'web_fetch',
-        'read_file', 'read_multiple_files',
-        'grep_search', 'file_search', 'list_directory',
-        'get_diagnostics', 'write_memory_dump',
+        'web_search',
+        'web_fetch',
+        'read_file',
+        'read_multiple_files',
+        'grep_search',
+        'file_search',
+        'list_directory',
+        'get_diagnostics',
+        'write_memory_dump',
         'trigger_hot_swap',
-        'mcp:*'
+        'mcp:*',
       ],
       developer: ['*'],
       debugger: [
-        'read_file', 'grep_search', 'list_directory',
-        'get_diagnostics', 'shell',
-        'git_diff', 'git_log',
+        'read_file',
+        'grep_search',
+        'list_directory',
+        'get_diagnostics',
+        'shell',
+        'git_diff',
+        'git_log',
         'web_search',
-        'write_file', 'str_replace',
+        'write_file',
+        'str_replace',
         'write_memory_dump',
         'trigger_hot_swap',
-        'mcp:*'
-      ]
+        'mcp:*',
+      ],
     };
-    
+
     return toolAccess[mode] || [];
   }
 
@@ -510,24 +520,24 @@ export class PromptModeManager extends EventEmitter {
    */
   isToolAllowed(toolName: string, mode: ModeType): boolean {
     const allowedTools = this.getAllowedTools(mode);
-    
+
     // If mode allows all tools (*)
     if (allowedTools.includes('*')) {
       return true;
     }
-    
+
     // Check exact match
     if (allowedTools.includes(toolName)) {
       return true;
     }
-    
+
     // Check for MCP tool permission
     if (allowedTools.includes('mcp:*') && toolName.includes(':')) {
       return true;
     }
-    
+
     // Check wildcard patterns (e.g., 'git_*')
-    return allowedTools.some(pattern => {
+    return allowedTools.some((pattern) => {
       if (pattern.endsWith('*')) {
         const prefix = pattern.slice(0, -1);
         return toolName.startsWith(prefix);
@@ -540,7 +550,7 @@ export class PromptModeManager extends EventEmitter {
    * Filter tools for a specific mode based on allowed tools
    */
   filterToolsForMode(tools: Array<{ name: string }>, mode: ModeType): Array<{ name: string }> {
-    return tools.filter(tool => this.isToolAllowed(tool.name, mode));
+    return tools.filter((tool) => this.isToolAllowed(tool.name, mode));
   }
 
   /**
@@ -554,38 +564,45 @@ export class PromptModeManager extends EventEmitter {
     if (technicalModes.includes(mode)) return 0.1;
     if (standardModes.includes(mode)) return 0.3;
     if (creativeModes.includes(mode)) return 0.5;
-    
+
     return 0.3; // Default
   }
-  
+
   /**
    * Get denied tools for a mode
    */
   getDeniedTools(mode: ModeType): string[] {
     const deniedTools: Record<ModeType, string[]> = {
       assistant: ['*'],
-      
+
       planning: [
-        'write_file', 'fs_append', 'str_replace', 'delete_file',
-        'execute_pwsh', 'control_pwsh_process',
-        'git_*'
+        'write_file',
+        'fs_append',
+        'str_replace',
+        'delete_file',
+        'execute_pwsh',
+        'control_pwsh_process',
+        'git_*',
       ],
-      
+
       developer: [],
-      
-      debugger: ['delete_file', 'git_commit']
+
+      debugger: ['delete_file', 'git_commit'],
     };
-    
+
     return deniedTools[mode] || [];
   }
-  
+
   /**
    * Validate if a file path is allowed for writing in planning mode
    * @param filePath - The file path to validate
    * @param toolName - The tool attempting to write (for error messages)
    * @returns Object with allowed status and error message if denied
    */
-  validateFilePathForPlanningMode(filePath: string, _toolName: string): {
+  validateFilePathForPlanningMode(
+    filePath: string,
+    _toolName: string
+  ): {
     allowed: boolean;
     errorMessage?: string;
   } {
@@ -593,26 +610,26 @@ export class PromptModeManager extends EventEmitter {
     if (this.state.currentMode !== 'planning') {
       return { allowed: true };
     }
-    
+
     // Import the validation functions dynamically
     // Note: This is synchronous validation, so we use a simple check
     const extension = filePath.split('.').pop()?.toLowerCase() || '';
     const allowedExtensions = ['md', 'txt', 'json', 'plan'];
     const allowedPaths = ['.kiro/', '.gemini/', 'docs/', 'plans/'];
-    
+
     const isAllowedExtension = allowedExtensions.includes(extension);
-    const isAllowedPath = allowedPaths.some(p => filePath.includes(p));
-    
+    const isAllowedPath = allowedPaths.some((p) => filePath.includes(p));
+
     if (!isAllowedExtension && !isAllowedPath) {
-      return { 
-        allowed: false, 
-        errorMessage: `Planning mode restricts file writes. File "${filePath}" is not in an allowed location.` 
+      return {
+        allowed: false,
+        errorMessage: `Planning mode restricts file writes. File "${filePath}" is not in an allowed location.`,
       };
     }
-    
+
     return { allowed: true };
   }
-  
+
   /**
    * Check if a tool with file path arguments should be allowed in planning mode
    * This is called before tool execution to validate file paths
@@ -620,7 +637,10 @@ export class PromptModeManager extends EventEmitter {
    * @param args - The tool arguments
    * @returns Object with allowed status and error message if denied
    */
-  validateToolArgsForPlanningMode(toolName: string, args: Record<string, unknown>): {
+  validateToolArgsForPlanningMode(
+    toolName: string,
+    args: Record<string, unknown>
+  ): {
     allowed: boolean;
     errorMessage?: string;
   } {
@@ -628,33 +648,34 @@ export class PromptModeManager extends EventEmitter {
     if (this.state.currentMode !== 'planning') {
       return { allowed: true };
     }
-    
+
     // Tools that write files and need validation
     const writeTools = ['write_file', 'fs_append', 'fsWrite', 'fsAppend'];
-    
+
     if (!writeTools.includes(toolName)) {
       return { allowed: true };
     }
-    
+
     // Extract file path from arguments
     let filePath: string | undefined;
-    
+
     if (typeof args === 'object' && args !== null) {
       // Try common argument names with explicit casting
-      filePath = (args.path as string | undefined) || 
-                 (args.filePath as string | undefined) || 
-                 (args.file as string | undefined) || 
-                 (args.targetFile as string | undefined);
+      filePath =
+        (args.path as string | undefined) ||
+        (args.filePath as string | undefined) ||
+        (args.file as string | undefined) ||
+        (args.targetFile as string | undefined);
     }
-    
+
     if (!filePath) {
       // Can't validate without a file path, allow it
       return { allowed: true };
     }
-    
+
     return this.validateFilePathForPlanningMode(filePath, toolName);
   }
-  
+
   /**
    * Get mode history in a serializable format for session persistence
    */
@@ -665,33 +686,35 @@ export class PromptModeManager extends EventEmitter {
     trigger: 'auto' | 'manual' | 'tool' | 'explicit';
     confidence: number;
   }> {
-    return this.modeHistory.map(transition => ({
+    return this.modeHistory.map((transition) => ({
       from: transition.from,
       to: transition.to,
       timestamp: transition.timestamp.toISOString(),
       trigger: transition.trigger,
-      confidence: transition.confidence
+      confidence: transition.confidence,
     }));
   }
-  
+
   /**
    * Restore mode history from serialized format (when resuming a session)
    */
-  restoreModeHistory(history: Array<{
-    from: string;
-    to: string;
-    timestamp: string;
-    trigger: 'auto' | 'manual' | 'tool' | 'explicit';
-    confidence: number;
-  }>): void {
-    this.modeHistory = history.map(transition => ({
+  restoreModeHistory(
+    history: Array<{
+      from: string;
+      to: string;
+      timestamp: string;
+      trigger: 'auto' | 'manual' | 'tool' | 'explicit';
+      confidence: number;
+    }>
+  ): void {
+    this.modeHistory = history.map((transition) => ({
       from: transition.from as ModeType,
       to: transition.to as ModeType,
       timestamp: new Date(transition.timestamp),
       trigger: transition.trigger,
-      confidence: transition.confidence
+      confidence: transition.confidence,
     }));
-    
+
     // Restore current mode from last transition if available
     if (this.modeHistory.length > 0) {
       const lastTransition = this.modeHistory[this.modeHistory.length - 1];
@@ -699,14 +722,14 @@ export class PromptModeManager extends EventEmitter {
       this.state.previousMode = lastTransition.from;
     }
   }
-  
+
   /**
    * Register mode change listener
    */
   onModeChange(callback: (transition: ModeTransition) => void): void {
     this.on('mode-changed', callback);
   }
-  
+
   /**
    * Remove mode change listener
    */

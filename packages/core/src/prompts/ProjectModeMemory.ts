@@ -1,6 +1,6 @@
 /**
  * Project Mode Memory
- * 
+ *
  * Manages per-project mode preferences and settings.
  * Stores preferences in .ollm/mode-preferences.json within the project directory.
  */
@@ -70,14 +70,14 @@ export class ProjectModeMemory {
     try {
       const data = await fs.readFile(this.preferencesFilePath, 'utf-8');
       const loaded = JSON.parse(data) as ProjectModePreferences;
-      
+
       // Merge with defaults to ensure all fields exist
       this.preferences = {
         ...getDefaultPreferences(),
         ...loaded,
         projectPath: this.projectPath,
       };
-      
+
       this.loaded = true;
       return this.preferences;
     } catch (error) {
@@ -86,7 +86,7 @@ export class ProjectModeMemory {
         this.loaded = true;
         return this.preferences;
       }
-      
+
       throw new Error(`Failed to load mode preferences: ${(error as Error).message}`);
     }
   }
@@ -99,10 +99,10 @@ export class ProjectModeMemory {
       // Ensure .ollm directory exists
       const ollmDir = path.dirname(this.preferencesFilePath);
       await fs.mkdir(ollmDir, { recursive: true });
-      
+
       // Update timestamp
       this.preferences.lastUpdated = Date.now();
-      
+
       // Write preferences
       await fs.writeFile(
         this.preferencesFilePath,
@@ -188,11 +188,11 @@ export class ProjectModeMemory {
     if (!this.loaded) {
       throw new Error('Preferences not loaded. Call load() first.');
     }
-    
+
     if (threshold < 0 || threshold > 1) {
       throw new Error('Threshold must be between 0.0 and 1.0');
     }
-    
+
     this.preferences.customThresholds[mode] = threshold;
     await this.save();
   }
@@ -228,7 +228,7 @@ export class ProjectModeMemory {
     if (!this.loaded) {
       throw new Error('Preferences not loaded. Call load() first.');
     }
-    
+
     if (!this.preferences.disabledModes.includes(mode)) {
       this.preferences.disabledModes.push(mode);
       await this.save();
@@ -243,7 +243,7 @@ export class ProjectModeMemory {
     if (!this.loaded) {
       throw new Error('Preferences not loaded. Call load() first.');
     }
-    
+
     const index = this.preferences.disabledModes.indexOf(mode);
     if (index !== -1) {
       this.preferences.disabledModes.splice(index, 1);
@@ -269,7 +269,7 @@ export class ProjectModeMemory {
     if (!this.loaded) {
       throw new Error('Preferences not loaded. Call load() first.');
     }
-    
+
     if (!this.preferences.preferredWorkflows.includes(workflow)) {
       this.preferences.preferredWorkflows.push(workflow);
       await this.save();
@@ -284,7 +284,7 @@ export class ProjectModeMemory {
     if (!this.loaded) {
       throw new Error('Preferences not loaded. Call load() first.');
     }
-    
+
     const index = this.preferences.preferredWorkflows.indexOf(workflow);
     if (index !== -1) {
       this.preferences.preferredWorkflows.splice(index, 1);

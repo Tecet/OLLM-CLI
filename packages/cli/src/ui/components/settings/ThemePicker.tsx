@@ -6,20 +6,20 @@ import { Theme } from '../../../config/types.js';
 export interface ThemePickerProps {
   /** Available theme names */
   themes: string[];
-  
+
   /** Currently selected theme */
   selectedTheme: string;
-  
+
   /** Callback when a theme is selected */
   onSelect: (themeName: string) => void;
-  
+
   /** Current theme for styling */
   theme: Theme;
 }
 
 /**
  * ThemePicker component
- * 
+ *
  * Displays available themes and allows selection.
  * Shows theme name and applies immediately on selection.
  */
@@ -40,7 +40,7 @@ export function ThemePicker({
       <Box flexDirection="column">
         {themes.map((themeName) => {
           const isSelected = themeName === selectedTheme;
-          
+
           return (
             <Box
               key={themeName}

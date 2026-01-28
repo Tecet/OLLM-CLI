@@ -1,6 +1,6 @@
 /**
  * PathSanitizer Tests
- * 
+ *
  * Tests for path normalization and sanitization
  */
 

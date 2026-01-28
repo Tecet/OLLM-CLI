@@ -1,6 +1,6 @@
 /**
  * Error Handling Utilities for MCP Panel UI
- * 
+ *
  * Provides user-friendly error messages, retry logic with exponential backoff,
  * and error recovery suggestions for common failure scenarios.
  */
@@ -196,10 +196,7 @@ export function parseError(error: unknown): MCPError {
   }
 
   // Timeout errors
-  if (
-    errorMessage.includes('timeout') ||
-    errorMessage.includes('ETIMEDOUT')
-  ) {
+  if (errorMessage.includes('timeout') || errorMessage.includes('ETIMEDOUT')) {
     return {
       type: MCPErrorType.TIMEOUT,
       message: 'Operation timed out',
@@ -257,7 +254,7 @@ export async function retryWithBackoff<T>(
       }
 
       // Wait before retrying
-      await new Promise(resolve => setTimeout(resolve, delay));
+      await new Promise((resolve) => setTimeout(resolve, delay));
 
       // Increase delay for next attempt (exponential backoff)
       delay = Math.min(delay * finalConfig.backoffMultiplier, finalConfig.maxDelay);

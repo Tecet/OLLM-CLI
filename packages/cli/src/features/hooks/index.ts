@@ -1,6 +1,6 @@
 /**
  * Hooks feature module
- * 
+ *
  * This module provides UI-specific types and utilities for the Hooks Panel.
  * It includes an adapter layer to convert between core Hook types and UI Hook types.
  */

@@ -1,6 +1,6 @@
 /**
  * MCP Health Monitoring commands
- * 
+ *
  * Provides commands for:
  * - Checking MCP server health
  * - Viewing health history
@@ -29,7 +29,7 @@ export function createMCPHealthCommands(
       handler: async (): Promise<CommandResult> => {
         try {
           const servers = mcpClient.listServers();
-          
+
           if (servers.length === 0) {
             return {
               success: true,
@@ -40,16 +40,18 @@ export function createMCPHealthCommands(
           const results = await Promise.all(
             servers.map(async (server) => {
               // Prefer monitor-provided health if available, otherwise fall back to client status
-              const result = healthMonitor.getServerHealth(server.name) ?? (() => {
-                const status = mcpClient.getServerStatus(server.name);
-                return {
-                  serverName: server.name,
-                  healthy: status.status === 'connected',
-                  status: status.status,
-                  error: status.error,
-                  timestamp: Date.now(),
-                } as any;
-              })();
+              const result =
+                healthMonitor.getServerHealth(server.name) ??
+                (() => {
+                  const status = mcpClient.getServerStatus(server.name);
+                  return {
+                    serverName: server.name,
+                    healthy: status.status === 'connected',
+                    status: status.status,
+                    error: status.error,
+                    timestamp: Date.now(),
+                  } as any;
+                })();
 
               return { server, result };
             })
@@ -61,18 +63,16 @@ export function createMCPHealthCommands(
             ...results.map(({ server, result }) => {
               const icon = result.healthy ? '✅' : '❌';
               const status = result.status;
-              const lines = [
-                `${icon} **${server.name}** - ${status}`,
-              ];
-              
+              const lines = [`${icon} **${server.name}** - ${status}`];
+
               if (result.error) {
                 lines.push(`   Error: ${result.error}`);
               }
-              
+
               if (server.status.tools > 0) {
                 lines.push(`   Tools: ${server.status.tools}`);
               }
-              
+
               return lines.join('\n');
             }),
           ];
@@ -108,16 +108,18 @@ export function createMCPHealthCommands(
 
         try {
           const maybe = healthMonitor.getServerHealth(serverName);
-          const result = maybe ?? (() => {
-            const status = mcpClient.getServerStatus(serverName);
-            return {
-              serverName,
-              healthy: status.status === 'connected',
-              status: status.status,
-              error: status.error,
-              timestamp: Date.now(),
-            } as any;
-          })();
+          const result =
+            maybe ??
+            (() => {
+              const status = mcpClient.getServerStatus(serverName);
+              return {
+                serverName,
+                healthy: status.status === 'connected',
+                status: status.status,
+                error: status.error,
+                timestamp: Date.now(),
+              } as any;
+            })();
 
           const icon = result.healthy ? '✅' : '❌';
           const output = [

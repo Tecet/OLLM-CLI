@@ -64,9 +64,7 @@ interface PendingRequest {
 /**
  * Handler function for confirmation requests
  */
-export type ConfirmationHandler = (
-  request: ConfirmationRequest
-) => Promise<boolean> | boolean;
+export type ConfirmationHandler = (request: ConfirmationRequest) => Promise<boolean> | boolean;
 
 /**
  * Default timeout for confirmation requests (60 seconds)

@@ -18,21 +18,19 @@ export function formatMB(bytes: number): string {
 }
 
 export function HeaderBar({ connection, model, gpu, theme, borderColor }: HeaderBarProps) {
-  const vramText = gpu && gpu.vramTotal
-    ? `${formatMB(gpu.vramUsed ?? 0)}/${formatMB(gpu.vramTotal)}`
-    : 'N/A';
+  const vramText =
+    gpu && gpu.vramTotal ? `${formatMB(gpu.vramUsed ?? 0)}/${formatMB(gpu.vramTotal)}` : 'N/A';
 
-  const tempText = gpu && typeof gpu.temperature === 'number'
-    ? `${Math.round(gpu.temperature)}°C`
-    : 'N/A';
-    
+  const tempText =
+    gpu && typeof gpu.temperature === 'number' ? `${Math.round(gpu.temperature)}°C` : 'N/A';
+
   const gpuVendor = gpu?.vendor || 'Unknown';
-  
+
   const connectionIndicator = connection.status === 'connected' ? '🟢' : '🔴';
   const providerText = connection.provider || 'ollama';
 
   return (
-    <Box 
+    <Box
       borderStyle={theme.border.style as BoxProps['borderStyle']}
       borderColor={borderColor || theme.border.primary}
       paddingX={1}

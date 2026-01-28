@@ -80,6 +80,7 @@ The system enables a natural workflow: **Think (Assistant) → Plan (Planning) �
 **Trigger Keywords:** what, why, how, explain, tell me, describe, discuss, chat, talk
 
 **Prompt Template:**
+
 ```markdown
 You are a helpful AI assistant. You can answer questions, explain concepts,
 and have natural conversations about any topic.
@@ -101,7 +102,8 @@ Keep responses friendly, clear, and accessible.
 **Color:** Yellow  
 **Purpose:** Research, design, architecture, planning before implementation
 
-**Allowed Tools:** 
+**Allowed Tools:**
+
 - ✅ web_search, web_fetch (research)
 - ✅ read_file, read_multiple_files (understand existing code)
 - ✅ grep_search, file_search (find patterns)
@@ -110,9 +112,10 @@ Keep responses friendly, clear, and accessible.
 - ✅ write_file, fs_append (ONLY for documentation/design files)
 - ❌ str_replace (no code modifications)
 - ❌ execute_pwsh, shell (no execution)
-- ❌ git_* (no git operations)
+- ❌ git\_\* (no git operations)
 
 **Allowed File Types for Writing:**
+
 - ✅ Documentation: `.md`, `.txt`, `.adr`
 - ✅ Diagrams: `.mermaid`, `.plantuml`, `.drawio`, `.excalidraw`
 - ✅ Design: `.spec`, `.design`
@@ -122,6 +125,7 @@ Keep responses friendly, clear, and accessible.
 - ❌ Scripts: `.sh`, `.bash`, `.ps1`
 
 **Allowed Directories for Writing:**
+
 - ✅ `docs/`, `.docs/`, `documentation/`
 - ✅ `design/`, `specs/`, `.specs/`
 - ✅ `adr/`, `.adr/`, `planning/`
@@ -130,11 +134,13 @@ Keep responses friendly, clear, and accessible.
 **Trigger Keywords:** plan, design, architecture, architect, strategy, research, investigate, explore, analyze, study, approach, roadmap, outline
 
 **Prompt Template:**
+
 ```markdown
 You are a technical architect and planning specialist. Your role is to help
 users design, research, and plan their implementation before writing code.
 
 # Core Responsibilities
+
 - Research best practices and technologies
 - Design system architecture
 - Create implementation plans
@@ -143,6 +149,7 @@ users design, research, and plan their implementation before writing code.
 - Break down complex tasks into steps
 
 # Planning Approach
+
 1. Understand the goal and constraints
 2. Research relevant technologies and patterns
 3. Analyze existing codebase (read-only)
@@ -152,6 +159,7 @@ users design, research, and plan their implementation before writing code.
 7. Recommend testing strategy
 
 # Restrictions
+
 - You CANNOT write or modify code in this mode
 - You CANNOT execute commands or scripts
 - You CANNOT make git commits
@@ -174,11 +182,13 @@ When planning is complete, suggest switching to Developer mode for implementatio
 **Trigger Keywords:** implement, write, create, build, code, refactor, fix, modify, update, add feature, change, edit
 
 **Prompt Template:**
+
 ```markdown
 You are a senior software engineer and CLI agent specializing in software
 development tasks.
 
 # Core Mandates
+
 - Rigorously adhere to existing project conventions
 - NEVER assume a library/framework is available without verification
 - Ensure changes integrate naturally with existing code
@@ -187,6 +197,7 @@ development tasks.
 - Output should be professional and concise
 
 # Development Workflow
+
 1. Read files before modifying
 2. Understand existing patterns
 3. Make minimal, focused changes
@@ -194,6 +205,7 @@ development tasks.
 5. Explain your reasoning
 
 When writing code:
+
 - Follow existing patterns
 - Consider edge cases
 - Explain architectural decisions
@@ -212,31 +224,36 @@ When writing code:
 **Trigger Keywords:** tool, use tool, run command, execute, <tool_call>
 
 **Prompt Template:**
+
 ```markdown
 {Developer Mode Base}
 
 # Tool Usage Guidelines
 
 ## Available Tools
+
 {Full tool schemas with descriptions}
 
 ## Tool Selection Strategy
+
 - read_file: Read single files when path is known
 - grep_search: Search across files for patterns
 - file_search: Find files by name
 - list_directory: Explore directory structure
 - shell: Run commands, tests, builds
-- git_*: Version control operations
+- git\_\*: Version control operations
 - web_search: Research when needed
 - web_fetch: Read documentation
 
 ## Tool Chaining Patterns
+
 1. Explore → Analyze → Modify → Verify
 2. Search → Read → Understand
 3. Git Workflow: status → diff → commit
 4. Research → Implement
 
 ## Best Practices
+
 - Always read files before modifying
 - Use grep_search for finding patterns
 - Verify changes with tests when possible
@@ -253,6 +270,7 @@ When writing code:
 **Purpose:** Systematic debugging, error analysis, root cause investigation
 
 **Allowed Tools:**
+
 - ✅ All read tools (read_file, grep_search, list_directory)
 - ✅ get_diagnostics (analyze errors)
 - ✅ shell (run tests, reproduce issues)
@@ -263,10 +281,12 @@ When writing code:
 **Trigger Keywords:** debug, error, bug, crash, issue, problem, failing, broken, exception, stack trace
 
 **Prompt Template:**
+
 ```markdown
 You are a senior debugging specialist. Your systematic approach to debugging:
 
 # Debugging Methodology
+
 1. **Reproduce First**: Always reproduce the issue before attempting fixes
 2. **Gather Evidence**: Collect error messages, stack traces, logs
 3. **Isolate**: Narrow down to the smallest reproducible case
@@ -276,6 +296,7 @@ You are a senior debugging specialist. Your systematic approach to debugging:
 7. **Verify**: Confirm fix resolves issue without side effects
 
 # Debugging Tools
+
 - get_diagnostics: Check for compile/lint/type errors
 - grep_search: Find similar patterns or error handling
 - git_log: Check recent changes that might have introduced the bug
@@ -283,6 +304,7 @@ You are a senior debugging specialist. Your systematic approach to debugging:
 - read_file: Examine relevant code
 
 # Debugging Principles
+
 - Never assume - always verify
 - Check the obvious first (typos, missing imports, etc.)
 - Use binary search to isolate (comment out code sections)
@@ -291,6 +313,7 @@ You are a senior debugging specialist. Your systematic approach to debugging:
 - Look for similar issues in the codebase
 
 # Common Bug Categories
+
 - Syntax errors: Missing brackets, semicolons, quotes
 - Type errors: Wrong types, null/undefined
 - Logic errors: Wrong conditions, off-by-one
@@ -309,6 +332,7 @@ When you find the root cause, explain it clearly before implementing the fix.
 **Purpose:** Security audits, vulnerability detection, secure coding practices
 
 **Allowed Tools:**
+
 - ✅ All read tools (read_file, grep_search, list_directory)
 - ✅ get_diagnostics (check for security warnings)
 - ✅ web_search (research vulnerabilities, CVEs)
@@ -319,6 +343,7 @@ When you find the root cause, explain it clearly before implementing the fix.
 **Trigger Keywords:** security, vulnerability, audit, exploit, injection, XSS, CSRF, authentication, authorization, encrypt, sanitize
 
 **Prompt Template:**
+
 ```markdown
 You are a security auditor and specialist. Your role is to identify and fix
 security vulnerabilities while following secure coding practices.
@@ -326,6 +351,7 @@ security vulnerabilities while following secure coding practices.
 # Security Audit Checklist
 
 ## Input Validation
+
 - [ ] All user inputs are validated and sanitized
 - [ ] SQL injection prevention (parameterized queries)
 - [ ] XSS prevention (output encoding)
@@ -333,6 +359,7 @@ security vulnerabilities while following secure coding practices.
 - [ ] Path traversal prevention (validate file paths)
 
 ## Authentication & Authorization
+
 - [ ] Strong password requirements
 - [ ] Secure session management
 - [ ] Proper access control checks
@@ -340,6 +367,7 @@ security vulnerabilities while following secure coding practices.
 - [ ] Multi-factor authentication where appropriate
 
 ## Data Protection
+
 - [ ] Sensitive data encrypted at rest
 - [ ] Sensitive data encrypted in transit (HTTPS/TLS)
 - [ ] Secrets not hardcoded in source
@@ -347,6 +375,7 @@ security vulnerabilities while following secure coding practices.
 - [ ] PII handling compliant with regulations
 
 ## Dependencies & Configuration
+
 - [ ] Dependencies up to date (no known vulnerabilities)
 - [ ] Security headers configured (CSP, HSTS, etc.)
 - [ ] Error messages don't leak sensitive info
@@ -354,6 +383,7 @@ security vulnerabilities while following secure coding practices.
 - [ ] Logging doesn't include sensitive data
 
 ## Common Vulnerabilities (OWASP Top 10)
+
 1. Injection (SQL, NoSQL, Command, LDAP)
 2. Broken Authentication
 3. Sensitive Data Exposure
@@ -366,12 +396,14 @@ security vulnerabilities while following secure coding practices.
 10. Insufficient Logging & Monitoring
 
 # Security Tools
+
 - npm audit / yarn audit (dependency vulnerabilities)
 - eslint-plugin-security (static analysis)
 - grep for common patterns (eval, innerHTML, dangerouslySetInnerHTML)
 - Check for hardcoded secrets (API keys, passwords)
 
 # Secure Coding Practices
+
 - Principle of least privilege
 - Defense in depth (multiple layers)
 - Fail securely (default deny)
@@ -380,6 +412,7 @@ security vulnerabilities while following secure coding practices.
 - Fix security issues, don't hide them
 
 When you identify a vulnerability, explain:
+
 1. What the vulnerability is
 2. How it could be exploited
 3. What the impact would be
@@ -394,6 +427,7 @@ When you identify a vulnerability, explain:
 **Purpose:** Code review, quality assessment, best practices enforcement
 
 **Allowed Tools:**
+
 - ✅ All read tools (read_file, grep_search, list_directory)
 - ✅ get_diagnostics (check for issues)
 - ✅ git_diff, git_log (review changes)
@@ -403,6 +437,7 @@ When you identify a vulnerability, explain:
 **Trigger Keywords:** review, check, assess, evaluate, quality, best practices, code review
 
 **Prompt Template:**
+
 ```markdown
 You are a senior code reviewer. Your role is to assess code quality and
 provide constructive feedback.
@@ -410,12 +445,14 @@ provide constructive feedback.
 # Code Review Checklist
 
 ## Functionality
+
 - [ ] Code does what it's supposed to do
 - [ ] Edge cases are handled
 - [ ] Error handling is appropriate
 - [ ] No obvious bugs or logic errors
 
 ## Code Quality
+
 - [ ] Code is readable and maintainable
 - [ ] Naming is clear and consistent
 - [ ] Functions are focused and single-purpose
@@ -423,24 +460,28 @@ provide constructive feedback.
 - [ ] DRY principle followed (no duplication)
 
 ## Testing
+
 - [ ] Tests exist for new functionality
 - [ ] Tests cover edge cases
 - [ ] Tests are clear and maintainable
 - [ ] All tests pass
 
 ## Performance
+
 - [ ] No obvious performance issues
 - [ ] Efficient algorithms used
 - [ ] No unnecessary loops or operations
 - [ ] Resources properly managed (memory, connections)
 
 ## Security
+
 - [ ] No security vulnerabilities
 - [ ] Input validation present
 - [ ] No hardcoded secrets
 - [ ] Proper error handling (no info leakage)
 
 ## Style & Conventions
+
 - [ ] Follows project style guide
 - [ ] Consistent formatting
 - [ ] Appropriate comments (why, not what)
@@ -448,6 +489,7 @@ provide constructive feedback.
 - [ ] No console.log or debug statements
 
 # Review Approach
+
 1. Understand the context and purpose
 2. Read the code thoroughly
 3. Check for issues in each category
@@ -456,6 +498,7 @@ provide constructive feedback.
 6. Acknowledge good practices
 
 # Feedback Format
+
 - **Positive**: What's done well
 - **Issues**: What needs to be fixed (with severity)
 - **Suggestions**: How to improve (optional)
@@ -472,6 +515,7 @@ Be constructive, specific, and helpful in your feedback.
 **Purpose:** Performance analysis, optimization, profiling
 
 **Allowed Tools:**
+
 - ✅ All read tools
 - ✅ shell (run benchmarks, profilers)
 - ✅ get_diagnostics (check for performance warnings)
@@ -481,11 +525,13 @@ Be constructive, specific, and helpful in your feedback.
 **Trigger Keywords:** performance, optimize, slow, fast, benchmark, profile, latency, throughput, memory, CPU
 
 **Prompt Template:**
+
 ```markdown
 You are a performance engineer. Your role is to analyze and optimize
 system performance.
 
 # Performance Analysis Methodology
+
 1. **Measure First**: Profile before optimizing
 2. **Identify Bottlenecks**: Find the slowest parts
 3. **Prioritize**: Focus on biggest impact
@@ -496,30 +542,35 @@ system performance.
 # Performance Categories
 
 ## Time Complexity
+
 - Algorithm efficiency (O(n), O(n²), etc.)
 - Unnecessary loops or iterations
 - Redundant calculations
 - Caching opportunities
 
 ## Space Complexity
+
 - Memory usage and leaks
 - Data structure efficiency
 - Unnecessary data copies
 - Buffer sizes
 
 ## I/O Performance
+
 - File system operations
 - Network requests
 - Database queries
 - Caching strategies
 
 ## Concurrency
+
 - Parallelization opportunities
 - Async/await usage
 - Thread pool sizing
 - Lock contention
 
 # Optimization Techniques
+
 - Memoization/caching
 - Lazy loading
 - Batch operations
@@ -530,12 +581,14 @@ system performance.
 - CDN usage
 
 # Performance Tools
+
 - Profilers (CPU, memory)
 - Benchmarking tools
 - Load testing tools
 - Monitoring dashboards
 
 # Optimization Principles
+
 - Measure, don't guess
 - Optimize the bottleneck, not everything
 - Readability vs performance tradeoff
@@ -543,6 +596,7 @@ system performance.
 - Document performance-critical code
 
 When suggesting optimizations, provide:
+
 1. Current performance metrics
 2. Bottleneck identification
 3. Proposed optimization
@@ -562,11 +616,13 @@ When suggesting optimizations, provide:
 **Trigger Keywords:** prototype, experiment, quick test, proof of concept, spike, try out, throwaway
 
 **Prompt Template:**
+
 ```markdown
 You are a rapid prototyper. Your goal is to build working proof-of-concepts
 as quickly as possible.
 
 # Prototype Mode Principles
+
 - Speed over perfection
 - Working code over clean code
 - Experiment freely
@@ -576,6 +632,7 @@ as quickly as possible.
 - Focus on validating ideas
 
 # When to Use Prototype Mode
+
 - Testing a new library or API
 - Validating an architectural approach
 - Creating a quick demo
@@ -583,6 +640,7 @@ as quickly as possible.
 - Spike work before planning
 
 # Restrictions Lifted
+
 - No need for tests
 - No need for documentation
 - No need for error handling (unless critical)
@@ -591,6 +649,7 @@ as quickly as possible.
 - Can skip edge cases
 
 # Important
+
 When the prototype is successful, suggest:
 "This prototype works! Ready to switch to Planning mode to design
 a production-ready version? Or Developer mode to refactor this code?"
@@ -605,7 +664,8 @@ Always mark prototype code clearly so it's not mistaken for production code.
 **Color:** Warm Yellow  
 **Purpose:** Explain concepts, teach best practices, answer "why" questions
 
-**Allowed Tools:** 
+**Allowed Tools:**
+
 - ✅ web_search (research topics)
 - ✅ read_file (show examples from codebase)
 - ✅ grep_search (find patterns to explain)
@@ -614,11 +674,13 @@ Always mark prototype code clearly so it's not mistaken for production code.
 **Trigger Keywords:** explain, teach me, how does, why, understand, learn, what is, tutorial
 
 **Prompt Template:**
+
 ```markdown
 You are a patient technical educator. Your role is to help users understand
 concepts deeply, not just implement solutions.
 
 # Teaching Principles
+
 - Break down complex topics into simple explanations
 - Use analogies and real-world examples
 - Check for understanding with questions
@@ -627,6 +689,7 @@ concepts deeply, not just implement solutions.
 - Never assume prior knowledge
 
 # Teaching Approach
+
 1. Assess current understanding
 2. Explain the concept clearly
 3. Provide concrete examples
@@ -636,6 +699,7 @@ concepts deeply, not just implement solutions.
 7. Check comprehension
 
 # Teaching Techniques
+
 - Use analogies: "Think of it like..."
 - Show examples: "Here's how it works..."
 - Explain why: "This is important because..."
@@ -644,6 +708,7 @@ concepts deeply, not just implement solutions.
 - Step-by-step breakdowns
 
 # Restrictions
+
 - You CANNOT write code in this mode
 - You CANNOT modify files
 - You CAN read files to show examples
@@ -656,18 +721,18 @@ Developer mode to implement it?"
 
 ### Mode Summary Table
 
-| Mode | Icon | Purpose | Tools | Trigger |
-|------|------|---------|-------|---------|
-| Assistant | 💬 | General conversation | None | what, why, explain |
-| Planning | 📋 | Design & research | Read-only + docs | plan, design, architecture |
-| Developer | 👨‍💻 | Implementation | All | implement, code, build |
-| Tool | 🔧 | Enhanced tool usage | All + guidance | tool, execute |
-| Debugger | 🐛 | Bug fixing | Read + diagnostics | debug, error, bug |
-| Security | 🔒 | Security audit | Read + security tools | security, vulnerability |
-| Reviewer | 👀 | Code review | Read-only | review, assess |
-| Performance | ⚡ | Optimization | Read + benchmarks | optimize, slow, performance |
-| Prototype | ⚡🔬 | Quick experiments | All (no quality rules) | prototype, experiment, spike |
-| Teacher | 👨‍🏫 | Education & learning | Read-only | explain, teach, learn |
+| Mode        | Icon | Purpose              | Tools                  | Trigger                      |
+| ----------- | ---- | -------------------- | ---------------------- | ---------------------------- |
+| Assistant   | 💬   | General conversation | None                   | what, why, explain           |
+| Planning    | 📋   | Design & research    | Read-only + docs       | plan, design, architecture   |
+| Developer   | 👨‍💻   | Implementation       | All                    | implement, code, build       |
+| Tool        | 🔧   | Enhanced tool usage  | All + guidance         | tool, execute                |
+| Debugger    | 🐛   | Bug fixing           | Read + diagnostics     | debug, error, bug            |
+| Security    | 🔒   | Security audit       | Read + security tools  | security, vulnerability      |
+| Reviewer    | 👀   | Code review          | Read-only              | review, assess               |
+| Performance | ⚡   | Optimization         | Read + benchmarks      | optimize, slow, performance  |
+| Prototype   | ⚡🔬 | Quick experiments    | All (no quality rules) | prototype, experiment, spike |
+| Teacher     | 👨‍🏫   | Education & learning | Read-only              | explain, teach, learn        |
 
 ---
 
@@ -685,23 +750,24 @@ Developer mode to implement it?"
 
 ### Confidence Thresholds
 
-| Transition | Required Confidence | Auto-Switch | Reason |
-|------------|-------------------|-------------|---------|
-| Any → Explicit | 1.0 | ✅ Always | User command |
-| Any → Debugger | 0.85 | ✅ Yes | Error/bug keywords detected |
-| Any → Security | 0.85 | ✅ Yes | Security keywords detected |
-| Any → Reviewer | 0.80 | ✅ Yes | Review keywords detected |
-| Any → Performance | 0.80 | ✅ Yes | Performance keywords detected |
-| Assistant → Planning | 0.70 | ✅ Yes | Natural progression |
-| Planning → Developer | 0.80 | ✅ Yes | Commitment to implement |
-| Developer → Planning | 0.60 | ✅ Yes | Easy to step back |
-| Developer → Debugger | 0.85 | ✅ Yes | Error encountered |
-| Debugger → Developer | 0.70 | ✅ Yes | Bug fixed, resume work |
-| Any → Tool | 0.90 | ✅ Yes | Explicit tool usage |
+| Transition           | Required Confidence | Auto-Switch | Reason                        |
+| -------------------- | ------------------- | ----------- | ----------------------------- |
+| Any → Explicit       | 1.0                 | ✅ Always   | User command                  |
+| Any → Debugger       | 0.85                | ✅ Yes      | Error/bug keywords detected   |
+| Any → Security       | 0.85                | ✅ Yes      | Security keywords detected    |
+| Any → Reviewer       | 0.80                | ✅ Yes      | Review keywords detected      |
+| Any → Performance    | 0.80                | ✅ Yes      | Performance keywords detected |
+| Assistant → Planning | 0.70                | ✅ Yes      | Natural progression           |
+| Planning → Developer | 0.80                | ✅ Yes      | Commitment to implement       |
+| Developer → Planning | 0.60                | ✅ Yes      | Easy to step back             |
+| Developer → Debugger | 0.85                | ✅ Yes      | Error encountered             |
+| Debugger → Developer | 0.70                | ✅ Yes      | Bug fixed, resume work        |
+| Any → Tool           | 0.90                | ✅ Yes      | Explicit tool usage           |
 
 ### Example Auto-Switch Scenarios
 
 **Scenario 1: Error Encountered**
+
 ```
 User (Developer mode): "Implement authentication"
 → Developer mode active
@@ -714,6 +780,7 @@ User (Developer mode): "Implement authentication"
 ```
 
 **Scenario 2: Security Concern**
+
 ```
 User (Developer mode): "Add user input handling"
 → Developer mode active
@@ -726,6 +793,7 @@ User: "Is this vulnerable to SQL injection?"
 ```
 
 **Scenario 3: Performance Issue**
+
 ```
 User (Developer mode): "This query is really slow"
 → AUTO-SWITCH to Performance mode (performance keyword detected)
@@ -746,6 +814,7 @@ The system maintains mode-aware context snapshots to preserve conversation state
 ### Snapshot Strategy
 
 **Hybrid Approach:**
+
 1. **Lightweight JSON Snapshots** - For quick mode switches (in-memory + disk cache)
 2. **Full XML Snapshots** - For long-term storage and compression (STATE_SNAPSHOT_PROMPT format)
 
@@ -764,19 +833,19 @@ interface ModeTransitionSnapshot {
   timestamp: Date;
   fromMode: ModeType;
   toMode: ModeType;
-  
+
   // Recent conversation context (last 5 messages)
   recentMessages: {
     role: 'user' | 'assistant' | 'system';
     content: string;
     timestamp: Date;
   }[];
-  
+
   // Active state
   activeSkills: string[];
   activeTools: string[];
   currentTask: string | null;
-  
+
   // Mode-specific findings (for specialized modes)
   findings?: {
     debugger?: {
@@ -801,6 +870,7 @@ interface ModeTransitionSnapshot {
 ```
 
 **Example Flow:**
+
 ```
 Developer mode: "Implement authentication"
 → Code written, tests run
@@ -850,7 +920,7 @@ Developer mode: "Implement authentication"
     6. [TODO] Add refresh token support
     7. [TODO] Write tests
   </current_plan>
-  
+
   <mode_history>
     - Planning mode: Researched JWT best practices
     - Developer mode: Implemented registration and login
@@ -876,19 +946,19 @@ interface SnapshotManager {
       findings?: ModeFindings;
     }
   ): ModeTransitionSnapshot;
-  
+
   // Store snapshot in cache
   storeSnapshot(snapshot: ModeTransitionSnapshot): void;
-  
+
   // Retrieve snapshot for mode restoration
   getSnapshot(fromMode: ModeType, toMode: ModeType): ModeTransitionSnapshot | null;
-  
+
   // Get most recent snapshot
   getLatestSnapshot(): ModeTransitionSnapshot | null;
-  
+
   // Create full XML snapshot for compression
   createFullSnapshot(messages: Message[]): Promise<string>;
-  
+
   // Clear old snapshots (older than 1 hour)
   pruneSnapshots(): void;
 }
@@ -897,20 +967,23 @@ interface SnapshotManager {
 ### Snapshot Creation Triggers
 
 **Automatic Snapshot Creation:**
+
 1. **Before Specialized Mode Entry** - Preserve developer context before debugging
 2. **After Specialized Mode Exit** - Preserve findings when returning to developer
 3. **Before Context Compression** - Full XML snapshot for long-term storage
 4. **Before HotSwap** - Full XML snapshot for context reseeding
 
 **Example Triggers:**
+
 ```typescript
 // Trigger 1: Before entering specialized mode
 if (isSpecializedMode(newMode) && currentMode === 'developer') {
-  const snapshot = snapshotManager.createTransitionSnapshot(
-    currentMode,
-    newMode,
-    { messages, activeSkills, activeTools, currentTask }
-  );
+  const snapshot = snapshotManager.createTransitionSnapshot(currentMode, newMode, {
+    messages,
+    activeSkills,
+    activeTools,
+    currentTask,
+  });
   snapshotManager.storeSnapshot(snapshot);
 }
 
@@ -922,7 +995,7 @@ if (isSpecializedMode(currentMode) && newMode === 'developer') {
     const findingsMessage = formatFindings(snapshot.findings);
     contextManager.addMessage({
       role: 'system',
-      content: findingsMessage
+      content: findingsMessage,
     });
   }
 }
@@ -943,11 +1016,12 @@ if (hotswapRequested) {
 ### Snapshot Storage
 
 **In-Memory Cache:**
+
 ```typescript
 class SnapshotCache {
   private cache: Map<string, ModeTransitionSnapshot> = new Map();
   private maxSize = 10;
-  
+
   set(key: string, snapshot: ModeTransitionSnapshot): void {
     if (this.cache.size >= this.maxSize) {
       // Remove oldest snapshot
@@ -956,11 +1030,11 @@ class SnapshotCache {
     }
     this.cache.set(key, snapshot);
   }
-  
+
   get(key: string): ModeTransitionSnapshot | null {
     return this.cache.get(key) || null;
   }
-  
+
   clear(): void {
     this.cache.clear();
   }
@@ -968,6 +1042,7 @@ class SnapshotCache {
 ```
 
 **Disk Cache:**
+
 ```
 ~/.ollm/snapshots/
 ├── session-{id}/
@@ -978,6 +1053,7 @@ class SnapshotCache {
 ### Snapshot Restoration
 
 **Scenario 1: Return from Debugger**
+
 ```typescript
 // User in Developer mode encounters error
 // System auto-switches to Debugger mode
@@ -987,7 +1063,7 @@ class SnapshotCache {
 const snapshot = snapshotManager.getSnapshot('developer', 'debugger');
 if (snapshot?.findings?.debugger) {
   const { errors, rootCause, fixes } = snapshot.findings.debugger;
-  
+
   // Inject findings as system message
   contextManager.addMessage({
     role: 'system',
@@ -998,17 +1074,18 @@ Root Cause: ${rootCause}
 Suggested Fixes: ${fixes.join(', ')}
 
 Continue implementation with these findings in mind.
-    `.trim()
+    `.trim(),
   });
 }
 ```
 
 **Scenario 2: Return from Security Audit**
+
 ```typescript
 const snapshot = snapshotManager.getSnapshot('developer', 'security');
 if (snapshot?.findings?.security) {
   const { vulnerabilities, recommendations } = snapshot.findings.security;
-  
+
   contextManager.addMessage({
     role: 'system',
     content: `
@@ -1020,7 +1097,7 @@ Recommendations:
 ${recommendations.map((r, i) => `${i + 1}. ${r}`).join('\n')}
 
 Apply these security fixes before continuing.
-    `.trim()
+    `.trim(),
   });
 }
 ```
@@ -1028,6 +1105,7 @@ Apply these security fixes before continuing.
 ### Integration with Existing Systems
 
 **Integration with HotSwap:**
+
 ```typescript
 // HotSwapService already uses XML snapshots
 // Extend to support mode-aware snapshots
@@ -1035,7 +1113,7 @@ Apply these security fixes before continuing.
 async swap(newSkills?: string[]): Promise<void> {
   // Create full XML snapshot (existing)
   const xmlSnapshot = await this.generateSnapshot(messages);
-  
+
   // Create mode transition snapshot (new)
   const transitionSnapshot = this.snapshotManager.createTransitionSnapshot(
     this.modeManager.getCurrentMode(),
@@ -1043,7 +1121,7 @@ async swap(newSkills?: string[]): Promise<void> {
     { messages, activeSkills, activeTools }
   );
   this.snapshotManager.storeSnapshot(transitionSnapshot);
-  
+
   // Continue with existing HotSwap flow
   await this.contextManager.clear();
   // ... rest of HotSwap logic
@@ -1051,6 +1129,7 @@ async swap(newSkills?: string[]): Promise<void> {
 ```
 
 **Integration with Compression:**
+
 ```typescript
 // CompressionService uses XML snapshots
 // No changes needed - already compatible
@@ -1058,10 +1137,10 @@ async swap(newSkills?: string[]): Promise<void> {
 async compress(): Promise<void> {
   // Create full XML snapshot (existing)
   const xmlSnapshot = await this.generateSnapshot(messages);
-  
+
   // Compress using XML snapshot
   const compressed = await this.compressionService.compress(xmlSnapshot);
-  
+
   // Replace old messages with compressed version
   await this.contextManager.replaceMessages(compressed);
 }
@@ -1077,7 +1156,6 @@ async compress(): Promise<void> {
 RAG (Retrieval-Augmented Generation) integration has been moved to a separate stage for future development. See the dedicated RAG roadmap document for complete architecture, implementation tasks, and integration specifications.
 
 ---
-
 
 ## Structured Output Support
 
@@ -1095,18 +1173,18 @@ interface StructuredOutputService {
     schema: JSONSchema,
     options?: StructuredOutputOptions
   ): Promise<T>;
-  
+
   // Validate output against schema
   validate(output: string, schema: JSONSchema): ValidationResult<any>;
-  
+
   // Extract JSON from mixed content
   extractJson(output: string): string | null;
 }
 
 interface StructuredOutputOptions {
-  strict: boolean;                // Strict schema enforcement
-  maxRetries: number;             // Retry on validation failure
-  retryDelay: number;             // Delay between retries (ms)
+  strict: boolean; // Strict schema enforcement
+  maxRetries: number; // Retry on validation failure
+  retryDelay: number; // Delay between retries (ms)
 }
 
 interface ValidationResult<T> {
@@ -1155,54 +1233,54 @@ const MODE_OUTPUT_SCHEMAS: Record<ModeType, JSONSchema | null> = {
     properties: {
       errors: { type: 'array', items: { type: 'string' } },
       rootCause: { type: 'string' },
-      fixes: { type: 'array', items: { type: 'string' } }
+      fixes: { type: 'array', items: { type: 'string' } },
     },
-    required: ['errors', 'rootCause', 'fixes']
+    required: ['errors', 'rootCause', 'fixes'],
   },
-  
+
   security: {
     type: 'object',
     properties: {
       vulnerabilities: { type: 'array', items: { type: 'string' } },
-      severity: { 
-        type: 'array', 
-        items: { 
-          type: 'string', 
-          enum: ['low', 'medium', 'high', 'critical'] 
-        } 
+      severity: {
+        type: 'array',
+        items: {
+          type: 'string',
+          enum: ['low', 'medium', 'high', 'critical'],
+        },
       },
-      recommendations: { type: 'array', items: { type: 'string' } }
+      recommendations: { type: 'array', items: { type: 'string' } },
     },
-    required: ['vulnerabilities', 'recommendations']
+    required: ['vulnerabilities', 'recommendations'],
   },
-  
+
   reviewer: {
     type: 'object',
     properties: {
       issues: { type: 'array', items: { type: 'string' } },
       suggestions: { type: 'array', items: { type: 'string' } },
-      positives: { type: 'array', items: { type: 'string' } }
+      positives: { type: 'array', items: { type: 'string' } },
     },
-    required: ['issues', 'suggestions']
+    required: ['issues', 'suggestions'],
   },
-  
+
   performance: {
     type: 'object',
     properties: {
       bottlenecks: { type: 'array', items: { type: 'string' } },
       optimizations: { type: 'array', items: { type: 'string' } },
-      estimatedImprovement: { type: 'string' }
+      estimatedImprovement: { type: 'string' },
     },
-    required: ['bottlenecks', 'optimizations']
+    required: ['bottlenecks', 'optimizations'],
   },
-  
+
   // Other modes don't require structured output
   assistant: null,
   planning: null,
   developer: null,
   tool: null,
   prototype: null,
-  teacher: null
+  teacher: null,
 };
 ```
 
@@ -1216,7 +1294,7 @@ async analyzeWithStructuredOutput(mode: ModeType, context: string): Promise<any>
     // No structured output for this mode
     return this.generateNormalResponse(context);
   }
-  
+
   // Generate with schema enforcement
   const result = await this.structuredOutputService.generateWithSchema(
     {
@@ -1231,7 +1309,7 @@ async analyzeWithStructuredOutput(mode: ModeType, context: string): Promise<any>
       retryDelay: 1000
     }
   );
-  
+
   return result;
 }
 ```
@@ -1246,30 +1324,30 @@ async generateWithSchema<T>(
 ): Promise<T> {
   let attempts = 0;
   let lastError: ValidationError[] | null = null;
-  
+
   while (attempts < options.maxRetries) {
     attempts++;
-    
+
     // Generate response
     const response = await this.provider.chat({
       ...request,
       responseFormat: { type: 'json_schema', schema, strict: options.strict }
     });
-    
+
     // Validate against schema
     const validation = this.validate(response.content, schema);
-    
+
     if (validation.valid) {
       return validation.data as T;
     }
-    
+
     lastError = validation.errors || null;
-    
+
     if (attempts < options.maxRetries) {
       await this.delay(options.retryDelay);
     }
   }
-  
+
   throw new ValidationError(
     `Failed to generate valid output after ${attempts} attempts`,
     lastError
@@ -1280,18 +1358,22 @@ async generateWithSchema<T>(
 ### Integration Points
 
 **Mode Entry:**
+
 - Enable structured output if mode has schema
 - Configure provider with response format
 
 **Mode Exit:**
+
 - Validate and store structured findings
 - Include in mode transition snapshot
 
 **Snapshot Creation:**
+
 - Include structured findings in JSON format
 - Preserve schema validation results
 
 **UI Display:**
+
 - Parse and display structured output nicely
 - Show validation errors if any
 
@@ -1339,6 +1421,7 @@ structuredOutput:
 ### Performance Considerations
 
 **Optimization Strategies:**
+
 1. **Lazy Loading** - Only load snapshots when needed
 2. **Async Storage** - Write to disk asynchronously
 3. **Compression** - Compress JSON snapshots before disk write
@@ -1346,6 +1429,7 @@ structuredOutput:
 5. **Cache Limits** - Keep only last 10 snapshots in memory
 
 **Memory Usage:**
+
 - In-memory cache: ~10 snapshots × ~50KB = ~500KB
 - Disk cache: ~100 snapshots × ~50KB = ~5MB per session
 
@@ -1358,17 +1442,19 @@ structuredOutput:
 The system proactively suggests mode switches to help users discover and understand the mode system.
 
 **Implementation:**
+
 ```typescript
 interface ModeTransitionSuggestion {
   currentMode: ModeType;
   suggestedMode: ModeType;
   reason: string;
   confidence: number;
-  autoSwitch: boolean;  // If false, ask user first
+  autoSwitch: boolean; // If false, ask user first
 }
 ```
 
 **Examples:**
+
 - Assistant → Planning: "This sounds like you want to plan an implementation"
 - Planning → Developer: "The plan is complete. Ready to implement?"
 - Developer → Debugger: "Multiple errors detected. Systematic debugging recommended"
@@ -1378,6 +1464,7 @@ interface ModeTransitionSuggestion {
 Predefined sequences of modes for common tasks:
 
 **Available Workflows:**
+
 1. **Feature Development**: Planning → Developer → Reviewer → Developer
 2. **Bug Fix**: Debugger → Developer → Reviewer
 3. **Security Hardening**: Security → Developer → Security
@@ -1385,6 +1472,7 @@ Predefined sequences of modes for common tasks:
 5. **Learning Session**: Teacher → Prototype → Developer
 
 **Commands:**
+
 ```bash
 /workflow feature_development  # Start workflow
 /workflow status               # Show progress
@@ -1439,6 +1527,7 @@ Combine multiple modes for complex tasks:
 ```
 
 **Preset Hybrid Modes:**
+
 - `secure-developer`: Developer + Security
 - `perf-developer`: Developer + Performance
 - `security-debugger`: Debugger + Security
@@ -1500,16 +1589,17 @@ Visual feedback for mode changes:
 The system is prepared for RAG integration using LanceDB:
 
 **Architecture:**
+
 ```typescript
 interface RAGSystem {
   codebaseIndex: LanceDBIndex;
   docsIndex: LanceDBIndex;
   memoryIndex: LanceDBIndex;
   modeKnowledge: {
-    debugger: LanceDBIndex;     // Common bugs, solutions
-    security: LanceDBIndex;     // Vulnerabilities, fixes
-    performance: LanceDBIndex;  // Optimization patterns
-    planning: LanceDBIndex;     // Design patterns
+    debugger: LanceDBIndex; // Common bugs, solutions
+    security: LanceDBIndex; // Vulnerabilities, fixes
+    performance: LanceDBIndex; // Optimization patterns
+    planning: LanceDBIndex; // Design patterns
   };
 }
 ```
@@ -1519,6 +1609,7 @@ interface RAGSystem {
 **Embedding Model:** `@xenova/transformers` with `all-MiniLM-L6-v2` (384-dim, runs locally)
 
 **Integration Points:**
+
 - Mode entry: Load relevant RAG context
 - Mode exit: Index findings for future use
 - Specialized modes: Query mode-specific knowledge bases
@@ -1542,10 +1633,10 @@ interface ContextAnalysis {
   };
 }
 
-type ModeType = 
-  | 'assistant' 
-  | 'planning' 
-  | 'developer' 
+type ModeType =
+  | 'assistant'
+  | 'planning'
+  | 'developer'
   | 'tool'
   | 'debugger'
   | 'security'
@@ -1555,19 +1646,20 @@ type ModeType =
 interface ContextAnalyzer {
   // Analyze conversation messages for mode recommendation
   analyzeConversation(messages: Message[]): ContextAnalysis;
-  
+
   // Calculate confidence score for a specific mode
   calculateModeConfidence(messages: Message[], mode: ModeType): number;
-  
+
   // Detect keywords in text
   detectKeywords(text: string): { mode: ModeType; keywords: string[] }[];
-  
+
   // Check if tool usage indicates mode switch
   detectToolUsage(messages: Message[]): ModeType | null;
 }
 ```
 
 **Implementation Notes:**
+
 - Analyze last 5 messages for context
 - Weight recent messages higher (exponential decay)
 - Boost confidence for explicit mode requests (+0.5)
@@ -1581,8 +1673,8 @@ interface ContextAnalyzer {
 interface ModeConfig {
   mode: ModeType;
   autoSwitch: boolean;
-  minDuration: number;      // Minimum time in mode (ms)
-  cooldownPeriod: number;   // Time between switches (ms)
+  minDuration: number; // Minimum time in mode (ms)
+  cooldownPeriod: number; // Time between switches (ms)
   confidenceThreshold: number;
 }
 
@@ -1597,34 +1689,28 @@ interface ModeTransition {
 interface PromptModeManager {
   // Get current mode
   getCurrentMode(): ModeType;
-  
+
   // Check if mode should switch
-  shouldSwitchMode(
-    currentMode: ModeType,
-    analysis: ContextAnalysis
-  ): boolean;
-  
+  shouldSwitchMode(currentMode: ModeType, analysis: ContextAnalysis): boolean;
+
   // Switch to a new mode
-  switchMode(
-    newMode: ModeType,
-    trigger: 'auto' | 'manual' | 'tool' | 'explicit'
-  ): Promise<void>;
-  
+  switchMode(newMode: ModeType, trigger: 'auto' | 'manual' | 'tool' | 'explicit'): Promise<void>;
+
   // Build prompt for current mode
   buildPrompt(options: PromptBuildOptions): string;
-  
+
   // Filter tools for current mode
   filterToolsForMode(tools: Tool[], mode: ModeType): Tool[];
-  
+
   // Get mode history
   getModeHistory(): ModeTransition[];
-  
+
   // Enable/disable auto-switching
   setAutoSwitch(enabled: boolean): void;
-  
+
   // Force a specific mode (disables auto-switch)
   forceMode(mode: ModeType): void;
-  
+
   // Register mode change listener
   onModeChange(callback: (transition: ModeTransition) => void): void;
 }
@@ -1639,6 +1725,7 @@ interface PromptBuildOptions {
 ```
 
 **Implementation Notes:**
+
 - Maintain mode history (last 100 transitions)
 - Implement hysteresis (30s minimum duration)
 - Implement cooldown (10s between switches)
@@ -1661,98 +1748,123 @@ const TOOL_ACCESS_RULES: Record<ModeType, ToolAccess> = {
     mode: 'assistant',
     allowedTools: [],
     deniedTools: ['*'],
-    readOnly: true
+    readOnly: true,
   },
-  
+
   planning: {
     mode: 'planning',
     allowedTools: [
-      'web_search', 'web_fetch',
-      'read_file', 'read_multiple_files',
-      'grep_search', 'file_search', 'list_directory',
-      'get_diagnostics'
+      'web_search',
+      'web_fetch',
+      'read_file',
+      'read_multiple_files',
+      'grep_search',
+      'file_search',
+      'list_directory',
+      'get_diagnostics',
     ],
     deniedTools: [
-      'write_file', 'fs_append', 'str_replace', 'delete_file',
-      'execute_pwsh', 'control_pwsh_process',
-      'git_*'
+      'write_file',
+      'fs_append',
+      'str_replace',
+      'delete_file',
+      'execute_pwsh',
+      'control_pwsh_process',
+      'git_*',
     ],
-    readOnly: true
+    readOnly: true,
   },
-  
+
   developer: {
     mode: 'developer',
     allowedTools: ['*'],
     deniedTools: [],
-    readOnly: false
+    readOnly: false,
   },
-  
+
   tool: {
     mode: 'tool',
     allowedTools: ['*'],
     deniedTools: [],
-    readOnly: false
+    readOnly: false,
   },
-  
+
   debugger: {
     mode: 'debugger',
     allowedTools: [
-      'read_file', 'grep_search', 'list_directory',
-      'get_diagnostics', 'shell',
-      'git_diff', 'git_log',
+      'read_file',
+      'grep_search',
+      'list_directory',
+      'get_diagnostics',
+      'shell',
+      'git_diff',
+      'git_log',
       'web_search',
-      'write_file', 'str_replace'  // For fixes only
+      'write_file',
+      'str_replace', // For fixes only
     ],
-    deniedTools: ['delete_file', 'git_commit'],  // Prevent accidental commits
-    readOnly: false
+    deniedTools: ['delete_file', 'git_commit'], // Prevent accidental commits
+    readOnly: false,
   },
-  
+
   security: {
     mode: 'security',
     allowedTools: [
-      'read_file', 'grep_search', 'list_directory',
-      'get_diagnostics', 'shell',
+      'read_file',
+      'grep_search',
+      'list_directory',
+      'get_diagnostics',
+      'shell',
       'web_search',
-      'write_file', 'str_replace'  // For security fixes only
+      'write_file',
+      'str_replace', // For security fixes only
     ],
     deniedTools: ['delete_file'],
-    readOnly: false
+    readOnly: false,
   },
-  
+
   reviewer: {
     mode: 'reviewer',
     allowedTools: [
-      'read_file', 'grep_search', 'list_directory',
-      'get_diagnostics', 'shell',
-      'git_diff', 'git_log'
+      'read_file',
+      'grep_search',
+      'list_directory',
+      'get_diagnostics',
+      'shell',
+      'git_diff',
+      'git_log',
     ],
     deniedTools: ['write_file', 'str_replace', 'delete_file', 'git_*'],
-    readOnly: true
+    readOnly: true,
   },
-  
+
   performance: {
     mode: 'performance',
     allowedTools: [
-      'read_file', 'grep_search', 'list_directory',
-      'get_diagnostics', 'shell',
+      'read_file',
+      'grep_search',
+      'list_directory',
+      'get_diagnostics',
+      'shell',
       'web_search',
-      'write_file', 'str_replace'  // For optimizations
+      'write_file',
+      'str_replace', // For optimizations
     ],
     deniedTools: ['delete_file'],
-    readOnly: false
-  }
+    readOnly: false,
+  },
 };
 
 interface ToolFilter {
   // Filter tools based on mode
   filterTools(tools: Tool[], mode: ModeType): Tool[];
-  
+
   // Check if a tool is allowed in mode
   isToolAllowed(toolName: string, mode: ModeType): boolean;
-  
+
   // Get allowed tools for mode
   getAllowedTools(mode: ModeType): string[];
-  
+
   // Get denied tools for mode
   getDeniedTools(mode: ModeType): string[];
 }
@@ -1797,43 +1909,39 @@ useEffect(() => {
     // Create context manager
     const manager = createContextManager(sessionId, modelInfo, config);
     await manager.start();
-    
+
     // Create prompt infrastructure
     const promptRegistry = new PromptRegistry();
     const promptBuilder = new SystemPromptBuilder(promptRegistry);
     const contextAnalyzer = new ContextAnalyzer();
-    const modeManager = new PromptModeManager(
-      promptBuilder,
-      promptRegistry,
-      contextAnalyzer
-    );
-    
+    const modeManager = new PromptModeManager(promptBuilder, promptRegistry, contextAnalyzer);
+
     // Load saved mode preference or default to assistant
     const savedMode = SettingsService.getInstance().getMode() || 'assistant';
     modeManager.forceMode(savedMode);
-    
+
     // Build initial prompt
     const initialPrompt = modeManager.buildPrompt({
       mode: savedMode,
       tools: [],
       skills: [],
-      workspace: workspaceContext
+      workspace: workspaceContext,
     });
-    
+
     manager.setSystemPrompt(initialPrompt);
-    
+
     // Store for later use
     modeManagerRef.current = modeManager;
-    
+
     // Listen for mode changes
     modeManager.onModeChange((transition) => {
       updateContextState({ currentMode: transition.to });
       SettingsService.getInstance().setMode(transition.to);
     });
-    
+
     setActive(true);
   };
-  
+
   initManager();
 }, [sessionId, modelInfo, config]);
 ```
@@ -1843,46 +1951,46 @@ useEffect(() => {
 ```typescript
 // packages/cli/src/features/context/ChatContext.tsx
 
-const sendMessage = useCallback(async (content: string) => {
-  if (!modeManager) return;
-  
-  // Add user message
-  const userMessage = {
-    id: generateId(),
-    role: 'user',
-    content,
-    timestamp: new Date()
-  };
-  
-  addMessage(userMessage);
-  
-  // Analyze conversation for mode recommendation
-  const messages = await contextManager.getMessages();
-  const analysis = modeManager.analyzeConversation([...messages, userMessage]);
-  
-  // Check if mode should switch
-  const shouldSwitch = modeManager.shouldSwitchMode(
-    modeManager.getCurrentMode(),
-    analysis
-  );
-  
-  if (shouldSwitch) {
-    // Switch mode and rebuild prompt
-    await modeManager.switchMode(analysis.mode, 'auto');
-    
-    const newPrompt = modeManager.buildPrompt({
-      mode: analysis.mode,
-      tools: availableTools,
-      skills: activeSkills,
-      workspace: workspaceContext
-    });
-    
-    contextManager.setSystemPrompt(newPrompt);
-  }
-  
-  // Continue with normal message flow
-  await sendToProvider(userMessage);
-}, [modeManager, contextManager, availableTools, activeSkills]);
+const sendMessage = useCallback(
+  async (content: string) => {
+    if (!modeManager) return;
+
+    // Add user message
+    const userMessage = {
+      id: generateId(),
+      role: 'user',
+      content,
+      timestamp: new Date(),
+    };
+
+    addMessage(userMessage);
+
+    // Analyze conversation for mode recommendation
+    const messages = await contextManager.getMessages();
+    const analysis = modeManager.analyzeConversation([...messages, userMessage]);
+
+    // Check if mode should switch
+    const shouldSwitch = modeManager.shouldSwitchMode(modeManager.getCurrentMode(), analysis);
+
+    if (shouldSwitch) {
+      // Switch mode and rebuild prompt
+      await modeManager.switchMode(analysis.mode, 'auto');
+
+      const newPrompt = modeManager.buildPrompt({
+        mode: analysis.mode,
+        tools: availableTools,
+        skills: activeSkills,
+        workspace: workspaceContext,
+      });
+
+      contextManager.setSystemPrompt(newPrompt);
+    }
+
+    // Continue with normal message flow
+    await sendToProvider(userMessage);
+  },
+  [modeManager, contextManager, availableTools, activeSkills]
+);
 ```
 
 ### Integration 3: Tool Execution Flow
@@ -1892,7 +2000,7 @@ const sendMessage = useCallback(async (content: string) => {
 
 async executeTool(toolCall: ToolCall): Promise<ToolResult> {
   const currentMode = this.modeManager.getCurrentMode();
-  
+
   // Check if tool is allowed in current mode
   if (!this.modeManager.isToolAllowed(toolCall.name, currentMode)) {
     return {
@@ -1903,21 +2011,21 @@ async executeTool(toolCall: ToolCall): Promise<ToolResult> {
       }
     };
   }
-  
+
   // Switch to tool mode during execution
   const previousMode = currentMode;
   if (currentMode !== 'tool') {
     await this.modeManager.switchMode('tool', 'tool');
   }
-  
+
   // Execute tool
   const result = await this.toolRegistry.execute(toolCall);
-  
+
   // Switch back to previous mode
   if (previousMode !== 'tool') {
     await this.modeManager.switchMode(previousMode, 'auto');
   }
-  
+
   return result;
 }
 ```
@@ -1931,7 +2039,7 @@ export class HotSwapService {
   constructor(
     private contextManager: ContextManager,
     private promptRegistry: PromptRegistry,
-    private modeManager: PromptModeManager,  // NEW
+    private modeManager: PromptModeManager, // NEW
     private provider: ProviderAdapter,
     private model: string
   ) {
@@ -1942,23 +2050,23 @@ export class HotSwapService {
     // 1. Generate snapshot
     const messages = await this.contextManager.getMessages();
     const snapshotXml = await this.generateSnapshot(messages);
-    
+
     // 2. Clear context
     await this.contextManager.clear();
-    
+
     // 3. Update mode manager with new skills
     this.modeManager.updateSkills(newSkills || []);
-    
+
     // 4. Build new prompt (defaults to developer mode for skills)
     const newPrompt = this.modeManager.buildPrompt({
       mode: 'developer',
       skills: newSkills,
       tools: this.availableTools,
-      workspace: this.workspaceContext
+      workspace: this.workspaceContext,
     });
-    
+
     this.contextManager.setSystemPrompt(newPrompt);
-    
+
     // 5. Reseed with snapshot
     if (snapshotXml) {
       const parsed = SnapshotParser.parse(snapshotXml);
@@ -1967,17 +2075,17 @@ export class HotSwapService {
         id: `seed-${Date.now()}`,
         role: 'system',
         content: seedContent,
-        timestamp: new Date()
+        timestamp: new Date(),
       });
     }
-    
+
     // 6. Emit events
     this.contextManager.emit('active-skills-updated', newSkills);
     this.modeManager.emit('mode-changed', {
       from: this.modeManager.getCurrentMode(),
       to: 'developer',
       trigger: 'explicit',
-      timestamp: new Date()
+      timestamp: new Date(),
     });
   }
 }
@@ -1995,27 +2103,27 @@ interface ActiveContextState {
   activeMcpServers: string[];
   activePrompts: string[];
   currentPersona: string;
-  currentMode: ModeType;           // NEW
-  allowedTools: string[];          // NEW
-  modeIcon: string;                // NEW
-  modeColor: string;               // NEW
+  currentMode: ModeType; // NEW
+  allowedTools: string[]; // NEW
+  modeIcon: string; // NEW
+  modeColor: string; // NEW
   contextStrategy: 'Standard' | 'Hot Swap';
 }
 
 // Listen for mode changes
 useEffect(() => {
   if (!modeManager) return;
-  
+
   modeManager.onModeChange((transition) => {
     const modeInfo = MODE_DISPLAY_INFO[transition.to];
-    
-    setState(prev => ({
+
+    setState((prev) => ({
       ...prev,
       currentMode: transition.to,
       currentPersona: modeInfo.persona,
       modeIcon: modeInfo.icon,
       modeColor: modeInfo.color,
-      allowedTools: modeManager.getAllowedTools(transition.to)
+      allowedTools: modeManager.getAllowedTools(transition.to),
     }));
   });
 }, [modeManager]);
@@ -2046,50 +2154,50 @@ const MODE_DISPLAY_INFO: Record<ModeType, ModeDisplayInfo> = {
     persona: 'Helpful AI Assistant',
     icon: '💬',
     color: 'blue',
-    description: 'General conversation and explanations'
+    description: 'General conversation and explanations',
   },
   planning: {
     persona: 'Technical Architect & Planner',
     icon: '📋',
     color: 'yellow',
-    description: 'Research and design (read-only)'
+    description: 'Research and design (read-only)',
   },
   developer: {
     persona: 'Senior Software Engineer',
     icon: '👨‍💻',
     color: 'green',
-    description: 'Full implementation access'
+    description: 'Full implementation access',
   },
   tool: {
     persona: 'Tool Expert',
     icon: '🔧',
     color: 'cyan',
-    description: 'Enhanced tool usage'
+    description: 'Enhanced tool usage',
   },
   debugger: {
     persona: 'Debugging Specialist',
     icon: '🐛',
     color: 'red',
-    description: 'Systematic debugging'
+    description: 'Systematic debugging',
   },
   security: {
     persona: 'Security Auditor',
     icon: '🔒',
     color: 'purple',
-    description: 'Security analysis and fixes'
+    description: 'Security analysis and fixes',
   },
   reviewer: {
     persona: 'Code Reviewer',
     icon: '👀',
     color: 'orange',
-    description: 'Code quality assessment'
+    description: 'Code quality assessment',
   },
   performance: {
     persona: 'Performance Engineer',
     icon: '⚡',
     color: 'magenta',
-    description: 'Performance optimization'
-  }
+    description: 'Performance optimization',
+  },
 };
 ```
 
@@ -2120,14 +2228,14 @@ const MODE_DISPLAY_INFO: Record<ModeType, ModeDisplayInfo> = {
 # .ollm/config.yaml
 
 prompt:
-  mode: auto  # auto | assistant | planning | developer | debugger | security | reviewer | performance
-  
+  mode: auto # auto | assistant | planning | developer | debugger | security | reviewer | performance
+
   switching:
     enabled: true
     confidence_threshold: 0.7
-    min_duration: 30000      # 30 seconds
-    cooldown: 10000          # 10 seconds
-  
+    min_duration: 30000 # 30 seconds
+    cooldown: 10000 # 10 seconds
+
   modes:
     assistant:
       enabled: true
@@ -2152,6 +2260,7 @@ prompt:
 ## Testing Strategy
 
 ### Unit Tests
+
 - Context Analyzer keyword detection
 - Mode confidence scoring
 - Tool filtering logic
@@ -2159,6 +2268,7 @@ prompt:
 - Hysteresis timing
 
 ### Integration Tests
+
 - Mode switching flow
 - Tool execution with filtering
 - HotSwap integration
@@ -2166,6 +2276,7 @@ prompt:
 - Prompt building
 
 ### Manual Testing
+
 - Test all 8 modes
 - Test mode transitions
 - Test tool restrictions

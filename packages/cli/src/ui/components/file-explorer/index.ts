@@ -1,6 +1,6 @@
 /**
  * File Explorer UI Component
- * 
+ *
  * Barrel export file for the File Explorer component and its types.
  * This provides a clean public API for importing file explorer functionality.
  */
@@ -18,27 +18,28 @@ export type {
 // Export services
 export { WorkspaceManager } from './WorkspaceManager.js';
 export { PathSanitizer, PathTraversalError, WorkspaceBoundaryError } from './PathSanitizer.js';
-export { FileTreeService, type BuildTreeOptions, type GetVisibleNodesOptions } from './FileTreeService.js';
+export {
+  FileTreeService,
+  type BuildTreeOptions,
+  type GetVisibleNodesOptions,
+} from './FileTreeService.js';
 export { GitStatusService } from './GitStatusService.js';
 export { FocusSystem } from './FocusSystem.js';
 export { EditorIntegration, type EditorResult } from './EditorIntegration.js';
-export { 
-  FileOperations, 
-  FileOperationError, 
+export {
+  FileOperations,
+  FileOperationError,
   PermissionError,
   type FileOperationResult,
   type ConfirmationCallback,
 } from './FileOperations.js';
 export { FollowModeService, type DetectFilePathsOptions } from './FollowModeService.js';
-export { 
-  ExplorerPersistence, 
+export {
+  ExplorerPersistence,
   type ExplorerState,
   type ExplorerPersistenceOptions,
 } from './ExplorerPersistence.js';
-export { 
-  handleError,
-  type ErrorInfo,
-} from './ErrorHandler.js';
+export { handleError, type ErrorInfo } from './ErrorHandler.js';
 
 // Export contexts and hooks
 export {
@@ -73,13 +74,13 @@ export { FileTreeView, type FileTreeViewProps } from './FileTreeView.js';
 export { FocusedFilesPanel, type FocusedFilesPanelProps } from './FocusedFilesPanel.js';
 
 // Export utilities
-export { 
-  injectFocusedFiles, 
-  getFocusedFilesSummary, 
-  exceedsSizeThreshold 
+export {
+  injectFocusedFiles,
+  getFocusedFilesSummary,
+  exceedsSizeThreshold,
 } from './FocusedFilesInjector.js';
-export { 
-  SyntaxViewer, 
+export {
+  SyntaxViewer,
   type SyntaxViewerProps,
   getSupportedLanguages,
   canHighlightFile,
@@ -90,22 +91,10 @@ export {
   type QuickAction,
   type MenuOption,
 } from './QuickActionsMenu.js';
-export {
-  ConfirmationDialog,
-  type ConfirmationDialogProps,
-} from './ConfirmationDialog.js';
-export {
-  QuickOpenDialog,
-  type QuickOpenDialogProps,
-} from './QuickOpenDialog.js';
-export {
-  Header,
-  type HeaderProps,
-} from './Header.js';
-export {
-  HelpPanel,
-  type HelpPanelProps,
-} from './HelpPanel.js';
+export { ConfirmationDialog, type ConfirmationDialogProps } from './ConfirmationDialog.js';
+export { QuickOpenDialog, type QuickOpenDialogProps } from './QuickOpenDialog.js';
+export { Header, type HeaderProps } from './Header.js';
+export { HelpPanel, type HelpPanelProps } from './HelpPanel.js';
 export {
   LoadingIndicator,
   type LoadingIndicatorProps,

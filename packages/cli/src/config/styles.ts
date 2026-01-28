@@ -1,9 +1,9 @@
 /**
  * Styles Registry
- * 
+ *
  * This file serves as the registry for visual styles and themes.
  * It connects the raw JSON theme data to the application's type system.
- * 
+ *
  * Responsibilities:
  * - Load built-in themes from themes.json
  * - Export named theme constants

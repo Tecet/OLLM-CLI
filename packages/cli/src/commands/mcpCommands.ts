@@ -1,6 +1,6 @@
 /**
  * MCP (Model Context Protocol) management commands
- * 
+ *
  * Provides CLI commands for MCP server management, OAuth authentication,
  * and tool/resource/prompt discovery.
  */
@@ -10,13 +10,10 @@ import type { MCPClient } from '@ollm/ollm-cli-core/mcp';
 
 /**
  * MCP list command
- * 
+ *
  * Usage: /mcp list [--tools|--resources|--prompts]
  */
-export const mcpListCommand: CommandHandler = async (
-  args: string[],
-  context: CommandContext
-) => {
+export const mcpListCommand: CommandHandler = async (args: string[], context: CommandContext) => {
   const mcpClient = context.mcpClient as MCPClient;
 
   if (!mcpClient) {
@@ -26,7 +23,7 @@ export const mcpListCommand: CommandHandler = async (
     };
   }
 
-  const showTools = context.flags?.tools || !context.flags?.resources && !context.flags?.prompts;
+  const showTools = context.flags?.tools || (!context.flags?.resources && !context.flags?.prompts);
   const showResources = context.flags?.resources;
   const showPrompts = context.flags?.prompts;
 
@@ -45,7 +42,7 @@ export const mcpListCommand: CommandHandler = async (
     for (const server of servers) {
       const status = server.status.status;
       const statusIcon = status === 'connected' ? '✓' : status === 'error' ? '✗' : '○';
-      
+
       output.push(`[${statusIcon}] ${server.name} (${status})`);
 
       if (server.status.error) {
@@ -56,25 +53,25 @@ export const mcpListCommand: CommandHandler = async (
         if (showTools) {
           const tools = await mcpClient.getTools(server.name);
           output.push(`    Tools: ${tools.length}`);
-            tools.forEach((tool: any) => {
-              output.push(`      - ${tool.name}: ${tool.description}`);
-            });
+          tools.forEach((tool: any) => {
+            output.push(`      - ${tool.name}: ${tool.description}`);
+          });
         }
 
         if (showResources && mcpClient.getResources) {
           const resources = await mcpClient.getResources(server.name);
           output.push(`    Resources: ${resources.length}`);
-            resources.forEach((resource: any) => {
-              output.push(`      - ${resource.name} (${resource.uri})`);
-            });
+          resources.forEach((resource: any) => {
+            output.push(`      - ${resource.name} (${resource.uri})`);
+          });
         }
 
         if (showPrompts && mcpClient.getPrompts) {
           const prompts = await mcpClient.getPrompts(server.name);
           output.push(`    Prompts: ${prompts.length}`);
-            prompts.forEach((prompt: any) => {
-              output.push(`      - ${prompt.name}: ${prompt.description || 'No description'}`);
-            });
+          prompts.forEach((prompt: any) => {
+            output.push(`      - ${prompt.name}: ${prompt.description || 'No description'}`);
+          });
         }
       }
 
@@ -95,7 +92,7 @@ export const mcpListCommand: CommandHandler = async (
 
 /**
  * MCP auth status command
- * 
+ *
  * Usage: /mcp auth status <server>
  */
 export const mcpAuthStatusCommand: CommandHandler = async (
@@ -113,7 +110,7 @@ export const mcpAuthStatusCommand: CommandHandler = async (
 
   // TODO: Implement OAuth status checking
   // This requires storing OAuth providers in context
-  
+
   return {
     success: false,
     message: 'OAuth status checking not yet implemented',
@@ -122,7 +119,7 @@ export const mcpAuthStatusCommand: CommandHandler = async (
 
 /**
  * MCP auth revoke command
- * 
+ *
  * Usage: /mcp auth revoke <server>
  */
 export const mcpAuthRevokeCommand: CommandHandler = async (
@@ -140,7 +137,7 @@ export const mcpAuthRevokeCommand: CommandHandler = async (
 
   // TODO: Implement OAuth token revocation
   // This requires storing OAuth providers in context
-  
+
   return {
     success: false,
     message: 'OAuth token revocation not yet implemented',
@@ -149,7 +146,7 @@ export const mcpAuthRevokeCommand: CommandHandler = async (
 
 /**
  * MCP auth refresh command
- * 
+ *
  * Usage: /mcp auth refresh <server>
  */
 export const mcpAuthRefreshCommand: CommandHandler = async (
@@ -167,7 +164,7 @@ export const mcpAuthRefreshCommand: CommandHandler = async (
 
   // TODO: Implement OAuth token refresh
   // This requires storing OAuth providers in context
-  
+
   return {
     success: false,
     message: 'OAuth token refresh not yet implemented',
@@ -176,13 +173,10 @@ export const mcpAuthRefreshCommand: CommandHandler = async (
 
 /**
  * MCP tools command
- * 
+ *
  * Usage: /mcp tools <server>
  */
-export const mcpToolsCommand: CommandHandler = async (
-  args: string[],
-  context: CommandContext
-) => {
+export const mcpToolsCommand: CommandHandler = async (args: string[], context: CommandContext) => {
   const mcpClient = context.mcpClient as MCPClient;
   const serverName = args[0];
 
@@ -235,7 +229,7 @@ export const mcpToolsCommand: CommandHandler = async (
 
 /**
  * MCP resources command
- * 
+ *
  * Usage: /mcp resources <server>
  */
 export const mcpResourcesCommand: CommandHandler = async (
@@ -278,7 +272,9 @@ export const mcpResourcesCommand: CommandHandler = async (
           `   ${resource.description || 'No description'}`,
           resource.mimeType ? `   Type: ${resource.mimeType}` : '',
           '',
-        ].filter(Boolean).join('\n');
+        ]
+          .filter(Boolean)
+          .join('\n');
       }),
     ].join('\n');
 
@@ -296,7 +292,7 @@ export const mcpResourcesCommand: CommandHandler = async (
 
 /**
  * MCP prompts command
- * 
+ *
  * Usage: /mcp prompts <server>
  */
 export const mcpPromptsCommand: CommandHandler = async (
@@ -338,9 +334,14 @@ export const mcpPromptsCommand: CommandHandler = async (
           `${index + 1}. ${prompt.name}`,
           `   ${prompt.description || 'No description'}`,
           args.length > 0 ? `   Arguments:` : '',
-          ...args.map((arg: any) => `     - ${arg.name}${arg.required ? ' (required)' : ''}: ${arg.description || 'No description'}`),
+          ...args.map(
+            (arg: any) =>
+              `     - ${arg.name}${arg.required ? ' (required)' : ''}: ${arg.description || 'No description'}`
+          ),
           '',
-        ].filter(Boolean).join('\n');
+        ]
+          .filter(Boolean)
+          .join('\n');
       }),
     ].join('\n');
 
@@ -358,13 +359,10 @@ export const mcpPromptsCommand: CommandHandler = async (
 
 /**
  * MCP status command
- * 
+ *
  * Usage: /mcp status [server]
  */
-export const mcpStatusCommand: CommandHandler = async (
-  args: string[],
-  context: CommandContext
-) => {
+export const mcpStatusCommand: CommandHandler = async (args: string[], context: CommandContext) => {
   const mcpClient = context.mcpClient as MCPClient;
 
   if (!mcpClient) {
@@ -380,13 +378,15 @@ export const mcpStatusCommand: CommandHandler = async (
     if (serverName) {
       // Show status for specific server
       const status = mcpClient.getServerStatus(serverName);
-      
+
       const output = [
         `Server: ${status.name}`,
         `Status: ${status.status}`,
         status.error ? `Error: ${status.error}` : '',
         `Tools: ${status.tools}`,
-      ].filter(Boolean).join('\n');
+      ]
+        .filter(Boolean)
+        .join('\n');
 
       return {
         success: true,
@@ -406,9 +406,12 @@ export const mcpStatusCommand: CommandHandler = async (
       const output = [
         `${servers.length} MCP server(s):\n`,
         ...servers.map((server: any) => {
-          const statusIcon = server.status.status === 'connected' ? '✓' 
-            : server.status.status === 'error' ? '✗' 
-            : '○';
+          const statusIcon =
+            server.status.status === 'connected'
+              ? '✓'
+              : server.status.status === 'error'
+                ? '✗'
+                : '○';
           return `[${statusIcon}] ${server.name}: ${server.status.status} (${server.status.tools} tools)`;
         }),
       ].join('\n');

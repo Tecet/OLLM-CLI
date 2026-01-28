@@ -51,13 +51,7 @@ export const sessionToolCall = (): fc.Arbitrary<SessionToolCall> =>
     name: fc.constantFrom('read_file', 'write_file', 'shell', 'grep', 'glob'),
     args: fc.dictionary(
       fc.string({ minLength: 1 }),
-      fc.oneof(
-        fc.string(),
-        fc.integer(),
-        fc.boolean(),
-        fc.constant(null),
-        fc.array(fc.string())
-      )
+      fc.oneof(fc.string(), fc.integer(), fc.boolean(), fc.constant(null), fc.array(fc.string()))
     ),
     result: toolCallResult(),
     timestamp: fc
@@ -101,7 +95,12 @@ export const contextEntry = (): fc.Arbitrary<ContextEntry> =>
     key: fc.string({ minLength: 1, maxLength: 50 }),
     content: fc.string({ minLength: 1, maxLength: 5000 }),
     priority: fc.integer({ min: 0, max: 100 }),
-    source: fc.constantFrom('hook' as const, 'extension' as const, 'user' as const, 'system' as const),
+    source: fc.constantFrom(
+      'hook' as const,
+      'extension' as const,
+      'user' as const,
+      'system' as const
+    ),
     timestamp: fc
       .date({ min: new Date('2020-01-01'), max: new Date('2030-01-01') })
       .map((d) => d.toISOString()),

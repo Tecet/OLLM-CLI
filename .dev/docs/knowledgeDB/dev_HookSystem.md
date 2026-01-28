@@ -4,6 +4,7 @@
 **Status:** Source of Truth
 
 **Related Documents:**
+
 - `dev_ToolExecution.md` - Hook integration with tools
 - `dev_MCPIntegration.md` - MCP OAuth pre-authentication requirements
 - `works_todo.md` - Task #7 (Hook System Documentation updates)
@@ -52,19 +53,23 @@ For each matching hook:
 ### Event Types
 
 **File Events:**
+
 - `fileEdited` - When user saves a file
 - `fileCreated` - When user creates a new file
 - `fileDeleted` - When user deletes a file
 
 **Agent Events:**
+
 - `promptSubmit` - When user sends a message
 - `agentStop` - When agent execution completes
 - `before_tool_selection` - Before selecting tools to use
 
 **User Events:**
+
 - `userTriggered` - When user manually triggers hook
 
 **System Events:**
+
 - `notification` - General notification event
 
 **See:** `packages/core/src/hooks/types.ts` line 30-42 for complete event type definitions
@@ -72,12 +77,14 @@ For each matching hook:
 ### Action Types
 
 **askAgent:**
+
 - Sends a new message to the agent
 - Used for reminders, checks, validations
 - Can access event data in prompt
 - **Valid with all event types**
 
 **runCommand:**
+
 - Executes a shell command
 - Used for builds, tests, linting
 - Can use event data as input
@@ -89,6 +96,7 @@ For each matching hook:
 For security, only specific commands are allowed in `runCommand` hooks:
 
 **Whitelisted Commands:**
+
 - `node` - Node.js runtime
 - `python`, `python3` - Python runtime
 - `bash`, `sh` - Shell scripts
@@ -98,11 +106,12 @@ For security, only specific commands are allowed in `runCommand` hooks:
 **Location:** `packages/core/src/hooks/hookRunner.ts` line 128
 
 **Example:**
+
 ```json
 {
   "then": {
     "type": "runCommand",
-    "command": "npx eslint src/"  // ✅ Allowed
+    "command": "npx eslint src/" // ✅ Allowed
   }
 }
 ```
@@ -111,7 +120,7 @@ For security, only specific commands are allowed in `runCommand` hooks:
 {
   "then": {
     "type": "runCommand",
-    "command": "rm -rf /"  // ❌ Blocked (not whitelisted)
+    "command": "rm -rf /" // ❌ Blocked (not whitelisted)
   }
 }
 ```
@@ -134,11 +143,13 @@ Is Trusted?
 ```
 
 **Trusted Hooks:**
+
 - Built-in hooks (shipped with app)
 - Verified marketplace hooks
 - Hooks in `.ollm/hooks/trusted/`
 
 **User Hooks:**
+
 - Hooks in `.ollm/hooks/`
 - Require confirmation first time
 - Can be marked as trusted
@@ -148,26 +159,26 @@ Is Trusted?
 ```typescript
 interface HookExecutionContext {
   event: {
-    type: string;           // Event type
-    timestamp: number;      // When event occurred
-    data: any;             // Event-specific data
+    type: string; // Event type
+    timestamp: number; // When event occurred
+    data: any; // Event-specific data
   };
-  
+
   file?: {
-    path: string;          // File path (for file events)
-    content?: string;      // File content (if available)
-    changes?: string;      // Diff (for fileEdited)
+    path: string; // File path (for file events)
+    content?: string; // File content (if available)
+    changes?: string; // Diff (for fileEdited)
   };
-  
+
   agent: {
-    mode: string;          // Current agent mode
-    context: any;          // Agent context
-    history: Message[];    // Recent messages
+    mode: string; // Current agent mode
+    context: any; // Agent context
+    history: Message[]; // Recent messages
   };
-  
+
   user: {
-    preferences: any;      // User preferences
-    settings: any;         // User settings
+    preferences: any; // User preferences
+    settings: any; // User settings
   };
 }
 ```
@@ -198,12 +209,14 @@ Return Decision
 ```
 
 **Rate Limiting:**
+
 - Prevent hook spam
 - Max executions per minute
 - Cooldown period between runs
 - Per-hook and global limits
 
 **Dependency Checking:**
+
 - Required tools available?
 - Required files exist?
 - Required services running?
@@ -289,6 +302,7 @@ Modern Hook (TypeScript)
 ```
 
 **Legacy Format:**
+
 ```json
 {
   "name": "Lint on Save",
@@ -298,6 +312,7 @@ Modern Hook (TypeScript)
 ```
 
 **Modern Format:**
+
 ```typescript
 {
   id: "lint-on-save",
@@ -316,30 +331,35 @@ Modern Hook (TypeScript)
 ## Key Interconnections
 
 ### Event System → Hook Registry
+
 - `HookEventHandler` emits events
 - `HookRegistry` stores all hooks
 - `getHooksForEvent()` filters by event type
 - Returns matching hooks for execution
 
 ### Hook Registry → Hook Planner
+
 - `HookPlanner` receives hook list
 - Evaluates execution conditions
 - Checks rate limits and dependencies
 - Returns execution decisions
 
 ### Hook Planner → Hook Runner
+
 - `HookRunner` receives approved hooks
 - Prepares execution context
 - Executes hook action (askAgent or runCommand)
 - Captures and returns result
 
 ### Hook Runner → Agent/Shell
+
 - `askAgent` → Sends message to agent
 - `runCommand` → Executes shell command
 - Results returned to hook system
 - Logged for debugging
 
 ### Hook Debugger → Metrics
+
 - `HookDebugger` logs all executions
 - Tracks success/failure rates
 - Stores execution times
@@ -348,6 +368,7 @@ Modern Hook (TypeScript)
 ## Related Files
 
 **Core Hook System:**
+
 - `packages/core/src/hooks/hookRegistry.ts` - Hook storage and retrieval
 - `packages/core/src/hooks/hookEventHandler.ts` - Event emission
 - `packages/core/src/hooks/hookPlanner.ts` - Execution planning
@@ -355,18 +376,22 @@ Modern Hook (TypeScript)
 - `packages/core/src/hooks/types.ts` - Type definitions
 
 **Hook Management:**
+
 - `packages/core/src/hooks/hookDebugger.ts` - Debugging and logging
 - `packages/core/src/hooks/hookTranslator.ts` - Legacy format translation
 - `packages/core/src/hooks/trustedHooks.ts` - Trust management
 
 **Configuration:**
+
 - `packages/core/src/hooks/config.ts` - Hook configuration
 - `packages/core/src/hooks/messageBus.ts` - Event bus
 
 **CLI Commands:**
+
 - `packages/cli/src/commands/hookCommands.ts` - Hook management commands
 
 **Services:**
+
 - `packages/core/src/services/hookService.ts` - Hook service integration
 - `packages/cli/src/services/hookLoader.ts` - Hook loading
 - `packages/cli/src/services/hookFileService.ts` - Hook file operations
@@ -400,6 +425,7 @@ The agent will then use the appropriate tool (e.g., `shell` tool) to execute the
 **Important:** MCP servers requiring OAuth must be authenticated BEFORE hook execution.
 
 **Authentication Flow:**
+
 1. User authenticates via MCP Panel UI (Ctrl+M → Select server → Press 'O')
 2. OAuth tokens stored locally
 3. Hook execution retrieves existing tokens
@@ -459,6 +485,7 @@ The agent will then use the appropriate tool (e.g., `shell` tool) to execute the
 **Symptom:** Hook doesn't run when event occurs
 
 **Solutions:**
+
 1. Check hook is enabled
 2. Verify event type matches
 3. Check file patterns (for file events)
@@ -470,6 +497,7 @@ The agent will then use the appropriate tool (e.g., `shell` tool) to execute the
 **Symptom:** `runCommand` hook fails with "command not allowed"
 
 **Solution:**
+
 - Only whitelisted commands are allowed
 - Use: node, python, bash, npx, uvx
 - Or use `askAgent` to let agent choose tool
@@ -479,6 +507,7 @@ The agent will then use the appropriate tool (e.g., `shell` tool) to execute the
 **Symptom:** Hook using MCP server fails with auth error
 
 **Solution:**
+
 - Authenticate MCP server BEFORE hook execution
 - Use MCP Panel UI (Ctrl+M → Select server → Press 'O')
 - Verify OAuth tokens are stored
@@ -488,22 +517,22 @@ The agent will then use the appropriate tool (e.g., `shell` tool) to execute the
 
 ## File Locations
 
-| File | Purpose |
-|------|---------|
-| `packages/core/src/hooks/hookRegistry.ts` | Hook storage and retrieval |
-| `packages/core/src/hooks/hookEventHandler.ts` | Event emission |
-| `packages/core/src/hooks/hookPlanner.ts` | Execution planning |
-| `packages/core/src/hooks/hookRunner.ts` | Hook execution (line 128: whitelist) |
-| `packages/core/src/hooks/types.ts` | Type definitions (line 30-42: events) |
-| `packages/core/src/hooks/hookDebugger.ts` | Debugging and logging |
-| `packages/core/src/hooks/hookTranslator.ts` | Legacy format translation |
-| `packages/core/src/hooks/trustedHooks.ts` | Trust management |
-| `packages/core/src/hooks/config.ts` | Hook configuration |
-| `packages/core/src/hooks/messageBus.ts` | Event bus |
-| `packages/cli/src/commands/hookCommands.ts` | Hook management commands |
-| `packages/core/src/services/hookService.ts` | Hook service integration |
-| `packages/cli/src/services/hookLoader.ts` | Hook loading |
-| `packages/cli/src/services/hookFileService.ts` | Hook file operations |
+| File                                           | Purpose                               |
+| ---------------------------------------------- | ------------------------------------- |
+| `packages/core/src/hooks/hookRegistry.ts`      | Hook storage and retrieval            |
+| `packages/core/src/hooks/hookEventHandler.ts`  | Event emission                        |
+| `packages/core/src/hooks/hookPlanner.ts`       | Execution planning                    |
+| `packages/core/src/hooks/hookRunner.ts`        | Hook execution (line 128: whitelist)  |
+| `packages/core/src/hooks/types.ts`             | Type definitions (line 30-42: events) |
+| `packages/core/src/hooks/hookDebugger.ts`      | Debugging and logging                 |
+| `packages/core/src/hooks/hookTranslator.ts`    | Legacy format translation             |
+| `packages/core/src/hooks/trustedHooks.ts`      | Trust management                      |
+| `packages/core/src/hooks/config.ts`            | Hook configuration                    |
+| `packages/core/src/hooks/messageBus.ts`        | Event bus                             |
+| `packages/cli/src/commands/hookCommands.ts`    | Hook management commands              |
+| `packages/core/src/services/hookService.ts`    | Hook service integration              |
+| `packages/cli/src/services/hookLoader.ts`      | Hook loading                          |
+| `packages/cli/src/services/hookFileService.ts` | Hook file operations                  |
 
 ---
 

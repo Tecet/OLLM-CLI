@@ -1,6 +1,6 @@
 /**
  * Parameter validation utilities for tool invocations
- * 
+ *
  * Provides validation of tool parameters against JSON schemas to ensure
  * type safety and catch errors before tool execution.
  */
@@ -57,7 +57,7 @@ export interface ValidationError {
 
 /**
  * Parameter validator for tool invocations
- * 
+ *
  * Implements basic JSON Schema validation for tool parameters.
  * Validates required fields, types, and enum values.
  */
@@ -70,7 +70,7 @@ export class ParameterValidator {
 
   /**
    * Register a tool schema for validation
-   * 
+   *
    * @param toolName Name of the tool
    * @param schema JSON Schema for the tool's parameters
    */
@@ -80,7 +80,7 @@ export class ParameterValidator {
 
   /**
    * Validate parameters against a tool's schema
-   * 
+   *
    * @param toolName Name of the tool
    * @param params Parameters to validate
    * @returns null if valid, ValidationError if invalid
@@ -125,7 +125,7 @@ export class ParameterValidator {
       return null;
     }
 
-    const message = `Invalid parameters for tool "${toolName}": ${errors.map(e => e.message).join('; ')}`;
+    const message = `Invalid parameters for tool "${toolName}": ${errors.map((e) => e.message).join('; ')}`;
 
     return {
       message,
@@ -136,7 +136,7 @@ export class ParameterValidator {
 
   /**
    * Validate a single property against its schema
-   * 
+   *
    * @param path Property path
    * @param value Property value
    * @param schema Property schema
@@ -242,7 +242,7 @@ export class ParameterValidator {
 
   /**
    * Get the JSON Schema type of a value
-   * 
+   *
    * @param value Value to check
    * @returns JSON Schema type string
    */
@@ -267,9 +267,8 @@ export class ParameterValidator {
 
 /**
  * Global parameter validator instance
- * 
+ *
  * This can be used across the application to validate tool parameters.
  * Tools should register their schemas during registration.
  */
 export const globalValidator = new ParameterValidator();
-

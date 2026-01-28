@@ -9,6 +9,7 @@
 {Provide a brief, engaging summary of the most important changes in this release. Focus on what users will care about most. Keep it to 2-3 sentences.}
 
 Example:
+
 > This release introduces powerful new context management features with automatic VRAM monitoring, adds support for MCP (Model Context Protocol) integration, and includes significant performance improvements for large codebases.
 
 ---
@@ -21,6 +22,7 @@ Example:
 - **Another feature**: Description (#PR)
 
 Example:
+
 - **VRAM Monitoring**: Automatic GPU memory monitoring with dynamic context sizing (#123)
 - **MCP Integration**: Full support for Model Context Protocol tools and servers (#124)
 - **Session Recording**: Record and resume chat sessions with compression (#125)
@@ -35,6 +37,7 @@ Example:
 - Resolved bug causing... (#PR)
 
 Example:
+
 - Fixed memory leak in context management during long sessions (#126)
 - Resolved issue with file paths on Windows (#127)
 - Fixed streaming response handling for large outputs (#128)
@@ -50,17 +53,21 @@ Example:
 **What changed**: {Describe what changed and why}
 
 **Migration guide**:
+
 1. {Step-by-step instructions for upgrading}
 2. {Include code examples if applicable}
 
 Example:
+
 ### Configuration File Format Change
 
 **What changed**: Configuration files now use YAML format instead of JSON for better readability and comment support.
 
 **Migration guide**:
+
 1. Rename your config file from `config.json` to `config.yaml`
 2. Convert JSON syntax to YAML:
+
    ```yaml
    # Before (config.json)
    {
@@ -68,11 +75,12 @@ Example:
        "name": "llama3.1:8b"
      }
    }
-   
+
    # After (config.yaml)
    model:
      name: llama3.1:8b
    ```
+
 3. Run `ollm --validate-config` to verify your configuration
 
 ---
@@ -159,6 +167,7 @@ npm install -g ollm-cli@{VERSION}
 
 Example:
 If you have a custom configuration file:
+
 1. Back up your existing config: `cp ~/.ollm/config.json ~/.ollm/config.json.backup`
 2. Follow the migration guide in the "Breaking Changes" section above
 3. Test your configuration: `ollm --validate-config`
@@ -169,6 +178,7 @@ If you have a custom configuration file:
 
 Example:
 Session data format has changed. To migrate existing sessions:
+
 ```bash
 ollm migrate-sessions
 ```
@@ -208,6 +218,7 @@ Thanks to all contributors who made this release possible!
 ## 🐛 Found a Bug?
 
 If you encounter any issues with this release, please:
+
 1. Check the troubleshooting guide (https://github.com/{user}/ollm-cli/blob/main/docs/troubleshooting.md)
 2. Search existing issues (https://github.com/{user}/ollm-cli/issues)
 3. Open a new issue (https://github.com/{user}/ollm-cli/issues/new) with:
@@ -221,6 +232,7 @@ If you encounter any issues with this release, please:
 ## 💬 Feedback
 
 We'd love to hear your feedback on this release! Share your thoughts:
+
 - GitHub Discussions (https://github.com/{user}/ollm-cli/discussions)
 - GitHub Issues (https://github.com/{user}/ollm-cli/issues)
 

@@ -1,9 +1,9 @@
 /**
  * LoadingIndicator - Loading indicator for long-running operations
- * 
+ *
  * Displays a spinner and message for operations that take longer than 500ms.
  * Provides visual feedback to users during file operations, git queries, etc.
- * 
+ *
  * Requirements: 11.4 (Display loading indicators for operations >500ms)
  */
 
@@ -29,15 +29,15 @@ const SPINNER_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', 
 
 /**
  * LoadingIndicator component
- * 
+ *
  * Shows a spinner and optional message for long-running operations.
  * Only displays after the specified delay (default 500ms) to avoid
  * flickering for fast operations.
  */
-export function LoadingIndicator({ 
-  isLoading, 
-  message = 'Loading...', 
-  delay = 500 
+export function LoadingIndicator({
+  isLoading,
+  message = 'Loading...',
+  delay = 500,
 }: LoadingIndicatorProps) {
   const [shouldShow, setShouldShow] = useState(false);
   const [frameIndex, setFrameIndex] = useState(0);
@@ -83,18 +83,18 @@ export function LoadingIndicator({
 
 /**
  * Hook to manage loading state with automatic delay
- * 
+ *
  * Returns a tuple of [isLoading, setIsLoading] similar to useState,
  * but automatically handles the delay logic.
- * 
+ *
  * @param initialState - Initial loading state
  * @param delay - Delay before showing indicator (default: 500ms)
  * @returns Tuple of [isLoading, setIsLoading]
- * 
+ *
  * @example
  * ```tsx
  * const [isLoading, setIsLoading] = useLoadingState(false);
- * 
+ *
  * async function loadData() {
  *   setIsLoading(true);
  *   try {
@@ -103,7 +103,7 @@ export function LoadingIndicator({
  *     setIsLoading(false);
  *   }
  * }
- * 
+ *
  * return <LoadingIndicator isLoading={isLoading} message="Loading data..." />;
  * ```
  */

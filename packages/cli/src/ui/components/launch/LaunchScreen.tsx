@@ -34,22 +34,32 @@ const STANDARD_ANIMATION_HEIGHT = 24;
 
 // Fixed layout constants - these don't change with terminal size
 const LAYOUT = {
-  topPadding: 3,        // Lines from top to banner
-  afterBanner: 2,       // Lines between banner and quick actions  
+  topPadding: 3, // Lines from top to banner
+  afterBanner: 2, // Lines between banner and quick actions
   afterQuickActions: 3, // Lines between quick actions and animation area
 };
 
-const LaunchHeader = React.memo(({ theme, modelInfo, gpuInfo }: { theme: LaunchScreenProps['theme'], modelInfo: LaunchScreenProps['modelInfo'], gpuInfo: LaunchScreenProps['gpuInfo'] }) => (
-  <Box flexDirection="column" alignItems="center" width="100%">
-    <Box marginTop={LAYOUT.topPadding}>
-      <VersionBanner theme={theme} modelInfo={modelInfo} gpuInfo={gpuInfo} />
-    </Box>
+const LaunchHeader = React.memo(
+  ({
+    theme,
+    modelInfo,
+    gpuInfo,
+  }: {
+    theme: LaunchScreenProps['theme'];
+    modelInfo: LaunchScreenProps['modelInfo'];
+    gpuInfo: LaunchScreenProps['gpuInfo'];
+  }) => (
+    <Box flexDirection="column" alignItems="center" width="100%">
+      <Box marginTop={LAYOUT.topPadding}>
+        <VersionBanner theme={theme} modelInfo={modelInfo} gpuInfo={gpuInfo} />
+      </Box>
 
-    <Box marginTop={LAYOUT.afterBanner}>
-      <QuickActions theme={theme} />
+      <Box marginTop={LAYOUT.afterBanner}>
+        <QuickActions theme={theme} />
+      </Box>
     </Box>
-  </Box>
-));
+  )
+);
 LaunchHeader.displayName = 'LaunchHeader';
 
 const LaunchFooter = React.memo(
@@ -95,7 +105,12 @@ export const LaunchScreen: React.FC<LaunchScreenProps> = ({
       <LaunchFooter theme={theme} recentSessions={recentSessions} />
 
       {/* Animation at the bottom - fixed position from content */}
-      <Box flexDirection="column" alignItems="center" width="100%" marginTop={LAYOUT.afterQuickActions}>
+      <Box
+        flexDirection="column"
+        alignItems="center"
+        width="100%"
+        marginTop={LAYOUT.afterQuickActions}
+      >
         <Box height={STANDARD_ANIMATION_HEIGHT} justifyContent="center">
           <LlamaAnimation size="standard" movementRatio={0.85} enabled />
         </Box>

@@ -74,7 +74,9 @@ export class PromptOrchestrator {
   getSystemPromptForTierAndMode(mode: OperationalMode, tier: ContextTier): string {
     const template = this.promptStore.get(mode, tier);
     if (!template) {
-      console.warn(`[ContextManager] No prompt template found for ${mode} in tier ${tier}, using fallback`);
+      console.warn(
+        `[ContextManager] No prompt template found for ${mode} in tier ${tier}, using fallback`
+      );
       const fallback = this.promptStore.get(OperationalMode.DEVELOPER, ContextTier.TIER_3_STANDARD);
       return fallback ?? '';
     }
@@ -90,7 +92,7 @@ export class PromptOrchestrator {
       [ContextTier.TIER_2_BASIC]: 500,
       [ContextTier.TIER_3_STANDARD]: 1000,
       [ContextTier.TIER_4_PREMIUM]: 1500,
-      [ContextTier.TIER_5_ULTRA]: 1500
+      [ContextTier.TIER_5_ULTRA]: 1500,
     };
     return budgets[tier] ?? 1000;
   }
@@ -109,7 +111,7 @@ export class PromptOrchestrator {
     const basePrompt = this.systemPromptBuilder.build({
       interactive: true,
       useSanityChecks: false,
-      skills: activeSkills
+      skills: activeSkills,
     });
     const tierPrompt = this.getSystemPromptForTierAndMode(mode, tier);
     const newPrompt = [tierPrompt, basePrompt].filter(Boolean).join('\n\n');
@@ -119,31 +121,24 @@ export class PromptOrchestrator {
       role: 'system',
       content: newPrompt,
       timestamp: new Date(),
-      tokenCount: this.tokenCounter.countTokensCached(
-        `system-${Date.now()}`,
-        newPrompt
-      )
+      tokenCount: this.tokenCounter.countTokensCached(`system-${Date.now()}`, newPrompt),
     };
 
-    currentContext.messages = currentContext.messages.filter(
-      m => !m.id.startsWith('system-')
-    );
+    currentContext.messages = currentContext.messages.filter((m) => !m.id.startsWith('system-'));
 
     currentContext.messages.unshift(systemPrompt);
     currentContext.systemPrompt = systemPrompt;
 
     // Recalculate total tokens (system prompt changed, so full recalc needed)
     // This includes the new system prompt + all existing messages
-    currentContext.tokenCount = this.tokenCounter.countConversationTokens(
-      currentContext.messages
-    );
+    currentContext.tokenCount = this.tokenCounter.countConversationTokens(currentContext.messages);
     contextPool.setCurrentTokens(currentContext.tokenCount);
 
     emit?.('system-prompt-updated', { content: newPrompt });
 
     return {
       message: systemPrompt,
-      tokenBudget: this.getSystemPromptTokenBudget(tier)
+      tokenBudget: this.getSystemPromptTokenBudget(tier),
     };
   }
 }

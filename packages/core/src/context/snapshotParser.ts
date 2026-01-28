@@ -16,7 +16,7 @@ export class SnapshotParser {
       overallGoal: '',
       keyKnowledge: [],
       fileSystemState: [],
-      currentPlan: []
+      currentPlan: [],
     };
 
     // Remove markdown code blocks if present (```xml ... ```)
@@ -33,15 +33,15 @@ export class SnapshotParser {
       const regex = new RegExp(`<${tagName}>([\\s\\S]*?)</${tagName}>`, 'i');
       const match = cleanContent.match(regex);
       if (!match) return [];
-      
+
       const chunk = match[1];
       // Split by newlines, filter out empty, remove leading non-alphanum (bullets)
       return chunk
         .split('\n')
-        .map(line => line.trim())
-        .filter(line => line.length > 0)
-        .map(line => line.replace(/^[-*•]\s?/, '').trim())
-        .filter(line => line.length > 0 && !line.startsWith('<!--'));
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0)
+        .map((line) => line.replace(/^[-*•]\s?/, '').trim())
+        .filter((line) => line.length > 0 && !line.startsWith('<!--'));
     };
 
     result.keyKnowledge = extractList('key_knowledge');
@@ -63,13 +63,13 @@ export class SnapshotParser {
 ${snapshot.overallGoal}
 
 ## Key Knowledge
-${snapshot.keyKnowledge.map(k => `- ${k}`).join('\n')}
+${snapshot.keyKnowledge.map((k) => `- ${k}`).join('\n')}
 
 ## File System State
-${snapshot.fileSystemState.map(f => `- ${f}`).join('\n')}
+${snapshot.fileSystemState.map((f) => `- ${f}`).join('\n')}
 
 ## Current Plan
-${snapshot.currentPlan.map(p => `- ${p}`).join('\n')}
+${snapshot.currentPlan.map((p) => `- ${p}`).join('\n')}
 `.trim();
   }
 }

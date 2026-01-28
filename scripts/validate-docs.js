@@ -2,13 +2,13 @@
 
 /**
  * Documentation Validation Script
- * 
+ *
  * Validates documentation for:
  * 1. Code example syntax correctness
  * 2. CLI flag accuracy (documented vs actual)
  * 3. Configuration option accuracy (documented vs actual)
  * 4. Link validity (internal and external)
- * 
+ *
  * Requirements: 12.1, 12.2, 12.3, 12.5, 12.6
  */
 
@@ -114,7 +114,7 @@ function validateBashSyntax(code) {
   // Check for unclosed quotes
   const singleQuotes = (code.match(/'/g) || []).length;
   const doubleQuotes = (code.match(/"/g) || []).length;
-  
+
   if (singleQuotes % 2 !== 0) {
     errors.push('Unclosed single quote');
   }
@@ -145,7 +145,7 @@ function validateYAMLSyntax(code) {
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-    
+
     // Skip empty lines and comments
     if (!line.trim() || line.trim().startsWith('#')) {
       continue;
@@ -256,7 +256,7 @@ async function _validateCodeExamples() {
 
     for (const block of blocks) {
       const result = validateCodeBlock(block);
-      
+
       if (result.skipped) {
         continue;
       }
@@ -281,7 +281,7 @@ async function _validateCodeExamples() {
  */
 function extractDocumentedCLIFlags(content) {
   const flags = new Set();
-  
+
   // Pattern 1: Table format (| `-p, --prompt` | ... |)
   const tablePattern = /\|\s*`(-[a-z]|--[a-z-]+)(?:,\s*(-[a-z]|--[a-z-]+))?[^|]*`/gi;
   let match;
@@ -312,7 +312,7 @@ function extractDocumentedCLIFlags(content) {
  */
 function getActualCLIFlags() {
   const cliPath = join(rootDir, 'packages/cli/src/cli.tsx');
-  
+
   if (!existsSync(cliPath)) {
     console.warn(`${colors.yellow}Warning: CLI file not found at ${cliPath}${colors.reset}`);
     return new Set();
@@ -348,7 +348,7 @@ async function _validateCLIFlags() {
   console.log(`\n${colors.blue}Validating CLI flags...${colors.reset}`);
 
   const actualFlags = getActualCLIFlags();
-  
+
   // Check README.md
   const readmePath = join(rootDir, 'README.md');
   if (existsSync(readmePath)) {
@@ -401,7 +401,7 @@ function extractDocumentedConfigOptions(content) {
  */
 function getActualConfigOptions() {
   const configTypesPath = join(rootDir, 'packages/cli/src/config/types.ts');
-  
+
   if (!existsSync(configTypesPath)) {
     console.warn(`${colors.yellow}Warning: Config types file not found${colors.reset}`);
     return new Set();
@@ -427,7 +427,7 @@ async function _validateConfigOptions() {
   console.log(`\n${colors.blue}Validating configuration options...${colors.reset}`);
 
   const actualOptions = getActualConfigOptions();
-  
+
   // Check configuration.md
   const configDocPath = join(rootDir, 'docs/configuration.md');
   if (existsSync(configDocPath)) {
@@ -435,18 +435,19 @@ async function _validateConfigOptions() {
     const documentedOptions = extractDocumentedConfigOptions(content);
 
     // Only validate options that look like config keys (not env vars)
-    const configKeys = documentedOptions.filter(opt => !opt.startsWith('OLLM_'));
+    const configKeys = documentedOptions.filter((opt) => !opt.startsWith('OLLM_'));
 
     for (const option of configKeys) {
       if (actualOptions.has(option)) {
         results.configOptions.passed++;
       } else {
         // Some documented options might be nested, so be lenient
-        const isNested = Array.from(actualOptions).some(actual => 
-          actual.toLowerCase().includes(option.toLowerCase()) ||
-          option.toLowerCase().includes(actual.toLowerCase())
+        const isNested = Array.from(actualOptions).some(
+          (actual) =>
+            actual.toLowerCase().includes(option.toLowerCase()) ||
+            option.toLowerCase().includes(actual.toLowerCase())
         );
-        
+
         if (isNested) {
           results.configOptions.passed++;
         } else {
@@ -467,7 +468,7 @@ async function _validateConfigOptions() {
  */
 function extractLinks(content, filePath) {
   const links = [];
-  
+
   // Pattern 1: [text](url)
   const markdownLinkPattern = /\[([^\]]+)\]\(([^)]+)\)/g;
   let match;
@@ -497,10 +498,10 @@ function extractLinks(content, filePath) {
  */
 function checkInternalLink(link, sourceFile) {
   const { url } = link;
-  
+
   // Remove anchor
   const urlWithoutAnchor = url.split('#')[0];
-  
+
   if (!urlWithoutAnchor) {
     // Just an anchor link, assume valid
     return true;
@@ -625,8 +626,10 @@ function _printResults() {
   // Code examples
   console.log(`\n${colors.blue}Code Examples:${colors.reset}`);
   console.log(`  Passed: ${colors.green}${results.codeExamples.passed}${colors.reset}`);
-  console.log(`  Failed: ${results.codeExamples.failed > 0 ? colors.red : colors.green}${results.codeExamples.failed}${colors.reset}`);
-  
+  console.log(
+    `  Failed: ${results.codeExamples.failed > 0 ? colors.red : colors.green}${results.codeExamples.failed}${colors.reset}`
+  );
+
   if (results.codeExamples.errors.length > 0) {
     console.log(`\n  ${colors.red}Errors:${colors.reset}`);
     for (const error of results.codeExamples.errors) {
@@ -639,8 +642,10 @@ function _printResults() {
   // CLI flags
   console.log(`\n${colors.blue}CLI Flags:${colors.reset}`);
   console.log(`  Passed: ${colors.green}${results.cliFlags.passed}${colors.reset}`);
-  console.log(`  Failed: ${results.cliFlags.failed > 0 ? colors.red : colors.green}${results.cliFlags.failed}${colors.reset}`);
-  
+  console.log(
+    `  Failed: ${results.cliFlags.failed > 0 ? colors.red : colors.green}${results.cliFlags.failed}${colors.reset}`
+  );
+
   if (results.cliFlags.errors.length > 0) {
     console.log(`\n  ${colors.red}Errors:${colors.reset}`);
     for (const error of results.cliFlags.errors) {
@@ -653,8 +658,10 @@ function _printResults() {
   // Config options
   console.log(`\n${colors.blue}Configuration Options:${colors.reset}`);
   console.log(`  Passed: ${colors.green}${results.configOptions.passed}${colors.reset}`);
-  console.log(`  Failed: ${results.configOptions.failed > 0 ? colors.red : colors.green}${results.configOptions.failed}${colors.reset}`);
-  
+  console.log(
+    `  Failed: ${results.configOptions.failed > 0 ? colors.red : colors.green}${results.configOptions.failed}${colors.reset}`
+  );
+
   if (results.configOptions.errors.length > 0) {
     console.log(`\n  ${colors.red}Errors:${colors.reset}`);
     for (const error of results.configOptions.errors) {
@@ -667,8 +674,10 @@ function _printResults() {
   // Links
   console.log(`\n${colors.blue}Links:${colors.reset}`);
   console.log(`  Passed: ${colors.green}${results.links.passed}${colors.reset}`);
-  console.log(`  Failed: ${results.links.failed > 0 ? colors.red : colors.green}${results.links.failed}${colors.reset}`);
-  
+  console.log(
+    `  Failed: ${results.links.failed > 0 ? colors.red : colors.green}${results.links.failed}${colors.reset}`
+  );
+
   if (results.links.errors.length > 0) {
     console.log(`\n  ${colors.red}Errors:${colors.reset}`);
     for (const error of results.links.errors) {
@@ -679,15 +688,23 @@ function _printResults() {
   }
 
   // Summary
-  const totalPassed = results.codeExamples.passed + results.cliFlags.passed + 
-                      results.configOptions.passed + results.links.passed;
-  const totalFailed = results.codeExamples.failed + results.cliFlags.failed + 
-                      results.configOptions.failed + results.links.failed;
+  const totalPassed =
+    results.codeExamples.passed +
+    results.cliFlags.passed +
+    results.configOptions.passed +
+    results.links.passed;
+  const totalFailed =
+    results.codeExamples.failed +
+    results.cliFlags.failed +
+    results.configOptions.failed +
+    results.links.failed;
 
   console.log(`\n${'='.repeat(60)}`);
   console.log(`${colors.blue}Summary:${colors.reset}`);
   console.log(`  Total Passed: ${colors.green}${totalPassed}${colors.reset}`);
-  console.log(`  Total Failed: ${totalFailed > 0 ? colors.red : colors.green}${totalFailed}${colors.reset}`);
+  console.log(
+    `  Total Failed: ${totalFailed > 0 ? colors.red : colors.green}${totalFailed}${colors.reset}`
+  );
   console.log('='.repeat(60));
 
   return totalFailed === 0;
@@ -699,8 +716,10 @@ function _printResults() {
 async function main() {
   console.log(`${colors.blue}OLLM CLI Documentation Validator${colors.reset}`);
   console.log(`${colors.yellow}Documentation validation is currently disabled${colors.reset}`);
-  console.log(`${colors.gray}To enable, uncomment the validation calls in scripts/validate-docs.js${colors.reset}`);
-  
+  console.log(
+    `${colors.gray}To enable, uncomment the validation calls in scripts/validate-docs.js${colors.reset}`
+  );
+
   // TEMPORARILY DISABLED - Uncomment to re-enable validation
   /*
   try {
@@ -717,7 +736,7 @@ async function main() {
     process.exit(1);
   }
   */
-  
+
   // Exit successfully when disabled
   process.exit(0);
 }

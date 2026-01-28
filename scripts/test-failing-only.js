@@ -21,26 +21,27 @@ for (const testFile of failingTests) {
   console.log(`\n${'='.repeat(80)}`);
   console.log(`Testing: ${testFile}`);
   console.log('='.repeat(80));
-  
+
   try {
     const output = execSync(`npm test -- ${testFile}`, {
       encoding: 'utf-8',
       stdio: 'pipe',
       maxBuffer: 10 * 1024 * 1024,
     });
-    
+
     // Extract only FAIL lines and assertion errors
     const lines = output.split('\n');
-    const relevantLines = lines.filter(line => 
-      line.includes('FAIL') || 
-      line.includes('AssertionError') ||
-      line.includes('expected') ||
-      line.includes('Error:')
+    const relevantLines = lines.filter(
+      (line) =>
+        line.includes('FAIL') ||
+        line.includes('AssertionError') ||
+        line.includes('expected') ||
+        line.includes('Error:')
     );
-    
+
     if (relevantLines.length > 0) {
       console.log('\nFailures:');
-      relevantLines.slice(0, 20).forEach(line => console.log(line));
+      relevantLines.slice(0, 20).forEach((line) => console.log(line));
     } else {
       console.log('✓ All tests passed');
     }
@@ -48,16 +49,17 @@ for (const testFile of failingTests) {
     // Test failed, extract error info
     const output = error.stdout?.toString() || error.stderr?.toString() || '';
     const lines = output.split('\n');
-    
+
     // Find FAIL lines
-    const failLines = lines.filter(line => 
-      line.includes('FAIL') || 
-      line.includes('AssertionError') ||
-      (line.includes('expected') && line.includes('to'))
+    const failLines = lines.filter(
+      (line) =>
+        line.includes('FAIL') ||
+        line.includes('AssertionError') ||
+        (line.includes('expected') && line.includes('to'))
     );
-    
+
     console.log('\nFailures:');
-    failLines.slice(0, 15).forEach(line => console.log(line.trim()));
+    failLines.slice(0, 15).forEach((line) => console.log(line.trim()));
   }
 }
 

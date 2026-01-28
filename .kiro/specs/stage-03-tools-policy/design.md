@@ -47,7 +47,6 @@ The design prioritizes safety (policy-controlled execution), extensibility (easy
 └─────────────────────────────────────────────────────────────┘
 ```
 
-
 ### Tool Execution Flow
 
 ```
@@ -99,7 +98,6 @@ LLM requests tool call
                 └───────────────┘
 ```
 
-
 ## Components and Interfaces
 
 ### Tool Types (`packages/core/src/tools/types.ts`)
@@ -108,8 +106,8 @@ LLM requests tool call
 
 ```typescript
 export interface ToolResult {
-  llmContent: string;      // Content sent to LLM
-  returnDisplay: string;   // Content displayed to user
+  llmContent: string; // Content sent to LLM
+  returnDisplay: string; // Content displayed to user
   error?: {
     message: string;
     type: string;
@@ -124,7 +122,7 @@ export interface ToolCallConfirmationDetails {
   toolName: string;
   description: string;
   risk: 'low' | 'medium' | 'high';
-  locations?: string[];  // Files/resources affected
+  locations?: string[]; // Files/resources affected
 }
 ```
 
@@ -133,18 +131,13 @@ export interface ToolCallConfirmationDetails {
 ```typescript
 export interface ToolInvocation<TParams extends object, TResult> {
   params: TParams;
-  
+
   getDescription(): string;
   toolLocations(): string[];
-  
-  shouldConfirmExecute(
-    abortSignal: AbortSignal
-  ): Promise<ToolCallConfirmationDetails | false>;
-  
-  execute(
-    signal: AbortSignal,
-    updateOutput?: (output: string) => void
-  ): Promise<TResult>;
+
+  shouldConfirmExecute(abortSignal: AbortSignal): Promise<ToolCallConfirmationDetails | false>;
+
+  execute(signal: AbortSignal, updateOutput?: (output: string) => void): Promise<TResult>;
 }
 ```
 
@@ -157,16 +150,12 @@ export interface DeclarativeTool<TParams extends object, TResult> {
   schema: {
     name: string;
     description?: string;
-    parameters?: Record<string, unknown>;  // JSON Schema
+    parameters?: Record<string, unknown>; // JSON Schema
   };
-  
-  createInvocation(
-    params: TParams,
-    messageBus: MessageBus
-  ): ToolInvocation<TParams, TResult>;
+
+  createInvocation(params: TParams, messageBus: MessageBus): ToolInvocation<TParams, TResult>;
 }
 ```
-
 
 ### Tool Registry (`packages/core/src/tools/tool-registry.ts`)
 
@@ -196,22 +185,21 @@ export class ToolRegistry {
 
   list(): DeclarativeTool<any, any>[] {
     // Return tools in alphabetical order by name
-    return Array.from(this.tools.values())
-      .sort((a, b) => a.name.localeCompare(b.name));
+    return Array.from(this.tools.values()).sort((a, b) => a.name.localeCompare(b.name));
   }
 
   getFunctionSchemas(): ToolSchema[] {
-    return this.list().map(tool => tool.schema);
+    return this.list().map((tool) => tool.schema);
   }
 }
 ```
 
 **Key Behaviors:**
+
 - Tools are stored by name as the unique key
 - Registering a tool with an existing name replaces the previous tool
 - List returns tools in alphabetical order for consistency
 - getFunctionSchemas converts tools to provider-compatible format
-
 
 ### Policy Engine (`packages/core/src/policy/policyEngine.ts`)
 
@@ -223,15 +211,15 @@ export class ToolRegistry {
 export type PolicyDecision = 'allow' | 'deny' | 'ask';
 
 export interface PolicyRule {
-  tool: string;              // Tool name or '*' for all
+  tool: string; // Tool name or '*' for all
   action: PolicyDecision;
   risk?: 'low' | 'medium' | 'high';
-  message?: string;          // Custom confirmation message
+  message?: string; // Custom confirmation message
   conditions?: PolicyCondition[];
 }
 
 export interface PolicyCondition {
-  param: string;             // Parameter name
+  param: string; // Parameter name
   operator: 'equals' | 'contains' | 'matches' | 'startsWith';
   value: string | string[];
 }
@@ -248,22 +236,19 @@ export interface PolicyConfig {
 export class PolicyEngine {
   constructor(private config: PolicyConfig) {}
 
-  evaluate(
-    toolName: string,
-    params: Record<string, unknown>
-  ): PolicyDecision {
+  evaluate(toolName: string, params: Record<string, unknown>): PolicyDecision {
     // Find matching rule (tool-specific rules first, then wildcard)
     const rule = this.findMatchingRule(toolName, params);
-    
+
     if (rule) {
       return rule.action;
     }
-    
+
     return this.config.defaultAction;
   }
 
   getRiskLevel(toolName: string): 'low' | 'medium' | 'high' {
-    const rule = this.config.rules.find(r => r.tool === toolName);
+    const rule = this.config.rules.find((r) => r.tool === toolName);
     return rule?.risk ?? this.inferRiskLevel(toolName);
   }
 
@@ -279,7 +264,7 @@ export class PolicyEngine {
         }
       }
     }
-    
+
     // Check wildcard rules
     for (const rule of this.config.rules) {
       if (rule.tool === '*') {
@@ -288,7 +273,7 @@ export class PolicyEngine {
         }
       }
     }
-    
+
     return undefined;
   }
 
@@ -299,13 +284,13 @@ export class PolicyEngine {
     if (!conditions || conditions.length === 0) {
       return true;
     }
-    
-    return conditions.every(condition => {
+
+    return conditions.every((condition) => {
       const value = params[condition.param];
       if (value === undefined) return false;
-      
+
       const valueStr = String(value);
-      
+
       switch (condition.operator) {
         case 'equals':
           return valueStr === condition.value;
@@ -337,7 +322,6 @@ export class PolicyEngine {
 }
 ```
 
-
 ### Message Bus (`packages/core/src/confirmation-bus/messageBus.ts`)
 
 **Purpose**: Async communication channel for requesting and receiving user confirmations.
@@ -346,22 +330,25 @@ export class PolicyEngine {
 
 ```typescript
 export interface ConfirmationRequest {
-  id: string;  // Correlation ID
+  id: string; // Correlation ID
   details: ToolCallConfirmationDetails;
   timeout?: number;
 }
 
 export interface ConfirmationResponse {
-  id: string;  // Correlation ID
+  id: string; // Correlation ID
   approved: boolean;
 }
 
 export class MessageBus {
-  private pendingRequests: Map<string, {
-    resolve: (response: ConfirmationResponse) => void;
-    reject: (error: Error) => void;
-    timeoutId?: NodeJS.Timeout;
-  }>;
+  private pendingRequests: Map<
+    string,
+    {
+      resolve: (response: ConfirmationResponse) => void;
+      reject: (error: Error) => void;
+      timeoutId?: NodeJS.Timeout;
+    }
+  >;
 
   constructor() {
     this.pendingRequests = new Map();
@@ -373,7 +360,7 @@ export class MessageBus {
     timeout: number = 60000
   ): Promise<boolean> {
     const id = crypto.randomUUID();
-    
+
     return new Promise((resolve, reject) => {
       // Handle abort signal
       if (abortSignal) {
@@ -382,13 +369,13 @@ export class MessageBus {
           reject(new Error('Confirmation request cancelled'));
         });
       }
-      
+
       // Set timeout
       const timeoutId = setTimeout(() => {
         this.cancelRequest(id);
         reject(new Error('Confirmation request timed out'));
       }, timeout);
-      
+
       // Store pending request
       this.pendingRequests.set(id, {
         resolve: (response) => {
@@ -398,7 +385,7 @@ export class MessageBus {
         reject,
         timeoutId,
       });
-      
+
       // Emit request event (to be handled by UI)
       this.emitRequest({ id, details, timeout });
     });
@@ -429,7 +416,6 @@ export class MessageBus {
 }
 ```
 
-
 ### Output Helpers (`packages/core/src/tools/output-helpers.ts`)
 
 **Purpose**: Utilities for truncating and formatting tool output.
@@ -450,7 +436,7 @@ export class OutputFormatter {
     let content = output;
     let truncated = false;
     let omitted: string | undefined;
-    
+
     // Truncate by lines
     if (config.maxLines) {
       const lines = content.split('\n');
@@ -460,20 +446,20 @@ export class OutputFormatter {
         omitted = `${lines.length - config.maxLines} lines`;
       }
     }
-    
+
     // Truncate by characters
     if (config.maxChars && content.length > config.maxChars) {
       content = content.slice(0, config.maxChars);
       truncated = true;
-      omitted = omitted 
+      omitted = omitted
         ? `${omitted} and ${output.length - config.maxChars} characters`
         : `${output.length - config.maxChars} characters`;
     }
-    
+
     if (truncated) {
       content += `\n\n[Output truncated: ${omitted} omitted]`;
     }
-    
+
     return { content, truncated, omitted };
   }
 
@@ -488,7 +474,6 @@ export class OutputFormatter {
   }
 }
 ```
-
 
 ## Built-in Tools
 
@@ -532,9 +517,10 @@ class ReadFileInvocation implements ToolInvocation<ReadFileParams, ToolResult> {
   ) {}
 
   getDescription(): string {
-    const range = this.params.startLine || this.params.endLine
-      ? ` (lines ${this.params.startLine ?? 1}-${this.params.endLine ?? 'end'})`
-      : '';
+    const range =
+      this.params.startLine || this.params.endLine
+        ? ` (lines ${this.params.startLine ?? 1}-${this.params.endLine ?? 'end'})`
+        : '';
     return `Read ${this.params.path}${range}`;
   }
 
@@ -552,14 +538,14 @@ class ReadFileInvocation implements ToolInvocation<ReadFileParams, ToolResult> {
       // Read file
       const content = await fs.readFile(this.params.path, 'utf-8');
       const lines = content.split('\n');
-      
+
       // Apply line range
       const start = (this.params.startLine ?? 1) - 1;
       const end = this.params.endLine ?? lines.length;
       const selectedLines = lines.slice(start, end);
-      
+
       const result = selectedLines.join('\n');
-      
+
       return {
         llmContent: result,
         returnDisplay: result,
@@ -577,7 +563,6 @@ class ReadFileInvocation implements ToolInvocation<ReadFileParams, ToolResult> {
   }
 }
 ```
-
 
 **read_many_files Tool:**
 
@@ -630,7 +615,7 @@ class ReadManyFilesInvocation implements ToolInvocation<ReadManyFilesParams, Too
 
   async execute(signal: AbortSignal): Promise<ToolResult> {
     const results: string[] = [];
-    
+
     for (const path of this.params.paths) {
       try {
         const content = await fs.readFile(path, 'utf-8');
@@ -639,9 +624,9 @@ class ReadManyFilesInvocation implements ToolInvocation<ReadManyFilesParams, Too
         results.push(`=== ${path} ===\nError: ${(error as Error).message}\n`);
       }
     }
-    
+
     const combined = results.join('\n');
-    
+
     return {
       llmContent: combined,
       returnDisplay: combined,
@@ -649,7 +634,6 @@ class ReadManyFilesInvocation implements ToolInvocation<ReadManyFilesParams, Too
   }
 }
 ```
-
 
 ### File Writing Tools
 
@@ -701,15 +685,15 @@ class WriteFileInvocation implements ToolInvocation<WriteFileParams, ToolResult>
 
   async shouldConfirmExecute(abortSignal: AbortSignal) {
     const decision = this.policyEngine.evaluate('write_file', this.params);
-    
+
     if (decision === 'allow') {
       return false;
     }
-    
+
     if (decision === 'deny') {
       throw new Error('Write operation denied by policy');
     }
-    
+
     // Ask for confirmation
     const risk = this.policyEngine.getRiskLevel('write_file');
     return {
@@ -723,8 +707,11 @@ class WriteFileInvocation implements ToolInvocation<WriteFileParams, ToolResult>
   async execute(signal: AbortSignal): Promise<ToolResult> {
     try {
       // Check if file exists
-      const exists = await fs.access(this.params.path).then(() => true).catch(() => false);
-      
+      const exists = await fs
+        .access(this.params.path)
+        .then(() => true)
+        .catch(() => false);
+
       if (exists && !this.params.overwrite) {
         return {
           llmContent: '',
@@ -735,14 +722,14 @@ class WriteFileInvocation implements ToolInvocation<WriteFileParams, ToolResult>
           },
         };
       }
-      
+
       // Create parent directories
       const dir = path.dirname(this.params.path);
       await fs.mkdir(dir, { recursive: true });
-      
+
       // Write file
       await fs.writeFile(this.params.path, this.params.content, 'utf-8');
-      
+
       return {
         llmContent: `Successfully wrote ${this.params.content.length} characters to ${this.params.path}`,
         returnDisplay: `Wrote to ${this.params.path}`,
@@ -761,16 +748,15 @@ class WriteFileInvocation implements ToolInvocation<WriteFileParams, ToolResult>
 }
 ```
 
-
 **edit_file Tool:**
 
 ```typescript
 interface EditFileParams {
   path: string;
   edits: Array<{
-    target: string;      // Text to find
+    target: string; // Text to find
     replacement: string; // Text to replace with
-    lineHint?: number;   // Optional line number hint
+    lineHint?: number; // Optional line number hint
   }>;
 }
 
@@ -823,15 +809,15 @@ class EditFileInvocation implements ToolInvocation<EditFileParams, ToolResult> {
 
   async shouldConfirmExecute(abortSignal: AbortSignal) {
     const decision = this.policyEngine.evaluate('edit_file', this.params);
-    
+
     if (decision === 'allow') {
       return false;
     }
-    
+
     if (decision === 'deny') {
       throw new Error('Edit operation denied by policy');
     }
-    
+
     const risk = this.policyEngine.getRiskLevel('edit_file');
     return {
       toolName: 'edit_file',
@@ -844,11 +830,12 @@ class EditFileInvocation implements ToolInvocation<EditFileParams, ToolResult> {
   async execute(signal: AbortSignal): Promise<ToolResult> {
     try {
       let content = await fs.readFile(this.params.path, 'utf-8');
-      
+
       // Apply each edit
       for (const edit of this.params.edits) {
-        const occurrences = (content.match(new RegExp(this.escapeRegex(edit.target), 'g')) || []).length;
-        
+        const occurrences = (content.match(new RegExp(this.escapeRegex(edit.target), 'g')) || [])
+          .length;
+
         if (occurrences === 0) {
           return {
             llmContent: '',
@@ -859,7 +846,7 @@ class EditFileInvocation implements ToolInvocation<EditFileParams, ToolResult> {
             },
           };
         }
-        
+
         if (occurrences > 1) {
           return {
             llmContent: '',
@@ -870,13 +857,13 @@ class EditFileInvocation implements ToolInvocation<EditFileParams, ToolResult> {
             },
           };
         }
-        
+
         content = content.replace(edit.target, edit.replacement);
       }
-      
+
       // Write back
       await fs.writeFile(this.params.path, content, 'utf-8');
-      
+
       return {
         llmContent: `Successfully applied ${this.params.edits.length} edits to ${this.params.path}`,
         returnDisplay: `Edited ${this.params.path}`,
@@ -898,7 +885,6 @@ class EditFileInvocation implements ToolInvocation<EditFileParams, ToolResult> {
   }
 }
 ```
-
 
 ### File Discovery Tools
 
@@ -961,13 +947,11 @@ class GlobInvocation implements ToolInvocation<GlobParams, ToolResult> {
         dot: this.params.includeHidden ?? false,
         ignore: ['**/node_modules/**', '**/.git/**'],
       });
-      
-      const limited = this.params.maxResults
-        ? matches.slice(0, this.params.maxResults)
-        : matches;
-      
+
+      const limited = this.params.maxResults ? matches.slice(0, this.params.maxResults) : matches;
+
       const result = limited.join('\n');
-      
+
       return {
         llmContent: result,
         returnDisplay: `Found ${limited.length} files${matches.length > limited.length ? ` (showing first ${limited.length})` : ''}`,
@@ -985,7 +969,6 @@ class GlobInvocation implements ToolInvocation<GlobParams, ToolResult> {
   }
 }
 ```
-
 
 **grep Tool:**
 
@@ -1044,39 +1027,39 @@ class GrepInvocation implements ToolInvocation<GrepParams, ToolResult> {
     try {
       const flags = this.params.caseSensitive ? 'g' : 'gi';
       const regex = new RegExp(this.params.pattern, flags);
-      
+
       // Find files to search
       const filePattern = this.params.filePattern ?? '**/*';
       const files = await glob(filePattern, {
         cwd: this.params.directory ?? process.cwd(),
         ignore: ['**/node_modules/**', '**/.git/**'],
       });
-      
+
       const results: string[] = [];
       let count = 0;
-      
+
       for (const file of files) {
         if (this.params.maxResults && count >= this.params.maxResults) {
           break;
         }
-        
+
         const content = await fs.readFile(file, 'utf-8');
         const lines = content.split('\n');
-        
+
         for (let i = 0; i < lines.length; i++) {
           if (regex.test(lines[i])) {
             results.push(`${file}:${i + 1}: ${lines[i]}`);
             count++;
-            
+
             if (this.params.maxResults && count >= this.params.maxResults) {
               break;
             }
           }
         }
       }
-      
+
       const result = results.join('\n');
-      
+
       return {
         llmContent: result,
         returnDisplay: `Found ${count} matches`,
@@ -1094,7 +1077,6 @@ class GrepInvocation implements ToolInvocation<GrepParams, ToolResult> {
   }
 }
 ```
-
 
 **ls Tool:**
 
@@ -1154,9 +1136,9 @@ class LsInvocation implements ToolInvocation<LsParams, ToolResult> {
         0,
         this.params.maxDepth ?? (this.params.recursive ? 3 : 0)
       );
-      
+
       const result = entries.join('\n');
-      
+
       return {
         llmContent: result,
         returnDisplay: `Listed ${entries.length} entries`,
@@ -1173,24 +1155,20 @@ class LsInvocation implements ToolInvocation<LsParams, ToolResult> {
     }
   }
 
-  private async listDirectory(
-    dir: string,
-    depth: number,
-    maxDepth: number
-  ): Promise<string[]> {
+  private async listDirectory(dir: string, depth: number, maxDepth: number): Promise<string[]> {
     const entries: string[] = [];
     const items = await fs.readdir(dir, { withFileTypes: true });
-    
+
     for (const item of items) {
       // Skip hidden files unless requested
       if (!this.params.includeHidden && item.name.startsWith('.')) {
         continue;
       }
-      
+
       const indent = '  '.repeat(depth);
       const prefix = item.isDirectory() ? 'd' : '-';
       entries.push(`${indent}${prefix} ${item.name}`);
-      
+
       // Recurse into directories
       if (item.isDirectory() && depth < maxDepth) {
         const subPath = path.join(dir, item.name);
@@ -1198,12 +1176,11 @@ class LsInvocation implements ToolInvocation<LsParams, ToolResult> {
         entries.push(...subEntries);
       }
     }
-    
+
     return entries;
   }
 }
 ```
-
 
 ### Shell Execution Tool
 
@@ -1260,15 +1237,15 @@ class ShellInvocation implements ToolInvocation<ShellParams, ToolResult> {
 
   async shouldConfirmExecute(abortSignal: AbortSignal) {
     const decision = this.policyEngine.evaluate('shell', this.params);
-    
+
     if (decision === 'allow') {
       return false;
     }
-    
+
     if (decision === 'deny') {
       throw new Error('Shell execution denied by policy');
     }
-    
+
     return {
       toolName: 'shell',
       description: this.getDescription(),
@@ -1277,10 +1254,7 @@ class ShellInvocation implements ToolInvocation<ShellParams, ToolResult> {
     };
   }
 
-  async execute(
-    signal: AbortSignal,
-    updateOutput?: (output: string) => void
-  ): Promise<ToolResult> {
+  async execute(signal: AbortSignal, updateOutput?: (output: string) => void): Promise<ToolResult> {
     try {
       const result = await this.shellService.execute({
         command: this.params.command,
@@ -1290,7 +1264,7 @@ class ShellInvocation implements ToolInvocation<ShellParams, ToolResult> {
         abortSignal: signal,
         onOutput: updateOutput,
       });
-      
+
       return {
         llmContent: `Exit code: ${result.exitCode}\n\nOutput:\n${result.output}`,
         returnDisplay: result.output,
@@ -1335,36 +1309,36 @@ export class ShellExecutionService {
         shell: true,
         stdio: ['ignore', 'pipe', 'pipe'],
       });
-      
+
       let output = '';
       let error = '';
-      
+
       // Collect output
       proc.stdout?.on('data', (data) => {
         const chunk = data.toString();
         output += chunk;
         options.onOutput?.(chunk);
       });
-      
+
       proc.stderr?.on('data', (data) => {
         const chunk = data.toString();
         error += chunk;
         options.onOutput?.(chunk);
       });
-      
+
       // Handle timeout
       const timeoutId = setTimeout(() => {
         proc.kill('SIGTERM');
         reject(new Error(`Command timed out after ${options.timeout}ms`));
       }, options.timeout);
-      
+
       // Handle abort signal
       options.abortSignal?.addEventListener('abort', () => {
         proc.kill('SIGTERM');
         clearTimeout(timeoutId);
         reject(new Error('Command cancelled'));
       });
-      
+
       // Handle completion
       proc.on('close', (code) => {
         clearTimeout(timeoutId);
@@ -1374,7 +1348,7 @@ export class ShellExecutionService {
           error: error || undefined,
         });
       });
-      
+
       proc.on('error', (err) => {
         clearTimeout(timeoutId);
         reject(err);
@@ -1383,7 +1357,6 @@ export class ShellExecutionService {
   }
 }
 ```
-
 
 ### Web Tools
 
@@ -1439,7 +1412,7 @@ class WebFetchInvocation implements ToolInvocation<WebFetchParams, ToolResult> {
   async execute(signal: AbortSignal): Promise<ToolResult> {
     try {
       const response = await fetch(this.params.url, { signal });
-      
+
       if (!response.ok) {
         return {
           llmContent: '',
@@ -1450,22 +1423,23 @@ class WebFetchInvocation implements ToolInvocation<WebFetchParams, ToolResult> {
           },
         };
       }
-      
+
       let content = await response.text();
-      
+
       // Apply CSS selector if provided
       if (this.params.selector) {
         // Use cheerio or similar for HTML parsing
         const $ = cheerio.load(content);
         content = $(this.params.selector).text();
       }
-      
+
       // Truncate if needed
       if (this.params.maxLength && content.length > this.params.maxLength) {
-        content = content.slice(0, this.params.maxLength) + 
+        content =
+          content.slice(0, this.params.maxLength) +
           `\n\n[Content truncated: ${content.length - this.params.maxLength} characters omitted]`;
       }
-      
+
       return {
         llmContent: content,
         returnDisplay: `Fetched ${content.length} characters`,
@@ -1534,15 +1508,12 @@ class WebSearchInvocation implements ToolInvocation<WebSearchParams, ToolResult>
   async execute(signal: AbortSignal): Promise<ToolResult> {
     try {
       // Use search API (e.g., DuckDuckGo, SearXNG)
-      const results = await this.performSearch(
-        this.params.query,
-        this.params.numResults ?? 5
-      );
-      
-      const formatted = results.map((r, i) => 
-        `${i + 1}. ${r.title}\n   ${r.url}\n   ${r.snippet}`
-      ).join('\n\n');
-      
+      const results = await this.performSearch(this.params.query, this.params.numResults ?? 5);
+
+      const formatted = results
+        .map((r, i) => `${i + 1}. ${r.title}\n   ${r.url}\n   ${r.snippet}`)
+        .join('\n\n');
+
       return {
         llmContent: formatted,
         returnDisplay: `Found ${results.length} results`,
@@ -1567,7 +1538,6 @@ class WebSearchInvocation implements ToolInvocation<WebSearchParams, ToolResult>
 }
 ```
 
-
 ### Persistent Storage Tools
 
 **memory Tool:**
@@ -1588,10 +1558,10 @@ class MemoryTool implements DeclarativeTool<MemoryParams, ToolResult> {
     parameters: {
       type: 'object',
       properties: {
-        action: { 
-          type: 'string', 
+        action: {
+          type: 'string',
           enum: ['get', 'set', 'delete', 'list'],
-          description: 'Action to perform' 
+          description: 'Action to perform',
         },
         key: { type: 'string', description: 'Key name' },
         value: { type: 'string', description: 'Value to store' },
@@ -1629,7 +1599,7 @@ class MemoryInvocation implements ToolInvocation<MemoryParams, ToolResult> {
   async execute(signal: AbortSignal): Promise<ToolResult> {
     try {
       const store = await this.loadStore();
-      
+
       switch (this.params.action) {
         case 'get':
           if (!this.params.key) {
@@ -1640,7 +1610,7 @@ class MemoryInvocation implements ToolInvocation<MemoryParams, ToolResult> {
             llmContent: value ?? 'Key not found',
             returnDisplay: value ? `Retrieved ${this.params.key}` : 'Key not found',
           };
-        
+
         case 'set':
           if (!this.params.key || !this.params.value) {
             throw new Error('Key and value required for set action');
@@ -1651,7 +1621,7 @@ class MemoryInvocation implements ToolInvocation<MemoryParams, ToolResult> {
             llmContent: `Stored ${this.params.key}`,
             returnDisplay: `Stored ${this.params.key}`,
           };
-        
+
         case 'delete':
           if (!this.params.key) {
             throw new Error('Key required for delete action');
@@ -1662,14 +1632,14 @@ class MemoryInvocation implements ToolInvocation<MemoryParams, ToolResult> {
             llmContent: `Deleted ${this.params.key}`,
             returnDisplay: `Deleted ${this.params.key}`,
           };
-        
+
         case 'list':
           const keys = Object.keys(store);
           return {
             llmContent: keys.join('\n'),
             returnDisplay: `${keys.length} keys`,
           };
-        
+
         default:
           throw new Error(`Unknown action: ${this.params.action}`);
       }
@@ -1700,7 +1670,6 @@ class MemoryInvocation implements ToolInvocation<MemoryParams, ToolResult> {
 }
 ```
 
-
 **write_todos Tool:**
 
 ```typescript
@@ -1719,10 +1688,10 @@ class WriteTodosTool implements DeclarativeTool<WriteTodosParams, ToolResult> {
     parameters: {
       type: 'object',
       properties: {
-        action: { 
-          type: 'string', 
+        action: {
+          type: 'string',
           enum: ['add', 'complete', 'remove', 'list'],
-          description: 'Action to perform' 
+          description: 'Action to perform',
         },
         task: { type: 'string', description: 'Task description' },
         id: { type: 'string', description: 'Task ID' },
@@ -1767,7 +1736,7 @@ class WriteTodosInvocation implements ToolInvocation<WriteTodosParams, ToolResul
   async execute(signal: AbortSignal): Promise<ToolResult> {
     try {
       const todos = await this.loadTodos();
-      
+
       switch (this.params.action) {
         case 'add':
           if (!this.params.task) {
@@ -1785,12 +1754,12 @@ class WriteTodosInvocation implements ToolInvocation<WriteTodosParams, ToolResul
             llmContent: `Added todo: ${newTodo.id}`,
             returnDisplay: `Added: ${this.params.task}`,
           };
-        
+
         case 'complete':
           if (!this.params.id) {
             throw new Error('ID required for complete action');
           }
-          const todoToComplete = todos.find(t => t.id === this.params.id);
+          const todoToComplete = todos.find((t) => t.id === this.params.id);
           if (!todoToComplete) {
             throw new Error(`Todo not found: ${this.params.id}`);
           }
@@ -1800,12 +1769,12 @@ class WriteTodosInvocation implements ToolInvocation<WriteTodosParams, ToolResul
             llmContent: `Completed todo: ${this.params.id}`,
             returnDisplay: `Completed: ${todoToComplete.task}`,
           };
-        
+
         case 'remove':
           if (!this.params.id) {
             throw new Error('ID required for remove action');
           }
-          const index = todos.findIndex(t => t.id === this.params.id);
+          const index = todos.findIndex((t) => t.id === this.params.id);
           if (index === -1) {
             throw new Error(`Todo not found: ${this.params.id}`);
           }
@@ -1815,16 +1784,16 @@ class WriteTodosInvocation implements ToolInvocation<WriteTodosParams, ToolResul
             llmContent: `Removed todo: ${this.params.id}`,
             returnDisplay: `Removed: ${removed.task}`,
           };
-        
+
         case 'list':
-          const formatted = todos.map(t => 
-            `[${t.completed ? 'x' : ' '}] ${t.id}: ${t.task}`
-          ).join('\n');
+          const formatted = todos
+            .map((t) => `[${t.completed ? 'x' : ' '}] ${t.id}: ${t.task}`)
+            .join('\n');
           return {
             llmContent: formatted,
             returnDisplay: `${todos.length} todos`,
           };
-        
+
         default:
           throw new Error(`Unknown action: ${this.params.action}`);
       }
@@ -1854,7 +1823,6 @@ class WriteTodosInvocation implements ToolInvocation<WriteTodosParams, ToolResul
   }
 }
 ```
-
 
 ## Data Models
 
@@ -1892,6 +1860,7 @@ class WriteTodosInvocation implements ToolInvocation<WriteTodosParams, ToolResul
 ### File Operation Errors
 
 **File Not Found:**
+
 ```typescript
 {
   llmContent: '',
@@ -1904,6 +1873,7 @@ class WriteTodosInvocation implements ToolInvocation<WriteTodosParams, ToolResul
 ```
 
 **File Already Exists:**
+
 ```typescript
 {
   llmContent: '',
@@ -1916,6 +1886,7 @@ class WriteTodosInvocation implements ToolInvocation<WriteTodosParams, ToolResul
 ```
 
 **Permission Denied:**
+
 ```typescript
 {
   llmContent: '',
@@ -1930,6 +1901,7 @@ class WriteTodosInvocation implements ToolInvocation<WriteTodosParams, ToolResul
 ### Edit Operation Errors
 
 **Target Not Found:**
+
 ```typescript
 {
   llmContent: '',
@@ -1942,6 +1914,7 @@ class WriteTodosInvocation implements ToolInvocation<WriteTodosParams, ToolResul
 ```
 
 **Ambiguous Target:**
+
 ```typescript
 {
   llmContent: '',
@@ -1956,6 +1929,7 @@ class WriteTodosInvocation implements ToolInvocation<WriteTodosParams, ToolResul
 ### Shell Execution Errors
 
 **Timeout:**
+
 ```typescript
 {
   llmContent: '',
@@ -1968,6 +1942,7 @@ class WriteTodosInvocation implements ToolInvocation<WriteTodosParams, ToolResul
 ```
 
 **Non-Zero Exit Code:**
+
 ```typescript
 {
   llmContent: 'Exit code: 1\n\nOutput:\nerror: command failed',
@@ -1982,6 +1957,7 @@ class WriteTodosInvocation implements ToolInvocation<WriteTodosParams, ToolResul
 ### Web Operation Errors
 
 **HTTP Error:**
+
 ```typescript
 {
   llmContent: '',
@@ -1994,6 +1970,7 @@ class WriteTodosInvocation implements ToolInvocation<WriteTodosParams, ToolResul
 ```
 
 **Network Error:**
+
 ```typescript
 {
   llmContent: '',
@@ -2008,16 +1985,19 @@ class WriteTodosInvocation implements ToolInvocation<WriteTodosParams, ToolResul
 ### Policy Errors
 
 **Denied by Policy:**
+
 ```typescript
 throw new Error('Write operation denied by policy');
 ```
 
 **Confirmation Timeout:**
+
 ```typescript
 throw new Error('Confirmation request timed out');
 ```
 
 **Confirmation Cancelled:**
+
 ```typescript
 throw new Error('Confirmation request cancelled');
 ```
@@ -2032,10 +2012,10 @@ async execute(signal: AbortSignal): Promise<ToolResult> {
   if (signal.aborted) {
     throw new Error('Operation cancelled');
   }
-  
+
   // Pass signal to async operations
   const response = await fetch(url, { signal });
-  
+
   // Check signal during long operations
   for (const item of items) {
     if (signal.aborted) {
@@ -2046,353 +2026,351 @@ async execute(signal: AbortSignal): Promise<ToolResult> {
 }
 ```
 
-
 ## Correctness Properties
 
 A property is a characteristic or behavior that should hold true across all valid executions of a system—essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.
 
 ### Property 1: Tool Registration and Retrieval
 
-*For any* tool with a unique name, registering it in the Tool_Registry and then retrieving it by name should return the same tool instance.
+_For any_ tool with a unique name, registering it in the Tool_Registry and then retrieving it by name should return the same tool instance.
 
 **Validates: Requirements 1.1, 1.5**
 
 ### Property 2: Tool Replacement
 
-*For any* two tools with the same name, registering the first then registering the second should result in only the second tool being retrievable.
+_For any_ two tools with the same name, registering the first then registering the second should result in only the second tool being retrievable.
 
 **Validates: Requirements 1.2**
 
 ### Property 3: Tool Unregistration
 
-*For any* registered tool, unregistering it by name should result in that tool no longer being retrievable.
+_For any_ registered tool, unregistering it by name should result in that tool no longer being retrievable.
 
 **Validates: Requirements 1.3**
 
 ### Property 4: Tool List Ordering and Consistency
 
-*For any* set of registered tools, calling list() should return all tools in alphabetical order by name, and multiple calls to list() should return the same ordering.
+_For any_ set of registered tools, calling list() should return all tools in alphabetical order by name, and multiple calls to list() should return the same ordering.
 
 **Validates: Requirements 1.4, 1.7**
 
 ### Property 5: Schema Generation Completeness
 
-*For any* set of registered tools, getFunctionSchemas() should return exactly one schema for each tool, with all schema fields (name, description, parameters) preserved.
+_For any_ set of registered tools, getFunctionSchemas() should return exactly one schema for each tool, with all schema fields (name, description, parameters) preserved.
 
 **Validates: Requirements 1.6**
 
 ### Property 6: File Read Round Trip
 
-*For any* file content, writing it to a file and then reading it back should return the same content.
+_For any_ file content, writing it to a file and then reading it back should return the same content.
 
 **Validates: Requirements 2.1, 2.9, 3.1**
 
 ### Property 7: File Read Line Range Slicing
 
-*For any* file and any valid line range (startLine, endLine), reading the file with that range should return exactly the lines within that range (inclusive).
+_For any_ file and any valid line range (startLine, endLine), reading the file with that range should return exactly the lines within that range (inclusive).
 
 **Validates: Requirements 2.2, 2.3, 2.4**
 
 ### Property 8: File Read Error Handling
 
-*For any* non-existent file path, attempting to read it should return an error with type 'FileNotFoundError'.
+_For any_ non-existent file path, attempting to read it should return an error with type 'FileNotFoundError'.
 
 **Validates: Requirements 2.5**
 
 ### Property 9: Multiple File Read Formatting
 
-*For any* set of file paths, reading them with read_many_files should return output containing each file path as a header followed by its content.
+_For any_ set of file paths, reading them with read_many_files should return output containing each file path as a header followed by its content.
 
 **Validates: Requirements 2.8**
 
 ### Property 10: File Write Overwrite Protection
 
-*For any* existing file, attempting to write to it without the overwrite flag should return an error with type 'FileExistsError'.
+_For any_ existing file, attempting to write to it without the overwrite flag should return an error with type 'FileExistsError'.
 
 **Validates: Requirements 3.2**
 
 ### Property 11: File Write Overwrite Behavior
 
-*For any* existing file and new content, writing with overwrite=true should replace the file content, and reading it back should return the new content.
+_For any_ existing file and new content, writing with overwrite=true should replace the file content, and reading it back should return the new content.
 
 **Validates: Requirements 3.3**
 
 ### Property 12: Parent Directory Creation
 
-*For any* file path with non-existent parent directories, writing to that path should create all parent directories.
+_For any_ file path with non-existent parent directories, writing to that path should create all parent directories.
 
 **Validates: Requirements 3.4**
 
 ### Property 13: File Edit Target Uniqueness
 
-*For any* file and edit target that appears exactly once, applying the edit should succeed and the target should be replaced with the replacement text.
+_For any_ file and edit target that appears exactly once, applying the edit should succeed and the target should be replaced with the replacement text.
 
 **Validates: Requirements 3.5**
 
 ### Property 14: File Edit Target Not Found
 
-*For any* file and edit target that does not appear in the file, attempting the edit should return an error with type 'EditTargetNotFound'.
+_For any_ file and edit target that does not appear in the file, attempting the edit should return an error with type 'EditTargetNotFound'.
 
 **Validates: Requirements 3.6**
 
 ### Property 15: File Edit Target Ambiguity
 
-*For any* file and edit target that appears multiple times, attempting the edit should return an error with type 'EditTargetAmbiguous'.
+_For any_ file and edit target that appears multiple times, attempting the edit should return an error with type 'EditTargetAmbiguous'.
 
 **Validates: Requirements 3.7**
 
 ### Property 16: Glob Pattern Matching
 
-*For any* file structure and glob pattern, the glob tool should return all and only the files that match the pattern.
+_For any_ file structure and glob pattern, the glob tool should return all and only the files that match the pattern.
 
 **Validates: Requirements 4.1**
 
 ### Property 17: Glob Max Results Constraint
 
-*For any* glob search with maxResults specified, the number of returned results should be less than or equal to maxResults.
+_For any_ glob search with maxResults specified, the number of returned results should be less than or equal to maxResults.
 
 **Validates: Requirements 4.2**
 
 ### Property 18: Glob Hidden File Filtering
 
-*For any* file structure containing hidden files, glob with includeHidden=false should exclude all hidden files, and includeHidden=true should include them.
+_For any_ file structure containing hidden files, glob with includeHidden=false should exclude all hidden files, and includeHidden=true should include them.
 
 **Validates: Requirements 4.3, 4.4**
 
 ### Property 19: Grep Pattern Matching
 
-*For any* file structure and search pattern, grep should return all lines containing matches to the pattern along with their file paths and line numbers.
+_For any_ file structure and search pattern, grep should return all lines containing matches to the pattern along with their file paths and line numbers.
 
 **Validates: Requirements 4.5**
 
 ### Property 20: Grep Case Sensitivity
 
-*For any* search pattern and file content, grep with caseSensitive=true should only match exact case, while caseSensitive=false should match regardless of case.
+_For any_ search pattern and file content, grep with caseSensitive=true should only match exact case, while caseSensitive=false should match regardless of case.
 
 **Validates: Requirements 4.6, 4.7**
 
 ### Property 21: Grep File Pattern Filtering
 
-*For any* grep search with filePattern specified, only files matching the filePattern should be searched.
+_For any_ grep search with filePattern specified, only files matching the filePattern should be searched.
 
 **Validates: Requirements 4.8**
 
 ### Property 22: Directory Listing Completeness
 
-*For any* directory, ls should return all non-hidden entries (or all entries if includeHidden=true).
+_For any_ directory, ls should return all non-hidden entries (or all entries if includeHidden=true).
 
 **Validates: Requirements 4.9**
 
 ### Property 23: Directory Listing Recursion
 
-*For any* directory with subdirectories, ls with recursive=true should include subdirectory contents, and maxDepth should limit the recursion depth.
+_For any_ directory with subdirectories, ls with recursive=true should include subdirectory contents, and maxDepth should limit the recursion depth.
 
 **Validates: Requirements 4.10, 4.11**
 
 ### Property 24: Gitignore Respect
 
-*For any* file discovery operation (glob, grep, ls) in a directory with .gitignore, files matching .gitignore patterns should be excluded from results.
+_For any_ file discovery operation (glob, grep, ls) in a directory with .gitignore, files matching .gitignore patterns should be excluded from results.
 
 **Validates: Requirements 4.12**
 
 ### Property 25: Shell Command Execution
 
-*For any* shell command, executing it should return a ToolResult containing the command output and exit code.
+_For any_ shell command, executing it should return a ToolResult containing the command output and exit code.
 
 **Validates: Requirements 5.1**
 
 ### Property 26: Shell Output Streaming
 
-*For any* shell command with streaming enabled, the updateOutput callback should be invoked with incremental output during execution.
+_For any_ shell command with streaming enabled, the updateOutput callback should be invoked with incremental output during execution.
 
 **Validates: Requirements 5.2**
 
 ### Property 27: Shell Timeout Enforcement
 
-*For any* shell command that runs longer than the timeout, the shell tool should terminate the process and return a timeout error.
+_For any_ shell command that runs longer than the timeout, the shell tool should terminate the process and return a timeout error.
 
 **Validates: Requirements 5.3**
 
 ### Property 28: Shell Working Directory
 
-*For any* shell command with a specified working directory, the command should execute in that directory.
+_For any_ shell command with a specified working directory, the command should execute in that directory.
 
 **Validates: Requirements 5.7**
 
 ### Property 29: Web Fetch Content Retrieval
 
-*For any* valid URL, web_fetch should return the page content as text.
+_For any_ valid URL, web_fetch should return the page content as text.
 
 **Validates: Requirements 6.1**
 
 ### Property 30: Web Fetch CSS Selector
 
-*For any* URL and CSS selector, web_fetch with the selector should return only content matching that selector.
+_For any_ URL and CSS selector, web_fetch with the selector should return only content matching that selector.
 
 **Validates: Requirements 6.2**
 
 ### Property 31: Web Fetch Truncation
 
-*For any* web content exceeding maxLength, web_fetch should truncate the output at maxLength and append a truncation indicator.
+_For any_ web content exceeding maxLength, web_fetch should truncate the output at maxLength and append a truncation indicator.
 
 **Validates: Requirements 6.3**
 
 ### Property 32: Web Search Result Count
 
-*For any* search query with numResults specified, web_search should return at most numResults results.
+_For any_ search query with numResults specified, web_search should return at most numResults results.
 
 **Validates: Requirements 6.7**
 
 ### Property 33: Policy Decision Evaluation
 
-*For any* tool and parameters, the Policy_Engine should return 'allow' if a matching allow rule exists, 'deny' if a deny rule exists, 'ask' if an ask rule exists, or the default action if no rule matches.
+_For any_ tool and parameters, the Policy_Engine should return 'allow' if a matching allow rule exists, 'deny' if a deny rule exists, 'ask' if an ask rule exists, or the default action if no rule matches.
 
 **Validates: Requirements 7.1, 7.2, 7.3, 7.5**
 
 ### Property 34: Policy Rule Precedence
 
-*For any* tool with both a tool-specific rule and a wildcard rule, the Policy_Engine should apply the tool-specific rule.
+_For any_ tool with both a tool-specific rule and a wildcard rule, the Policy_Engine should apply the tool-specific rule.
 
 **Validates: Requirements 7.4**
 
 ### Property 35: Policy Condition Evaluation
 
-*For any* policy rule with conditions, the Policy_Engine should only apply the rule if all conditions evaluate to true against the tool parameters.
+_For any_ policy rule with conditions, the Policy_Engine should only apply the rule if all conditions evaluate to true against the tool parameters.
 
 **Validates: Requirements 7.6**
 
 ### Property 36: Policy Risk Classification
 
-*For any* tool, the Policy_Engine should classify it with a risk level of low, medium, or high.
+_For any_ tool, the Policy_Engine should classify it with a risk level of low, medium, or high.
 
 **Validates: Requirements 7.7**
 
 ### Property 37: Confirmation Details Completeness
 
-*For any* tool requiring confirmation, the confirmation details should include the tool name, description, risk level, and affected locations.
+_For any_ tool requiring confirmation, the confirmation details should include the tool name, description, risk level, and affected locations.
 
 **Validates: Requirements 7.8**
 
 ### Property 38: Message Bus Correlation ID Uniqueness
 
-*For any* set of confirmation requests, each should receive a unique correlation ID.
+_For any_ set of confirmation requests, each should receive a unique correlation ID.
 
 **Validates: Requirements 8.1**
 
 ### Property 39: Message Bus Request-Response Matching
 
-*For any* confirmation request, the Message_Bus should deliver the response with matching correlation ID to the correct requester.
+_For any_ confirmation request, the Message_Bus should deliver the response with matching correlation ID to the correct requester.
 
 **Validates: Requirements 8.2, 8.3**
 
 ### Property 40: Message Bus Timeout Handling
 
-*For any* confirmation request that receives no response within the timeout period, the Message_Bus should reject with a timeout error.
+_For any_ confirmation request that receives no response within the timeout period, the Message_Bus should reject with a timeout error.
 
 **Validates: Requirements 8.4**
 
 ### Property 41: Message Bus Concurrent Requests
 
-*For any* set of concurrent confirmation requests, the Message_Bus should handle each independently without interference.
+_For any_ set of concurrent confirmation requests, the Message_Bus should handle each independently without interference.
 
 **Validates: Requirements 8.5**
 
 ### Property 42: Message Bus Cancellation
 
-*For any* confirmation request with an AbortSignal, triggering the signal should cancel the request and reject with a cancellation error.
+_For any_ confirmation request with an AbortSignal, triggering the signal should cancel the request and reject with a cancellation error.
 
 **Validates: Requirements 8.6**
 
 ### Property 43: Output Truncation Behavior
 
-*For any* tool output exceeding maxChars or maxLines, the system should truncate at the limit and append an indicator specifying how much content was omitted.
+_For any_ tool output exceeding maxChars or maxLines, the system should truncate at the limit and append an indicator specifying how much content was omitted.
 
 **Validates: Requirements 9.1, 9.2, 9.3**
 
 ### Property 44: Tool Invocation Parameter Validation
 
-*For any* tool invocation with parameters that don't match the tool schema, the system should return a validation error.
+_For any_ tool invocation with parameters that don't match the tool schema, the system should return a validation error.
 
 **Validates: Requirements 10.1**
 
 ### Property 45: Tool Invocation Description
 
-*For any* tool invocation, getDescription() should return a non-empty human-readable string describing the operation.
+_For any_ tool invocation, getDescription() should return a non-empty human-readable string describing the operation.
 
 **Validates: Requirements 10.2**
 
 ### Property 46: Tool Invocation Locations
 
-*For any* tool invocation, toolLocations() should return an array of file paths or resources that will be affected.
+_For any_ tool invocation, toolLocations() should return an array of file paths or resources that will be affected.
 
 **Validates: Requirements 10.3**
 
 ### Property 47: Tool Invocation Confirmation Check
 
-*For any* tool invocation, shouldConfirmExecute() should return either false (no confirmation needed) or ToolCallConfirmationDetails (confirmation needed).
+_For any_ tool invocation, shouldConfirmExecute() should return either false (no confirmation needed) or ToolCallConfirmationDetails (confirmation needed).
 
 **Validates: Requirements 10.4**
 
 ### Property 48: Tool Invocation Abort Signal Respect
 
-*For any* tool execution with an AbortSignal, triggering the signal should cause the execution to stop and throw a cancellation error.
+_For any_ tool execution with an AbortSignal, triggering the signal should cause the execution to stop and throw a cancellation error.
 
 **Validates: Requirements 10.5**
 
 ### Property 49: Tool Result Format
 
-*For any* tool execution, the returned ToolResult should contain llmContent and returnDisplay fields.
+_For any_ tool execution, the returned ToolResult should contain llmContent and returnDisplay fields.
 
 **Validates: Requirements 10.7**
 
 ### Property 50: Memory Storage Round Trip
 
-*For any* key-value pair, storing it with the memory tool and then retrieving it should return the same value.
+_For any_ key-value pair, storing it with the memory tool and then retrieving it should return the same value.
 
 **Validates: Requirements 11.1, 11.2**
 
 ### Property 51: Memory Deletion
 
-*For any* stored key, deleting it with the memory tool should result in subsequent retrieval indicating the key is not found.
+_For any_ stored key, deleting it with the memory tool should result in subsequent retrieval indicating the key is not found.
 
 **Validates: Requirements 11.3**
 
 ### Property 52: Memory Key Listing
 
-*For any* set of stored key-value pairs, listing memory keys should return exactly the set of stored keys.
+_For any_ set of stored key-value pairs, listing memory keys should return exactly the set of stored keys.
 
 **Validates: Requirements 11.4**
 
 ### Property 53: Todo Addition
 
-*For any* todo task, adding it should result in the todo list containing that task with a unique ID and completed=false.
+_For any_ todo task, adding it should result in the todo list containing that task with a unique ID and completed=false.
 
 **Validates: Requirements 11.5**
 
 ### Property 54: Todo Completion
 
-*For any* todo in the list, completing it by ID should result in that todo having completed=true.
+_For any_ todo in the list, completing it by ID should result in that todo having completed=true.
 
 **Validates: Requirements 11.6**
 
 ### Property 55: Todo Removal
 
-*For any* todo in the list, removing it by ID should result in that todo no longer appearing in the list.
+_For any_ todo in the list, removing it by ID should result in that todo no longer appearing in the list.
 
 **Validates: Requirements 11.7**
 
 ### Property 56: Todo Listing
 
-*For any* todo list state, listing todos should return all todos with their current status (completed or not).
+_For any_ todo list state, listing todos should return all todos with their current status (completed or not).
 
 **Validates: Requirements 11.8**
 
 ### Property 57: Error Result Format
 
-*For any* tool execution that encounters an error, the ToolResult should include an error object with message and type fields.
+_For any_ tool execution that encounters an error, the ToolResult should include an error object with message and type fields.
 
 **Validates: Requirements 12.1, 12.2, 12.3, 12.4, 12.5, 12.6**
-
 
 ## Testing Strategy
 
@@ -2401,6 +2379,7 @@ A property is a characteristic or behavior that should hold true across all vali
 This feature will use both unit tests and property-based tests to ensure comprehensive coverage:
 
 **Unit Tests** will verify:
+
 - Specific examples of tool registration and execution
 - Edge cases like binary files, size limits, and empty inputs
 - Error conditions such as file not found, permission denied, and timeout
@@ -2409,6 +2388,7 @@ This feature will use both unit tests and property-based tests to ensure compreh
 - Specific shell commands and their expected outputs
 
 **Property-Based Tests** will verify:
+
 - Universal properties across all inputs (as defined above)
 - Randomized file contents, paths, and tool parameters
 - Round-trip properties for file operations and memory storage
@@ -2420,6 +2400,7 @@ This feature will use both unit tests and property-based tests to ensure compreh
 We will use **fast-check** (already in package.json) as the property-based testing library for TypeScript.
 
 Each property test will:
+
 - Run a minimum of 100 iterations to ensure comprehensive input coverage
 - Be tagged with a comment referencing the design property
 - Tag format: `// Feature: stage-03-tools-policy, Property N: [property text]`
@@ -2435,7 +2416,7 @@ describe('Tool Registry', () => {
     // Feature: stage-03-tools-policy, Property 1: Tool Registration and Retrieval
     fc.assert(
       fc.property(
-        fc.string().filter(s => s.length > 0), // tool name
+        fc.string().filter((s) => s.length > 0), // tool name
         fc.record({ name: fc.string() }), // mock tool
         (name, mockTool) => {
           const registry = new ToolRegistry();
@@ -2467,6 +2448,7 @@ describe('Tool Registry', () => {
 ### Mock Services for Testing
 
 We will create mock services in `packages/core/src/tools/__tests__/mocks/` that:
+
 - Provide in-memory file systems for file operation testing
 - Simulate shell command execution with predictable outputs
 - Mock HTTP responses for web tool testing
@@ -2512,25 +2494,30 @@ We will create custom generators for property-based testing:
 
 ```typescript
 // File path generator
-const filePathArb = fc.array(
-  fc.stringOf(fc.constantFrom('a', 'b', 'c', '1', '2', '3'), { minLength: 1, maxLength: 10 }),
-  { minLength: 1, maxLength: 5 }
-).map(parts => parts.join('/'));
+const filePathArb = fc
+  .array(
+    fc.stringOf(fc.constantFrom('a', 'b', 'c', '1', '2', '3'), { minLength: 1, maxLength: 10 }),
+    { minLength: 1, maxLength: 5 }
+  )
+  .map((parts) => parts.join('/'));
 
 // File content generator
 const fileContentArb = fc.string({ minLength: 0, maxLength: 1000 });
 
 // Line range generator
-const lineRangeArb = (maxLines: number) => fc.record({
-  startLine: fc.integer({ min: 1, max: maxLines }),
-  endLine: fc.integer({ min: 1, max: maxLines }),
-}).filter(range => range.startLine <= range.endLine);
+const lineRangeArb = (maxLines: number) =>
+  fc
+    .record({
+      startLine: fc.integer({ min: 1, max: maxLines }),
+      endLine: fc.integer({ min: 1, max: maxLines }),
+    })
+    .filter((range) => range.startLine <= range.endLine);
 
 // Tool name generator
-const toolNameArb = fc.stringOf(
-  fc.constantFrom('a', 'b', 'c', '_', '-'),
-  { minLength: 1, maxLength: 20 }
-);
+const toolNameArb = fc.stringOf(fc.constantFrom('a', 'b', 'c', '_', '-'), {
+  minLength: 1,
+  maxLength: 20,
+});
 
 // Policy rule generator
 const policyRuleArb = fc.record({
@@ -2543,6 +2530,7 @@ const policyRuleArb = fc.record({
 ### Integration Testing
 
 In addition to unit and property tests, we will create integration tests that:
+
 - Test the full flow from tool registration to execution
 - Verify policy engine integration with tool invocations
 - Test message bus integration with confirmation UI
@@ -2550,4 +2538,3 @@ In addition to unit and property tests, we will create integration tests that:
 - Test concurrent tool execution scenarios
 
 These integration tests will use real implementations (not mocks) where possible to ensure components work together correctly.
-

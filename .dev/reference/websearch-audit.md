@@ -13,17 +13,20 @@ The OLLM CLI has a **web search tool infrastructure** in place but **no active s
 ### Key Findings
 
 ✅ **Infrastructure Ready**:
+
 - `WebSearchTool` class fully implemented with proper interfaces
 - Tool registry integration complete
 - Policy engine allows web search (low risk)
 - Mode system permits web search in planning, execution, and other modes
 
 ❌ **No Active Provider**:
+
 - `DefaultSearchProvider` returns empty results (placeholder)
 - No API integrations configured
 - No MCP search servers installed by default
 
 🎯 **Recommended Solution**: **MCP Integration** (Brave Search or Exa AI)
+
 - Leverages existing MCP infrastructure
 - No additional dependencies needed
 - Easy to configure and swap providers
@@ -40,6 +43,7 @@ The OLLM CLI has a **web search tool infrastructure** in place but **no active s
 **Status**: ✅ **Fully Implemented** (but inactive)
 
 **Architecture**:
+
 ```typescript
 interface SearchProvider {
   search(query: string, numResults: number): Promise<SearchResult[]>;
@@ -54,6 +58,7 @@ class DefaultSearchProvider implements SearchProvider {
 ```
 
 **Features**:
+
 - Query validation
 - Result limiting (default: 5 results)
 - Abort signal support
@@ -61,11 +66,11 @@ class DefaultSearchProvider implements SearchProvider {
 - Error handling
 
 **Integration Points**:
+
 - Registered in tool registry ✅
 - Allowed in policy engine (low risk) ✅
 - Enabled in multiple modes ✅
 - No confirmation required ✅
-
 
 ### 1.2 MCP Search Integration
 
@@ -74,13 +79,14 @@ class DefaultSearchProvider implements SearchProvider {
 **Status**: ⚠️ **Partially Implemented**
 
 **Architecture**:
+
 ```typescript
 class MCPSearchProvider implements SearchProvider {
   constructor(
-    private router: ToolRouter, 
+    private router: ToolRouter,
     private capability: ToolCapability.WEB_SEARCH
   ) {}
-  
+
   async search(query: string, numResults: number): Promise<SearchResult[]> {
     const serverName = this.router.findServerForCapability(this.capability);
     // Calls MCP server's search tool
@@ -90,12 +96,14 @@ class MCPSearchProvider implements SearchProvider {
 ```
 
 **Features**:
+
 - Routes to MCP servers with search capability
 - Flexible result parsing (handles various formats)
 - Capability-based server discovery
 - Error handling with fallback
 
 **Issues**:
+
 - Requires MCP server to be installed and configured
 - No default search server configured
 - Router access pattern needs refinement
@@ -109,6 +117,7 @@ class MCPSearchProvider implements SearchProvider {
 **Status**: ✅ **Multiple Options Available**
 
 #### Option 1: Brave Search (Official Anthropic)
+
 ```json
 {
   "id": "brave-search",
@@ -125,18 +134,21 @@ class MCPSearchProvider implements SearchProvider {
 ```
 
 **Pros**:
+
 - Official Anthropic MCP server
 - Privacy-focused search engine
 - Free tier available (2,000 queries/month)
 - Well-documented API
 
 **Cons**:
+
 - Requires API key registration
 - Rate limits on free tier
 
 ---
 
 #### Option 2: Exa AI Search
+
 ```json
 {
   "id": "ai.exa/exa",
@@ -153,18 +165,21 @@ class MCPSearchProvider implements SearchProvider {
 ```
 
 **Pros**:
+
 - AI-powered semantic search
 - Better understanding of natural language queries
 - High-quality results
 - Free tier available (1,000 searches/month)
 
 **Cons**:
+
 - Requires API key
 - Newer service (less established)
 
 ---
 
 #### Option 3: Smithery Brave Search (Remote)
+
 ```json
 {
   "id": "ai.smithery/brave",
@@ -182,11 +197,13 @@ class MCPSearchProvider implements SearchProvider {
 ```
 
 **Pros**:
+
 - Remote server (no local installation)
 - SSE transport (real-time streaming)
 - Additional features (images, local businesses)
 
 **Cons**:
+
 - Requires two API keys (Smithery + Brave)
 - Depends on external service availability
 
@@ -201,17 +218,19 @@ class MCPSearchProvider implements SearchProvider {
 **Implementation Steps**:
 
 1. **Install MCP Search Server**
+
    ```bash
    # Option 1: Brave Search
    npm install -g @modelcontextprotocol/server-brave-search
-   
+
    # Option 2: Exa AI
    npm install -g @exa/mcp-server
    ```
 
 2. **Configure MCP Server**
-   
+
    Add to `.kiro/settings/mcp.json`:
+
    ```json
    {
      "mcpServers": {
@@ -229,22 +248,20 @@ class MCPSearchProvider implements SearchProvider {
    ```
 
 3. **Update WebSearchTool Registration**
-   
+
    Modify `packages/core/src/tools/index.ts`:
+
    ```typescript
    export function registerBuiltInTools(
-     registry: ToolRegistry, 
+     registry: ToolRegistry,
      config?: BuiltInToolsConfig,
      toolRouter?: ToolRouter
    ): void {
      // ... existing tools ...
-     
+
      // Register web search with MCP provider if router available
      if (toolRouter) {
-       const mcpSearchProvider = new MCPSearchProvider(
-         toolRouter, 
-         ToolCapability.WEB_SEARCH
-       );
+       const mcpSearchProvider = new MCPSearchProvider(toolRouter, ToolCapability.WEB_SEARCH);
        registry.register(new WebSearchTool(mcpSearchProvider));
      } else {
        // Fallback to default (empty) provider
@@ -258,11 +275,12 @@ class MCPSearchProvider implements SearchProvider {
    // In chat or CLI
    const result = await toolRegistry.get('web_search').execute({
      query: 'latest TypeScript features',
-     numResults: 5
+     numResults: 5,
    });
    ```
 
 **Pros**:
+
 - ✅ Uses existing MCP infrastructure
 - ✅ No new dependencies
 - ✅ Easy to swap providers
@@ -270,6 +288,7 @@ class MCPSearchProvider implements SearchProvider {
 - ✅ Consistent with project architecture
 
 **Cons**:
+
 - ⚠️ Requires API key setup
 - ⚠️ Depends on external service
 
@@ -284,48 +303,52 @@ class MCPSearchProvider implements SearchProvider {
 **Implementation Steps**:
 
 1. **Create Brave Search Provider**
-   
+
    Create `packages/core/src/tools/providers/braveSearchProvider.ts`:
+
    ```typescript
    import type { SearchProvider, SearchResult } from '../web-search.js';
-   
+
    export class BraveSearchProvider implements SearchProvider {
      private apiKey: string;
      private baseUrl = 'https://api.search.brave.com/res/v1/web/search';
-     
+
      constructor(apiKey: string) {
        this.apiKey = apiKey;
      }
-     
+
      async search(query: string, numResults: number): Promise<SearchResult[]> {
        const response = await fetch(
          `${this.baseUrl}?q=${encodeURIComponent(query)}&count=${numResults}`,
          {
            headers: {
-             'Accept': 'application/json',
+             Accept: 'application/json',
              'X-Subscription-Token': this.apiKey,
            },
          }
        );
-       
+
        if (!response.ok) {
          throw new Error(`Brave Search API error: ${response.status}`);
        }
-       
+
        const data = await response.json();
-       
-       return data.web?.results?.map((r: any) => ({
-         title: r.title,
-         url: r.url,
-         snippet: r.description,
-       })) || [];
+
+       return (
+         data.web?.results?.map((r: any) => ({
+           title: r.title,
+           url: r.url,
+           snippet: r.description,
+         })) || []
+       );
      }
    }
    ```
 
 2. **Configure Provider**
-   
+
    Add to configuration system:
+
    ```typescript
    // In config
    export interface WebSearchConfig {
@@ -335,10 +358,11 @@ class MCPSearchProvider implements SearchProvider {
    ```
 
 3. **Register with Tool**
+
    ```typescript
    const searchConfig = config.webSearch;
    let searchProvider: SearchProvider;
-   
+
    switch (searchConfig.provider) {
      case 'brave':
        searchProvider = new BraveSearchProvider(searchConfig.apiKey);
@@ -349,16 +373,18 @@ class MCPSearchProvider implements SearchProvider {
      default:
        searchProvider = new DefaultSearchProvider();
    }
-   
+
    registry.register(new WebSearchTool(searchProvider));
    ```
 
 **Pros**:
+
 - ✅ Direct control over implementation
 - ✅ No MCP dependency
 - ✅ Potentially faster (no MCP overhead)
 
 **Cons**:
+
 - ❌ Requires new dependencies (fetch, API clients)
 - ❌ More code to maintain
 - ❌ Duplicates MCP functionality
@@ -375,6 +401,7 @@ class MCPSearchProvider implements SearchProvider {
 **Implementation Steps**:
 
 1. **Deploy SearXNG**
+
    ```bash
    # Using Docker
    docker run -d -p 8080:8080 searxng/searxng
@@ -384,18 +411,18 @@ class MCPSearchProvider implements SearchProvider {
    ```typescript
    export class SearXNGProvider implements SearchProvider {
      private baseUrl: string;
-     
+
      constructor(baseUrl: string = 'http://localhost:8080') {
        this.baseUrl = baseUrl;
      }
-     
+
      async search(query: string, numResults: number): Promise<SearchResult[]> {
        const response = await fetch(
-         `${this.baseUrl}/search?q=${encodeURIComponent(query)}&format=json`,
+         `${this.baseUrl}/search?q=${encodeURIComponent(query)}&format=json`
        );
-       
+
        const data = await response.json();
-       
+
        return data.results.slice(0, numResults).map((r: any) => ({
          title: r.title,
          url: r.url,
@@ -406,12 +433,14 @@ class MCPSearchProvider implements SearchProvider {
    ```
 
 **Pros**:
+
 - ✅ No API keys required
 - ✅ Privacy-focused
 - ✅ Aggregates multiple search engines
 - ✅ Self-hosted (full control)
 
 **Cons**:
+
 - ❌ Requires infrastructure setup
 - ❌ Maintenance overhead
 - ❌ Slower than direct APIs
@@ -428,6 +457,7 @@ class MCPSearchProvider implements SearchProvider {
 **Goal**: Enable web search via MCP with Brave Search
 
 **Tasks**:
+
 1. ✅ Audit current implementation (complete)
 2. [ ] Fix `MCPSearchProvider` router access pattern
 3. [ ] Update `registerBuiltInTools` to accept `ToolRouter`
@@ -437,12 +467,14 @@ class MCPSearchProvider implements SearchProvider {
 7. [ ] Document usage in README
 
 **Files to Modify**:
+
 - `packages/core/src/tools/semantic-tools.ts` - Fix router access
 - `packages/core/src/tools/index.ts` - Add router parameter
 - `packages/cli/src/services/mcpMarketplace.ts` - Ensure Brave is prominent
 - `docs/` - Add web search setup guide
 
 **Success Criteria**:
+
 - [ ] Web search returns real results
 - [ ] Works with Brave Search MCP server
 - [ ] Easy to configure API key
@@ -455,6 +487,7 @@ class MCPSearchProvider implements SearchProvider {
 **Goal**: Support multiple search providers (Brave, Exa, SearXNG)
 
 **Tasks**:
+
 1. [ ] Add Exa AI MCP server support
 2. [ ] Add SearXNG provider option
 3. [ ] Create provider selection UI/config
@@ -463,6 +496,7 @@ class MCPSearchProvider implements SearchProvider {
 6. [ ] Add provider comparison guide
 
 **Configuration Example**:
+
 ```json
 {
   "webSearch": {
@@ -494,6 +528,7 @@ class MCPSearchProvider implements SearchProvider {
 **Goal**: Add advanced search capabilities
 
 **Tasks**:
+
 1. [ ] Image search support
 2. [ ] News search support
 3. [ ] Local business search
@@ -514,6 +549,7 @@ class MCPSearchProvider implements SearchProvider {
 4. **Pricing**: $5/month for 20,000 queries
 
 **Configuration**:
+
 ```bash
 # Add to .env or mcp.json
 BRAVE_API_KEY=your-api-key-here
@@ -529,6 +565,7 @@ BRAVE_API_KEY=your-api-key-here
 4. **Pricing**: $20/month for 10,000 searches
 
 **Configuration**:
+
 ```bash
 # Add to .env or mcp.json
 EXA_API_KEY=your-api-key-here
@@ -545,18 +582,18 @@ describe('WebSearchTool with MCP Provider', () => {
   it('should return search results from Brave', async () => {
     const provider = new MCPSearchProvider(router, ToolCapability.WEB_SEARCH);
     const results = await provider.search('TypeScript', 5);
-    
+
     expect(results).toHaveLength(5);
     expect(results[0]).toHaveProperty('title');
     expect(results[0]).toHaveProperty('url');
     expect(results[0]).toHaveProperty('snippet');
   });
-  
+
   it('should handle API errors gracefully', async () => {
     // Test with invalid API key
     // Should throw descriptive error
   });
-  
+
   it('should respect numResults parameter', async () => {
     const results = await provider.search('test', 3);
     expect(results.length).toBeLessThanOrEqual(3);
@@ -574,7 +611,7 @@ describe('Web Search Integration', () => {
     // Verify results
     // Stop MCP server
   });
-  
+
   it('should fallback to secondary provider on failure', async () => {
     // Simulate primary provider failure
     // Verify fallback to secondary
@@ -607,11 +644,11 @@ describe('Web Search Integration', () => {
 
 ### Brave Search
 
-| Tier | Queries/Month | Cost | Cost per Query |
-|------|---------------|------|----------------|
-| Free | 2,000 | $0 | $0 |
-| Basic | 20,000 | $5 | $0.00025 |
-| Pro | 100,000 | $20 | $0.0002 |
+| Tier  | Queries/Month | Cost | Cost per Query |
+| ----- | ------------- | ---- | -------------- |
+| Free  | 2,000         | $0   | $0             |
+| Basic | 20,000        | $5   | $0.00025       |
+| Pro   | 100,000       | $20  | $0.0002        |
 
 **Recommendation**: Free tier sufficient for most users
 
@@ -619,11 +656,11 @@ describe('Web Search Integration', () => {
 
 ### Exa AI
 
-| Tier | Searches/Month | Cost | Cost per Search |
-|------|----------------|------|----------------|
-| Free | 1,000 | $0 | $0 |
-| Starter | 10,000 | $20 | $0.002 |
-| Pro | 50,000 | $80 | $0.0016 |
+| Tier    | Searches/Month | Cost | Cost per Search |
+| ------- | -------------- | ---- | --------------- |
+| Free    | 1,000          | $0   | $0              |
+| Starter | 10,000         | $20  | $0.002          |
+| Pro     | 50,000         | $80  | $0.0016         |
 
 **Recommendation**: Free tier for testing, Starter for regular use
 
@@ -631,11 +668,11 @@ describe('Web Search Integration', () => {
 
 ### SearXNG (Self-Hosted)
 
-| Component | Cost |
-|-----------|------|
-| Server | $5-10/month (VPS) |
-| Bandwidth | Included |
-| Maintenance | Time investment |
+| Component   | Cost              |
+| ----------- | ----------------- |
+| Server      | $5-10/month (VPS) |
+| Bandwidth   | Included          |
+| Maintenance | Time investment   |
 
 **Recommendation**: Only for privacy-focused users or organizations
 
@@ -668,14 +705,17 @@ describe('Web Search Integration', () => {
 ## 9. Summary & Next Steps
 
 ### Current State
+
 - ✅ Tool infrastructure complete
 - ❌ No active search provider
 - ⚠️ MCP integration partially implemented
 
 ### Recommended Action
+
 **Implement MCP Integration with Brave Search** (Option A)
 
 **Rationale**:
+
 1. Leverages existing MCP infrastructure
 2. No new dependencies
 3. Easy to configure and swap providers

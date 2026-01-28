@@ -7,18 +7,18 @@
 ## Integration Checklist
 
 ### 1. MCPProvider Wrapper ✅
+
 - **Location:** `packages/cli/src/ui/App.tsx` (line ~950)
 - **Status:** Already integrated
 - **Code:**
   ```tsx
   <MCPProvider>
-    <UserPromptProvider>
-      {/* ... rest of app */}
-    </UserPromptProvider>
+    <UserPromptProvider>{/* ... rest of app */}</UserPromptProvider>
   </MCPProvider>
   ```
 
 ### 2. MCPTab Import ✅
+
 - **Location:** `packages/cli/src/ui/App.tsx` (line ~60)
 - **Status:** Already imported
 - **Code:**
@@ -27,6 +27,7 @@
   ```
 
 ### 3. MCPTab Rendering ✅
+
 - **Location:** `packages/cli/src/ui/App.tsx` (line ~600)
 - **Status:** Already integrated in `renderActiveTab` function
 - **Code:**
@@ -36,6 +37,7 @@
   ```
 
 ### 4. TabBar Registration ✅
+
 - **Location:** `packages/cli/src/ui/components/layout/TabBar.tsx` (line ~22)
 - **Status:** Already registered
 - **Code:**
@@ -44,20 +46,32 @@
   ```
 
 ### 5. TabType Definition ✅
+
 - **Location:** `packages/cli/src/features/context/UIContext.tsx` (line ~7)
 - **Status:** Already defined
 - **Code:**
   ```tsx
-  export type TabType = 'chat' | 'search' | 'files' | 'tools' | 'hooks' | 'mcp' | 'docs' | 'github' | 'settings';
+  export type TabType =
+    | 'chat'
+    | 'search'
+    | 'files'
+    | 'tools'
+    | 'hooks'
+    | 'mcp'
+    | 'docs'
+    | 'github'
+    | 'settings';
   ```
 
 ### 6. FocusContext Panel ID ✅
+
 - **Location:** `packages/cli/src/features/context/FocusContext.tsx`
 - **Status:** Already registered
 - **Panel ID:** `'mcp-panel'`
 - **Tab Mapping:** `'mcp'` → `'mcp-panel'`
 
 ### 7. Keyboard Shortcut (Ctrl+8) ✅
+
 - **Location:** `packages/cli/src/ui/App.tsx` (line ~450)
 - **Status:** ✅ **NEWLY ADDED**
 - **Code:**
@@ -70,6 +84,7 @@
   ```
 
 ### 8. Keybinds Configuration ✅
+
 - **Location:** `packages/cli/src/config/keybinds.ts` (line ~20)
 - **Status:** ✅ **NEWLY ADDED**
 - **Code:**
@@ -90,6 +105,7 @@
 ## Browse Mode / Active Mode Integration ✅
 
 ### FocusContext Integration
+
 - **MCPTab** uses `useFocusManager()` hook
 - **Panel ID:** `'mcp-panel'`
 - **Browse Mode:** Tab cycling between UI areas
@@ -98,6 +114,7 @@
 - **Esc/0 Keys:** Exits to Browse Mode (returns to nav-bar)
 
 ### Navigation Flow
+
 ```
 Browse Mode (Tab cycling)
     ↓ Enter on MCP tab
@@ -109,6 +126,7 @@ Browse Mode (Returns to nav-bar)
 ## Test Results
 
 ### TabBar Integration Tests ✅
+
 - **File:** `packages/cli/src/ui/components/layout/__tests__/TabBar.integration.test.tsx`
 - **Status:** All 6 tests passing
 - **Tests:**
@@ -120,6 +138,7 @@ Browse Mode (Returns to nav-bar)
   - ✅ should support Ctrl+8 shortcut for MCP tab
 
 ### MCPTab Component Tests ⚠️
+
 - **File:** `packages/cli/src/ui/components/tabs/__tests__/MCPTab.test.tsx`
 - **Status:** 3/12 tests passing (9 failing)
 - **Note:** Test failures are due to pre-existing MCPContext initialization issues in test environment, not related to App integration
@@ -127,16 +146,19 @@ Browse Mode (Returns to nav-bar)
 ## Changes Made
 
 ### 1. Added Ctrl+8 Keyboard Shortcut
+
 - **File:** `packages/cli/src/ui/App.tsx`
 - **Change:** Added keyboard shortcut handler for MCP tab
 - **Line:** ~450
 
 ### 2. Updated Keybinds Configuration
+
 - **File:** `packages/cli/src/config/keybinds.ts`
 - **Change:** Added `tabMcp: "ctrl+8"` and `tabHooks: "ctrl+3"` to tabNavigation
 - **Line:** ~20
 
 ### 3. Standardized Tab Shortcuts
+
 - **File:** `packages/cli/src/ui/App.tsx`
 - **Change:** Updated all tab shortcuts to use keybinds configuration
 - **Line:** ~440-460
@@ -144,6 +166,7 @@ Browse Mode (Returns to nav-bar)
 ## Validation
 
 ### Manual Testing Steps
+
 1. ✅ Start the application
 2. ✅ Press `Ctrl+8` to switch to MCP tab
 3. ✅ Verify MCPTab renders correctly
@@ -155,6 +178,7 @@ Browse Mode (Returns to nav-bar)
 9. ✅ Verify MCP tab can be selected via Tab cycling
 
 ### Integration Points Verified
+
 - ✅ MCPProvider wraps the entire app
 - ✅ MCPTab is imported and rendered
 - ✅ Tab switching works with Ctrl+8
@@ -166,6 +190,7 @@ Browse Mode (Returns to nav-bar)
 ## Requirements Validation
 
 **Validates: Requirements 12.1**
+
 - ✅ Up/Down arrows navigate between servers
 - ✅ Left/Right arrows toggle enabled/disabled
 - ✅ Enter expands/collapses server details

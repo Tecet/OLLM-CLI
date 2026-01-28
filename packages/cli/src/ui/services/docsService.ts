@@ -13,7 +13,7 @@ export interface DocEntry {
 
 /**
  * DocsService
- * 
+ *
  * Service for loading and managing documentation files.
  * Provides markdown rendering and navigation support.
  */
@@ -31,12 +31,32 @@ export class DocsService {
   getIndex(): DocEntry[] {
     return [
       { title: 'Getting Started', path: 'docs/README.md', description: 'Introduction to OLLM CLI' },
-      { title: 'Architecture', path: 'docs/architecture.md', description: 'System architecture overview' },
+      {
+        title: 'Architecture',
+        path: 'docs/architecture.md',
+        description: 'System architecture overview',
+      },
       { title: 'Commands', path: 'docs/commands.md', description: 'Available CLI commands' },
-      { title: 'Provider Systems', path: 'docs/provider-systems.md', description: 'Provider integration guide' },
-      { title: 'Context Management', path: 'docs/context-management-plan.md', description: 'Context and memory management' },
-      { title: 'UI Design', path: 'docs/ui-design-spec.md', description: 'UI design specification' },
-      { title: 'Feature Analysis', path: 'docs/feature-analysis.md', description: 'Feature comparison and analysis' },
+      {
+        title: 'Provider Systems',
+        path: 'docs/provider-systems.md',
+        description: 'Provider integration guide',
+      },
+      {
+        title: 'Context Management',
+        path: 'docs/context-management-plan.md',
+        description: 'Context and memory management',
+      },
+      {
+        title: 'UI Design',
+        path: 'docs/ui-design-spec.md',
+        description: 'UI design specification',
+      },
+      {
+        title: 'Feature Analysis',
+        path: 'docs/feature-analysis.md',
+        description: 'Feature comparison and analysis',
+      },
     ];
   }
 
@@ -60,24 +80,24 @@ export class DocsService {
 
   /**
    * Render markdown to plain text (simplified)
-   * 
+   *
    * In a real implementation, this would use a proper markdown parser.
    * For now, we just strip some basic markdown syntax.
    */
   renderMarkdown(content: string): string {
     // Remove code blocks
     let rendered = content.replace(/```[\s\S]*?```/g, '[code block]');
-    
+
     // Remove inline code
     rendered = rendered.replace(/`([^`]+)`/g, '$1');
-    
+
     // Remove bold/italic
     rendered = rendered.replace(/\*\*([^*]+)\*\*/g, '$1');
     rendered = rendered.replace(/\*([^*]+)\*/g, '$1');
-    
+
     // Remove links but keep text
     rendered = rendered.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
-    
+
     return rendered;
   }
 

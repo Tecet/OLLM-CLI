@@ -6,7 +6,15 @@
 
 import os from 'os';
 
-import React, { createContext, useContext, useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  useMemo,
+} from 'react';
 import { Terminal } from '@xterm/headless';
 import * as pty from 'node-pty';
 
@@ -36,7 +44,13 @@ export function Terminal2Provider({ children }: { children: React.ReactNode }) {
     const isWindows = os.platform() === 'win32';
     const shell = isWindows ? 'powershell.exe' : 'bash';
     const shellArgs = isWindows
-      ? ['-NoProfile', '-NoLogo', '-NoExit', '-Command', 'Set-PSReadLineOption -PredictionSource None']
+      ? [
+          '-NoProfile',
+          '-NoLogo',
+          '-NoExit',
+          '-Command',
+          'Set-PSReadLineOption -PredictionSource None',
+        ]
       : [];
 
     try {
@@ -107,17 +121,23 @@ export function Terminal2Provider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const sendCommand = useCallback((command: string) => {
-    if (ptyProcessRef.current && isRunning) {
-      ptyProcessRef.current.write(command + '\r');
-    }
-  }, [isRunning]);
+  const sendCommand = useCallback(
+    (command: string) => {
+      if (ptyProcessRef.current && isRunning) {
+        ptyProcessRef.current.write(command + '\r');
+      }
+    },
+    [isRunning]
+  );
 
-  const sendRawInput = useCallback((char: string) => {
-    if (ptyProcessRef.current && isRunning) {
-      ptyProcessRef.current.write(char);
-    }
-  }, [isRunning]);
+  const sendRawInput = useCallback(
+    (char: string) => {
+      if (ptyProcessRef.current && isRunning) {
+        ptyProcessRef.current.write(char);
+      }
+    },
+    [isRunning]
+  );
 
   const clear = useCallback(() => {
     if (xtermRef.current) {
@@ -135,42 +155,44 @@ export function Terminal2Provider({ children }: { children: React.ReactNode }) {
     }
   }, [isRunning]);
 
-  const resize = useCallback((cols: number, rows: number) => {
-    const safeRows = Math.max(1, rows);
-    const safeCols = Math.max(1, cols);
+  const resize = useCallback(
+    (cols: number, rows: number) => {
+      const safeRows = Math.max(1, rows);
+      const safeCols = Math.max(1, cols);
 
-    if (xtermRef.current) {
-      try {
-        xtermRef.current.resize(safeCols, safeRows);
-      } catch (_err) {
-        // Silently fail
+      if (xtermRef.current) {
+        try {
+          xtermRef.current.resize(safeCols, safeRows);
+        } catch (_err) {
+          // Silently fail
+        }
       }
-    }
 
-    if (ptyProcessRef.current && isRunning) {
-      try {
-        ptyProcessRef.current.resize(safeCols, safeRows);
-      } catch (_err) {
-        // Silently fail
+      if (ptyProcessRef.current && isRunning) {
+        try {
+          ptyProcessRef.current.resize(safeCols, safeRows);
+        } catch (_err) {
+          // Silently fail
+        }
       }
-    }
-  }, [isRunning]);
-
-  const value = useMemo(() => ({
-    output,
-    isRunning,
-    sendCommand,
-    sendRawInput,
-    clear,
-    interrupt,
-    resize,
-  }), [output, isRunning, sendCommand, sendRawInput, clear, interrupt, resize]);
-
-  return (
-    <Terminal2Context.Provider value={value}>
-      {children}
-    </Terminal2Context.Provider>
+    },
+    [isRunning]
   );
+
+  const value = useMemo(
+    () => ({
+      output,
+      isRunning,
+      sendCommand,
+      sendRawInput,
+      clear,
+      interrupt,
+      resize,
+    }),
+    [output, isRunning, sendCommand, sendRawInput, clear, interrupt, resize]
+  );
+
+  return <Terminal2Context.Provider value={value}>{children}</Terminal2Context.Provider>;
 }
 
 export function useTerminal2() {
