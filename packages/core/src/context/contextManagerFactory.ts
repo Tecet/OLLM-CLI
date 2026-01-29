@@ -1,25 +1,13 @@
 /**
  * Context Manager Factory
  *
- * Factory for creating context managers with feature flag support.
- * Allows gradual migration from legacy system to new system.
- *
- * During migration:
- * - Feature flags control which implementation is used
- * - Legacy system is default (safe fallback)
- * - New system can be enabled via environment variables
- *
- * After migration:
- * - This factory will be removed
- * - Only new system will remain
+ * Factory for creating context managers using the new ContextOrchestrator system.
  *
  * Requirements: NFR-1 (Performance), NFR-2 (Reliability)
  *
  * @module contextManagerFactory
  */
 
-import { ConversationContextManager } from './contextManager.js';
-import { FEATURES, getFeatureFlagStatus } from '../config/features.js';
 import { ContextOrchestrator, type ContextOrchestratorConfig } from './orchestration/contextOrchestrator.js';
 import { ContextOrchestratorAdapter } from './adapters/contextOrchestratorAdapter.js';
 import { ContextTier, OperationalMode } from './types.js';
@@ -46,13 +34,13 @@ export interface ContextManagerFactoryConfig {
     mode?: OperationalMode;
   };
 
-  /** Provider adapter (required for new system) */
-  provider?: ProviderAdapter;
+  /** Provider adapter (required) */
+  provider: ProviderAdapter;
 
-  /** Storage path (required for new system) */
-  storagePath?: string;
+  /** Storage path (required) */
+  storagePath: string;
 
-  /** Service overrides (for legacy system and new system) */
+  /** Service overrides */
   services?: ContextModuleOverrides & {
     vramMonitor?: VRAMMonitor;
     tokenCounter?: TokenCounter;
@@ -67,33 +55,19 @@ export interface ContextManagerFactoryConfig {
  * Context manager factory result
  */
 export interface ContextManagerFactoryResult {
-  /** The context manager instance (always implements ContextManager interface) */
+  /** The context manager instance */
   manager: ContextManager;
-
-  /** Whether new system is being used */
-  isNewSystem: boolean;
-
-  /** Feature flag status at creation time */
-  featureFlags: Record<string, boolean>;
 }
 
 /**
- * Create a context manager based on feature flags
+ * Create a context manager using the new ContextOrchestrator system
  *
  * @param config - Factory configuration
- * @returns Context manager instance and metadata
+ * @returns Context manager instance
  *
  * @example
  * ```typescript
- * // Create with legacy system (default)
- * const { manager, isNewSystem } = createContextManager({
- *   sessionId: 'session_123',
- *   modelInfo: { ... },
- *   contextConfig: { ... }
- * });
- *
- * // Create with new system (when enabled)
- * const { manager, isNewSystem } = createContextManager({
+ * const { manager } = createContextManager({
  *   sessionId: 'session_123',
  *   modelInfo: { ... },
  *   provider: ollamaProvider,
@@ -104,10 +78,7 @@ export interface ContextManagerFactoryResult {
 export function createContextManager(
   config: ContextManagerFactoryConfig
 ): ContextManagerFactoryResult {
-  const featureFlags = getFeatureFlagStatus();
-
-  // Log feature flag status (for debugging)
-  console.log('[ContextManagerFactory] Feature flags:', featureFlags);
+  console.log('[ContextManagerFactory] Creating ContextOrchestrator');
   console.log('[ContextManagerFactory] Config:', {
     sessionId: config.sessionId,
     hasProvider: !!config.provider,
@@ -115,41 +86,16 @@ export function createContextManager(
     modelId: config.modelInfo?.modelId,
   });
 
-  // Use new system if all flags are enabled
-  if (FEATURES.USE_NEW_CONTEXT_MANAGER) {
-    console.log('[ContextManagerFactory] Using NEW system');
-    return createNewContextManager(config, featureFlags);
-  }
-
-  // Default to legacy system
-  console.log('[ContextManagerFactory] Using LEGACY system');
-  return createLegacyContextManager(config, featureFlags);
-}
-
-/**
- * Create new context manager (ContextOrchestrator)
- */
-function createNewContextManager(
-  config: ContextManagerFactoryConfig,
-  featureFlags: Record<string, boolean>
-): ContextManagerFactoryResult {
-  console.log('[ContextManagerFactory] createNewContextManager called');
-  
-  // Validate required configuration for new system
+  // Validate required configuration
   if (!config.provider) {
-    console.warn('[ContextManagerFactory] No provider - falling back to legacy');
-    return createLegacyContextManager(config, featureFlags);
+    throw new Error('Provider is required for context manager');
   }
 
   if (!config.storagePath) {
-    console.warn('[ContextManagerFactory] No storagePath - falling back to legacy');
-    return createLegacyContextManager(config, featureFlags);
+    throw new Error('Storage path is required for context manager');
   }
 
-  console.log('[ContextManagerFactory] Creating ContextOrchestrator...');
-
   // Build system prompt (this would normally come from PromptOrchestrator)
-  // For now, create a basic system prompt
   const systemPrompt: Message = {
     role: 'system',
     content: 'You are a helpful AI assistant.',
@@ -193,30 +139,6 @@ function createNewContextManager(
 
   return {
     manager: adapter,
-    isNewSystem: true,
-    featureFlags,
-  };
-}
-
-/**
- * Create legacy context manager (ConversationContextManager)
- */
-function createLegacyContextManager(
-  config: ContextManagerFactoryConfig,
-  featureFlags: Record<string, boolean>
-): ContextManagerFactoryResult {
-  // Create legacy context manager
-  const manager = new ConversationContextManager(
-    config.sessionId,
-    config.modelInfo,
-    config.contextConfig,
-    config.services
-  );
-
-  return {
-    manager,
-    isNewSystem: false,
-    featureFlags,
   };
 }
 
@@ -312,101 +234,5 @@ function createDefaultPromptOrchestrator(): any {
     }),
     updateSystemPrompt: () => {},
     getSystemPromptTokens: () => 10,
-  };
-}
-
-/**
- * Migrate session from legacy to new system
- *
- * @param legacyManager - Legacy context manager
- * @param newManager - New context orchestrator
- * @returns Migration result
- *
- * @example
- * ```typescript
- * const legacyManager = createLegacyContextManager(...);
- * const newManager = createNewContextManager(...);
- *
- * const result = await migrateSession(legacyManager, newManager);
- * if (result.success) {
- *   console.log(`Migrated ${result.messageCount} messages`);
- * }
- * ```
- */
-export async function migrateSession(
-  legacyManager: ConversationContextManager,
-  newManager: ContextOrchestrator
-): Promise<{
-  success: boolean;
-  messageCount: number;
-  checkpointCount: number;
-  error?: string;
-}> {
-  try {
-    // Get messages from legacy manager
-    const messages = await legacyManager.getMessages();
-
-    // Convert messages to new format
-    const convertedMessages: Message[] = messages.map((msg: any) => ({
-      id: msg.id || `msg_${Date.now()}_${Math.random()}`,
-      role: msg.role,
-      content: msg.content,
-      timestamp: msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp),
-      toolCalls: msg.toolCalls,
-      toolCallId: msg.toolCallId,
-      tokenCount: msg.tokenCount,
-      metadata: msg.metadata,
-    }));
-
-    // Add messages to new manager
-    for (const message of convertedMessages) {
-      await newManager.addMessage(message);
-    }
-
-    return {
-      success: true,
-      messageCount: convertedMessages.length,
-      checkpointCount: 0, // Legacy system doesn't have checkpoints
-    };
-  } catch (error) {
-    return {
-      success: false,
-      messageCount: 0,
-      checkpointCount: 0,
-      error: error instanceof Error ? error.message : String(error),
-    };
-  }
-}
-
-/**
- * Check if migration is needed
- *
- * @param manager - Context manager to check
- * @returns Whether migration is needed
- */
-export function needsMigration(
-  manager: ContextManager | ContextOrchestrator
-): boolean {
-  // If new system is enabled but we have a legacy manager, migration is needed
-  return (
-    FEATURES.USE_NEW_CONTEXT_MANAGER &&
-    manager instanceof ConversationContextManager
-  );
-}
-
-/**
- * Get migration status
- *
- * @returns Migration status information
- */
-export function getMigrationStatus(): {
-  newSystemEnabled: boolean;
-  migrationNeeded: boolean;
-  featureFlags: Record<string, boolean>;
-} {
-  return {
-    newSystemEnabled: FEATURES.USE_NEW_CONTEXT_MANAGER,
-    migrationNeeded: FEATURES.USE_NEW_CONTEXT_MANAGER,
-    featureFlags: getFeatureFlagStatus(),
   };
 }

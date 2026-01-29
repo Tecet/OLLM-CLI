@@ -5,8 +5,7 @@
  * through VRAM monitoring, dynamic context sizing, snapshots, compression,
  * and memory safety guards.
  * 
- * NEW SYSTEM (v0.1.1+): Uses ContextOrchestrator with LLM-based compression
- * LEGACY SYSTEM: Available for backward compatibility (set feature flags to false)
+ * SYSTEM (v0.1.1+): Uses ContextOrchestrator with LLM-based compression
  */
 
 // Export all types and interfaces
@@ -33,22 +32,16 @@ export * from './snapshotStorage.js';
 // Export snapshot manager
 export * from './snapshotManager.js';
 
-// Export compression service (legacy - for backward compatibility)
+// Export compression service
 export * from './compressionService.js';
 
 // Export memory guard
 export * from './memoryGuard.js';
 
-// Export context manager (legacy - for backward compatibility)
-// Note: Legacy createContextManager is NOT exported to avoid conflicts with factory
-// Use the factory createContextManager from contextManagerFactory.js instead
-export { ConversationContextManager } from './contextManager.js';
-
 // Export hot swap service
 export * from './HotSwapService.js';
 
 // Export new system components (v0.1.1+)
-// Note: Some types may conflict with legacy exports - use explicit imports if needed
 export { ContextOrchestrator } from './orchestration/contextOrchestrator.js';
 export type { ContextOrchestratorConfig } from './orchestration/contextOrchestrator.js';
 
@@ -65,7 +58,7 @@ export { ValidationService } from './compression/validationService.js';
 export { CheckpointLifecycle } from './checkpoints/checkpointLifecycle.js';
 export { EmergencyActions } from './checkpoints/emergencyActions.js';
 
-// Export storage types (avoiding conflicts)
+// Export storage types
 export type {
   ActiveContext,
   CheckpointSummary,
@@ -75,7 +68,7 @@ export type {
   StorageBoundaries as IStorageBoundaries,
 } from './types/storageTypes.js';
 
-// Export context manager factory (handles feature flags)
+// Export context manager factory
 export { createContextManager } from './contextManagerFactory.js';
 export type { ContextManagerFactoryConfig, ContextManagerFactoryResult } from './contextManagerFactory.js';
 

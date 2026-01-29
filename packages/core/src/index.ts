@@ -208,7 +208,6 @@ export {
   // Classes (for DI/testing)
   DefaultVRAMMonitor,
   DefaultGPUDetector,
-  ConversationContextManager,
   HotSwapService,
 } from './context/index.js';
 

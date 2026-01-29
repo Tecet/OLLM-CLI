@@ -229,18 +229,17 @@ export function ContextManagerProvider({
         const os = await import('os');
         const storagePath = path.join(os.homedir(), '.ollm', 'context-storage');
         
-        const factoryResult = createContextManager({
+        const { manager } = createContextManager({
           sessionId,
           modelInfo: {
             ...modelInfo,
             contextSize: effectiveConfig?.targetSize,
           },
           contextConfig: effectiveConfig,
-          provider, // Pass provider from props
-          storagePath, // Pass storage path for new system
+          provider: provider!, // Provider is required
+          storagePath, // Storage path is required
         });
         
-        const manager = factoryResult.manager;
         managerRef.current = manager as any; // Type compatibility with legacy interface
 
         // Create mode manager
