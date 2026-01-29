@@ -82,8 +82,6 @@ export {
 export {
   SyntaxViewer,
   type SyntaxViewerProps,
-  getSupportedLanguages,
-  canHighlightFile,
 } from './SyntaxViewer.js';
 export {
   QuickActionsMenu,

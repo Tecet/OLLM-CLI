@@ -6,9 +6,6 @@ export { SystemBar } from './SystemBar.js';
 export {
   StatusBar,
   type StatusBarProps,
-  type ConnectionStatus,
-  type GitStatus,
-  type GPUInfo,
 } from './StatusBar.js';
 export { InputBox, type InputBoxProps } from './InputBox.js';
 export { TwoColumnLayout, type TwoColumnLayoutProps } from './TwoColumnLayout.js';

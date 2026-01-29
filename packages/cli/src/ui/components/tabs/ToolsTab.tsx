@@ -22,5 +22,5 @@ export function ToolsTab({ width }: ToolsTabProps) {
   // Check if current model supports tools
   const supportsTools = modelSupportsTools(currentModel);
 
-  return <ToolsPanel modelSupportsTools={supportsTools} windowWidth={width} height={undefined} />;
+  return <ToolsPanel modelSupportsTools={supportsTools} windowWidth={width} />;
 }

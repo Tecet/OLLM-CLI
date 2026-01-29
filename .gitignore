@@ -36,6 +36,7 @@ test-session-*/
 # Development documentation and debugging
 .archive
 .legacy
+.obsidian
 
 
 # OLLM runtime data and memory

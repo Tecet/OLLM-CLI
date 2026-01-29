@@ -99,6 +99,7 @@ export interface ContextManagerActions {
   resize: (size: number) => Promise<void>;
   hotSwap: (newSkills?: string[]) => Promise<void>;
   getSystemPrompt: () => string;
+  getOllamaContextLimit: () => number;
   on: (event: string, callback: (data: unknown) => void) => void;
   off: (event: string, callback: (data: unknown) => void) => void;
   getUsage: () => ContextUsage;
@@ -628,6 +629,10 @@ export function ContextManagerProvider({
     return managerRef.current?.getSystemPrompt() || '';
   }, []);
 
+  const getOllamaContextLimit = useCallback(() => {
+    return managerRef.current?.getOllamaContextLimit?.() || 0;
+  }, []);
+
   const resize = useCallback(async (size: number) => {
     if (!managerRef.current) return;
 
@@ -824,6 +829,7 @@ export function ContextManagerProvider({
       resize,
       hotSwap,
       getSystemPrompt,
+      getOllamaContextLimit,
       on,
       off,
       getUsage: () => managerRef.current?.getUsage() || DEFAULT_USAGE,
