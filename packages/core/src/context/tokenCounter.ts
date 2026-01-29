@@ -171,9 +171,6 @@ export class TokenCounterService implements TokenCounter {
     // Single rounding operation for accuracy
     const count = Math.ceil((text.length / 4) * this.modelMultiplier);
 
-    // DEBUG: Log token counting
-    console.log(`[TokenCounter] Counting tokens for message ${messageId.substring(0, 20)}...: ${count} tokens (${text.length} chars)`);
-
     // ✅ VALIDATION: Ensure token count is valid
     if (count < 0) {
       console.error('[TokenCounter] INVALID: Negative token count!', {
