@@ -301,6 +301,63 @@ export class SnapshotLifecycle {
   }
 
   /**
+   * Get snapshot count for this session
+   *
+   * Returns the total number of snapshots for this session.
+   *
+   * @returns Number of snapshots
+   *
+   * @example
+   * ```typescript
+   * const count = await lifecycle.getSnapshotCount();
+   * console.log(`${count} snapshots available`);
+   * ```
+   */
+  async getSnapshotCount(): Promise<number> {
+    const metadataList = await this.storage.list(this.sessionId);
+    return metadataList.length;
+  }
+
+  /**
+   * Get latest snapshot metadata
+   *
+   * Returns metadata for the most recent snapshot.
+   *
+   * @returns Latest snapshot metadata or undefined if no snapshots
+   *
+   * @example
+   * ```typescript
+   * const latest = await lifecycle.getLatestSnapshot();
+   * if (latest) {
+   *   console.log(`Latest snapshot: ${latest.id} (${latest.purpose})`);
+   * }
+   * ```
+   */
+  async getLatestSnapshot(): Promise<{
+    id: string;
+    timestamp: number;
+    purpose: string;
+  } | undefined> {
+    const metadataList = await this.storage.list(this.sessionId);
+    
+    if (metadataList.length === 0) {
+      return undefined;
+    }
+    
+    // Sort by timestamp (newest first)
+    const sorted = metadataList.sort(
+      (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
+    );
+    
+    const latest = sorted[0];
+    return {
+      id: latest.id,
+      timestamp: latest.timestamp.getTime(),
+      purpose: (latest.metadata as any)?.purpose || 'recovery',
+    };
+  }
+
+  /**
    * Calculate total token count for messages
    *
    * @param messages - Messages to count
