@@ -24,29 +24,46 @@ export interface TierBudgetConfig {
 /**
  * Tier-aware compression integration
  *
- * Respects tier-specific prompt budgets (200-1500 tokens) and ensures
- * compression triggers account for tier constraints.
+ * Calculates tier budgets dynamically based on context size to ensure
+ * consistent behavior across all context sizes.
  */
 export class TierAwareCompression {
   /**
-   * Tier-specific prompt budgets (from dev_PromptSystem.md)
-   */
-  private readonly tierBudgets: Record<ContextTier, number> = {
-    [ContextTier.TIER_1_MINIMAL]: 200,
-    [ContextTier.TIER_2_BASIC]: 500,
-    [ContextTier.TIER_3_STANDARD]: 1000,
-    [ContextTier.TIER_4_PREMIUM]: 1500,
-    [ContextTier.TIER_5_ULTRA]: 1500,
-  };
-
-  /**
-   * Get the prompt budget for a specific tier
+   * Get the prompt budget for a specific tier and context size
+   * 
+   * Budget is calculated as a percentage of context size:
+   * - Tier 1 (2-4K): 5% of context (min 200)
+   * - Tier 2 (8K): 6% of context (min 500)
+   * - Tier 3 (16K): 6% of context (min 1000)
+   * - Tier 4 (32K): 5% of context (min 1500)
+   * - Tier 5 (64K+): 2% of context (min 1500)
    *
    * @param tier - Context tier
+   * @param contextSize - Full context size in tokens
    * @returns Prompt budget in tokens
    */
-  getPromptBudget(tier: ContextTier): number {
-    return this.tierBudgets[tier];
+  getPromptBudget(tier: ContextTier, contextSize: number = 8192): number {
+    const percentages: Record<ContextTier, number> = {
+      [ContextTier.TIER_1_MINIMAL]: 0.05, // 5%
+      [ContextTier.TIER_2_BASIC]: 0.06,   // 6%
+      [ContextTier.TIER_3_STANDARD]: 0.06, // 6%
+      [ContextTier.TIER_4_PREMIUM]: 0.05,  // 5%
+      [ContextTier.TIER_5_ULTRA]: 0.02,    // 2%
+    };
+
+    const minimums: Record<ContextTier, number> = {
+      [ContextTier.TIER_1_MINIMAL]: 200,
+      [ContextTier.TIER_2_BASIC]: 500,
+      [ContextTier.TIER_3_STANDARD]: 1000,
+      [ContextTier.TIER_4_PREMIUM]: 1500,
+      [ContextTier.TIER_5_ULTRA]: 1500,
+    };
+
+    const percentage = percentages[tier];
+    const minimum = minimums[tier];
+    const calculated = Math.floor(contextSize * percentage);
+
+    return Math.max(minimum, calculated);
   }
 
   /**
@@ -54,10 +71,11 @@ export class TierAwareCompression {
    *
    * @param tier - Context tier
    * @param systemPromptTokens - Tokens used by system prompt
+   * @param contextSize - Full context size in tokens
    * @returns Available tokens for checkpoints and messages
    */
-  calculateCheckpointBudget(tier: ContextTier, systemPromptTokens: number): number {
-    const totalBudget = this.getPromptBudget(tier);
+  calculateCheckpointBudget(tier: ContextTier, systemPromptTokens: number, contextSize: number = 8192): number {
+    const totalBudget = this.getPromptBudget(tier, contextSize);
     const checkpointBudget = totalBudget - systemPromptTokens;
     return Math.max(0, checkpointBudget);
   }
@@ -77,11 +95,10 @@ export class TierAwareCompression {
     ollamaLimit: number,
     systemPromptTokens: number
   ): boolean {
-    const promptBudget = this.getPromptBudget(tier);
     const safetyMargin = 1000; // Reserve for response
 
-    // Calculate available space for messages (Ollama limit - system prompt - prompt budget - safety margin)
-    const availableForMessages = ollamaLimit - systemPromptTokens - promptBudget - safetyMargin;
+    // Calculate available space for messages (Ollama limit - system prompt - safety margin)
+    const availableForMessages = ollamaLimit - systemPromptTokens - safetyMargin;
 
     // Trigger compression at 75% of available space
     const compressionThreshold = availableForMessages * 0.75;
@@ -93,11 +110,12 @@ export class TierAwareCompression {
    * Get tier configuration including compression settings
    *
    * @param tier - Context tier
+   * @param contextSize - Full context size in tokens
    * @returns Tier budget configuration
    */
-  getTierConfig(tier: ContextTier): TierBudgetConfig {
+  getTierConfig(tier: ContextTier, contextSize: number = 8192): TierBudgetConfig {
     return {
-      promptBudget: this.getPromptBudget(tier),
+      promptBudget: this.getPromptBudget(tier, contextSize),
       systemPromptReserve: 100, // Minimum reserve for system prompt
       compressionThreshold: 0.75, // Trigger at 75% of available budget
     };
@@ -110,13 +128,15 @@ export class TierAwareCompression {
    * @param systemPromptTokens - Tokens used by system prompt
    * @param checkpointTokens - Tokens used by checkpoints
    * @param ollamaLimit - Ollama context limit
+   * @param contextSize - Full context size in tokens
    * @returns Total token budget breakdown
    */
   calculateTotalBudget(
     tier: ContextTier,
     systemPromptTokens: number,
     checkpointTokens: number,
-    ollamaLimit: number
+    ollamaLimit: number,
+    contextSize: number = 8192
   ): {
     totalOllamaLimit: number;
     systemPromptTokens: number;
@@ -126,7 +146,7 @@ export class TierAwareCompression {
     availableForMessages: number;
     compressionThreshold: number;
   } {
-    const promptBudget = this.getPromptBudget(tier);
+    const promptBudget = this.getPromptBudget(tier, contextSize);
     const safetyMargin = 1000;
 
     // Calculate available space for new messages

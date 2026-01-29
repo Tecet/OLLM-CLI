@@ -395,7 +395,7 @@ export class ContextOrchestrator {
       );
       const totalTokens = this.activeContext.getTokenCount();
       const currentTokens = totalTokens - systemPromptTokens; // Exclude system prompt for compression check
-      const tierBudget = this.tierIntegration.getPromptBudget(this.config.tier);
+      const tierBudget = this.tierIntegration.getPromptBudget(this.config.tier, this.config.contextSize);
 
       // 🔍 DEBUG: Log compression check
       debugLog('ContextOrchestrator', 'Compression check', {
