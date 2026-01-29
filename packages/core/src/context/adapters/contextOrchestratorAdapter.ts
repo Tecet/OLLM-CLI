@@ -42,7 +42,13 @@ export class ContextOrchestratorAdapter extends EventEmitter implements ContextM
   // ============================================================================
 
   async start(): Promise<void> {
-    this.emit('started');
+    // Emit started event with initial state
+    // Use tier from config or default to TIER_3_STANDARD
+    const tier = (this.config as any).tier || 3; // ContextTier.TIER_3_STANDARD = 3
+    this.emit('started', {
+      tier,
+      autoSizeEnabled: this.config.autoSize ?? true,
+    });
   }
 
   async stop(): Promise<void> {
