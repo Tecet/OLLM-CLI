@@ -392,6 +392,10 @@ export function useContextMenu(options: ContextMenuOptions) {
               const { getSessionManager } = await import('../../../features/context/SessionManager.js');
               const sessionManager = getSessionManager();
               sessionManager.setPendingContextSize(val);
+              
+              // Also save to settings for persistence
+              const { SettingsService } = await import('../../../config/settingsService.js');
+              SettingsService.getInstance().setContextSize(val);
             } catch (error) {
               console.warn('[ContextMenu] Failed to set pending context size:', error);
             }
@@ -435,6 +439,10 @@ export function useContextMenu(options: ContextMenuOptions) {
               const { getSessionManager } = await import('../../../features/context/SessionManager.js');
               const sessionManager = getSessionManager();
               sessionManager.setPendingContextSize(value);
+              
+              // Also save to settings for persistence
+              const { SettingsService } = await import('../../../config/settingsService.js');
+              SettingsService.getInstance().setContextSize(value);
             } catch (error) {
               console.warn('[ContextMenu] Failed to set pending context size:', error);
             }

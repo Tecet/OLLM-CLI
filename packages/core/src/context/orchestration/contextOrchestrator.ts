@@ -39,6 +39,7 @@ import { ActiveContextManager } from '../storage/activeContextManager.js';
 import { SessionHistoryManager } from '../storage/sessionHistoryManager.js';
 import { SnapshotLifecycle } from '../storage/snapshotLifecycle.js';
 import { TokenCounterService } from '../tokenCounter.js';
+import { debugLog } from '../../utils/debugLogger.js';
 
 // Integration imports
 
@@ -394,8 +395,19 @@ export class ContextOrchestrator {
         this.config.systemPrompt.id,
         this.config.systemPrompt.content
       );
-      const currentTokens = this.activeContext.getTokenCount();
+      const totalTokens = this.activeContext.getTokenCount();
+      const currentTokens = totalTokens - systemPromptTokens; // Exclude system prompt for compression check
       const tierBudget = this.tierIntegration.getPromptBudget(this.config.tier);
+
+      // 🔍 DEBUG: Log compression check
+      debugLog('ContextOrchestrator', 'Compression check', {
+        totalTokens,
+        systemPromptTokens,
+        currentTokens,
+        ollamaLimit: this.config.ollamaLimit,
+        tier: this.config.tier,
+        tierBudget,
+      });
 
       // Use tier and provider integrations to determine if compression needed
       const tierShouldCompress = this.tierIntegration.shouldCompress(
@@ -412,11 +424,25 @@ export class ContextOrchestrator {
         tierBudget
       );
 
+      // 🔍 DEBUG: Log compression decision
+      debugLog('ContextOrchestrator', 'Compression decision', {
+        tierShouldCompress,
+        providerShouldCompress,
+        willCompress: tierShouldCompress || providerShouldCompress,
+      });
+
       let compressionTriggered = false;
       let tokensFreed = 0;
 
       if (tierShouldCompress || providerShouldCompress) {
+        debugLog('ContextOrchestrator', '🔄 TRIGGERING COMPRESSION');
         const compressionResult = await this.compress();
+        debugLog('ContextOrchestrator', 'Compression result', {
+          success: compressionResult.success,
+          freedTokens: compressionResult.freedTokens,
+          reason: compressionResult.reason,
+          error: compressionResult.error,
+        });
         compressionTriggered = compressionResult.success;
         tokensFreed = compressionResult.freedTokens || 0;
       }
@@ -1204,6 +1230,48 @@ export class ContextOrchestrator {
    */
   getOllamaLimit(): number {
     return this.activeContext.getOllamaLimit();
+  }
+
+  /**
+   * Update Ollama context limit
+   *
+   * Updates the ollama limit when context size changes dynamically.
+   * This allows resizing without creating a new session.
+   *
+   * @param newLimit - New ollama context limit (85% of context size)
+   *
+   * @example
+   * ```typescript
+   * orchestrator.updateOllamaLimit(6963); // For 8K context
+   * ```
+   */
+  updateOllamaLimit(newLimit: number): void {
+    this.config.ollamaLimit = newLimit;
+    this.activeContext.updateOllamaLimit(newLimit);
+  }
+
+  /**
+   * Rebuild system prompt
+   *
+   * Rebuilds the system prompt when mode or tier changes.
+   * Uses PromptOrchestrator (via promptIntegration) to generate the correct prompt.
+   *
+   * @example
+   * ```typescript
+   * orchestrator.rebuildSystemPrompt();
+   * ```
+   */
+  rebuildSystemPrompt(): void {
+    // Use PromptOrchestrator to build new system prompt for current mode/tier
+    const newSystemPrompt = this.promptIntegration.getSystemPrompt({
+      mode: this.config.mode,
+      tier: this.config.tier,
+      activeSkills: [],
+      useSanityChecks: false,
+    });
+
+    // Update active context with new system prompt
+    this.activeContext.updateSystemPrompt(newSystemPrompt);
   }
 
   /**

@@ -234,10 +234,55 @@ export function ContextManagerProvider({
           
           if (pendingSize !== null) {
             log(`[ContextManagerContext] Using pending context size: ${pendingSize}`);
+            
+            // Get ollama_context_size from profile
+            let ollamaContextSize = Math.floor(pendingSize * 0.85);
+            try {
+              const { profileManager } = await import('../profiles/ProfileManager.js');
+              const modelEntry = profileManager.getModelEntry(modelInfo?.modelId || '');
+              const contextProfile = modelEntry.context_profiles?.find(
+                (p: any) => p.size === pendingSize
+              );
+              if (contextProfile?.ollama_context_size) {
+                ollamaContextSize = contextProfile.ollama_context_size;
+                log(`[ContextManagerContext] Using ollama_context_size from profile: ${ollamaContextSize}`);
+              }
+            } catch (error) {
+              log(`[ContextManagerContext] Failed to get ollama_context_size: ${error}`);
+            }
+            
             effectiveConfig = {
               ...config,
               targetSize: pendingSize,
-              autoSize: false, // Disable auto-size when user explicitly selects size
+              ollamaContextSize,
+              autoSize: false,
+            };
+          } else {
+            // Use user's selected context size from config, or default to 8K
+            const userContextSize = config?.targetSize || 8192;
+            
+            // Get ollama_context_size from profile
+            let ollamaContextSize = Math.floor(userContextSize * 0.85);
+            try {
+              const { profileManager } = await import('../profiles/ProfileManager.js');
+              const modelEntry = profileManager.getModelEntry(modelInfo?.modelId || '');
+              const contextProfile = modelEntry.context_profiles?.find(
+                (p: any) => p.size === userContextSize
+              );
+              if (contextProfile?.ollama_context_size) {
+                ollamaContextSize = contextProfile.ollama_context_size;
+                log(`[ContextManagerContext] Using ollama_context_size from profile: ${ollamaContextSize} for context ${userContextSize}`);
+              } else {
+                log(`[ContextManagerContext] No profile found for ${userContextSize}, using 85% fallback: ${ollamaContextSize}`);
+              }
+            } catch (error) {
+              log(`[ContextManagerContext] Failed to get ollama_context_size: ${error}`);
+            }
+            
+            effectiveConfig = {
+              ...config,
+              targetSize: userContextSize,
+              ollamaContextSize,
             };
           }
         } catch (error) {
@@ -256,13 +301,23 @@ export function ContextManagerProvider({
         }
         
         log('[ContextManagerContext] Creating context manager with factory...');
+        log(`[ContextManagerContext] Model info: ${JSON.stringify(modelInfo)}`);
+        log(`[ContextManagerContext] Effective config: ${JSON.stringify(effectiveConfig)}`);
+        
+        // Load saved mode from settings, default to developer
+        const savedMode = SettingsService.getInstance().getMode() || 'developer';
+        log(`[ContextManagerContext] Using mode: ${savedMode}`);
+        
         const { manager } = createContextManager({
           sessionId,
           modelInfo: {
             ...modelInfo,
             contextSize: effectiveConfig?.targetSize,
           },
-          contextConfig: effectiveConfig,
+          contextConfig: {
+            ...effectiveConfig,
+            mode: savedMode as any, // Pass mode to factory
+          },
           provider, // Provider is now validated
           storagePath,
         });
@@ -402,6 +457,11 @@ export function ContextManagerProvider({
           setUsage(manager.getUsage());
         });
 
+        // Listen for real-time usage updates (during streaming)
+        manager.on('usage-updated', (usage: unknown) => {
+          setUsage(usage as ContextUsage);
+        });
+
         // Listen for config updates
         manager.on('config-updated', (updatedConfig) => {
           const cfg = updatedConfig as ContextConfig;
@@ -417,14 +477,16 @@ export function ContextManagerProvider({
         // Get initial usage
         setUsage(manager.getUsage());
 
-        // Start in assistant mode
-        const startMode = 'assistant';
+        // Use the saved mode from earlier
         const savedAutoSwitch = false; // Force auto-switch OFF
 
-        modeManager.forceMode(startMode as ModeType);
+        modeManager.forceMode(savedMode as ModeType);
         modeManager.setAutoSwitch(savedAutoSwitch);
 
-        setCurrentMode(startMode as ModeType);
+        setCurrentMode(savedMode as ModeType);
+        
+        // Update context manager with saved mode
+        manager.setMode?.(savedMode as any);
         setAutoSwitchEnabled(savedAutoSwitch);
         setError(null);
         
@@ -638,12 +700,41 @@ export function ContextManagerProvider({
 
     console.log(`[ContextManagerContext] Resize to ${size} tokens, disabling auto-size`);
 
-    managerRef.current.updateConfig({ targetSize: size, autoSize: false });
+    // Get ollama_context_size from profile
+    let ollamaContextSize = Math.floor(size * 0.85);
+    try {
+      const { profileManager } = await import('../profiles/ProfileManager.js');
+      const modelEntry = profileManager.getModelEntry(modelInfo?.modelId || '');
+      const contextProfile = modelEntry.context_profiles?.find(
+        (p: any) => p.size === size
+      );
+      if (contextProfile?.ollama_context_size) {
+        ollamaContextSize = contextProfile.ollama_context_size;
+        console.log(`[ContextManagerContext] Using ollama_context_size from profile: ${ollamaContextSize} for resize to ${size}`);
+      }
+    } catch (error) {
+      console.warn('[ContextManagerContext] Failed to get ollama_context_size for resize:', error);
+    }
+
+    // Update context manager with new size and ollama limit
+    managerRef.current.updateConfig({ 
+      targetSize: size, 
+      ollamaContextSize,
+      autoSize: false 
+    });
     setAutoSizeEnabled(false);
+
+    // Save to settings for persistence
+    try {
+      const { SettingsService } = await import('../../config/settingsService.js');
+      SettingsService.getInstance().setContextSize(size);
+    } catch (error) {
+      console.warn('[ContextManagerContext] Failed to save context size to settings:', error);
+    }
 
     const newUsage = managerRef.current.getUsage();
     setUsage(newUsage);
-  }, []);
+  }, [modelInfo]);
 
   const hotSwap = useCallback(
     async (newSkills?: string[]) => {

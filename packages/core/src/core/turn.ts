@@ -4,6 +4,7 @@
  */
 
 import { DeclarativeTool as _DeclarativeTool } from '../tools/types.js';
+import { debugLog } from '../utils/debugLogger.js';
 
 import type { ModeType } from '../prompts/ContextAnalyzer.js';
 import type { SnapshotManager } from '../prompts/modeSnapshotManager.js';
@@ -320,13 +321,13 @@ export class Turn {
     // Use ollamaContextSize if provided, otherwise fall back to contextSize
     if (this.options.ollamaContextSize !== undefined) {
       opts.num_ctx = this.options.ollamaContextSize;
-      if (!isTestEnv) console.log(`[Turn] Setting num_ctx from ollamaContextSize: ${opts.num_ctx}`);
+      debugLog('Turn', `Setting num_ctx from ollamaContextSize: ${opts.num_ctx}`);
     } else if (this.options.contextSize !== undefined) {
       // Fallback: calculate 85% if only contextSize is provided
       opts.num_ctx = Math.floor(this.options.contextSize * 0.85);
-      if (!isTestEnv) console.log(`[Turn] Setting num_ctx from contextSize (85%): ${opts.num_ctx}`);
+      debugLog('Turn', `Setting num_ctx from contextSize (85%): ${opts.num_ctx}`);
     } else {
-      if (!isTestEnv) console.warn('[Turn] No context size provided, num_ctx will not be set!');
+      debugLog('Turn', 'WARNING: No context size provided, num_ctx will not be set!');
     }
 
     return Object.keys(opts).length > 0 ? opts : undefined;

@@ -927,6 +927,12 @@ export interface ContextConfig {
   autoSize: boolean;
   /** VRAM buffer in bytes */
   vramBuffer: number;
+  /** Ollama context size (85% of targetSize, pre-calculated from profile) */
+  ollamaContextSize?: number;
+  /** Operational mode (assistant, developer, etc.) */
+  mode?: string;
+  /** Context tier */
+  tier?: ContextTier;
   /** KV cache quantization type */
   kvQuantization: KVQuantization;
   /** Compression configuration */

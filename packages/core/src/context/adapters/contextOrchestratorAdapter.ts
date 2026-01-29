@@ -15,6 +15,7 @@ import { EventEmitter } from 'events';
 
 import { ContextOrchestrator } from '../orchestration/contextOrchestrator.js';
 import { OperationalMode, ContextTier } from '../types.js';
+import { debugLog } from '../../utils/debugLogger.js';
 
 import type { 
   ContextManager, 
@@ -56,6 +57,7 @@ export class ContextOrchestratorAdapter extends EventEmitter implements ContextM
   private currentMode: OperationalMode;
   private currentTier: ContextTier;
   private systemPromptText: string = '';
+  private inflightTokens: number = 0;
 
   constructor(orchestrator: ContextOrchestrator, config: ContextConfig, initialMode?: OperationalMode, initialTier?: ContextTier) {
     super();
@@ -90,12 +92,20 @@ export class ContextOrchestratorAdapter extends EventEmitter implements ContextM
     this.config = { ...this.config, ...config };
     const newSize = this.config.targetSize || 8192;
     
-    // If context size changed, recalculate and emit tier change
+    // If context size changed, recalculate tier and ollama limit
     if (oldSize !== newSize) {
       const newTier = calculateTier(newSize);
       this.currentTier = newTier;
       this.orchestrator.updateTier(newTier);
       this.orchestrator.updateContextSize(newSize);
+      
+      // Recalculate ollama limit (85% of new size or from profile)
+      const newOllamaLimit = config.ollamaContextSize || Math.floor(newSize * 0.85);
+      this.orchestrator.updateOllamaLimit(newOllamaLimit);
+      
+      // Rebuild system prompt with new tier
+      this.orchestrator.rebuildSystemPrompt();
+      
       this.emit('tier-changed', { tier: newTier });
     }
     
@@ -110,10 +120,13 @@ export class ContextOrchestratorAdapter extends EventEmitter implements ContextM
     const state = this.orchestrator.getState();
     const fullContextSize = this.config.targetSize || 8192;
     
+    // Include inflight tokens in the current count for real-time updates during streaming
+    const totalTokens = state.activeContext.tokenCount.total + this.inflightTokens;
+    
     return {
-      currentTokens: state.activeContext.tokenCount.total,
+      currentTokens: totalTokens,
       maxTokens: fullContextSize, // Show full context size in UI, not ollama limit
-      percentage: Math.round((state.activeContext.tokenCount.total / fullContextSize) * 100),
+      percentage: Math.round((totalTokens / fullContextSize) * 100),
       vramUsed: 0, // Orchestrator doesn't track VRAM
       vramTotal: 0,
     };
@@ -267,6 +280,9 @@ export class ContextOrchestratorAdapter extends EventEmitter implements ContextM
     this.currentMode = mode;
     this.orchestrator.updateMode(mode);
     
+    // Rebuild system prompt with new mode
+    this.orchestrator.rebuildSystemPrompt();
+    
     // Emit mode-changed event with both old and new mode
     this.emit('mode-changed', { 
       mode,
@@ -335,12 +351,16 @@ export class ContextOrchestratorAdapter extends EventEmitter implements ContextM
   // Token Tracking Methods
   // ============================================================================
 
-  reportInflightTokens(_delta: number): void {
-    // Orchestrator doesn't need this
+  reportInflightTokens(delta: number): void {
+    this.inflightTokens += delta;
+    // Emit usage update for real-time UI updates
+    this.emit('usage-updated', this.getUsage());
   }
 
   clearInflightTokens(): void {
-    // Orchestrator doesn't need this
+    this.inflightTokens = 0;
+    // Emit usage update to reflect cleared inflight tokens
+    this.emit('usage-updated', this.getUsage());
   }
 
   getTokenMetrics(): {

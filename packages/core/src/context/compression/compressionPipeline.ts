@@ -312,8 +312,12 @@ export class CompressionPipeline {
    *
    * Determines which messages should be compressed based on:
    * - Keep last N recent messages (default: 5)
-   * - Only compress assistant messages (keep user messages for context)
+   * - Compress ALL older messages (user + assistant) for complete context
    * - Ensure we have enough messages to make compression worthwhile
+   *
+   * **CRITICAL**: Must include BOTH user and assistant messages in compression
+   * so that the LLM-generated summary includes the full conversation context.
+   * Otherwise, the LLM loses track of what the user asked for.
    *
    * Requirements: FR-5
    *
@@ -335,17 +339,15 @@ export class CompressionPipeline {
     }
 
     // Compress older messages (exclude last N)
+    // INCLUDE BOTH user and assistant messages for complete conversation context
     const oldMessages = recentMessages.slice(0, -this.keepRecentCount);
 
-    // Only compress assistant messages (keep user messages for continuity)
-    const toCompress = oldMessages.filter(m => m.role === 'assistant');
-
     // Need at least 2 messages to make compression worthwhile
-    if (toCompress.length < 2) {
+    if (oldMessages.length < 2) {
       return [];
     }
 
-    return toCompress;
+    return oldMessages;
   }
 
   /**

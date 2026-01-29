@@ -413,6 +413,43 @@ export class ActiveContextManager {
   }
 
   /**
+   * Update Ollama context limit
+   * 
+   * Updates the ollama limit when context size changes dynamically.
+   * This allows resizing without creating a new session.
+   * 
+   * @param newLimit - New ollama context limit (85% of context size)
+   */
+  updateOllamaLimit(newLimit: number): void {
+    this.ollamaLimit = newLimit;
+  }
+
+  /**
+   * Update system prompt
+   * 
+   * Updates the system prompt when mode or tier changes.
+   * Recalculates token counts for the new prompt.
+   * 
+   * @param newSystemPrompt - New system prompt message
+   */
+  updateSystemPrompt(newSystemPrompt: Message): void {
+    // Count tokens for new system prompt
+    const newSystemTokens = this.tokenCounter.countTokensCached(
+      newSystemPrompt.id,
+      newSystemPrompt.content
+    );
+
+    // Update context
+    this.context.systemPrompt = newSystemPrompt;
+    
+    // Recalculate total tokens
+    const oldSystemTokens = this.context.tokenCount.system;
+    this.context.tokenCount.system = newSystemTokens;
+    this.context.tokenCount.total = 
+      this.context.tokenCount.total - oldSystemTokens + newSystemTokens;
+  }
+
+  /**
    * Get safety margin
    * 
    * Returns the safety margin reserved for the response.

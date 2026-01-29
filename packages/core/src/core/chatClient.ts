@@ -24,6 +24,7 @@
 import { Turn, type TurnEvent, type ToolRegistry, type ChatOptions } from './turn.js';
 import { getMessageBus } from '../hooks/messageBus.js';
 import { LoopDetectionService } from '../services/loopDetectionService.js';
+import { debugLog } from '../utils/debugLogger.js';
 
 import type { ContextManager as ContextMgmtManager } from '../context/types.js';
 import type { ProviderRegistry } from '../provider/registry.js';
@@ -120,6 +121,13 @@ export class ChatClient {
         contextSize: usage.maxTokens,
         ollamaContextSize: ollamaLimit,
       };
+      
+      debugLog('ChatClient', 'Context size configuration', {
+        contextSize: usage.maxTokens,
+        ollamaContextSize: ollamaLimit,
+        currentTokens: usage.currentTokens,
+        percentage: usage.percentage,
+      });
       
       if (!isTestEnv) {
         console.log(`[ChatClient] Context: ${usage.maxTokens} tokens, Ollama limit: ${ollamaLimit}`);
