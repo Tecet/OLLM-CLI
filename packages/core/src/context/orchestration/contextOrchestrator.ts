@@ -27,10 +27,19 @@ import { SessionHistoryManager } from '../storage/sessionHistoryManager.js';
 import { SnapshotLifecycle } from '../storage/snapshotLifecycle.js';
 import { TokenCounterService } from '../tokenCounter.js';
 
+// Integration imports
+import { TierAwareCompression } from '../integration/tierAwareCompression.js';
+import { ModeAwareCompression } from '../integration/modeAwareCompression.js';
+import { ModelAwareCompression } from '../integration/modelAwareCompression.js';
+import { ProviderAwareCompression, type IProfileManager } from '../integration/providerAwareCompression.js';
+import { GoalAwareCompression } from '../integration/goalAwareCompression.js';
+import { PromptOrchestratorIntegration } from '../integration/promptOrchestratorIntegration.js';
+
 import type { ProviderAdapter } from '../../provider/types.js';
-import type { Goal } from '../goalTypes.js';
+import type { Goal, GoalManager } from '../goalTypes.js';
 import type { CheckpointSummary } from '../types/storageTypes.js';
-import type { Message } from '../types.js';
+import type { Message, ContextTier, OperationalMode } from '../types.js';
+import type { PromptOrchestrator } from '../promptOrchestrator.js';
 
 
 /**
@@ -69,6 +78,25 @@ export interface ContextOrchestratorConfig {
 
   /** Safety margin for response tokens (default: 1000) */
   safetyMargin?: number;
+
+  // Integration dependencies
+  /** Context tier for tier-aware compression */
+  tier: ContextTier;
+
+  /** Operational mode for mode-aware compression */
+  mode: OperationalMode;
+
+  /** Profile manager for provider-aware compression */
+  profileManager: IProfileManager;
+
+  /** Goal manager for goal-aware compression */
+  goalManager: GoalManager;
+
+  /** Prompt orchestrator for system prompt building */
+  promptOrchestrator: PromptOrchestrator;
+
+  /** Current context size (for provider integration) */
+  contextSize: number;
 }
 
 /**
@@ -113,6 +141,28 @@ export interface OrchestratorState {
     utilizationPercent: number;
     needsCompression: boolean;
     needsAging: boolean;
+  };
+
+  /** Integration status */
+  integrations: {
+    tier: ContextTier;
+    mode: OperationalMode;
+    model: string;
+    modelSize: number;
+    contextSize: number;
+    hasActiveGoal: boolean;
+    tierBudget: number;
+    compressionReliability: number;
+    compressionUrgency: 'none' | 'low' | 'medium' | 'high' | 'critical';
+  };
+
+  /** Compression reliability */
+  reliability: {
+    score: number;
+    level: 'excellent' | 'good' | 'moderate' | 'low' | 'critical';
+    emoji: string;
+    description: string;
+    shouldWarn: boolean;
   };
 }
 
@@ -178,6 +228,14 @@ export class ContextOrchestrator {
   private emergencyActions: EmergencyActions;
   private validationService: ValidationService;
 
+  // Integration subsystems
+  private tierIntegration: TierAwareCompression;
+  private modeIntegration: ModeAwareCompression;
+  private modelIntegration: ModelAwareCompression;
+  private providerIntegration: ProviderAwareCompression;
+  private goalIntegration: GoalAwareCompression;
+  private promptIntegration: PromptOrchestratorIntegration;
+
   // Configuration
   private config: ContextOrchestratorConfig;
   private goal?: Goal;
@@ -197,6 +255,17 @@ export class ContextOrchestrator {
 
     // Initialize token counter
     const tokenCounter = config.tokenCounter;
+
+    // Initialize integration subsystems
+    this.tierIntegration = new TierAwareCompression();
+    this.modeIntegration = new ModeAwareCompression();
+    this.modelIntegration = new ModelAwareCompression();
+    this.providerIntegration = new ProviderAwareCompression(
+      config.profileManager,
+      config.contextSize
+    );
+    this.goalIntegration = new GoalAwareCompression(config.goalManager);
+    this.promptIntegration = new PromptOrchestratorIntegration(config.promptOrchestrator);
 
     // Initialize active context manager
     this.activeContext = new ActiveContextManager(
@@ -218,19 +287,19 @@ export class ContextOrchestrator {
       config.storagePath
     );
 
-    // Initialize summarization service
+    // Initialize summarization service with mode integration
     const summarizationService = new SummarizationService({
       provider: config.provider,
       model: config.model,
     });
 
-    // Initialize validation service
+    // Initialize validation service with provider integration
     this.validationService = new ValidationService({
       ollamaLimit: config.ollamaLimit,
       tokenCounter,
     });
 
-    // Initialize compression pipeline
+    // Initialize compression pipeline with all integrations
     this.compressionPipeline = new CompressionPipeline({
       summarizationService,
       validationService: this.validationService,
@@ -241,7 +310,7 @@ export class ContextOrchestrator {
       keepRecentCount: config.keepRecentCount,
     });
 
-    // Initialize checkpoint lifecycle
+    // Initialize checkpoint lifecycle with model integration
     this.checkpointLifecycle = new CheckpointLifecycle(summarizationService);
 
     // Initialize emergency actions
@@ -257,13 +326,14 @@ export class ContextOrchestrator {
    *
    * Adds a message to both active context and session history.
    * Automatically triggers compression if context is getting full.
+   * Uses tier and provider integrations to determine compression triggers.
    *
    * **Compression Trigger:**
-   * - Triggered when token usage exceeds 75% of limit
+   * - Triggered based on tier budget and provider limits
    * - Compression runs automatically in background
    * - User is notified via progress callback
    *
-   * Requirements: FR-1, FR-4, FR-5
+   * Requirements: FR-1, FR-4, FR-5, FR-11, FR-14
    *
    * @param message - Message to add
    * @returns Add message result
@@ -312,12 +382,33 @@ export class ContextOrchestrator {
       // Step 3: Add to active context
       this.activeContext.addMessage(message);
 
-      // Step 4: Check if we need compression after adding
-      const utilization = this.getTokenUtilization();
+      // Step 4: Check if we need compression after adding (using integrations)
+      const systemPromptTokens = this.config.tokenCounter.countTokensCached(
+        this.config.systemPrompt.id,
+        this.config.systemPrompt.content
+      );
+      const currentTokens = this.activeContext.getTokenCount();
+      const tierBudget = this.tierIntegration.getPromptBudget(this.config.tier);
+
+      // Use tier and provider integrations to determine if compression needed
+      const tierShouldCompress = this.tierIntegration.shouldCompress(
+        this.config.tier,
+        currentTokens,
+        this.config.ollamaLimit,
+        systemPromptTokens
+      );
+
+      const providerShouldCompress = this.providerIntegration.shouldCompress(
+        currentTokens,
+        this.config.model,
+        systemPromptTokens,
+        tierBudget
+      );
+
       let compressionTriggered = false;
       let tokensFreed = 0;
 
-      if (utilization > this.compressionThreshold) {
+      if (tierShouldCompress || providerShouldCompress) {
         const compressionResult = await this.compress();
         compressionTriggered = compressionResult.success;
         tokensFreed = compressionResult.freedTokens || 0;
@@ -366,8 +457,9 @@ export class ContextOrchestrator {
    *
    * Runs the compression pipeline to free space in active context.
    * Creates a snapshot before compression for safety.
+   * Uses all system integrations (tier, mode, model, provider, goal).
    *
-   * Requirements: FR-5, FR-6, FR-7, FR-9
+   * Requirements: FR-5, FR-6, FR-7, FR-9, FR-11, FR-12, FR-13, FR-14, FR-15
    *
    * @returns Compression result
    *
@@ -398,10 +490,54 @@ export class ContextOrchestrator {
     this.isCompressing = true;
 
     try {
-      // Step 1: Create safety snapshot
+      // Step 1: Validate system prompt before compression
+      try {
+        this.validateSystemPrompt();
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        return {
+          success: false,
+          reason: 'System prompt validation failed',
+          error: errorMessage,
+        };
+      }
+
+      // Step 2: Check compression urgency
+      const urgency = this.getCompressionUrgency();
+      if (urgency === 'none') {
+        return {
+          success: false,
+          reason: 'Compression not needed - token usage is low',
+        };
+      }
+
+      // Step 3: Check compression reliability
+      const reliability = this.getCompressionReliability();
+      if (reliability.shouldWarn) {
+        console.warn(
+          `[ContextOrchestrator] ${reliability.emoji} ${reliability.description}`
+        );
+      }
+
+      // Step 4: Create safety snapshot
       await this.createSnapshot('recovery');
 
-      // Step 2: Run compression pipeline
+      // Step 5: Verify goals are not in messages to compress (FR-15)
+      if (this.goal) {
+        const messages = this.activeContext.getRecentMessages();
+        try {
+          this.goalIntegration.verifyGoalsNotCompressed(messages, this.goal);
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          return {
+            success: false,
+            reason: 'Goal verification failed',
+            error: errorMessage,
+          };
+        }
+      }
+
+      // Step 6: Run compression pipeline with goal context
       const result = await this.compressionPipeline.compress(this.goal);
 
       if (!result.success) {
@@ -412,8 +548,22 @@ export class ContextOrchestrator {
         };
       }
 
-      // Step 3: Age checkpoints if needed
+      // Step 7: Age checkpoints if needed (with model-aware reliability)
       await this.ageCheckpointsIfNeeded();
+
+      // Step 8: Validate result against provider limits (FR-14)
+      const validation = this.providerIntegration.validateAgainstProvider(
+        this.activeContext.getTokenCount(),
+        this.config.model
+      );
+
+      if (!validation.valid) {
+        return {
+          success: false,
+          reason: 'Compression result exceeds provider limits',
+          error: validation.message,
+        };
+      }
 
       return {
         success: true,
@@ -422,6 +572,18 @@ export class ContextOrchestrator {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       console.error('[ContextOrchestrator] Compression failed:', errorMessage);
+
+      // Handle provider-specific errors (FR-14)
+      if (error instanceof Error) {
+        const errorStrategy = this.providerIntegration.handleProviderError(
+          error,
+          this.config.model
+        );
+
+        if (errorStrategy.shouldCompress && errorStrategy.shouldRetry) {
+          console.log('[ContextOrchestrator] Provider error suggests retry with compression');
+        }
+      }
 
       return {
         success: false,
@@ -613,7 +775,8 @@ export class ContextOrchestrator {
   /**
    * Get current state
    *
-   * Returns a snapshot of the current orchestrator state.
+   * Returns a snapshot of the current orchestrator state including
+   * all integration statuses.
    * Useful for debugging and monitoring.
    *
    * @returns Current state
@@ -623,6 +786,7 @@ export class ContextOrchestrator {
    * const state = orchestrator.getState();
    * console.log(`Token usage: ${state.health.utilizationPercent}%`);
    * console.log(`Needs compression: ${state.health.needsCompression}`);
+   * console.log(`Tier: ${state.integrations.tier}`);
    * ```
    */
   getState(): OrchestratorState {
@@ -631,6 +795,8 @@ export class ContextOrchestrator {
     const tokenUsage = this.activeContext.getTokenCount();
     const tokenLimit = this.activeContext.getOllamaLimit() - this.activeContext.getSafetyMargin();
     const utilization = (tokenUsage / tokenLimit) * 100;
+    const integrationStatus = this.getIntegrationStatus();
+    const reliability = this.getCompressionReliability();
 
     return {
       activeContext: activeContextState,
@@ -648,12 +814,14 @@ export class ContextOrchestrator {
         tokenUsage,
         tokenLimit,
         utilizationPercent: Math.round(utilization),
-        needsCompression: utilization > this.compressionThreshold * 100,
+        needsCompression: this.getCompressionUrgency() !== 'none',
         needsAging: this.checkpointLifecycle.getCheckpointsNeedingAging(
           activeContextState.checkpoints,
           sessionHistoryState.metadata.compressionCount
         ).length > 0,
       },
+      integrations: integrationStatus,
+      reliability,
     };
   }
 
@@ -760,6 +928,216 @@ export class ContextOrchestrator {
    */
   getGoal(): Goal | undefined {
     return this.goal;
+  }
+
+  /**
+   * Update operational mode
+   *
+   * Updates the operational mode for mode-aware compression.
+   *
+   * Requirements: FR-12
+   *
+   * @param mode - New operational mode
+   *
+   * @example
+   * ```typescript
+   * orchestrator.updateMode(OperationalMode.DEVELOPER);
+   * ```
+   */
+  updateMode(mode: OperationalMode): void {
+    this.config.mode = mode;
+  }
+
+  /**
+   * Update context tier
+   *
+   * Updates the context tier for tier-aware compression.
+   *
+   * Requirements: FR-11
+   *
+   * @param tier - New context tier
+   *
+   * @example
+   * ```typescript
+   * orchestrator.updateTier(ContextTier.TIER_3_STANDARD);
+   * ```
+   */
+  updateTier(tier: ContextTier): void {
+    this.config.tier = tier;
+  }
+
+  /**
+   * Update context size
+   *
+   * Updates the context size for provider-aware compression.
+   *
+   * Requirements: FR-14
+   *
+   * @param size - New context size
+   *
+   * @example
+   * ```typescript
+   * orchestrator.updateContextSize(16384);
+   * ```
+   */
+  updateContextSize(size: number): void {
+    this.config.contextSize = size;
+    this.providerIntegration.updateContextSize(size);
+  }
+
+  /**
+   * Get compression reliability
+   *
+   * Calculates the current compression reliability based on model size
+   * and number of compressions performed.
+   *
+   * Requirements: FR-13
+   *
+   * @returns Reliability information
+   *
+   * @example
+   * ```typescript
+   * const reliability = orchestrator.getCompressionReliability();
+   * console.log(`Reliability: ${reliability.score * 100}%`);
+   * ```
+   */
+  getCompressionReliability(): {
+    score: number;
+    level: 'excellent' | 'good' | 'moderate' | 'low' | 'critical';
+    emoji: string;
+    description: string;
+    shouldWarn: boolean;
+  } {
+    const modelSize = this.modelIntegration.getModelSize(this.config.model);
+    const compressionCount = this.sessionHistory.getHistory().metadata.compressionCount;
+    const reliability = this.modelIntegration.calculateReliability(modelSize, compressionCount);
+    const reliabilityInfo = this.modelIntegration.getReliabilityLevel(reliability);
+    const shouldWarn = this.modelIntegration.shouldWarn(modelSize, compressionCount);
+
+    return {
+      score: reliability,
+      ...reliabilityInfo,
+      shouldWarn,
+    };
+  }
+
+  /**
+   * Get compression urgency
+   *
+   * Determines the urgency level for compression based on current token usage
+   * and all system integrations (tier, mode, model, provider).
+   *
+   * Requirements: FR-11, FR-12, FR-13, FR-14
+   *
+   * @returns Urgency level
+   *
+   * @example
+   * ```typescript
+   * const urgency = orchestrator.getCompressionUrgency();
+   * if (urgency === 'critical') {
+   *   console.log('Compression needed immediately!');
+   * }
+   * ```
+   */
+  getCompressionUrgency(): 'none' | 'low' | 'medium' | 'high' | 'critical' {
+    const currentTokens = this.activeContext.getTokenCount();
+    const systemPromptTokens = this.config.tokenCounter.countTokensCached(
+      this.config.systemPrompt.id,
+      this.config.systemPrompt.content
+    );
+
+    // Get urgency from each integration
+    const tierUrgency = this.tierIntegration.getCompressionUrgency(
+      this.config.tier,
+      currentTokens,
+      this.config.ollamaLimit,
+      systemPromptTokens
+    );
+
+    const providerUrgency = this.providerIntegration.getCompressionUrgency(
+      currentTokens,
+      this.config.model,
+      systemPromptTokens,
+      this.tierIntegration.getPromptBudget(this.config.tier)
+    );
+
+    // Return the highest urgency level
+    const urgencyLevels = ['none', 'low', 'medium', 'high', 'critical'];
+    const tierIndex = urgencyLevels.indexOf(tierUrgency);
+    const providerIndex = urgencyLevels.indexOf(providerUrgency);
+    const maxIndex = Math.max(tierIndex, providerIndex);
+
+    return urgencyLevels[maxIndex] as 'none' | 'low' | 'medium' | 'high' | 'critical';
+  }
+
+  /**
+   * Validate system prompt
+   *
+   * Validates that the system prompt doesn't exceed tier budget and
+   * maintains proper structure.
+   *
+   * Requirements: FR-11, FR-16
+   *
+   * @throws Error if system prompt is invalid
+   *
+   * @example
+   * ```typescript
+   * orchestrator.validateSystemPrompt();
+   * ```
+   */
+  validateSystemPrompt(): void {
+    const systemPromptTokens = this.config.tokenCounter.countTokensCached(
+      this.config.systemPrompt.id,
+      this.config.systemPrompt.content
+    );
+
+    // Validate against tier budget
+    this.tierIntegration.validateSystemPrompt(systemPromptTokens, this.config.tier);
+
+    // Validate prompt structure
+    const prompt = this.buildPrompt();
+    this.promptIntegration.verifyPromptStructure(prompt, []);
+  }
+
+  /**
+   * Get integration status
+   *
+   * Returns the status of all system integrations for debugging and monitoring.
+   *
+   * @returns Integration status
+   *
+   * @example
+   * ```typescript
+   * const status = orchestrator.getIntegrationStatus();
+   * console.log(`Tier: ${status.tier}, Mode: ${status.mode}`);
+   * ```
+   */
+  getIntegrationStatus(): {
+    tier: ContextTier;
+    mode: OperationalMode;
+    model: string;
+    modelSize: number;
+    contextSize: number;
+    hasActiveGoal: boolean;
+    tierBudget: number;
+    compressionReliability: number;
+    compressionUrgency: 'none' | 'low' | 'medium' | 'high' | 'critical';
+  } {
+    const modelSize = this.modelIntegration.getModelSize(this.config.model);
+    const compressionCount = this.sessionHistory.getHistory().metadata.compressionCount;
+    const reliability = this.modelIntegration.calculateReliability(modelSize, compressionCount);
+
+    return {
+      tier: this.config.tier,
+      mode: this.config.mode,
+      model: this.config.model,
+      modelSize,
+      contextSize: this.config.contextSize,
+      hasActiveGoal: this.goal !== undefined,
+      tierBudget: this.tierIntegration.getPromptBudget(this.config.tier),
+      compressionReliability: reliability,
+      compressionUrgency: this.getCompressionUrgency(),
+    };
   }
 
   /**
