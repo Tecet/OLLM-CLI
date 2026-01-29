@@ -9,7 +9,7 @@
 
 import { EventEmitter } from 'events';
 import { ContextOrchestrator } from '../orchestration/contextOrchestrator.js';
-import { OperationalMode } from '../types.js';
+import { OperationalMode, ContextTier } from '../types.js';
 
 import type { 
   ContextManager, 
@@ -19,6 +19,17 @@ import type {
   ContextBudget,
   Message 
 } from '../types.js';
+
+/**
+ * Calculate context tier based on context size
+ */
+function calculateTier(contextSize: number): ContextTier {
+  if (contextSize <= 4096) return ContextTier.TIER_1_MINIMAL;
+  if (contextSize <= 8192) return ContextTier.TIER_2_BASIC;
+  if (contextSize <= 16384) return ContextTier.TIER_3_STANDARD;
+  if (contextSize <= 32768) return ContextTier.TIER_4_PREMIUM;
+  return ContextTier.TIER_5_ULTRA;
+}
 
 /**
  * Adapter that makes ContextOrchestrator compatible with legacy ContextManager interface
@@ -42,9 +53,14 @@ export class ContextOrchestratorAdapter extends EventEmitter implements ContextM
   // ============================================================================
 
   async start(): Promise<void> {
-    // Emit started event with initial state
-    // Use tier from config or default to TIER_3_STANDARD
-    const tier = (this.config as any).tier || 3; // ContextTier.TIER_3_STANDARD = 3
+    // Calculate tier based on actual context size (not ollama limit)
+    const contextSize = this.config.targetSize || 8192;
+    const tier = calculateTier(contextSize);
+    
+    // Update orchestrator's tier
+    this.orchestrator.updateTier(tier);
+    
+    // Emit started event with correct tier
     this.emit('started', {
       tier,
       autoSizeEnabled: this.config.autoSize ?? true,
@@ -60,7 +76,17 @@ export class ContextOrchestratorAdapter extends EventEmitter implements ContextM
   // ============================================================================
 
   updateConfig(config: Partial<ContextConfig>): void {
+    const oldSize = this.config.targetSize || 8192;
     this.config = { ...this.config, ...config };
+    const newSize = this.config.targetSize || 8192;
+    
+    // If context size changed, recalculate and emit tier change
+    if (oldSize !== newSize) {
+      const newTier = calculateTier(newSize);
+      this.orchestrator.updateTier(newTier);
+      this.emit('tier-changed', { tier: newTier });
+    }
+    
     this.emit('config-updated', config);
   }
 
