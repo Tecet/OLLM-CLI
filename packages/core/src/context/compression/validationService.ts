@@ -170,7 +170,9 @@ export class ValidationService {
    * ```
    */
   calculateTotalTokens(messages: Message[]): number {
-    return this.tokenCounter.countConversationTokens(messages);
+    return messages.reduce((total, msg) => 
+      total + this.tokenCounter.countTokensCached(msg.id, msg.content), 0
+    );
   }
 
   /**

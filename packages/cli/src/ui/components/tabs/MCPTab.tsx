@@ -293,7 +293,7 @@ function ServerDetailsContent({
                   setSaveStatus('success');
                 } catch (err) {
                   setSaveStatus('error');
-                  setSaveError(err instanceof Error ? err.message : 'Failed to save configuration');
+                  setSaveError(err instanceof Error ? err.message : 'Task Failed Successfully');
                 }
               })();
             }
@@ -326,7 +326,7 @@ function ServerDetailsContent({
                 setDeleteState({
                   status: 'error',
                   selection: 'no',
-                  error: err instanceof Error ? err.message : 'Unknown error occurred',
+                  error: err instanceof Error ? err.message : 'Task Failed Successfully',
                 });
               });
           } else {
@@ -604,7 +604,7 @@ function ServerDetailsContent({
         ) : (
           <>
             <Text bold color="red">
-              ✗ Failed to Save API Keys
+              ✗ Task Failed Successfully
             </Text>
             <Text> </Text>
             <Text color={uiState.theme.status.error}>{saveError}</Text>
@@ -1005,7 +1005,7 @@ function MarketplaceContent({
                 setInstallState({
                   status: 'error',
                   selection: 'no',
-                  error: err instanceof Error ? err.message : 'Unknown error occurred',
+                  error: err instanceof Error ? err.message : 'Task Failed Successfully',
                 });
               }
             })();
@@ -1154,7 +1154,7 @@ function MarketplaceContent({
             setInstallState({
               status: 'error',
               selection: 'no',
-              error: err instanceof Error ? err.message : 'Unknown error occurred',
+              error: err instanceof Error ? err.message : 'Task Failed Successfully',
             });
           }
         }}

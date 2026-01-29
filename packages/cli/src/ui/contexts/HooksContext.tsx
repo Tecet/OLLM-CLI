@@ -274,7 +274,7 @@ export function HooksProvider({
       setState((prev) => ({
         ...prev,
         isLoading: false,
-        error: error instanceof Error ? error.message : 'Failed to load hooks',
+        error: error instanceof Error ? error.message : 'Task Failed Successfully',
       }));
     }
   }, [hookRegistry, settingsService, categorizeHooks]);
@@ -317,7 +317,7 @@ export function HooksProvider({
         // Revert on error
         setState((prev) => ({
           ...prev,
-          error: error instanceof Error ? error.message : 'Failed to toggle hook',
+          error: error instanceof Error ? error.message : 'Task Failed Successfully',
         }));
       }
     },

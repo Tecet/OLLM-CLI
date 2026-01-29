@@ -252,7 +252,7 @@ export function HooksTab({ windowSize = 30, windowWidth }: HooksTabProps) {
       // Close dialog
       closeDialog();
     } catch (error) {
-      throw new Error(error instanceof Error ? error.message : 'Failed to create hook');
+      throw new Error(error instanceof Error ? error.message : 'Task Failed Successfully');
     }
   };
 
@@ -265,7 +265,7 @@ export function HooksTab({ windowSize = 30, windowWidth }: HooksTabProps) {
       // Close dialog
       closeDialog();
     } catch (error) {
-      throw new Error(error instanceof Error ? error.message : 'Failed to update hook');
+      throw new Error(error instanceof Error ? error.message : 'Task Failed Successfully');
     }
   };
 
@@ -280,7 +280,7 @@ export function HooksTab({ windowSize = 30, windowWidth }: HooksTabProps) {
       // Close dialog
       closeDialog();
     } catch (error) {
-      throw new Error(error instanceof Error ? error.message : 'Failed to delete hook');
+      throw new Error(error instanceof Error ? error.message : 'Task Failed Successfully');
     }
   };
 

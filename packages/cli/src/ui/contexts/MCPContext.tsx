@@ -659,7 +659,7 @@ export function MCPProvider({
       setState((prev) => ({
         ...prev,
         isLoading: false,
-        error: error instanceof Error ? error.message : 'Failed to load servers',
+        error: error instanceof Error ? error.message : 'Task Failed Successfully',
       }));
     }
   }, [mcpClient, oauthProvider, registerServerTools, unregisterServerTools, emitSystemMessage]);

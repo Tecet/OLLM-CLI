@@ -321,7 +321,7 @@ export function ToolsProvider({ children, settingsService: customSettings }: Too
       setState((prev) => ({
         ...prev,
         isLoading: false,
-        error: error instanceof Error ? error.message : 'Failed to load tools',
+        error: error instanceof Error ? error.message : 'Task Failed Successfully',
       }));
     }
   }, [toolRegistry, settingsService]);
@@ -370,7 +370,7 @@ export function ToolsProvider({ children, settingsService: customSettings }: Too
         // Revert on error
         setState((prev) => ({
           ...prev,
-          error: error instanceof Error ? error.message : 'Failed to toggle tool',
+          error: error instanceof Error ? error.message : 'Task Failed Successfully',
         }));
       }
     },

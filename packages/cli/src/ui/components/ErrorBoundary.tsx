@@ -67,7 +67,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       return (
         <Box flexDirection="column" padding={1} borderStyle="round" borderColor={borderColor}>
           <Text color={textColor} bold>
-            ❌ An error occurred
+            ❌ Task Failed Successfully
           </Text>
           <Text color={textColor}>{this.state.error.message}</Text>
 

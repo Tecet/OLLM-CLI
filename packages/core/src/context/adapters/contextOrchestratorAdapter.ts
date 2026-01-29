@@ -174,27 +174,35 @@ export class ContextOrchestratorAdapter extends EventEmitter implements ContextM
       this.emit('summarizing');
     }
     
-    const result = await this.orchestrator.addMessage(message);
-    
-    if (!result.success) {
-      // Clear summarizing state if we emitted it
+    try {
+      const result = await this.orchestrator.addMessage(message);
+      
+      if (!result.success) {
+        // Clear summarizing state if we emitted it
+        if (utilizationPercent > 70) {
+          this.emit('compression-complete', { tokensFreed: 0 });
+        }
+        throw new Error(result.error || 'Task Failed Successfully');
+      }
+
+      this.emit('message-added', message);
+      
+      if (result.compressionTriggered) {
+        // Compression happened - emit completion event
+        // (summarizing event was already emitted above if utilization was high)
+        this.emit('compression-complete', {
+          tokensFreed: result.tokensFreed,
+        });
+      } else if (utilizationPercent > 70) {
+        // We emitted summarizing but compression didn't trigger - clear the state
+        this.emit('compression-complete', { tokensFreed: 0 });
+      }
+    } catch (error) {
+      // Clear compressing state on error
       if (utilizationPercent > 70) {
         this.emit('compression-complete', { tokensFreed: 0 });
       }
-      throw new Error(result.error || 'Failed to add message');
-    }
-
-    this.emit('message-added', message);
-    
-    if (result.compressionTriggered) {
-      // Compression happened - emit completion event
-      // (summarizing event was already emitted above if utilization was high)
-      this.emit('compression-complete', {
-        tokensFreed: result.tokensFreed,
-      });
-    } else if (utilizationPercent > 70) {
-      // We emitted summarizing but compression didn't trigger - clear the state
-      this.emit('compression-complete', { tokensFreed: 0 });
+      throw error;
     }
   }
 
@@ -259,15 +267,23 @@ export class ContextOrchestratorAdapter extends EventEmitter implements ContextM
     // Emit summarizing event for UI indicator
     this.emit('summarizing');
     
-    const result = await this.orchestrator.compress();
-    
-    if (!result.success) {
-      throw new Error(result.error || 'Compression failed');
-    }
+    try {
+      const result = await this.orchestrator.compress();
+      
+      if (!result.success) {
+        // Emit completion event to clear UI indicator
+        this.emit('compression-complete', { tokensFreed: 0 });
+        throw new Error(result.error || 'Task Failed Successfully');
+      }
 
-    this.emit('compression-complete', {
-      tokensFreed: result.freedTokens,
-    });
+      this.emit('compression-complete', {
+        tokensFreed: result.freedTokens,
+      });
+    } catch (error) {
+      // Ensure UI indicator is cleared on error
+      this.emit('compression-complete', { tokensFreed: 0 });
+      throw error;
+    }
   }
 
   // ============================================================================

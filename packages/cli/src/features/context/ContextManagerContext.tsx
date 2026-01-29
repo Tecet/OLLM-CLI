@@ -466,6 +466,10 @@ export function ContextManagerProvider({
           setCompressing(false);
           setUsage(manager.getUsage());
         });
+        manager.on('compression-complete', () => {
+          setCompressing(false);
+          setUsage(manager.getUsage());
+        });
 
         // Listen for real-time usage updates (during streaming)
         manager.on('usage-updated', (usage: unknown) => {

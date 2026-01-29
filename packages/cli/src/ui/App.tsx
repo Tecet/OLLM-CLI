@@ -43,7 +43,6 @@ import { UserPromptProvider } from '../features/context/UserPromptContext.js';
 import { extractModelSize } from '../features/profiles/modelUtils.js';
 import { profileManager } from '../features/profiles/ProfileManager.js';
 import { createProvider } from '../features/provider/providerFactory.js';
-import { CompressionProgress } from './components/context/CompressionProgress.js';
 import { useContextMenu } from './components/context/ContextMenu.js';
 import { DialogManager } from './components/dialogs/DialogManager.js';
 import { FileFocusProvider, WorkspaceProvider } from './components/file-explorer/index.js';
@@ -362,19 +361,6 @@ Type \`/help\` for more commands.`,
           </Box>
         )}
       </Box>
-
-      {/* Compression Progress Overlay */}
-      {contextState.compressing && (
-        <Box
-          position="absolute"
-          width="100%"
-          height="100%"
-          justifyContent="center"
-          alignItems="center"
-        >
-          <CompressionProgress active={contextState.compressing} />
-        </Box>
-      )}
 
       {/* Dialogs */}
       <DialogManager />
