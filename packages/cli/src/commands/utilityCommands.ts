@@ -266,9 +266,12 @@ export const exitCommand: Command = {
 export const testPromptCommand: Command = {
   name: '/test prompt',
   description: 'Dump the current prompt/context details as a system message',
-  usage: '/test prompt',
+  usage: '/test prompt [--full] [--budget]',
   handler: async (args: string[] = []): Promise<CommandResult> => {
     try {
+      const showPayload = args.includes('--full');
+      const showBudget = args.includes('--budget');
+      
       const manager = getGlobalContextManager();
       if (!manager) {
         return { success: false, message: 'Context Manager not initialized yet.' };
@@ -331,7 +334,7 @@ export const testPromptCommand: Command = {
         userMessages: history.filter((m) => m.role === 'user').map((m) => m.content || ''),
         toolNames: [],
       });
-      const showPayload = args.includes('--full');
+      
       const payloadJson = JSON.stringify(
         {
           model: modelId,
@@ -390,11 +393,34 @@ export const testPromptCommand: Command = {
       const addSystemMessage = globalThis.__ollmAddSystemMessage;
       if (typeof addSystemMessage === 'function') {
         addSystemMessage(preview);
+        
+        // If --budget flag is present, run budget validation
+        if (showBudget) {
+          try {
+            const { execSync } = await import('child_process');
+            const budgetOutput = execSync('npm run validate:prompts', {
+              encoding: 'utf-8',
+              cwd: process.cwd(),
+            });
+            
+            // Format budget output as a system message
+            const budgetMessage = `\`\`\`\n${budgetOutput}\n\`\`\``;
+            addSystemMessage(budgetMessage);
+          } catch (error) {
+            // Budget validation failed (exit code 1), but we still want to show the output
+            const err = error as { stdout?: string; stderr?: string };
+            const output = err.stdout || err.stderr || 'Budget validation failed';
+            const budgetMessage = `\`\`\`\n${output}\n\`\`\``;
+            addSystemMessage(budgetMessage);
+          }
+        }
       }
 
       return {
         success: true,
-        message: 'Prompt preview posted as system message for debugging.',
+        message: showBudget 
+          ? 'Prompt preview and budget validation posted as system messages.'
+          : 'Prompt preview posted as system message for debugging.',
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
