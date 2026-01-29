@@ -280,13 +280,12 @@ export const testPromptCommand: Command = {
       const settings = SettingsService.getInstance().getSettings();
       const modelId = settings.llm?.model ?? 'llama3.2:3b';
       const modelEntry = profileManager.getModelEntry(modelId);
-      const requestedContextSize = settings.llm?.contextSize ?? modelEntry.default_context ?? 4096;
-      const contextCapRatio = settings.llm?.contextCapRatio ?? 0.85;
-      const contextSizing = calculateContextSizing(
-        requestedContextSize,
-        modelEntry,
-        contextCapRatio
-      );
+      
+      // Get the actual Ollama context limit from the context manager
+      // This is the 85% pre-calculated value that gets sent to Ollama
+      const ollamaContextSize = manager.getOllamaContextLimit?.() ?? 
+        Math.floor((manager.getUsage().maxTokens || 8192) * 0.85);
+      
       const temperature = settings.llm?.temperature ?? 0.1;
       const forcedNumGpu = settings.llm?.forceNumGpu;
       const history = contextMessages
@@ -296,7 +295,7 @@ export const testPromptCommand: Command = {
           content: m.content || '',
         }));
       const lastGPUInfo = getLastGPUInfo();
-      const gpuHints = deriveGPUPlacementHints(lastGPUInfo, contextSizing.ollamaContextSize);
+      const gpuHints = deriveGPUPlacementHints(lastGPUInfo, ollamaContextSize);
       const effectiveNumGpu = Number.isFinite(forcedNumGpu) ? forcedNumGpu : gpuHints?.num_gpu;
       const coreManager = manager.getManager?.();
       const coreMode = manager.getCurrentMode?.() ?? coreManager?.getMode?.() ?? 'unknown';
@@ -355,7 +354,7 @@ export const testPromptCommand: Command = {
           ],
           tools: [],
           options: {
-            num_ctx: contextSizing.ollamaContextSize,
+            num_ctx: ollamaContextSize,
             temperature: temperature,
             num_gpu: effectiveNumGpu ?? null,
             num_gpu_layers: gpuHints?.gpu_layers ?? null,
@@ -371,7 +370,7 @@ export const testPromptCommand: Command = {
         `Model: ${modelId}`,
         `Mode: ${coreMode}`,
         `Context usage: ${manager.getUsage().currentTokens} / ${manager.getUsage().maxTokens} (${Math.round(manager.getUsage().percentage)}%)`,
-        `Effective context cap (num_ctx): ${contextSizing.ollamaContextSize} (${Math.round(contextSizing.ratio * 100)}% of allowed ${contextSizing.allowed})`,
+        `Effective context cap (num_ctx): ${ollamaContextSize} (85% of ${manager.getUsage().maxTokens})`,
         `Temperature: ${temperature}`,
         `GPU hints: ${gpuHints ? `num_gpu=${gpuHints.num_gpu}, num_gpu_layers=${gpuHints.gpu_layers}` : 'unavailable'}`,
         `GPU override (settings): ${Number.isFinite(forcedNumGpu) ? forcedNumGpu : 'none'}`,
