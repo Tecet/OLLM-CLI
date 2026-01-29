@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "docs/LLM Models/LLM_ModelsArchitecture.md",
-                "mode": "source",
+                "file": "docs/Context/ContextCompression.md",
+                "mode": "preview",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "LLM_ModelsArchitecture"
+              "title": "ContextCompression"
             }
           }
         ]
@@ -185,6 +185,11 @@
   },
   "active": "da5d6c58ca060cf0",
   "lastOpenFiles": [
+    "packages/core/src/context/compression/__tests__/compressionPipeline.property.test.ts",
+    "packages/core/src/context/compression/compressionPipeline.ts",
+    "packages/core/src/context/compression/__tests__/validationService.test.ts",
+    "packages/core/src/context/compression/__tests__/validationService.property.test.ts",
+    "docs/LLM Models/LLM_ModelsArchitecture.md",
     "packages/core/src/context/compression/validationService.ts",
     "docs/LLM Models/LLM_ModelsConfiguration.md",
     "CHANGELOG.md",
@@ -197,14 +202,9 @@
     "packages/core/src/context/compression/summarizationService.ts",
     "packages/core/dist/context/storage/storageBoundaries.js.map",
     "packages/core/dist/context/storage/storageBoundaries.js",
-    "packages/core/dist/context/storage/activeContextManager.js",
-    "packages/core/dist/context/storage/storageBoundaries.d.ts.map",
-    "packages/core/dist/context/storage/storageBoundaries.d.ts",
-    "packages/core/dist/context/storage/snapshotLifecycle.js.map",
     "docs/Prompts System/Architecture.md",
     "docs/LLM Models/LLM_ModelsList.md",
     "docs/LLM Models/LLM_ModelsCommands.md",
-    "docs/LLM Models/LLM_ModelsArchitecture.md",
     "docs/LLM Models/LLM_ModelCompatibility.md",
     "docs/LLM Models/LLM_MemorySystem.md",
     "docs/LLM Models/LLM_Index.md",
