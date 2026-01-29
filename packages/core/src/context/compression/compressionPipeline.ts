@@ -217,6 +217,20 @@ export class CompressionPipeline {
       const prepared = await this.prepareForSummarization(messagesToCompress, goal);
       this.reportProgress('Preparation', 25, `Prepared ${prepared.messages.length} messages (Level ${prepared.level})`);
 
+      // Calculate dynamic maxSummaryTokens based on input size
+      // Target: 60% of input tokens for effective compression
+      const inputTokens = messagesToCompress.reduce((sum, msg) => 
+        sum + this.tokenCounter.countTokensCached(msg.id, msg.content), 0
+      );
+      const dynamicMaxTokens = Math.max(300, Math.floor(inputTokens * 0.6)); // Min 300, target 60% of input
+      this.summarizationService.setMaxSummaryTokens(dynamicMaxTokens);
+      
+      debugLog('CompressionPipeline', 'Dynamic summary limit', {
+        inputTokens,
+        maxSummaryTokens: dynamicMaxTokens,
+        compressionRatio: `${Math.round((dynamicMaxTokens / inputTokens) * 100)}%`,
+      });
+
       // Stage 3: Summarization (25-70%)
       this.reportProgress('Summarization', 25, 'Calling LLM to create summary...');
       const summarizationResult = await this.summarizationService.summarize(
