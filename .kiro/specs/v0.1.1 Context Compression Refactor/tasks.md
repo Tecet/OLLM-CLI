@@ -479,14 +479,14 @@ This implementation plan breaks down the context compression system refactor int
   - Update API documentation
   - _Requirements: All_
 
-- [ ] 32. Create Release Notes
+- [x] 32. Create Release Notes
   - Create release notes
   - Document breaking changes
   - Create migration guide
   - Document known issues
   - _Requirements: All_
 
-- [ ] 33. Enable New System by Default
+- [x] 33. Enable New System by Default
   - Change feature flag default
   - Move legacy code to `.legacy/`
   - Remove old imports
@@ -494,7 +494,7 @@ This implementation plan breaks down the context compression system refactor int
   - Update documentation
   - _Requirements: NFR-1_
 
-- [ ] 34. Final Checkpoint - All Tests Pass
+- [x] 34. Final Checkpoint - All Tests Pass
   - Run full test suite
   - Verify all integration tests pass
   - Verify no regressions

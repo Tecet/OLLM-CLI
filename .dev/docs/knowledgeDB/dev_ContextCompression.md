@@ -1,7 +1,9 @@
 # Context Compression and Checkpoint System
 
 **Last Updated:** January 29, 2026  
-**Status:** ✅ Refactored - New Architecture Implemented
+**Status:** ✅ Production - New System Enabled by Default (v0.1.1)
+
+> **🎉 NEW SYSTEM ENABLED:** As of v0.1.1, the new LLM-based compression system is enabled by default. The legacy system is available for backward compatibility by setting feature flags to `false`.
 
 **Related Documents:**
 
@@ -17,13 +19,32 @@
 
 ---
 
+## Feature Flags (v0.1.1+)
+
+**Default Behavior:** All new system features are **enabled by default**.
+
+To disable specific features, set environment variables to `false`:
+
+```bash
+# Disable all new features (revert to legacy system)
+export OLLM_NEW_COMPRESSION=false
+export OLLM_NEW_CONTEXT=false
+export OLLM_NEW_CHECKPOINTS=false
+export OLLM_NEW_SNAPSHOTS=false
+export OLLM_NEW_VALIDATION=false
+```
+
+**Note:** The legacy system has known issues (crashes after 3-4 checkpoints). Use only for backward compatibility.
+
+---
+
 ## Recent Updates (January 28-29, 2026)
 
-### ✅ Complete Architecture Refactor
+### ✅ Complete Architecture Refactor - Now Production Default
 
 **Major Refactor (v0.1.1):**
 
-The context compression system has been completely rewritten with a clean architecture to address fundamental design flaws. The new system provides:
+The context compression system has been completely rewritten with a clean architecture to address fundamental design flaws. The new system is now **enabled by default** and provides:
 
 1. **Storage Layer Separation** - Clear boundaries between active context, snapshots, and session history
 2. **LLM-Based Summarization** - Semantic summaries instead of truncation

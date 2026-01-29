@@ -109,7 +109,7 @@ export class LegacyContextAdapter {
     const messages: Message[] = legacySession.messages.map((msg, index) => ({
       id: `msg-${legacySession.sessionId}-${index}`,
       role: msg.role as 'user' | 'assistant' | 'system',
-      content: msg.parts.map(p => p.text).join('\n'),
+      parts: msg.parts, // Use existing parts from session message
       timestamp: new Date(msg.timestamp).getTime(),
     }));
 
@@ -164,10 +164,15 @@ export class LegacyContextAdapter {
     provider: string
   ): Session {
     // Convert messages back to session message format
-    const messages: SessionMessage[] = newHistory.messages.map(msg => ({
+    // Filter out image parts as legacy system only supports text
+    // Use message index to generate timestamps since Message doesn't have timestamp
+    const baseTime = newHistory.metadata.startTime;
+    const messages: SessionMessage[] = newHistory.messages.map((msg, index) => ({
       role: msg.role,
-      parts: [{ type: 'text' as const, text: msg.content }],
-      timestamp: new Date(msg.timestamp).toISOString(),
+      parts: msg.parts
+        .filter(part => part.type === 'text')
+        .map(part => ({ type: 'text' as const, text: (part as any).text })),
+      timestamp: new Date(baseTime + index * 1000).toISOString(), // Approximate timestamps
     }));
 
     // Build metadata

@@ -206,7 +206,7 @@ export function ContextManagerProvider({
     const initManager = async () => {
       try {
         // Check for pending context size from SessionManager
-        let effectiveConfig = config;
+        let effectiveConfig: Partial<ContextConfig> | undefined = config;
         try {
           const { getSessionManager } = await import('./SessionManager.js');
           const sessionManager = getSessionManager();
@@ -224,9 +224,24 @@ export function ContextManagerProvider({
           console.warn('[ContextManagerContext] Failed to check pending context size:', error);
         }
 
-        // Create context manager
-        const manager = createContextManager(sessionId, modelInfo, effectiveConfig);
-        managerRef.current = manager;
+        // Create context manager using new factory
+        const path = await import('path');
+        const os = await import('os');
+        const storagePath = path.join(os.homedir(), '.ollm', 'context-storage');
+        
+        const factoryResult = createContextManager({
+          sessionId,
+          modelInfo: {
+            ...modelInfo,
+            contextSize: effectiveConfig?.targetSize,
+          },
+          contextConfig: effectiveConfig,
+          provider, // Pass provider from props
+          storagePath, // Pass storage path for new system
+        });
+        
+        const manager = factoryResult.manager;
+        managerRef.current = manager as any; // Type compatibility with legacy interface
 
         // Create mode manager
         const contextAnalyzer = new ContextAnalyzer();
@@ -234,8 +249,6 @@ export function ContextManagerProvider({
         modeManagerRef.current = modeManager;
 
         // Create snapshot manager
-        const path = await import('path');
-        const os = await import('os');
         const modeSnapshotPath = path.join(os.homedir(), '.ollm', 'mode-snapshots');
         const snapshotStorage = createSnapshotStorage(modeSnapshotPath);
         const snapshotManager = createSnapshotManager(snapshotStorage, {
