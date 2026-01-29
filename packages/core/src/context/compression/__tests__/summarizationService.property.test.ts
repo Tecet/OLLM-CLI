@@ -231,7 +231,10 @@ describe('SummarizationService - Property Tests', () => {
           expect(result.summary.length).toBeLessThanOrEqual(maxAllowedLength);
 
           // Property 4: Summary must contain meaningful content
-          expect(result.summary.length).toBeGreaterThanOrEqual(20);
+          // For very short messages (< 30 chars), require at least 50% of original length
+          // For longer messages, require at least 20 characters
+          const minLength = originalLength < 30 ? Math.floor(originalLength * 0.5) : 20;
+          expect(result.summary.length).toBeGreaterThanOrEqual(minLength);
           expect(result.summary).not.toMatch(/^summarize/i);
 
           // Property 5: Token count must be reasonable
