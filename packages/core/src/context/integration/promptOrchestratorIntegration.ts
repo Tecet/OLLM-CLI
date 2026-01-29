@@ -335,11 +335,11 @@ export class PromptOrchestratorIntegration {
     systemPromptTokens: number,
     ollamaLimit: number
   ): number {
-    const tierBudget = this.getTokenBudget(tier);
     const safetyMargin = 1000; // Reserve for response
 
-    // Available space = Ollama limit - system prompt - tier budget - safety margin
-    const available = ollamaLimit - systemPromptTokens - tierBudget - safetyMargin;
+    // Available space = Ollama limit - system prompt - safety margin
+    // Note: tier budget is NOT subtracted because systemPromptTokens already includes it
+    const available = ollamaLimit - systemPromptTokens - safetyMargin;
 
     return Math.max(0, available);
   }

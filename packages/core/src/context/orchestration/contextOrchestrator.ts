@@ -418,8 +418,7 @@ export class ContextOrchestrator {
       const providerShouldCompress = this.providerIntegration.shouldCompress(
         currentTokens,
         this.config.model,
-        systemPromptTokens,
-        tierBudget
+        systemPromptTokens
       );
 
       // 🔍 DEBUG: Log compression decision
@@ -1129,8 +1128,7 @@ export class ContextOrchestrator {
     const providerUrgency = this.providerIntegration.getCompressionUrgency(
       currentTokens,
       this.config.model,
-      systemPromptTokens,
-      this.tierIntegration.getPromptBudget(this.config.tier)
+      systemPromptTokens
     );
 
     // Return the highest urgency level

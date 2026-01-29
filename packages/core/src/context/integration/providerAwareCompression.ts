@@ -179,12 +179,11 @@ export class ProviderAwareCompression {
    * Determine if compression should be triggered based on provider limits
    *
    * Triggers compression when token usage exceeds 75% of available space
-   * (after accounting for system prompt, tier budget, and safety margin).
+   * (after accounting for system prompt and safety margin).
    *
    * @param currentTokens - Current token count (excluding system prompt)
    * @param modelId - Model identifier
    * @param systemPromptTokens - Tokens used by system prompt
-   * @param tierBudget - Tier-specific prompt budget
    * @returns True if compression should be triggered
    *
    * @example
@@ -192,23 +191,22 @@ export class ProviderAwareCompression {
    * const shouldCompress = compression.shouldCompress(
    *   4000,
    *   'llama3.2:3b',
-   *   500,
-   *   1000
+   *   500
    * );
    * ```
    */
   shouldCompress(
     currentTokens: number,
     modelId: string,
-    systemPromptTokens: number,
-    tierBudget: number
+    systemPromptTokens: number
   ): boolean {
     const ollamaLimit = this.getContextLimit(modelId);
     const safetyMargin = 1000; // Reserve for response
 
     // Calculate available space for messages
-    // (Ollama limit - system prompt - tier budget - safety margin)
-    const availableForMessages = ollamaLimit - systemPromptTokens - tierBudget - safetyMargin;
+    // (Ollama limit - system prompt - safety margin)
+    // Note: tier budget is NOT subtracted because systemPromptTokens already includes it
+    const availableForMessages = ollamaLimit - systemPromptTokens - safetyMargin;
 
     // Trigger compression at 75% of available space
     const compressionThreshold = availableForMessages * 0.75;
@@ -299,12 +297,11 @@ export class ProviderAwareCompression {
   getCompressionUrgency(
     currentTokens: number,
     modelId: string,
-    systemPromptTokens: number,
-    tierBudget: number
+    systemPromptTokens: number
   ): 'none' | 'low' | 'medium' | 'high' | 'critical' {
     const ollamaLimit = this.getContextLimit(modelId);
     const safetyMargin = 1000;
-    const availableForMessages = ollamaLimit - systemPromptTokens - tierBudget - safetyMargin;
+    const availableForMessages = ollamaLimit - systemPromptTokens - safetyMargin;
     const usagePercentage = currentTokens / availableForMessages;
 
     if (usagePercentage < 0.5) return 'none';

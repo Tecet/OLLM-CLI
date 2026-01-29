@@ -26,6 +26,20 @@ export interface TierBudgetConfig {
  *
  * Calculates tier budgets dynamically based on context size to ensure
  * consistent behavior across all context sizes.
+ * 
+ * **What is Tier Budget?**
+ * Tier budget is the MAXIMUM allowed size for the system prompt at each tier.
+ * It ensures system prompts don't grow too large and consume too much context.
+ * 
+ * **What it's NOT:**
+ * - NOT subtracted from available message space
+ * - NOT a reserved space (system prompt tokens are already counted)
+ * - ONLY used for validation: if systemPromptTokens > tierBudget, throw error
+ * 
+ * **Example:**
+ * - Tier 2 (8K context): tier budget = 500 tokens
+ * - If system prompt = 450 tokens: ✅ Valid (450 < 500)
+ * - If system prompt = 600 tokens: ❌ Error (600 > 500)
  */
 export class TierAwareCompression {
   /**
@@ -166,14 +180,15 @@ export class TierAwareCompression {
   }
 
   /**
-   * Validate that system prompt never gets compressed
+   * Validate that system prompt fits within tier budget
    *
    * @param systemPromptTokens - Current system prompt token count
    * @param tier - Context tier
+   * @param contextSize - Full context size
    * @throws Error if system prompt exceeds tier budget
    */
-  validateSystemPrompt(systemPromptTokens: number, tier: ContextTier): void {
-    const promptBudget = this.getPromptBudget(tier);
+  validateSystemPrompt(systemPromptTokens: number, tier: ContextTier, contextSize: number = 8192): void {
+    const promptBudget = this.getPromptBudget(tier, contextSize);
 
     if (systemPromptTokens > promptBudget) {
       throw new Error(
