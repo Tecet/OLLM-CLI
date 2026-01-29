@@ -1,7 +1,7 @@
 # Context Compression and Checkpoint System
 
-**Last Updated:** January 27, 2026  
-**Status:** ✅ Production Ready - All Critical Issues Resolved
+**Last Updated:** January 29, 2026  
+**Status:** ✅ Refactored - New Architecture Implemented
 
 **Related Documents:**
 
@@ -17,31 +17,35 @@
 
 ---
 
-## Recent Updates (January 26-27, 2026)
+## Recent Updates (January 28-29, 2026)
 
-### ✅ All Critical Issues Resolved
+### ✅ Complete Architecture Refactor
 
-**Context Sessions Work (Phases 0-6 Complete):**
+**Major Refactor (v0.1.1):**
 
-1. **Input Preprocessing** - Extract clean intent from noisy messages (30x token savings)
-2. **Pre-Send Validation** - Prevent context overflow before sending to Ollama (0% error rate)
-3. **Blocking Mechanism** - Block user input during checkpoint creation (no interruptions)
-4. **Emergency Triggers** - Graceful degradation at 70%, 80%, 95%, 100% thresholds
-5. **Session Storage** - Full history always saved to disk (no data loss)
-6. **Checkpoint Aging** - Progressive compression (50% space reduction)
+The context compression system has been completely rewritten with a clean architecture to address fundamental design flaws. The new system provides:
 
-**Bug Fixes:**
+1. **Storage Layer Separation** - Clear boundaries between active context, snapshots, and session history
+2. **LLM-Based Summarization** - Semantic summaries instead of truncation
+3. **Pre-Send Validation** - Hard stop before sending oversized prompts
+4. **Checkpoint Aging** - Progressive compression of old checkpoints
+5. **Comprehensive Error Handling** - Graceful degradation without crashes
+6. **System Integration** - Deep integration with tiers, modes, models, providers, goals, and prompt orchestrator
 
-- ✅ Compression threshold clarified (80% of available budget)
-- ✅ Percentage calculation fixed (uses Ollama size, not user size)
-- ✅ Mid-stream compression eliminated (no message truncation)
-- ✅ Dynamic budget tracking implemented (accounts for checkpoint space)
-- ✅ Checkpoint aging verified working (progressive compression)
+**New Architecture:**
+
+- **Storage Layer** (`types/`, `storage/`) - Type-safe storage interfaces
+- **Compression Engine** (`compression/`) - LLM summarization pipeline
+- **Checkpoint Lifecycle** (`checkpoints/`) - Aging and emergency actions
+- **Orchestration** (`orchestration/`) - Main coordinator
+- **Integration** (`integration/`) - System-wide integration
+- **Migration** (`migration/`) - Legacy system migration
 
 **Test Results:**
 
-- 502/502 tests passing ✅
-- 58 new tests added
+- All property-based tests passing ✅
+- Comprehensive integration tests ✅
+- Migration scripts tested ✅
 - Zero TypeScript errors
 - Production ready
 
@@ -75,162 +79,335 @@ Ollama enforces a fixed context limit (e.g., 6800 tokens for 8K selection). As c
 
 ## Architecture
 
-### Three-File Compression System
+### New Architecture (v0.1.1 Refactor)
 
-The compression system is built with **clear separation of concerns** across three files:
+The compression system has been completely rewritten with a **clean, layered architecture**:
 
-#### 1. **compressionService.ts** (920 lines) - Core Compression Engine
+```
+┌─────────────────────────────────────────────────────────────┐
+│ contextOrchestrator.ts (Main Coordination)                  │
+│ - Coordinates all subsystems                                │
+│ - Manages conversation lifecycle                            │
+│ - Enforces storage boundaries                               │
+│ - Integrates with all system components                     │
+└─────────────────────────────────────────────────────────────┘
+                            ↓
+    ┌───────────────────────┼───────────────────────┐
+    ↓                       ↓                       ↓
+┌─────────────┐    ┌─────────────────┐    ┌──────────────────┐
+│ Active      │    │ Snapshot        │    │ Session History  │
+│ Context     │    │ Lifecycle       │    │ Manager          │
+│ Manager     │    │                 │    │                  │
+│             │    │                 │    │                  │
+│ (LLM-bound) │    │ (Recovery)      │    │ (Full history)   │
+└─────────────┘    └─────────────────┘    └──────────────────┘
+       ↓                    ↓                       ↓
+┌─────────────────────────────────────────────────────────────┐
+│ Storage Boundaries (Runtime Enforcement)                    │
+│ - Prevents cross-contamination                              │
+│ - Type guards and validation                                │
+└─────────────────────────────────────────────────────────────┘
+       ↓
+┌─────────────────────────────────────────────────────────────┐
+│ Compression Pipeline                                        │
+│ 1. Identification → 2. Preparation → 3. Summarization      │
+│ 4. Checkpoint Creation → 5. Context Update → 6. Validation │
+└─────────────────────────────────────────────────────────────┘
+       ↓
+┌─────────────────────────────────────────────────────────────┐
+│ Supporting Services                                         │
+│ - Summarization Service (LLM integration)                   │
+│ - Validation Service (Pre-send checks)                      │
+│ - Checkpoint Lifecycle (Aging)                              │
+│ - Emergency Actions (Critical situations)                   │
+└─────────────────────────────────────────────────────────────┘
+       ↓
+┌─────────────────────────────────────────────────────────────┐
+│ System Integration Layer                                    │
+│ - Tier-Aware Compression (prompt budgets)                   │
+│ - Mode-Aware Compression (mode-specific strategies)         │
+│ - Model-Aware Compression (model size adaptation)           │
+│ - Provider-Aware Compression (provider limits)              │
+│ - Goal-Aware Compression (goal preservation)                │
+│ - Prompt Orchestrator Integration (system prompt)           │
+└─────────────────────────────────────────────────────────────┘
+```
 
-**Purpose:** Pure compression logic and LLM summarization
+### Core Components
 
-**Responsibilities:**
+#### 1. Storage Layer (`packages/core/src/context/storage/`)
 
-- Implements 3 compression strategies (truncate, summarize, hybrid)
-- LLM-based summarization with recursive/rolling logic
-- Fractional preservation (30% of total tokens)
-- Inflation guard (prevents compression from increasing tokens)
-- Token counting with TokenCounter integration
+**Purpose:** Separate storage concerns with clear boundaries
+
+- **activeContextManager.ts** - Manages what gets sent to LLM
+- **snapshotLifecycle.ts** - Recovery and rollback snapshots
+- **sessionHistoryManager.ts** - Full uncompressed conversation history
+- **storageBoundaries.ts** - Runtime enforcement of storage separation
+
+**Key Principle:** Three distinct storage layers that never mix:
+- Active Context: Compressed, sent to LLM
+- Snapshots: Recovery only, never sent to LLM
+- Session History: Full history, never sent to LLM
+
+#### 2. Compression Engine (`packages/core/src/context/compression/`)
+
+**Purpose:** LLM-based semantic summarization
+
+- **compressionPipeline.ts** - Six-stage compression pipeline
+- **summarizationService.ts** - LLM integration for summaries
+- **validationService.ts** - Pre-send validation
+- **compressionEngine.ts** - Strategy pattern for compression types
 
 **Key Features:**
+- LLM creates semantic summaries (not truncation)
+- Multi-level compression (detailed → moderate → compact)
+- Pre-send validation prevents overflow
+- Progress reporting and error handling
 
-- **Recursive Summarization:** Merges previous summaries with new content
-- **User Message Preservation:** NEVER compresses user messages
-- **System Prompt Preservation:** Always keeps first system message
-- **Structured Summaries:** "🎯 Active Goals" + "📜 History Archive"
+#### 3. Checkpoint Lifecycle (`packages/core/src/context/checkpoints/`)
 
-**Interface:**
+**Purpose:** Progressive checkpoint aging and emergency handling
 
-```typescript
-class CompressionService implements ICompressionService {
-  async compress(messages: Message[], strategy: CompressionStrategy): Promise<CompressedContext>;
-  estimateCompression(messages: Message[]): CompressionEstimate;
-  shouldCompress(tokenCount: number, threshold: number): boolean;
-}
-```
-
-#### 2. **compressionCoordinator.ts** (830 lines) - Orchestration Layer
-
-**Purpose:** Coordinates compression strategies across 5 context tiers
-
-**Responsibilities:**
-
-- Tier-based compression dispatch (Tier 1-5)
-- Auto-threshold handling with cooldown
-- Snapshot integration
-- Memory guard integration
-- Checkpoint management coordination
-- User input blocking during compression
-
-**Tier Strategies:**
-
-1. **Tier 1 (Rollover):** Ultra-compact summary, snapshot creation
-2. **Tier 2 (Smart):** Single detailed checkpoint, critical info extraction
-3. **Tier 3 (Progressive):** Hierarchical checkpoints, checkpoint merging
-4. **Tier 4 (Structured):** Broader summaries, 1500 token budget
-5. **Tier 5 (Ultra):** Maximal detail, 2000 token budget
+- **checkpointLifecycle.ts** - Checkpoint aging and merging
+- **emergencyActions.ts** - Emergency compression actions
 
 **Key Features:**
+- Checkpoints age over time (Level 3 → 2 → 1 → Merged)
+- LLM re-summarization at each level
+- Emergency actions when context critical
+- Snapshot before emergency actions
 
-- **Blocking Mechanism:** Prevents user input during checkpoint creation
-- **Cooldown System:** 60-second cooldown between auto-compressions
-- **Checkpoint Limits:** Enforces max checkpoints per tier
-- **Never-Compressed Preservation:** Preserves critical messages
+#### 4. Orchestration (`packages/core/src/context/orchestration/`)
+
+**Purpose:** Main coordination of all subsystems
+
+- **contextOrchestrator.ts** - Main coordinator
+- Integrates all compression components
+- Manages conversation lifecycle
+- Enforces storage boundaries
+- Emits events for UI updates
+
+#### 5. System Integration (`packages/core/src/context/integration/`)
+
+**Purpose:** Deep integration with existing systems
+
+- **tierAwareCompression.ts** - Respects tier-specific prompt budgets
+- **modeAwareCompression.ts** - Mode-specific compression strategies
+- **modelAwareCompression.ts** - Model size affects compression quality
+- **providerAwareCompression.ts** - Provider-specific context limits
+- **goalAwareCompression.ts** - Goals never compressed, guide summarization
+- **promptOrchestratorIntegration.ts** - System prompt integration
+
+#### 6. Migration (`packages/core/src/context/migration/`)
+
+**Purpose:** Migrate from legacy system
+
+- **sessionMigration.ts** - Migrate old sessions
+- **snapshotMigration.ts** - Migrate old snapshots
+- **migrationCLI.ts** - Command-line migration tool
+
+### Legacy System (Archived)
+
+The old compression system has been backed up to `.legacy/context-compression/2026-01-28-233842/`:
+
+**Legacy Files (Archived):**
+- compressionService.ts (920 lines) - Truncation-based compression
+- compressionCoordinator.ts (830 lines) - Tier-based dispatch
+- chatCompressionService.ts (559 lines) - Session compression
+- checkpointManager.ts (~400 lines) - Checkpoint storage
+- snapshotManager.ts (615 lines) - Snapshot management
+- contextManager.ts (639 lines) - Context orchestration
+
+**Why Replaced:**
+- ❌ No LLM summarization (just truncation)
+- ❌ Snapshots mixed with active context
+- ❌ No pre-send validation
+- ❌ Checkpoints don't age properly
+- ❌ User messages accumulate unbounded
+- ❌ No error handling
+
+### File Organization
+
+```
+packages/core/src/context/
+├── types/
+│   └── storageTypes.ts          # Storage layer interfaces
+│
+├── storage/
+│   ├── activeContextManager.ts  # Active context (LLM-bound)
+│   ├── snapshotLifecycle.ts     # Recovery snapshots
+│   ├── sessionHistoryManager.ts # Full history
+│   └── storageBoundaries.ts     # Boundary enforcement
+│
+├── compression/
+│   ├── compressionPipeline.ts   # Structured flow
+│   ├── compressionEngine.ts     # Core compression logic
+│   ├── summarizationService.ts  # LLM summarization
+│   └── validationService.ts     # Pre-send validation
+│
+├── checkpoints/
+│   ├── checkpointLifecycle.ts   # Checkpoint management
+│   └── emergencyActions.ts      # Emergency handling
+│
+├── orchestration/
+│   └── contextOrchestrator.ts   # Main coordinator
+│
+├── integration/
+│   ├── tierAwareCompression.ts
+│   ├── modeAwareCompression.ts
+│   ├── modelAwareCompression.ts
+│   ├── providerAwareCompression.ts
+│   ├── goalAwareCompression.ts
+│   └── promptOrchestratorIntegration.ts
+│
+├── migration/
+│   ├── sessionMigration.ts
+│   ├── snapshotMigration.ts
+│   └── migrationCLI.ts
+│
+└── __tests__/
+    ├── storage/
+    ├── compression/
+    ├── checkpoints/
+    ├── orchestration/
+    └── integration/
+```
+
+---
+
+## Storage Layer Separation
+
+### Three Distinct Storage Layers
+
+The new architecture enforces **strict separation** between three storage layers:
+
+#### 1. Active Context (LLM-Bound)
+
+**Purpose:** What gets sent to the LLM
+
+**Location:** In-memory only
+
+**Contents:**
+- System prompt (never compressed)
+- Checkpoint summaries (compressed history)
+- Recent messages (not yet compressed)
+- User messages (never compressed)
+
+**Characteristics:**
+- Compressed for efficiency
+- Fits within Ollama's context limit
+- Rebuilt for each LLM call
+- No persistent storage
 
 **Interface:**
 
 ```typescript
-class CompressionCoordinator {
-  async compress(): Promise<void>;
-  async handleAutoThreshold(): Promise<void>;
-  isAutoSummaryRunning(): boolean;
-  isSummarizationInProgress(): boolean;
-  async waitForSummarization(timeoutMs?: number): Promise<void>;
+interface ActiveContext {
+  systemPrompt: Message;
+  checkpoints: CheckpointSummary[];  // LLM-generated summaries only
+  recentMessages: Message[];          // Last N messages
+  tokenCount: {
+    system: number;
+    checkpoints: number;
+    recent: number;
+    total: number;
+  };
 }
 ```
 
-#### 3. **chatCompressionService.ts** (559 lines) - Session-Based Compression
+#### 2. Snapshots (Recovery)
 
-**Purpose:** Session-specific compression for chat history
+**Purpose:** Recovery and rollback
 
-**Responsibilities:**
+**Location:** `~/.ollm/context-snapshots/`
 
-- Compresses `SessionMessage[]` (different type from Message)
-- Supports truncate, summarize, hybrid strategies
-- XML snapshot generation using STATE_SNAPSHOT_PROMPT
-- Session metadata updates (compressionCount)
-- Event emission for compression lifecycle
+**Contents:**
+- Full conversation state at a point in time
+- All messages (uncompressed)
+- All checkpoints
+- Goals and metadata
 
-**Key Differences from compressionService.ts:**
-
-- Works with `SessionMessage` type (has `parts[]` structure)
-- Generates XML snapshots (not used by compressionService)
-- Updates session metadata
-- Emits events via EventEmitter
-- Simpler token budgeting (50% recent, 30% summary)
+**Characteristics:**
+- Never sent to LLM
+- Used only for recovery
+- Created before risky operations
+- Automatic cleanup (keep last N)
 
 **Interface:**
 
 ```typescript
-class ChatCompressionService extends EventEmitter {
-  async compress(
-    messages: SessionMessage[],
-    options: CompressionOptions
-  ): Promise<CompressionResult>;
-  async shouldCompress(
-    messages: SessionMessage[],
-    tokenLimit: number,
-    threshold: number
-  ): Promise<boolean>;
-  async generateXMLSnapshot(messages: SessionMessage[]): Promise<string>;
+interface SnapshotData {
+  id: string;
+  sessionId: string;
+  timestamp: number;
+  conversationState: {
+    messages: Message[];           // Full messages at checkpoint
+    checkpoints: CheckpointSummary[];
+    goals?: Goal[];
+    metadata: Record<string, unknown>;
+  };
+  purpose: 'recovery' | 'rollback' | 'emergency';
 }
 ```
 
-### Architecture Diagram
+#### 3. Session History (Full Record)
 
+**Purpose:** Complete uncompressed conversation
+
+**Location:** `~/.ollm/sessions/{sessionId}.json`
+
+**Contents:**
+- ALL messages (uncompressed)
+- ALL tool calls
+- Checkpoint records (metadata)
+- Session metadata
+
+**Characteristics:**
+- Never sent to LLM
+- Never affected by compression
+- Permanent record
+- Can be exported/reviewed
+
+**Interface:**
+
+```typescript
+interface SessionHistory {
+  sessionId: string;
+  messages: Message[];              // Complete uncompressed history
+  checkpointRecords: CheckpointRecord[];
+  metadata: {
+    startTime: number;
+    lastUpdate: number;
+    totalMessages: number;
+    totalTokens: number;
+    compressionCount: number;
+  };
+}
 ```
-┌─────────────────────────────────────────┐
-│ compressionCoordinator.ts (830 lines)   │  ← Orchestration Layer
-│ - Tier-based dispatch                   │
-│ - Auto-threshold handling               │
-│ - Checkpoint coordination               │
-│ - Memory guard integration              │
-└─────────────────────────────────────────┘
-              ↓
-┌─────────────────────────────────────────┐
-│ compressionService.ts (920 lines)       │  ← Core Engine
-│ - Truncate/Summarize/Hybrid strategies  │
-│ - LLM summarization                     │
-│ - Recursive compression                 │
-│ - Inflation guard                       │
-└─────────────────────────────────────────┘
 
-┌─────────────────────────────────────────┐
-│ chatCompressionService.ts (559 lines)   │  ← Session Layer
-│ - Session message compression           │
-│ - XML snapshot generation               │
-│ - Event emission                        │
-│ - Metadata updates                      │
-└─────────────────────────────────────────┘
+### Storage Boundaries
+
+**Runtime Enforcement:**
+
+```typescript
+class StorageBoundaries {
+  // Type guards
+  isActiveContext(data: unknown): data is ActiveContext;
+  isSnapshotData(data: unknown): data is SnapshotData;
+  isSessionHistory(data: unknown): data is SessionHistory;
+  
+  // Validation
+  validateActiveContext(context: ActiveContext): ValidationResult;
+  validateSnapshotData(snapshot: SnapshotData): ValidationResult;
+  validateSessionHistory(history: SessionHistory): ValidationResult;
+  
+  // Enforcement
+  preventSnapshotInPrompt(prompt: Message[]): void;
+  preventHistoryInPrompt(prompt: Message[]): void;
+}
 ```
 
-### Supporting Components
-
-4. **Checkpoint Manager** (`checkpointManager.ts`)
-   - Stores and retrieves checkpoints
-   - Ages checkpoints over time
-   - Merges old checkpoints
-   - Preserves never-compressed content
-
-5. **Snapshot Manager** (`snapshotManager.ts`)
-   - Creates full conversation snapshots
-   - Saves to disk for recovery
-   - Restores previous states
-   - Lists available snapshots
-
-6. **Message Store** (`messageStore.ts`)
-   - Tracks token usage
-   - Triggers compression at thresholds
-   - Manages message history
+**Key Principle:** These three layers NEVER mix. Snapshots and session history are NEVER sent to the LLM.
 
 ---
 
@@ -645,48 +822,129 @@ if (markers.artifacts) {
 
 ## LLM-Based Summarization
 
-### Who Does the Compression?
+### Summarization Service
 
-**The LLM does the summarization**, not our app. Our app:
+The new architecture uses a dedicated **SummarizationService** that integrates with the LLM to create semantic summaries.
 
-1. Identifies messages to compress
-2. Sends them to the LLM with a summarization prompt
-3. Receives the summary back
-4. Stores the summary as a checkpoint
-5. Removes the original messages from active context
+**Key Features:**
+- LLM creates summaries (not truncation)
+- Multi-level compression (detailed → moderate → compact)
+- Goal-aware summarization
+- Mode-specific prompts
+- Error handling and retries
+
+### Compression Pipeline
+
+The compression process follows a **six-stage pipeline**:
+
+```
+1. Identification
+   ↓ Which messages to compress?
+2. Preparation
+   ↓ Format for LLM
+3. Summarization
+   ↓ LLM creates summary
+4. Checkpoint Creation
+   ↓ Store summary
+5. Context Update
+   ↓ Replace old with summary
+6. Validation
+   ↓ Verify result fits
+```
 
 ### Summarization Process
 
 ```typescript
-// 1. Extract messages to compress
-const messagesToCompress = getRecentAssistantMessages(context);
+// 1. Identify messages to compress
+const messagesToCompress = identifyMessagesToCompress(context);
 
-// 2. Ask the SAME LLM to summarize its own output
-const summaryPrompt = `Summarize the following conversation history, preserving key decisions, code changes, and important context:
+// 2. Prepare for summarization
+const prepared = prepareForSummarization(messagesToCompress, goal);
 
-${messagesToCompress.join('\n')}
+// 3. Ask the LLM to summarize
+const summary = await summarizationService.summarize(
+  prepared.messages,
+  prepared.level,
+  goal
+);
 
-Provide a concise summary that maintains essential information.`;
+// 4. Create checkpoint with summary
+const checkpoint = createCheckpoint(summary, messagesToCompress, prepared.level);
 
-const summary = await llm.generate(summaryPrompt);
+// 5. Update active context
+activeContext.removeMessages(checkpoint.originalMessageIds);
+activeContext.addCheckpoint(checkpoint);
 
-// 3. Create checkpoint with summary
-const checkpoint = {
-  summary: summary,
-  tokens: countTokens(summary),
-  originalTokens: countTokens(messagesToCompress),
-  compressionRatio: summary.tokens / messagesToCompress.tokens,
-  timestamp: Date.now(),
-};
+// 6. Validate result
+const validation = validationService.validate(activeContext.buildPrompt());
+if (!validation.valid) {
+  throw new Error(`Compression failed validation: ${validation.message}`);
+}
+```
 
-// 4. Replace original messages with checkpoint
-context.messages = [
-  systemPrompt, // Always preserved
-  ...checkpoints, // All previous checkpoints
-  checkpoint, // New checkpoint
-  ...userMessages, // Always preserved (never compress)
-  ...recentMessages, // Most recent (not yet compressed)
-];
+### Compression Levels
+
+The system uses three compression levels:
+
+```
+Level 3 (Detailed): 50-70% compression
+  - Detailed summaries
+  - Key decisions preserved
+  - Code snippets included
+  - ~2000 tokens
+
+Level 2 (Moderate): 60% compression
+  - Moderate summaries
+  - Main points only
+  - Code references only
+  - ~1200 tokens
+
+Level 1 (Compact): 70% compression
+  - Brief summaries
+  - Critical info only
+  - No code details
+  - ~800 tokens
+```
+
+### Summarization Prompts
+
+The system uses different prompts based on compression level and mode:
+
+```typescript
+// Level 3 (Detailed)
+const detailedPrompt = `
+Summarize the following conversation, preserving:
+- All key decisions and rationale
+- Code snippets and file paths
+- Technical details and implementation notes
+- Error messages and debugging context
+- Next steps and planned actions
+
+${messages.join('\n')}
+`;
+
+// Level 2 (Moderate)
+const moderatePrompt = `
+Summarize the following conversation, preserving:
+- Main decisions and outcomes
+- File paths (no code snippets)
+- Important technical points
+- Critical errors
+- Next steps
+
+${messages.join('\n')}
+`;
+
+// Level 1 (Compact)
+const compactPrompt = `
+Provide a brief summary of the following conversation:
+- Key decisions only
+- Files modified
+- Critical issues
+- Next action
+
+${messages.join('\n')}
+`;
 ```
 
 ### Compression Rules
@@ -774,6 +1032,233 @@ Large models (70B+):
   - Handles very complex topics
   - Compression: 70-90%
   - Recommend: 5-7 compressions
+```
+
+### Error Handling
+
+The summarization service includes comprehensive error handling:
+
+```typescript
+try {
+  const summary = await llm.generate(summaryPrompt);
+  
+  // Validate summary
+  if (!summary || summary.length === 0) {
+    throw new Error('Empty summary returned');
+  }
+  
+  // Check for inflation (summary larger than original)
+  const summaryTokens = countTokens(summary);
+  const originalTokens = countTokens(messages);
+  if (summaryTokens > originalTokens * 0.9) {
+    throw new Error('Summary too large (inflation detected)');
+  }
+  
+  return summary;
+} catch (error) {
+  // Retry with simpler prompt
+  if (retryCount < 3) {
+    return await this.summarize(messages, level - 1, goal, retryCount + 1);
+  }
+  
+  // Fallback to truncation
+  console.error('Summarization failed, falling back to truncation');
+  return truncateMessages(messages);
+}
+```
+
+---
+
+## System Integration
+
+The new architecture includes deep integration with all major systems:
+
+### 1. Tier System Integration
+
+**Purpose:** Respect tier-specific prompt budgets
+
+**Implementation:** `tierAwareCompression.ts`
+
+**Features:**
+- Tier budgets: 200-1500 tokens
+- Compression triggers account for tier
+- System prompt never compressed
+- Tier changes handled gracefully
+
+**Example:**
+
+```typescript
+class TierAwareCompression {
+  private tierBudgets = {
+    TIER_1_MINIMAL: 200,
+    TIER_2_BASIC: 500,
+    TIER_3_STANDARD: 1000,
+    TIER_4_PREMIUM: 1500,
+    TIER_5_ULTRA: 1500,
+  };
+
+  shouldCompress(tier: ContextTier, currentTokens: number, ollamaLimit: number): boolean {
+    const promptBudget = this.tierBudgets[tier];
+    const availableForMessages = ollamaLimit - promptBudget - 1000; // Safety margin
+    return currentTokens > availableForMessages * 0.75; // Trigger at 75%
+  }
+}
+```
+
+### 2. Mode System Integration
+
+**Purpose:** Mode-aware compression strategies
+
+**Implementation:** `modeAwareCompression.ts`
+
+**Features:**
+- Mode-specific summarization prompts
+- Developer mode preserves code context
+- Planning mode preserves goals/decisions
+- Debugger mode preserves errors
+
+**Example:**
+
+```typescript
+class ModeAwareCompression {
+  getSummarizationPrompt(mode: OperationalMode, level: 1 | 2 | 3): string {
+    const basePrompt = this.getBasePrompt(level);
+    
+    switch (mode) {
+      case 'DEVELOPER':
+        return `${basePrompt}\n\nFocus on preserving:\n- Code snippets and file paths\n- Technical decisions\n- Error messages and debugging context`;
+      
+      case 'PLANNING':
+        return `${basePrompt}\n\nFocus on preserving:\n- Goals and objectives\n- Architectural decisions\n- Trade-offs discussed`;
+      
+      // ... other modes
+    }
+  }
+}
+```
+
+### 3. Model Management Integration
+
+**Purpose:** Model size affects compression quality
+
+**Implementation:** `modelAwareCompression.ts`
+
+**Features:**
+- Model size detection
+- Reliability scoring based on model
+- Warning thresholds by model size
+- Model swaps preserve compression state
+
+**Example:**
+
+```typescript
+class ModelAwareCompression {
+  calculateReliability(modelSize: number, compressionCount: number): number {
+    const modelFactor =
+      modelSize >= 70 ? 0.95 :
+      modelSize >= 30 ? 0.85 :
+      modelSize >= 13 ? 0.7 :
+      modelSize >= 7 ? 0.5 :
+      0.3; // 3B and below
+
+    const compressionPenalty = Math.pow(0.9, compressionCount);
+    return modelFactor * compressionPenalty;
+  }
+}
+```
+
+### 4. Provider System Integration
+
+**Purpose:** Use provider-specific context limits
+
+**Implementation:** `providerAwareCompression.ts`
+
+**Features:**
+- Provider limits read from profiles
+- 85% values used correctly
+- Compression triggers respect provider
+- Provider errors handled
+
+**Example:**
+
+```typescript
+class ProviderAwareCompression {
+  getContextLimit(modelId: string): number {
+    const modelEntry = this.profileManager.getModelEntry(modelId);
+    const profile = modelEntry.context_profiles.find(
+      p => p.size === this.getCurrentContextSize()
+    );
+    
+    return profile?.ollama_context_size || 6800; // Default to 8K * 0.85
+  }
+}
+```
+
+### 5. Goal System Integration
+
+**Purpose:** Goals NEVER compressed, guide summarization
+
+**Implementation:** `goalAwareCompression.ts`
+
+**Features:**
+- Goals always in system prompt
+- Goal-aware summarization
+- Goal markers parsed correctly
+- Progress tracked accurately
+
+**Example:**
+
+```typescript
+class GoalAwareCompression {
+  buildGoalAwarePrompt(messages: Message[], goal: Goal): string {
+    return `
+ACTIVE GOAL: ${goal.description}
+Priority: ${goal.priority}
+Status: ${goal.status}
+
+Checkpoints:
+${goal.checkpoints.map(cp => `${cp.status === 'completed' ? '✅' : '🔄'} ${cp.description}`).join('\n')}
+
+Summarize the following conversation, focusing on progress toward the goal:
+${messages.map(m => `${m.role}: ${m.content}`).join('\n\n')}
+
+Preserve:
+- Decisions made toward the goal
+- Checkpoints completed
+- Files created/modified
+- Blockers encountered
+    `.trim();
+  }
+}
+```
+
+### 6. Prompt Orchestrator Integration
+
+**Purpose:** System prompt built by PromptOrchestrator
+
+**Implementation:** `promptOrchestratorIntegration.ts`
+
+**Features:**
+- System prompt from orchestrator
+- Compression respects prompt structure
+- Checkpoints integrated into prompt
+- Skills/tools/hooks preserved
+
+**Example:**
+
+```typescript
+class PromptOrchestratorIntegration {
+  getSystemPrompt(): Message {
+    // System prompt built by PromptOrchestrator
+    // Includes: tier prompt + mandates + goals + skills + sanity checks
+    return this.promptOrchestrator.buildSystemPrompt();
+  }
+
+  getSystemPromptTokens(): number {
+    const systemPrompt = this.getSystemPrompt();
+    return countTokens(systemPrompt);
+  }
+}
 ```
 
 ---
@@ -1228,17 +1713,49 @@ context.messages = [...systemMessages, ...summaries, ...recentMessages];
 
 ## File Locations
 
-| File                                                  | Purpose                            |
-| ----------------------------------------------------- | ---------------------------------- |
-| `packages/core/src/context/compressionCoordinator.ts` | Orchestrates compression           |
-| `packages/core/src/context/compressionService.ts`     | LLM summarization                  |
-| `packages/core/src/context/checkpointManager.ts`      | Checkpoint management              |
-| `packages/core/src/context/checkpointUtils.ts`        | **Checkpoint utilities**           |
-| `packages/core/src/context/snapshotManager.ts`        | Snapshot operations                |
-| `packages/core/src/context/messageStore.ts`           | Tracks usage, triggers compression |
-| `packages/core/src/context/goalManager.ts`            | Goal management                    |
-| `packages/core/src/services/chatRecordingService.ts`  | Full history storage               |
+### New Architecture (v0.1.1)
+
+| File                                                                       | Purpose                          | Status      |
+| -------------------------------------------------------------------------- | -------------------------------- | ----------- |
+| `packages/core/src/context/types/storageTypes.ts`                          | Storage layer interfaces         | ✅ New      |
+| `packages/core/src/context/storage/activeContextManager.ts`                | Active context (LLM-bound)       | ✅ New      |
+| `packages/core/src/context/storage/snapshotLifecycle.ts`                   | Recovery snapshots               | ✅ New      |
+| `packages/core/src/context/storage/sessionHistoryManager.ts`               | Full history                     | ✅ New      |
+| `packages/core/src/context/storage/storageBoundaries.ts`                   | Boundary enforcement             | ✅ New      |
+| `packages/core/src/context/compression/compressionPipeline.ts`             | Structured flow                  | ✅ New      |
+| `packages/core/src/context/compression/compressionEngine.ts`               | Core compression logic           | ✅ New      |
+| `packages/core/src/context/compression/summarizationService.ts`            | LLM summarization                | ✅ New      |
+| `packages/core/src/context/compression/validationService.ts`               | Pre-send validation              | ✅ New      |
+| `packages/core/src/context/checkpoints/checkpointLifecycle.ts`             | Checkpoint management            | ✅ New      |
+| `packages/core/src/context/checkpoints/emergencyActions.ts`                | Emergency handling               | ✅ New      |
+| `packages/core/src/context/orchestration/contextOrchestrator.ts`           | Main coordinator                 | ✅ New      |
+| `packages/core/src/context/integration/tierAwareCompression.ts`            | Tier integration                 | ✅ New      |
+| `packages/core/src/context/integration/modeAwareCompression.ts`            | Mode integration                 | ✅ New      |
+| `packages/core/src/context/integration/modelAwareCompression.ts`           | Model integration                | ✅ New      |
+| `packages/core/src/context/integration/providerAwareCompression.ts`        | Provider integration             | ✅ New      |
+| `packages/core/src/context/integration/goalAwareCompression.ts`            | Goal integration                 | ✅ New      |
+| `packages/core/src/context/integration/promptOrchestratorIntegration.ts`   | Prompt orchestrator integration  | ✅ New      |
+| `packages/core/src/context/migration/sessionMigration.ts`                  | Session migration                | ✅ New      |
+| `packages/core/src/context/migration/snapshotMigration.ts`                 | Snapshot migration               | ✅ New      |
+| `packages/core/src/context/migration/migrationCLI.ts`                      | Migration CLI tool               | ✅ New      |
+| `packages/core/src/context/__tests__/storage/`                             | Storage layer tests              | ✅ New      |
+| `packages/core/src/context/__tests__/compression/`                         | Compression tests                | ✅ New      |
+| `packages/core/src/context/__tests__/checkpoints/`                         | Checkpoint tests                 | ✅ New      |
+| `packages/core/src/context/__tests__/orchestration/`                       | Orchestration tests              | ✅ New      |
+| `packages/core/src/context/__tests__/integration/`                         | Integration tests                | ✅ New      |
+
+### Legacy System (Archived)
+
+| File                                                                       | Purpose                          | Status      |
+| -------------------------------------------------------------------------- | -------------------------------- | ----------- |
+| `.legacy/context-compression/2026-01-28-233842/core/compressionService.ts` | Old compression engine           | 📦 Archived |
+| `.legacy/context-compression/2026-01-28-233842/core/compressionCoordinator.ts` | Old orchestration            | 📦 Archived |
+| `.legacy/context-compression/2026-01-28-233842/services/chatCompressionService.ts` | Old session compression  | 📦 Archived |
+| `.legacy/context-compression/2026-01-28-233842/core/checkpointManager.ts`  | Old checkpoint manager           | 📦 Archived |
+| `.legacy/context-compression/2026-01-28-233842/core/snapshotManager.ts`    | Old snapshot manager             | 📦 Archived |
+| `.legacy/context-compression/2026-01-28-233842/core/contextManager.ts`     | Old context manager              | 📦 Archived |
 
 ---
 
-**Note:** This document focuses on compression and snapshots. For context sizing logic, see `dev_ContextManagement.md`. For prompt structure, see `dev_PromptSystem.md`.
+**Note:** This document describes the new compression architecture (v0.1.1). For context sizing logic, see `dev_ContextManagement.md`. For snapshot details, see `dev_ContextSnapshots.md`. For prompt structure, see `dev_PromptSystem.md`.
+
