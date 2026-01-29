@@ -402,7 +402,7 @@ This implementation plan breaks down the context compression system refactor int
   - Test OpenAI-compatible provider
   - _Requirements: FR-14_
 
-- [~] 26. Implement Goal System Integration
+- [x] 26. Implement Goal System Integration
   - Create `GoalAwareCompression` class
   - Never compress goals
   - Implement goal-aware summarization
@@ -410,15 +410,15 @@ This implementation plan breaks down the context compression system refactor int
   - Track goal progress
   - _Requirements: FR-15_
 
-- [ ] 26.1 Write property test for goal never compressed
+- [x] 26.1 Write property test for goal never compressed
   - **Property 27: Goal Never Compressed**
   - **Validates: Requirements FR-15**
 
-- [ ] 26.2 Write property test for goal-aware summarization
+- [x] 26.2 Write property test for goal-aware summarization
   - **Property 28: Goal-Aware Summarization**
   - **Validates: Requirements FR-15**
 
-- [ ] 27. Implement Prompt Orchestrator Integration
+- [x] 27. Implement Prompt Orchestrator Integration
   - Create `PromptOrchestratorIntegration` class
   - Get system prompt from orchestrator
   - Respect prompt structure in compression
@@ -426,11 +426,11 @@ This implementation plan breaks down the context compression system refactor int
   - Preserve skills/tools/hooks
   - _Requirements: FR-16_
 
-- [ ] 27.1 Write property test for prompt structure preservation
+- [x] 27.1 Write property test for prompt structure preservation
   - **Property 29: Prompt Structure Preservation**
   - **Validates: Requirements FR-16**
 
-- [ ] 27.2 Write integration tests for orchestrator
+- [x] 27.2 Write integration tests for orchestrator
   - Test system prompt integration
   - Test checkpoint integration
   - Test skills/tools/hooks preservation
