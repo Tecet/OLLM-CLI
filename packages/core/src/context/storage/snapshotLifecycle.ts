@@ -350,11 +350,25 @@ export class SnapshotLifecycle {
     );
     
     const latest = sorted[0];
-    return {
-      id: latest.id,
-      timestamp: latest.timestamp.getTime(),
-      purpose: (latest.metadata as any)?.purpose || 'recovery',
-    };
+    
+    // Load the full snapshot to get the purpose
+    try {
+      const contextSnapshot = await this.storage.load(latest.id);
+      const snapshot = this.fromContextSnapshot(contextSnapshot);
+      
+      return {
+        id: latest.id,
+        timestamp: latest.timestamp.getTime(),
+        purpose: snapshot.purpose,
+      };
+    } catch (error) {
+      // If we can't load the snapshot, return basic metadata
+      return {
+        id: latest.id,
+        timestamp: latest.timestamp.getTime(),
+        purpose: 'recovery', // Default
+      };
+    }
   }
 
   /**

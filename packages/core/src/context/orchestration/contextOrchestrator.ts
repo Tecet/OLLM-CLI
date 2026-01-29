@@ -797,6 +797,9 @@ export class ContextOrchestrator {
    * all integration statuses.
    * Useful for debugging and monitoring.
    *
+   * Note: Snapshot count and latest snapshot are not included in sync version.
+   * Use getStateAsync() if you need snapshot information.
+   *
    * @returns Current state
    *
    * @example
@@ -825,8 +828,8 @@ export class ContextOrchestrator {
         compressionCount: sessionHistoryState.metadata.compressionCount,
       },
       snapshots: {
-        count: await this.snapshotLifecycle.getSnapshotCount(),
-        latest: await this.snapshotLifecycle.getLatestSnapshot(),
+        count: 0, // Use getStateAsync() for actual count
+        latest: undefined, // Use getStateAsync() for latest snapshot
       },
       health: {
         tokenUsage,
@@ -840,6 +843,33 @@ export class ContextOrchestrator {
       },
       integrations: integrationStatus,
       reliability,
+    };
+  }
+
+  /**
+   * Get current state with snapshot information (async)
+   *
+   * Returns complete state including snapshot count and latest snapshot.
+   * Use this when you need snapshot information.
+   *
+   * @returns Current state with snapshot data
+   *
+   * @example
+   * ```typescript
+   * const state = await orchestrator.getStateAsync();
+   * console.log(`Snapshots: ${state.snapshots.count}`);
+   * ```
+   */
+  async getStateAsync(): Promise<OrchestratorState> {
+    const baseState = this.getState();
+    
+    // Add snapshot information
+    return {
+      ...baseState,
+      snapshots: {
+        count: await this.snapshotLifecycle.getSnapshotCount(),
+        latest: await this.snapshotLifecycle.getLatestSnapshot(),
+      },
     };
   }
 
