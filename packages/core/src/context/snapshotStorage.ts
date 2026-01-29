@@ -61,6 +61,20 @@ interface SnapshotFile {
     tokenCount?: number;
     metadata?: unknown;
   }>;
+  checkpoints?: Array<{
+    id: string;
+    timestamp: number;
+    summary: string;
+    originalMessageIds: string[];
+    tokenCount: number;
+    compressionLevel: 1 | 2 | 3;
+    compressionNumber: number;
+    metadata: {
+      model: string;
+      createdAt: number;
+      compressedAt?: number;
+    };
+  }>;
 }
 
 /**
@@ -196,6 +210,17 @@ export class SnapshotStorageImpl implements SnapshotStorage {
         tokenCount: msg.tokenCount,
         metadata: msg.metadata,
       })),
+      // Store checkpoints if present
+      checkpoints: ((snapshot as any).checkpoints || []).map((cp: any) => ({
+        id: cp.id,
+        timestamp: cp.timestamp,
+        summary: cp.summary,
+        originalMessageIds: cp.originalMessageIds,
+        tokenCount: cp.tokenCount,
+        compressionLevel: cp.compressionLevel,
+        compressionNumber: cp.compressionNumber,
+        metadata: cp.metadata,
+      })),
     };
 
     const snapshotPath = this.getSnapshotPath(snapshot.sessionId, snapshot.id);
@@ -304,13 +329,24 @@ export class SnapshotStorageImpl implements SnapshotStorage {
           tokenCount: msg.tokenCount,
           metadata: msg.metadata as Record<string, unknown>,
         })),
+        // Restore checkpoints if present
+        checkpoints: (snapshotFile.checkpoints || []).map((cp) => ({
+          id: cp.id,
+          timestamp: cp.timestamp,
+          summary: cp.summary,
+          originalMessageIds: cp.originalMessageIds,
+          tokenCount: cp.tokenCount,
+          compressionLevel: cp.compressionLevel,
+          compressionNumber: cp.compressionNumber,
+          metadata: cp.metadata,
+        })),
         metadata: {
           ...snapshotFile.metadata,
           totalUserMessages: snapshotFile.metadata.totalUserMessages || 0,
           totalGoalsCompleted: snapshotFile.metadata.totalGoalsCompleted || 0,
           totalCheckpoints: snapshotFile.metadata.totalCheckpoints || 0,
         },
-      };
+      } as any;
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
         throw new Error(`Snapshot not found: ${snapshotId}`);

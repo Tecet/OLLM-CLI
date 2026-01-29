@@ -261,6 +261,7 @@ export class SnapshotLifecycle {
       userMessages: snapshot.conversationState.messages.filter((m) => m.role === 'user'),
       archivedUserMessages: [],
       messages: snapshot.conversationState.messages,
+      checkpoints: snapshot.conversationState.checkpoints, // Store checkpoints
       metadata: {
         model: 'unknown',
         contextSize: snapshot.conversationState.messages.length,
@@ -290,7 +291,7 @@ export class SnapshotLifecycle {
           : new Date(contextSnapshot.timestamp).getTime(),
       conversationState: {
         messages: contextSnapshot.messages || [],
-        checkpoints: [], // Checkpoints not stored in ContextSnapshot
+        checkpoints: contextSnapshot.checkpoints || [], // Restore checkpoints
         goals: undefined,
         metadata: contextSnapshot.metadata || {},
       },
