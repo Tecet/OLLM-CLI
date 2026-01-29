@@ -119,54 +119,40 @@ export class ChatClient {
     }
 
     // Ensure context size is set (CRITICAL: prevents context overflow)
-    if (!options?.contextSize && !options?.ollamaContextSize) {
-      // Try to get from context manager
-      if (this.contextMgmtManager) {
-        const usage = this.contextMgmtManager.getUsage();
-        options = {
-          ...options,
-          contextSize: usage.maxTokens,
-          ollamaContextSize: Math.floor(usage.maxTokens * 0.85),
-        };
-        if (!isTestEnv)
-          console.log(
-            `[ChatClient] Context size from manager: ${usage.maxTokens}, Ollama: ${Math.floor(usage.maxTokens * 0.85)}`
-          );
-      } else {
-        // Fallback to default
-        const defaultContextSize = 8192;
-        const defaultOllamaSize = 6963; // 85% of 8192
-        options = {
-          ...options,
-          contextSize: defaultContextSize,
-          ollamaContextSize: defaultOllamaSize,
-        };
-        if (!isTestEnv)
-          console.warn(
-            `[ChatClient] No context size specified, using default ${defaultContextSize} (Ollama: ${defaultOllamaSize})`
-          );
+    if (!options?.contextSize || !options?.ollamaContextSize) {
+      // Get from context manager (required)
+      if (!this.contextMgmtManager) {
+        throw new Error(
+          '[ChatClient] Context manager not initialized. Cannot determine context size.'
+        );
+      }
+
+      const usage = this.contextMgmtManager.getUsage();
+      const ollamaLimit = this.contextMgmtManager.getOllamaContextLimit?.();
+      
+      if (!ollamaLimit) {
+        throw new Error(
+          '[ChatClient] Context manager does not provide Ollama context limit. ' +
+          'This indicates the new context system is not properly initialized.'
+        );
+      }
+
+      options = {
+        ...options,
+        contextSize: usage.maxTokens,
+        ollamaContextSize: ollamaLimit, // Use pre-calculated value from JSON profiles
+      };
+      
+      if (!isTestEnv) {
+        console.log(
+          `[ChatClient] Context from manager: ${usage.maxTokens} tokens, Ollama limit: ${ollamaLimit}`
+        );
       }
     } else {
-      if (!isTestEnv)
+      if (!isTestEnv) {
         console.log(
           `[ChatClient] Context size: ${options.contextSize}, Ollama: ${options.ollamaContextSize}`
         );
-    }
-
-    // Sync context manager threshold with Ollama context size
-    // This ensures we snapshot/summarize exactly when Ollama hits its limit
-    if (this.contextMgmtManager && options?.contextSize && options?.ollamaContextSize) {
-      const ratio = options.ollamaContextSize / options.contextSize;
-      if (!isTestEnv) console.log(`[ChatClient] Syncing autoThreshold to ${ratio.toFixed(4)}`);
-
-      const currentConfig = this.contextMgmtManager.config;
-      if (currentConfig) {
-        this.contextMgmtManager.updateConfig({
-          snapshots: {
-            ...currentConfig.snapshots,
-            autoThreshold: ratio,
-          },
-        });
       }
     }
 
@@ -451,91 +437,6 @@ Is this correct? (y/n)`;
           // Stop execution (Requirement 4.7)
           yield { type: 'finish', reason: 'loop_detected' };
           break;
-        }
-      }
-
-      // Check compression threshold before each turn (Requirement 3.1, 8.1, 8.2, 8.3)
-      if (this.compressionService && this.servicesConfig.compression.enabled) {
-        try {
-          // Get model name for token limit lookup
-          const model = options?.model ?? this.config.defaultModel ?? 'unknown';
-
-          // Query Model Database for context window limit (Requirement 8.1, 8.2)
-          // Config override takes precedence if specified
-          const tokenLimit = this.config.tokenLimit ?? this.modelDatabase.getContextWindow(model);
-          const threshold = this.servicesConfig.compression.threshold ?? 0.8;
-
-          // Convert messages to SessionMessage format for compression check
-          const sessionMessages = messages.map((msg) => this.messageToSessionMessage(msg));
-
-          if (
-            await this.compressionService.shouldCompress(sessionMessages, tokenLimit, threshold)
-          ) {
-            // Emit pre_compress event
-            this.messageBus.emit('pre_compress', {
-              contextSize: sessionMessages.length,
-              tokenCount: sessionMessages.reduce(
-                (sum, msg) => sum + msg.parts.reduce((s, p) => s + p.text.length, 0),
-                0
-              ),
-              maxSize: tokenLimit,
-              sessionId,
-            });
-
-            // Trigger compression (Requirement 8.3)
-            const compressionResult = await this.compressionService.compress(sessionMessages, {
-              strategy: this.servicesConfig.compression.strategy ?? 'hybrid',
-              preserveRecentTokens: this.servicesConfig.compression.preserveRecent ?? 1000,
-              targetTokens: Math.floor(tokenLimit * 0.7), // Target 70% of limit after compression
-            });
-
-            const compressionRatio =
-              compressionResult.originalTokenCount > 0
-                ? compressionResult.compressedTokenCount / compressionResult.originalTokenCount
-                : 1.0;
-
-            // Emit post_compress event
-            this.messageBus.emit('post_compress', {
-              originalSize: sessionMessages.length,
-              compressedSize: compressionResult.compressedMessages.length,
-              originalTokenCount: sessionMessages.reduce(
-                (sum, msg) => sum + msg.parts.reduce((s, p) => s + p.text.length, 0),
-                0
-              ),
-              compressedTokenCount: compressionResult.compressedTokenCount,
-              compressionRatio,
-              sessionId,
-            });
-
-            // Update message history with compressed messages
-            messages.length = 0; // Clear existing messages
-            messages.push(
-              ...compressionResult.compressedMessages.map((msg) =>
-                this.sessionMessageToMessage(msg)
-              )
-            );
-
-            // Update session metadata if recording is enabled
-            if (sessionId && this.recordingService) {
-              try {
-                // Get current session to update metadata
-                const session = await this.recordingService.getSession(sessionId);
-                if (session) {
-                  session.metadata.compressionCount++;
-                  session.metadata.tokenCount = compressionResult.compressedTokenCount;
-                  // Save updated session
-                  await this.recordingService.saveSession(sessionId);
-                }
-              } catch (error) {
-                // Log error but continue (Requirement 10.3)
-                if (!isTestEnv)
-                  console.error('Failed to update session metadata after compression:', error);
-              }
-            }
-          }
-        } catch (error) {
-          // Log error but continue without compression (Requirement 10.3)
-          if (!isTestEnv) console.error('Compression check failed:', error);
         }
       }
 

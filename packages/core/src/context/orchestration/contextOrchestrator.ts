@@ -1141,6 +1141,24 @@ export class ContextOrchestrator {
   }
 
   /**
+   * Get Ollama context limit
+   *
+   * Returns the pre-calculated Ollama context limit (85% of context size)
+   * that should be sent to Ollama as the num_ctx parameter.
+   *
+   * @returns Ollama context limit in tokens
+   *
+   * @example
+   * ```typescript
+   * const ollamaLimit = orchestrator.getOllamaLimit();
+   * console.log(`Send num_ctx=${ollamaLimit} to Ollama`);
+   * ```
+   */
+  getOllamaLimit(): number {
+    return this.activeContext.getOllamaLimit();
+  }
+
+  /**
    * Cleanup old snapshots
    *
    * Removes old snapshots to save disk space.

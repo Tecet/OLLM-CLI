@@ -130,14 +130,16 @@ export class ContextOrchestratorAdapter extends EventEmitter implements ContextM
 
   /**
    * Get the Ollama context limit (reduced value sent to Ollama)
-   * This is the 85% pre-calculated value used internally for compression triggers
+   * This is the pre-calculated value from the model's context profiles
+   * that gets sent to Ollama as num_ctx parameter.
+   * 
+   * This value comes from the LLM_profiles.json file's ollama_context_size field,
+   * or is calculated as 85% of the context size if not found in the profiles.
    * 
    * @returns Ollama context limit in tokens
    */
   getOllamaContextLimit(): number {
-    // Calculate 85% of the full context size
-    const fullContextSize = this.config.targetSize || 8192;
-    return Math.floor(fullContextSize * 0.85);
+    return this.orchestrator.getOllamaLimit();
   }
 
   // ============================================================================

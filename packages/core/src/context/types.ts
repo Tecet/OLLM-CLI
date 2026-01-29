@@ -998,6 +998,8 @@ export interface ContextManager {
   isSummarizationInProgress(): boolean;
   /** Wait for any in-progress summarization to complete (Phase 2: Blocking Mechanism) */
   waitForSummarization(timeoutMs?: number): Promise<void>;
+  /** Get the Ollama context limit (85% pre-calculated value from JSON profiles) */
+  getOllamaContextLimit?(): number;
   /** Report in-flight (streaming) token delta to the manager (can be positive or negative) */
   reportInflightTokens(delta: number): void;
   /** Clear any in-flight token accounting (call on generation finish) */
