@@ -205,6 +205,11 @@ export function ContextManagerProvider({
   useEffect(() => {
     const initManager = async () => {
       try {
+        console.log('[ContextManagerContext] Starting initialization...');
+        console.log('[ContextManagerContext] Provider available:', !!provider);
+        console.log('[ContextManagerContext] Session ID:', sessionId);
+        console.log('[ContextManagerContext] Model ID:', modelInfo?.modelId);
+        
         // Check for pending context size from SessionManager
         let effectiveConfig: Partial<ContextConfig> | undefined = config;
         try {
@@ -229,6 +234,15 @@ export function ContextManagerProvider({
         const os = await import('os');
         const storagePath = path.join(os.homedir(), '.ollm', 'context-storage');
         
+        // Check if provider is available
+        if (!provider) {
+          console.error('[ContextManagerContext] Provider not available - cannot initialize context manager');
+          setError('Provider not available. Please ensure a model provider is configured.');
+          setActive(false);
+          return;
+        }
+        
+        console.log('[ContextManagerContext] Creating context manager with factory...');
         const { manager } = createContextManager({
           sessionId,
           modelInfo: {
@@ -236,10 +250,11 @@ export function ContextManagerProvider({
             contextSize: effectiveConfig?.targetSize,
           },
           contextConfig: effectiveConfig,
-          provider: provider!, // Provider is required
-          storagePath, // Storage path is required
+          provider, // Provider is now validated
+          storagePath,
         });
         
+        console.log('[ContextManagerContext] Context manager created successfully');
         managerRef.current = manager as any; // Type compatibility with legacy interface
 
         // Create mode manager
