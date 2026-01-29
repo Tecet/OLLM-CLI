@@ -38,14 +38,26 @@ export class ContextOrchestratorAdapter extends EventEmitter implements ContextM
   private orchestrator: ContextOrchestrator;
   public config: ContextConfig;
   public activeSkills: string[] = [];
-  public activeTools: string[] = [];
-  private currentMode: OperationalMode = OperationalMode.ASSISTANT;
+  public activeTools: string[] = [
+    'read-file',
+    'write-file', 
+    'edit-file',
+    'shell',
+    'web-fetch',
+    'web-search',
+    'memory',
+    'git',
+  ];
+  private currentMode: OperationalMode;
+  private currentTier: ContextTier;
   private systemPromptText: string = '';
 
-  constructor(orchestrator: ContextOrchestrator, config: ContextConfig) {
+  constructor(orchestrator: ContextOrchestrator, config: ContextConfig, initialMode?: OperationalMode, initialTier?: ContextTier) {
     super();
     this.orchestrator = orchestrator;
     this.config = config;
+    this.currentMode = initialMode || OperationalMode.ASSISTANT;
+    this.currentTier = initialTier || calculateTier(config.targetSize || 8192);
   }
 
   // ============================================================================
@@ -53,16 +65,9 @@ export class ContextOrchestratorAdapter extends EventEmitter implements ContextM
   // ============================================================================
 
   async start(): Promise<void> {
-    // Calculate tier based on actual context size (not ollama limit)
-    const contextSize = this.config.targetSize || 8192;
-    const tier = calculateTier(contextSize);
-    
-    // Update orchestrator's tier
-    this.orchestrator.updateTier(tier);
-    
     // Emit started event with correct tier
     this.emit('started', {
-      tier,
+      tier: this.currentTier,
       autoSizeEnabled: this.config.autoSize ?? true,
     });
   }
@@ -83,7 +88,9 @@ export class ContextOrchestratorAdapter extends EventEmitter implements ContextM
     // If context size changed, recalculate and emit tier change
     if (oldSize !== newSize) {
       const newTier = calculateTier(newSize);
+      this.currentTier = newTier;
       this.orchestrator.updateTier(newTier);
+      this.orchestrator.updateContextSize(newSize);
       this.emit('tier-changed', { tier: newTier });
     }
     
@@ -237,8 +244,15 @@ export class ContextOrchestratorAdapter extends EventEmitter implements ContextM
   // ============================================================================
 
   setMode(mode: OperationalMode): void {
+    const oldMode = this.currentMode;
     this.currentMode = mode;
-    this.emit('mode-changed', { mode });
+    this.orchestrator.updateMode(mode);
+    
+    // Emit mode-changed event with both old and new mode
+    this.emit('mode-changed', { 
+      mode,
+      oldMode,
+    });
   }
 
   getMode(): OperationalMode {

@@ -12,9 +12,10 @@ import { ContextOrchestrator, type ContextOrchestratorConfig } from './orchestra
 import { ContextOrchestratorAdapter } from './adapters/contextOrchestratorAdapter.js';
 import { ContextTier, OperationalMode } from './types.js';
 import { PromptOrchestrator } from './promptOrchestrator.js';
+import { PromptOrchestratorIntegration } from './integration/promptOrchestratorIntegration.js';
 
 import type { ContextModuleOverrides } from './contextModules.js';
-import type { ContextManager, ContextConfig, ModelInfo, VRAMMonitor, TokenCounter, ContextPool, Message } from './types.js';
+import type { ContextManager, ContextConfig, ModelInfo, VRAMMonitor, TokenCounter, ContextPool } from './types.js';
 import type { ProviderAdapter } from '../provider/types.js';
 
 /**
@@ -119,20 +120,36 @@ export function createContextManager(
   }
 
   try {
-    // Build system prompt (this would normally come from PromptOrchestrator)
-    const systemPrompt: Message = {
-      role: 'system',
-      content: 'You are a helpful AI assistant.',
-      id: 'system_prompt',
-      timestamp: new Date(),
-    };
-
+    // Determine the actual context size to use
+    // Priority: contextConfig.targetSize > modelInfo.contextSize > 8192 default
+    const actualContextSize = config.contextConfig?.targetSize || config.modelInfo.contextSize || 8192;
+    
     // Get Ollama context limit from model info
-    const ollamaLimit = getOllamaContextLimit(config.modelInfo, config.contextConfig);
-    log(`[ContextManagerFactory] Ollama limit: ${ollamaLimit}`);
+    const ollamaLimit = getOllamaContextLimit(config.modelInfo, actualContextSize);
+    log(`[ContextManagerFactory] Context size: ${actualContextSize}, Ollama limit: ${ollamaLimit}`);
 
     // Create token counter (reuse for all components)
     const tokenCounter = config.services?.tokenCounter || createDefaultTokenCounter();
+    
+    // Get tier and mode based on actual context size
+    const tier = config.contextConfig?.tier || calculateTierFromSize(actualContextSize);
+    const mode = config.contextConfig?.mode || OperationalMode.ASSISTANT;
+    
+    log(`[ContextManagerFactory] Tier: ${tier}, Mode: ${mode}`);
+    
+    // Create prompt orchestrator
+    const promptOrchestrator = config.services?.promptOrchestrator || createDefaultPromptOrchestrator(tokenCounter);
+    
+    // Build system prompt using PromptOrchestratorIntegration
+    const promptIntegration = new PromptOrchestratorIntegration(promptOrchestrator);
+    const systemPrompt = promptIntegration.getSystemPrompt({
+      mode,
+      tier,
+      activeSkills: [], // TODO: Get from config
+      useSanityChecks: false,
+    });
+    
+    log(`[ContextManagerFactory] System prompt tokens: ${promptIntegration.getSystemPromptTokens(systemPrompt)}`);
     
     // Create orchestrator configuration
     const orchestratorConfig: ContextOrchestratorConfig = {
@@ -146,12 +163,12 @@ export function createContextManager(
       keepRecentCount: config.contextConfig?.compression?.preserveRecent || 5,
       
       // Integration dependencies (use defaults if not provided)
-      tier: config.contextConfig?.tier || ContextTier.TIER_3_STANDARD,
-      mode: config.contextConfig?.mode || OperationalMode.ASSISTANT,
+      tier,
+      mode,
       profileManager: config.services?.profileManager || createDefaultProfileManager(),
       goalManager: config.services?.goalManager || createDefaultGoalManager(),
-      promptOrchestrator: config.services?.promptOrchestrator || createDefaultPromptOrchestrator(tokenCounter),
-      contextSize: config.modelInfo.contextSize || 8192,
+      promptOrchestrator,
+      contextSize: actualContextSize, // Use the same value consistently
     };
 
     log('[ContextManagerFactory] Creating ContextOrchestrator instance...');
@@ -162,7 +179,9 @@ export function createContextManager(
     // Wrap in adapter to implement legacy interface
     const adapter = new ContextOrchestratorAdapter(
       orchestrator, 
-      config.contextConfig as ContextConfig
+      config.contextConfig as ContextConfig,
+      mode,
+      tier
     );
     log('[ContextManagerFactory] Adapter created, returning manager');
 
@@ -183,19 +202,29 @@ export function createContextManager(
  */
 function getOllamaContextLimit(
   modelInfo: ModelInfo,
-  contextConfig?: Partial<ContextConfig>
+  actualContextSize: number
 ): number {
   // Try to get from model info context profiles
   if (modelInfo.contextProfiles && modelInfo.contextProfiles.length > 0) {
-    const targetSize = contextConfig?.targetSize || 8192;
-    const profile = modelInfo.contextProfiles.find(p => p.size === targetSize);
+    const profile = modelInfo.contextProfiles.find(p => p.size === actualContextSize);
     if (profile) {
       return profile.ollama_context_size;
     }
   }
 
-  // Default to 6800 (85% of 8K)
-  return 6800;
+  // Calculate 85% of context size as fallback
+  return Math.floor(actualContextSize * 0.85);
+}
+
+/**
+ * Calculate tier from context size
+ */
+function calculateTierFromSize(contextSize: number): ContextTier {
+  if (contextSize <= 4096) return ContextTier.TIER_1_MINIMAL;
+  if (contextSize <= 8192) return ContextTier.TIER_2_BASIC;
+  if (contextSize <= 16384) return ContextTier.TIER_3_STANDARD;
+  if (contextSize <= 32768) return ContextTier.TIER_4_PREMIUM;
+  return ContextTier.TIER_5_ULTRA;
 }
 
 /**
