@@ -182,6 +182,8 @@ export class ActiveContextManager {
       message.content
     );
 
+    console.log(`[ActiveContextManager] Adding message: ${messageTokens} tokens. Current total: ${this.context.tokenCount.total}`);
+
     const newTotal = this.context.tokenCount.total + messageTokens;
     const effectiveLimit = this.ollamaLimit - this.safetyMargin;
 
@@ -199,6 +201,8 @@ export class ActiveContextManager {
     // Update token counts
     this.context.tokenCount.recent += messageTokens;
     this.context.tokenCount.total += messageTokens;
+
+    console.log(`[ActiveContextManager] After adding: total=${this.context.tokenCount.total}, recent=${this.context.tokenCount.recent}, system=${this.context.tokenCount.system}`);
   }
 
   /**
