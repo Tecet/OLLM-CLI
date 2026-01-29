@@ -34,7 +34,6 @@ import {
   PromptModeManager,
   ContextAnalyzer,
   WorkflowManager,
-  createSnapshotManager,
   createSnapshotStorage,
   SnapshotManager as PromptsSnapshotManager,
   ContextTier,
@@ -276,22 +275,16 @@ export function ContextManagerProvider({
         const modeManager = new PromptModeManager(contextAnalyzer);
         modeManagerRef.current = modeManager;
 
-        // Create snapshot manager
-        const modeSnapshotPath = path.join(os.homedir(), '.ollm', 'mode-snapshots');
-        const snapshotStorage = createSnapshotStorage(modeSnapshotPath);
-        const snapshotManager = createSnapshotManager(snapshotStorage, {
-          enabled: true,
-          maxCount: 10,
-          autoCreate: true,
-          autoThreshold: 0.8,
-        });
-        promptsSnapshotManagerRef.current = snapshotManager as unknown as PromptsSnapshotManager;
+        // Note: Old createSnapshotManager removed - using PromptsSnapshotManager below
+        // const modeSnapshotPath = path.join(os.homedir(), '.ollm', 'mode-snapshots');
+        // const snapshotStorage = createSnapshotStorage(modeSnapshotPath);
+        // const snapshotManager = createSnapshotManager(snapshotStorage, {...});
 
         // Create workflow manager
         const workflowManager = new WorkflowManager(modeManager);
         workflowManagerRef.current = workflowManager;
 
-        // Create prompts snapshot manager
+        // Create prompts snapshot manager (for mode transitions)
         const promptsSnapshotManager = new PromptsSnapshotManager({
           sessionId,
           storagePath: path.join(os.homedir(), '.ollm', 'mode-transition-snapshots'),

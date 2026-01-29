@@ -202,7 +202,6 @@ export {
   createVRAMMonitor,
   createContextManager,
   createContextPool,
-  createSnapshotManager,
   createSnapshotStorage,
   createMemoryGuard,
   // Classes (for DI/testing)
@@ -239,7 +238,6 @@ export type {
   CompressedContext,
   CompressionEstimate,
   CompressionConfig,
-  CompressionService as ContextCompressionService,
   MemoryThresholds,
   MemoryGuard,
   Message as ContextMessage,
