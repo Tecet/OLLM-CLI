@@ -41,21 +41,41 @@ const createMockProvider = (): ProviderAdapter => ({
   showModel: vi.fn().mockResolvedValue({}),
 });
 
-const createMockProfileManager = (): IProfileManager => ({
-  getModelEntry: vi.fn().mockReturnValue({
+const createMockProfileManager = (): IProfileManager => {
+  const mockGetModelEntry = vi.fn().mockReturnValue({
     id: 'llama3.2:3b',
     name: 'Llama 3.2 3B',
     context_profiles: [
       {
+        size: 4096,
+        size_label: '4k',
+        vram_estimate: '3.5 GB',
+        vram_estimate_gb: 3.5,
+        ollama_context_size: 3482,
+      },
+      {
         size: 8192,
+        size_label: '8k',
+        vram_estimate: '3.9 GB',
+        vram_estimate_gb: 3.9,
         ollama_context_size: 6963,
-        ollama_num_ctx: 8192,
+      },
+      {
+        size: 16384,
+        size_label: '16k',
+        vram_estimate: '4.6 GB',
+        vram_estimate_gb: 4.6,
+        ollama_context_size: 13926,
       },
     ],
     default_context: 8192,
-    max_context_window: 8192,
-  }),
-});
+  });
+
+  return {
+    getModelEntry: mockGetModelEntry,
+    getProfiles: vi.fn().mockReturnValue([]),
+  } as any;
+};
 
 const createMockGoalManager = (): GoalManager => ({
   getActiveGoal: vi.fn().mockReturnValue(null),
