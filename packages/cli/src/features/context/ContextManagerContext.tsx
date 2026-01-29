@@ -204,11 +204,27 @@ export function ContextManagerProvider({
   // Initialize context manager
   useEffect(() => {
     const initManager = async () => {
+      // Create debug log file
+      const fs = await import('fs');
+      const path = await import('path');
+      const os = await import('os');
+      const logPath = path.join(os.homedir(), '.ollm', 'context-init-debug.log');
+      
+      const log = (msg: string) => {
+        const timestamp = new Date().toISOString();
+        const logMsg = `[${timestamp}] ${msg}\n`;
+        try {
+          fs.appendFileSync(logPath, logMsg);
+        } catch (e) {
+          // Ignore write errors
+        }
+      };
+      
       try {
-        console.log('[ContextManagerContext] Starting initialization...');
-        console.log('[ContextManagerContext] Provider available:', !!provider);
-        console.log('[ContextManagerContext] Session ID:', sessionId);
-        console.log('[ContextManagerContext] Model ID:', modelInfo?.modelId);
+        log('[ContextManagerContext] Starting initialization...');
+        log(`[ContextManagerContext] Provider available: ${!!provider}`);
+        log(`[ContextManagerContext] Session ID: ${sessionId}`);
+        log(`[ContextManagerContext] Model ID: ${modelInfo?.modelId}`);
         
         // Check for pending context size from SessionManager
         let effectiveConfig: Partial<ContextConfig> | undefined = config;
@@ -218,7 +234,7 @@ export function ContextManagerProvider({
           const pendingSize = sessionManager.getPendingContextSize();
           
           if (pendingSize !== null) {
-            console.log(`[ContextManagerContext] Using pending context size: ${pendingSize}`);
+            log(`[ContextManagerContext] Using pending context size: ${pendingSize}`);
             effectiveConfig = {
               ...config,
               targetSize: pendingSize,
@@ -226,23 +242,21 @@ export function ContextManagerProvider({
             };
           }
         } catch (error) {
-          console.warn('[ContextManagerContext] Failed to check pending context size:', error);
+          log(`[ContextManagerContext] Failed to check pending context size: ${error}`);
         }
 
         // Create context manager using new factory
-        const path = await import('path');
-        const os = await import('os');
         const storagePath = path.join(os.homedir(), '.ollm', 'context-storage');
         
         // Check if provider is available
         if (!provider) {
-          console.error('[ContextManagerContext] Provider not available - cannot initialize context manager');
+          log('[ContextManagerContext] ERROR: Provider not available - cannot initialize context manager');
           setError('Provider not available. Please ensure a model provider is configured.');
           setActive(false);
           return;
         }
         
-        console.log('[ContextManagerContext] Creating context manager with factory...');
+        log('[ContextManagerContext] Creating context manager with factory...');
         const { manager } = createContextManager({
           sessionId,
           modelInfo: {
@@ -254,7 +268,7 @@ export function ContextManagerProvider({
           storagePath,
         });
         
-        console.log('[ContextManagerContext] Context manager created successfully');
+        log('[ContextManagerContext] Context manager created successfully');
         managerRef.current = manager as any; // Type compatibility with legacy interface
 
         // Create mode manager
@@ -420,9 +434,13 @@ export function ContextManagerProvider({
         setCurrentMode(startMode as ModeType);
         setAutoSwitchEnabled(savedAutoSwitch);
         setError(null);
+        
+        log('[ContextManagerContext] Initialization complete!');
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        console.error('Failed to initialize ContextManager:', message);
+        const stack = err instanceof Error ? err.stack : '';
+        log(`[ContextManagerContext] ERROR: Failed to initialize: ${message}`);
+        log(`[ContextManagerContext] Stack: ${stack}`);
         setError(message);
         setActive(false);
       }

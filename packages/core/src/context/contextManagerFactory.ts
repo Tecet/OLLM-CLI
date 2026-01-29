@@ -78,68 +78,96 @@ export interface ContextManagerFactoryResult {
 export function createContextManager(
   config: ContextManagerFactoryConfig
 ): ContextManagerFactoryResult {
-  console.log('[ContextManagerFactory] Creating ContextOrchestrator');
-  console.log('[ContextManagerFactory] Config:', {
+  // Create debug log file
+  const fs = require('fs');
+  const path = require('path');
+  const os = require('os');
+  const logPath = path.join(os.homedir(), '.ollm', 'context-init-debug.log');
+  
+  const log = (msg: string) => {
+    const timestamp = new Date().toISOString();
+    const logMsg = `[${timestamp}] ${msg}\n`;
+    try {
+      fs.appendFileSync(logPath, logMsg);
+    } catch (e) {
+      // Ignore write errors
+    }
+  };
+  
+  log('[ContextManagerFactory] Creating ContextOrchestrator');
+  log(`[ContextManagerFactory] Config: ${JSON.stringify({
     sessionId: config.sessionId,
     hasProvider: !!config.provider,
     hasStoragePath: !!config.storagePath,
     modelId: config.modelInfo?.modelId,
-  });
+  })}`);
 
   // Validate required configuration
   if (!config.provider) {
+    log('[ContextManagerFactory] ERROR: Provider is required');
     throw new Error('Provider is required for context manager');
   }
 
   if (!config.storagePath) {
+    log('[ContextManagerFactory] ERROR: Storage path is required');
     throw new Error('Storage path is required for context manager');
   }
 
-  // Build system prompt (this would normally come from PromptOrchestrator)
-  const systemPrompt: Message = {
-    role: 'system',
-    content: 'You are a helpful AI assistant.',
-    id: 'system_prompt',
-    timestamp: new Date(),
-  };
+  try {
+    // Build system prompt (this would normally come from PromptOrchestrator)
+    const systemPrompt: Message = {
+      role: 'system',
+      content: 'You are a helpful AI assistant.',
+      id: 'system_prompt',
+      timestamp: new Date(),
+    };
 
-  // Get Ollama context limit from model info
-  const ollamaLimit = getOllamaContextLimit(config.modelInfo, config.contextConfig);
+    // Get Ollama context limit from model info
+    const ollamaLimit = getOllamaContextLimit(config.modelInfo, config.contextConfig);
+    log(`[ContextManagerFactory] Ollama limit: ${ollamaLimit}`);
 
-  // Create orchestrator configuration
-  const orchestratorConfig: ContextOrchestratorConfig = {
-    systemPrompt,
-    ollamaLimit,
-    tokenCounter: config.services?.tokenCounter || createDefaultTokenCounter(),
-    provider: config.provider,
-    model: config.modelInfo.modelId || 'unknown',
-    sessionId: config.sessionId,
-    storagePath: config.storagePath,
-    keepRecentCount: config.contextConfig?.compression?.preserveRecent || 5,
-    
-    // Integration dependencies (use defaults if not provided)
-    tier: config.contextConfig?.tier || ContextTier.TIER_3_STANDARD,
-    mode: config.contextConfig?.mode || OperationalMode.ASSISTANT,
-    profileManager: config.services?.profileManager || createDefaultProfileManager(),
-    goalManager: config.services?.goalManager || createDefaultGoalManager(),
-    promptOrchestrator: config.services?.promptOrchestrator || createDefaultPromptOrchestrator(),
-    contextSize: config.modelInfo.contextSize || 8192,
-  };
+    // Create orchestrator configuration
+    const orchestratorConfig: ContextOrchestratorConfig = {
+      systemPrompt,
+      ollamaLimit,
+      tokenCounter: config.services?.tokenCounter || createDefaultTokenCounter(),
+      provider: config.provider,
+      model: config.modelInfo.modelId || 'unknown',
+      sessionId: config.sessionId,
+      storagePath: config.storagePath,
+      keepRecentCount: config.contextConfig?.compression?.preserveRecent || 5,
+      
+      // Integration dependencies (use defaults if not provided)
+      tier: config.contextConfig?.tier || ContextTier.TIER_3_STANDARD,
+      mode: config.contextConfig?.mode || OperationalMode.ASSISTANT,
+      profileManager: config.services?.profileManager || createDefaultProfileManager(),
+      goalManager: config.services?.goalManager || createDefaultGoalManager(),
+      promptOrchestrator: config.services?.promptOrchestrator || createDefaultPromptOrchestrator(),
+      contextSize: config.modelInfo.contextSize || 8192,
+    };
 
-  // Create new context orchestrator
-  const orchestrator = new ContextOrchestrator(orchestratorConfig);
-  console.log('[ContextManagerFactory] ContextOrchestrator created');
+    log('[ContextManagerFactory] Creating ContextOrchestrator instance...');
+    // Create new context orchestrator
+    const orchestrator = new ContextOrchestrator(orchestratorConfig);
+    log('[ContextManagerFactory] ContextOrchestrator created');
 
-  // Wrap in adapter to implement legacy interface
-  const adapter = new ContextOrchestratorAdapter(
-    orchestrator, 
-    config.contextConfig as ContextConfig
-  );
-  console.log('[ContextManagerFactory] Adapter created, returning manager');
+    // Wrap in adapter to implement legacy interface
+    const adapter = new ContextOrchestratorAdapter(
+      orchestrator, 
+      config.contextConfig as ContextConfig
+    );
+    log('[ContextManagerFactory] Adapter created, returning manager');
 
-  return {
-    manager: adapter,
-  };
+    return {
+      manager: adapter,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const stack = error instanceof Error ? error.stack : '';
+    log(`[ContextManagerFactory] ERROR: ${message}`);
+    log(`[ContextManagerFactory] Stack: ${stack}`);
+    throw error;
+  }
 }
 
 /**
