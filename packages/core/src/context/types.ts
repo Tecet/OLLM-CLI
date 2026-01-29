@@ -1,6 +1,10 @@
 /**
  * Context Management System - Core Types and Interfaces
  *
+ * @status REWORK - Enhanced (2026-01-29)
+ * @date 2026-01-29
+ * @changes Added getOllamaContextLimit() method to ContextManager interface
+ *
  * This module defines all interfaces and types for the context management system,
  * including VRAM monitoring, token counting, context pooling, snapshots, compression,
  * and memory safety.

@@ -1,6 +1,10 @@
 /**
  * Context Manager Factory
  *
+ * @status REWORK - Simplified (2026-01-29)
+ * @date 2026-01-29
+ * @changes Removed legacy system, removed feature flags, simplified to only create ContextOrchestrator
+ *
  * Factory for creating context managers using the new ContextOrchestrator system.
  *
  * Requirements: NFR-1 (Performance), NFR-2 (Reliability)

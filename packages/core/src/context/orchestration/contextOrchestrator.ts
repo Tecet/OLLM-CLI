@@ -1,6 +1,10 @@
 /**
  * Context Orchestrator
  *
+ * @status REWORK - Enhanced (2026-01-29)
+ * @date 2026-01-29
+ * @changes Added getOllamaLimit() method to expose pre-calculated 85% values from JSON profiles
+ *
  * Main coordinator for the context compression system. Integrates all subsystems:
  * - Active Context Manager (FR-1) - What gets sent to LLM
  * - Snapshot Lifecycle (FR-3) - Recovery and rollback

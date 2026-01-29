@@ -1,6 +1,10 @@
 /**
  * Chat Client
  * 
+ * @status REWORK - Complete rewrite (2026-01-29)
+ * @date 2026-01-29
+ * @changes Removed 500+ lines of legacy code, now properly delegates to ContextOrchestrator
+ * 
  * Simplified chat client that delegates context management to ContextOrchestrator.
  * 
  * Responsibilities:

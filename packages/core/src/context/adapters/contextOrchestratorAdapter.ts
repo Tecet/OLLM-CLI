@@ -1,6 +1,10 @@
 /**
  * Context Orchestrator Adapter
  *
+ * @status REWORK - Enhanced (2026-01-29)
+ * @date 2026-01-29
+ * @changes Added getOllamaContextLimit(), fixed tools/mode tracking, improved event emission
+ *
  * Adapts the new ContextOrchestrator to implement the legacy ContextManager interface.
  * This allows the CLI to use the new system without changes.
  *
