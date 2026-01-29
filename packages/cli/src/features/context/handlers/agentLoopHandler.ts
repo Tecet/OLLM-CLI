@@ -476,6 +476,15 @@ export async function runAgentLoop(deps: AgentLoopDependencies): Promise<AgentLo
         });
         if (assistantContent) {
           await recordSessionMessage('assistant', assistantContent);
+          
+          // **CRITICAL FIX**: Add assistant response to context manager
+          // This was missing, causing the LLM to forget context after one turn
+          if (contextActions) {
+            await contextActions.addMessage({
+              role: 'assistant',
+              content: assistantContent,
+            });
+          }
         }
 
         // If we only have tool calls and no content, we can optionally hide the empty bubble in UI
