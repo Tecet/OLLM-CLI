@@ -11,14 +11,16 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { ContextOrchestrator } from '../contextOrchestrator.js';
+
 import { TokenCounterService } from '../../tokenCounter.js';
 import { ContextTier, OperationalMode } from '../../types.js';
-import type { Message } from '../../types.js';
+import { ContextOrchestrator } from '../contextOrchestrator.js';
+
 import type { ProviderAdapter } from '../../../provider/types.js';
 import type { Goal, GoalManager } from '../../goalTypes.js';
-import type { PromptOrchestrator } from '../../promptOrchestrator.js';
 import type { IProfileManager } from '../../integration/providerAwareCompression.js';
+import type { PromptOrchestrator } from '../../promptOrchestrator.js';
+import type { Message } from '../../types.js';
 
 // Mock implementations
 const createMockProvider = (): ProviderAdapter => ({
@@ -323,6 +325,7 @@ describe('ContextOrchestrator - Full System Integration', () => {
     it('should handle emergency when compression fails', async () => {
       // Mock provider to fail
       vi.mocked(provider.chatStream).mockImplementationOnce(async function* () {
+        yield { type: 'error', error: new Error('Provider error') };
         throw new Error('Provider error');
       });
 
@@ -356,6 +359,7 @@ describe('ContextOrchestrator - Full System Integration', () => {
     it('should handle provider errors gracefully', async () => {
       // Mock provider to fail
       vi.mocked(provider.chatStream).mockImplementationOnce(async function* () {
+        yield { type: 'error', error: new Error('Context overflow') };
         throw new Error('Context overflow');
       });
 
@@ -414,6 +418,7 @@ describe('ContextOrchestrator - Full System Integration', () => {
 
       // Cause an error
       vi.mocked(provider.chatStream).mockImplementationOnce(async function* () {
+        yield { type: 'error', error: new Error('Test error') };
         throw new Error('Test error');
       });
 

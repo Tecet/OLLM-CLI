@@ -10,8 +10,8 @@
 import React from 'react';
 import { Box, Text } from 'ink';
 
-import { FadeTransition, Pulse } from '../mcp/FadeTransition.js';
 import { StreamingIndicator } from '../chat/StreamingIndicator.js';
+import { FadeTransition, Pulse } from '../mcp/FadeTransition.js';
 
 export interface CompressionProgressProps {
   /** Whether compression is in progress */

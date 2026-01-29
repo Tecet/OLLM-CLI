@@ -20,13 +20,12 @@ import { randomUUID } from 'crypto';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
-import type { Message } from '../types.js';
 import type {
-  SessionHistory,
   CheckpointRecord,
   CheckpointSummary,
-  ActiveContext,
+  SessionHistory,
 } from '../types/storageTypes.js';
+import type { Message } from '../types.js';
 
 // ============================================================================
 // Legacy Types

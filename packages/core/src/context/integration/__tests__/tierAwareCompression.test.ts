@@ -6,8 +6,9 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { TierAwareCompression } from '../tierAwareCompression.js';
+
 import { ContextTier } from '../../types.js';
+import { TierAwareCompression } from '../tierAwareCompression.js';
 
 describe('TierAwareCompression - Unit Tests', () => {
   let tierCompression: TierAwareCompression;

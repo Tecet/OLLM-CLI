@@ -5,10 +5,11 @@
  * Validates: Requirements FR-11
  */
 
-import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
-import { TierAwareCompression } from '../tierAwareCompression.js';
+import { describe, it, expect } from 'vitest';
+
 import { ContextTier } from '../../types.js';
+import { TierAwareCompression } from '../tierAwareCompression.js';
 
 describe('Property 23: Tier Budget Enforcement', () => {
   const tierCompression = new TierAwareCompression();

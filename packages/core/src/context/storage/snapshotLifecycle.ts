@@ -361,7 +361,7 @@ export class SnapshotLifecycle {
         timestamp: latest.timestamp.getTime(),
         purpose: snapshot.purpose,
       };
-    } catch (error) {
+    } catch (_error) {
       // If we can't load the snapshot, return basic metadata
       return {
         id: latest.id,

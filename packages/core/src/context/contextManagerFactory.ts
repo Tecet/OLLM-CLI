@@ -12,11 +12,11 @@
  * @module contextManagerFactory
  */
 
-import { ContextOrchestrator, type ContextOrchestratorConfig } from './orchestration/contextOrchestrator.js';
 import { ContextOrchestratorAdapter } from './adapters/contextOrchestratorAdapter.js';
-import { ContextTier, OperationalMode } from './types.js';
-import { PromptOrchestrator } from './promptOrchestrator.js';
 import { PromptOrchestratorIntegration } from './integration/promptOrchestratorIntegration.js';
+import { ContextOrchestrator, type ContextOrchestratorConfig } from './orchestration/contextOrchestrator.js';
+import { PromptOrchestrator } from './promptOrchestrator.js';
+import { ContextTier, OperationalMode } from './types.js';
 
 import type { ContextManager, ContextConfig, ModelInfo, VRAMMonitor, TokenCounter, ContextPool } from './types.js';
 import type { ProviderAdapter } from '../provider/types.js';
@@ -99,7 +99,7 @@ export function createContextManager(
       const timestamp = new Date().toISOString();
       const logMsg = `[${timestamp}] ${msg}\n`;
       fs.appendFileSync(logPath, logMsg);
-    } catch (e) {
+    } catch (_e) {
       // Ignore write errors
     }
   };

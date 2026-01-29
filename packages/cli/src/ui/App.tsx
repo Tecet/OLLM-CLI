@@ -13,20 +13,40 @@
  * - Build prompts (core does this)
  */
 
-import { useCallback, useEffect, useRef, useMemo } from 'react';
-import { Box, useStdout, BoxProps } from 'ink';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { Box, BoxProps, useStdout } from 'ink';
 
 import { SettingsService } from '../config/settingsService.js';
 import { defaultDarkTheme } from '../config/styles.js';
 import { AllCallbacksBridge } from './components/AllCallbacksBridge.js';
-import { initializeSessionManager, getSessionManager } from '../features/context/SessionManager.js';
-import { extractModelSize } from '../features/profiles/modelUtils.js';
-import { createProvider } from '../features/provider/providerFactory.js';
-import { useContextMenu } from './components/context/ContextMenu.js';
-import { CompressionProgress } from './components/context/CompressionProgress.js';
-import { DialogManager } from './components/dialogs/DialogManager.js';
 import { ErrorBoundary } from './components/ErrorBoundary.js';
-import { WorkspaceProvider, FileFocusProvider } from './components/file-explorer/index.js';
+import { ActiveContextProvider } from '../features/context/ActiveContextState.js';
+import { ChatProvider, useChat } from '../features/context/ChatContext.js';
+import {
+  ContextManagerProvider,
+  useContextManager,
+} from '../features/context/ContextManagerContext.js';
+import { FocusProvider, useFocusManager } from '../features/context/FocusContext.js';
+import { GPUProvider, useGPU } from '../features/context/GPUContext.js';
+import { KeybindsProvider } from '../features/context/KeybindsContext.js';
+import { ModelProvider, useModel } from '../features/context/ModelContext.js';
+import { ReviewProvider } from '../features/context/ReviewContext.js';
+import { ServiceProvider } from '../features/context/ServiceContext.js';
+import { getSessionManager, initializeSessionManager } from '../features/context/SessionManager.js';
+import { SettingsProvider } from '../features/context/SettingsContext.js';
+import {
+  createCompactWelcomeMessage,
+  createWelcomeMessage,
+} from '../features/context/SystemMessages.js';
+import { UIProvider, useUI } from '../features/context/UIContext.js';
+import { UserPromptProvider } from '../features/context/UserPromptContext.js';
+import { extractModelSize } from '../features/profiles/modelUtils.js';
+import { profileManager } from '../features/profiles/ProfileManager.js';
+import { createProvider } from '../features/provider/providerFactory.js';
+import { CompressionProgress } from './components/context/CompressionProgress.js';
+import { useContextMenu } from './components/context/ContextMenu.js';
+import { DialogManager } from './components/dialogs/DialogManager.js';
+import { FileFocusProvider, WorkspaceProvider } from './components/file-explorer/index.js';
 import { LaunchScreen } from './components/launch/LaunchScreen.js';
 import { ChatInputArea } from './components/layout/ChatInputArea.js';
 import { Clock } from './components/layout/Clock.js';
@@ -54,27 +74,7 @@ import { TerminalProvider } from './contexts/TerminalContext.js';
 import { ToolsProvider } from './contexts/ToolsContext.js';
 import { WindowProvider } from './contexts/WindowContext.js';
 import { useGlobalKeyboardShortcuts } from './hooks/useGlobalKeyboardShortcuts.js';
-import { useMouse, MouseProvider } from './hooks/useMouse.js';
-import { ActiveContextProvider } from '../features/context/ActiveContextState.js';
-import { ChatProvider, useChat } from '../features/context/ChatContext.js';
-import {
-  ContextManagerProvider,
-  useContextManager,
-} from '../features/context/ContextManagerContext.js';
-import { FocusProvider, useFocusManager } from '../features/context/FocusContext.js';
-import { GPUProvider, useGPU } from '../features/context/GPUContext.js';
-import { KeybindsProvider } from '../features/context/KeybindsContext.js';
-import { ModelProvider, useModel } from '../features/context/ModelContext.js';
-import { ReviewProvider } from '../features/context/ReviewContext.js';
-import { ServiceProvider } from '../features/context/ServiceContext.js';
-import { SettingsProvider } from '../features/context/SettingsContext.js';
-import {
-  createWelcomeMessage,
-  createCompactWelcomeMessage,
-} from '../features/context/SystemMessages.js';
-import { UIProvider, useUI } from '../features/context/UIContext.js';
-import { UserPromptProvider } from '../features/context/UserPromptContext.js';
-import { profileManager } from '../features/profiles/ProfileManager.js';
+import { MouseProvider, useMouse } from './hooks/useMouse.js';
 
 import type { Config } from '../config/types.js';
 

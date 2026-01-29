@@ -12,6 +12,7 @@
  */
 
 import { EventEmitter } from 'events';
+
 import { ContextOrchestrator } from '../orchestration/contextOrchestrator.js';
 import { OperationalMode, ContextTier } from '../types.js';
 
@@ -325,7 +326,7 @@ export class ContextOrchestratorAdapter extends EventEmitter implements ContextM
     return false;
   }
 
-  async waitForSummarization(timeoutMs: number = 30000): Promise<void> {
+  async waitForSummarization(_timeoutMs: number = 30000): Promise<void> {
     // Orchestrator handles this internally
     return Promise.resolve();
   }
@@ -334,7 +335,7 @@ export class ContextOrchestratorAdapter extends EventEmitter implements ContextM
   // Token Tracking Methods
   // ============================================================================
 
-  reportInflightTokens(delta: number): void {
+  reportInflightTokens(_delta: number): void {
     // Orchestrator doesn't need this
   }
 

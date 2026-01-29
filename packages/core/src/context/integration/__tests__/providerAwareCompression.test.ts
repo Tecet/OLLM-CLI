@@ -4,13 +4,15 @@
  * Tests for FR-14: Provider System Integration
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
 import * as fc from 'fast-check';
+import { describe, it, expect, beforeEach } from 'vitest';
+
 import {
   ProviderAwareCompression,
   type IProfileManager,
   type ValidationResult,
 } from '../providerAwareCompression.js';
+
 import type { ContextProfile } from '../../types.js';
 
 // Mock ProfileManager for testing

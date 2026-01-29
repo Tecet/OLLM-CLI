@@ -8,7 +8,7 @@
  * Requirements: FR-15
  */
 
-import type { Goal, GoalManager, Checkpoint, Decision, Artifact } from '../goalTypes.js';
+import type { Goal, GoalManager } from '../goalTypes.js';
 import type { Message } from '../types.js';
 
 /**

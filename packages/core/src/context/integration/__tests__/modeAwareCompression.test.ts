@@ -11,8 +11,9 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { ModeAwareCompression } from '../modeAwareCompression.js';
+
 import { OperationalMode } from '../../types.js';
+import { ModeAwareCompression } from '../modeAwareCompression.js';
 
 describe('ModeAwareCompression', () => {
   let modeAware: ModeAwareCompression;

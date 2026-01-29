@@ -4,10 +4,11 @@
  * Tests for session migration from legacy format to new storage layer format.
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import * as fs from 'fs/promises';
-import * as path from 'path';
 import * as os from 'os';
+import * as path from 'path';
+
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 import {
   migrateLegacySession,
@@ -17,8 +18,9 @@ import {
   rollbackMigration,
   type SessionMigrationOptions,
 } from '../sessionMigration.js';
-import type { Message } from '../../types.js';
+
 import type { SessionHistory, CheckpointSummary } from '../../types/storageTypes.js';
+import type { Message } from '../../types.js';
 
 // ============================================================================
 // Test Fixtures

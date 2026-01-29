@@ -8,10 +8,11 @@
  * operational mode and applies appropriate summarization strategies.
  */
 
-import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
-import { ModeAwareCompression } from '../modeAwareCompression.js';
+import { describe, it, expect } from 'vitest';
+
 import { OperationalMode } from '../../types.js';
+import { ModeAwareCompression } from '../modeAwareCompression.js';
 
 describe('Property 24: Mode-Specific Preservation', () => {
   const modeAware = new ModeAwareCompression();

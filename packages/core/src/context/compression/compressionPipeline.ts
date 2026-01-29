@@ -15,12 +15,12 @@
  * Requirements: FR-5, FR-6, FR-7
  */
 
+import { GoalProgressTracker } from './goalProgressTracker.js';
 import { SummarizationService } from './summarizationService.js';
 import { ValidationService } from './validationService.js';
 import { ActiveContextManager } from '../storage/activeContextManager.js';
 import { SessionHistoryManager } from '../storage/sessionHistoryManager.js';
 import { TokenCounterService } from '../tokenCounter.js';
-import { GoalProgressTracker } from './goalProgressTracker.js';
 
 import type { CompressionLevel } from './summarizationService.js';
 import type { ExtendedValidationResult } from './validationService.js';

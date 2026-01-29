@@ -4,12 +4,14 @@
  * Tests for FR-15: Goal System Integration
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
 import * as fc from 'fast-check';
+import { describe, it, expect, beforeEach } from 'vitest';
+
 import {
   GoalAwareCompression,
   type GoalUpdate,
 } from '../goalAwareCompression.js';
+
 import type {
   Goal,
   GoalManager,

@@ -12,13 +12,15 @@
  * - Tier limits respected
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
 import * as fc from 'fast-check';
-import { PromptOrchestratorIntegration } from '../promptOrchestratorIntegration.js';
+import { describe, it, expect, beforeEach } from 'vitest';
+
 import { PromptOrchestrator } from '../../promptOrchestrator.js';
 import { ContextTier, OperationalMode } from '../../types.js';
-import type { Message } from '../../types.js';
+import { PromptOrchestratorIntegration } from '../promptOrchestratorIntegration.js';
+
 import type { CheckpointSummary } from '../../types/storageTypes.js';
+import type { Message } from '../../types.js';
 
 describe('Property 29: Prompt Structure Preservation', () => {
   let integration: PromptOrchestratorIntegration;

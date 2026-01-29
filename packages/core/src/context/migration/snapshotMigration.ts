@@ -20,8 +20,8 @@ import { randomUUID } from 'crypto';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
-import type { Message } from '../types.js';
 import type { SnapshotData, CheckpointSummary } from '../types/storageTypes.js';
+import type { Message } from '../types.js';
 
 // ============================================================================
 // Legacy Types

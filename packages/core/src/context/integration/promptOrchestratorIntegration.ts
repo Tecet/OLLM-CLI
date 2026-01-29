@@ -9,8 +9,8 @@
  */
 
 import type { PromptOrchestrator } from '../promptOrchestrator.js';
-import type { Message, ContextTier, OperationalMode } from '../types.js';
 import type { CheckpointSummary } from '../types/storageTypes.js';
+import type { Message, ContextTier, OperationalMode } from '../types.js';
 
 /**
  * System prompt configuration

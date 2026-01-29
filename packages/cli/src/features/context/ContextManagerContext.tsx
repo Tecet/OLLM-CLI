@@ -27,16 +27,15 @@ import {
 } from 'react';
 
 import {
-  MemoryLevel,
+  ContextAnalyzer,
+  ContextTier,
   createContextManager,
   HotSwapService,
-  PromptRegistry,
+  MemoryLevel,
   PromptModeManager,
-  ContextAnalyzer,
-  WorkflowManager,
-  createSnapshotStorage,
+  PromptRegistry,
   SnapshotManager as PromptsSnapshotManager,
-  ContextTier,
+  WorkflowManager,
 } from '@ollm/core';
 
 import { getSessionManager } from './SessionManager.js';
@@ -215,7 +214,7 @@ export function ContextManagerProvider({
         const logMsg = `[${timestamp}] ${msg}\n`;
         try {
           fs.appendFileSync(logPath, logMsg);
-        } catch (e) {
+        } catch (_e) {
           // Ignore write errors
         }
       };
@@ -477,6 +476,7 @@ export function ContextManagerProvider({
       }
       modeChangeCallbackRef.current = null;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId, modelInfo, config]);
 
   // Update usage periodically
@@ -869,6 +869,13 @@ export function ContextManagerProvider({
       createSnapshotAction,
       restoreSnapshot,
       refreshSnapshots,
+      updateConfig,
+      refreshVRAM,
+      getContext,
+      resize,
+      hotSwap,
+      getSystemPrompt,
+      getOllamaContextLimit,
       updateConfig,
       refreshVRAM,
       getContext,

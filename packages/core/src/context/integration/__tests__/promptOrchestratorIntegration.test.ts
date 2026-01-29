@@ -10,11 +10,13 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { PromptOrchestratorIntegration } from '../promptOrchestratorIntegration.js';
+
 import { PromptOrchestrator } from '../../promptOrchestrator.js';
 import { ContextTier, OperationalMode } from '../../types.js';
-import type { Message } from '../../types.js';
+import { PromptOrchestratorIntegration } from '../promptOrchestratorIntegration.js';
+
 import type { CheckpointSummary } from '../../types/storageTypes.js';
+import type { Message } from '../../types.js';
 
 describe('PromptOrchestratorIntegration', () => {
   let integration: PromptOrchestratorIntegration;

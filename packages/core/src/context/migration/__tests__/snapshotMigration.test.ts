@@ -4,10 +4,11 @@
  * Tests for snapshot migration from legacy format to new storage layer format.
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs/promises';
-import * as path from 'path';
 import * as os from 'os';
+import * as path from 'path';
+
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 import {
   migrateLegacySnapshot,
@@ -16,8 +17,9 @@ import {
   rollbackMigration,
   type SnapshotMigrationOptions,
 } from '../snapshotMigration.js';
-import type { Message } from '../../types.js';
+
 import type { SnapshotData } from '../../types/storageTypes.js';
+import type { Message } from '../../types.js';
 
 // ============================================================================
 // Test Fixtures

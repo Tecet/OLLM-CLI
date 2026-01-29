@@ -7,7 +7,7 @@
  * Requirements: FR-11
  */
 
-import { ContextTier, TIER_CONFIGS } from '../types.js';
+import type { ContextTier } from '../types.js';
 
 /**
  * Tier budget configuration

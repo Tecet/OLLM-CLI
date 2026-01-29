@@ -10,6 +10,7 @@
  */
 
 import { GoalMarkerParser, type ParsedGoalUpdate } from './goalMarkerParser.js';
+
 import type { Goal, GoalManager, ArtifactType } from '../goalTypes.js';
 
 /**

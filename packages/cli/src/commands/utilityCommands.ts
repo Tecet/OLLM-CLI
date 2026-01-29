@@ -14,7 +14,6 @@ import { ContextTier, OperationalMode, TieredPromptStore } from '@ollm/core';
 
 import { SettingsService } from '../config/settingsService.js';
 import { getGlobalContextManager } from '../features/context/ContextManagerContext.js';
-import { calculateContextSizing } from '../features/context/contextSizing.js';
 import { deriveGPUPlacementHints } from '../features/context/gpuHints.js';
 import { getLastGPUInfo } from '../features/context/gpuHintStore.js';
 import { profileManager } from '../features/profiles/ProfileManager.js';

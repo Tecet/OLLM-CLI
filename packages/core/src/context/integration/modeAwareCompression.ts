@@ -185,7 +185,7 @@ Preserve user preferences and important context.`;
 
     // Check extraction rules
     if (profile.extractionRules) {
-      for (const [type, regex] of Object.entries(profile.extractionRules)) {
+      for (const [_type, regex] of Object.entries(profile.extractionRules)) {
         if (regex.test(content)) {
           return true;
         }
@@ -308,7 +308,7 @@ Preserve user preferences and important context.`;
    * @param toMode - New mode
    * @returns True if transition is safe
    */
-  validateModeTransition(fromMode: OperationalMode, toMode: OperationalMode): boolean {
+  validateModeTransition(_fromMode: OperationalMode, _toMode: OperationalMode): boolean {
     // All mode transitions are safe - compression state is mode-agnostic
     // Only the summarization strategy changes
     return true;

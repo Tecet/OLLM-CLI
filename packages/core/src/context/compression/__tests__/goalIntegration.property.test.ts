@@ -8,29 +8,25 @@
  */
 
 import * as fc from 'fast-check';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import { SummarizationService, type CompressionLevel } from '../summarizationService.js';
-import { CompressionPipeline } from '../compressionPipeline.js';
-import { ValidationService } from '../validationService.js';
-import { ActiveContextManager } from '../../storage/activeContextManager.js';
-import { SessionHistoryManager } from '../../storage/sessionHistoryManager.js';
-import { TokenCounterService } from '../../tokenCounter.js';
+import { SummarizationService } from '../summarizationService.js';
 
-import type { ProviderAdapter, ProviderRequest, ProviderEvent } from '../../../provider/types.js';
-import type { Message } from '../../types.js';
 import type {
-  Goal,
-  GoalStatus,
-  GoalPriority,
-  Subtask,
-  SubtaskStatus,
-  Decision,
-  Artifact,
-  ArtifactType,
+  ProviderAdapter,
+  ProviderEvent,
+  ProviderRequest,
+} from '../../../provider/types.js';
+import type {
   ArtifactAction,
-  Checkpoint,
+  ArtifactType,
+  Goal,
+  GoalPriority,
+  GoalStatus,
+  SubtaskStatus,
 } from '../../goalTypes.js';
+import type { Message } from '../../types.js';
+import type { CompressionLevel } from '../summarizationService.js';
 
 /**
  * Mock provider that includes goal markers in summaries

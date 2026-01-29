@@ -29,24 +29,24 @@ import { EmergencyActions } from '../checkpoints/emergencyActions.js';
 import { CompressionPipeline, type ProgressCallback } from '../compression/compressionPipeline.js';
 import { SummarizationService } from '../compression/summarizationService.js';
 import { ValidationService } from '../compression/validationService.js';
+import { GoalAwareCompression } from '../integration/goalAwareCompression.js';
+import { ModeAwareCompression } from '../integration/modeAwareCompression.js';
+import { ModelAwareCompression } from '../integration/modelAwareCompression.js';
+import { PromptOrchestratorIntegration } from '../integration/promptOrchestratorIntegration.js';
+import { ProviderAwareCompression, type IProfileManager } from '../integration/providerAwareCompression.js';
+import { TierAwareCompression } from '../integration/tierAwareCompression.js';
 import { ActiveContextManager } from '../storage/activeContextManager.js';
 import { SessionHistoryManager } from '../storage/sessionHistoryManager.js';
 import { SnapshotLifecycle } from '../storage/snapshotLifecycle.js';
 import { TokenCounterService } from '../tokenCounter.js';
 
 // Integration imports
-import { TierAwareCompression } from '../integration/tierAwareCompression.js';
-import { ModeAwareCompression } from '../integration/modeAwareCompression.js';
-import { ModelAwareCompression } from '../integration/modelAwareCompression.js';
-import { ProviderAwareCompression, type IProfileManager } from '../integration/providerAwareCompression.js';
-import { GoalAwareCompression } from '../integration/goalAwareCompression.js';
-import { PromptOrchestratorIntegration } from '../integration/promptOrchestratorIntegration.js';
 
 import type { ProviderAdapter } from '../../provider/types.js';
 import type { Goal, GoalManager } from '../goalTypes.js';
+import type { PromptOrchestrator } from '../promptOrchestrator.js';
 import type { CheckpointSummary } from '../types/storageTypes.js';
 import type { Message, ContextTier, OperationalMode } from '../types.js';
-import type { PromptOrchestrator } from '../promptOrchestrator.js';
 
 
 /**

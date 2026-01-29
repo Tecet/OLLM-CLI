@@ -6,6 +6,7 @@
  */
 
 import React from 'react';
+
 import { CompressionProgress } from '../CompressionProgress.js';
 
 // Example 1: Active compression with stage
