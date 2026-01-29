@@ -15,10 +15,11 @@
  * @module snapshotLifecycle
  */
 
-import type { Message } from '../types.js';
-import type { CheckpointSummary, SnapshotData } from '../types/storageTypes.js';
-import type { SnapshotStorage } from '../types.js';
 import { createSnapshotStorage } from '../snapshotStorage.js';
+
+import type { CheckpointSummary, SnapshotData } from '../types/storageTypes.js';
+import type { Message , SnapshotStorage } from '../types.js';
+
 
 /**
  * Generate a unique ID for snapshots

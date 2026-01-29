@@ -14,16 +14,18 @@
  * 5. Custom strategies can be registered and used
  */
 
-import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
-import { CompressionEngine, type CompressionStrategy, type StrategyConfig } from '../compressionEngine.js';
-import { SummarizationService } from '../summarizationService.js';
-import { ValidationService } from '../validationService.js';
+import { describe, it, expect } from 'vitest';
+
 import { ActiveContextManager } from '../../storage/activeContextManager.js';
 import { SessionHistoryManager } from '../../storage/sessionHistoryManager.js';
 import { TokenCounterService } from '../../tokenCounter.js';
-import type { Message } from '../../types.js';
+import { CompressionEngine, type CompressionStrategy, type StrategyConfig } from '../compressionEngine.js';
+import { SummarizationService } from '../summarizationService.js';
+import { ValidationService } from '../validationService.js';
+
 import type { ProviderAdapter } from '../../../provider/types.js';
+import type { Message } from '../../types.js';
 
 // ============================================================================
 // Test Fixtures and Helpers
@@ -620,7 +622,7 @@ describe('CompressionEngine - Property Tests', () => {
           engine.setStrategy(strategy);
 
           const before = engine.getCurrentStrategy();
-          const config = engine.getStrategyConfig(strategy);
+          const _config = engine.getStrategyConfig(strategy);
           const after = engine.getCurrentStrategy();
 
           // Property: Getting config should not change current strategy

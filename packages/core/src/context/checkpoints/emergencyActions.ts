@@ -21,12 +21,12 @@
  * @module emergencyActions
  */
 
-import type { Message } from '../types.js';
-import type { CheckpointSummary } from '../types/storageTypes.js';
 import type { CheckpointLifecycle } from './checkpointLifecycle.js';
-import type { SnapshotLifecycle } from '../storage/snapshotLifecycle.js';
 import type { SummarizationService } from '../compression/summarizationService.js';
 import type { Goal } from '../goalTypes.js';
+import type { SnapshotLifecycle } from '../storage/snapshotLifecycle.js';
+import type { CheckpointSummary } from '../types/storageTypes.js';
+import type { Message } from '../types.js';
 
 /**
  * Emergency action result
@@ -480,7 +480,7 @@ export class EmergencyActions {
       }
 
       // Step 1: Create safety snapshot
-      const snapshot = await this.snapshotLifecycle.createSnapshot(
+      const _snapshot = await this.snapshotLifecycle.createSnapshot(
         allMessages,
         allCheckpoints,
         'emergency'
@@ -523,7 +523,6 @@ export class EmergencyActions {
         metadata: {
           model: result.model,
           createdAt: Date.now(),
-          emergency: true,
         },
       };
 

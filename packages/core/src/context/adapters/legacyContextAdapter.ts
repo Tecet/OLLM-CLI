@@ -5,8 +5,8 @@
  * Handles migration of sessions and snapshots from old format to new format.
  */
 
-import type { Session, SessionMessage, SessionMetadata } from '../../services/types.js';
 import type { Message } from '../../provider/types.js';
+import type { Session, SessionMessage, SessionMetadata } from '../../services/types.js';
 
 /**
  * Legacy snapshot format (from old snapshotManager.ts)
@@ -208,7 +208,7 @@ export class LegacyContextAdapter {
   /**
    * Check if a session needs migration
    */
-  static needsMigration(session: Session): boolean {
+  static needsMigration(_session: Session): boolean {
     // Check if session has new format indicators
     // Legacy sessions won't have checkpoint records
     return true; // All legacy sessions need migration

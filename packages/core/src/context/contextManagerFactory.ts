@@ -18,13 +18,12 @@
  * @module contextManagerFactory
  */
 
-import { FEATURES, getFeatureFlagStatus } from '../config/features.js';
 import { ConversationContextManager } from './contextManager.js';
+import { FEATURES, getFeatureFlagStatus } from '../config/features.js';
 import { ContextOrchestrator, type ContextOrchestratorConfig } from './orchestration/contextOrchestrator.js';
-import { LegacyContextAdapter } from './adapters/legacyContextAdapter.js';
-import type { ContextManager, ContextConfig, ModelInfo } from './types.js';
+
 import type { ContextModuleOverrides } from './contextModules.js';
-import type { VRAMMonitor, TokenCounter, ContextPool } from './types.js';
+import type { ContextManager, ContextConfig, ModelInfo, VRAMMonitor, TokenCounter, ContextPool, Message } from './types.js';
 import type { ProviderAdapter } from '../provider/types.js';
 
 /**
@@ -135,11 +134,11 @@ function createNewContextManager(
 
   // Build system prompt (this would normally come from PromptOrchestrator)
   // For now, create a basic system prompt
-  const systemPrompt = {
-    role: 'system' as const,
+  const systemPrompt: Message = {
+    role: 'system',
     content: 'You are a helpful AI assistant.',
     id: 'system_prompt',
-    timestamp: Date.now(),
+    timestamp: new Date(),
   };
 
   // Get Ollama context limit from model info
@@ -151,10 +150,10 @@ function createNewContextManager(
     ollamaLimit,
     tokenCounter: config.services?.tokenCounter || createDefaultTokenCounter(),
     provider: config.provider,
-    model: config.modelInfo.id,
+    model: config.modelInfo.modelId || 'unknown',
     sessionId: config.sessionId,
     storagePath: config.storagePath,
-    keepRecentCount: config.contextConfig?.keepRecentCount || 5,
+    keepRecentCount: config.contextConfig?.compression?.preserveRecent || 5,
   };
 
   // Create new context orchestrator
@@ -196,11 +195,6 @@ function getOllamaContextLimit(
   modelInfo: ModelInfo,
   contextConfig?: Partial<ContextConfig>
 ): number {
-  // Try to get from context config
-  if (contextConfig?.ollamaContextSize) {
-    return contextConfig.ollamaContextSize;
-  }
-
   // Try to get from model info context profiles
   if (modelInfo.contextProfiles && modelInfo.contextProfiles.length > 0) {
     const targetSize = contextConfig?.targetSize || 8192;
@@ -255,27 +249,30 @@ export async function migrateSession(
   error?: string;
 }> {
   try {
-    // Get current context from legacy manager
-    const legacyContext = legacyManager.getCurrentContext();
+    // Get messages from legacy manager
+    const messages = await legacyManager.getMessages();
 
-    // Use adapter to convert to new format
-    const migratedData = LegacyContextAdapter.migrateSession({
-      sessionId: legacyManager['sessionId'],
-      messages: legacyContext.messages,
-      metadata: {
-        checkpoints: [], // Legacy system doesn't have proper checkpoints
-      },
-    });
+    // Convert messages to new format
+    const convertedMessages: Message[] = messages.map((msg: any) => ({
+      id: msg.id || `msg_${Date.now()}_${Math.random()}`,
+      role: msg.role,
+      content: msg.content,
+      timestamp: msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp),
+      toolCalls: msg.toolCalls,
+      toolCallId: msg.toolCallId,
+      tokenCount: msg.tokenCount,
+      metadata: msg.metadata,
+    }));
 
     // Add messages to new manager
-    for (const message of migratedData.messages) {
+    for (const message of convertedMessages) {
       await newManager.addMessage(message);
     }
 
     return {
       success: true,
-      messageCount: migratedData.messages.length,
-      checkpointCount: migratedData.checkpoints.length,
+      messageCount: convertedMessages.length,
+      checkpointCount: 0, // Legacy system doesn't have checkpoints
     };
   } catch (error) {
     return {

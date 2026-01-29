@@ -10,6 +10,8 @@
  * @module storageBoundaries
  */
 
+import { isActiveContext, isSnapshotData, isSessionHistory } from '../types/storageTypes.js';
+
 import type {
   ActiveContext,
   SnapshotData,
@@ -19,7 +21,6 @@ import type {
   CheckpointSummary,
 } from '../types/storageTypes.js';
 import type { Message } from '../types.js';
-import { isActiveContext, isSnapshotData, isSessionHistory } from '../types/storageTypes.js';
 
 /**
  * Storage boundaries implementation

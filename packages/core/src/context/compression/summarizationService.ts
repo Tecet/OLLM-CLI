@@ -11,9 +11,9 @@
  * Requirements: FR-5, FR-6, FR-7
  */
 
-import type { Message } from '../types.js';
-import type { Goal } from '../goalTypes.js';
 import type { ProviderAdapter, ProviderRequest } from '../../provider/types.js';
+import type { Goal } from '../goalTypes.js';
+import type { Message } from '../types.js';
 
 /**
  * Compression level determines summary detail

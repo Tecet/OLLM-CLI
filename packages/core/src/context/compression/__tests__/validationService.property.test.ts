@@ -8,9 +8,11 @@
  * Requirements: FR-5, FR-8
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
 import * as fc from 'fast-check';
+import { describe, it, expect } from 'vitest';
+
 import { ValidationService } from '../validationService.js';
+
 import type { Message } from '../../types.js';
 
 /**

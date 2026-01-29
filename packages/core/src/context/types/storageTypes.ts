@@ -11,8 +11,8 @@
  * @module storageTypes
  */
 
-import type { Message } from '../types.js';
 import type { Goal } from '../goalTypes.js';
+import type { Message } from '../types.js';
 
 // ============================================================================
 // Active Context Types (LLM-Bound)

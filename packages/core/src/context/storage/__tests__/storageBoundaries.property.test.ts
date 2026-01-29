@@ -11,9 +11,11 @@
  * - Boundaries are maintained under all conditions
  */
 
-import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
+import { describe, it, expect } from 'vitest';
+
 import { StorageBoundariesImpl } from '../storageBoundaries.js';
+
 import type {
   ActiveContext,
   SnapshotData,

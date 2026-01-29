@@ -8,9 +8,10 @@
  * Requirements: FR-5, FR-8
  */
 
-import type { Message } from '../types.js';
-import type { ValidationResult } from '../types/storageTypes.js';
 import { TokenCounterService } from '../tokenCounter.js';
+
+import type { ValidationResult } from '../types/storageTypes.js';
+import type { Message } from '../types.js';
 
 /**
  * Validation configuration
@@ -247,12 +248,12 @@ export class ValidationService {
     const userMessages = messages.filter((m) => m.role === 'user');
     const systemMessages = messages.filter((m) => m.role === 'system');
 
-    // Estimate tokens by role
-    const assistantTokens = assistantMessages.reduce(
+    // Estimate tokens by role (for future use in detailed analysis)
+    const _assistantTokens = assistantMessages.reduce(
       (sum, m) => sum + (m.tokenCount ?? this.tokenCounter.countTokensCached(m.id, m.content)),
       0
     );
-    const userTokens = userMessages.reduce(
+    const _userTokens = userMessages.reduce(
       (sum, m) => sum + (m.tokenCount ?? this.tokenCounter.countTokensCached(m.id, m.content)),
       0
     );

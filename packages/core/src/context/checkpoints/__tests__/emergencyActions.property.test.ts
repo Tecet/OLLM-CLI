@@ -9,14 +9,13 @@
  * that emergency actions always maintain safety guarantees.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
 import * as fc from 'fast-check';
-import { EmergencyActions } from '../emergencyActions.js';
-import { CheckpointLifecycle } from '../checkpointLifecycle.js';
-import { SnapshotLifecycle } from '../../storage/snapshotLifecycle.js';
+import { describe, it, expect, beforeEach } from 'vitest';
+
 import { SummarizationService } from '../../compression/summarizationService.js';
-import type { CheckpointSummary } from '../../types/storageTypes.js';
-import type { Message } from '../../types.js';
+import { SnapshotLifecycle } from '../../storage/snapshotLifecycle.js';
+import { CheckpointLifecycle } from '../checkpointLifecycle.js';
+import { EmergencyActions } from '../emergencyActions.js';
 
 // Mock provider for testing
 const mockProvider = {
@@ -548,7 +547,7 @@ describe('EmergencyActions - Property Tests', () => {
               checkpoints
             );
 
-            const mergeResult = await emergencyActions.mergeCheckpoints(
+            const _mergeResult = await emergencyActions.mergeCheckpoints(
               checkpoints.slice(0, 3),
               messages,
               checkpoints

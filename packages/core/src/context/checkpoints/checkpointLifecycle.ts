@@ -18,9 +18,9 @@
  * @module checkpointLifecycle
  */
 
-import type { CheckpointSummary } from '../types/storageTypes.js';
 import type { SummarizationService } from '../compression/summarizationService.js';
 import type { Goal } from '../goalTypes.js';
+import type { CheckpointSummary } from '../types/storageTypes.js';
 
 /**
  * Aging result for a checkpoint
@@ -203,7 +203,6 @@ export class CheckpointLifecycle {
             content: checkpoint.summary,
             id: checkpoint.id,
             timestamp: new Date(checkpoint.timestamp),
-            parts: [{ type: 'text', text: checkpoint.summary }],
           },
         ],
         targetLevel,
@@ -315,7 +314,6 @@ export class CheckpointLifecycle {
             content: combinedSummary,
             id: 'merge-temp',
             timestamp: new Date(),
-            parts: [{ type: 'text', text: combinedSummary }],
           },
         ],
         1, // Always merge at Level 1 (Compact)
@@ -423,7 +421,6 @@ export class CheckpointLifecycle {
             content: checkpoint.summary,
             id: checkpoint.id,
             timestamp: new Date(checkpoint.timestamp),
-            parts: [{ type: 'text', text: checkpoint.summary }],
           },
         ],
         targetLevel,

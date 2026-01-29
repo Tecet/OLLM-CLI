@@ -4,12 +4,15 @@
  * Tests specific functionality and edge cases not covered by property tests.
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { SessionHistoryManager } from '../sessionHistoryManager.js';
-import type { Message, CheckpointRecord } from '../../types/storageTypes.js';
+import * as fs from 'fs/promises';
 import * as os from 'os';
 import * as path from 'path';
-import * as fs from 'fs/promises';
+
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+
+import { SessionHistoryManager } from '../sessionHistoryManager.js';
+
+import type { Message, CheckpointRecord } from '../../types/storageTypes.js';
 
 describe('SessionHistoryManager - Unit Tests', () => {
   let tempDir: string;
@@ -21,7 +24,7 @@ describe('SessionHistoryManager - Unit Tests', () => {
   afterEach(async () => {
     try {
       await fs.rm(tempDir, { recursive: true, force: true });
-    } catch (error) {
+    } catch (_error) {
       // Ignore cleanup errors
     }
   });

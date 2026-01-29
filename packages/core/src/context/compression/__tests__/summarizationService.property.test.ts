@@ -8,11 +8,13 @@
  * Requirements: FR-5, FR-6
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
 import * as fc from 'fast-check';
+import { describe, it, expect, beforeEach } from 'vitest';
+
 import { SummarizationService, type CompressionLevel } from '../summarizationService.js';
-import type { Message } from '../../types.js';
+
 import type { ProviderAdapter, ProviderRequest, ProviderEvent } from '../../../provider/types.js';
+import type { Message } from '../../types.js';
 
 /**
  * Mock provider for testing

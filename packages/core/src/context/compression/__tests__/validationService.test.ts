@@ -7,7 +7,9 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
+
 import { ValidationService } from '../validationService.js';
+
 import type { Message } from '../../types.js';
 
 describe('ValidationService - Unit Tests', () => {

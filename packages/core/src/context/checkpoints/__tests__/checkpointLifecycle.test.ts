@@ -7,19 +7,23 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { CheckpointLifecycle } from '../checkpointLifecycle.js';
+
 import { SummarizationService } from '../../compression/summarizationService.js';
-import type { CheckpointSummary } from '../../types/storageTypes.js';
+import { CheckpointLifecycle } from '../checkpointLifecycle.js';
+
 import type { ProviderAdapter } from '../../../provider/types.js';
+import type { CheckpointSummary } from '../../types/storageTypes.js';
 
 // ============================================================================
 // Mock Provider
 // ============================================================================
 
 class MockProvider implements Partial<ProviderAdapter> {
+  name = 'mock';
+  
   async *chatStream(request: any) {
     // Extract the original content length to generate appropriately sized summary
-    const originalContent = request.messages[0]?.parts[0]?.text || '';
+    const originalContent = request.messages[0]?.content || '';
     const originalLength = originalContent.length;
     
     // Generate a summary that's shorter than the original

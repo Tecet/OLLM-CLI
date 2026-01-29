@@ -10,9 +10,11 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
+
 import { SummarizationService } from '../summarizationService.js';
-import type { Message } from '../../types.js';
+
 import type { ProviderAdapter, ProviderRequest, ProviderEvent } from '../../../provider/types.js';
+import type { Message } from '../../types.js';
 
 /**
  * Mock provider that returns predictable summaries

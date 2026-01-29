@@ -9,19 +9,14 @@
  * @module storageTypes.test
  */
 
-import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
+import { describe, it, expect } from 'vitest';
+
 import {
-  type ActiveContext,
-  type SnapshotData,
-  type SessionHistory,
-  type CheckpointSummary,
-  type CheckpointRecord,
   isActiveContext,
   isSnapshotData,
   isSessionHistory,
 } from '../storageTypes.js';
-import type { Message } from '../../types.js';
 
 // ============================================================================
 // Arbitraries (Generators for Property-Based Testing)

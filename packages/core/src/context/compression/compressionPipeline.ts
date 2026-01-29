@@ -15,16 +15,17 @@
  * Requirements: FR-5, FR-6, FR-7
  */
 
-import type { Message } from '../types.js';
-import type { Goal } from '../goalTypes.js';
-import type { CheckpointSummary, CheckpointRecord } from '../types/storageTypes.js';
-import type { CompressionLevel, SummarizationResult } from './summarizationService.js';
-import type { ExtendedValidationResult } from './validationService.js';
 import { SummarizationService } from './summarizationService.js';
 import { ValidationService } from './validationService.js';
 import { ActiveContextManager } from '../storage/activeContextManager.js';
 import { SessionHistoryManager } from '../storage/sessionHistoryManager.js';
 import { TokenCounterService } from '../tokenCounter.js';
+
+import type { CompressionLevel } from './summarizationService.js';
+import type { ExtendedValidationResult } from './validationService.js';
+import type { Goal } from '../goalTypes.js';
+import type { CheckpointSummary, CheckpointRecord } from '../types/storageTypes.js';
+import type { Message } from '../types.js';
 
 /**
  * Compression result
@@ -454,7 +455,7 @@ export class CompressionPipeline {
    */
   private async updateActiveContext(
     checkpoint: CheckpointSummary,
-    compressedMessages: Message[]
+    _compressedMessages: Message[]
   ): Promise<void> {
     // Remove compressed messages
     this.activeContext.removeMessages(checkpoint.originalMessageIds);

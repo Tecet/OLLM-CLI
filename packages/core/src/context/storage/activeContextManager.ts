@@ -17,9 +17,10 @@
  * @module activeContextManager
  */
 
-import type { Message } from '../types.js';
-import type { ActiveContext, CheckpointSummary } from '../types/storageTypes.js';
 import { TokenCounterService } from '../tokenCounter.js';
+
+import type { ActiveContext, CheckpointSummary } from '../types/storageTypes.js';
+import type { Message } from '../types.js';
 
 /**
  * Validation result for context operations
@@ -64,7 +65,7 @@ export interface ValidationResult {
 export class ActiveContextManager {
   private context: ActiveContext;
   private ollamaLimit: number;
-  private safetyMargin: number = 1000; // Reserve for response
+  private safetyMargin: number;
   private tokenCounter: TokenCounterService;
 
   /**
@@ -73,14 +74,17 @@ export class ActiveContextManager {
    * @param systemPrompt - System prompt message (built by PromptOrchestrator)
    * @param ollamaLimit - Ollama context limit (85% pre-calculated value)
    * @param tokenCounter - Token counter service for accurate counting
+   * @param safetyMargin - Safety margin for response tokens (default: 1000)
    */
   constructor(
     systemPrompt: Message,
     ollamaLimit: number,
-    tokenCounter: TokenCounterService
+    tokenCounter: TokenCounterService,
+    safetyMargin: number = 1000
   ) {
     this.ollamaLimit = ollamaLimit;
     this.tokenCounter = tokenCounter;
+    this.safetyMargin = safetyMargin;
 
     // Initialize context with system prompt
     const systemTokens = this.tokenCounter.countTokensCached(

@@ -7,12 +7,14 @@
  * Requirements: FR-1, FR-5
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
 import * as fc from 'fast-check';
-import { ActiveContextManager } from '../activeContextManager.js';
+import { describe, it, expect, beforeEach } from 'vitest';
+
 import { TokenCounterService } from '../../tokenCounter.js';
-import type { Message } from '../../types.js';
+import { ActiveContextManager } from '../activeContextManager.js';
+
 import type { CheckpointSummary } from '../../types/storageTypes.js';
+import type { Message } from '../../types.js';
 
 /**
  * Helper to create a test message

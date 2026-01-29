@@ -286,7 +286,7 @@ This implementation plan breaks down the context compression system refactor int
   - Test migration path
   - _Requirements: NFR-1, NFR-2_
 
-- [ ] 17. Integration Testing - Core System
+- [x] 17. Integration Testing - Core System
   - Write long conversation test (10+ checkpoints)
   - Write checkpoint aging test
   - Write emergency scenario test
@@ -294,7 +294,7 @@ This implementation plan breaks down the context compression system refactor int
   - Ensure all tests passing
   - _Requirements: All FR_
 
-- [ ] 18. Checkpoint - Ensure all Phase 4 tests pass
+- [x] 18. Checkpoint - Ensure all Phase 4 tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Phase 5: UI & Progress

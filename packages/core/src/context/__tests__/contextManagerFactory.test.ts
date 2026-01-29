@@ -12,6 +12,8 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+
+import { ConversationContextManager } from '../contextManager.js';
 import {
   createContextManager,
   migrateSession,
@@ -19,10 +21,9 @@ import {
   getMigrationStatus,
   type ContextManagerFactoryConfig,
 } from '../contextManagerFactory.js';
-import { ConversationContextManager } from '../contextManager.js';
-import { ContextOrchestrator } from '../orchestration/contextOrchestrator.js';
-import type { ModelInfo } from '../types.js';
+
 import type { ProviderAdapter } from '../../provider/types.js';
+import type { ModelInfo } from '../types.js';
 
 describe('ContextManagerFactory', () => {
   let originalEnv: NodeJS.ProcessEnv;
@@ -147,7 +148,7 @@ describe('ContextManagerFactory', () => {
         provider: mockProvider,
         storagePath: '/tmp/test-storage',
         contextConfig: {
-          ollamaContextSize: 10000,
+          targetSize: 10000,
         },
       };
 
@@ -163,7 +164,13 @@ describe('ContextManagerFactory', () => {
         provider: mockProvider,
         storagePath: '/tmp/test-storage',
         contextConfig: {
-          keepRecentCount: 10,
+          compression: {
+            enabled: true,
+            threshold: 0.8,
+            strategy: 'summarize',
+            preserveRecent: 10,
+            summaryMaxTokens: 1024,
+          },
         },
       };
 
@@ -307,13 +314,13 @@ describe('ContextManagerFactory', () => {
         role: 'user',
         content: 'Hello',
         id: 'msg1',
-        timestamp: Date.now(),
+        timestamp: new Date(),
       });
       await legacyManager.addMessage({
         role: 'assistant',
         content: 'Hi there!',
         id: 'msg2',
-        timestamp: Date.now(),
+        timestamp: new Date(),
       });
 
       // Create new manager
@@ -478,9 +485,8 @@ describe('ContextManagerFactory', () => {
       const invalidModelInfo = {
         id: 'test',
         name: 'Test',
-        parameters: {
-          toString: () => 'test-params',
-        },
+        parameters: 7,
+        contextLimit: 8192,
       } as ModelInfo;
 
       const config: ContextManagerFactoryConfig = {

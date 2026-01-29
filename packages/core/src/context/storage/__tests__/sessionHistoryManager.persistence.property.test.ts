@@ -15,13 +15,16 @@
  * 5. Large sessions can be saved and loaded
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import * as fc from 'fast-check';
-import { SessionHistoryManager } from '../sessionHistoryManager.js';
-import type { Message, CheckpointRecord } from '../../types/storageTypes.js';
+import * as fs from 'fs/promises';
 import * as os from 'os';
 import * as path from 'path';
-import * as fs from 'fs/promises';
+
+import * as fc from 'fast-check';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+
+import { SessionHistoryManager } from '../sessionHistoryManager.js';
+
+import type { Message, CheckpointRecord } from '../../types/storageTypes.js';
 
 // ============================================================================
 // Arbitraries
@@ -86,7 +89,7 @@ describe('SessionHistoryManager - Property 7: Session History Persistence', () =
     for (const dir of tempDirs) {
       try {
         await fs.rm(dir, { recursive: true, force: true });
-      } catch (error) {
+      } catch (_error) {
         // Ignore cleanup errors
       }
     }

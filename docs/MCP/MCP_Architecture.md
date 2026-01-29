@@ -81,6 +81,12 @@ graph TB
 
 **Extension Loading:**
 
+
+
+
+
+
+
 ```mermaid
 flowchart LR
     EM[Extension Manager] --> MP[Manifest Parser]

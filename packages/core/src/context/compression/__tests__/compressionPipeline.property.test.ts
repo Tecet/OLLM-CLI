@@ -8,16 +8,18 @@
  * Requirements: FR-5, FR-6, FR-7
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import * as fc from 'fast-check';
-import { CompressionPipeline } from '../compressionPipeline.js';
-import { SummarizationService } from '../summarizationService.js';
-import { ValidationService } from '../validationService.js';
+import { describe, it, expect, vi } from 'vitest';
+
 import { ActiveContextManager } from '../../storage/activeContextManager.js';
 import { SessionHistoryManager } from '../../storage/sessionHistoryManager.js';
 import { TokenCounterService } from '../../tokenCounter.js';
-import type { Message } from '../../types.js';
+import { CompressionPipeline } from '../compressionPipeline.js';
+import { SummarizationService } from '../summarizationService.js';
+import { ValidationService } from '../validationService.js';
+
 import type { ProviderAdapter } from '../../../provider/types.js';
+import type { Message } from '../../types.js';
 
 // ============================================================================
 // Test Helpers
@@ -38,13 +40,12 @@ function createMockProvider(): ProviderAdapter {
 /**
  * Create a test message
  */
-function createMessage(id: string, role: 'user' | 'assistant', content: string): Message {
+function createMessage(id: string, role: 'user' | 'assistant' | 'system', content: string): Message {
   return {
     id,
     role,
     content,
     timestamp: new Date(),
-    parts: [{ type: 'text', text: content }],
   };
 }
 

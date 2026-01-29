@@ -15,13 +15,16 @@
  * 5. Timestamps are updated
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
-import * as fc from 'fast-check';
-import { SessionHistoryManager } from '../sessionHistoryManager.js';
-import type { Message } from '../../types.js';
+import * as fs from 'fs/promises';
 import * as os from 'os';
 import * as path from 'path';
-import * as fs from 'fs/promises';
+
+import * as fc from 'fast-check';
+import { describe, it, expect, beforeEach } from 'vitest';
+
+import { SessionHistoryManager } from '../sessionHistoryManager.js';
+
+import type { Message } from '../../types.js';
 
 // ============================================================================
 // Arbitraries

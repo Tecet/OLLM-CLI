@@ -15,8 +15,9 @@
 
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import type { Message } from '../types.js';
+
 import type { SessionHistory, CheckpointRecord } from '../types/storageTypes.js';
+import type { Message } from '../types.js';
 
 /**
  * Session History Manager

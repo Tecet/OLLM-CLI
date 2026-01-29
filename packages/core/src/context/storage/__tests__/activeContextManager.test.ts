@@ -7,10 +7,12 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { ActiveContextManager } from '../activeContextManager.js';
+
 import { TokenCounterService } from '../../tokenCounter.js';
-import type { Message } from '../../types.js';
+import { ActiveContextManager } from '../activeContextManager.js';
+
 import type { CheckpointSummary } from '../../types/storageTypes.js';
+import type { Message } from '../../types.js';
 
 /**
  * Helper to create a test message

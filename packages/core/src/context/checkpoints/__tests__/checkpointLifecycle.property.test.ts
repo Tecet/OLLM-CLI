@@ -10,18 +10,22 @@
  * **Validates: Requirements FR-2, FR-6**
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
 import * as fc from 'fast-check';
-import { CheckpointLifecycle } from '../checkpointLifecycle.js';
+import { describe, it, expect, beforeEach } from 'vitest';
+
 import { SummarizationService } from '../../compression/summarizationService.js';
-import type { CheckpointSummary } from '../../types/storageTypes.js';
+import { CheckpointLifecycle } from '../checkpointLifecycle.js';
+
 import type { ProviderAdapter } from '../../../provider/types.js';
+import type { CheckpointSummary } from '../../types/storageTypes.js';
 
 // ============================================================================
 // Mock Provider
 // ============================================================================
 
 class MockProvider implements Partial<ProviderAdapter> {
+  name = 'mock';
+  
   async *chatStream() {
     // Return a simple summary
     yield { type: 'text' as const, value: 'Summarized content' };

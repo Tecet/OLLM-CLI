@@ -13,13 +13,15 @@
  * @module snapshotLifecycle.roundtrip.property.test
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import * as fc from 'fast-check';
 import * as fs from 'fs/promises';
-import * as path from 'path';
 import * as os from 'os';
+import * as path from 'path';
+
+import * as fc from 'fast-check';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+
 import { SnapshotLifecycle } from '../snapshotLifecycle.js';
-import type { Message } from '../../types.js';
+
 import type { CheckpointSummary } from '../../types/storageTypes.js';
 
 // ============================================================================
@@ -38,7 +40,7 @@ afterEach(async () => {
   // Clean up test directory
   try {
     await fs.rm(testDir, { recursive: true, force: true });
-  } catch (error) {
+  } catch (_error) {
     // Ignore cleanup errors
   }
 });

@@ -13,12 +13,12 @@
  * Requirements: FR-5, FR-6
  */
 
-import type { Message } from '../types.js';
-import type { Goal } from '../goalTypes.js';
-import type { CheckpointSummary } from '../types/storageTypes.js';
-import type { CompressionLevel } from './summarizationService.js';
 import { CompressionPipeline, type CompressionResult, type CompressionPipelineConfig } from './compressionPipeline.js';
 import { TokenCounterService } from '../tokenCounter.js';
+
+import type { Goal } from '../goalTypes.js';
+import type { CompressionLevel } from './summarizationService.js';
+import type { Message } from '../types.js';
 
 /**
  * Compression strategy type

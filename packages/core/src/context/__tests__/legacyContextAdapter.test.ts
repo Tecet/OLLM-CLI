@@ -3,7 +3,9 @@
  */
 
 import { describe, it, expect } from 'vitest';
+
 import { LegacyContextAdapter } from '../adapters/legacyContextAdapter.js';
+
 import type { Session } from '../../services/types.js';
 import type { LegacySnapshot } from '../adapters/legacyContextAdapter.js';
 
