@@ -21,6 +21,7 @@ import { ValidationService } from './validationService.js';
 import { ActiveContextManager } from '../storage/activeContextManager.js';
 import { SessionHistoryManager } from '../storage/sessionHistoryManager.js';
 import { TokenCounterService } from '../tokenCounter.js';
+import { debugLog } from '../../utils/debugLogger.js';
 
 import type { CompressionLevel } from './summarizationService.js';
 import type { ExtendedValidationResult } from './validationService.js';
@@ -102,7 +103,13 @@ export interface CompressionPipelineConfig {
   /** Progress callback (optional) */
   onProgress?: ProgressCallback;
 
-  /** Number of recent messages to keep (default: 5) */
+  /** 
+   * Token budget for keeping recent messages (default: 10 = 2000 tokens)
+   * Each unit represents 200 tokens. So keepRecentCount=10 means keep last 2000 tokens.
+   * This ensures compression is based on content size, not message count.
+   * 
+   * The LLM will summarize older messages beyond this budget into compact checkpoints.
+   */
   keepRecentCount?: number;
 }
 
@@ -150,7 +157,7 @@ export class CompressionPipeline {
     this.sessionHistory = config.sessionHistory;
     this.tokenCounter = config.tokenCounter;
     this.onProgress = config.onProgress;
-    this.keepRecentCount = config.keepRecentCount ?? 5;
+    this.keepRecentCount = config.keepRecentCount ?? 10; // Default: 2000 tokens
 
     // Initialize goal progress tracker if goal manager provided
     if (config.goalManager) {
@@ -311,13 +318,17 @@ export class CompressionPipeline {
    * Stage 1: Identify messages to compress
    *
    * Determines which messages should be compressed based on:
-   * - Keep last N recent messages (default: 5)
+   * - Keep recent messages up to a token budget (default: 1000 tokens)
    * - Compress ALL older messages (user + assistant) for complete context
-   * - Ensure we have enough messages to make compression worthwhile
+   * - Ensure we have enough tokens to make compression worthwhile
    *
    * **CRITICAL**: Must include BOTH user and assistant messages in compression
    * so that the LLM-generated summary includes the full conversation context.
    * Otherwise, the LLM loses track of what the user asked for.
+   *
+   * **Token-based logic**: Instead of keeping last N messages, we keep messages
+   * that fit within a token budget. This ensures short messages don't waste space
+   * and long messages don't overflow the context.
    *
    * Requirements: FR-5
    *
@@ -333,17 +344,54 @@ export class CompressionPipeline {
     const state = this.activeContext.getState();
     const recentMessages = state.recentMessages;
 
-    // Keep last N messages
-    if (recentMessages.length <= this.keepRecentCount) {
+    debugLog('CompressionPipeline', `Total messages: ${recentMessages.length}`);
+
+    if (recentMessages.length === 0) {
+      debugLog('CompressionPipeline', `No messages to compress`);
       return [];
     }
 
-    // Compress older messages (exclude last N)
-    // INCLUDE BOTH user and assistant messages for complete conversation context
-    const oldMessages = recentMessages.slice(0, -this.keepRecentCount);
+    // Calculate token budget for keeping recent messages
+    // Default: keep last 1000 tokens of conversation
+    const keepRecentTokenBudget = this.keepRecentCount * 200; // keepRecentCount now represents 200-token units
 
-    // Need at least 2 messages to make compression worthwhile
-    if (oldMessages.length < 2) {
+    // Work backwards from most recent message, accumulating tokens
+    let recentTokens = 0;
+    let keepFromIndex = recentMessages.length;
+
+    for (let i = recentMessages.length - 1; i >= 0; i--) {
+      const msg = recentMessages[i];
+      const msgTokens = this.tokenCounter.countTokensCached(msg.id, msg.content);
+      
+      if (recentTokens + msgTokens <= keepRecentTokenBudget) {
+        recentTokens += msgTokens;
+        keepFromIndex = i;
+      } else {
+        // Exceeded budget, stop here
+        break;
+      }
+    }
+
+    debugLog('CompressionPipeline', `Keep recent: ${recentMessages.length - keepFromIndex} messages (${recentTokens} tokens), Budget: ${keepRecentTokenBudget} tokens`);
+
+    // Messages to compress are everything before keepFromIndex
+    const oldMessages = recentMessages.slice(0, keepFromIndex);
+
+    if (oldMessages.length === 0) {
+      debugLog('CompressionPipeline', `No old messages to compress (all within budget)`);
+      return [];
+    }
+
+    // Calculate tokens in old messages
+    const oldTokens = oldMessages.reduce((sum, m) => {
+      return sum + this.tokenCounter.countTokensCached(m.id, m.content);
+    }, 0);
+
+    debugLog('CompressionPipeline', `Messages to compress: ${oldMessages.length} (${oldTokens} tokens)`);
+
+    // Need at least 500 tokens to make compression worthwhile
+    if (oldTokens < 500) {
+      debugLog('CompressionPipeline', `Not enough tokens to compress (need >= 500, have ${oldTokens})`);
       return [];
     }
 
@@ -542,9 +590,9 @@ export class CompressionPipeline {
   }
 
   /**
-   * Set number of recent messages to keep
+   * Set token budget for keeping recent messages
    *
-   * @param count - Number of messages to keep
+   * @param count - Number of 200-token units to keep (e.g., 5 = 1000 tokens)
    */
   setKeepRecentCount(count: number): void {
     if (count < 1) {

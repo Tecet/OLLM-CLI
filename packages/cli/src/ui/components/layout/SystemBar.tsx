@@ -31,19 +31,26 @@ export function SystemBar({ height }: SystemBarProps) {
   const spinnerFrames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
 
   useEffect(() => {
-    // Show spinner when model is loading OR when streaming (LLM is typing) OR waiting for response
-    if (!modelLoading && !streaming && !waitingForResponse) return;
+    // Show spinner when model is loading OR when streaming (LLM is typing) OR waiting for response OR compressing
+    if (!modelLoading && !streaming && !waitingForResponse && !contextState.compressing) return;
     const interval = setInterval(() => {
       setSpinnerIndex((prev) => (prev + 1) % spinnerFrames.length);
     }, 80);
     return () => clearInterval(interval);
-  }, [modelLoading, streaming, waitingForResponse, spinnerFrames.length]);
+  }, [modelLoading, streaming, waitingForResponse, contextState.compressing, spinnerFrames.length]);
 
   // Determine status text based only on input destination
   let displayStatus = ' ';
   const isTerminalMode = activeDestination === 'terminal1' || activeDestination === 'terminal2';
 
-  if (activeDestination === 'editor') {
+  if (contextState.compressing && contextState.compressionProgress) {
+    // Show compression progress
+    const { stage, progress } = contextState.compressionProgress;
+    displayStatus = `Compressing (${stage} ${progress}%) ${spinnerFrames[spinnerIndex]}`;
+  } else if (contextState.compressing) {
+    // Show generic compression status
+    displayStatus = `Compressing context ${spinnerFrames[spinnerIndex]}`;
+  } else if (activeDestination === 'editor') {
     displayStatus = 'Editor';
   } else if (activeDestination === 'terminal2') {
     displayStatus = 'Terminal 2';

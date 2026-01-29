@@ -74,6 +74,11 @@ export interface ContextManagerState {
   memoryLevel: MemoryLevel;
   active: boolean;
   compressing: boolean;
+  compressionProgress?: {
+    stage: string;
+    progress: number;
+    message: string;
+  };
   snapshots: ContextSnapshot[];
   error: string | null;
   currentMode: ModeType;
@@ -898,6 +903,7 @@ export function ContextManagerProvider({
     memoryLevel,
     active,
     compressing,
+    compressionProgress,
     snapshots,
     error,
     currentMode,
