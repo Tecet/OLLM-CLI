@@ -96,11 +96,12 @@ export class ContextOrchestratorAdapter extends EventEmitter implements ContextM
 
   getUsage(): ContextUsage {
     const state = this.orchestrator.getState();
+    const fullContextSize = this.config.targetSize || 8192;
     
     return {
       currentTokens: state.activeContext.tokenCount.total,
-      maxTokens: state.health.tokenLimit,
-      percentage: state.health.utilizationPercent,
+      maxTokens: fullContextSize, // Show full context size in UI, not ollama limit
+      percentage: Math.round((state.activeContext.tokenCount.total / fullContextSize) * 100),
       vramUsed: 0, // Orchestrator doesn't track VRAM
       vramTotal: 0,
     };
@@ -108,14 +109,15 @@ export class ContextOrchestratorAdapter extends EventEmitter implements ContextM
 
   getBudget(): ContextBudget {
     const state = this.orchestrator.getState();
+    const fullContextSize = this.config.targetSize || 8192;
     
     return {
-      totalOllamaSize: state.health.tokenLimit,
+      totalOllamaSize: fullContextSize, // Show full context size, not reduced ollama limit
       systemPromptTokens: state.activeContext.tokenCount.system,
       checkpointTokens: state.activeContext.tokenCount.checkpoints,
-      availableBudget: state.health.tokenLimit - state.activeContext.tokenCount.total,
+      availableBudget: fullContextSize - state.activeContext.tokenCount.total,
       conversationTokens: state.activeContext.tokenCount.recent,
-      budgetPercentage: state.health.utilizationPercent,
+      budgetPercentage: Math.round((state.activeContext.tokenCount.total / fullContextSize) * 100),
     };
   }
 
