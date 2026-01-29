@@ -122,7 +122,7 @@ This implementation plan breaks down the context compression system refactor int
   - **Property 7: Session History Persistence**
   - **Validates: Requirements FR-4**
 
-- [ ] 5. Implement Storage Boundaries
+- [x] 5. Implement Storage Boundaries
   - Create `StorageBoundaries` class
   - Implement type guards
   - Implement validation methods
@@ -130,7 +130,7 @@ This implementation plan breaks down the context compression system refactor int
   - Add runtime checks
   - _Requirements: FR-1, FR-2, FR-3, FR-4_
 
-- [ ] 5.1 Write property test for storage boundary enforcement
+- [x] 5.1 Write property test for storage boundary enforcement
   - **Property 8: Storage Boundary Enforcement**
   - **Validates: Requirements FR-1, FR-2, FR-3, FR-4**
 
