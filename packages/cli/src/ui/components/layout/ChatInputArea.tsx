@@ -9,6 +9,7 @@ import { Box, Text, useInput, BoxProps } from 'ink';
 
 import { InputBox } from './InputBox.js';
 import { useChat, Message } from '../../../features/context/ChatContext.js';
+import { useContextManager } from '../../../features/context/ContextManagerContext.js';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { useKeybinds } from '../../../features/context/KeybindsContext.js';
 import { useUI } from '../../../features/context/UIContext.js';
@@ -39,6 +40,7 @@ export const ChatInputArea = memo(function ChatInputArea({
     setInputMode,
     setMenuState,
   } = useChat();
+  const { state: contextState } = useContextManager();
   const { state: uiState } = useUI();
   const { isFocused, setFocus } = useFocusManager();
   const { switchWindow } = useWindow();
@@ -267,7 +269,11 @@ export const ChatInputArea = memo(function ChatInputArea({
   let placeholder = hasFocus
     ? 'Type a message... (Enter to send)'
     : 'Focus elsewhere... (Ctrl+Space to focus)';
-  if (activeDestination === 'terminal1') {
+  
+  // Override placeholder if compressing
+  if (contextState.compressing) {
+    placeholder = 'Compressing context... Please wait.';
+  } else if (activeDestination === 'terminal1') {
     placeholder = hasFocus ? 'Terminal 1 input (raw mode)' : 'Terminal 1 inactive...';
   } else if (activeDestination === 'terminal2') {
     placeholder = hasFocus ? 'Terminal 2 input (raw mode)' : 'Terminal 2 inactive...';
@@ -292,7 +298,7 @@ export const ChatInputArea = memo(function ChatInputArea({
             onSubmit={handleSubmit}
             userMessages={userMessages}
             placeholder={placeholder}
-            disabled={inputMode !== 'line-buffered' || !hasFocus}
+            disabled={inputMode !== 'line-buffered' || !hasFocus || contextState.compressing}
             theme={theme}
           />
         ) : (

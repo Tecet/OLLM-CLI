@@ -299,7 +299,7 @@ This implementation plan breaks down the context compression system refactor int
 
 ## Phase 5: UI & Progress
 
-- [ ] 19. Implement Compression Progress UI
+- [x] 19. Implement Compression Progress UI
   - Create `CompressionProgress` component
   - Add progress indicator
   - Block user input during compression
@@ -307,13 +307,13 @@ This implementation plan breaks down the context compression system refactor int
   - Ensure good UX
   - _Requirements: NFR-3_
 
-- [ ] 19.1 Write UI tests for compression progress
+- [x] 19.1 Write UI tests for compression progress
   - Test progress display
   - Test input blocking
   - Test completion message
   - _Requirements: NFR-3_
 
-- [ ] 20. Implement Goal Integration
+- [~] 20. Implement Goal Integration
   - Pass goals to summarization
   - Parse goal markers
   - Track goal progress

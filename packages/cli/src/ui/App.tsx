@@ -23,6 +23,7 @@ import { initializeSessionManager, getSessionManager } from '../features/context
 import { extractModelSize } from '../features/profiles/modelUtils.js';
 import { createProvider } from '../features/provider/providerFactory.js';
 import { useContextMenu } from './components/context/ContextMenu.js';
+import { CompressionProgress } from './components/context/CompressionProgress.js';
 import { DialogManager } from './components/dialogs/DialogManager.js';
 import { ErrorBoundary } from './components/ErrorBoundary.js';
 import { WorkspaceProvider, FileFocusProvider } from './components/file-explorer/index.js';
@@ -361,6 +362,19 @@ Type \`/help\` for more commands.`,
           </Box>
         )}
       </Box>
+
+      {/* Compression Progress Overlay */}
+      {contextState.compressing && (
+        <Box
+          position="absolute"
+          width="100%"
+          height="100%"
+          justifyContent="center"
+          alignItems="center"
+        >
+          <CompressionProgress active={contextState.compressing} />
+        </Box>
+      )}
 
       {/* Dialogs */}
       <DialogManager />
