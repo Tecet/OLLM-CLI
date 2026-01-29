@@ -324,12 +324,12 @@ This implementation plan breaks down the context compression system refactor int
   - **Property 22: Goal Preservation**
   - **Validates: Requirements FR-10**
 
-- [ ] 21. Checkpoint - Ensure all Phase 5 tests pass
+- [x] 21. Checkpoint - Ensure all Phase 5 tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Phase 5b: System Integration
 
-- [ ] 22. Implement Tier System Integration
+- [x] 22. Implement Tier System Integration
   - Create `TierAwareCompression` class
   - Respect tier budgets (200-1500 tokens)
   - Account for tier in compression triggers
@@ -337,18 +337,18 @@ This implementation plan breaks down the context compression system refactor int
   - Include all components in token calculations
   - _Requirements: FR-11_
 
-- [ ] 22.1 Write property test for tier budget enforcement
+- [x] 22.1 Write property test for tier budget enforcement
   - **Property 23: Tier Budget Enforcement**
   - **Validates: Requirements FR-11**
 
-- [ ] 22.2 Write unit tests for all tiers
+- [x] 22.2 Write unit tests for all tiers
   - Test Tier 1 (200 tokens)
   - Test Tier 2 (500 tokens)
   - Test Tier 3 (1000 tokens)
   - Test Tier 4 (1500 tokens)
   - _Requirements: FR-11_
 
-- [ ] 23. Implement Mode System Integration
+- [x] 23. Implement Mode System Integration
   - Create `ModeAwareCompression` class
   - Create mode-specific summarization prompts
   - Preserve code in developer mode
@@ -356,35 +356,35 @@ This implementation plan breaks down the context compression system refactor int
   - Preserve errors in debugger mode
   - _Requirements: FR-12_
 
-- [ ] 23.1 Write property test for mode-specific preservation
+- [x] 23.1 Write property test for mode-specific preservation
   - **Property 24: Mode-Specific Preservation**
   - **Validates: Requirements FR-12**
 
-- [ ] 23.2 Write unit tests for all modes
+- [x] 23.2 Write unit tests for all modes
   - Test developer mode
   - Test planning mode
   - Test debugger mode
   - Test general mode
   - _Requirements: FR-12_
 
-- [ ] 24. Implement Model Management Integration
+- [x] 24. Implement Model Management Integration
   - Create `ModelAwareCompression` class
   - Implement model size detection
   - Calculate reliability based on model
   - Set warning thresholds by model
   - _Requirements: FR-13_
 
-- [ ] 24.1 Write property test for model size adaptation
+- [x] 24.1 Write property test for model size adaptation
   - **Property 25: Model Size Adaptation**
   - **Validates: Requirements FR-13**
 
-- [ ] 24.2 Write unit tests for different model sizes
+- [x] 24.2 Write unit tests for different model sizes
   - Test small models (<7B)
   - Test medium models (7B-13B)
   - Test large models (>13B)
   - _Requirements: FR-13_
 
-- [ ] 25. Implement Provider System Integration
+- [x] 25. Implement Provider System Integration
   - Create `ProviderAwareCompression` class
   - Read provider limits from profiles
   - Use 85% values correctly
@@ -392,17 +392,17 @@ This implementation plan breaks down the context compression system refactor int
   - Handle provider errors
   - _Requirements: FR-14_
 
-- [ ] 25.1 Write property test for provider limit respect
+- [x] 25.1 Write property test for provider limit respect
   - **Property 26: Provider Limit Respect**
   - **Validates: Requirements FR-14**
 
-- [ ] 25.2 Write unit tests for provider integration
+- [x] 25.2 Write unit tests for provider integration
   - Test Ollama provider
   - Test vLLM provider
   - Test OpenAI-compatible provider
   - _Requirements: FR-14_
 
-- [ ] 26. Implement Goal System Integration
+- [~] 26. Implement Goal System Integration
   - Create `GoalAwareCompression` class
   - Never compress goals
   - Implement goal-aware summarization
