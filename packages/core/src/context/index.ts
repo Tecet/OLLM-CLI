@@ -6,42 +6,26 @@
  * and memory safety guards.
  * 
  * SYSTEM (v0.1.1+): Uses ContextOrchestrator with LLM-based compression
+ * 
+ * @status REWORK - Cleaned (2026-01-29)
+ * @date 2026-01-29
+ * @changes Removed all legacy system exports, only exports new ContextOrchestrator system
  */
 
 // Export all types and interfaces
 export * from './types.js';
 
-// Export GPU detector
+// Export shared utilities (used by both old and new systems)
 export * from './gpuDetector.js';
-
-// Export VRAM monitor
 export * from './vramMonitor.js';
-
-// Export token counter
 export * from './tokenCounter.js';
-
-// Export GPU hint helpers
 export * from './gpuHints.js';
-
-// Export context pool
 export * from './contextPool.js';
-
-// Export snapshot storage
 export * from './snapshotStorage.js';
-
-// Export snapshot manager
-export * from './snapshotManager.js';
-
-// Export compression service
-export * from './compressionService.js';
-
-// Export memory guard
 export * from './memoryGuard.js';
-
-// Export hot swap service
 export * from './HotSwapService.js';
 
-// Export new system components (v0.1.1+)
+// Export NEW SYSTEM components (v0.1.1+)
 export { ContextOrchestrator } from './orchestration/contextOrchestrator.js';
 export type { ContextOrchestratorConfig } from './orchestration/contextOrchestrator.js';
 
@@ -76,5 +60,8 @@ export type { ContextManagerFactoryConfig, ContextManagerFactoryResult } from '.
 export * from './migration/index.js';
 
 // Export adapters
-export { LegacyContextAdapter } from './adapters/legacyContextAdapter.js';
 export { ContextOrchestratorAdapter } from './adapters/contextOrchestratorAdapter.js';
+
+// Note: Legacy system (ConversationContextManager) has been moved to .legacy/
+// Use migration utilities if you need to migrate old sessions/snapshots
+
