@@ -20,12 +20,14 @@ import { ValidationService } from './validationService.js';
 import { ActiveContextManager } from '../storage/activeContextManager.js';
 import { SessionHistoryManager } from '../storage/sessionHistoryManager.js';
 import { TokenCounterService } from '../tokenCounter.js';
+import { GoalProgressTracker } from './goalProgressTracker.js';
 
 import type { CompressionLevel } from './summarizationService.js';
 import type { ExtendedValidationResult } from './validationService.js';
-import type { Goal } from '../goalTypes.js';
+import type { Goal, GoalManager } from '../goalTypes.js';
 import type { CheckpointSummary, CheckpointRecord } from '../types/storageTypes.js';
 import type { Message } from '../types.js';
+import type { ProgressTrackingResult } from './goalProgressTracker.js';
 
 /**
  * Compression result
@@ -45,6 +47,9 @@ export interface CompressionResult {
 
   /** Validation result after compression */
   validation?: ExtendedValidationResult;
+
+  /** Goal progress tracking result (if goal provided) */
+  goalProgress?: ProgressTrackingResult;
 
   /** Error details (if failed) */
   error?: string;
@@ -91,6 +96,9 @@ export interface CompressionPipelineConfig {
   /** Token counter service */
   tokenCounter: TokenCounterService;
 
+  /** Goal manager for progress tracking (optional) */
+  goalManager?: GoalManager;
+
   /** Progress callback (optional) */
   onProgress?: ProgressCallback;
 
@@ -131,6 +139,7 @@ export class CompressionPipeline {
   private activeContext: ActiveContextManager;
   private sessionHistory: SessionHistoryManager;
   private tokenCounter: TokenCounterService;
+  private goalProgressTracker?: GoalProgressTracker;
   private onProgress?: ProgressCallback;
   private keepRecentCount: number;
 
@@ -142,6 +151,13 @@ export class CompressionPipeline {
     this.tokenCounter = config.tokenCounter;
     this.onProgress = config.onProgress;
     this.keepRecentCount = config.keepRecentCount ?? 5;
+
+    // Initialize goal progress tracker if goal manager provided
+    if (config.goalManager) {
+      this.goalProgressTracker = new GoalProgressTracker({
+        goalManager: config.goalManager,
+      });
+    }
   }
 
   /**
@@ -253,11 +269,30 @@ export class CompressionPipeline {
 
       this.reportProgress('Complete', 100, 'Compression complete');
 
+      // Track goal progress if goal provided and tracker available
+      let goalProgress: ProgressTrackingResult | undefined;
+      if (goal && this.goalProgressTracker) {
+        this.reportProgress('Goal Tracking', 100, 'Tracking goal progress...');
+        goalProgress = this.goalProgressTracker.trackProgress(
+          summarizationResult.summary,
+          goal
+        );
+
+        if (goalProgress.success && goalProgress.updatesApplied > 0) {
+          this.reportProgress(
+            'Goal Tracking',
+            100,
+            `Applied ${goalProgress.updatesApplied} goal updates`
+          );
+        }
+      }
+
       return {
         success: true,
         checkpoint,
         freedTokens,
         validation,
+        goalProgress,
       };
     } catch (error) {
       // Error handling (FR-7)

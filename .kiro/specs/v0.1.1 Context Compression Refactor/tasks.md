@@ -313,14 +313,14 @@ This implementation plan breaks down the context compression system refactor int
   - Test completion message
   - _Requirements: NFR-3_
 
-- [~] 20. Implement Goal Integration
+- [x] 20. Implement Goal Integration
   - Pass goals to summarization
   - Parse goal markers
   - Track goal progress
   - Write tests
   - _Requirements: FR-10_
 
-- [ ] 20.1 Write property test for goal preservation
+- [x] 20.1 Write property test for goal preservation
   - **Property 22: Goal Preservation**
   - **Validates: Requirements FR-10**
 
