@@ -78,20 +78,24 @@ export interface ContextManagerFactoryResult {
 export function createContextManager(
   config: ContextManagerFactoryConfig
 ): ContextManagerFactoryResult {
-  // Create debug log file
-  const fs = require('fs');
-  const path = require('path');
-  const os = require('os');
-  const logPath = path.join(os.homedir(), '.ollm', 'context-init-debug.log');
-  
-  const log = (msg: string) => {
-    const timestamp = new Date().toISOString();
-    const logMsg = `[${timestamp}] ${msg}\n`;
+  // Create debug log file using dynamic import
+  const logToFile = async (msg: string) => {
     try {
+      const fs = await import('fs');
+      const path = await import('path');
+      const os = await import('os');
+      const logPath = path.join(os.homedir(), '.ollm', 'context-init-debug.log');
+      const timestamp = new Date().toISOString();
+      const logMsg = `[${timestamp}] ${msg}\n`;
       fs.appendFileSync(logPath, logMsg);
     } catch (e) {
       // Ignore write errors
     }
+  };
+  
+  // Log synchronously by wrapping in promise (fire and forget)
+  const log = (msg: string) => {
+    logToFile(msg).catch(() => {});
   };
   
   log('[ContextManagerFactory] Creating ContextOrchestrator');
