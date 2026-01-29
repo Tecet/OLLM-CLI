@@ -18,9 +18,21 @@ import { ContextTier, OperationalMode } from './types.js';
 import { PromptOrchestrator } from './promptOrchestrator.js';
 import { PromptOrchestratorIntegration } from './integration/promptOrchestratorIntegration.js';
 
-import type { ContextModuleOverrides } from './contextModules.js';
 import type { ContextManager, ContextConfig, ModelInfo, VRAMMonitor, TokenCounter, ContextPool } from './types.js';
 import type { ProviderAdapter } from '../provider/types.js';
+
+/**
+ * Service overrides for context manager factory
+ * Allows injecting custom implementations of services
+ */
+export interface ContextModuleOverrides {
+  vramMonitor?: VRAMMonitor;
+  tokenCounter?: TokenCounter;
+  contextPool?: ContextPool;
+  profileManager?: any;
+  goalManager?: any;
+  promptOrchestrator?: any;
+}
 
 /**
  * Factory configuration for creating context managers
@@ -47,14 +59,7 @@ export interface ContextManagerFactoryConfig {
   storagePath: string;
 
   /** Service overrides */
-  services?: ContextModuleOverrides & {
-    vramMonitor?: VRAMMonitor;
-    tokenCounter?: TokenCounter;
-    contextPool?: ContextPool;
-    profileManager?: any;
-    goalManager?: any;
-    promptOrchestrator?: any;
-  };
+  services?: ContextModuleOverrides;
 }
 
 /**
