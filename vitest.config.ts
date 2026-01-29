@@ -22,6 +22,7 @@ export default defineConfig({
       '**/docs/**',
       '**/documentation/**',
       '**/node_modules/**',
+      '**/.legacy/**',
       '**/*doc*.test.*',
       '**/*docs*.test.*',
     ],

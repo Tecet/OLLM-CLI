@@ -184,7 +184,7 @@ export const modeCommand: Command = {
 
       if (validModes.includes(subcommand as ModeType)) {
         const mode = subcommand as ModeType;
-        manager.switchMode(mode);
+        manager.switchModeExplicit(mode);
 
         const metadata = MODE_METADATA[mode];
         const icon = metadata?.icon || '';

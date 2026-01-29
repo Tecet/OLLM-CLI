@@ -4,21 +4,21 @@
     "type": "split",
     "children": [
       {
-        "id": "86e5c489c764944b",
+        "id": "a0e2cd0fdf7f6fc3",
         "type": "tabs",
         "children": [
           {
-            "id": "96f17f0c11000dcf",
+            "id": "da5d6c58ca060cf0",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "docs/MCP/README.md",
-                "mode": "preview",
+                "file": "docs/LLM Models/LLM_ModelsArchitecture.md",
+                "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "README"
+              "title": "LLM_ModelsArchitecture"
             }
           }
         ]
@@ -183,19 +183,37 @@
       "bases:Create new base": false
     }
   },
-  "active": "96f17f0c11000dcf",
+  "active": "da5d6c58ca060cf0",
   "lastOpenFiles": [
-    "scripts/test-duckduckgo.mjs",
-    "packages/core/dist/tools/providers/duckduckgo-search.js.map",
-    "packages/core/dist/tools/providers/duckduckgo-search.js",
-    "packages/core/dist/tools/providers/duckduckgo-search.d.ts.map",
-    "packages/core/dist/tools/providers/duckduckgo-search.d.ts",
-    "packages/core/dist/tools/providers",
-    "packages/core/src/tools/providers/duckduckgo-search.ts",
-    "packages/core/src/tools/providers",
-    "packages/cli/src/features/context/handlers/agentLoopHandler.ts",
-    "packages/cli/src/features/context/handlers/commandHandler.ts",
-    "packages/cli/src/features/context/handlers/contextEventHandlers.ts",
+    "packages/core/src/context/compression/validationService.ts",
+    "docs/LLM Models/LLM_ModelsConfiguration.md",
+    "CHANGELOG.md",
+    "docs/Prompts System/SystemPrompts.md",
+    "docs/Prompts System/PromptsTemplates.md",
+    "docs/Prompts System/PromptsRouting.md",
+    "packages/core/src/context/compression/__tests__/summarizationService.test.ts",
+    "packages/core/src/context/compression/__tests__/summarizationService.property.test.ts",
+    "packages/core/src/context/compression/__tests__",
+    "packages/core/src/context/compression/summarizationService.ts",
+    "packages/core/dist/context/storage/storageBoundaries.js.map",
+    "packages/core/dist/context/storage/storageBoundaries.js",
+    "packages/core/dist/context/storage/activeContextManager.js",
+    "packages/core/dist/context/storage/storageBoundaries.d.ts.map",
+    "packages/core/dist/context/storage/storageBoundaries.d.ts",
+    "packages/core/dist/context/storage/snapshotLifecycle.js.map",
+    "docs/Prompts System/Architecture.md",
+    "docs/LLM Models/LLM_ModelsList.md",
+    "docs/LLM Models/LLM_ModelsCommands.md",
+    "docs/LLM Models/LLM_ModelsArchitecture.md",
+    "docs/LLM Models/LLM_ModelCompatibility.md",
+    "docs/LLM Models/LLM_MemorySystem.md",
+    "docs/LLM Models/LLM_Index.md",
+    "docs/LLM Models/LLM_GettingStarted.md",
+    "docs/Context/README.md",
+    "docs/Context/ContextManagment.md",
+    "docs/Context/ContextArchitecture.md",
+    "docs/Context/CheckpointFlowDiagram.md",
+    "docs/MCP/README.md",
     "dev/backlog/REFACTORING-SUMMARY.md",
     "dev/backlog/report.md",
     "packages/cli/src/ui/components/animations/lama/lama_sprite/right/llama-r6.png",
@@ -212,8 +230,6 @@
     "files_split.md",
     "REFACTORING-SUMMARY.md",
     "README.md",
-    "docs/Quickstart.md",
-    "docs/Introduction.md",
-    "docs/LLM Models/README.md"
+    "docs/Quickstart.md"
   ]
 }

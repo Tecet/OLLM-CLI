@@ -79,7 +79,7 @@
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │ Step 1: Monitor Context Usage                                   │
-│                                                                  │
+│                                                                 │
 │  Available Budget = ollama_context_size - system - checkpoints  │
 │  Trigger at: 80% of available budget                            │
 └─────────────────────────────────────────────────────────────────┘
@@ -87,19 +87,19 @@
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │ Step 2: Context Reaches Threshold (80% of available)            │
-│                                                                  │
-│  Example (16K context):                                          │
+│                                                                 │
+│  Example (16K context):                                         │
 │  - Ollama limit: 13,600 tokens                                  │
 │  - System prompt: 1,000 tokens                                  │
 │  - Checkpoints: 2,100 tokens                                    │
 │  - Available: 10,500 tokens                                     │
-│  - Trigger at: 8,400 tokens (80% of 10,500)                    │
+│  - Trigger at: 8,400 tokens (80% of 10,500)                     │
 └─────────────────────────────────────────────────────────────────┘
                             │
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │ Step 3: Identify Messages to Compress                           │
-│                                                                  │
+│                                                                 │
 │  ✅ Compress: Assistant messages (LLM output)                   │
 │  ❌ Never compress: User messages                               │
 │  ❌ Never compress: System prompt                               │
@@ -110,39 +110,39 @@
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │ Step 4: LLM Summarization                                       │
-│                                                                  │
-│  Send to LLM:                                                    │
+│                                                                 │
+│  Send to LLM:                                                   │
 │  "Summarize the following conversation history,                 │
 │   preserving key decisions, code changes, and context..."       │
-│                                                                  │
+│                                                                 │
 │  LLM returns summary (50-70% compression)                       │
 └─────────────────────────────────────────────────────────────────┘
                             │
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │ Step 5: Create New Checkpoint                                   │
-│                                                                  │
-│  Checkpoint {                                                    │
+│                                                                 │
+│  Checkpoint {                                                   │
 │    id: "cp-3"                                                   │
 │    level: 3 (DETAILED)                                          │
 │    range: "Messages 51-100"                                     │
 │    summary: "Implemented JWT authentication..."                 │
-│    keyDecisions: ["Use JWT", "httpOnly cookies"]               │
-│    filesModified: ["auth/login.ts", "auth/jwt.ts"]             │
+│    keyDecisions: ["Use JWT", "httpOnly cookies"]                │
+│    filesModified: ["auth/login.ts", "auth/jwt.ts"]              │
 │    originalTokens: 5000                                         │
 │    currentTokens: 1200                                          │
 │    compressionCount: 1                                          │
-│  }                                                               │
+│  }                                                              │
 └─────────────────────────────────────────────────────────────────┘
                             │
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │ Step 6: Age Existing Checkpoints                                │
-│                                                                  │
-│  Checkpoint 3 (new)    → Level 3 (DETAILED)   ~1200 tokens     │
-│  Checkpoint 2 (recent) → Level 2 (MODERATE)   ~600 tokens      │
-│  Checkpoint 1 (old)    → Level 1 (COMPACT)    ~300 tokens      │
-│                                                                  │
+│                                                                 │
+│  Checkpoint 3 (new)    → Level 3 (DETAILED)   ~1200 tokens      │
+│  Checkpoint 2 (recent) → Level 2 (MODERATE)   ~600 tokens       │
+│  Checkpoint 1 (old)    → Level 1 (COMPACT)    ~300 tokens       │
+│                                                                 │
 │  Each aging step compresses further:                            │
 │  - Recent: 50-70% compression                                   │
 │  - Old: 60% compression                                         │
@@ -152,17 +152,17 @@
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │ Step 7: Recalculate Available Budget                            │
-│                                                                  │
-│  New available budget:                                           │
-│  13,600 - 1,000 (system) - 2,100 (checkpoints) = 10,500        │
-│                                                                  │
-│  New trigger threshold: 10,500 * 0.80 = 8,400 tokens           │
+│                                                                 │
+│  New available budget:                                          │
+│  13,600 - 1,000 (system) - 2,100 (checkpoints) = 10,500         │
+│                                                                 │
+│  New trigger threshold: 10,500 * 0.80 = 8,400 tokens            │
 └─────────────────────────────────────────────────────────────────┘
                             │
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │ Step 8: Continue Conversation                                   │
-│                                                                  │
+│                                                                 │
 │  Context now has more available space for new messages          │
 └─────────────────────────────────────────────────────────────────┘
 ```

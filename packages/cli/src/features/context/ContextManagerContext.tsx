@@ -650,15 +650,6 @@ export function ContextManagerProvider({
   const getWorkflowManager = useCallback(() => workflowManagerRef.current, []);
   const getPromptsSnapshotManager = useCallback(() => promptsSnapshotManagerRef.current, []);
 
-  const switchMode = useCallback((_mode: ModeType) => {
-    if (!modeManagerRef.current) {
-      console.warn('PromptModeManager not initialized');
-      return;
-    }
-
-    // Mode switching logic removed - use switchModeExplicit instead
-  }, []);
-
   const switchModeExplicit = useCallback((mode: ModeType) => {
     if (!modeManagerRef.current) {
       console.warn('PromptModeManager not initialized');
@@ -710,6 +701,11 @@ export function ContextManagerProvider({
     SettingsService.getInstance().setMode(mode);
     SettingsService.getInstance().setAutoSwitch(false);
   }, []);
+
+  const switchMode = useCallback((mode: ModeType) => {
+    // Delegate to switchModeExplicit for backward compatibility
+    switchModeExplicit(mode);
+  }, [switchModeExplicit]);
 
   const setAutoSwitchAction = useCallback((enabled: boolean) => {
     if (!modeManagerRef.current) {

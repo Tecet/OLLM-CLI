@@ -67,7 +67,7 @@ export const assistCommand: Command = {
   handler: async (): Promise<CommandResult> => {
     try {
       const manager = ensureContextManager();
-      manager.switchMode('assistant');
+      manager.switchModeExplicit('assistant');
 
       return {
         success: true,
@@ -93,7 +93,7 @@ export const planCommand: Command = {
   handler: async (): Promise<CommandResult> => {
     try {
       const manager = ensureContextManager();
-      manager.switchMode('planning');
+      manager.switchModeExplicit('planning');
 
       return {
         success: true,
@@ -119,7 +119,7 @@ export const devCommand: Command = {
   handler: async (): Promise<CommandResult> => {
     try {
       const manager = ensureContextManager();
-      manager.switchMode('developer');
+      manager.switchModeExplicit('developer');
 
       return {
         success: true,
@@ -150,7 +150,7 @@ export const debugCommand: Command = {
       const manager = ensureContextManager();
 
       // Switch to debugger mode
-      manager.switchMode('debugger');
+      manager.switchModeExplicit('debugger');
 
       // Handle subcommands
       if (args.length === 0) {
