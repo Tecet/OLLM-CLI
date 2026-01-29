@@ -78,9 +78,6 @@ export interface ContextOrchestratorConfig {
   /** Progress callback for compression operations (optional) */
   onProgress?: ProgressCallback;
 
-  /** Number of recent messages to keep during compression (default: 5) */
-  keepRecentCount?: number;
-
   /** Active goal (optional) */
   goal?: Goal;
 
@@ -315,7 +312,8 @@ export class ContextOrchestrator {
       sessionHistory: this.sessionHistory,
       tokenCounter,
       onProgress: config.onProgress,
-      keepRecentCount: config.keepRecentCount,
+      keepRecentPercentage: 0.5, // Keep 50% of context uncompressed
+      ollamaLimit: config.ollamaLimit,
     });
 
     // Initialize checkpoint lifecycle with model integration

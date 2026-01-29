@@ -229,8 +229,11 @@ export class CompressionEngine {
    * @param strategy - Strategy configuration to apply
    */
   private applyStrategy(strategy: StrategyConfig): void {
-    // Update pipeline configuration
-    this.pipeline.setKeepRecentCount(strategy.keepRecentCount);
+    // Calculate percentage from keepRecentCount
+    // Assuming keepRecentCount is in tokens, convert to percentage of ollama limit
+    // For now, we use a fixed 50% - in future this could be configurable per strategy
+    const percentage = 0.5; // 50% of context
+    this.pipeline.setKeepRecentPercentage(percentage);
 
     // Note: Other strategy parameters (compressionLevel, maxSummaryTokens, etc.)
     // would be applied to the summarization service if we had access to it here.

@@ -104,13 +104,19 @@ export interface CompressionPipelineConfig {
   onProgress?: ProgressCallback;
 
   /** 
-   * Token budget for keeping recent messages (default: 10 = 2000 tokens)
-   * Each unit represents 200 tokens. So keepRecentCount=10 means keep last 2000 tokens.
-   * This ensures compression is based on content size, not message count.
-   * 
-   * The LLM will summarize older messages beyond this budget into compact checkpoints.
+   * Percentage of context to keep uncompressed (default: 0.5 = 50%)
+   * For example, with 8K context (6963 ollama limit):
+   * - 50% = keep last 3481 tokens uncompressed
+   * - 30% = keep last 2089 tokens uncompressed
+   * This scales automatically with context size.
    */
-  keepRecentCount?: number;
+  keepRecentPercentage?: number;
+
+  /** 
+   * Ollama context limit (for calculating keep budget)
+   * This is the 85% pre-calculated value from profiles
+   */
+  ollamaLimit: number;
 }
 
 /**
@@ -148,7 +154,8 @@ export class CompressionPipeline {
   private tokenCounter: TokenCounterService;
   private goalProgressTracker?: GoalProgressTracker;
   private onProgress?: ProgressCallback;
-  private keepRecentCount: number;
+  private keepRecentPercentage: number;
+  private ollamaLimit: number;
 
   constructor(config: CompressionPipelineConfig) {
     this.summarizationService = config.summarizationService;
@@ -157,7 +164,8 @@ export class CompressionPipeline {
     this.sessionHistory = config.sessionHistory;
     this.tokenCounter = config.tokenCounter;
     this.onProgress = config.onProgress;
-    this.keepRecentCount = config.keepRecentCount ?? 10; // Default: 2000 tokens
+    this.keepRecentPercentage = config.keepRecentPercentage ?? 0.5; // Default: 50%
+    this.ollamaLimit = config.ollamaLimit;
 
     // Initialize goal progress tracker if goal manager provided
     if (config.goalManager) {
@@ -352,8 +360,8 @@ export class CompressionPipeline {
     }
 
     // Calculate token budget for keeping recent messages
-    // Default: keep last 1000 tokens of conversation
-    const keepRecentTokenBudget = this.keepRecentCount * 200; // keepRecentCount now represents 200-token units
+    // Use percentage of ollama limit (e.g., 50% of 6963 = 3481 tokens)
+    const keepRecentTokenBudget = Math.floor(this.ollamaLimit * this.keepRecentPercentage);
 
     // Work backwards from most recent message, accumulating tokens
     let recentTokens = 0;
@@ -372,7 +380,7 @@ export class CompressionPipeline {
       }
     }
 
-    debugLog('CompressionPipeline', `Keep recent: ${recentMessages.length - keepFromIndex} messages (${recentTokens} tokens), Budget: ${keepRecentTokenBudget} tokens`);
+    debugLog('CompressionPipeline', `Keep recent: ${recentMessages.length - keepFromIndex} messages (${recentTokens} tokens), Budget: ${keepRecentTokenBudget} tokens (${Math.round(this.keepRecentPercentage * 100)}% of ${this.ollamaLimit})`);
 
     // Messages to compress are everything before keepFromIndex
     const oldMessages = recentMessages.slice(0, keepFromIndex);
@@ -580,24 +588,28 @@ export class CompressionPipeline {
    * @returns Current pipeline configuration
    */
   getConfig(): {
-    keepRecentCount: number;
+    keepRecentPercentage: number;
+    ollamaLimit: number;
+    keepRecentTokens: number;
     hasProgressCallback: boolean;
   } {
     return {
-      keepRecentCount: this.keepRecentCount,
+      keepRecentPercentage: this.keepRecentPercentage,
+      ollamaLimit: this.ollamaLimit,
+      keepRecentTokens: Math.floor(this.ollamaLimit * this.keepRecentPercentage),
       hasProgressCallback: !!this.onProgress,
     };
   }
 
   /**
-   * Set token budget for keeping recent messages
+   * Set percentage of context to keep uncompressed
    *
-   * @param count - Number of 200-token units to keep (e.g., 5 = 1000 tokens)
+   * @param percentage - Percentage (0.0 to 1.0, e.g., 0.5 = 50%)
    */
-  setKeepRecentCount(count: number): void {
-    if (count < 1) {
-      throw new Error('keepRecentCount must be at least 1');
+  setKeepRecentPercentage(percentage: number): void {
+    if (percentage < 0.1 || percentage > 0.9) {
+      throw new Error('keepRecentPercentage must be between 0.1 (10%) and 0.9 (90%)');
     }
-    this.keepRecentCount = count;
+    this.keepRecentPercentage = percentage;
   }
 }

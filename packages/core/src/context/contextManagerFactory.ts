@@ -169,7 +169,6 @@ export function createContextManager(
       model: config.modelInfo.modelId || 'unknown',
       sessionId: config.sessionId,
       storagePath: config.storagePath,
-      keepRecentCount: config.contextConfig?.compression?.preserveRecent || 5,
       
       // Integration dependencies (use defaults if not provided)
       tier,
