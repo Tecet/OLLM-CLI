@@ -6,8 +6,8 @@
  */
 
 import { appendFileSync } from 'fs';
-import { join } from 'path';
 import { homedir } from 'os';
+import { join } from 'path';
 
 const DEBUG_LOG_PATH = join(homedir(), '.ollm', 'debug.log');
 
@@ -20,7 +20,7 @@ export function debugLog(category: string, message: string, data?: unknown): voi
   
   try {
     appendFileSync(DEBUG_LOG_PATH, logLine);
-  } catch (error) {
+  } catch (_error) {
     // Ignore write errors
   }
 }
@@ -30,9 +30,10 @@ export function debugLog(category: string, message: string, data?: unknown): voi
  */
 export function clearDebugLog(): void {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { writeFileSync } = require('fs');
     writeFileSync(DEBUG_LOG_PATH, '');
-  } catch (error) {
+  } catch (_error) {
     // Ignore errors
   }
 }

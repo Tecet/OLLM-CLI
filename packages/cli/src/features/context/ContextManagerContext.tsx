@@ -189,7 +189,7 @@ export function ContextManagerProvider({
   const [memoryLevel, _setMemoryLevel] = useState<MemoryLevel>(MemoryLevel.NORMAL);
   const [active, setActive] = useState(false);
   const [compressing, setCompressing] = useState(false);
-  const [compressionProgress, setCompressionProgress] = useState<{
+  const [compressionProgress, _setCompressionProgress] = useState<{
     stage: string;
     progress: number;
     message: string;

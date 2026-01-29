@@ -18,10 +18,10 @@
 import { GoalProgressTracker } from './goalProgressTracker.js';
 import { SummarizationService } from './summarizationService.js';
 import { ValidationService } from './validationService.js';
+import { debugLog } from '../../utils/debugLogger.js';
 import { ActiveContextManager } from '../storage/activeContextManager.js';
 import { SessionHistoryManager } from '../storage/sessionHistoryManager.js';
 import { TokenCounterService } from '../tokenCounter.js';
-import { debugLog } from '../../utils/debugLogger.js';
 
 import type { CompressionLevel } from './summarizationService.js';
 import type { ExtendedValidationResult } from './validationService.js';

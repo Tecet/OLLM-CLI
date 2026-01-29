@@ -15,7 +15,6 @@ import { EventEmitter } from 'events';
 
 import { ContextOrchestrator } from '../orchestration/contextOrchestrator.js';
 import { OperationalMode, ContextTier } from '../types.js';
-import { debugLog } from '../../utils/debugLogger.js';
 
 import type { 
   ContextManager, 
@@ -165,18 +164,37 @@ export class ContextOrchestratorAdapter extends EventEmitter implements ContextM
   // ============================================================================
 
   async addMessage(message: Message): Promise<void> {
+    // Check if compression might be needed before adding message
+    const state = this.orchestrator.getState();
+    const utilizationPercent = state.health.utilizationPercent;
+    
+    // If utilization is high, emit summarizing event preemptively
+    // This gives the UI a chance to show the indicator before the 17-second pause
+    if (utilizationPercent > 70) {
+      this.emit('summarizing');
+    }
+    
     const result = await this.orchestrator.addMessage(message);
     
     if (!result.success) {
+      // Clear summarizing state if we emitted it
+      if (utilizationPercent > 70) {
+        this.emit('compression-complete', { tokensFreed: 0 });
+      }
       throw new Error(result.error || 'Failed to add message');
     }
 
     this.emit('message-added', message);
     
     if (result.compressionTriggered) {
+      // Compression happened - emit completion event
+      // (summarizing event was already emitted above if utilization was high)
       this.emit('compression-complete', {
         tokensFreed: result.tokensFreed,
       });
+    } else if (utilizationPercent > 70) {
+      // We emitted summarizing but compression didn't trigger - clear the state
+      this.emit('compression-complete', { tokensFreed: 0 });
     }
   }
 
@@ -238,6 +256,9 @@ export class ContextOrchestratorAdapter extends EventEmitter implements ContextM
   // ============================================================================
 
   async compress(): Promise<void> {
+    // Emit summarizing event for UI indicator
+    this.emit('summarizing');
+    
     const result = await this.orchestrator.compress();
     
     if (!result.success) {

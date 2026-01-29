@@ -24,6 +24,7 @@
  * @module contextOrchestrator
  */
 
+import { debugLog } from '../../utils/debugLogger.js';
 import { CheckpointLifecycle } from '../checkpoints/checkpointLifecycle.js';
 import { EmergencyActions } from '../checkpoints/emergencyActions.js';
 import { CompressionPipeline, type ProgressCallback } from '../compression/compressionPipeline.js';
@@ -39,7 +40,6 @@ import { ActiveContextManager } from '../storage/activeContextManager.js';
 import { SessionHistoryManager } from '../storage/sessionHistoryManager.js';
 import { SnapshotLifecycle } from '../storage/snapshotLifecycle.js';
 import { TokenCounterService } from '../tokenCounter.js';
-import { debugLog } from '../../utils/debugLogger.js';
 
 // Integration imports
 

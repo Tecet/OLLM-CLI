@@ -5,15 +5,16 @@
  */
 
 import { vi } from 'vitest';
+
 import { ContextTier, OperationalMode } from '../../types.js';
 
 import type { ProviderAdapter } from '../../../provider/types.js';
 import type { GoalManager } from '../../goalTypes.js';
 import type { IProfileManager } from '../../integration/providerAwareCompression.js';
-import type { PromptOrchestrator } from '../../promptOrchestrator.js';
-import type { Message } from '../../types.js';
 import type { ContextOrchestratorConfig } from '../../orchestration/contextOrchestrator.js';
+import type { PromptOrchestrator } from '../../promptOrchestrator.js';
 import type { TokenCounterService } from '../../tokenCounter.js';
+import type { Message } from '../../types.js';
 
 /**
  * Create a mock ProfileManager with standard test models

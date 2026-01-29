@@ -226,9 +226,9 @@ export class CompressionEngine {
    *
    * Configures the pipeline according to the strategy settings.
    *
-   * @param strategy - Strategy configuration to apply
+   * @param _strategy - Strategy configuration to apply
    */
-  private applyStrategy(strategy: StrategyConfig): void {
+  private applyStrategy(_strategy: StrategyConfig): void {
     // Calculate percentage from keepRecentCount
     // Assuming keepRecentCount is in tokens, convert to percentage of ollama limit
     // For now, we use a fixed 50% - in future this could be configurable per strategy

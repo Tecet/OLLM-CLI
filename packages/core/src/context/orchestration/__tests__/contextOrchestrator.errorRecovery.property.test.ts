@@ -22,7 +22,6 @@ import * as fc from 'fast-check';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 import { TokenCounterService } from '../../tokenCounter.js';
-import { ContextTier, OperationalMode } from '../../types.js';
 import { ContextOrchestrator } from '../contextOrchestrator.js';
 
 import type { ProviderAdapter } from '../../../provider/types.js';
@@ -38,7 +37,7 @@ import type { Message } from '../../types.js';
 /**
  * Create a mock ProfileManager
  */
-function createMockProfileManager(): IProfileManager {
+function _createMockProfileManager(): IProfileManager {
   return {
     getModelEntry: vi.fn().mockReturnValue({
       id: 'llama3.2:3b',
@@ -68,7 +67,7 @@ function createMockProfileManager(): IProfileManager {
 /**
  * Create a mock GoalManager
  */
-function createMockGoalManager(): GoalManager {
+function _createMockGoalManager(): GoalManager {
   return {
     getActiveGoal: vi.fn().mockReturnValue(null),
     createGoal: vi.fn(),
@@ -98,7 +97,7 @@ function createMockGoalManager(): GoalManager {
 /**
  * Create a mock PromptOrchestrator
  */
-function createMockPromptOrchestrator(): PromptOrchestrator {
+function _createMockPromptOrchestrator(): PromptOrchestrator {
   return {
     getSystemPromptForTierAndMode: vi.fn().mockReturnValue('Test system prompt'),
     getSystemPromptTokenBudget: vi.fn().mockReturnValue(1000),
