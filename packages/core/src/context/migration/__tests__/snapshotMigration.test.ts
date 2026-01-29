@@ -15,10 +15,8 @@ import {
   validateMigratedSnapshot,
   migrateAllSnapshots,
   rollbackMigration,
-  type SnapshotMigrationOptions,
 } from '../snapshotMigration.js';
 
-import type { SnapshotData } from '../../types/storageTypes.js';
 import type { Message } from '../../types.js';
 
 // ============================================================================
@@ -286,7 +284,7 @@ describe('snapshotMigration - Integration Tests', () => {
     // Clean up temporary directories
     try {
       await fs.rm(tempDir, { recursive: true, force: true });
-    } catch (error) {
+    } catch (_error) {
       // Ignore cleanup errors
     }
   });

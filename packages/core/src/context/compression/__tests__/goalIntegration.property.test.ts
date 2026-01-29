@@ -25,7 +25,6 @@ import type {
   GoalStatus,
   SubtaskStatus,
 } from '../../goalTypes.js';
-import type { Message } from '../../types.js';
 import type { CompressionLevel } from '../summarizationService.js';
 
 /**
@@ -303,7 +302,7 @@ describe('Goal Integration - Property Tests', () => {
         fc.asyncProperty(goalArbitrary, messagesArbitrary, async (goal, messages) => {
           // Setup services
           const provider = new GoalAwareMockProvider();
-          const tokenCounter = new TokenCounterService();
+          const _tokenCounter = new TokenCounterService();
           const summarizationService = new SummarizationService({
             provider,
             model: 'test-model',

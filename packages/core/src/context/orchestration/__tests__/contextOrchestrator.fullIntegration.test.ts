@@ -414,7 +414,7 @@ describe('ContextOrchestrator - Full System Integration', () => {
 
     it('should maintain state consistency after errors', async () => {
       // Get initial state
-      const initialState = orchestrator.getState();
+      const _initialState = orchestrator.getState();
 
       // Cause an error
       vi.mocked(provider.chatStream).mockImplementationOnce(async function* () {

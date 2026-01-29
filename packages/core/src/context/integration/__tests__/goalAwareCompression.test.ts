@@ -9,7 +9,6 @@ import { describe, it, expect, beforeEach } from 'vitest';
 
 import {
   GoalAwareCompression,
-  type GoalUpdate,
 } from '../goalAwareCompression.js';
 
 import type {
@@ -20,7 +19,6 @@ import type {
   Artifact,
   Checkpoint,
   GoalStack,
-  GoalStatus,
   GoalPriority,
 } from '../../goalTypes.js';
 import type { Message } from '../../types.js';
@@ -62,7 +60,7 @@ class MockGoalManager implements GoalManager {
     return goal;
   }
 
-  completeGoal(goalId: string, summary?: string): void {
+  completeGoal(goalId: string, _summary?: string): void {
     const goal = this.goals.get(goalId);
     if (goal) {
       goal.status = 'completed';
@@ -86,7 +84,7 @@ class MockGoalManager implements GoalManager {
     }
   }
 
-  abandonGoal(goalId: string, reason: string): void {
+  abandonGoal(goalId: string, _reason: string): void {
     const goal = this.goals.get(goalId);
     if (goal) {
       goal.status = 'abandoned';
@@ -811,7 +809,7 @@ describe('GoalAwareCompression', () => {
           fc.array(fc.string({ minLength: 5, maxLength: 30 }), { minLength: 1, maxLength: 5 }), // decisionDescriptions
           fc.array(fc.string({ minLength: 5, maxLength: 30 }), { minLength: 1, maxLength: 5 }), // artifactPaths
           (goalDescription, checkpointDescs, decisionDescs, artifactPaths) => {
-            const goal = createTestGoal(goalDescription);
+            const _goal = createTestGoal(goalDescription);
 
             // Build summary with markers
             const summary = `

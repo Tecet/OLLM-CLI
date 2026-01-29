@@ -10,7 +10,6 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import {
   ProviderAwareCompression,
   type IProfileManager,
-  type ValidationResult,
 } from '../providerAwareCompression.js';
 
 import type { ContextProfile } from '../../types.js';
@@ -339,7 +338,7 @@ describe('ProviderAwareCompression', () => {
           fc.constantFrom('llama3.2:3b', 'mistral:7b', 'codellama:13b'), // modelId
           fc.integer({ min: 100, max: 1000 }), // systemPromptTokens
           fc.integer({ min: 200, max: 1500 }), // tierBudget
-          (currentTokens, modelId, systemPromptTokens, tierBudget) => {
+          (currentTokens, modelId, _systemPromptTokens, _tierBudget) => {
             const validation = compression.validateAgainstProvider(currentTokens, modelId);
             const limit = compression.getContextLimit(modelId);
             const safetyMargin = 1000;

@@ -8,7 +8,7 @@ import * as fs from 'fs/promises';
 import * as os from 'os';
 import * as path from 'path';
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 import {
   migrateLegacySession,
@@ -16,10 +16,8 @@ import {
   validateMigratedSession,
   migrateAllSessions,
   rollbackMigration,
-  type SessionMigrationOptions,
 } from '../sessionMigration.js';
 
-import type { SessionHistory, CheckpointSummary } from '../../types/storageTypes.js';
 import type { Message } from '../../types.js';
 
 // ============================================================================
@@ -265,7 +263,7 @@ describe('sessionMigration - Integration Tests', () => {
     // Clean up temporary directories
     try {
       await fs.rm(tempDir, { recursive: true, force: true });
-    } catch (error) {
+    } catch (_error) {
       // Ignore cleanup errors
     }
   });
