@@ -11,6 +11,7 @@
 import { ContextOrchestrator, type ContextOrchestratorConfig } from './orchestration/contextOrchestrator.js';
 import { ContextOrchestratorAdapter } from './adapters/contextOrchestratorAdapter.js';
 import { ContextTier, OperationalMode } from './types.js';
+import { PromptOrchestrator } from './promptOrchestrator.js';
 
 import type { ContextModuleOverrides } from './contextModules.js';
 import type { ContextManager, ContextConfig, ModelInfo, VRAMMonitor, TokenCounter, ContextPool, Message } from './types.js';
@@ -130,11 +131,14 @@ export function createContextManager(
     const ollamaLimit = getOllamaContextLimit(config.modelInfo, config.contextConfig);
     log(`[ContextManagerFactory] Ollama limit: ${ollamaLimit}`);
 
+    // Create token counter (reuse for all components)
+    const tokenCounter = config.services?.tokenCounter || createDefaultTokenCounter();
+    
     // Create orchestrator configuration
     const orchestratorConfig: ContextOrchestratorConfig = {
       systemPrompt,
       ollamaLimit,
-      tokenCounter: config.services?.tokenCounter || createDefaultTokenCounter(),
+      tokenCounter,
       provider: config.provider,
       model: config.modelInfo.modelId || 'unknown',
       sessionId: config.sessionId,
@@ -146,7 +150,7 @@ export function createContextManager(
       mode: config.contextConfig?.mode || OperationalMode.ASSISTANT,
       profileManager: config.services?.profileManager || createDefaultProfileManager(),
       goalManager: config.services?.goalManager || createDefaultGoalManager(),
-      promptOrchestrator: config.services?.promptOrchestrator || createDefaultPromptOrchestrator(),
+      promptOrchestrator: config.services?.promptOrchestrator || createDefaultPromptOrchestrator(tokenCounter),
       contextSize: config.modelInfo.contextSize || 8192,
     };
 
@@ -258,13 +262,9 @@ function createDefaultGoalManager(): any {
 /**
  * Create default prompt orchestrator (fallback)
  */
-function createDefaultPromptOrchestrator(): any {
-  return {
-    buildSystemPrompt: () => ({
-      role: 'system' as const,
-      parts: [{ type: 'text' as const, text: 'You are a helpful AI assistant.' }],
-    }),
-    updateSystemPrompt: () => {},
-    getSystemPromptTokens: () => 10,
-  };
+function createDefaultPromptOrchestrator(tokenCounter?: TokenCounter): any {
+  // Create a real PromptOrchestrator instance that loads templates
+  return new PromptOrchestrator({
+    tokenCounter: tokenCounter || createDefaultTokenCounter(),
+  });
 }
