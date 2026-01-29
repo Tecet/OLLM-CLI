@@ -46,14 +46,14 @@ export class TierAwareCompression {
    * Get the prompt budget for a specific tier and context size
    * 
    * Budget is calculated as a percentage of context size:
-   * - Tier 1 (2-4K): 10% of context (min 400) - INCREASED to accommodate mandates
+   * - Tier 1 (2-4K): 12% of context (min 450) - INCREASED to accommodate mandates (267 tokens)
    * - Tier 2 (8K): 9% of context (min 700) - INCREASED to accommodate mandates
    * - Tier 3 (16K): 6% of context (min 1000)
    * - Tier 4 (32K): 5% of context (min 1500)
    * - Tier 5 (64K+): 2% of context (min 1500)
    *
    * **UPDATED (2026-01-29):** Increased Tier 1-2 budgets to accommodate full system prompt
-   * (template + mandates ~200 tokens + skills + sanity checks)
+   * (template + mandates ~267 tokens + skills + sanity checks)
    *
    * @param tier - Context tier
    * @param contextSize - Full context size in tokens
@@ -61,7 +61,7 @@ export class TierAwareCompression {
    */
   getPromptBudget(tier: ContextTier, contextSize: number = 8192): number {
     const percentages: Record<ContextTier, number> = {
-      [ContextTier.TIER_1_MINIMAL]: 0.10, // 10% (was 5%, increased for mandates)
+      [ContextTier.TIER_1_MINIMAL]: 0.12, // 12% (was 10%, increased for mandates 267 tokens)
       [ContextTier.TIER_2_BASIC]: 0.09,   // 9% (was 6%, increased for mandates)
       [ContextTier.TIER_3_STANDARD]: 0.06, // 6%
       [ContextTier.TIER_4_PREMIUM]: 0.05,  // 5%
@@ -69,7 +69,7 @@ export class TierAwareCompression {
     };
 
     const minimums: Record<ContextTier, number> = {
-      [ContextTier.TIER_1_MINIMAL]: 400,  // Was 200, increased for mandates
+      [ContextTier.TIER_1_MINIMAL]: 450,  // Was 400, increased for mandates (267 tokens)
       [ContextTier.TIER_2_BASIC]: 700,    // Was 500, increased for mandates
       [ContextTier.TIER_3_STANDARD]: 1000,
       [ContextTier.TIER_4_PREMIUM]: 1500,

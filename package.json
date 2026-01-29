@@ -27,6 +27,7 @@
     "task:sync": "node scripts/task-tracker.js sync",
     "generate-model-db": "node scripts/generate_model_db.js",
     "validate-profiles": "node scripts/validate_profiles.js",
+    "validate:prompts": "node scripts/validate-promptBudget.js",
     "prebuild": "npm run generate-model-db"
   },
   "devDependencies": {
