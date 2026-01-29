@@ -235,6 +235,11 @@ export const helpCommand: Command = {
         'Display:\n' +
         '  /metrics          - Manage metrics (show, toggle, reset)\n' +
         '  /reasoning        - Manage reasoning display (toggle, expand, collapse)\n\n' +
+        'System Testing:\n' +
+        '  Prompts:\n' +
+        '    /test prompt           - Show current prompt/context details\n' +
+        '    /test prompt --full    - Include full Ollama payload JSON\n' +
+        '    /test prompt --budget  - Include prompt budget validation\n\n' +
         'Utility:\n' +
         '  /help             - Show this help\n' +
         '  /home             - Return to launch screen\n' +
