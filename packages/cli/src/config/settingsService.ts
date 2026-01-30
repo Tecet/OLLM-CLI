@@ -3,23 +3,14 @@ import { homedir } from 'os';
 import { join } from 'path';
 
 // Default tool sets per mode
+// NOTE: tools are disabled by default per-mode to prevent accidental usage.
+// Individual users can enable tools via settings.tools or settings.toolsByMode.
 const DEFAULT_TOOLS_BY_MODE: Record<string, string[]> = {
-  developer: ['*'], // All enabled tools
-  debugger: ['*'], // All enabled tools
-  assistant: ['read_file', 'web_search', 'web_fetch'],
-  planning: [
-    'read_file',
-    'read_multiple_files',
-    'grep_search',
-    'file_search',
-    'list_directory',
-    'web_search',
-    'web_fetch',
-    'get_diagnostics',
-    'write_memory_dump',
-    'mcp:*',
-  ],
-  user: ['*'], // All enabled tools (user can customize)
+  developer: [],
+  debugger: [],
+  assistant: [],
+  planning: [],
+  user: [],
 };
 
 export interface UserSettings {
@@ -479,7 +470,7 @@ export class SettingsService {
     // Get mode-specific settings (or use defaults)
     const modeSettings = this.settings.toolsByMode?.[mode];
 
-    if (!modeSettings || Object.keys(modeSettings).length === 0) {
+    if (!modeSettings || Object.keys(modeSettings || {}).length === 0) {
       // Use defaults if user hasn't customized
       const defaults = DEFAULT_TOOLS_BY_MODE[mode] || [];
       if (defaults.includes('*')) {
@@ -490,7 +481,7 @@ export class SettingsService {
 
     // User has customized this mode
     return globallyEnabled.filter((toolId) => {
-      return modeSettings[toolId] === true;
+      return modeSettings?.[toolId] === true;
     });
   }
 

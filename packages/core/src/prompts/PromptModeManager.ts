@@ -479,38 +479,14 @@ export class PromptModeManager extends EventEmitter {
    * Get allowed tools for a specific mode
    */
   getAllowedTools(mode: ModeType): string[] {
+    // Disable tool access by default per-mode to prevent automatic tool usage.
+    // Users may still enable tools via SettingsService (`tools` or `toolsByMode`).
     const toolAccess: Record<ModeType, string[]> = {
       assistant: [],
-      planning: [
-        'web_search',
-        'web_fetch',
-        'read_file',
-        'read_multiple_files',
-        'grep_search',
-        'file_search',
-        'list_directory',
-        'get_diagnostics',
-        'write_memory_dump',
-        'trigger_hot_swap',
-        'mcp:*',
-      ],
-      developer: ['*'],
-      debugger: [
-        'read_file',
-        'grep_search',
-        'list_directory',
-        'get_diagnostics',
-        'shell',
-        'git_diff',
-        'git_log',
-        'web_search',
-        'write_file',
-        'str_replace',
-        'write_memory_dump',
-        'trigger_hot_swap',
-        'mcp:*',
-      ],
-      user: ['*'],
+      planning: [],
+      developer: [],
+      debugger: [],
+      user: [],
     };
 
     return toolAccess[mode] || [];
