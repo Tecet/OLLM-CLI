@@ -11,7 +11,8 @@ export type ToolCategory =
   | 'shell'
   | 'web'
   | 'memory'
-  | 'context';
+  | 'context'
+  | 'goals'; // Goal management tools (under development)
 
 export type ToolRisk = 'low' | 'medium' | 'high';
 
@@ -22,19 +23,22 @@ export interface ToolMetadata {
   description: string;
   docLink?: string;
   risk: ToolRisk;
+  disabled?: boolean; // If true, tool is disabled and cannot be enabled
+  disabledReason?: string; // Reason why tool is disabled (e.g., "Under Development")
 }
 
 /**
  * Default tool registry
  *
- * All 15 built-in tools with their metadata.
- * Tools are organized into 6 categories:
+ * All 20 built-in tools with their metadata (5 disabled).
+ * Tools are organized into 7 categories:
  * - File Operations: read, write, edit files
  * - File Discovery: search and list files
  * - Shell: execute shell commands
  * - Web: fetch and search web content
  * - Memory: store and retrieve information
  * - Context: manage conversation context
+ * - Goals: goal management (DISABLED - under development)
  */
 export const DEFAULT_TOOLS: ToolMetadata[] = [
   // File Operations (3 tools)
@@ -153,6 +157,54 @@ export const DEFAULT_TOOLS: ToolMetadata[] = [
     description: 'Create TODO lists and task tracking files',
     risk: 'medium',
   },
+
+  // Goals (5 tools - UNDER DEVELOPMENT)
+  // These tools are disabled because they cause LLMs to call tools unnecessarily
+  {
+    id: 'create_goal',
+    displayName: 'Create Goal',
+    category: 'goals',
+    description: 'Create a new goal or task to work on',
+    risk: 'low',
+    disabled: true,
+    disabledReason: 'Under Development - Causes unnecessary tool calls',
+  },
+  {
+    id: 'create_checkpoint',
+    displayName: 'Create Checkpoint',
+    category: 'goals',
+    description: 'Create a checkpoint for the current goal',
+    risk: 'low',
+    disabled: true,
+    disabledReason: 'Under Development - Causes unnecessary tool calls',
+  },
+  {
+    id: 'complete_goal',
+    displayName: 'Complete Goal',
+    category: 'goals',
+    description: 'Mark a goal as complete',
+    risk: 'low',
+    disabled: true,
+    disabledReason: 'Under Development - Causes unnecessary tool calls',
+  },
+  {
+    id: 'record_decision',
+    displayName: 'Record Decision',
+    category: 'goals',
+    description: 'Record a decision made during goal execution',
+    risk: 'low',
+    disabled: true,
+    disabledReason: 'Under Development - Causes unnecessary tool calls',
+  },
+  {
+    id: 'switch_goal',
+    displayName: 'Switch Goal',
+    category: 'goals',
+    description: 'Switch to a different goal',
+    risk: 'low',
+    disabled: true,
+    disabledReason: 'Under Development - Causes unnecessary tool calls',
+  },
 ];
 
 /**
@@ -178,7 +230,7 @@ export function getToolsByCategory(category: ToolCategory): ToolMetadata[] {
  * @returns Array of all tool categories
  */
 export function getAllCategories(): ToolCategory[] {
-  return ['file-operations', 'file-discovery', 'shell', 'web', 'memory', 'context'];
+  return ['file-operations', 'file-discovery', 'shell', 'web', 'memory', 'context', 'goals'];
 }
 
 /**
@@ -194,6 +246,7 @@ export function getCategoryDisplayName(category: ToolCategory): string {
     web: 'Web',
     memory: 'Memory',
     context: 'Context',
+    goals: 'Goals (Under Development)',
   };
   return displayNames[category];
 }

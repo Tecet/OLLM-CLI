@@ -5,6 +5,7 @@ import { join } from 'path';
 // Default tool sets per mode
 // IMPORTANT: Limit tools to prevent LLM confusion. Too many tools (18+) causes
 // the LLM to launch multiple unnecessary tools. Keep essential tools only.
+// Goal management tools (create_goal, etc.) should NOT be in default sets.
 const DEFAULT_TOOLS_BY_MODE: Record<string, string[]> = {
   // Developer mode: Core development tools only (8 tools)
   developer: [
@@ -28,6 +29,7 @@ const DEFAULT_TOOLS_BY_MODE: Record<string, string[]> = {
     'shell',
   ],
   // Assistant mode: Minimal tools for general assistance (3 tools)
+  // NO goal tools - these confuse the LLM for simple conversations
   assistant: ['read_file', 'web_search', 'web_fetch'],
   // Planning mode: Research and analysis tools (10 tools)
   planning: [
@@ -43,6 +45,7 @@ const DEFAULT_TOOLS_BY_MODE: Record<string, string[]> = {
     'mcp:*',
   ],
   // User mode: Balanced set of common tools (10 tools)
+  // NO goal tools - these are for advanced workflows only
   user: [
     'read_file',
     'read_multiple_files',
