@@ -2,6 +2,26 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { homedir } from 'os';
 import { join } from 'path';
 
+// Default tool sets per mode
+const DEFAULT_TOOLS_BY_MODE: Record<string, string[]> = {
+  developer: ['*'], // All enabled tools
+  debugger: ['*'], // All enabled tools
+  assistant: ['read_file', 'web_search', 'web_fetch'],
+  planning: [
+    'read_file',
+    'read_multiple_files',
+    'grep_search',
+    'file_search',
+    'list_directory',
+    'web_search',
+    'web_fetch',
+    'get_diagnostics',
+    'write_memory_dump',
+    'mcp:*',
+  ],
+  user: ['*'], // All enabled tools (user can customize)
+};
+
 export interface UserSettings {
   ui: {
     theme: string;
@@ -36,6 +56,11 @@ export interface UserSettings {
   };
   tools?: {
     [toolId: string]: boolean;
+  };
+  toolsByMode?: {
+    [mode: string]: {
+      [toolId: string]: boolean;
+    };
   };
   prompt?: {
     mode?: string;
@@ -116,19 +141,36 @@ export class SettingsService {
         console.log(`[SettingsService] Loading settings from: ${this.settingsPath}`);
         const content = readFileSync(this.settingsPath, 'utf-8');
         const loaded = JSON.parse(content);
+        
+        // Migrate old settings if needed
+        const migrated = this.migrateSettings(loaded);
+        
         // Shallow merge defaults with loaded to ensure structure exists
         this.settings = {
           ...this.settings,
-          ...loaded,
-          ui: { ...this.settings.ui, ...(loaded.ui || {}) },
-          llm: { ...this.settings.llm, ...(loaded.llm || {}) },
-          hardware: loaded.hardware,
-          tools: loaded.tools || {},
+          ...migrated,
+          ui: { ...this.settings.ui, ...(migrated.ui || {}) },
+          llm: { ...this.settings.llm, ...(migrated.llm || {}) },
+          hardware: migrated.hardware,
+          tools: migrated.tools || {},
+          toolsByMode: migrated.toolsByMode || {},
         };
       }
     } catch (error) {
       console.error('Failed to load system settings:', error);
     }
+  }
+
+  /**
+   * Migrate old settings format to new format
+   */
+  private migrateSettings(loaded: Partial<UserSettings>): Partial<UserSettings> {
+    // If toolsByMode doesn't exist, initialize with defaults
+    if (!loaded.toolsByMode) {
+      loaded.toolsByMode = {};
+    }
+    
+    return loaded;
   }
 
   private saveSettings(): void {
@@ -421,5 +463,96 @@ export class SettingsService {
    */
   public triggerSave(): void {
     this.saveSettings();
+  }
+
+  /**
+   * Get tools enabled for a specific mode
+   * @param mode The mode to get tools for
+   * @returns Array of tool IDs enabled for this mode
+   */
+  public getToolsForMode(mode: string): string[] {
+    // Get globally enabled tools
+    const globallyEnabled = Object.entries(this.settings.tools || {})
+      .filter(([_, enabled]) => enabled)
+      .map(([toolId, _]) => toolId);
+
+    // Get mode-specific settings (or use defaults)
+    const modeSettings = this.settings.toolsByMode?.[mode];
+
+    if (!modeSettings || Object.keys(modeSettings).length === 0) {
+      // Use defaults if user hasn't customized
+      const defaults = DEFAULT_TOOLS_BY_MODE[mode] || [];
+      if (defaults.includes('*')) {
+        return globallyEnabled; // All enabled tools
+      }
+      return globallyEnabled.filter((tool) => defaults.includes(tool));
+    }
+
+    // User has customized this mode
+    return globallyEnabled.filter((toolId) => {
+      return modeSettings[toolId] === true;
+    });
+  }
+
+  /**
+   * Set tool enabled state for a specific mode
+   * @param mode The mode to configure
+   * @param toolId The tool to enable/disable
+   * @param enabled Whether the tool should be enabled
+   */
+  public setToolForMode(mode: string, toolId: string, enabled: boolean): void {
+    if (!this.settings.toolsByMode) {
+      this.settings.toolsByMode = {};
+    }
+
+    if (!this.settings.toolsByMode[mode]) {
+      this.settings.toolsByMode[mode] = {};
+    }
+
+    this.settings.toolsByMode[mode][toolId] = enabled;
+    this.saveSettings();
+  }
+
+  /**
+   * Reset tool settings to defaults for all modes
+   * @param toolId The tool to reset
+   */
+  public resetToolToDefaults(toolId: string): void {
+    if (!this.settings.toolsByMode) {
+      return;
+    }
+
+    // Remove custom settings for this tool across all modes
+    for (const mode of Object.keys(this.settings.toolsByMode)) {
+      if (this.settings.toolsByMode[mode]?.[toolId] !== undefined) {
+        delete this.settings.toolsByMode[mode][toolId];
+      }
+    }
+
+    this.saveSettings();
+  }
+
+  /**
+   * Get mode settings for a specific tool
+   * @param toolId The tool to get settings for
+   * @returns Object with mode -> enabled mapping
+   */
+  public getModeSettingsForTool(toolId: string): Record<string, boolean> {
+    const result: Record<string, boolean> = {};
+
+    for (const mode of Object.keys(DEFAULT_TOOLS_BY_MODE)) {
+      const modeSettings = this.settings.toolsByMode?.[mode];
+
+      if (!modeSettings || Object.keys(modeSettings).length === 0) {
+        // Use defaults
+        const defaults = DEFAULT_TOOLS_BY_MODE[mode] || [];
+        result[mode] = defaults.includes('*') || defaults.includes(toolId);
+      } else {
+        // Use custom settings
+        result[mode] = modeSettings[toolId] ?? false;
+      }
+    }
+
+    return result;
   }
 }
