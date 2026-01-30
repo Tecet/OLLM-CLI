@@ -3,10 +3,33 @@ import { homedir } from 'os';
 import { join } from 'path';
 
 // Default tool sets per mode
+// IMPORTANT: Limit tools to prevent LLM confusion. Too many tools (18+) causes
+// the LLM to launch multiple unnecessary tools. Keep essential tools only.
 const DEFAULT_TOOLS_BY_MODE: Record<string, string[]> = {
-  developer: ['*'], // All enabled tools
-  debugger: ['*'], // All enabled tools
+  // Developer mode: Core development tools only (8 tools)
+  developer: [
+    'read_file',
+    'read_multiple_files',
+    'write_file',
+    'edit_file',
+    'grep_search',
+    'file_search',
+    'list_directory',
+    'shell',
+  ],
+  // Debugger mode: Debugging and analysis tools (7 tools)
+  debugger: [
+    'read_file',
+    'read_multiple_files',
+    'grep_search',
+    'file_search',
+    'list_directory',
+    'get_diagnostics',
+    'shell',
+  ],
+  // Assistant mode: Minimal tools for general assistance (3 tools)
   assistant: ['read_file', 'web_search', 'web_fetch'],
+  // Planning mode: Research and analysis tools (10 tools)
   planning: [
     'read_file',
     'read_multiple_files',
@@ -19,7 +42,19 @@ const DEFAULT_TOOLS_BY_MODE: Record<string, string[]> = {
     'write_memory_dump',
     'mcp:*',
   ],
-  user: ['*'], // All enabled tools (user can customize)
+  // User mode: Balanced set of common tools (10 tools)
+  user: [
+    'read_file',
+    'read_multiple_files',
+    'write_file',
+    'edit_file',
+    'grep_search',
+    'file_search',
+    'list_directory',
+    'web_search',
+    'web_fetch',
+    'memory',
+  ],
 };
 
 export interface UserSettings {

@@ -126,6 +126,8 @@ export interface BuiltInToolsConfig {
  * ```
  */
 export function registerBuiltInTools(registry: ToolRegistry, config?: BuiltInToolsConfig): void {
+  // IMPORTANT: This registers 18 tools. Passing all to LLM causes confusion.
+  // Use getFunctionSchemasForMode() to limit to 5-10 tools per mode.
   const { memoryPath = '~/.ollm/memory.json', todosPath = '~/.ollm/todos.json' } = config || {};
 
   // File reading tools

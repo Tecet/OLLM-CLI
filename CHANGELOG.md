@@ -25,9 +25,18 @@ and this project adheres to Semantic Versioning (https://semver.org/spec/v2.0.0.
 
 - DEFAULT_CONTEXT_OPTIONS constant in test utilities for consistent test setup
 - Comprehensive test coverage documentation in `.dev/backlog/30-01-2026-PublishAlpha/`
+- Documentation for tool overload issue and fix
 
 ### Changed
 
+- **CRITICAL FIX: Tool Overload** - Reduced default tools per mode from 18 to 5-10
+  - Developer mode: 8 tools (was: all 18)
+  - Debugger mode: 7 tools (was: all 18)
+  - User mode: 10 tools (was: all 18)
+  - Assistant mode: 3 tools (unchanged)
+  - Planning mode: 10 tools (unchanged)
+  - **Impact:** Prevents LLM from launching 5+ tools per request
+  - **Benefit:** Faster responses, more focused tool usage, better UX
 - **Context Management**: Tier budgets now calculated dynamically based on context size
   - Tier 1: 12% of context (min 450 tokens) - increased to accommodate system prompt mandates
   - Tier 2: 9% of context (min 700 tokens) - increased to accommodate system prompt mandates
@@ -39,7 +48,9 @@ and this project adheres to Semantic Versioning (https://semver.org/spec/v2.0.0.
   - `getCompressionUrgency()` now takes 3 parameters: currentTokens, modelId, systemPromptTokens
   - Tier budget is already included in systemPromptTokens, no need to subtract separately
 - **ChatClient**: Now requires either `contextMgmtManager` or explicit `contextSize`/`ollamaContextSize` in options
+- **Package Name**: Changed from `@ollm/cli` to `@tecet/ollm` (scope ownership)
 - Updated all test files to use new context management system
+- Updated repository URLs to tecet/ollm
 
 ### Fixed
 
