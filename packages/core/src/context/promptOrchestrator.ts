@@ -108,9 +108,12 @@ export class PromptOrchestrator {
     contextPool,
     emit,
   }: UpdateSystemPromptArgs): { message: Message; tokenBudget: number } {
+    // Enable sanity checks for Tier 1-2 (smaller contexts/models)
+    const useSanityChecks = tier <= ContextTier.TIER_2_BASIC;
+
     const basePrompt = this.systemPromptBuilder.build({
       interactive: true,
-      useSanityChecks: false,
+      useSanityChecks,
       skills: activeSkills,
     });
     const tierPrompt = this.getSystemPromptForTierAndMode(mode, tier);
