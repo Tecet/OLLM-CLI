@@ -202,15 +202,14 @@ export function registerBuiltInTools(registry: ToolRegistry, config?: BuiltInToo
   registry.register(new MemoryTool(memoryPath));
   registry.register(new WriteTodosTool(todosPath));
 
-  // Goal management tools (DISABLED by default - opt-in only)
-  // These tools cause LLMs to call tools unnecessarily, even for "hi"
-  if (enableGoalTools) {
-    registry.register(new CreateGoalTool());
-    registry.register(new CreateCheckpointTool());
-    registry.register(new CompleteGoalTool());
-    registry.register(new RecordDecisionTool());
-    registry.register(new SwitchGoalTool());
-  }
+  // Goal management tools - ALWAYS REGISTERED
+  // These are registered so they appear in UI as "Under Development"
+  // but are disabled by default in settingsService (not passed to LLM)
+  registry.register(new CreateGoalTool());
+  registry.register(new CreateCheckpointTool());
+  registry.register(new CompleteGoalTool());
+  registry.register(new RecordDecisionTool());
+  registry.register(new SwitchGoalTool());
 
   // Reasoning traces tool
   registry.register(new ReadReasoningTool());

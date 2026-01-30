@@ -2,6 +2,18 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { homedir } from 'os';
 import { join } from 'path';
 
+// Goal management tools - GLOBALLY DISABLED (Under Development)
+// These tools are registered but permanently disabled because they cause LLMs
+// to call tools unnecessarily, even for simple greetings like "hi".
+// They appear in the UI as "Under Development" but cannot be enabled.
+const GLOBALLY_DISABLED_TOOLS = [
+  'create_goal',
+  'create_checkpoint',
+  'complete_goal',
+  'record_decision',
+  'switch_goal',
+];
+
 // Default tool sets per mode
 // IMPORTANT: Limit tools to prevent LLM confusion. Too many tools (18+) causes
 // the LLM to launch multiple unnecessary tools. Keep essential tools only.
@@ -333,10 +345,20 @@ export class SettingsService {
   /**
    * Get the enabled state of a tool
    *
+   * NOTE: Goal management tools (create_goal, create_checkpoint, complete_goal,
+   * record_decision, switch_goal) are GLOBALLY DISABLED and marked as
+   * "Under Development". They cannot be enabled through settings because they
+   * cause LLMs to call tools unnecessarily, even for simple greetings like "hi".
+   *
    * @param toolId The ID of the tool to check
    * @returns true if enabled (default), false if disabled
    */
   public getToolState(toolId: string): boolean {
+    // Check if tool is globally disabled (under development)
+    if (GLOBALLY_DISABLED_TOOLS.includes(toolId)) {
+      return false; // Always disabled, no exceptions
+    }
+
     // Default to true (enabled) if not explicitly set
     if (!this.settings.tools) {
       return true;
