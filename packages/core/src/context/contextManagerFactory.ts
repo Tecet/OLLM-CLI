@@ -32,6 +32,7 @@ export interface ContextModuleOverrides {
   profileManager?: any;
   goalManager?: any;
   promptOrchestrator?: any;
+  settingsService?: any;
 }
 
 /**
@@ -149,13 +150,31 @@ export function createContextManager(
     // Create prompt orchestrator
     const promptOrchestrator = config.services?.promptOrchestrator || createDefaultPromptOrchestrator(tokenCounter);
     
+    // Get settings service for tool filtering
+    const settingsService = config.services?.settingsService;
+    
+    // Get allowed tools for current mode (if settings service available)
+    let allowedTools: string[] | undefined;
+    if (settingsService && typeof settingsService.getToolsForMode === 'function') {
+      try {
+        allowedTools = settingsService.getToolsForMode(mode);
+      } catch (error) {
+        log(`[ContextManagerFactory] Failed to get tools for mode: ${error}`);
+      }
+    }
+    
     // Build system prompt using PromptOrchestratorIntegration
-    const promptIntegration = new PromptOrchestratorIntegration(promptOrchestrator);
+    const promptIntegration = new PromptOrchestratorIntegration(
+      promptOrchestrator,
+      config.services?.profileManager
+    );
     const systemPrompt = promptIntegration.getSystemPrompt({
       mode,
       tier,
       activeSkills: [], // TODO: Get from config
       useSanityChecks: false,
+      modelId: config.modelInfo.modelId,
+      allowedTools,
     });
     
     log(`[ContextManagerFactory] System prompt tokens: ${promptIntegration.getSystemPromptTokens(systemPrompt)}`);
@@ -189,7 +208,8 @@ export function createContextManager(
       orchestrator, 
       config.contextConfig as ContextConfig,
       mode,
-      tier
+      tier,
+      config.services?.settingsService
     );
     log('[ContextManagerFactory] Adapter created, returning manager');
 

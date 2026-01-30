@@ -330,6 +330,9 @@ export function ContextManagerProvider({
           },
           provider, // Provider is now validated
           storagePath,
+          services: {
+            settingsService: SettingsService.getInstance(),
+          },
         });
         
         log('[ContextManagerContext] Context manager created successfully');

@@ -270,7 +270,10 @@ export class ContextOrchestrator {
       config.contextSize
     );
     this.goalIntegration = new GoalAwareCompression(config.goalManager);
-    this.promptIntegration = new PromptOrchestratorIntegration(config.promptOrchestrator);
+    this.promptIntegration = new PromptOrchestratorIntegration(
+      config.promptOrchestrator,
+      config.profileManager
+    );
 
     // Initialize active context manager
     this.activeContext = new ActiveContextManager(
@@ -1252,18 +1255,32 @@ export class ContextOrchestrator {
    * Rebuilds the system prompt when mode or tier changes.
    * Uses PromptOrchestrator (via promptIntegration) to generate the correct prompt.
    *
+   * @param settingsService - Optional settings service for tool filtering
+   *
    * @example
    * ```typescript
-   * orchestrator.rebuildSystemPrompt();
+   * orchestrator.rebuildSystemPrompt(settingsService);
    * ```
    */
-  rebuildSystemPrompt(): void {
+  rebuildSystemPrompt(settingsService?: any): void {
+    // Get allowed tools for current mode (if settings service provided)
+    let allowedTools: string[] | undefined;
+    if (settingsService && typeof settingsService.getToolsForMode === 'function') {
+      try {
+        allowedTools = settingsService.getToolsForMode(this.config.mode);
+      } catch (error) {
+        console.warn('[ContextOrchestrator] Failed to get tools for mode:', error);
+      }
+    }
+
     // Use PromptOrchestrator to build new system prompt for current mode/tier
     const newSystemPrompt = this.promptIntegration.getSystemPrompt({
       mode: this.config.mode,
       tier: this.config.tier,
       activeSkills: [],
       useSanityChecks: false,
+      modelId: this.config.model,
+      allowedTools,
     });
 
     // Update active context with new system prompt

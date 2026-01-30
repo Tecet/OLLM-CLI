@@ -57,13 +57,21 @@ export class ContextOrchestratorAdapter extends EventEmitter implements ContextM
   private currentTier: ContextTier;
   private systemPromptText: string = '';
   private inflightTokens: number = 0;
+  private settingsService?: any;
 
-  constructor(orchestrator: ContextOrchestrator, config: ContextConfig, initialMode?: OperationalMode, initialTier?: ContextTier) {
+  constructor(
+    orchestrator: ContextOrchestrator, 
+    config: ContextConfig, 
+    initialMode?: OperationalMode, 
+    initialTier?: ContextTier,
+    settingsService?: any
+  ) {
     super();
     this.orchestrator = orchestrator;
     this.config = config;
     this.currentMode = initialMode || OperationalMode.ASSISTANT;
     this.currentTier = initialTier || calculateTier(config.targetSize || 8192);
+    this.settingsService = settingsService;
   }
 
   // ============================================================================
@@ -103,7 +111,7 @@ export class ContextOrchestratorAdapter extends EventEmitter implements ContextM
       this.orchestrator.updateOllamaLimit(newOllamaLimit);
       
       // Rebuild system prompt with new tier
-      this.orchestrator.rebuildSystemPrompt();
+      this.orchestrator.rebuildSystemPrompt(this.settingsService);
       
       this.emit('tier-changed', { tier: newTier });
     }
@@ -318,7 +326,7 @@ export class ContextOrchestratorAdapter extends EventEmitter implements ContextM
     this.orchestrator.updateMode(mode);
     
     // Rebuild system prompt with new mode
-    this.orchestrator.rebuildSystemPrompt();
+    this.orchestrator.rebuildSystemPrompt(this.settingsService);
     
     // Emit mode-changed event with both old and new mode
     this.emit('mode-changed', { 

@@ -11,6 +11,7 @@
 import type { PromptOrchestrator } from '../promptOrchestrator.js';
 import type { CheckpointSummary } from '../types/storageTypes.js';
 import type { Message, ContextTier, OperationalMode } from '../types.js';
+import type { IProfileManager } from './providerAwareCompression.js';
 
 /**
  * System prompt configuration
@@ -24,6 +25,10 @@ export interface SystemPromptConfig {
   activeSkills: string[];
   /** Whether to include sanity checks */
   useSanityChecks?: boolean;
+  /** Current model ID (for tool support detection) */
+  modelId?: string;
+  /** Allowed tools for this mode (from user settings) */
+  allowedTools?: string[];
 }
 
 /**
@@ -48,9 +53,11 @@ export interface PromptStructure {
  */
 export class PromptOrchestratorIntegration {
   private promptOrchestrator: PromptOrchestrator;
+  private profileManager?: IProfileManager;
 
-  constructor(promptOrchestrator: PromptOrchestrator) {
+  constructor(promptOrchestrator: PromptOrchestrator, profileManager?: IProfileManager) {
     this.promptOrchestrator = promptOrchestrator;
+    this.profileManager = profileManager;
   }
 
   /**
@@ -414,8 +421,22 @@ export class PromptOrchestratorIntegration {
       parts.push(`Active Skills: ${config.activeSkills.join(', ')}`);
     }
 
-    // Add tools section (simplified)
-    parts.push('Available Tools: read-file, write-file, edit-file, shell, web-fetch, web-search');
+    // Check if model supports tools
+    let modelSupportsTools = false;
+    if (config.modelId && this.profileManager) {
+      try {
+        const modelEntry = this.profileManager.getModelEntry(config.modelId);
+        modelSupportsTools = (modelEntry as any)?.tool_support ?? false;
+      } catch (error) {
+        // Model not found, assume no tool support
+        modelSupportsTools = false;
+      }
+    }
+
+    // Add tools section (only if model supports tools and tools are provided)
+    if (modelSupportsTools && config.allowedTools && config.allowedTools.length > 0) {
+      parts.push(`Available Tools: ${config.allowedTools.join(', ')}`);
+    }
 
     // Add hooks section (simplified)
     parts.push('Hooks: Enabled');
