@@ -53,7 +53,7 @@ function parseTier(filename) {
 }
 
 // Get mode from directory name
-function getMode(dirPath) {
+function _getMode(dirPath) {
   const parts = dirPath.split(/[/\\]/);
   return parts[parts.length - 1];
 }

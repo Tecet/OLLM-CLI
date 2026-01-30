@@ -48,7 +48,7 @@ export function ToolModeSettings({
   onReset,
   focused,
   selectedIndex,
-  onSelectionChange,
+  _onSelectionChange,
 }: ToolModeSettingsProps) {
   const [localSettings, setLocalSettings] = useState(modeSettings);
   const [hasChanges, setHasChanges] = useState(false);
@@ -60,7 +60,7 @@ export function ToolModeSettings({
   }, [modeSettings, toolId]);
 
   // Handle toggle
-  const handleToggle = (mode: string) => {
+  const _handleToggle = (mode: string) => {
     setLocalSettings((prev) => ({
       ...prev,
       [mode]: !prev[mode],
@@ -70,13 +70,13 @@ export function ToolModeSettings({
   };
 
   // Handle apply
-  const handleApply = () => {
+  const _handleApply = () => {
     onApply();
     setHasChanges(false);
   };
 
   // Handle reset
-  const handleReset = () => {
+  const _handleReset = () => {
     onReset();
     setHasChanges(false);
   };

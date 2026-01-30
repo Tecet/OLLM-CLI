@@ -132,13 +132,13 @@ export class SystemPromptBuilder {
     const lines = fullText.split('\n');
     const filtered: string[] = [];
     let inSection = false;
-    let currentSection = '';
+    let _currentSection = '';
 
     for (const line of lines) {
       // Keep title and section headers
       if (line.startsWith('# ') || line.startsWith('## ')) {
         filtered.push(line);
-        currentSection = line;
+        _currentSection = line;
         inSection = true;
         continue;
       }

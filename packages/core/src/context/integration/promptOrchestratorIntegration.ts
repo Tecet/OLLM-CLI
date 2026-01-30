@@ -8,10 +8,10 @@
  * Requirements: FR-16
  */
 
+import type { IProfileManager } from './providerAwareCompression.js';
 import type { PromptOrchestrator } from '../promptOrchestrator.js';
 import type { CheckpointSummary } from '../types/storageTypes.js';
 import type { Message, ContextTier, OperationalMode } from '../types.js';
-import type { IProfileManager } from './providerAwareCompression.js';
 
 /**
  * System prompt configuration
@@ -427,7 +427,7 @@ export class PromptOrchestratorIntegration {
       try {
         const modelEntry = this.profileManager.getModelEntry(config.modelId);
         modelSupportsTools = (modelEntry as any)?.tool_support ?? false;
-      } catch (error) {
+      } catch (_error) {
         // Model not found, assume no tool support
         modelSupportsTools = false;
       }

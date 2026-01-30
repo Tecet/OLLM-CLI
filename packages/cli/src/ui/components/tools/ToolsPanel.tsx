@@ -17,11 +17,12 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Box, Text, useInput } from 'ink';
 
+import { ToolModeSettings } from './ToolModeSettings.js';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { useUI } from '../../../features/context/UIContext.js';
 import { useTools } from '../../contexts/ToolsContext.js';
 import { useTabEscapeHandler } from '../../hooks/useTabEscapeHandler.js';
-import { ToolModeSettings } from './ToolModeSettings.js';
+
 
 export interface ToolsPanelProps {
   modelSupportsTools?: boolean;

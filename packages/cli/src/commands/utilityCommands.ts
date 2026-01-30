@@ -10,20 +10,19 @@
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 
-import { ContextTier, OperationalMode, TieredPromptStore, type ToolSchema } from '@ollm/core';
+import { ContextTier, OperationalMode, TieredPromptStore, type ToolSchema , ContextMessage } from '@ollm/core';
 
 import { SettingsService } from '../config/settingsService.js';
-import { commandRegistry } from './index.js';
 import { getGlobalContextManager } from '../features/context/ContextManagerContext.js';
 import { deriveGPUPlacementHints } from '../features/context/gpuHints.js';
 import { getLastGPUInfo } from '../features/context/gpuHintStore.js';
 import { profileManager } from '../features/profiles/ProfileManager.js';
 import { getGlobalFocusedFiles } from '../ui/components/file-explorer/FileFocusContext.js';
 import { injectFocusedFiles } from '../ui/components/file-explorer/FocusedFilesInjector.js';
-import { themesData } from '../config/themes.js';
 
 import type { Command, CommandResult } from './types.js';
-import type { ContextMessage } from '@ollm/core';
+
+import { commandRegistry } from './index.js';
 
 /**
  * ANSI color codes for terminal output
