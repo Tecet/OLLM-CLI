@@ -94,17 +94,17 @@ veryfy as Ollama is instaled and model is avalible on list:
 ollama list
 ```
 
-# Start using OLLM CLI
+## Start using OLLM CLI
 
 ```bash
 # Start using OLLM CLI
 ollm
 ```
 
-# Have fun!
+### Have fun!
 
 
-# Uninstalling and bugs
+## Uninstalling and bugs
 
 ``` bash
 # Get help
@@ -117,7 +117,9 @@ npm uninstall -g @tecet/ollm
 ```
 
 Raport bugs:
+
  https://discord.gg/9GuCwdrB
+ 
  https://github.com/Tecet/OLLM
 
 
