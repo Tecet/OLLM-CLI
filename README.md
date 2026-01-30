@@ -78,7 +78,7 @@ npm install -g @tecet/ollm
 ```bash
 ollm --version
 ```
->>>  0.1.3
+#### >>>  0.1.3
 
 Install Ollama with your favored model
 
