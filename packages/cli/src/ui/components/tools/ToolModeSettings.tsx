@@ -48,8 +48,10 @@ export function ToolModeSettings({
   onReset,
   focused,
   selectedIndex,
-  _onSelectionChange,
+  onSelectionChange,
 }: ToolModeSettingsProps) {
+  // Refer to onSelectionChange to satisfy linter for unused prop when not needed here
+  void onSelectionChange;
   const [localSettings, setLocalSettings] = useState(modeSettings);
   const [hasChanges, setHasChanges] = useState(false);
 

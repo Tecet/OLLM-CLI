@@ -12,5 +12,8 @@
   "dependencies": {
     "@ollm/core": "file:../core"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "react": "^19.0.0",
+    "vitest": "^4.0.17"
+  }
 }

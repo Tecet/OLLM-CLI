@@ -6,7 +6,6 @@
 import { ProviderRegistry, ChatClient, ToolRegistry } from '@ollm/core';
 import { NonInteractiveError } from '@ollm/ollm-cli-core/errors/index.js';
 
-import { LocalProvider } from '../../ollm-bridge/src/provider/localProvider.js';
 
 import type { Config } from './config/types.js';
 import type { DeclarativeTool as _DeclarativeTool } from '@ollm/ollm-cli-core/tools/types.js';
@@ -97,6 +96,11 @@ export class NonInteractiveRunner {
           host: 'http://localhost:11434',
           timeout: 30000,
         };
+
+        // Dynamically import LocalProvider to avoid requiring compiled declarations
+        // TS: this import targets source in another workspace package; silence project-reference build check
+        // @ts-expect-error: dynamic import from sibling package source
+        const { LocalProvider } = await import('../../ollm-bridge/src/provider/localProvider.js');
 
         const localProvider = new LocalProvider({
           baseUrl: ollamaConfig.host,
