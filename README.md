@@ -125,9 +125,13 @@ Raport bugs:
 
 # 🛠️ Release v0.1.3
 
+
  OLLM is Currently in early access / demo - alpha development stage,is not production grade software.
  Tested on Windows CMD / PowerShell and Nvidia GPU
 
+ 
+
+# 📖 Documentation
 
 For detailed installation instructions, 
 see the **[Installation Guide](docs/Installation.md)**.
