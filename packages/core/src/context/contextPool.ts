@@ -16,6 +16,9 @@
  */
 
 import { clampContextSize, calculateOptimalContextSize } from './ContextSizeCalculator.js';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('ContextPool');
 
 import type { ContextPool, ContextPoolConfig, ContextUsage, VRAMInfo, ModelInfo } from './types.js';
 
@@ -162,7 +165,9 @@ export class ContextPoolImpl implements ContextPool {
 
     return {
       currentTokens: this.currentTokens,
-      maxTokens: this.userContextSize, // Show user's selected size in UI
+      // Use effective Ollama window as the maxTokens value so UI percentage and
+      // displayed denominator align (prevents confusing values like 12000/4096).
+      maxTokens: this.currentSize,
       percentage: Math.min(100, Math.max(0, percentage)),
       vramUsed: this.vramInfo?.used ?? 0,
       vramTotal: this.vramInfo?.total ?? 0,
@@ -173,7 +178,11 @@ export class ContextPoolImpl implements ContextPool {
    * Update state
    */
   setCurrentTokens(tokens: number): void {
-    this.currentTokens = Math.max(0, tokens);
+    const t = Math.max(0, tokens);
+    if (t !== this.currentTokens) {
+      logger.debug('setCurrentTokens', { previous: this.currentTokens, next: t });
+    }
+    this.currentTokens = t;
   }
 
   setUserContextSize(size: number): void {

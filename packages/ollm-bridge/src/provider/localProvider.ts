@@ -217,6 +217,14 @@ export class LocalProvider implements ProviderAdapter {
         optionsPayload[key] = value;
       }
     }
+    // Normalize common max-token option names so Ollama receives a name it understands.
+    // Some callers use camelCase `maxTokens`; Ollama servers commonly expect
+    // `max_new_tokens` or `max_tokens`. Mirror the value to both keys to be safe.
+    if (optionsPayload.maxTokens !== undefined) {
+      const v = optionsPayload.maxTokens as number;
+      optionsPayload.max_new_tokens = v;
+      optionsPayload.max_tokens = v;
+    }
     // Don't send gpu_layers or num_gpu_layers - only num_gpu should be used
     // num_gpu set to 999 forces all layers to GPU
     if ('gpu_layers' in optionsPayload) {
@@ -247,6 +255,9 @@ export class LocalProvider implements ProviderAdapter {
       stream: true,
       think: request.think, // Pass thinking parameter to Ollama
     };
+
+    // Log the final options payload so developers can verify what Ollama receives
+    logger.debug('Ollama request payload options', { options: optionsPayload });
 
     // Log tool information for debugging
     if (body.tools && Array.isArray(body.tools) && body.tools.length > 0) {

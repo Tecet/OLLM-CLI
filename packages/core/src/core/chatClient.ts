@@ -261,7 +261,90 @@ export class ChatClient {
           : (this.toolRegistry as any).getFunctionSchemas();
       }
 
-      // Create turn options
+      // Ensure provider cannot stream more tokens than remaining Ollama budget.
+      // Compute a safe `maxTokens` if not provided by caller.
+      try {
+        const usage = this.contextMgmtManager?.getUsage();
+        const ollamaLimit = this.contextMgmtManager?.getOllamaContextLimit?.() ?? options?.ollamaContextSize;
+
+        if (usage && ollamaLimit && options) {
+          const remaining = Math.max(0, ollamaLimit - usage.currentTokens);
+          // Reserve small safety buffer to avoid edge overruns
+          const safeMax = Math.max(1, remaining - 100);
+          if (options.maxTokens === undefined) {
+            options.maxTokens = safeMax;
+            debugLog('ChatClient', `Auto-setting maxTokens=${safeMax} (remaining=${remaining})`);
+          } else {
+            // Never allow configured maxTokens to exceed remaining budget
+            options.maxTokens = Math.min(options.maxTokens, Math.max(1, remaining));
+          }
+          // Compute effective num_ctx to send to Ollama. We want Ollama's
+          // `num_ctx` to reflect the actual total tokens that will be in
+          // play (current prompt + expected response) so the model doesn't
+          // assume a larger window than we can actually provide.
+          // effectiveNumCtx = min(profile ollama limit, currentTokens + maxTokens)
+          try {
+            const effectiveNumCtx = Math.min(ollamaLimit, usage.currentTokens + (options.maxTokens ?? 1));
+            options.ollamaContextSize = Math.max(effectiveNumCtx, usage.currentTokens + 1);
+            debugLog('ChatClient', `Setting effective ollamaContextSize=${options.ollamaContextSize} (usage=${usage.currentTokens}, maxTokens=${options.maxTokens}, profileLimit=${ollamaLimit})`);
+          } catch (err) {
+            debugLog('ChatClient', 'Failed to compute effective ollamaContextSize', { error: String(err) });
+          }
+          // Prevent starting a provider request that would overflow the Ollama limit.
+          try {
+            const requested = options.maxTokens ?? 0;
+            if (usage.currentTokens + requested > ollamaLimit) {
+              debugLog('ChatClient', 'Potential overflow detected before request start', {
+                currentTokens: usage.currentTokens,
+                requested,
+                ollamaLimit,
+              });
+
+              // If summarization is in progress, wait for it to finish (short timeout)
+              if (this.contextMgmtManager?.isSummarizationInProgress()) {
+                const waitMs = 5000;
+                debugLog('ChatClient', `Waiting up to ${waitMs}ms for summarization to free space`);
+                const waitPromise = this.contextMgmtManager.waitForSummarization(waitMs);
+                // Respect abort signal while waiting
+                if (options.abortSignal) {
+                  const abortPromise = new Promise<void>((resolve, reject) => {
+                    options.abortSignal!.addEventListener('abort', () => reject(new Error('aborted')));
+                  });
+                  try {
+                    await Promise.race([waitPromise, abortPromise]);
+                  } catch (e) {
+                    yield { type: 'finish', reason: 'cancelled' };
+                    return;
+                  }
+                } else {
+                  try {
+                    await waitPromise;
+                  } catch (e) {
+                    // ignore timeout errors from waitForSummarization
+                  }
+                }
+              }
+
+              // Recompute usage after waiting
+              const latestUsage = this.contextMgmtManager?.getUsage();
+              const remainingAfter = Math.max(0, (ollamaLimit || 0) - (latestUsage?.currentTokens ?? usage.currentTokens));
+              if (remainingAfter < (options.maxTokens ?? 0)) {
+                yield {
+                  type: 'error',
+                  error: new Error('Insufficient context capacity: request would exceed Ollama context limit. Try reducing maxTokens or enable compression.'),
+                };
+                return;
+              }
+            }
+          } catch (err) {
+            debugLog('ChatClient', 'Overflow guard check failed', { error: String(err) });
+          }
+        }
+      } catch (err) {
+        // Don't block chat if usage info unavailable; proceed without altering maxTokens
+        debugLog('ChatClient', 'Failed to compute safe maxTokens', { error: String(err) });
+      }
+
       const turnOptions: ChatOptions = {
         ...options,
         systemPrompt: systemPromptWithContext,
