@@ -34,26 +34,16 @@ function countTokens(text) {
 
 // Read mandates content
 function getMandatesTokens() {
-  const mandatesPath = join(__dirname, '../packages/core/src/prompts/templates/mandates.ts');
+  const mandatesPath = join(__dirname, '../packages/core/src/prompts/templates/system/CoreMandates.txt');
   const content = readFileSync(mandatesPath, 'utf-8');
-  
-  // Extract content between backticks
-  const match = content.match(/content: `([^`]+)`/s);
-  if (!match) return 0;
-  
-  return countTokens(match[1]);
+  return countTokens(content);
 }
 
 // Read sanity checks content
 function getSanityTokens() {
-  const sanityPath = join(__dirname, '../packages/core/src/prompts/templates/sanity.ts');
+  const sanityPath = join(__dirname, '../packages/core/src/prompts/templates/system/SanityChecks.txt');
   const content = readFileSync(sanityPath, 'utf-8');
-  
-  // Extract content between backticks
-  const match = content.match(/content: `([^`]+)`/s);
-  if (!match) return 0;
-  
-  return countTokens(match[1]);
+  return countTokens(content);
 }
 
 // Parse tier from filename (e.g., "tier1.txt" -> "tier1")
