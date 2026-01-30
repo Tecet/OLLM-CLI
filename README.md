@@ -121,12 +121,12 @@ Raport bugs:
  https://discord.gg/9GuCwdrB
  
  https://github.com/Tecet/OLLM
+ 
 
+# 🛠️ Release v0.1.3
 
-
-## OLLM is Curently in early access / demo - aplha developmnet stage, 
-## is not production grade software.
-## Tested on Windows CMD / Powershell and Nvidia GPU
+ OLLM is Currently in early access / demo - alpha development stage,is not production grade software.
+ Tested on Windows CMD / PowerShell and Nvidia GPU
 
 
 For detailed installation instructions, 
