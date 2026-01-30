@@ -72,19 +72,20 @@ npm install -g @tecet/ollm
 
 **That's it!** The installer handles everything automatically.
 
-## After Instalation
-# check verion
+##  After Instalation
+###  check version
 
 ```bash
 ollm --version
 ```
 #### >>>  0.1.3
 
-Install Ollama with your favored model
+
+### Install Ollama with your favored model
 
 https://ollama.com/download/OllamaSetup.exe
 
-Modles libarary: 
+### Modles libarary: 
 https://ollama.com/search
 
 veryfy as Ollama is instaled and model is avalible on list:
