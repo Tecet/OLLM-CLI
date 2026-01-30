@@ -1,5 +1,8 @@
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
 import { PromptRegistry } from '../prompts/PromptRegistry.js';
-import { MANDATES_PROMPT } from '../prompts/templates/mandates.js';
 import { REALITY_CHECK_PROMPT } from '../prompts/templates/sanity.js';
 
 export interface SystemPromptConfig {
@@ -11,10 +14,36 @@ export interface SystemPromptConfig {
 }
 
 export class SystemPromptBuilder {
+  private baseDir: string;
+
   constructor(private registry: PromptRegistry) {
-    // Register core prompts by default
-    this.registry.register(MANDATES_PROMPT);
+    // Register sanity checks (still in TypeScript for now)
     this.registry.register(REALITY_CHECK_PROMPT);
+
+    // Set base directory for template files
+    const moduleDir = path.dirname(fileURLToPath(import.meta.url));
+    this.baseDir = path.resolve(moduleDir, '../prompts/templates');
+  }
+
+  /**
+   * Load a template file from the templates directory
+   */
+  private loadTemplate(relativePath: string): string {
+    const filePath = path.join(this.baseDir, relativePath);
+    try {
+      return fs.readFileSync(filePath, 'utf8').trim();
+    } catch (error) {
+      console.warn(`[SystemPromptBuilder] Failed to load template: ${filePath}`, error);
+      return '';
+    }
+  }
+
+  /**
+   * Check if a template file exists
+   */
+  private templateExists(relativePath: string): boolean {
+    const filePath = path.join(this.baseDir, relativePath);
+    return fs.existsSync(filePath);
   }
 
   /**
@@ -23,10 +52,10 @@ export class SystemPromptBuilder {
   build(config: SystemPromptConfig): string {
     const sections: string[] = [];
 
-    // 1. Mandates (Tier 1)
-    const mandates = this.registry.get('core-mandates');
+    // 1. Core Mandates (loaded from file)
+    const mandates = this.loadTemplate('system/CoreMandates.txt');
     if (mandates) {
-      sections.push(mandates.content);
+      sections.push(mandates);
     }
 
     // 2. Active Skills (Tier 2)

@@ -1,0 +1,8 @@
+# Core Mandates
+
+- **Conventions:** Follow existing project patterns (style, naming, structure). Analyze surrounding code before changes.
+- **Verification:** Never assume libraries exist. Check package.json or imports first.
+- **Integration:** Changes must fit naturally. Understand local context (imports, hierarchy).
+- **Comments:** Only explain "why", not "what". Be sparing.
+- **Scope:** Stay within request boundaries. Ask before significant additions.
+- **Output:** Be professional and concise. No filler ("Okay", "I will now").

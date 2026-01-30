@@ -45,6 +45,22 @@ Current system has prompt components hardcoded in TypeScript files. We need to:
 - Hooks: Not mentioned (internal automation)
 - MCP: Included in tools list as `mcp:*` or specific MCP tools
 
+### Modes
+
+The system supports 5 operational modes:
+
+1. **Developer** - Full development capabilities (all tools)
+2. **Debugger** - Debugging and troubleshooting (read + diagnostics + git)
+3. **Assistant** - Conversational assistance (read + web only)
+4. **Planning** - Planning and analysis (read-only + web)
+5. **User** - Custom user-defined mode (user controls everything)
+
+**User Mode:**
+- Allows users to define their own prompts and tool access
+- Templates in `packages/core/src/prompts/templates/user/`
+- User can customize skills, tools, and behavior
+- Precursor for full custom mode support
+
 ---
 
 ## Current State
@@ -287,7 +303,8 @@ const DEFAULT_TOOLS_BY_MODE = {
     'get_diagnostics',
     'write_memory_dump',
     'mcp:*'
-  ]
+  ],
+  user: ['*']  // NEW: User mode gets all tools by default (user can customize)
 };
 ```
 
@@ -302,6 +319,34 @@ const DEFAULT_TOOLS_BY_MODE = {
 - `SkillsAssistant.txt` - Conversational assistance
 - `SkillsPlanning.txt` - Planning and analysis
 - `SkillsDebugger.txt` - Debugging and troubleshooting
+- `SkillsUser.txt` - **NEW:** User-defined custom mode
+
+**Example: `SkillsUser.txt`**
+```markdown
+# User Mode Skills
+
+You are operating in User mode - a customizable mode where the user defines your capabilities and behavior.
+
+## Customization
+- Your specific skills and capabilities are defined by the user
+- Tool access is controlled by user preferences
+- Communication style adapts to user needs
+- You may have specialized knowledge or focus areas
+
+## General Guidelines
+- Follow any custom instructions provided by the user
+- Respect tool access limitations set by the user
+- Adapt your approach based on user feedback
+- Ask for clarification when user intent is unclear
+
+## Flexibility
+- This mode is designed for maximum flexibility
+- Users can define their own workflows and preferences
+- You can combine aspects of other modes as needed
+- Focus on what the user needs most
+
+**Note:** User mode templates (tier1-5.txt) provide additional context and guidelines.
+```
 
 **Example: `SkillsDeveloper.txt`**
 ```markdown
@@ -670,11 +715,12 @@ updateSystemPrompt({ mode, tier, ... }) {
 │ ▸ Shell                     │ │                                       │   │
 │   • Execute Shell           │ │ Developer:  [✓ Enabled ]              │   │
 │                             │ │ Debugger:   [✓ Enabled ]              │   │
-│ ▸ Memory                    │ │ Assistant:  [✗ Disabled] ← Navigate   │   │
+│ ▸ Memory                    │ │ Assistant:  [✗ Disabled]              │   │
 │   • Persistent Memory       │ │ Planning:   [✓ Enabled ]              │   │
-│                             │ │                                       │   │
-│ ▸ Context                   │ │ [Apply] [Reset to Defaults]           │   │
-│   • Complete Goal           │ └───────────────────────────────────────┘   │
+│                             │ │ User:       [✓ Enabled ] ← Navigate   │   │
+│ ▸ Context                   │ │                                       │   │
+│   • Complete Goal           │ │ [Apply] [Reset to Defaults]           │   │
+│                             │ └───────────────────────────────────────┘   │
 │                             │                                             │
 └─────────────────────────────┴─────────────────────────────────────────────┘
 
@@ -695,7 +741,12 @@ Navigation:
 2. **Right Column (Tool Details + Per-Mode Settings):**
    - Show tool description (as before)
    - Add "Per-Mode Settings" section below description
-   - List all 4 modes with enable/disable toggles
+   - List all 5 modes with enable/disable toggles:
+     - Developer
+     - Debugger
+     - Assistant
+     - Planning
+     - User (NEW)
    - User can navigate through modes with arrow keys
    - Toggle with Enter/Space
    - Apply button to save changes
@@ -706,7 +757,7 @@ Navigation:
    1. User navigates left column to select tool
    2. Right panel shows tool description
    3. User tabs to right panel
-   4. User navigates through mode settings
+   4. User navigates through 5 mode settings
    5. User toggles enable/disable per mode
    6. User applies changes
    ```
@@ -747,7 +798,7 @@ Navigation:
 // - Show tool description
 // - Show global status
 // - Show per-mode settings section
-// - Allow navigation through modes
+// - Allow navigation through 5 modes
 // - Allow toggle per mode
 // - Apply/Reset buttons
 ```
@@ -756,7 +807,7 @@ Navigation:
 
 ```typescript
 interface ModeSettingRow {
-  mode: 'developer' | 'debugger' | 'assistant' | 'planning';
+  mode: 'developer' | 'debugger' | 'assistant' | 'planning' | 'user';  // All 5 modes
   enabled: boolean;
   isDefault: boolean; // Using default or customized
 }
@@ -812,6 +863,11 @@ interface ModeSettingRow {
       "file_search": true,
       "read_file": true,
       "write_file": false
+    },
+    "user": {
+      "file_search": true,  // User mode settings
+      "read_file": true,
+      "write_file": true
     }
   }
 }
@@ -826,7 +882,7 @@ interface ModeSettingRow {
    - Keep category expand/collapse
 
 2. **Create ToolModeSettings component:**
-   - Show 4 modes with enable/disable
+   - Show 5 modes with enable/disable
    - Allow navigation through modes
    - Toggle with Enter/Space
    - Show default vs customized indicator
@@ -859,9 +915,9 @@ interface ModeSettingRow {
 
 **Benefits:**
 - ✅ Clear separation: browse tools vs configure modes
-- ✅ All mode settings visible at once
+- ✅ All 5 mode settings visible at once
 - ✅ Easy to see which modes have access
-- ✅ Cherry-pick tools per mode
+- ✅ Cherry-pick tools per mode including User mode
 - ✅ Visual indicator for defaults vs custom
 - ✅ Apply/Reset for safety
 
@@ -917,6 +973,174 @@ interface ModeSettingRow {
 4. Test UI tool selection
 5. Test settings persistence
 6. Run budget validation script
+
+---
+
+### TASK 6: Enable USER Mode in System
+
+**Status:** TODO
+
+**Goal:** Enable the new "user" mode throughout the system to allow custom user-defined behavior
+
+**Current State:**
+- ✅ User mode templates exist (`packages/core/src/prompts/templates/user/tier1-5.txt`)
+- ❌ USER not in OperationalMode enum
+- ❌ No SkillsUser.txt
+- ❌ Not in mode switcher UI
+- ❌ Not in tool settings UI
+
+**Changes Needed:**
+
+#### 6.1: Update OperationalMode Enum
+
+**File:** `packages/core/src/context/types.ts`
+
+```typescript
+export enum OperationalMode {
+  DEVELOPER = 'developer',
+  PLANNING = 'planning',
+  ASSISTANT = 'assistant',
+  DEBUGGER = 'debugger',
+  USER = 'user',  // NEW
+}
+```
+
+#### 6.2: Update PromptModeManager
+
+**File:** `packages/core/src/prompts/PromptModeManager.ts`
+
+Add user mode to getAllowedTools():
+```typescript
+getAllowedTools(mode: ModeType): string[] {
+  const toolAccess: Record<ModeType, string[]> = {
+    assistant: [],
+    planning: [...],
+    developer: ['*'],
+    debugger: [...],
+    user: ['*'],  // NEW: User gets all tools by default
+  };
+  return toolAccess[mode] || [];
+}
+```
+
+#### 6.3: Update Mode Switcher UI
+
+**File:** `packages/cli/src/commands/modeCommands.ts` or mode switcher component
+
+Add user mode option:
+```typescript
+const modes = [
+  { value: 'developer', label: 'Developer' },
+  { value: 'debugger', label: 'Debugger' },
+  { value: 'assistant', label: 'Assistant' },
+  { value: 'planning', label: 'Planning' },
+  { value: 'user', label: 'User' },  // NEW
+];
+```
+
+#### 6.4: Update Mode Shortcuts
+
+**File:** `packages/cli/src/commands/modeShortcuts.ts`
+
+Add `/user` command:
+```typescript
+export const userCommand: Command = {
+  name: '/user',
+  aliases: ['/u'],
+  description: 'Switch to user mode (custom user-defined behavior)',
+  handler: async () => {
+    // Switch to user mode
+    return { success: true, message: 'Switched to user mode' };
+  },
+};
+```
+
+#### 6.5: Update TieredPromptStore
+
+**File:** `packages/core/src/prompts/tieredPromptStore.ts`
+
+Ensure it loads user mode templates:
+```typescript
+// Should already work if it scans directories
+// Verify user/ folder is included in template loading
+```
+
+#### 6.6: Update Type Definitions
+
+**Files:** Any files with mode type definitions
+
+```typescript
+type ModeType = 'developer' | 'debugger' | 'assistant' | 'planning' | 'user';
+```
+
+#### 6.7: Update UI Components
+
+**Files:**
+- Mode selector dropdown
+- Status bar mode display
+- Settings mode configuration
+- Any mode-specific UI elements
+
+Add "User" option to all mode selectors.
+
+#### 6.8: Update Documentation
+
+**Files:**
+- Help command (`/help`)
+- Mode documentation
+- User guides
+
+Add user mode to:
+- `/help` output
+- Mode descriptions
+- Quick reference
+
+#### 6.9: Create SkillsUser.txt
+
+**File:** `packages/core/src/prompts/templates/system/skills/SkillsUser.txt`
+
+Already defined in Task 4.2 above.
+
+#### 6.10: Update Default Tool Settings
+
+**File:** `packages/cli/src/config/settingsService.ts` or wherever defaults are defined
+
+```typescript
+const DEFAULT_TOOLS_BY_MODE = {
+  developer: ['*'],
+  debugger: ['*'],
+  assistant: [...],
+  planning: [...],
+  user: ['*'],  // NEW: User mode gets all tools by default
+};
+```
+
+**Actions:**
+1. Update OperationalMode enum
+2. Update PromptModeManager
+3. Update mode switcher UI
+4. Add `/user` command
+5. Verify TieredPromptStore loads user templates
+6. Update all type definitions
+7. Update UI components
+8. Update documentation
+9. Create SkillsUser.txt
+10. Update default tool settings
+11. Test mode switching to user mode
+12. Test user mode with tools
+13. Validate user mode templates load correctly
+
+**Success Criteria:**
+- [ ] USER in OperationalMode enum
+- [ ] User mode appears in mode switcher
+- [ ] `/user` command works
+- [ ] User mode templates load correctly
+- [ ] SkillsUser.txt exists and loads
+- [ ] User mode in tool settings UI (5 modes shown)
+- [ ] User mode gets all tools by default
+- [ ] Can customize user mode tool access
+- [ ] User mode works with all tiers
+- [ ] Documentation updated
 
 ---
 
@@ -1028,8 +1252,18 @@ packages/core/src/prompts/templates/
 3. Test with small models
 4. Validate behavior
 
-### Phase 3: Skills and Tools System
-1. Create skill template files
+### Phase 3: Enable USER Mode
+1. Add USER to OperationalMode enum
+2. Update PromptModeManager with user mode
+3. Add `/user` command
+4. Update mode switcher UI
+5. Create SkillsUser.txt
+6. Update default tool settings
+7. Test mode switching
+8. Validate user templates load
+
+### Phase 4: Skills and Tools System
+1. Create skill template files (5 modes)
 2. Create ToolDescriptions.txt
 3. Implement tool filtering by mode
 4. Update SystemPromptBuilder
@@ -1037,11 +1271,29 @@ packages/core/src/prompts/templates/
 6. Test each mode
 7. Validate budgets
 
-### Phase 4: Project Integration
+### Phase 5: UI Redesign
+1. Update ToolList (read-only)
+2. Create ToolModeSettings component
+3. Update ToolDetails with mode settings
+4. Update ToolsContext for per-mode
+5. Update SettingsService
+6. Implement keyboard navigation
+7. Test UI interactions
+
+### Phase 6: Project Integration
 1. Implement focused files explanation
 2. Implement project rules loader
 3. Test with real projects
 4. Validate budgets
+
+### Phase 7: Final Testing
+1. Test all 5 modes with correct tools
+2. Verify model without tool support
+3. Validate all token budgets
+4. Test UI tool selection per mode
+5. Test settings persistence
+6. Run budget validation script
+7. Update documentation
 
 ---
 
@@ -1080,6 +1332,230 @@ packages/core/src/prompts/templates/
 - Skills are optional (only add when needed)
 - Sanity checks only for Tier 1-2
 - More concise Core Mandates saves 87 tokens
+
+---
+
+---
+
+### TASK 7: Refactor /test prompt Command Output
+
+**Status:** TODO
+
+**Goal:** Improve `/test prompt` output formatting for better readability with theme-aware highlighting
+
+**Current State:**
+- Output is plain text with basic separators
+- Hard to distinguish sections
+- No visual hierarchy
+- Labels blend with content
+
+**Proposed Improvements:**
+
+#### 7.1: Visual Hierarchy
+
+Use theme colors for section headers and labels:
+```
+=== Options === (theme.accent)
+Model: llama3.2:3b (theme.text)
+Mode: assistant (theme.text)
+Context usage: 164 / 4096 (4%) (theme.text)
+
+=== Assistant Tier 1 === (theme.accent)
+You are a helpful, knowledgeable assistant.
+...
+
+=== Core Mandates === (theme.accent)
+- Conventions: ...
+- Verification: ...
+
+=== Available Tools === (theme.accent)
+read_file, write_file, edit_file, shell, web_fetch, web_search
+```
+
+#### 7.2: Section Formatting
+
+**Options Section:**
+- Use bold/accent color for section header
+- Align labels consistently
+- Group related info (model, mode, context, GPU)
+
+**Prompt Sections:**
+- Clear visual separation between sections
+- Indent content under headers
+- Use different colors for headers vs content
+
+**Tools Section:**
+- Show tool count
+- Format as comma-separated list or columns
+- Indicate if tools are filtered by mode
+
+#### 7.3: Implementation
+
+**File:** `packages/cli/src/commands/utilityCommands.ts`
+
+Update the `/test prompt` handler:
+
+```typescript
+// Use theme colors from context
+const theme = useTheme(); // or get from settings
+
+// Format sections with colors
+const formatSection = (title: string, content: string) => {
+  return `\n${chalk.hex(theme.accent)(`=== ${title} ===`)}\n${content}\n`;
+};
+
+const formatLabel = (label: string, value: string) => {
+  return `${chalk.hex(theme.accent)(label)}: ${chalk.hex(theme.text)(value)}`;
+};
+
+// Build formatted output
+const output = [
+  formatSection('Options', [
+    formatLabel('Model', modelName),
+    formatLabel('Mode', currentMode),
+    formatLabel('Context usage', `${currentTokens} / ${maxTokens} (${percentage}%)`),
+    formatLabel('Effective context cap (num_ctx)', `${effectiveContext} (85% of ${maxTokens})`),
+    formatLabel('Temperature', temperature.toString()),
+    formatLabel('GPU hints', gpuHints),
+    formatLabel('GPU override (settings)', gpuOverride),
+    formatLabel('GPU info', gpuInfo),
+  ].join('\n')),
+  
+  formatSection(`${modeName} Tier ${tierNumber}`, tierPrompt),
+  
+  formatSection('Core Mandates', mandatesContent),
+  
+  // Only show if enabled
+  sanityChecks && formatSection('Sanity Checks', sanityContent),
+  
+  // Only show if any skills active
+  skills.length > 0 && formatSection('Active Skills', skillsContent),
+  
+  formatSection('Available Tools', [
+    formatLabel('Count', tools.length.toString()),
+    formatLabel('Tools', tools.join(', ')),
+  ].join('\n')),
+  
+  // Only show if hooks enabled
+  hooks.length > 0 && formatSection('Hooks', `Enabled (${hooks.length} active)`),
+  
+  formatSection('Rules', rulesContent),
+  
+  // Only show with --full flag
+  fullFlag && formatSection('Mock User Message', mockMessage),
+  
+  // Only show with --full flag
+  fullFlag && formatSection('Ollama Payload (collapsed)', 'Use `/test prompt --full` to show the full JSON payload.'),
+].filter(Boolean).join('\n');
+```
+
+#### 7.4: Color Scheme
+
+Use theme-aware colors:
+- **Section headers** (`=== ... ===`): `theme.accent` (cyan/blue)
+- **Labels** (`Model:`, `Mode:`): `theme.accent` (cyan/blue)
+- **Values**: `theme.text` (white/default)
+- **Separators**: `theme.dim` (gray)
+- **Warnings**: `theme.warning` (yellow)
+- **Errors**: `theme.error` (red)
+
+#### 7.5: Collapsible Sections
+
+For `--full` flag:
+- Show full Ollama payload in formatted JSON
+- Syntax highlight JSON if possible
+- Add line numbers for reference
+
+```typescript
+if (fullFlag) {
+  const formattedJson = JSON.stringify(payload, null, 2);
+  output += formatSection('Ollama Payload (Full)', 
+    syntaxHighlight(formattedJson, 'json')
+  );
+}
+```
+
+#### 7.6: Budget Validation Integration
+
+When using `--budget` flag:
+- Show validation results in formatted table
+- Use colors for pass/fail status
+- Highlight warnings and errors
+
+```
+=== Prompt Budget Validation ===
+✓ Tier 1 (Developer): 387 / 450 tokens (86%) - PASS
+✓ Tier 2 (Developer): 387 / 700 tokens (55%) - PASS
+⚠ Tier 3 (Developer): 1088 / 1000 tokens (109%) - WARNING: Exceeds budget
+...
+```
+
+#### 7.7: Responsive Layout
+
+Adjust formatting based on terminal width:
+- Wide terminals: Show more info per line
+- Narrow terminals: Stack info vertically
+- Use `process.stdout.columns` to detect width
+
+**Actions:**
+1. Update `/test prompt` handler in utilityCommands.ts
+2. Create formatting helper functions
+3. Integrate theme colors from settings
+4. Add collapsible sections for --full flag
+5. Format budget validation output
+6. Test with different terminal widths
+7. Test with different themes
+8. Update help text to mention improved formatting
+
+**Success Criteria:**
+- [ ] Section headers clearly visible with accent color
+- [ ] Labels distinguished from values
+- [ ] Consistent alignment and spacing
+- [ ] Theme-aware colors
+- [ ] Collapsible sections work with --full
+- [ ] Budget validation nicely formatted
+- [ ] Responsive to terminal width
+- [ ] Works with all themes
+- [ ] Easy to scan and read
+- [ ] Professional appearance
+
+**Example Output:**
+
+```
+=== Options ===
+Model:                    llama3.2:3b
+Mode:                     assistant
+Context usage:            164 / 4096 (4%)
+Effective context cap:    3482 (85% of 4096)
+Temperature:              0.1
+GPU hints:                num_gpu=999, num_gpu_layers=0
+GPU override:             999
+GPU info:                 NVIDIA GeForce GTX 1060 6GB - 6.0 GB total / 3.4 GB free
+
+=== Assistant Tier 1 ===
+You are a helpful, knowledgeable assistant.
+
+Core Behavior:
+- Provide accurate, clear information
+- Explain concepts simply and directly
+...
+
+=== Core Mandates ===
+- Conventions: Follow existing project patterns (style, naming, structure)
+- Verification: Never assume libraries exist. Check package.json first
+...
+
+=== Available Tools ===
+Count: 8
+Tools: read_file, write_file, edit_file, shell, web_fetch, web_search, git_diff, git_log
+
+=== Hooks ===
+Enabled (3 active)
+
+=== Rules ===
+Available Tools: read_file, write_file, edit_file, shell, web_fetch, web_search
+Hooks: Enabled
+```
 
 ---
 
