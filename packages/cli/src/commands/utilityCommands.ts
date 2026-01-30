@@ -10,9 +10,10 @@
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 
-import { ContextTier, OperationalMode, TieredPromptStore } from '@ollm/core';
+import { ContextTier, OperationalMode, TieredPromptStore, type ToolSchema } from '@ollm/core';
 
 import { SettingsService } from '../config/settingsService.js';
+import { commandRegistry } from './index.js';
 import { getGlobalContextManager } from '../features/context/ContextManagerContext.js';
 import { deriveGPUPlacementHints } from '../features/context/gpuHints.js';
 import { getLastGPUInfo } from '../features/context/gpuHintStore.js';
@@ -314,10 +315,22 @@ export const testPromptCommand: Command = {
       let systemPrompt = manager.getSystemPrompt();
       const modelSupportsTools = modelEntry?.tool_support ?? false;
       
-      // Get tools for current mode from settings
-      const allowedTools = modelSupportsTools 
+      // Get tools for current mode from settings (just names)
+      const allowedToolNames = modelSupportsTools 
         ? SettingsService.getInstance().getToolsForMode(coreMode)
         : [];
+      
+      // Get actual tool schemas from registry (what gets sent to LLM)
+      let toolSchemas: ToolSchema[] = [];
+      if (modelSupportsTools) {
+        const serviceContainer = commandRegistry['serviceContainer'];
+        const toolRegistry = serviceContainer?.getToolRegistry();
+        const modeManager = manager.getModeManager?.();
+        
+        if (toolRegistry && modeManager) {
+          toolSchemas = toolRegistry.getFunctionSchemasForMode(coreMode, modeManager);
+        }
+      }
       
       const toolNote = modelSupportsTools
         ? ''
@@ -343,7 +356,7 @@ export const testPromptCommand: Command = {
         tierPrompt: expectedTierPrompt,
         toolNote,
         userMessages: history.filter((m) => m.role === 'user').map((m) => m.content || ''),
-        toolNames: allowedTools,
+        toolNames: allowedToolNames,
       });
       
       const payloadJson = JSON.stringify(
@@ -365,7 +378,14 @@ export const testPromptCommand: Command = {
               tool_call_id: m.toolCallId,
             })),
           ],
-          tools: [],  // Note: Tools would be populated by provider in actual request
+          tools: toolSchemas.map((schema) => ({
+            type: 'function',
+            function: {
+              name: schema.name,
+              description: schema.description,
+              parameters: schema.parameters,
+            },
+          })),
           options: {
             num_ctx: ollamaContextSize,
             temperature: temperature,
@@ -386,7 +406,7 @@ export const testPromptCommand: Command = {
         `Effective context cap:    ${ollamaContextSize} (85% of ${manager.getUsage().maxTokens})`,
         `Temperature:              ${temperature}`,
         `Model supports tools:     ${modelSupportsTools ? 'YES' : 'NO'}`,
-        `Tools for this mode:      ${allowedTools.length > 0 ? `${allowedTools.length} tools` : 'NONE'}`,
+        `Tools for this mode:      ${toolSchemas.length > 0 ? `${toolSchemas.length} tools` : 'NONE'}`,
         `GPU hints:                ${gpuHints ? `num_gpu=${gpuHints.num_gpu}, num_gpu_layers=${gpuHints.gpu_layers}` : 'unavailable'}`,
         `GPU override (settings):  ${Number.isFinite(forcedNumGpu) ? forcedNumGpu : 'none'}`,
         `GPU info:                 ${lastGPUInfo ? `${lastGPUInfo.model ?? lastGPUInfo.vendor ?? 'Unknown'} - ${(lastGPUInfo.vramTotal / (1024 * 1024 * 1024)).toFixed(1)} GB total / ${(lastGPUInfo.vramFree / (1024 * 1024 * 1024)).toFixed(1)} GB free` : 'unavailable'}`,
@@ -394,8 +414,9 @@ export const testPromptCommand: Command = {
       
       // Add tools section if any
       let toolsSection = '';
-      if (allowedTools.length > 0) {
-        toolsSection = `\n\n=== Available Tools (${allowedTools.length}) ===\n${allowedTools.join(', ')}`;
+      if (toolSchemas.length > 0) {
+        const toolNames = toolSchemas.map(s => s.name);
+        toolsSection = `\n\n=== Available Tools (${toolSchemas.length}) ===\n${toolNames.join(', ')}`;
       } else if (modelSupportsTools) {
         toolsSection = `\n\n=== Available Tools ===\nNONE - No tools enabled for ${coreMode} mode`;
       } else {
