@@ -319,11 +319,17 @@ Type \`/help\` for more commands.`,
                   />
                 )}
                 {uiState.activeTab === 'tools' && <ToolsTab width={leftWidth} />}
-                {uiState.activeTab === 'files' && <FilesTabWrapper width={leftWidth} height={row2Height - 2} />}
+                {uiState.activeTab === 'files' && (
+                  <FilesTabWrapper width={leftWidth} height={row2Height - 2} />
+                )}
                 {uiState.activeTab === 'hooks' && <HooksTab windowWidth={leftWidth} />}
-                {uiState.activeTab === 'mcp' && <MCPTab windowWidth={leftWidth} height={row2Height - 2} />}
+                {uiState.activeTab === 'mcp' && (
+                  <MCPTab windowWidth={leftWidth} height={row2Height - 2} />
+                )}
                 {uiState.activeTab === 'settings' && <SettingsTab width={leftWidth} />}
-                {uiState.activeTab === 'docs' && <DocsTab height={row2Height - 2} width={leftWidth} />}
+                {uiState.activeTab === 'docs' && (
+                  <DocsTab height={row2Height - 2} width={leftWidth} />
+                )}
                 {uiState.activeTab === 'search' && <SearchTab width={leftWidth} />}
                 {uiState.activeTab === 'github' && <GitHubTab width={leftWidth} />}
                 {uiState.activeTab === 'bug-report' && <BugReportTab width={leftWidth} />}
@@ -347,7 +353,16 @@ Type \`/help\` for more commands.`,
           <Box width={rightColumnWidth} flexDirection="column">
             {/* Row 1: Header Bar (GPU + VRAM only) */}
             <HeaderBar
-              gpu={gpuInfo as unknown as { model?: string; vendor?: string; vramTotal?: number; vramUsed?: number; temperature?: number; count?: number } | null}
+              gpu={
+                gpuInfo as unknown as {
+                  model?: string;
+                  vendor?: string;
+                  vramTotal?: number;
+                  vramUsed?: number;
+                  temperature?: number;
+                  count?: number;
+                } | null
+              }
               theme={uiState.theme}
             />
 

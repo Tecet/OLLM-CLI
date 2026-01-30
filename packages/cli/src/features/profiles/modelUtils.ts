@@ -1,6 +1,6 @@
 /**
  * Model Utilities
- * 
+ *
  * Helper functions for working with model names and metadata.
  */
 

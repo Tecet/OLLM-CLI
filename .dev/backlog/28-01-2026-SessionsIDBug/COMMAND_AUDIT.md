@@ -10,6 +10,7 @@
 ### Issue 1: Model Swap Clears Chat Instead of Creating New Session
 
 **Current Behavior:**
+
 - Model swap calls `__ollmResetSession()`
 - `__ollmResetSession()` changes sessionId
 - ContextManagerProvider remounts with `key={sessionId}`
@@ -17,11 +18,13 @@
 - Chat appears cleared
 
 **Expected Behavior:**
+
 - Model swap should create new session
 - But preserve welcome message
 - Show confirmation of model loaded and context size
 
 **Root Cause:**
+
 - ContextManagerProvider remount clears all messages
 - No welcome message generated after remount
 - No confirmation message about model/context
@@ -31,11 +34,13 @@
 ### Issue 2: No Confirmation After Model Swap
 
 **Current Behavior:**
+
 - System message: "Switched to {model}. Tools: {status}"
 - No context size information
 - No welcome message with model details
 
 **Expected Behavior:**
+
 - Show which model was loaded
 - Show which context size was selected
 - Show welcome message with model capabilities
@@ -47,6 +52,7 @@
 **Current Behavior:**
 
 **`/new` command:**
+
 - Returns `action: 'new-session'`
 - Calls `__ollmResetSession(currentModel)`
 - Creates new session
@@ -54,6 +60,7 @@
 - Shows welcome message
 
 **`/clear` command:**
+
 - Returns `action: 'clear-chat'`
 - Calls `contextActions.clear()`
 - Clears messages
@@ -63,18 +70,21 @@
 **Expected Behavior:**
 
 **`/new` should:**
+
 - Create new session
 - Keep current model
 - Show welcome message
 - NOT clear existing chat (just start fresh session)
 
 **`/clear` should:**
+
 - Clear chat messages only
 - Keep same session
 - Keep same model
 - NOT show welcome message
 
 **User's Requirement:**
+
 > "/clear - clears chat conversation - but not start new session just clear screen"
 > "/new only start new session but not clear chat"
 > "link model swap to /new"
@@ -86,11 +96,13 @@
 ### Fix 1: Model Swap Should NOT Clear Chat
 
 **Change:**
+
 - Model swap should call `/new` command logic
 - `/new` creates new session but preserves messages
 - Add confirmation message with model and context info
 
 **Implementation:**
+
 1. Model swap calls `__ollmResetSession()` (keeps this)
 2. After remount, add welcome message
 3. Add confirmation: "Loaded {model} with {context} context"
@@ -100,6 +112,7 @@
 ### Fix 2: Separate /new and /clear Behavior
 
 **`/new` command:**
+
 ```typescript
 // Create new session
 // Keep current model
@@ -109,6 +122,7 @@
 ```
 
 **`/clear` command:**
+
 ```typescript
 // Clear messages only
 // Keep same session
@@ -121,6 +135,7 @@
 ### Fix 3: Link Model Swap to /new
 
 **Model swap flow:**
+
 1. User selects model + context size
 2. Call `/new` command logic internally
 3. Set new model
@@ -146,6 +161,7 @@ All fixes have been implemented. See details below.
 **File:** `packages/cli/src/features/context/handlers/commandHandler.ts`
 
 **Before:**
+
 ```typescript
 if (result.action === 'new-session') {
   if ((globalThis as any).__ollmResetSession) {
@@ -157,6 +173,7 @@ if (result.action === 'new-session') {
 ```
 
 **After:**
+
 ```typescript
 if (result.action === 'new-session') {
   // Create new session WITHOUT clearing messages
@@ -175,6 +192,7 @@ if (result.action === 'new-session') {
 **File:** `packages/cli/src/commands/sessionCommands.ts`
 
 **Updated /new:**
+
 ```typescript
 export const newCommand: Command = {
   name: '/new',
@@ -185,6 +203,7 @@ export const newCommand: Command = {
 ```
 
 **Updated /clear:**
+
 ```typescript
 export const clearCommand: Command = {
   name: '/clear',
@@ -205,6 +224,7 @@ The key insight: ContextManagerProvider remount doesn't need to clear messages f
 Messages are stored in ChatContext, not ContextManager.
 
 When sessionId changes:
+
 1. ContextManagerProvider remounts (creates new context manager)
 2. ChatContext messages are preserved (different state)
 3. Welcome message added by buildWelcomeMessage logic
@@ -218,6 +238,7 @@ When sessionId changes:
 **File:** `packages/cli/src/features/context/ModelContext.tsx`
 
 **Enhanced confirmation message:**
+
 ```typescript
 // After session reset
 const contextSize = /* get from context config */;
@@ -295,6 +316,7 @@ System: "Chat cleared. Session continues."
 ## Testing Checklist
 
 ### Model Swap
+
 - [ ] Select model → new session created
 - [ ] Welcome message appears
 - [ ] Confirmation shows model and context
@@ -303,6 +325,7 @@ System: "Chat cleared. Session continues."
 - [ ] Console logs new session
 
 ### /new Command
+
 - [ ] Type `/new` → new session created
 - [ ] Welcome message appears
 - [ ] Chat history preserved
@@ -310,6 +333,7 @@ System: "Chat cleared. Session continues."
 - [ ] Message: "New session created"
 
 ### /clear Command
+
 - [ ] Type `/clear` → messages cleared
 - [ ] Session ID unchanged
 - [ ] No welcome message

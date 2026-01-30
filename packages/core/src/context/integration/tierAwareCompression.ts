@@ -26,16 +26,16 @@ export interface TierBudgetConfig {
  *
  * Calculates tier budgets dynamically based on context size to ensure
  * consistent behavior across all context sizes.
- * 
+ *
  * **What is Tier Budget?**
  * Tier budget is the MAXIMUM allowed size for the system prompt at each tier.
  * It ensures system prompts don't grow too large and consume too much context.
- * 
+ *
  * **What it's NOT:**
  * - NOT subtracted from available message space
  * - NOT a reserved space (system prompt tokens are already counted)
  * - ONLY used for validation: if systemPromptTokens > tierBudget, throw error
- * 
+ *
  * **Example:**
  * - Tier 2 (8K context): tier budget = 500 tokens
  * - If system prompt = 450 tokens: ✅ Valid (450 < 500)
@@ -44,7 +44,7 @@ export interface TierBudgetConfig {
 export class TierAwareCompression {
   /**
    * Get the prompt budget for a specific tier and context size
-   * 
+   *
    * Budget is calculated as a percentage of context size:
    * - Tier 1 (2-4K): 12% of context (min 450) - INCREASED to accommodate mandates (267 tokens)
    * - Tier 2 (8K): 9% of context (min 700) - INCREASED to accommodate mandates
@@ -62,15 +62,15 @@ export class TierAwareCompression {
   getPromptBudget(tier: ContextTier, contextSize: number = 8192): number {
     const percentages: Record<ContextTier, number> = {
       [ContextTier.TIER_1_MINIMAL]: 0.12, // 12% (was 10%, increased for mandates 267 tokens)
-      [ContextTier.TIER_2_BASIC]: 0.09,   // 9% (was 6%, increased for mandates)
+      [ContextTier.TIER_2_BASIC]: 0.09, // 9% (was 6%, increased for mandates)
       [ContextTier.TIER_3_STANDARD]: 0.06, // 6%
-      [ContextTier.TIER_4_PREMIUM]: 0.05,  // 5%
-      [ContextTier.TIER_5_ULTRA]: 0.02,    // 2%
+      [ContextTier.TIER_4_PREMIUM]: 0.05, // 5%
+      [ContextTier.TIER_5_ULTRA]: 0.02, // 2%
     };
 
     const minimums: Record<ContextTier, number> = {
-      [ContextTier.TIER_1_MINIMAL]: 450,  // Was 400, increased for mandates (267 tokens)
-      [ContextTier.TIER_2_BASIC]: 700,    // Was 500, increased for mandates
+      [ContextTier.TIER_1_MINIMAL]: 450, // Was 400, increased for mandates (267 tokens)
+      [ContextTier.TIER_2_BASIC]: 700, // Was 500, increased for mandates
       [ContextTier.TIER_3_STANDARD]: 1000,
       [ContextTier.TIER_4_PREMIUM]: 1500,
       [ContextTier.TIER_5_ULTRA]: 1500,
@@ -91,7 +91,11 @@ export class TierAwareCompression {
    * @param contextSize - Full context size in tokens
    * @returns Available tokens for checkpoints and messages
    */
-  calculateCheckpointBudget(tier: ContextTier, systemPromptTokens: number, contextSize: number = 8192): number {
+  calculateCheckpointBudget(
+    tier: ContextTier,
+    systemPromptTokens: number,
+    contextSize: number = 8192
+  ): number {
     const totalBudget = this.getPromptBudget(tier, contextSize);
     const checkpointBudget = totalBudget - systemPromptTokens;
     return Math.max(0, checkpointBudget);
@@ -190,7 +194,11 @@ export class TierAwareCompression {
    * @param contextSize - Full context size
    * @throws Error if system prompt exceeds tier budget
    */
-  validateSystemPrompt(systemPromptTokens: number, tier: ContextTier, contextSize: number = 8192): void {
+  validateSystemPrompt(
+    systemPromptTokens: number,
+    tier: ContextTier,
+    contextSize: number = 8192
+  ): void {
     const promptBudget = this.getPromptBudget(tier, contextSize);
 
     if (systemPromptTokens > promptBudget) {

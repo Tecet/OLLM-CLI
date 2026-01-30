@@ -103,6 +103,7 @@ providerFactory.ts (NEW)
 **Location:** `packages/cli/src/features/context/SessionManager.ts`
 
 **Responsibilities:**
+
 - Generate unique session IDs
 - Track current model
 - Store pending context size
@@ -110,6 +111,7 @@ providerFactory.ts (NEW)
 - Provide session folder paths
 
 **API:**
+
 ```typescript
 export class SessionManager {
   getCurrentSessionId(): string;
@@ -126,6 +128,7 @@ export function getSessionManager(): SessionManager;
 ```
 
 **Usage:**
+
 ```typescript
 // Initialize once in App.tsx
 initializeSessionManager(initialModel);
@@ -140,21 +143,24 @@ const sessionId = sessionManager.getCurrentSessionId();
 **Location:** `packages/cli/src/features/profiles/modelUtils.ts`
 
 **Responsibilities:**
+
 - Extract model size from model name
 - Parse model parameters
 
 **API:**
+
 ```typescript
 export function extractModelSize(modelName: string): number;
 ```
 
 **Usage:**
+
 ```typescript
 import { extractModelSize } from '../features/profiles/modelUtils.js';
 
 const size = extractModelSize('llama3.2:3b'); // Returns 3
-const size = extractModelSize('gemma3:4b');   // Returns 4
-const size = extractModelSize('unknown');     // Returns 7 (default)
+const size = extractModelSize('gemma3:4b'); // Returns 4
+const size = extractModelSize('unknown'); // Returns 7 (default)
 ```
 
 ### 3. providerFactory.ts
@@ -162,11 +168,13 @@ const size = extractModelSize('unknown');     // Returns 7 (default)
 **Location:** `packages/cli/src/features/provider/providerFactory.ts`
 
 **Responsibilities:**
+
 - Create provider adapter instances
 - Handle provider initialization errors
 - Provide no-op fallback provider
 
 **API:**
+
 ```typescript
 export interface ProviderConfig {
   ollama?: {
@@ -179,6 +187,7 @@ export function createProvider(config: ProviderConfig): ProviderAdapter;
 ```
 
 **Usage:**
+
 ```typescript
 import { createProvider } from '../features/provider/providerFactory.js';
 
@@ -329,21 +338,26 @@ export function App({ config }: AppProps) {
 
 ### 1. Separation of Concerns
 
-| Concern | Before | After |
-|---------|--------|-------|
-| Session Management | App.tsx | SessionManager.ts |
-| Model Utilities | App.tsx | modelUtils.ts |
-| Provider Creation | App.tsx | providerFactory.ts |
+| Concern            | Before  | After                       |
+| ------------------ | ------- | --------------------------- |
+| Session Management | App.tsx | SessionManager.ts           |
+| Model Utilities    | App.tsx | modelUtils.ts               |
+| Provider Creation  | App.tsx | providerFactory.ts          |
 | Context Size State | App.tsx | SessionManager.ts (pending) |
-| Global Functions | App.tsx | SessionManager callbacks |
+| Global Functions   | App.tsx | SessionManager callbacks    |
 
 ### 2. No More Global Functions
 
 **Before:**
+
 ```typescript
 // In App.tsx
-(globalThis as any).__ollmResetSession = (newModel) => { /* ... */ };
-(globalThis as any).__ollmSetContextSize = (size) => { /* ... */ };
+(globalThis as any).__ollmResetSession = (newModel) => {
+  /* ... */
+};
+(globalThis as any).__ollmSetContextSize = (size) => {
+  /* ... */
+};
 
 // In ContextMenu.tsx
 if ((globalThis as any).__ollmSetContextSize) {
@@ -357,6 +371,7 @@ if ((globalThis as any).__ollmResetSession) {
 ```
 
 **After:**
+
 ```typescript
 // In ContextMenu.tsx
 const sessionManager = getSessionManager();
@@ -370,6 +385,7 @@ sessionManager.createNewSession(model);
 ### 3. No More Provider Remounting
 
 **Before:**
+
 ```typescript
 <ContextManagerProvider
   key={sessionId} // Remounts on every session change!
@@ -379,6 +395,7 @@ sessionManager.createNewSession(model);
 ```
 
 **After:**
+
 ```typescript
 <ContextManagerProvider
   sessionId={initialSessionId} // No key prop

@@ -43,11 +43,7 @@ export function FilesTab({
 }: FilesTabProps) {
   const { state: uiState } = useUI();
   const { isFocused } = useFocusManager();
-  const {
-    state: treeState,
-    setRoot,
-    expandDirectory,
-  } = useFileTree();
+  const { state: treeState, setRoot, expandDirectory } = useFileTree();
 
   const hasFocus = isFocused('file-tree');
 
@@ -59,11 +55,16 @@ export function FilesTab({
           const rootNode = await fileTreeService.buildTree({
             rootPath: process.cwd(),
           });
-          
+
           // Immediately expand the root to show files and folders
-          await fileTreeService.expandDirectory(rootNode, ['node_modules', '.git', 'dist', 'coverage']);
+          await fileTreeService.expandDirectory(rootNode, [
+            'node_modules',
+            '.git',
+            'dist',
+            'coverage',
+          ]);
           expandDirectory(rootNode.path);
-          
+
           setRoot(rootNode);
         } catch (error) {
           console.error('Failed to initialize file tree:', error);
@@ -125,4 +126,3 @@ export function FilesTab({
     </Box>
   );
 }
-

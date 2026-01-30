@@ -34,14 +34,14 @@ export function KeybindsLegend({ theme, version = '0.1.0-alpha' }: KeybindsLegen
           <Text bold color={theme.text.primary}>
             Tab
           </Text>
-          <Text dimColor>        Cycle focus</Text>
+          <Text dimColor> Cycle focus</Text>
         </Box>
         <Text dimColor> │ </Text>
         <Box>
           <Text bold color={theme.text.primary}>
             ↑↓
           </Text>
-          <Text dimColor>        Navigate items</Text>
+          <Text dimColor> Navigate items</Text>
         </Box>
       </Box>
 
@@ -51,14 +51,14 @@ export function KeybindsLegend({ theme, version = '0.1.0-alpha' }: KeybindsLegen
           <Text bold color={theme.text.primary}>
             Ctrl+←→
           </Text>
-          <Text dimColor>    Switch panel</Text>
+          <Text dimColor> Switch panel</Text>
         </Box>
         <Text dimColor> │ </Text>
         <Box>
           <Text bold color={theme.text.primary}>
             Enter
           </Text>
-          <Text dimColor>     Select/Open</Text>
+          <Text dimColor> Select/Open</Text>
         </Box>
       </Box>
 
@@ -71,7 +71,7 @@ export function KeybindsLegend({ theme, version = '0.1.0-alpha' }: KeybindsLegen
         <Text bold color={theme.text.primary}>
           Ctrl+P
         </Text>
-        <Text dimColor>    Close panel</Text>
+        <Text dimColor> Close panel</Text>
       </Box>
     </Box>
   );

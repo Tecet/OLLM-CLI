@@ -13,12 +13,14 @@ Successfully updated the OLLM CLI model database with comprehensive information 
 ## Files Updated
 
 ### 1. `packages/cli/src/config/LLM_profiles.json`
+
 - **Backup created:** `LLM_profiles.json.backup`
 - **Version:** 0.1.0 → 0.2.0
 - **Total models:** 11 → 36 models
 - **Status:** ✅ Valid JSON
 
 #### Changes:
+
 - Added 25 new models with complete metadata
 - Updated existing models with accurate VRAM data from markdown source
 - Added proper quantization types (Q4_0, Q4_K_M)
@@ -27,7 +29,9 @@ Successfully updated the OLLM CLI model database with comprehensive information 
 - Standardized context profiles across all models
 
 #### New Models Added:
+
 **Coding Models (13):**
+
 - codegeex4:9b
 - codegemma:2b, codegemma:7b
 - codestral:22b
@@ -39,6 +43,7 @@ Successfully updated the OLLM CLI model database with comprehensive information 
 - qwen3-coder:30b
 
 **General Purpose Models (12):**
+
 - command-r7b:7b
 - dolphin3:8b
 - gemma3n:e2b, gemma3n:latest
@@ -50,6 +55,7 @@ Successfully updated the OLLM CLI model database with comprehensive information 
 - qwen3-vl:4b
 
 ### 2. `docs/LLM Models/LLM_ModelsList.md`
+
 - **Backup created:** `LLM_ModelsList.md.backup`
 - **Version:** 0.1.0 → 0.2.0
 - **File size:** ~32.59 KB
@@ -57,6 +63,7 @@ Successfully updated the OLLM CLI model database with comprehensive information 
 - **Total sections:** 13
 
 #### Major Changes:
+
 1. **Added Complete Model Database Section**
    - 35+ models organized by category
    - Detailed VRAM tables for each model
@@ -86,6 +93,7 @@ Successfully updated the OLLM CLI model database with comprehensive information 
 ## Data Source
 
 All model data extracted from:
+
 - **Primary source:** `.dev/docs/knowledgeDB/dev_ModelsDB`
 - **Additional info:** End section of dev_ModelsDB with VRAM calculation formulas
 
@@ -94,18 +102,21 @@ All model data extracted from:
 ## Key Improvements
 
 ### Accuracy
+
 - All VRAM estimates now based on actual measurements
 - Proper quantization types specified
 - Accurate model file sizes included
 - Context window limits correctly set
 
 ### Completeness
+
 - Every model has VRAM data for all applicable context tiers (4k, 8k, 16k, 32k, 64k, 128k)
 - Tool support clearly indicated
 - Reasoning capabilities flagged
 - Company/creator information included
 
 ### Usability
+
 - Models organized by use case (coding, reasoning, general, vision)
 - VRAM tables for quick reference
 - Practical examples for common GPU configurations
@@ -120,11 +131,13 @@ Total VRAM = Model Weights + KV Cache + System Overhead (~1GB)
 ```
 
 ### Context Cost by Model Class:
+
 - **Small (7B-9B):** ~0.13 GB per 1,000 tokens
 - **Medium (Mixtral MoE):** ~0.13 GB per 1,000 tokens (efficient cache)
 - **Large (70B+):** ~0.33 GB per 1,000 tokens
 
 ### Special Cases:
+
 - **DeepSeek Coder V2 16B:** Highly efficient MLA cache (MoE architecture)
 - **Gemma 2 9B:** High cache usage (~0.34 GB per 1k tokens)
 - **Mixtral 8x7B:** Large weights but tiny cache (same as 7B models)
@@ -134,6 +147,7 @@ Total VRAM = Model Weights + KV Cache + System Overhead (~1GB)
 ## Validation
 
 ### JSON Validation
+
 ```bash
 ✅ JSON is valid!
 ✅ Total models: 36
@@ -141,6 +155,7 @@ Total VRAM = Model Weights + KV Cache + System Overhead (~1GB)
 ```
 
 ### Document Validation
+
 ```bash
 ✅ Total lines: 1,023
 ✅ Total sections: 13
@@ -153,6 +168,7 @@ Total VRAM = Model Weights + KV Cache + System Overhead (~1GB)
 ## Usage Examples
 
 ### Example 1: Finding a Model for 8GB GPU
+
 ```bash
 # Check the "Budget Setup (8GB VRAM)" section
 # Recommended: Llama 3.2 3B, Qwen 3 4B, Gemma 3 4B
@@ -160,6 +176,7 @@ Total VRAM = Model Weights + KV Cache + System Overhead (~1GB)
 ```
 
 ### Example 2: Checking VRAM for Specific Context
+
 ```bash
 # Look up model in Complete Model Database
 # Find VRAM table
@@ -167,6 +184,7 @@ Total VRAM = Model Weights + KV Cache + System Overhead (~1GB)
 ```
 
 ### Example 3: Choosing a Coding Model
+
 ```bash
 # Check "Coding Models" section
 # Compare VRAM requirements
@@ -178,6 +196,7 @@ Total VRAM = Model Weights + KV Cache + System Overhead (~1GB)
 ## Next Steps
 
 ### Recommended Actions:
+
 1. ✅ Test JSON file loads correctly in OLLM CLI
 2. ✅ Verify model selection works with new database
 3. ⏳ Update any model routing logic if needed
@@ -185,6 +204,7 @@ Total VRAM = Model Weights + KV Cache + System Overhead (~1GB)
 5. ⏳ Update related documentation if needed
 
 ### Future Enhancements:
+
 - Add benchmark scores for each model
 - Include inference speed estimates
 - Add model comparison tool
@@ -205,6 +225,7 @@ Total VRAM = Model Weights + KV Cache + System Overhead (~1GB)
 ## Changelog
 
 ### Version 0.2.0 (2026-01-28)
+
 - Added 25 new models to JSON database
 - Updated all VRAM estimates with accurate data
 - Added complete model database section to documentation
@@ -214,6 +235,7 @@ Total VRAM = Model Weights + KV Cache + System Overhead (~1GB)
 - Improved model selection guidance
 
 ### Version 0.1.0 (2026-01-16)
+
 - Initial model database with 11 models
 - Basic VRAM estimates
 - Initial documentation structure

@@ -1897,7 +1897,7 @@ function MCPTabContent({ windowWidth, height }: { windowWidth?: number; height?:
   }
 
   return (
-    <Box flexDirection="column" height={height ?? "100%"} width={windowWidth}>
+    <Box flexDirection="column" height={height ?? '100%'} width={windowWidth}>
       {/* Header */}
       <Box
         borderStyle="single"
@@ -2168,11 +2168,7 @@ function MCPTabContent({ windowWidth, height }: { windowWidth?: number; height?:
             {/* Content area */}
             <Box flexDirection="column" flexGrow={1} overflow="hidden">
               {(!selectedItem || selectedItem?.type === 'exit') && (
-                <Box
-                  flexDirection="column"
-                  width="100%"
-                  overflow="hidden"
-                >
+                <Box flexDirection="column" width="100%" overflow="hidden">
                   <Text></Text>
                   <Text></Text>
                   <Text></Text>
@@ -2186,7 +2182,9 @@ function MCPTabContent({ windowWidth, height }: { windowWidth?: number; height?:
                     MCP Registry - Marketplace
                   </Text>
                   <Text></Text>
-                  <Text wrap="wrap">The MCP registry provides MCP clients with a list of MCP servers.</Text>
+                  <Text wrap="wrap">
+                    The MCP registry provides MCP clients with a list of MCP servers.
+                  </Text>
                   <Text></Text>
                   <Text></Text>
                   <Text bold color={uiState.theme.text.accent}>

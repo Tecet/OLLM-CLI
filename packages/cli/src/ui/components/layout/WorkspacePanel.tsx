@@ -16,11 +16,7 @@ import { Theme } from '../../../config/types.js';
 import { useFocusManager } from '../../../features/context/FocusContext.js';
 import { useServices } from '../../../features/context/ServiceContext.js';
 import { useUI } from '../../../features/context/UIContext.js';
-import {
-  useFileFocus,
-  FileTreeService,
-  FocusSystem,
-} from '../file-explorer/index.js';
+import { useFileFocus, FileTreeService, FocusSystem } from '../file-explorer/index.js';
 
 import type { FileNode } from '../file-explorer/types.js';
 
@@ -337,21 +333,21 @@ export function WorkspacePanel({ theme, hasFocus }: WorkspacePanelProps) {
               const focusIndicator = hasFocus && isSelected ? '→ ' : '  ';
               const isFocusedFile = fileFocusContext.isFocused(file.path);
 
-                  return (
-                    <Text
-                      key={actualIndex}
-                      color={isSelected ? 'cyan' : theme.text.primary}
-                      backgroundColor={isSelected ? 'blue' : undefined}
-                    >
-                      {focusIndicator}
-                      {indent}
-                      {icon} {file.name}
-                      {isFocusedFile ? ' 📌' : ''}
-                    </Text>
-                  );
-                })}
-              </Box>
-            )}
+              return (
+                <Text
+                  key={actualIndex}
+                  color={isSelected ? 'cyan' : theme.text.primary}
+                  backgroundColor={isSelected ? 'blue' : undefined}
+                >
+                  {focusIndicator}
+                  {indent}
+                  {icon} {file.name}
+                  {isFocusedFile ? ' 📌' : ''}
+                </Text>
+              );
+            })}
+          </Box>
+        )}
       </Box>
 
       {/* Bottom Panel (Red): Keybinds Legend */}

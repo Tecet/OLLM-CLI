@@ -1,9 +1,9 @@
 /**
  * Property-Based Tests for Active Context Manager
- * 
+ *
  * These tests use fast-check to verify universal properties that should hold
  * for all possible inputs to the ActiveContextManager.
- * 
+ *
  * Requirements: FR-1, FR-5
  */
 
@@ -19,7 +19,11 @@ import type { Message } from '../../types.js';
 /**
  * Helper to create a test message
  */
-function createMessage(id: string, content: string, role: 'user' | 'assistant' | 'system' = 'user'): Message {
+function createMessage(
+  id: string,
+  content: string,
+  role: 'user' | 'assistant' | 'system' = 'user'
+): Message {
   return {
     id,
     role,
@@ -61,13 +65,13 @@ describe('ActiveContextManager - Property Tests', () => {
   describe('Property 2: Active Context Token Limits', () => {
     /**
      * **Property 2: Active Context Token Limits**
-     * 
+     *
      * **Validates: Requirements FR-1, FR-5**
-     * 
+     *
      * **Property Statement:**
      * For any sequence of operations (addMessage, addCheckpoint, removeMessages),
      * the total token count must NEVER exceed the Ollama limit minus safety margin.
-     * 
+     *
      * **Invariants:**
      * 1. Total tokens = system + checkpoints + recent messages
      * 2. Total tokens ≤ ollamaLimit - safetyMargin
@@ -131,9 +135,7 @@ describe('ActiveContextManager - Property Tests', () => {
                 // **Invariant 1:** Total tokens = system + checkpoints + recent
                 const state = manager.getState();
                 const calculatedTotal =
-                  state.tokenCount.system +
-                  state.tokenCount.checkpoints +
-                  state.tokenCount.recent;
+                  state.tokenCount.system + state.tokenCount.checkpoints + state.tokenCount.recent;
                 expect(state.tokenCount.total).toBe(calculatedTotal);
 
                 // **Invariant 2:** Total tokens ≤ limit - safety margin
@@ -174,7 +176,7 @@ describe('ActiveContextManager - Property Tests', () => {
 
     /**
      * **Property 2.1: Token Count Accuracy**
-     * 
+     *
      * The token count breakdown must always be accurate and consistent.
      */
     it('should maintain accurate token count breakdown', () => {
@@ -226,7 +228,7 @@ describe('ActiveContextManager - Property Tests', () => {
 
     /**
      * **Property 2.2: Available Tokens Calculation**
-     * 
+     *
      * Available tokens should always equal (limit - safety margin - total tokens).
      */
     it('should calculate available tokens correctly', () => {
@@ -262,7 +264,7 @@ describe('ActiveContextManager - Property Tests', () => {
 
     /**
      * **Property 2.3: Checkpoint Addition**
-     * 
+     *
      * Adding checkpoints should increase checkpoint token count and total.
      */
     it('should correctly update token counts when adding checkpoints', () => {
@@ -298,7 +300,7 @@ describe('ActiveContextManager - Property Tests', () => {
 
     /**
      * **Property 2.4: Message Removal**
-     * 
+     *
      * Removing messages should decrease recent token count and total.
      */
     it('should correctly update token counts when removing messages', () => {
@@ -327,7 +329,7 @@ describe('ActiveContextManager - Property Tests', () => {
             if (toRemove.length > 0) {
               // Calculate expected token reduction
               const removedTokens = toRemove.reduce((sum, id) => {
-                const msg = beforeRemoval.recentMessages.find(m => m.id === id);
+                const msg = beforeRemoval.recentMessages.find((m) => m.id === id);
                 return sum + (msg ? tokenCounter.countTokensCached(msg.id, msg.content) : 0);
               }, 0);
 

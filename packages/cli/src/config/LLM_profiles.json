@@ -57,8 +57,7 @@
         }
       ],
       "default_context": 4096
-    }
-,
+    },
     {
       "id": "codegeex4:9b",
       "name": "CodeGeeX4 9B",
@@ -403,8 +402,7 @@
         }
       ],
       "default_context": 4096
-    }
-,
+    },
     {
       "id": "deepseek-r1:7b",
       "name": "DeepSeek R1 7B",
@@ -807,8 +805,7 @@
         }
       ],
       "default_context": 4096
-    }
-,
+    },
     {
       "id": "gpt-oss:20b",
       "name": "GPT-OSS 20B",
@@ -1279,8 +1276,7 @@
         }
       ],
       "default_context": 4096
-    }
-,
+    },
     {
       "id": "opencoder:8b",
       "name": "OpenCoder 8B",

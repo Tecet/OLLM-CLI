@@ -1,6 +1,6 @@
 /**
  * Provider Factory
- * 
+ *
  * Creates provider adapter instances based on configuration.
  */
 
@@ -22,7 +22,7 @@ export function createProvider(config: ProviderConfig): ProviderAdapter {
   let LocalProviderClass: {
     new (opts: { baseUrl: string; timeout?: number }): ProviderAdapter;
   } | null = null;
-  
+
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const mod = require('@ollm/ollm-bridge/provider/localProvider.js') as

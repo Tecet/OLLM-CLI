@@ -7,6 +7,7 @@
 ## Overview
 
 The Tools Management System handles:
+
 - **Tool Registration** - Built-in and MCP tools
 - **Tool Configuration** - Per-mode enable/disable
 - **Tool Filtering** - Dynamic based on mode and settings
@@ -65,17 +66,17 @@ const tool = toolRegistry.getTool('read_file');
 
 ### Tool Categories
 
-| Category | Tools | Description |
-|----------|-------|-------------|
-| **File Discovery** | `glob`, `ls`, `grep`, `file_search` | Find and search files |
-| **File Reading** | `read_file`, `read_multiple_files` | Read file contents |
-| **File Writing** | `write_file`, `edit_file`, `str_replace` | Modify files |
-| **Web** | `web_search`, `web_fetch` | Internet access |
-| **Shell** | `shell` | Execute commands |
-| **Memory** | `write_memory_dump`, `read_reasoning` | Context management |
-| **Git** | `git_*` | Version control |
-| **MCP** | `mcp:*` | External MCP tools |
-| **Diagnostics** | `get_diagnostics` | Code analysis |
+| Category           | Tools                                    | Description           |
+| ------------------ | ---------------------------------------- | --------------------- |
+| **File Discovery** | `glob`, `ls`, `grep`, `file_search`      | Find and search files |
+| **File Reading**   | `read_file`, `read_multiple_files`       | Read file contents    |
+| **File Writing**   | `write_file`, `edit_file`, `str_replace` | Modify files          |
+| **Web**            | `web_search`, `web_fetch`                | Internet access       |
+| **Shell**          | `shell`                                  | Execute commands      |
+| **Memory**         | `write_memory_dump`, `read_reasoning`    | Context management    |
+| **Git**            | `git_*`                                  | Version control       |
+| **MCP**            | `mcp:*`                                  | External MCP tools    |
+| **Diagnostics**    | `get_diagnostics`                        | Code analysis         |
 
 ---
 
@@ -140,16 +141,12 @@ initializeToolSettings(toolIds: string[]): void
 
 ```typescript
 const DEFAULT_TOOLS_BY_MODE = {
-  developer: ['*'],  // All tools enabled
-  
-  debugger: ['*'],   // All tools enabled
-  
-  assistant: [
-    'read_file',
-    'web_search',
-    'web_fetch'
-  ],
-  
+  developer: ['*'], // All tools enabled
+
+  debugger: ['*'], // All tools enabled
+
+  assistant: ['read_file', 'web_search', 'web_fetch'],
+
   planning: [
     'read_file',
     'read_multiple_files',
@@ -160,10 +157,10 @@ const DEFAULT_TOOLS_BY_MODE = {
     'web_fetch',
     'get_diagnostics',
     'write_memory_dump',
-    'mcp:*'
+    'mcp:*',
   ],
-  
-  user: ['*']  // All tools, user can customize
+
+  user: ['*'], // All tools, user can customize
 };
 ```
 
@@ -195,14 +192,15 @@ const DEFAULT_TOOLS_BY_MODE = {
 
 **Method:** `filterToolDescriptions(fullText: string, allowedTools: string[]): string`
 
-| Pattern | Matches | Example |
-|---------|---------|---------|
-| `'*'` | All tools | All enabled tools |
-| `'mcp:*'` | Prefix match | All MCP tools (mcp:weather, mcp:calendar, etc.) |
-| `'git_*'` | Prefix match | All git tools (git_status, git_commit, etc.) |
-| `'read_file'` | Exact match | Only read_file tool |
+| Pattern       | Matches      | Example                                         |
+| ------------- | ------------ | ----------------------------------------------- |
+| `'*'`         | All tools    | All enabled tools                               |
+| `'mcp:*'`     | Prefix match | All MCP tools (mcp:weather, mcp:calendar, etc.) |
+| `'git_*'`     | Prefix match | All git tools (git_status, git_commit, etc.)    |
+| `'read_file'` | Exact match  | Only read_file tool                             |
 
 **Implementation:**
+
 ```typescript
 filterToolDescriptions(fullText: string, allowedTools: string[]): string {
   // If wildcard, return all
@@ -218,7 +216,7 @@ filterToolDescriptions(fullText: string, allowedTools: string[]): string {
       const match = line.match(/- \*\*([^:]+):/);
       if (match) {
         const toolName = match[1];
-        
+
         const isAllowed = allowedTools.some((allowed) => {
           if (allowed === '*') return true;
           if (allowed.endsWith(':*')) {
@@ -260,6 +258,7 @@ filterToolDescriptions(fullText: string, allowedTools: string[]): string {
 **Purpose:** Main UI for managing tools
 
 **Layout:**
+
 ```
 ┌─────────────────────────────────────────────────────┐
 │ Tools                                               │
@@ -288,6 +287,7 @@ filterToolDescriptions(fullText: string, allowedTools: string[]): string {
 ```
 
 **Features:**
+
 - Two-column layout (30% nav, 70% details)
 - Enhanced tool descriptions with examples
 - Per-mode enable/disable toggles
@@ -296,6 +296,7 @@ filterToolDescriptions(fullText: string, allowedTools: string[]): string {
 - Keyboard shortcuts
 
 **Key State:**
+
 ```typescript
 interface ToolsPanelState {
   selectedTool: string | null;
@@ -312,12 +313,14 @@ interface ToolsPanelState {
 **Purpose:** Per-mode toggle controls
 
 **Features:**
+
 - Shows all 5 modes (developer, debugger, assistant, planning, user)
 - Checkbox for each mode
 - Visual feedback for changes
 - Keyboard navigation
 
 **Usage:**
+
 ```typescript
 <ToolModeSettings
   toolId="read_file"
@@ -341,6 +344,7 @@ interface ToolsPanelState {
 **Purpose:** React context for tool state management
 
 **Provides:**
+
 ```typescript
 interface ToolsContextValue {
   tools: ToolDefinition[];
@@ -364,6 +368,7 @@ interface ToolsContextValue {
 **Method:** `initializeToolSettings(toolIds: string[]): void`
 
 **Flow:**
+
 ```
 1. App starts
    ↓
@@ -381,6 +386,7 @@ interface ToolsContextValue {
 ```
 
 **Implementation:**
+
 ```typescript
 initializeToolSettings(toolIds: string[]): void {
   let needsSave = false;
@@ -434,6 +440,7 @@ initializeToolSettings(toolIds: string[]): void {
 ### System Prompt Integration
 
 **Flow:**
+
 ```
 Mode Change
   ↓
@@ -463,6 +470,7 @@ LLM receives prompt with correct tools
 **Purpose:** Only include tools if model supports function calling
 
 **Flow:**
+
 ```typescript
 // Get model entry
 const modelEntry = profileManager.getModelEntry(modelId);
@@ -504,19 +512,19 @@ Return to LLM
 
 ### Permission Levels
 
-| Mode | Behavior | Use Case |
-|------|----------|----------|
+| Mode     | Behavior                                    | Use Case          |
+| -------- | ------------------------------------------- | ----------------- |
 | **AUTO** | Auto-approve safe tools, ask for risky ones | Default, balanced |
-| **ASK** | Ask for all tools | Maximum control |
-| **YOLO** | Auto-approve all tools | Fast iteration |
+| **ASK**  | Ask for all tools                           | Maximum control   |
+| **YOLO** | Auto-approve all tools                      | Fast iteration    |
 
 ### Risk Levels
 
-| Level | Tools | Auto-Approve (AUTO mode) |
-|-------|-------|--------------------------|
-| **Low** | read_file, web_search, grep, ls | ✅ Yes |
-| **Medium** | write_file, edit_file | ❌ Ask |
-| **High** | shell | ❌ Ask |
+| Level      | Tools                           | Auto-Approve (AUTO mode) |
+| ---------- | ------------------------------- | ------------------------ |
+| **Low**    | read_file, web_search, grep, ls | ✅ Yes                   |
+| **Medium** | write_file, edit_file           | ❌ Ask                   |
+| **High**   | shell                           | ❌ Ask                   |
 
 ---
 
@@ -527,6 +535,7 @@ Return to LLM
 **Purpose:** Complete list of all tools with descriptions
 
 **Format:**
+
 ```markdown
 # Available Tools
 
@@ -549,6 +558,7 @@ Return to LLM
 ```
 
 **Usage:**
+
 - Loaded by SystemPromptBuilder
 - Filtered based on allowedTools
 - Included in system prompt if model supports tools
@@ -604,18 +614,21 @@ Return to LLM
 ## File Locations Reference
 
 ### Core Files
+
 - `packages/core/src/tools/tool-registry.ts` - Tool registration
 - `packages/cli/src/config/settingsService.ts` - Settings management
 - `packages/core/src/context/SystemPromptBuilder.ts` - Tool filtering
 - `packages/core/src/prompts/templates/system/ToolDescriptions.txt` - Tool descriptions
 
 ### UI Files
+
 - `packages/cli/src/ui/components/tools/ToolsPanel.tsx` - Main UI
 - `packages/cli/src/ui/components/tools/ToolModeSettings.tsx` - Mode toggles
 - `packages/cli/src/ui/contexts/ToolsContext.tsx` - State management
 - `packages/cli/src/ui/components/tabs/ToolsTab.tsx` - Tab wrapper
 
 ### Settings
+
 - `~/.ollm/settings.json` - User tool configuration
 
 ---
@@ -625,29 +638,35 @@ Return to LLM
 ### Adding New Tools
 
 1. **Define Tool:**
+
 ```typescript
 const newTool: ToolDefinition = {
   id: 'my_tool',
   name: 'my_tool',
   description: 'Does something useful',
   category: 'utility',
-  inputSchema: { /* JSON Schema */ },
-  handler: async (args) => { /* Implementation */ },
+  inputSchema: {
+    /* JSON Schema */
+  },
+  handler: async (args) => {
+    /* Implementation */
+  },
   requiresConfirmation: false,
-  riskLevel: 'low'
+  riskLevel: 'low',
 };
 ```
 
 2. **Register Tool:**
+
 ```typescript
 toolRegistry.registerTool(newTool);
 ```
 
 3. **Add to Template:**
-Edit `ToolDescriptions.txt` to include description
+   Edit `ToolDescriptions.txt` to include description
 
 4. **Configure Defaults:**
-Update `DEFAULT_TOOLS_BY_MODE` if needed
+   Update `DEFAULT_TOOLS_BY_MODE` if needed
 
 ### Adding New Tool Categories
 

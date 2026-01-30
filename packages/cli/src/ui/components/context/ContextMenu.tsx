@@ -158,8 +158,7 @@ export function useContextMenu(options: ContextMenuOptions) {
               : `${val}`;
 
         // Add VRAM estimate to label (only if available)
-        const vramEstimate =
-          'vram_estimate_gb' in opt ? (opt as any).vram_estimate_gb : undefined;
+        const vramEstimate = 'vram_estimate_gb' in opt ? (opt as any).vram_estimate_gb : undefined;
         const label = vramEstimate ? `${sizeStr} (${vramEstimate.toFixed(1)} GB)` : sizeStr;
 
         sizeOptions.push({
@@ -373,8 +372,7 @@ export function useContextMenu(options: ContextMenuOptions) {
               : `${val}`;
 
         // Add VRAM estimate to label (only if available)
-        const vramEstimate =
-          'vram_estimate_gb' in opt ? (opt as any).vram_estimate_gb : undefined;
+        const vramEstimate = 'vram_estimate_gb' in opt ? (opt as any).vram_estimate_gb : undefined;
         const label = vramEstimate ? `${sizeStr} (${vramEstimate.toFixed(1)} GB)` : sizeStr;
 
         sizeOptions.push({
@@ -389,10 +387,11 @@ export function useContextMenu(options: ContextMenuOptions) {
             // Store the pending context size in SessionManager
             // This will be used when the new session is created
             try {
-              const { getSessionManager } = await import('../../../features/context/SessionManager.js');
+              const { getSessionManager } =
+                await import('../../../features/context/SessionManager.js');
               const sessionManager = getSessionManager();
               sessionManager.setPendingContextSize(val);
-              
+
               // Also save to settings for persistence
               const { SettingsService } = await import('../../../config/settingsService.js');
               SettingsService.getInstance().setContextSize(val);
@@ -433,23 +432,24 @@ export function useContextMenu(options: ContextMenuOptions) {
           });
           requestManualContextInput(modelId, async (value) => {
             profileManager.setManualContext(modelId, value);
-            
+
             // Store the pending context size in SessionManager
             try {
-              const { getSessionManager } = await import('../../../features/context/SessionManager.js');
+              const { getSessionManager } =
+                await import('../../../features/context/SessionManager.js');
               const sessionManager = getSessionManager();
               sessionManager.setPendingContextSize(value);
-              
+
               // Also save to settings for persistence
               const { SettingsService } = await import('../../../config/settingsService.js');
               SettingsService.getInstance().setContextSize(value);
             } catch (error) {
               console.warn('[ContextMenu] Failed to set pending context size:', error);
             }
-            
+
             // Now swap to the new model
             setCurrentModel(modelId);
-            
+
             addMessage({
               role: 'system',
               content: `Switched to **${modelLabel}** with manual context size **${value}** tokens.`,
@@ -543,4 +543,3 @@ export function useContextMenu(options: ContextMenuOptions) {
     buildModelSelectionMenu,
   };
 }
-

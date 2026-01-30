@@ -99,12 +99,7 @@ export const LaunchScreen: React.FC<LaunchScreenProps> = ({
       <LaunchFooter theme={theme} recentSessions={recentSessions} />
 
       {/* Animation at the bottom - fixed position from content */}
-      <Box
-        flexDirection="column"
-        alignItems="center"
-        width="100%"
-        marginTop={LAYOUT.afterBanner}
-      >
+      <Box flexDirection="column" alignItems="center" width="100%" marginTop={LAYOUT.afterBanner}>
         <Box height={STANDARD_ANIMATION_HEIGHT} justifyContent="center">
           <LlamaAnimation size="standard" movementRatio={0.85} enabled />
         </Box>

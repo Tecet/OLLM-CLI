@@ -79,10 +79,7 @@ export {
   getFocusedFilesSummary,
   exceedsSizeThreshold,
 } from './FocusedFilesInjector.js';
-export {
-  SyntaxViewer,
-  type SyntaxViewerProps,
-} from './SyntaxViewer.js';
+export { SyntaxViewer, type SyntaxViewerProps } from './SyntaxViewer.js';
 export {
   QuickActionsMenu,
   type QuickActionsMenuProps,

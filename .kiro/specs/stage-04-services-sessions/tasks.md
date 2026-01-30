@@ -143,7 +143,7 @@ This implementation plan breaks down the six core services into discrete, increm
   - [x] 4.1 Implement environment sanitization
     - Create `environmentSanitization.ts` with allow/deny list logic
     - Implement default allow list (PATH, HOME, USER, SHELL, TERM, LANG, LC\_\*)
-    - Implement default deny patterns (_\_KEY, __SECRET, *\_TOKEN, *\_PASSWORD, \*\_CREDENTIAL, AWS__, GITHUB\__)
+    - Implement default deny patterns (\_\_KEY, **SECRET, _\_TOKEN, _\_PASSWORD, \*\_CREDENTIAL, AWS**, GITHUB\_\_)
     - Add pattern matching using picomatch
     - Add configuration support for custom rules
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.7_

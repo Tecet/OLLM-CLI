@@ -31,18 +31,21 @@ const sessionId = `session-${Date.now()}`; // Created ONCE at app start
 ```
 
 **Problem:**
+
 - Session ID is created once when app starts
 - Never regenerates when model changes
 - Same session ID used for gemma3:1b, llama3.2:3b, qwen2.5:3b, etc.
 - All models write to same session file
 
 **Impact:**
+
 - Session file contains mixed model data
 - Snapshots reference wrong model
 - Compression checkpoints from one model used with another
 - Context contamination across models
 
 **Evidence from User:**
+
 ```
 "I changed models while testing and can see in session snapshot wrong informations"
 File: C:\Users\rad3k\.ollm\context-snapshots\session-1769629397190\snapshots\snapshot-87f69c42-6c2f-4b43-9a5b-272a6cc85da4.json
@@ -56,9 +59,9 @@ File: C:\Users\rad3k\.ollm\context-snapshots\session-1769629397190\snapshots\sna
 
 ```typescript
 const clearChat = useCallback(() => {
-  setMessages([]);           // ✅ Clears messages
-  setCurrentInput('');       // ✅ Clears input
-  setStreaming(false);       // ✅ Resets streaming
+  setMessages([]); // ✅ Clears messages
+  setCurrentInput(''); // ✅ Clears input
+  setStreaming(false); // ✅ Resets streaming
   setWaitingForResponse(false); // ✅ Resets waiting
   if (contextActions) {
     contextActions.clear().catch(console.error); // ✅ Clears context manager
@@ -68,12 +71,14 @@ const clearChat = useCallback(() => {
 ```
 
 **Problem:**
+
 - Clears messages and context
 - Does NOT regenerate session ID
 - Does NOT create new session file
 - Does NOT clear snapshots from old session
 
 **What's Missing:**
+
 ```typescript
 // Should also do:
 - Generate new session ID
@@ -95,7 +100,7 @@ const setModelAndLoading = useCallback(
     const changed = currentModel !== model;
     if (changed) {
       // ... model switching logic ...
-      
+
       // Clear context on model switch (optional, configurable)
       const settingsService = SettingsService.getInstance();
       const settings = settingsService.getSettings();
@@ -111,26 +116,28 @@ const setModelAndLoading = useCallback(
 ```
 
 **Problem:**
+
 - Calls `clearContext()` which only clears messages
 - Does NOT regenerate session ID
 - Does NOT notify ContextManagerProvider of model change
 - Does NOT create new session file
 
 **What Should Happen:**
+
 ```typescript
 if (shouldClearContext) {
   // 1. Close current session
   await sessionService.closeSession(currentSessionId);
-  
+
   // 2. Generate new session ID
   const newSessionId = `session-${Date.now()}`;
-  
+
   // 3. Create new session with new model
   await sessionService.createSession(newSessionId, model, provider);
-  
+
   // 4. Clear context with new session
   clearContext();
-  
+
   // 5. Notify ContextManagerProvider of new session
   if (globalThis.__ollmResetSession) {
     globalThis.__ollmResetSession();
@@ -155,12 +162,14 @@ if (shouldClearContext) {
 ```
 
 **Problem:**
+
 - `sessionId` prop is static
 - ContextManagerProvider has no way to know model changed
 - Snapshots continue using old session ID
 - Checkpoints reference wrong session
 
 **What's Needed:**
+
 - Make `sessionId` a state variable
 - Update `sessionId` when model changes
 - Force ContextManagerProvider to remount with new session
@@ -173,6 +182,7 @@ if (shouldClearContext) {
 **Location:** `packages/core/src/context/snapshotManager.ts`
 
 **Problem:**
+
 - Snapshots are stored per session ID
 - When model changes but session ID doesn't, snapshots mix data
 - Snapshot contains:
@@ -181,13 +191,14 @@ if (shouldClearContext) {
   - Checkpoints from `qwen2.5:3b` (another model)
 
 **Example Contaminated Snapshot:**
+
 ```json
 {
   "id": "snapshot-87f69c42-6c2f-4b43-9a5b-272a6cc85da4",
   "sessionId": "session-1769629397190",
   "timestamp": "2026-01-28T10:00:00Z",
   "metadata": {
-    "model": "gemma3:1b",  // ❌ Wrong! User switched to llama3.2:3b
+    "model": "gemma3:1b", // ❌ Wrong! User switched to llama3.2:3b
     "contextSize": 6963,
     "compressionRatio": 0.7
   },
@@ -201,6 +212,7 @@ if (shouldClearContext) {
 ```
 
 **Impact:**
+
 - LLM receives context from wrong model
 - Compression summaries from one model used with another
 - Context confusion and hallucinations
@@ -213,12 +225,14 @@ if (shouldClearContext) {
 **Location:** `packages/core/src/context/checkpointManager.ts`
 
 **Problem:**
+
 - Checkpoints are created by LLM summarizing conversation
 - When model changes, old checkpoints remain
 - New model receives checkpoints created by old model
 - Checkpoint summaries may not match new model's style/capabilities
 
 **Example:**
+
 ```
 1. User uses gemma3:1b
 2. Checkpoint created: "Summary of authentication implementation..."
@@ -236,6 +250,7 @@ if (shouldClearContext) {
 **Location:** `packages/core/src/context/contextPool.ts`
 
 The tier system itself is working correctly:
+
 - Tiers are labels based on context size
 - No hardcoded thresholds
 - Profile-based mapping
@@ -252,6 +267,7 @@ The tier system itself is working correctly:
 **Location:** `packages/core/src/context/compressionCoordinator.ts`
 
 Compression triggers are working correctly:
+
 - Triggers at 80% of available budget
 - Dynamic budget calculation
 - Checkpoint aging
@@ -268,6 +284,7 @@ Compression triggers are working correctly:
 **Location:** `packages/core/src/services/chatRecordingService.ts`
 
 Session recording is working correctly:
+
 - Auto-save enabled
 - Atomic writes
 - Full history preserved
@@ -284,6 +301,7 @@ Session recording is working correctly:
 **Session ID is created once and never regenerates.**
 
 This single issue cascades into all other problems:
+
 1. Same session used for multiple models
 2. Snapshots contain mixed data
 3. Checkpoints from wrong model
@@ -314,18 +332,21 @@ This single issue cascades into all other problems:
 ### Severity: 🔴 CRITICAL
 
 **User Impact:**
+
 - Context contamination across models
 - Unreliable conversation continuity
 - Potential hallucinations
 - Confusing behavior when switching models
 
 **Data Integrity:**
+
 - Session files contain mixed model data
 - Snapshots reference wrong model
 - Checkpoints from wrong model
 - Metadata inconsistencies
 
 **System Reliability:**
+
 - Unpredictable behavior
 - Hard to debug issues
 - User confusion
@@ -387,7 +408,7 @@ const setModelAndLoading = useCallback(
       if (shouldClearContext) {
         // 1. Clear context first
         clearContext();
-        
+
         // 2. Reset session ID (triggers new session creation)
         if ((globalThis as any).__ollmResetSession) {
           const newSessionId = (globalThis as any).__ollmResetSession(model);
@@ -428,7 +449,7 @@ const clearChat = useCallback(() => {
   if (contextActions) {
     // Clear context manager
     contextActions.clear().catch(console.error);
-    
+
     // Clear snapshots for old session
     const snapshotManager = contextActions.getSnapshotManager?.();
     if (snapshotManager) {
@@ -444,6 +465,7 @@ const clearChat = useCallback(() => {
 **Location:** Multiple files
 
 Add logging to track session transitions:
+
 ```typescript
 console.log('[Session] Closing session:', oldSessionId, 'model:', oldModel);
 console.log('[Session] Creating session:', newSessionId, 'model:', newModel);
@@ -461,21 +483,21 @@ console.log('[Session] Cleared', checkpointCount, 'checkpoints from old session'
 test('should create new session when model changes', async () => {
   // 1. Start with gemma3:1b
   const session1 = getCurrentSessionId();
-  
+
   // 2. Send message
   await sendMessage('Hello');
-  
+
   // 3. Switch to llama3.2:3b
   await switchModel('llama3.2:3b');
-  
+
   // 4. Verify new session created
   const session2 = getCurrentSessionId();
   expect(session2).not.toBe(session1);
-  
+
   // 5. Verify old session closed
   const oldSession = await getSession(session1);
   expect(oldSession.metadata.model).toBe('gemma3:1b');
-  
+
   // 6. Verify new session has correct model
   const newSession = await getSession(session2);
   expect(newSession.metadata.model).toBe('llama3.2:3b');
@@ -490,15 +512,15 @@ test('should not mix snapshots across models', async () => {
   await switchModel('gemma3:1b');
   await sendMessage('Test 1');
   const snapshot1 = await createSnapshot();
-  
+
   // 2. Switch to llama3.2:3b, create snapshot
   await switchModel('llama3.2:3b');
   await sendMessage('Test 2');
   const snapshot2 = await createSnapshot();
-  
+
   // 3. Verify snapshots have different session IDs
   expect(snapshot1.sessionId).not.toBe(snapshot2.sessionId);
-  
+
   // 4. Verify snapshots have correct models
   expect(snapshot1.metadata.model).toBe('gemma3:1b');
   expect(snapshot2.metadata.model).toBe('llama3.2:3b');
@@ -513,10 +535,10 @@ test('should not use checkpoints from previous model', async () => {
   await switchModel('gemma3:1b');
   await fillContext(); // Fill to 80%
   const checkpoints1 = getCheckpoints();
-  
+
   // 2. Switch to llama3.2:3b
   await switchModel('llama3.2:3b');
-  
+
   // 3. Verify checkpoints cleared
   const checkpoints2 = getCheckpoints();
   expect(checkpoints2).toHaveLength(0);
@@ -528,14 +550,14 @@ test('should not use checkpoints from previous model', async () => {
 
 ## Priority Matrix
 
-| Issue | Severity | Priority | Effort | Impact |
-|-------|----------|----------|--------|--------|
-| Session ID never regenerates | 🔴 Critical | P0 | Medium | High |
-| clearContext() incomplete | 🔴 Critical | P0 | Low | High |
-| Model swap logic incomplete | 🔴 Critical | P0 | Medium | High |
-| ContextManagerProvider static | 🟡 High | P1 | Low | Medium |
-| Snapshot contamination | 🟡 High | P1 | Low | Medium |
-| Checkpoint wrong model | 🟡 High | P2 | Low | Medium |
+| Issue                         | Severity    | Priority | Effort | Impact |
+| ----------------------------- | ----------- | -------- | ------ | ------ |
+| Session ID never regenerates  | 🔴 Critical | P0       | Medium | High   |
+| clearContext() incomplete     | 🔴 Critical | P0       | Low    | High   |
+| Model swap logic incomplete   | 🔴 Critical | P0       | Medium | High   |
+| ContextManagerProvider static | 🟡 High     | P1       | Low    | Medium |
+| Snapshot contamination        | 🟡 High     | P1       | Low    | Medium |
+| Checkpoint wrong model        | 🟡 High     | P2       | Low    | Medium |
 
 ---
 
@@ -544,8 +566,8 @@ test('should not use checkpoints from previous model', async () => {
 ### Phase 1: Critical Fixes (P0)
 
 1. Make sessionId reactive in App.tsx
-2. Add __ollmResetSession global function
-3. Update model swap logic to call __ollmResetSession
+2. Add \_\_ollmResetSession global function
+3. Update model swap logic to call \_\_ollmResetSession
 4. Add key prop to ContextManagerProvider
 5. Test model swap creates new session
 
@@ -596,7 +618,7 @@ The session/snapshot/tier system has **CRITICAL ISSUES** that must be fixed imme
 ## Files to Modify
 
 1. `packages/cli/src/ui/App.tsx` - Make sessionId reactive
-2. `packages/cli/src/features/context/ModelContext.tsx` - Call __ollmResetSession
+2. `packages/cli/src/features/context/ModelContext.tsx` - Call \_\_ollmResetSession
 3. `packages/cli/src/features/context/ChatContext.tsx` - Update clearChat
 4. `packages/core/src/context/contextManager.ts` - Add session reset support
 5. `packages/core/src/context/snapshotManager.ts` - Verify isolation

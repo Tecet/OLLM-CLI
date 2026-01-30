@@ -141,10 +141,10 @@ export class SettingsService {
         console.log(`[SettingsService] Loading settings from: ${this.settingsPath}`);
         const content = readFileSync(this.settingsPath, 'utf-8');
         const loaded = JSON.parse(content);
-        
+
         // Migrate old settings if needed
         const migrated = this.migrateSettings(loaded);
-        
+
         // Shallow merge defaults with loaded to ensure structure exists
         this.settings = {
           ...this.settings,
@@ -169,7 +169,7 @@ export class SettingsService {
     if (!loaded.toolsByMode) {
       loaded.toolsByMode = {};
     }
-    
+
     return loaded;
   }
 

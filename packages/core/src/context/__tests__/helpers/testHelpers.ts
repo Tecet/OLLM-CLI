@@ -1,6 +1,6 @@
 /**
  * Shared Test Helpers for Context Tests
- * 
+ *
  * Provides mock implementations and helper functions for all context-related tests.
  */
 
@@ -115,7 +115,10 @@ export function createMockProvider(shouldFail: boolean = false): ProviderAdapter
 
   return {
     chatStream: vi.fn(async function* () {
-      yield { type: 'text' as const, value: 'This is a test summary of the conversation. Key points covered.' };
+      yield {
+        type: 'text' as const,
+        value: 'This is a test summary of the conversation. Key points covered.',
+      };
       yield { type: 'finish' as const, reason: 'stop' };
     }),
     listModels: vi.fn().mockResolvedValue([]),
@@ -144,7 +147,7 @@ export function createOrchestratorConfig(
     model: 'llama3.2:3b',
     sessionId: 'test-session',
     storagePath: overrides.storagePath,
-    
+
     // Integration dependencies
     tier: ContextTier.TIER_3_STANDARD,
     mode: OperationalMode.DEVELOPER,
@@ -152,11 +155,11 @@ export function createOrchestratorConfig(
     goalManager: createMockGoalManager(),
     promptOrchestrator: createMockPromptOrchestrator(),
     contextSize: 8192,
-    
+
     // Optional fields
     keepRecentCount: 5,
     safetyMargin: 1000,
-    
+
     // Apply overrides
     ...overrides,
   };

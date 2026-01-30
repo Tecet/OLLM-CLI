@@ -1,12 +1,12 @@
 /**
  * Property-Based Tests for Session History Append
- * 
+ *
  * **Property 6: Session History Append**
  * **Validates: Requirements FR-4**
- * 
+ *
  * This test validates that the session history manager correctly appends messages
  * and maintains the append-only invariant.
- * 
+ *
  * Properties tested:
  * 1. Messages are never removed or modified
  * 2. Message order is preserved
@@ -320,9 +320,7 @@ describe('SessionHistoryManager - Property 6: Session History Append', () => {
         }
 
         // Last update should be >= start time
-        expect(history.metadata.lastUpdate).toBeGreaterThanOrEqual(
-          history.metadata.startTime
-        );
+        expect(history.metadata.lastUpdate).toBeGreaterThanOrEqual(history.metadata.startTime);
       }),
       { numRuns: 100 }
     );

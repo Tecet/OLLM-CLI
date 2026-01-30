@@ -1,6 +1,5 @@
 ![Welcome Screen](https://github.com/Tecet/OLLM-CLI/blob/task-1-simplify-tier-selection/welcome.png)
 
-
 # OLLM CLI
 
 > A local-first command-line interface for open-source LLMs with intelligent context management, tools, hooks, and MCP integration.

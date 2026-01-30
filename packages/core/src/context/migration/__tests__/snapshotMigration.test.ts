@@ -1,6 +1,6 @@
 /**
  * Snapshot Migration Tests
- * 
+ *
  * Tests for snapshot migration from legacy format to new storage layer format.
  */
 
@@ -253,7 +253,7 @@ describe('snapshotMigration - Unit Tests', () => {
 
       const errors = validateMigratedSnapshot(snapshot);
 
-      expect(errors.some(e => e.includes('Invalid purpose'))).toBe(true);
+      expect(errors.some((e) => e.includes('Invalid purpose'))).toBe(true);
     });
   });
 });
@@ -295,14 +295,8 @@ describe('snapshotMigration - Integration Tests', () => {
       const snapshot1 = createLegacySnapshot();
       const snapshot2 = { ...createLegacySnapshot(), id: 'snap-456' };
 
-      await fs.writeFile(
-        path.join(sourceDir, 'snapshot1.json'),
-        JSON.stringify(snapshot1)
-      );
-      await fs.writeFile(
-        path.join(sourceDir, 'snapshot2.json'),
-        JSON.stringify(snapshot2)
-      );
+      await fs.writeFile(path.join(sourceDir, 'snapshot1.json'), JSON.stringify(snapshot1));
+      await fs.writeFile(path.join(sourceDir, 'snapshot2.json'), JSON.stringify(snapshot2));
 
       // Run migration
       const result = await migrateAllSnapshots({
@@ -329,10 +323,7 @@ describe('snapshotMigration - Integration Tests', () => {
 
     it('should perform dry run without writing files', async () => {
       const snapshot = createLegacySnapshot();
-      await fs.writeFile(
-        path.join(sourceDir, 'snapshot.json'),
-        JSON.stringify(snapshot)
-      );
+      await fs.writeFile(path.join(sourceDir, 'snapshot.json'), JSON.stringify(snapshot));
 
       const result = await migrateAllSnapshots({
         sourceDir,
@@ -353,10 +344,7 @@ describe('snapshotMigration - Integration Tests', () => {
 
     it('should create backups when requested', async () => {
       const snapshot = createLegacySnapshot();
-      await fs.writeFile(
-        path.join(sourceDir, 'snapshot.json'),
-        JSON.stringify(snapshot)
-      );
+      await fs.writeFile(path.join(sourceDir, 'snapshot.json'), JSON.stringify(snapshot));
 
       const result = await migrateAllSnapshots({
         sourceDir,
@@ -383,10 +371,7 @@ describe('snapshotMigration - Integration Tests', () => {
         timestamp: 'invalid',
       };
 
-      await fs.writeFile(
-        path.join(sourceDir, 'invalid.json'),
-        JSON.stringify(invalidSnapshot)
-      );
+      await fs.writeFile(path.join(sourceDir, 'invalid.json'), JSON.stringify(invalidSnapshot));
 
       const result = await migrateAllSnapshots({
         sourceDir,
@@ -416,14 +401,8 @@ describe('snapshotMigration - Integration Tests', () => {
 
     it('should skip non-JSON files', async () => {
       const snapshot = createLegacySnapshot();
-      await fs.writeFile(
-        path.join(sourceDir, 'snapshot.json'),
-        JSON.stringify(snapshot)
-      );
-      await fs.writeFile(
-        path.join(sourceDir, 'readme.txt'),
-        'This is not a snapshot file'
-      );
+      await fs.writeFile(path.join(sourceDir, 'snapshot.json'), JSON.stringify(snapshot));
+      await fs.writeFile(path.join(sourceDir, 'readme.txt'), 'This is not a snapshot file');
 
       const result = await migrateAllSnapshots({
         sourceDir,
@@ -442,10 +421,7 @@ describe('snapshotMigration - Integration Tests', () => {
     it('should restore snapshots from backup', async () => {
       // Create backup
       const snapshot = createLegacySnapshot();
-      await fs.writeFile(
-        path.join(backupDir, 'snapshot.json'),
-        JSON.stringify(snapshot)
-      );
+      await fs.writeFile(path.join(backupDir, 'snapshot.json'), JSON.stringify(snapshot));
 
       // Run rollback
       const result = await rollbackMigration({
@@ -466,10 +442,7 @@ describe('snapshotMigration - Integration Tests', () => {
 
     it('should perform dry run rollback', async () => {
       const snapshot = createLegacySnapshot();
-      await fs.writeFile(
-        path.join(backupDir, 'snapshot.json'),
-        JSON.stringify(snapshot)
-      );
+      await fs.writeFile(path.join(backupDir, 'snapshot.json'), JSON.stringify(snapshot));
 
       const result = await rollbackMigration({
         sourceDir,

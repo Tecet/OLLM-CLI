@@ -146,7 +146,9 @@ export class GoalMarkerParser {
    */
   private parseCheckpoint(line: string): CheckpointUpdate | null {
     // Match: [CHECKPOINT] description - STATUS
-    const match = line.match(/\[CHECKPOINT\]\s+(.+?)\s+-\s+(COMPLETED|IN-PROGRESS|PENDING|BLOCKED)/i);
+    const match = line.match(
+      /\[CHECKPOINT\]\s+(.+?)\s+-\s+(COMPLETED|IN-PROGRESS|PENDING|BLOCKED)/i
+    );
 
     if (!match) {
       return null;
@@ -306,4 +308,3 @@ export class GoalMarkerParser {
     };
   }
 }
-

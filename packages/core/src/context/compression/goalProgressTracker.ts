@@ -203,10 +203,7 @@ export class GoalProgressTracker {
    * @param goal - Goal to update
    * @param update - Decision update to apply
    */
-  private applyDecisionUpdate(
-    goal: Goal,
-    update: ParsedGoalUpdate & { type: 'decision' }
-  ): void {
+  private applyDecisionUpdate(goal: Goal, update: ParsedGoalUpdate & { type: 'decision' }): void {
     // Check if decision already exists
     const existingDecision = goal.decisions.find(
       (d) => d.description.toLowerCase() === update.description.toLowerCase()
@@ -241,10 +238,7 @@ export class GoalProgressTracker {
    * @param goal - Goal to update
    * @param update - Artifact update to apply
    */
-  private applyArtifactUpdate(
-    goal: Goal,
-    update: ParsedGoalUpdate & { type: 'artifact' }
-  ): void {
+  private applyArtifactUpdate(goal: Goal, update: ParsedGoalUpdate & { type: 'artifact' }): void {
     // Infer artifact type from file extension
     const type = this.inferArtifactType(update.path);
 
@@ -336,4 +330,3 @@ export class GoalProgressTracker {
     return this.parser.getStats(summary);
   }
 }
-

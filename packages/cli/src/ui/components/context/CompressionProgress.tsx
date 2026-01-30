@@ -188,7 +188,13 @@ export function CompressionProgress({
   // In-progress state
   return (
     <FadeTransition show={true} duration={300}>
-      <Box flexDirection="column" borderStyle="round" borderColor="yellow" paddingX={2} paddingY={1}>
+      <Box
+        flexDirection="column"
+        borderStyle="round"
+        borderColor="yellow"
+        paddingX={2}
+        paddingY={1}
+      >
         {/* Header */}
         <Box>
           <Pulse active={true} color="yellow" interval={500}>
@@ -200,11 +206,7 @@ export function CompressionProgress({
 
         {/* Current stage */}
         <Box marginTop={1}>
-          <StreamingIndicator
-            text={`${icon} ${stageText}...`}
-            spinnerType="dots"
-            color="yellow"
-          />
+          <StreamingIndicator text={`${icon} ${stageText}...`} spinnerType="dots" color="yellow" />
         </Box>
 
         {/* Progress bar (if progress provided) */}

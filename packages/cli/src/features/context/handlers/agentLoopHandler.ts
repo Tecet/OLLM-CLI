@@ -474,7 +474,7 @@ export async function runAgentLoop(deps: AgentLoopDependencies): Promise<AgentLo
               ]
             : undefined,
         });
-        
+
         if (assistantContent) {
           await recordSessionMessage('assistant', assistantContent);
         }

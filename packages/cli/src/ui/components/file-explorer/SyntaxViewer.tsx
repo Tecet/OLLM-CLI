@@ -79,31 +79,36 @@ export const SyntaxViewer: React.FC<SyntaxViewerProps> = ({
   const totalLines = lines.length;
 
   // Handle keyboard input for scrolling
-  useInput((input, key) => {
-    if (!hasFocus) return;
+  useInput(
+    (input, key) => {
+      if (!hasFocus) return;
 
-    if (key.downArrow || input === 'j') {
-      // Scroll down
-      setScrollOffset((prev) => Math.min(prev + 1, Math.max(0, totalLines - windowHeight)));
-    } else if (key.upArrow || input === 'k') {
-      // Scroll up
-      setScrollOffset((prev) => Math.max(0, prev - 1));
-    } else if (key.pageDown || input === 'd') {
-      // Page down (half window)
-      const pageSize = Math.floor(windowHeight / 2);
-      setScrollOffset((prev) => Math.min(prev + pageSize, Math.max(0, totalLines - windowHeight)));
-    } else if (key.pageUp || input === 'u') {
-      // Page up (half window)
-      const pageSize = Math.floor(windowHeight / 2);
-      setScrollOffset((prev) => Math.max(0, prev - pageSize));
-    } else if (input === 'g') {
-      // Go to top
-      setScrollOffset(0);
-    } else if (input === 'G') {
-      // Go to bottom
-      setScrollOffset(Math.max(0, totalLines - windowHeight));
-    }
-  }, { isActive: hasFocus });
+      if (key.downArrow || input === 'j') {
+        // Scroll down
+        setScrollOffset((prev) => Math.min(prev + 1, Math.max(0, totalLines - windowHeight)));
+      } else if (key.upArrow || input === 'k') {
+        // Scroll up
+        setScrollOffset((prev) => Math.max(0, prev - 1));
+      } else if (key.pageDown || input === 'd') {
+        // Page down (half window)
+        const pageSize = Math.floor(windowHeight / 2);
+        setScrollOffset((prev) =>
+          Math.min(prev + pageSize, Math.max(0, totalLines - windowHeight))
+        );
+      } else if (key.pageUp || input === 'u') {
+        // Page up (half window)
+        const pageSize = Math.floor(windowHeight / 2);
+        setScrollOffset((prev) => Math.max(0, prev - pageSize));
+      } else if (input === 'g') {
+        // Go to top
+        setScrollOffset(0);
+      } else if (input === 'G') {
+        // Go to bottom
+        setScrollOffset(Math.max(0, totalLines - windowHeight));
+      }
+    },
+    { isActive: hasFocus }
+  );
 
   if (isLoading) {
     return (
@@ -132,21 +137,22 @@ export const SyntaxViewer: React.FC<SyntaxViewerProps> = ({
 
   return (
     <Box flexDirection="column" height="100%" width="100%">
-      <Box 
-        borderStyle="single" 
-        borderColor="cyan" 
-        paddingX={1}
-        marginBottom={1}
-      >
+      <Box borderStyle="single" borderColor="cyan" paddingX={1} marginBottom={1}>
         <Text color="cyan" bold>
           📄 {filePath.split(/[/\\]/).pop()}
         </Text>
-        <Text color="gray"> - Lines {scrollOffset + 1}-{Math.min(scrollOffset + windowHeight, totalLines)} of {totalLines}</Text>
+        <Text color="gray">
+          {' '}
+          - Lines {scrollOffset + 1}-{Math.min(scrollOffset + windowHeight, totalLines)} of{' '}
+          {totalLines}
+        </Text>
       </Box>
 
       {hasMoreAbove && (
         <Box justifyContent="center">
-          <Text color="gray" dimColor>▲ More lines above (scroll up) ▲</Text>
+          <Text color="gray" dimColor>
+            ▲ More lines above (scroll up) ▲
+          </Text>
         </Box>
       )}
 
@@ -168,7 +174,9 @@ export const SyntaxViewer: React.FC<SyntaxViewerProps> = ({
 
       {hasMoreBelow && (
         <Box justifyContent="center">
-          <Text color="gray" dimColor>▼ More lines below (scroll down) ▼</Text>
+          <Text color="gray" dimColor>
+            ▼ More lines below (scroll down) ▼
+          </Text>
         </Box>
       )}
 

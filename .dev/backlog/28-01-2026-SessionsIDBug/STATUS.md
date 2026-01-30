@@ -24,23 +24,25 @@
 
 ## Issues Fixed
 
-| # | Issue | Priority | Status | Details |
-|---|-------|----------|--------|---------|
-| 1 | Session ID contamination | P0 | ✅ FIXED | [ALL_FIXES.md#fix-1](./ALL_FIXES.md#fix-1-session-id-regeneration) |
-| 2 | Mode snapshots not created | P1 | ✅ FIXED | [ALL_FIXES.md#fix-2](./ALL_FIXES.md#fix-2-mode-transition-snapshots) |
-| 3 | Model swap broken | P0 | ✅ FIXED | [ALL_FIXES.md#fix-3](./ALL_FIXES.md#fix-3-model-swap-flow) |
-| 4 | /new command not working | P1 | ✅ FIXED | [ALL_FIXES.md#fix-4](./ALL_FIXES.md#fix-4-new-command) |
-| 5 | Context size not persisting | P0 | ✅ FIXED | [ALL_FIXES.md#fix-5](./ALL_FIXES.md#fix-5-context-size-selection) |
-| 6 | Auto context blocking changes | P1 | ✅ FIXED | [ALL_FIXES.md#fix-6](./ALL_FIXES.md#fix-6-auto-context-disabled) |
+| #   | Issue                         | Priority | Status   | Details                                                              |
+| --- | ----------------------------- | -------- | -------- | -------------------------------------------------------------------- |
+| 1   | Session ID contamination      | P0       | ✅ FIXED | [ALL_FIXES.md#fix-1](./ALL_FIXES.md#fix-1-session-id-regeneration)   |
+| 2   | Mode snapshots not created    | P1       | ✅ FIXED | [ALL_FIXES.md#fix-2](./ALL_FIXES.md#fix-2-mode-transition-snapshots) |
+| 3   | Model swap broken             | P0       | ✅ FIXED | [ALL_FIXES.md#fix-3](./ALL_FIXES.md#fix-3-model-swap-flow)           |
+| 4   | /new command not working      | P1       | ✅ FIXED | [ALL_FIXES.md#fix-4](./ALL_FIXES.md#fix-4-new-command)               |
+| 5   | Context size not persisting   | P0       | ✅ FIXED | [ALL_FIXES.md#fix-5](./ALL_FIXES.md#fix-5-context-size-selection)    |
+| 6   | Auto context blocking changes | P1       | ✅ FIXED | [ALL_FIXES.md#fix-6](./ALL_FIXES.md#fix-6-auto-context-disabled)     |
 
 ---
 
 ## Testing Status
 
 ### Build
+
 ✅ **SUCCESS** - All changes compiled without errors
 
 ### Manual Testing
+
 ⏳ **PENDING** - Awaiting user verification
 
 **Test Checklist:** See [ALL_FIXES.md#testing-checklist](./ALL_FIXES.md#testing-checklist)
@@ -50,6 +52,7 @@
 ## Files Modified
 
 7 files changed:
+
 - `packages/cli/src/ui/App.tsx`
 - `packages/cli/src/features/context/ModelContext.tsx`
 - `packages/cli/src/features/context/ContextManagerContext.tsx`

@@ -1,6 +1,6 @@
 /**
  * Mock ProfileManager for Testing
- * 
+ *
  * Provides a complete mock implementation of IProfileManager
  * for use in all context-related tests.
  */
@@ -75,11 +75,7 @@ export class MockProfileManager implements IProfileManager {
   /**
    * Add a model to the mock manager
    */
-  addModel(
-    modelId: string,
-    profiles: ContextProfile[],
-    defaultContext?: number
-  ): void {
+  addModel(modelId: string, profiles: ContextProfile[], defaultContext?: number): void {
     this.models.set(modelId, {
       id: modelId,
       name: modelId,
@@ -108,11 +104,11 @@ export class MockProfileManager implements IProfileManager {
  */
 export function createMockProfileManager(): IProfileManager {
   const manager = new MockProfileManager();
-  
+
   // Add standard test models
   manager.addModel('llama3.2:3b', createStandardProfiles(), 131072);
   manager.addModel('mistral:7b', createStandardProfiles(), 32768);
   manager.addModel('codellama:13b', createStandardProfiles(), 16384);
-  
+
   return manager;
 }

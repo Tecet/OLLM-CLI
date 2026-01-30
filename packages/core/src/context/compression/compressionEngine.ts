@@ -13,7 +13,11 @@
  * Requirements: FR-5, FR-6
  */
 
-import { CompressionPipeline, type CompressionResult, type CompressionPipelineConfig } from './compressionPipeline.js';
+import {
+  CompressionPipeline,
+  type CompressionResult,
+  type CompressionPipelineConfig,
+} from './compressionPipeline.js';
 import { TokenCounterService } from '../tokenCounter.js';
 
 import type { Goal } from '../goalTypes.js';
@@ -271,7 +275,7 @@ export class CompressionEngine {
       return 'emergency';
     } else if (usage >= 0.85) {
       return 'aggressive';
-    } else if (usage >= 0.70) {
+    } else if (usage >= 0.7) {
       return 'standard';
     } else {
       return 'selective';
@@ -443,19 +447,19 @@ export class CompressionEngine {
     let estimatedRatio: number;
     switch (strategy) {
       case 'emergency':
-        estimatedRatio = 0.10; // 10% of original
+        estimatedRatio = 0.1; // 10% of original
         break;
       case 'aggressive':
         estimatedRatio = 0.15; // 15% of original
         break;
       case 'standard':
-        estimatedRatio = 0.20; // 20% of original
+        estimatedRatio = 0.2; // 20% of original
         break;
       case 'selective':
         estimatedRatio = 0.25; // 25% of original
         break;
       default:
-        estimatedRatio = 0.20;
+        estimatedRatio = 0.2;
     }
 
     const estimatedCompressedTokens = Math.ceil(originalTokens * estimatedRatio);

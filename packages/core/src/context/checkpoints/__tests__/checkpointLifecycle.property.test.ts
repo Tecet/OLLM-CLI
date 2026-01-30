@@ -25,7 +25,7 @@ import type { CheckpointSummary } from '../../types/storageTypes.js';
 
 class MockProvider implements Partial<ProviderAdapter> {
   name = 'mock';
-  
+
   async *chatStream() {
     // Return a simple summary
     yield { type: 'text' as const, value: 'Summarized content' };
@@ -71,9 +71,7 @@ const checkpointsWithAgesArbitrary = fc
       fc.array(
         fc
           .integer({ min: 0, max: currentNumber - 1 })
-          .chain(compressionNumber =>
-            checkpointArbitrary(3, compressionNumber)
-          ),
+          .chain((compressionNumber) => checkpointArbitrary(3, compressionNumber)),
         { minLength: count, maxLength: count }
       ),
       fc.constant(currentNumber)
@@ -106,9 +104,7 @@ describe('Property 16: Checkpoint Aging', () => {
         // Property: All successful aging results have level <= target level
         for (const result of results) {
           if (result.success) {
-            expect(result.agedCheckpoint.compressionLevel).toBeLessThanOrEqual(
-              result.newLevel
-            );
+            expect(result.agedCheckpoint.compressionLevel).toBeLessThanOrEqual(result.newLevel);
           }
         }
       }),
@@ -126,7 +122,7 @@ describe('Property 16: Checkpoint Aging', () => {
         for (const result of results) {
           if (result.success) {
             expect(result.agedCheckpoint.tokenCount).toBeLessThanOrEqual(
-              checkpoints.find(cp => cp.id === result.originalId)!.tokenCount
+              checkpoints.find((cp) => cp.id === result.originalId)!.tokenCount
             );
           }
         }
@@ -144,11 +140,9 @@ describe('Property 16: Checkpoint Aging', () => {
         // Property: Aged checkpoints maintain original ID and message IDs
         for (const result of results) {
           if (result.success) {
-            const original = checkpoints.find(cp => cp.id === result.originalId)!;
+            const original = checkpoints.find((cp) => cp.id === result.originalId)!;
             expect(result.agedCheckpoint.id).toBe(original.id);
-            expect(result.agedCheckpoint.originalMessageIds).toEqual(
-              original.originalMessageIds
-            );
+            expect(result.agedCheckpoint.originalMessageIds).toEqual(original.originalMessageIds);
           }
         }
       }),
@@ -165,7 +159,7 @@ describe('Property 16: Checkpoint Aging', () => {
         // Property: Checkpoints are aged according to age rules
         for (const result of results) {
           if (result.success) {
-            const original = checkpoints.find(cp => cp.id === result.originalId)!;
+            const original = checkpoints.find((cp) => cp.id === result.originalId)!;
             const age = currentNumber - original.compressionNumber;
 
             // Verify target level matches age rules
@@ -192,10 +186,9 @@ describe('Property 16: Checkpoint Aging', () => {
         // Property: Only checkpoints with level > target level are aged
         for (const checkpoint of checkpoints) {
           const age = currentNumber - checkpoint.compressionNumber;
-          const targetLevel =
-            age >= 10 ? 1 : age >= 5 ? 2 : 3;
+          const targetLevel = age >= 10 ? 1 : age >= 5 ? 2 : 3;
 
-          const wasAged = results.some(r => r.originalId === checkpoint.id);
+          const wasAged = results.some((r) => r.originalId === checkpoint.id);
 
           if (checkpoint.compressionLevel > targetLevel) {
             // Should be aged
@@ -219,7 +212,7 @@ describe('Property 16: Checkpoint Aging', () => {
         // Property: tokensFreed = original tokens - new tokens
         for (const result of results) {
           if (result.success) {
-            const original = checkpoints.find(cp => cp.id === result.originalId)!;
+            const original = checkpoints.find((cp) => cp.id === result.originalId)!;
             const expectedFreed = original.tokenCount - result.agedCheckpoint.tokenCount;
             expect(result.tokensFreed).toBe(expectedFreed);
           }
@@ -251,13 +244,13 @@ describe('Property 17: Checkpoint Merging', () => {
     await fc.assert(
       fc.asyncProperty(
         fc.array(checkpointArbitrary(1, 0), { minLength: 2, maxLength: 5 }),
-        async checkpoints => {
+        async (checkpoints) => {
           // Merge checkpoints
           const result = await lifecycle.mergeCheckpoints(checkpoints);
 
           if (result.success) {
             // Property: Merged checkpoint contains all original message IDs
-            const allOriginalIds = checkpoints.flatMap(cp => cp.originalMessageIds);
+            const allOriginalIds = checkpoints.flatMap((cp) => cp.originalMessageIds);
             expect(result.mergedCheckpoint.originalMessageIds).toEqual(allOriginalIds);
           }
         }
@@ -270,7 +263,7 @@ describe('Property 17: Checkpoint Merging', () => {
     await fc.assert(
       fc.asyncProperty(
         fc.array(checkpointArbitrary(1, 0), { minLength: 2, maxLength: 5 }),
-        async checkpoints => {
+        async (checkpoints) => {
           // Merge checkpoints
           const result = await lifecycle.mergeCheckpoints(checkpoints);
 
@@ -288,7 +281,7 @@ describe('Property 17: Checkpoint Merging', () => {
     await fc.assert(
       fc.asyncProperty(
         fc.array(checkpointArbitrary(1, 0), { minLength: 2, maxLength: 5 }),
-        async checkpoints => {
+        async (checkpoints) => {
           // Merge checkpoints
           const result = await lifecycle.mergeCheckpoints(checkpoints);
 
@@ -307,7 +300,7 @@ describe('Property 17: Checkpoint Merging', () => {
     await fc.assert(
       fc.asyncProperty(
         fc.array(checkpointArbitrary(1, 0), { minLength: 2, maxLength: 5 }),
-        async checkpoints => {
+        async (checkpoints) => {
           // Merge checkpoints
           const result = await lifecycle.mergeCheckpoints(checkpoints);
 
@@ -326,7 +319,7 @@ describe('Property 17: Checkpoint Merging', () => {
     await fc.assert(
       fc.asyncProperty(
         fc.array(checkpointArbitrary(1, 0), { minLength: 0, maxLength: 1 }),
-        async checkpoints => {
+        async (checkpoints) => {
           // Merge checkpoints
           const result = await lifecycle.mergeCheckpoints(checkpoints);
 
@@ -345,18 +338,16 @@ describe('Property 17: Checkpoint Merging', () => {
         fc.array(
           fc
             .integer({ min: 0, max: 20 })
-            .chain(compressionNumber => checkpointArbitrary(1, compressionNumber)),
+            .chain((compressionNumber) => checkpointArbitrary(1, compressionNumber)),
           { minLength: 2, maxLength: 5 }
         ),
-        async checkpoints => {
+        async (checkpoints) => {
           // Merge checkpoints
           const result = await lifecycle.mergeCheckpoints(checkpoints);
 
           if (result.success) {
             // Property: Merged checkpoint has max compression number
-            const maxCompressionNumber = Math.max(
-              ...checkpoints.map(cp => cp.compressionNumber)
-            );
+            const maxCompressionNumber = Math.max(...checkpoints.map((cp) => cp.compressionNumber));
             expect(result.mergedCheckpoint.compressionNumber).toBe(maxCompressionNumber);
           }
         }

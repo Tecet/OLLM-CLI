@@ -10,7 +10,13 @@
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 
-import { ContextTier, OperationalMode, TieredPromptStore, type ToolSchema , ContextMessage } from '@ollm/core';
+import {
+  ContextTier,
+  OperationalMode,
+  TieredPromptStore,
+  type ToolSchema,
+  ContextMessage,
+} from '@ollm/core';
 
 import { SettingsService } from '../config/settingsService.js';
 import { getGlobalContextManager } from '../features/context/ContextManagerContext.js';
@@ -32,15 +38,15 @@ const ANSI = {
   reset: '\x1b[0m',
   bold: '\x1b[1m',
   dim: '\x1b[2m',
-  
+
   // Theme colors (using neon-dark as reference)
-  accent: '\x1b[38;2;78;201;176m',    // #4ec9b0 - theme.text.accent
-  primary: '\x1b[38;2;212;212;212m',  // #d4d4d4 - theme.text.primary
+  accent: '\x1b[38;2;78;201;176m', // #4ec9b0 - theme.text.accent
+  primary: '\x1b[38;2;212;212;212m', // #d4d4d4 - theme.text.primary
   secondary: '\x1b[38;2;133;133;133m', // #858585 - theme.text.secondary
-  success: '\x1b[38;2;78;201;176m',   // #4ec9b0 - theme.status.success
-  warning: '\x1b[38;2;206;145;120m',  // #ce9178 - theme.status.warning
-  error: '\x1b[38;2;244;135;113m',    // #f48771 - theme.status.error
-  info: '\x1b[38;2;86;156;214m',      // #569cd6 - theme.status.info
+  success: '\x1b[38;2;78;201;176m', // #4ec9b0 - theme.status.success
+  warning: '\x1b[38;2;206;145;120m', // #ce9178 - theme.status.warning
+  error: '\x1b[38;2;244;135;113m', // #f48771 - theme.status.error
+  info: '\x1b[38;2;86;156;214m', // #569cd6 - theme.status.info
 } as const;
 
 /**
@@ -204,11 +210,11 @@ function buildPromptPreviewMessage(input: {
   const spacer = '\n';
   const sectionSpacer = '\n\n';
   const divider = color.dim('─'.repeat(80));
-  
+
   // Format options with colored labels
   const formattedOptions = input.optionsText
     .split('\n')
-    .map(line => {
+    .map((line) => {
       const match = line.match(/^([^:]+):\s+(.+)$/);
       if (match) {
         const label = match[1].trim();
@@ -218,7 +224,7 @@ function buildPromptPreviewMessage(input: {
       return line;
     })
     .join('\n');
-  
+
   // Format payload section
   const payloadBlock = input.showPayload
     ? `${color.header('═══ 📦 Ollama Payload (JSON) ═══')}\n\n${color.dim(input.payloadJson)}`
@@ -346,7 +352,7 @@ export const testPromptCommand: Command = {
     try {
       const showPayload = args.includes('--full');
       const showBudget = args.includes('--budget');
-      
+
       const manager = getGlobalContextManager();
       if (!manager) {
         return { success: false, message: 'Context Manager not initialized yet.' };
@@ -357,12 +363,13 @@ export const testPromptCommand: Command = {
       const settings = SettingsService.getInstance().getSettings();
       const modelId = settings.llm?.model ?? 'llama3.2:3b';
       const modelEntry = profileManager.getModelEntry(modelId);
-      
+
       // Get the actual Ollama context limit from the context manager
       // This is the 85% pre-calculated value that gets sent to Ollama
-      const ollamaContextSize = manager.getOllamaContextLimit?.() ?? 
+      const ollamaContextSize =
+        manager.getOllamaContextLimit?.() ??
         Math.floor((manager.getUsage().maxTokens || 8192) * 0.85);
-      
+
       const temperature = settings.llm?.temperature ?? 0.1;
       const forcedNumGpu = settings.llm?.forceNumGpu;
       const history = contextMessages
@@ -383,24 +390,24 @@ export const testPromptCommand: Command = {
       );
       let systemPrompt = manager.getSystemPrompt();
       const modelSupportsTools = modelEntry?.tool_support ?? false;
-      
+
       // Get tools for current mode from settings (just names)
-      const allowedToolNames = modelSupportsTools 
+      const allowedToolNames = modelSupportsTools
         ? SettingsService.getInstance().getToolsForMode(coreMode)
         : [];
-      
+
       // Get actual tool schemas from registry (what gets sent to LLM)
       let toolSchemas: ToolSchema[] = [];
       if (modelSupportsTools) {
         const serviceContainer = commandRegistry['serviceContainer'];
         const toolRegistry = serviceContainer?.getToolRegistry();
         const modeManager = manager.getModeManager?.();
-        
+
         if (toolRegistry && modeManager) {
           toolSchemas = toolRegistry.getFunctionSchemasForMode(coreMode, modeManager);
         }
       }
-      
+
       const toolNote = modelSupportsTools
         ? ''
         : 'Note: This model does not support function calling. Do not attempt to use tools or make tool calls.';
@@ -427,7 +434,7 @@ export const testPromptCommand: Command = {
         userMessages: history.filter((m) => m.role === 'user').map((m) => m.content || ''),
         toolNames: allowedToolNames,
       });
-      
+
       const payloadJson = JSON.stringify(
         {
           model: modelId,
@@ -480,11 +487,11 @@ export const testPromptCommand: Command = {
         `GPU override (settings):  ${Number.isFinite(forcedNumGpu) ? forcedNumGpu : 'none'}`,
         `GPU info:                 ${lastGPUInfo ? `${lastGPUInfo.model ?? lastGPUInfo.vendor ?? 'Unknown'} - ${(lastGPUInfo.vramTotal / (1024 * 1024 * 1024)).toFixed(1)} GB total / ${(lastGPUInfo.vramFree / (1024 * 1024 * 1024)).toFixed(1)} GB free` : 'unavailable'}`,
       ].join('\n');
-      
+
       // Add tools section if any
       let toolsSection = '';
       if (toolSchemas.length > 0) {
-        const toolNames = toolSchemas.map(s => s.name);
+        const toolNames = toolSchemas.map((s) => s.name);
         toolsSection = `\n\n${color.label('🔧 Available Tools:')} ${color.success(`(${toolSchemas.length})`)}`;
         toolsSection += `\n  ${color.value(toolNames.join(', '))}`;
         toolsSection += `\n\n  ${color.success('✓')} ${color.dim('These tools will be sent to Ollama in the payload')}`;
@@ -495,7 +502,7 @@ export const testPromptCommand: Command = {
         toolsSection = `\n\n${color.label('🔧 Available Tools:')} ${color.error('NOT SUPPORTED')}`;
         toolsSection += `\n  ${color.dim('Model does not support function calling')}`;
       }
-      
+
       const systemHeader = `${formatModeLabel(coreMode)} ${formatTierLabel(effectiveTierEnum)}`;
       const preview = buildPromptPreviewMessage({
         optionsText,
@@ -511,7 +518,7 @@ export const testPromptCommand: Command = {
       const addSystemMessage = globalThis.__ollmAddSystemMessage;
       if (typeof addSystemMessage === 'function') {
         addSystemMessage(preview);
-        
+
         // If --budget flag is present, run budget validation
         if (showBudget) {
           try {
@@ -520,7 +527,7 @@ export const testPromptCommand: Command = {
               encoding: 'utf-8',
               cwd: process.cwd(),
             });
-            
+
             // Format budget output as a system message
             const budgetMessage = `\`\`\`\n${budgetOutput}\n\`\`\``;
             addSystemMessage(budgetMessage);
@@ -536,7 +543,7 @@ export const testPromptCommand: Command = {
 
       return {
         success: true,
-        message: showBudget 
+        message: showBudget
           ? 'Prompt preview and budget validation posted as system messages.'
           : 'Prompt preview posted as system message for debugging.',
       };

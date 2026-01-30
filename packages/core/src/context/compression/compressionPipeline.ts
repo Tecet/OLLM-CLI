@@ -103,7 +103,7 @@ export interface CompressionPipelineConfig {
   /** Progress callback (optional) */
   onProgress?: ProgressCallback;
 
-  /** 
+  /**
    * Percentage of context to keep uncompressed (default: 0.5 = 50%)
    * For example, with 8K context (6963 ollama limit):
    * - 50% = keep last 3481 tokens uncompressed
@@ -112,7 +112,7 @@ export interface CompressionPipelineConfig {
    */
   keepRecentPercentage?: number;
 
-  /** 
+  /**
    * Ollama context limit (for calculating keep budget)
    * This is the 85% pre-calculated value from profiles
    */
@@ -210,21 +210,30 @@ export class CompressionPipeline {
         };
       }
 
-      this.reportProgress('Identification', 15, `Found ${messagesToCompress.length} messages to compress`);
+      this.reportProgress(
+        'Identification',
+        15,
+        `Found ${messagesToCompress.length} messages to compress`
+      );
 
       // Stage 2: Preparation (15-25%)
       this.reportProgress('Preparation', 15, 'Preparing messages for summarization...');
       const prepared = await this.prepareForSummarization(messagesToCompress, goal);
-      this.reportProgress('Preparation', 25, `Prepared ${prepared.messages.length} messages (Level ${prepared.level})`);
+      this.reportProgress(
+        'Preparation',
+        25,
+        `Prepared ${prepared.messages.length} messages (Level ${prepared.level})`
+      );
 
       // Calculate dynamic maxSummaryTokens based on input size
       // Target: 60% of input tokens for effective compression
-      const inputTokens = messagesToCompress.reduce((sum, msg) => 
-        sum + this.tokenCounter.countTokensCached(msg.id, msg.content), 0
+      const inputTokens = messagesToCompress.reduce(
+        (sum, msg) => sum + this.tokenCounter.countTokensCached(msg.id, msg.content),
+        0
       );
       const dynamicMaxTokens = Math.max(300, Math.floor(inputTokens * 0.6)); // Min 300, target 60% of input
       this.summarizationService.setMaxSummaryTokens(dynamicMaxTokens);
-      
+
       debugLog('CompressionPipeline', 'Dynamic summary limit', {
         inputTokens,
         maxSummaryTokens: dynamicMaxTokens,
@@ -248,7 +257,11 @@ export class CompressionPipeline {
         };
       }
 
-      this.reportProgress('Summarization', 70, `Created summary (${summarizationResult.tokenCount} tokens)`);
+      this.reportProgress(
+        'Summarization',
+        70,
+        `Created summary (${summarizationResult.tokenCount} tokens)`
+      );
 
       // Stage 4: Checkpoint Creation (70-80%)
       this.reportProgress('Checkpoint Creation', 70, 'Creating checkpoint...');
@@ -262,10 +275,10 @@ export class CompressionPipeline {
 
       // Stage 5: Context Update (80-90%)
       this.reportProgress('Context Update', 80, 'Updating active context...');
-      
+
       // Calculate freed tokens (can be negative if summary is longer than original)
       const freedTokens = prepared.originalTokens - checkpoint.tokenCount;
-      
+
       // If compression didn't actually save tokens, it's still a failure
       if (freedTokens <= 0) {
         this.reportProgress('Error', 100, 'Compression did not reduce token count');
@@ -276,7 +289,7 @@ export class CompressionPipeline {
           freedTokens,
         };
       }
-      
+
       await this.updateActiveContext(checkpoint, messagesToCompress);
       this.reportProgress('Context Update', 90, `Freed ${freedTokens} tokens`);
 
@@ -302,10 +315,7 @@ export class CompressionPipeline {
       let goalProgress: ProgressTrackingResult | undefined;
       if (goal && this.goalProgressTracker) {
         this.reportProgress('Goal Tracking', 100, 'Tracking goal progress...');
-        goalProgress = this.goalProgressTracker.trackProgress(
-          summarizationResult.summary,
-          goal
-        );
+        goalProgress = this.goalProgressTracker.trackProgress(summarizationResult.summary, goal);
 
         if (goalProgress.success && goalProgress.updatesApplied > 0) {
           this.reportProgress(
@@ -384,7 +394,7 @@ export class CompressionPipeline {
     for (let i = recentMessages.length - 1; i >= 0; i--) {
       const msg = recentMessages[i];
       const msgTokens = this.tokenCounter.countTokensCached(msg.id, msg.content);
-      
+
       if (recentTokens + msgTokens <= keepRecentTokenBudget) {
         recentTokens += msgTokens;
         keepFromIndex = i;
@@ -394,7 +404,10 @@ export class CompressionPipeline {
       }
     }
 
-    debugLog('CompressionPipeline', `Keep recent: ${recentMessages.length - keepFromIndex} messages (${recentTokens} tokens), Budget: ${keepRecentTokenBudget} tokens (${Math.round(this.keepRecentPercentage * 100)}% of ${this.ollamaLimit})`);
+    debugLog(
+      'CompressionPipeline',
+      `Keep recent: ${recentMessages.length - keepFromIndex} messages (${recentTokens} tokens), Budget: ${keepRecentTokenBudget} tokens (${Math.round(this.keepRecentPercentage * 100)}% of ${this.ollamaLimit})`
+    );
 
     // Messages to compress are everything before keepFromIndex
     const oldMessages = recentMessages.slice(0, keepFromIndex);
@@ -409,11 +422,17 @@ export class CompressionPipeline {
       return sum + this.tokenCounter.countTokensCached(m.id, m.content);
     }, 0);
 
-    debugLog('CompressionPipeline', `Messages to compress: ${oldMessages.length} (${oldTokens} tokens)`);
+    debugLog(
+      'CompressionPipeline',
+      `Messages to compress: ${oldMessages.length} (${oldTokens} tokens)`
+    );
 
     // Need at least 500 tokens to make compression worthwhile
     if (oldTokens < 500) {
-      debugLog('CompressionPipeline', `Not enough tokens to compress (need >= 500, have ${oldTokens})`);
+      debugLog(
+        'CompressionPipeline',
+        `Not enough tokens to compress (need >= 500, have ${oldTokens})`
+      );
       return [];
     }
 
@@ -457,9 +476,11 @@ export class CompressionPipeline {
     // Determine compression level based on token count
     // More tokens = more aggressive compression
     const level: CompressionLevel =
-      originalTokens > 3000 ? 1 : // Compact
-      originalTokens > 2000 ? 2 : // Moderate
-      3; // Detailed
+      originalTokens > 3000
+        ? 1 // Compact
+        : originalTokens > 2000
+          ? 2 // Moderate
+          : 3; // Detailed
 
     return {
       messages,
@@ -507,11 +528,8 @@ export class CompressionPipeline {
       id: this.generateId(),
       timestamp: Date.now(),
       summary,
-      originalMessageIds: originalMessages.map(m => m.id),
-      tokenCount: this.tokenCounter.countTokensCached(
-        `checkpoint_${compressionNumber}`,
-        summary
-      ),
+      originalMessageIds: originalMessages.map((m) => m.id),
+      tokenCount: this.tokenCounter.countTokensCached(`checkpoint_${compressionNumber}`, summary),
       compressionLevel: level,
       compressionNumber,
       metadata: {
@@ -592,8 +610,11 @@ export class CompressionPipeline {
    * @returns Unique identifier
    */
   private generateId(): string {
-    return 'ckpt_' + Math.random().toString(36).substring(2, 15) +
-           Math.random().toString(36).substring(2, 15);
+    return (
+      'ckpt_' +
+      Math.random().toString(36).substring(2, 15) +
+      Math.random().toString(36).substring(2, 15)
+    );
   }
 
   /**

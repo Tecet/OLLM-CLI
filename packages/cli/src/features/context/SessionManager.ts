@@ -1,6 +1,6 @@
 /**
  * Session Manager
- * 
+ *
  * Handles session ID generation and management for model swaps.
  * Keeps session logic separate from UI components.
  */
@@ -73,21 +73,23 @@ export class SessionManager {
   createNewSession(newModel: string): string {
     const newSessionId = `session-${Date.now()}`;
     const sessionPath = this.getSessionPath(newSessionId);
-    
-    console.log(`[SessionManager] Model changed: ${this.currentModel} → ${newModel}, new session: ${newSessionId}`);
-    
+
+    console.log(
+      `[SessionManager] Model changed: ${this.currentModel} → ${newModel}, new session: ${newSessionId}`
+    );
+
     this.currentSessionId = newSessionId;
     this.currentModel = newModel;
-    
+
     // Notify all callbacks
-    this.callbacks.forEach(callback => {
+    this.callbacks.forEach((callback) => {
       try {
         callback(newSessionId, newModel, sessionPath);
       } catch (error) {
         console.error('[SessionManager] Callback error:', error);
       }
     });
-    
+
     return newSessionId;
   }
 

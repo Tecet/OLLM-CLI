@@ -1,4 +1,4 @@
-#         plementation Plan: Context Compression System Refactor
+# plementation Plan: Context Compression System Refactor
 
 ## Overview
 

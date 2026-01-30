@@ -1,12 +1,12 @@
 /**
  * Storage Boundaries Implementation
- * 
+ *
  * Enforces strict separation between storage layers to prevent cross-contamination.
  * Provides runtime validation and enforcement to ensure:
  * - Only ActiveContext is sent to the LLM
  * - Snapshots are never included in prompts
  * - Session history is never included in prompts
- * 
+ *
  * @module storageBoundaries
  */
 
@@ -24,20 +24,20 @@ import type { Message } from '../types.js';
 
 /**
  * Storage boundaries implementation
- * 
+ *
  * Provides type guards, validation, and enforcement methods to maintain
  * strict separation between storage layers.
- * 
+ *
  * @example
  * ```typescript
  * const boundaries = new StorageBoundariesImpl();
- * 
+ *
  * // Validate before sending to LLM
  * const result = boundaries.validateActiveContext(context);
  * if (!result.valid) {
  *   throw new Error(`Invalid context: ${result.errors?.join(', ')}`);
  * }
- * 
+ *
  * // Enforce boundaries
  * boundaries.preventSnapshotInPrompt(prompt);
  * boundaries.preventHistoryInPrompt(prompt);
@@ -118,7 +118,10 @@ export class StorageBoundariesImpl implements IStorageBoundaries {
       if (typeof context.tokenCount.system !== 'number' || context.tokenCount.system < 0) {
         errors.push('Token count system must be a non-negative number');
       }
-      if (typeof context.tokenCount.checkpoints !== 'number' || context.tokenCount.checkpoints < 0) {
+      if (
+        typeof context.tokenCount.checkpoints !== 'number' ||
+        context.tokenCount.checkpoints < 0
+      ) {
         errors.push('Token count checkpoints must be a non-negative number');
       }
       if (typeof context.tokenCount.recent !== 'number' || context.tokenCount.recent < 0) {
@@ -130,9 +133,7 @@ export class StorageBoundariesImpl implements IStorageBoundaries {
 
       // Validate token count consistency
       const expectedTotal =
-        context.tokenCount.system +
-        context.tokenCount.checkpoints +
-        context.tokenCount.recent;
+        context.tokenCount.system + context.tokenCount.checkpoints + context.tokenCount.recent;
 
       if (Math.abs(context.tokenCount.total - expectedTotal) > 1) {
         errors.push(
@@ -239,13 +240,19 @@ export class StorageBoundariesImpl implements IStorageBoundaries {
       if (typeof history.metadata.lastUpdate !== 'number' || history.metadata.lastUpdate <= 0) {
         errors.push('Metadata lastUpdate must be a positive number');
       }
-      if (typeof history.metadata.totalMessages !== 'number' || history.metadata.totalMessages < 0) {
+      if (
+        typeof history.metadata.totalMessages !== 'number' ||
+        history.metadata.totalMessages < 0
+      ) {
         errors.push('Metadata totalMessages must be a non-negative number');
       }
       if (typeof history.metadata.totalTokens !== 'number' || history.metadata.totalTokens < 0) {
         errors.push('Metadata totalTokens must be a non-negative number');
       }
-      if (typeof history.metadata.compressionCount !== 'number' || history.metadata.compressionCount < 0) {
+      if (
+        typeof history.metadata.compressionCount !== 'number' ||
+        history.metadata.compressionCount < 0
+      ) {
         errors.push('Metadata compressionCount must be a non-negative number');
       }
 
@@ -269,7 +276,7 @@ export class StorageBoundariesImpl implements IStorageBoundaries {
 
   /**
    * Prevent snapshot data from being included in prompt
-   * 
+   *
    * Scans messages for snapshot-specific markers and throws if detected.
    */
   preventSnapshotInPrompt(prompt: Message[]): void {
@@ -286,8 +293,10 @@ export class StorageBoundariesImpl implements IStorageBoundaries {
             'CRITICAL: Snapshot conversation state detected in prompt. Snapshots must never be sent to LLM.'
           );
         }
-        if ('purpose' in message.metadata && 
-            ['recovery', 'rollback', 'emergency'].includes(message.metadata.purpose as string)) {
+        if (
+          'purpose' in message.metadata &&
+          ['recovery', 'rollback', 'emergency'].includes(message.metadata.purpose as string)
+        ) {
           throw new Error(
             'CRITICAL: Snapshot purpose marker detected in prompt. Snapshots must never be sent to LLM.'
           );
@@ -307,7 +316,7 @@ export class StorageBoundariesImpl implements IStorageBoundaries {
 
   /**
    * Prevent session history from being included in prompt
-   * 
+   *
    * Scans messages for session history markers and throws if detected.
    */
   preventHistoryInPrompt(prompt: Message[]): void {
@@ -452,7 +461,11 @@ export class StorageBoundariesImpl implements IStorageBoundaries {
       errors.push('Compressed tokens must be a non-negative number');
     }
 
-    if (typeof record.compressionRatio !== 'number' || record.compressionRatio < 0 || record.compressionRatio > 1) {
+    if (
+      typeof record.compressionRatio !== 'number' ||
+      record.compressionRatio < 0 ||
+      record.compressionRatio > 1
+    ) {
       errors.push('Compression ratio must be between 0 and 1');
     }
 
@@ -466,9 +479,9 @@ export class StorageBoundariesImpl implements IStorageBoundaries {
 
 /**
  * Create a new StorageBoundaries instance
- * 
+ *
  * @returns StorageBoundaries implementation
- * 
+ *
  * @example
  * ```typescript
  * const boundaries = createStorageBoundaries();

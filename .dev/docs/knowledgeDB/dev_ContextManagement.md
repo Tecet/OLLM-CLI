@@ -115,7 +115,7 @@ useEffect(() => {
       const { getSessionManager } = await import('./SessionManager.js');
       const sessionManager = getSessionManager();
       const pendingSize = sessionManager.getPendingContextSize();
-      
+
       if (pendingSize !== null) {
         console.log(`[ContextManagerContext] Using pending context size: ${pendingSize}`);
         effectiveConfig = {
@@ -131,7 +131,7 @@ useEffect(() => {
     // Create context manager with effective config
     const manager = createContextManager(sessionId, modelInfo, effectiveConfig);
     managerRef.current = manager;
-    
+
     // ... rest of initialization
   };
 
@@ -142,12 +142,12 @@ useEffect(() => {
     const sessionManager = getSessionManager();
     const cleanup = sessionManager.onSessionChange(async (newSessionId, newModel) => {
       console.log(`[ContextManagerContext] Session change detected: ${newSessionId}`);
-      
+
       // Stop old manager
       if (managerRef.current) {
         await managerRef.current.stop();
       }
-      
+
       // Reinitialize with new session
       await initManager();
     });

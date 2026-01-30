@@ -14,11 +14,21 @@
 
 import { ContextOrchestratorAdapter } from './adapters/contextOrchestratorAdapter.js';
 import { PromptOrchestratorIntegration } from './integration/promptOrchestratorIntegration.js';
-import { ContextOrchestrator, type ContextOrchestratorConfig } from './orchestration/contextOrchestrator.js';
+import {
+  ContextOrchestrator,
+  type ContextOrchestratorConfig,
+} from './orchestration/contextOrchestrator.js';
 import { PromptOrchestrator } from './promptOrchestrator.js';
 import { ContextTier, OperationalMode } from './types.js';
 
-import type { ContextManager, ContextConfig, ModelInfo, VRAMMonitor, TokenCounter, ContextPool } from './types.js';
+import type {
+  ContextManager,
+  ContextConfig,
+  ModelInfo,
+  VRAMMonitor,
+  TokenCounter,
+  ContextPool,
+} from './types.js';
 import type { ProviderAdapter } from '../provider/types.js';
 
 /**
@@ -104,19 +114,21 @@ export function createContextManager(
       // Ignore write errors
     }
   };
-  
+
   // Log synchronously by wrapping in promise (fire and forget)
   const log = (msg: string) => {
     logToFile(msg).catch(() => {});
   };
-  
+
   log('[ContextManagerFactory] Creating ContextOrchestrator');
-  log(`[ContextManagerFactory] Config: ${JSON.stringify({
-    sessionId: config.sessionId,
-    hasProvider: !!config.provider,
-    hasStoragePath: !!config.storagePath,
-    modelId: config.modelInfo?.modelId,
-  })}`);
+  log(
+    `[ContextManagerFactory] Config: ${JSON.stringify({
+      sessionId: config.sessionId,
+      hasProvider: !!config.provider,
+      hasStoragePath: !!config.storagePath,
+      modelId: config.modelInfo?.modelId,
+    })}`
+  );
 
   // Validate required configuration
   if (!config.provider) {
@@ -132,27 +144,29 @@ export function createContextManager(
   try {
     // Determine the actual context size to use
     // Priority: contextConfig.targetSize > modelInfo.contextSize > 8192 default
-    const actualContextSize = config.contextConfig?.targetSize || config.modelInfo.contextSize || 8192;
-    
+    const actualContextSize =
+      config.contextConfig?.targetSize || config.modelInfo.contextSize || 8192;
+
     // Get Ollama context limit from model info
     const ollamaLimit = getOllamaContextLimit(config.modelInfo, actualContextSize);
     log(`[ContextManagerFactory] Context size: ${actualContextSize}, Ollama limit: ${ollamaLimit}`);
 
     // Create token counter (reuse for all components)
     const tokenCounter = config.services?.tokenCounter || createDefaultTokenCounter();
-    
+
     // Get tier and mode based on actual context size
     const tier = config.contextConfig?.tier || calculateTierFromSize(actualContextSize);
     const mode = config.contextConfig?.mode || OperationalMode.ASSISTANT;
-    
+
     log(`[ContextManagerFactory] Tier: ${tier}, Mode: ${mode}`);
-    
+
     // Create prompt orchestrator
-    const promptOrchestrator = config.services?.promptOrchestrator || createDefaultPromptOrchestrator(tokenCounter);
-    
+    const promptOrchestrator =
+      config.services?.promptOrchestrator || createDefaultPromptOrchestrator(tokenCounter);
+
     // Get settings service for tool filtering
     const settingsService = config.services?.settingsService;
-    
+
     // Get allowed tools for current mode (if settings service available)
     let allowedTools: string[] | undefined;
     if (settingsService && typeof settingsService.getToolsForMode === 'function') {
@@ -162,7 +176,7 @@ export function createContextManager(
         log(`[ContextManagerFactory] Failed to get tools for mode: ${error}`);
       }
     }
-    
+
     // Build system prompt using PromptOrchestratorIntegration
     const promptIntegration = new PromptOrchestratorIntegration(
       promptOrchestrator,
@@ -176,9 +190,11 @@ export function createContextManager(
       modelId: config.modelInfo.modelId,
       allowedTools,
     });
-    
-    log(`[ContextManagerFactory] System prompt tokens: ${promptIntegration.getSystemPromptTokens(systemPrompt)}`);
-    
+
+    log(
+      `[ContextManagerFactory] System prompt tokens: ${promptIntegration.getSystemPromptTokens(systemPrompt)}`
+    );
+
     // Create orchestrator configuration
     const orchestratorConfig: ContextOrchestratorConfig = {
       systemPrompt,
@@ -188,7 +204,7 @@ export function createContextManager(
       model: config.modelInfo.modelId || 'unknown',
       sessionId: config.sessionId,
       storagePath: config.storagePath,
-      
+
       // Integration dependencies (use defaults if not provided)
       tier,
       mode,
@@ -205,7 +221,7 @@ export function createContextManager(
 
     // Wrap in adapter to implement legacy interface
     const adapter = new ContextOrchestratorAdapter(
-      orchestrator, 
+      orchestrator,
       config.contextConfig as ContextConfig,
       mode,
       tier,
@@ -228,13 +244,10 @@ export function createContextManager(
 /**
  * Get Ollama context limit from model info and config
  */
-function getOllamaContextLimit(
-  modelInfo: ModelInfo,
-  actualContextSize: number
-): number {
+function getOllamaContextLimit(modelInfo: ModelInfo, actualContextSize: number): number {
   // Try to get from model info context profiles
   if (modelInfo.contextProfiles && modelInfo.contextProfiles.length > 0) {
-    const profile = modelInfo.contextProfiles.find(p => p.size === actualContextSize);
+    const profile = modelInfo.contextProfiles.find((p) => p.size === actualContextSize);
     if (profile) {
       return profile.ollama_context_size;
     }

@@ -1,6 +1,6 @@
 /**
  * Session Migration Tests
- * 
+ *
  * Tests for session migration from legacy format to new storage layer format.
  */
 
@@ -232,7 +232,7 @@ describe('sessionMigration - Unit Tests', () => {
 
       const errors = validateMigratedSession(session);
 
-      expect(errors.some(e => e.includes('totalMessages'))).toBe(true);
+      expect(errors.some((e) => e.includes('totalMessages'))).toBe(true);
     });
   });
 });
@@ -274,14 +274,8 @@ describe('sessionMigration - Integration Tests', () => {
       const session1 = createLegacySession();
       const session2 = { ...createLegacySession(), sessionId: 'test-session-456' };
 
-      await fs.writeFile(
-        path.join(sourceDir, 'session1.json'),
-        JSON.stringify(session1)
-      );
-      await fs.writeFile(
-        path.join(sourceDir, 'session2.json'),
-        JSON.stringify(session2)
-      );
+      await fs.writeFile(path.join(sourceDir, 'session1.json'), JSON.stringify(session1));
+      await fs.writeFile(path.join(sourceDir, 'session2.json'), JSON.stringify(session2));
 
       // Run migration
       const result = await migrateAllSessions({
@@ -303,10 +297,7 @@ describe('sessionMigration - Integration Tests', () => {
 
     it('should perform dry run without writing files', async () => {
       const session = createLegacySession();
-      await fs.writeFile(
-        path.join(sourceDir, 'session.json'),
-        JSON.stringify(session)
-      );
+      await fs.writeFile(path.join(sourceDir, 'session.json'), JSON.stringify(session));
 
       const result = await migrateAllSessions({
         sourceDir,
@@ -327,10 +318,7 @@ describe('sessionMigration - Integration Tests', () => {
 
     it('should create backups when requested', async () => {
       const session = createLegacySession();
-      await fs.writeFile(
-        path.join(sourceDir, 'session.json'),
-        JSON.stringify(session)
-      );
+      await fs.writeFile(path.join(sourceDir, 'session.json'), JSON.stringify(session));
 
       const result = await migrateAllSessions({
         sourceDir,
@@ -356,10 +344,7 @@ describe('sessionMigration - Integration Tests', () => {
         messages: null,
       };
 
-      await fs.writeFile(
-        path.join(sourceDir, 'invalid.json'),
-        JSON.stringify(invalidSession)
-      );
+      await fs.writeFile(path.join(sourceDir, 'invalid.json'), JSON.stringify(invalidSession));
 
       const result = await migrateAllSessions({
         sourceDir,
@@ -389,14 +374,8 @@ describe('sessionMigration - Integration Tests', () => {
 
     it('should skip non-JSON files', async () => {
       const session = createLegacySession();
-      await fs.writeFile(
-        path.join(sourceDir, 'session.json'),
-        JSON.stringify(session)
-      );
-      await fs.writeFile(
-        path.join(sourceDir, 'readme.txt'),
-        'This is not a session file'
-      );
+      await fs.writeFile(path.join(sourceDir, 'session.json'), JSON.stringify(session));
+      await fs.writeFile(path.join(sourceDir, 'readme.txt'), 'This is not a session file');
 
       const result = await migrateAllSessions({
         sourceDir,
@@ -415,10 +394,7 @@ describe('sessionMigration - Integration Tests', () => {
     it('should restore sessions from backup', async () => {
       // Create backup
       const session = createLegacySession();
-      await fs.writeFile(
-        path.join(backupDir, 'session.json'),
-        JSON.stringify(session)
-      );
+      await fs.writeFile(path.join(backupDir, 'session.json'), JSON.stringify(session));
 
       // Run rollback
       const result = await rollbackMigration({
@@ -439,10 +415,7 @@ describe('sessionMigration - Integration Tests', () => {
 
     it('should perform dry run rollback', async () => {
       const session = createLegacySession();
-      await fs.writeFile(
-        path.join(backupDir, 'session.json'),
-        JSON.stringify(session)
-      );
+      await fs.writeFile(path.join(backupDir, 'session.json'), JSON.stringify(session));
 
       const result = await rollbackMigration({
         sourceDir,

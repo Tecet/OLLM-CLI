@@ -9,6 +9,7 @@ This directory contains comprehensive integration tests for the context compress
 Tests the system's ability to handle extended conversations with 10+ compressions.
 
 **Coverage:**
+
 - ✅ Handles 10+ compressions without crashing
 - ✅ Maintains conversation continuity across compressions
 - ✅ Keeps token usage within limits throughout conversation
@@ -18,6 +19,7 @@ Tests the system's ability to handle extended conversations with 10+ compression
 **Requirements:** All FR (FR-1 through FR-16)
 
 **Key Scenarios:**
+
 - 30+ message conversation triggering 10+ compressions
 - Verification of checkpoint creation and management
 - Token usage monitoring throughout conversation
@@ -29,6 +31,7 @@ Tests the system's ability to handle extended conversations with 10+ compression
 Tests the checkpoint aging system to ensure checkpoints compress over time.
 
 **Coverage:**
+
 - ✅ Ages checkpoints from Level 3 to Level 2 after 5 compressions
 - ✅ Ages checkpoints from Level 2 to Level 1 after 10 compressions
 - ✅ Reduces token usage through aging
@@ -39,6 +42,7 @@ Tests the checkpoint aging system to ensure checkpoints compress over time.
 **Requirements:** FR-2, FR-6
 
 **Key Scenarios:**
+
 - Checkpoint aging at different compression counts
 - Token reduction verification
 - Summary preservation validation
@@ -50,6 +54,7 @@ Tests the checkpoint aging system to ensure checkpoints compress over time.
 Tests emergency actions when normal compression fails.
 
 **Coverage:**
+
 - ✅ Handles context overflow gracefully
 - ✅ Creates snapshots before emergency actions
 - ✅ Recovers from LLM failures during compression
@@ -62,6 +67,7 @@ Tests emergency actions when normal compression fails.
 **Requirements:** FR-8, FR-9
 
 **Key Scenarios:**
+
 - Context near capacity situations
 - LLM failure recovery
 - Stress testing with rapid additions
@@ -74,6 +80,7 @@ Tests emergency actions when normal compression fails.
 Tests comprehensive error handling throughout the system.
 
 **Coverage:**
+
 - ✅ Handles LLM errors during compression gracefully
 - ✅ Handles provider timeouts
 - ✅ Handles invalid LLM responses
@@ -88,6 +95,7 @@ Tests comprehensive error handling throughout the system.
 **Requirements:** FR-6, FR-7
 
 **Key Scenarios:**
+
 - Provider failures (connection, timeout, invalid response)
 - Invalid input handling
 - File system errors
@@ -136,6 +144,7 @@ npm test -- --watch packages/core/src/context/__tests__/integration
 ### Timeouts
 
 Integration tests have extended timeouts due to their comprehensive nature:
+
 - Long conversation test: 60 seconds
 - Checkpoint aging test: 60 seconds
 - Emergency scenarios test: 60 seconds
@@ -144,12 +153,14 @@ Integration tests have extended timeouts due to their comprehensive nature:
 ### Mock Providers
 
 All tests use mock providers that simulate LLM behavior:
+
 - **MockProvider**: Basic provider for normal operations
 - **ErrorMockProvider**: Configurable provider for error scenarios
 
 ### Temporary Storage
 
 Tests create temporary storage directories for:
+
 - Session history files
 - Snapshot files
 - Test isolation
@@ -165,11 +176,11 @@ beforeEach(async () => {
   // Create temporary storage
   storagePath = await fs.mkdtemp(path.join(os.tmpdir(), 'ollm-test-'));
   sessionId = `test_session_${Date.now()}`;
-  
+
   // Initialize components
   tokenCounter = new TokenCounterService();
   mockProvider = new MockProvider();
-  
+
   // Create orchestrator
   orchestrator = new ContextOrchestrator({
     systemPrompt,
@@ -222,6 +233,7 @@ All integration tests must pass before the context compression system is conside
 ### Enable Verbose Logging
 
 Set environment variable:
+
 ```bash
 DEBUG=ollm:context npm test
 ```
@@ -229,6 +241,7 @@ DEBUG=ollm:context npm test
 ### Inspect Test Artifacts
 
 Tests create temporary directories. To inspect:
+
 ```bash
 # Find temp directories
 ls -la /tmp/ollm-test-*
@@ -243,16 +256,19 @@ ls -la /tmp/ollm-test-*/snapshots/
 ### Common Issues
 
 **Issue: Tests timeout**
+
 - Increase timeout in test configuration
 - Check for infinite loops in compression logic
 - Verify mock provider responses
 
 **Issue: File system errors**
+
 - Check permissions on temp directory
 - Verify cleanup is working correctly
 - Check for file locks
 
 **Issue: Inconsistent results**
+
 - Check for race conditions
 - Verify proper async/await usage
 - Check for shared state between tests

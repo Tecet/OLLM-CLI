@@ -233,7 +233,7 @@ Q2 2026  │ █████████░░░ v0.2.0: File Explorer & MCP (P
          │ ░░░░░░░░░░░░ v0.3.0: Advanced Explorer (Planned)
          │
 Q3 2026  │ ░░░░░░░░░░░░ v0.4.0: Code Editor (Planned)
-         │ ░░░░░░░░░░░░ v0.5.0: Release Kraken (Planned) 
+         │ ░░░░░░░░░░░░ v0.5.0: Release Kraken (Planned)
          │
 Q3 2026  │ ░░░░░░░░░░░░ v0.6.0: RAG Integration (Planned)
          │ ░░░░░░░░░░░░ v0.7.0: GitHub Integration (Planned)

@@ -204,7 +204,14 @@ export function ModelProvider({ children, provider, initialModel }: ModelProvide
         );
       }
     },
-    [currentModel, provider, handleUnknownModel, saveToolSupport, addSystemMessage, contextManagerState.usage.maxTokens]
+    [
+      currentModel,
+      provider,
+      handleUnknownModel,
+      saveToolSupport,
+      addSystemMessage,
+      contextManagerState.usage.maxTokens,
+    ]
   );
 
   const cancelRequest = useCallback(() => {
@@ -289,11 +296,17 @@ export function ModelProvider({ children, provider, initialModel }: ModelProvide
         }
 
         // Log tool information for debugging
-        const toolsToSend = tools && tools.length > 0 && modelSupportsTools(currentModel) ? tools : undefined;
+        const toolsToSend =
+          tools && tools.length > 0 && modelSupportsTools(currentModel) ? tools : undefined;
         if (toolsToSend) {
-          console.log(`[ModelContext] Sending ${toolsToSend.length} tools to LLM:`, toolsToSend.map(t => t.name).join(', '));
+          console.log(
+            `[ModelContext] Sending ${toolsToSend.length} tools to LLM:`,
+            toolsToSend.map((t) => t.name).join(', ')
+          );
         } else if (tools && tools.length > 0 && !modelSupportsTools(currentModel)) {
-          console.log('[ModelContext] Tools available but model does not support them - not sending');
+          console.log(
+            '[ModelContext] Tools available but model does not support them - not sending'
+          );
         } else {
           console.log('[ModelContext] No tools to send');
         }

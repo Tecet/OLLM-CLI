@@ -129,11 +129,7 @@ export class SummarizationService {
    *
    * Requirements: FR-5, FR-6
    */
-  buildSummarizationPrompt(
-    messages: Message[],
-    level: CompressionLevel,
-    goal?: Goal
-  ): string {
+  buildSummarizationPrompt(messages: Message[], level: CompressionLevel, goal?: Goal): string {
     // Get base prompt for compression level
     const basePrompt = this.getBasePrompt(level);
 
@@ -267,7 +263,10 @@ Locked Decisions:
 ${lockedDecisions.map((d) => `🔒 ${d.description}`).join('\n')}
 
 Recent Artifacts:
-${goal.artifacts.slice(-3).map((a) => `${a.action} ${a.path}`).join('\n')}
+${goal.artifacts
+  .slice(-3)
+  .map((a) => `${a.action} ${a.path}`)
+  .join('\n')}
 
 IMPORTANT: Preserve information relevant to goal progress.`;
   }
@@ -372,7 +371,7 @@ IMPORTANT: Preserve information relevant to goal progress.`;
     // Check if summary is longer than original (compression failed)
     // Allow some tolerance for short messages (up to 50% longer)
     const maxAllowedLength = Math.max(originalLength, originalLength * 1.5);
-    
+
     if (summary.length > maxAllowedLength) {
       return { valid: false, reason: 'Summary is significantly longer than original content' };
     }

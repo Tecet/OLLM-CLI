@@ -32,7 +32,10 @@ let testDir: string;
 
 beforeEach(async () => {
   // Create temporary directory for test snapshots
-  testDir = path.join(os.tmpdir(), `snapshot-test-${Date.now()}-${Math.random().toString(36).substring(7)}`);
+  testDir = path.join(
+    os.tmpdir(),
+    `snapshot-test-${Date.now()}-${Math.random().toString(36).substring(7)}`
+  );
   await fs.mkdir(testDir, { recursive: true });
 });
 
@@ -121,50 +124,42 @@ describe('SnapshotLifecycle - Property 4: Snapshot Round Trip', () => {
    */
   it('should preserve conversation state through save and restore', async () => {
     await fc.assert(
-      fc.asyncProperty(
-        conversationStateArbitrary,
-        purposeArbitrary,
-        async (state, purpose) => {
-          // Arrange - use unique session ID for each property test run
-          const sessionId = generateSessionId();
-          const lifecycle = new SnapshotLifecycle(sessionId, testDir);
+      fc.asyncProperty(conversationStateArbitrary, purposeArbitrary, async (state, purpose) => {
+        // Arrange - use unique session ID for each property test run
+        const sessionId = generateSessionId();
+        const lifecycle = new SnapshotLifecycle(sessionId, testDir);
 
-          // Act: Create snapshot
-          const snapshot = await lifecycle.createSnapshot(
-            state.messages,
-            state.checkpoints,
-            purpose
-          );
+        // Act: Create snapshot
+        const snapshot = await lifecycle.createSnapshot(state.messages, state.checkpoints, purpose);
 
-          // Act: Restore snapshot
-          const restored = await lifecycle.restoreSnapshot(snapshot.id);
+        // Act: Restore snapshot
+        const restored = await lifecycle.restoreSnapshot(snapshot.id);
 
-          // Assert: Messages match
-          expect(restored.messages).toHaveLength(state.messages.length);
-          for (let i = 0; i < state.messages.length; i++) {
-            const original = state.messages[i];
-            const restoredMsg = restored.messages[i];
+        // Assert: Messages match
+        expect(restored.messages).toHaveLength(state.messages.length);
+        for (let i = 0; i < state.messages.length; i++) {
+          const original = state.messages[i];
+          const restoredMsg = restored.messages[i];
 
-            expect(restoredMsg.id).toBe(original.id);
-            expect(restoredMsg.role).toBe(original.role);
-            expect(restoredMsg.content).toBe(original.content);
-            // Timestamp may be converted to Date, so compare values
-            const originalTime =
-              original.timestamp instanceof Date
-                ? original.timestamp.getTime()
-                : new Date(original.timestamp).getTime();
-            const restoredTime =
-              restoredMsg.timestamp instanceof Date
-                ? restoredMsg.timestamp.getTime()
-                : new Date(restoredMsg.timestamp).getTime();
-            expect(restoredTime).toBe(originalTime);
-          }
-
-          // Note: Checkpoints are not currently stored in ContextSnapshot format
-          // This is a known limitation of the current storage implementation
-          // The test validates that messages are preserved correctly
+          expect(restoredMsg.id).toBe(original.id);
+          expect(restoredMsg.role).toBe(original.role);
+          expect(restoredMsg.content).toBe(original.content);
+          // Timestamp may be converted to Date, so compare values
+          const originalTime =
+            original.timestamp instanceof Date
+              ? original.timestamp.getTime()
+              : new Date(original.timestamp).getTime();
+          const restoredTime =
+            restoredMsg.timestamp instanceof Date
+              ? restoredMsg.timestamp.getTime()
+              : new Date(restoredMsg.timestamp).getTime();
+          expect(restoredTime).toBe(originalTime);
         }
-      ),
+
+        // Note: Checkpoints are not currently stored in ContextSnapshot format
+        // This is a known limitation of the current storage implementation
+        // The test validates that messages are preserved correctly
+      }),
       {
         numRuns: 20, // Reduced from 50 for speed
         verbose: false, // Disable verbose for speed
@@ -297,25 +292,17 @@ describe('SnapshotLifecycle - Property 4: Snapshot Round Trip', () => {
    */
   it('should preserve snapshot purpose', async () => {
     await fc.assert(
-      fc.asyncProperty(
-        conversationStateArbitrary,
-        purposeArbitrary,
-        async (state, purpose) => {
-          // Arrange - use unique session ID for each property test run
-          const sessionId = generateSessionId();
-          const lifecycle = new SnapshotLifecycle(sessionId, testDir);
+      fc.asyncProperty(conversationStateArbitrary, purposeArbitrary, async (state, purpose) => {
+        // Arrange - use unique session ID for each property test run
+        const sessionId = generateSessionId();
+        const lifecycle = new SnapshotLifecycle(sessionId, testDir);
 
-          // Act: Create snapshot
-          const snapshot = await lifecycle.createSnapshot(
-            state.messages,
-            state.checkpoints,
-            purpose
-          );
+        // Act: Create snapshot
+        const snapshot = await lifecycle.createSnapshot(state.messages, state.checkpoints, purpose);
 
-          // Assert: Purpose is preserved
-          expect(snapshot.purpose).toBe(purpose);
-        }
-      ),
+        // Assert: Purpose is preserved
+        expect(snapshot.purpose).toBe(purpose);
+      }),
       {
         numRuns: 10, // Reduced from 30 for speed
         verbose: false,

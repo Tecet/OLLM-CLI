@@ -128,8 +128,14 @@ export const ReasoningBox: React.FC<ReasoningBoxProps> = ({
 
   // Expanded state: show scrollable content
   // Calculate total height: header (1) + marginBottom (1) + scroll indicators (2) + content (maxVisibleLines) + footer (2 if streaming)
-  const totalHeight = 1 + 1 + (canScrollUp ? 1 : 0) + maxVisibleLines + (canScrollDown ? 1 : 0) + (!reasoning.complete ? 2 : 0);
-  
+  const totalHeight =
+    1 +
+    1 +
+    (canScrollUp ? 1 : 0) +
+    maxVisibleLines +
+    (canScrollDown ? 1 : 0) +
+    (!reasoning.complete ? 2 : 0);
+
   return (
     <Box
       flexDirection="column"

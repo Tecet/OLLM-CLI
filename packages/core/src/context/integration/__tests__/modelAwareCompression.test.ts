@@ -9,10 +9,7 @@
 import * as fc from 'fast-check';
 import { describe, it, expect } from 'vitest';
 
-import {
-  ModelAwareCompression,
-  extractModelSize,
-} from '../modelAwareCompression.js';
+import { ModelAwareCompression, extractModelSize } from '../modelAwareCompression.js';
 
 describe('ModelAwareCompression', () => {
   const compression = new ModelAwareCompression();
@@ -126,17 +123,17 @@ describe('ModelAwareCompression', () => {
       expect(compression.getReliabilityLevel(0.95).level).toBe('excellent');
       expect(compression.getReliabilityLevel(0.85).level).toBe('excellent');
       expect(compression.getReliabilityLevel(0.75).level).toBe('good');
-      expect(compression.getReliabilityLevel(0.60).level).toBe('moderate');
+      expect(compression.getReliabilityLevel(0.6).level).toBe('moderate');
       expect(compression.getReliabilityLevel(0.45).level).toBe('low');
-      expect(compression.getReliabilityLevel(0.30).level).toBe('critical');
+      expect(compression.getReliabilityLevel(0.3).level).toBe('critical');
     });
 
     it('should include emoji and description', () => {
-      const excellent = compression.getReliabilityLevel(0.90);
+      const excellent = compression.getReliabilityLevel(0.9);
       expect(excellent.emoji).toBe('🟢');
       expect(excellent.description).toContain('Excellent');
 
-      const critical = compression.getReliabilityLevel(0.30);
+      const critical = compression.getReliabilityLevel(0.3);
       expect(critical.emoji).toBe('🔴');
       expect(critical.description).toContain('Critical');
     });
@@ -315,12 +312,18 @@ describe('ModelAwareCompression', () => {
     it('larger models always have higher reliability than smaller models', () => {
       fc.assert(
         fc.property(
-          fc.double({ min: 1, max: 50, noNaN: true }),  // smaller model size
+          fc.double({ min: 1, max: 50, noNaN: true }), // smaller model size
           fc.double({ min: 51, max: 100, noNaN: true }), // larger model size
-          fc.integer({ min: 0, max: 20 }),  // compression count
+          fc.integer({ min: 0, max: 20 }), // compression count
           (smallerSize, largerSize, compressionCount) => {
-            const smallerReliability = compression.calculateReliability(smallerSize, compressionCount);
-            const largerReliability = compression.calculateReliability(largerSize, compressionCount);
+            const smallerReliability = compression.calculateReliability(
+              smallerSize,
+              compressionCount
+            );
+            const largerReliability = compression.calculateReliability(
+              largerSize,
+              compressionCount
+            );
 
             // Larger model should have higher or equal reliability
             return largerReliability >= smallerReliability;
@@ -334,7 +337,7 @@ describe('ModelAwareCompression', () => {
       fc.assert(
         fc.property(
           fc.double({ min: 0.1, max: 100, noNaN: true }), // model size
-          fc.integer({ min: 0, max: 50 }),   // compression count
+          fc.integer({ min: 0, max: 50 }), // compression count
           (modelSize, compressionCount) => {
             const reliability = compression.calculateReliability(modelSize, compressionCount);
 
@@ -349,7 +352,7 @@ describe('ModelAwareCompression', () => {
     it('warning thresholds are consistent with model size', () => {
       fc.assert(
         fc.property(
-          fc.double({ min: 1, max: 50, noNaN: true }),  // smaller model size
+          fc.double({ min: 1, max: 50, noNaN: true }), // smaller model size
           fc.double({ min: 51, max: 100, noNaN: true }), // larger model size
           (smallerSize, largerSize) => {
             const smallerThreshold = compression.getWarningThreshold(smallerSize);
@@ -366,13 +369,7 @@ describe('ModelAwareCompression', () => {
     it('model size extraction is idempotent', () => {
       fc.assert(
         fc.property(
-          fc.constantFrom(
-            'llama3.2:3b',
-            'mistral:7b',
-            'llama3:13b',
-            'mixtral:70b',
-            'qwen:1.5b'
-          ),
+          fc.constantFrom('llama3.2:3b', 'mistral:7b', 'llama3:13b', 'mixtral:70b', 'qwen:1.5b'),
           (modelId) => {
             const size1 = extractModelSize(modelId);
             const size2 = extractModelSize(modelId);
@@ -387,25 +384,22 @@ describe('ModelAwareCompression', () => {
 
     it('reliability level boundaries are consistent', () => {
       fc.assert(
-        fc.property(
-          fc.double({ min: 0, max: 1, noNaN: true }),
-          (reliability) => {
-            const level = compression.getReliabilityLevel(reliability);
+        fc.property(fc.double({ min: 0, max: 1, noNaN: true }), (reliability) => {
+          const level = compression.getReliabilityLevel(reliability);
 
-            // Check level matches reliability value
-            if (reliability >= 0.85) {
-              return level.level === 'excellent';
-            } else if (reliability >= 0.70) {
-              return level.level === 'good';
-            } else if (reliability >= 0.50) {
-              return level.level === 'moderate';
-            } else if (reliability >= 0.40) {
-              return level.level === 'low';
-            } else {
-              return level.level === 'critical';
-            }
+          // Check level matches reliability value
+          if (reliability >= 0.85) {
+            return level.level === 'excellent';
+          } else if (reliability >= 0.7) {
+            return level.level === 'good';
+          } else if (reliability >= 0.5) {
+            return level.level === 'moderate';
+          } else if (reliability >= 0.4) {
+            return level.level === 'low';
+          } else {
+            return level.level === 'critical';
           }
-        ),
+        }),
         { numRuns: 1000 }
       );
     });
@@ -414,7 +408,7 @@ describe('ModelAwareCompression', () => {
       fc.assert(
         fc.property(
           fc.double({ min: 1, max: 100, noNaN: true }), // model size
-          fc.integer({ min: 1, max: 20 }),  // compression count
+          fc.integer({ min: 1, max: 20 }), // compression count
           (modelSize, compressionCount) => {
             const reliability = compression.calculateReliability(modelSize, compressionCount);
             const baseReliability = compression.calculateReliability(modelSize, 0);

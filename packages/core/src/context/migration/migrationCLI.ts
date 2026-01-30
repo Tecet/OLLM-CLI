@@ -1,26 +1,26 @@
 /**
  * Migration CLI
- * 
+ *
  * Command-line interface for running context compression migrations.
- * 
+ *
  * **Usage:**
  * ```bash
  * # Dry run (no actual changes)
  * npm run migrate -- --dry-run
- * 
+ *
  * # Migrate sessions
  * npm run migrate -- --type session --source ~/.ollm/session-data --target ~/.ollm/session-history
- * 
+ *
  * # Migrate snapshots
  * npm run migrate -- --type snapshot --source ~/.ollm/snapshots --target ~/.ollm/snapshots-new
- * 
+ *
  * # Migrate with backup
  * npm run migrate -- --type session --source ~/.ollm/session-data --target ~/.ollm/session-history --backup
- * 
+ *
  * # Rollback migration
  * npm run migrate -- --rollback --type session --source ~/.ollm/session-data
  * ```
- * 
+ *
  * @module migrationCLI
  */
 
@@ -108,7 +108,7 @@ function getDefaultPaths(): {
 
 /**
  * Parse command-line arguments
- * 
+ *
  * @param args - Command-line arguments
  * @returns Parsed options
  */
@@ -216,7 +216,7 @@ Examples:
 
 /**
  * Print migration result
- * 
+ *
  * @param result - Migration result
  * @param type - Migration type
  */
@@ -233,7 +233,7 @@ function printResult(
   }
 
   console.log(`Status: ${result.success ? '✅ SUCCESS' : '❌ FAILED'}`);
-  
+
   // Handle different result types
   if ('sessionsMigrated' in result) {
     console.log(`Migrated: ${result.sessionsMigrated}`);
@@ -263,7 +263,7 @@ function printResult(
 
 /**
  * Run session migration
- * 
+ *
  * @param options - CLI options
  */
 async function runSessionMigration(options: MigrationCLIOptions): Promise<void> {
@@ -305,7 +305,7 @@ async function runSessionMigration(options: MigrationCLIOptions): Promise<void> 
 
 /**
  * Run snapshot migration
- * 
+ *
  * @param options - CLI options
  */
 async function runSnapshotMigration(options: MigrationCLIOptions): Promise<void> {
@@ -347,7 +347,7 @@ async function runSnapshotMigration(options: MigrationCLIOptions): Promise<void>
 
 /**
  * Main CLI entry point
- * 
+ *
  * @param args - Command-line arguments
  */
 export async function main(args: string[]): Promise<void> {

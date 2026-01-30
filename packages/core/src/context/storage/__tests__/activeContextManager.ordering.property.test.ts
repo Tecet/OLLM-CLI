@@ -1,9 +1,9 @@
 /**
  * Property-Based Tests for Active Context Manager - Message Ordering
- * 
+ *
  * These tests verify that message ordering is preserved correctly
  * across all operations.
- * 
+ *
  * Requirements: FR-1
  */
 
@@ -18,7 +18,11 @@ import type { Message } from '../../types.js';
 /**
  * Helper to create a test message
  */
-function createMessage(id: string, content: string, role: 'user' | 'assistant' | 'system' = 'user'): Message {
+function createMessage(
+  id: string,
+  content: string,
+  role: 'user' | 'assistant' | 'system' = 'user'
+): Message {
   return {
     id,
     role,
@@ -41,15 +45,15 @@ describe('ActiveContextManager - Message Ordering Property Tests', () => {
   describe('Property 3: Active Context Message Ordering', () => {
     /**
      * **Property 3: Active Context Message Ordering**
-     * 
+     *
      * **Validates: Requirements FR-1**
-     * 
+     *
      * **Property Statement:**
      * Messages must always be ordered chronologically (oldest to newest) in:
      * 1. Recent messages array
      * 2. Checkpoints array
      * 3. Built prompts
-     * 
+     *
      * **Invariants:**
      * 1. Recent messages maintain insertion order
      * 2. Checkpoints maintain insertion order
@@ -79,7 +83,7 @@ describe('ActiveContextManager - Message Ordering Property Tests', () => {
 
             // **Invariant 1:** Recent messages maintain insertion order
             const state = manager.getState();
-            const actualIds = state.recentMessages.map(m => m.id);
+            const actualIds = state.recentMessages.map((m) => m.id);
 
             // Verify order matches insertion order
             const expectedIds = addedIds.slice(0, actualIds.length);
@@ -99,7 +103,7 @@ describe('ActiveContextManager - Message Ordering Property Tests', () => {
 
     /**
      * **Property 3.1: Checkpoint Ordering**
-     * 
+     *
      * Checkpoints must maintain insertion order (oldest to newest).
      */
     it('should maintain chronological order in checkpoints', () => {
@@ -131,7 +135,7 @@ describe('ActiveContextManager - Message Ordering Property Tests', () => {
 
             // **Invariant 2:** Checkpoints maintain insertion order
             const state = manager.getState();
-            const actualIds = state.checkpoints.map(cp => cp.id);
+            const actualIds = state.checkpoints.map((cp) => cp.id);
 
             // Verify order matches insertion order
             expect(actualIds).toEqual(addedIds);
@@ -157,7 +161,7 @@ describe('ActiveContextManager - Message Ordering Property Tests', () => {
 
     /**
      * **Property 3.2: Prompt Structure Order**
-     * 
+     *
      * Built prompts must follow the structure:
      * [system, checkpoints (oldest→newest), recent (oldest→newest), new]
      */
@@ -165,8 +169,14 @@ describe('ActiveContextManager - Message Ordering Property Tests', () => {
       fc.assert(
         fc.property(
           fc.record({
-            checkpoints: fc.array(fc.string({ minLength: 10, maxLength: 30 }), { minLength: 0, maxLength: 3 }),
-            messages: fc.array(fc.string({ minLength: 1, maxLength: 30 }), { minLength: 1, maxLength: 5 }),
+            checkpoints: fc.array(fc.string({ minLength: 10, maxLength: 30 }), {
+              minLength: 0,
+              maxLength: 3,
+            }),
+            messages: fc.array(fc.string({ minLength: 1, maxLength: 30 }), {
+              minLength: 1,
+              maxLength: 5,
+            }),
             newMessage: fc.option(fc.string({ minLength: 1, maxLength: 30 }), { nil: undefined }),
           }),
           ({ checkpoints, messages, newMessage }) => {
@@ -246,7 +256,7 @@ describe('ActiveContextManager - Message Ordering Property Tests', () => {
 
     /**
      * **Property 3.3: Order Preservation After Removal**
-     * 
+     *
      * Removing messages should preserve the order of remaining messages.
      */
     it('should preserve order of remaining messages after removal', () => {
@@ -270,22 +280,22 @@ describe('ActiveContextManager - Message Ordering Property Tests', () => {
             }
 
             const beforeRemoval = manager.getState();
-            const beforeIds = beforeRemoval.recentMessages.map(m => m.id);
+            const beforeIds = beforeRemoval.recentMessages.map((m) => m.id);
 
             // Remove messages at specified indices
             const toRemove = removeIndices
-              .filter(idx => idx < beforeIds.length)
-              .map(idx => beforeIds[idx]);
+              .filter((idx) => idx < beforeIds.length)
+              .map((idx) => beforeIds[idx]);
 
             if (toRemove.length > 0) {
               manager.removeMessages(toRemove);
 
               // **Invariant 4:** Order of remaining messages is preserved
               const afterRemoval = manager.getState();
-              const afterIds = afterRemoval.recentMessages.map(m => m.id);
+              const afterIds = afterRemoval.recentMessages.map((m) => m.id);
 
               // Build expected remaining IDs (in original order)
-              const expectedIds = beforeIds.filter(id => !toRemove.includes(id));
+              const expectedIds = beforeIds.filter((id) => !toRemove.includes(id));
 
               expect(afterIds).toEqual(expectedIds);
 
@@ -304,15 +314,21 @@ describe('ActiveContextManager - Message Ordering Property Tests', () => {
 
     /**
      * **Property 3.4: Message ID Uniqueness in Prompt**
-     * 
+     *
      * All message IDs in a prompt should be unique.
      */
     it('should have unique message IDs in built prompts', () => {
       fc.assert(
         fc.property(
           fc.record({
-            checkpoints: fc.array(fc.string({ minLength: 10, maxLength: 30 }), { minLength: 0, maxLength: 3 }),
-            messages: fc.array(fc.string({ minLength: 1, maxLength: 30 }), { minLength: 1, maxLength: 5 }),
+            checkpoints: fc.array(fc.string({ minLength: 10, maxLength: 30 }), {
+              minLength: 0,
+              maxLength: 3,
+            }),
+            messages: fc.array(fc.string({ minLength: 1, maxLength: 30 }), {
+              minLength: 1,
+              maxLength: 5,
+            }),
           }),
           ({ checkpoints, messages }) => {
             const manager = new ActiveContextManager(systemPrompt, OLLAMA_LIMIT, tokenCounter);
@@ -349,7 +365,7 @@ describe('ActiveContextManager - Message Ordering Property Tests', () => {
             const prompt = manager.buildPrompt();
 
             // **Invariant 5:** All message IDs are unique
-            const ids = prompt.map(m => m.id);
+            const ids = prompt.map((m) => m.id);
             const uniqueIds = new Set(ids);
             expect(uniqueIds.size).toBe(ids.length);
           }

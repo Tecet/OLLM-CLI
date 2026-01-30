@@ -15,21 +15,73 @@ and this project adheres to Semantic Versioning (https://semver.org/spec/v2.0.0.
 
 - Changes to existing functionality
 
-### Deprecated
+### Fixed
 
-- Soon-to-be removed features
+- Bug fixes
 
-### Removed
+## [0.1.2] - 2026-01-30
 
-- Removed features
+### Added
+
+- DEFAULT_CONTEXT_OPTIONS constant in test utilities for consistent test setup
+- Comprehensive test coverage documentation in `.dev/backlog/30-01-2026-PublishAlpha/`
+
+### Changed
+
+- **Context Management**: Tier budgets now calculated dynamically based on context size
+  - Tier 1: 12% of context (min 450 tokens) - increased to accommodate system prompt mandates
+  - Tier 2: 9% of context (min 700 tokens) - increased to accommodate system prompt mandates
+  - Tier 3: 6% of context (min 1000 tokens)
+  - Tier 4: 5% of context (min 1500 tokens)
+  - Tier 5: 2% of context (min 1500 tokens)
+- **Compression System**: Removed `tierBudget` parameter from compression methods
+  - `shouldCompress()` now takes 3 parameters: currentTokens, modelId, systemPromptTokens
+  - `getCompressionUrgency()` now takes 3 parameters: currentTokens, modelId, systemPromptTokens
+  - Tier budget is already included in systemPromptTokens, no need to subtract separately
+- **ChatClient**: Now requires either `contextMgmtManager` or explicit `contextSize`/`ollamaContextSize` in options
+- Updated all test files to use new context management system
 
 ### Fixed
 
-- Fixed TypeScript type errors in `promptRouting.test.ts` by adding explicit Vitest imports
+- Fixed 42 failing tests (improved pass rate from 93.8% to 96.4%)
+- Fixed all tier-aware compression tests (12 tests) - updated to dynamic budget calculations
+- Fixed all provider-aware compression tests (5 tests) - removed tierBudget parameter
+- Fixed 25 chatClient tests - added context size options
+- Fixed ESLint errors (19 errors, 1 warning) - removed unused imports, fixed import order
+- Fixed TypeScript compilation - 0 errors
+- Fixed `/test prompt` command to show actual tool schemas from ToolRegistry
+- Fixed `/test prompt --budget` validation script paths
 
-### Security
+### Known Issues
 
-- Security fixes
+- 57 tests still failing (3.6% of total), primarily:
+  - Session recording tests (5) - legacy feature needs investigation
+  - Context injection tests (3) - need contextManager mocks
+  - Checkpoint lifecycle tests (10) - checkpoint operations need review
+  - Integration tests (39) - various system behavior changes
+- These will be addressed in v0.1.3
+
+### Documentation
+
+- Added `.dev/backlog/30-01-2026-PublishAlpha/TASKS.md` - Alpha release task tracker
+- Added `.dev/backlog/30-01-2026-PublishAlpha/TEST_FIXES_SUMMARY.md` - Test fix analysis
+- Added `.dev/backlog/30-01-2026-PublishAlpha/TEST_FIXES_FINAL.md` - Final test report
+- Updated `.dev/backlog/backlog.md` with unfinished work from previous sessions
+
+### Technical Details
+
+**Test Suite Statistics:**
+
+- Total Tests: 1596
+- Passing: 1539 (96.4%)
+- Failing: 57 (3.6%)
+- Improvement: +42 tests fixed, +2.6% pass rate
+
+**Code Quality:**
+
+- ESLint: 0 errors, 0 warnings ✅
+- TypeScript: 0 compilation errors ✅
+- Prettier: All files formatted ✅
 
 ## [0.1.0] - 2026-01-26
 
@@ -190,5 +242,6 @@ and this project adheres to Semantic Versioning (https://semver.org/spec/v2.0.0.
 - File operation permissions validation
 - Sandboxed tool execution environment
 
-[Unreleased]: https://github.com/tecet/ollm/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/tecet/ollm/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/tecet/ollm/compare/v0.1.0...v0.1.2
 [0.1.0]: https://github.com/tecet/ollm/releases/tag/v0.1.0

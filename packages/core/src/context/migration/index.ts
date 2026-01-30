@@ -1,26 +1,26 @@
 /**
  * Context Compression Migration
- * 
+ *
  * This module provides migration utilities for upgrading from the legacy
  * context compression system to the new storage layer architecture.
- * 
+ *
  * **Migration Types:**
  * - Session Migration: Migrates session data to new SessionHistory format
  * - Snapshot Migration: Migrates snapshots to new SnapshotData format
- * 
+ *
  * **Features:**
  * - Dry run mode for testing
  * - Automatic backup creation
  * - Validation of migrated data
  * - Rollback capability
  * - CLI interface
- * 
+ *
  * @module migration
- * 
+ *
  * @example
  * ```typescript
  * import { migrateAllSessions, migrateAllSnapshots } from './migration/index.js';
- * 
+ *
  * // Migrate sessions
  * const sessionResult = await migrateAllSessions({
  *   sourceDir: '~/.ollm/session-data',
@@ -30,7 +30,7 @@
  *   validate: true,
  *   verbose: true
  * });
- * 
+ *
  * // Migrate snapshots
  * const snapshotResult = await migrateAllSnapshots({
  *   sourceDir: '~/.ollm/snapshots',
@@ -65,8 +65,4 @@ export {
 } from './snapshotMigration.js';
 
 // CLI
-export {
-  main as runMigrationCLI,
-  parseArgs,
-  type MigrationCLIOptions,
-} from './migrationCLI.js';
+export { main as runMigrationCLI, parseArgs, type MigrationCLIOptions } from './migrationCLI.js';

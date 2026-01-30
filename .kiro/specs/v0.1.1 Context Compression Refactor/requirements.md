@@ -12,6 +12,7 @@
 The context compression system has critical architectural flaws causing crashes after 3-4 checkpoints. This spec addresses the fundamental issues identified in the audit and rebuilds the system to match the documented design.
 
 **Problem:** System crashes after 3-4 checkpoints due to:
+
 - LLM not involved in compression (just truncation)
 - Snapshots mixed with active context
 - No pre-send validation
@@ -71,6 +72,7 @@ The system has documentation describing an ideal compression system, but the imp
 ### US-1: As a user, I want long conversations without crashes
 
 **Acceptance Criteria:**
+
 - [ ] Can have conversations with 10+ checkpoints
 - [ ] System never crashes due to context overflow
 - [ ] Conversation quality maintained across compressions
@@ -83,6 +85,7 @@ The system has documentation describing an ideal compression system, but the imp
 ### US-2: As a user, I want meaningful summaries of conversation history
 
 **Acceptance Criteria:**
+
 - [ ] LLM creates semantic summaries of old messages
 - [ ] Summaries preserve key decisions and context
 - [ ] Summaries are concise but informative
@@ -95,6 +98,7 @@ The system has documentation describing an ideal compression system, but the imp
 ### US-3: As a user, I want the system to prevent context overflow
 
 **Acceptance Criteria:**
+
 - [ ] System validates prompt size before sending to Ollama
 - [ ] System never sends oversized prompts
 - [ ] System takes corrective action if prompt too large
@@ -107,6 +111,7 @@ The system has documentation describing an ideal compression system, but the imp
 ### US-4: As a user, I want old checkpoints to compress further
 
 **Acceptance Criteria:**
+
 - [ ] Old checkpoints re-summarize to free space
 - [ ] Compression levels: Detailed → Moderate → Compact → Merged
 - [ ] Aging happens automatically
@@ -119,6 +124,7 @@ The system has documentation describing an ideal compression system, but the imp
 ### US-5: As a user, I want graceful error handling
 
 **Acceptance Criteria:**
+
 - [ ] System handles LLM errors gracefully
 - [ ] System handles Ollama errors gracefully
 - [ ] Clear error messages
@@ -131,6 +137,7 @@ The system has documentation describing an ideal compression system, but the imp
 ### US-6: As a user, I want goal-aware compression
 
 **Acceptance Criteria:**
+
 - [ ] Goals guide what information to preserve
 - [ ] Goal-relevant information prioritized
 - [ ] Goals visible across compressions
@@ -143,6 +150,7 @@ The system has documentation describing an ideal compression system, but the imp
 ### US-7: As a user, I want to see compression progress
 
 **Acceptance Criteria:**
+
 - [ ] UI shows "Compressing context..."
 - [ ] Progress indicator visible
 - [ ] User input blocked during compression
@@ -155,6 +163,7 @@ The system has documentation describing an ideal compression system, but the imp
 ### US-8: As a user, I want to review full conversation history
 
 **Acceptance Criteria:**
+
 - [ ] Full uncompressed history saved to disk
 - [ ] Can review history anytime
 - [ ] History never affected by compression
@@ -171,6 +180,7 @@ The system has documentation describing an ideal compression system, but the imp
 **Description:** Clearly separate three storage layers
 
 **Requirements:**
+
 - FR-1.1: Active context contains only what goes to LLM
 - FR-1.2: Snapshots used only for recovery, never sent to LLM
 - FR-1.3: Session history stores full uncompressed conversation
@@ -178,6 +188,7 @@ The system has documentation describing an ideal compression system, but the imp
 - FR-1.5: Runtime enforcement of boundaries
 
 **Acceptance Criteria:**
+
 - [ ] Three distinct storage interfaces defined
 - [ ] Active context manager created
 - [ ] Snapshot manager refactored
@@ -193,6 +204,7 @@ The system has documentation describing an ideal compression system, but the imp
 **Description:** LLM creates semantic summaries of conversation history
 
 **Requirements:**
+
 - FR-2.1: LLM called to summarize old messages
 - FR-2.2: Summarization prompts for each compression level
 - FR-2.3: User input blocked during summarization
@@ -200,6 +212,7 @@ The system has documentation describing an ideal compression system, but the imp
 - FR-2.5: Error handling for LLM failures
 
 **Acceptance Criteria:**
+
 - [ ] Summarization service created
 - [ ] Prompts for all compression levels
 - [ ] LLM integration working
@@ -215,6 +228,7 @@ The system has documentation describing an ideal compression system, but the imp
 **Description:** Validate prompt size before sending to Ollama
 
 **Requirements:**
+
 - FR-3.1: Calculate total tokens before sending
 - FR-3.2: Compare against Ollama limit
 - FR-3.3: Block sending if oversized
@@ -222,6 +236,7 @@ The system has documentation describing an ideal compression system, but the imp
 - FR-3.5: Re-validate after action
 
 **Acceptance Criteria:**
+
 - [ ] Validation service created
 - [ ] Validates before every send
 - [ ] Takes action if oversized
@@ -237,6 +252,7 @@ The system has documentation describing an ideal compression system, but the imp
 **Description:** Progressively compress old checkpoints
 
 **Requirements:**
+
 - FR-4.1: Checkpoints age over time
 - FR-4.2: Aging levels: Level 3 → 2 → 1 → Merged
 - FR-4.3: LLM re-summarizes at each level
@@ -244,6 +260,7 @@ The system has documentation describing an ideal compression system, but the imp
 - FR-4.5: Oldest checkpoints merged
 
 **Acceptance Criteria:**
+
 - [ ] Aging logic implemented
 - [ ] LLM re-summarization working
 - [ ] Space freed correctly
@@ -259,6 +276,7 @@ The system has documentation describing an ideal compression system, but the imp
 **Description:** Structured compression pipeline with clear stages
 
 **Requirements:**
+
 - FR-5.1: Identification stage - which messages to compress
 - FR-5.2: Preparation stage - format for LLM
 - FR-5.3: Summarization stage - LLM creates summary
@@ -267,6 +285,7 @@ The system has documentation describing an ideal compression system, but the imp
 - FR-5.6: Validation stage - verify result fits
 
 **Acceptance Criteria:**
+
 - [ ] Pipeline class created
 - [ ] All stages implemented
 - [ ] Progress reporting works
@@ -282,6 +301,7 @@ The system has documentation describing an ideal compression system, but the imp
 **Description:** Comprehensive error handling throughout system
 
 **Requirements:**
+
 - FR-6.1: Try-catch around all LLM calls
 - FR-6.2: Try-catch around all Ollama calls
 - FR-6.3: Graceful degradation on errors
@@ -289,6 +309,7 @@ The system has documentation describing an ideal compression system, but the imp
 - FR-6.5: Recovery mechanisms
 
 **Acceptance Criteria:**
+
 - [ ] All error cases handled
 - [ ] Graceful degradation works
 - [ ] User sees helpful messages
@@ -304,6 +325,7 @@ The system has documentation describing an ideal compression system, but the imp
 **Description:** Goals guide compression decisions
 
 **Requirements:**
+
 - FR-7.1: Goals passed to LLM during summarization
 - FR-7.2: Goal-relevant information prioritized
 - FR-7.3: Goals preserved across compressions
@@ -311,6 +333,7 @@ The system has documentation describing an ideal compression system, but the imp
 - FR-7.5: Goal markers parsed from LLM output
 
 **Acceptance Criteria:**
+
 - [ ] Goals in summarization prompts
 - [ ] Goal-aware compression works
 - [ ] Goals preserved
@@ -326,6 +349,7 @@ The system has documentation describing an ideal compression system, but the imp
 **Description:** Prevent unbounded user message accumulation
 
 **Requirements:**
+
 - FR-8.1: Keep recent 10-20 user messages in full
 - FR-8.2: Summarize older user messages
 - FR-8.3: Include summaries in checkpoints
@@ -333,6 +357,7 @@ The system has documentation describing an ideal compression system, but the imp
 - FR-8.5: Maintain conversation continuity
 
 **Acceptance Criteria:**
+
 - [ ] Recent messages preserved
 - [ ] Old messages summarized
 - [ ] Summaries in checkpoints
@@ -348,6 +373,7 @@ The system has documentation describing an ideal compression system, but the imp
 **Description:** Show compression progress to user
 
 **Requirements:**
+
 - FR-9.1: UI component for progress
 - FR-9.2: Shows "Compressing context..."
 - FR-9.3: Progress indicator
@@ -355,6 +381,7 @@ The system has documentation describing an ideal compression system, but the imp
 - FR-9.5: Shows completion
 
 **Acceptance Criteria:**
+
 - [ ] UI component created
 - [ ] Progress shown
 - [ ] Input blocked
@@ -370,6 +397,7 @@ The system has documentation describing an ideal compression system, but the imp
 **Description:** Emergency actions when context critical
 
 **Requirements:**
+
 - FR-10.1: Compress checkpoint at lower level
 - FR-10.2: Merge multiple checkpoints
 - FR-10.3: Emergency rollover
@@ -377,6 +405,7 @@ The system has documentation describing an ideal compression system, but the imp
 - FR-10.5: Snapshot before emergency action
 
 **Acceptance Criteria:**
+
 - [ ] All emergency actions implemented
 - [ ] Triggered correctly
 - [ ] Snapshots created
@@ -392,6 +421,7 @@ The system has documentation describing an ideal compression system, but the imp
 **Description:** Integrate with existing tier system for prompt budgets
 
 **Requirements:**
+
 - FR-11.1: Respect tier-specific prompt budgets (see `dev_PromptSystem.md`)
 - FR-11.2: Compression thresholds based on tier
 - FR-11.3: System prompt preservation across compressions
@@ -399,6 +429,7 @@ The system has documentation describing an ideal compression system, but the imp
 - FR-11.5: Prompt budget calculations include checkpoints
 
 **Acceptance Criteria:**
+
 - [ ] Tier budgets respected (200-1500 tokens)
 - [ ] Compression triggers account for tier
 - [ ] System prompt never compressed
@@ -408,6 +439,7 @@ The system has documentation describing an ideal compression system, but the imp
 **Priority:** P0 (Critical)
 
 **References:**
+
 - `dev_PromptSystem.md` - Tier token budgets
 - `dev_ContextManagement.md` - Tier detection logic
 
@@ -418,6 +450,7 @@ The system has documentation describing an ideal compression system, but the imp
 **Description:** Integrate with operational modes (Assistant, Developer, Planning, Debugger, User)
 
 **Requirements:**
+
 - FR-12.1: Mode-specific compression strategies
 - FR-12.2: Mode changes don't break compression
 - FR-12.3: Mode context preserved in summaries
@@ -425,6 +458,7 @@ The system has documentation describing an ideal compression system, but the imp
 - FR-12.5: Planning mode preserves goals/decisions
 
 **Acceptance Criteria:**
+
 - [ ] Mode-aware summarization prompts
 - [ ] Mode changes handled gracefully
 - [ ] Code context preserved in Developer mode
@@ -434,6 +468,7 @@ The system has documentation describing an ideal compression system, but the imp
 **Priority:** P1 (High)
 
 **References:**
+
 - `dev_PromptSystem.md` - Operational modes
 
 ---
@@ -443,6 +478,7 @@ The system has documentation describing an ideal compression system, but the imp
 **Description:** Integrate with model size detection and tool support
 
 **Requirements:**
+
 - FR-13.1: Model size affects compression reliability scoring
 - FR-13.2: Larger models = better compression quality
 - FR-13.3: Model size used in warning thresholds
@@ -450,6 +486,7 @@ The system has documentation describing an ideal compression system, but the imp
 - FR-13.5: Model swaps preserve compression state
 
 **Acceptance Criteria:**
+
 - [ ] Model size integrated into reliability calculation
 - [ ] Compression quality varies by model size
 - [ ] Warnings account for model capabilities
@@ -459,6 +496,7 @@ The system has documentation describing an ideal compression system, but the imp
 **Priority:** P1 (High)
 
 **References:**
+
 - `dev_ModelManagement.md` - Model size detection
 - `dev_ContextCompression.md` - Reliability scoring
 
@@ -469,6 +507,7 @@ The system has documentation describing an ideal compression system, but the imp
 **Description:** Integrate with provider context limits
 
 **Requirements:**
+
 - FR-14.1: Use provider-specific context limits (from `LLM_profiles.json`)
 - FR-14.2: Respect `ollama_context_size` (85% pre-calculated values)
 - FR-14.3: Compression triggers based on provider limits
@@ -476,6 +515,7 @@ The system has documentation describing an ideal compression system, but the imp
 - FR-14.5: Future provider support (vLLM, Claude, etc.)
 
 **Acceptance Criteria:**
+
 - [ ] Provider limits read from profiles
 - [ ] 85% values used correctly
 - [ ] Compression triggers respect provider
@@ -485,6 +525,7 @@ The system has documentation describing an ideal compression system, but the imp
 **Priority:** P0 (Critical)
 
 **References:**
+
 - `dev_ProviderSystem.md` - Provider integration
 - `dev_ContextManagement.md` - Context sizing logic
 
@@ -495,6 +536,7 @@ The system has documentation describing an ideal compression system, but the imp
 **Description:** Deep integration with goal management system
 
 **Requirements:**
+
 - FR-15.1: Goals NEVER compressed (always in system prompt)
 - FR-15.2: Goal context guides summarization
 - FR-15.3: Goal markers parsed from LLM output
@@ -502,6 +544,7 @@ The system has documentation describing an ideal compression system, but the imp
 - FR-15.5: Checkpoints preserve goal-relevant information
 
 **Acceptance Criteria:**
+
 - [ ] Goals always in system prompt
 - [ ] Goal-aware summarization working
 - [ ] Goal markers parsed correctly
@@ -511,6 +554,7 @@ The system has documentation describing an ideal compression system, but the imp
 **Priority:** P1 (High)
 
 **References:**
+
 - `dev_PromptSystem.md` - Goal management system
 
 ---
@@ -520,6 +564,7 @@ The system has documentation describing an ideal compression system, but the imp
 **Description:** Integrate with PromptOrchestrator for system prompt building
 
 **Requirements:**
+
 - FR-16.1: System prompt built by PromptOrchestrator
 - FR-16.2: Compression doesn't interfere with prompt assembly
 - FR-16.3: Checkpoints included in prompt structure
@@ -527,6 +572,7 @@ The system has documentation describing an ideal compression system, but the imp
 - FR-16.5: MCP prompts handled correctly
 
 **Acceptance Criteria:**
+
 - [ ] PromptOrchestrator builds system prompt
 - [ ] Compression respects prompt structure
 - [ ] Checkpoints integrated into prompt
@@ -536,6 +582,7 @@ The system has documentation describing an ideal compression system, but the imp
 **Priority:** P0 (Critical)
 
 **References:**
+
 - `dev_PromptSystem.md` - PromptOrchestrator
 
 ---
@@ -545,6 +592,7 @@ The system has documentation describing an ideal compression system, but the imp
 ### NFR-1: Performance
 
 **Requirements:**
+
 - NFR-1.1: Compression completes in 2-5 seconds
 - NFR-1.2: Validation completes in <100ms
 - NFR-1.3: Checkpoint aging completes in 1-2 seconds
@@ -552,6 +600,7 @@ The system has documentation describing an ideal compression system, but the imp
 - NFR-1.5: Memory usage stays reasonable
 
 **Acceptance Criteria:**
+
 - [ ] Performance benchmarks met
 - [ ] No UI lag
 - [ ] Memory usage acceptable
@@ -564,6 +613,7 @@ The system has documentation describing an ideal compression system, but the imp
 ### NFR-2: Reliability
 
 **Requirements:**
+
 - NFR-2.1: System never crashes
 - NFR-2.2: Graceful degradation on errors
 - NFR-2.3: Data never lost
@@ -571,6 +621,7 @@ The system has documentation describing an ideal compression system, but the imp
 - NFR-2.5: 99.9% uptime
 
 **Acceptance Criteria:**
+
 - [ ] No crashes in testing
 - [ ] All error cases handled
 - [ ] Data loss prevented
@@ -584,6 +635,7 @@ The system has documentation describing an ideal compression system, but the imp
 ### NFR-3: Maintainability
 
 **Requirements:**
+
 - NFR-3.1: Clear separation of concerns
 - NFR-3.2: Well-documented code
 - NFR-3.3: Comprehensive tests
@@ -591,6 +643,7 @@ The system has documentation describing an ideal compression system, but the imp
 - NFR-3.5: Easy to extend
 
 **Acceptance Criteria:**
+
 - [ ] Code follows architecture
 - [ ] Documentation complete
 - [ ] Test coverage >80%
@@ -604,6 +657,7 @@ The system has documentation describing an ideal compression system, but the imp
 ### NFR-4: Testability
 
 **Requirements:**
+
 - NFR-4.1: Unit tests for all components
 - NFR-4.2: Integration tests for flows
 - NFR-4.3: Property-based tests for compression
@@ -611,6 +665,7 @@ The system has documentation describing an ideal compression system, but the imp
 - NFR-4.5: Error scenario tests
 
 **Acceptance Criteria:**
+
 - [ ] Unit tests written
 - [ ] Integration tests written
 - [ ] Property tests written
@@ -692,6 +747,7 @@ The system has documentation describing an ideal compression system, but the imp
 **Risk:** LLM creates poor summaries, losing important context
 
 **Mitigation:**
+
 - Test with multiple models
 - Provide clear summarization prompts
 - Allow user to review summaries
@@ -707,6 +763,7 @@ The system has documentation describing an ideal compression system, but the imp
 **Risk:** Compression takes too long, blocking user
 
 **Mitigation:**
+
 - Optimize LLM calls
 - Show progress indicator
 - Allow cancellation
@@ -722,6 +779,7 @@ The system has documentation describing an ideal compression system, but the imp
 **Risk:** Existing sessions break with new system
 
 **Mitigation:**
+
 - Migration scripts
 - Backward compatibility layer
 - Thorough testing
@@ -737,6 +795,7 @@ The system has documentation describing an ideal compression system, but the imp
 **Risk:** Unexpected scenarios cause crashes
 
 **Mitigation:**
+
 - Comprehensive testing
 - Error handling everywhere
 - Graceful degradation
@@ -775,43 +834,43 @@ To avoid carrying forward legacy code and broken parts, we will:
 
 #### Core Compression Files (Complete Rewrite)
 
-| Old File | Location | Lines | Backup To | New File | Reason |
-|----------|----------|-------|-----------|----------|---------|
-| `compressionService.ts` | `packages/core/src/context/` | 920 | `.legacy/context-compression/2026-01-28/` | `compressionEngine.ts` | No LLM integration, just truncation |
-| `compressionCoordinator.ts` | `packages/core/src/context/` | 830 | `.legacy/context-compression/2026-01-28/` | `compressionOrchestrator.ts` | Mixed concerns, unclear flow |
-| `chatCompressionService.ts` | `packages/core/src/services/` | 559 | `.legacy/context-compression/2026-01-28/` | `sessionCompressionService.ts` | Duplicate logic, XML generation |
-| `checkpointManager.ts` | `packages/core/src/context/` | ~400 | `.legacy/context-compression/2026-01-28/` | `checkpointLifecycle.ts` | Aging doesn't work properly |
-| `snapshotManager.ts` | `packages/core/src/context/` | 615 | `.legacy/context-compression/2026-01-28/` | `snapshotLifecycle.ts` | Mixed with active context |
-| `contextManager.ts` | `packages/core/src/context/` | 639 | `.legacy/context-compression/2026-01-28/` | `contextOrchestrator.ts` | Too many responsibilities |
+| Old File                    | Location                      | Lines | Backup To                                 | New File                       | Reason                              |
+| --------------------------- | ----------------------------- | ----- | ----------------------------------------- | ------------------------------ | ----------------------------------- |
+| `compressionService.ts`     | `packages/core/src/context/`  | 920   | `.legacy/context-compression/2026-01-28/` | `compressionEngine.ts`         | No LLM integration, just truncation |
+| `compressionCoordinator.ts` | `packages/core/src/context/`  | 830   | `.legacy/context-compression/2026-01-28/` | `compressionOrchestrator.ts`   | Mixed concerns, unclear flow        |
+| `chatCompressionService.ts` | `packages/core/src/services/` | 559   | `.legacy/context-compression/2026-01-28/` | `sessionCompressionService.ts` | Duplicate logic, XML generation     |
+| `checkpointManager.ts`      | `packages/core/src/context/`  | ~400  | `.legacy/context-compression/2026-01-28/` | `checkpointLifecycle.ts`       | Aging doesn't work properly         |
+| `snapshotManager.ts`        | `packages/core/src/context/`  | 615   | `.legacy/context-compression/2026-01-28/` | `snapshotLifecycle.ts`         | Mixed with active context           |
+| `contextManager.ts`         | `packages/core/src/context/`  | 639   | `.legacy/context-compression/2026-01-28/` | `contextOrchestrator.ts`       | Too many responsibilities           |
 
 **Total Legacy Code:** ~4,000 lines to be replaced
 
 #### Supporting Files (Partial Rewrite)
 
-| Old File | Location | Action | New File | Reason |
-|----------|----------|--------|----------|---------|
-| `snapshotStorage.ts` | `packages/core/src/context/` | Keep & Refactor | `snapshotStorage.ts` | Storage logic is sound, just needs cleanup |
-| `snapshotCoordinator.ts` | `packages/core/src/context/` | Keep & Refactor | `snapshotCoordinator.ts` | Coordination logic is minimal |
-| `snapshotUtils.ts` | `packages/core/src/context/` | Keep | `snapshotUtils.ts` | Utilities are well-tested |
-| `messageStore.ts` | `packages/core/src/context/` | Keep & Refactor | `messageStore.ts` | Core logic sound, needs integration updates |
-| `tokenCounter.ts` | `packages/core/src/context/` | Keep | `tokenCounter.ts` | Token counting works correctly |
-| `types.ts` | `packages/core/src/context/` | Extend | `types.ts` | Add new types, keep existing |
+| Old File                 | Location                     | Action          | New File                 | Reason                                      |
+| ------------------------ | ---------------------------- | --------------- | ------------------------ | ------------------------------------------- |
+| `snapshotStorage.ts`     | `packages/core/src/context/` | Keep & Refactor | `snapshotStorage.ts`     | Storage logic is sound, just needs cleanup  |
+| `snapshotCoordinator.ts` | `packages/core/src/context/` | Keep & Refactor | `snapshotCoordinator.ts` | Coordination logic is minimal               |
+| `snapshotUtils.ts`       | `packages/core/src/context/` | Keep            | `snapshotUtils.ts`       | Utilities are well-tested                   |
+| `messageStore.ts`        | `packages/core/src/context/` | Keep & Refactor | `messageStore.ts`        | Core logic sound, needs integration updates |
+| `tokenCounter.ts`        | `packages/core/src/context/` | Keep            | `tokenCounter.ts`        | Token counting works correctly              |
+| `types.ts`               | `packages/core/src/context/` | Extend          | `types.ts`               | Add new types, keep existing                |
 
 #### New Files to Create
 
-| New File | Purpose | Lines (Est.) | Dependencies |
-|----------|---------|--------------|--------------|
-| `storageTypes.ts` | Storage layer interfaces | 200 | None |
-| `activeContextManager.ts` | Active context (LLM-bound) | 400 | storageTypes.ts |
-| `snapshotLifecycle.ts` | Recovery snapshots | 500 | storageTypes.ts, snapshotStorage.ts |
-| `sessionHistoryManager.ts` | Full history storage | 300 | storageTypes.ts |
-| `compressionPipeline.ts` | Structured compression flow | 600 | summarizationService.ts |
-| `summarizationService.ts` | LLM summarization | 400 | provider types |
-| `validationService.ts` | Pre-send validation | 300 | tokenCounter.ts |
-| `checkpointLifecycle.ts` | Checkpoint aging | 500 | summarizationService.ts |
-| `emergencyActions.ts` | Emergency compression | 400 | compressionPipeline.ts |
-| `contextOrchestrator.ts` | Main coordination | 700 | All above |
-| `storageBoundaries.ts` | Boundary enforcement | 200 | storageTypes.ts |
+| New File                   | Purpose                     | Lines (Est.) | Dependencies                        |
+| -------------------------- | --------------------------- | ------------ | ----------------------------------- |
+| `storageTypes.ts`          | Storage layer interfaces    | 200          | None                                |
+| `activeContextManager.ts`  | Active context (LLM-bound)  | 400          | storageTypes.ts                     |
+| `snapshotLifecycle.ts`     | Recovery snapshots          | 500          | storageTypes.ts, snapshotStorage.ts |
+| `sessionHistoryManager.ts` | Full history storage        | 300          | storageTypes.ts                     |
+| `compressionPipeline.ts`   | Structured compression flow | 600          | summarizationService.ts             |
+| `summarizationService.ts`  | LLM summarization           | 400          | provider types                      |
+| `validationService.ts`     | Pre-send validation         | 300          | tokenCounter.ts                     |
+| `checkpointLifecycle.ts`   | Checkpoint aging            | 500          | summarizationService.ts             |
+| `emergencyActions.ts`      | Emergency compression       | 400          | compressionPipeline.ts              |
+| `contextOrchestrator.ts`   | Main coordination           | 700          | All above                           |
+| `storageBoundaries.ts`     | Boundary enforcement        | 200          | storageTypes.ts                     |
 
 **Total New Code:** ~4,500 lines (clean, well-tested)
 
@@ -1286,6 +1345,7 @@ export class LegacyContextAdapter {
 **Risk:** Rewrite takes longer than refactor
 
 **Mitigation:**
+
 - Clear requirements and design
 - Incremental development
 - Feature flags for gradual rollout
@@ -1294,6 +1354,7 @@ export class LegacyContextAdapter {
 **Risk:** Breaking changes for users
 
 **Mitigation:**
+
 - Compatibility layer for old sessions
 - Migration scripts
 - Thorough testing
@@ -1302,6 +1363,7 @@ export class LegacyContextAdapter {
 **Risk:** Missing edge cases from legacy code
 
 **Mitigation:**
+
 - Review legacy code for edge cases
 - Document known issues
 - Comprehensive test suite

@@ -96,6 +96,7 @@ This section contains all 35+ models currently supported in OLLM CLI with accura
 ### Coding Models
 
 #### CodeGeeX4 9B
+
 - **Company:** Zhipu AI
 - **Quantization:** Q4_0
 - **Size:** 5.5 GB
@@ -107,9 +108,10 @@ This section contains all 35+ models currently supported in OLLM CLI with accura
 **VRAM Requirements:**
 | Context | 4k | 8k | 16k | 32k | 64k | 128k |
 |---------|----|----|-----|-----|-----|------|
-| VRAM    | 7.5 GB | 8.1 GB | 9.2 GB | 11.5 GB | 15.8 GB | 24.5 GB |
+| VRAM | 7.5 GB | 8.1 GB | 9.2 GB | 11.5 GB | 15.8 GB | 24.5 GB |
 
 #### CodeGemma 2B
+
 - **Company:** Google DeepMind
 - **Quantization:** Q4_K_M
 - **Size:** 1.6 GB
@@ -121,9 +123,10 @@ This section contains all 35+ models currently supported in OLLM CLI with accura
 **VRAM Requirements:**
 | Context | 4k | 8k |
 |---------|----|----|
-| VRAM    | 3.0 GB | 3.4 GB |
+| VRAM | 3.0 GB | 3.4 GB |
 
 #### CodeGemma 7B
+
 - **Company:** Google DeepMind
 - **Quantization:** Q4_K_M
 - **Size:** 5.0 GB
@@ -135,9 +138,10 @@ This section contains all 35+ models currently supported in OLLM CLI with accura
 **VRAM Requirements:**
 | Context | 4k | 8k |
 |---------|----|----|
-| VRAM    | 7.0 GB | 8.5 GB |
+| VRAM | 7.0 GB | 8.5 GB |
 
 #### Codestral 22B
+
 - **Company:** Mistral AI
 - **Quantization:** Q4_0
 - **Size:** 12 GB
@@ -149,9 +153,10 @@ This section contains all 35+ models currently supported in OLLM CLI with accura
 **VRAM Requirements:**
 | Context | 4k | 8k | 16k | 32k |
 |---------|----|----|-----|-----|
-| VRAM    | 14.5 GB | 15.6 GB | 17.8 GB | 22.0 GB |
+| VRAM | 14.5 GB | 15.6 GB | 17.8 GB | 22.0 GB |
 
 #### DeepSeek Coder V2 16B
+
 - **Company:** DeepSeek
 - **Quantization:** Q4_K_M
 - **Size:** 8.9 GB
@@ -163,9 +168,10 @@ This section contains all 35+ models currently supported in OLLM CLI with accura
 **VRAM Requirements:**
 | Context | 4k | 8k | 16k | 32k | 64k | 128k |
 |---------|----|----|-----|-----|-----|------|
-| VRAM    | 11.2 GB | 11.5 GB | 12.0 GB | 13.1 GB | 15.2 GB | 19.5 GB |
+| VRAM | 11.2 GB | 11.5 GB | 12.0 GB | 13.1 GB | 15.2 GB | 19.5 GB |
 
 #### Granite Code 3B
+
 - **Company:** IBM
 - **Quantization:** Q4_K_M
 - **Size:** 2.0 GB
@@ -176,10 +182,11 @@ This section contains all 35+ models currently supported in OLLM CLI with accura
 
 **VRAM Requirements:**
 | Context | 4k |
-|---------|----| 
-| VRAM    | 3.5 GB |
+|---------|----|
+| VRAM | 3.5 GB |
 
 #### Granite Code 8B
+
 - **Company:** IBM
 - **Quantization:** Q4_K_M
 - **Size:** 4.6 GB
@@ -190,10 +197,11 @@ This section contains all 35+ models currently supported in OLLM CLI with accura
 
 **VRAM Requirements:**
 | Context | 4k |
-|---------|----| 
-| VRAM    | 6.5 GB |
+|---------|----|
+| VRAM | 6.5 GB |
 
 #### Magicoder Latest
+
 - **Company:** ise-uiuc (OSS-Instruct Team)
 - **Quantization:** Q4_K_M
 - **Size:** 3.8 GB
@@ -205,9 +213,10 @@ This section contains all 35+ models currently supported in OLLM CLI with accura
 **VRAM Requirements:**
 | Context | 4k | 8k | 16k |
 |---------|----|----|-----|
-| VRAM    | 5.5 GB | 6.0 GB | 7.1 GB |
+| VRAM | 5.5 GB | 6.0 GB | 7.1 GB |
 
 #### OpenCoder 8B
+
 - **Company:** OpenCoder Team / INF
 - **Quantization:** Q4_K_M
 - **Size:** 4.7 GB
@@ -219,9 +228,10 @@ This section contains all 35+ models currently supported in OLLM CLI with accura
 **VRAM Requirements:**
 | Context | 4k | 8k |
 |---------|----|----|
-| VRAM    | 6.5 GB | 7.2 GB |
+| VRAM | 6.5 GB | 7.2 GB |
 
 #### Qwen 2.5 Coder 3B
+
 - **Company:** Alibaba Cloud
 - **Quantization:** Q4_K_M
 - **Size:** 1.9 GB
@@ -233,9 +243,10 @@ This section contains all 35+ models currently supported in OLLM CLI with accura
 **VRAM Requirements:**
 | Context | 4k | 8k | 16k | 32k | 64k | 128k |
 |---------|----|----|-----|-----|-----|------|
-| VRAM    | 3.5 GB | 4.0 GB | 4.8 GB | 6.5 GB | 9.8 GB | 16.5 GB |
+| VRAM | 3.5 GB | 4.0 GB | 4.8 GB | 6.5 GB | 9.8 GB | 16.5 GB |
 
 #### Qwen 2.5 Coder 7B
+
 - **Company:** Alibaba Cloud
 - **Quantization:** Q4_K_M
 - **Size:** 4.7 GB
@@ -247,9 +258,10 @@ This section contains all 35+ models currently supported in OLLM CLI with accura
 **VRAM Requirements:**
 | Context | 4k | 8k | 16k | 32k | 64k | 128k |
 |---------|----|----|-----|-----|-----|------|
-| VRAM    | 6.5 GB | 7.2 GB | 8.4 GB | 10.8 GB | 15.5 GB | 24.5 GB |
+| VRAM | 6.5 GB | 7.2 GB | 8.4 GB | 10.8 GB | 15.5 GB | 24.5 GB |
 
 #### Qwen 3 Coder 30B
+
 - **Company:** Alibaba Cloud
 - **Quantization:** Q4_0
 - **Size:** 18 GB
@@ -261,13 +273,14 @@ This section contains all 35+ models currently supported in OLLM CLI with accura
 **VRAM Requirements:**
 | Context | 4k | 8k | 16k | 32k | 64k | 128k |
 |---------|----|----|-----|-----|-----|------|
-| VRAM    | 20.5 GB | 22.0 GB | 24.5 GB | 29.5 GB | 39.5 GB | 59.5 GB |
+| VRAM | 20.5 GB | 22.0 GB | 24.5 GB | 29.5 GB | 39.5 GB | 59.5 GB |
 
 ---
 
 ### Reasoning Models
 
 #### DeepSeek R1 1.5B
+
 - **Company:** DeepSeek
 - **Quantization:** Q4_K_M
 - **Size:** 1.1 GB
@@ -279,9 +292,10 @@ This section contains all 35+ models currently supported in OLLM CLI with accura
 **VRAM Requirements:**
 | Context | 4k | 8k | 16k | 32k | 64k | 128k |
 |---------|----|----|-----|-----|-----|------|
-| VRAM    | 2.5 GB | 2.8 GB | 3.2 GB | 4.1 GB | 6.0 GB | 9.8 GB |
+| VRAM | 2.5 GB | 2.8 GB | 3.2 GB | 4.1 GB | 6.0 GB | 9.8 GB |
 
 #### DeepSeek R1 7B
+
 - **Company:** DeepSeek
 - **Quantization:** Q4_K_M
 - **Size:** 4.7 GB
@@ -293,9 +307,10 @@ This section contains all 35+ models currently supported in OLLM CLI with accura
 **VRAM Requirements:**
 | Context | 4k | 8k | 16k | 32k | 64k | 128k |
 |---------|----|----|-----|-----|-----|------|
-| VRAM    | 6.5 GB | 7.2 GB | 8.4 GB | 10.8 GB | 15.5 GB | 24.5 GB |
+| VRAM | 6.5 GB | 7.2 GB | 8.4 GB | 10.8 GB | 15.5 GB | 24.5 GB |
 
 #### DeepSeek R1 8B
+
 - **Company:** DeepSeek
 - **Quantization:** Q4_K_M
 - **Size:** 5.2 GB
@@ -307,9 +322,10 @@ This section contains all 35+ models currently supported in OLLM CLI with accura
 **VRAM Requirements:**
 | Context | 4k | 8k | 16k | 32k | 64k | 128k |
 |---------|----|----|-----|-----|-----|------|
-| VRAM    | 7.0 GB | 7.8 GB | 9.0 GB | 11.5 GB | 16.2 GB | 25.0 GB |
+| VRAM | 7.0 GB | 7.8 GB | 9.0 GB | 11.5 GB | 16.2 GB | 25.0 GB |
 
 #### Phi-4 Mini Reasoning
+
 - **Company:** Microsoft
 - **Quantization:** Q4_K_M
 - **Size:** 3.2 GB
@@ -321,13 +337,14 @@ This section contains all 35+ models currently supported in OLLM CLI with accura
 **VRAM Requirements:**
 | Context | 4k | 8k | 16k | 32k | 64k | 128k |
 |---------|----|----|-----|-----|-----|------|
-| VRAM    | 5.0 GB | 5.6 GB | 6.8 GB | 9.2 GB | 13.8 GB | 23.0 GB |
+| VRAM | 5.0 GB | 5.6 GB | 6.8 GB | 9.2 GB | 13.8 GB | 23.0 GB |
 
 ---
 
 ### General Purpose Models
 
 #### Command R7B 7B
+
 - **Company:** Cohere
 - **Quantization:** Q4_K_M
 - **Size:** 5.1 GB
@@ -339,9 +356,10 @@ This section contains all 35+ models currently supported in OLLM CLI with accura
 **VRAM Requirements:**
 | Context | 4k | 8k | 16k | 32k | 64k | 128k |
 |---------|----|----|-----|-----|-----|------|
-| VRAM    | 7.0 GB | 7.6 GB | 8.8 GB | 11.0 GB | 15.5 GB | 24.5 GB |
+| VRAM | 7.0 GB | 7.6 GB | 8.8 GB | 11.0 GB | 15.5 GB | 24.5 GB |
 
 #### Dolphin3 8B
+
 - **Company:** Cognitive Computations
 - **Quantization:** Q4_K_M
 - **Size:** 4.9 GB
@@ -353,9 +371,10 @@ This section contains all 35+ models currently supported in OLLM CLI with accura
 **VRAM Requirements:**
 | Context | 4k | 8k | 16k | 32k |
 |---------|----|----|-----|-----|
-| VRAM    | 7.0 GB | 7.7 GB | 8.9 GB | 11.2 GB |
+| VRAM | 7.0 GB | 7.7 GB | 8.9 GB | 11.2 GB |
 
 #### Gemma 3 1B
+
 - **Company:** Google DeepMind
 - **Quantization:** Q4_K_M
 - **Size:** 815 MB
@@ -367,9 +386,10 @@ This section contains all 35+ models currently supported in OLLM CLI with accura
 **VRAM Requirements:**
 | Context | 4k | 8k | 16k | 32k | 64k | 128k |
 |---------|----|----|-----|-----|-----|------|
-| VRAM    | 2.0 GB | 2.4 GB | 3.2 GB | 4.8 GB | 8.0 GB | 14.2 GB |
+| VRAM | 2.0 GB | 2.4 GB | 3.2 GB | 4.8 GB | 8.0 GB | 14.2 GB |
 
 #### Gemma 3 4B
+
 - **Company:** Google DeepMind
 - **Quantization:** Q4_K_M
 - **Size:** 3.3 GB
@@ -381,9 +401,10 @@ This section contains all 35+ models currently supported in OLLM CLI with accura
 **VRAM Requirements:**
 | Context | 4k | 8k | 16k | 32k | 64k | 128k |
 |---------|----|----|-----|-----|-----|------|
-| VRAM    | 5.0 GB | 5.8 GB | 7.5 GB | 10.5 GB | 16.5 GB | 28.5 GB |
+| VRAM | 5.0 GB | 5.8 GB | 7.5 GB | 10.5 GB | 16.5 GB | 28.5 GB |
 
 #### Gemma 3 Nano E2B
+
 - **Company:** Google DeepMind
 - **Quantization:** Q4_K_M
 - **Size:** 5.6 GB
@@ -395,9 +416,10 @@ This section contains all 35+ models currently supported in OLLM CLI with accura
 **VRAM Requirements:**
 | Context | 4k | 8k | 16k | 32k | 64k | 128k |
 |---------|----|----|-----|-----|-----|------|
-| VRAM    | 7.5 GB | 8.5 GB | 10.5 GB | 14.5 GB | 22.5 GB | 38.5 GB |
+| VRAM | 7.5 GB | 8.5 GB | 10.5 GB | 14.5 GB | 22.5 GB | 38.5 GB |
 
 #### Gemma 3 Nano Latest
+
 - **Company:** Google DeepMind
 - **Quantization:** Q4_K_M
 - **Size:** 7.5 GB
@@ -409,9 +431,10 @@ This section contains all 35+ models currently supported in OLLM CLI with accura
 **VRAM Requirements:**
 | Context | 4k | 8k | 16k | 32k | 64k | 128k |
 |---------|----|----|-----|-----|-----|------|
-| VRAM    | 9.5 GB | 10.8 GB | 13.5 GB | 18.5 GB | 28.5 GB | 48.0 GB |
+| VRAM | 9.5 GB | 10.8 GB | 13.5 GB | 18.5 GB | 28.5 GB | 48.0 GB |
 
 #### GPT-OSS 20B
+
 - **Company:** OpenAI (Hypothetical/Mirror)
 - **Quantization:** Q4_0
 - **Size:** 13 GB
@@ -423,9 +446,10 @@ This section contains all 35+ models currently supported in OLLM CLI with accura
 **VRAM Requirements:**
 | Context | 4k | 8k | 16k | 32k | 64k | 128k |
 |---------|----|----|-----|-----|-----|------|
-| VRAM    | 16.5 GB | 17.5 GB | 19.5 GB | 23.5 GB | 31.5 GB | 47.5 GB |
+| VRAM | 16.5 GB | 17.5 GB | 19.5 GB | 23.5 GB | 31.5 GB | 47.5 GB |
 
 #### Granite 3.3 8B
+
 - **Company:** IBM
 - **Quantization:** Q4_K_M
 - **Size:** 4.9 GB
@@ -437,9 +461,10 @@ This section contains all 35+ models currently supported in OLLM CLI with accura
 **VRAM Requirements:**
 | Context | 4k | 8k | 16k | 32k | 64k | 128k |
 |---------|----|----|-----|-----|-----|------|
-| VRAM    | 7.0 GB | 7.7 GB | 8.9 GB | 11.2 GB | 15.8 GB | 24.8 GB |
+| VRAM | 7.0 GB | 7.7 GB | 8.9 GB | 11.2 GB | 15.8 GB | 24.8 GB |
 
 #### Granite 4 Latest
+
 - **Company:** IBM
 - **Quantization:** Q4_K_M
 - **Size:** 2.1 GB
@@ -451,9 +476,10 @@ This section contains all 35+ models currently supported in OLLM CLI with accura
 **VRAM Requirements:**
 | Context | 4k | 8k | 16k | 32k | 64k | 128k |
 |---------|----|----|-----|-----|-----|------|
-| VRAM    | 4.0 GB | 4.5 GB | 5.5 GB | 7.5 GB | 11.5 GB | 19.5 GB |
+| VRAM | 4.0 GB | 4.5 GB | 5.5 GB | 7.5 GB | 11.5 GB | 19.5 GB |
 
 #### Llama 3 Latest (8B)
+
 - **Company:** Meta
 - **Quantization:** Q4_K_M
 - **Size:** 4.7 GB
@@ -465,9 +491,10 @@ This section contains all 35+ models currently supported in OLLM CLI with accura
 **VRAM Requirements:**
 | Context | 4k | 8k |
 |---------|----|----|
-| VRAM    | 6.5 GB | 7.2 GB |
+| VRAM | 6.5 GB | 7.2 GB |
 
 #### Llama 3.2 3B
+
 - **Company:** Meta
 - **Quantization:** Q4_K_M
 - **Size:** 2.0 GB
@@ -479,9 +506,10 @@ This section contains all 35+ models currently supported in OLLM CLI with accura
 **VRAM Requirements:**
 | Context | 4k | 8k | 16k | 32k | 64k | 128k |
 |---------|----|----|-----|-----|-----|------|
-| VRAM    | 3.5 GB | 3.9 GB | 4.6 GB | 6.0 GB | 8.8 GB | 14.5 GB |
+| VRAM | 3.5 GB | 3.9 GB | 4.6 GB | 6.0 GB | 8.8 GB | 14.5 GB |
 
 #### Ministral 3 3B
+
 - **Company:** Mistral AI
 - **Quantization:** Q4_K_M
 - **Size:** 3.0 GB
@@ -493,9 +521,10 @@ This section contains all 35+ models currently supported in OLLM CLI with accura
 **VRAM Requirements:**
 | Context | 4k | 8k | 16k | 32k | 64k | 128k |
 |---------|----|----|-----|-----|-----|------|
-| VRAM    | 5.0 GB | 5.6 GB | 6.8 GB | 9.0 GB | 13.5 GB | 22.5 GB |
+| VRAM | 5.0 GB | 5.6 GB | 6.8 GB | 9.0 GB | 13.5 GB | 22.5 GB |
 
 #### Ministral 3 8B
+
 - **Company:** Mistral AI
 - **Quantization:** Q4_K_M
 - **Size:** 6.0 GB
@@ -507,9 +536,10 @@ This section contains all 35+ models currently supported in OLLM CLI with accura
 **VRAM Requirements:**
 | Context | 4k | 8k | 16k | 32k | 64k | 128k |
 |---------|----|----|-----|-----|-----|------|
-| VRAM    | 8.0 GB | 8.8 GB | 10.5 GB | 13.6 GB | 20.0 GB | 32.5 GB |
+| VRAM | 8.0 GB | 8.8 GB | 10.5 GB | 13.6 GB | 20.0 GB | 32.5 GB |
 
 #### Phi-3 Mini 3.8B
+
 - **Company:** Microsoft
 - **Quantization:** Q4_K_M
 - **Size:** 2.2 GB
@@ -521,9 +551,10 @@ This section contains all 35+ models currently supported in OLLM CLI with accura
 **VRAM Requirements:**
 | Context | 4k | 8k | 16k | 32k | 64k | 128k |
 |---------|----|----|-----|-----|-----|------|
-| VRAM    | 4.0 GB | 4.5 GB | 5.5 GB | 7.5 GB | 11.5 GB | 19.5 GB |
+| VRAM | 4.0 GB | 4.5 GB | 5.5 GB | 7.5 GB | 11.5 GB | 19.5 GB |
 
 #### Qwen 2.5 7B
+
 - **Company:** Alibaba Cloud
 - **Quantization:** Q4_K_M
 - **Size:** 4.7 GB
@@ -535,9 +566,10 @@ This section contains all 35+ models currently supported in OLLM CLI with accura
 **VRAM Requirements:**
 | Context | 4k | 8k | 16k | 32k | 64k | 128k |
 |---------|----|----|-----|-----|-----|------|
-| VRAM    | 6.5 GB | 7.2 GB | 8.4 GB | 10.8 GB | 15.5 GB | 24.5 GB |
+| VRAM | 6.5 GB | 7.2 GB | 8.4 GB | 10.8 GB | 15.5 GB | 24.5 GB |
 
 #### Qwen 3 4B
+
 - **Company:** Alibaba Cloud
 - **Quantization:** Q4_K_M
 - **Size:** 2.5 GB
@@ -549,9 +581,10 @@ This section contains all 35+ models currently supported in OLLM CLI with accura
 **VRAM Requirements:**
 | Context | 4k | 8k | 16k | 32k | 64k | 128k |
 |---------|----|----|-----|-----|-----|------|
-| VRAM    | 4.5 GB | 5.0 GB | 6.0 GB | 8.0 GB | 12.0 GB | 20.0 GB |
+| VRAM | 4.5 GB | 5.0 GB | 6.0 GB | 8.0 GB | 12.0 GB | 20.0 GB |
 
 #### Qwen 3 8B
+
 - **Company:** Alibaba Cloud
 - **Quantization:** Q4_K_M
 - **Size:** 5.2 GB
@@ -563,13 +596,14 @@ This section contains all 35+ models currently supported in OLLM CLI with accura
 **VRAM Requirements:**
 | Context | 4k | 8k | 16k | 32k | 64k | 128k |
 |---------|----|----|-----|-----|-----|------|
-| VRAM    | 7.5 GB | 8.2 GB | 9.5 GB | 12.0 GB | 17.0 GB | 27.0 GB |
+| VRAM | 7.5 GB | 8.2 GB | 9.5 GB | 12.0 GB | 17.0 GB | 27.0 GB |
 
 ---
 
 ### Vision-Language Models
 
 #### Qwen 3 VL 4B
+
 - **Company:** Alibaba Cloud
 - **Quantization:** Q4_K_M
 - **Size:** 3.3 GB
@@ -581,9 +615,10 @@ This section contains all 35+ models currently supported in OLLM CLI with accura
 **VRAM Requirements:**
 | Context | 4k | 8k | 16k | 32k | 64k | 128k |
 |---------|----|----|-----|-----|-----|------|
-| VRAM    | 5.0 GB | 5.5 GB | 6.5 GB | 8.5 GB | 12.5 GB | 20.5 GB |
+| VRAM | 5.0 GB | 5.5 GB | 6.5 GB | 8.5 GB | 12.5 GB | 20.5 GB |
 
 #### Qwen 3 VL 8B
+
 - **Company:** Alibaba Cloud
 - **Quantization:** Q4_K_M
 - **Size:** 6.1 GB
@@ -595,7 +630,7 @@ This section contains all 35+ models currently supported in OLLM CLI with accura
 **VRAM Requirements:**
 | Context | 4k | 8k | 16k | 32k | 64k | 128k |
 |---------|----|----|-----|-----|-----|------|
-| VRAM    | 8.0 GB | 8.7 GB | 10.0 GB | 12.5 GB | 17.5 GB | 27.5 GB |
+| VRAM | 8.0 GB | 8.7 GB | 10.0 GB | 12.5 GB | 17.5 GB | 27.5 GB |
 
 ---
 
@@ -905,12 +940,14 @@ Error: Context length exceeds model maximum
 VRAM usage comes from two distinct places:
 
 #### 1. The "Parking Fee" (Model Weights)
+
 This is the fixed cost just to load the model.
 
 - **For an 8B model (Q4 quantization):** You need roughly 5.5 GB just to store the "brain" of the model
 - This never changes, regardless of how much text you type
 
 #### 2. The "Running Cost" (KV Cache)
+
 This is the memory needed to "remember" the conversation. It grows with every single word (token) you add.
 
 - **For short context (4k tokens):** You only need ~0.5 GB extra
@@ -921,6 +958,7 @@ This is the memory needed to "remember" the conversation. It grows with every si
 ### Context Cost by Model Class
 
 #### The "Small" Class (7B - 9B)
+
 **Models:** Llama 3 8B, Mistral 7B v0.3, Qwen 2.5 7B
 
 - **Context Cost:** ~0.13 GB per 1,000 tokens
@@ -928,12 +966,14 @@ This is the memory needed to "remember" the conversation. It grows with every si
 - **Warning:** Gemma 2 9B is an outlier. It uses a much larger cache (approx 0.34 GB per 1k tokens) due to its architecture (high head dimension). It eats VRAM much faster than Llama 3
 
 #### The "Medium" Class (Mixtral 8x7B)
+
 **Models:** Mixtral 8x7B, Mixtral 8x22B
 
 - **Context Cost:** ~0.13 GB per 1,000 tokens
 - **Notes:** Mixtral is unique. While the weights are huge (26GB+), the context cache is tiny (identical to the small 7B model). This means if you can fit the weights, increasing context to 32k is very "cheap" in terms of extra VRAM
 
 #### The "Large" Class (70B+)
+
 **Models:** Llama 3 70B, Qwen2 72B
 
 - **Context Cost:** ~0.33 GB per 1,000 tokens
@@ -944,25 +984,28 @@ This is the memory needed to "remember" the conversation. It grows with every si
 ### Tips for Saving VRAM
 
 #### KV Cache Quantization (FP8)
+
 If you use llama.cpp or ExLlamaV2, you can enable "FP8 Cache" (sometimes called Q8 cache). This cuts the context VRAM usage in half with negligible quality loss.
 
 **Example:** Llama 3 70B at 32k context drops from ~50.5 GB total to ~45 GB total
 
 #### System Overhead
+
 Always leave 1-2 GB of VRAM free for your display and OS overhead. If the chart says 23.8 GB and you have a 24 GB card, it will likely crash (OOM).
 
 ### Context Size Reference Table
 
-| Context Size | What it represents | Total VRAM Needed (8B Model) | GPU Class |
-|--------------|-------------------|------------------------------|-----------|
-| 4k | A long article | ~6.0 GB | 8GB Cards (RTX 3060/4060) |
-| 16k | A small book chapter | ~7.5 GB | 8GB Cards (Tight fit) |
-| 32k | A short book | ~9.5 GB | 12GB Cards (RTX 3060/4070) |
-| 128k | A full novel | ~22.0 GB | 24GB Cards (RTX 3090/4090) |
+| Context Size | What it represents   | Total VRAM Needed (8B Model) | GPU Class                  |
+| ------------ | -------------------- | ---------------------------- | -------------------------- |
+| 4k           | A long article       | ~6.0 GB                      | 8GB Cards (RTX 3060/4060)  |
+| 16k          | A small book chapter | ~7.5 GB                      | 8GB Cards (Tight fit)      |
+| 32k          | A short book         | ~9.5 GB                      | 12GB Cards (RTX 3060/4070) |
+| 128k         | A full novel         | ~22.0 GB                     | 24GB Cards (RTX 3090/4090) |
 
 ### Practical Examples
 
 #### Example 1: Running Qwen 2.5 7B on 8GB Card
+
 - **Model weights:** 4.7 GB
 - **4k context:** 6.5 GB total ✅ Fits comfortably
 - **8k context:** 7.2 GB total ✅ Fits with headroom
@@ -970,6 +1013,7 @@ Always leave 1-2 GB of VRAM free for your display and OS overhead. If the chart 
 - **Recommendation:** Use 8k context maximum
 
 #### Example 2: Running DeepSeek Coder V2 16B on 12GB Card
+
 - **Model weights:** 8.9 GB (MoE with efficient MLA cache)
 - **4k context:** 11.2 GB total ✅ Fits
 - **8k context:** 11.5 GB total ✅ Fits
@@ -978,6 +1022,7 @@ Always leave 1-2 GB of VRAM free for your display and OS overhead. If the chart 
 - **Recommendation:** Use 8k context for safety
 
 #### Example 3: Running Qwen 3 Coder 30B on 24GB Card
+
 - **Model weights:** 18 GB
 - **4k context:** 20.5 GB total ✅ Fits
 - **8k context:** 22.0 GB total ✅ Fits
@@ -987,21 +1032,25 @@ Always leave 1-2 GB of VRAM free for your display and OS overhead. If the chart 
 ### GPU Recommendations by Use Case
 
 #### Budget Setup (8GB VRAM)
+
 - **Best models:** Llama 3.2 3B, Qwen 3 4B, Gemma 3 4B, DeepSeek R1 1.5B
 - **Context sweet spot:** 8k-16k
 - **Use case:** Code completion, quick queries, edge deployment
 
 #### Mid-Range Setup (12GB VRAM)
+
 - **Best models:** Qwen 2.5 7B, Qwen 2.5 Coder 7B, Llama 3 8B, Mistral 7B
 - **Context sweet spot:** 16k-32k
 - **Use case:** General development, moderate context needs
 
 #### High-End Setup (24GB VRAM)
+
 - **Best models:** Codestral 22B, Qwen 3 Coder 30B, DeepSeek Coder V2 16B
 - **Context sweet spot:** 32k-64k
 - **Use case:** Professional development, large codebases
 
 #### Workstation Setup (48GB+ VRAM)
+
 - **Best models:** Llama 3.3 70B, Qwen 2.5 72B, Large MoE models
 - **Context sweet spot:** 64k-128k
 - **Use case:** Enterprise, research, maximum capability

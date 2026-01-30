@@ -1,12 +1,12 @@
 /**
  * Property-Based Tests for Session History Persistence
- * 
+ *
  * **Property 7: Session History Persistence**
  * **Validates: Requirements FR-4**
- * 
+ *
  * This test validates that the session history manager correctly persists
  * and loads session data from disk.
- * 
+ *
  * Properties tested:
  * 1. Save/load round trip preserves all data
  * 2. Multiple saves don't corrupt data
@@ -48,10 +48,9 @@ const checkpointRecordArbitrary = (): fc.Arbitrary<CheckpointRecord> =>
   fc.record({
     id: fc.uuid(),
     timestamp: fc.integer({ min: Date.now() - 1000000, max: Date.now() }),
-    messageRange: fc.tuple(
-      fc.integer({ min: 0, max: 100 }),
-      fc.integer({ min: 0, max: 100 })
-    ).map(([start, end]) => [Math.min(start, end), Math.max(start, end)] as [number, number]),
+    messageRange: fc
+      .tuple(fc.integer({ min: 0, max: 100 }), fc.integer({ min: 0, max: 100 }))
+      .map(([start, end]) => [Math.min(start, end), Math.max(start, end)] as [number, number]),
     originalTokens: fc.integer({ min: 100, max: 10000 }),
     compressedTokens: fc.integer({ min: 10, max: 1000 }),
     compressionRatio: fc.double({ min: 0.01, max: 1.0, noNaN: true }),
@@ -84,8 +83,8 @@ describe('SessionHistoryManager - Property 7: Session History Persistence', () =
   afterEach(async () => {
     // Clean up all temporary directories after a delay
     // This prevents race conditions with async operations
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
     for (const dir of tempDirs) {
       try {
         await fs.rm(dir, { recursive: true, force: true });
@@ -98,67 +97,59 @@ describe('SessionHistoryManager - Property 7: Session History Persistence', () =
 
   it('Property 7.1: Save/load round trip preserves all data', () => {
     fc.assert(
-      fc.asyncProperty(
-        fc.uuid(),
-        sessionDataArbitrary(),
-        async (sessionId, sessionData) => {
-          const manager = new SessionHistoryManager(sessionId, tempDir);
+      fc.asyncProperty(fc.uuid(), sessionDataArbitrary(), async (sessionId, sessionData) => {
+        const manager = new SessionHistoryManager(sessionId, tempDir);
 
-          // Append messages and checkpoint records
-          for (const message of sessionData.messages) {
-            manager.appendMessage(message);
-          }
+        // Append messages and checkpoint records
+        for (const message of sessionData.messages) {
+          manager.appendMessage(message);
+        }
 
-          for (const record of sessionData.checkpointRecords) {
-            manager.recordCheckpoint(record);
-          }
+        for (const record of sessionData.checkpointRecords) {
+          manager.recordCheckpoint(record);
+        }
 
-          // Get original history
-          const originalHistory = manager.getHistory();
+        // Get original history
+        const originalHistory = manager.getHistory();
 
-          // Save to disk
-          await manager.save();
+        // Save to disk
+        await manager.save();
 
-          // Create new manager and load
-          const newManager = new SessionHistoryManager(sessionId, tempDir);
-          const loadedHistory = await newManager.load(sessionId);
+        // Create new manager and load
+        const newManager = new SessionHistoryManager(sessionId, tempDir);
+        const loadedHistory = await newManager.load(sessionId);
 
-          // Verify all data is preserved
-          expect(loadedHistory.sessionId).toBe(originalHistory.sessionId);
-          expect(loadedHistory.messages).toHaveLength(originalHistory.messages.length);
-          expect(loadedHistory.checkpointRecords).toHaveLength(
-            originalHistory.checkpointRecords.length
+        // Verify all data is preserved
+        expect(loadedHistory.sessionId).toBe(originalHistory.sessionId);
+        expect(loadedHistory.messages).toHaveLength(originalHistory.messages.length);
+        expect(loadedHistory.checkpointRecords).toHaveLength(
+          originalHistory.checkpointRecords.length
+        );
+
+        // Verify messages
+        for (let i = 0; i < originalHistory.messages.length; i++) {
+          expect(loadedHistory.messages[i].id).toBe(originalHistory.messages[i].id);
+          expect(loadedHistory.messages[i].role).toBe(originalHistory.messages[i].role);
+          expect(loadedHistory.messages[i].content).toBe(originalHistory.messages[i].content);
+          expect(loadedHistory.messages[i].timestamp).toBe(originalHistory.messages[i].timestamp);
+        }
+
+        // Verify checkpoint records
+        for (let i = 0; i < originalHistory.checkpointRecords.length; i++) {
+          expect(loadedHistory.checkpointRecords[i].id).toBe(
+            originalHistory.checkpointRecords[i].id
           );
-
-          // Verify messages
-          for (let i = 0; i < originalHistory.messages.length; i++) {
-            expect(loadedHistory.messages[i].id).toBe(originalHistory.messages[i].id);
-            expect(loadedHistory.messages[i].role).toBe(originalHistory.messages[i].role);
-            expect(loadedHistory.messages[i].content).toBe(originalHistory.messages[i].content);
-            expect(loadedHistory.messages[i].timestamp).toBe(
-              originalHistory.messages[i].timestamp
-            );
-          }
-
-          // Verify checkpoint records
-          for (let i = 0; i < originalHistory.checkpointRecords.length; i++) {
-            expect(loadedHistory.checkpointRecords[i].id).toBe(
-              originalHistory.checkpointRecords[i].id
-            );
-            expect(loadedHistory.checkpointRecords[i].timestamp).toBe(
-              originalHistory.checkpointRecords[i].timestamp
-            );
-          }
-
-          // Verify metadata
-          expect(loadedHistory.metadata.totalMessages).toBe(
-            originalHistory.metadata.totalMessages
-          );
-          expect(loadedHistory.metadata.compressionCount).toBe(
-            originalHistory.metadata.compressionCount
+          expect(loadedHistory.checkpointRecords[i].timestamp).toBe(
+            originalHistory.checkpointRecords[i].timestamp
           );
         }
-      ),
+
+        // Verify metadata
+        expect(loadedHistory.metadata.totalMessages).toBe(originalHistory.metadata.totalMessages);
+        expect(loadedHistory.metadata.compressionCount).toBe(
+          originalHistory.metadata.compressionCount
+        );
+      }),
       { numRuns: 50 }
     );
   });
@@ -237,39 +228,33 @@ describe('SessionHistoryManager - Property 7: Session History Persistence', () =
 
   it('Property 7.5: Metadata is preserved across save/load', () => {
     fc.assert(
-      fc.asyncProperty(
-        fc.uuid(),
-        sessionDataArbitrary(),
-        async (sessionId, sessionData) => {
-          const manager = new SessionHistoryManager(sessionId, tempDir);
+      fc.asyncProperty(fc.uuid(), sessionDataArbitrary(), async (sessionId, sessionData) => {
+        const manager = new SessionHistoryManager(sessionId, tempDir);
 
-          // Append data
-          for (const message of sessionData.messages) {
-            manager.appendMessage(message);
-          }
-
-          for (const record of sessionData.checkpointRecords) {
-            manager.recordCheckpoint(record);
-          }
-
-          const originalMetadata = manager.getHistory().metadata;
-
-          // Save and load
-          await manager.save();
-
-          const newManager = new SessionHistoryManager(sessionId, tempDir);
-          const loadedHistory = await newManager.load(sessionId);
-
-          // Verify metadata
-          expect(loadedHistory.metadata.startTime).toBe(originalMetadata.startTime);
-          expect(loadedHistory.metadata.lastUpdate).toBe(originalMetadata.lastUpdate);
-          expect(loadedHistory.metadata.totalMessages).toBe(originalMetadata.totalMessages);
-          expect(loadedHistory.metadata.totalTokens).toBe(originalMetadata.totalTokens);
-          expect(loadedHistory.metadata.compressionCount).toBe(
-            originalMetadata.compressionCount
-          );
+        // Append data
+        for (const message of sessionData.messages) {
+          manager.appendMessage(message);
         }
-      ),
+
+        for (const record of sessionData.checkpointRecords) {
+          manager.recordCheckpoint(record);
+        }
+
+        const originalMetadata = manager.getHistory().metadata;
+
+        // Save and load
+        await manager.save();
+
+        const newManager = new SessionHistoryManager(sessionId, tempDir);
+        const loadedHistory = await newManager.load(sessionId);
+
+        // Verify metadata
+        expect(loadedHistory.metadata.startTime).toBe(originalMetadata.startTime);
+        expect(loadedHistory.metadata.lastUpdate).toBe(originalMetadata.lastUpdate);
+        expect(loadedHistory.metadata.totalMessages).toBe(originalMetadata.totalMessages);
+        expect(loadedHistory.metadata.totalTokens).toBe(originalMetadata.totalTokens);
+        expect(loadedHistory.metadata.compressionCount).toBe(originalMetadata.compressionCount);
+      }),
       { numRuns: 50 }
     );
   });

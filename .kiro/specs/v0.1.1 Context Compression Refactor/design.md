@@ -67,10 +67,10 @@ Six-stage pipeline with **clear responsibilities**:
 interface TierIntegration {
   // Get tier-specific prompt budget
   getPromptBudget(tier: ContextTier): number;
-  
+
   // Calculate available space for checkpoints
   calculateCheckpointBudget(tier: ContextTier, systemPromptTokens: number): number;
-  
+
   // Determine if compression needed based on tier
   shouldCompress(tier: ContextTier, currentTokens: number): boolean;
 }
@@ -103,11 +103,13 @@ class TierAwareCompression {
 ```
 
 **Integration Points:**
+
 - `ActiveContextManager` - Respects tier budgets
 - `CompressionPipeline` - Tier-aware compression triggers
 - `ValidationService` - Validates against tier limits
 
 **References:**
+
 - `dev_PromptSystem.md` - Tier token budgets
 - `dev_ContextManagement.md` - Tier detection
 
@@ -123,7 +125,7 @@ class TierAwareCompression {
 interface ModeIntegration {
   // Get mode-specific summarization prompt
   getSummarizationPrompt(mode: OperationalMode, level: 1 | 2 | 3): string;
-  
+
   // Determine what to preserve based on mode
   getPreservationStrategy(mode: OperationalMode): PreservationStrategy;
 }
@@ -131,17 +133,17 @@ interface ModeIntegration {
 class ModeAwareCompression {
   getSummarizationPrompt(mode: OperationalMode, level: 1 | 2 | 3): string {
     const basePrompt = this.getBasePrompt(level);
-    
+
     switch (mode) {
       case 'DEVELOPER':
         return `${basePrompt}\n\nFocus on preserving:\n- Code snippets and file paths\n- Technical decisions\n- Error messages and debugging context\n- Implementation details`;
-      
+
       case 'PLANNING':
         return `${basePrompt}\n\nFocus on preserving:\n- Goals and objectives\n- Architectural decisions\n- Trade-offs discussed\n- Next steps planned`;
-      
+
       case 'DEBUGGER':
         return `${basePrompt}\n\nFocus on preserving:\n- Error symptoms and stack traces\n- Debugging steps taken\n- Root cause analysis\n- Solutions attempted`;
-      
+
       case 'ASSISTANT':
       default:
         return `${basePrompt}\n\nFocus on preserving:\n- Key decisions made\n- Important context\n- User preferences\n- Conversation flow`;
@@ -160,10 +162,12 @@ class ModeAwareCompression {
 ```
 
 **Integration Points:**
+
 - `SummarizationService` - Mode-specific prompts
 - `CompressionPipeline` - Mode-aware preservation
 
 **References:**
+
 - `dev_PromptSystem.md` - Operational modes
 
 ---
@@ -178,10 +182,10 @@ class ModeAwareCompression {
 interface ModelIntegration {
   // Get model size for reliability calculation
   getModelSize(modelId: string): number;
-  
+
   // Calculate compression reliability based on model
   calculateReliability(modelSize: number, compressionCount: number): number;
-  
+
   // Determine warning thresholds based on model
   getWarningThreshold(modelSize: number): number;
 }
@@ -196,11 +200,15 @@ class ModelAwareCompression {
   calculateReliability(modelSize: number, compressionCount: number): number {
     // From dev_ContextCompression.md
     const modelFactor =
-      modelSize >= 70 ? 0.95 :
-      modelSize >= 30 ? 0.85 :
-      modelSize >= 13 ? 0.7 :
-      modelSize >= 7 ? 0.5 :
-      0.3; // 3B and below
+      modelSize >= 70
+        ? 0.95
+        : modelSize >= 30
+          ? 0.85
+          : modelSize >= 13
+            ? 0.7
+            : modelSize >= 7
+              ? 0.5
+              : 0.3; // 3B and below
 
     const compressionPenalty = Math.pow(0.9, compressionCount);
     return modelFactor * compressionPenalty;
@@ -217,11 +225,13 @@ class ModelAwareCompression {
 ```
 
 **Integration Points:**
+
 - `CheckpointLifecycle` - Reliability scoring
 - `CompressionPipeline` - Warning thresholds
 - `EmergencyActions` - Model-aware decisions
 
 **References:**
+
 - `dev_ModelManagement.md` - Model size detection
 - `dev_ContextCompression.md` - Reliability scoring
 
@@ -237,10 +247,10 @@ class ModelAwareCompression {
 interface ProviderIntegration {
   // Get provider-specific context limit
   getContextLimit(modelId: string): number;
-  
+
   // Get pre-calculated ollama_context_size (85% value)
   getOllamaContextSize(modelId: string, requestedSize: number): number;
-  
+
   // Validate against provider limits
   validateAgainstProvider(tokens: number, modelId: string): ValidationResult;
 }
@@ -257,12 +267,12 @@ class ProviderAwareCompression {
     if (!modelEntry) {
       throw new Error(`Model not found: ${modelId}`);
     }
-    
+
     // Get current context profile
     const profile = modelEntry.context_profiles.find(
-      p => p.size === this.getCurrentContextSize()
+      (p) => p.size === this.getCurrentContextSize()
     );
-    
+
     return profile?.ollama_context_size || 6800; // Default to 8K * 0.85
   }
 
@@ -271,16 +281,14 @@ class ProviderAwareCompression {
     if (!modelEntry) {
       throw new Error(`Model not found: ${modelId}`);
     }
-    
+
     // Find matching profile
-    const profile = modelEntry.context_profiles.find(
-      p => p.size === requestedSize
-    );
-    
+    const profile = modelEntry.context_profiles.find((p) => p.size === requestedSize);
+
     if (!profile) {
       throw new Error(`No profile for size ${requestedSize}`);
     }
-    
+
     // Return pre-calculated 85% value
     return profile.ollama_context_size;
   }
@@ -289,11 +297,11 @@ class ProviderAwareCompression {
     const limit = this.getContextLimit(modelId);
     const safetyMargin = 1000; // Reserve for response
     const effectiveLimit = limit - safetyMargin;
-    
+
     if (tokens <= effectiveLimit) {
       return { valid: true, tokens, limit: effectiveLimit };
     }
-    
+
     return {
       valid: false,
       tokens,
@@ -306,11 +314,13 @@ class ProviderAwareCompression {
 ```
 
 **Integration Points:**
+
 - `ActiveContextManager` - Provider limits
 - `ValidationService` - Provider validation
 - `CompressionPipeline` - Provider-aware triggers
 
 **References:**
+
 - `dev_ProviderSystem.md` - Provider integration
 - `dev_ContextManagement.md` - Context sizing logic
 
@@ -326,13 +336,13 @@ class ProviderAwareCompression {
 interface GoalIntegration {
   // Get active goal for summarization context
   getActiveGoal(): Goal | null;
-  
+
   // Build goal-aware summarization prompt
   buildGoalAwarePrompt(messages: Message[], goal: Goal): string;
-  
+
   // Parse goal markers from LLM output
   parseGoalMarkers(summary: string): GoalUpdate[];
-  
+
   // Update goal based on markers
   updateGoal(goal: Goal, updates: GoalUpdate[]): Goal;
 }
@@ -355,13 +365,13 @@ Priority: ${goal.priority}
 Status: ${goal.status}
 
 Checkpoints:
-${goal.checkpoints.map(cp => `${cp.status === 'completed' ? '✅' : cp.status === 'in-progress' ? '🔄' : '⏳'} ${cp.description}`).join('\n')}
+${goal.checkpoints.map((cp) => `${cp.status === 'completed' ? '✅' : cp.status === 'in-progress' ? '🔄' : '⏳'} ${cp.description}`).join('\n')}
 
 Key Decisions:
-${goal.decisions.map(d => `${d.locked ? '🔒' : '-'} ${d.description}`).join('\n')}
+${goal.decisions.map((d) => `${d.locked ? '🔒' : '-'} ${d.description}`).join('\n')}
 
 Summarize the following conversation, focusing on progress toward the goal:
-${messages.map(m => `${m.role}: ${m.content}`).join('\n\n')}
+${messages.map((m) => `${m.role}: ${m.content}`).join('\n\n')}
 
 Preserve:
 - Decisions made toward the goal
@@ -377,7 +387,7 @@ Provide a concise summary that maintains essential information for continuing wo
   parseGoalMarkers(summary: string): GoalUpdate[] {
     const updates: GoalUpdate[] = [];
     const lines = summary.split('\n');
-    
+
     for (const line of lines) {
       if (line.startsWith('[CHECKPOINT]')) {
         const match = line.match(/\[CHECKPOINT\] (.+) - (COMPLETED|IN-PROGRESS|PENDING)/);
@@ -408,18 +418,18 @@ Provide a concise summary that maintains essential information for continuing wo
         }
       }
     }
-    
+
     return updates;
   }
 
   updateGoal(goal: Goal, updates: GoalUpdate[]): Goal {
     const updatedGoal = { ...goal };
-    
+
     for (const update of updates) {
       switch (update.type) {
         case 'checkpoint':
           const checkpoint = updatedGoal.checkpoints.find(
-            cp => cp.description === update.description
+            (cp) => cp.description === update.description
           );
           if (checkpoint) {
             checkpoint.status = update.status;
@@ -428,7 +438,7 @@ Provide a concise summary that maintains essential information for continuing wo
             }
           }
           break;
-        
+
         case 'decision':
           updatedGoal.decisions.push({
             id: generateId(),
@@ -437,7 +447,7 @@ Provide a concise summary that maintains essential information for continuing wo
             locked: update.locked,
           });
           break;
-        
+
         case 'artifact':
           updatedGoal.artifacts.push({
             type: 'file', // Infer from path
@@ -447,18 +457,20 @@ Provide a concise summary that maintains essential information for continuing wo
           break;
       }
     }
-    
+
     return updatedGoal;
   }
 }
 ```
 
 **Integration Points:**
+
 - `SummarizationService` - Goal-aware prompts
 - `CompressionPipeline` - Goal preservation
 - `ActiveContextManager` - Goals never compressed
 
 **References:**
+
 - `dev_PromptSystem.md` - Goal management system
 
 ---
@@ -473,10 +485,10 @@ Provide a concise summary that maintains essential information for continuing wo
 interface PromptOrchestratorIntegration {
   // Get system prompt from orchestrator
   getSystemPrompt(): Message;
-  
+
   // Update system prompt (triggers orchestrator rebuild)
   updateSystemPrompt(config: SystemPromptConfig): void;
-  
+
   // Get token count for system prompt
   getSystemPromptTokens(): number;
 }
@@ -507,11 +519,13 @@ class PromptOrchestratorIntegration {
 ```
 
 **Integration Points:**
+
 - `ActiveContextManager` - Uses orchestrator for system prompt
 - `CompressionPipeline` - Never compresses system prompt
 - `ValidationService` - Includes system prompt in validation
 
 **References:**
+
 - `dev_PromptSystem.md` - PromptOrchestrator
 
 ---
@@ -533,8 +547,8 @@ class PromptOrchestratorIntegration {
  */
 export interface ActiveContext {
   systemPrompt: Message;
-  checkpoints: CheckpointSummary[];  // LLM-generated summaries only
-  recentMessages: Message[];          // Last N messages
+  checkpoints: CheckpointSummary[]; // LLM-generated summaries only
+  recentMessages: Message[]; // Last N messages
   tokenCount: {
     system: number;
     checkpoints: number;
@@ -549,11 +563,11 @@ export interface ActiveContext {
 export interface CheckpointSummary {
   id: string;
   timestamp: number;
-  summary: string;              // LLM-generated summary
+  summary: string; // LLM-generated summary
   originalMessageIds: string[]; // IDs of replaced messages
   tokenCount: number;
-  compressionLevel: 1 | 2 | 3;  // 1=compact, 2=moderate, 3=detailed
-  compressionNumber: number;     // For aging
+  compressionLevel: 1 | 2 | 3; // 1=compact, 2=moderate, 3=detailed
+  compressionNumber: number; // For aging
   metadata: {
     model: string;
     createdAt: number;
@@ -570,7 +584,7 @@ export interface SnapshotData {
   sessionId: string;
   timestamp: number;
   conversationState: {
-    messages: Message[];           // Full messages at checkpoint
+    messages: Message[]; // Full messages at checkpoint
     checkpoints: CheckpointSummary[];
     goals?: Goal[];
     metadata: Record<string, unknown>;
@@ -584,7 +598,7 @@ export interface SnapshotData {
  */
 export interface SessionHistory {
   sessionId: string;
-  messages: Message[];              // Complete uncompressed history
+  messages: Message[]; // Complete uncompressed history
   checkpointRecords: CheckpointRecord[];
   metadata: {
     startTime: number;
@@ -601,7 +615,7 @@ export interface SessionHistory {
 export interface CheckpointRecord {
   id: string;
   timestamp: number;
-  messageRange: [number, number];   // Start and end message indices
+  messageRange: [number, number]; // Start and end message indices
   originalTokens: number;
   compressedTokens: number;
   compressionRatio: number;
@@ -616,12 +630,12 @@ export interface StorageBoundaries {
   isActiveContext(data: unknown): data is ActiveContext;
   isSnapshotData(data: unknown): data is SnapshotData;
   isSessionHistory(data: unknown): data is SessionHistory;
-  
+
   // Validation
   validateActiveContext(context: ActiveContext): ValidationResult;
   validateSnapshotData(snapshot: SnapshotData): ValidationResult;
   validateSessionHistory(history: SessionHistory): ValidationResult;
-  
+
   // Enforcement
   preventSnapshotInPrompt(prompt: Message[]): void;
   preventHistoryInPrompt(prompt: Message[]): void;
@@ -679,10 +693,7 @@ export class ActiveContextManager {
   private ollamaLimit: number;
   private safetyMargin: number = 1000; // Reserve for response
 
-  constructor(
-    systemPrompt: Message,
-    ollamaLimit: number
-  ) {
+  constructor(systemPrompt: Message, ollamaLimit: number) {
     this.ollamaLimit = ollamaLimit;
     this.context = {
       systemPrompt,
@@ -704,7 +715,7 @@ export class ActiveContextManager {
   buildPrompt(newMessage?: Message): Message[] {
     const prompt: Message[] = [
       this.context.systemPrompt,
-      ...this.context.checkpoints.map(cp => ({
+      ...this.context.checkpoints.map((cp) => ({
         role: 'assistant' as const,
         content: cp.summary,
         id: cp.id,
@@ -754,12 +765,10 @@ export class ActiveContextManager {
    */
   removeMessages(messageIds: string[]): void {
     const idsSet = new Set(messageIds);
-    const removed = this.context.recentMessages.filter(m => idsSet.has(m.id));
+    const removed = this.context.recentMessages.filter((m) => idsSet.has(m.id));
     const removedTokens = removed.reduce((sum, m) => sum + countTokens(m), 0);
 
-    this.context.recentMessages = this.context.recentMessages.filter(
-      m => !idsSet.has(m.id)
-    );
+    this.context.recentMessages = this.context.recentMessages.filter((m) => !idsSet.has(m.id));
 
     this.context.tokenCount.recent -= removedTokens;
     this.context.tokenCount.total -= removedTokens;
@@ -842,7 +851,7 @@ export class SnapshotLifecycle {
       sessionId: this.sessionId,
       timestamp: Date.now(),
       conversationState: {
-        messages: [...messages],  // Full copy
+        messages: [...messages], // Full copy
         checkpoints: [...checkpoints],
         metadata: {
           purpose,
@@ -959,10 +968,7 @@ export class SessionHistoryManager {
    * Save history to disk
    */
   async save(): Promise<void> {
-    const filePath = path.join(
-      this.storagePath,
-      `${this.history.sessionId}.json`
-    );
+    const filePath = path.join(this.storagePath, `${this.history.sessionId}.json`);
     await fs.writeFile(filePath, JSON.stringify(this.history, null, 2));
   }
 
@@ -1046,19 +1052,13 @@ export class CompressionPipeline {
     );
 
     // Stage 4: Checkpoint Creation
-    const checkpoint = await this.createCheckpoint(
-      summary,
-      messagesToCompress,
-      prepared.level
-    );
+    const checkpoint = await this.createCheckpoint(summary, messagesToCompress, prepared.level);
 
     // Stage 5: Context Update
     await this.updateActiveContext(checkpoint, messagesToCompress);
 
     // Stage 6: Validation
-    const validation = await this.validationService.validate(
-      this.activeContext.buildPrompt()
-    );
+    const validation = await this.validationService.validate(this.activeContext.buildPrompt());
 
     if (!validation.valid) {
       throw new Error(`Compression failed validation: ${validation.message}`);
@@ -1086,9 +1086,7 @@ export class CompressionPipeline {
     }
 
     // Compress older messages (exclude user messages)
-    const toCompress = recentMessages
-      .slice(0, -keepCount)
-      .filter(m => m.role === 'assistant');
+    const toCompress = recentMessages.slice(0, -keepCount).filter((m) => m.role === 'assistant');
 
     return toCompress;
   }
@@ -1100,14 +1098,10 @@ export class CompressionPipeline {
     messages: Message[],
     goal?: Goal
   ): Promise<PreparedSummarization> {
-    const originalTokens = messages.reduce(
-      (sum, m) => sum + countTokens(m),
-      0
-    );
+    const originalTokens = messages.reduce((sum, m) => sum + countTokens(m), 0);
 
     // Determine compression level based on token count
-    const level: 1 | 2 | 3 =
-      originalTokens > 3000 ? 1 : originalTokens > 2000 ? 2 : 3;
+    const level: 1 | 2 | 3 = originalTokens > 3000 ? 1 : originalTokens > 2000 ? 2 : 3;
 
     return {
       messages,
@@ -1129,7 +1123,7 @@ export class CompressionPipeline {
       id: generateId(),
       timestamp: Date.now(),
       summary,
-      originalMessageIds: originalMessages.map(m => m.id),
+      originalMessageIds: originalMessages.map((m) => m.id),
       tokenCount: countTokens(summary),
       compressionLevel: level,
       compressionNumber: this.sessionHistory.getHistory().metadata.compressionCount,
@@ -1146,7 +1140,8 @@ export class CompressionPipeline {
       messageRange: [0, originalMessages.length], // TODO: Calculate actual range
       originalTokens: originalMessages.reduce((sum, m) => sum + countTokens(m), 0),
       compressedTokens: checkpoint.tokenCount,
-      compressionRatio: checkpoint.tokenCount / originalMessages.reduce((sum, m) => sum + countTokens(m), 0),
+      compressionRatio:
+        checkpoint.tokenCount / originalMessages.reduce((sum, m) => sum + countTokens(m), 0),
       level,
     });
 

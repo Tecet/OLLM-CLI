@@ -1,18 +1,18 @@
 /**
  * Session Migration Script
- * 
+ *
  * Migrates session data from legacy format to new storage layer format.
- * 
+ *
  * **Legacy Format:**
  * - Mixed storage layers (active context + snapshots + history)
  * - No clear separation between LLM-bound and recovery data
  * - Checkpoints stored as metadata
- * 
+ *
  * **New Format:**
  * - Three distinct storage layers (ActiveContext, SnapshotData, SessionHistory)
  * - Clear separation enforced at runtime
  * - Checkpoints as first-class objects
- * 
+ *
  * @module sessionMigration
  */
 
@@ -20,11 +20,7 @@ import { randomUUID } from 'crypto';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
-import type {
-  CheckpointRecord,
-  CheckpointSummary,
-  SessionHistory,
-} from '../types/storageTypes.js';
+import type { CheckpointRecord, CheckpointSummary, SessionHistory } from '../types/storageTypes.js';
 import type { Message } from '../types.js';
 
 // ============================================================================
@@ -127,14 +123,14 @@ export interface SessionMigrationResult {
 
 /**
  * Migrate a single legacy session to new format
- * 
+ *
  * @param legacySession - Legacy session data
  * @returns Migrated session history
  */
 export function migrateLegacySession(legacySession: LegacySession): SessionHistory {
   // Extract checkpoint records from metadata
   const checkpointRecords: CheckpointRecord[] = [];
-  
+
   if (legacySession.metadata?.checkpoints) {
     for (const legacyCheckpoint of legacySession.metadata.checkpoints) {
       const record: CheckpointRecord = {
@@ -151,7 +147,8 @@ export function migrateLegacySession(legacySession: LegacySession): SessionHisto
   }
 
   // Calculate total tokens (approximate if not available)
-  const totalTokens = legacySession.metadata?.totalTokens || 
+  const totalTokens =
+    legacySession.metadata?.totalTokens ||
     legacySession.messages.reduce((sum, msg) => sum + Math.ceil(msg.content.length / 4), 0);
 
   // Create new session history
@@ -173,7 +170,7 @@ export function migrateLegacySession(legacySession: LegacySession): SessionHisto
 
 /**
  * Migrate legacy checkpoint to new checkpoint summary format
- * 
+ *
  * @param legacyCheckpoint - Legacy checkpoint data
  * @param compressionNumber - Current compression number
  * @returns Migrated checkpoint summary
@@ -199,7 +196,7 @@ export function migrateLegacyCheckpoint(
 
 /**
  * Validate migrated session history
- * 
+ *
  * @param sessionHistory - Migrated session history
  * @returns Validation errors (empty if valid)
  */
@@ -246,11 +243,13 @@ export function validateMigratedSession(sessionHistory: SessionHistory): string[
     }
 
     // Check consistency (only if messages is valid array)
-    if (Array.isArray(sessionHistory.messages) &&
-        sessionHistory.metadata.totalMessages !== sessionHistory.messages.length) {
+    if (
+      Array.isArray(sessionHistory.messages) &&
+      sessionHistory.metadata.totalMessages !== sessionHistory.messages.length
+    ) {
       errors.push(
         `Metadata totalMessages (${sessionHistory.metadata.totalMessages}) ` +
-        `doesn't match actual message count (${sessionHistory.messages.length})`
+          `doesn't match actual message count (${sessionHistory.messages.length})`
       );
     }
   }
@@ -260,7 +259,7 @@ export function validateMigratedSession(sessionHistory: SessionHistory): string[
 
 /**
  * Migrate all sessions in a directory
- * 
+ *
  * @param options - Migration options
  * @returns Migration result
  */
@@ -297,7 +296,7 @@ export async function migrateAllSessions(
 
     // Read all session files
     const files = await fs.readdir(options.sourceDir);
-    const sessionFiles = files.filter(f => f.endsWith('.json'));
+    const sessionFiles = files.filter((f) => f.endsWith('.json'));
 
     if (options.verbose) {
       console.log(`Found ${sessionFiles.length} session files to migrate`);
@@ -375,7 +374,7 @@ export async function migrateAllSessions(
 
 /**
  * Rollback migration (restore from backup)
- * 
+ *
  * @param options - Migration options (must have backupDir)
  * @returns Rollback result
  */
@@ -403,7 +402,7 @@ export async function rollbackMigration(
 
     // Read all backup files
     const files = await fs.readdir(backupDir);
-    const sessionFiles = files.filter(f => f.endsWith('.json'));
+    const sessionFiles = files.filter((f) => f.endsWith('.json'));
 
     if (options.verbose) {
       console.log(`Found ${sessionFiles.length} backup files to restore`);

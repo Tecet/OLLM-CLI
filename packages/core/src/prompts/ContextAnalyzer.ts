@@ -152,15 +152,7 @@ const MODE_KEYWORDS: Record<ModeType, string[]> = {
     'test failure',
     'issue',
   ],
-  user: [
-    'custom',
-    'my way',
-    'personalize',
-    'configure',
-    'preference',
-    'specific',
-    'unique',
-  ],
+  user: ['custom', 'my way', 'personalize', 'configure', 'preference', 'specific', 'unique'],
 };
 
 /**

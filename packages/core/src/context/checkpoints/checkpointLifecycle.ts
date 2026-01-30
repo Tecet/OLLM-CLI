@@ -281,10 +281,7 @@ export class CheckpointLifecycle {
    * }
    * ```
    */
-  async mergeCheckpoints(
-    checkpoints: CheckpointSummary[],
-    goal?: Goal
-  ): Promise<MergeResult> {
+  async mergeCheckpoints(checkpoints: CheckpointSummary[], goal?: Goal): Promise<MergeResult> {
     if (checkpoints.length < 2) {
       return {
         mergedIds: [],
@@ -322,7 +319,7 @@ export class CheckpointLifecycle {
 
       if (!result.success) {
         return {
-          mergedIds: checkpoints.map(cp => cp.id),
+          mergedIds: checkpoints.map((cp) => cp.id),
           mergedCheckpoint: checkpoints[0],
           originalTokens,
           mergedTokens: 0,
@@ -337,10 +334,10 @@ export class CheckpointLifecycle {
         id: `merged_${Date.now()}`,
         timestamp: Date.now(),
         summary: result.summary,
-        originalMessageIds: checkpoints.flatMap(cp => cp.originalMessageIds),
+        originalMessageIds: checkpoints.flatMap((cp) => cp.originalMessageIds),
         tokenCount: result.tokenCount,
         compressionLevel: 1, // Merged checkpoints are always Level 1
-        compressionNumber: Math.max(...checkpoints.map(cp => cp.compressionNumber)),
+        compressionNumber: Math.max(...checkpoints.map((cp) => cp.compressionNumber)),
         metadata: {
           model: result.model,
           createdAt: Date.now(),
@@ -351,7 +348,7 @@ export class CheckpointLifecycle {
       const tokensFreed = originalTokens - result.tokenCount;
 
       return {
-        mergedIds: checkpoints.map(cp => cp.id),
+        mergedIds: checkpoints.map((cp) => cp.id),
         mergedCheckpoint,
         originalTokens,
         mergedTokens: result.tokenCount,
@@ -363,7 +360,7 @@ export class CheckpointLifecycle {
       console.error('[CheckpointLifecycle] Merge failed:', errorMessage);
 
       return {
-        mergedIds: checkpoints.map(cp => cp.id),
+        mergedIds: checkpoints.map((cp) => cp.id),
         mergedCheckpoint: checkpoints[0],
         originalTokens: checkpoints.reduce((sum, cp) => sum + cp.tokenCount, 0),
         mergedTokens: 0,
@@ -484,7 +481,7 @@ export class CheckpointLifecycle {
     checkpoints: CheckpointSummary[],
     currentCompressionNumber: number
   ): CheckpointSummary[] {
-    return checkpoints.filter(checkpoint => {
+    return checkpoints.filter((checkpoint) => {
       const age = currentCompressionNumber - checkpoint.compressionNumber;
       const targetLevel = this.determineTargetLevel(age);
       return checkpoint.compressionLevel > targetLevel;
@@ -504,7 +501,7 @@ export class CheckpointLifecycle {
     checkpoints: CheckpointSummary[],
     minCount: number = 3
   ): CheckpointSummary[] {
-    const level1Checkpoints = checkpoints.filter(cp => cp.compressionLevel === 1);
+    const level1Checkpoints = checkpoints.filter((cp) => cp.compressionLevel === 1);
 
     if (level1Checkpoints.length >= minCount) {
       return level1Checkpoints;

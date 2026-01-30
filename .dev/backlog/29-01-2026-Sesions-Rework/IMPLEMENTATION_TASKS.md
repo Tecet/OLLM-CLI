@@ -7,6 +7,7 @@
 ## Project Summary
 
 Successfully completed all 4 phases of the Prompt Builder Polish project:
+
 - ✅ Template-based prompts (40-50% token reduction)
 - ✅ Per-mode tool configuration
 - ✅ Dynamic tool filtering
@@ -16,11 +17,13 @@ Successfully completed all 4 phases of the Prompt Builder Polish project:
 ## Implementation Results
 
 ### Token Savings
+
 - **Before:** ~800-1000 tokens per system prompt
 - **After:** ~400-600 tokens per system prompt
 - **Reduction:** 40-50% savings
 
 ### Code Quality
+
 - ToolsPanel: 685 → 330 lines (52% reduction)
 - Template-based prompts (easy to update)
 - Clean separation of concerns
@@ -33,6 +36,7 @@ Successfully completed all 4 phases of the Prompt Builder Polish project:
 **Tasks:** 7/7 | **Commits:** 5
 
 ### Completed Tasks
+
 1. ✅ Removed unused identity prompt (already didn't exist)
 2. ✅ Created system templates folder structure
 3. ✅ Moved Core Mandates to template file (saved ~174 tokens)
@@ -42,11 +46,13 @@ Successfully completed all 4 phases of the Prompt Builder Polish project:
 7. ✅ Added `/user` command
 
 ### Files Created
+
 - `packages/core/src/prompts/templates/system/CoreMandates.txt`
 - `packages/core/src/prompts/templates/system/SanityChecks.txt`
 - `packages/core/src/prompts/templates/system/skills/` (folder)
 
 ### Key Changes
+
 - SystemPromptBuilder now loads templates from files
 - Sanity checks dynamic based on tier: `tier <= ContextTier.TIER_2_BASIC`
 - USER mode added to all mode-related enums and commands
@@ -58,6 +64,7 @@ Successfully completed all 4 phases of the Prompt Builder Polish project:
 **Tasks:** 7/7 | **Commits:** 3
 
 ### Completed Tasks
+
 1. ✅ Updated settings structure for per-mode tools
 2. ✅ Implemented settings service methods (getToolsForMode, setToolForMode, etc.)
 3. ✅ Created 5 mode-specific skill templates
@@ -67,6 +74,7 @@ Successfully completed all 4 phases of the Prompt Builder Polish project:
 7. ✅ Implemented tool filtering logic with wildcard support
 
 ### Files Created
+
 - `packages/core/src/prompts/templates/system/skills/SkillsDeveloper.txt`
 - `packages/core/src/prompts/templates/system/skills/SkillsDebugger.txt`
 - `packages/core/src/prompts/templates/system/skills/SkillsAssistant.txt`
@@ -75,6 +83,7 @@ Successfully completed all 4 phases of the Prompt Builder Polish project:
 - `packages/core/src/prompts/templates/system/ToolDescriptions.txt`
 
 ### Key Changes
+
 - Added `toolsByMode` to UserSettings interface
 - Added `DEFAULT_TOOLS_BY_MODE` with defaults for all 5 modes
 - SystemPromptBuilder supports wildcards: `'*'`, `'mcp:*'`, `'git_*'`
@@ -87,6 +96,7 @@ Successfully completed all 4 phases of the Prompt Builder Polish project:
 **Tasks:** 5/5 | **Commits:** 4
 
 ### Completed Tasks
+
 1. ✅ Updated ToolsContext for per-mode settings
 2. ✅ Created ToolModeSettings component
 3. ✅ Backed up original ToolsPanel
@@ -94,11 +104,13 @@ Successfully completed all 4 phases of the Prompt Builder Polish project:
 5. ✅ Added settings auto-initialization
 
 ### Files Created
+
 - `packages/cli/src/ui/components/tools/ToolModeSettings.tsx`
 - `packages/cli/src/ui/components/tools/ToolsPanel.tsx` (rewritten)
 - `packages/cli/src/ui/components/tools/ToolsPanel.tsx.backup`
 
 ### Key Changes
+
 - Two-column layout: 30% navigation, 70% details
 - Enhanced tool descriptions with examples
 - Left/Right arrow navigation (Tab for window circulation)
@@ -112,9 +124,11 @@ Successfully completed all 4 phases of the Prompt Builder Polish project:
 **Tasks:** 1/1 | **Commits:** 1
 
 ### Completed Tasks
+
 1. ✅ Integrated dynamic tool filtering into production system prompt
 
 ### Files Modified
+
 - `packages/core/src/context/integration/promptOrchestratorIntegration.ts`
 - `packages/core/src/context/orchestration/contextOrchestrator.ts`
 - `packages/core/src/context/adapters/contextOrchestratorAdapter.ts`
@@ -122,6 +136,7 @@ Successfully completed all 4 phases of the Prompt Builder Polish project:
 - `packages/cli/src/features/context/ContextManagerContext.tsx`
 
 ### Key Changes
+
 - PromptOrchestratorIntegration now accepts profileManager for model capability detection
 - Added `modelId` and `allowedTools` to SystemPromptConfig
 - ContextOrchestrator.rebuildSystemPrompt() accepts settingsService parameter
@@ -130,6 +145,7 @@ Successfully completed all 4 phases of the Prompt Builder Polish project:
 - Removed hardcoded tools list: `'Available Tools: read-file, write-file, ...'`
 
 ### Integration Flow
+
 ```
 User Settings (~/.ollm/settings.json)
   ↓
@@ -161,6 +177,7 @@ LLM receives prompt with correct tools for mode
 ## Testing Checklist
 
 ### All Tests Passing ✅
+
 - [x] Build succeeds without errors
 - [x] Settings file created in `~/.ollm/settings.json`
 - [x] All tools initialized with defaults
@@ -176,21 +193,22 @@ LLM receives prompt with correct tools for mode
 
 ## Final Statistics
 
-| Metric | Value |
-|--------|-------|
-| **Phases Completed** | 4/4 (100%) |
-| **Tasks Completed** | 20/20 (100%) |
-| **Total Commits** | 13 |
-| **Files Created** | 11 |
-| **Files Modified** | 15+ |
-| **Token Savings** | 40-50% |
-| **Code Reduction** | 52% (ToolsPanel) |
+| Metric               | Value            |
+| -------------------- | ---------------- |
+| **Phases Completed** | 4/4 (100%)       |
+| **Tasks Completed**  | 20/20 (100%)     |
+| **Total Commits**    | 13               |
+| **Files Created**    | 11               |
+| **Files Modified**   | 15+              |
+| **Token Savings**    | 40-50%           |
+| **Code Reduction**   | 52% (ToolsPanel) |
 
 ---
 
 ## Architecture Overview
 
 ### Template System
+
 ```
 packages/core/src/prompts/templates/
 ├── system/
@@ -206,6 +224,7 @@ packages/core/src/prompts/templates/
 ```
 
 ### Settings Structure
+
 ```json
 {
   "tools": {
@@ -231,6 +250,7 @@ packages/core/src/prompts/templates/
 ```
 
 ### Default Tools Per Mode
+
 - **developer:** `['*']` (all tools)
 - **debugger:** `['*']` (all tools)
 - **assistant:** `['read_file', 'web_search', 'web_fetch']`
@@ -242,18 +262,21 @@ packages/core/src/prompts/templates/
 ## Benefits Delivered
 
 ### For Users
+
 - ✅ Faster responses (smaller prompts = less processing)
 - ✅ Customizable tool availability per mode
 - ✅ Clear understanding of available tools
 - ✅ Better mode-specific behavior
 
 ### For Developers
+
 - ✅ Easy prompt updates (edit text files)
 - ✅ Clear separation of concerns
 - ✅ Maintainable codebase
 - ✅ Extensible architecture
 
 ### For System
+
 - ✅ 40-50% reduction in system prompt tokens
 - ✅ More tokens available for conversation
 - ✅ Better compression efficiency

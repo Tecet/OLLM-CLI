@@ -28,7 +28,7 @@ export interface FileViewerTabProps {
  *
  * Displays a file in the syntax viewer with scrolling support.
  * Provides a large viewing area in the main left panel.
- * 
+ *
  * Esc key behavior:
  * - Closes the file viewer
  * - Returns to chat tab

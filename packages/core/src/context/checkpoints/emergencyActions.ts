@@ -487,10 +487,7 @@ export class EmergencyActions {
       );
 
       // Step 2: Calculate original tokens
-      const originalTokens = messages.reduce(
-        (sum, m) => sum + this.estimateTokens(m.content),
-        0
-      );
+      const originalTokens = messages.reduce((sum, m) => sum + this.estimateTokens(m.content), 0);
 
       // Step 3: Aggressive summarization at Level 1 (Compact)
       const result = await this.summarizationService.summarize(

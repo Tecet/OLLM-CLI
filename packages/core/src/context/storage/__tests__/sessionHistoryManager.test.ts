@@ -1,6 +1,6 @@
 /**
  * Unit Tests for Session History Manager
- * 
+ *
  * Tests specific functionality and edge cases not covered by property tests.
  */
 

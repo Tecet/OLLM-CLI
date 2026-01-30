@@ -11,6 +11,7 @@
 The `mode-transition-snapshots` folder is created by the **PromptsSnapshotManager** (also called `SnapshotManager` in `modeSnapshotManager.ts`). This is a **mode-aware snapshot system** designed to preserve conversation state when switching between operational modes (assistant, debugger, architect, etc.).
 
 **Current Status:**
+
 - ✅ Folder is created correctly
 - ✅ Session subfolders are created
 - ❌ **Snapshots are NOT being saved** (folders are empty)
@@ -57,6 +58,7 @@ Mode transition snapshots are **lightweight JSON snapshots** that capture conver
 ### Operational Modes
 
 The system supports multiple operational modes:
+
 - **assistant** - General conversation and assistance
 - **debugger** - Debugging and error analysis
 - **architect** - System design and architecture
@@ -66,6 +68,7 @@ The system supports multiple operational modes:
 ### Why Mode Snapshots?
 
 When switching modes (e.g., assistant → debugger → assistant), the system needs to:
+
 1. **Preserve context** from the previous mode
 2. **Extract mode-specific findings** (e.g., debugger errors, root causes, fixes)
 3. **Inject findings** into the new mode's conversation
@@ -96,7 +99,7 @@ interface ModeTransitionSnapshot {
 
   // Mode-specific findings (for specialized modes)
   findings?: ModeFindings;
-  
+
   // Extracted reasoning traces (for reasoning-capable models)
   reasoningTraces?: Array<{
     content: string;
@@ -177,10 +180,12 @@ const modeChangeCallback = (transition: ModeTransition) => {
 ### Root Causes
 
 1. **Auto-Switch Disabled by Default**
+
    ```typescript
    // Line 322
    const savedAutoSwitch = false; // Force auto-switch OFF
    ```
+
    - Mode switching is **disabled by default**
    - User must manually enable auto-switch
    - Without mode switches, no snapshots are created
@@ -190,9 +195,11 @@ const modeChangeCallback = (transition: ModeTransition) => {
    - Manual switches (via UI or commands) bypass snapshot logic
 
 3. **Early Exit on Empty Conversation**
+
    ```typescript
    if (!hasUserMessages) return; // Exits if no user messages yet
    ```
+
    - If mode switches before user sends a message, no snapshot is created
 
 ---
@@ -215,6 +222,7 @@ C:\Users\rad3k\.ollm\mode-transition-snapshots\
 ### Session Isolation
 
 Each session gets its own subfolder:
+
 - **Session ID format:** `session-{timestamp}`
 - **Snapshot filename format:** `transition-{timestamp}.json`
 - **Isolation:** Snapshots from different sessions don't mix
@@ -263,6 +271,7 @@ pruneAfterMs: 7200000, // 2 hours
 ### Current Impact: 🟡 LOW
 
 **Why Low Impact?**
+
 - Feature is not working (snapshots not created)
 - Empty folders don't cause harm
 - Mode switching is disabled by default
@@ -271,6 +280,7 @@ pruneAfterMs: 7200000, // 2 hours
 ### Potential Impact if Fixed: 🟢 POSITIVE
 
 **Benefits if Feature Works:**
+
 - Better conversation continuity across mode switches
 - Preserved debugging findings
 - Smoother workflow transitions
@@ -279,6 +289,7 @@ pruneAfterMs: 7200000, // 2 hours
 ### Risk if Not Fixed: 🟡 MEDIUM
 
 **Risks:**
+
 - Feature is implemented but broken
 - Users who enable auto-switch won't get expected behavior
 - Wasted storage space (empty folders)
@@ -291,6 +302,7 @@ pruneAfterMs: 7200000, // 2 hours
 ### Priority 1: Fix Session ID Issue (P0 - CRITICAL)
 
 **This fixes BOTH issues:**
+
 1. Session contamination in context snapshots
 2. Session contamination in mode transition snapshots
 
@@ -299,19 +311,21 @@ pruneAfterMs: 7200000, // 2 hours
 ### Priority 2: Fix Mode Snapshot Creation (P1 - HIGH)
 
 **Option A: Enable Auto-Switch by Default**
+
 ```typescript
 // In ContextManagerContext.tsx:322
 const savedAutoSwitch = true; // Enable auto-switch by default
 ```
 
 **Option B: Trigger Snapshots on Manual Mode Switch**
+
 ```typescript
 // In switchMode() and switchModeExplicit()
 const switchMode = useCallback((mode: ModeType) => {
   if (!modeManagerRef.current) return;
 
   const previousMode = modeManagerRef.current.getCurrentMode();
-  
+
   // Create snapshot before switching
   if (promptsSnapshotManagerRef.current && managerRef.current) {
     (async () => {
@@ -320,7 +334,9 @@ const switchMode = useCallback((mode: ModeType) => {
         const snapshot = promptsSnapshotManagerRef.current!.createTransitionSnapshot(
           previousMode,
           mode,
-          { /* ... */ }
+          {
+            /* ... */
+          }
         );
         await promptsSnapshotManagerRef.current!.storeSnapshot(snapshot, true);
       } catch (error) {
@@ -335,6 +351,7 @@ const switchMode = useCallback((mode: ModeType) => {
 ```
 
 **Option C: Remove Feature if Not Used**
+
 - If mode switching is not a priority feature
 - Remove `PromptsSnapshotManager` initialization
 - Clean up empty folders
@@ -343,6 +360,7 @@ const switchMode = useCallback((mode: ModeType) => {
 ### Priority 3: Add Logging (P2 - MEDIUM)
 
 **Add debug logging to track snapshot creation:**
+
 ```typescript
 console.log('[ModeSnapshot] Mode changed:', transition.from, '→', transition.to);
 console.log('[ModeSnapshot] Has user messages:', hasUserMessages);
@@ -353,6 +371,7 @@ console.log('[ModeSnapshot] Snapshot stored at:', filePath);
 ### Priority 4: Documentation (P3 - LOW)
 
 **Document the feature:**
+
 - Add user guide for mode switching
 - Explain when snapshots are created
 - Document folder structure
@@ -370,13 +389,14 @@ test('should create mode-transition-snapshots folder', async () => {
     sessionId: 'test-session',
     storagePath: '/tmp/mode-transition-snapshots',
   });
-  
+
   await manager.initialize();
-  
-  const folderExists = await fs.access('/tmp/mode-transition-snapshots/session-test-session')
+
+  const folderExists = await fs
+    .access('/tmp/mode-transition-snapshots/session-test-session')
     .then(() => true)
     .catch(() => false);
-  
+
   expect(folderExists).toBe(true);
 });
 ```
@@ -385,17 +405,19 @@ test('should create mode-transition-snapshots folder', async () => {
 
 ```typescript
 test('should create snapshot on mode transition', async () => {
-  const manager = new PromptsSnapshotManager({ /* ... */ });
+  const manager = new PromptsSnapshotManager({
+    /* ... */
+  });
   await manager.initialize();
-  
+
   const snapshot = manager.createTransitionSnapshot('assistant', 'debugger', {
     messages: [{ role: 'user', parts: [{ type: 'text', text: 'Test' }] }],
     activeSkills: [],
     activeTools: [],
   });
-  
+
   await manager.storeSnapshot(snapshot, true);
-  
+
   const files = await fs.readdir('/tmp/mode-transition-snapshots/session-test-session');
   expect(files.length).toBeGreaterThan(0);
   expect(files[0]).toMatch(/^transition-\d+\.json$/);
@@ -408,19 +430,19 @@ test('should create snapshot on mode transition', async () => {
 test('should isolate snapshots per session', async () => {
   const manager1 = new PromptsSnapshotManager({ sessionId: 'session-1' });
   const manager2 = new PromptsSnapshotManager({ sessionId: 'session-2' });
-  
+
   await manager1.initialize();
   await manager2.initialize();
-  
+
   const snapshot1 = manager1.createTransitionSnapshot(/* ... */);
   const snapshot2 = manager2.createTransitionSnapshot(/* ... */);
-  
+
   await manager1.storeSnapshot(snapshot1, true);
   await manager2.storeSnapshot(snapshot2, true);
-  
+
   const files1 = await fs.readdir('mode-transition-snapshots/session-1');
   const files2 = await fs.readdir('mode-transition-snapshots/session-2');
-  
+
   expect(files1.length).toBe(1);
   expect(files2.length).toBe(1);
   expect(files1[0]).not.toBe(files2[0]);

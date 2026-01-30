@@ -30,22 +30,22 @@ const WELCOME_ASCII_LINES = [
 // "LLM" (plus signs) = Orange (#f69500)
 const getColorForChar = (char: string): string | undefined => {
   if (char === ' ') return undefined;
-  
+
   // "O" - semicolons and colons (red)
   if (char === ';' || char === ':') {
     return '#ea3829';
   }
-  
+
   // "LLM" - plus signs (orange)
   if (char === '+') {
     return '#f69500';
   }
-  
+
   // Dots and commas (brown/dark orange)
   if (char === '.' || char === ',') {
     return '#8c5500';
   }
-  
+
   return undefined;
 };
 

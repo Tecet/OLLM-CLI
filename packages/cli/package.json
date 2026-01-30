@@ -1,6 +1,6 @@
 {
   "name": "@ollm/cli",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "Local-first CLI for open-source LLMs with tools, hooks, and MCP integration",
   "type": "module",
   "bin": {

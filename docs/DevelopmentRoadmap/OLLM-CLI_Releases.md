@@ -185,18 +185,21 @@ editor:
 Access powerful cloud models when local models need assistance.
 
 **CLI-Based Providers:**
+
 - Gemini CLI integration
 - Claude Code integration
 - Codex CLI integration
 - Subprocess execution bridge
 
 **API-Based Providers:**
+
 - OpenAI API integration
 - Anthropic API integration
 - Google AI API integration
 - Streaming response handling
 
 **Management:**
+
 - Provider discovery and health checks
 - Intelligent provider selection
 - Context transfer between providers
@@ -245,6 +248,7 @@ kraken:
 Find relevant code with semantic search.
 
 **Key Features:**
+
 - Codebase indexing with embeddings
 - Semantic code search
 - Context-aware file discovery
@@ -278,6 +282,7 @@ codebaseIndex:
 #### 🐙 GitHub Workflow Integration
 
 **Key Features:**
+
 - GitHub API integration
 - Issue and PR management
 - Code review workflows
@@ -311,6 +316,7 @@ github:
 #### 🖥️ Enhanced Windows, macOS, Linux Compatibility
 
 **Key Features:**
+
 - Platform detection and defaults
 - Cross-platform GPU monitoring (NVIDIA, AMD, Apple Silicon)
 - Terminal capability detection
@@ -342,6 +348,7 @@ platform:
 #### 🔌 High-Performance Inference Engines
 
 **Key Features:**
+
 - vLLM provider integration
 - OpenAI-compatible API support
 - High-throughput inference
@@ -384,18 +391,18 @@ providers:
 
 ## Version Comparison
 
-| Version | Release Date | Status | Key Features |
-|---------|-------------|--------|--------------|
-| v0.1.0 | Jan 2026 | ✅ Released | Foundation, TUI, Tools, Context Management |
-| v0.2.0 | Q2 2026 | 📋 Planned | File Explorer, Enhanced MCP |
-| v0.3.0 | Q2 2026 | 📋 Planned | Advanced Explorer, MCP Polish |
-| v0.4.0 | Q3 2026 | 📋 Planned | Code Editor |
-| v0.5.0 | Q3 2026 | 📋 Planned | Release Kraken (External Providers) |
-| v0.6.0 | Q3 2026 | 📋 Planned | RAG Integration |
-| v0.7.0 | Q3 2026 | 📋 Planned | GitHub Integration |
-| v0.8.0 | Q4 2026 | 📋 Planned | Cross-Platform Support |
-| v0.9.0 | Q4 2026 | 📋 Planned | vLLM & Open Source Providers |
-| v1.0.0 | Q4 2026 | 🔮 Future | Beta Release |
+| Version | Release Date | Status      | Key Features                               |
+| ------- | ------------ | ----------- | ------------------------------------------ |
+| v0.1.0  | Jan 2026     | ✅ Released | Foundation, TUI, Tools, Context Management |
+| v0.2.0  | Q2 2026      | 📋 Planned  | File Explorer, Enhanced MCP                |
+| v0.3.0  | Q2 2026      | 📋 Planned  | Advanced Explorer, MCP Polish              |
+| v0.4.0  | Q3 2026      | 📋 Planned  | Code Editor                                |
+| v0.5.0  | Q3 2026      | 📋 Planned  | Release Kraken (External Providers)        |
+| v0.6.0  | Q3 2026      | 📋 Planned  | RAG Integration                            |
+| v0.7.0  | Q3 2026      | 📋 Planned  | GitHub Integration                         |
+| v0.8.0  | Q4 2026      | 📋 Planned  | Cross-Platform Support                     |
+| v0.9.0  | Q4 2026      | 📋 Planned  | vLLM & Open Source Providers               |
+| v1.0.0  | Q4 2026      | 🔮 Future   | Beta Release                               |
 
 ---
 

@@ -8,6 +8,7 @@
 ## Executive Summary
 
 Implemented a comprehensive context size filtering and VRAM management system that:
+
 1. Intelligently filters context sizes based on model capabilities and available VRAM
 2. Provides mandatory context selection after model selection
 3. Warns users about high VRAM usage and potential performance degradation
@@ -20,12 +21,14 @@ Implemented a comprehensive context size filtering and VRAM management system th
 ### 1. ✅ Intelligent Context Size Filtering
 
 **What it does:**
+
 - Filters context sizes by model's `max_context_window`
 - Filters by total VRAM capacity (with 1.3× overhead for CPU offloading)
 - Shows VRAM requirements in labels: `"4k (2.5 GB)"`
 - Prevents selection of contexts that won't fit
 
 **Filtering Algorithm:**
+
 ```typescript
 // 1. Get model's max context window
 const maxContextWindow = modelProfile?.max_context_window || 131072;
@@ -34,13 +37,13 @@ const maxContextWindow = modelProfile?.max_context_window || 131072;
 const vramLimit = availableVRAM * 1.3;
 
 // 3. Filter contexts
-contexts.filter(ctx => {
-  return ctx.size <= maxContextWindow &&
-         ctx.vram_estimate_gb <= vramLimit;
+contexts.filter((ctx) => {
+  return ctx.size <= maxContextWindow && ctx.vram_estimate_gb <= vramLimit;
 });
 ```
 
 **Example:**
+
 ```
 User: 8GB VRAM
 Model: qwen2.5:7b (max 128k context)
@@ -55,11 +58,13 @@ Available contexts:
 ### 2. ✅ Mandatory Context Selection Flow
 
 **What it does:**
+
 - After selecting a model, user MUST select a context size
 - Model loading deferred until context size is selected
 - Prevents unnecessary warmup cycles
 
 **User Flow:**
+
 ```
 Main Menu
   ↓
@@ -82,10 +87,12 @@ Return to Main Menu or Chat
 ```
 
 **Before:**
+
 1. Select model → Model loads immediately → Return to main menu
 2. Separately select context size → Model reloads
 
 **After:**
+
 1. Select model → Show context menu
 2. Select context size → Model loads once with correct context
 3. Return to main menu
@@ -96,6 +103,7 @@ Return to Main Menu or Chat
 Users couldn't switch between models because the system was checking free VRAM instead of total VRAM.
 
 **Example of the bug:**
+
 ```
 User: 8GB total VRAM
 Currently loaded: qwen2.5:7b (5.5 GB)
@@ -113,15 +121,17 @@ NEW BEHAVIOR (FIXED):
 ```
 
 **The Fix:**
+
 ```typescript
 // OLD (BROKEN)
-availableVRAM: gpuInfo?.vramFree / (1024 * 1024 * 1024)
+availableVRAM: gpuInfo?.vramFree / (1024 * 1024 * 1024);
 
 // NEW (FIXED)
-availableVRAM: gpuInfo?.vramTotal / (1024 * 1024 * 1024)
+availableVRAM: gpuInfo?.vramTotal / (1024 * 1024 * 1024);
 ```
 
 **Why this works:**
+
 - Ollama unloads the old model when loading a new one
 - Total VRAM becomes available for the new model
 - Users can now switch between models of similar size
@@ -129,11 +139,13 @@ availableVRAM: gpuInfo?.vramTotal / (1024 * 1024 * 1024)
 ### 4. ✅ High VRAM Usage Warning
 
 **What it does:**
+
 - Warns when context uses >80% of total VRAM
 - Alerts about potential CPU offloading and performance impact
 - Non-blocking - user can still proceed
 
 **Warning Threshold:**
+
 ```
 0%                    80%                   100%        130%
 ├─────────────────────┼─────────────────────┼───────────┼──────>
@@ -144,14 +156,16 @@ availableVRAM: gpuInfo?.vramTotal / (1024 * 1024 * 1024)
 ```
 
 **Warning Message:**
+
 ```
-⚠️ Performance Warning: VRAM usage is high (90% - 9.0 GB / 10.0 GB). 
+⚠️ Performance Warning: VRAM usage is high (90% - 9.0 GB / 10.0 GB).
 Model may be partially offloaded to CPU, reducing performance.
 ```
 
 **Example Scenarios:**
 
 **Scenario 1: Normal VRAM Usage (< 80%)**
+
 ```
 User: 8GB VRAM
 Model: llama3.2:3b
@@ -162,6 +176,7 @@ Result: ✅ No warning, optimal performance
 ```
 
 **Scenario 2: High VRAM Usage (> 80%)**
+
 ```
 User: 10GB VRAM
 Model: qwen2.5:7b
@@ -173,6 +188,7 @@ Result: ✅ Option shown (within 130% limit)
 ```
 
 **Scenario 3: Filtered Out (> 130%)**
+
 ```
 User: 8GB VRAM
 Model: qwen2.5:7b
@@ -192,10 +208,12 @@ Result: ❌ 32k option not shown (filtered out)
 #### 1. `packages/cli/src/ui/components/context/ContextMenu.tsx`
 
 **New Functions:**
+
 - `filterContextSizes()` - Filters contexts by model and VRAM limits
 - `buildContextSizeMenuForModel()` - Builds context menu with filtering and warnings
 
 **Key Changes:**
+
 - Added VRAM-based filtering logic
 - Added model capability filtering
 - Added VRAM labels to menu items
@@ -204,6 +222,7 @@ Result: ❌ 32k option not shown (filtered out)
 - Added error handling for insufficient VRAM
 
 **Code Snippet:**
+
 ```typescript
 // Filter contexts
 const filterContextSizes = (
@@ -216,8 +235,7 @@ const filterContextSizes = (
 
   return contextProfiles.filter((profile) => {
     const withinModelLimit = profile.size <= maxContextWindow;
-    const withinVRAMLimit = !profile.vram_estimate_gb || 
-                           profile.vram_estimate_gb <= vramLimit;
+    const withinVRAMLimit = !profile.vram_estimate_gb || profile.vram_estimate_gb <= vramLimit;
     return withinModelLimit && withinVRAMLimit;
   });
 };
@@ -234,17 +252,19 @@ if (isHighVRAMUsage && vramEstimate) {
 #### 2. `packages/cli/src/ui/App.tsx`
 
 **Key Changes:**
+
 - Changed from `gpuInfo.vramFree` to `gpuInfo.vramTotal`
 - Pass total VRAM to context menu
 - Default to 8GB if GPU info unavailable
 
 **Code Snippet:**
+
 ```typescript
 // OLD (BROKEN)
-availableVRAM: gpuInfo?.vramFree ? gpuInfo.vramFree / (1024 * 1024 * 1024) : 8
+availableVRAM: gpuInfo?.vramFree ? gpuInfo.vramFree / (1024 * 1024 * 1024) : 8;
 
 // NEW (FIXED)
-availableVRAM: gpuInfo?.vramTotal ? gpuInfo.vramTotal / (1024 * 1024 * 1024) : 8
+availableVRAM: gpuInfo?.vramTotal ? gpuInfo.vramTotal / (1024 * 1024 * 1024) : 8;
 ```
 
 ---
@@ -252,6 +272,7 @@ availableVRAM: gpuInfo?.vramTotal ? gpuInfo.vramTotal / (1024 * 1024 * 1024) : 8
 ## VRAM Calculation Logic
 
 ### Filtering Threshold: 130%
+
 Allows for CPU offloading capability of Ollama.
 
 ```typescript
@@ -260,6 +281,7 @@ const canShow = contextVRAM <= vramLimit;
 ```
 
 ### Warning Threshold: 80%
+
 Alerts user to potential performance degradation.
 
 ```typescript
@@ -268,6 +290,7 @@ const showWarning = vramUsagePercent > 80;
 ```
 
 ### Visual Representation
+
 ```
 VRAM Usage Scale:
 0%                    80%                   100%        130%
@@ -284,6 +307,7 @@ VRAM Usage Scale:
 ## Example Scenarios
 
 ### Scenario 1: Sufficient VRAM
+
 ```
 User: 16GB VRAM
 Model: llama3.2:3b
@@ -302,6 +326,7 @@ Result: ✅ All contexts available, no warning
 ```
 
 ### Scenario 2: Limited VRAM
+
 ```
 User: 6GB VRAM
 Model: llama3.2:3b
@@ -320,6 +345,7 @@ Result: ⚠️ Warning about high VRAM usage (87%)
 ```
 
 ### Scenario 3: Model with Limited Context Window
+
 ```
 User: 8GB VRAM
 Model: codegemma:7b (max 8k context)
@@ -337,6 +363,7 @@ Result: ⚠️ Warning about high VRAM usage (106%)
 ```
 
 ### Scenario 4: Insufficient VRAM
+
 ```
 User: 2GB VRAM
 Model: qwen2.5:7b
@@ -356,6 +383,7 @@ Result: ❌ Error message displayed:
 ```
 
 ### Scenario 5: Model Switching (THE FIX)
+
 ```
 User: 8GB total VRAM
 Currently loaded: qwen2.5:7b (5.5 GB)
@@ -433,6 +461,7 @@ NEW BEHAVIOR (FIXED):
 ## Testing Checklist
 
 ### Filtering Tests
+
 - [x] Context sizes filtered by model's max_context_window
 - [x] Context sizes filtered by total VRAM (not free VRAM)
 - [x] VRAM labels displayed correctly
@@ -441,6 +470,7 @@ NEW BEHAVIOR (FIXED):
 - [ ] Test with models having different max_context_window values
 
 ### Flow Tests
+
 - [x] Model loading deferred until context selection
 - [x] Model selection automatically shows context menu
 - [x] Back/Exit navigation works correctly
@@ -448,6 +478,7 @@ NEW BEHAVIOR (FIXED):
 - [ ] Test insufficient VRAM error message
 
 ### Warning Tests
+
 - [x] High VRAM usage warning (>80%) displayed
 - [x] Warning shows correct percentage and GB values
 - [x] Warning is non-blocking (user can proceed)
@@ -456,6 +487,7 @@ NEW BEHAVIOR (FIXED):
 - [ ] Test with VRAM usage at 95% (warning shown)
 
 ### Bug Fix Tests
+
 - [x] Model switching works with loaded model
 - [x] Uses total VRAM, not free VRAM
 - [ ] Test switching between models of similar size
@@ -463,6 +495,7 @@ NEW BEHAVIOR (FIXED):
 - [ ] Test switching from small to large model
 
 ### Edge Cases
+
 - [ ] Test with Ollama not running (should default to 8GB)
 - [ ] Test with manual context input (no warning - no VRAM estimate)
 - [ ] Test with GPU detection failure
@@ -473,6 +506,7 @@ NEW BEHAVIOR (FIXED):
 ## Benefits
 
 ### For Users
+
 1. **Prevents Errors**: Can't select contexts that won't fit
 2. **Enables Model Switching**: Fixed the "insufficient VRAM" bug
 3. **Informed Decisions**: See VRAM requirements and warnings
@@ -480,6 +514,7 @@ NEW BEHAVIOR (FIXED):
 5. **Optimal UX**: Context selection is mandatory and guided
 
 ### For System
+
 1. **Efficient Resource Usage**: Models load once with correct context
 2. **Predictable Behavior**: Consistent filtering logic
 3. **Better Error Handling**: Clear messages for insufficient VRAM
@@ -500,17 +535,20 @@ NEW BEHAVIOR (FIXED):
 ## Future Enhancements
 
 ### High Priority
+
 1. **Dynamic VRAM Monitoring**: Update available contexts if VRAM changes during session
 2. **Configurable Thresholds**: Allow users to adjust warning and filtering thresholds
 3. **Performance Estimates**: Show estimated inference speed reduction
 
 ### Medium Priority
+
 4. **Alternative Suggestions**: Suggest lower context sizes for better performance
 5. **Historical Data**: Track actual performance with high VRAM usage
 6. **Color-Coded Labels**: Visual indicators in menu (green/yellow/red)
 7. **Account for Other Processes**: Detect and account for other GPU processes
 
 ### Low Priority
+
 8. **Context Size Recommendations**: AI-powered suggestions based on use case
 9. **VRAM Usage Prediction**: Show estimated total VRAM usage (model + context)
 10. **Model Compatibility Check**: Warn before selecting models that won't fit
@@ -522,18 +560,22 @@ NEW BEHAVIOR (FIXED):
 ## Technical Notes
 
 ### Why 1.3× Multiplier?
+
 The 1.3× multiplier (30% overhead) accounts for Ollama's CPU offloading capability. When VRAM is insufficient, Ollama can offload parts of the model to CPU RAM, allowing contexts up to 130% of VRAM to work (with performance degradation).
 
 ### Why 80% Warning Threshold?
+
 - **Below 80%**: Model fits comfortably in VRAM with room for overhead
 - **80-100%**: Model may trigger partial CPU offloading
 - **Above 100%**: Significant CPU offloading, noticeable performance impact
 - **Above 130%**: Won't work at all (filtered out)
 
 ### Why Total VRAM vs Free VRAM?
+
 When switching models, Ollama unloads the old model before loading the new one. This means the total VRAM becomes available, not just the currently free VRAM. Using free VRAM would incorrectly prevent model switching.
 
 ### Default 8GB Fallback
+
 If GPU detection fails (Ollama not running, driver issues, etc.), the system defaults to 8GB VRAM. This is a reasonable middle ground that works for most consumer GPUs (RTX 3060, RTX 4060, etc.).
 
 ---
@@ -541,6 +583,7 @@ If GPU detection fails (Ollama not running, driver issues, etc.), the system def
 ## Summary
 
 This implementation provides a comprehensive solution for context size management and VRAM optimization. It combines:
+
 - **Intelligent filtering** to prevent errors
 - **Mandatory selection** for optimal UX
 - **Performance warnings** for informed decisions

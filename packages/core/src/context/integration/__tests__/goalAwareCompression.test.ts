@@ -7,9 +7,7 @@
 import * as fc from 'fast-check';
 import { describe, it, expect, beforeEach } from 'vitest';
 
-import {
-  GoalAwareCompression,
-} from '../goalAwareCompression.js';
+import { GoalAwareCompression } from '../goalAwareCompression.js';
 
 import type {
   Goal,
@@ -118,7 +116,11 @@ class MockGoalManager implements GoalManager {
     }
   }
 
-  updateSubtaskStatus(goalId: string, subtaskId: string, status: 'pending' | 'in-progress' | 'completed' | 'blocked'): void {
+  updateSubtaskStatus(
+    goalId: string,
+    subtaskId: string,
+    status: 'pending' | 'in-progress' | 'completed' | 'blocked'
+  ): void {
     const goal = this.goals.get(goalId);
     if (!goal) return;
 
@@ -137,7 +139,12 @@ class MockGoalManager implements GoalManager {
       goalId,
       description,
       timestamp: new Date(),
-      state: state || { filesModified: [], testsAdded: [], decisionsLocked: [], metricsRecorded: {} },
+      state: state || {
+        filesModified: [],
+        testsAdded: [],
+        decisionsLocked: [],
+        metricsRecorded: {},
+      },
       assistantSummary: summary || '',
     };
 
@@ -145,7 +152,12 @@ class MockGoalManager implements GoalManager {
     return checkpoint;
   }
 
-  recordDecision(goalId: string, description: string, rationale: string, alternatives?: string[]): Decision {
+  recordDecision(
+    goalId: string,
+    description: string,
+    rationale: string,
+    alternatives?: string[]
+  ): Decision {
     const goal = this.goals.get(goalId);
     if (!goal) throw new Error('Goal not found');
 
@@ -172,7 +184,13 @@ class MockGoalManager implements GoalManager {
     }
   }
 
-  recordArtifact(goalId: string, type: 'file' | 'test' | 'documentation' | 'configuration', path: string, action: 'created' | 'modified' | 'deleted', description?: string): Artifact {
+  recordArtifact(
+    goalId: string,
+    type: 'file' | 'test' | 'documentation' | 'configuration',
+    path: string,
+    action: 'created' | 'modified' | 'deleted',
+    description?: string
+  ): Artifact {
     const goal = this.goals.get(goalId);
     if (!goal) throw new Error('Goal not found');
 
@@ -188,7 +206,11 @@ class MockGoalManager implements GoalManager {
     return artifact;
   }
 
-  addBlocker(goalId: string, description: string, type: 'missing-info' | 'external-dependency' | 'technical-issue'): any {
+  addBlocker(
+    goalId: string,
+    description: string,
+    type: 'missing-info' | 'external-dependency' | 'technical-issue'
+  ): any {
     const goal = this.goals.get(goalId);
     if (!goal) throw new Error('Goal not found');
 
@@ -362,7 +384,7 @@ describe('GoalAwareCompression', () => {
         ],
       });
 
-      const messages = [createTestMessage('user', 'Let\'s continue')];
+      const messages = [createTestMessage('user', "Let's continue")];
       const basePrompt = 'Summarize:';
 
       const prompt = compression.buildGoalAwarePrompt(messages, goal, basePrompt);
@@ -489,10 +511,7 @@ describe('GoalAwareCompression', () => {
 
   describe('verifyGoalsNotCompressed', () => {
     it('should pass when no goal is active', () => {
-      const messages = [
-        createTestMessage('user', 'Hello'),
-        createTestMessage('assistant', 'Hi'),
-      ];
+      const messages = [createTestMessage('user', 'Hello'), createTestMessage('assistant', 'Hi')];
 
       expect(() => compression.verifyGoalsNotCompressed(messages, null)).not.toThrow();
     });
@@ -500,7 +519,7 @@ describe('GoalAwareCompression', () => {
     it('should pass when messages do not contain goal information', () => {
       const goal = createTestGoal('Implement feature X');
       const messages = [
-        createTestMessage('user', 'Let\'s work on something else'),
+        createTestMessage('user', "Let's work on something else"),
         createTestMessage('assistant', 'Sure, what would you like to do?'),
       ];
 
@@ -510,7 +529,7 @@ describe('GoalAwareCompression', () => {
     it('should throw when messages contain goal description', () => {
       const goal = createTestGoal('Implement user authentication');
       const messages = [
-        createTestMessage('user', 'Let\'s continue with implement user authentication'),
+        createTestMessage('user', "Let's continue with implement user authentication"),
       ];
 
       expect(() => compression.verifyGoalsNotCompressed(messages, goal)).toThrow(
@@ -531,9 +550,7 @@ describe('GoalAwareCompression', () => {
 
     it('should throw when messages contain goal context keywords', () => {
       const goal = createTestGoal('Build API');
-      const messages = [
-        createTestMessage('assistant', 'Based on the active goal: we should...'),
-      ];
+      const messages = [createTestMessage('assistant', 'Based on the active goal: we should...')];
 
       expect(() => compression.verifyGoalsNotCompressed(messages, goal)).toThrow(
         'Goal information found in messages to compress'
@@ -597,16 +614,13 @@ describe('GoalAwareCompression', () => {
             // Create messages
             const messages = messageContents.map((content, index) => {
               let finalContent = content;
-              
+
               // Conditionally inject goal information
               if (includeGoalInfo && index === 0) {
                 finalContent = `${content} ${goalDescription}`;
               }
 
-              return createTestMessage(
-                index % 2 === 0 ? 'user' : 'assistant',
-                finalContent
-              );
+              return createTestMessage(index % 2 === 0 ? 'user' : 'assistant', finalContent);
             });
 
             // Property: If goal info is in messages, verification must fail
@@ -626,21 +640,24 @@ describe('GoalAwareCompression', () => {
       fc.assert(
         fc.property(
           fc.array(fc.string({ minLength: 5, maxLength: 50 }), { minLength: 1, maxLength: 10 }),
-          fc.constantFrom('[CHECKPOINT]', '[DECISION]', '[ARTIFACT]', 'active goal:', 'goal context:'),
+          fc.constantFrom(
+            '[CHECKPOINT]',
+            '[DECISION]',
+            '[ARTIFACT]',
+            'active goal:',
+            'goal context:'
+          ),
           (messageContents, marker) => {
             const goal = createTestGoal('Test goal');
-            
+
             // Ensure markerPosition is within bounds
-            const markerPosition = messageContents.length > 0 ? 
-              Math.floor(Math.random() * messageContents.length) : 0;
-            
+            const markerPosition =
+              messageContents.length > 0 ? Math.floor(Math.random() * messageContents.length) : 0;
+
             // Create messages with marker at specific position
             const messages = messageContents.map((content, index) => {
               const finalContent = index === markerPosition ? `${content} ${marker}` : content;
-              return createTestMessage(
-                index % 2 === 0 ? 'user' : 'assistant',
-                finalContent
-              );
+              return createTestMessage(index % 2 === 0 ? 'user' : 'assistant', finalContent);
             });
 
             // Property: Any goal marker in messages must be detected
@@ -752,7 +769,12 @@ describe('GoalAwareCompression', () => {
                       goalId: 'g1',
                       description: 'Test checkpoint',
                       timestamp: new Date(),
-                      state: { filesModified: [], testsAdded: [], decisionsLocked: [], metricsRecorded: {} },
+                      state: {
+                        filesModified: [],
+                        testsAdded: [],
+                        decisionsLocked: [],
+                        metricsRecorded: {},
+                      },
                       assistantSummary: 'Test',
                     },
                   ]

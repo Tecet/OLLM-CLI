@@ -1,9 +1,11 @@
 # Files Tab Fix - Files Not Showing
 
 ## Problem
+
 Files tab was showing only folders, not files. Folders weren't expanding to show subfolders and files when selected.
 
 ## Root Cause
+
 The issue was with React's memoization and state synchronization:
 
 1. **Memo dependency missing**: The `visibleNodes` memo in `FileTreeView.tsx` wasn't recalculating when directories were expanded because it didn't depend on `treeState.expandedPaths`
@@ -13,6 +15,7 @@ The issue was with React's memoization and state synchronization:
 ## Solution
 
 ### 1. Fixed Initialization Order (FilesTab.tsx)
+
 ```typescript
 // OLD: Set root first, then expand
 setRoot(rootNode);
@@ -26,6 +29,7 @@ setRoot(rootNode);
 ```
 
 ### 2. Added Memo Dependency (FileTreeView.tsx)
+
 ```typescript
 // OLD: Missing expandedPaths dependency
 const visibleNodes = React.useMemo(() => {
@@ -35,10 +39,17 @@ const visibleNodes = React.useMemo(() => {
 // NEW: Added expandedPaths to trigger recalculation
 const visibleNodes = React.useMemo(() => {
   // ...
-}, [treeState.root, treeState.scrollOffset, treeState.windowSize, treeState.expandedPaths, fileTreeService]);
+}, [
+  treeState.root,
+  treeState.scrollOffset,
+  treeState.windowSize,
+  treeState.expandedPaths,
+  fileTreeService,
+]);
 ```
 
 ### 3. Fixed Expansion Order (FileTreeView.tsx)
+
 ```typescript
 // OLD: Mark as expanded first (optimistic)
 expandDirectory(selectedNode.path);
@@ -67,10 +78,12 @@ expandDirectory(selectedNode.path);
    - UI shows files and subfolders
 
 ## Files Modified
+
 - `packages/cli/src/ui/components/tabs/FilesTab.tsx`
 - `packages/cli/src/ui/components/file-explorer/FileTreeView.tsx`
 
 ## Testing
+
 - [x] Files tab shows root directory
 - [x] Root directory shows files and folders
 - [x] Folders expand on Enter key

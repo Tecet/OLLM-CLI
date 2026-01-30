@@ -224,7 +224,7 @@ Preserve user preferences and important context.`;
       /export\s+(default|const|function|class)/,
     ];
 
-    return codePatterns.some(pattern => pattern.test(content));
+    return codePatterns.some((pattern) => pattern.test(content));
   }
 
   /**
@@ -243,7 +243,7 @@ Preserve user preferences and important context.`;
       /TypeError|ReferenceError|SyntaxError/,
     ];
 
-    return errorPatterns.some(pattern => pattern.test(content));
+    return errorPatterns.some((pattern) => pattern.test(content));
   }
 
   /**
@@ -263,7 +263,7 @@ Preserve user preferences and important context.`;
       /must\s+(have|be|do)/i,
     ];
 
-    return goalPatterns.some(pattern => pattern.test(content));
+    return goalPatterns.some((pattern) => pattern.test(content));
   }
 
   /**

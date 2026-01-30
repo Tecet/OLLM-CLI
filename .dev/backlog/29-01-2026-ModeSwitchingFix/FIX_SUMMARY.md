@@ -10,9 +10,11 @@ The `switchMode` function in `ContextManagerContext.tsx` was intentionally left 
 ## Files Modified
 
 ### 1. `packages/cli/src/commands/modeCommands.ts`
+
 - Changed `manager.switchMode(mode)` to `manager.switchModeExplicit(mode)` in the main mode command handler
 
 ### 2. `packages/cli/src/commands/modeShortcuts.ts`
+
 - Updated all shortcut commands to use `switchModeExplicit`:
   - `/assist` command
   - `/plan` command
@@ -20,6 +22,7 @@ The `switchMode` function in `ContextManagerContext.tsx` was intentionally left 
   - `/debug` command
 
 ### 3. `packages/cli/src/features/context/ContextManagerContext.tsx`
+
 - Implemented `switchMode` to delegate to `switchModeExplicit` for backward compatibility
 - Reordered function definitions so `switchModeExplicit` is defined before `switchMode`
 
@@ -40,10 +43,13 @@ const switchModeExplicit = useCallback((mode: ModeType) => {
   // ... full implementation ...
 }, []);
 
-const switchMode = useCallback((mode: ModeType) => {
-  // Delegate to switchModeExplicit for backward compatibility
-  switchModeExplicit(mode);
-}, [switchModeExplicit]);
+const switchMode = useCallback(
+  (mode: ModeType) => {
+    // Delegate to switchModeExplicit for backward compatibility
+    switchModeExplicit(mode);
+  },
+  [switchModeExplicit]
+);
 ```
 
 ## Testing

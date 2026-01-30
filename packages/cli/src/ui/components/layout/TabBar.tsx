@@ -90,9 +90,7 @@ export function TabBar({
         return (
           <Box key={tab.id} paddingLeft={index === 0 ? 0 : 1}>
             <Text color={textColor} bold={isActive}>
-              {tab.icon}
-              {' '}
-              {tab.label}
+              {tab.icon} {tab.label}
               {hasNotifications && <Text color={theme.text.accent}> ({notificationCount})</Text>}
             </Text>
           </Box>

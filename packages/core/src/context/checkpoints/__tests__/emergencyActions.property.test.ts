@@ -280,14 +280,9 @@ describe('EmergencyActions - Property Tests', () => {
           async (checkpoint, messages, checkpoints) => {
             // All emergency actions should handle errors gracefully
             const actions = [
+              () => emergencyActions.compressCheckpoint(checkpoint, messages, checkpoints),
               () =>
-                emergencyActions.compressCheckpoint(checkpoint, messages, checkpoints),
-              () =>
-                emergencyActions.mergeCheckpoints(
-                  checkpoints.slice(0, 2),
-                  messages,
-                  checkpoints
-                ),
+                emergencyActions.mergeCheckpoints(checkpoints.slice(0, 2), messages, checkpoints),
               () => emergencyActions.emergencyRollover(messages, checkpoints, 3),
               () =>
                 emergencyActions.aggressiveSummarization(
@@ -481,9 +476,7 @@ describe('EmergencyActions - Property Tests', () => {
               expect(result.summarizedTokens).toBeLessThan(result.originalTokens);
 
               // Invariant 4: Tokens freed matches calculation
-              expect(result.tokensFreed).toBe(
-                result.originalTokens - result.summarizedTokens
-              );
+              expect(result.tokensFreed).toBe(result.originalTokens - result.summarizedTokens);
 
               // Invariant 5: Checkpoint is at Level 1 (most aggressive)
               expect(result.checkpoint.compressionLevel).toBe(1);
@@ -509,17 +502,9 @@ describe('EmergencyActions - Property Tests', () => {
             // Test all emergency actions
             const results = await Promise.all([
               emergencyActions.compressCheckpoint(checkpoint, messages, checkpoints),
-              emergencyActions.mergeCheckpoints(
-                checkpoints.slice(0, 2),
-                messages,
-                checkpoints
-              ),
+              emergencyActions.mergeCheckpoints(checkpoints.slice(0, 2), messages, checkpoints),
               emergencyActions.emergencyRollover(messages, checkpoints, 3),
-              emergencyActions.aggressiveSummarization(
-                messages.slice(0, 5),
-                messages,
-                checkpoints
-              ),
+              emergencyActions.aggressiveSummarization(messages.slice(0, 5), messages, checkpoints),
             ]);
 
             // Invariant: Tokens freed is never negative
@@ -569,9 +554,7 @@ describe('EmergencyActions - Property Tests', () => {
                 // This may not always be true for small contexts,
                 // but should be true for larger ones
                 if (messages.length > 20 && checkpoints.length > 5) {
-                  expect(rolloverResult.tokensFreed).toBeGreaterThan(
-                    compressResult.tokensFreed
-                  );
+                  expect(rolloverResult.tokensFreed).toBeGreaterThan(compressResult.tokensFreed);
                 }
               }
             }

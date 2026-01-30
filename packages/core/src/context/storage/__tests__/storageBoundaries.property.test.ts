@@ -1,9 +1,9 @@
 /**
  * Property-Based Tests for Storage Boundaries
- * 
+ *
  * **Property 8: Storage Boundary Enforcement**
  * **Validates: Requirements FR-1, FR-2, FR-3, FR-4**
- * 
+ *
  * Tests that storage boundaries are enforced correctly:
  * - Type guards correctly identify storage types
  * - Validation catches all invalid structures
@@ -54,28 +54,30 @@ describe('Property 8: Storage Boundary Enforcement', () => {
     }),
   }) as fc.Arbitrary<CheckpointSummary>;
 
-  const activeContextArb = fc.record({
-    systemPrompt: messageArb.filter(m => m.role === 'system'),
-    checkpoints: fc.array(checkpointSummaryArb, { maxLength: 10 }),
-    recentMessages: fc.array(messageArb, { maxLength: 20 }),
-  }).chain(partial => {
-    const systemTokens = Math.floor(partial.systemPrompt.content.length / 4);
-    const checkpointsTokens = partial.checkpoints.reduce((sum, cp) => sum + cp.tokenCount, 0);
-    const recentTokens = partial.recentMessages.reduce(
-      (sum, m) => sum + Math.floor(m.content.length / 4),
-      0
-    );
+  const activeContextArb = fc
+    .record({
+      systemPrompt: messageArb.filter((m) => m.role === 'system'),
+      checkpoints: fc.array(checkpointSummaryArb, { maxLength: 10 }),
+      recentMessages: fc.array(messageArb, { maxLength: 20 }),
+    })
+    .chain((partial) => {
+      const systemTokens = Math.floor(partial.systemPrompt.content.length / 4);
+      const checkpointsTokens = partial.checkpoints.reduce((sum, cp) => sum + cp.tokenCount, 0);
+      const recentTokens = partial.recentMessages.reduce(
+        (sum, m) => sum + Math.floor(m.content.length / 4),
+        0
+      );
 
-    return fc.constant({
-      ...partial,
-      tokenCount: {
-        system: systemTokens,
-        checkpoints: checkpointsTokens,
-        recent: recentTokens,
-        total: systemTokens + checkpointsTokens + recentTokens,
-      },
-    });
-  }) as fc.Arbitrary<ActiveContext>;
+      return fc.constant({
+        ...partial,
+        tokenCount: {
+          system: systemTokens,
+          checkpoints: checkpointsTokens,
+          recent: recentTokens,
+          total: systemTokens + checkpointsTokens + recentTokens,
+        },
+      });
+    }) as fc.Arbitrary<ActiveContext>;
 
   const snapshotDataArb = fc.record({
     id: fc.uuid(),
@@ -84,57 +86,66 @@ describe('Property 8: Storage Boundary Enforcement', () => {
     conversationState: fc.record({
       messages: fc.array(messageArb, { maxLength: 50 }),
       checkpoints: fc.array(checkpointSummaryArb, { maxLength: 10 }),
-      goals: fc.option(fc.array(fc.record({
-        id: fc.uuid(),
-        description: fc.string({ minLength: 1 }),
-      }))),
+      goals: fc.option(
+        fc.array(
+          fc.record({
+            id: fc.uuid(),
+            description: fc.string({ minLength: 1 }),
+          })
+        )
+      ),
       metadata: fc.dictionary(fc.string(), fc.anything()),
     }),
-    purpose: fc.constantFrom('recovery', 'rollback', 'emergency') as fc.Arbitrary<'recovery' | 'rollback' | 'emergency'>,
+    purpose: fc.constantFrom('recovery', 'rollback', 'emergency') as fc.Arbitrary<
+      'recovery' | 'rollback' | 'emergency'
+    >,
   }) as fc.Arbitrary<SnapshotData>;
 
-  const checkpointRecordArb = fc.record({
-    id: fc.uuid(),
-    timestamp: fc.integer({ min: 1000000000000, max: Date.now() }),
-    messageRange: fc.tuple(
-      fc.integer({ min: 0, max: 100 }),
-      fc.integer({ min: 0, max: 100 })
-    ).map(([a, b]) => [Math.min(a, b), Math.max(a, b)] as [number, number]),
-    originalTokens: fc.integer({ min: 100, max: 5000 }),
-  }).chain(partial => {
-    // Ensure compressedTokens is always less than originalTokens for valid compression ratio
-    return fc.integer({ min: 10, max: partial.originalTokens - 1 }).map(compressedTokens => {
-      const ratio = compressedTokens / partial.originalTokens;
-      return {
+  const checkpointRecordArb = fc
+    .record({
+      id: fc.uuid(),
+      timestamp: fc.integer({ min: 1000000000000, max: Date.now() }),
+      messageRange: fc
+        .tuple(fc.integer({ min: 0, max: 100 }), fc.integer({ min: 0, max: 100 }))
+        .map(([a, b]) => [Math.min(a, b), Math.max(a, b)] as [number, number]),
+      originalTokens: fc.integer({ min: 100, max: 5000 }),
+    })
+    .chain((partial) => {
+      // Ensure compressedTokens is always less than originalTokens for valid compression ratio
+      return fc.integer({ min: 10, max: partial.originalTokens - 1 }).map((compressedTokens) => {
+        const ratio = compressedTokens / partial.originalTokens;
+        return {
+          ...partial,
+          compressedTokens,
+          compressionRatio: ratio,
+          level: (ratio < 0.2 ? 1 : ratio < 0.4 ? 2 : 3) as 1 | 2 | 3,
+        };
+      });
+    }) as fc.Arbitrary<CheckpointRecord>;
+
+  const sessionHistoryArb = fc
+    .record({
+      sessionId: fc.uuid(),
+      messages: fc.array(messageArb, { minLength: 0, maxLength: 100 }),
+      checkpointRecords: fc.array(checkpointRecordArb, { maxLength: 10 }),
+    })
+    .chain((partial) => {
+      const totalTokens = partial.messages.reduce(
+        (sum, m) => sum + Math.floor(m.content.length / 4),
+        0
+      );
+
+      return fc.constant({
         ...partial,
-        compressedTokens,
-        compressionRatio: ratio,
-        level: (ratio < 0.2 ? 1 : ratio < 0.4 ? 2 : 3) as 1 | 2 | 3,
-      };
-    });
-  }) as fc.Arbitrary<CheckpointRecord>;
-
-  const sessionHistoryArb = fc.record({
-    sessionId: fc.uuid(),
-    messages: fc.array(messageArb, { minLength: 0, maxLength: 100 }),
-    checkpointRecords: fc.array(checkpointRecordArb, { maxLength: 10 }),
-  }).chain(partial => {
-    const totalTokens = partial.messages.reduce(
-      (sum, m) => sum + Math.floor(m.content.length / 4),
-      0
-    );
-
-    return fc.constant({
-      ...partial,
-      metadata: {
-        startTime: Date.now() - 3600000,
-        lastUpdate: Date.now(),
-        totalMessages: partial.messages.length,
-        totalTokens,
-        compressionCount: partial.checkpointRecords.length,
-      },
-    });
-  }) as fc.Arbitrary<SessionHistory>;
+        metadata: {
+          startTime: Date.now() - 3600000,
+          lastUpdate: Date.now(),
+          totalMessages: partial.messages.length,
+          totalTokens,
+          compressionCount: partial.checkpointRecords.length,
+        },
+      });
+    }) as fc.Arbitrary<SessionHistory>;
 
   // ============================================================================
   // Property Tests
@@ -177,7 +188,7 @@ describe('Property 8: Storage Boundary Enforcement', () => {
             fc.string(),
             fc.integer(),
             fc.boolean(),
-            fc.array(fc.anything()),
+            fc.array(fc.anything())
           ),
           (invalidData) => {
             expect(boundaries.isActiveContext(invalidData)).toBe(false);
@@ -191,18 +202,15 @@ describe('Property 8: Storage Boundary Enforcement', () => {
 
     it('should not confuse storage types', () => {
       fc.assert(
-        fc.property(
-          fc.oneof(activeContextArb, snapshotDataArb, sessionHistoryArb),
-          (data) => {
-            const isActive = boundaries.isActiveContext(data);
-            const isSnapshot = boundaries.isSnapshotData(data);
-            const isHistory = boundaries.isSessionHistory(data);
+        fc.property(fc.oneof(activeContextArb, snapshotDataArb, sessionHistoryArb), (data) => {
+          const isActive = boundaries.isActiveContext(data);
+          const isSnapshot = boundaries.isSnapshotData(data);
+          const isHistory = boundaries.isSessionHistory(data);
 
-            // Exactly one should be true
-            const trueCount = [isActive, isSnapshot, isHistory].filter(Boolean).length;
-            expect(trueCount).toBe(1);
-          }
-        ),
+          // Exactly one should be true
+          const trueCount = [isActive, isSnapshot, isHistory].filter(Boolean).length;
+          expect(trueCount).toBe(1);
+        }),
         { numRuns: 100 }
       );
     });
@@ -257,7 +265,7 @@ describe('Property 8: Storage Boundary Enforcement', () => {
           const result = boundaries.validateActiveContext(corrupted);
           expect(result.valid).toBe(false);
           expect(result.errors).toBeDefined();
-          expect(result.errors!.some(e => e.includes('does not match sum'))).toBe(true);
+          expect(result.errors!.some((e) => e.includes('does not match sum'))).toBe(true);
         }),
         { numRuns: 50 }
       );
@@ -278,7 +286,9 @@ describe('Property 8: Storage Boundary Enforcement', () => {
           const result = boundaries.validateSessionHistory(corrupted);
           expect(result.valid).toBe(false);
           expect(result.errors).toBeDefined();
-          expect(result.errors!.some(e => e.includes('does not match messages array length'))).toBe(true);
+          expect(
+            result.errors!.some((e) => e.includes('does not match messages array length'))
+          ).toBe(true);
         }),
         { numRuns: 50 }
       );
@@ -306,7 +316,9 @@ describe('Property 8: Storage Boundary Enforcement', () => {
             },
           };
 
-          expect(() => boundaries.preventSnapshotInPrompt([contaminated])).toThrow(/CRITICAL.*Snapshot/);
+          expect(() => boundaries.preventSnapshotInPrompt([contaminated])).toThrow(
+            /CRITICAL.*Snapshot/
+          );
         }),
         { numRuns: 50 }
       );
@@ -322,7 +334,9 @@ describe('Property 8: Storage Boundary Enforcement', () => {
             },
           };
 
-          expect(() => boundaries.preventHistoryInPrompt([contaminated])).toThrow(/CRITICAL.*Session history/);
+          expect(() => boundaries.preventHistoryInPrompt([contaminated])).toThrow(
+            /CRITICAL.*Session history/
+          );
         }),
         { numRuns: 50 }
       );
@@ -341,7 +355,9 @@ describe('Property 8: Storage Boundary Enforcement', () => {
               },
             };
 
-            expect(() => boundaries.preventSnapshotInPrompt([contaminated])).toThrow(/CRITICAL.*Snapshot purpose/);
+            expect(() => boundaries.preventSnapshotInPrompt([contaminated])).toThrow(
+              /CRITICAL.*Snapshot purpose/
+            );
           }
         ),
         { numRuns: 50 }
@@ -358,7 +374,9 @@ describe('Property 8: Storage Boundary Enforcement', () => {
             },
           };
 
-          expect(() => boundaries.preventHistoryInPrompt([contaminated])).toThrow(/CRITICAL.*Checkpoint records/);
+          expect(() => boundaries.preventHistoryInPrompt([contaminated])).toThrow(
+            /CRITICAL.*Checkpoint records/
+          );
         }),
         { numRuns: 50 }
       );
@@ -368,19 +386,16 @@ describe('Property 8: Storage Boundary Enforcement', () => {
   describe('Boundary Invariants', () => {
     it('should maintain type exclusivity', () => {
       fc.assert(
-        fc.property(
-          fc.oneof(activeContextArb, snapshotDataArb, sessionHistoryArb),
-          (data) => {
-            const checks = [
-              boundaries.isActiveContext(data),
-              boundaries.isSnapshotData(data),
-              boundaries.isSessionHistory(data),
-            ];
+        fc.property(fc.oneof(activeContextArb, snapshotDataArb, sessionHistoryArb), (data) => {
+          const checks = [
+            boundaries.isActiveContext(data),
+            boundaries.isSnapshotData(data),
+            boundaries.isSessionHistory(data),
+          ];
 
-            // Exactly one should be true
-            expect(checks.filter(Boolean).length).toBe(1);
-          }
-        ),
+          // Exactly one should be true
+          expect(checks.filter(Boolean).length).toBe(1);
+        }),
         { numRuns: 100 }
       );
     });

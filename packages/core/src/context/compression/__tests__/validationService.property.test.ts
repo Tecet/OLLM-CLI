@@ -18,16 +18,18 @@ import type { Message } from '../../types.js';
 /**
  * Arbitrary for generating messages with realistic token counts
  */
-const messageArbitrary = fc.record({
-  id: fc.uuid(),
-  role: fc.constantFrom('user' as const, 'assistant' as const, 'system' as const),
-  content: fc.string({ minLength: 10, maxLength: 500 }),
-  timestamp: fc.date(),
-}).map((msg) => ({
-  ...msg,
-  // Calculate realistic token count (approx 1 token per 4 characters)
-  tokenCount: Math.ceil(msg.content.length / 4),
-}));
+const messageArbitrary = fc
+  .record({
+    id: fc.uuid(),
+    role: fc.constantFrom('user' as const, 'assistant' as const, 'system' as const),
+    content: fc.string({ minLength: 10, maxLength: 500 }),
+    timestamp: fc.date(),
+  })
+  .map((msg) => ({
+    ...msg,
+    // Calculate realistic token count (approx 1 token per 4 characters)
+    tokenCount: Math.ceil(msg.content.length / 4),
+  }));
 
 /**
  * Arbitrary for generating message arrays with controlled token counts
@@ -239,9 +241,12 @@ describe('ValidationService - Property Tests', () => {
             // Property 3: Each suggestion must have valid fields
             for (const suggestion of result.suggestions) {
               expect(suggestion.type).toBeDefined();
-              expect(['compress', 'merge_checkpoints', 'emergency_rollover', 'remove_messages']).toContain(
-                suggestion.type
-              );
+              expect([
+                'compress',
+                'merge_checkpoints',
+                'emergency_rollover',
+                'remove_messages',
+              ]).toContain(suggestion.type);
               expect(suggestion.description).toBeTruthy();
               expect(suggestion.description.length).toBeGreaterThan(10);
               expect(suggestion.estimatedTokensFreed).toBeGreaterThan(0);
@@ -249,12 +254,17 @@ describe('ValidationService - Property Tests', () => {
             }
 
             // Property 4: Total estimated tokens freed should be significant
-            const totalFreed = result.suggestions.reduce((sum, s) => sum + s.estimatedTokensFreed, 0);
+            const totalFreed = result.suggestions.reduce(
+              (sum, s) => sum + s.estimatedTokensFreed,
+              0
+            );
             expect(totalFreed).toBeGreaterThan(0);
 
             // Property 5: At least one suggestion should free enough tokens
             const overage = result.overage || 0;
-            const hasViableSolution = result.suggestions.some((s) => s.estimatedTokensFreed >= overage * 0.5);
+            const hasViableSolution = result.suggestions.some(
+              (s) => s.estimatedTokensFreed >= overage * 0.5
+            );
             expect(hasViableSolution).toBe(true);
           }
         }),
@@ -314,7 +324,9 @@ describe('ValidationService - Property Tests', () => {
 
       const massiveResult = validator.validatePromptSize(massiveOverage);
       if (!massiveResult.valid && massiveResult.suggestions) {
-        const emergencySuggestion = massiveResult.suggestions.find((s) => s.type === 'emergency_rollover');
+        const emergencySuggestion = massiveResult.suggestions.find(
+          (s) => s.type === 'emergency_rollover'
+        );
         expect(emergencySuggestion).toBeDefined();
       }
     });

@@ -38,7 +38,7 @@ interface SnapshotData {
   sessionId: string;
   timestamp: number;
   conversationState: {
-    messages: Message[];           // Full messages at checkpoint
+    messages: Message[]; // Full messages at checkpoint
     checkpoints: CheckpointSummary[];
     goals?: Goal[];
     metadata: Record<string, unknown>;
@@ -91,12 +91,14 @@ class SnapshotLifecycle {
 ### Snapshot vs Session History
 
 **Snapshot:**
+
 - Point-in-time recovery
 - Created periodically
 - Limited retention (keep last N)
 - Used for rollback
 
 **Session History:**
+
 - Complete conversation record
 - Created continuously
 - Permanent storage
@@ -173,22 +175,18 @@ class ContextOrchestrator {
   async createSnapshot(purpose: 'recovery' | 'rollback' | 'emergency'): Promise<SnapshotData> {
     const messages = this.activeContext.getState().recentMessages;
     const checkpoints = this.activeContext.getState().checkpoints;
-    
-    return await this.snapshotLifecycle.createSnapshot(
-      messages,
-      checkpoints,
-      purpose
-    );
+
+    return await this.snapshotLifecycle.createSnapshot(messages, checkpoints, purpose);
   }
 
   // Restore snapshot
   async restoreSnapshot(snapshotId: string): Promise<void> {
     const restored = await this.snapshotLifecycle.restoreSnapshot(snapshotId);
-    
+
     // Update active context
     this.activeContext.clear();
-    restored.messages.forEach(m => this.activeContext.addMessage(m));
-    restored.checkpoints.forEach(cp => this.activeContext.addCheckpoint(cp));
+    restored.messages.forEach((m) => this.activeContext.addMessage(m));
+    restored.checkpoints.forEach((cp) => this.activeContext.addCheckpoint(cp));
   }
 }
 ```
@@ -201,15 +199,15 @@ Snapshots respect storage boundaries:
 // ✅ Correct: Snapshot stores full state
 const snapshot = {
   conversationState: {
-    messages: [...allMessages],      // Full messages
-    checkpoints: [...checkpoints],   // All checkpoints
-  }
+    messages: [...allMessages], // Full messages
+    checkpoints: [...checkpoints], // All checkpoints
+  },
 };
 
 // ❌ Wrong: Never send snapshot to LLM
 const prompt = [
   systemPrompt,
-  ...snapshot.conversationState.messages,  // NEVER DO THIS
+  ...snapshot.conversationState.messages, // NEVER DO THIS
 ];
 
 // ✅ Correct: Use active context for LLM
@@ -220,16 +218,16 @@ const prompt = activeContext.buildPrompt();
 
 ## Comparison: Old vs New
 
-| Feature           | Old System (Legacy)          | New System (v0.1.1)              |
-| ----------------- | ---------------------------- | -------------------------------- |
-| **Architecture**  | Mixed concerns               | Layered (lifecycle + storage)    |
-| **Storage**       | `snapshotStorage.ts`         | `snapshotLifecycle.ts` + storage |
-| **Type Safety**   | Partial                      | Full TypeScript                  |
-| **Boundaries**    | Not enforced                 | Runtime enforcement              |
-| **Integration**   | Direct with contextManager   | Via contextOrchestrator          |
-| **Validation**    | Basic                        | Comprehensive                    |
-| **Error Handling**| Limited                      | Comprehensive                    |
-| **Testing**       | Unit tests only              | Unit + integration + property    |
+| Feature            | Old System (Legacy)        | New System (v0.1.1)              |
+| ------------------ | -------------------------- | -------------------------------- |
+| **Architecture**   | Mixed concerns             | Layered (lifecycle + storage)    |
+| **Storage**        | `snapshotStorage.ts`       | `snapshotLifecycle.ts` + storage |
+| **Type Safety**    | Partial                    | Full TypeScript                  |
+| **Boundaries**     | Not enforced               | Runtime enforcement              |
+| **Integration**    | Direct with contextManager | Via contextOrchestrator          |
+| **Validation**     | Basic                      | Comprehensive                    |
+| **Error Handling** | Limited                    | Comprehensive                    |
+| **Testing**        | Unit tests only            | Unit + integration + property    |
 
 ---
 
@@ -237,26 +235,26 @@ const prompt = activeContext.buildPrompt();
 
 ### New Architecture (v0.1.1)
 
-| File                                                                       | Purpose                          | Status      |
-| -------------------------------------------------------------------------- | -------------------------------- | ----------- |
-| `packages/core/src/context/storage/snapshotLifecycle.ts`                   | Snapshot lifecycle management    | ✅ New      |
-| `packages/core/src/context/storage/snapshotStorage.ts`                     | File I/O and serialization       | ✅ Refactored |
-| `packages/core/src/context/storage/snapshotCoordinator.ts`                 | Integration with context system  | ✅ Refactored |
-| `packages/core/src/context/__tests__/storage/snapshotLifecycle.test.ts`    | Lifecycle tests                  | ✅ New      |
-| `packages/core/src/context/__tests__/storage/snapshotStorage.test.ts`      | Storage tests                    | ✅ Updated  |
+| File                                                                    | Purpose                         | Status        |
+| ----------------------------------------------------------------------- | ------------------------------- | ------------- |
+| `packages/core/src/context/storage/snapshotLifecycle.ts`                | Snapshot lifecycle management   | ✅ New        |
+| `packages/core/src/context/storage/snapshotStorage.ts`                  | File I/O and serialization      | ✅ Refactored |
+| `packages/core/src/context/storage/snapshotCoordinator.ts`              | Integration with context system | ✅ Refactored |
+| `packages/core/src/context/__tests__/storage/snapshotLifecycle.test.ts` | Lifecycle tests                 | ✅ New        |
+| `packages/core/src/context/__tests__/storage/snapshotStorage.test.ts`   | Storage tests                   | ✅ Updated    |
 
 ### Legacy System (Archived)
 
-| File                                                                       | Purpose                          | Status      |
-| -------------------------------------------------------------------------- | -------------------------------- | ----------- |
-| `.legacy/context-compression/2026-01-28-233842/core/snapshotManager.ts`    | Old snapshot manager             | 📦 Archived |
+| File                                                                    | Purpose              | Status      |
+| ----------------------------------------------------------------------- | -------------------- | ----------- |
+| `.legacy/context-compression/2026-01-28-233842/core/snapshotManager.ts` | Old snapshot manager | 📦 Archived |
 
 ### Mode Snapshots (Legacy - Separate System)
 
-| File                                                                       | Purpose                          | Status      |
-| -------------------------------------------------------------------------- | -------------------------------- | ----------- |
-| `packages/core/src/services/intentSnapshotStorage.ts`                      | Mode transition snapshots        | ⚠️ Legacy   |
-| `packages/core/src/prompts/modeSnapshotManager.ts`                         | Mode snapshot manager            | ⚠️ Legacy   |
+| File                                                  | Purpose                   | Status    |
+| ----------------------------------------------------- | ------------------------- | --------- |
+| `packages/core/src/services/intentSnapshotStorage.ts` | Mode transition snapshots | ⚠️ Legacy |
+| `packages/core/src/prompts/modeSnapshotManager.ts`    | Mode snapshot manager     | ⚠️ Legacy |
 
 **Note:** Mode snapshots are a separate system for mode transitions. They are not part of the main snapshot system and may be deprecated in future versions.
 
@@ -332,7 +330,7 @@ fc.assert(
   fc.property(fc.array(messageArb), fc.array(checkpointArb), async (messages, checkpoints) => {
     const snapshot = await snapshotLifecycle.createSnapshot(messages, checkpoints, 'recovery');
     const restored = await snapshotLifecycle.restoreSnapshot(snapshot.id);
-    
+
     expect(restored.messages).toEqual(messages);
     expect(restored.checkpoints).toEqual(checkpoints);
   })
@@ -343,7 +341,7 @@ fc.assert(
   fc.property(fc.array(snapshotArb), fc.nat(10), async (snapshots, keepCount) => {
     await snapshotLifecycle.cleanup(keepCount);
     const remaining = await snapshotLifecycle.listSnapshots();
-    
+
     expect(remaining.length).toBeLessThanOrEqual(keepCount);
   })
 );
@@ -368,6 +366,7 @@ The system is production-ready and provides reliable recovery and rollback capab
 
 **Status:** ✅ Refactored (v0.1.1)  
 **Related Documents:**
+
 - [Context Compression](./dev_ContextCompression.md) - Compression system
 - [Context Management](./dev_ContextManagement.md) - Context sizing
 - [Session Storage](./dev_SessionStorage.md) - Session management

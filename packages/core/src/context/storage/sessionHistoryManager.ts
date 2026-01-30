@@ -1,15 +1,15 @@
 /**
  * Session History Manager
- * 
+ *
  * Manages the complete, uncompressed conversation history for a session.
  * This is the source of truth for what actually happened in the conversation.
- * 
+ *
  * **Critical Rules:**
  * 1. Messages are NEVER compressed or removed from history
  * 2. History is NEVER sent to the LLM (only for record-keeping)
  * 3. History is append-only (messages never modified)
  * 4. History is persisted to disk for permanent record
- * 
+ *
  * @module sessionHistoryManager
  */
 
@@ -21,18 +21,18 @@ import type { Message } from '../types.js';
 
 /**
  * Session History Manager
- * 
+ *
  * Stores the complete, uncompressed conversation history.
  * This is NEVER sent to the LLM and NEVER compressed.
- * 
+ *
  * @example
  * ```typescript
  * const manager = new SessionHistoryManager('session-123', '/path/to/storage');
- * 
+ *
  * // Append messages
  * manager.appendMessage(userMessage);
  * manager.appendMessage(assistantMessage);
- * 
+ *
  * // Record checkpoint creation
  * manager.recordCheckpoint({
  *   id: 'ckpt-1',
@@ -43,10 +43,10 @@ import type { Message } from '../types.js';
  *   compressionRatio: 0.12,
  *   level: 3
  * });
- * 
+ *
  * // Save to disk
  * await manager.save();
- * 
+ *
  * // Export to markdown
  * const markdown = manager.exportToMarkdown();
  * ```
@@ -57,7 +57,7 @@ export class SessionHistoryManager {
 
   /**
    * Create a new session history manager
-   * 
+   *
    * @param sessionId - Unique session identifier
    * @param storagePath - Directory path for storing session history
    */
@@ -79,12 +79,12 @@ export class SessionHistoryManager {
 
   /**
    * Append message to history
-   * 
+   *
    * Messages are NEVER compressed or removed from history.
    * This is an append-only operation.
-   * 
+   *
    * @param message - Message to append
-   * 
+   *
    * @example
    * ```typescript
    * manager.appendMessage({
@@ -104,12 +104,12 @@ export class SessionHistoryManager {
 
   /**
    * Record checkpoint creation
-   * 
+   *
    * Records metadata about when and how a checkpoint was created.
    * This does NOT include the actual summary (that's in CheckpointSummary).
-   * 
+   *
    * @param record - Checkpoint record metadata
-   * 
+   *
    * @example
    * ```typescript
    * manager.recordCheckpoint({
@@ -131,12 +131,12 @@ export class SessionHistoryManager {
 
   /**
    * Get full history
-   * 
+   *
    * Returns a deep copy of the complete session history.
    * Modifications to the returned object will not affect the internal state.
-   * 
+   *
    * @returns Complete session history
-   * 
+   *
    * @example
    * ```typescript
    * const history = manager.getHistory();
@@ -146,20 +146,23 @@ export class SessionHistoryManager {
   getHistory(): SessionHistory {
     return {
       ...this.history,
-      messages: this.history.messages.map(msg => ({ ...msg })),
-      checkpointRecords: this.history.checkpointRecords.map(rec => ({ ...rec, messageRange: [...rec.messageRange] as [number, number] })),
+      messages: this.history.messages.map((msg) => ({ ...msg })),
+      checkpointRecords: this.history.checkpointRecords.map((rec) => ({
+        ...rec,
+        messageRange: [...rec.messageRange] as [number, number],
+      })),
       metadata: { ...this.history.metadata },
     };
   }
 
   /**
    * Save history to disk
-   * 
+   *
    * Persists the complete session history to a JSON file.
    * Creates the storage directory if it doesn't exist.
-   * 
+   *
    * @throws Error if file write fails
-   * 
+   *
    * @example
    * ```typescript
    * await manager.save();
@@ -169,28 +172,21 @@ export class SessionHistoryManager {
     // Ensure storage directory exists
     await fs.mkdir(this.storagePath, { recursive: true });
 
-    const filePath = path.join(
-      this.storagePath,
-      `${this.history.sessionId}.json`
-    );
+    const filePath = path.join(this.storagePath, `${this.history.sessionId}.json`);
 
-    await fs.writeFile(
-      filePath,
-      JSON.stringify(this.history, null, 2),
-      'utf-8'
-    );
+    await fs.writeFile(filePath, JSON.stringify(this.history, null, 2), 'utf-8');
   }
 
   /**
    * Load history from disk
-   * 
+   *
    * Loads a session history from a JSON file.
    * Replaces the current history with the loaded data.
-   * 
+   *
    * @param sessionId - Session ID to load
    * @returns Loaded session history
    * @throws Error if file doesn't exist or is invalid
-   * 
+   *
    * @example
    * ```typescript
    * const history = await manager.load('session-123');
@@ -215,12 +211,12 @@ export class SessionHistoryManager {
 
   /**
    * Export history to markdown
-   * 
+   *
    * Generates a human-readable markdown document of the conversation.
    * Includes session metadata, messages, and checkpoint records.
-   * 
+   *
    * @returns Markdown string
-   * 
+   *
    * @example
    * ```typescript
    * const markdown = manager.exportToMarkdown();
@@ -270,7 +266,7 @@ export class SessionHistoryManager {
 
   /**
    * Get human-readable compression level name
-   * 
+   *
    * @param level - Compression level (1, 2, or 3)
    * @returns Level name
    */
@@ -287,10 +283,10 @@ export class SessionHistoryManager {
 
   /**
    * Estimate token count for a message
-   * 
+   *
    * Simple estimation: ~4 characters per token
    * This is just for metadata tracking, not for actual compression decisions.
-   * 
+   *
    * @param message - Message to estimate
    * @returns Estimated token count
    */

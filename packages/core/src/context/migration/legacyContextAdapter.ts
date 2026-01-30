@@ -1,6 +1,6 @@
 /**
  * Legacy Context Adapter
- * 
+ *
  * Provides compatibility layer between legacy and new context compression systems.
  * Handles migration of sessions and snapshots from old format to new format.
  */
@@ -158,11 +158,7 @@ export class LegacyContextAdapter {
   /**
    * Convert new session history back to legacy format (for rollback)
    */
-  static toLegacySession(
-    newHistory: NewSessionHistory,
-    model: string,
-    provider: string
-  ): Session {
+  static toLegacySession(newHistory: NewSessionHistory, model: string, provider: string): Session {
     // Convert messages back to session message format
     // Filter out image parts as legacy system only supports text
     // Use message index to generate timestamps since Message doesn't have timestamp
@@ -170,8 +166,8 @@ export class LegacyContextAdapter {
     const messages: SessionMessage[] = newHistory.messages.map((msg, index) => ({
       role: msg.role,
       parts: msg.parts
-        .filter(part => part.type === 'text')
-        .map(part => ({ type: 'text' as const, text: (part as any).text })),
+        .filter((part) => part.type === 'text')
+        .map((part) => ({ type: 'text' as const, text: (part as any).text })),
       timestamp: new Date(baseTime + index * 1000).toISOString(), // Approximate timestamps
     }));
 
@@ -271,8 +267,7 @@ export class LegacyContextAdapter {
       messageCount: newHistory.messages.length,
       tokenCount: newHistory.metadata.totalTokens,
       compressionCount: newHistory.metadata.compressionCount,
-      timeDiff:
-        newHistory.metadata.lastUpdate - newHistory.metadata.startTime,
+      timeDiff: newHistory.metadata.lastUpdate - newHistory.metadata.startTime,
     };
   }
 }

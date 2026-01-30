@@ -11,6 +11,7 @@ This directory contains property-based tests for the Context Orchestrator, which
 **Property 20: Orchestrator Coordination**
 
 This test validates that the orchestrator properly coordinates all subsystems:
+
 - Active Context Manager (FR-1)
 - Snapshot Lifecycle (FR-3)
 - Session History Manager (FR-4)
@@ -86,6 +87,7 @@ The test file contains **10 main property tests** and **5 integration scenario t
 **Status:** ✅ Test structure complete, awaiting ContextOrchestrator implementation
 
 The test file is currently implemented with **placeholder tests** that:
+
 - Document the expected behavior
 - Define all invariants that must hold
 - Provide the test structure
@@ -140,7 +142,7 @@ it('maintains consistency across all subsystems during operations', async () => 
 
           // 4. Verify invariants after each operation
           const state = orchestrator.getState();
-          
+
           // Invariant 1: Token count never exceeds limit
           expect(state.activeContext.tokenCount.total).toBeLessThanOrEqual(
             10000 - 1000 // limit - safety margin
@@ -163,40 +165,47 @@ it('maintains consistency across all subsystems during operations', async () => 
 ## Key Invariants to Verify
 
 ### Token Count Invariants
+
 - Total tokens = system + checkpoints + recent messages
 - Total tokens ≤ ollamaLimit - safetyMargin
 - Token counts are always non-negative
 
 ### Data Integrity Invariants
+
 - Session history contains all messages ever added
 - Active context messages exist in session history
 - Compression doesn't lose messages from session history
 - Message IDs are unique and traceable
 
 ### Snapshot Invariants
+
 - Snapshots contain complete conversation state
 - Snapshots can restore exact state
 - Snapshots are created before risky operations
 
 ### Compression Invariants
+
 - Compression reduces active context token count
 - Compressed messages are replaced by checkpoint
 - Checkpoint is added to active context
 - Session history remains complete
 
 ### Checkpoint Lifecycle Invariants
+
 - Aging checkpoints reduces token count
 - Merging checkpoints reduces checkpoint count
 - Checkpoint metadata is updated correctly
 - Session history tracks checkpoint changes
 
 ### Ordering Invariants
+
 - Messages maintain chronological order
 - Compression doesn't reorder messages
 - Checkpoints are inserted in correct position
 - Timestamps are monotonic
 
 ### Error Handling Invariants
+
 - Errors don't corrupt active context
 - Errors don't lose session history
 - Snapshots enable recovery from errors
@@ -211,14 +220,14 @@ it('maintains consistency across all subsystems during operations', async () => 
 
 ## Requirements Coverage
 
-| Requirement | Description | Tests |
-|-------------|-------------|-------|
-| FR-1 | Storage Layer Separation | Tests 1, 2, 6, 7, 9, 10 |
-| FR-2 | Checkpoint Lifecycle | Tests 1, 5, 9, 10 |
-| FR-3 | Snapshot Management | Tests 1, 3, 9, 10 |
-| FR-4 | Session History | Tests 1, 2, 7, 9, 10 |
-| FR-5 | Compression Pipeline | Tests 1, 4, 6, 9, 10 |
-| FR-7 | Error Handling | Test 8 |
+| Requirement | Description              | Tests                   |
+| ----------- | ------------------------ | ----------------------- |
+| FR-1        | Storage Layer Separation | Tests 1, 2, 6, 7, 9, 10 |
+| FR-2        | Checkpoint Lifecycle     | Tests 1, 5, 9, 10       |
+| FR-3        | Snapshot Management      | Tests 1, 3, 9, 10       |
+| FR-4        | Session History          | Tests 1, 2, 7, 9, 10    |
+| FR-5        | Compression Pipeline     | Tests 1, 4, 6, 9, 10    |
+| FR-7        | Error Handling           | Test 8                  |
 
 ## Running the Tests
 

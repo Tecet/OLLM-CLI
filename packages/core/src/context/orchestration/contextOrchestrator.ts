@@ -34,7 +34,10 @@ import { GoalAwareCompression } from '../integration/goalAwareCompression.js';
 import { ModeAwareCompression } from '../integration/modeAwareCompression.js';
 import { ModelAwareCompression } from '../integration/modelAwareCompression.js';
 import { PromptOrchestratorIntegration } from '../integration/promptOrchestratorIntegration.js';
-import { ProviderAwareCompression, type IProfileManager } from '../integration/providerAwareCompression.js';
+import {
+  ProviderAwareCompression,
+  type IProfileManager,
+} from '../integration/providerAwareCompression.js';
 import { TierAwareCompression } from '../integration/tierAwareCompression.js';
 import { ActiveContextManager } from '../storage/activeContextManager.js';
 import { SessionHistoryManager } from '../storage/sessionHistoryManager.js';
@@ -48,7 +51,6 @@ import type { Goal, GoalManager } from '../goalTypes.js';
 import type { PromptOrchestrator } from '../promptOrchestrator.js';
 import type { CheckpointSummary } from '../types/storageTypes.js';
 import type { Message, ContextTier, OperationalMode } from '../types.js';
-
 
 /**
  * Context orchestrator configuration
@@ -284,16 +286,10 @@ export class ContextOrchestrator {
     );
 
     // Initialize snapshot lifecycle
-    this.snapshotLifecycle = new SnapshotLifecycle(
-      config.sessionId,
-      config.storagePath
-    );
+    this.snapshotLifecycle = new SnapshotLifecycle(config.sessionId, config.storagePath);
 
     // Initialize session history manager
-    this.sessionHistory = new SessionHistoryManager(
-      config.sessionId,
-      config.storagePath
-    );
+    this.sessionHistory = new SessionHistoryManager(config.sessionId, config.storagePath);
 
     // Initialize summarization service with mode integration
     const summarizationService = new SummarizationService({
@@ -365,10 +361,7 @@ export class ContextOrchestrator {
 
       // Step 2: Check if we need compression before adding
       const available = this.activeContext.getAvailableTokens();
-      const messageTokens = this.config.tokenCounter.countTokensCached(
-        message.id,
-        message.content
-      );
+      const messageTokens = this.config.tokenCounter.countTokensCached(message.id, message.content);
 
       if (messageTokens > available) {
         // Need compression before we can add this message
@@ -398,7 +391,10 @@ export class ContextOrchestrator {
       );
       const totalTokens = this.activeContext.getTokenCount();
       const currentTokens = totalTokens - systemPromptTokens; // Exclude system prompt for compression check
-      const tierBudget = this.tierIntegration.getPromptBudget(this.config.tier, this.config.contextSize);
+      const tierBudget = this.tierIntegration.getPromptBudget(
+        this.config.tier,
+        this.config.contextSize
+      );
 
       // 🔍 DEBUG: Log compression check
       debugLog('ContextOrchestrator', 'Compression check', {
@@ -547,9 +543,7 @@ export class ContextOrchestrator {
       // Step 3: Check compression reliability
       const reliability = this.getCompressionReliability();
       if (reliability.shouldWarn) {
-        console.warn(
-          `[ContextOrchestrator] ${reliability.emoji} ${reliability.description}`
-        );
+        console.warn(`[ContextOrchestrator] ${reliability.emoji} ${reliability.description}`);
       }
 
       // Step 4: Create safety snapshot
@@ -701,7 +695,9 @@ export class ContextOrchestrator {
         // Emergency action succeeded but we need to manually update context
         // since emergency actions don't return the new checkpoint
         // For now, just log success - the checkpoint lifecycle handles the update
-        console.log(`[ContextOrchestrator] Emergency checkpoint compression freed ${result.tokensFreed} tokens`);
+        console.log(
+          `[ContextOrchestrator] Emergency checkpoint compression freed ${result.tokensFreed} tokens`
+        );
         return { success: true };
       }
     }
@@ -718,7 +714,9 @@ export class ContextOrchestrator {
 
       if (result.success) {
         // Emergency action succeeded
-        console.log(`[ContextOrchestrator] Emergency checkpoint merge freed ${result.tokensFreed} tokens`);
+        console.log(
+          `[ContextOrchestrator] Emergency checkpoint merge freed ${result.tokensFreed} tokens`
+        );
         return { success: true };
       }
     }
@@ -732,7 +730,9 @@ export class ContextOrchestrator {
 
     if (rolloverResult.success) {
       // Emergency rollover succeeded - context has been reset
-      console.log(`[ContextOrchestrator] Emergency rollover archived ${rolloverResult.messagesArchived} messages`);
+      console.log(
+        `[ContextOrchestrator] Emergency rollover archived ${rolloverResult.messagesArchived} messages`
+      );
       return { success: true };
     }
 
@@ -759,17 +759,11 @@ export class ContextOrchestrator {
    * console.log(`Created snapshot: ${snapshotId}`);
    * ```
    */
-  async createSnapshot(
-    purpose: 'recovery' | 'rollback' | 'emergency'
-  ): Promise<string> {
+  async createSnapshot(purpose: 'recovery' | 'rollback' | 'emergency'): Promise<string> {
     const messages = this.activeContext.getRecentMessages();
     const checkpoints = this.activeContext.getCheckpoints();
 
-    const snapshot = await this.snapshotLifecycle.createSnapshot(
-      messages,
-      checkpoints,
-      purpose
-    );
+    const snapshot = await this.snapshotLifecycle.createSnapshot(messages, checkpoints, purpose);
 
     return snapshot.id;
   }
@@ -796,21 +790,21 @@ export class ContextOrchestrator {
     // Clear active context
     const currentMessages = this.activeContext.getRecentMessages();
     const currentCheckpoints = this.activeContext.getCheckpoints();
-    
+
     // Remove all current messages and checkpoints
-    this.activeContext.removeMessages(currentMessages.map(m => m.id));
-    this.activeContext.removeMessages(currentCheckpoints.map(cp => cp.id));
-    
+    this.activeContext.removeMessages(currentMessages.map((m) => m.id));
+    this.activeContext.removeMessages(currentCheckpoints.map((cp) => cp.id));
+
     // Restore checkpoints from snapshot
     for (const checkpoint of state.checkpoints) {
       this.activeContext.addCheckpoint(checkpoint);
     }
-    
+
     // Restore messages from snapshot
     for (const message of state.messages) {
       this.activeContext.addMessage(message);
     }
-    
+
     console.log(`[ContextOrchestrator] Restored from snapshot ${snapshotId}`);
     console.log(`- Restored ${state.messages.length} messages`);
     console.log(`- Restored ${state.checkpoints.length} checkpoints`);
@@ -862,10 +856,11 @@ export class ContextOrchestrator {
         tokenLimit,
         utilizationPercent: Math.round(utilization),
         needsCompression: this.getCompressionUrgency() !== 'none',
-        needsAging: this.checkpointLifecycle.getCheckpointsNeedingAging(
-          activeContextState.checkpoints,
-          sessionHistoryState.metadata.compressionCount
-        ).length > 0,
+        needsAging:
+          this.checkpointLifecycle.getCheckpointsNeedingAging(
+            activeContextState.checkpoints,
+            sessionHistoryState.metadata.compressionCount
+          ).length > 0,
       },
       integrations: integrationStatus,
       reliability,
@@ -888,7 +883,7 @@ export class ContextOrchestrator {
    */
   async getStateAsync(): Promise<OrchestratorState> {
     const baseState = this.getState();
-    
+
     // Add snapshot information
     return {
       ...baseState,

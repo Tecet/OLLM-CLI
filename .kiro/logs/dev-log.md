@@ -1296,7 +1296,7 @@ _Shared Types (185 lines):_
 Ô£à **Environment Sanitization**
 
 - Allow list for safe variables (PATH, HOME, USER, SHELL, TERM, LANG)
-- Deny patterns for sensitive variables (_\_KEY, __SECRET, *\_TOKEN, *\_PASSWORD, AWS__, GITHUB\__)
+- Deny patterns for sensitive variables (\_\_KEY, **SECRET, _\_TOKEN, _\_PASSWORD, AWS**, GITHUB\_\_)
 - Picomatch-based pattern matching
 - Configurable custom rules
 - Applied to all shell execution

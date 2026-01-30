@@ -26,6 +26,7 @@ After investigating the crash occurring after 3-4 checkpoints, I've identified *
 ### What Documentation Says
 
 > "The LLM does the summarization, not our app. Our app:
+>
 > 1. Identifies messages to compress
 > 2. Sends them to the LLM with a summarization prompt
 > 3. Receives the summary back
@@ -37,13 +38,13 @@ After investigating the crash occurring after 3-4 checkpoints, I've identified *
 // compressionService.ts - NO LLM CALL!
 async compress(messages: Message[], strategy: CompressionStrategy): Promise<CompressedContext> {
   const originalTokens = this.countMessagesTokens(messages);
-  
+
   // Just truncates or estimates - NO LLM summarization!
   // The provider is optional and rarely used
   if (strategy.type === 'truncate') {
     return this.truncateMessages(messages, strategy);
   }
-  
+
   // Even "summarize" strategy doesn't call LLM in most cases
   return this.estimateCompression(messages);
 }
@@ -74,10 +75,10 @@ async compress(messages: Message[], strategy: CompressionStrategy): Promise<Comp
 async validateAndBuildPrompt(newMessage?: Message): Promise<{...}> {
   // Builds prompt from current context
   const prompt = [...this.currentContext.messages];
-  
+
   // BUT: currentContext.messages may include snapshot data!
   // No separation between "active context" and "snapshot data"
-  
+
   return {
     valid: true,
     prompt: prompt, // This goes to Ollama!
@@ -89,6 +90,7 @@ async validateAndBuildPrompt(newMessage?: Message): Promise<{...}> {
 ```
 
 **Reality:** The system doesn't clearly separate:
+
 - Active context (what should go to LLM)
 - Snapshot data (what should stay on disk)
 - Checkpoint summaries (what should replace old messages)
@@ -115,18 +117,18 @@ async validateAndBuildPrompt(newMessage?: Message): Promise<{...}> {
 ```typescript
 // validateAndBuildPrompt exists but has issues:
 async validateAndBuildPrompt(newMessage?: Message): Promise<{...}> {
-  const totalTokens = 
+  const totalTokens =
     budget.systemPromptTokens +
     budget.checkpointTokens +
     budget.conversationTokens +
     newMessageTokens;
-  
+
   // Checks percentage
   if (usagePercentage >= 100) {
     // Triggers emergency rollover
     // BUT: Doesn't prevent sending oversized prompt!
   }
-  
+
   // Returns prompt regardless of size
   return {
     valid: true, // Always true!
@@ -138,6 +140,7 @@ async validateAndBuildPrompt(newMessage?: Message): Promise<{...}> {
 ```
 
 **Reality:** Validation exists but:
+
 - Doesn't prevent oversized prompts from being sent
 - Emergency actions happen AFTER the fact
 - No hard stop before sending to Ollama
@@ -157,6 +160,7 @@ async validateAndBuildPrompt(newMessage?: Message): Promise<{...}> {
 
 > "Progressive Checkpoint Compaction
 > As conversation progresses through multiple rollovers, older checkpoints compress more aggressively:
+>
 > - Checkpoint 1: Level 3 (detailed, ~2000 tokens)
 > - After aging: Level 2 (moderate, ~1200 tokens)
 > - After more aging: Level 1 (compact, ~800 tokens)
@@ -168,11 +172,11 @@ async validateAndBuildPrompt(newMessage?: Message): Promise<{...}> {
 // checkpointManager.ts - compressOldCheckpoints
 async compressOldCheckpoints(): Promise<void> {
   const context = this.getContext();
-  
+
   // Tries to age checkpoints
   for (const checkpoint of context.checkpoints) {
     let age = 0;
-    
+
     // Age calculation is complex and may fail
     if (checkpoint.compressionNumber !== undefined) {
       age = totalCompressions - checkpoint.compressionNumber;
@@ -180,7 +184,7 @@ async compressOldCheckpoints(): Promise<void> {
       // Fallback logic - may not work correctly
       age = totalCompressions;
     }
-    
+
     // Aging logic exists but may not trigger
     if (age >= COMPACT_AGE && checkpoint.level !== 1) {
       // Compress to compact
@@ -191,6 +195,7 @@ async compressOldCheckpoints(): Promise<void> {
 ```
 
 **Reality:** Checkpoint aging:
+
 - Exists in code but may not trigger reliably
 - Doesn't use LLM for re-summarization
 - Just manipulates text without semantic understanding
@@ -231,6 +236,7 @@ const allUserMessages = context.messages
 ```
 
 **Reality:** User messages:
+
 - Accumulate without limit
 - Never compressed or summarized
 - Grow linearly with conversation length
@@ -264,6 +270,7 @@ const allUserMessages = context.messages
 ```
 
 **Reality:** Error handling:
+
 - Minimal or absent
 - No recovery from Ollama errors
 - No user-friendly error messages
@@ -418,6 +425,7 @@ Checkpoint 3:
 ```
 
 **Reality:** Goal system:
+
 - Exists in code
 - Not integrated with compression flow
 - LLM doesn't see goals during summarization

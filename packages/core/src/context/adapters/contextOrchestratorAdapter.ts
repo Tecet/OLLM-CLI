@@ -16,13 +16,13 @@ import { EventEmitter } from 'events';
 import { ContextOrchestrator } from '../orchestration/contextOrchestrator.js';
 import { OperationalMode, ContextTier } from '../types.js';
 
-import type { 
-  ContextManager, 
-  ContextConfig, 
-  ContextUsage, 
-  ContextSnapshot, 
+import type {
+  ContextManager,
+  ContextConfig,
+  ContextUsage,
+  ContextSnapshot,
   ContextBudget,
-  Message 
+  Message,
 } from '../types.js';
 
 /**
@@ -45,7 +45,7 @@ export class ContextOrchestratorAdapter extends EventEmitter implements ContextM
   public activeSkills: string[] = [];
   public activeTools: string[] = [
     'read-file',
-    'write-file', 
+    'write-file',
     'edit-file',
     'shell',
     'web-fetch',
@@ -60,9 +60,9 @@ export class ContextOrchestratorAdapter extends EventEmitter implements ContextM
   private settingsService?: any;
 
   constructor(
-    orchestrator: ContextOrchestrator, 
-    config: ContextConfig, 
-    initialMode?: OperationalMode, 
+    orchestrator: ContextOrchestrator,
+    config: ContextConfig,
+    initialMode?: OperationalMode,
     initialTier?: ContextTier,
     settingsService?: any
   ) {
@@ -98,24 +98,24 @@ export class ContextOrchestratorAdapter extends EventEmitter implements ContextM
     const oldSize = this.config.targetSize || 8192;
     this.config = { ...this.config, ...config };
     const newSize = this.config.targetSize || 8192;
-    
+
     // If context size changed, recalculate tier and ollama limit
     if (oldSize !== newSize) {
       const newTier = calculateTier(newSize);
       this.currentTier = newTier;
       this.orchestrator.updateTier(newTier);
       this.orchestrator.updateContextSize(newSize);
-      
+
       // Recalculate ollama limit (85% of new size or from profile)
       const newOllamaLimit = config.ollamaContextSize || Math.floor(newSize * 0.85);
       this.orchestrator.updateOllamaLimit(newOllamaLimit);
-      
+
       // Rebuild system prompt with new tier
       this.orchestrator.rebuildSystemPrompt(this.settingsService);
-      
+
       this.emit('tier-changed', { tier: newTier });
     }
-    
+
     this.emit('config-updated', config);
   }
 
@@ -126,10 +126,10 @@ export class ContextOrchestratorAdapter extends EventEmitter implements ContextM
   getUsage(): ContextUsage {
     const state = this.orchestrator.getState();
     const fullContextSize = this.config.targetSize || 8192;
-    
+
     // Include inflight tokens in the current count for real-time updates during streaming
     const totalTokens = state.activeContext.tokenCount.total + this.inflightTokens;
-    
+
     return {
       currentTokens: totalTokens,
       maxTokens: fullContextSize, // Show full context size in UI, not ollama limit
@@ -142,7 +142,7 @@ export class ContextOrchestratorAdapter extends EventEmitter implements ContextM
   getBudget(): ContextBudget {
     const state = this.orchestrator.getState();
     const fullContextSize = this.config.targetSize || 8192;
-    
+
     return {
       totalOllamaSize: fullContextSize, // Show full context size, not reduced ollama limit
       systemPromptTokens: state.activeContext.tokenCount.system,
@@ -157,10 +157,10 @@ export class ContextOrchestratorAdapter extends EventEmitter implements ContextM
    * Get the Ollama context limit (reduced value sent to Ollama)
    * This is the pre-calculated value from the model's context profiles
    * that gets sent to Ollama as num_ctx parameter.
-   * 
+   *
    * This value comes from the LLM_profiles.json file's ollama_context_size field,
    * or is calculated as 85% of the context size if not found in the profiles.
-   * 
+   *
    * @returns Ollama context limit in tokens
    */
   getOllamaContextLimit(): number {
@@ -175,16 +175,16 @@ export class ContextOrchestratorAdapter extends EventEmitter implements ContextM
     // Check if compression might be needed before adding message
     const state = this.orchestrator.getState();
     const utilizationPercent = state.health.utilizationPercent;
-    
+
     // If utilization is high, emit summarizing event preemptively
     // This gives the UI a chance to show the indicator before the 17-second pause
     if (utilizationPercent > 70) {
       this.emit('summarizing');
     }
-    
+
     try {
       const result = await this.orchestrator.addMessage(message);
-      
+
       if (!result.success) {
         // Clear summarizing state if we emitted it
         if (utilizationPercent > 70) {
@@ -194,7 +194,7 @@ export class ContextOrchestratorAdapter extends EventEmitter implements ContextM
       }
 
       this.emit('message-added', message);
-      
+
       if (result.compressionTriggered) {
         // Compression happened - emit completion event
         // (summarizing event was already emitted above if utilization was high)
@@ -218,7 +218,7 @@ export class ContextOrchestratorAdapter extends EventEmitter implements ContextM
     const state = this.orchestrator.getState();
     return [
       state.activeContext.systemPrompt,
-      ...state.activeContext.checkpoints.map(cp => ({
+      ...state.activeContext.checkpoints.map((cp) => ({
         id: cp.id,
         role: 'assistant' as const,
         content: cp.summary,
@@ -235,7 +235,7 @@ export class ContextOrchestratorAdapter extends EventEmitter implements ContextM
   async createSnapshot(): Promise<ContextSnapshot> {
     const snapshotId = await this.orchestrator.createSnapshot('recovery');
     const state = this.orchestrator.getState();
-    
+
     return {
       id: snapshotId,
       sessionId: 'default', // TODO: Get from orchestrator
@@ -274,10 +274,10 @@ export class ContextOrchestratorAdapter extends EventEmitter implements ContextM
   async compress(): Promise<void> {
     // Emit summarizing event for UI indicator
     this.emit('summarizing');
-    
+
     try {
       const result = await this.orchestrator.compress();
-      
+
       if (!result.success) {
         // Emit completion event to clear UI indicator
         this.emit('compression-complete', { tokensFreed: 0 });
@@ -324,12 +324,12 @@ export class ContextOrchestratorAdapter extends EventEmitter implements ContextM
     const oldMode = this.currentMode;
     this.currentMode = mode;
     this.orchestrator.updateMode(mode);
-    
+
     // Rebuild system prompt with new mode
     this.orchestrator.rebuildSystemPrompt(this.settingsService);
-    
+
     // Emit mode-changed event with both old and new mode
-    this.emit('mode-changed', { 
+    this.emit('mode-changed', {
       mode,
       oldMode,
     });
@@ -353,17 +353,18 @@ export class ContextOrchestratorAdapter extends EventEmitter implements ContextM
   }> {
     const prompt = this.orchestrator.buildPrompt(newMessage);
     const state = this.orchestrator.getState();
-    
-    const totalTokens = state.activeContext.tokenCount.total + 
+
+    const totalTokens =
+      state.activeContext.tokenCount.total +
       (newMessage ? this.countTokens(newMessage.content) : 0);
-    
+
     const valid = totalTokens <= state.health.tokenLimit;
     const warnings: string[] = [];
-    
+
     if (!valid) {
       warnings.push(`Context exceeds limit: ${totalTokens} > ${state.health.tokenLimit}`);
     }
-    
+
     if (state.health.utilizationPercent > 80) {
       warnings.push(`High context utilization: ${state.health.utilizationPercent}%`);
     }

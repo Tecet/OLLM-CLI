@@ -11,13 +11,7 @@ import { CompressionProgress } from '../CompressionProgress.js';
 
 // Example 1: Active compression with stage
 export function Example1_ActiveCompression() {
-  return (
-    <CompressionProgress
-      active={true}
-      stage="summarizing"
-      messageCount={15}
-    />
-  );
+  return <CompressionProgress active={true} stage="summarizing" messageCount={15} />;
 }
 
 // Example 2: Active compression with progress bar
@@ -35,22 +29,14 @@ export function Example2_WithProgress() {
 // Example 3: Compression complete
 export function Example3_Complete() {
   return (
-    <CompressionProgress
-      active={false}
-      complete={true}
-      messageCount={18}
-      tokensFreed={2500}
-    />
+    <CompressionProgress active={false} complete={true} messageCount={18} tokensFreed={2500} />
   );
 }
 
 // Example 4: Compression error
 export function Example4_Error() {
   return (
-    <CompressionProgress
-      active={false}
-      error="LLM summarization timed out after 30 seconds"
-    />
+    <CompressionProgress active={false} error="LLM summarization timed out after 30 seconds" />
   );
 }
 
@@ -65,10 +51,7 @@ export function Example5_Integration() {
   return (
     <>
       {contextState.compressing && (
-        <CompressionProgress
-          active={contextState.compressing}
-          stage="summarizing"
-        />
+        <CompressionProgress active={contextState.compressing} stage="summarizing" />
       )}
     </>
   );

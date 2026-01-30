@@ -269,7 +269,7 @@ export const ChatInputArea = memo(function ChatInputArea({
   let placeholder = hasFocus
     ? 'Type a message... (Enter to send)'
     : 'Focus elsewhere... (Ctrl+Space to focus)';
-  
+
   // Override placeholder if compressing
   if (contextState.compressing) {
     placeholder = 'Compressing context... Please wait.';

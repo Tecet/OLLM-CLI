@@ -310,10 +310,10 @@ Use this checklist to track progress through the documentation project phases.
 
 ### Final Review
 
-- [ ] Reviewed by: ******\_\_\_******
-- [ ] Date: ******\_\_\_******
+- [ ] Reviewed by: **\*\***\_\_\_**\*\***
+- [ ] Date: **\*\***\_\_\_**\*\***
 - [ ] Approved: Yes/No
-- [ ] Notes: ******\_\_\_******
+- [ ] Notes: **\*\***\_\_\_**\*\***
 
 ---
 

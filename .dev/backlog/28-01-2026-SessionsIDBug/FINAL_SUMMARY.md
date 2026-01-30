@@ -12,6 +12,7 @@
 Fixed critical session management bugs and performed major architectural refactoring to improve code quality, maintainability, and user experience.
 
 **Key Achievements:**
+
 - ✅ Fixed session ID contamination across model swaps
 - ✅ Implemented clean session lifecycle management
 - ✅ Refactored App.tsx to pure display component
@@ -26,51 +27,61 @@ Fixed critical session management bugs and performed major architectural refacto
 ## Tasks Completed
 
 ### 1. Session ID Bug (Task 1)
+
 **Problem:** All models shared same session folder, causing context contamination  
 **Solution:** Made sessionId reactive, added session reset on model swap  
 **Commit:** 8e10aa0
 
 ### 2. Mode Transition Snapshots (Task 2)
+
 **Problem:** Mode transition snapshots folder empty  
 **Solution:** Added snapshot creation to all transition types  
 **Commit:** 50afa45
 
 ### 3. Model Swap Flow (Task 3)
+
 **Problem:** Model swaps cleared chat, UI didn't update  
 **Solution:** Removed clearContext(), made modelInfo reactive  
 **Commit:** 50afa45
 
 ### 4. /new Command (Task 4)
+
 **Problem:** /new only cleared messages, didn't create new session  
 **Solution:** Changed action to 'new-session', added handler  
 **Commit:** 50afa45
 
 ### 5. Context Size Selection (Task 5)
+
 **Problem:** Selected context size reverted after model swap  
 **Solution:** Added selectedContextSize state, global function  
 **Commit:** 50afa45
 
 ### 6. Auto Context Disabled (Task 6)
+
 **Problem:** Auto context sizing blocked user changes  
 **Solution:** Disabled by default in config  
 **Commit:** 50afa45
 
 ### 7. Command Behavior (Task 7)
+
 **Problem:** /new and /clear behavior unclear  
 **Solution:** /clear clears messages, /new creates session  
 **Commit:** 50afa45
 
 ### 8. Lint/TypeScript Errors (Task 8)
+
 **Problem:** 12 ESLint errors, 8 warnings  
 **Solution:** Fixed all errors and warnings  
 **Commit:** 50afa45
 
 ### 9. Model Switching Clears Chat (Task 9)
+
 **Problem:** key={sessionId} forced remount, destroyed messages  
 **Solution:** Created SessionManager, removed key prop, internal session handling  
 **Commits:** f5db375, dc19597
 
 ### 10. 2-Step Model Selection (Task 10)
+
 **Problem:** User selects 8k, model loads with 4k  
 **Solution:** Pending context size mechanism in SessionManager  
 **Commit:** 172fa89

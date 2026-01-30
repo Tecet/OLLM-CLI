@@ -189,11 +189,14 @@ export function ContextManagerProvider({
   const [memoryLevel, _setMemoryLevel] = useState<MemoryLevel>(MemoryLevel.NORMAL);
   const [active, setActive] = useState(false);
   const [compressing, setCompressing] = useState(false);
-  const [compressionProgress, _setCompressionProgress] = useState<{
-    stage: string;
-    progress: number;
-    message: string;
-  } | undefined>(undefined);
+  const [compressionProgress, _setCompressionProgress] = useState<
+    | {
+        stage: string;
+        progress: number;
+        message: string;
+      }
+    | undefined
+  >(undefined);
   const [snapshots, setSnapshots] = useState<ContextSnapshot[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [currentMode, setCurrentMode] = useState<ModeType>('assistant');
@@ -218,7 +221,7 @@ export function ContextManagerProvider({
       const path = await import('path');
       const os = await import('os');
       const logPath = path.join(os.homedir(), '.ollm', 'context-init-debug.log');
-      
+
       const log = (msg: string) => {
         const timestamp = new Date().toISOString();
         const logMsg = `[${timestamp}] ${msg}\n`;
@@ -228,23 +231,23 @@ export function ContextManagerProvider({
           // Ignore write errors
         }
       };
-      
+
       try {
         log('[ContextManagerContext] Starting initialization...');
         log(`[ContextManagerContext] Provider available: ${!!provider}`);
         log(`[ContextManagerContext] Session ID: ${sessionId}`);
         log(`[ContextManagerContext] Model ID: ${modelInfo?.modelId}`);
-        
+
         // Check for pending context size from SessionManager
         let effectiveConfig: Partial<ContextConfig> | undefined = config;
         try {
           const { getSessionManager } = await import('./SessionManager.js');
           const sessionManager = getSessionManager();
           const pendingSize = sessionManager.getPendingContextSize();
-          
+
           if (pendingSize !== null) {
             log(`[ContextManagerContext] Using pending context size: ${pendingSize}`);
-            
+
             // Get ollama_context_size from profile
             let ollamaContextSize = Math.floor(pendingSize * 0.85);
             try {
@@ -255,12 +258,14 @@ export function ContextManagerProvider({
               );
               if (contextProfile?.ollama_context_size) {
                 ollamaContextSize = contextProfile.ollama_context_size;
-                log(`[ContextManagerContext] Using ollama_context_size from profile: ${ollamaContextSize}`);
+                log(
+                  `[ContextManagerContext] Using ollama_context_size from profile: ${ollamaContextSize}`
+                );
               }
             } catch (error) {
               log(`[ContextManagerContext] Failed to get ollama_context_size: ${error}`);
             }
-            
+
             effectiveConfig = {
               ...config,
               targetSize: pendingSize,
@@ -270,7 +275,7 @@ export function ContextManagerProvider({
           } else {
             // Use user's selected context size from config, or default to 8K
             const userContextSize = config?.targetSize || 8192;
-            
+
             // Get ollama_context_size from profile
             let ollamaContextSize = Math.floor(userContextSize * 0.85);
             try {
@@ -281,14 +286,18 @@ export function ContextManagerProvider({
               );
               if (contextProfile?.ollama_context_size) {
                 ollamaContextSize = contextProfile.ollama_context_size;
-                log(`[ContextManagerContext] Using ollama_context_size from profile: ${ollamaContextSize} for context ${userContextSize}`);
+                log(
+                  `[ContextManagerContext] Using ollama_context_size from profile: ${ollamaContextSize} for context ${userContextSize}`
+                );
               } else {
-                log(`[ContextManagerContext] No profile found for ${userContextSize}, using 85% fallback: ${ollamaContextSize}`);
+                log(
+                  `[ContextManagerContext] No profile found for ${userContextSize}, using 85% fallback: ${ollamaContextSize}`
+                );
               }
             } catch (error) {
               log(`[ContextManagerContext] Failed to get ollama_context_size: ${error}`);
             }
-            
+
             effectiveConfig = {
               ...config,
               targetSize: userContextSize,
@@ -301,23 +310,25 @@ export function ContextManagerProvider({
 
         // Create context manager using new factory
         const storagePath = path.join(os.homedir(), '.ollm', 'context-storage');
-        
+
         // Check if provider is available
         if (!provider) {
-          log('[ContextManagerContext] ERROR: Provider not available - cannot initialize context manager');
+          log(
+            '[ContextManagerContext] ERROR: Provider not available - cannot initialize context manager'
+          );
           setError('Provider not available. Please ensure a model provider is configured.');
           setActive(false);
           return;
         }
-        
+
         log('[ContextManagerContext] Creating context manager with factory...');
         log(`[ContextManagerContext] Model info: ${JSON.stringify(modelInfo)}`);
         log(`[ContextManagerContext] Effective config: ${JSON.stringify(effectiveConfig)}`);
-        
+
         // Load saved mode from settings, default to developer
         const savedMode = SettingsService.getInstance().getMode() || 'developer';
         log(`[ContextManagerContext] Using mode: ${savedMode}`);
-        
+
         const { manager } = createContextManager({
           sessionId,
           modelInfo: {
@@ -334,7 +345,7 @@ export function ContextManagerProvider({
             settingsService: SettingsService.getInstance(),
           },
         });
-        
+
         log('[ContextManagerContext] Context manager created successfully');
         managerRef.current = manager as any; // Type compatibility with legacy interface
 
@@ -391,14 +402,18 @@ export function ContextManagerProvider({
               try {
                 const messages = await managerRef.current!.getMessages();
                 const hasUserMessages = messages.some((m) => m.role === 'user');
-                
+
                 if (!hasUserMessages) {
-                  console.log(`[ModeSnapshot] Skipping auto-transition snapshot (no user messages yet)`);
+                  console.log(
+                    `[ModeSnapshot] Skipping auto-transition snapshot (no user messages yet)`
+                  );
                   return;
                 }
 
-                console.log(`[ModeSnapshot] Creating snapshot for auto-transition: ${transition.from} → ${transition.to}`);
-                
+                console.log(
+                  `[ModeSnapshot] Creating snapshot for auto-transition: ${transition.from} → ${transition.to}`
+                );
+
                 const snapshot = promptsSnapshotMgr.createTransitionSnapshot(
                   transition.from,
                   transition.to,
@@ -412,7 +427,7 @@ export function ContextManagerProvider({
                     currentTask: undefined,
                   }
                 );
-                
+
                 await promptsSnapshotMgr.storeSnapshot(snapshot, true);
                 console.log(`[ModeSnapshot] Auto-transition snapshot created: ${snapshot.id}`);
               } catch (error) {
@@ -501,12 +516,12 @@ export function ContextManagerProvider({
         modeManager.setAutoSwitch(savedAutoSwitch);
 
         setCurrentMode(savedMode as ModeType);
-        
+
         // Update context manager with saved mode
         manager.setMode?.(savedMode as any);
         setAutoSwitchEnabled(savedAutoSwitch);
         setError(null);
-        
+
         log('[ContextManagerContext] Initialization complete!');
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
@@ -524,13 +539,15 @@ export function ContextManagerProvider({
     try {
       const sessionManager = getSessionManager();
       const cleanup = sessionManager.onSessionChange(async (newSessionId, newModel) => {
-        console.log(`[ContextManagerContext] Session change detected: ${newSessionId} for model: ${newModel}`);
-        
+        console.log(
+          `[ContextManagerContext] Session change detected: ${newSessionId} for model: ${newModel}`
+        );
+
         // Stop old manager
         if (managerRef.current) {
           await managerRef.current.stop();
         }
-        
+
         // Reinitialize with new session
         await initManager();
       });
@@ -712,46 +729,52 @@ export function ContextManagerProvider({
     return managerRef.current?.getOllamaContextLimit?.() || 0;
   }, []);
 
-  const resize = useCallback(async (size: number) => {
-    if (!managerRef.current) return;
+  const resize = useCallback(
+    async (size: number) => {
+      if (!managerRef.current) return;
 
-    console.log(`[ContextManagerContext] Resize to ${size} tokens, disabling auto-size`);
+      console.log(`[ContextManagerContext] Resize to ${size} tokens, disabling auto-size`);
 
-    // Get ollama_context_size from profile
-    let ollamaContextSize = Math.floor(size * 0.85);
-    try {
-      const { profileManager } = await import('../profiles/ProfileManager.js');
-      const modelEntry = profileManager.getModelEntry(modelInfo?.modelId || '');
-      const contextProfile = modelEntry.context_profiles?.find(
-        (p: any) => p.size === size
-      );
-      if (contextProfile?.ollama_context_size) {
-        ollamaContextSize = contextProfile.ollama_context_size;
-        console.log(`[ContextManagerContext] Using ollama_context_size from profile: ${ollamaContextSize} for resize to ${size}`);
+      // Get ollama_context_size from profile
+      let ollamaContextSize = Math.floor(size * 0.85);
+      try {
+        const { profileManager } = await import('../profiles/ProfileManager.js');
+        const modelEntry = profileManager.getModelEntry(modelInfo?.modelId || '');
+        const contextProfile = modelEntry.context_profiles?.find((p: any) => p.size === size);
+        if (contextProfile?.ollama_context_size) {
+          ollamaContextSize = contextProfile.ollama_context_size;
+          console.log(
+            `[ContextManagerContext] Using ollama_context_size from profile: ${ollamaContextSize} for resize to ${size}`
+          );
+        }
+      } catch (error) {
+        console.warn(
+          '[ContextManagerContext] Failed to get ollama_context_size for resize:',
+          error
+        );
       }
-    } catch (error) {
-      console.warn('[ContextManagerContext] Failed to get ollama_context_size for resize:', error);
-    }
 
-    // Update context manager with new size and ollama limit
-    managerRef.current.updateConfig({ 
-      targetSize: size, 
-      ollamaContextSize,
-      autoSize: false 
-    });
-    setAutoSizeEnabled(false);
+      // Update context manager with new size and ollama limit
+      managerRef.current.updateConfig({
+        targetSize: size,
+        ollamaContextSize,
+        autoSize: false,
+      });
+      setAutoSizeEnabled(false);
 
-    // Save to settings for persistence
-    try {
-      const { SettingsService } = await import('../../config/settingsService.js');
-      SettingsService.getInstance().setContextSize(size);
-    } catch (error) {
-      console.warn('[ContextManagerContext] Failed to save context size to settings:', error);
-    }
+      // Save to settings for persistence
+      try {
+        const { SettingsService } = await import('../../config/settingsService.js');
+        SettingsService.getInstance().setContextSize(size);
+      } catch (error) {
+        console.warn('[ContextManagerContext] Failed to save context size to settings:', error);
+      }
 
-    const newUsage = managerRef.current.getUsage();
-    setUsage(newUsage);
-  }, [modelInfo]);
+      const newUsage = managerRef.current.getUsage();
+      setUsage(newUsage);
+    },
+    [modelInfo]
+  );
 
   const hotSwap = useCallback(
     async (newSkills?: string[]) => {
@@ -808,17 +831,19 @@ export function ContextManagerProvider({
     }
 
     const previousMode = modeManagerRef.current.getCurrentMode();
-    
+
     // Create snapshot before switching (if we have messages)
     if (promptsSnapshotManagerRef.current && managerRef.current) {
       (async () => {
         try {
           const messages = await managerRef.current!.getMessages();
           const hasUserMessages = messages.some((m) => m.role === 'user');
-          
+
           if (hasUserMessages) {
-            console.log(`[ModeSnapshot] Creating snapshot for explicit switch: ${previousMode} → ${mode}`);
-            
+            console.log(
+              `[ModeSnapshot] Creating snapshot for explicit switch: ${previousMode} → ${mode}`
+            );
+
             const snapshot = promptsSnapshotManagerRef.current!.createTransitionSnapshot(
               previousMode,
               mode,
@@ -832,7 +857,7 @@ export function ContextManagerProvider({
                 currentTask: undefined,
               }
             );
-            
+
             await promptsSnapshotManagerRef.current!.storeSnapshot(snapshot, true);
             console.log(`[ModeSnapshot] Snapshot created: ${snapshot.id}`);
           } else {
@@ -853,10 +878,13 @@ export function ContextManagerProvider({
     SettingsService.getInstance().setAutoSwitch(false);
   }, []);
 
-  const switchMode = useCallback((mode: ModeType) => {
-    // Delegate to switchModeExplicit for backward compatibility
-    switchModeExplicit(mode);
-  }, [switchModeExplicit]);
+  const switchMode = useCallback(
+    (mode: ModeType) => {
+      // Delegate to switchModeExplicit for backward compatibility
+      switchModeExplicit(mode);
+    },
+    [switchModeExplicit]
+  );
 
   const setAutoSwitchAction = useCallback((enabled: boolean) => {
     if (!modeManagerRef.current) {

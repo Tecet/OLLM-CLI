@@ -408,6 +408,7 @@ class MCPSearchProvider implements SearchProvider {
    ```
 
 2. **Create SearXNG Provider**
+
    ```typescript
    export class SearXNGProvider implements SearchProvider {
      private baseUrl: string;

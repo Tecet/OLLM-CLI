@@ -4,9 +4,9 @@
  * This module provides memory-efficient conversation management for local LLMs
  * through VRAM monitoring, dynamic context sizing, snapshots, compression,
  * and memory safety guards.
- * 
+ *
  * SYSTEM (v0.1.1+): Uses ContextOrchestrator with LLM-based compression
- * 
+ *
  * @status REWORK - Cleaned (2026-01-29)
  * @date 2026-01-29
  * @changes Removed all legacy system exports, only exports new ContextOrchestrator system
@@ -54,7 +54,10 @@ export type {
 
 // Export context manager factory
 export { createContextManager } from './contextManagerFactory.js';
-export type { ContextManagerFactoryConfig, ContextManagerFactoryResult } from './contextManagerFactory.js';
+export type {
+  ContextManagerFactoryConfig,
+  ContextManagerFactoryResult,
+} from './contextManagerFactory.js';
 
 // Export migration utilities
 export * from './migration/index.js';
@@ -64,4 +67,3 @@ export { ContextOrchestratorAdapter } from './adapters/contextOrchestratorAdapte
 
 // Note: Legacy system (ConversationContextManager) has been moved to .legacy/
 // Use migration utilities if you need to migrate old sessions/snapshots
-

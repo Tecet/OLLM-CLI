@@ -65,11 +65,7 @@ describe('Property 29: Prompt Structure Preservation', () => {
           const systemPrompt = createSystemPrompt(['typescript', 'testing']);
 
           // Integrate checkpoints
-          const prompt = integration.integrateCheckpoints(
-            systemPrompt,
-            checkpoints,
-            messages
-          );
+          const prompt = integration.integrateCheckpoints(systemPrompt, checkpoints, messages);
 
           // Property: First message is always system prompt
           expect(prompt.length).toBeGreaterThan(0);
@@ -91,10 +87,10 @@ describe('Property 29: Prompt Structure Preservation', () => {
     fc.assert(
       fc.property(
         // Generate arbitrary skills
-        fc.array(
-          fc.constantFrom('typescript', 'javascript', 'python', 'testing', 'debugging'),
-          { minLength: 1, maxLength: 5 }
-        ),
+        fc.array(fc.constantFrom('typescript', 'javascript', 'python', 'testing', 'debugging'), {
+          minLength: 1,
+          maxLength: 5,
+        }),
         fc.array(arbCheckpoint(), { maxLength: 5 }),
         fc.array(arbMessage(), { maxLength: 10 }),
         (skills, checkpoints, messages) => {
@@ -102,11 +98,7 @@ describe('Property 29: Prompt Structure Preservation', () => {
           const systemPrompt = createSystemPrompt(skills);
 
           // Integrate checkpoints
-          const prompt = integration.integrateCheckpoints(
-            systemPrompt,
-            checkpoints,
-            messages
-          );
+          const prompt = integration.integrateCheckpoints(systemPrompt, checkpoints, messages);
 
           // Property: All skills must be in system prompt
           const systemPromptContent = prompt[0].content.toLowerCase();
@@ -140,11 +132,7 @@ describe('Property 29: Prompt Structure Preservation', () => {
           const systemPrompt = createSystemPrompt(['typescript']);
 
           // Integrate checkpoints
-          const prompt = integration.integrateCheckpoints(
-            systemPrompt,
-            checkpoints,
-            messages
-          );
+          const prompt = integration.integrateCheckpoints(systemPrompt, checkpoints, messages);
 
           // Property: Exactly one system prompt
           const systemPrompts = prompt.filter((m) => m.role === 'system');
@@ -176,18 +164,14 @@ describe('Property 29: Prompt Structure Preservation', () => {
           const systemPrompt = createSystemPrompt(['typescript']);
 
           // Integrate checkpoints
-          const prompt = integration.integrateCheckpoints(
-            systemPrompt,
-            checkpoints,
-            messages
-          );
+          const prompt = integration.integrateCheckpoints(systemPrompt, checkpoints, messages);
 
           // Find indices
-          const firstCheckpointIndex = prompt.findIndex(
-            (m) => checkpoints.some((cp) => cp.id === m.id)
+          const firstCheckpointIndex = prompt.findIndex((m) =>
+            checkpoints.some((cp) => cp.id === m.id)
           );
-          const firstMessageIndex = prompt.findIndex(
-            (m) => messages.some((msg) => msg.id === m.id)
+          const firstMessageIndex = prompt.findIndex((m) =>
+            messages.some((msg) => msg.id === m.id)
           );
 
           // Property: If both exist, checkpoints come before messages
@@ -250,18 +234,10 @@ describe('Property 29: Prompt Structure Preservation', () => {
           ];
 
           // Integrate checkpoints
-          const prompt = integration.integrateCheckpoints(
-            systemPrompt,
-            checkpoints,
-            messages
-          );
+          const prompt = integration.integrateCheckpoints(systemPrompt, checkpoints, messages);
 
           // Validate against tier
-          const result = integration.validatePromptAgainstTier(
-            prompt,
-            tier,
-            ollamaLimit
-          );
+          const result = integration.validatePromptAgainstTier(prompt, tier, ollamaLimit);
 
           // Property: Validation should pass for small prompts
           expect(result.valid).toBe(true);
@@ -326,10 +302,10 @@ describe('Property 29: Prompt Structure Preservation', () => {
   it('property: component extraction is idempotent', () => {
     fc.assert(
       fc.property(
-        fc.array(
-          fc.constantFrom('typescript', 'javascript', 'python', 'testing'),
-          { minLength: 1, maxLength: 5 }
-        ),
+        fc.array(fc.constantFrom('typescript', 'javascript', 'python', 'testing'), {
+          minLength: 1,
+          maxLength: 5,
+        }),
         (skills) => {
           // Create system prompt
           const systemPrompt = createSystemPrompt(skills);

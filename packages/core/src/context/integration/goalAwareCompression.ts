@@ -177,9 +177,7 @@ Provide a concise summary that maintains essential information for continuing wo
 
       // Parse artifact markers
       else if (trimmedLine.startsWith('[ARTIFACT]')) {
-        const match = trimmedLine.match(
-          /\[ARTIFACT\]\s+(Created|Modified|Deleted)\s+(.+)/i
-        );
+        const match = trimmedLine.match(/\[ARTIFACT\]\s+(Created|Modified|Deleted)\s+(.+)/i);
         if (match) {
           updates.push({
             type: 'artifact',
@@ -267,8 +265,8 @@ Provide a concise summary that maintains essential information for continuing wo
         if (content.includes(keyword)) {
           throw new Error(
             `Goal information found in messages to compress. ` +
-            `Goals must remain in system prompt. ` +
-            `Keyword: "${keyword}"`
+              `Goals must remain in system prompt. ` +
+              `Keyword: "${keyword}"`
           );
         }
       }
@@ -385,9 +383,7 @@ Provide a concise summary that maintains essential information for continuing wo
    * @returns Formatted messages
    */
   private formatMessages(messages: Message[]): string {
-    return messages
-      .map((m) => `${m.role.toUpperCase()}: ${m.content}`)
-      .join('\n\n');
+    return messages.map((m) => `${m.role.toUpperCase()}: ${m.content}`).join('\n\n');
   }
 
   /**
@@ -421,8 +417,8 @@ Provide a concise summary that maintains essential information for continuing wo
     }
 
     // Find matching subtask
-    const subtask = goal.subtasks.find(
-      (st) => st.description.toLowerCase().includes(update.description!.toLowerCase())
+    const subtask = goal.subtasks.find((st) =>
+      st.description.toLowerCase().includes(update.description!.toLowerCase())
     );
 
     if (subtask) {
@@ -498,7 +494,11 @@ Provide a concise summary that maintains essential information for continuing wo
   private inferArtifactType(path: string): 'file' | 'test' | 'documentation' | 'configuration' {
     const lowerPath = path.toLowerCase();
 
-    if (lowerPath.includes('test') || lowerPath.endsWith('.test.ts') || lowerPath.endsWith('.spec.ts')) {
+    if (
+      lowerPath.includes('test') ||
+      lowerPath.endsWith('.test.ts') ||
+      lowerPath.endsWith('.spec.ts')
+    ) {
       return 'test';
     }
 

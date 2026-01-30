@@ -126,10 +126,7 @@ export class ProviderAwareCompression {
     }
 
     // Find matching profile
-    const profile = this.findContextProfile(
-      modelEntry.context_profiles || [],
-      requestedSize
-    );
+    const profile = this.findContextProfile(modelEntry.context_profiles || [], requestedSize);
 
     if (!profile) {
       throw new Error(`No profile for size ${requestedSize} in model ${modelId}`);
@@ -195,11 +192,7 @@ export class ProviderAwareCompression {
    * );
    * ```
    */
-  shouldCompress(
-    currentTokens: number,
-    modelId: string,
-    systemPromptTokens: number
-  ): boolean {
+  shouldCompress(currentTokens: number, modelId: string, systemPromptTokens: number): boolean {
     const ollamaLimit = this.getContextLimit(modelId);
     const safetyMargin = 1000; // Reserve for response
 
@@ -338,10 +331,7 @@ export class ProviderAwareCompression {
    * @param size - Requested size
    * @returns Matching profile or undefined
    */
-  private findContextProfile(
-    profiles: ContextProfile[],
-    size: number
-  ): ContextProfile | undefined {
+  private findContextProfile(profiles: ContextProfile[], size: number): ContextProfile | undefined {
     return profiles.find((p) => p.size === size);
   }
 
@@ -369,9 +359,11 @@ export class ProviderAwareCompression {
   getProviderInfo(modelId: string): ProviderInfo {
     // Determine provider from model ID
     // This is a simplified version - in production, this would query the actual provider
-    const name = modelId.includes('vllm') ? 'vllm' : 
-                 modelId.includes('openai') ? 'openai-compatible' : 
-                 'ollama';
+    const name = modelId.includes('vllm')
+      ? 'vllm'
+      : modelId.includes('openai')
+        ? 'openai-compatible'
+        : 'ollama';
 
     return {
       name,

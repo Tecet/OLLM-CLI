@@ -163,7 +163,7 @@ describe('GoalMarkerParser', () => {
       expect(updates[0].type).toBe('checkpoint');
       expect(updates[1].type).toBe('checkpoint');
       expect(updates[2].type).toBe('checkpoint');
-      
+
       // Type guard to access status property
       if (updates[0].type === 'checkpoint') {
         expect(updates[0].status).toBe('completed');
@@ -190,7 +190,7 @@ describe('GoalMarkerParser', () => {
       expect(updates[0].type).toBe('artifact');
       expect(updates[1].type).toBe('artifact');
       expect(updates[2].type).toBe('artifact');
-      
+
       // Type guard to access action property
       if (updates[0].type === 'artifact') {
         expect(updates[0].action).toBe('created');

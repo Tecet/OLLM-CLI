@@ -1,8 +1,8 @@
 /**
  * Unit Tests for Active Context Manager - Edge Cases
- * 
+ *
  * These tests verify specific edge cases and scenarios for the ActiveContextManager.
- * 
+ *
  * Requirements: FR-1, FR-6
  */
 
@@ -17,7 +17,11 @@ import type { Message } from '../../types.js';
 /**
  * Helper to create a test message
  */
-function createMessage(id: string, content: string, role: 'user' | 'assistant' | 'system' = 'user'): Message {
+function createMessage(
+  id: string,
+  content: string,
+  role: 'user' | 'assistant' | 'system' = 'user'
+): Message {
   return {
     id,
     role,
@@ -254,7 +258,8 @@ describe('ActiveContextManager - Edge Cases', () => {
 
       // Verify token count changed correctly
       // After = Before - removedTokens + checkpointTokens
-      const expectedTotal = beforeCompression.tokenCount.total - removedTokens + checkpoint.tokenCount;
+      const expectedTotal =
+        beforeCompression.tokenCount.total - removedTokens + checkpoint.tokenCount;
       expect(afterCompression.tokenCount.total).toBe(expectedTotal);
 
       // Verify compression actually saved tokens

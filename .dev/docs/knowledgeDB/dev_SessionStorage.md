@@ -200,12 +200,12 @@ console.log(`[ModelContext] New session created: ${newSessionId}`);
 const sessionManager = getSessionManager();
 const cleanup = sessionManager.onSessionChange(async (newSessionId, newModel) => {
   console.log(`[ContextManagerContext] Session change detected: ${newSessionId}`);
-  
+
   // Stop old manager
   if (managerRef.current) {
     await managerRef.current.stop();
   }
-  
+
   // Reinitialize with new session
   await initManager();
 });
@@ -237,10 +237,10 @@ action: async () => {
   // Store pending context size
   const sessionManager = getSessionManager();
   sessionManager.setPendingContextSize(val);
-  
+
   // Trigger model swap (will use pending size)
   setCurrentModel(modelId);
-}
+};
 ```
 
 ### 6. Command Handler (/new command)
@@ -303,11 +303,13 @@ if (result.action === 'new-session') {
 ### 1. Separation of Concerns
 
 **Before:**
+
 - App.tsx managed session state, model state, context size state
 - Global functions (`__ollmResetSession`, `__ollmSetContextSize`)
 - Business logic mixed with UI
 
 **After:**
+
 - SessionManager handles all session logic
 - App.tsx is pure display component
 - Clean module boundaries
@@ -317,12 +319,14 @@ if (result.action === 'new-session') {
 **Problem:** User selects 8k context, but model loads with 4k (config default)
 
 **Solution:**
+
 - ContextMenu stores pending size in SessionManager
 - ContextManagerContext checks for pending size on init
 - Pending size overrides config default
 - One-time use (cleared after retrieval)
 
 **Flow:**
+
 ```
 User selects 8k → setPendingContextSize(8192)
   ↓
@@ -339,7 +343,8 @@ Pending size cleared (null)
 
 **Before:** Provider remount destroyed ChatContext messages
 
-**After:** 
+**After:**
+
 - SessionManager notifies listeners without remounting
 - ChatContext messages preserved
 - ContextManager reinitializes cleanly
@@ -349,6 +354,7 @@ Pending size cleared (null)
 **Before:** Silent session changes
 
 **After:**
+
 ```
 🆕 New session started: **session-1769636018616**
 
@@ -358,6 +364,7 @@ Model: **gemma3:4b**
 ```
 
 Users can:
+
 - See when new sessions start
 - Know the session ID
 - Find the session folder

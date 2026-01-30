@@ -18,8 +18,7 @@
 import { createSnapshotStorage } from '../snapshotStorage.js';
 
 import type { CheckpointSummary, SnapshotData } from '../types/storageTypes.js';
-import type { Message , SnapshotStorage } from '../types.js';
-
+import type { Message, SnapshotStorage } from '../types.js';
 
 /**
  * Generate a unique ID for snapshots
@@ -228,9 +227,7 @@ export class SnapshotLifecycle {
     const metadataList = await this.storage.list(this.sessionId);
 
     // Sort by timestamp (newest first)
-    const sorted = metadataList.sort(
-      (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
-    );
+    const sorted = metadataList.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
     // Identify snapshots to delete
     const toDelete = sorted.slice(keepCount);
@@ -333,29 +330,30 @@ export class SnapshotLifecycle {
    * }
    * ```
    */
-  async getLatestSnapshot(): Promise<{
-    id: string;
-    timestamp: number;
-    purpose: string;
-  } | undefined> {
+  async getLatestSnapshot(): Promise<
+    | {
+        id: string;
+        timestamp: number;
+        purpose: string;
+      }
+    | undefined
+  > {
     const metadataList = await this.storage.list(this.sessionId);
-    
+
     if (metadataList.length === 0) {
       return undefined;
     }
-    
+
     // Sort by timestamp (newest first)
-    const sorted = metadataList.sort(
-      (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
-    );
-    
+    const sorted = metadataList.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
     const latest = sorted[0];
-    
+
     // Load the full snapshot to get the purpose
     try {
       const contextSnapshot = await this.storage.load(latest.id);
       const snapshot = this.fromContextSnapshot(contextSnapshot);
-      
+
       return {
         id: latest.id,
         timestamp: latest.timestamp.getTime(),

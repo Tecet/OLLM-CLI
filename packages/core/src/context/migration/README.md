@@ -9,11 +9,13 @@ The context compression system has been completely refactored to fix critical ar
 ### What Changed?
 
 **Legacy Format:**
+
 - Mixed storage layers (active context + snapshots + history)
 - No clear separation between LLM-bound and recovery data
 - Checkpoints stored as metadata
 
 **New Format:**
+
 - Three distinct storage layers (ActiveContext, SnapshotData, SessionHistory)
 - Clear separation enforced at runtime
 - Checkpoints as first-class objects
@@ -25,6 +27,7 @@ The context compression system has been completely refactored to fix critical ar
 Migrates session data from legacy format to new `SessionHistory` format.
 
 **What it does:**
+
 - Converts legacy session files to new format
 - Extracts checkpoint records from metadata
 - Preserves all messages
@@ -35,6 +38,7 @@ Migrates session data from legacy format to new `SessionHistory` format.
 Migrates snapshot data from legacy format to new `SnapshotData` format.
 
 **What it does:**
+
 - Converts legacy snapshot files to new format
 - Combines separate `messages` and `userMessages` arrays
 - Converts legacy checkpoints to new format
@@ -62,18 +66,18 @@ npm run migrate -- --rollback --type session --source ~/.ollm/session-data
 
 ### CLI Options
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--type <type>` | Migration type: `session` or `snapshot` | `session` |
-| `--source <dir>` | Source directory | `~/.ollm/session-data` or `~/.ollm/snapshots` |
-| `--target <dir>` | Target directory | `~/.ollm/session-history` or `~/.ollm/snapshots-new` |
-| `--dry-run` | Perform a dry run (no actual changes) | `false` |
-| `--backup` | Create backup before migration | `false` |
-| `--backup-dir <dir>` | Backup directory | `~/.ollm/migration-backup` |
-| `--no-validate` | Skip validation of migrated data | Validation enabled |
-| `--verbose, -v` | Verbose output | `false` |
-| `--rollback` | Rollback migration from backup | `false` |
-| `--help, -h` | Show help message | - |
+| Option               | Description                             | Default                                              |
+| -------------------- | --------------------------------------- | ---------------------------------------------------- |
+| `--type <type>`      | Migration type: `session` or `snapshot` | `session`                                            |
+| `--source <dir>`     | Source directory                        | `~/.ollm/session-data` or `~/.ollm/snapshots`        |
+| `--target <dir>`     | Target directory                        | `~/.ollm/session-history` or `~/.ollm/snapshots-new` |
+| `--dry-run`          | Perform a dry run (no actual changes)   | `false`                                              |
+| `--backup`           | Create backup before migration          | `false`                                              |
+| `--backup-dir <dir>` | Backup directory                        | `~/.ollm/migration-backup`                           |
+| `--no-validate`      | Skip validation of migrated data        | Validation enabled                                   |
+| `--verbose, -v`      | Verbose output                          | `false`                                              |
+| `--rollback`         | Rollback migration from backup          | `false`                                              |
+| `--help, -h`         | Show help message                       | -                                                    |
 
 ### Programmatic Usage
 
@@ -89,7 +93,7 @@ const sessionResult = await migrateAllSessions({
   dryRun: false,
   createBackup: true,
   validate: true,
-  verbose: true
+  verbose: true,
 });
 
 console.log(`Migrated ${sessionResult.sessionsMigrated} sessions`);
@@ -101,7 +105,7 @@ const snapshotResult = await migrateAllSnapshots({
   dryRun: false,
   createBackup: true,
   validate: true,
-  verbose: true
+  verbose: true,
 });
 
 console.log(`Migrated ${snapshotResult.snapshotsMigrated} snapshots`);
@@ -112,18 +116,21 @@ console.log(`Migrated ${snapshotResult.snapshotsMigrated} snapshots`);
 ### Recommended Steps
 
 1. **Backup your data** (always do this first!)
+
    ```bash
    cp -r ~/.ollm/session-data ~/.ollm/session-data.backup
    cp -r ~/.ollm/snapshots ~/.ollm/snapshots.backup
    ```
 
 2. **Run a dry run** to see what will happen
+
    ```bash
    npm run migrate -- --type session --dry-run --verbose
    npm run migrate -- --type snapshot --dry-run --verbose
    ```
 
 3. **Run the actual migration with backup**
+
    ```bash
    npm run migrate -- --type session --backup --verbose
    npm run migrate -- --type snapshot --backup --verbose
@@ -186,6 +193,7 @@ The migration includes built-in validation to ensure data integrity:
 **Problem:** Migration reports validation errors
 
 **Solution:**
+
 1. Run with `--verbose` to see detailed errors
 2. Check the error messages for specific issues
 3. Fix the source data if possible
@@ -196,6 +204,7 @@ The migration includes built-in validation to ensure data integrity:
 **Problem:** Source directory doesn't exist
 
 **Solution:**
+
 1. Verify the source directory path
 2. Check that you have session data to migrate
 3. Use `--source` to specify the correct path
@@ -205,6 +214,7 @@ The migration includes built-in validation to ensure data integrity:
 **Problem:** Not enough space for backups
 
 **Solution:**
+
 1. Free up disk space
 2. Use a different backup directory with `--backup-dir`
 3. Skip backup (not recommended) by omitting `--backup`
@@ -214,6 +224,7 @@ The migration includes built-in validation to ensure data integrity:
 **Problem:** Cannot restore from backup
 
 **Solution:**
+
 1. Verify backup directory exists
 2. Check that backup files are intact
 3. Manually restore from your manual backup
@@ -243,15 +254,15 @@ npm test -- packages/core/src/context/migration/__tests__/snapshotMigration.test
 
 ## Files
 
-| File | Description |
-|------|-------------|
-| `sessionMigration.ts` | Session migration logic |
-| `snapshotMigration.ts` | Snapshot migration logic |
-| `migrationCLI.ts` | Command-line interface |
-| `index.ts` | Public API exports |
-| `__tests__/sessionMigration.test.ts` | Session migration tests |
+| File                                  | Description              |
+| ------------------------------------- | ------------------------ |
+| `sessionMigration.ts`                 | Session migration logic  |
+| `snapshotMigration.ts`                | Snapshot migration logic |
+| `migrationCLI.ts`                     | Command-line interface   |
+| `index.ts`                            | Public API exports       |
+| `__tests__/sessionMigration.test.ts`  | Session migration tests  |
 | `__tests__/snapshotMigration.test.ts` | Snapshot migration tests |
-| `README.md` | This file |
+| `README.md`                           | This file                |
 
 ## API Reference
 
@@ -259,56 +270,54 @@ npm test -- packages/core/src/context/migration/__tests__/snapshotMigration.test
 
 ```typescript
 // Migrate a single legacy session
-function migrateLegacySession(legacySession: LegacySession): SessionHistory
+function migrateLegacySession(legacySession: LegacySession): SessionHistory;
 
 // Migrate a legacy checkpoint
 function migrateLegacyCheckpoint(
   legacyCheckpoint: LegacyCheckpoint,
   compressionNumber: number
-): CheckpointSummary
+): CheckpointSummary;
 
 // Validate migrated session
-function validateMigratedSession(sessionHistory: SessionHistory): string[]
+function validateMigratedSession(sessionHistory: SessionHistory): string[];
 
 // Migrate all sessions in a directory
 async function migrateAllSessions(
   options: SessionMigrationOptions
-): Promise<SessionMigrationResult>
+): Promise<SessionMigrationResult>;
 
 // Rollback session migration
-async function rollbackMigration(
-  options: SessionMigrationOptions
-): Promise<SessionMigrationResult>
+async function rollbackMigration(options: SessionMigrationOptions): Promise<SessionMigrationResult>;
 ```
 
 ### Snapshot Migration
 
 ```typescript
 // Migrate a single legacy snapshot
-function migrateLegacySnapshot(legacySnapshot: LegacySnapshot): SnapshotData
+function migrateLegacySnapshot(legacySnapshot: LegacySnapshot): SnapshotData;
 
 // Validate migrated snapshot
-function validateMigratedSnapshot(snapshotData: SnapshotData): string[]
+function validateMigratedSnapshot(snapshotData: SnapshotData): string[];
 
 // Migrate all snapshots in a directory
 async function migrateAllSnapshots(
   options: SnapshotMigrationOptions
-): Promise<SnapshotMigrationResult>
+): Promise<SnapshotMigrationResult>;
 
 // Rollback snapshot migration
 async function rollbackMigration(
   options: SnapshotMigrationOptions
-): Promise<SnapshotMigrationResult>
+): Promise<SnapshotMigrationResult>;
 ```
 
 ### CLI
 
 ```typescript
 // Run migration CLI
-async function runMigrationCLI(args: string[]): Promise<void>
+async function runMigrationCLI(args: string[]): Promise<void>;
 
 // Parse command-line arguments
-function parseArgs(args: string[]): MigrationCLIOptions
+function parseArgs(args: string[]): MigrationCLIOptions;
 ```
 
 ## Support

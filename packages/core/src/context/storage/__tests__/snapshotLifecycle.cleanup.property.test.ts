@@ -30,7 +30,10 @@ let testDir: string;
 
 beforeEach(async () => {
   // Create temporary directory for test snapshots
-  testDir = path.join(os.tmpdir(), `snapshot-cleanup-test-${Date.now()}-${Math.random().toString(36).substring(7)}`);
+  testDir = path.join(
+    os.tmpdir(),
+    `snapshot-cleanup-test-${Date.now()}-${Math.random().toString(36).substring(7)}`
+  );
   await fs.mkdir(testDir, { recursive: true });
 });
 
@@ -361,7 +364,8 @@ describe('SnapshotLifecycle - Property 5: Snapshot Cleanup', () => {
    */
   it('should handle cleanup when no snapshots exist', async () => {
     await fc.assert(
-      fc.asyncProperty(fc.integer({ min: 1, max: 5 }), async (keepCount) => { // Reduced from 10
+      fc.asyncProperty(fc.integer({ min: 1, max: 5 }), async (keepCount) => {
+        // Reduced from 10
         // Arrange - use unique session ID for each property test run
         const sessionId = generateSessionId();
         const lifecycle = new SnapshotLifecycle(sessionId, testDir);

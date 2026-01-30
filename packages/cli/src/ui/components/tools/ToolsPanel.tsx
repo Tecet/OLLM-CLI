@@ -23,7 +23,6 @@ import { useUI } from '../../../features/context/UIContext.js';
 import { useTools } from '../../contexts/ToolsContext.js';
 import { useTabEscapeHandler } from '../../hooks/useTabEscapeHandler.js';
 
-
 export interface ToolsPanelProps {
   modelSupportsTools?: boolean;
   windowWidth?: number;
@@ -466,9 +465,7 @@ export function ToolsPanel({ modelSupportsTools = true, windowWidth }: ToolsPane
               <Box marginTop={1}>
                 <Text
                   color={
-                    selectedTool.enabled
-                      ? uiState.theme.status.success
-                      : uiState.theme.status.error
+                    selectedTool.enabled ? uiState.theme.status.success : uiState.theme.status.error
                   }
                 >
                   Status: {selectedTool.enabled ? '✓ Enabled Globally' : '✗ Disabled Globally'}

@@ -50,6 +50,7 @@
 ### Problem
 
 Session ID was created once at app start and never regenerated:
+
 - All models shared same session folder
 - Snapshots contained mixed model data
 - Checkpoints from wrong model persisted
@@ -67,11 +68,13 @@ const sessionId = `session-${Date.now()}`; // Created once, never changes
 **Made Session ID Reactive:**
 
 1. **Changed to State Variable** (`App.tsx`):
+
    ```typescript
    const [sessionId, setSessionId] = useState(() => `session-${Date.now()}`);
    ```
 
 2. **Added Global Function** (`App.tsx`):
+
    ```typescript
    useEffect(() => {
      (globalThis as any).__ollmResetSession = (newModel: string) => {
@@ -86,6 +89,7 @@ const sessionId = `session-${Date.now()}`; // Created once, never changes
    ```
 
 3. **Force Provider Remount** (`App.tsx`):
+
    ```typescript
    <ContextManagerProvider
      key={sessionId}  // Force remount when sessionId changes
@@ -125,6 +129,7 @@ const sessionId = `session-${Date.now()}`; // Created once, never changes
 ### Problem
 
 Mode transition snapshots folder existed but was empty:
+
 - Auto-switch disabled by default
 - Manual mode switches didn't trigger snapshots
 - Early exit on empty conversation
@@ -138,23 +143,26 @@ Snapshot creation only happened on auto-transitions, not manual or explicit swit
 **Added Snapshot Creation to All Transitions:**
 
 1. **Manual Mode Switch** (`ContextManagerContext.tsx`):
+
    ```typescript
    const switchMode = useCallback((mode: ModeType) => {
      const previousMode = modeManagerRef.current.getCurrentMode();
-     
+
      // Create snapshot before switching
      if (promptsSnapshotManagerRef.current && managerRef.current) {
        const messages = await managerRef.current.getMessages();
        const hasUserMessages = messages.some((m) => m.role === 'user');
-       
+
        if (hasUserMessages) {
          const snapshot = promptsSnapshotManagerRef.current.createTransitionSnapshot(
-           previousMode, mode, { messages, activeSkills, activeTools, currentTask }
+           previousMode,
+           mode,
+           { messages, activeSkills, activeTools, currentTask }
          );
          await promptsSnapshotManagerRef.current.storeSnapshot(snapshot, true);
        }
      }
-     
+
      modeManagerRef.current.forceMode(mode);
    }, []);
    ```
@@ -188,6 +196,7 @@ Snapshot creation only happened on auto-transitions, not manual or explicit swit
 ### Problem
 
 After session ID fix, model swaps were broken:
+
 - Chat cleared completely (no welcome message)
 - Model didn't actually swap in UI
 - Context size didn't change
@@ -197,6 +206,7 @@ After session ID fix, model swaps were broken:
 ### Root Cause
 
 Timing issue:
+
 1. `clearContext()` cleared ALL messages first
 2. `__ollmResetSession()` remounted provider with OLD model info
 3. `modelInfo` computed once, never updated
@@ -207,6 +217,7 @@ Timing issue:
 **Fixed Timing and Made Model Info Reactive:**
 
 1. **Removed clearContext() Call** (`ModelContext.tsx`):
+
    ```typescript
    // Before: clearContext() then __ollmResetSession()
    // After: Only __ollmResetSession() - remount handles cleanup
@@ -216,6 +227,7 @@ Timing issue:
    ```
 
 2. **Set Model BEFORE Session Reset** (`ModelContext.tsx`):
+
    ```typescript
    setCurrentModel(model); // ✅ Set model FIRST
    setModelLoading(true);
@@ -225,15 +237,16 @@ Timing issue:
    ```
 
 3. **Made modelInfo Reactive** (`App.tsx`):
+
    ```typescript
    const [currentAppModel, setCurrentAppModel] = useState(initialModel);
-   
+
    // Update in __ollmResetSession
    (globalThis as any).__ollmResetSession = (newModel: string) => {
      setCurrentAppModel(newModel); // ✅ Update current model
      setSessionId(newSessionId);
    };
-   
+
    // Recompute dynamically
    const modelEntry = currentAppModel ? profileManager.getModelEntry(currentAppModel) : null;
    const modelInfo = {
@@ -274,6 +287,7 @@ Timing issue:
 ### Problem
 
 `/new` command only cleared messages, didn't create new session:
+
 - Behaved exactly like `/clear`
 - No session ID regeneration
 - No new session folder
@@ -288,6 +302,7 @@ Command returned `action: 'clear-chat'` instead of `action: 'new-session'`.
 **Changed Action and Added Handler:**
 
 1. **Changed Command Action** (`sessionCommands.ts`):
+
    ```typescript
    return {
      success: true,
@@ -320,10 +335,10 @@ Command returned `action: 'clear-chat'` instead of `action: 'new-session'`.
 
 ### Difference
 
-| Command | Session ID | Messages | Welcome | Snapshots |
-|---------|-----------|----------|---------|-----------|
-| `/new`  | ✅ New    | ✅ Clear | ✅ Yes  | ✅ New folder |
-| `/clear`| ❌ Same   | ✅ Clear | ❌ No   | ❌ Same folder |
+| Command  | Session ID | Messages | Welcome | Snapshots      |
+| -------- | ---------- | -------- | ------- | -------------- |
+| `/new`   | ✅ New     | ✅ Clear | ✅ Yes  | ✅ New folder  |
+| `/clear` | ❌ Same    | ✅ Clear | ❌ No   | ❌ Same folder |
 
 ---
 
@@ -335,6 +350,7 @@ Command returned `action: 'clear-chat'` instead of `action: 'new-session'`.
 ### Problem
 
 User selected context size didn't persist:
+
 - Selected 8k but UI showed 4k
 - Active prompt didn't update
 - Size reverted after model swap
@@ -343,6 +359,7 @@ User selected context size didn't persist:
 ### Root Cause
 
 `contextConfig` was static - computed once and never updated:
+
 ```typescript
 // Before - Static config
 const contextConfig = config.context
@@ -357,11 +374,13 @@ When user selected size → `resize()` called → session reset → remount with
 **Made Context Size Reactive:**
 
 1. **Added State** (`App.tsx`):
+
    ```typescript
    const [selectedContextSize, setSelectedContextSize] = useState<number | null>(null);
    ```
 
 2. **Exposed Global Function** (`App.tsx`):
+
    ```typescript
    useEffect(() => {
      (globalThis as any).__ollmSetContextSize = (size: number) => {
@@ -373,6 +392,7 @@ When user selected size → `resize()` called → session reset → remount with
    ```
 
 3. **Updated Config Construction** (`App.tsx`):
+
    ```typescript
    const contextConfig = config.context
      ? {
@@ -391,7 +411,7 @@ When user selected size → `resize()` called → session reset → remount with
        (globalThis as any).__ollmSetContextSize(val);
      }
      await contextActions.resize(val);
-   }
+   };
    ```
 
 ### Files Modified
@@ -417,6 +437,7 @@ When user selected size → `resize()` called → session reset → remount with
 ### Problem
 
 Auto context sizing was blocking user changes:
+
 - Enabled by default
 - Overrode user selections
 - Caused confusion
@@ -426,6 +447,7 @@ Auto context sizing was blocking user changes:
 **Disabled Auto-Size by Default:**
 
 1. **Updated Default Config** (`defaults.ts`):
+
    ```typescript
    export const defaultConfig: Config = {
      // ...
@@ -517,6 +539,7 @@ Auto context sizing was blocking user changes:
 ## Commit History
 
 ### Commit 1: Session ID Regeneration
+
 ```
 fix(session): regenerate session ID on model swap to prevent context contamination
 
@@ -529,6 +552,7 @@ Impact: Prevents context contamination across models
 ```
 
 ### Commit 2: Mode Snapshots
+
 ```
 fix(snapshots): create mode transition snapshots for all transition types
 
@@ -540,6 +564,7 @@ Impact: Mode snapshots now created for manual, explicit, and auto transitions
 ```
 
 ### Commit 3: Model Swap Flow
+
 ```
 fix(model-swap): fix model swap flow broken by session ID changes
 
@@ -552,6 +577,7 @@ Impact: Model swaps work correctly, UI updates properly
 ```
 
 ### Commit 4: /new Command
+
 ```
 fix(commands): make /new command create new session instead of just clearing chat
 
@@ -563,6 +589,7 @@ Impact: /new creates new session, /clear only clears messages
 ```
 
 ### Commit 5: Context Size Selection
+
 ```
 fix(context): make context size selection persist across session resets
 
@@ -575,6 +602,7 @@ Impact: Selected context size persists, auto-size disabled when user selects
 ```
 
 ### Commit 6: Auto Context Disabled
+
 ```
 fix(config): disable auto context sizing by default
 
@@ -589,15 +617,15 @@ Impact: User has full control, default 4k context
 
 ## Files Modified Summary
 
-| File | Changes |
-|------|---------|
-| `packages/cli/src/ui/App.tsx` | Session ID state, model info reactivity, context size state, global functions |
-| `packages/cli/src/features/context/ModelContext.tsx` | Model swap timing, session reset calls, removed conditionals |
-| `packages/cli/src/features/context/ContextManagerContext.tsx` | Mode snapshot creation for all transitions |
-| `packages/cli/src/commands/sessionCommands.ts` | Changed /new action to 'new-session' |
-| `packages/cli/src/features/context/handlers/commandHandler.ts` | Added 'new-session' action handler |
-| `packages/cli/src/ui/components/context/ContextMenu.tsx` | Call __ollmSetContextSize before resize (4 locations) |
-| `packages/cli/src/config/defaults.ts` | Added context config, disabled auto-size |
+| File                                                           | Changes                                                                       |
+| -------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `packages/cli/src/ui/App.tsx`                                  | Session ID state, model info reactivity, context size state, global functions |
+| `packages/cli/src/features/context/ModelContext.tsx`           | Model swap timing, session reset calls, removed conditionals                  |
+| `packages/cli/src/features/context/ContextManagerContext.tsx`  | Mode snapshot creation for all transitions                                    |
+| `packages/cli/src/commands/sessionCommands.ts`                 | Changed /new action to 'new-session'                                          |
+| `packages/cli/src/features/context/handlers/commandHandler.ts` | Added 'new-session' action handler                                            |
+| `packages/cli/src/ui/components/context/ContextMenu.tsx`       | Call \_\_ollmSetContextSize before resize (4 locations)                       |
+| `packages/cli/src/config/defaults.ts`                          | Added context config, disabled auto-size                                      |
 
 ---
 
@@ -622,7 +650,6 @@ Impact: User has full control, default 4k context
 **Date:** January 28, 2026  
 **Status:** ✅ READY FOR PRODUCTION
 
-
 ---
 
 ## TASK 9: Fix Model Switching Still Clearing Chat
@@ -630,6 +657,7 @@ Impact: User has full control, default 4k context
 **STATUS:** ✅ COMPLETE
 
 **DETAILS:**
+
 - **Problem:** Model switching was 2-step (select model → select context). When user selected context and hit enter, chat got cleared.
 - **Root Cause:** `key={sessionId}` on `ContextManagerProvider` forced remount, destroying ChatContext messages
 - **Solution:**
@@ -647,10 +675,12 @@ Impact: User has full control, default 4k context
   - `/new` command uses SessionManager directly
 
 **COMMITS:**
+
 - f5db375: Moved session logic out of App.tsx
 - dc19597: Added session start notifications
 
 **FILES:**
+
 - `packages/cli/src/ui/App.tsx` (cleaned up)
 - `packages/cli/src/features/context/ContextManagerContext.tsx` (listens to SessionManager)
 - `packages/cli/src/features/context/ModelContext.tsx` (uses SessionManager)
@@ -666,7 +696,6 @@ Impact: User has full control, default 4k context
 
 **Final Status:** All 9 tasks complete, ready for production testing
 
-
 ---
 
 ## TASK 10: Fix 2-Step Model Selection Context Size
@@ -674,6 +703,7 @@ Impact: User has full control, default 4k context
 **STATUS:** ✅ COMPLETE
 
 **DETAILS:**
+
 - **Problem:** User selects model → selects 8k context → model loads with 4k context instead
 - **Root Cause:** Model swap created new session which initialized ContextManager with default config context size (4k), ignoring the user's selection
 - **Solution:**
@@ -684,6 +714,7 @@ Impact: User has full control, default 4k context
   - Pending size is cleared after being used (one-time use)
 
 **FLOW:**
+
 1. User selects model (stored, NOT loaded yet)
 2. User selects context size (stored in SessionManager as pending)
 3. User confirms → model swap triggered
@@ -695,11 +726,13 @@ Impact: User has full control, default 4k context
 **COMMIT:** 172fa89
 
 **FILES:**
+
 - `packages/cli/src/features/context/SessionManager.ts` (added pending context methods)
 - `packages/cli/src/ui/components/context/ContextMenu.tsx` (stores pending size before swap)
 - `packages/cli/src/features/context/ContextManagerContext.tsx` (checks pending size on init)
 
 **NOTES:**
+
 - `/model` command opens ContextMenu, uses same 2-step flow ✅
 - `/model use <name>` bypasses menu, switches immediately with default context
 - Context size selection when NOT changing models still works (direct resize)

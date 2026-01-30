@@ -1,13 +1,13 @@
 /**
  * Storage Layer Type Definitions
- * 
+ *
  * This module defines the three distinct storage layers for the context compression system:
  * 1. Active Context - What gets sent to the LLM (compressed, in-memory)
  * 2. Snapshots - Recovery and rollback data (on disk, never sent to LLM)
  * 3. Session History - Complete uncompressed conversation (on disk, never sent to LLM)
- * 
+ *
  * These layers are strictly separated with runtime enforcement to prevent cross-contamination.
- * 
+ *
  * @module storageTypes
  */
 
@@ -20,14 +20,14 @@ import type { Message } from '../types.js';
 
 /**
  * Active context - what gets sent to the LLM
- * 
+ *
  * This is the ONLY data structure that should be sent to the LLM.
  * It MUST fit within the Ollama context limit (85% pre-calculated value).
- * 
+ *
  * **Storage Location:** In-memory only
  * **Lifetime:** Current conversation session
  * **Purpose:** Provide context to LLM for generating responses
- * 
+ *
  * @example
  * ```typescript
  * const activeContext: ActiveContext = {
@@ -85,15 +85,15 @@ export interface ActiveContext {
 
 /**
  * Checkpoint summary - LLM-generated summary of old messages
- * 
+ *
  * Represents a compressed segment of conversation history.
  * Created by asking the LLM to summarize old messages into a concise summary.
- * 
+ *
  * **Compression Levels:**
  * - Level 1 (Compact): Ultra-compressed, minimal detail (10+ compressions old)
  * - Level 2 (Moderate): Medium detail (5-9 compressions old)
  * - Level 3 (Detailed): Full detail, recent checkpoint (1-4 compressions old)
- * 
+ *
  * @example
  * ```typescript
  * const checkpoint: CheckpointSummary = {
@@ -165,14 +165,14 @@ export interface CheckpointSummary {
 
 /**
  * Snapshot data - for recovery and rollback
- * 
+ *
  * Snapshots capture the complete conversation state at a point in time.
  * They are NEVER sent to the LLM - only used for recovery and rollback.
- * 
+ *
  * **Storage Location:** On disk (`.ollm/snapshots/`)
  * **Lifetime:** Configurable (default: keep last 5)
  * **Purpose:** Enable recovery from errors, rollback to previous state
- * 
+ *
  * @example
  * ```typescript
  * const snapshot: SnapshotData = {
@@ -232,15 +232,15 @@ export interface SnapshotData {
 
 /**
  * Session history - complete uncompressed conversation
- * 
+ *
  * The session history stores the COMPLETE, UNCOMPRESSED conversation.
  * This is the source of truth for what actually happened in the conversation.
  * It is NEVER sent to the LLM and NEVER compressed.
- * 
+ *
  * **Storage Location:** On disk (`.ollm/session-data/`)
  * **Lifetime:** Permanent (until user deletes)
  * **Purpose:** Complete conversation record, export, review
- * 
+ *
  * @example
  * ```typescript
  * const history: SessionHistory = {
@@ -296,10 +296,10 @@ export interface SessionHistory {
 
 /**
  * Checkpoint record - metadata about checkpoint creation
- * 
+ *
  * Records when and how a checkpoint was created.
  * This is metadata only - the actual summary is in CheckpointSummary.
- * 
+ *
  * @example
  * ```typescript
  * const record: CheckpointRecord = {
@@ -345,7 +345,7 @@ export interface CheckpointRecord {
 
 /**
  * Validation result for storage operations
- * 
+ *
  * @example
  * ```typescript
  * const result: ValidationResult = {
@@ -364,34 +364,34 @@ export interface ValidationResult {
 
 /**
  * Storage boundaries - prevent cross-contamination
- * 
+ *
  * This interface defines methods to enforce strict separation between storage layers.
  * It provides type guards, validation, and enforcement to prevent:
  * - Snapshots being included in prompts sent to LLM
  * - Session history being included in prompts sent to LLM
  * - Active context being stored as permanent history
- * 
+ *
  * **Critical Rules:**
  * 1. Only ActiveContext should ever be sent to the LLM
  * 2. Snapshots are for recovery only, never for LLM consumption
  * 3. Session history is for record-keeping only, never for LLM consumption
- * 
+ *
  * @example
  * ```typescript
  * const boundaries: StorageBoundaries = new StorageBoundariesImpl();
- * 
+ *
  * // Type guard
  * if (boundaries.isActiveContext(data)) {
  *   // Safe to send to LLM
  *   await sendToLLM(data);
  * }
- * 
+ *
  * // Validation
  * const result = boundaries.validateActiveContext(context);
  * if (!result.valid) {
  *   throw new Error(`Invalid context: ${result.errors.join(', ')}`);
  * }
- * 
+ *
  * // Enforcement
  * boundaries.preventSnapshotInPrompt(prompt); // Throws if snapshot data detected
  * ```
@@ -403,7 +403,7 @@ export interface StorageBoundaries {
 
   /**
    * Check if data is valid ActiveContext
-   * 
+   *
    * @param data - Data to check
    * @returns True if data is ActiveContext
    */
@@ -411,7 +411,7 @@ export interface StorageBoundaries {
 
   /**
    * Check if data is valid SnapshotData
-   * 
+   *
    * @param data - Data to check
    * @returns True if data is SnapshotData
    */
@@ -419,7 +419,7 @@ export interface StorageBoundaries {
 
   /**
    * Check if data is valid SessionHistory
-   * 
+   *
    * @param data - Data to check
    * @returns True if data is SessionHistory
    */
@@ -431,14 +431,14 @@ export interface StorageBoundaries {
 
   /**
    * Validate ActiveContext structure and constraints
-   * 
+   *
    * Checks:
    * - System prompt exists and is valid
    * - Checkpoints are valid CheckpointSummary objects
    * - Recent messages are valid Message objects
    * - Token counts are accurate and consistent
    * - Total tokens don't exceed limits
-   * 
+   *
    * @param context - Active context to validate
    * @returns Validation result with errors if invalid
    */
@@ -446,13 +446,13 @@ export interface StorageBoundaries {
 
   /**
    * Validate SnapshotData structure and constraints
-   * 
+   *
    * Checks:
    * - ID and session ID are present
    * - Timestamp is valid
    * - Conversation state is complete
    * - Purpose is valid
-   * 
+   *
    * @param snapshot - Snapshot to validate
    * @returns Validation result with errors if invalid
    */
@@ -460,13 +460,13 @@ export interface StorageBoundaries {
 
   /**
    * Validate SessionHistory structure and constraints
-   * 
+   *
    * Checks:
    * - Session ID is present
    * - Messages array exists
    * - Checkpoint records are valid
    * - Metadata is complete and consistent
-   * 
+   *
    * @param history - Session history to validate
    * @returns Validation result with errors if invalid
    */
@@ -478,12 +478,12 @@ export interface StorageBoundaries {
 
   /**
    * Prevent snapshot data from being included in prompt
-   * 
+   *
    * Scans the prompt for any snapshot-specific data structures.
    * Throws an error if snapshot data is detected.
-   * 
+   *
    * **Critical:** This prevents accidentally sending recovery data to the LLM.
-   * 
+   *
    * @param prompt - Prompt messages to check
    * @throws Error if snapshot data detected in prompt
    */
@@ -491,12 +491,12 @@ export interface StorageBoundaries {
 
   /**
    * Prevent session history from being included in prompt
-   * 
+   *
    * Scans the prompt for any session history data structures.
    * Throws an error if session history data is detected.
-   * 
+   *
    * **Critical:** This prevents accidentally sending full history to the LLM.
-   * 
+   *
    * @param prompt - Prompt messages to check
    * @throws Error if session history data detected in prompt
    */
@@ -509,10 +509,10 @@ export interface StorageBoundaries {
 
 /**
  * Type guard for ActiveContext
- * 
+ *
  * @param data - Data to check
  * @returns True if data is ActiveContext
- * 
+ *
  * @example
  * ```typescript
  * if (isActiveContext(data)) {
@@ -541,10 +541,10 @@ export function isActiveContext(data: unknown): data is ActiveContext {
 
 /**
  * Type guard for SnapshotData
- * 
+ *
  * @param data - Data to check
  * @returns True if data is SnapshotData
- * 
+ *
  * @example
  * ```typescript
  * if (isSnapshotData(data)) {
@@ -575,10 +575,10 @@ export function isSnapshotData(data: unknown): data is SnapshotData {
 
 /**
  * Type guard for SessionHistory
- * 
+ *
  * @param data - Data to check
  * @returns True if data is SessionHistory
- * 
+ *
  * @example
  * ```typescript
  * if (isSessionHistory(data)) {

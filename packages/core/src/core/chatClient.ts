@@ -1,19 +1,19 @@
 /**
  * Chat Client
- * 
+ *
  * @status REWORK - Complete rewrite (2026-01-29)
  * @date 2026-01-29
  * @changes Removed 500+ lines of legacy code, now properly delegates to ContextOrchestrator
- * 
+ *
  * Simplified chat client that delegates context management to ContextOrchestrator.
- * 
+ *
  * Responsibilities:
  * - Coordinate chat turns with provider
  * - Delegate message management to ContextManager
  * - Handle tool execution via Turn
  * - Emit events for UI/hooks
  * - Record sessions (optional)
- * 
+ *
  * NOT responsible for:
  * - Context compression (handled by ContextOrchestrator)
  * - Snapshot management (handled by ContextOrchestrator)
@@ -111,7 +111,7 @@ export class ChatClient {
 
       const usage = this.contextMgmtManager.getUsage();
       const ollamaLimit = this.contextMgmtManager.getOllamaContextLimit?.();
-      
+
       if (!ollamaLimit) {
         throw new Error('[ChatClient] Context manager does not provide Ollama context limit');
       }
@@ -121,16 +121,18 @@ export class ChatClient {
         contextSize: usage.maxTokens,
         ollamaContextSize: ollamaLimit,
       };
-      
+
       debugLog('ChatClient', 'Context size configuration', {
         contextSize: usage.maxTokens,
         ollamaContextSize: ollamaLimit,
         currentTokens: usage.currentTokens,
         percentage: usage.percentage,
       });
-      
+
       if (!isTestEnv) {
-        console.log(`[ChatClient] Context: ${usage.maxTokens} tokens, Ollama limit: ${ollamaLimit}`);
+        console.log(
+          `[ChatClient] Context: ${usage.maxTokens} tokens, Ollama limit: ${ollamaLimit}`
+        );
       }
     }
 
@@ -159,11 +161,11 @@ export class ChatClient {
         // Wait for any in-progress summarization
         if (this.contextMgmtManager.isSummarizationInProgress()) {
           if (!isTestEnv) console.log('[ChatClient] Waiting for checkpoint creation...');
-          
+
           yield { type: 'text', value: '\n[System: Creating checkpoint, please wait...]\n\n' };
-          
+
           await this.contextMgmtManager.waitForSummarization();
-          
+
           yield { type: 'text', value: '[System: Checkpoint complete, continuing...]\n\n' };
         }
 
@@ -228,12 +230,10 @@ export class ChatClient {
       }
 
       // Get messages from context manager
-      const messages = this.contextMgmtManager 
-        ? await this.contextMgmtManager.getMessages()
-        : [];
+      const messages = this.contextMgmtManager ? await this.contextMgmtManager.getMessages() : [];
 
       // Convert to Turn-compatible format
-      const turnMessages: Message[] = messages.map(msg => ({
+      const turnMessages: Message[] = messages.map((msg) => ({
         role: msg.role as 'user' | 'assistant' | 'system',
         parts: [{ type: 'text' as const, text: msg.content }],
       }));
@@ -249,7 +249,10 @@ export class ChatClient {
 
       // Get available tools for current mode
       let availableTools: ChatOptions['tools'];
-      if (this.toolRegistry && typeof (this.toolRegistry as any).getFunctionSchemas === 'function') {
+      if (
+        this.toolRegistry &&
+        typeof (this.toolRegistry as any).getFunctionSchemas === 'function'
+      ) {
         availableTools = options?.modeManager
           ? (this.toolRegistry as any).getFunctionSchemasForMode(
               options.modeManager.getCurrentMode(),
@@ -340,17 +343,22 @@ export class ChatClient {
       this.messageBus.emit('after_agent', {
         prompt,
         response: assistantOutput,
-        toolCalls: turnToolCalls.map(tc => tc.toolCall),
+        toolCalls: turnToolCalls.map((tc) => tc.toolCall),
         sessionId,
         turnNumber,
       });
 
       // Record assistant message
-      if (sessionId && this.recordingService && assistantMessage && assistantMessage.parts.length > 0) {
+      if (
+        sessionId &&
+        this.recordingService &&
+        assistantMessage &&
+        assistantMessage.parts.length > 0
+      ) {
         try {
           await this.recordingService.recordMessage(sessionId, {
             role: 'assistant',
-            parts: assistantMessage.parts.map(part => ({
+            parts: assistantMessage.parts.map((part) => ({
               type: 'text',
               text: part.type === 'text' ? part.text : '',
             })),
@@ -371,8 +379,8 @@ export class ChatClient {
       if (this.contextMgmtManager && assistantMessage && assistantMessage.parts.length > 0) {
         try {
           const content = assistantMessage.parts
-            .filter(part => part.type === 'text')
-            .map(part => (part.type === 'text' ? part.text : ''))
+            .filter((part) => part.type === 'text')
+            .map((part) => (part.type === 'text' ? part.text : ''))
             .join('');
 
           await this.contextMgmtManager.addMessage({
@@ -383,7 +391,10 @@ export class ChatClient {
           });
         } catch (error) {
           const err = error as Error;
-          yield { type: 'error', error: new Error(`Failed to add assistant message: ${err.message}`) };
+          yield {
+            type: 'error',
+            error: new Error(`Failed to add assistant message: ${err.message}`),
+          };
         }
       }
 

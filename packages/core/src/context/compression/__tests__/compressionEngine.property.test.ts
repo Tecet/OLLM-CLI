@@ -20,7 +20,11 @@ import { describe, it, expect } from 'vitest';
 import { ActiveContextManager } from '../../storage/activeContextManager.js';
 import { SessionHistoryManager } from '../../storage/sessionHistoryManager.js';
 import { TokenCounterService } from '../../tokenCounter.js';
-import { CompressionEngine, type CompressionStrategy, type StrategyConfig } from '../compressionEngine.js';
+import {
+  CompressionEngine,
+  type CompressionStrategy,
+  type StrategyConfig,
+} from '../compressionEngine.js';
 import { SummarizationService } from '../summarizationService.js';
 import { ValidationService } from '../validationService.js';
 
@@ -229,19 +233,15 @@ describe('CompressionEngine - Property Tests', () => {
 
     it('should recommend selective strategy for low usage', () => {
       fc.assert(
-        fc.property(
-          tokenLimitArbitrary,
-          fc.double({ min: 0.1, max: 0.70 }),
-          (limit, usageRatio) => {
-            const engine = createTestEngine();
-            const currentTokens = Math.floor(limit * usageRatio);
+        fc.property(tokenLimitArbitrary, fc.double({ min: 0.1, max: 0.7 }), (limit, usageRatio) => {
+          const engine = createTestEngine();
+          const currentTokens = Math.floor(limit * usageRatio);
 
-            const recommended = engine.recommendStrategy(currentTokens, limit);
+          const recommended = engine.recommendStrategy(currentTokens, limit);
 
-            // Property: Usage < 70% must recommend selective
-            expect(recommended).toBe('selective');
-          }
-        )
+          // Property: Usage < 70% must recommend selective
+          expect(recommended).toBe('selective');
+        })
       );
     });
 
@@ -251,10 +251,10 @@ describe('CompressionEngine - Property Tests', () => {
           const engine = createTestEngine();
 
           // Test at different usage levels
-          const usage10 = engine.recommendStrategy(Math.floor(limit * 0.10), limit);
-          const usage50 = engine.recommendStrategy(Math.floor(limit * 0.50), limit);
+          const usage10 = engine.recommendStrategy(Math.floor(limit * 0.1), limit);
+          const usage50 = engine.recommendStrategy(Math.floor(limit * 0.5), limit);
           const usage75 = engine.recommendStrategy(Math.floor(limit * 0.75), limit);
-          const usage90 = engine.recommendStrategy(Math.floor(limit * 0.90), limit);
+          const usage90 = engine.recommendStrategy(Math.floor(limit * 0.9), limit);
           const usage98 = engine.recommendStrategy(Math.floor(limit * 0.98), limit);
 
           // Property: Recommendations should become more aggressive as usage increases
@@ -298,8 +298,7 @@ describe('CompressionEngine - Property Tests', () => {
             const engine = createTestEngine();
             const efficiency = engine.calculateEfficiency(originalTokens, compressedTokens);
 
-            const expectedPercentage =
-              ((originalTokens - compressedTokens) / originalTokens) * 100;
+            const expectedPercentage = ((originalTokens - compressedTokens) / originalTokens) * 100;
 
             // Property: Percentage saved should be accurate (within rounding)
             expect(efficiency.percentageSaved).toBeCloseTo(expectedPercentage, 2);

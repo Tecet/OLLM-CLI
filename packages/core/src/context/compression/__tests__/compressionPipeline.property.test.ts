@@ -40,7 +40,11 @@ function createMockProvider(): ProviderAdapter {
 /**
  * Create a test message
  */
-function createMessage(id: string, role: 'user' | 'assistant' | 'system', content: string): Message {
+function createMessage(
+  id: string,
+  role: 'user' | 'assistant' | 'system',
+  content: string
+): Message {
   return {
     id,
     role,
@@ -52,11 +56,13 @@ function createMessage(id: string, role: 'user' | 'assistant' | 'system', conten
 /**
  * Fast-check arbitrary for generating messages
  */
-const messageArbitrary = fc.record({
-  id: fc.string({ minLength: 1, maxLength: 20 }),
-  role: fc.constantFrom('user' as const, 'assistant' as const),
-  content: fc.string({ minLength: 10, maxLength: 200 }),
-}).map(({ id, role, content }) => createMessage(id, role, content));
+const messageArbitrary = fc
+  .record({
+    id: fc.string({ minLength: 1, maxLength: 20 }),
+    role: fc.constantFrom('user' as const, 'assistant' as const),
+    content: fc.string({ minLength: 10, maxLength: 200 }),
+  })
+  .map(({ id, role, content }) => createMessage(id, role, content));
 
 /**
  * Fast-check arbitrary for generating message arrays
@@ -131,8 +137,16 @@ describe('Property 13: Compression Pipeline Stages', () => {
         // If compression succeeded, verify properties
         if (result.success) {
           // Property 1: Stages execute in correct order
-          const stageOrder = ['Identification', 'Preparation', 'Summarization', 'Checkpoint Creation', 'Context Update', 'Validation', 'Complete'];
-          const observedStages = progressEvents.map(e => e.stage);
+          const stageOrder = [
+            'Identification',
+            'Preparation',
+            'Summarization',
+            'Checkpoint Creation',
+            'Context Update',
+            'Validation',
+            'Complete',
+          ];
+          const observedStages = progressEvents.map((e) => e.stage);
           const uniqueStages = [...new Set(observedStages)];
 
           // Check that stages appear in order (allowing duplicates)
@@ -145,7 +159,9 @@ describe('Property 13: Compression Pipeline Stages', () => {
 
           // Property 2: Progress increases monotonically
           for (let i = 1; i < progressEvents.length; i++) {
-            expect(progressEvents[i].progress).toBeGreaterThanOrEqual(progressEvents[i - 1].progress);
+            expect(progressEvents[i].progress).toBeGreaterThanOrEqual(
+              progressEvents[i - 1].progress
+            );
           }
 
           // Property 3: Final progress is 100%
@@ -367,7 +383,10 @@ describe('Property 14: Compression Pipeline Error Handling', () => {
         // Mock provider that fails
         const failingProvider: ProviderAdapter = {
           chatStream: vi.fn(async function* () {
-            yield { type: 'error' as const, error: { message: 'LLM connection failed', code: 'CONNECTION_ERROR' } };
+            yield {
+              type: 'error' as const,
+              error: { message: 'LLM connection failed', code: 'CONNECTION_ERROR' },
+            };
           }),
         } as unknown as ProviderAdapter;
 
@@ -414,7 +433,7 @@ describe('Property 14: Compression Pipeline Error Handling', () => {
 
           // Property 2: Provides error information
           expect(result.reason).toBeTruthy();
-          
+
           // If the reason is "No messages to compress", error field is optional
           // Otherwise (LLM failure), error field should be present
           if (result.reason !== 'No messages to compress') {

@@ -216,9 +216,7 @@ export class PromptOrchestratorIntegration {
 
     // 1. First message must be system prompt
     if (prompt[0].role !== 'system') {
-      throw new Error(
-        `First message must be system prompt, got ${prompt[0].role}`
-      );
+      throw new Error(`First message must be system prompt, got ${prompt[0].role}`);
     }
 
     // 2. Verify skills are preserved in system prompt
@@ -227,16 +225,14 @@ export class PromptOrchestratorIntegration {
       if (!systemPrompt.content.toLowerCase().includes(skill.toLowerCase())) {
         throw new Error(
           `Skill "${skill}" not found in system prompt. ` +
-          `Skills must be preserved during compression.`
+            `Skills must be preserved during compression.`
         );
       }
     }
 
     // 3. Verify system prompt ID format
     if (!systemPrompt.id.startsWith('system-')) {
-      throw new Error(
-        `System prompt ID must start with "system-", got ${systemPrompt.id}`
-      );
+      throw new Error(`System prompt ID must start with "system-", got ${systemPrompt.id}`);
     }
 
     // 4. Verify no duplicate system prompts
@@ -244,7 +240,7 @@ export class PromptOrchestratorIntegration {
     if (systemPrompts.length > 1) {
       throw new Error(
         `Multiple system prompts found (${systemPrompts.length}). ` +
-        `Only one system prompt allowed.`
+          `Only one system prompt allowed.`
       );
     }
 

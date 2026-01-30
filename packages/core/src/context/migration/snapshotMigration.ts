@@ -1,18 +1,18 @@
 /**
  * Snapshot Migration Script
- * 
+ *
  * Migrates snapshot data from legacy format to new storage layer format.
- * 
+ *
  * **Legacy Format:**
  * - Mixed active context and recovery data
  * - No clear purpose distinction
  * - Inconsistent structure
- * 
+ *
  * **New Format:**
  * - Clear SnapshotData structure
  * - Explicit purpose (recovery/rollback/emergency)
  * - Consistent conversationState
- * 
+ *
  * @module snapshotMigration
  */
 
@@ -113,21 +113,21 @@ export interface SnapshotMigrationResult {
 
 /**
  * Migrate a single legacy snapshot to new format
- * 
+ *
  * @param legacySnapshot - Legacy snapshot data
  * @returns Migrated snapshot data
  */
 export function migrateLegacySnapshot(legacySnapshot: LegacySnapshot): SnapshotData {
   // Combine messages and userMessages (legacy had them separate)
   const allMessages: Message[] = [];
-  
+
   if (legacySnapshot.messages) {
     allMessages.push(...legacySnapshot.messages);
   }
-  
+
   if (legacySnapshot.userMessages) {
     // Filter out duplicates (userMessages might be subset of messages)
-    const existingIds = new Set(allMessages.map(m => m.id));
+    const existingIds = new Set(allMessages.map((m) => m.id));
     for (const msg of legacySnapshot.userMessages) {
       if (!existingIds.has(msg.id)) {
         allMessages.push(msg);
@@ -137,14 +137,16 @@ export function migrateLegacySnapshot(legacySnapshot: LegacySnapshot): SnapshotD
 
   // Sort messages by timestamp
   allMessages.sort((a, b) => {
-    const aTime = a.timestamp instanceof Date ? a.timestamp.getTime() : new Date(a.timestamp).getTime();
-    const bTime = b.timestamp instanceof Date ? b.timestamp.getTime() : new Date(b.timestamp).getTime();
+    const aTime =
+      a.timestamp instanceof Date ? a.timestamp.getTime() : new Date(a.timestamp).getTime();
+    const bTime =
+      b.timestamp instanceof Date ? b.timestamp.getTime() : new Date(b.timestamp).getTime();
     return aTime - bTime;
   });
 
   // Convert legacy checkpoints to new format
   const checkpoints: CheckpointSummary[] = [];
-  
+
   if (legacySnapshot.metadata?.checkpoints) {
     for (const legacyCheckpoint of legacySnapshot.metadata.checkpoints) {
       const checkpoint: CheckpointSummary = {
@@ -196,7 +198,7 @@ export function migrateLegacySnapshot(legacySnapshot: LegacySnapshot): SnapshotD
 
 /**
  * Validate migrated snapshot data
- * 
+ *
  * @param snapshotData - Migrated snapshot data
  * @returns Validation errors (empty if valid)
  */
@@ -244,7 +246,7 @@ export function validateMigratedSnapshot(snapshotData: SnapshotData): string[] {
 
 /**
  * Migrate all snapshots in a directory
- * 
+ *
  * @param options - Migration options
  * @returns Migration result
  */
@@ -281,7 +283,7 @@ export async function migrateAllSnapshots(
 
     // Read all snapshot files
     const files = await fs.readdir(options.sourceDir);
-    const snapshotFiles = files.filter(f => f.endsWith('.json'));
+    const snapshotFiles = files.filter((f) => f.endsWith('.json'));
 
     if (options.verbose) {
       console.log(`Found ${snapshotFiles.length} snapshot files to migrate`);
@@ -359,7 +361,7 @@ export async function migrateAllSnapshots(
 
 /**
  * Rollback migration (restore from backup)
- * 
+ *
  * @param options - Migration options (must have backupDir)
  * @returns Rollback result
  */
@@ -387,7 +389,7 @@ export async function rollbackMigration(
 
     // Read all backup files
     const files = await fs.readdir(backupDir);
-    const snapshotFiles = files.filter(f => f.endsWith('.json'));
+    const snapshotFiles = files.filter((f) => f.endsWith('.json'));
 
     if (options.verbose) {
       console.log(`Found ${snapshotFiles.length} backup files to restore`);

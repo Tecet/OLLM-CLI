@@ -7,10 +7,7 @@
 import * as fc from 'fast-check';
 import { describe, it, expect, beforeEach } from 'vitest';
 
-import {
-  ProviderAwareCompression,
-  type IProfileManager,
-} from '../providerAwareCompression.js';
+import { ProviderAwareCompression, type IProfileManager } from '../providerAwareCompression.js';
 
 import type { ContextProfile } from '../../types.js';
 
@@ -152,16 +149,14 @@ describe('ProviderAwareCompression', () => {
     it('should not trigger compression below 75% threshold', () => {
       const ollamaLimit = 6963;
       const systemPrompt = 500;
-      const tierBudget = 1000;
       const safetyMargin = 1000;
-      const available = ollamaLimit - systemPrompt - tierBudget - safetyMargin;
+      const available = ollamaLimit - systemPrompt - safetyMargin;
       const threshold = available * 0.75;
 
       const shouldCompress = compression.shouldCompress(
         threshold - 100,
         'llama3.2:3b',
-        systemPrompt,
-        tierBudget
+        systemPrompt
       );
       expect(shouldCompress).toBe(false);
     });
@@ -169,43 +164,49 @@ describe('ProviderAwareCompression', () => {
     it('should trigger compression above 75% threshold', () => {
       const ollamaLimit = 6963;
       const systemPrompt = 500;
-      const tierBudget = 1000;
       const safetyMargin = 1000;
-      const available = ollamaLimit - systemPrompt - tierBudget - safetyMargin;
+      const available = ollamaLimit - systemPrompt - safetyMargin;
       const threshold = available * 0.75;
 
       const shouldCompress = compression.shouldCompress(
         threshold + 100,
         'llama3.2:3b',
-        systemPrompt,
-        tierBudget
+        systemPrompt
       );
       expect(shouldCompress).toBe(true);
     });
 
-    it('should respect different tier budgets', () => {
-      const systemPrompt = 500;
-      const smallTierBudget = 200;
-      const largeTierBudget = 1500;
+    it('should respect different system prompt sizes', () => {
+      const smallSystemPrompt = 200;
+      const largeSystemPrompt = 1000;
 
-      // With small tier budget, more space available, higher threshold
+      // Calculate thresholds for both
+      const ollamaLimit = 6963;
+      const safetyMargin = 1000;
+
+      // Small system prompt: available = 6963 - 200 - 1000 = 5763, threshold = 4322.25
+      // Large system prompt: available = 6963 - 1000 - 1000 = 4963, threshold = 3722.25
+
+      // Use 4000 tokens - above large threshold (3722.25) but below small threshold (4322.25)
+      const testTokens = 4000;
+
+      // With small system prompt, more space available, should NOT compress
       const shouldCompress1 = compression.shouldCompress(
-        3000,
+        testTokens,
         'llama3.2:3b',
-        systemPrompt,
-        smallTierBudget
+        smallSystemPrompt
       );
 
-      // With large tier budget, less space available, lower threshold
+      // With large system prompt, less space available, SHOULD compress
       const shouldCompress2 = compression.shouldCompress(
-        3000,
+        testTokens,
         'llama3.2:3b',
-        systemPrompt,
-        largeTierBudget
+        largeSystemPrompt
       );
 
-      // Same token count, but different tier budgets should give different results
-      expect(shouldCompress1).not.toBe(shouldCompress2);
+      // Same token count, but different system prompts should give different results
+      expect(shouldCompress1).toBe(false);
+      expect(shouldCompress2).toBe(true);
     });
   });
 
@@ -254,31 +255,25 @@ describe('ProviderAwareCompression', () => {
   describe('getCompressionUrgency', () => {
     it('should return correct urgency levels', () => {
       const systemPrompt = 500;
-      const tierBudget = 1000;
       const ollamaLimit = 6963;
       const safetyMargin = 1000;
-      const available = ollamaLimit - systemPrompt - tierBudget - safetyMargin;
+      const available = ollamaLimit - systemPrompt - safetyMargin;
 
-      expect(
-        compression.getCompressionUrgency(available * 0.4, 'llama3.2:3b', systemPrompt, tierBudget)
-      ).toBe('none');
-      expect(
-        compression.getCompressionUrgency(available * 0.6, 'llama3.2:3b', systemPrompt, tierBudget)
-      ).toBe('low');
-      expect(
-        compression.getCompressionUrgency(available * 0.8, 'llama3.2:3b', systemPrompt, tierBudget)
-      ).toBe('medium');
-      expect(
-        compression.getCompressionUrgency(available * 0.9, 'llama3.2:3b', systemPrompt, tierBudget)
-      ).toBe('high');
-      expect(
-        compression.getCompressionUrgency(
-          available * 0.96,
-          'llama3.2:3b',
-          systemPrompt,
-          tierBudget
-        )
-      ).toBe('critical');
+      expect(compression.getCompressionUrgency(available * 0.4, 'llama3.2:3b', systemPrompt)).toBe(
+        'none'
+      );
+      expect(compression.getCompressionUrgency(available * 0.6, 'llama3.2:3b', systemPrompt)).toBe(
+        'low'
+      );
+      expect(compression.getCompressionUrgency(available * 0.8, 'llama3.2:3b', systemPrompt)).toBe(
+        'medium'
+      );
+      expect(compression.getCompressionUrgency(available * 0.9, 'llama3.2:3b', systemPrompt)).toBe(
+        'high'
+      );
+      expect(compression.getCompressionUrgency(available * 0.96, 'llama3.2:3b', systemPrompt)).toBe(
+        'critical'
+      );
     });
   });
 
@@ -337,8 +332,7 @@ describe('ProviderAwareCompression', () => {
           fc.integer({ min: 0, max: 10000 }), // currentTokens
           fc.constantFrom('llama3.2:3b', 'mistral:7b', 'codellama:13b'), // modelId
           fc.integer({ min: 100, max: 1000 }), // systemPromptTokens
-          fc.integer({ min: 200, max: 1500 }), // tierBudget
-          (currentTokens, modelId, _systemPromptTokens, _tierBudget) => {
+          (currentTokens, modelId, systemPromptTokens) => {
             const validation = compression.validateAgainstProvider(currentTokens, modelId);
             const limit = compression.getContextLimit(modelId);
             const safetyMargin = 1000;
@@ -396,13 +390,11 @@ describe('ProviderAwareCompression', () => {
           fc.integer({ min: 0, max: 10000 }), // currentTokens
           fc.constantFrom('llama3.2:3b', 'mistral:7b'), // modelId
           fc.integer({ min: 100, max: 1000 }), // systemPromptTokens
-          fc.integer({ min: 200, max: 1500 }), // tierBudget
-          (currentTokens, modelId, systemPromptTokens, tierBudget) => {
+          (currentTokens, modelId, systemPromptTokens) => {
             const shouldCompress = compression.shouldCompress(
               currentTokens,
               modelId,
-              systemPromptTokens,
-              tierBudget
+              systemPromptTokens
             );
             const validation = compression.validateAgainstProvider(currentTokens, modelId);
 
@@ -412,7 +404,7 @@ describe('ProviderAwareCompression', () => {
               // We might be close to limit, but not necessarily over it
               const ollamaLimit = compression.getContextLimit(modelId);
               const safetyMargin = 1000;
-              const available = ollamaLimit - systemPromptTokens - tierBudget - safetyMargin;
+              const available = ollamaLimit - systemPromptTokens - safetyMargin;
               const threshold = available * 0.75;
 
               expect(currentTokens).toBeGreaterThan(threshold);
@@ -466,18 +458,16 @@ describe('ProviderAwareCompression', () => {
           fc.integer({ min: 0, max: 10000 }), // currentTokens
           fc.constantFrom('llama3.2:3b', 'mistral:7b'), // modelId
           fc.integer({ min: 100, max: 1000 }), // systemPromptTokens
-          fc.integer({ min: 200, max: 1500 }), // tierBudget
-          (currentTokens, modelId, systemPromptTokens, tierBudget) => {
+          (currentTokens, modelId, systemPromptTokens) => {
             const urgency = compression.getCompressionUrgency(
               currentTokens,
               modelId,
-              systemPromptTokens,
-              tierBudget
+              systemPromptTokens
             );
 
             const ollamaLimit = compression.getContextLimit(modelId);
             const safetyMargin = 1000;
-            const available = ollamaLimit - systemPromptTokens - tierBudget - safetyMargin;
+            const available = ollamaLimit - systemPromptTokens - safetyMargin;
             const usagePercentage = currentTokens / available;
 
             // Property: Urgency level must match usage percentage
@@ -535,21 +525,16 @@ describe('Provider Integration - Ollama', () => {
 
   it('should respect Ollama provider in compression triggers', () => {
     const systemPrompt = 500;
-    const tierBudget = 1000;
     const ollamaLimit = 6963;
     const safetyMargin = 1000;
-    const available = ollamaLimit - systemPrompt - tierBudget - safetyMargin;
+    const available = ollamaLimit - systemPrompt - safetyMargin;
     const threshold = available * 0.75;
 
     // Just below threshold - no compression
-    expect(
-      compression.shouldCompress(threshold - 1, 'llama3.2:3b', systemPrompt, tierBudget)
-    ).toBe(false);
+    expect(compression.shouldCompress(threshold - 1, 'llama3.2:3b', systemPrompt)).toBe(false);
 
     // Just above threshold - compression triggered
-    expect(
-      compression.shouldCompress(threshold + 1, 'llama3.2:3b', systemPrompt, tierBudget)
-    ).toBe(true);
+    expect(compression.shouldCompress(threshold + 1, 'llama3.2:3b', systemPrompt)).toBe(true);
   });
 
   it('should handle Ollama provider errors', () => {
@@ -606,14 +591,8 @@ describe('Provider Integration - vLLM', () => {
 
   it('should respect vLLM provider in compression triggers', () => {
     const systemPrompt = 500;
-    const tierBudget = 1000;
 
-    const shouldCompress = compression.shouldCompress(
-      4000,
-      'vllm-llama:7b',
-      systemPrompt,
-      tierBudget
-    );
+    const shouldCompress = compression.shouldCompress(4000, 'vllm-llama:7b', systemPrompt);
 
     // Should be based on vLLM's context limit
     expect(typeof shouldCompress).toBe('boolean');
@@ -676,14 +655,8 @@ describe('Provider Integration - OpenAI-compatible', () => {
 
   it('should respect OpenAI-compatible provider in compression triggers', () => {
     const systemPrompt = 500;
-    const tierBudget = 1000;
 
-    const shouldCompress = compression.shouldCompress(
-      4000,
-      'openai-gpt-4',
-      systemPrompt,
-      tierBudget
-    );
+    const shouldCompress = compression.shouldCompress(4000, 'openai-gpt-4', systemPrompt);
 
     expect(typeof shouldCompress).toBe('boolean');
   });
