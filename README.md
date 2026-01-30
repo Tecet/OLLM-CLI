@@ -11,6 +11,14 @@
 
 OLLM CLI brings the power of open-source large language models to your terminal with a focus on local-first operation, intelligent resource management, and extensibility. Built with TypeScript and React, it provides a modern terminal UI while maintaining compatibility with automation workflows.
 
+
+# 🛠️ Release v0.1.3
+
+
+ OLLM is Currently in early access / demo - alpha development stage,is not production grade software.
+ Tested on Windows CMD / PowerShell and Nvidia GPU
+
+
 ---
 
 ## ✨ Features
