@@ -1,4 +1,4 @@
-![Welcome Screen](https://github.com/Tecet/OLLM-CLI/blob/task-1-simplify-tier-selection/welcome.png)
+![Welcome Screen](https://github.com/Tecet/OLLM-CLI/blob/main/welcome.png)
 
 # OLLM CLI
 
@@ -129,14 +129,6 @@ Raport bugs:
  https://discord.gg/9GuCwdrB
  
  https://github.com/Tecet/OLLM
- 
-
-# 🛠️ Release v0.1.3
-
-
- OLLM is Currently in early access / demo - alpha development stage,is not production grade software.
- Tested on Windows CMD / PowerShell and Nvidia GPU
-
  
 
 # 📖 Documentation
