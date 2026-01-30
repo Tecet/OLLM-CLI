@@ -274,6 +274,10 @@ export function ToolsProvider({ children, settingsService: customSettings }: Too
       // Get all tools from registry
       const registeredTools = toolRegistry.list();
 
+      // Initialize tool settings in settings file
+      const toolIds = registeredTools.map((tool) => tool.name);
+      settingsService.initializeToolSettings(toolIds);
+
       // Convert to ToolInfo with categorization
       const allTools: ToolInfo[] = registeredTools.map((tool) => {
         const category = categorizeTool(tool);

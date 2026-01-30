@@ -555,4 +555,58 @@ export class SettingsService {
 
     return result;
   }
+
+  /**
+   * Initialize tool settings for all available tools
+   * This ensures all tools are present in the settings file with their defaults
+   * @param toolIds Array of all available tool IDs
+   */
+  public initializeToolSettings(toolIds: string[]): void {
+    let needsSave = false;
+
+    // Initialize tools object if not exists
+    if (!this.settings.tools) {
+      this.settings.tools = {};
+      needsSave = true;
+    }
+
+    // Initialize toolsByMode if not exists
+    if (!this.settings.toolsByMode) {
+      this.settings.toolsByMode = {};
+      needsSave = true;
+    }
+
+    // Add any missing tools to global tools list (default: enabled)
+    for (const toolId of toolIds) {
+      if (this.settings.tools[toolId] === undefined) {
+        this.settings.tools[toolId] = true;
+        needsSave = true;
+      }
+    }
+
+    // Initialize per-mode settings for all tools
+    for (const mode of Object.keys(DEFAULT_TOOLS_BY_MODE)) {
+      if (!this.settings.toolsByMode[mode]) {
+        this.settings.toolsByMode[mode] = {};
+      }
+
+      const defaults = DEFAULT_TOOLS_BY_MODE[mode] || [];
+      const isWildcard = defaults.includes('*');
+
+      for (const toolId of toolIds) {
+        // Only initialize if not already set by user
+        if (this.settings.toolsByMode[mode][toolId] === undefined) {
+          // Check if tool should be enabled by default for this mode
+          const shouldEnable = isWildcard || defaults.includes(toolId);
+          this.settings.toolsByMode[mode][toolId] = shouldEnable;
+          needsSave = true;
+        }
+      }
+    }
+
+    // Save if any changes were made
+    if (needsSave) {
+      this.saveSettings();
+    }
+  }
 }
