@@ -1,9 +1,14 @@
 #!/usr/bin/env node
+/* eslint-disable @typescript-eslint/no-require-imports */
 const fs = require('fs');
 const path = require('path');
 
 function readJSON(p) {
-  try { return JSON.parse(fs.readFileSync(p,'utf8')); } catch(e){ return null; }
+  try {
+    return JSON.parse(fs.readFileSync(p, 'utf8'));
+  } catch (_e) {
+    return null;
+  }
 }
 
 function isExternal(spec) {
@@ -46,40 +51,53 @@ function parseImports(content) {
 function firstPackage(spec) {
   if (spec.startsWith('@')) {
     const parts = spec.split('/');
-    return parts.slice(0,2).join('/');
+    return parts.slice(0, 2).join('/');
   }
   return spec.split('/')[0];
 }
 
 const repoRoot = path.resolve(__dirname, '..');
-const builtin = new Set(require('module').builtinModules.concat(Object.keys(process.binding ? process.binding('natives') : {})));
+const builtin = new Set(
+  require('module').builtinModules.concat(
+    Object.keys(process.binding ? process.binding('natives') : {})
+  )
+);
+
 const packagesDir = path.join(repoRoot, 'packages');
 if (!fs.existsSync(packagesDir)) {
   console.error('No packages directory found.');
   process.exit(1);
 }
 
-const packageNames = fs.readdirSync(packagesDir).filter(n => fs.statSync(path.join(packagesDir,n)).isDirectory());
+const packageNames = fs
+  .readdirSync(packagesDir)
+  .filter((n) => fs.statSync(path.join(packagesDir, n)).isDirectory());
 let overallMissing = {};
 for (const pkgName of packageNames) {
   const pkgPath = path.join(packagesDir, pkgName);
   const pkgJsonPath = path.join(pkgPath, 'package.json');
   const pkgJson = readJSON(pkgJsonPath);
   if (!pkgJson) continue;
-  const declared = Object.assign({}, pkgJson.dependencies || {}, pkgJson.devDependencies || {}, pkgJson.peerDependencies || {}, pkgJson.optionalDependencies || {});
+  const declared = Object.assign(
+    {},
+    pkgJson.dependencies || {},
+    pkgJson.devDependencies || {},
+    pkgJson.peerDependencies || {},
+    pkgJson.optionalDependencies || {}
+  );
   const srcPath = path.join(pkgPath, 'src');
   if (!fs.existsSync(srcPath)) continue;
   const files = collectFiles(srcPath);
   const used = new Set();
   for (const f of files) {
-    const content = fs.readFileSync(f,'utf8');
+    const content = fs.readFileSync(f, 'utf8');
     const imps = parseImports(content);
     for (const s of imps) {
       if (isExternal(s)) used.add(firstPackage(s));
     }
   }
   const missing = [];
-  used.forEach(mod => {
+  used.forEach((mod) => {
     if (!declared[mod]) {
       // ignore node builtins (fs, path, node:fs, etc.)
       if (builtin.has(mod) || builtin.has(mod.replace(/^node:/, ''))) return;
@@ -98,7 +116,7 @@ if (Object.keys(overallMissing).length === 0) {
 console.log('Missing dependencies report:\n');
 for (const [pkg, mods] of Object.entries(overallMissing)) {
   console.log(`Package: ${pkg}`);
-  mods.forEach(m => console.log(`  - ${m}`));
+  mods.forEach((m) => console.log(`  - ${m}`));
   console.log('');
 }
 

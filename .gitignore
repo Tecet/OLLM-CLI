@@ -34,9 +34,10 @@ temp/
 test-session-*/
 
 # Development documentation and debugging
-.archive
-.legacy
-.obsidian
+.archive/
+.legacy/
+.obsidian/
+.vscode/
 
 
 # OLLM runtime data and memory

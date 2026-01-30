@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+
 import { ChatClient } from '../chatClient';
 
 describe('ChatClient effective num_ctx', () => {

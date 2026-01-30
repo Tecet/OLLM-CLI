@@ -53,6 +53,7 @@ Successfully prepared OLLM CLI v0.1.2 for alpha release through a comprehensive 
 ### Phase 2: Code Quality ✅
 
 #### 2.1 Linting ✅
+
 - [x] Fixed 19 ESLint errors
 - [x] Fixed 1 ESLint warning
 - [x] Removed unused imports (`themesData`)
@@ -61,10 +62,12 @@ Successfully prepared OLLM CLI v0.1.2 for alpha release through a comprehensive 
 - [x] **Result:** `npm run lint` passes with 0 issues
 
 #### 2.2 TypeScript ✅
+
 - [x] Ran `npm run build`
 - [x] **Result:** 0 compilation errors
 
 #### 2.3 Test Suite ✅
+
 - [x] Fixed 42 failing tests
 - [x] Deleted 225 legacy tests (15 files)
 - [x] Cleaned up chatClient.test.ts (removed 2 legacy sections)
@@ -108,12 +111,14 @@ Successfully prepared OLLM CLI v0.1.2 for alpha release through a comprehensive 
 **Issue:** Tests expected old hardcoded tier budget values (200, 500, 1000, 1500)
 
 **Root Cause:** Implementation changed to dynamic calculation:
+
 - Tier 1: 12% of context (min 450) = 983 tokens for 8K context
 - Tier 2: 9% of context (min 700) = 737 tokens for 8K context
 - Tier 3: 6% of context (min 1000) = 1000 tokens
 - Tier 4: 5% of context (min 1500) = 1500 tokens
 
 **Fix:**
+
 - Updated all test expectations to match dynamic budgets
 - Added `contextSize` parameter to all method calls
 - Updated comments to reflect new values
@@ -125,15 +130,17 @@ Successfully prepared OLLM CLI v0.1.2 for alpha release through a comprehensive 
 **Issue:** Tests passing `tierBudget` parameter to methods that no longer accept it
 
 **Root Cause:** Method signatures changed:
+
 ```typescript
 // Old
-shouldCompress(currentTokens, modelId, systemPromptTokens, tierBudget)
+shouldCompress(currentTokens, modelId, systemPromptTokens, tierBudget);
 
 // New
-shouldCompress(currentTokens, modelId, systemPromptTokens)
+shouldCompress(currentTokens, modelId, systemPromptTokens);
 ```
 
 **Fix:**
+
 - Removed `tierBudget` parameter from all test calls
 - Updated calculations (tier budget NOT subtracted from available space)
 - Fixed test expectations for threshold calculations
@@ -147,13 +154,16 @@ shouldCompress(currentTokens, modelId, systemPromptTokens)
 **Root Cause:** ChatClient now requires `contextMgmtManager` or explicit context sizes
 
 **Fix:**
+
 - Added `DEFAULT_CONTEXT_OPTIONS` constant:
+
 ```typescript
 const DEFAULT_CONTEXT_OPTIONS = {
   contextSize: 8192,
   ollamaContextSize: 6963,
 };
 ```
+
 - Applied to all test chat calls
 
 ### Phase 2: Deleted Legacy Tests (225 tests)
@@ -161,29 +171,18 @@ const DEFAULT_CONTEXT_OPTIONS = {
 #### Deleted Test Files (15 files)
 
 **Compression Tests (3 files):**
+
 1. `summarizationService.property.test.ts` - Legacy summarization property tests
 2. `summarizationService.test.ts` - Legacy summarization unit tests
 3. `validationService.test.ts` - Legacy validation service tests
 
-**Context Integration Tests (5 files):**
-4. `errorHandling.test.ts` - Legacy error handling integration
-5. `longConversation.test.ts` - Legacy long conversation tests
-6. `checkpointAging.test.ts` - Legacy checkpoint aging tests
-7. `emergencyScenarios.test.ts` - Legacy emergency scenarios
-8. `promptOrchestratorIntegration.test.ts` - Legacy prompt orchestrator
+**Context Integration Tests (5 files):** 4. `errorHandling.test.ts` - Legacy error handling integration 5. `longConversation.test.ts` - Legacy long conversation tests 6. `checkpointAging.test.ts` - Legacy checkpoint aging tests 7. `emergencyScenarios.test.ts` - Legacy emergency scenarios 8. `promptOrchestratorIntegration.test.ts` - Legacy prompt orchestrator
 
-**Checkpoint Tests (1 file):**
-9. `checkpointLifecycle.test.ts` - Legacy checkpoint lifecycle tests
+**Checkpoint Tests (1 file):** 9. `checkpointLifecycle.test.ts` - Legacy checkpoint lifecycle tests
 
-**Orchestrator Tests (3 files):**
-10. `contextOrchestrator.property.test.ts` - Legacy orchestrator property tests
-11. `contextOrchestrator.errorRecovery.property.test.ts` - Legacy error recovery
-12. `contextOrchestrator.fullIntegration.test.ts` - Legacy full integration
+**Orchestrator Tests (3 files):** 10. `contextOrchestrator.property.test.ts` - Legacy orchestrator property tests 11. `contextOrchestrator.errorRecovery.property.test.ts` - Legacy error recovery 12. `contextOrchestrator.fullIntegration.test.ts` - Legacy full integration
 
-**Other Integration Tests (3 files):**
-13. `goalIntegration.property.test.ts` - Legacy goal integration
-14. `tierAwareCompression.property.test.ts` - Legacy tier-aware compression
-15. `modeAwareCompression.property.test.ts` - Legacy mode-aware compression
+**Other Integration Tests (3 files):** 13. `goalIntegration.property.test.ts` - Legacy goal integration 14. `tierAwareCompression.property.test.ts` - Legacy tier-aware compression 15. `modeAwareCompression.property.test.ts` - Legacy mode-aware compression
 
 #### Removed Sections from chatClient.test.ts
 
@@ -191,6 +190,7 @@ const DEFAULT_CONTEXT_OPTIONS = {
 - **Context Manager Integration** (~258 lines)
 
 **Why Deleted:**
+
 - Testing removed features
 - Testing redesigned systems with old APIs
 - Using APIs that no longer exist
@@ -208,10 +208,12 @@ const DEFAULT_CONTEXT_OPTIONS = {
 These are in active test files, marked with `.skip()` for future updates:
 
 **In chatClient.test.ts (4 tests):**
+
 - 2 error handling tests (finish reason mismatch)
 - 2 session recording tests (implementation changed)
 
 **In other active test files (12 tests):**
+
 - Various property-based tests needing minor updates
 
 ---
@@ -221,14 +223,17 @@ These are in active test files, marked with `.skip()` for future updates:
 ### Linting Results
 
 **Before:**
+
 - 19 ESLint errors
 - 1 ESLint warning
 
 **After:**
+
 - ✅ 0 errors
 - ✅ 0 warnings
 
 **Files Fixed:**
+
 - `packages/cli/src/commands/utilityCommands.ts` - Removed unused `themesData` import
 - `packages/cli/src/ui/components/chat/ChatHistory.tsx` - Fixed import order
 - `packages/core/src/context/compression/compressionService.ts` - Prefixed unused variables
@@ -282,6 +287,7 @@ npm run format
 ### Version Updates
 
 All packages updated to 0.1.2:
+
 - `packages/cli/package.json`
 - `packages/core/package.json`
 - `packages/ollm-bridge/package.json`
@@ -343,6 +349,7 @@ ollm --version
 ### Legacy Features
 
 Some old features were removed during the context management rework:
+
 - Old checkpoint lifecycle system
 - Legacy compression orchestrator
 - Old goal integration system
@@ -434,6 +441,7 @@ Some old features were removed during the context management rework:
 **Total:** 50+ files across the codebase
 
 **Key Files:**
+
 - `CHANGELOG.md` - Release notes
 - `package.json` (all packages) - Version bump
 - Test files (fixed and deleted)
@@ -463,13 +471,13 @@ All criteria met for alpha release:
 
 ### Code Quality
 
-| Metric            | v0.1.0  | v0.1.2 | Change       |
-| ----------------- | ------- | ------ | ------------ |
-| ESLint Errors     | Unknown | 0      | ✅ Fixed     |
-| TypeScript Errors | Unknown | 0      | ✅ Fixed     |
-| Test Pass Rate    | Unknown | 100%   | ✅ Excellent |
-| Test Files        | 84      | 69     | -15 (cleanup)|
-| Active Tests      | 1602    | 1377   | -225 (legacy)|
+| Metric            | v0.1.0  | v0.1.2 | Change        |
+| ----------------- | ------- | ------ | ------------- |
+| ESLint Errors     | Unknown | 0      | ✅ Fixed      |
+| TypeScript Errors | Unknown | 0      | ✅ Fixed      |
+| Test Pass Rate    | Unknown | 100%   | ✅ Excellent  |
+| Test Files        | 84      | 69     | -15 (cleanup) |
+| Active Tests      | 1602    | 1377   | -225 (legacy) |
 
 ### Features
 
@@ -522,6 +530,7 @@ All criteria met for alpha release:
 **Duration:** ~8 hours
 
 **Phases:**
+
 - Phase 1 (Documentation): 1 hour
 - Phase 2 (Code Quality): 4 hours
 - Phase 3 (Formatting & Prep): 1 hour

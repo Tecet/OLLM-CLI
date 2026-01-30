@@ -343,18 +343,18 @@ export function useToolSupport(
 
       // Fall back to profile data (static profiles)
       const profile = profileManager.findProfile(model);
-      
+
       // Check explicit tool_support flag
       if (profile && typeof profile.tool_support === 'boolean') {
         return profile.tool_support;
       }
-      
+
       // Check capabilities object if present (as used in ContextManagerFactory)
       if (profile && (profile as any).capabilities?.tools === true) {
         return true;
       }
 
-      // Default to FALSE for safety. 
+      // Default to FALSE for safety.
       // This prevents "hallucinated tool calls" on models that don't support them.
       // Users can enable tools via the "Auto-detect" or manual override features if needed.
       return false;

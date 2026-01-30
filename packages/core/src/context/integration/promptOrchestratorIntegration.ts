@@ -94,10 +94,7 @@ export class PromptOrchestratorIntegration {
         // Use type assertion or optional chaining to access prompt_options/tool_support
         // Based on ProfileManager structure, tool_support might be at root or under capabilities
         const anyEntry = modelEntry as any;
-        modelSupportsTools = 
-          anyEntry.tool_support || 
-          anyEntry.capabilities?.tools || 
-          false;
+        modelSupportsTools = anyEntry.tool_support || anyEntry.capabilities?.tools || false;
       } catch (_error) {
         // Model not found or error, assume no tool support
         modelSupportsTools = false;

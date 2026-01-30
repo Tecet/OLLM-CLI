@@ -60,7 +60,7 @@
 ### ✅ Files Excluded (via .npmignore)
 
 - [x] src/ folder (TypeScript source)
-- [x] Test files (__tests__/, *.test.ts)
+- [x] Test files (**tests**/, \*.test.ts)
 - [x] Development configs (tsconfig.json, etc.)
 - [x] Build artifacts (.tsbuildinfo)
 - [x] IDE files (.vscode/, .idea/)
@@ -76,11 +76,7 @@
   "bin": {
     "ollm": "./dist/cli.js"
   },
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
-  ],
+  "files": ["dist", "README.md", "LICENSE"],
   "engines": {
     "node": ">=20.0.0"
   },
@@ -100,16 +96,19 @@
 ### Options
 
 **Option 1: Keep @ollm/cli (Current)**
+
 - Requires ownership of @ollm scope on npm
 - If you don't own @ollm, publish will fail
 - Check: https://www.npmjs.com/org/ollm
 
 **Option 2: Change to @tecet/ollm (Recommended)**
+
 - Uses your npm username as scope
 - Guaranteed to work if logged in as tecet
 - Update package.json name to `@tecet/ollm`
 
 **Option 3: Use unscoped name**
+
 - Change to `ollm-cli-tecet` or similar
 - No scope required
 - May conflict with existing packages
@@ -283,6 +282,7 @@ ollm --help
 **Cause:** Don't own the @ollm scope
 
 **Solution:**
+
 1. Change package name to `@tecet/ollm` in packages/cli/package.json
 2. Rebuild: `npm run build`
 3. Repack: `npm pack --workspace=packages/cli`
@@ -291,12 +291,14 @@ ollm --help
 ### Issue: "Package name too similar to existing package"
 
 **Solution:**
+
 - Use scoped package: `@tecet/ollm`
 - Or use unique name: `ollm-cli-tecet`
 
 ### Issue: "need auth This command requires you to be logged in"
 
 **Solution:**
+
 ```bash
 npm login
 # Or
@@ -310,6 +312,7 @@ npm adduser
 ### Current Size: 1.8 MB (unpacked: 9.3 MB)
 
 **Breakdown:**
+
 - cli.js: 3.0 MB (bundled code)
 - cli.js.map: 6.1 MB (source maps for debugging)
 - Templates: ~50 KB (prompt templates)
@@ -317,6 +320,7 @@ npm adduser
 - Docs: ~26 KB (README + LICENSE)
 
 **Optimization Notes:**
+
 - Source maps are large but useful for debugging
 - Could exclude .map files to reduce to ~3 MB
 - Templates and sprites are essential
@@ -349,12 +353,14 @@ All criteria met for npm publish:
    - If not, update package.json to @tecet/ollm
 
 2. **Login to npm**
+
    ```bash
    npm login
    npm whoami
    ```
 
 3. **Test locally**
+
    ```bash
    npm install -g .\ollm-cli-0.1.2.tgz
    ollm --version
@@ -363,6 +369,7 @@ All criteria met for npm publish:
    ```
 
 4. **Publish**
+
    ```bash
    cd packages\cli
    npm publish --access public
@@ -382,20 +389,24 @@ All criteria met for npm publish:
 ### ✅ Documentation Strategy
 
 **Included in package:**
+
 - README.md (14.9 KB) - Installation, quick start, features
 - LICENSE (11.4 KB) - Apache 2.0 license
 
 **Excluded from package (available on GitHub):**
+
 - docs/ folder (57 files) - Complete documentation
 - .dev/ folder - Development documentation
 - CHANGELOG.md - Version history
 
 **Access via:**
+
 1. **npm package page** - README displayed
 2. **GitHub repository** - All 57 docs files
 3. **Links in README** - Direct links to GitHub docs
 
 **Benefits:**
+
 - Smaller package size (1.8 MB vs ~5 MB with docs)
 - Easier to maintain (update docs without republishing)
 - Better user experience (browse docs on GitHub)
@@ -429,6 +440,7 @@ The package is built, tested, and ready for npm publish. All that remains is:
 ### Support
 
 If you encounter any issues during publishing, refer to the Troubleshooting section above or check:
+
 - npm documentation: https://docs.npmjs.com/
 - npm support: https://www.npmjs.com/support
 
@@ -439,6 +451,7 @@ If you encounter any issues during publishing, refer to the Troubleshooting sect
 **Next Step:** Login to npm and verify scope ownership
 
 **Command to start:**
+
 ```bash
 npm login
 ```

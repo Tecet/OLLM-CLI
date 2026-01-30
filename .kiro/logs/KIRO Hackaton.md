@@ -28,7 +28,13 @@ The design was good, but the implementation was a nightmare. During debugging, t
 
 The Crunch I had to do a full rework of one of the most complex parts of the core system the day before the deadline. I spent most of today testing, verifying, and debugging. It was stressful, but we made it. Through sweat, tears, and a swarm of AI agents, the app is working... kind of.
 
+Because I had to split my focus between making the app function and making it look good enough for the demo, many planned features had to be pushed back. However, I have documented a full roadmap for the next few months.
+
+OLLM may have been born as a prototype for this Hackathon, but this is just the beginning. Over the next few weeks, my priority is improving core stability and squashing the bugs I found. Once the foundation is solid, I’ll start rolling out the new features I have planned.
+
+Who knows? Maybe among the participants or the community, I’ll find people who resonate with this idea and want to contribute. That would be awesome.
+
+
 Conclusion AI Vibe coding is interesting and opens up endless possibilities, but right now, it is also frustrating and full of flaws. However, I can clearly see that in the future, this will be seamless and part of our day-to-day lives.
 
-All the best, 
-Radek
+Thanks again, take care, and good luck to all the participants in this event!

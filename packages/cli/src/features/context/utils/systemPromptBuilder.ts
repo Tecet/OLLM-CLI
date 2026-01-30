@@ -49,8 +49,6 @@ export function buildSystemPrompt(options: BuildSystemPromptOptions): string {
 
   let systemPrompt = basePrompt;
 
-
-
   const toolNote = supportsTools
     ? ''
     : 'Note: This model does not support function calling. Do not attempt to use tools or make tool calls.';

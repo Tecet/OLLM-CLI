@@ -46,6 +46,7 @@ npm login
 ```
 
 **Enter:**
+
 - Username: `tecet`
 - Password: [your npm password]
 - Email: [your npm email]
@@ -74,6 +75,7 @@ npm publish --access public
 **Note:** `--access public` is required for scoped packages
 
 **Expected output:**
+
 ```
 + @tecet/ollm@0.1.2
 ```
@@ -114,6 +116,7 @@ ollm --help
    - Verify README is shown
 
 2. **Test Installation**
+
    ```bash
    npm install -g @tecet/ollm
    ollm --version
@@ -121,10 +124,11 @@ ollm --help
    ```
 
 3. **Create GitHub Release**
+
    ```bash
    # Create tag
    git tag v0.1.2
-   
+
    # Push tag
    git push origin v0.1.2
    ```
@@ -246,6 +250,7 @@ All criteria met:
 ### Issue: "need auth This command requires you to be logged in"
 
 **Solution:**
+
 ```bash
 npm login
 ```
@@ -253,10 +258,12 @@ npm login
 ### Issue: "403 Forbidden"
 
 **Possible causes:**
+
 1. Not logged in as tecet
 2. 2FA token expired
 
 **Solution:**
+
 ```bash
 npm whoami  # Verify you're logged in as tecet
 npm login   # Login again if needed
@@ -267,6 +274,7 @@ npm login   # Login again if needed
 **This should NOT happen** - @tecet is your scope
 
 **If it does:**
+
 ```bash
 # Check who owns the package
 npm view @tecet/ollm

@@ -75,37 +75,53 @@ const CONFIDENCE_THRESHOLDS: Record<string, number> = {
   'planning->developer': 0.8,
   'developer->planning': 0.6, // Easier to step back
   'developer->debugger': 0.85,
-      assistant: [],
-      planning: [],
-      developer: [],
-      debugger: [],
-      user: [],
+
+  // Defaults
+  any: 0.5,
+  default: 0.5,
+};
+
+export class PromptModeManager extends EventEmitter {
+  private contextAnalyzer: ContextAnalyzer;
+  private minDuration: number;
+  private cooldownPeriod: number;
+  private metricsTracker?: ModeMetricsTracker;
+  private focusModeManager: FocusModeManager;
+  private animator: ModeTransitionAnimator;
+  private state: ModeState;
+  private modeHistory: ModeTransition[] = [];
+  private maxHistorySize = 100;
+
+  constructor(contextAnalyzer: ContextAnalyzer, config: Partial<ModeConfig> = {}) {
+    super();
+    this.contextAnalyzer = contextAnalyzer;
+
+    this.minDuration = config.minDuration ?? 15000; // default 15s
+    this.cooldownPeriod = config.cooldownPeriod ?? 10000; // default 10s
 
     // Initialize metrics tracker (optional, default disabled)
-    if (config.enableMetrics) {
+    if ((config as any).enableMetrics) {
       this.metricsTracker = new ModeMetricsTracker();
-      // Load persisted metrics from disk
+      // Attempt to load persisted metrics from disk
       this.loadMetrics();
     }
 
-    // Initialize focus mode manager
+    // Initialize focus mode manager and animator
     this.focusModeManager = new FocusModeManager();
-
-    // Initialize transition animator
     this.animator = new ModeTransitionAnimator();
 
     // Initialize state
     this.state = {
-      currentMode: 'assistant',
+      currentMode: (config.mode as ModeType) ?? 'assistant',
       previousMode: null,
-      autoSwitchEnabled: false, // DISABLED: Prevent mid-response mode switching
+      autoSwitchEnabled: false,
       lastSwitchTime: new Date(),
       modeEntryTime: new Date(),
       activeSkills: [],
     };
 
     // Track initial mode entry (if metrics enabled)
-    this.metricsTracker?.trackModeEntry('assistant');
+    this.metricsTracker?.trackModeEntry(this.state.currentMode);
   }
 
   /**
@@ -456,45 +472,11 @@ const CONFIDENCE_THRESHOLDS: Record<string, number> = {
     // Disable tool access by default per-mode to prevent automatic tool usage.
     // Users may still enable tools via SettingsService (`tools` or `toolsByMode`).
     const toolAccess: Record<ModeType, string[]> = {
-<<<<<<< HEAD
       assistant: [], // Pure chat mode by default - prevents tool overuse
-      planning: [
-        'web_search',
-        'web_fetch',
-        'read_file',
-        'read_multiple_files',
-        'grep_search',
-        'file_search',
-        'list_directory',
-        'get_diagnostics',
-        'write_memory_dump',
-        'trigger_hot_swap',
-        'mcp:*',
-      ],
-      developer: ['*'],
-      debugger: [
-        'read_file',
-        'grep_search',
-        'list_directory',
-        'get_diagnostics',
-        'shell',
-        'git_diff',
-        'git_log',
-        'web_search',
-        'write_file',
-        'str_replace',
-        'write_memory_dump',
-        'trigger_hot_swap',
-        'mcp:*',
-      ],
-      user: ['*'],
-=======
-      assistant: [],
       planning: [],
       developer: [],
       debugger: [],
       user: [],
->>>>>>> test
     };
 
     return toolAccess[mode] || [];

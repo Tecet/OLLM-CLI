@@ -3,18 +3,19 @@
  * Implements the ProviderAdapter interface to connect to a local server.
  */
 
-import { createLogger, createVRAMMonitor } from '@ollm/core';
-import { deriveGPUPlacementHints, type GPUPlacementHints } from '@ollm/core/context/gpuHints.js';
-
-import type {
-  ProviderAdapter,
-  ProviderRequest,
-  ProviderEvent,
-  Message,
-  MessagePart,
-  ToolSchema,
-  ModelInfo,
-  PullProgress,
+import {
+  createLogger,
+  createVRAMMonitor,
+  deriveGPUPlacementHints,
+  type GPUPlacementHints,
+  type ProviderAdapter,
+  type ProviderRequest,
+  type ProviderEvent,
+  type Message,
+  type MessagePart,
+  type ToolSchema,
+  type ModelInfo,
+  type PullProgress,
 } from '@ollm/core';
 
 /**

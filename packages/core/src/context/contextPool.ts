@@ -18,9 +18,9 @@
 import { clampContextSize, calculateOptimalContextSize } from './ContextSizeCalculator.js';
 import { createLogger } from '../utils/logger.js';
 
-const logger = createLogger('ContextPool');
-
 import type { ContextPool, ContextPoolConfig, ContextUsage, VRAMInfo, ModelInfo } from './types.js';
+
+const logger = createLogger('ContextPool');
 
 /**
  * Default context pool configuration

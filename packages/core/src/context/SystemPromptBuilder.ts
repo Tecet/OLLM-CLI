@@ -23,7 +23,7 @@ export class SystemPromptBuilder {
     // Determine base directory for template files
     // We check multiple locations to support both source/dev mode and bundled production mode
     const moduleDir = path.dirname(fileURLToPath(import.meta.url));
-    
+
     // Potential paths to check
     const candidates = [
       // 1. Production bundle (CLI): ./templates (relative to cli.js in dist)
@@ -33,12 +33,12 @@ export class SystemPromptBuilder {
       // 3. Development/Source: ../prompts/templates (relative to src/context/SystemPromptBuilder.ts)
       path.resolve(moduleDir, '../prompts/templates'),
       // 4. Monorepo fallback: resolve from CWD to core source
-      path.resolve(process.cwd(), 'packages/core/src/prompts/templates')
+      path.resolve(process.cwd(), 'packages/core/src/prompts/templates'),
     ];
 
     // Find the first valid directory
-    this.baseDir = candidates.find(dir => fs.existsSync(dir)) || candidates[0];
-    
+    this.baseDir = candidates.find((dir) => fs.existsSync(dir)) || candidates[0];
+
     // Log for debugging if needed (can be removed later)
     // console.log('[SystemPromptBuilder] Using template directory:', this.baseDir);
   }

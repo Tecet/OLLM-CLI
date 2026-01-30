@@ -1,5 +1,5 @@
 {
-  "name": "@ollm/ollm-cli-core",
+  "name": "@ollm/core",
   "version": "0.1.2",
   "type": "module",
   "main": "./dist/index.js",

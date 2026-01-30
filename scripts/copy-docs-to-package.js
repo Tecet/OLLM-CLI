@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable @typescript-eslint/no-require-imports */
 const fs = require('fs/promises');
 const path = require('path');
 
@@ -11,7 +12,7 @@ const path = require('path');
   try {
     // remove existing dest if it exists
     await fs.rm(dest, { recursive: true, force: true });
-  } catch (e) {
+  } catch (_e) {
     // ignore
   }
 

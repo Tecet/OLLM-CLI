@@ -174,7 +174,9 @@ export function createContextManager(
       (config.modelInfo as any).capabilities?.tools ??
       false;
 
-    log(`[ContextManagerFactory] Model ${config.modelInfo.modelId} supports tools: ${modelSupportsTools}`);
+    log(
+      `[ContextManagerFactory] Model ${config.modelInfo.modelId} supports tools: ${modelSupportsTools}`
+    );
 
     // Get allowed tools for current mode (if settings service available)
     let allowedTools: string[] | undefined;

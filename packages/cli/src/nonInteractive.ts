@@ -6,7 +6,6 @@
 import { ProviderRegistry, ChatClient, ToolRegistry } from '@ollm/core';
 import { NonInteractiveError } from '@ollm/ollm-cli-core/errors/index.js';
 
-
 import type { Config } from './config/types.js';
 import type { DeclarativeTool as _DeclarativeTool } from '@ollm/ollm-cli-core/tools/types.js';
 

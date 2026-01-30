@@ -68,6 +68,7 @@
 **Purpose:** Exclude unnecessary files from npm package
 
 **Contents:**
+
 ```
 # Source files
 src/
@@ -143,7 +144,7 @@ copy LICENSE packages\cli\LICENSE
 ### Files to Exclude (via .npmignore)
 
 - Source TypeScript files (src/)
-- Test files (__tests__/, *.test.ts)
+- Test files (**tests**/, \*.test.ts)
 - Development configs (tsconfig.json, eslint.config.js)
 - Build artifacts (tsconfig.tsbuildinfo)
 - IDE files (.vscode/, .idea/)
@@ -159,11 +160,13 @@ copy LICENSE packages\cli\LICENSE
 ### Package Installation
 
 When users install via npm:
+
 ```bash
 npm install -g @tecet/ollm
 ```
 
 They get:
+
 - ✅ CLI binary (`ollm` command)
 - ✅ README.md (installation and quick start)
 - ✅ LICENSE file
@@ -298,6 +301,7 @@ ollm --version
 ### Issue: "need auth This command requires you to be logged in"
 
 **Solution:**
+
 ```bash
 npm login
 # Or
@@ -307,11 +311,13 @@ npm adduser
 ### Issue: "403 Forbidden - PUT https://registry.npmjs.org/@tecet%2follm"
 
 **Possible causes:**
+
 1. Not logged in
 2. No access to @tecet scope
 3. Package name already taken
 
 **Solutions:**
+
 1. Run `npm login`
 2. Verify scope ownership on npmjs.com
 3. Choose different package name
@@ -319,12 +325,14 @@ npm adduser
 ### Issue: "Package name too similar to existing package"
 
 **Solution:**
+
 - Use scoped package: `@tecet/ollm` (already configured)
 - Or choose different name: `ollm-cli-tecet`
 
 ### Issue: "You do not have permission to publish"
 
 **Solution:**
+
 - Verify you own the @tecet scope
 - Or publish as unscoped: change name to `ollm-cli-tecet`
 - Add `--access public` flag for scoped packages

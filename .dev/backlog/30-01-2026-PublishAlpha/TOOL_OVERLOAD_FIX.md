@@ -15,6 +15,7 @@ After refactoring the tool system to pass actual tool schemas to the LLM, the mo
 The system was registering **18 built-in tools** and passing ALL of them to the LLM in certain modes:
 
 **All 18 Tools:**
+
 1. read_file
 2. read_multiple_files
 3. write_file
@@ -35,6 +36,7 @@ The system was registering **18 built-in tools** and passing ALL of them to the 
 18. read_reasoning
 
 **Problem Modes:**
+
 - `developer`: Used `'*'` (all 18 tools)
 - `debugger`: Used `'*'` (all 18 tools)
 - `user`: Used `'*'` (all 18 tools)
@@ -42,6 +44,7 @@ The system was registering **18 built-in tools** and passing ALL of them to the 
 ### Why This Causes Issues
 
 When an LLM receives too many tool options (15-20+), it:
+
 1. Gets overwhelmed with choices
 2. Tries to use multiple tools "just in case"
 3. Launches 5+ tools per request
@@ -59,6 +62,7 @@ When an LLM receives too many tool options (15-20+), it:
 Updated `DEFAULT_TOOLS_BY_MODE` in `packages/cli/src/config/settingsService.ts` to limit tools per mode:
 
 #### Developer Mode (8 tools)
+
 ```typescript
 developer: [
   'read_file',
@@ -69,12 +73,13 @@ developer: [
   'file_search',
   'list_directory',
   'shell',
-]
+];
 ```
 
 **Rationale:** Core development tools only - reading, writing, searching, executing
 
 #### Debugger Mode (7 tools)
+
 ```typescript
 debugger: [
   'read_file',
@@ -90,17 +95,15 @@ debugger: [
 **Rationale:** Debugging and analysis tools - no writing, focus on investigation
 
 #### Assistant Mode (3 tools)
+
 ```typescript
-assistant: [
-  'read_file',
-  'web_search',
-  'web_fetch',
-]
+assistant: ['read_file', 'web_search', 'web_fetch'];
 ```
 
 **Rationale:** Minimal tools for general assistance - already optimal
 
 #### Planning Mode (10 tools)
+
 ```typescript
 planning: [
   'read_file',
@@ -113,12 +116,13 @@ planning: [
   'get_diagnostics',
   'write_memory_dump',
   'mcp:*',
-]
+];
 ```
 
 **Rationale:** Research and analysis tools - already well-configured
 
 #### User Mode (10 tools)
+
 ```typescript
 user: [
   'read_file',
@@ -131,7 +135,7 @@ user: [
   'web_search',
   'web_fetch',
   'memory',
-]
+];
 ```
 
 **Rationale:** Balanced set of common tools - file ops, search, web, memory
@@ -145,6 +149,7 @@ user: [
 **File:** `packages/cli/src/config/settingsService.ts`
 
 **Before:**
+
 ```typescript
 const DEFAULT_TOOLS_BY_MODE: Record<string, string[]> = {
   developer: ['*'], // All 18 tools
@@ -155,11 +160,18 @@ const DEFAULT_TOOLS_BY_MODE: Record<string, string[]> = {
 ```
 
 **After:**
+
 ```typescript
 const DEFAULT_TOOLS_BY_MODE: Record<string, string[]> = {
-  developer: [/* 8 specific tools */],
-  debugger: [/* 7 specific tools */],
-  user: [/* 10 specific tools */],
+  developer: [
+    /* 8 specific tools */
+  ],
+  debugger: [
+    /* 7 specific tools */
+  ],
+  user: [
+    /* 10 specific tools */
+  ],
   // ...
 };
 ```
@@ -169,6 +181,7 @@ const DEFAULT_TOOLS_BY_MODE: Record<string, string[]> = {
 **File:** `packages/core/src/tools/index.ts`
 
 Added comment in `registerBuiltInTools()`:
+
 ```typescript
 // IMPORTANT: This registers 18 tools. Passing all to LLM causes confusion.
 // Use getFunctionSchemasForMode() to limit to 5-10 tools per mode.
@@ -181,11 +194,13 @@ Added comment in `registerBuiltInTools()`:
 ### Before Fix
 
 **Developer Mode:**
+
 - Tools passed to LLM: 18
 - LLM behavior: Launches 5+ tools per request
 - User experience: Slow, confusing, wasteful
 
 **User Mode:**
+
 - Tools passed to LLM: 18
 - LLM behavior: Launches 5+ tools per request
 - User experience: Slow, confusing, wasteful
@@ -193,11 +208,13 @@ Added comment in `registerBuiltInTools()`:
 ### After Fix
 
 **Developer Mode:**
+
 - Tools passed to LLM: 8
 - LLM behavior: Focused, 1-2 tools per request
 - User experience: Fast, clear, efficient
 
 **User Mode:**
+
 - Tools passed to LLM: 10
 - LLM behavior: Focused, 1-2 tools per request
 - User experience: Fast, clear, efficient
@@ -209,6 +226,7 @@ Added comment in `registerBuiltInTools()`:
 ### Manual Testing
 
 1. **Test Developer Mode**
+
    ```bash
    ollm --mode developer
    # Ask: "Read the package.json file"
@@ -216,6 +234,7 @@ Added comment in `registerBuiltInTools()`:
    ```
 
 2. **Test User Mode**
+
    ```bash
    ollm --mode user
    # Ask: "Search for TODO comments in the code"
@@ -237,7 +256,7 @@ Add test to verify tool counts per mode:
 describe('Tool Filtering', () => {
   it('should limit tools per mode', () => {
     const settings = SettingsService.getInstance();
-    
+
     expect(settings.getToolsForMode('developer').length).toBeLessThanOrEqual(10);
     expect(settings.getToolsForMode('debugger').length).toBeLessThanOrEqual(10);
     expect(settings.getToolsForMode('user').length).toBeLessThanOrEqual(10);
@@ -253,6 +272,7 @@ describe('Tool Filtering', () => {
 ### Existing Users
 
 Users who have already customized their tool settings will NOT be affected. The changes only apply to:
+
 1. New installations
 2. Users who haven't customized tool settings
 3. Users who reset to defaults
@@ -260,11 +280,13 @@ Users who have already customized their tool settings will NOT be affected. The 
 ### Custom Tool Sets
 
 Users can still enable all tools if desired:
+
 ```bash
 ollm config tools enable-all --mode developer
 ```
 
 Or customize per mode:
+
 ```bash
 ollm config tools enable write_todos --mode developer
 ollm config tools disable shell --mode assistant
@@ -277,6 +299,7 @@ ollm config tools disable shell --mode assistant
 ### 1. Dynamic Tool Selection
 
 Instead of fixed tool sets, use LLM to select relevant tools based on request:
+
 ```typescript
 // Analyze request
 const relevantTools = await selectToolsForRequest(userPrompt);
@@ -286,6 +309,7 @@ const relevantTools = await selectToolsForRequest(userPrompt);
 ### 2. Tool Usage Analytics
 
 Track which tools are actually used per mode:
+
 ```typescript
 // Log tool usage
 analytics.logToolUse(mode, toolName);
@@ -295,6 +319,7 @@ analytics.logToolUse(mode, toolName);
 ### 3. Adaptive Tool Sets
 
 Adjust tool availability based on conversation context:
+
 ```typescript
 // Start with minimal tools
 // Add more as conversation progresses

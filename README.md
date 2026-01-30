@@ -11,13 +11,10 @@
 
 OLLM CLI brings the power of open-source large language models to your terminal with a focus on local-first operation, intelligent resource management, and extensibility. Built with TypeScript and React, it provides a modern terminal UI while maintaining compatibility with automation workflows.
 
-
 # 🛠️ Release v0.1.3
 
-
- OLLM is Currently in early access / demo - alpha development stage,is not production grade software.
- Tested on Windows CMD / PowerShell and Nvidia GPU
-
+OLLM is Currently in early access / demo - alpha development stage,is not production grade software.
+Tested on Windows CMD / PowerShell and Nvidia GPU
 
 ---
 
@@ -77,23 +74,24 @@ Install OLLM CLI globally using npm:
 npm install -g @tecet/ollm
 ```
 
-
 **That's it!** The installer handles everything automatically.
 
-##  After Instalation
-###  check version
+## After Instalation
+
+### check version
 
 ```bash
 ollm --version
 ```
-#### >>>  0.1.3
 
+#### >>> 0.1.3
 
 ### Install Ollama with your favored model
 
 https://ollama.com/download/OllamaSetup.exe
 
-### Modles libarary: 
+### Modles libarary:
+
 https://ollama.com/search
 
 veryfy as Ollama is instaled and model is avalible on list:
@@ -111,10 +109,9 @@ ollm
 
 ### Have fun!
 
-
 ## Uninstalling and bugs
 
-``` bash
+```bash
 # Get help
 ollm --help
 ```
@@ -126,13 +123,11 @@ npm uninstall -g @tecet/ollm
 
 Raport bugs:
 
- https://discord.gg/9GuCwdrB
- 
- https://github.com/Tecet/OLLM
+https://discord.gg/9GuCwdrB
 
+https://github.com/Tecet/OLLM
 
 #Screenshoots
-
 
 ![Logo](https://github.com/Tecet/OLLM-CLI/blob/main/img/VS.png)
 
@@ -140,15 +135,12 @@ Raport bugs:
 
 ![docs/img/logo.png](https://github.com/Tecet/OLLM-CLI/blob/main/img/settings%20models.png)
 
- 
-
 # 📖 Documentation
 
-For detailed installation instructions, 
+For detailed installation instructions,
 see the **[Installation Guide](docs/Installation.md)**.
 
-
-```
+````
 
 ### Learn More
 
@@ -266,7 +258,7 @@ ollm --debug
 
 # Show version
 ollm --version
-```
+````
 
 ### Interactive Slash Commands
 

@@ -1,4 +1,4 @@
-declare module '../../ollm-bridge/src/provider/localProvider.js' {
+declare module '@ollm/ollm-bridge/provider/localProvider.js' {
   export class LocalProvider {
     constructor(opts?: any);
   }
