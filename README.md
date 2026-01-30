@@ -67,34 +67,68 @@ Install OLLM CLI globally using npm:
 ```bash
 # Install from npm
 npm install -g @tecet/ollm
+```
 
-# The interactive installer will guide you through:
-# 1. Installing Ollama (if needed)
-# 2. Downloading a starter model
-# 3. Setting up configuration
 
+**That's it!** The installer handles everything automatically.
+
+## After Instalation
+# check verion
+
+```bash
+ollm --version
+```
+>>>  0.1.3
+
+Install Ollama with your favored model
+
+https://ollama.com/download/OllamaSetup.exe
+
+Modles libarary: 
+https://ollama.com/search
+
+veryfy as Ollama is instaled and model is avalible on list:
+
+```bash
+ollama list
+```
+
+# Start using OLLM CLI
+
+```bash
 # Start using OLLM CLI
 ollm
 ```
 
-**That's it!** The installer handles everything automatically.
+# Have fun!
 
-For detailed installation instructions, see the **[Installation Guide](docs/Installation.md)**.
 
-### First Steps
+# Uninstalling and bugs
 
-```bash
-# Start interactive mode
-ollm
-
-# Or try a quick question
-ollm -p "Explain async/await in JavaScript"
-
-# Select a specific model
-ollm --model llama3.1:8b
-
+``` bash
 # Get help
 ollm --help
+```
+
+```bash
+#uninstall command:
+npm uninstall -g @tecet/ollm
+```
+
+Raport bugs:
+ https://discord.gg/9GuCwdrB
+ https://github.com/Tecet/OLLM
+
+
+
+# Curently in aplha developmnet stage.
+# Tested on Windows CMD / Powershell and Nvidia GPU
+
+
+For detailed installation instructions, 
+see the **[Installation Guide](docs/Installation.md)**.
+
+
 ```
 
 ### Learn More
