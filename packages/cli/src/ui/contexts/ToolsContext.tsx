@@ -90,6 +90,12 @@ export interface ToolsContextValue {
   isToolEnabled: (toolId: string) => boolean;
   /** Get tool by ID */
   getTool: (toolId: string) => ToolInfo | undefined;
+  /** Get mode settings for a tool (which modes can use this tool) */
+  getModeSettings: (toolId: string) => Record<string, boolean>;
+  /** Set tool enabled state for a specific mode */
+  setModeSettings: (toolId: string, mode: string, enabled: boolean) => void;
+  /** Reset tool to default settings for all modes */
+  resetToDefaults: (toolId: string) => void;
 }
 
 const ToolsContext = createContext<ToolsContextValue | undefined>(undefined);
@@ -397,6 +403,38 @@ export function ToolsProvider({ children, settingsService: customSettings }: Too
     [state.allTools]
   );
 
+  /**
+   * Get mode settings for a tool
+   */
+  const getModeSettings = useCallback(
+    (toolId: string): Record<string, boolean> => {
+      return settingsService.getModeSettingsForTool(toolId);
+    },
+    [settingsService]
+  );
+
+  /**
+   * Set tool enabled state for a specific mode
+   */
+  const setModeSettings = useCallback(
+    (toolId: string, mode: string, enabled: boolean): void => {
+      settingsService.setToolForMode(mode, toolId, enabled);
+    },
+    [settingsService]
+  );
+
+  /**
+   * Reset tool to default settings for all modes
+   */
+  const resetToDefaults = useCallback(
+    (toolId: string): void => {
+      settingsService.resetToolToDefaults(toolId);
+      // Refresh to show updated state
+      refreshTools();
+    },
+    [settingsService, refreshTools]
+  );
+
   // Load tools on mount and when registry changes
   useEffect(() => {
     refreshTools();
@@ -408,6 +446,9 @@ export function ToolsProvider({ children, settingsService: customSettings }: Too
     toggleTool,
     isToolEnabled,
     getTool,
+    getModeSettings,
+    setModeSettings,
+    resetToDefaults,
   };
 
   return <ToolsContext.Provider value={value}>{children}</ToolsContext.Provider>;
