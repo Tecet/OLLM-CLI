@@ -41,4 +41,12 @@ export const MODE_METADATA = {
     description: 'Systematic debugging, error analysis, performance optimization',
     temperatureTier: 1,
   },
+  user: {
+    name: 'User',
+    persona: 'Custom User Mode',
+    icon: '👤',
+    color: 'cyan',
+    description: 'Custom user-defined behavior with full tool access',
+    temperatureTier: 2,
+  },
 } as const;

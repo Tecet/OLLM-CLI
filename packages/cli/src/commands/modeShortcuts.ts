@@ -39,6 +39,7 @@ export const MODE_SHORTCUTS: Record<string, ModeType> = {
   '/assist': 'assistant',
   '/plan': 'planning',
   '/dev': 'developer',
+  '/user': 'user',
 };
 
 /**
@@ -134,6 +135,32 @@ export const devCommand: Command = {
   },
 };
 
+/**
+ * /user - Switch to user mode
+ */
+export const userCommand: Command = {
+  name: '/user',
+  aliases: ['/u'],
+  description: 'Switch to user mode (custom user-defined behavior)',
+  usage: '/user',
+  handler: async (): Promise<CommandResult> => {
+    try {
+      const manager = ensureContextManager();
+      manager.switchModeExplicit('user');
+
+      return {
+        success: true,
+        message: '👤 Switched to user mode\nCustom user-defined behavior with all tools',
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: `Error: ${error instanceof Error ? error.message : String(error)}`,
+      };
+    }
+  },
+};
+
 // ============================================================================
 // Debugger Mode Shortcuts
 // ============================================================================
@@ -204,6 +231,7 @@ export const modeShortcuts: Command[] = [
   assistCommand,
   planCommand,
   devCommand,
+  userCommand,
 
   // Mode-specific action shortcuts
   debugCommand,

@@ -180,7 +180,7 @@ export const modeCommand: Command = {
       const subcommand = args[0].toLowerCase();
 
       // Handle mode switching commands
-      const validModes: ModeType[] = ['assistant', 'planning', 'developer', 'debugger'];
+      const validModes: ModeType[] = ['assistant', 'planning', 'developer', 'debugger', 'user'];
 
       if (validModes.includes(subcommand as ModeType)) {
         const mode = subcommand as ModeType;
