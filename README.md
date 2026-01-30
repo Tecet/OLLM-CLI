@@ -132,11 +132,11 @@ Raport bugs:
 
 
 
-![Logo](docs/img/logo.png)](http://github.com/Tecet/OLLM-CLI/blob/main/img/VS.png)
+![Logo](http://github.com/Tecet/OLLM-CLI/blob/main/img/VS.png)
 
-![Logo](docs/img/logo.png)
+![Logo](docs/img/logo.png](https://github.com/Tecet/OLLM-CLI/blob/main/img/w4%20ter-chat.png)
 
-![Logo](docs/img/logo.png)
+[docs/img/logo.png](https://github.com/Tecet/OLLM-CLI/blob/main/img/settings%20models.png))
 
 
  
