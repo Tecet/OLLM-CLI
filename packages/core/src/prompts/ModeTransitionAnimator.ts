@@ -75,6 +75,12 @@ const MODE_ANIMATIONS: Record<ModeType, ModeAnimationConfig> = {
     completionVerb: 'Debugger mode active',
     duration: 700,
   },
+  user: {
+    icon: '👤',
+    loadingVerb: 'Switching to user mode',
+    completionVerb: 'User mode active',
+    duration: 500,
+  },
 };
 
 /**
@@ -227,6 +233,7 @@ export class ModeTransitionAnimator {
       planning: 'Planning',
       developer: 'Developer',
       debugger: 'Debugger',
+      user: 'User',
     };
 
     return names[mode] || mode;

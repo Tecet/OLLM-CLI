@@ -110,6 +110,7 @@ export class HybridModeManager {
       planning: 'Planner',
       developer: 'Developer',
       debugger: 'Debugger',
+      user: 'User',
     };
 
     return modes.map((m) => modeNames[m]).join(' + ');
@@ -124,6 +125,7 @@ export class HybridModeManager {
       planning: '📋',
       developer: '👨‍💻',
       debugger: '🐛',
+      user: '👤',
     };
 
     return modes.map((m) => modeIcons[m]).join('');
@@ -138,6 +140,7 @@ export class HybridModeManager {
       planning: 'yellow',
       developer: 'green',
       debugger: 'red',
+      user: 'cyan',
     };
 
     // For multiple modes, combine colors
@@ -159,6 +162,7 @@ export class HybridModeManager {
       planning: 'Technical Architect & Planner',
       developer: 'Senior Software Engineer',
       debugger: 'Debugging Specialist',
+      user: 'Custom User Mode',
     };
 
     if (modes.length === 1) {
@@ -241,6 +245,7 @@ export class HybridModeManager {
       planning: 'For research and design work',
       developer: 'For implementation and coding',
       debugger: 'When analyzing errors and bugs',
+      user: 'For custom user-defined behavior',
     };
 
     return guidance[mode];

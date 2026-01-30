@@ -480,6 +480,7 @@ export enum OperationalMode {
   PLANNING = 'planning',
   ASSISTANT = 'assistant',
   DEBUGGER = 'debugger',
+  USER = 'user',
 }
 
 /**
@@ -557,6 +558,15 @@ export const MODE_PROFILES: Record<OperationalMode, ModeProfile> = {
       error: /(?:error|exception|failed):\s*(.+?)(?:\n|$)/i,
       fix_attempt: /(?:tried|attempted|fixed)\s+(.+?)(?:\.|$)/i,
       reproduction: /(?:reproduce|replicate|steps):\s*(.+?)(?:\.|$)/i,
+    },
+  },
+  [OperationalMode.USER]: {
+    mode: OperationalMode.USER,
+    neverCompress: ['user_preferences', 'custom_context'],
+    compressionPriority: ['discussion', 'exploration', 'examples'],
+    extractionRules: {
+      preference: /(?:prefer|like|want|need)\s+(.+?)(?:\.|$)/i,
+      important: /(?:important|critical|must remember)\s+(.+?)(?:\.|$)/i,
     },
   },
 };

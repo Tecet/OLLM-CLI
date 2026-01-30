@@ -12,7 +12,7 @@ import type { Message } from '../provider/types.js';
 /**
  * Available mode types in the system
  */
-export type ModeType = 'assistant' | 'planning' | 'developer' | 'debugger';
+export type ModeType = 'assistant' | 'planning' | 'developer' | 'debugger' | 'user';
 
 /**
  * Result of context analysis
@@ -152,6 +152,15 @@ const MODE_KEYWORDS: Record<ModeType, string[]> = {
     'test failure',
     'issue',
   ],
+  user: [
+    'custom',
+    'my way',
+    'personalize',
+    'configure',
+    'preference',
+    'specific',
+    'unique',
+  ],
 };
 
 /**
@@ -210,6 +219,7 @@ export class ContextAnalyzer {
       planning: this.calculateModeConfidence(recentMessages, 'planning'),
       developer: this.calculateModeConfidence(recentMessages, 'developer'),
       debugger: this.calculateModeConfidence(recentMessages, 'debugger'),
+      user: this.calculateModeConfidence(recentMessages, 'user'),
     };
 
     // Detect keywords and metadata

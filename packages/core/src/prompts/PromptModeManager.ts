@@ -510,6 +510,7 @@ export class PromptModeManager extends EventEmitter {
         'trigger_hot_swap',
         'mcp:*',
       ],
+      user: ['*'],
     };
 
     return toolAccess[mode] || [];
@@ -588,6 +589,8 @@ export class PromptModeManager extends EventEmitter {
       developer: [],
 
       debugger: ['delete_file', 'git_commit'],
+
+      user: [],
     };
 
     return deniedTools[mode] || [];

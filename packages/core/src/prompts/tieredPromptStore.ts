@@ -17,6 +17,7 @@ const MODES: OperationalMode[] = [
   OperationalMode.DEVELOPER,
   OperationalMode.PLANNING,
   OperationalMode.DEBUGGER,
+  OperationalMode.USER,
 ];
 
 export class TieredPromptStore {
