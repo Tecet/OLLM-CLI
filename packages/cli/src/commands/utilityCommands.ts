@@ -20,9 +20,50 @@ import { getLastGPUInfo } from '../features/context/gpuHintStore.js';
 import { profileManager } from '../features/profiles/ProfileManager.js';
 import { getGlobalFocusedFiles } from '../ui/components/file-explorer/FileFocusContext.js';
 import { injectFocusedFiles } from '../ui/components/file-explorer/FocusedFilesInjector.js';
+import { themesData } from '../config/themes.js';
 
 import type { Command, CommandResult } from './types.js';
 import type { ContextMessage } from '@ollm/core';
+
+/**
+ * ANSI color codes for terminal output
+ * Using theme-aware colors for better visibility
+ */
+const ANSI = {
+  reset: '\x1b[0m',
+  bold: '\x1b[1m',
+  dim: '\x1b[2m',
+  
+  // Theme colors (using neon-dark as reference)
+  accent: '\x1b[38;2;78;201;176m',    // #4ec9b0 - theme.text.accent
+  primary: '\x1b[38;2;212;212;212m',  // #d4d4d4 - theme.text.primary
+  secondary: '\x1b[38;2;133;133;133m', // #858585 - theme.text.secondary
+  success: '\x1b[38;2;78;201;176m',   // #4ec9b0 - theme.status.success
+  warning: '\x1b[38;2;206;145;120m',  // #ce9178 - theme.status.warning
+  error: '\x1b[38;2;244;135;113m',    // #f48771 - theme.status.error
+  info: '\x1b[38;2;86;156;214m',      // #569cd6 - theme.status.info
+} as const;
+
+/**
+ * Color helper functions using theme colors
+ */
+const color = {
+  // Section headers - bold accent color
+  header: (text: string) => `${ANSI.bold}${ANSI.accent}${text}${ANSI.reset}`,
+  // Labels - accent color (for "Model:", "Temperature:", etc.)
+  label: (text: string) => `${ANSI.accent}${text}${ANSI.reset}`,
+  // Values - standard primary color
+  value: (text: string) => `${ANSI.primary}${text}${ANSI.reset}`,
+  // Accent highlights
+  accent: (text: string) => `${ANSI.accent}${text}${ANSI.reset}`,
+  // Dimmed text
+  dim: (text: string) => `${ANSI.secondary}${text}${ANSI.reset}`,
+  // Status colors
+  success: (text: string) => `${ANSI.success}${text}${ANSI.reset}`,
+  warning: (text: string) => `${ANSI.warning}${text}${ANSI.reset}`,
+  error: (text: string) => `${ANSI.error}${text}${ANSI.reset}`,
+  info: (text: string) => `${ANSI.info}${text}${ANSI.reset}`,
+};
 
 function resolveTierForSize(size: number): ContextTier {
   if (size < 8192) return ContextTier.TIER_1_MINIMAL;
@@ -161,25 +202,54 @@ function buildPromptPreviewMessage(input: {
   payloadJson: string;
   showPayload: boolean;
 }): string {
-  const spacer = '\n\n';
-  const payloadSpacer = '\n\n\n';
+  const spacer = '\n';
+  const sectionSpacer = '\n\n';
+  const divider = color.dim('─'.repeat(80));
+  
+  // Format options with colored labels
+  const formattedOptions = input.optionsText
+    .split('\n')
+    .map(line => {
+      const match = line.match(/^([^:]+):\s+(.+)$/);
+      if (match) {
+        const label = match[1].trim();
+        const value = match[2].trim();
+        return `  ${color.label(label + ':')} ${color.value(value)}`;
+      }
+      return line;
+    })
+    .join('\n');
+  
+  // Format payload section
   const payloadBlock = input.showPayload
-    ? `=== Ollama Payload (JSON) ===\n${input.payloadJson}`
-    : '=== Ollama Payload (collapsed) ===\nUse `/test prompt --full` to show the full JSON payload.';
+    ? `${color.header('═══ 📦 Ollama Payload (JSON) ═══')}\n\n${color.dim(input.payloadJson)}`
+    : `${color.header('═══ 📦 Ollama Payload ═══')}\n\n${color.dim('Use ')}${color.accent('/test prompt --full')}${color.dim(' to show the full JSON payload.')}`;
 
   return [
-    '=== Options ===',
-    input.optionsText,
+    color.header('═══ ⚙️  Configuration ═══'),
     spacer,
-    `=== ${input.systemHeader} ===`,
-    input.systemPrompt || '<empty>',
+    formattedOptions,
+    sectionSpacer,
+    divider,
+    sectionSpacer,
+    color.header(`═══ 📋 ${input.systemHeader} ═══`),
     spacer,
-    '=== Rules ===',
-    input.rules || '<empty>',
+    color.dim(input.systemPrompt || '<empty>'),
+    sectionSpacer,
+    divider,
+    sectionSpacer,
+    color.header('═══ 📜 Rules & Tools ═══'),
     spacer,
-    '=== Mock User Message ===',
-    input.mockUserMessage,
-    payloadSpacer,
+    color.dim(input.rules || '<empty>'),
+    sectionSpacer,
+    divider,
+    sectionSpacer,
+    color.header('═══ 💬 Mock User Message ═══'),
+    spacer,
+    `  ${color.info(input.mockUserMessage)}`,
+    sectionSpacer,
+    divider,
+    sectionSpacer,
     payloadBlock,
   ].join('\n');
 }
@@ -416,11 +486,15 @@ export const testPromptCommand: Command = {
       let toolsSection = '';
       if (toolSchemas.length > 0) {
         const toolNames = toolSchemas.map(s => s.name);
-        toolsSection = `\n\n=== Available Tools (${toolSchemas.length}) ===\n${toolNames.join(', ')}`;
+        toolsSection = `\n\n${color.label('🔧 Available Tools:')} ${color.success(`(${toolSchemas.length})`)}`;
+        toolsSection += `\n  ${color.value(toolNames.join(', '))}`;
+        toolsSection += `\n\n  ${color.success('✓')} ${color.dim('These tools will be sent to Ollama in the payload')}`;
       } else if (modelSupportsTools) {
-        toolsSection = `\n\n=== Available Tools ===\nNONE - No tools enabled for ${coreMode} mode`;
+        toolsSection = `\n\n${color.label('🔧 Available Tools:')} ${color.warning('NONE')}`;
+        toolsSection += `\n  ${color.dim(`No tools enabled for ${coreMode} mode`)}`;
       } else {
-        toolsSection = `\n\n=== Available Tools ===\nNOT SUPPORTED - Model does not support function calling`;
+        toolsSection = `\n\n${color.label('🔧 Available Tools:')} ${color.error('NOT SUPPORTED')}`;
+        toolsSection += `\n  ${color.dim('Model does not support function calling')}`;
       }
       
       const systemHeader = `${formatModeLabel(coreMode)} ${formatTierLabel(effectiveTierEnum)}`;

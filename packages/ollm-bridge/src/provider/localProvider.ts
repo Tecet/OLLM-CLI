@@ -248,6 +248,15 @@ export class LocalProvider implements ProviderAdapter {
       think: request.think, // Pass thinking parameter to Ollama
     };
 
+    // Log tool information for debugging
+    if (body.tools && Array.isArray(body.tools) && body.tools.length > 0) {
+      logger.info('Sending tools to Ollama', {
+        model: request.model,
+        toolCount: body.tools.length,
+        toolNames: body.tools.map((t: any) => t.function?.name).filter(Boolean),
+      });
+    }
+
     // Log context window configuration for debugging
     if (request.options?.num_ctx) {
       logger.debug('Sending context window configuration to Ollama', {

@@ -288,11 +288,21 @@ export function ModelProvider({ children, provider, initialModel }: ModelProvide
           console.debug('[ModelContext] Derived GPU placement hints:', gpuHints);
         }
 
+        // Log tool information for debugging
+        const toolsToSend = tools && tools.length > 0 && modelSupportsTools(currentModel) ? tools : undefined;
+        if (toolsToSend) {
+          console.log(`[ModelContext] Sending ${toolsToSend.length} tools to LLM:`, toolsToSend.map(t => t.name).join(', '));
+        } else if (tools && tools.length > 0 && !modelSupportsTools(currentModel)) {
+          console.log('[ModelContext] Tools available but model does not support them - not sending');
+        } else {
+          console.log('[ModelContext] No tools to send');
+        }
+
         // Stream the response
         const stream = provider.chatStream({
           model: currentModel,
           messages: providerMessages,
-          tools: tools && tools.length > 0 && modelSupportsTools(currentModel) ? tools : undefined,
+          tools: toolsToSend,
           systemPrompt: systemPrompt,
           abortSignal: abortController.signal,
           timeout: requestTimeout,
