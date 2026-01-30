@@ -3,7 +3,6 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 import { PromptRegistry } from '../prompts/PromptRegistry.js';
-import { REALITY_CHECK_PROMPT } from '../prompts/templates/sanity.js';
 
 export interface SystemPromptConfig {
   interactive: boolean;
@@ -17,9 +16,6 @@ export class SystemPromptBuilder {
   private baseDir: string;
 
   constructor(private registry: PromptRegistry) {
-    // Register sanity checks (still in TypeScript for now)
-    this.registry.register(REALITY_CHECK_PROMPT);
-
     // Set base directory for template files
     const moduleDir = path.dirname(fileURLToPath(import.meta.url));
     this.baseDir = path.resolve(moduleDir, '../prompts/templates');
@@ -72,11 +68,11 @@ export class SystemPromptBuilder {
       }
     }
 
-    // 3. Sanity Checks (Tier 2/3 - Optional)
+    // 3. Sanity Checks (Tier 2/3 - Optional, loaded from file)
     if (config.useSanityChecks) {
-      const sanity = this.registry.get('sanity-reality-check');
+      const sanity = this.loadTemplate('system/SanityChecks.txt');
       if (sanity) {
-        sections.push(sanity.content);
+        sections.push(sanity);
       }
     }
 
