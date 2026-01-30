@@ -129,6 +129,16 @@ Raport bugs:
  https://discord.gg/9GuCwdrB
  
  https://github.com/Tecet/OLLM
+
+
+
+![Logo](docs/img/logo.png)](http://github.com/Tecet/OLLM-CLI/blob/main/img/VS.png)
+
+![Logo](docs/img/logo.png)
+
+![Logo](docs/img/logo.png)
+
+
  
 
 # 📖 Documentation
