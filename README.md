@@ -124,8 +124,8 @@ Raport bugs:
 
 
 
-# Curently in aplha developmnet stage.
-# Tested on Windows CMD / Powershell and Nvidia GPU
+## OLLM is Curently in early access / demo - aplha developmnet stage, is not production grade software.
+## Tested on Windows CMD / Powershell and Nvidia GPU
 
 
 For detailed installation instructions, 
