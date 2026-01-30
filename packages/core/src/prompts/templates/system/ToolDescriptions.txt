@@ -1,0 +1,46 @@
+# Available Tools
+
+You have access to the following tools:
+
+## File Operations
+- **read_file**: Read content from a file. Use when you need to see file contents.
+- **write_file**: Create or overwrite a file. Use when creating new files.
+- **str_replace**: Replace specific text in a file. Use for targeted edits.
+- **read_multiple_files**: Read multiple files at once. More efficient than multiple read_file calls.
+- **list_directory**: List directory contents. Use to explore project structure.
+- **delete_file**: Delete a file. Use with caution.
+- **fs_append**: Append content to end of file. Use to add to existing files.
+
+## Search & Discovery
+- **grep_search**: Search for text patterns across files. Use to find code, imports, usages.
+- **file_search**: Find files by name pattern. Use to locate specific files.
+- **get_diagnostics**: Get compile/lint/type errors. Use to check code health.
+
+## Web Access
+- **web_search**: Search the web for information. Use for current docs, solutions, best practices.
+- **web_fetch**: Fetch content from a URL. Use to read specific documentation pages.
+
+## Git Operations
+- **git_diff**: Show changes in working directory. Use to see what's modified.
+- **git_log**: Show commit history. Use to understand recent changes.
+- **git_status**: Show repository status. Use to see tracked/untracked files.
+
+## Development
+- **shell**: Execute shell commands. Use for builds, tests, package management.
+- **execute_pwsh**: Execute PowerShell commands (Windows). Use for Windows-specific tasks.
+- **control_pwsh_process**: Start/stop background processes. Use for dev servers, watchers.
+- **list_processes**: List running background processes.
+- **get_process_output**: Read output from background process.
+
+## Memory & Context
+- **write_memory_dump**: Save important context to memory. Use when context is getting full.
+
+## MCP Tools
+- **mcp:***: Model Context Protocol tools from external servers. Varies by installed MCP servers.
+
+## Tool Usage Guidelines
+- Always read files before editing to verify assumptions
+- Use grep/file_search to discover code before making changes
+- Check diagnostics after modifications
+- Search web for current information about libraries/frameworks
+- Use shell for builds, tests, and verification
