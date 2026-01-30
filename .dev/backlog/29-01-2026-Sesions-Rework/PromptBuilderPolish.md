@@ -176,116 +176,277 @@ Current system has prompt components hardcoded in TypeScript files. We need to:
 **Status:** TODO - COMPLEX
 
 **Goal:** Create skills system that:
-1. Defines what skills are (typescript, testing, debugging, etc.)
-2. Explains available tools to LLM based on user settings
-3. Integrates with mode-specific tool restrictions
-4. Allows combining skills per mode
+1. Defines mode-specific skills (developer, assistant, planning, debugger)
+2. Explains available tools to LLM based on user settings per mode
+3. Gives users full control over which tools each mode can use
+4. Provides sensible defaults that users can override
 
-**Current State:**
-- ✅ Tool enable/disable UI exists (ToolsTab, ToolsPanel)
-- ✅ Settings saved in `~/.ollm/settings.json` under `tools: { [toolId]: boolean }`
-- ✅ ToolsContext manages tool state
-- ⚠️ Mode-specific tool restrictions exist but are hardcoded
-- ❌ No skills defined
-- ❌ Tools not explained to LLM
+**Architecture Overview:**
 
-**Tool Settings Storage:**
-```typescript
-// ~/.ollm/settings.json
+```
+Model Check → Mode Check → Settings Check → Tools Passed to LLM
+     ↓             ↓              ↓                    ↓
+Tool support?  Which mode?  User settings?    Filtered tools
+(yes/no)      (dev/assist)  (per mode)       + descriptions
+```
+
+**Flow:**
+1. Check if model supports tools (from model capabilities)
+2. If no tool support → Skip tool descriptions entirely
+3. If tool support → Get current mode
+4. Load user settings for that mode from `settings.json`
+5. Filter tools based on mode + user preferences
+6. Generate tool descriptions for allowed tools only
+7. Add to system prompt
+
+---
+
+#### 4.1: Update Settings Structure
+
+**Current:**
+```json
 {
   "tools": {
     "read_file": true,
     "write_file": true,
-    "shell": false,
-    // ... etc
+    "shell": false
   }
 }
 ```
 
-**Current Mode-Specific Tool Access (from PromptModeManager):**
-```typescript
-assistant: []                    // No tools
-planning: [                      // Read-only + web
-  'web_search', 'web_fetch',
-  'read_file', 'read_multiple_files',
-  'grep_search', 'file_search', 'list_directory',
-  'get_diagnostics', 'write_memory_dump',
-  'trigger_hot_swap', 'mcp:*'
-]
-developer: ['*']                 // All tools
-debugger: [                      // Read + diagnostics + git
-  'read_file', 'grep_search', 'list_directory',
-  'get_diagnostics', 'shell',
-  'git_diff', 'git_log',
-  'web_search', 'write_file', 'str_replace',
-  'write_memory_dump', 'trigger_hot_swap', 'mcp:*'
-]
-```
-
-**Proposed Improvement:**
-
-Instead of hardcoded mode restrictions, use a hybrid approach:
-1. **Developer/Debugger modes:** Use ALL enabled tools (user controls via UI)
-2. **Assistant/Planning modes:** Use mode-specific defaults + user overrides
-
-**New Settings Structure:**
-```typescript
-// ~/.ollm/settings.json
+**New (per-mode tool settings):**
+```json
 {
   "tools": {
     // Global enable/disable (affects all modes)
     "read_file": true,
     "write_file": true,
     "shell": true,
-    // ... etc
+    "web_search": true,
+    "git_diff": true
   },
   "toolsByMode": {
-    // Optional: Override per mode
+    "developer": {
+      // Developer gets all enabled tools by default
+      // User can disable specific tools if needed
+      "shell": true,
+      "write_file": true,
+      "git_diff": true
+      // ... all tools enabled
+    },
+    "debugger": {
+      // Debugger gets all enabled tools by default
+      "shell": true,
+      "git_diff": true,
+      "write_file": true
+      // ... all tools enabled
+    },
     "assistant": {
-      "read_file": true,      // Enable for assistant
-      "web_search": true,     // Enable for assistant
-      "write_file": false     // Disable for assistant (even if globally enabled)
+      // Assistant gets limited tools by default
+      "read_file": true,
+      "web_search": true,
+      "web_fetch": true,
+      // write_file: false (not in list = disabled)
+      // shell: false (not in list = disabled)
     },
     "planning": {
-      // Uses defaults + global settings if not specified
+      // Planning gets read-only + web tools by default
+      "read_file": true,
+      "read_multiple_files": true,
+      "grep_search": true,
+      "file_search": true,
+      "list_directory": true,
+      "web_search": true,
+      "web_fetch": true,
+      "get_diagnostics": true
+      // write_file: false (not in list = disabled)
+      // shell: false (not in list = disabled)
     }
   }
 }
 ```
 
-**Implementation Strategy:**
+**Default Tool Sets (if user hasn't customized):**
+```typescript
+const DEFAULT_TOOLS_BY_MODE = {
+  developer: ['*'],  // All enabled tools
+  debugger: ['*'],   // All enabled tools
+  assistant: [
+    'read_file',
+    'web_search',
+    'web_fetch'
+  ],
+  planning: [
+    'read_file',
+    'read_multiple_files',
+    'grep_search',
+    'file_search',
+    'list_directory',
+    'web_search',
+    'web_fetch',
+    'get_diagnostics',
+    'write_memory_dump',
+    'mcp:*'
+  ]
+};
+```
 
-#### 4.1: Create Skill Templates
+---
+
+#### 4.2: Create Mode-Specific Skill Templates
 
 **Location:** `packages/core/src/prompts/templates/system/skills/`
 
 **Files to create:**
-- `typescript.txt` - TypeScript best practices
-- `testing.txt` - Testing strategies and tools
-- `debugging.txt` - Debugging approaches
-- `refactoring.txt` - Code refactoring guidelines
-- `documentation.txt` - Documentation writing
-- `git.txt` - Git workflow and commands
+- `SkillsDeveloper.txt` - Full development capabilities
+- `SkillsAssistant.txt` - Conversational assistance
+- `SkillsPlanning.txt` - Planning and analysis
+- `SkillsDebugger.txt` - Debugging and troubleshooting
 
-**Example: `typescript.txt`**
+**Example: `SkillsDeveloper.txt`**
 ```markdown
-# TypeScript Skill
+# Developer Skills
 
-You have expertise in TypeScript development:
-- Use strict type checking
-- Prefer interfaces over types for objects
-- Use generics for reusable code
-- Avoid `any`, use `unknown` when type is uncertain
-- Leverage utility types (Partial, Pick, Omit, etc.)
+You are a full-stack developer with expertise in:
+
+## Code Development
+- Write clean, maintainable code following best practices
+- Use appropriate design patterns and architectures
+- Implement proper error handling and logging
+- Write comprehensive tests (unit, integration, e2e)
+
+## Code Quality
+- Follow existing project conventions and style
+- Refactor code for better readability and performance
+- Add meaningful comments explaining "why", not "what"
+- Use type systems effectively (TypeScript, etc.)
+
+## Problem Solving
+- Break down complex problems into manageable steps
+- Research solutions using web search when needed
+- Verify assumptions by reading actual code/docs
+- Test changes before considering them complete
+
+## Tools Usage
+- Use file operations to read and modify code
+- Execute shell commands for builds, tests, deployments
+- Use git for version control and collaboration
+- Search codebase efficiently with grep/file search
 ```
 
-**Note:** Skills are separate from tools. Skills are knowledge/guidelines, tools are actions.
+**Example: `SkillsAssistant.txt`**
+```markdown
+# Assistant Skills
 
-#### 4.2: Create Tool Descriptions Template
+You are a helpful AI assistant focused on:
+
+## Communication
+- Provide clear, concise explanations
+- Ask clarifying questions when needed
+- Adapt communication style to user preferences
+- Be friendly and professional
+
+## Information Gathering
+- Search the web for current information
+- Read documentation and files when relevant
+- Synthesize information from multiple sources
+- Verify facts before presenting them
+
+## Guidance
+- Offer suggestions and recommendations
+- Explain concepts in accessible terms
+- Provide examples when helpful
+- Guide users toward solutions without doing everything for them
+
+## Limitations
+- You cannot modify files or execute commands
+- You focus on information and guidance
+- You can read files to understand context
+- You can search the web for current information
+```
+
+**Example: `SkillsPlanning.txt`**
+```markdown
+# Planning Skills
+
+You are a strategic planner and analyst with expertise in:
+
+## Analysis
+- Break down complex requirements into clear steps
+- Identify dependencies and potential blockers
+- Assess risks and propose mitigations
+- Evaluate multiple approaches objectively
+
+## Planning
+- Create detailed, actionable plans
+- Define clear milestones and success criteria
+- Estimate effort and complexity realistically
+- Prioritize tasks based on impact and dependencies
+
+## Research
+- Gather information from codebase and documentation
+- Search for best practices and solutions
+- Analyze existing implementations
+- Identify patterns and anti-patterns
+
+## Documentation
+- Document plans clearly and concisely
+- Create structured outlines and roadmaps
+- Explain rationale behind decisions
+- Maintain context for future reference
+
+## Limitations
+- You cannot modify files directly
+- You focus on planning and analysis
+- You can read files to understand current state
+- You can search for information and best practices
+```
+
+**Example: `SkillsDebugger.txt`**
+```markdown
+# Debugger Skills
+
+You are a debugging specialist with expertise in:
+
+## Problem Diagnosis
+- Reproduce issues systematically
+- Read error logs and stack traces carefully
+- Identify root causes, not just symptoms
+- Form and test hypotheses methodically
+
+## Investigation
+- Use diagnostics tools to gather information
+- Search codebase for relevant code paths
+- Check git history for recent changes
+- Compare working vs broken states
+
+## Analysis
+- Understand code flow and data transformations
+- Identify edge cases and boundary conditions
+- Recognize common bug patterns
+- Assess impact and severity
+
+## Resolution
+- Propose targeted fixes with minimal changes
+- Verify fixes don't introduce new issues
+- Add tests to prevent regression
+- Document findings for future reference
+
+## Tools Usage
+- Read files to understand implementation
+- Use grep to find related code
+- Check diagnostics for compile/lint errors
+- Use git to see recent changes
+- Execute shell commands for testing
+```
+
+---
+
+#### 4.3: Create Tool Descriptions Template
 
 **Location:** `packages/core/src/prompts/templates/system/ToolDescriptions.txt`
 
-**Purpose:** Explain what each tool does (separate from tool schemas)
+**Purpose:** Explain what each tool does (will be filtered per mode)
 
 **Format:**
 ```markdown
@@ -294,115 +455,108 @@ You have expertise in TypeScript development:
 You have access to the following tools:
 
 ## File Operations
-- read_file: Read content from a file
-- write_file: Create or overwrite a file
-- str_replace: Replace text in a file
-- read_multiple_files: Read multiple files at once
-- list_directory: List directory contents
+- **read_file**: Read content from a file. Use when you need to see file contents.
+- **write_file**: Create or overwrite a file. Use when creating new files.
+- **str_replace**: Replace specific text in a file. Use for targeted edits.
+- **read_multiple_files**: Read multiple files at once. More efficient than multiple read_file calls.
+- **list_directory**: List directory contents. Use to explore project structure.
 
 ## Search & Discovery
-- grep_search: Search for text patterns in files
-- file_search: Find files by name pattern
-- get_diagnostics: Get compile/lint errors
+- **grep_search**: Search for text patterns across files. Use to find code, imports, usages.
+- **file_search**: Find files by name pattern. Use to locate specific files.
+- **get_diagnostics**: Get compile/lint/type errors. Use to check code health.
 
 ## Web Access
-- web_search: Search the web for information
-- web_fetch: Fetch content from a URL
+- **web_search**: Search the web for information. Use for current docs, solutions, best practices.
+- **web_fetch**: Fetch content from a URL. Use to read specific documentation pages.
 
 ## Git Operations
-- git_diff: Show changes in working directory
-- git_log: Show commit history
-- git_status: Show repository status
+- **git_diff**: Show changes in working directory. Use to see what's modified.
+- **git_log**: Show commit history. Use to understand recent changes.
+- **git_status**: Show repository status. Use to see tracked/untracked files.
 
 ## Development
-- shell: Execute shell commands
-- write_memory_dump: Save important context to memory
+- **shell**: Execute shell commands. Use for builds, tests, package management.
+- **write_memory_dump**: Save important context to memory. Use when context is getting full.
 
 ## MCP Tools
-- mcp:*: Model Context Protocol tools (varies by server)
+- **mcp:***: Model Context Protocol tools from external servers. Varies by installed MCP servers.
 
-Use tools proactively to gather information before making assumptions.
+**Tool Usage Guidelines:**
+- Always read files before editing to verify assumptions
+- Use grep/file_search to discover code before making changes
+- Check diagnostics after modifications
+- Search web for current information about libraries/frameworks
+- Use shell for builds, tests, and verification
 ```
 
-#### 4.3: Tool Filtering Logic
+---
 
-**New approach:**
-1. Get globally enabled tools from settings
-2. For developer/debugger: Use ALL enabled tools
-3. For assistant/planning: Filter by mode defaults + user overrides
-4. Generate tool descriptions for only the allowed tools
+#### 4.4: Update Tool Filtering Logic
 
-**Pseudocode:**
+**New SettingsService methods:**
 ```typescript
-function getToolsForMode(mode: string, settings: UserSettings): string[] {
-  const globallyEnabled = Object.entries(settings.tools)
+// In SettingsService
+getToolsForMode(mode: string): string[] {
+  const settings = this.getSettings();
+  
+  // Get globally enabled tools
+  const globallyEnabled = Object.entries(settings.tools || {})
     .filter(([_, enabled]) => enabled)
     .map(([toolId, _]) => toolId);
   
-  if (mode === 'developer' || mode === 'debugger') {
-    // Use all globally enabled tools
-    return globallyEnabled;
+  // Get mode-specific settings (or use defaults)
+  const modeSettings = settings.toolsByMode?.[mode];
+  
+  if (!modeSettings) {
+    // Use defaults if user hasn't customized
+    const defaults = DEFAULT_TOOLS_BY_MODE[mode] || [];
+    if (defaults.includes('*')) {
+      return globallyEnabled; // All enabled tools
+    }
+    return globallyEnabled.filter(tool => defaults.includes(tool));
   }
   
-  // For assistant/planning, use mode defaults
-  const modeDefaults = getModeDefaults(mode);
-  const modeOverrides = settings.toolsByMode?.[mode] || {};
-  
+  // User has customized this mode
   return globallyEnabled.filter(toolId => {
-    // Check mode-specific override first
-    if (toolId in modeOverrides) {
-      return modeOverrides[toolId];
-    }
-    // Fall back to mode defaults
-    return modeDefaults.includes(toolId) || modeDefaults.includes('*');
+    return modeSettings[toolId] === true;
   });
+}
+
+setToolForMode(mode: string, toolId: string, enabled: boolean): void {
+  const settings = this.getSettings();
+  
+  if (!settings.toolsByMode) {
+    settings.toolsByMode = {};
+  }
+  
+  if (!settings.toolsByMode[mode]) {
+    settings.toolsByMode[mode] = {};
+  }
+  
+  settings.toolsByMode[mode][toolId] = enabled;
+  this.saveSettings(settings);
 }
 ```
 
-#### 4.4: Update SystemPromptBuilder
+---
 
-**Changes needed:**
-1. Load skill templates from files
-2. Load tool descriptions template
-3. Filter tool descriptions based on mode + settings
-4. Combine skills + tools into coherent section
+#### 4.5: Update SystemPromptBuilder
 
-**Proposed build order:**
-```
-1. Tier-specific template (identity + mode-specific guidance)
-2. Core Mandates (universal rules)
-3. Available Tools (filtered by mode + user settings)
-4. Active Skills (if any)
-5. Sanity Checks (if Tier 1-2)
-6. Project Rules (if any)
-```
-
-#### 4.5: Integration Points
-
-**PromptOrchestrator.updateSystemPrompt():**
+**New interface:**
 ```typescript
-updateSystemPrompt({ mode, tier, activeSkills, ... }) {
-  // Get tools for this mode (respects user settings)
-  const allowedTools = this.getToolsForMode(mode);
-  
-  // Build base prompt with tools and skills
-  const basePrompt = this.systemPromptBuilder.build({
-    interactive: true,
-    mode: mode,                           // NEW: Pass mode
-    tier: tier,                           // NEW: Pass tier
-    allowedTools: allowedTools,           // NEW: Pass allowed tools
-    useSanityChecks: tier <= Tier.TIER_2, // NEW: Enable for small tiers
-    skills: activeSkills,
-  });
-  
-  const tierPrompt = this.getSystemPromptForTierAndMode(mode, tier);
-  const newPrompt = [tierPrompt, basePrompt].filter(Boolean).join('\n\n');
-  
-  return { message: systemPrompt, tokenBudget };
+export interface SystemPromptConfig {
+  interactive: boolean;
+  mode: string;                    // NEW: Current mode
+  tier: ContextTier;               // NEW: Current tier
+  modelSupportsTools: boolean;     // NEW: Model capability
+  allowedTools: string[];          // NEW: Tools for this mode
+  useSanityChecks?: boolean;
+  additionalInstructions?: string;
 }
 ```
 
-**SystemPromptBuilder.build():**
+**New build logic:**
 ```typescript
 build(config: SystemPromptConfig): string {
   const sections: string[] = [];
@@ -410,24 +564,26 @@ build(config: SystemPromptConfig): string {
   // 1. Core Mandates (always)
   sections.push(this.loadTemplate('system/CoreMandates.txt'));
   
-  // 2. Available Tools (filtered by mode + user settings)
-  const toolsSection = this.buildToolsSection(config.allowedTools);
-  if (toolsSection) sections.push(toolsSection);
-  
-  // 3. Active Skills (if any)
-  if (config.skills?.length > 0) {
-    const skillsSection = this.buildSkillsSection(config.skills);
-    if (skillsSection) sections.push(skillsSection);
+  // 2. Mode-Specific Skills
+  const skillsFile = `system/skills/Skills${capitalize(config.mode)}.txt`;
+  if (this.templateExists(skillsFile)) {
+    sections.push(this.loadTemplate(skillsFile));
   }
   
-  // 4. Sanity Checks (if enabled)
+  // 3. Available Tools (only if model supports tools)
+  if (config.modelSupportsTools && config.allowedTools.length > 0) {
+    const toolsSection = this.buildToolsSection(config.allowedTools);
+    if (toolsSection) sections.push(toolsSection);
+  }
+  
+  // 4. Sanity Checks (if enabled for small tiers)
   if (config.useSanityChecks) {
     sections.push(this.loadTemplate('system/SanityChecks.txt'));
   }
   
-  // 5. Project Rules (if any)
-  if (config.projectRules) {
-    sections.push('# Project Rules\n' + config.projectRules);
+  // 5. Additional Instructions (if any)
+  if (config.additionalInstructions) {
+    sections.push('# Additional Instructions\n' + config.additionalInstructions);
   }
   
   return sections.join('\n\n');
@@ -439,32 +595,144 @@ buildToolsSection(allowedTools: string[]): string {
   // Filter to only show allowed tools
   return this.filterToolDescriptions(allToolDescriptions, allowedTools);
 }
+
+filterToolDescriptions(fullText: string, allowedTools: string[]): string {
+  // Parse tool descriptions and filter to only allowed tools
+  // Keep section headers, remove tools not in allowedTools list
+  // Return filtered markdown
+}
 ```
 
-#### 4.6: UI Enhancement (Optional)
+---
 
-**Add per-mode tool settings:**
-1. Add "Mode Overrides" section to ToolsTab
-2. Show which tools are available in each mode
-3. Allow users to override mode defaults
-4. Save to `settings.toolsByMode`
+#### 4.6: Update PromptOrchestrator
 
-**Benefits:**
-- Users can customize assistant/planning tool access
-- Developer/debugger always get all enabled tools
-- Clear visibility of what tools are available per mode
+**Changes:**
+```typescript
+updateSystemPrompt({ mode, tier, ... }) {
+  // Check if model supports tools
+  const modelEntry = profileManager.getModelEntry(this.model);
+  const modelSupportsTools = modelEntry?.tool_support ?? false;
+  
+  // Get allowed tools for this mode (from user settings)
+  const allowedTools = modelSupportsTools 
+    ? settingsService.getToolsForMode(mode)
+    : [];
+  
+  // Build base prompt
+  const basePrompt = this.systemPromptBuilder.build({
+    interactive: true,
+    mode: mode,
+    tier: tier,
+    modelSupportsTools: modelSupportsTools,
+    allowedTools: allowedTools,
+    useSanityChecks: tier <= ContextTier.TIER_2_BASIC,
+  });
+  
+  const tierPrompt = this.getSystemPromptForTierAndMode(mode, tier);
+  const newPrompt = [tierPrompt, basePrompt].filter(Boolean).join('\n\n');
+  
+  return { message: systemPrompt, tokenBudget };
+}
+```
 
-**Actions:**
-1. Create skill template files
-2. Create ToolDescriptions.txt
-3. Implement getToolsForMode() logic
-4. Update SystemPromptBuilder interface
-5. Implement buildToolsSection()
-6. Implement buildSkillsSection()
-7. Update PromptOrchestrator to pass mode/tier/tools
-8. Test with each mode to verify correct tools shown
-9. Validate token budgets still met
-10. (Optional) Add per-mode tool settings UI
+---
+
+#### 4.7: Redesign Tools UI
+
+**New UI Structure:**
+
+```
+┌─ Tools ─────────────────────────────────────┐
+│                                              │
+│ Mode: [Developer ▼]                         │
+│                                              │
+│ ┌─ File Operations ────────────────────┐   │
+│ │ ✓ read_file                           │   │
+│ │ ✓ write_file                          │   │
+│ │ ✓ str_replace                         │   │
+│ │ ✓ read_multiple_files                 │   │
+│ │ ✓ list_directory                      │   │
+│ └───────────────────────────────────────┘   │
+│                                              │
+│ ┌─ Search & Discovery ─────────────────┐   │
+│ │ ✓ grep_search                         │   │
+│ │ ✓ file_search                         │   │
+│ │ ✓ get_diagnostics                     │   │
+│ └───────────────────────────────────────┘   │
+│                                              │
+│ [Copy to Assistant] [Copy to Planning]      │
+│ [Reset to Defaults]                          │
+└──────────────────────────────────────────────┘
+```
+
+**Features:**
+1. Mode selector dropdown at top
+2. Show tools for selected mode
+3. Enable/disable per mode
+4. "Copy to X" buttons to copy settings between modes
+5. "Reset to Defaults" to restore default tool set
+6. Visual indicator if using defaults vs customized
+
+**Implementation:**
+- Update ToolsTab to show mode selector
+- Update ToolsContext to handle per-mode settings
+- Add mode parameter to toggleTool()
+- Save to settings.toolsByMode
+- Show which mode is currently active
+
+---
+
+#### 4.8: Implementation Steps
+
+**Phase 1: Settings Structure**
+1. Update UserSettings interface with toolsByMode
+2. Add DEFAULT_TOOLS_BY_MODE constants
+3. Implement getToolsForMode() in SettingsService
+4. Implement setToolForMode() in SettingsService
+5. Test settings save/load
+
+**Phase 2: Skill Templates**
+1. Create system/skills/ folder
+2. Write SkillsDeveloper.txt
+3. Write SkillsAssistant.txt
+4. Write SkillsPlanning.txt
+5. Write SkillsDebugger.txt
+6. Validate token counts
+
+**Phase 3: Tool Descriptions**
+1. Create system/ToolDescriptions.txt
+2. Document all built-in tools
+3. Add usage guidelines
+4. Validate token count
+
+**Phase 4: SystemPromptBuilder**
+1. Update SystemPromptConfig interface
+2. Implement mode-specific skills loading
+3. Implement tool filtering logic
+4. Implement filterToolDescriptions()
+5. Test with each mode
+
+**Phase 5: PromptOrchestrator**
+1. Add model tool support check
+2. Integrate with SettingsService
+3. Pass correct parameters to SystemPromptBuilder
+4. Test with tool-capable and non-tool models
+
+**Phase 6: UI Redesign**
+1. Add mode selector to ToolsTab
+2. Update ToolsContext for per-mode settings
+3. Implement "Copy to" and "Reset" buttons
+4. Add visual indicators for defaults vs custom
+5. Test UI interactions
+
+**Phase 7: Testing & Validation**
+1. Test each mode with correct tools
+2. Verify model without tool support works
+3. Validate token budgets
+4. Test UI tool selection
+5. Test settings persistence
+6. Run budget validation script
 
 ---
 
