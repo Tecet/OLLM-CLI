@@ -205,7 +205,7 @@ export const GENERATED_MODEL_DB: ModelEntry[] = [
     "family": "gemma3:1b",
     "contextWindow": 131072,
     "capabilities": {
-      "toolCalling": true,
+      "toolCalling": false,
       "vision": false,
       "streaming": true,
       "reasoning": false
@@ -224,7 +224,7 @@ export const GENERATED_MODEL_DB: ModelEntry[] = [
     "family": "gemma3:4b",
     "contextWindow": 131072,
     "capabilities": {
-      "toolCalling": true,
+      "toolCalling": false,
       "vision": false,
       "streaming": true,
       "reasoning": true
@@ -243,7 +243,7 @@ export const GENERATED_MODEL_DB: ModelEntry[] = [
     "family": "gemma3n:e2b",
     "contextWindow": 131072,
     "capabilities": {
-      "toolCalling": true,
+      "toolCalling": false,
       "vision": false,
       "streaming": true,
       "reasoning": false
@@ -381,7 +381,7 @@ export const GENERATED_MODEL_DB: ModelEntry[] = [
     "family": "llama3.2:3b",
     "contextWindow": 131072,
     "capabilities": {
-      "toolCalling": true,
+      "toolCalling": false,
       "vision": false,
       "streaming": true,
       "reasoning": false
@@ -1275,7 +1275,7 @@ export const GENERATED_RAW_PROFILES = {
       "General Purpose",
       "Fast Inference"
     ],
-    "tool_support": true,
+    "tool_support": false,
     "reasoning": false,
     "ollama_url": "https://ollama.com/library/gemma3",
     "max_context_window": 131072,
@@ -1337,7 +1337,7 @@ export const GENERATED_RAW_PROFILES = {
       "General Purpose",
       "Reasoning"
     ],
-    "tool_support": true,
+    "tool_support": false,
     "reasoning": false,
     "ollama_url": "https://ollama.com/library/gemma3",
     "max_context_window": 131072,
@@ -1399,7 +1399,7 @@ export const GENERATED_RAW_PROFILES = {
       "General Purpose",
       "Experimental"
     ],
-    "tool_support": true,
+    "tool_support": false,
     "reasoning": false,
     "ollama_url": "https://ollama.com/library/gemma3",
     "max_context_window": 131072,
@@ -1792,7 +1792,7 @@ export const GENERATED_RAW_PROFILES = {
       "General Purpose",
       "Edge Optimized"
     ],
-    "tool_support": true,
+    "tool_support": false,
     "reasoning": false,
     "ollama_url": "https://ollama.com/library/llama3.2",
     "max_context_window": 131072,

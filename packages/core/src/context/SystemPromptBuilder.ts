@@ -76,7 +76,15 @@ export class SystemPromptBuilder {
       sections.push(mandates);
     }
 
-    // 2. Mode-Specific Skills (if mode is provided)
+    // 2. Sanity Checks (Optional, loaded from file)
+    if (config.useSanityChecks) {
+      const sanity = this.loadTemplate('system/SanityChecks.txt');
+      if (sanity) {
+        sections.push(sanity);
+      }
+    }
+
+    // 3. Mode-Specific Skills (if mode is provided)
     if (config.mode) {
       const skillsFile = `system/skills/Skills${this.capitalize(config.mode)}.txt`;
       if (this.templateExists(skillsFile)) {
@@ -87,19 +95,11 @@ export class SystemPromptBuilder {
       }
     }
 
-    // 3. Available Tools (only if model supports tools and tools are provided)
+    // 4. Available Tools (only if model supports tools and tools are provided)
     if (config.modelSupportsTools && config.allowedTools && config.allowedTools.length > 0) {
       const toolsSection = this.buildToolsSection(config.allowedTools);
       if (toolsSection) {
         sections.push(toolsSection);
-      }
-    }
-
-    // 4. Sanity Checks (Optional, loaded from file)
-    if (config.useSanityChecks) {
-      const sanity = this.loadTemplate('system/SanityChecks.txt');
-      if (sanity) {
-        sections.push(sanity);
       }
     }
 

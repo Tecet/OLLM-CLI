@@ -480,7 +480,7 @@ export class PromptModeManager extends EventEmitter {
    */
   getAllowedTools(mode: ModeType): string[] {
     const toolAccess: Record<ModeType, string[]> = {
-      assistant: ['web_search', 'read_file', 'read_multiple_files'],
+      assistant: [], // Pure chat mode by default - prevents tool overuse
       planning: [
         'web_search',
         'web_fetch',

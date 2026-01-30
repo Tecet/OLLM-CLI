@@ -238,79 +238,6 @@ export function ContextManagerProvider({
         log(`[ContextManagerContext] Session ID: ${sessionId}`);
         log(`[ContextManagerContext] Model ID: ${modelInfo?.modelId}`);
 
-        // Check for pending context size from SessionManager
-        let effectiveConfig: Partial<ContextConfig> | undefined = config;
-        try {
-          const { getSessionManager } = await import('./SessionManager.js');
-          const sessionManager = getSessionManager();
-          const pendingSize = sessionManager.getPendingContextSize();
-
-          if (pendingSize !== null) {
-            log(`[ContextManagerContext] Using pending context size: ${pendingSize}`);
-
-            // Get ollama_context_size from profile
-            let ollamaContextSize = Math.floor(pendingSize * 0.85);
-            try {
-              const { profileManager } = await import('../profiles/ProfileManager.js');
-              const modelEntry = profileManager.getModelEntry(modelInfo?.modelId || '');
-              const contextProfile = modelEntry.context_profiles?.find(
-                (p: any) => p.size === pendingSize
-              );
-              if (contextProfile?.ollama_context_size) {
-                ollamaContextSize = contextProfile.ollama_context_size;
-                log(
-                  `[ContextManagerContext] Using ollama_context_size from profile: ${ollamaContextSize}`
-                );
-              }
-            } catch (error) {
-              log(`[ContextManagerContext] Failed to get ollama_context_size: ${error}`);
-            }
-
-            effectiveConfig = {
-              ...config,
-              targetSize: pendingSize,
-              ollamaContextSize,
-              autoSize: false,
-            };
-          } else {
-            // Use user's selected context size from config, or default to 8K
-            const userContextSize = config?.targetSize || 8192;
-
-            // Get ollama_context_size from profile
-            let ollamaContextSize = Math.floor(userContextSize * 0.85);
-            try {
-              const { profileManager } = await import('../profiles/ProfileManager.js');
-              const modelEntry = profileManager.getModelEntry(modelInfo?.modelId || '');
-              const contextProfile = modelEntry.context_profiles?.find(
-                (p: any) => p.size === userContextSize
-              );
-              if (contextProfile?.ollama_context_size) {
-                ollamaContextSize = contextProfile.ollama_context_size;
-                log(
-                  `[ContextManagerContext] Using ollama_context_size from profile: ${ollamaContextSize} for context ${userContextSize}`
-                );
-              } else {
-                log(
-                  `[ContextManagerContext] No profile found for ${userContextSize}, using 85% fallback: ${ollamaContextSize}`
-                );
-              }
-            } catch (error) {
-              log(`[ContextManagerContext] Failed to get ollama_context_size: ${error}`);
-            }
-
-            effectiveConfig = {
-              ...config,
-              targetSize: userContextSize,
-              ollamaContextSize,
-            };
-          }
-        } catch (error) {
-          log(`[ContextManagerContext] Failed to check pending context size: ${error}`);
-        }
-
-        // Create context manager using new factory
-        const storagePath = path.join(os.homedir(), '.ollm', 'context-storage');
-
         // Check if provider is available
         if (!provider) {
           log(
@@ -321,22 +248,26 @@ export function ContextManagerProvider({
           return;
         }
 
+        // Create context manager using new factory
+        const storagePath = path.join(os.homedir(), '.ollm', 'context-storage');
+
         log('[ContextManagerContext] Creating context manager with factory...');
         log(`[ContextManagerContext] Model info: ${JSON.stringify(modelInfo)}`);
-        log(`[ContextManagerContext] Effective config: ${JSON.stringify(effectiveConfig)}`);
 
         // Load saved mode from settings, default to developer
         const savedMode = SettingsService.getInstance().getMode() || 'assistant';
         log(`[ContextManagerContext] Using mode: ${savedMode}`);
 
+        // Simply pass provided config - factory handles the rest (defaults, calculations, etc.)
         const { manager } = createContextManager({
           sessionId,
           modelInfo: {
             ...modelInfo,
-            contextSize: effectiveConfig?.targetSize,
+            // If targetSize is provided in config, use it. Otherwise factory defaults to 8192
+            contextSize: config?.targetSize,
           },
           contextConfig: {
-            ...effectiveConfig,
+            ...config,
             mode: savedMode as any, // Pass mode to factory
           },
           provider, // Provider is now validated
@@ -353,11 +284,6 @@ export function ContextManagerProvider({
         const contextAnalyzer = new ContextAnalyzer();
         const modeManager = new PromptModeManager(contextAnalyzer);
         modeManagerRef.current = modeManager;
-
-        // Note: Old createSnapshotManager removed - using PromptsSnapshotManager below
-        // const modeSnapshotPath = path.join(os.homedir(), '.ollm', 'mode-snapshots');
-        // const snapshotStorage = createSnapshotStorage(modeSnapshotPath);
-        // const snapshotManager = createSnapshotManager(snapshotStorage, {...});
 
         // Create workflow manager
         const workflowManager = new WorkflowManager(modeManager);
@@ -775,6 +701,9 @@ export function ContextManagerProvider({
     [modelInfo]
   );
 
+  // PromptRegistry for hot swap (lazy init)
+  const promptRegistryRef = useRef<PromptRegistry | null>(null);
+
   const hotSwap = useCallback(
     async (newSkills?: string[]) => {
       if (!managerRef.current) return;
@@ -784,10 +713,13 @@ export function ContextManagerProvider({
       }
 
       try {
-        const promptRegistry = new PromptRegistry();
+        if (!promptRegistryRef.current) {
+          promptRegistryRef.current = new PromptRegistry();
+        }
+
         const hotSwapService = new HotSwapService(
           managerRef.current,
-          promptRegistry,
+          promptRegistryRef.current,
           provider,
           modelId,
           modeManagerRef.current || undefined,

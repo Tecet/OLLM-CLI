@@ -1,9 +1,11 @@
 # Available Tools
 
-You have access to the following tools:
+You have access to the following tools.
+CRITICAL: You must ONLY use these tools when absolutely necessary for the user's request.
+If a request can be answered effectively with your internal knowledge, you MUST do so without using tools.
 
 ## File Operations
-- **read_file**: Read content from a file. Use when you need to see file contents.
+- **read_file**: Read content from a file. Use ONLY when you are sure the file exists and is relevant. Do NOT use for greetings.
 - **write_file**: Create or overwrite a file. Use when creating new files.
 - **str_replace**: Replace specific text in a file. Use for targeted edits.
 - **read_multiple_files**: Read multiple files at once. More efficient than multiple read_file calls.
@@ -17,7 +19,7 @@ You have access to the following tools:
 - **get_diagnostics**: Get compile/lint/type errors. Use to check code health.
 
 ## Web Access
-- **web_search**: Search for SPECIFIC, REQUIRED info not in internal knowledge. Do NOT use for general concepts.
+- **web_search**: Search for SPECIFIC, REQUIRED info not in internal knowledge. Do NOT use for general concepts. Use of this tool for general knowledge is FORBIDDEN.
 - **web_fetch**: Fetch content from a URL. Use to read specific documentation pages.
 
 ## Git Operations

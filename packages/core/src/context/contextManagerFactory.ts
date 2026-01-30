@@ -167,14 +167,30 @@ export function createContextManager(
     // Get settings service for tool filtering
     const settingsService = config.services?.settingsService;
 
+    // Check tool support from model info
+    // This comes from LLM_profiles.json so it's the source of truth
+    const modelSupportsTools =
+      (config.modelInfo as any).tool_support ??
+      (config.modelInfo as any).capabilities?.tools ??
+      false;
+
+    log(`[ContextManagerFactory] Model ${config.modelInfo.modelId} supports tools: ${modelSupportsTools}`);
+
     // Get allowed tools for current mode (if settings service available)
     let allowedTools: string[] | undefined;
-    if (settingsService && typeof settingsService.getToolsForMode === 'function') {
-      try {
-        allowedTools = settingsService.getToolsForMode(mode);
-      } catch (error) {
-        log(`[ContextManagerFactory] Failed to get tools for mode: ${error}`);
+
+    if (modelSupportsTools) {
+      if (settingsService && typeof settingsService.getToolsForMode === 'function') {
+        try {
+          allowedTools = settingsService.getToolsForMode(mode);
+        } catch (error) {
+          log(`[ContextManagerFactory] Failed to get tools for mode: ${error}`);
+        }
       }
+    } else {
+      // Force empty tools if model doesn't support them
+      allowedTools = [];
+      log('[ContextManagerFactory] Tools disabled because model does not support them');
     }
 
     // Build system prompt using PromptOrchestratorIntegration
