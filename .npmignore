@@ -1,0 +1,36 @@
+# Source files
+src/
+*.ts
+!*.d.ts
+tsconfig*.json
+
+# Development files
+.vitest.setup.ts
+vitest.config.ts
+eslint.config.js
+.prettierrc.json
+.gitignore
+
+# Test files
+**/__tests__/
+**/*.test.ts
+**/*.test.js
+
+# Build artifacts
+tsconfig.tsbuildinfo
+.tmp-*
+
+# IDE
+.vscode/
+.idea/
+.dev/
+.kiro/
+.test-snapshots/
+.ollm/
+.obsidian/
+.legacy/
+.github/
+
+
+# Logs
+*.log

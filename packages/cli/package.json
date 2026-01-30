@@ -1,6 +1,6 @@
 {
   "name": "@tecet/ollm",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Local-first CLI for open-source LLMs with tools, hooks, and MCP integration",
   "type": "module",
   "bin": {
@@ -9,7 +9,8 @@
   "files": [
     "dist",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "docs"
   ],
   "engines": {
     "node": ">=20.0.0"
@@ -18,7 +19,9 @@
     "build": "tsc",
     "dev": "tsc -w",
     "start": "node dist/cli.js",
-    "test": "vitest"
+    "test": "vitest",
+    "prepack": "node ../../scripts/copy-docs-to-package.cjs .",
+    "postpack": "node ../../scripts/remove-docs-from-package.cjs ."
   },
   "keywords": [
     "llm",
@@ -63,12 +66,17 @@
     "shiki": "^3.21.0",
     "simple-git": "^3.30.0",
     "terminal-image": "^1.1.0",
+    "node-pty": "^1.1.0",
+    "@xterm/headless": "^6.0.0",
+    "ink-text-input": "^6.0.0",
+    "sharp": "^0.34.5",
     "vitest": "4.0.17",
     "yaml": "^2.3.4",
     "yargs": "^17.7.0"
   },
   "devDependencies": {
     "@types/react": "^19.0.0",
-    "@types/yargs": "^17.0.0"
+    "@types/yargs": "^17.0.0",
+    "ink-testing-library": "github:vadimdemedes/ink-testing-library"
   }
 }

@@ -15,61 +15,14 @@ const GLOBALLY_DISABLED_TOOLS = [
 ];
 
 // Default tool sets per mode
-// IMPORTANT: Limit tools to prevent LLM confusion. Too many tools (18+) causes
-// the LLM to launch multiple unnecessary tools. Keep essential tools only.
-// Goal management tools (create_goal, etc.) should NOT be in default sets.
+// NOTE: tools are disabled by default per-mode to prevent accidental usage.
+// Individual users can enable tools via settings.tools or settings.toolsByMode.
 const DEFAULT_TOOLS_BY_MODE: Record<string, string[]> = {
-  // Developer mode: Core development tools only (8 tools)
-  developer: [
-    'read_file',
-    'read_multiple_files',
-    'write_file',
-    'edit_file',
-    'grep_search',
-    'file_search',
-    'list_directory',
-    'shell',
-  ],
-  // Debugger mode: Debugging and analysis tools (7 tools)
-  debugger: [
-    'read_file',
-    'read_multiple_files',
-    'grep_search',
-    'file_search',
-    'list_directory',
-    'get_diagnostics',
-    'shell',
-  ],
-  // Assistant mode: Minimal tools for general assistance (3 tools)
-  // NO goal tools - these confuse the LLM for simple conversations
-  assistant: ['read_file', 'web_search', 'web_fetch'],
-  // Planning mode: Research and analysis tools (10 tools)
-  planning: [
-    'read_file',
-    'read_multiple_files',
-    'grep_search',
-    'file_search',
-    'list_directory',
-    'web_search',
-    'web_fetch',
-    'get_diagnostics',
-    'write_memory_dump',
-    'mcp:*',
-  ],
-  // User mode: Balanced set of common tools (10 tools)
-  // NO goal tools - these are for advanced workflows only
-  user: [
-    'read_file',
-    'read_multiple_files',
-    'write_file',
-    'edit_file',
-    'grep_search',
-    'file_search',
-    'list_directory',
-    'web_search',
-    'web_fetch',
-    'memory',
-  ],
+  developer: [],
+  debugger: [],
+  assistant: [],
+  planning: [],
+  user: [],
 };
 
 export interface UserSettings {
@@ -539,7 +492,7 @@ export class SettingsService {
     // Get mode-specific settings (or use defaults)
     const modeSettings = this.settings.toolsByMode?.[mode];
 
-    if (!modeSettings || Object.keys(modeSettings).length === 0) {
+    if (!modeSettings || Object.keys(modeSettings || {}).length === 0) {
       // Use defaults if user hasn't customized
       const defaults = DEFAULT_TOOLS_BY_MODE[mode] || [];
       if (defaults.includes('*')) {
@@ -550,7 +503,7 @@ export class SettingsService {
 
     // User has customized this mode
     return globallyEnabled.filter((toolId) => {
-      return modeSettings[toolId] === true;
+      return modeSettings?.[toolId] === true;
     });
   }
 

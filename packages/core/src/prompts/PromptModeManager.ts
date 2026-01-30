@@ -75,37 +75,11 @@ const CONFIDENCE_THRESHOLDS: Record<string, number> = {
   'planning->developer': 0.8,
   'developer->planning': 0.6, // Easier to step back
   'developer->debugger': 0.85,
-  'debugger->developer': 0.7,
-
-  // Tool mode
-  'any->tool': 0.9,
-
-  // Default threshold
-  default: 0.7,
-};
-
-/**
- * Prompt Mode Manager
- *
- * Central orchestration layer for the dynamic prompt system.
- */
-export class PromptModeManager extends EventEmitter {
-  private state: ModeState;
-  private modeHistory: ModeTransition[] = [];
-  private readonly maxHistorySize = 100;
-  private metricsTracker?: ModeMetricsTracker; // Optional: only created if enabled
-  private focusModeManager: FocusModeManager;
-  private animator: ModeTransitionAnimator;
-
-  // Timing configuration
-  private readonly minDuration = 60000; // 60 seconds (increased from 15s to prevent rapid switching)
-  private readonly cooldownPeriod = 30000; // 30 seconds (increased from 10s)
-
-  constructor(
-    private contextAnalyzer: ContextAnalyzer,
-    config: { enableMetrics?: boolean } = {}
-  ) {
-    super();
+      assistant: [],
+      planning: [],
+      developer: [],
+      debugger: [],
+      user: [],
 
     // Initialize metrics tracker (optional, default disabled)
     if (config.enableMetrics) {
@@ -479,7 +453,10 @@ export class PromptModeManager extends EventEmitter {
    * Get allowed tools for a specific mode
    */
   getAllowedTools(mode: ModeType): string[] {
+    // Disable tool access by default per-mode to prevent automatic tool usage.
+    // Users may still enable tools via SettingsService (`tools` or `toolsByMode`).
     const toolAccess: Record<ModeType, string[]> = {
+<<<<<<< HEAD
       assistant: [], // Pure chat mode by default - prevents tool overuse
       planning: [
         'web_search',
@@ -511,6 +488,13 @@ export class PromptModeManager extends EventEmitter {
         'mcp:*',
       ],
       user: ['*'],
+=======
+      assistant: [],
+      planning: [],
+      developer: [],
+      debugger: [],
+      user: [],
+>>>>>>> test
     };
 
     return toolAccess[mode] || [];
