@@ -1,6 +1,6 @@
 {
   "name": "@tecet/ollm",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Local-first CLI for open-source LLMs with tools, hooks, and MCP integration",
   "type": "module",
   "bin": {
