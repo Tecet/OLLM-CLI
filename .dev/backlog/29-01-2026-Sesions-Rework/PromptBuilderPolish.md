@@ -1,7 +1,7 @@
 # Prompt Builder Polish - Redesign System
 
 **Date:** 2026-01-30  
-**Status:** ✅ MOSTLY COMPLETE - Minor tasks remaining  
+**Status:** ✅ COMPLETE - All core tasks done, only optional enhancement remaining  
 **Goal:** Move prompt components from hardcoded TypeScript to template files and improve system
 
 ---
@@ -47,7 +47,14 @@
    - Default tool settings include user mode
    - All 5 modes working
 
-### ⚠️ REMAINING TASKS
+6. **TASK 7: Refactor /test prompt Command Output** ✅
+   - Get real tool schemas from ToolRegistry
+   - Show actual tools in Ollama payload JSON
+   - Display tool count and names accurately
+   - Match chat flow filtering logic
+   - `/test prompt` now reliably shows what gets sent to LLM
+
+### ⚠️ OPTIONAL ENHANCEMENTS
 
 6. **TASK 5: Integrate Focused Files and Project Rules** ⚠️ OPTIONAL
    - **Status:** Not critical for core functionality
@@ -55,14 +62,6 @@
      - Add focused files explanation to system prompt
      - Load project rules from `.ollm/ollm.md`
    - **Priority:** Low - can be done later
-
-7. **TASK 7: Refactor /test prompt Command Output** ⚠️ NICE-TO-HAVE
-   - **Status:** Current output works, just not pretty
-   - **What's needed:**
-     - Theme-aware color highlighting
-     - Better visual hierarchy
-     - Formatted sections
-   - **Priority:** Low - cosmetic improvement
 
 ---
 
