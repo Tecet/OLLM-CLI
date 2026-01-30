@@ -803,12 +803,12 @@ describe('Chat Client - Unit Tests', () => {
 });
 
 describe('Chat Client - Session Recording Integration', () => {
-  let providerRegistry: ProviderRegistry;
-  let toolRegistry: MockToolRegistry;
+  let _providerRegistry: ProviderRegistry;
+  let _toolRegistry: MockToolRegistry;
 
   beforeEach(() => {
-    providerRegistry = new ProviderRegistry();
-    toolRegistry = new MockToolRegistry();
+    _providerRegistry = new ProviderRegistry();
+    _toolRegistry = new MockToolRegistry();
   });
 
   describe('Session Recording', () => {

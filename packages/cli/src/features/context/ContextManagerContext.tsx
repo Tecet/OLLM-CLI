@@ -326,7 +326,7 @@ export function ContextManagerProvider({
         log(`[ContextManagerContext] Effective config: ${JSON.stringify(effectiveConfig)}`);
 
         // Load saved mode from settings, default to developer
-        const savedMode = SettingsService.getInstance().getMode() || 'developer';
+        const savedMode = SettingsService.getInstance().getMode() || 'assistant';
         log(`[ContextManagerContext] Using mode: ${savedMode}`);
 
         const { manager } = createContextManager({
@@ -572,8 +572,7 @@ export function ContextManagerProvider({
       }
       modeChangeCallbackRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionId, modelInfo, config]);
+  }, [sessionId, modelInfo, config, provider]);
 
   // Update usage periodically
   useEffect(() => {

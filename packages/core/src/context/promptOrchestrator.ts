@@ -43,6 +43,13 @@ export class PromptOrchestrator {
   }
 
   /**
+   * Build base prompt using SystemPromptBuilder
+   */
+  buildBasePrompt(config: import('./SystemPromptBuilder.js').SystemPromptConfig): string {
+    return this.systemPromptBuilder.build(config);
+  }
+
+  /**
    * Load the tiered prompt store with fallbacks (dist -> src) for dev flows.
    */
   static createPromptStore(): TieredPromptStore {

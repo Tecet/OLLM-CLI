@@ -8,10 +8,11 @@
  * Requirements: FR-16
  */
 
+import { type Message, ContextTier, type OperationalMode } from '../types.js';
+
 import type { IProfileManager } from './providerAwareCompression.js';
 import type { PromptOrchestrator } from '../promptOrchestrator.js';
 import type { CheckpointSummary } from '../types/storageTypes.js';
-import type { Message, ContextTier, OperationalMode } from '../types.js';
 
 /**
  * System prompt configuration
@@ -85,10 +86,34 @@ export class PromptOrchestratorIntegration {
       config.tier
     );
 
-    // Build base prompt with skills/tools/hooks
-    // Note: This is a simplified version. In production, this would call
-    // the actual SystemPromptBuilder with full context
-    const basePrompt = this.buildBasePrompt(config);
+    // Detect tool support
+    let modelSupportsTools = false;
+    if (config.modelId && this.profileManager) {
+      try {
+        const modelEntry = this.profileManager.getModelEntry(config.modelId);
+        // Use type assertion or optional chaining to access prompt_options/tool_support
+        // Based on ProfileManager structure, tool_support might be at root or under capabilities
+        const anyEntry = modelEntry as any;
+        modelSupportsTools = 
+          anyEntry.tool_support || 
+          anyEntry.capabilities?.tools || 
+          false;
+      } catch (_error) {
+        // Model not found or error, assume no tool support
+        modelSupportsTools = false;
+      }
+    }
+
+    // Build base prompt using actual SystemPromptBuilder
+    const basePrompt = this.promptOrchestrator.buildBasePrompt({
+      interactive: true,
+      mode: config.mode,
+      tier: mapTierToNumber(config.tier),
+      modelSupportsTools,
+      allowedTools: config.allowedTools,
+      useSanityChecks: config.useSanityChecks,
+      skills: config.activeSkills,
+    });
 
     // Combine tier prompt and base prompt
     const content = [tierPrompt, basePrompt].filter(Boolean).join('\n\n');
@@ -402,46 +427,19 @@ export class PromptOrchestratorIntegration {
         `Tier ${tier} budget: ${tierBudget} tokens.`,
     };
   }
+}
 
-  /**
-   * Build base prompt with skills/tools/hooks
-   *
-   * @param config - System prompt configuration
-   * @returns Base prompt string
-   */
-  private buildBasePrompt(config: SystemPromptConfig): string {
-    const parts: string[] = [];
+/**
+ * Map context tier to number (1-5)
+ */
+function mapTierToNumber(tier: ContextTier): number {
+  const mapping: Record<ContextTier, number> = {
+    [ContextTier.TIER_1_MINIMAL]: 1,
+    [ContextTier.TIER_2_BASIC]: 2,
+    [ContextTier.TIER_3_STANDARD]: 3,
+    [ContextTier.TIER_4_PREMIUM]: 4,
+    [ContextTier.TIER_5_ULTRA]: 5,
+  };
 
-    // Add skills section
-    if (config.activeSkills.length > 0) {
-      parts.push(`Active Skills: ${config.activeSkills.join(', ')}`);
-    }
-
-    // Check if model supports tools
-    let modelSupportsTools = false;
-    if (config.modelId && this.profileManager) {
-      try {
-        const modelEntry = this.profileManager.getModelEntry(config.modelId);
-        modelSupportsTools = (modelEntry as any)?.tool_support ?? false;
-      } catch (_error) {
-        // Model not found, assume no tool support
-        modelSupportsTools = false;
-      }
-    }
-
-    // Add tools section (only if model supports tools and tools are provided)
-    if (modelSupportsTools && config.allowedTools && config.allowedTools.length > 0) {
-      parts.push(`Available Tools: ${config.allowedTools.join(', ')}`);
-    }
-
-    // Add hooks section (simplified)
-    parts.push('Hooks: Enabled');
-
-    // Add sanity checks if requested
-    if (config.useSanityChecks) {
-      parts.push('Sanity Checks: Enabled');
-    }
-
-    return parts.join('\n\n');
-  }
+  return mapping[tier] || 3;
 }

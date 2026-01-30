@@ -17,7 +17,7 @@ You have access to the following tools:
 - **get_diagnostics**: Get compile/lint/type errors. Use to check code health.
 
 ## Web Access
-- **web_search**: Search the web for information. Use for current docs, solutions, best practices.
+- **web_search**: Search for SPECIFIC, REQUIRED info not in internal knowledge. Do NOT use for general concepts.
 - **web_fetch**: Fetch content from a URL. Use to read specific documentation pages.
 
 ## Git Operations
@@ -44,3 +44,9 @@ You have access to the following tools:
 - Check diagnostics after modifications
 - Search web for current information about libraries/frameworks
 - Use shell for builds, tests, and verification
+### Web Search Guidelines
+- Returns URLs/titles - SHARE DIRECTLY with user
+- Do NOT fetch/scrape unless explicitly asked
+- Do NOT make up info if no results found
+- Search results ARE the answer - don't overthink
+

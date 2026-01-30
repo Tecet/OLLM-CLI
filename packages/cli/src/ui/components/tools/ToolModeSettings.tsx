@@ -48,7 +48,7 @@ export function ToolModeSettings({
   onReset,
   focused,
   selectedIndex,
-  _onSelectionChange,
+  onSelectionChange: _onSelectionChange,
 }: ToolModeSettingsProps) {
   const [localSettings, setLocalSettings] = useState(modeSettings);
   const [hasChanges, setHasChanges] = useState(false);

@@ -175,7 +175,7 @@ export function registerBuiltInTools(registry: ToolRegistry, config?: BuiltInToo
   const {
     memoryPath = '~/.ollm/memory.json',
     todosPath = '~/.ollm/todos.json',
-    enableGoalTools = false, // DISABLED by default
+    // enableGoalTools is ignored - goal tools are always registered but disabled by default
   } = config || {};
 
   // File reading tools

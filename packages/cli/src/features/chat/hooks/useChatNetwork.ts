@@ -387,9 +387,21 @@ export function useChatNetwork(props: UseChatNetworkProps): UseChatNetworkReturn
       // Continue in next part...
       // (Agent loop implementation continues in the actual file)
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
-      /* dependencies */
+      addMessage,
+      clearChat,
+      contextActions,
+      currentModel,
+      injectFocusedFilesIntoPrompt,
+      modelSupportsTools,
+      provider,
+      recordSessionMessage,
+      serviceContainer,
+      setLaunchScreenVisible,
+      setStreaming,
+      setWaitingForResponse,
+      setWaitingForResume,
+      waitingForResume,
     ]
   );
 

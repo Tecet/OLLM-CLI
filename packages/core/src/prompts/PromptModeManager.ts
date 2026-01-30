@@ -480,7 +480,7 @@ export class PromptModeManager extends EventEmitter {
    */
   getAllowedTools(mode: ModeType): string[] {
     const toolAccess: Record<ModeType, string[]> = {
-      assistant: [],
+      assistant: ['web_search', 'read_file', 'read_multiple_files'],
       planning: [
         'web_search',
         'web_fetch',

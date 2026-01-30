@@ -181,8 +181,8 @@ describe('ProviderAwareCompression', () => {
       const largeSystemPrompt = 1000;
 
       // Calculate thresholds for both
-      const ollamaLimit = 6963;
-      const safetyMargin = 1000;
+      const _ollamaLimit = 6963;
+      const _safetyMargin = 1000;
 
       // Small system prompt: available = 6963 - 200 - 1000 = 5763, threshold = 4322.25
       // Large system prompt: available = 6963 - 1000 - 1000 = 4963, threshold = 3722.25
@@ -332,7 +332,7 @@ describe('ProviderAwareCompression', () => {
           fc.integer({ min: 0, max: 10000 }), // currentTokens
           fc.constantFrom('llama3.2:3b', 'mistral:7b', 'codellama:13b'), // modelId
           fc.integer({ min: 100, max: 1000 }), // systemPromptTokens
-          (currentTokens, modelId, systemPromptTokens) => {
+          (currentTokens, modelId, _systemPromptTokens) => {
             const validation = compression.validateAgainstProvider(currentTokens, modelId);
             const limit = compression.getContextLimit(modelId);
             const safetyMargin = 1000;

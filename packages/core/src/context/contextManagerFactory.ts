@@ -178,6 +178,7 @@ export function createContextManager(
     }
 
     // Build system prompt using PromptOrchestratorIntegration
+    const useSanityChecks = tier <= ContextTier.TIER_2_BASIC;
     const promptIntegration = new PromptOrchestratorIntegration(
       promptOrchestrator,
       config.services?.profileManager
@@ -186,7 +187,7 @@ export function createContextManager(
       mode,
       tier,
       activeSkills: [], // TODO: Get from config
-      useSanityChecks: false,
+      useSanityChecks,
       modelId: config.modelInfo.modelId,
       allowedTools,
     });

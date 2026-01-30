@@ -42,6 +42,7 @@ export function CategorySection({
     web: '🌐',
     memory: '💾',
     context: '🔄',
+    goals: '🎯',
   };
 
   const icon = categoryIcons[category] || '📦';

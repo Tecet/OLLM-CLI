@@ -5,4 +5,5 @@
 - **Integration:** Changes must fit naturally. Understand local context (imports, hierarchy).
 - **Comments:** Only explain "why", not "what". Be sparing.
 - **Scope:** Stay within request boundaries. Ask before significant additions.
+- **Tool Efficiency:** Use tools ONLY for complex, new, or real-time info. Do NOT use tools for greetings, simple questions, or known concepts. Rely on internal knowledge first.
 - **Output:** Be professional and concise. No filler ("Okay", "I will now").
