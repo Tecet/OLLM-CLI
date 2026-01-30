@@ -313,6 +313,12 @@ export const testPromptCommand: Command = {
       );
       let systemPrompt = manager.getSystemPrompt();
       const modelSupportsTools = modelEntry?.tool_support ?? false;
+      
+      // Get tools for current mode from settings
+      const allowedTools = modelSupportsTools 
+        ? SettingsService.getInstance().getToolsForMode(coreMode)
+        : [];
+      
       const toolNote = modelSupportsTools
         ? ''
         : 'Note: This model does not support function calling. Do not attempt to use tools or make tool calls.';
@@ -337,7 +343,7 @@ export const testPromptCommand: Command = {
         tierPrompt: expectedTierPrompt,
         toolNote,
         userMessages: history.filter((m) => m.role === 'user').map((m) => m.content || ''),
-        toolNames: [],
+        toolNames: allowedTools,
       });
       
       const payloadJson = JSON.stringify(
@@ -359,7 +365,7 @@ export const testPromptCommand: Command = {
               tool_call_id: m.toolCallId,
             })),
           ],
-          tools: [],
+          tools: [],  // Note: Tools would be populated by provider in actual request
           options: {
             num_ctx: ollamaContextSize,
             temperature: temperature,
@@ -374,21 +380,34 @@ export const testPromptCommand: Command = {
       );
 
       const optionsText = [
-        `Model: ${modelId}`,
-        `Mode: ${coreMode}`,
-        `Context usage: ${manager.getUsage().currentTokens} / ${manager.getUsage().maxTokens} (${Math.round(manager.getUsage().percentage)}%)`,
-        `Effective context cap (num_ctx): ${ollamaContextSize} (85% of ${manager.getUsage().maxTokens})`,
-        `Temperature: ${temperature}`,
-        `GPU hints: ${gpuHints ? `num_gpu=${gpuHints.num_gpu}, num_gpu_layers=${gpuHints.gpu_layers}` : 'unavailable'}`,
-        `GPU override (settings): ${Number.isFinite(forcedNumGpu) ? forcedNumGpu : 'none'}`,
-        `GPU info: ${lastGPUInfo ? `${lastGPUInfo.model ?? lastGPUInfo.vendor ?? 'Unknown'} - ${(lastGPUInfo.vramTotal / (1024 * 1024 * 1024)).toFixed(1)} GB total / ${(lastGPUInfo.vramFree / (1024 * 1024 * 1024)).toFixed(1)} GB free` : 'unavailable'}`,
+        `Model:                    ${modelId}`,
+        `Mode:                     ${coreMode}`,
+        `Context usage:            ${manager.getUsage().currentTokens} / ${manager.getUsage().maxTokens} (${Math.round(manager.getUsage().percentage)}%)`,
+        `Effective context cap:    ${ollamaContextSize} (85% of ${manager.getUsage().maxTokens})`,
+        `Temperature:              ${temperature}`,
+        `Model supports tools:     ${modelSupportsTools ? 'YES' : 'NO'}`,
+        `Tools for this mode:      ${allowedTools.length > 0 ? `${allowedTools.length} tools` : 'NONE'}`,
+        `GPU hints:                ${gpuHints ? `num_gpu=${gpuHints.num_gpu}, num_gpu_layers=${gpuHints.gpu_layers}` : 'unavailable'}`,
+        `GPU override (settings):  ${Number.isFinite(forcedNumGpu) ? forcedNumGpu : 'none'}`,
+        `GPU info:                 ${lastGPUInfo ? `${lastGPUInfo.model ?? lastGPUInfo.vendor ?? 'Unknown'} - ${(lastGPUInfo.vramTotal / (1024 * 1024 * 1024)).toFixed(1)} GB total / ${(lastGPUInfo.vramFree / (1024 * 1024 * 1024)).toFixed(1)} GB free` : 'unavailable'}`,
       ].join('\n');
+      
+      // Add tools section if any
+      let toolsSection = '';
+      if (allowedTools.length > 0) {
+        toolsSection = `\n\n=== Available Tools (${allowedTools.length}) ===\n${allowedTools.join(', ')}`;
+      } else if (modelSupportsTools) {
+        toolsSection = `\n\n=== Available Tools ===\nNONE - No tools enabled for ${coreMode} mode`;
+      } else {
+        toolsSection = `\n\n=== Available Tools ===\nNOT SUPPORTED - Model does not support function calling`;
+      }
+      
       const systemHeader = `${formatModeLabel(coreMode)} ${formatTierLabel(effectiveTierEnum)}`;
       const preview = buildPromptPreviewMessage({
         optionsText,
         systemHeader,
         systemPrompt,
-        rules: structuredContent.rules.join('\n\n'),
+        rules: structuredContent.rules.join('\n\n') + toolsSection,
         mockUserMessage:
           'Here is a short mock user message for testing prompt structure and output formatting.',
         payloadJson,
