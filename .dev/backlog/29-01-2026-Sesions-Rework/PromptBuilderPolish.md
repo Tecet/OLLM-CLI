@@ -640,46 +640,230 @@ updateSystemPrompt({ mode, tier, ... }) {
 
 #### 4.7: Redesign Tools UI
 
-**New UI Structure:**
-
+**Current UI:**
 ```
-┌─ Tools ─────────────────────────────────────┐
-│                                              │
-│ Mode: [Developer ▼]                         │
-│                                              │
-│ ┌─ File Operations ────────────────────┐   │
-│ │ ✓ read_file                           │   │
-│ │ ✓ write_file                          │   │
-│ │ ✓ str_replace                         │   │
-│ │ ✓ read_multiple_files                 │   │
-│ │ ✓ list_directory                      │   │
-│ └───────────────────────────────────────┘   │
-│                                              │
-│ ┌─ Search & Discovery ─────────────────┐   │
-│ │ ✓ grep_search                         │   │
-│ │ ✓ file_search                         │   │
-│ │ ✓ get_diagnostics                     │   │
-│ └───────────────────────────────────────┘   │
-│                                              │
-│ [Copy to Assistant] [Copy to Planning]      │
-│ [Reset to Defaults]                          │
-└──────────────────────────────────────────────┘
+┌─ Left Column ────────┬─ Right Column ──────────────────┐
+│ ▸ File Discovery     │ Find Files by Pattern           │
+│   ✓ Find Files       │                                 │
+│   ✓ List Directory   │ Version: v0.1.0 (Stable)        │
+│ ▸ File Operations    │ Status: ✓ Enabled               │
+│   ✓ Edit File        │                                 │
+│   ✓ Read File        │ Description of selected tool... │
+│ ▸ Shell              │                                 │
+│   ✓ Execute Shell    │                                 │
+└──────────────────────┴─────────────────────────────────┘
 ```
 
-**Features:**
-1. Mode selector dropdown at top
-2. Show tools for selected mode
-3. Enable/disable per mode
-4. "Copy to X" buttons to copy settings between modes
-5. "Reset to Defaults" to restore default tool set
-6. Visual indicator if using defaults vs customized
+**New UI Design:**
 
-**Implementation:**
-- Update ToolsTab to show mode selector
-- Update ToolsContext to handle per-mode settings
-- Add mode parameter to toggleTool()
-- Save to settings.toolsByMode
-- Show which mode is currently active
+```
+┌─ Left Column (Label Only) ─┬─ Right Column (Interactive) ────────────────┐
+│                             │                                             │
+│ ▸ File Discovery            │ Find Files by Pattern                       │
+│   • Find Files              │                                             │
+│   • List Directory          │ Version: v0.1.0 (Stable)                    │
+│                             │ Status: ✓ Enabled Globally                  │
+│ ▸ File Operations           │                                             │
+│   • Edit File               │ Description of tool...                      │
+│   • Read File               │                                             │
+│                             │ ┌─ Per-Mode Settings ──────────────────┐   │
+│ ▸ Shell                     │ │                                       │   │
+│   • Execute Shell           │ │ Developer:  [✓ Enabled ]              │   │
+│                             │ │ Debugger:   [✓ Enabled ]              │   │
+│ ▸ Memory                    │ │ Assistant:  [✗ Disabled] ← Navigate   │   │
+│   • Persistent Memory       │ │ Planning:   [✓ Enabled ]              │   │
+│                             │ │                                       │   │
+│ ▸ Context                   │ │ [Apply] [Reset to Defaults]           │   │
+│   • Complete Goal           │ └───────────────────────────────────────┘   │
+│                             │                                             │
+└─────────────────────────────┴─────────────────────────────────────────────┘
+
+Navigation:
+- Left: Browse tools (read-only, no toggle)
+- Right: Navigate per-mode settings, toggle enable/disable
+- Tab: Switch between left/right panels
+```
+
+**Key Changes:**
+
+1. **Left Column (Tool List):**
+   - Remove toggle functionality (✓ → •)
+   - Make it label-only for navigation
+   - Show global enabled status in right panel
+   - User navigates to select which tool to configure
+
+2. **Right Column (Tool Details + Per-Mode Settings):**
+   - Show tool description (as before)
+   - Add "Per-Mode Settings" section below description
+   - List all 4 modes with enable/disable toggles
+   - User can navigate through modes with arrow keys
+   - Toggle with Enter/Space
+   - Apply button to save changes
+   - Reset button to restore defaults
+
+3. **Navigation Flow:**
+   ```
+   1. User navigates left column to select tool
+   2. Right panel shows tool description
+   3. User tabs to right panel
+   4. User navigates through mode settings
+   5. User toggles enable/disable per mode
+   6. User applies changes
+   ```
+
+**Component Structure:**
+
+```typescript
+// ToolsTab.tsx
+<Box flexDirection="column">
+  <Box flexDirection="row">
+    {/* Left Panel - Tool List (Read-only) */}
+    <ToolList 
+      tools={tools}
+      selectedTool={selectedTool}
+      onSelect={setSelectedTool}
+      focused={focusedPanel === 'left'}
+    />
+    
+    {/* Right Panel - Tool Details + Mode Settings */}
+    <ToolDetails
+      tool={selectedTool}
+      modeSettings={modeSettings}
+      onToggleMode={handleToggleMode}
+      onApply={handleApply}
+      onReset={handleReset}
+      focused={focusedPanel === 'right'}
+    />
+  </Box>
+</Box>
+
+// ToolList.tsx (Left Panel)
+// - Show categories and tools
+// - No toggle functionality
+// - Just navigation and selection
+// - Visual indicator for selected tool
+
+// ToolDetails.tsx (Right Panel)
+// - Show tool description
+// - Show global status
+// - Show per-mode settings section
+// - Allow navigation through modes
+// - Allow toggle per mode
+// - Apply/Reset buttons
+```
+
+**Per-Mode Settings Section:**
+
+```typescript
+interface ModeSettingRow {
+  mode: 'developer' | 'debugger' | 'assistant' | 'planning';
+  enabled: boolean;
+  isDefault: boolean; // Using default or customized
+}
+
+// Visual representation
+<Box flexDirection="column" borderStyle="single" padding={1}>
+  <Text bold>Per-Mode Settings</Text>
+  <Text dimColor>Configure which modes can use this tool</Text>
+  
+  {modes.map((mode, index) => (
+    <Box key={mode.mode}>
+      <Text>
+        {mode.mode.padEnd(12)}: 
+        {mode.enabled ? '[✓ Enabled ]' : '[✗ Disabled]'}
+        {mode.isDefault && <Text dimColor> (default)</Text>}
+        {index === selectedModeIndex && <Text color="cyan"> ←</Text>}
+      </Text>
+    </Box>
+  ))}
+  
+  <Box marginTop={1} gap={1}>
+    <Text>[Enter] Toggle  [A] Apply  [R] Reset</Text>
+  </Box>
+</Box>
+```
+
+**Settings Storage:**
+
+```json
+{
+  "tools": {
+    "file_search": true,  // Global enable/disable
+    "read_file": true,
+    "write_file": true
+  },
+  "toolsByMode": {
+    "developer": {
+      "file_search": true,
+      "read_file": true,
+      "write_file": true
+    },
+    "debugger": {
+      "file_search": true,
+      "read_file": true,
+      "write_file": true
+    },
+    "assistant": {
+      "file_search": false,  // Disabled for assistant
+      "read_file": true,
+      "write_file": false
+    },
+    "planning": {
+      "file_search": true,
+      "read_file": true,
+      "write_file": false
+    }
+  }
+}
+```
+
+**Implementation Steps:**
+
+1. **Update ToolList component:**
+   - Remove toggle functionality
+   - Make it read-only navigation
+   - Change ✓ to • for items
+   - Keep category expand/collapse
+
+2. **Create ToolModeSettings component:**
+   - Show 4 modes with enable/disable
+   - Allow navigation through modes
+   - Toggle with Enter/Space
+   - Show default vs customized indicator
+
+3. **Update ToolDetails component:**
+   - Add ToolModeSettings below description
+   - Handle Apply button (save to settings)
+   - Handle Reset button (restore defaults)
+   - Manage focus between description and mode settings
+
+4. **Update ToolsContext:**
+   - Add getModeSettings(toolId) method
+   - Add setModeSettings(toolId, mode, enabled) method
+   - Add resetToDefaults(toolId) method
+   - Load/save from settings.toolsByMode
+
+5. **Update SettingsService:**
+   - Add toolsByMode to UserSettings interface
+   - Implement getToolForMode(toolId, mode)
+   - Implement setToolForMode(toolId, mode, enabled)
+   - Implement resetToolToDefaults(toolId)
+
+6. **Keyboard Navigation:**
+   - Tab: Switch between left/right panels
+   - ↑/↓: Navigate tools (left) or modes (right)
+   - Enter/Space: Toggle mode setting (right panel)
+   - A: Apply changes
+   - R: Reset to defaults
+   - Esc: Exit to nav bar
+
+**Benefits:**
+- ✅ Clear separation: browse tools vs configure modes
+- ✅ All mode settings visible at once
+- ✅ Easy to see which modes have access
+- ✅ Cherry-pick tools per mode
+- ✅ Visual indicator for defaults vs custom
+- ✅ Apply/Reset for safety
 
 ---
 
