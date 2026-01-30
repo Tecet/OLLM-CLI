@@ -113,7 +113,7 @@ export const VersionBanner: React.FC<VersionBannerProps> = ({ theme, modelInfo, 
       {/* Version info with 2 lines padding */}
       <Box marginTop={2} flexDirection="column" alignItems="center">
         <Text bold color={theme.text.accent}>
-          OLLM CLI v0.1.0 alpha
+          OLLM CLI v0.1.4 alpha
         </Text>
         <Text color={theme.text.accent} dimColor>
           Press any key to continue

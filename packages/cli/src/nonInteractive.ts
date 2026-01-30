@@ -97,8 +97,7 @@ export class NonInteractiveRunner {
         };
 
         // Dynamically import LocalProvider to avoid requiring compiled declarations
-        // TS: this import targets source in another workspace package; silence project-reference build check
-        // @ts-expect-error: dynamic import from sibling package source
+        // TS: this import targets source in another workspace package; dynamic import from sibling package source
         const { LocalProvider } = await import('../../ollm-bridge/src/provider/localProvider.js');
 
         const localProvider = new LocalProvider({

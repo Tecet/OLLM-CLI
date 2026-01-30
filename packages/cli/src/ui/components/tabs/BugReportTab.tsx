@@ -169,7 +169,7 @@ export function BugReportTab({ width }: BugReportTabProps) {
             ✓ Check if the issue still happens after restarting OLLM CLI
           </Text>
           <Text color={uiState.theme.text.secondary}>
-            ✓ Make sure you're running the latest version (v0.1.0)
+            ✓ Make sure you're running the latest version (v0.1.4)
           </Text>
           <Box marginBottom={2}>
             <Text color={uiState.theme.text.secondary}>

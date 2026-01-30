@@ -50,9 +50,7 @@ Thumbs.db
 .travis.yml
 
 # Documentation (keep on GitHub)
-docs/
-*.md
-!README.md
+
 
 # Development
 node_modules/
