@@ -15,6 +15,36 @@ Current system has prompt components hardcoded in TypeScript files. We need to:
 4. Enable sanity checks for smaller models
 5. Integrate focused files and project rules
 
+### Skills vs Tools vs Hooks vs MCP
+
+**Important distinction:**
+
+- **Skills** = Knowledge/guidelines (e.g., "TypeScript best practices", "Testing strategies")
+  - Defined in template files
+  - Explain HOW to do things
+  - No executable actions
+  
+- **Tools** = Executable actions (e.g., `read_file`, `write_file`, `shell`)
+  - Registered in ToolRegistry
+  - LLM can call them via function calling
+  - User can enable/disable in UI
+  
+- **Hooks** = Event-driven automation (e.g., "run lint on file save")
+  - Defined in `.ollm/hooks/`
+  - Triggered by events (fileEdited, promptSubmit, etc.)
+  - Can run commands or ask agent
+  
+- **MCP** = External tool servers (e.g., GitHub MCP, AWS MCP)
+  - Provide additional tools via Model Context Protocol
+  - Tools appear as `mcp:server:tool` (e.g., `mcp:github:create_issue`)
+  - User can enable/disable servers
+
+**In system prompt:**
+- Skills: Explain knowledge/guidelines
+- Tools: List available tools and what they do
+- Hooks: Not mentioned (internal automation)
+- MCP: Included in tools list as `mcp:*` or specific MCP tools
+
 ---
 
 ## Current State
@@ -147,16 +177,32 @@ Current system has prompt components hardcoded in TypeScript files. We need to:
 
 **Goal:** Create skills system that:
 1. Defines what skills are (typescript, testing, debugging, etc.)
-2. Explains available tools to LLM
+2. Explains available tools to LLM based on user settings
 3. Integrates with mode-specific tool restrictions
 4. Allows combining skills per mode
 
 **Current State:**
-- Placeholder only in SystemPromptBuilder
-- No skills defined
-- Tool restrictions exist in PromptModeManager but not explained to LLM
+- ✅ Tool enable/disable UI exists (ToolsTab, ToolsPanel)
+- ✅ Settings saved in `~/.ollm/settings.json` under `tools: { [toolId]: boolean }`
+- ✅ ToolsContext manages tool state
+- ⚠️ Mode-specific tool restrictions exist but are hardcoded
+- ❌ No skills defined
+- ❌ Tools not explained to LLM
 
-**Mode-Specific Tool Access (from PromptModeManager):**
+**Tool Settings Storage:**
+```typescript
+// ~/.ollm/settings.json
+{
+  "tools": {
+    "read_file": true,
+    "write_file": true,
+    "shell": false,
+    // ... etc
+  }
+}
+```
+
+**Current Mode-Specific Tool Access (from PromptModeManager):**
 ```typescript
 assistant: []                    // No tools
 planning: [                      // Read-only + web
@@ -176,7 +222,38 @@ debugger: [                      // Read + diagnostics + git
 ]
 ```
 
-**Proposed Structure:**
+**Proposed Improvement:**
+
+Instead of hardcoded mode restrictions, use a hybrid approach:
+1. **Developer/Debugger modes:** Use ALL enabled tools (user controls via UI)
+2. **Assistant/Planning modes:** Use mode-specific defaults + user overrides
+
+**New Settings Structure:**
+```typescript
+// ~/.ollm/settings.json
+{
+  "tools": {
+    // Global enable/disable (affects all modes)
+    "read_file": true,
+    "write_file": true,
+    "shell": true,
+    // ... etc
+  },
+  "toolsByMode": {
+    // Optional: Override per mode
+    "assistant": {
+      "read_file": true,      // Enable for assistant
+      "web_search": true,     // Enable for assistant
+      "write_file": false     // Disable for assistant (even if globally enabled)
+    },
+    "planning": {
+      // Uses defaults + global settings if not specified
+    }
+  }
+}
+```
+
+**Implementation Strategy:**
 
 #### 4.1: Create Skill Templates
 
@@ -201,6 +278,8 @@ You have expertise in TypeScript development:
 - Avoid `any`, use `unknown` when type is uncertain
 - Leverage utility types (Partial, Pick, Omit, etc.)
 ```
+
+**Note:** Skills are separate from tools. Skills are knowledge/guidelines, tools are actions.
 
 #### 4.2: Create Tool Descriptions Template
 
@@ -245,31 +324,66 @@ You have access to the following tools:
 Use tools proactively to gather information before making assumptions.
 ```
 
-#### 4.3: Update SystemPromptBuilder
+#### 4.3: Tool Filtering Logic
+
+**New approach:**
+1. Get globally enabled tools from settings
+2. For developer/debugger: Use ALL enabled tools
+3. For assistant/planning: Filter by mode defaults + user overrides
+4. Generate tool descriptions for only the allowed tools
+
+**Pseudocode:**
+```typescript
+function getToolsForMode(mode: string, settings: UserSettings): string[] {
+  const globallyEnabled = Object.entries(settings.tools)
+    .filter(([_, enabled]) => enabled)
+    .map(([toolId, _]) => toolId);
+  
+  if (mode === 'developer' || mode === 'debugger') {
+    // Use all globally enabled tools
+    return globallyEnabled;
+  }
+  
+  // For assistant/planning, use mode defaults
+  const modeDefaults = getModeDefaults(mode);
+  const modeOverrides = settings.toolsByMode?.[mode] || {};
+  
+  return globallyEnabled.filter(toolId => {
+    // Check mode-specific override first
+    if (toolId in modeOverrides) {
+      return modeOverrides[toolId];
+    }
+    // Fall back to mode defaults
+    return modeDefaults.includes(toolId) || modeDefaults.includes('*');
+  });
+}
+```
+
+#### 4.4: Update SystemPromptBuilder
 
 **Changes needed:**
 1. Load skill templates from files
 2. Load tool descriptions template
-3. Filter tool descriptions based on mode
+3. Filter tool descriptions based on mode + settings
 4. Combine skills + tools into coherent section
 
 **Proposed build order:**
 ```
 1. Tier-specific template (identity + mode-specific guidance)
 2. Core Mandates (universal rules)
-3. Available Tools (filtered by mode)
+3. Available Tools (filtered by mode + user settings)
 4. Active Skills (if any)
 5. Sanity Checks (if Tier 1-2)
 6. Project Rules (if any)
 ```
 
-#### 4.4: Integration Points
+#### 4.5: Integration Points
 
 **PromptOrchestrator.updateSystemPrompt():**
 ```typescript
 updateSystemPrompt({ mode, tier, activeSkills, ... }) {
-  // Get allowed tools for this mode
-  const allowedTools = this.modeManager.getAllowedTools(mode);
+  // Get tools for this mode (respects user settings)
+  const allowedTools = this.getToolsForMode(mode);
   
   // Build base prompt with tools and skills
   const basePrompt = this.systemPromptBuilder.build({
@@ -296,7 +410,7 @@ build(config: SystemPromptConfig): string {
   // 1. Core Mandates (always)
   sections.push(this.loadTemplate('system/CoreMandates.txt'));
   
-  // 2. Available Tools (filtered by mode)
+  // 2. Available Tools (filtered by mode + user settings)
   const toolsSection = this.buildToolsSection(config.allowedTools);
   if (toolsSection) sections.push(toolsSection);
   
@@ -322,25 +436,35 @@ build(config: SystemPromptConfig): string {
 buildToolsSection(allowedTools: string[]): string {
   const allToolDescriptions = this.loadTemplate('system/ToolDescriptions.txt');
   
-  // If mode allows all tools, return full description
-  if (allowedTools.includes('*')) {
-    return allToolDescriptions;
-  }
-  
-  // Otherwise, filter to only show allowed tools
+  // Filter to only show allowed tools
   return this.filterToolDescriptions(allToolDescriptions, allowedTools);
 }
 ```
 
+#### 4.6: UI Enhancement (Optional)
+
+**Add per-mode tool settings:**
+1. Add "Mode Overrides" section to ToolsTab
+2. Show which tools are available in each mode
+3. Allow users to override mode defaults
+4. Save to `settings.toolsByMode`
+
+**Benefits:**
+- Users can customize assistant/planning tool access
+- Developer/debugger always get all enabled tools
+- Clear visibility of what tools are available per mode
+
 **Actions:**
 1. Create skill template files
 2. Create ToolDescriptions.txt
-3. Update SystemPromptBuilder interface
-4. Implement buildToolsSection()
-5. Implement buildSkillsSection()
-6. Update PromptOrchestrator to pass mode/tier/tools
-7. Test with each mode to verify correct tools shown
-8. Validate token budgets still met
+3. Implement getToolsForMode() logic
+4. Update SystemPromptBuilder interface
+5. Implement buildToolsSection()
+6. Implement buildSkillsSection()
+7. Update PromptOrchestrator to pass mode/tier/tools
+8. Test with each mode to verify correct tools shown
+9. Validate token budgets still met
+10. (Optional) Add per-mode tool settings UI
 
 ---
 
