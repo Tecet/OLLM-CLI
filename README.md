@@ -124,7 +124,8 @@ Raport bugs:
 
 
 
-## OLLM is Curently in early access / demo - aplha developmnet stage, is not production grade software.
+## OLLM is Curently in early access / demo - aplha developmnet stage, 
+## is not production grade software.
 ## Tested on Windows CMD / Powershell and Nvidia GPU
 
 
