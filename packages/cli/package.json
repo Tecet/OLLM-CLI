@@ -1,6 +1,6 @@
 {
   "name": "@tecet/ollm",
-  "version": "0.1.4",
+  "version": "0.1.6",
   "description": "Local-first CLI for open-source LLMs with tools, hooks, and MCP integration",
   "type": "module",
   "bin": {
@@ -10,7 +10,8 @@
     "dist",
     "README.md",
     "LICENSE",
-    "docs"
+    "docs",
+    "scripts/copy-docs-to-user.cjs"
   ],
   "engines": {
     "node": ">=20.0.0"
@@ -21,7 +22,8 @@
     "start": "node dist/cli.js",
     "test": "vitest",
     "prepack": "node ../../scripts/copy-docs-to-package.cjs .",
-    "postpack": "node ../../scripts/remove-docs-from-package.cjs ."
+    "postpack": "node ../../scripts/remove-docs-from-package.cjs .",
+    "postinstall": "node ./scripts/copy-docs-to-user.cjs"
   },
   "keywords": [
     "llm",
@@ -50,7 +52,9 @@
   "license": "Apache-2.0",
   "author": "OLLM CLI Contributors",
   "dependencies": {
+    
     "@vitest/coverage-v8": "4.0.17",
+    "@xterm/headless": "^6.0.0",
     "ajv": "^8.12.0",
     "ajv-formats": "^2.1.1",
     "esbuild": "0.27.2",
@@ -59,17 +63,16 @@
     "ignore": "^5.3.2",
     "ink": "^6.6.0",
     "ink-spinner": "^5.0.0",
+    "ink-text-input": "^6.0.0",
     "jimp": "^1.6.0",
+    "node-pty": "^1.1.0",
     "picomatch": "^4.0.3",
     "react": "19.2.3",
     "react-devtools-core": "^6.1.2",
+    "sharp": "^0.34.5",
     "shiki": "^3.21.0",
     "simple-git": "^3.30.0",
     "terminal-image": "^1.1.0",
-    "node-pty": "^1.1.0",
-    "@xterm/headless": "^6.0.0",
-    "ink-text-input": "^6.0.0",
-    "sharp": "^0.34.5",
     "vitest": "4.0.17",
     "yaml": "^2.3.4",
     "yargs": "^17.7.0"
