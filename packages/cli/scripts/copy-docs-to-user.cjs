@@ -1,8 +1,9 @@
 #!/usr/bin/env node
+/* eslint-disable @typescript-eslint/no-require-imports */
 const { existsSync } = require('fs');
 const { mkdir, cp } = require('fs/promises');
-const path = require('path');
 const os = require('os');
+const path = require('path');
 
 (async function main(){
   try {

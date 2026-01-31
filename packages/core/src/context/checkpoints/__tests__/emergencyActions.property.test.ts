@@ -12,18 +12,28 @@
 import * as fc from 'fast-check';
 import { describe, it, expect, beforeEach } from 'vitest';
 
-import { SummarizationService } from '../../compression/summarizationService.js';
 import { SnapshotLifecycle } from '../../storage/snapshotLifecycle.js';
 import { CheckpointLifecycle } from '../checkpointLifecycle.js';
 import { EmergencyActions } from '../emergencyActions.js';
 
-// Mock provider for testing
-const mockProvider = {
-  chat: async () => ({
-    content: 'Test summary of the conversation',
-    role: 'assistant' as const,
-  }),
-};
+import type { SummarizationService } from '../../compression/summarizationService.js';
+
+const mockSummarizationService = {
+  summarize: async (messages, level) => {
+    const originalTokens = Math.ceil(
+      messages.reduce((sum, message) => sum + message.content.length, 0) / 4
+    );
+    const tokenCount = Math.max(1, Math.min(5, originalTokens - 1));
+
+    return {
+      summary: 'Test summary that is shorter than input.',
+      tokenCount,
+      level,
+      model: 'test-model',
+      success: true,
+    };
+  },
+} as SummarizationService;
 
 /**
  * Arbitraries for property-based testing
@@ -39,22 +49,27 @@ const messageArbitrary = fc.record({
 });
 
 // Generate a valid checkpoint
-const checkpointArbitrary = fc.record({
-  id: fc.string({ minLength: 1, maxLength: 20 }),
-  timestamp: fc.integer({ min: 1000000000000, max: Date.now() }),
-  summary: fc.string({ minLength: 50, maxLength: 500 }),
-  originalMessageIds: fc.array(fc.string({ minLength: 1, maxLength: 20 }), {
-    minLength: 1,
-    maxLength: 10,
-  }),
-  tokenCount: fc.integer({ min: 10, max: 500 }),
-  compressionLevel: fc.constantFrom(1, 2, 3) as fc.Arbitrary<1 | 2 | 3>,
-  compressionNumber: fc.integer({ min: 0, max: 20 }),
-  metadata: fc.record({
-    model: fc.constant('test-model'),
-    createdAt: fc.integer({ min: 1000000000000, max: Date.now() }),
-  }),
-});
+const checkpointArbitrary = fc
+  .record({
+    id: fc.string({ minLength: 1, maxLength: 20 }),
+    timestamp: fc.integer({ min: 1000000000000, max: Date.now() }),
+    summary: fc.string({ minLength: 50, maxLength: 500 }),
+    originalMessageIds: fc.array(fc.string({ minLength: 1, maxLength: 20 }), {
+      minLength: 1,
+      maxLength: 10,
+    }),
+    tokenCount: fc.integer({ min: 10, max: 500 }),
+    compressionLevel: fc.constantFrom(1, 2, 3) as fc.Arbitrary<1 | 2 | 3>,
+    compressionNumber: fc.integer({ min: 0, max: 20 }),
+    metadata: fc.record({
+      model: fc.constant('test-model'),
+      createdAt: fc.integer({ min: 1000000000000, max: Date.now() }),
+    }),
+  })
+  .map((checkpoint) => ({
+    ...checkpoint,
+    tokenCount: Math.max(1, Math.ceil(checkpoint.summary.length / 4)),
+  }));
 
 describe('EmergencyActions - Property Tests', () => {
   let summarizationService: SummarizationService;
@@ -63,7 +78,7 @@ describe('EmergencyActions - Property Tests', () => {
   let emergencyActions: EmergencyActions;
 
   beforeEach(() => {
-    summarizationService = new SummarizationService(mockProvider as any);
+    summarizationService = mockSummarizationService;
     snapshotLifecycle = new SnapshotLifecycle('test-session');
     checkpointLifecycle = new CheckpointLifecycle(summarizationService);
     emergencyActions = new EmergencyActions(

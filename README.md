@@ -13,8 +13,8 @@ OLLM CLI brings the power of open-source large language models to your terminal 
 
 # 🛠️ Release v0.1.3
 
-OLLM is Currently in early access / demo - alpha development stage,is not production grade software.
-Tested on Windows CMD / PowerShell and Nvidia GPU
+OLLM is in early access / demo stage and is not production‑grade software.  
+Tested on Windows CMD / PowerShell and NVIDIA GPU.
 
 ---
 
@@ -76,9 +76,9 @@ npm install -g @tecet/ollm
 
 **That's it!** The installer handles everything automatically.
 
-## After Instalation
+## After Installation
 
-### check version
+### Check version
 
 ```bash
 ollm --version
@@ -90,11 +90,11 @@ ollm --version
 
 https://ollama.com/download/OllamaSetup.exe
 
-### Modles libarary:
+### Models library
 
 https://ollama.com/search
 
-veryfy as Ollama is instaled and model is avalible on list:
+Verify Ollama is installed and your model appears in the list:
 
 ```bash
 ollama list
@@ -117,17 +117,17 @@ ollm --help
 ```
 
 ```bash
-#uninstall command:
+# uninstall command:
 npm uninstall -g @tecet/ollm
 ```
 
-Raport bugs:
+Report bugs:
 
 https://discord.gg/9GuCwdrB
 
 https://github.com/Tecet/OLLM
 
-#Screenshoots
+# Screenshots
 
 ![Logo](https://github.com/Tecet/OLLM-CLI/blob/main/img/VS.png)
 
@@ -135,28 +135,16 @@ https://github.com/Tecet/OLLM
 
 ![docs/img/logo.png](https://github.com/Tecet/OLLM-CLI/blob/main/img/settings%20models.png)
 
-# 📖 Documentation
-
-For detailed installation instructions,
-see the **[Installation Guide](docs/Installation.md)**.
-
-````
-
-### Learn More
-
-- **[Introduction](docs/Introduction.md)** - What is OLLM CLI and why use it?
-- **[Quick Start Guide](docs/Quickstart.md)** - Get up and running in 5 minutes
-- **[Complete Documentation](docs/README.md)** - Full documentation (57 guides)
-
----
-
 ## 📖 Documentation
+
+Start here:
+
+- **[Installation](docs/Installation.md)** - Complete installation guide
+- **[Quick Start](docs/Quickstart.md)** - Get started in 5 minutes
 
 ### Getting Started
 
 - **[Introduction](docs/Introduction.md)** - What is OLLM CLI? (friendly, non-technical)
-- **[Installation](docs/Installation.md)** - Complete installation guide
-- **[Quick Start](docs/Quickstart.md)** - Get started in 5 minutes
 - **[Troubleshooting](docs/Troubleshooting.md)** - Common issues and solutions
 
 ### Core Features
@@ -175,6 +163,108 @@ see the **[Installation Guide](docs/Installation.md)**.
 - **[Complete Index](docs/Index.md)** - All 57 documentation files organized by topic
 
 **Total Documentation:** 57 comprehensive guides covering every aspect of OLLM CLI
+
+---
+
+## ✅ Quick Verification (Recommended)
+
+```bash
+ollm --version
+ollm --help
+```
+
+Interactive sanity check:
+```bash
+ollm
+/model list
+/context
+```
+
+### Golden Path (2–3 minutes)
+
+```bash
+# 1) Start the CLI
+ollm
+
+# 2) List available models
+/model list
+
+# 3) Ask for a quick summary of the README
+Summarize the README and list 3 key features.
+
+# 4) Switch to developer mode
+/dev
+
+# 5) Read package.json and report version
+Read package.json and tell me the current version.
+```
+
+---
+
+## 🎥 Demo
+
+Demo video: https://www.youtube.com/watch?v=XhJQ_XYVgzk
+
+Short demo script: see `projectsummary.md` (60‑second walkthrough).
+
+Demo media note: more recordings and screenshots will be added after alpha.
+
+---
+
+## 🧭 Hackathon Artifacts
+
+- **Project summary:** `projectsummary.md`
+- **Kiro prompts:** `.kiro/prompts/`
+- **Steering docs:** `.kiro/steering/`
+- **Dev diary:** `.kiro/logs/KIRO Hackaton.md`
+- **Devlog:** `DEVLOG.md`
+
+---
+
+## 🎯 Use Cases (Quick)
+
+- **Local coding copilot:** run a local model with tools and file diffs in a terminal UI.
+- **Prompt router for multiple projects:** swap prompts/modes quickly without re‑wiring scripts.
+- **Long‑running sessions:** keep context with snapshots + compression instead of losing history.
+
+---
+
+## 👤 User Stories (12)
+
+1. As a Windows dev, I want a local CLI copilot so I can avoid cloud dependencies.
+2. As a prompt engineer, I want mode‑specific prompts so I can switch between planning and coding fast.
+3. As a maintainer, I want tool approvals so I can prevent destructive file edits.
+4. As a researcher, I want long sessions with snapshots so I can preserve context over hours.
+5. As a security‑minded user, I want offline‑first behavior so no data leaves my machine.
+6. As a power user, I want MCP integrations so I can connect external tools safely.
+7. As a team lead, I want reproducible session logs so I can audit AI changes.
+8. As a TUI fan, I want readable status bars so I can see model and context at a glance.
+9. As a debugger, I want a dedicated mode so the assistant prioritizes diagnosis steps.
+10. As a planner, I want a planning mode so outputs are structured into tasks and risks.
+11. As a content writer, I want a user mode to customize tone and guidance.
+12. As a hackathon judge, I want a concise demo script so I can validate features quickly.
+
+---
+
+## 🧩 Kiro Workflow (How It Was Used)
+
+This project used Kiro’s workflow to keep AI development aligned:
+
+1. **Requirements** → `.kiro/specs/`
+2. **Design & structure** → `.kiro/steering/`
+3. **Execution & review** → `.kiro/prompts/` + `.kiro/logs/KIRO Hackaton.md`
+
+Short note: Kiro captured requirements first, converted them into design guidance, then tracked tasks during execution.
+
+---
+
+## 🗓️ Milestones (Short)
+
+- 2026‑01‑24: UI + chat context refinements.
+- 2026‑01‑26: Sessions + context system stabilization.
+- 2026‑01‑29: Sessions rework + prompt builder templating.
+- 2026‑01‑30: Alpha publish readiness.
+- 2026‑01‑31: Post‑hackathon cleanup + documentation pass.
 
 ---
 
@@ -258,7 +348,7 @@ ollm --debug
 
 # Show version
 ollm --version
-````
+```
 
 ### Interactive Slash Commands
 
@@ -347,6 +437,12 @@ npm run lint           # Lint code
 npm run format         # Format code
 npm start              # Run CLI
 ```
+
+### Testing Notes
+
+- `npm test` currently reports 16 skipped tests in `packages/core/src/core/__tests__/chatClient.test.ts`.
+- These are integration‑style tests that depend on richer provider mocks and session recording hooks.
+- They are intentionally skipped until the test harness for those paths is finalized.
 
 ### Project Structure
 

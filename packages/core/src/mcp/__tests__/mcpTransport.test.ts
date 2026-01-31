@@ -14,6 +14,15 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 import { StdioTransport, SSETransport, HTTPTransport } from '../mcpTransport.js';
 
+vi.mock('../../utils/logger.js', () => ({
+  createLogger: () => ({
+    error: () => {},
+    warn: () => {},
+    info: () => {},
+    debug: () => {},
+  }),
+}));
+
 describe('StdioTransport', () => {
   let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
   let consoleWarnSpy: ReturnType<typeof vi.spyOn>;

@@ -1,6 +1,6 @@
 # Prompt Components System
 
-**Last Updated:** 2026-01-30  
+**Last Updated:** 2026-01-31  
 **Status:** Production  
 **Purpose:** Technical reference for how system prompts are built and managed
 
@@ -47,9 +47,9 @@ A complete system prompt consists of:
 
 ```
 1. Core Mandates          (~93 tokens)
-2. Mode-Specific Skills   (~70-100 tokens)
-3. Tool Descriptions      (dynamic, filtered by mode)
-4. Sanity Checks          (~100 tokens, Tier 1-2 only)
+2. Sanity Checks          (~100 tokens, Tier 1-2 only)
+3. Mode-Specific Skills   (~70-100 tokens)
+4. Tool Descriptions      (dynamic, filtered by mode)
 5. Tier-Specific Prompt   (from TieredPromptStore)
 ```
 
@@ -209,14 +209,14 @@ getSystemPromptTokenBudget(tier: ContextTier): number
 
 ### 5. TieredPromptStore
 
-**Location:** `packages/core/src/prompts/TieredPromptStore.ts`
+**Location:** `packages/core/src/prompts/tieredPromptStore.ts`
 
 **Purpose:** Loads mode and tier-specific prompt files
 
 **Prompt File Structure:**
 
 ```
-packages/core/src/prompts/modes/
+packages/core/src/prompts/templates/
 ├── developer/
 │   ├── tier1.txt
 │   ├── tier2.txt
@@ -520,7 +520,7 @@ resetToolToDefaults(toolId: string): void
 - `packages/core/src/context/SystemPromptBuilder.ts`
 - `packages/core/src/context/integration/promptOrchestratorIntegration.ts`
 - `packages/core/src/context/promptOrchestrator.ts`
-- `packages/core/src/prompts/TieredPromptStore.ts`
+- `packages/core/src/prompts/tieredPromptStore.ts`
 
 ### Template Files
 
@@ -531,7 +531,7 @@ resetToolToDefaults(toolId: string): void
 
 ### Mode Prompts
 
-- `packages/core/src/prompts/modes/{mode}/tier{1-5}.txt`
+- `packages/core/src/prompts/templates/{mode}/tier{1-5}.txt`
 
 ### Settings
 

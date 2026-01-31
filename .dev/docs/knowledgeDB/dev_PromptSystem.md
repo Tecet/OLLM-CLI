@@ -1,6 +1,6 @@
 # Prompt System
 
-**Last Updated:** January 27, 2026  
+**Last Updated:** January 31, 2026  
 **Status:** Source of Truth
 
 **Related Documents:**
@@ -29,7 +29,7 @@ ContextManager (Owner)
   ↓
 PromptOrchestrator (Coordinator)
   ├─ TieredPromptStore (Mode+Tier Templates)
-  ├─ PromptRegistry (Core Prompts)
+  ├─ PromptRegistry (Legacy + MCP Prompts)
   └─ SystemPromptBuilder (Assembly)
 ```
 
@@ -88,7 +88,7 @@ get(mode, tier): string | undefined
 
 **Location:** `packages/core/src/prompts/PromptRegistry.ts`
 
-**Role:** Registry for core prompts (mandates, sanity checks, skills)
+**Role:** Registry for dynamic prompts (MCP, tools, legacy skills)
 
 **Key Methods:**
 
@@ -104,16 +104,17 @@ clearMcpPrompts(serverName: string): void
 
 **Location:** `packages/core/src/context/SystemPromptBuilder.ts`
 
-**Role:** Assembles final system prompt from registry components
+**Role:** Assembles final system prompt from template components
 
-**Assembly Order:**
+**Assembly Order (Current):**
 
 ```
-1. Core Mandates (from registry: 'core-mandates')
-2. Active Goals (from goal manager - never compressed)
-3. Active Skills (from registry by skill IDs)
-4. Sanity Checks (optional, from registry: 'sanity-reality-check')
-5. Additional Instructions (custom user instructions)
+1. Core Mandates (system/CoreMandates.txt)
+2. Sanity Checks (system/SanityChecks.txt, Tier 1-2 only)
+3. Mode-Specific Skills (system/skills/Skills{Mode}.txt)
+4. Tool Descriptions (system/ToolDescriptions.txt, filtered by allowed tools)
+5. Legacy Skills (PromptRegistry, optional)
+6. Additional Instructions (custom user instructions)
 ```
 
 ---
@@ -392,9 +393,16 @@ packages/core/src/prompts/templates/
 │   ├── tier3.txt
 │   ├── tier4.txt
 │   └── tier5.txt
-├── mandates.ts      (Core behavior)
-├── sanity.ts        (Reality checks)
-├── identity.ts      (Agent identity)
+├── system/
+│   ├── CoreMandates.txt
+│   ├── SanityChecks.txt
+│   ├── ToolDescriptions.txt
+│   └── skills/
+│       ├── SkillsAssistant.txt
+│       ├── SkillsDeveloper.txt
+│       ├── SkillsDebugger.txt
+│       ├── SkillsPlanning.txt
+│       └── SkillsUser.txt
 └── stateSnapshot.ts (State tracking)
 ```
 
@@ -435,16 +443,13 @@ PromptOrchestrator Flow:
   │   ↓ Returns mode+tier template
   ├─ GoalManager.getActiveGoal()
   │   ↓ Returns active goal (if any)
-  ├─ SystemPromptBuilder.build({ skills, goal })
-  │   ├─ PromptRegistry.get('core-mandates')
-  │   ├─ Format active goal (if exists)
-  │   │  ├─ Goal description
-  │   │  ├─ Checkpoints (✅🔄⏳)
-  │   │  ├─ Decisions (🔒)
-  │   │  └─ Artifacts
-  │   ├─ PromptRegistry.get(skillId) for each skill
-  │   └─ PromptRegistry.get('sanity-reality-check') if enabled
-  │   ↓ Returns assembled core prompt
+  ├─ SystemPromptBuilder.build({ mode, allowedTools, modelSupportsTools, useSanityChecks, skills })
+  │   ├─ Load system/CoreMandates.txt
+  │   ├─ Load system/SanityChecks.txt (Tier 1-2)
+  │   ├─ Load system/skills/Skills{Mode}.txt
+  │   ├─ Filter system/ToolDescriptions.txt
+  │   └─ Append legacy skills + additional instructions (optional)
+  │   ↓ Returns assembled base prompt
   └─ Combine: [tierPrompt, corePrompt].join('\n\n')
   ↓
 Create System Message
@@ -571,11 +576,14 @@ promptRegistry.clearMcpPrompts('github-mcp');
 ```typescript
 interface SystemPromptConfig {
   interactive: boolean;
+  mode?: OperationalMode;
+  tier?: number;
+  modelSupportsTools?: boolean;
+  allowedTools?: string[];
   useSanityChecks?: boolean;
   agentName?: string;
   additionalInstructions?: string;
-  skills?: string[]; // Skill IDs to include
-  goal?: Goal; // Active goal to include
+  skills?: string[]; // Legacy skill IDs to include
 }
 ```
 
@@ -789,6 +797,7 @@ Continue conversation with updated goal
 | File                                               | Purpose                          |
 | -------------------------------------------------- | -------------------------------- |
 | `packages/core/src/context/promptOrchestrator.ts`  | Coordinator                      |
+| `packages/core/src/context/integration/promptOrchestratorIntegration.ts` | Mode/tool aware integration |
 | `packages/core/src/prompts/tieredPromptStore.ts`   | Template loader                  |
 | `packages/core/src/prompts/PromptRegistry.ts`      | Core prompt registry             |
 | `packages/core/src/context/SystemPromptBuilder.ts` | Prompt assembly                  |
@@ -798,8 +807,9 @@ Continue conversation with updated goal
 | `packages/core/src/prompts/templates/planning/`    | Planning mode prompts            |
 | `packages/core/src/prompts/templates/debugger/`    | Debugger mode prompts            |
 | `packages/core/src/prompts/templates/user/`        | User mode prompts (customizable) |
-| `packages/core/src/prompts/templates/mandates.ts`  | Core behavior                    |
-| `packages/core/src/prompts/templates/sanity.ts`    | Reality checks                   |
+| `packages/core/src/prompts/templates/system/CoreMandates.txt` | Core behavior |
+| `packages/core/src/prompts/templates/system/SanityChecks.txt` | Reality checks |
+| `packages/core/src/prompts/templates/system/ToolDescriptions.txt` | Tool descriptions |
 
 ---
 

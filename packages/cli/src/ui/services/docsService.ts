@@ -1,8 +1,8 @@
-import { readFile } from 'fs/promises';
 import { existsSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { readFile } from 'fs/promises';
 import os from 'os';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 
 export interface DocEntry {
   title: string;

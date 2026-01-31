@@ -1,7 +1,7 @@
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import os from 'os';
 
 export interface DocFile {
   title: string;
@@ -22,7 +22,7 @@ export interface DocFolder {
 export class DocumentService {
   private basePath: string;
 
-  constructor(basePath?: string) {
+  constructor() {
     // Resolve module directory in both CommonJS and ESM runtimes
     const moduleDir = typeof __dirname !== 'undefined'
       ? __dirname

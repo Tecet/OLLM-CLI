@@ -13,25 +13,27 @@
 import * as fc from 'fast-check';
 import { describe, it, expect, beforeEach } from 'vitest';
 
-import { SummarizationService } from '../../compression/summarizationService.js';
 import { CheckpointLifecycle } from '../checkpointLifecycle.js';
 
-import type { ProviderAdapter } from '../../../provider/types.js';
+import type { SummarizationService } from '../../compression/summarizationService.js';
 import type { CheckpointSummary } from '../../types/storageTypes.js';
 
-// ============================================================================
-// Mock Provider
-// ============================================================================
+const mockSummarizationService = {
+  summarize: async (messages, level) => {
+    const originalTokens = Math.ceil(
+      messages.reduce((sum, message) => sum + message.content.length, 0) / 4
+    );
+    const tokenCount = Math.max(1, Math.min(5, originalTokens - 1));
 
-class MockProvider implements Partial<ProviderAdapter> {
-  name = 'mock';
-
-  async *chatStream() {
-    // Return a simple summary
-    yield { type: 'text' as const, value: 'Summarized content' };
-    yield { type: 'finish' as const, reason: 'stop' as const };
-  }
-}
+    return {
+      summary: 'Summarized content for tests.',
+      tokenCount,
+      level,
+      model: 'test-model',
+      success: true,
+    };
+  },
+} as SummarizationService;
 
 // ============================================================================
 // Arbitraries
@@ -44,19 +46,24 @@ const checkpointArbitrary = (
   level: 1 | 2 | 3 = 3,
   compressionNumber: number = 0
 ): fc.Arbitrary<CheckpointSummary> =>
-  fc.record({
-    id: fc.uuid(),
-    timestamp: fc.integer({ min: 1000000000000, max: Date.now() }),
-    summary: fc.string({ minLength: 20, maxLength: 500 }),
-    originalMessageIds: fc.array(fc.uuid(), { minLength: 1, maxLength: 10 }),
-    tokenCount: fc.integer({ min: 50, max: 500 }),
-    compressionLevel: fc.constant(level),
-    compressionNumber: fc.constant(compressionNumber),
-    metadata: fc.record({
-      model: fc.constant('test-model'),
-      createdAt: fc.integer({ min: 1000000000000, max: Date.now() }),
-    }),
-  });
+  fc
+    .record({
+      id: fc.uuid(),
+      timestamp: fc.integer({ min: 1000000000000, max: Date.now() }),
+      summary: fc.string({ minLength: 20, maxLength: 500 }),
+      originalMessageIds: fc.array(fc.uuid(), { minLength: 1, maxLength: 10 }),
+      tokenCount: fc.integer({ min: 50, max: 500 }),
+      compressionLevel: fc.constant(level),
+      compressionNumber: fc.constant(compressionNumber),
+      metadata: fc.record({
+        model: fc.constant('test-model'),
+        createdAt: fc.integer({ min: 1000000000000, max: Date.now() }),
+      }),
+    })
+    .map((checkpoint) => ({
+      ...checkpoint,
+      tokenCount: Math.max(1, Math.ceil(checkpoint.summary.length / 4)),
+    }));
 
 /**
  * Generate an array of checkpoints with varying ages
@@ -87,11 +94,7 @@ describe('Property 16: Checkpoint Aging', () => {
   let summarizationService: SummarizationService;
 
   beforeEach(() => {
-    const mockProvider = new MockProvider() as ProviderAdapter;
-    summarizationService = new SummarizationService({
-      provider: mockProvider,
-      model: 'test-model',
-    });
+    summarizationService = mockSummarizationService;
     lifecycle = new CheckpointLifecycle(summarizationService);
   });
 
@@ -232,11 +235,7 @@ describe('Property 17: Checkpoint Merging', () => {
   let summarizationService: SummarizationService;
 
   beforeEach(() => {
-    const mockProvider = new MockProvider() as ProviderAdapter;
-    summarizationService = new SummarizationService({
-      provider: mockProvider,
-      model: 'test-model',
-    });
+    summarizationService = mockSummarizationService;
     lifecycle = new CheckpointLifecycle(summarizationService);
   });
 
