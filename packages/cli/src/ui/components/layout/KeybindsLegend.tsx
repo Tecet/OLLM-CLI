@@ -10,7 +10,7 @@ export interface KeybindsLegendProps {
 /**
  * KeybindsLegend - Displays main keyboard shortcuts in a compact, organized layout
  */
-export function KeybindsLegend({ theme, version = '0.1.4' }: KeybindsLegendProps) {
+export function KeybindsLegend({ theme, version = '0.1.4b' }: KeybindsLegendProps) {
   return (
     <Box flexDirection="column" paddingX={2} paddingY={1}>
       {/* Header with version - centered */}

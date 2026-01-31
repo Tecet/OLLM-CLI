@@ -1,6 +1,6 @@
 {
   "name": "@ollm/ollm-bridge",
-  "version": "0.1.3",
+  "version": "0.1.4b",
   "type": "module",
   "main": "./dist/index.js",
   "scripts": {

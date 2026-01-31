@@ -1,5 +1,7 @@
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
+import os from 'os';
 
 export interface DocFile {
   title: string;
@@ -20,8 +22,16 @@ export interface DocFolder {
 export class DocumentService {
   private basePath: string;
 
-  constructor(basePath: string = 'docs') {
-    this.basePath = basePath;
+  constructor(basePath?: string) {
+    // Resolve module directory in both CommonJS and ESM runtimes
+    const moduleDir = typeof __dirname !== 'undefined'
+      ? __dirname
+      : path.dirname(fileURLToPath(import.meta.url));
+    // Use the package-installed docs folder by default (three levels up)
+    const packaged = path.join(moduleDir, '..', '..', '..', 'docs');
+    // Prefer user-installed docs at %USERPROFILE%/.ollm/docs if present
+    const userDocs = path.join(os.homedir(), '.ollm', 'docs');
+    this.basePath = fs.existsSync(userDocs) ? userDocs : packaged;
   }
 
   /**

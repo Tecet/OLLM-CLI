@@ -446,3 +446,26 @@ npm login
 **Project:** OLLM CLI  
 **Version:** 0.1.2  
 **Status:** ✅ PRODUCTION READY
+
+
+
+
+See the current latest version/dist-tags:
+npm view @tecet/ollm dist-tags --json
+npm view @tecet/ollm version
+
+
+Install the latest explicitly:
+
+npm install @tecet/ollm
+# or
+npm install @tecet/ollm@latest
+
+Install a specific version:
+
+npm install @tecet/ollm@0.1.3
+
+List/set/remove dist-tags:
+npm dist-tag ls @tecet/ollm
+npm dist-tag add @tecet/ollm@0.1.4 latest
+npm dist-tag rm @tecet/ollm beta

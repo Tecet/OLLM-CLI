@@ -353,10 +353,11 @@ export function DocsPanel({ height, windowWidth }: DocsPanelProps) {
                   focusedColumn === 'left';
 
                 return (
-                  <Box key={`doc-${doc.path}`} paddingLeft={2}>
+                  <Box key={`doc-${doc.path}`} paddingLeft={2} marginBottom={1} width="100%">
                     <Text
                       bold={isSelected && hasFocus}
                       color={isSelected && hasFocus ? 'yellow' : uiState.theme.text.primary}
+                      wrap="truncate-end"
                     >
                       📄 {doc.title}
                     </Text>
